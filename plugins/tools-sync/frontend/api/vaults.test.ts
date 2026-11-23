@@ -46,7 +46,7 @@ describe('the fixtures of the vaults service', () => {
     const response = read('ListVaults.response') as ListVaultsResponse
 
     expect(read('ListVaults.request')).toStrictEqual({})
-    expect(response.vaults.map((one) => one.state)).toStrictEqual(['connected', 'notConnected'])
+    expect(response.vaults.map((one) => one.state)).toStrictEqual(['connected', 'notConnected', 'received'])
     expect(response.vaults.at(0)).toStrictEqual({
       id: '01JCX6Q4ZB3W8N2V7T5R9K1M0P',
       name: 'Test',

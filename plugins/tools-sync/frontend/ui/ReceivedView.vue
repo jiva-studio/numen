@@ -27,7 +27,7 @@ function onReceive(): void {
 }
 
 function onCopy(): void {
-  navigator.clipboard.writeText(props.view.code).catch(props.view.fail)
+  props.view.copyCode().catch(props.view.fail)
 }
 </script>
 

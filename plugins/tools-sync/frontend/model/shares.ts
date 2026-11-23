@@ -40,7 +40,10 @@ const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
 /** Whether a refusal is the warning the person must confirm before the reader is added. */
 export const isIdentityWarning = (message: string): boolean => message === words.otherIdentity
 
-function createRepeater(delayMs: number) {
+/** Puts the text on the clipboard of the machine. */
+const copyText = (text: string): Promise<void> => globalThis.navigator.clipboard.writeText(text)
+
+function createRepeater(delayMs: number, onFail: (failure: unknown) => void) {
   let timer: ReturnType<typeof setTimeout> | undefined
   const stop = (): void => {
     if (timer !== undefined) clearTimeout(timer)
@@ -48,7 +51,9 @@ function createRepeater(delayMs: number) {
   }
   const again = (task: () => Promise<void>): void => {
     stop()
-    timer = setTimeout(() => void task(), delayMs)
+    timer = setTimeout(() => {
+      task().catch(onFail)
+    }, delayMs)
   }
   if (getCurrentScope() !== undefined) onScopeDispose(stop)
   return { stop, again }
@@ -102,7 +107,9 @@ export function createShareView(options: ShareViewOptions) {
   const error = ref('')
   const isBusy = ref(false)
   const field = createReadField((text) => client.readReaderCode(text))
-  const repeater = createRepeater(refreshMs)
+  const repeater = createRepeater(refreshMs, (failure) => {
+    error.value = getErrorMessage(failure)
+  })
 
   async function load(): Promise<void> {
     repeater.stop()
@@ -176,6 +183,7 @@ export function createShareView(options: ShareViewOptions) {
     add,
     removeReader,
     stopShare,
+    copyInvitation: (): Promise<void> => copyText(invitation.value),
     stop: repeater.stop,
     close,
   })
@@ -197,7 +205,9 @@ export function createReceivedView(options: ReceivedViewOptions = {}) {
   const rows = ref<readonly ReceivedRow[]>([])
   const isBusy = ref(false)
   const invitation = createReadField((text) => client.readInvitation(text))
-  const repeater = createRepeater(refreshMs)
+  const repeater = createRepeater(refreshMs, (failure) => {
+    error.value = getErrorMessage(failure)
+  })
 
   async function refresh(): Promise<void> {
     repeater.stop()
@@ -251,6 +261,7 @@ export function createReceivedView(options: ReceivedViewOptions = {}) {
       error.value = getErrorMessage(failure)
     },
     receive,
+    copyCode: (): Promise<void> => copyText(code.value),
     stop: repeater.stop,
   })
 }

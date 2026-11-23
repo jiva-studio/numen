@@ -46,7 +46,7 @@ function onStopShare(): void {
 }
 
 function onCopy(): void {
-  navigator.clipboard.writeText(props.state.invitation).catch(props.state.fail)
+  props.state.copyInvitation().catch(props.state.fail)
 }
 </script>
 
