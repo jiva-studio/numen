@@ -5,6 +5,7 @@
  * them) or to restore one from its words or from two sheets of a kit.
  */
 import { computed } from 'vue'
+import { FileText, KeyRound, Plus } from '@lucide/vue'
 import { Button, IslandCard } from '@numen/ui'
 import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity } from '../../types'
@@ -58,27 +59,33 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
         type="button"
         variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startRestore('restore')"
       >
+        <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
       </Button>
       <Button
         type="button"
         variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startRestore('restoreSheets')"
       >
+        <FileText :size="14" aria-hidden="true" />
         {{ words.identityRestoreSheets }}
       </Button>
       <Button
         type="button"
-        variant="solid"
+        variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startSetup"
       >
+        <Plus :size="14" aria-hidden="true" />
         {{ words.identityCreate }}
       </Button>
     </template>
@@ -136,6 +143,12 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
   flex-direction: column;
   gap: 0.75rem;
   padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
+}
+
+/* As tall as the card title's line, so the header keeps the height it has with a text aside. */
+.identity-section__action {
+  block-size: calc(var(--numen-text-2) * var(--numen-line-height));
+  padding-block: 0;
 }
 
 .identity-section__detail,

@@ -115,7 +115,14 @@ export {
   type LicenseClient,
   createLicenseClient,
 } from './licenses'
-export { type IdentityClient, createIdentityClient } from './identity'
+export {
+  type IdentityInfo,
+  type IdentityFailure,
+  type RecoveryKit,
+  type KitProof,
+  type IdentityClient,
+  createIdentityClient,
+} from './identity'
 export {
   NoteGraphSchema,
   type Entry,
