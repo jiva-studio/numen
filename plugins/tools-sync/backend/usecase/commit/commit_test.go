@@ -118,7 +118,7 @@ func TestCommitRevisions_UploadsNoPlainText(t *testing.T) {
 	s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk and bread and eggs")})
 
 	revision := s.read(t)[0].GetRevision()
-	wire, err := synctest.EncodeMessage(revision)
+	wire, err := fakeserver.EncodeMessage(revision)
 	if err != nil {
 		t.Fatal(err)
 	}
