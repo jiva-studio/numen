@@ -156,7 +156,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 		}
 		cards, err := one.rename(ctx, path, in)
 		if err != nil {
-			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.OnFile(
+			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.BuildFileProblem(
 				format.FaultNotWritten,
 				"a field renamed in "+named+" did not reach this deck: "+err.Error(),
 			)})
@@ -247,7 +247,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
-	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.BuildDeck(on))
 	if err != nil {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
@@ -267,7 +267,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		return 0, err
 	}
 	// gomutants:disable-next-line BRANCH_IF reason="DeckFile.Whole does not fail on a deck that already passed OpenDeck and RenameField."
-	if _, err := f.Whole(delta, d.createCardID); err != nil {
+	if _, err := f.AssignCardIDs(delta, d.createCardID); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

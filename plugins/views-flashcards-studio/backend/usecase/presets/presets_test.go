@@ -66,7 +66,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	if target.Path != "" {
 		t.Errorf("read from %q", target.Path)
 	}
-	if !reflect.DeepEqual(target.Settings, review.Defaults()) {
+	if !reflect.DeepEqual(target.Settings, review.NewDefaultPreset()) {
 		t.Errorf("preset = %+v", target.Settings)
 	}
 }
@@ -89,7 +89,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	if target.Path != "" {
 		t.Errorf("read from %q", target.Path)
 	}
-	if !reflect.DeepEqual(target.Settings, review.Defaults()) {
+	if !reflect.DeepEqual(target.Settings, review.NewDefaultPreset()) {
 		t.Errorf("preset = %+v", target.Settings)
 	}
 	if len(target.Problems) != 1 || !strings.Contains(target.Problems[0], "no role") {
@@ -198,7 +198,7 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	if target.Path != "" {
 		t.Errorf("read from %q", target.Path)
 	}
-	if !reflect.DeepEqual(target.Settings, review.Defaults()) {
+	if !reflect.DeepEqual(target.Settings, review.NewDefaultPreset()) {
 		t.Errorf("preset = %+v", target.Settings)
 	}
 	if len(target.Problems) != 1 || !strings.Contains(target.Problems[0], "not a preset") {
@@ -241,7 +241,7 @@ func getSettledVault() map[string]string {
 }
 
 func minutes() review.Preset {
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.MinutesADay, p.NewADay, p.ReviewsADay, p.Retention = 35, 8, 45, 0.87
 	return p
 }
@@ -574,7 +574,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 		t.Fatalf("problems = %v", read.Problems)
 	}
 	p := read.Settings
-	if p.Rule != review.RuleInterval || p.Interval != review.Defaults().Interval {
+	if p.Rule != review.RuleInterval || p.Interval != review.NewDefaultPreset().Interval {
 		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
 	}
 
@@ -1345,7 +1345,7 @@ func TestPresetsReadsCachingNilDependenciesAndMissingSave(t *testing.T) {
 		Now:     vaulttest.NewClock(),
 	})
 	def, err := noLinks.Execute(t.Context(), s.vault, "decks/Roots.md")
-	if err != nil || def.Path != "" || !reflect.DeepEqual(def.Settings, review.Defaults()) {
+	if err != nil || def.Path != "" || !reflect.DeepEqual(def.Settings, review.NewDefaultPreset()) {
 		t.Fatalf("noLinks GetForDeck = %+v, %v", def, err)
 	}
 	noProblems := presets.NewGetForDeck(presets.Config{

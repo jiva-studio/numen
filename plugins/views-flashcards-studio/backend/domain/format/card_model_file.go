@@ -104,7 +104,7 @@ func (f *CardModelFile) AddTemplate(template CardTemplate) error {
 }
 
 func formatTemplate(template CardTemplate) string {
-	blocks := []string{headingLine(2, template.Name)}
+	blocks := []string{buildHeadingLine(2, template.Name)}
 	if lead := trimBlankLines(markdown.Normalize(template.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
@@ -116,17 +116,17 @@ func formatTemplate(template CardTemplate) string {
 		if text == "" {
 			continue
 		}
-		blocks = append(blocks, headingLine(3, side.heading), text)
+		blocks = append(blocks, buildHeadingLine(3, side.heading), text)
 	}
 	return strings.Join(blocks, "\n\n")
 }
 
-// CardModelBody is the markdown these templates are written as, in the order they are
+// BuildCardModelBody is the markdown these templates are written as, in the order they are
 // to stand in the note: the preamble as it arrived, each template laid down by the
 // format itself, and the tail verbatim below the last side.
 //
 // The templates are written into a card model of no templates, one after another, so every
-func CardModelBody(preamble string, templates []CardTemplate, tail string) (string, error) {
+func BuildCardModelBody(preamble string, templates []CardTemplate, tail string) (string, error) {
 	scratch, err := OpenCardModel(markdown.Create("", preamble))
 	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that OpenCardModel always opens."
 	if err != nil {

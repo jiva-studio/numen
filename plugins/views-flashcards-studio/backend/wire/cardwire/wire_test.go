@@ -171,25 +171,25 @@ func TestTemplatesComeIn(t *testing.T) {
 }
 
 func TestASectionIsAnIndexOrNothing(t *testing.T) {
-	if section(format.NoSection) != nil {
+	if buildSection(format.NoSection) != nil {
 		t.Error("no section went out as an index")
 	}
-	if got := section(0); got == nil || *got != 0 {
+	if got := buildSection(0); got == nil || *got != 0 {
 		t.Errorf("section 0 went out as %v", got)
 	}
-	if sectionOf(nil) != format.NoSection {
+	if readSection(nil) != format.NoSection {
 		t.Error("an absent index came in as a section")
 	}
-	if got := sectionOf(new(int32(0))); got != 0 {
+	if got := readSection(new(int32(0))); got != 0 {
 		t.Errorf("index 0 came in as %d", got)
 	}
 }
 
 func TestAPositionIsAnIndexOrNothing(t *testing.T) {
-	if position(format.NoPosition) != nil {
+	if buildPosition(format.NoPosition) != nil {
 		t.Error("no position went out as an index")
 	}
-	if got := position(0); got == nil || *got != 0 {
+	if got := buildPosition(0); got == nil || *got != 0 {
 		t.Errorf("position 0 went out as %v", got)
 	}
 }

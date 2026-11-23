@@ -275,7 +275,7 @@ export function useReviewSession(deps: SessionDeps) {
     },
   })
 
-  const answering = createAnswerActions({
+  const answerActions = createAnswerActions({
     cardsClient: deps.cards,
     reportError: deps.reportError,
     now,
@@ -296,7 +296,7 @@ export function useReviewSession(deps: SessionDeps) {
     writing,
     cards,
     opener,
-    answering,
+    answering: answerActions,
     show: () => {
       cards.queue.isAnswerShown.value = true
     },

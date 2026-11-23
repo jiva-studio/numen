@@ -25,9 +25,9 @@ type headSpan struct {
 	from int
 }
 
-func sectionHeads(body []byte) []headSpan {
+func findSectionHeads(body []byte) []headSpan {
 	var out []headSpan
-	for _, s := range sections(body, SectionLevel, FieldLevel) {
+	for _, s := range splitSections(body, SectionLevel, FieldLevel) {
 		if s.level == SectionLevel {
 			out = append(out, headSpan{head: s.head, from: s.from})
 		}
@@ -122,7 +122,7 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 	b.read = getTrimmedEnd(body, s.head, s.from)
 	if target != "" {
 		b.read = getTrimmedEnd(body, s.from, leadFrom)
-		span.linkFrom, span.linkTo = lineFrom(body, s.from, b.read), b.read
+		span.linkFrom, span.linkTo = findLineStart(body, s.from, b.read), b.read
 	}
 	lead, leadEnd := readTrimmedRun(body, leadFrom, s.to)
 	card.Preamble = lead
@@ -146,7 +146,7 @@ func createEmptyStat() domain.FileStat {
 }
 
 func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
-	secs := sections(body, SectionLevel, FieldLevel)
+	secs := splitSections(body, SectionLevel, FieldLevel)
 	b := deckBuilder{
 		deck: Deck{
 			Ref: ref, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil,
@@ -218,7 +218,7 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 		// A paragraph that is one wikilink and nothing else names the card model.
 		found := markdown.FindWikilinks(line)
 		if len(found) == 1 && found[0].At == 0 && found[0].To == len(line) &&
-			paragraphEnds(body, next, to) {
+			isParagraphEnd(body, next, to) {
 			return found[0].Inside, next
 		}
 		return "", from
@@ -226,7 +226,7 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 	return "", from
 }
 
-func paragraphEnds(body []byte, pos, to int) bool {
+func isParagraphEnd(body []byte, pos, to int) bool {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF,RETURN_FALSE reason="When pos >= to, body[pos:to] is empty and trims to empty string, returning true below."
 	if pos >= to {
 		return true

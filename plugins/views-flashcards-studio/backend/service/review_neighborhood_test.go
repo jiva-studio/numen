@@ -113,7 +113,7 @@ func getBacklinkedVault() map[string]string {
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	handler, target := newAPI(t, getJoinedVault())
 	handler.neighborhood = neighborhood.NewShow(
-		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{Vaults: handler.vaults}))
+		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{GetVault: handler.getHostVault}))
 
 	_, err := handler.GetDeckNeighborhood(t.Context(), &api.GetDeckNeighborhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",

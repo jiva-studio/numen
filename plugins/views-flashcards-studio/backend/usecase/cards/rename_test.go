@@ -374,7 +374,7 @@ func (d decksOf) ListPathsOfType(context.Context, domain.VaultID, domain.NoteTyp
 // A field renamed to its own name is no rename, and nothing is written.
 func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	vs := newVaults(t)
-	cardModel, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
+	cardModel, err := cards.NewRead(vs.ports.Readers, nil).ReadCardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatal(err)
 	}

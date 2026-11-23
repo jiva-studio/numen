@@ -48,7 +48,7 @@ const fakePresets = () => {
     },
     scheduleDeck,
     write: async () => asValue({ at: '', version: 1n }),
-    curve: async () => {
+    getCurve: async () => {
       throw new Error('unused')
     },
   }

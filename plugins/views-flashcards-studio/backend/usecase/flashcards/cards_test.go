@@ -502,8 +502,8 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 
 	want := review.PresetCardsDue{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
-		Budget: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
-		Limits: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
+		Budget: review.NewDefaultPreset().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
+		Limits: review.NewDefaultPreset().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
 	}
 	if len(counts.Presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", counts.Presets)
@@ -606,7 +606,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	answer(t, s.run(t, getSaturday()), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
-	s.schedules.At = func(retention float64) review.Scheduler {
+	s.schedules.GetScheduler = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
 	counter := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(time.Hour)))

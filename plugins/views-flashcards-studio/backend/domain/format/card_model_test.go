@@ -527,7 +527,7 @@ func TestProject(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got := format.Project(one.value)
+			got := format.GetHeadingText(one.value)
 			if got != one.want {
 				t.Errorf("project %q\n want %q\n  got %q", one.value, one.want, got)
 			}
@@ -561,7 +561,7 @@ func TestCardModelFileRenameAndTemplates(t *testing.T) {
 		t.Fatalf("unexpected body: %q", body)
 	}
 
-	emptyBody, err := format.CardModelBody("Preamble\n", nil, "\n\n")
+	emptyBody, err := format.BuildCardModelBody("Preamble\n", nil, "\n\n")
 	if err != nil || emptyBody != "Preamble\n" {
 		t.Fatalf("expected preamble only when no templates, got %q, err %v", emptyBody, err)
 	}

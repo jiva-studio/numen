@@ -34,8 +34,8 @@ type Queries struct {
 	hostports.Problems
 }
 
-// Folders gives the plugin folder in the store of the vault with an identity, seen from the vault.
-func Folders(host *hosttest.Vault) func(domain.VaultID) ports.HostFolder {
+// NewFolders gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func NewFolders(host *hosttest.Vault) func(domain.VaultID) ports.HostFolder {
 	return func(id domain.VaultID) ports.HostFolder { return host.Store().With(id) }
 }
 
@@ -52,7 +52,7 @@ type Env struct {
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
 	host := hosttest.CreateOnDisk(tb, createVaultName(tb), notes)
-	return Of(host)
+	return BuildEnv(host)
 }
 
 func createVaultName(tb testing.TB) string {
@@ -61,15 +61,15 @@ func createVaultName(tb testing.TB) string {
 	return "vault-" + filepath.Base(filepath.Dir(own)) + "-" + filepath.Base(own)
 }
 
-// Of is the ports over a vault the test made.
-func Of(host *hosttest.Vault) Env {
-	ports := hostports.New(Vaults(host), Folders(host))
+// BuildEnv is the ports over a vault the test made.
+func BuildEnv(host *hosttest.Vault) Env {
+	ports := hostports.New(NewVaults(host), NewFolders(host))
 	return Env{
 		Host:    host,
 		Store:   host.Store(),
 		Vault:   host.Vault(),
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
+		Queries: Queries{Notes: hostports.Notes{GetVault: NewVaults(host)}, Links: hostports.Links{GetVault: NewVaults(host)}, Problems: hostports.Problems{GetVault: NewVaults(host)}},
 	}
 }
 
@@ -86,12 +86,12 @@ type Installation struct {
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()
-	ports := hostports.New(Vaults(host), Folders(host))
+	ports := hostports.New(NewVaults(host), NewFolders(host))
 	return Installation{
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
+		Queries: Queries{Notes: hostports.Notes{GetVault: NewVaults(host)}, Links: hostports.Links{GetVault: NewVaults(host)}, Problems: hostports.Problems{GetVault: NewVaults(host)}},
 	}
 }
 
@@ -104,15 +104,15 @@ func (i Installation) Add(tb testing.TB, notes map[string]string) domain.Vault {
 	return added.Vault()
 }
 
-// Of is the vault of that identity as the host holds it, for a test that changes how it answers.
-func (i Installation) Of(id domain.VaultID) *hosttest.Vault { return i.vaults[id] }
+// GetVault is the vault of that identity as the host holds it, for a test that changes how it answers.
+func (i Installation) GetVault(id domain.VaultID) *hosttest.Vault { return i.vaults[id] }
 
 // Patience is how long a test gives something happening in the background before it calls the thing
 // broken. It is a claim about the slowest machine the suite must pass on.
 const Patience = 10 * time.Second
 
-// Vaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
-func Vaults(v *hosttest.Vault) func(domain.VaultID) ports.HostVault {
+// NewVaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
+func NewVaults(v *hosttest.Vault) func(domain.VaultID) ports.HostVault {
 	return func(id domain.VaultID) ports.HostVault {
 		on := v.With(id)
 		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}

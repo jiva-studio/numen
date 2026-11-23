@@ -22,4 +22,4 @@ export function getSlots(template: string): readonly Slot[] {
 }
 
 /** The braces a field is written as. */
-export const braceField = (field: string): string => `{{${field}}}`
+export const wrapBraces = (field: string): string => `{{${field}}}`

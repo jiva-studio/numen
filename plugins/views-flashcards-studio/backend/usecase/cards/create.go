@@ -57,7 +57,7 @@ type CreateNoteResult struct {
 	Title string
 }
 
-func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+func (u Create) CreateDeck(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil
 	return u.make(ctx, v, format.TypeDeck, in)
 }
@@ -66,15 +66,15 @@ func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteRes
 // first field is the field a card of the card model is named by.
 var ErrNoFields = errors.New("a card model declares at least one field")
 
-// CardModel makes a card model declaring the fields it was given, with its templates laid
+// CreateCardModel makes a card model declaring the fields it was given, with its templates laid
 // down as its body.
-func (u Create) CardModel(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+func (u Create) CreateCardModel(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	if len(in.Fields) == 0 {
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="Slice length is never negative; empty templates generate an empty body identical to the zero value."
 	if len(in.Templates) > 0 {
-		body, err := format.CardModelBody("", in.Templates, "")
+		body, err := format.BuildCardModelBody("", in.Templates, "")
 		// gomutants:disable-next-line BRANCH_IF reason="CardModelBody on an empty in-memory preamble does not fail."
 		if err != nil {
 			return CreateNoteResult{}, err
@@ -88,9 +88,9 @@ func (u Create) CardModel(ctx context.Context, v domain.Vault, in New) (CreateNo
 	return u.make(ctx, v, format.TypeCardModel, in)
 }
 
-// Preset creates a preset with none of its settings written. A setting absent
+// CreatePreset creates a preset with none of its settings written. A setting absent
 // from the file takes its default until the user changes it.
-func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+func (u Create) CreatePreset(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil
 	return u.make(ctx, v, format.TypePreset, in)
 }
