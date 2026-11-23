@@ -34,7 +34,11 @@ func openLicenses(
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	t.Cleanup(func() {
+		if err := stream.Close(); err != nil {
+			t.Log(err)
+		}
+	})
 	return stream
 }
 
