@@ -8,6 +8,7 @@ type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscripti
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 const CHECKOUT_URL = 'https://pay.example/checkout/abc'
+const PORTAL_URL = 'https://portal.example/session/1'
 
 const GIB = 2 ** 30
 const PLANS = [
@@ -44,6 +45,9 @@ const createClient = (answer: () => Promise<SubscriptionResponse>) => ({
     Promise.resolve(createResponse({ ...ACTIVE_ON_PLUS, plan, quotaBytes: quotaOf(plan) })),
   ),
   createCheckout: vi.fn<SubscriptionClient['createCheckout']>(() => Promise.resolve(CHECKOUT_URL)),
+  createPortalSession: vi.fn<SubscriptionClient['createPortalSession']>(() =>
+    Promise.resolve(PORTAL_URL),
+  ),
 })
 
 const mounted: VueWrapper[] = []
@@ -193,7 +197,9 @@ describe('SubscriptionCard', () => {
   it('asks for an identity and offers nothing when the device has none', async () => {
     const { wrapper } = await render(createResponse({ hasIdentity: false, phase: '' }))
 
-    expect(wrapper.text()).toContain('Create an identity to buy a subscription.')
+    expect(wrapper.text()).toContain(
+      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+    )
     expect(wrapper.find('.subscription__badge').exists()).toBe(false)
     expect(findChoose(wrapper)).toBeUndefined()
   })
@@ -297,7 +303,9 @@ describe('SubscriptionCard', () => {
       refreshMs: { noIdentity: 50, ready: 60_000, unreachable: 60_000 },
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('Create an identity to buy a subscription.')
+    expect(wrapper.text()).toContain(
+      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+    )
 
     answer = createResponse({ phase: 'none' })
     await vi.waitFor(() => expect(findChoose(wrapper, 'Plus')).toBeDefined())
@@ -386,6 +394,22 @@ describe('SubscriptionCard', () => {
     expect(getRow(wrapper, 'Plan')).toContain('100 GB, $15 / month')
   })
 
+  it('shows why the server refused the change when the subscription reads the same', async () => {
+    const { wrapper, client } = await render(ACTIVE_ON_PLUS)
+    client.changePlan.mockRejectedValue(
+      Object.assign(new Error('the account has no active subscription to change'), {
+        code: 'failed_precondition',
+      }),
+    )
+
+    await changePlanTo(wrapper, 'Pro')
+
+    expect(wrapper.find('[role="alert"]').text()).toBe(
+      'the account has no active subscription to change',
+    )
+    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+  })
+
   it('shows the used space above the plan, says the cloud is full and offers a larger plan', async () => {
     const { wrapper } = await render(
       createResponse({
@@ -439,8 +463,6 @@ describe('SubscriptionCard', () => {
 })
 
 describe('SubscriptionCard trial and portal', () => {
-  const PORTAL_URL = 'https://portal.example/session/1'
-
   it('says the day the trial ends', async () => {
     const { wrapper } = await render(
       createResponse({ ...ACTIVE_ON_PLUS, isTrial: true, periodEndAt: '2026-12-07T12:00:00Z' }),
@@ -451,15 +473,7 @@ describe('SubscriptionCard trial and portal', () => {
   })
 
   it('opens the portal in the browser with the one button Manage subscription', async () => {
-    const client = {
-      ...createClient(() => Promise.resolve(ACTIVE_ON_PLUS)),
-      createPortalSession: vi.fn<() => Promise<string>>(() => Promise.resolve(PORTAL_URL)),
-    }
-    const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
-      Promise.resolve(asValue(null)),
-    )
-    const wrapper = mountCard({ client, openExternal, now: () => NOW })
-    await flushPromises()
+    const { wrapper, openExternal } = await render(ACTIVE_ON_PLUS)
 
     const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')
     await manage[0]?.trigger('click')

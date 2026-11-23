@@ -9,6 +9,7 @@ type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscripti
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 const CHECKOUT_URL = 'https://pay.example/checkout/abc'
+const PORTAL_URL = 'http://127.0.0.1:8787/portal/'
 const NOT_SEEN = 'The payment is not seen yet. Open this page again after you pay.'
 
 const createResponse = (patch: Partial<SubscriptionResponse> = {}): SubscriptionResponse => ({
@@ -63,6 +64,9 @@ const createClient = (answers: readonly SubscriptionResponse[]) => {
     ),
     createCheckout: vi.fn<SubscriptionClient['createCheckout']>(() =>
       Promise.resolve(CHECKOUT_URL),
+    ),
+    createPortalSession: vi.fn<SubscriptionClient['createPortalSession']>(() =>
+      Promise.resolve(PORTAL_URL),
     ),
   }
 }
@@ -621,7 +625,7 @@ describe('useSubscription change of the plan', () => {
     expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
   })
 
-  it('reads the subscription again when the server says the plan is the plan of the account', async () => {
+  it('shows the refusal and reads the subscription again when the server says the plan is the plan of the account', async () => {
     const client = createClient([
       ACTIVE_ON_PLUS,
       createResponse({ ...ACTIVE_ON_PLUS, plan: 'pro', quotaBytes: 250 * GIB }),
@@ -635,9 +639,10 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
+    expect(subscription.session.problem.value).toBe('the account has this plan already')
   })
 
-  it('reads the subscription again when the server says there is no active subscription', async () => {
+  it('shows the refusal and reads the subscription again when the server says there is no active subscription', async () => {
     const client = createClient([
       ACTIVE_ON_PLUS,
       createResponse({ phase: 'grace', plan: 'plus', quotaBytes: 100 * GIB }),
@@ -652,6 +657,65 @@ describe('useSubscription change of the plan', () => {
 
     expect(subscription.session.account.phase.value).toBe('grace')
     expect(subscription.offers.changeOffers.value).toStrictEqual([])
+    expect(subscription.session.problem.value).toBe(
+      'the account has no active subscription to change',
+    )
+  })
+
+  it('shows the refusal and keeps the plan when the server sells no subscriptions', async () => {
+    const client = createClient([ACTIVE_ON_PLUS])
+    client.changePlan.mockRejectedValue(
+      createFailure('failed_precondition', 'the sync server does not sell subscriptions'),
+    )
+    const { subscription } = mountSubscription(client)
+    await subscription.session.load()
+
+    await subscription.session.change('pro')
+
+    expect(subscription.session.problem.value).toBe('the sync server does not sell subscriptions')
+    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
+  })
+})
+
+describe('useSubscription portal', () => {
+  it('opens the portal the server gives in the browser', async () => {
+    const client = createClient([ACTIVE_ON_PLUS])
+    const { subscription, openExternal } = mountSubscription(client)
+    await subscription.session.load()
+
+    await subscription.session.manage()
+
+    expect(openExternal).toHaveBeenCalledExactlyOnceWith(PORTAL_URL)
+    expect(subscription.session.problem.value).toBe('')
+  })
+
+  it('shows the refusal of the server and opens no browser', async () => {
+    const client = createClient([ACTIVE_ON_PLUS])
+    client.createPortalSession.mockRejectedValue(
+      createFailure('failed_precondition', 'the account has no active subscription to change'),
+    )
+    const { subscription, openExternal } = mountSubscription(client)
+    await subscription.session.load()
+
+    await subscription.session.manage()
+
+    expect(openExternal).not.toHaveBeenCalled()
+    expect(subscription.session.problem.value).toBe(
+      'the account has no active subscription to change',
+    )
+  })
+
+  it('shows why the browser did not open the portal', async () => {
+    const client = createClient([ACTIVE_ON_PLUS])
+    const openExternal = vi.fn<OpenExternal>(() =>
+      Promise.resolve(asFailure('missing permission: link:open')),
+    )
+    const { subscription } = mountSubscription(client, openExternal)
+    await subscription.session.load()
+
+    await subscription.session.manage()
+
+    expect(subscription.session.problem.value).toBe('missing permission: link:open')
   })
 })
 

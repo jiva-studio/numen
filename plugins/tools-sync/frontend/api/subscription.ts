@@ -58,7 +58,7 @@ export interface SubscriptionClient {
   /** The subscription after the active subscription moved to the plan with this id. */
   changePlan(plan: string): Promise<SubscriptionResponse>
   /** The address of the page of the payment provider where the person manages the subscription. */
-  createPortalSession?(): Promise<string>
+  createPortalSession(): Promise<string>
 }
 
 /** A failed call: the message of the backend and its code, such as `unavailable` or `already_exists`. */
