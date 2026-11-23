@@ -234,8 +234,35 @@ describe('the page "Identity and licenses"', () => {
     await fillConfirmations(tab, { word: 'zoo' })
     await press(tab, 'Continue')
     expect(create).not.toHaveBeenCalled()
-    expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
+    const alert = tab.get('[role="alert"]')
+    expect(alert.text()).toBe('Some words are not valid.')
     expect(tab.text()).toContain(NO_IDENTITY)
+    const inputs = getConfirmInputs(tab)
+    expect(inputs.map((input) => input.attributes('aria-invalid'))).toStrictEqual([
+      'true',
+      undefined,
+      undefined,
+    ])
+    const lastInput = inputs.at(-1)?.element
+    const back = findButton(tab, 'Back')?.element
+    if (!lastInput || !back) throw new Error('the check has no inputs or no Back')
+    expect(
+      lastInput.compareDocumentPosition(alert.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      alert.element.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('clears the mark of a wrong word once the person types it again', async () => {
+    const { tab } = await createPage()
+    await startSetup(tab)
+    await fillConfirmations(tab, { word: 'zoo' })
+    await press(tab, 'Continue')
+    const first = getConfirmInputs(tab)[0]
+    if (!first) throw new Error('the check has no input')
+    await first.setValue(RECOVERY_WORDS[getPosition(first) - 1] ?? '')
+    expect(getConfirmInputs(tab)[0]?.attributes('aria-invalid')).toBeUndefined()
   })
 
   it('goes back to the words from the second step and drops the problem', async () => {

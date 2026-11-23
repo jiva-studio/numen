@@ -69,6 +69,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const keep = async (): Promise<void> => {
     if (isBusy.value) return
     if (!confirmation.isConfirmed()) {
+      confirmation.markWrong()
       problem.value = words.identityNotValid
       return
     }

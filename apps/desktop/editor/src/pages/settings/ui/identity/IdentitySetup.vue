@@ -84,16 +84,19 @@ function focusFirst(): void {
       <template v-else>
         <h2 :id="titleId" class="connection-dialog__title">{{ words.identityCheckTitle }}</h2>
         <p class="connection-dialog__text">{{ words.identityConfirmHint(positions) }}</p>
-        <ConfirmWords
-          :positions="positions"
-          :entered="entered"
-          :is-disabled="isBusy"
-          @change="(position, value) => emit('change', position, value)"
-          @submit="onSubmit"
-        />
-        <p v-if="problem !== ''" role="alert" class="connection-dialog__problem">
-          {{ problem }}
-        </p>
+        <div class="identity-setup__check">
+          <ConfirmWords
+            :positions="positions"
+            :entered="entered"
+            :wrong="wrong"
+            :is-disabled="isBusy"
+            @change="(position, value) => emit('change', position, value)"
+            @submit="onSubmit"
+          />
+          <p v-if="problem !== ''" role="alert" class="connection-dialog__problem">
+            {{ problem }}
+          </p>
+        </div>
       </template>
 
       <IdentitySetupActions
@@ -136,6 +139,12 @@ function focusFirst(): void {
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   line-height: var(--numen-line-height);
+}
+
+.identity-setup__check {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .connection-dialog__title {
