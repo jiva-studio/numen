@@ -84,6 +84,11 @@ const createPage = async (
       if (answer.ok) identity.value = IDENTITY
       return answer
     }),
+    restore: vi.fn(async (given: readonly string[]) => {
+      const answer = await create(given)
+      if (answer.ok) identity.value = IDENTITY
+      return answer
+    }),
     delete: vi.fn(() => {
       identity.value = undefined
       return Promise.resolve(asValue<void>(undefined))
@@ -226,14 +231,39 @@ describe('the page "Identity and licenses"', () => {
     expect(generateWords).toHaveBeenCalledTimes(2)
   })
 
-  it('sends the words that are typed to create when the person restores', async () => {
-    const { tab, create } = await createPage()
+  it('starts a restore with the words that are typed when the person restores', async () => {
+    const { tab, create, restore } = await createPage()
     await press(tab, 'Restore from words')
     await tab
       .get('textarea[aria-label="Your 12 recovery words"]')
       .setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
     await press(tab, 'Restore')
-    expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
+    expect(restore).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
+    expect(create).not.toHaveBeenCalled()
+    expect(tab.text()).toContain(IDENTITY.accountFingerprint)
+  })
+
+  it('shows "Restoring…" until the core has the identity', async () => {
+    let finish: (answer: Result<IdentityInfo, string>) => void = () => undefined
+    const { tab, identity } = await createPage(
+      undefined,
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    await press(tab, 'Restore from words')
+    await tab
+      .get('textarea[aria-label="Your 12 recovery words"]')
+      .setValue(RECOVERY_WORDS.join(' '))
+
+    await press(tab, 'Restore')
+
+    expect(findButton(tab, words.identityRestoring)?.attributes('disabled')).toBeDefined()
+    expect(identity.value).toBeUndefined()
+    expect(tab.text()).not.toContain(IDENTITY.accountFingerprint)
+    finish(asValue(IDENTITY))
+    await flushPromises()
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
   })
 

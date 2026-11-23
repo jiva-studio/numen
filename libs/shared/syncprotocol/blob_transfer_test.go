@@ -1,0 +1,172 @@
+package syncprotocol_test
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+)
+
+type transferRecord struct {
+	method string
+	header http.Header
+	body   []byte
+	length int64
+}
+
+type storage struct {
+	mu       sync.Mutex
+	requests []transferRecord
+	stored   []byte
+	status   int
+}
+
+func (s *storage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.requests = append(s.requests, transferRecord{method: r.Method, header: r.Header.Clone(), body: body, length: r.ContentLength})
+	if s.status != 0 {
+		w.WriteHeader(s.status)
+		return
+	}
+	if r.Method == http.MethodPut {
+		s.stored = body
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if _, err := w.Write(s.stored); err != nil {
+		return
+	}
+}
+
+func serveStorage(tb testing.TB) (*storage, string) {
+	tb.Helper()
+	store := &storage{}
+	server := httptest.NewServer(store)
+	tb.Cleanup(server.Close)
+	return store, server.URL + "/object"
+}
+
+func TestPutBlob_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.T) {
+	t.Parallel()
+	store, url := serveStorage(t)
+	body := bytes.Repeat([]byte{0x5A}, 4168)
+
+	if err := syncprotocol.PutBlob(t.Context(), http.DefaultClient, url, body); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(store.requests) != 1 {
+		t.Fatalf("requests = %d, want 1", len(store.requests))
+	}
+	got := store.requests[0]
+	if got.method != http.MethodPut || !bytes.Equal(got.body, body) || got.length != int64(len(body)) {
+		t.Errorf("request = %s with %d bytes (length %d), want a PUT of the body with its length", got.method, len(got.body), got.length)
+	}
+	if got.header.Get("Authorization") != "" || got.header.Get(syncprotocol.HeaderVersion) != "" {
+		t.Errorf("headers = %v, want no bearer and no protocol version", got.header)
+	}
+}
+
+func TestGetBlob_ReturnsTheBodyAndSendsNoBearerOrVersionHeader(t *testing.T) {
+	t.Parallel()
+	store, url := serveStorage(t)
+	store.stored = []byte("stored object")
+
+	got, err := syncprotocol.GetBlob(t.Context(), http.DefaultClient, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got) != "stored object" {
+		t.Errorf("body = %q, want the stored object", got)
+	}
+	header := store.requests[0].header
+	if store.requests[0].method != http.MethodGet || header.Get("Authorization") != "" || header.Get(syncprotocol.HeaderVersion) != "" {
+		t.Errorf("request = %s %v, want a GET with no bearer and no protocol version", store.requests[0].method, header)
+	}
+}
+
+func TestPutBlobAndGetBlob_ReportAnAnswerThatIsNotASuccess(t *testing.T) {
+	t.Parallel()
+	for _, status := range []int{http.StatusForbidden, http.StatusNotFound, http.StatusInternalServerError} {
+		store, url := serveStorage(t)
+		store.status = status
+
+		if err := syncprotocol.PutBlob(t.Context(), http.DefaultClient, url, []byte("x")); err == nil {
+			t.Errorf("PutBlob with status %d: no error", status)
+		}
+		if body, err := syncprotocol.GetBlob(t.Context(), http.DefaultClient, url); err == nil {
+			t.Errorf("GetBlob with status %d: body %q and no error", status, body)
+		}
+	}
+}
+
+func TestPutBlobAndGetBlob_StopWhenTheContextEnds(t *testing.T) {
+	t.Parallel()
+	_, url := serveStorage(t)
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	if err := syncprotocol.PutBlob(canceled, http.DefaultClient, url, []byte("x")); err == nil {
+		t.Error("PutBlob ran with a context that is done")
+	}
+	if _, err := syncprotocol.GetBlob(canceled, http.DefaultClient, url); err == nil {
+		t.Error("GetBlob ran with a context that is done")
+	}
+}
+
+func TestGetChainReadChallenge_ReturnsTheIDAndTheChainReadMessageOfTheRootKey(t *testing.T) {
+	t.Parallel()
+	server := fakeserver.New(fakeserver.Config{})
+	served := httptest.NewServer(server)
+	t.Cleanup(served.Close)
+	server.SetAudience(served.URL)
+	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, time.Now)
+	root := bytes.Repeat([]byte{3}, 32)
+
+	read, err := client.GetChainReadChallenge(t.Context(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signIn, err := client.GetChallenge(t.Context(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	label := []byte("numen-sync/chain-read/v1\x00")
+	tail := append(bytes.Clone(root), 0, 0, 0, 1)
+	if len(read.ID) != 16 || !bytes.HasPrefix(read.Message, label) || !bytes.HasSuffix(read.Message, tail) {
+		t.Errorf("challenge = %x %x, want a 16-byte id and a message of the chain-read label ending with the root key and the version", read.ID, read.Message)
+	}
+	if bytes.Equal(read.ID, signIn.ID) {
+		t.Error("two challenges have the same id")
+	}
+}
+
+func TestGetChainReadChallenge_RefusesAChallengeOfAnotherServer(t *testing.T) {
+	t.Parallel()
+	server := fakeserver.New(fakeserver.Config{Audience: "https://other.example"})
+	served := httptest.NewServer(server)
+	t.Cleanup(served.Close)
+	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, time.Now)
+
+	_, err := client.GetChainReadChallenge(t.Context(), bytes.Repeat([]byte{3}, 32))
+
+	if !errors.Is(err, syncprotocol.ErrAudienceMismatch) {
+		t.Errorf("error = %v, want ErrAudienceMismatch", err)
+	}
+}

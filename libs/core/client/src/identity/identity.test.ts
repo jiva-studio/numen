@@ -6,12 +6,26 @@ import {
   GenerateRecoveryWordsResponseSchema,
   GetIdentityResponseSchema,
   IdentityErrorCode,
+  StartRestoreResponseSchema,
 } from '@numen/protocol'
 import { createIdentityServiceClient } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createIdentityClient, type IdentityInfo } from './identity'
 
-const WORDS = ['legal', 'winner', 'thank', 'year', 'wave', 'sausage', 'worth', 'useful', 'legal', 'winner', 'thank', 'yellow']
+const WORDS = [
+  'legal',
+  'winner',
+  'thank',
+  'year',
+  'wave',
+  'sausage',
+  'worth',
+  'useful',
+  'legal',
+  'winner',
+  'thank',
+  'yellow',
+]
 
 const INFO = {
   accountFingerprint: '3F2A 91C0 0000 1111 2222 3333 4444 5555',
@@ -66,7 +80,8 @@ describe('createIdentityClient', () => {
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
-        createIdentity: () => create(CreateIdentityResponseSchema, { error: code, detail: 'refused' }),
+        createIdentity: () =>
+          create(CreateIdentityResponseSchema, { error: code, detail: 'refused' }),
       })
       expect(await client.create(WORDS)).toStrictEqual({
         ok: false,
@@ -91,5 +106,35 @@ describe('createIdentityClient', () => {
     })
     await client.delete()
     expect(calls).toBe(1)
+  })
+
+  it('sends the words to start a restore and reads that it started', async () => {
+    let sent: readonly string[] = []
+    const client = createClient({
+      startRestore: (request) => {
+        sent = [...request.words]
+        return create(StartRestoreResponseSchema, {})
+      },
+    })
+    const answer = await client.startRestore(WORDS)
+    expect(answer).toStrictEqual({ ok: true, value: undefined })
+    expect(sent).toStrictEqual(WORDS)
+  })
+
+  it('reads each served error code of a restore as a failure', async () => {
+    const codes: Array<[IdentityErrorCode, string]> = [
+      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
+      [IdentityErrorCode.IDENTITY_EXISTS, 'identity_exists'],
+      [IdentityErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+    ]
+    for (const [code, expected] of codes) {
+      const client = createClient({
+        startRestore: () => create(StartRestoreResponseSchema, { error: code, detail: 'refused' }),
+      })
+      expect(await client.startRestore(WORDS)).toStrictEqual({
+        ok: false,
+        error: { errorCode: expected, detail: 'refused' },
+      })
+    }
   })
 })

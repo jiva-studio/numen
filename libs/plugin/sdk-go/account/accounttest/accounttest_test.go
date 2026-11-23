@@ -1,6 +1,9 @@
 package accounttest_test
 
 import (
+	"bytes"
+	"crypto/rand"
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
@@ -51,5 +54,39 @@ func TestTheFakeIsAHostAPluginReachesByTheEnvironment(t *testing.T) {
 
 	if vars[hostcall.PluginTokenEnv] != "token" || vars[hostcall.HostPortEnv] == "" {
 		t.Errorf("vars = %v", vars)
+	}
+}
+
+func TestAFakeThatStartedARestoreHasNoIdentityUntilTheRestoreCompletes(t *testing.T) {
+	fake := accounttest.NewFake(t, "md.numen.a")
+	fake.NoIdentity()
+	words, err := identity.NewRecoveryWords(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.StartRestore(words.List())
+	client := newClient(t, fake)
+
+	if _, err := client.GetPublicIdentity(t.Context()); !errors.Is(err, account.ErrNoIdentity) {
+		t.Fatalf("error = %v, want ErrNoIdentity while the restore is pending", err)
+	}
+	if err := client.CompleteRestore(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+
+	root, err := words.DeriveRecoveryKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fake.Public().AccountFingerprint == "" || fake.Public().DeviceSignKey == nil {
+		t.Errorf("public = %+v, want the identity the restore made", fake.Public())
+	}
+	pending, err := client.GetPendingRestore(t.Context())
+	if err != nil || pending.IsPending {
+		t.Errorf("pending = %+v, error = %v, want nothing pending", pending, err)
+	}
+	chain, err := identity.ParseChain(fake.Public().Chain)
+	if err != nil || !bytes.Equal(chain.Root().Sign, root.Public().Sign) {
+		t.Errorf("the chain of the fake has another root than the words, error = %v", err)
 	}
 }

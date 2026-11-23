@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo } from '../lib/types'
@@ -8,6 +8,7 @@ import { createIdentityStore } from './identity'
 
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
+const asStarted = (): Result<undefined, IdentityFailure> => ({ ok: true, value: undefined })
 
 const WORDS = [
   'legal',
@@ -36,6 +37,7 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
   get: () => Promise.resolve(undefined),
   generateWords: () => Promise.resolve(WORDS),
   create: () => Promise.resolve(asValue(createSampleIdentity())),
+  startRestore: () => Promise.resolve(asStarted()),
   delete: () => Promise.resolve(),
   ...overrides,
 })
@@ -178,5 +180,106 @@ describe('the identity store', () => {
     const answer = await store.delete()
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
+})
+
+describe('the identity store restoring from words', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const settle = async <T>(answer: Promise<T>): Promise<T> => {
+    let isDone = false
+    const markDone = () => {
+      isDone = true
+    }
+    void answer.then(markDone, markDone)
+    for (let second = 0; second < 70 && !isDone; second += 1) {
+      await vi.advanceTimersByTimeAsync(1000)
+    }
+    return answer
+  }
+
+  it('starts the restore with the words and stores the identity once the core has it', async () => {
+    vi.useFakeTimers()
+    const startRestore = vi.fn(() => Promise.resolve(asStarted()))
+    const create = vi.fn(() => Promise.resolve(asValue(createSampleIdentity())))
+    let reads = 0
+    const { store } = createStore(
+      createClient({
+        startRestore,
+        create,
+        get: () => {
+          reads += 1
+          return Promise.resolve(reads < 3 ? undefined : createSampleIdentity())
+        },
+      }),
+    )
+
+    const answer = await settle(store.restore(WORDS))
+
+    expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
+    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS)
+    expect(create).not.toHaveBeenCalled()
+    expect(reads).toBe(3)
+    expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
+
+  it('waits while the core has no identity yet', async () => {
+    vi.useFakeTimers()
+    let isDone = false
+    const { store } = createStore(createClient({ get: () => Promise.resolve(undefined) }))
+
+    void store.restore(WORDS).then(() => {
+      isDone = true
+    })
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(isDone).toBe(false)
+    expect(store.identity.value).toBeUndefined()
+  })
+
+  it('reports that the words are not valid, stores no identity and does not wait', async () => {
+    const get = vi.fn(() => Promise.resolve(undefined))
+    const { store } = createStore(
+      createClient({
+        get,
+        startRestore: () =>
+          Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: 'word 4 is wrong' })),
+      }),
+    )
+
+    const answer = await store.restore(WORDS)
+
+    expect(answer).toStrictEqual({ ok: false, error: 'Some words are not valid.' })
+    expect(get).not.toHaveBeenCalled()
+    expect(store.identity.value).toBeUndefined()
+  })
+
+  it('reports that this device already has an identity and keeps the one it has', async () => {
+    const { store } = createStore(
+      createClient({
+        get: () => Promise.resolve(createSampleIdentity()),
+        startRestore: () =>
+          Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+      }),
+    )
+    await store.load()
+
+    const answer = await store.restore(WORDS)
+
+    expect(answer).toStrictEqual({ ok: false, error: 'This device already has an identity.' })
+    expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
+
+  it('reads a failed start as a text and stores no identity', async () => {
+    const { store } = createStore(
+      createClient({ startRestore: () => Promise.reject(new Error('offline')) }),
+    )
+
+    const answer = await store.restore(WORDS)
+
+    expect(answer.ok).toBe(false)
+    expect(store.identity.value).toBeUndefined()
   })
 })

@@ -27,6 +27,14 @@ type accountOperations struct {
 	signature []byte
 	public    identitydomain.Public
 	err       error
+
+	dataContexts [][]byte
+	plains       [][]byte
+	chains       [][]byte
+	sealed       []byte
+	opened       []byte
+	pending      identitydomain.PendingRestore
+	recovered    []byte
 }
 
 func (a *accountOperations) SignAsDevice(_ context.Context, pluginID string, message []byte) ([]byte, error) {
@@ -41,6 +49,46 @@ func (a *accountOperations) GetPublicIdentity(context.Context) (identitydomain.P
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.public, a.err
+}
+
+func (a *accountOperations) SealData(_ context.Context, pluginID string, dataContext, plain []byte) ([]byte, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.pluginIDs = append(a.pluginIDs, pluginID)
+	a.dataContexts = append(a.dataContexts, bytes.Clone(dataContext))
+	a.plains = append(a.plains, bytes.Clone(plain))
+	return a.sealed, a.err
+}
+
+func (a *accountOperations) OpenData(_ context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.pluginIDs = append(a.pluginIDs, pluginID)
+	a.dataContexts = append(a.dataContexts, bytes.Clone(dataContext))
+	a.plains = append(a.plains, bytes.Clone(sealed))
+	return a.opened, a.err
+}
+
+func (a *accountOperations) GetPendingRestore(context.Context) (identitydomain.PendingRestore, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.pending, a.err
+}
+
+func (a *accountOperations) SignAsRecovery(_ context.Context, pluginID string, message []byte) ([]byte, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.pluginIDs = append(a.pluginIDs, pluginID)
+	a.messages = append(a.messages, bytes.Clone(message))
+	return a.recovered, a.err
+}
+
+func (a *accountOperations) CompleteRestore(_ context.Context, pluginID string, chain []byte) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.pluginIDs = append(a.pluginIDs, pluginID)
+	a.chains = append(a.chains, bytes.Clone(chain))
+	return a.err
 }
 
 func (a *accountOperations) callCount() int {
