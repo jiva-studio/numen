@@ -5,30 +5,30 @@ import type { IdentityErrorCode } from './lib/types'
 export const IDENTITY_WORDS = {
   loadFailed: 'The identity could not be read.',
   describeFailure: (failure: {
-    readonly errorCode: IdentityErrorCode
-    readonly detail: string
+    readonly error: IdentityErrorCode
+    readonly message: string
   }): string => {
-    switch (failure.errorCode) {
-      case 'invalid_words':
+    switch (failure.error) {
+      case 'invalidWords':
         return 'Some words are not valid.'
-      case 'identity_exists':
+      case 'identityExists':
         return 'This device already has an identity.'
-      case 'key_store_failed':
+      case 'keyStoreFailed':
         return 'The identity could not be saved. Check the system keychain.'
-      case 'last_device':
+      case 'lastDevice':
         return 'The last device of the account cannot be revoked.'
-      case 'revoke_raced':
+      case 'revokeRaced':
         return 'A device was added while you revoked. Check the list.'
-      case 'not_allowed_this_device':
+      case 'notAllowedThisDevice':
         return 'This device cannot revoke itself.'
-      case 'link_text_invalid':
+      case 'linkTextInvalid':
         return 'This text is not the link of a QR code.'
-      case 'link_active':
+      case 'linkActive':
         return 'Another link is in progress.'
-      case 'code_invalid':
+      case 'codeInvalid':
         return 'The code has six digits.'
       default:
-        return failure.detail
+        return failure.message
     }
   },
 }

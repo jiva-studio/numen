@@ -84,7 +84,7 @@ export interface LinkInspectorRequest {
 /** What a plex requests of the relationships between notes. */
 export type PlexEditor = Pick<
   VaultRelations,
-  'createRelated' | 'join' | 'getConnection' | 'saveConnection' | 'removeConnection'
+  'createRelated' | 'join' | 'getConnection' | 'saveConnection' | 'deleteConnection'
 >
 
 export interface OpenNoteOptions {

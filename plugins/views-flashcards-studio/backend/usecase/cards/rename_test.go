@@ -297,11 +297,11 @@ type byType struct {
 	queryCount *int
 }
 
-func (q byType) GetPathsOfType(
+func (q byType) ListPathsOfType(
 	ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType,
 ) ([]string, error) {
 	*q.queryCount++
-	return q.TypePathQueries.GetPathsOfType(ctx, vaultID, noteType)
+	return q.TypePathQueries.ListPathsOfType(ctx, vaultID, noteType)
 }
 
 // A rename queries the index for the decks of the vault and for nothing else.
@@ -364,7 +364,7 @@ type decksOf struct {
 	cancel func()
 }
 
-func (d decksOf) GetPathsOfType(context.Context, domain.VaultID, domain.NoteType) ([]string, error) {
+func (d decksOf) ListPathsOfType(context.Context, domain.VaultID, domain.NoteType) ([]string, error) {
 	if d.cancel != nil {
 		d.cancel()
 	}
@@ -374,7 +374,7 @@ func (d decksOf) GetPathsOfType(context.Context, domain.VaultID, domain.NoteType
 // A field renamed to its own name is no rename, and nothing is written.
 func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	vs := newVaults(t)
-	cardModel, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
+	cardModel, err := cards.NewRead(vs.ports.Readers, nil).ReadCardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatal(err)
 	}

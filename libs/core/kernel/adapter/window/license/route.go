@@ -8,11 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// NewRoute is where LicenseService is mounted, what the schema generated to answer it, and the
-// handler it answers through.
-func NewRoute(handler numenv1connect.LicenseServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewLicenseServiceHandler(handler, counted)
-	return path, served, handler
+// NewRoute returns the path LicenseService is served at and the handler that serves it.
+func NewRoute(handler numenv1connect.LicenseServiceHandler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewLicenseServiceHandler(handler, counted)
 }
 
 // NewService returns the handler over the use cases, or the handler that answers every call as

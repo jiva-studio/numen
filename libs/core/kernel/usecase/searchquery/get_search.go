@@ -50,7 +50,7 @@ func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
 func (u *GetSearch) wait(ctx context.Context, r Read, stopped <-chan struct{}) (searchrun.Record, error) {
 	select {
 	case <-stopped:
-	case <-u.kept.Parts().After(min(r.Wait, u.kept.Parts().Policy.MaxWait)):
+	case <-u.kept.Parts().CreateTimer(min(r.Wait, u.kept.Parts().Policy.MaxWait)):
 	case <-ctx.Done():
 		return searchrun.Record{}, ctx.Err()
 	}

@@ -3,7 +3,7 @@
  */
 import { nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { branch, pane } from '@numen/workbench'
+import { branch, createPane } from '@numen/workbench'
 import { createWorkspace } from '../lib/workspace'
 import { findTabKindIcon } from '../lib/icons'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -43,7 +43,7 @@ const create = (
         ),
       ),
     },
-    handle: { front: () => front },
+    handle: { getFrontTab: () => front },
     kinds: {
       findKind: (isWanted: (kind: { kind: string }) => boolean) =>
         entries
@@ -216,7 +216,7 @@ describe('the open tabs', () => {
     await nextTick()
     target.writeOpenTabs.mockClear()
     target.layout.value = {
-      root: branch('split', [pane('first', ['a']), pane('second', ['b'])], [0.4, 0.6]),
+      root: branch('split', [createPane('first', ['a']), createPane('second', ['b'])], [0.4, 0.6]),
       axis: 'vertical',
       focus: 'first',
     }
@@ -247,7 +247,7 @@ describe('the open tabs', () => {
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
       panes: { layout: ref(createWorkspace([], [])) },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
       tabs: {
         tabs,
         getTab: (id: string) => ({
@@ -305,7 +305,7 @@ describe('the open tabs', () => {
     const rejecting = {
       windowTabs: {
         panes: { layout: ref(createWorkspace([], [])) },
-        handle: { front: () => null },
+        handle: { getFrontTab: () => null },
         tabs: { tabs, getTab: () => undefined },
       },
       writeMessage,

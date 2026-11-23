@@ -70,7 +70,7 @@ export function formatCategoryLabel(category: string): string {
   return category.charAt(0).toUpperCase() + category.slice(1)
 }
 
-function matchesReader(plugin: ManagedPlugin, value: string): boolean {
+function isReaderMatch(plugin: ManagedPlugin, value: string): boolean {
   const readers = plugin.info?.readers ?? []
   if (!value) return readers.length > 0
   const stems = toSearchStems(value)
@@ -83,14 +83,14 @@ function matchesReader(plugin: ManagedPlugin, value: string): boolean {
   })
 }
 
-function matchesCapability(plugin: ManagedPlugin, value: string): boolean {
+function isCapabilityMatch(plugin: ManagedPlugin, value: string): boolean {
   const capabilities = plugin.info?.capabilities ?? []
   if (!value) return capabilities.length > 0
   const stems = toSearchStems(value)
   return capabilities.some((cap) => stems.some((stem) => cap.toLowerCase().includes(stem)))
 }
 
-function matchesFeature(plugin: ManagedPlugin, value: string): boolean {
+function isFeatureMatch(plugin: ManagedPlugin, value: string): boolean {
   if (!value) return plugin.feature !== ''
   const feature = plugin.feature.toLowerCase()
   const kinds = plugin.tabKinds.map((kind) => kind.toLowerCase())
@@ -99,23 +99,23 @@ function matchesFeature(plugin: ManagedPlugin, value: string): boolean {
   )
 }
 
-function matchesStatus(plugin: ManagedPlugin, value: string, context: PluginFilterContext) {
+function isStatusMatch(plugin: ManagedPlugin, value: string, context: PluginFilterContext) {
   if (value === 'available') return !isInstalled(plugin)
   if (!isInstalled(plugin)) return false
   return value === 'disabled' ? !context.isEnabled(plugin.id) : context.isEnabled(plugin.id)
 }
 
-function matchesCategory(plugin: ManagedPlugin, value: string): boolean {
+function isCategoryMatch(plugin: ManagedPlugin, value: string): boolean {
   const category = getPluginCategory(plugin)
   return category.includes(value) || formatCategoryLabel(category).toLowerCase().includes(value)
 }
 
 const QUALIFIER_MATCHERS: Readonly<Record<string, QualifierMatcher>> = {
-  status: matchesStatus,
-  category: (plugin, value) => matchesCategory(plugin, value),
-  reader: (plugin, value) => matchesReader(plugin, value),
-  capability: (plugin, value) => matchesCapability(plugin, value),
-  feature: (plugin, value) => matchesFeature(plugin, value),
+  status: isStatusMatch,
+  category: (plugin, value) => isCategoryMatch(plugin, value),
+  reader: (plugin, value) => isReaderMatch(plugin, value),
+  capability: (plugin, value) => isCapabilityMatch(plugin, value),
+  feature: (plugin, value) => isFeatureMatch(plugin, value),
   id: (plugin, value) => plugin.id.toLowerCase().includes(value),
 }
 
@@ -164,20 +164,20 @@ export function parsePluginQuery(rawQuery: string): ParsedPluginQuery {
   return { qualifiers, terms }
 }
 
-function matchesFreeText(plugin: ManagedPlugin, term: string): boolean {
+function isFreeTextMatch(plugin: ManagedPlugin, term: string): boolean {
   return (
     plugin.name.toLowerCase().includes(term) ||
     plugin.description.toLowerCase().includes(term) ||
     plugin.id.toLowerCase().includes(term) ||
-    matchesCategory(plugin, term) ||
+    isCategoryMatch(plugin, term) ||
     plugin.feature.toLowerCase().includes(term) ||
-    matchesCapability(plugin, term) ||
-    matchesReader(plugin, term)
+    isCapabilityMatch(plugin, term) ||
+    isReaderMatch(plugin, term)
   )
 }
 
 /** Checks whether a plugin matches all qualifiers and free-text terms in the parsed query. */
-export function matchesPluginQuery(
+export function isPluginQueryMatch(
   plugin: ManagedPlugin,
   query: ParsedPluginQuery,
   context: PluginFilterContext,
@@ -188,7 +188,7 @@ export function matchesPluginQuery(
   })
   if (!matchesAllQualifiers) return false
 
-  return query.terms.every((term) => matchesFreeText(plugin, term))
+  return query.terms.every((term) => isFreeTextMatch(plugin, term))
 }
 
 function compareItems(a: FlatPluginItem, b: FlatPluginItem): number {
@@ -207,9 +207,9 @@ export function getFilteredPluginItems(
   context: PluginFilterContext,
 ): readonly FlatPluginItem[] {
   const matching =
-    // Stryker disable next-line ConditionalExpression,EqualityOperator: matchesPluginQuery returns true for all plugins when query is empty
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: isPluginQueryMatch returns true for all plugins when query is empty
     query.qualifiers.length > 0 || query.terms.length > 0
-      ? plugins.filter((plugin) => matchesPluginQuery(plugin, query, context))
+      ? plugins.filter((plugin) => isPluginQueryMatch(plugin, query, context))
       : plugins
 
   const items: FlatPluginItem[] = matching.map((plugin) => {

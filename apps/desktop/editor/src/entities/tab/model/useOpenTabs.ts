@@ -41,7 +41,7 @@ function findActiveTabId(windowTabs: WindowTabs): string {
   const isTakingText = (id: string): boolean =>
     windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
   const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
-  const frontTab = windowTabs.handle.front()
+  const frontTab = windowTabs.handle.getFrontTab()
   if (frontTab && !isTakingText(frontTab.id)) {
     if (!isTool(frontTab.id)) return frontTab.id
     const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))

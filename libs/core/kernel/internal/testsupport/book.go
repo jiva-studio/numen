@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// Book is the bytes of a book with one chapter in it, in the form Texts
+// ReadBook is the bytes of a book with one chapter in it, in the form Texts
 // reads. The fixture vault stays text a reader can check.
-func Book(tb testing.TB) []byte {
+func ReadBook(tb testing.TB) []byte {
 	tb.Helper()
 	return NewBook("A book carries text and no title of its own in the graph.")
 }

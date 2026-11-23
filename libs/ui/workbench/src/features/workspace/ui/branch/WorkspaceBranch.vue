@@ -19,7 +19,7 @@ import { SplitterGroup } from 'reka-ui'
 import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { getOrientation, type Branch, type Orientation, type TabId } from '../../lib/node'
-import { atLeast, fit } from '../../lib/shares'
+import { getMinimumShare, fit } from '../../lib/shares'
 import { getSlotProps } from '../../lib/slotBinding'
 import { useViewport } from '@numen/ui'
 import { useBranchResize } from '../../model/resize'
@@ -71,7 +71,7 @@ const length = computed(() =>
 )
 
 const floor = computed(
-  () => atLeast(workspace.value.minimum, length.value, props.node.children.length) * 100,
+  () => getMinimumShare(workspace.value.minimum, length.value, props.node.children.length) * 100,
 )
 
 /** Which children exist, so a change of shape resets the pane. */

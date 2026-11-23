@@ -50,13 +50,13 @@ func TestTheIndexSourceSatisfiesTheSourceContract(t *testing.T) {
 		}
 		writeIndex(t, path, manifests)
 		return indexsource.New([]string{path}, nil)
-	}, catalogtest.AvailableEntries())
+	}, catalogtest.ListAvailableEntries())
 }
 
 func TestTheFirstIndexThatExistsIsRead(t *testing.T) {
 	t.Helper()
 	dir := t.TempDir()
-	entries := catalogtest.AvailableEntries()
+	entries := catalogtest.ListAvailableEntries()
 	second := filepath.Join(dir, "second.json")
 	writeIndex(t, second, []map[string]any{manifestOf(entries[0])})
 
@@ -72,7 +72,7 @@ func TestTheFirstIndexThatExistsIsRead(t *testing.T) {
 
 func TestWithoutAnIndexTheManifestsOfTheFallbackFoldersAreRead(t *testing.T) {
 	dir := t.TempDir()
-	entries := catalogtest.AvailableEntries()
+	entries := catalogtest.ListAvailableEntries()
 	for _, entry := range entries {
 		folder := filepath.Join(dir, entry.ID)
 		if err := os.MkdirAll(folder, 0o755); err != nil {
@@ -104,7 +104,7 @@ func TestWithNeitherAnIndexNorFoldersNothingIsListed(t *testing.T) {
 
 func TestAnInvalidManifestIsReportedAndDoesNotHideTheOthers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), indexsource.FileName)
-	entry := catalogtest.AvailableEntries()[0]
+	entry := catalogtest.ListAvailableEntries()[0]
 	writeIndex(t, path, []map[string]any{{"id": "org.example.broken"}, manifestOf(entry)})
 	src := indexsource.New([]string{path}, nil)
 

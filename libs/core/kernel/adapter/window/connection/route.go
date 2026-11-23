@@ -8,11 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// NewRoute is where ProviderConnectionService is mounted, what the schema generated to answer it, and the
-// handler it answers through. Each call goes through counted.
-func NewRoute(handler numenv1connect.ProviderConnectionServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewProviderConnectionServiceHandler(handler, counted)
-	return path, served, handler
+// NewRoute is the path ProviderConnectionService is served at and the handler that serves it. Each call goes through counted.
+func NewRoute(handler numenv1connect.ProviderConnectionServiceHandler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewProviderConnectionServiceHandler(handler, counted)
 }
 
 // NewService returns the handler over the use cases, or the handler that answers every call as

@@ -47,9 +47,14 @@ describe('the texts of a plugin', () => {
 
     const { context, texts } = createContext(['vault:read'])
 
-    await expect(context.host.vault.texts!.createEdit('talk.mp3', 'p/k', [])).rejects.toThrowError(
-      'Plugin "md.numen.player" lacks required permission "vault:write" for texts.createEdit',
-    )
+    await expect(context.host.vault.texts!.createEdit('talk.mp3', 'p/k', [])).resolves.toEqual({
+      ok: false,
+      error: {
+        error: 'permissionDenied',
+        message:
+          'Plugin "md.numen.player" lacks required permission "vault:write" for texts.createEdit',
+      },
+    })
     expect(texts.createEdit).not.toHaveBeenCalled()
   })
 

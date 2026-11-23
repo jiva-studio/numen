@@ -15,7 +15,7 @@ func getAttentionBudget(batchTexts int) int {
 	return batchTexts * referenceLength * referenceLength
 }
 
-func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
+func computeMeanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	backing := make([]float32, rows*dimensions)
 	for row := range rows {
@@ -81,19 +81,19 @@ type tokenOutput struct {
 	rows, seq, dimensions int
 }
 
-func pool(kind string, out tokenOutput, isNormalized bool) ([][]float32, error) {
+func computePool(kind string, out tokenOutput, isNormalized bool) ([][]float32, error) {
 	switch kind {
 	case model.PoolMean:
-		return meanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
+		return computeMeanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
 	case model.PoolCLS:
-		return headPool(out.flat, out.rows, out.seq, out.dimensions, isNormalized), nil
+		return computeHeadPool(out.flat, out.rows, out.seq, out.dimensions, isNormalized), nil
 	case model.PoolLast:
-		return lastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
+		return computeLastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
 	}
 	return nil, fmt.Errorf("a per-token output cannot be pooled as %q: the model answers one vector per text only as an output named sentence_embedding", kind)
 }
 
-func headPool(flat []float32, rows, seq, dimensions int, isNormalized bool) [][]float32 {
+func computeHeadPool(flat []float32, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
 		pos := row * seq * dimensions
@@ -104,7 +104,7 @@ func headPool(flat []float32, rows, seq, dimensions int, isNormalized bool) [][]
 	return out
 }
 
-func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
+func computeLastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
 		last := 0

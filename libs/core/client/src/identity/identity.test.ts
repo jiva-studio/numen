@@ -20,7 +20,7 @@ import {
   StartLinkResponseSchema,
   StartRestoreResponseSchema,
 } from '@numen/protocol'
-import { createIdentityServiceClient } from '../clients'
+import { createIdentityRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { buildIdentityClient, type IdentityInfo } from './identity'
 
@@ -49,7 +49,7 @@ const INFO = {
 const EXPECTED: IdentityInfo = { ...INFO, isRevoked: false, keyEpoch: 0 }
 
 const createClient = (answers: CoreAnswers['identity'] = {}) =>
-  buildIdentityClient(createIdentityServiceClient(createCoreTransport({ identity: answers })))
+  buildIdentityClient(createIdentityRpc(createCoreTransport({ identity: answers })))
 
 describe('buildIdentityClient', () => {
   it('reads the identity of this device', async () => {
@@ -86,9 +86,9 @@ describe('buildIdentityClient', () => {
 
   it('reads each served error code as a failure', async () => {
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identity_exists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
+      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
+      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -97,7 +97,7 @@ describe('buildIdentityClient', () => {
       })
       expect(await client.create(WORDS)).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })
@@ -135,9 +135,9 @@ describe('buildIdentityClient', () => {
 
   it('reads each served error code of a restore as a failure', async () => {
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identity_exists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
+      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
+      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -145,7 +145,7 @@ describe('buildIdentityClient', () => {
       })
       expect(await client.startRestore(WORDS)).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })
@@ -223,14 +223,14 @@ describe('buildIdentityClient link', () => {
       cancelLink: () =>
         create(CancelLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
     })
-    const noLink = { ok: false, error: { errorCode: 'no_link', detail: 'none' } }
+    const noLink = { ok: false, error: { error: 'noLink', message: 'none' } }
     expect(await client.getLink()).toStrictEqual(noLink)
     expect(await client.decideLink(true)).toStrictEqual(noLink)
     expect(await client.confirmJoin(true)).toStrictEqual(noLink)
     expect(await client.cancelLink()).toStrictEqual(noLink)
     expect(await client.enterLinkCode('12')).toStrictEqual({
       ok: false,
-      error: { errorCode: 'code_invalid', detail: 'six' },
+      error: { error: 'codeInvalid', message: 'six' },
     })
   })
 
@@ -278,10 +278,10 @@ describe('buildIdentityClient link', () => {
   it('sends the fingerprint to revoke and reads each refusal', async () => {
     let sent = ''
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.LAST_DEVICE, 'last_device'],
-      [IdentityErrorCode.REVOKE_RACED, 'revoke_raced'],
-      [IdentityErrorCode.NOT_ALLOWED_THIS_DEVICE, 'not_allowed_this_device'],
-      [IdentityErrorCode.UNKNOWN_DEVICE, 'unknown_device'],
+      [IdentityErrorCode.LAST_DEVICE, 'lastDevice'],
+      [IdentityErrorCode.REVOKE_RACED, 'revokeRaced'],
+      [IdentityErrorCode.NOT_ALLOWED_THIS_DEVICE, 'notAllowedThisDevice'],
+      [IdentityErrorCode.UNKNOWN_DEVICE, 'unknownDevice'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -292,7 +292,7 @@ describe('buildIdentityClient link', () => {
       })
       expect(await client.revokeDevice('B')).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
       expect(sent).toBe('B')
     }

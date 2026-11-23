@@ -6,7 +6,7 @@
  * here is the same text on any machine on any day.
  */
 
-import { braceField, getSlots, SLOT } from './braces'
+import { wrapBraces, getSlots, SLOT } from './braces'
 import type { FieldValue } from './card'
 
 const escapeHtml = (text: string): string =>
@@ -52,7 +52,7 @@ export interface InsertResult {
  */
 export function insert(template: string, pos: number, field: string): InsertResult {
   const where = Math.max(0, Math.min(pos, template.length))
-  const content = braceField(field)
+  const content = wrapBraces(field)
   return {
     text: template.slice(0, where) + content + template.slice(where),
     caret: where + content.length,

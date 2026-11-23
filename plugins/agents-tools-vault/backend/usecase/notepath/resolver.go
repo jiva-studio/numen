@@ -29,7 +29,7 @@ func (r *Resolver) Resolve(ctx context.Context, name string) string {
 	if strings.HasSuffix(name, ".md") {
 		return name
 	}
-	named, err := r.notes.GetNamedPaths(ctx, name)
+	named, err := r.notes.ListNamedPaths(ctx, name)
 	if err == nil && len(named) > 0 {
 		return named[0]
 	}

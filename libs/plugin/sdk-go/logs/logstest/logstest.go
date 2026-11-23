@@ -46,8 +46,8 @@ func NewHost(t *testing.T) *Host {
 	return host
 }
 
-// Vars are the variables a host gives a plugin it links in, naming this host and the token.
-func (h *Host) Vars(token string) map[string]string {
+// BuildVars returns the variables a host gives a plugin it links in, naming this host and the token.
+func (h *Host) BuildVars(token string) map[string]string {
 	return map[string]string{hostcall.HostPortEnv: h.port, hostcall.PluginTokenEnv: token}
 }
 

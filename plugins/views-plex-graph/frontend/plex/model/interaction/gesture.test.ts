@@ -68,10 +68,10 @@ function setUp(relations: readonly PlexRelation[] = AVAILABLE_RELATIONS) {
   scopes.push(scope)
   const gesture = scope.run(() =>
     usePlexGesture({
-      frame: () => frame,
-      options: () => DEFAULT_OPTIONS,
-      relations: () => relations,
-      threshold: () => THRESHOLD,
+      getFrame: () => frame,
+      getOptions: () => DEFAULT_OPTIONS,
+      getRelations: () => relations,
+      getThreshold: () => THRESHOLD,
       commit: (drop) => commits.push(drop),
     }),
   )!

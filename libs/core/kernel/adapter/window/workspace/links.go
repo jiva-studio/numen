@@ -34,40 +34,35 @@ func (h *Handler) WatchTabLinks(
 	watch := h.links.Windows.Watch(r.Msg.GetWindowId())
 	defer watch.Close()
 
-	if err := out.Send(convertSnapshotToWire(watch.Initial)); err != nil {
-		return err
-	}
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchTabLinksResponse) error) error {
+		if err := send(convertSnapshotToWire(watch.Initial)); err != nil {
+			return err
+		}
+		return sendTabLinkEvents(ctx, watch, r.Msg.GetWindowId(), send)
+	})
+}
 
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
+func sendTabLinkEvents(
+	ctx context.Context, watch *tablinks.Watch, windowID string, send func(*v1.WatchTabLinksResponse) error,
+) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-watch.Stop:
 			return nil
-		case <-repeat.C:
-			// An empty response is a keepalive; its send fails once the client disconnects.
-			if err := out.Send(&v1.WatchTabLinksResponse{}); err != nil {
-				return err
-			}
 		case event, open := <-watch.Events:
 			if !open {
 				return nil
 			}
-			if err := sendTabLinksEvent(out, r.Msg.GetWindowId(), event); err != nil {
+			if !event.IsFor(windowID) {
+				continue
+			}
+			if err := send(convertEventToWire(event)); err != nil {
 				return err
 			}
 		}
 	}
-}
-
-func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablinks.Event) error {
-	if !event.IsFor(windowID) {
-		return nil
-	}
-	return out.Send(convertEventToWire(event))
 }
 
 func (h *Handler) CancelWatchTabLinks(

@@ -662,7 +662,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 		}
 	}
 
-	base := review.Defaults()
+	base := review.NewDefaultPreset()
 	base.Goal, base.MinutesADay = review.GoalMinutes, 20
 	base.NewADay, base.ReviewsADay = 8, 45
 	base.Rule, base.Interval = review.RuleInterval, 21
@@ -725,7 +725,7 @@ func TestCurves_MinutesAndRetentionGoalsNameLearnedDay(t *testing.T) {
 		}
 	}
 
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 4, 60
 	p.Rule, p.Interval = review.RuleInterval, 21
 

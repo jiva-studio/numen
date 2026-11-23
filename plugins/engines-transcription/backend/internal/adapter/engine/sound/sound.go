@@ -68,13 +68,13 @@ func Read(raw []byte) ([]float32, int, error) {
 		if err != nil {
 			return nil, 0, err
 		}
-		return mono(sound, found.channels), found.rate, nil
+		return mixToMono(sound, found.channels), found.rate, nil
 
 	case bytes.HasPrefix(raw, []byte(fLaC)):
-		return fromFlac(raw)
+		return decodeFlac(raw)
 
 	case isMP3(raw):
-		return fromMP3(raw)
+		return decodeMP3(raw)
 	}
 	return nil, 0, fmt.Errorf("the recording is in no container this reads: wav, mp3 and flac are")
 }
@@ -236,7 +236,7 @@ const (
 	mp3BlockMoments = 4096
 )
 
-func fromMP3(raw []byte) ([]float32, int, error) {
+func decodeMP3(raw []byte) ([]float32, int, error) {
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
@@ -263,7 +263,7 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 	return out, decoder.SampleRate(), nil
 }
 
-func fromFlac(raw []byte) (samples []float32, rate int, err error) {
+func decodeFlac(raw []byte) (samples []float32, rate int, err error) {
 	stream, err := flac.New(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, fmt.Errorf("the flac recording: %w", err)
@@ -292,7 +292,7 @@ func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	return out, int(stream.Info.SampleRate), nil
 }
 
-func mono(interleaved []float32, channels int) []float32 {
+func mixToMono(interleaved []float32, channels int) []float32 {
 	if channels <= 1 {
 		return interleaved
 	}

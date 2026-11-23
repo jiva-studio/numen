@@ -69,6 +69,9 @@ const (
 // MaxRelatedNotePaths is the most notes one call gathers the related notes of.
 const MaxRelatedNotePaths = 64
 
+// ErrTooManyRelatedPaths is a call that names more notes than MaxRelatedNotePaths.
+var ErrTooManyRelatedPaths = errors.New("too many notes at once")
+
 // ErrInvalidRelationDepth is a depth that is none of the two.
 var ErrInvalidRelationDepth = errors.New("the depth of related notes is 1 or 2")
 

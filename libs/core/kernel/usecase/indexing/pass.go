@@ -50,11 +50,11 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-p.waits.sourcesWoken():
+		case <-p.waits.getSourcesWake():
 			p.reportIndexChanged(ctx, p.indexSources(ctx))
 		case <-p.waits.readWakeChannel():
 			p.reportIndexChanged(ctx, p.embedRecognized(ctx))
-		case <-p.waits.notesWoken():
+		case <-p.waits.getNotesWake():
 			// The wake is sent only after notes were saved or removed. Every write puts the pass off again.
 			p.isIndexChanged = true
 			p.quietTimer = p.env.waitForQuiet()
@@ -127,7 +127,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) (isStoppedByWake bo
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsTextSkipped: p.skips.IsTextSkipped, OnTextsProgress: func(res vaultreading.IndexResult) {
+	reporting := Reporting{IsTextSkipped: p.skips.IsTextSkipped, NotifyTextsProgress: func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
@@ -264,7 +264,7 @@ func (p *pass) makeVectors(
 	items, cancel := newTaskCancel(limit)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsVectorSkipped: p.skips.IsVectorSkipped, OnVectorsProgress: func(res vaultreading.EmbedResult) {
+	reporting := Reporting{IsVectorSkipped: p.skips.IsVectorSkipped, NotifyVectorsProgress: func(res vaultreading.EmbedResult) {
 		current.set(getEmbeddingSources(res))
 		pos := work.Task{ID: work.MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {

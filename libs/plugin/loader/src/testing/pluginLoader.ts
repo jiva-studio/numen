@@ -2,16 +2,35 @@
  * A plugin loader for tests, whose status also answers which plugins are active and starting and why
  * one failed.
  */
-import { createPluginLoader, isPluginEnabledValue, type PluginLoaderDeps } from '../loader'
+import {
+  createPluginLoader,
+  isPluginEnabledValue,
+  type PluginLoader,
+  type PluginLoaderDeps,
+} from '../loader'
 import { createPluginStatus } from '../loading'
+import { createPluginStyles, type PluginStyles } from '../styles'
 
-export function createTestPluginLoader(deps: PluginLoaderDeps) {
+/** The deps of a loader, with a stylesheet store of its own where the test gives none. */
+type TestLoaderDeps = Omit<PluginLoaderDeps, 'styles'> & { readonly styles?: PluginStyles }
+
+/** A loader whose status also answers which plugins are active and starting and why one failed. */
+type TestPluginLoader = Omit<PluginLoader, 'status'> & {
+  readonly status: PluginLoader['status'] & {
+    readonly isPluginActive: (id: string) => boolean
+    readonly getActivePluginIds: () => string[]
+    readonly getPluginFailure: ReturnType<typeof createPluginStatus>['getPluginFailure']
+    readonly isPluginStarting: ReturnType<typeof createPluginStatus>['isPluginStarting']
+  }
+}
+
+export function createTestPluginLoader(deps: TestLoaderDeps): TestPluginLoader {
   const status =
     deps.status ??
     createPluginStatus({
       isEnabled: (id) => isPluginEnabledValue(deps.host.getSetting?.(id, 'enabled')),
     })
-  const loader = createPluginLoader({ ...deps, status })
+  const loader = createPluginLoader({ styles: createPluginStyles(), ...deps, status })
   const { activePlugins } = status.state
   return {
     ...loader,

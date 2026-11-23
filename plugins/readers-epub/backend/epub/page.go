@@ -24,14 +24,13 @@ func (b *Book) PageCount() int {
 	return max(1, (len(b.Text)+size-1)/size)
 }
 
-// PageOf is the page an offset falls on.
-func (b *Book) PageOf(offset int) int {
+func (b *Book) FindPage(offset int) int {
 	return min(max(1, offset/b.PageBytes()+1), b.PageCount())
 }
 
-// PageStart is where a page begins in the text. A page begins at a letter, and
+// GetPageStart is where a page begins in the text. A page begins at a letter, and
 // a letter is several bytes in most of the scripts a book is written in.
-func (b *Book) PageStart(page int) int {
+func (b *Book) GetPageStart(page int) int {
 	pos := min(max(0, (page-1)*b.PageBytes()), len(b.Text))
 	for pos < len(b.Text) && !utf8.RuneStart(b.Text[pos]) {
 		pos++

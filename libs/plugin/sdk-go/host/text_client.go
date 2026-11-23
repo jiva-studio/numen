@@ -28,7 +28,7 @@ var (
 // NewTextClientFromEnv connects to the host the process was started for. It
 // returns hostcall.ErrNoHost when the environment names no host.
 func NewTextClientFromEnv() (*TextClient, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -36,11 +36,11 @@ func NewTextClientFromEnv() (*TextClient, error) {
 }
 
 func NewTextClient(endpoint hostcall.Endpoint) *TextClient {
-	return newTextClientOver(transport.HTTPClient(), endpoint)
+	return newTextClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *TextClient {
-	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on
@@ -106,14 +106,14 @@ func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing
 }
 
 func (c *TextClient) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error) {
-	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), Cursor: cursor}))
+	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), PageToken: cursor}))
 	if err != nil {
 		return TextPage{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
 		return TextPage{}, err
 	}
-	return TextPage{Segments: readTextSegments(res.Msg.GetSegments()), NextCursor: res.Msg.GetNextCursor()}, nil
+	return TextPage{Segments: readTextSegments(res.Msg.GetSegments()), NextCursor: res.Msg.GetNextPageToken()}, nil
 }
 
 func readTextVersion(v *v1.TextVersion) domain.TextVersion {

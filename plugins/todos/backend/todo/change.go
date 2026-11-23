@@ -54,7 +54,7 @@ func ChangeLine(line string, isDone bool, today string) (string, Change, error) 
 	if isDone {
 		return tick(cut, today)
 	}
-	return untick(cut)
+	return uncheckTask(cut)
 }
 
 func cutTaskLine(line string) (taskLine, error) {
@@ -98,7 +98,7 @@ func tick(c taskLine, today string) (string, Change, error) {
 	return setMark(line, c, "x"), ChangeCompleted, nil
 }
 
-func untick(c taskLine) (string, Change, error) {
+func uncheckTask(c taskLine) (string, Change, error) {
 	if c.task.Status == StatusOpen {
 		return c.line, "", ErrNotDone
 	}

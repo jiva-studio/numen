@@ -84,13 +84,13 @@ describe('taking the keyboard onto a row', () => {
     const focus = vi.fn<(options?: FocusOptions) => void>()
     keys.holdRow('copy', { focus })
 
-    keys.pointTo(-1)
+    keys.highlightRow(-1)
     expect(keys.here.value).toBe(-1)
-    keys.pointTo(0)
+    keys.highlightRow(0)
     expect(keys.here.value).toBe(0)
     expect(focus).not.toHaveBeenCalled()
 
-    keys.pointTo(1)
+    keys.highlightRow(1)
     expect(keys.here.value).toBe(1)
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
 
@@ -248,10 +248,10 @@ describe('useMenuNavigation', () => {
     const scope = effectScope()
     const nav = scope.run(() =>
       useMenuNavigation({
-        items: () => items,
+        getItems: () => items,
         trigger: () => 'keyboard',
-        current: () => null,
-        clock: () => 1000,
+        getCurrent: () => null,
+        getTime: () => 1000,
         menuRef: shallowRef(menuEl),
         getFallbackPosition: () => ({ x: 10, y: 20 }),
         getSubmenuPosition: (el) => (el ? { x: 50, y: 60 } : null),
@@ -348,10 +348,10 @@ describe('useMenuNavigation', () => {
     submenuEl.appendChild(childInSubmenu)
 
     const nav = useMenuNavigation({
-      items: () => [parent],
+      getItems: () => [parent],
       trigger: () => 'pointer',
-      current: () => null,
-      clock: () => now,
+      getCurrent: () => null,
+      getTime: () => now,
       menuRef: shallowRef(menuEl),
       getFallbackPosition: () => ({ x: 10, y: 20 }),
       getSubmenuPosition: () => ({ x: 10, y: 20 }),

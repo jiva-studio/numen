@@ -15,7 +15,7 @@ func kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
 	}
-	ended := exec.Command(taskkill(), "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
+	ended := exec.Command(getTaskkillPath(), "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
 	if ended == nil {
 		return nil
 	}
@@ -25,6 +25,6 @@ func kill(cmd *exec.Cmd) error {
 	return ended
 }
 
-func taskkill() string {
+func getTaskkillPath() string {
 	return filepath.Join(os.Getenv("SystemRoot"), "System32", "taskkill.exe")
 }

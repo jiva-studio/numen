@@ -19,7 +19,7 @@ import (
 
 // Config is what the backend is made from.
 type Config struct {
-	Vaults    func(domain.VaultID) ports.HostVault
+	GetVault  func(domain.VaultID) ports.HostVault
 	Store     func(domain.VaultID) ports.HostFolder
 	Now       ports.Clock
 	Cores     int
@@ -41,9 +41,9 @@ type Backend struct {
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
-	hostPorts := hostports.New(cfg.Vaults, cfg.Store)
+	hostPorts := hostports.New(cfg.GetVault, cfg.Store)
 	b := &Backend{
-		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts,
+		vaultSession: &vaultSession{getHostVault: cfg.GetVault, notes: hostPorts.Notes}, ports: hostPorts,
 		now: cfg.Now, entropy: clock.Entropy{}, cfg: cfg, runs: flashcards.NewRunRegistry(), flash: nil,
 	}
 	b.flash = flashcards.NewCurrent(b.getFlashConfig(), b.newPresets)
@@ -51,14 +51,14 @@ func New(cfg Config) *Backend {
 }
 
 func (b *Backend) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	return b.vaults(v.ID).Index.Scan(ctx, paths)
+	return b.getHostVault(v.ID).Index.Scan(ctx, paths)
 }
 
 func (b *Backend) getFlashConfig() flashcards.Config {
 	c := b.getCardsConfig()
 	return flashcards.Config{
 		Readers: c.Readers, Notes: b.ports.Notes, Cards: cards.NewRead(c.Readers, c.Links), NewDeckWriter: c.NewDeckWriter,
-		Index: b.updateIndex, Logs: b.ports.Logs, Schedules: b.ports.Schedules("schedules"), DayCounts: b.ports.Schedules("days"),
+		Index: b.updateIndex, Logs: b.ports.Logs, Schedules: b.ports.GetScheduleStore("schedules"), DayCounts: b.ports.GetScheduleStore("days"),
 		Report: hostclient.ReportError, Day: review.Day{Starts: 0, In: nil}, Now: b.now, Entropy: b.entropy, Cores: b.cfg.Cores,
 		Scheduler: b.cfg.Scheduler,
 	}

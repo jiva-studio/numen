@@ -5,7 +5,6 @@ package vault
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -39,11 +38,10 @@ func NewHandler(current Window, changes Changes) *Handler {
 	return &Handler{window: current, changes: changes}
 }
 
-// NewRoute is where the vault service answers: its path, the handler of its calls and the handler it answers through. Each call
+// NewRoute is where the vault service answers: its path and the handler of its calls. Each call
 // goes through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewVaultServiceHandler(handler, counted)
-	return path, served, handler
+func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewVaultServiceHandler(handler, counted)
 }
 
 // GetVaultState answers the vault the window shows and how far it has been read.
@@ -72,33 +70,27 @@ func (h *Handler) WatchVaultChanges(
 	line, isDone := h.changes.SubscribeChanges()
 	defer isDone()
 
-	// An initial empty message confirms the subscription. A stream that sends
-	// nothing until the vault changes is indistinguishable from one that never
-	// opened.
-	if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
-		return err
-	}
-
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
-				return err
-			}
-		case what, open := <-line:
-			if !open {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchVaultChangesResponse) error) error {
+		// An initial empty message confirms the subscription. A stream that sends
+		// nothing until the vault changes is indistinguishable from one that never
+		// opened.
+		if err := send(&v1.WatchVaultChangesResponse{}); err != nil {
+			return err
+		}
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(newChangeResponse(what)); err != nil {
-				return err
+			case what, open := <-line:
+				if !open {
+					return nil
+				}
+				if err := send(newChangeResponse(what)); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 func newChangeResponse(what window.Change) *v1.WatchVaultChangesResponse {
@@ -107,6 +99,6 @@ func newChangeResponse(what window.Change) *v1.WatchVaultChangesResponse {
 		renamedMoves = append(renamedMoves, &v1.MoveResult{From: went.From, To: went.To})
 	}
 	return &v1.WatchVaultChangesResponse{
-		Paths: what.Paths, Reload: what.ShouldReload, Renamed: renamedMoves, VersionPaths: what.VersionPaths,
+		Paths: what.Paths, IsReloadRequired: what.ShouldReload, Moves: renamedMoves, VersionPaths: what.VersionPaths,
 	}
 }

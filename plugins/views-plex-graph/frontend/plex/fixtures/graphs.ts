@@ -6,7 +6,7 @@ import type { PlexEdge, PlexGraph, PlexNode, PlexNodeRelation } from '../../type
  * the dependency in through tests.
  */
 
-function graph(
+function buildGraph(
   focus: string,
   neighbors: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
@@ -38,10 +38,10 @@ function run(
 }
 
 /** Nothing points at it and it points at nothing. A vault's first note. */
-const solitary: PlexGraph = graph('An orphan note', [])
+const solitary: PlexGraph = buildGraph('An orphan note', [])
 
 /** The ordinary case, and the one to judge the proportions by. */
-const typical: PlexGraph = graph('Hexagonal architecture', [
+const typical: PlexGraph = buildGraph('Hexagonal architecture', [
   { id: 'parent-0', title: 'Software architecture', relation: 'parent' },
   { id: 'parent-1', title: 'Ports and adapters', relation: 'parent' },
   { id: 'child-0', title: 'Domain', relation: 'child' },
@@ -58,7 +58,7 @@ const typical: PlexGraph = graph('Hexagonal architecture', [
 ])
 
 /** Two parents, one a parent of the other: an edge inside a row. */
-const diamond: PlexGraph = graph(
+const diamond: PlexGraph = buildGraph(
   'Recursive CTE',
   [
     { id: 'parent-0', title: 'SQL', relation: 'parent' },
@@ -70,27 +70,27 @@ const diamond: PlexGraph = graph(
 )
 
 /** Nothing above it. The top of a hierarchy has to look deliberate, not broken. */
-const root: PlexGraph = graph('Everything', [
+const root: PlexGraph = buildGraph('Everything', [
   ...run('child', 5, (i) => ['Ideas', 'People', 'Places', 'Work', 'Reading'][i] ?? `Child ${i}`),
 ])
 
 /** Nothing below it, and the plex has to stay centered anyway. */
-const leaf: PlexGraph = graph('Nothing below', [
+const leaf: PlexGraph = buildGraph('Nothing below', [
   { id: 'parent-0', title: 'Inbox', relation: 'parent' },
 ])
 
 /** One past what a side can hold, where an off-by-one in the overflow shows. */
-const crowded: PlexGraph = graph('Verbs', [...run('child', 21, (i) => `Child ${i + 1}`)])
+const crowded: PlexGraph = buildGraph('Verbs', [...run('child', 21, (i) => `Child ${i + 1}`)])
 
 /** Past every limit. What the overflow report is for. */
-const overcrowded: PlexGraph = graph('Everything, again', [
+const overcrowded: PlexGraph = buildGraph('Everything, again', [
   ...run('parent', 9, (i) => `Parent ${i + 1}`),
   ...run('child', 200, (i) => `Child ${i + 1}`),
   ...run('jump', 40, (i) => `Jump ${i + 1}`),
 ])
 
 /** Not Latin, far too long, nothing to break at, and nothing at all. */
-const awkwardLabels: PlexGraph = graph(
+const awkwardLabels: PlexGraph = buildGraph(
   'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
     { id: 'parent-0', title: 'बगीचा', relation: 'parent' },

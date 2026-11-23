@@ -31,8 +31,8 @@ type racingWriter struct {
 func (w *racingWriter) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	w.writes++
 	if w.writes <= w.stale {
-		now, _ := w.vault.Content(path)
-		w.vault.File(path, now+"\nother window\n")
+		now, _ := w.vault.ReadContent(path)
+		w.vault.WriteFile(path, now+"\nother window\n")
 	}
 	return w.vault.Write(ctx, path, content, baseline)
 }
@@ -40,14 +40,14 @@ func (w *racingWriter) Write(ctx context.Context, path string, content []byte, b
 func setup(t *testing.T, note string) (*hosttest.Vault, *edit.Editor, *recordingStore) {
 	t.Helper()
 	vault := hosttest.New("notes")
-	vault.File("Home.md", note)
+	vault.WriteFile("Home.md", note)
 	store := &recordingStore{}
 	return vault, edit.New(vault, vault, store, ports.NewWriteLock()), store
 }
 
 func content(t *testing.T, vault *hosttest.Vault) string {
 	t.Helper()
-	text, ok := vault.Content("Home.md")
+	text, ok := vault.ReadContent("Home.md")
 	if !ok {
 		t.Fatal("Home.md is gone")
 	}
@@ -238,7 +238,7 @@ func TestAWriteOverANoteChangedMeanwhileIsRetriedOnceThenRefused(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			vault := hosttest.New("notes")
-			vault.File("Home.md", "- [ ] one\n")
+			vault.WriteFile("Home.md", "- [ ] one\n")
 			writer := &racingWriter{vault: vault, stale: c.stale}
 			editor := edit.New(vault, writer, &recordingStore{}, ports.NewWriteLock())
 

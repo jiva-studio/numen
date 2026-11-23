@@ -8,7 +8,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 
 type Severity = NonNullable<Parameters<MessageWriter>[1]>
 
-export function writer() {
+export function createWriter() {
   const notifiedCalls: { text: string; kind: Severity }[] = []
   const write: MessageWriter = (text, kind = 'info') => {
     notifiedCalls.push({ text, kind })

@@ -13,7 +13,7 @@ import (
 // unsaved. A plugin's open after that shows the vault.
 func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	userResponded := make(chan struct{})
 	f.respondPromptUntil(t, stream, userResponded)

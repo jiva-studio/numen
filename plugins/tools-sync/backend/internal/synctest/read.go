@@ -165,12 +165,12 @@ type CatalogBody struct {
 
 // WriteNote writes a file in the vault as another window would, and the host indexes it.
 func (c *Computer) WriteNote(id domain.VaultID, path, text string) {
-	c.Vaults.With(id).File(path, text)
+	c.Vaults.With(id).WriteFile(path, text)
 }
 
 // ReadNote returns the text of the file in the vault, and whether the file is there.
 func (c *Computer) ReadNote(id domain.VaultID, path string) (string, bool) {
-	return c.Vaults.With(id).Content(path)
+	return c.Vaults.With(id).ReadContent(path)
 }
 
 // HasItem reports whether the health host holds an item of the text.

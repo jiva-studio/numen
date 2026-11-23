@@ -116,11 +116,11 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	t.Helper()
 	fake := accounttest.NewFake(t, syncprotocol.SignInPluginID)
 	healthHost := healthtest.NewHost(t)
-	accountEndpoint, err := hostcall.FromVars(fake.Vars("token"))
+	accountEndpoint, err := hostcall.ReadVars(fake.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	healthEndpoint, err := hostcall.FromVars(healthHost.Vars("token"))
+	healthEndpoint, err := hostcall.ReadVars(healthHost.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}

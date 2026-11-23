@@ -4,10 +4,10 @@
 import { describe, expect, it } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/lib/textRange'
-import { fileOpeners, type FileOpenerDeps } from './openers'
+import { createFileOpeners, type FileOpenerDeps } from './openers'
 
 const createVault = (kinds: Record<string, FileKind>): FileOpenerDeps => ({
-  fileKinds: async (paths) => {
+  readFileKinds: async (paths) => {
     const found = new Map<string, FileKind>()
     for (const path of paths) {
       const one = kinds[path]
@@ -21,7 +21,7 @@ const OTHER: FileKind = { isNote: false, type: 'note' }
 
 describe('a file opened at ranges of its text', () => {
   it('passes the ranges to the reader of the file in their order', async () => {
-    const tabOpeners = fileOpeners(createVault({ 'library/Birds.bin': OTHER }))
+    const tabOpeners = createFileOpeners(createVault({ 'library/Birds.bin': OTHER }))
     const readerCalls: unknown[][] = []
     tabOpeners.registerExtensionReader('bin', (path, selector, ranges) => {
       readerCalls.push([path, selector, ranges])
@@ -37,8 +37,8 @@ describe('a file opened at ranges of its text', () => {
   })
 
   it('opens nothing and rejects where the vault could not be requested', async () => {
-    const tabOpeners = fileOpeners({
-      fileKinds: async () => {
+    const tabOpeners = createFileOpeners({
+      readFileKinds: async () => {
         throw new Error('the vault is not there')
       },
     })

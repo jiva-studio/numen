@@ -31,11 +31,11 @@ func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Se
 		identity.NoIdentity()
 	}
 	healthHost := healthtest.NewHost(t)
-	identityEndpoint, err := hostcall.FromVars(identity.Vars("token"))
+	identityEndpoint, err := hostcall.ReadVars(identity.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	healthEndpoint, err := hostcall.FromVars(healthHost.Vars("token"))
+	healthEndpoint, err := hostcall.ReadVars(healthHost.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -38,7 +38,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test getStopReasons returning both overall and today's stop reason.
-	pausedPreset := review.Defaults()
+	pausedPreset := review.NewDefaultPreset()
 	pausedPreset.Goal = review.GoalDate
 	pausedPreset.By = time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	overallStop, todayStop := getStopReasons(pausedPreset, pDay.day, pDay.now)
@@ -46,13 +46,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected StoppedPastDay for both stop reasons, got %q, %q", overallStop, todayStop)
 	}
 
-	// Test List: GetPathsOfType error, empty paths, GetNotes error.
+	// Test List: ListPathsOfType error, empty paths, GetNotes error.
 	if _, err := NewList(Config{
 		Notes: stubNoteQueries{
 			pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
 		},
 	}).Execute(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetPathsOfType error in List, got %v", err)
+		t.Fatalf("expected ListPathsOfType error in List, got %v", err)
 	}
 	emptyList, err := NewList(Config{
 		Notes: stubNoteQueries{
@@ -226,7 +226,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 
 	// Test Save / save error branches: Lock error, release error, readers.Open error, StatFile error,
 	// Size == MaxBytes vs MaxBytes+1, expectedFp.IsZero(), Read error, writers.Open error.
-	validPreset := review.Defaults()
+	validPreset := review.NewDefaultPreset()
 	if _, err := NewSave(Config{Writers: stubVaultWriters{lockErr: errBoom}}).Execute(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected lock error in Save, got %v", err)
 	}
@@ -289,10 +289,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wasWithDate := review.Defaults()
+	wasWithDate := review.NewDefaultPreset()
 	wasWithDate.Goal = review.GoalDate
 	wasWithDate.By = time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
-	nowNoDate := review.Defaults()
+	nowNoDate := review.NewDefaultPreset()
 	if err := writeSettings(doc, nowNoDate, wasWithDate); err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +309,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test checkBounds / checkLoad with invalid Counts and out-of-range time.Weekday keys (< Sunday, > Saturday).
-	badCounts := review.Defaults()
+	badCounts := review.NewDefaultPreset()
 	badCounts.Counts = "invalid"
 	if err := checkBounds(badCounts); !errors.Is(err, review.ErrOutOfBounds) {
 		t.Fatalf("expected ErrOutOfBounds for invalid Counts, got %v", err)

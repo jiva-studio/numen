@@ -12,7 +12,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
 // GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
-// GetBestSimilarity, FindNearestChunks, SearchText, StartSearch, GetSearch, RemoveSearch and
+// GetBestSimilarity, FindNearestChunks, SearchText, StartSearch, GetSearch, DeleteSearch and
 // ListSearchFunctions need index:read; GetSearchFloor and
 // SetSearchFloor need search:policy.
 //
@@ -82,8 +82,8 @@ service HostSearchService {
   // read, and at most 20 are kept. Only the plugin that started a search reads it.
   rpc GetSearch(GetSearchRequest) returns (GetSearchResponse);
 
-  // RemoveSearch cancels a running search and forgets it.
-  rpc RemoveSearch(RemoveSearchRequest) returns (RemoveSearchResponse);
+  // DeleteSearch cancels a running search and forgets it.
+  rpc DeleteSearch(DeleteSearchRequest) returns (DeleteSearchResponse);
 
   // ListSearchFunctions is the functions, variables and stages of the search language.
   rpc ListSearchFunctions(ListSearchFunctionsRequest) returns (ListSearchFunctionsResponse);
@@ -441,11 +441,11 @@ message SearchRerank {
   int32 reused_count = 3;
 }
 
-message RemoveSearchRequest {
+message DeleteSearchRequest {
   string id = 1;
 }
 
-message RemoveSearchResponse {
+message DeleteSearchResponse {
   HostSearchErrorCode error = 1;
 }
 

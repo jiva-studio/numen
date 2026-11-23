@@ -22,7 +22,7 @@ const createLoader = (status: ReturnType<typeof createPluginStatus>, isBroken = 
           ? ''
           : JSON.stringify({ id: ORCHARD, name: 'Orchard', version: '1.0.0', frontend: {} }),
       )) as unknown as typeof fetch,
-    dynamicImport: async () => ({
+    importModule: async () => ({
       activate: async () => {
         if (isBroken) throw new Error('the orchard is closed')
       },

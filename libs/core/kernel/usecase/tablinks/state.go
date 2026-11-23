@@ -91,7 +91,7 @@ func (s *state) dropTab(tabID string) {
 
 func (s *state) dropUnreportedTab(tabID string) {
 	tab, isKnown := s.roster.tabs[tabID]
-	if !isKnown || slices.Contains(s.roster.tabIDsOf(tab.WindowID), tabID) {
+	if !isKnown || slices.Contains(s.roster.listTabIDs(tab.WindowID), tabID) {
 		return
 	}
 	s.dropTab(tabID)

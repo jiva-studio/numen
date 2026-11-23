@@ -91,7 +91,7 @@ describe('the devices section', () => {
     const revokeDevice = () =>
       Promise.resolve({
         ok: false as const,
-        error: { errorCode: 'revoke_raced' as const, detail: 'x' },
+        error: { error: 'revokeRaced' as const, message: 'x' },
       })
     const section = await mountSection(true, [THIS, OTHER], { revokeDevice })
     await click(findButtons(/^Revoke$/)[0] as HTMLElement)

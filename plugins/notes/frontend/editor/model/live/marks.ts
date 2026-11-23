@@ -11,7 +11,15 @@ import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/vie
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { findChild } from '../../lib/extensions/address'
 import { getGrid } from '../table/grid'
-import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from '../../lib/live/styles'
+import {
+  BULLET,
+  HEADING,
+  HIDDEN,
+  INLINE,
+  createLineStyle,
+  mark,
+  CARET_ONLY,
+} from '../../lib/live/styles'
 import { Bullet, Picture, Rule } from './widgets'
 import {
   drawWikilink,
@@ -123,20 +131,24 @@ class MarkBuilder {
     const heading = HEADING.exec(node.name)
     if (heading) {
       this.found.push(
-        line(`cm-heading cm-heading-${heading[1]}`).range(this.doc.lineAt(node.from).from),
+        createLineStyle(`cm-heading cm-heading-${heading[1]}`).range(
+          this.doc.lineAt(node.from).from,
+        ),
       )
       return true
     }
 
     if (node.name === 'Blockquote') {
-      this.eachLine(node.from, node.to, (pos) => this.found.push(line('cm-quote').range(pos)))
+      this.eachLine(node.from, node.to, (pos) =>
+        this.found.push(createLineStyle('cm-quote').range(pos)),
+      )
       return true
     }
 
     if (node.name === 'FencedCode') {
       this.eachLine(node.from, node.to, (pos, first, isLast) => {
         const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
-        this.found.push(line(`cm-code${edge}`).range(pos))
+        this.found.push(createLineStyle(`cm-code${edge}`).range(pos))
       })
       return true
     }

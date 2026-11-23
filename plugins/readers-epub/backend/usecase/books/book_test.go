@@ -65,7 +65,7 @@ func TestReaderVaultBoundary(t *testing.T) {
 	data := createMinimalEpub(t)
 	writeFile(t, outsidePath, data, 0o644)
 
-	files := hosttest.OnDisk(t, "vault", map[string]string{
+	files := hosttest.CreateOnDisk(t, "vault", map[string]string{
 		"inside.epub": string(data),
 		"a..b.epub":   string(data),
 	})
@@ -138,8 +138,8 @@ func TestReaderVaultBoundary(t *testing.T) {
 
 func TestReaderPartsPagesAndErrors(t *testing.T) {
 	files, name, _, _ := writeBook(t)
-	files.File("bad.epub", "not an epub")
-	files.File("enc.epub", string(testsupport.CreateEncryptedEpub(t)))
+	files.WriteFile("bad.epub", "not an epub")
+	files.WriteFile("enc.epub", string(testsupport.CreateEncryptedEpub(t)))
 	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	ctx := t.Context()

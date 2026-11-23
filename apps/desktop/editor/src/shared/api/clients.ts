@@ -5,35 +5,35 @@
  */
 import {
   createCallerTransport,
-  createCatalogClient,
-  createCommandClient,
+  createCatalogRpc,
+  createCommandRpc,
   createConnectionCallClient,
-  createConnectionCallServiceClient,
+  createConnectionCallRpc,
   createConnectionClient,
-  createContributionClient,
-  createFileClient,
-  createFolderDialogClient,
+  createContributionRpc,
+  createFileRpc,
+  createFolderDialogRpc,
   buildIdentityClient,
-  createIdentityServiceClient,
+  createIdentityRpc,
   createLogClient,
-  createLogServiceClient,
+  createLogRpc,
   createLicenseClient,
-  createLicenseServiceClient,
-  createNoteClient,
+  createLicenseRpc,
+  createNoteRpc,
   createPluginCatalog,
-  createPluginDataClient,
-  createPluginHealthClient,
-  createPluginProcessClient,
-  createProviderConnectionClient,
-  createSearchClient,
-  createSettingsClient,
-  createTextClient,
-  createTextVersionClient,
-  createThemeServiceClient,
-  createVaultClient,
-  createVaultsClient,
-  createWindowClient,
-  createWorkspaceClient,
+  createPluginDataRpc,
+  createPluginHealthRpc,
+  createPluginProcessRpc,
+  createProviderConnectionRpc,
+  createSearchRpc,
+  createSettingsRpc,
+  createTextRpc,
+  createTextVersionRpc,
+  createThemeRpc,
+  createVaultRpc,
+  createVaultsRpc,
+  createWindowRpc,
+  createWorkspaceRpc,
   type Transport,
 } from '@numen/core-client'
 
@@ -50,34 +50,34 @@ export interface WindowTransports {
 export const createVaultClients = (transport: Transport) => {
   const editor = createCallerTransport('editor', transport)
   return {
-    vault: createVaultClient(editor),
-    files: createFileClient(editor),
-    notes: createNoteClient(editor),
-    texts: createTextClient(editor),
-    search: createSearchClient(createCallerTransport('search', transport)),
-    vaultsService: createVaultsClient(transport),
-    folderDialog: createFolderDialogClient(transport),
+    vault: createVaultRpc(editor),
+    files: createFileRpc(editor),
+    notes: createNoteRpc(editor),
+    texts: createTextRpc(editor),
+    search: createSearchRpc(createCallerTransport('search', transport)),
+    vaultsService: createVaultsRpc(transport),
+    folderDialog: createFolderDialogRpc(transport),
   }
 }
 
 /** The clients of the workspace and of the window itself. */
 export const createWorkspaceClients = ({ transport, keepalive }: WindowTransports) => ({
-  workspace: createWorkspaceClient(transport),
-  keepaliveWorkspace: createWorkspaceClient(keepalive),
-  windowService: createWindowClient(transport),
-  logService: createLogServiceClient(transport),
+  workspace: createWorkspaceRpc(transport),
+  keepaliveWorkspace: createWorkspaceRpc(keepalive),
+  windowService: createWindowRpc(transport),
+  logService: createLogRpc(transport),
 })
 
 /** The clients of the settings, the connections, the licenses, the identity and the themes. */
 export const createSettingsClients = (transport: Transport) => {
   const settings = createCallerTransport('settings', transport)
   return {
-    settingsService: createSettingsClient(settings),
-    connections: createConnectionClient(createProviderConnectionClient(settings)),
-    licenses: createLicenseClient(createLicenseServiceClient(settings)),
-    identity: buildIdentityClient(createIdentityServiceClient(settings)),
-    pluginData: createPluginDataClient(settings),
-    theme: createThemeServiceClient(transport),
+    settingsService: createSettingsRpc(settings),
+    connections: createConnectionClient(createProviderConnectionRpc(settings)),
+    licenses: createLicenseClient(createLicenseRpc(settings)),
+    identity: buildIdentityClient(createIdentityRpc(settings)),
+    pluginData: createPluginDataRpc(settings),
+    theme: createThemeRpc(transport),
   }
 }
 
@@ -86,13 +86,13 @@ export const createPluginHostClients = (transport: Transport) => {
   const plugins = createCallerTransport('plugins', transport)
   const commands = createCallerTransport('commands', transport)
   return {
-    pluginCommands: createCommandClient(commands),
-    contributions: createContributionClient(commands),
-    textVersions: createTextVersionClient(commands),
-    pluginProcessService: createPluginProcessClient(plugins),
-    pluginHealth: createPluginHealthClient(plugins),
-    pluginCatalog: createPluginCatalog(createCatalogClient(transport)),
-    connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),
+    pluginCommands: createCommandRpc(commands),
+    contributions: createContributionRpc(commands),
+    textVersions: createTextVersionRpc(commands),
+    pluginProcessService: createPluginProcessRpc(plugins),
+    pluginHealth: createPluginHealthRpc(plugins),
+    pluginCatalog: createPluginCatalog(createCatalogRpc(transport)),
+    connectionCalls: createConnectionCallClient(createConnectionCallRpc(transport)),
   }
 }
 

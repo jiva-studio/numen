@@ -9,8 +9,8 @@ import { wrapIdentityClient } from '@/testing/identityClient'
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
 const asStarted = (): Result<undefined, IdentityFailure> => ({ ok: true, value: undefined })
-const asRefusal = (errorCode: IdentityFailure['errorCode']): Result<never, IdentityFailure> =>
-  asFailure({ errorCode, detail: 'refused' })
+const asRefusal = (error: IdentityFailure['error']): Result<never, IdentityFailure> =>
+  asFailure({ error, message: 'refused' })
 
 const WORDS = [
   'legal',
@@ -43,8 +43,8 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
   create: () => Promise.resolve(asValue(createSampleIdentity())),
   startRestore: () => Promise.resolve(asStarted()),
   delete: () => Promise.resolve(),
-  startLink: () => Promise.resolve(asRefusal('no_link')),
-  getLink: () => Promise.resolve(asRefusal('no_link')),
+  startLink: () => Promise.resolve(asRefusal('noLink')),
+  getLink: () => Promise.resolve(asRefusal('noLink')),
   decideLink: () => Promise.resolve(asStarted()),
   enterLinkCode: () => Promise.resolve(asStarted()),
   confirmJoin: () => Promise.resolve(asStarted()),
@@ -129,7 +129,7 @@ describe('the identity store', () => {
       createClient({
         create: () =>
           Promise.resolve(
-            asFailure({ errorCode: 'invalid_words', detail: 'word 4 is not a recovery word' }),
+            asFailure({ error: 'invalidWords', message: 'word 4 is not a recovery word' }),
           ),
       }),
     )
@@ -142,7 +142,7 @@ describe('the identity store', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        create: () => Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+        create: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
@@ -152,8 +152,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalid_words', 'identity_exists', 'key_store_failed'] as const).map(
-      (errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }),
+    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map((error) =>
+      IDENTITY_WORDS.describeFailure({ error, message: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
@@ -262,7 +262,7 @@ describe('the identity store restoring from words', () => {
       createClient({
         get,
         startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: 'word 4 is wrong' })),
+          Promise.resolve(asFailure({ error: 'invalidWords', message: 'word 4 is wrong' })),
       }),
     )
 
@@ -277,8 +277,7 @@ describe('the identity store restoring from words', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+        startRestore: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
@@ -323,7 +322,7 @@ describe('the devices and the link of the identity store', () => {
           listed += 1
           return Promise.resolve(asValue(DEVICES))
         },
-        revokeDevice: () => Promise.resolve(asRefusal('revoke_raced')),
+        revokeDevice: () => Promise.resolve(asRefusal('revokeRaced')),
       }),
     )
     const answer = await store.devices.revoke('B')
@@ -336,7 +335,7 @@ describe('the devices and the link of the identity store', () => {
 
   it('words the refusal of a revoke of this device', async () => {
     const { store } = createStore(
-      createClient({ revokeDevice: () => Promise.resolve(asRefusal('not_allowed_this_device')) }),
+      createClient({ revokeDevice: () => Promise.resolve(asRefusal('notAllowedThisDevice')) }),
     )
     expect(await store.devices.revoke('A')).toStrictEqual({
       ok: false,
@@ -365,7 +364,7 @@ describe('the devices and the link of the identity store', () => {
 
   it('words a refused link text', async () => {
     const { store } = createStore(
-      createClient({ startLink: () => Promise.resolve(asRefusal('link_text_invalid')) }),
+      createClient({ startLink: () => Promise.resolve(asRefusal('linkTextInvalid')) }),
     )
     expect(await store.devices.link.start('host', 'scan', 'x')).toStrictEqual({
       ok: false,

@@ -10,9 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// NewRoute is where the window service answers: its path, the handler of its calls and the handler it answers through. Each call
+// NewRoute is where the window service answers: its path and the handler of its calls. Each call
 // goes through counted.
-func NewRoute(handler numenv1connect.WindowServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewWindowServiceHandler(handler, counted)
-	return path, served, handler
+func NewRoute(handler numenv1connect.WindowServiceHandler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewWindowServiceHandler(handler, counted)
 }

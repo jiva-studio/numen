@@ -7,7 +7,7 @@ import { defineComponent, h, shallowRef } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import {
-  cards,
+  listCards,
   getWindowParts,
   listed,
   mountWindow as mountPlainWindow,
@@ -167,7 +167,7 @@ describe('the window with a plugin that draws the title bar', () => {
 
     expect(window.find('[data-title-bar="HarborBar"]').exists()).toBe(true)
     expect(window.find('[data-title-bar="LedgerBar"]').exists()).toBe(false)
-    expect(cards().join('\n')).toContain(HARBOR)
+    expect(listCards().join('\n')).toContain(HARBOR)
   })
 
   it('closes the window through the frame when the bar closes the window of its context', async () => {

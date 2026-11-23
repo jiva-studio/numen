@@ -18,7 +18,7 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 	t.Cleanup(func() { syscall.Umask(old) })
 
 	dir := filepath.Join(t.TempDir(), "cache")
-	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
+	if err := appstate.NewVaultFiles(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(dir)
@@ -34,7 +34,7 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 // keeps no descriptor open.
 func TestWrite_FileSizeLimitRemovesTempFileAndDescriptor(t *testing.T) {
 	dir := t.TempDir()
-	files := appstate.VaultFilesAt(dir)
+	files := appstate.NewVaultFiles(dir)
 
 	signal.Ignore(syscall.SIGXFSZ)
 	t.Cleanup(func() { signal.Reset(syscall.SIGXFSZ) })

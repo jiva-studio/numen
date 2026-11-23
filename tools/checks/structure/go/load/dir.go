@@ -10,10 +10,10 @@ import (
 	"testing"
 )
 
-// Main changes the working directory of a check's test binary to the container of the kernel, where the checks
+// RunTests changes the working directory of a check's test binary to the container of the kernel, where the checks
 // lived before they moved and against which their relative paths are written, and runs its tests. A check
 // calls it from TestMain.
-func Main(m *testing.M) int {
+func RunTests(m *testing.M) int {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		fmt.Fprintln(os.Stderr, "load: the location of the package is unknown")

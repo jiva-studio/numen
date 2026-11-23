@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<TreeProps>(), {
   selected: () => [],
   threshold: 4,
   name: 'Tree',
-  counted: (rows: number) => `${rows} rows`,
+  getCountText: (rows: number) => `${rows} rows`,
   marking: undefined,
   clock: () => browserClock,
 })
@@ -30,7 +30,7 @@ const list = useTemplateRef<HTMLElement>('list')
 
 const box = useTemplateRef<HTMLElement>('box')
 
-const { visibleRows, layout, rows, getRowRef, picked, drag, gestures, renaming } = useTree({
+const { visibleRows, layout, rows, getRowRef, picked, drag, gestures, renamer } = useTree({
   input: props,
   box,
   list,
@@ -50,7 +50,7 @@ const {
   onRowDoubleClick,
   onKeyDown,
 } = gestures
-const { onRename, onAbandon, onFieldBlur } = renaming
+const { onRename, onAbandon, onFieldBlur } = renamer
 </script>
 
 <template>

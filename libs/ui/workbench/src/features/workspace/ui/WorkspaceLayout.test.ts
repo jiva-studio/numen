@@ -11,7 +11,7 @@ import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
 import { type Tab, type Workspace as State } from '../lib/node'
 import { createTabHosts } from '../model/hosts'
-import { oneStack, sideBySide, stack, createWorkspace } from '../fixtures/build'
+import { createOneStack, createSideBySide, createStack, createWorkspace } from '../fixtures/build'
 import { dropTab } from '../lib/edit'
 
 const TABS: readonly Tab[] = [
@@ -20,7 +20,7 @@ const TABS: readonly Tab[] = [
 ]
 
 const mountWorkspace = (
-  state: State = oneStack(),
+  state: State = createOneStack(),
   props: Record<string, unknown> = {},
   slots: Record<string, string> = {},
 ) =>
@@ -36,7 +36,7 @@ const findCloseButton = (wrapper: ReturnType<typeof mountWorkspace>, tab: string
 describe('a close', () => {
   it('is reported to the caller before anything is applied', async () => {
     let notifiedEvent: unknown
-    const target = mountWorkspace(oneStack(), {
+    const target = mountWorkspace(createOneStack(), {
       onClose: () => {
         notifiedEvent = target.emitted('update:modelValue')
       },
@@ -58,7 +58,7 @@ describe('a close', () => {
 
   it('leaves the tab standing where the caller holds it', async () => {
     const hold = vi.fn()
-    const target = mountWorkspace(oneStack(), {
+    const target = mountWorkspace(createOneStack(), {
       onClose: (_tab: string, take: () => void) => {
         take()
         hold()
@@ -74,7 +74,7 @@ describe('a close', () => {
 })
 
 describe('the last tab in the workspace', () => {
-  const createLoneTab = () => createWorkspace(stack('main', 'plex'))
+  const createLoneTab = () => createWorkspace(createStack('main', 'plex'))
 
   it('is offered a close, as every other tab is', () => {
     expect(findCloseButton(mountWorkspace(createLoneTab()), 'plex').exists()).toBe(true)
@@ -135,7 +135,7 @@ describe('the menu of a tab', () => {
   const getRows = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
 
   it('is drawn with the rows the caller gives, and nowhere while it gives none', async () => {
-    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    const target = mountWorkspace(createOneStack(), { tabMenu: MENU })
     await nextTick()
 
     expect(getRows().map((one) => one.textContent?.trim())).toStrictEqual([
@@ -149,7 +149,7 @@ describe('the menu of a tab', () => {
   })
 
   it('emits the id of the chosen row with the id of its tab', async () => {
-    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    const target = mountWorkspace(createOneStack(), { tabMenu: MENU })
     await nextTick()
 
     getRows()[1]?.click()
@@ -161,7 +161,7 @@ describe('the menu of a tab', () => {
   })
 
   it('emits the dismissal of the menu and the id of the highlighted row', async () => {
-    const target = mountWorkspace(oneStack(), { tabMenu: MENU })
+    const target = mountWorkspace(createOneStack(), { tabMenu: MENU })
     await nextTick()
     const menu = target.findComponent({ name: 'Menu' })
 
@@ -175,7 +175,7 @@ describe('the menu of a tab', () => {
 
   it('draws the icon the caller draws for a row', async () => {
     const target = mountWorkspace(
-      oneStack(),
+      createOneStack(),
       { tabMenu: MENU },
       {
         'tab-menu-icon':
@@ -191,7 +191,7 @@ describe('the menu of a tab', () => {
 
 describe('what a tab carries', () => {
   it('reaches the strip from the tabs the caller declared', () => {
-    const target = mountWorkspace(oneStack(), {
+    const target = mountWorkspace(createOneStack(), {
       tabs: [
         { id: 'plex', title: 'Plex' },
         { id: 'chat', title: 'Chat', mark: 'unsaved' },
@@ -206,7 +206,7 @@ describe('what a tab carries', () => {
 
   it('is drawn by the caller where the caller draws one', () => {
     const target = mountWorkspace(
-      oneStack(),
+      createOneStack(),
       {
         tabs: [
           { id: 'plex', title: 'Plex' },
@@ -230,19 +230,19 @@ describe('what is drawn before a tab’s name', () => {
     mountWorkspace(state, {}, { icon: '<i class="mine">{{ params.id }}</i>' })
 
   it('reaches the tabs of a workspace of one pane', () => {
-    const target = mountWithIcon(oneStack())
+    const target = mountWithIcon(createOneStack())
 
     expect(target.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })
 
   it('reaches the tabs of every pane of a workspace that is split', () => {
-    const target = mountWithIcon(sideBySide())
+    const target = mountWithIcon(createSideBySide())
 
     expect(target.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })
 
   it('is nothing where the caller draws none, and takes no room', () => {
-    const target = mountWorkspace(sideBySide())
+    const target = mountWorkspace(createSideBySide())
 
     expect(target.find('.tab__icon').exists()).toBe(false)
   })
@@ -297,7 +297,7 @@ describe('a tab moved to another pane', () => {
     })
     const target = mount(WorkspaceLayout, {
       attachTo: document.body,
-      props: { modelValue: sideBySide(), tabs: TABS },
+      props: { modelValue: createSideBySide(), tabs: TABS },
       slots: { tab: ({ id }: { id: string }) => (id === 'plex' ? h(Content) : h('div')) },
     })
     await nextTick()

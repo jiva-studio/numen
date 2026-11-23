@@ -6,11 +6,11 @@ import type { createPaletteSwitch } from './createPaletteSwitch'
  * are connected once they are made.
  */
 export function createSearchRequests() {
-  const requests = createEmitter<void>()
+  const requestEmitter = createEmitter<void>()
   return {
-    request: (): void => requests.emit(),
+    request: (): void => requestEmitter.emit(),
     connect: (paletteSwitch: Pick<ReturnType<typeof createPaletteSwitch>, 'openSearch'>): void => {
-      requests.subscribe(paletteSwitch.openSearch)
+      requestEmitter.subscribe(paletteSwitch.openSearch)
     },
   }
 }

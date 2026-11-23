@@ -21,17 +21,17 @@ type Client struct {
 
 // NewClient returns the client of the host at the endpoint, sending its calls with the default HTTP client.
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return newClientOver(transport.HTTPClient(), endpoint)
+	return newClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostProcessServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &Client{rpc: numenv1connect.NewHostProcessServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // NewClientFromEnv returns the client of the host the process was started for. It returns
 // hostcall.ErrNoHost where the environment names none.
 func NewClientFromEnv() (*Client, error) {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}

@@ -36,8 +36,8 @@ const createPalette = () => {
   const showing = shallowRef('physics')
   const commands = createCommandPalette({
     core: {
-      names: async () => [{ path: 'physics/Heat.md', title: 'Heat' }] as never,
-      vaults: async () => ({
+      searchNames: async () => [{ path: 'physics/Heat.md', title: 'Heat' }] as never,
+      listVaults: async () => ({
         vaults: [
           { id: 'physics', name: 'Physics', path: '/physics', isMissing: false },
           { id: 'heat', name: 'Heat', path: '/heat', isMissing: false },
@@ -46,9 +46,9 @@ const createPalette = () => {
       }),
     },
     words,
-    at: () => front,
+    getTarget: () => front,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => THEMES, previewItem: vi.fn() },
+    lists: { getStepGroups: () => THEMES, applyItemPreview: vi.fn() },
     runs: runSupport(),
     getCommands: () => [
       ...createAppCommands(),

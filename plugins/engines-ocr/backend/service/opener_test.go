@@ -9,7 +9,7 @@ import (
 
 func TestOpenerReturnsMockRecognizer(t *testing.T) {
 	isMock := func() bool { return true }
-	opened, err := newOpener(engine.NewLibrary(), isMock, nil)(t.Context(), settings.Defaults())
+	opened, err := newOpener(engine.NewLibrary(), isMock, nil)(t.Context(), settings.NewDefaultConfig())
 	if err != nil {
 		t.Fatal(err)
 	}

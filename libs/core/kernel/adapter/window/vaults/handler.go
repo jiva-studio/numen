@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"sync/atomic"
 
 	"connectrpc.com/connect"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -37,9 +37,9 @@ type FolderChooser interface {
 	Execute(ctx context.Context, title, startingAt string) (picker.PickedFolder, error)
 }
 
-// Dialog answers the request for the machine's native folder dialog, once the application has one.
+// Dialog answers the request for the machine's native folder dialog, when the application has one.
 type Dialog struct {
-	chooseFolder atomic.Pointer[FolderChooser]
+	chooseFolder FolderChooser
 }
 
 // Handler answers about the vaults this installation holds.
@@ -53,8 +53,7 @@ type Handler struct {
 	remove Remover
 }
 
-// NewHandler is the handler of the vaults service of one window. The folder dialog is set after,
-// when the application has one.
+// NewHandler is the handler of the vaults service of one window. It has no folder dialog until WithFolderChooser.
 func NewHandler(
 	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
 	open *windowsession.OpenVault, remove Remover,
@@ -62,22 +61,24 @@ func NewHandler(
 	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
 }
 
-// NewRoute is where the vaults service answers: its path, the handler of its calls and the handler it answers through. Each call
-// goes through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewVaultsServiceHandler(handler, counted)
-	return path, served, handler
+// WithFolderChooser returns the handler answering the folder dialog request with the native folder dialog.
+func (s *Handler) WithFolderChooser(choose FolderChooser) *Handler {
+	chosen := *s
+	chosen.Dialog = &Dialog{chooseFolder: choose}
+	return &chosen
 }
 
-// NewDialogRoute is where the folder dialog service answers: its path, the handler of its calls and the handler it answers through. Each call
+// NewRoute is where the vaults service answers: its path and the handler of its calls. Each call
 // goes through counted.
-func NewDialogRoute(dialog *Dialog, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewFolderDialogServiceHandler(dialog, counted)
-	return path, served, dialog
+func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewVaultsServiceHandler(handler, counted)
 }
 
-// SetFolderChooser sets the native folder dialog a client may ask for.
-func (s *Dialog) SetFolderChooser(choose FolderChooser) { s.chooseFolder.Store(&choose) }
+// NewDialogRoute is where the folder dialog service answers: its path and the handler of its calls. Each call
+// goes through counted.
+func NewDialogRoute(dialog *Dialog, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewFolderDialogServiceHandler(dialog, counted)
+}
 
 // ListVaults returns every vault of the installation. The active vault is
 // queried from the window.
@@ -87,7 +88,7 @@ func (s *Handler) ListVaults(
 ) (*connect.Response[v1.ListVaultsResponse], error) {
 	target, err := s.list.Execute()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(target))}
 	for _, v := range target {
@@ -101,16 +102,15 @@ func (s *Dialog) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	choose := s.chooseFolder.Load()
-	if choose == nil {
+	if s.chooseFolder == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDialog)
 	}
-	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	selected, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
 	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	// A closed dialog is a valid response with IsChosen false.
 	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
@@ -129,7 +129,7 @@ func (s *Handler) AddVault(
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
@@ -146,7 +146,7 @@ func (s *Handler) RenameVault(
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
@@ -159,11 +159,11 @@ func (s *Handler) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	err := s.remove.Execute(ctx, r.Msg.GetId(), s.window.GetCurrentVault().ID, r.Msg.GetTrash())
+	err := s.remove.Execute(ctx, r.Msg.GetId(), s.window.GetCurrentVault().ID, r.Msg.GetIsFolderTrashed())
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
 	}
@@ -186,7 +186,7 @@ func (s *Handler) OpenVault(
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }

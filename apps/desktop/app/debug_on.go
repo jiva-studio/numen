@@ -57,8 +57,17 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	if d.FolderFile != "" {
-		opened.SetFolderDialog(debugserve.NewFolderFileDialog(d.FolderFile))
-	}
 	return debugserve.Serve(ctx, container.GetClock(res), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
+}
+
+type folderFileFrame struct {
+	editor.Frame
+	editor.PathDialog
+}
+
+func (d *DebugOptions) getFrame(frame editor.Frame) editor.Frame {
+	if !d.isServingHTTP() || d.FolderFile == "" {
+		return frame
+	}
+	return folderFileFrame{Frame: frame, PathDialog: debugserve.NewFolderFileDialog(d.FolderFile)}
 }

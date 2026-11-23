@@ -49,7 +49,7 @@ const countSame = (
   return { head, tail }
 }
 
-export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
+export const rebuildCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const lines = text.split('\n')
   const { head, tail } = countSame(lines, was)
 
@@ -68,7 +68,7 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const middle =
     old.length === newLines.length
       ? newLines.map((one, index) => ({ text: one, from: old[index]!.from, to: old[index]!.to }))
-      : spread(newLines, start, end)
+      : distributeTexts(newLines, start, end)
 
   return [...headCues, ...middle, ...rest]
 }
@@ -78,9 +78,9 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
  * entirely is dropped.
  */
 export const applyCues = (was: readonly Cue[], text: string): readonly Cue[] =>
-  spanCues(was, text).filter((cue) => cue.text !== '')
+  rebuildCues(was, text).filter((cue) => cue.text !== '')
 
-const spread = (texts: readonly string[], start: number, end: number): Cue[] => {
+const distributeTexts = (texts: readonly string[], start: number, end: number): Cue[] => {
   const all = texts.reduce((sum, one) => sum + one.length, 0)
   const cues: Cue[] = []
   let from = start

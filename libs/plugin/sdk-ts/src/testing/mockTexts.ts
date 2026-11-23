@@ -1,4 +1,4 @@
-import type { Result } from '@numen/result'
+import type { Failure, Result } from '@numen/result'
 import type {
   LiveText,
   TextErrorCode,
@@ -34,10 +34,13 @@ export function createMockVaultTexts(pluginId = 'org.example.view'): MockVaultTe
       path: string,
       sourceVersionId: TextVersionId,
       segments: readonly TextSegment[],
-    ): Promise<Result<TextVersion, TextErrorCode>> {
+    ): Promise<Result<TextVersion, Failure<TextErrorCode>>> {
       const current = live.get(path)
       if (current?.version.id !== sourceVersionId) {
-        return Promise.resolve({ ok: false, error: 'missing' })
+        return Promise.resolve({
+          ok: false,
+          error: { error: 'notFound', message: `no live version ${sourceVersionId} at ${path}` },
+        })
       }
       count++
       const key = `edit-${count}`

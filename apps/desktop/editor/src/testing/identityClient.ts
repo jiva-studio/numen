@@ -11,7 +11,7 @@ import {
 const asDone = (): Result<undefined, IdentityFailure> => ({ ok: true, value: undefined })
 const asRefused = (): Result<never, IdentityFailure> => ({
   ok: false,
-  error: { errorCode: 'no_link', detail: 'No link.' },
+  error: { error: 'noLink', message: 'No link.' },
 })
 
 export const createIdentityClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({

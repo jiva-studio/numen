@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
+import { createPluginNotices, type NoticeList } from './pluginNotices'
+
+type NoticeListTask = Parameters<NoticeList['setTasks']>[1][number]
 
 const createRecordingList = () => {
   const showCalls: [string, string, string][] = []

@@ -27,7 +27,7 @@ export interface DeckTabsInside {
     open(id: string, path?: string): void
     getPath(id: string): string
     getOpenIds(): readonly string[]
-    stale(id: string): ConflictWords | null
+    findConflict(id: string): ConflictWords | null
     flushPending(id: string): Promise<void>
   }
   readonly vaultAnswers: { getTitle(path: string): string }
@@ -81,7 +81,7 @@ export function createDeckKind({
     },
     // The tab state holds no resource beyond the buffer store.
     onDestroy: () => undefined,
-    isAsking: (one) => store.stale(one.id) !== null,
+    isAsking: (one) => store.findConflict(one.id) !== null,
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => createDeck(name, folder),
   }

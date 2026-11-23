@@ -34,7 +34,7 @@ export type { SourceReader }
  * reader opens it, which register them as they start.
  */
 export interface FileOpenerDeps {
-  fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+  readFileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   reconcileTab?(path: string, newKind: string): void
   startTabKind?(kind: string): Promise<void>
   startExtensionReader?(extension: string): Promise<void>
@@ -55,10 +55,10 @@ const getExtension = (path: string): string => {
 }
 
 const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileKind | null> => {
-  return (await vault.fileKinds([path])).get(path) ?? null
+  return (await vault.readFileKinds([path])).get(path) ?? null
 }
 
-export function fileOpeners(vault: FileOpenerDeps) {
+export function createFileOpeners(vault: FileOpenerDeps) {
   /** How each tab kind opens a file, by the kind. */
   const editors = new Map<string, FileOpener>()
 
@@ -160,4 +160,4 @@ export function fileOpeners(vault: FileOpenerDeps) {
 }
 
 /** The openers the window uses to display files. */
-export type FileOpeners = ReturnType<typeof fileOpeners>
+export type FileOpeners = ReturnType<typeof createFileOpeners>

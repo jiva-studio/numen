@@ -188,7 +188,7 @@ func TestNewService_AnswersUnimplementedWhereTheInstallationHasNoKeyStore(t *tes
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("error = %v, want Unimplemented", err)
 	}
-	if path, handler, answering := windowidentity.NewRoute(service, connect.WithInterceptors()); path == "" || handler == nil || answering != service {
+	if path, handler := windowidentity.NewRoute(service, connect.WithInterceptors()); path == "" || handler == nil {
 		t.Error("NewRoute returned no route")
 	}
 }

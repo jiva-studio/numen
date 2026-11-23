@@ -15,7 +15,7 @@ import {
   type IdentityService,
   type LinkInfo as ProtoLinkInfo,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** What a person can see of the identity of this device. */
 export interface IdentityInfo {
@@ -29,25 +29,22 @@ export interface IdentityInfo {
 
 /** Why a call of the identity was refused. */
 export type IdentityErrorCode =
-  | 'invalid_words'
-  | 'identity_exists'
-  | 'key_store_failed'
-  | 'link_active'
-  | 'no_link'
-  | 'link_text_invalid'
-  | 'last_device'
-  | 'revoke_raced'
-  | 'not_allowed_this_device'
-  | 'no_identity'
-  | 'device_revoked'
-  | 'unknown_device'
-  | 'code_invalid'
+  | 'invalidWords'
+  | 'identityExists'
+  | 'keyStoreFailed'
+  | 'linkActive'
+  | 'noLink'
+  | 'linkTextInvalid'
+  | 'lastDevice'
+  | 'revokeRaced'
+  | 'notAllowedThisDevice'
+  | 'noIdentity'
+  | 'deviceRevoked'
+  | 'unknownDevice'
+  | 'codeInvalid'
 
 /** A served refusal with the reason the core gives. */
-export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
-}
+export type IdentityFailure = Failure<IdentityErrorCode>
 
 /** The device that has the account is the host, a device with none is the joiner. */
 export type LinkRole = 'host' | 'joiner'
@@ -144,7 +141,7 @@ export interface LinkClient {
     mode: LinkMode,
     scannedText: string,
   ): Promise<Result<LinkInfo, IdentityFailure>>
-  /** The link in progress; the failure no_link when there is none. */
+  /** The link in progress; the failure noLink when there is none. */
   getLink(): Promise<Result<LinkInfo, IdentityFailure>>
   /** The answer of the person on the host to the new device. */
   decideLink(approve: boolean): Promise<Result<undefined, IdentityFailure>>
@@ -174,19 +171,19 @@ const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
 })
 
 const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = {
-  [ProtoIdentityErrorCode.INVALID_WORDS]: 'invalid_words',
-  [ProtoIdentityErrorCode.IDENTITY_EXISTS]: 'identity_exists',
-  [ProtoIdentityErrorCode.KEY_STORE_FAILED]: 'key_store_failed',
-  [ProtoIdentityErrorCode.LINK_ACTIVE]: 'link_active',
-  [ProtoIdentityErrorCode.NO_LINK]: 'no_link',
-  [ProtoIdentityErrorCode.LINK_TEXT_INVALID]: 'link_text_invalid',
-  [ProtoIdentityErrorCode.LAST_DEVICE]: 'last_device',
-  [ProtoIdentityErrorCode.REVOKE_RACED]: 'revoke_raced',
-  [ProtoIdentityErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'not_allowed_this_device',
-  [ProtoIdentityErrorCode.NO_IDENTITY]: 'no_identity',
-  [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'device_revoked',
-  [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknown_device',
-  [ProtoIdentityErrorCode.CODE_INVALID]: 'code_invalid',
+  [ProtoIdentityErrorCode.INVALID_WORDS]: 'invalidWords',
+  [ProtoIdentityErrorCode.IDENTITY_EXISTS]: 'identityExists',
+  [ProtoIdentityErrorCode.KEY_STORE_FAILED]: 'keyStoreFailed',
+  [ProtoIdentityErrorCode.LINK_ACTIVE]: 'linkActive',
+  [ProtoIdentityErrorCode.NO_LINK]: 'noLink',
+  [ProtoIdentityErrorCode.LINK_TEXT_INVALID]: 'linkTextInvalid',
+  [ProtoIdentityErrorCode.LAST_DEVICE]: 'lastDevice',
+  [ProtoIdentityErrorCode.REVOKE_RACED]: 'revokeRaced',
+  [ProtoIdentityErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'notAllowedThisDevice',
+  [ProtoIdentityErrorCode.NO_IDENTITY]: 'noIdentity',
+  [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'deviceRevoked',
+  [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknownDevice',
+  [ProtoIdentityErrorCode.CODE_INVALID]: 'codeInvalid',
 }
 
 const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined =>
@@ -258,35 +255,33 @@ interface Refusal {
 }
 
 const readAnswer = (answer: Refusal & { identity?: ProtoIdentityInfo | undefined }) => {
-  const errorCode = readErrorCode(answer.error)
-  if (errorCode !== undefined) {
-    return asFailure<IdentityFailure>({ errorCode, detail: answer.detail })
+  const error = readErrorCode(answer.error)
+  if (error !== undefined) {
+    return asFailure<IdentityFailure>({ error, message: answer.detail })
   }
   if (answer.identity === undefined) {
     return asFailure<IdentityFailure>({
-      errorCode: 'key_store_failed',
-      detail: 'The core returned no identity.',
+      error: 'keyStoreFailed',
+      message: 'The core returned no identity.',
     })
   }
   return asValue(readInfo(answer.identity))
 }
 
 const readStartAnswer = (answer: Refusal): Result<undefined, IdentityFailure> => {
-  const errorCode = readErrorCode(answer.error)
-  return errorCode === undefined
-    ? asValue(undefined)
-    : asFailure({ errorCode, detail: answer.detail })
+  const error = readErrorCode(answer.error)
+  return error === undefined ? asValue(undefined) : asFailure({ error, message: answer.detail })
 }
 
 const readLinkAnswer = (
   answer: Refusal & { link?: ProtoLinkInfo | undefined },
 ): Result<LinkInfo, IdentityFailure> => {
-  const errorCode = readErrorCode(answer.error)
-  if (errorCode !== undefined) {
-    return asFailure({ errorCode, detail: answer.detail })
+  const error = readErrorCode(answer.error)
+  if (error !== undefined) {
+    return asFailure({ error, message: answer.detail })
   }
   if (answer.link === undefined) {
-    return asFailure({ errorCode: 'no_link', detail: 'The core returned no link.' })
+    return asFailure({ error: 'noLink', message: 'The core returned no link.' })
   }
   return asValue(readLink(answer.link))
 }
@@ -326,10 +321,10 @@ export const createLinkClient = (rpc: LinkRpc): LinkClient => ({
 export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
   listDevices: async () => {
     const answer = await rpc.listDevices({})
-    const errorCode = readErrorCode(answer.error)
-    return errorCode === undefined
+    const error = readErrorCode(answer.error)
+    return error === undefined
       ? asValue(answer.devices.map(readDevice))
-      : asFailure({ errorCode, detail: answer.detail })
+      : asFailure({ error, message: answer.detail })
   },
   revokeDevice: async (fingerprint) => readStartAnswer(await rpc.revokeDevice({ fingerprint })),
 })

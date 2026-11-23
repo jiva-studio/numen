@@ -47,7 +47,7 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
   const invoked: [string, CommandTarget, string | undefined][] = []
   const steps = createPaletteSteps({
     words,
-    lists: { getStepGroups: () => groups, previewItem: vi.fn() },
+    lists: { getStepGroups: () => groups, applyItemPreview: vi.fn() },
     knows: { getTitle: () => '', getTabAt: () => null },
     text,
     onDrop: () => {
@@ -64,11 +64,11 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
     },
   })
   const choose = createStepChoice({
-    invocation: (id, target, name) => {
+    createInvocation: (id, target, name) => {
       invoked.push([id, target, name])
       return { id } as never
     },
-    lists: { getStepGroups: () => groups, previewItem: vi.fn() },
+    lists: { getStepGroups: () => groups, applyItemPreview: vi.fn() },
     text,
     stack: steps.stack,
     getStepTitle: steps.naming.getStepTitle,

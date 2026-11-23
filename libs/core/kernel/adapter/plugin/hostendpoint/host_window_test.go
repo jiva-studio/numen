@@ -120,7 +120,7 @@ func newWindowClient(t *testing.T, window WindowControl, token string) (numenv1c
 		}
 	})
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return numenv1connect.NewHostWindowServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor(token))), fakeCallers
+	return numenv1connect.NewHostWindowServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.CreateAuthInterceptor(token))), fakeCallers
 }
 
 func TestHostWindowFocusesANoteAndChecksThePermission(t *testing.T) {

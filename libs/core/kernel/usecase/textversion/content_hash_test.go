@@ -6,13 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"io"
 	"io/fs"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"

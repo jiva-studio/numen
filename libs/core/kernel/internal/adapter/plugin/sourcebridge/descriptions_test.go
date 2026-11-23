@@ -121,7 +121,7 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	kept := sourcebridge.NewDescriptions(source.host.Supervision.Storage, source.host.Management.Config)
 	bridge := source.open(t, kept)
 	var announced atomic.Int32
-	bridge.OnDescriptionChange(func() { announced.Add(1) })
+	bridge.WatchDescription(func() { announced.Add(1) })
 	source.stop(t)
 
 	source.mock.modelName.Store("large")

@@ -49,11 +49,11 @@ type Scheduler interface {
 	// Next is where an answer leaves a schedule.
 	Next(s Schedule, now time.Time, r Rating) Schedule
 
-	// Endings returns both outcomes of an answer: the schedule after a recalled
+	// ComputeEndings returns both outcomes of an answer: the schedule after a recalled
 	// answer (Next at Good) and after a forgotten one (Next at Again). They are
 	// computed together because a projection weighs the two and a scheduler
 	// derives them from one evaluation of the card.
-	Endings(s Schedule, now time.Time) (good, again Schedule)
+	ComputeEndings(s Schedule, now time.Time) (good, again Schedule)
 
 	// IsSpaced reports whether a review card at this schedule is next due in
 	// days. A card the scheduler is still learning is due in minutes.

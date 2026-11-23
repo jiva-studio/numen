@@ -48,7 +48,7 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) hostendpoint.HostVa
 		}
 	})
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return hostendpoint.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return hostendpoint.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 }
 
 func newDiskReadClient(t *testing.T) hostendpoint.HostVaultClient {
@@ -62,7 +62,7 @@ func newDiskReadClient(t *testing.T) hostendpoint.HostVaultClient {
 	})
 	readers := vaultreader.Readers{}
 	return openReadEndpoint(t, hostvault.NewAccess(
-		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
+		hostvault.Session{GetCurrent: func() (domain.Vault, bool) { return v, true }},
 		hostvault.Files{
 			Stat:        file.NewHashFile(readers, vaultwriter.VaultWriters{}),
 			ReadFile:    file.NewReadFile(readers, vaultwriter.VaultWriters{}),

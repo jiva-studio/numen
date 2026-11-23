@@ -15,7 +15,7 @@ import (
 // What was worked out is kept by the vault it was worked out for, and comes
 // back as it was written.
 func TestReadReturnsWhatWriteStoredForTheVault(t *testing.T) {
-	files := appstate.VaultFilesAt(filepath.Join(t.TempDir(), "cache"))
+	files := appstate.NewVaultFiles(filepath.Join(t.TempDir(), "cache"))
 	ctx := t.Context()
 
 	if err := files.Write(ctx, "01J8F3K2M9QRSTVWXYZ012", []byte(`{"v":1}`)); err != nil {
@@ -33,7 +33,7 @@ func TestReadReturnsWhatWriteStoredForTheVault(t *testing.T) {
 
 // The identity is written into a file's name, so a name that is not one is
 func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
-	files := appstate.VaultFilesAt(filepath.Join(t.TempDir(), "cache"))
+	files := appstate.NewVaultFiles(filepath.Join(t.TempDir(), "cache"))
 	for _, id := range []domain.VaultID{"", "../numen.json", "a/b", `a\b`, "one.json"} {
 		if err := files.Write(t.Context(), id, []byte("{}")); err == nil {
 			t.Errorf("wrote under %q", id)
@@ -43,7 +43,7 @@ func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
 
 // A vault whose identity is not one is read as an error.
 func TestAnIdentityThatIsNotOneReadsNothing(t *testing.T) {
-	files := appstate.VaultFilesAt(t.TempDir())
+	files := appstate.NewVaultFiles(t.TempDir())
 	for _, id := range []domain.VaultID{"", "a/b", "one.json"} {
 		if _, err := files.Read(t.Context(), id); err == nil {
 			t.Errorf("read under %q", id)
@@ -60,7 +60,7 @@ func TestAFolderThatCannotBeMadeFailsTheWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	files := appstate.VaultFilesAt(filepath.Join(file, "cache"))
+	files := appstate.NewVaultFiles(filepath.Join(file, "cache"))
 	if err := files.Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Error("wrote under a folder that is a file")
 	}
@@ -72,7 +72,7 @@ func TestASavedFileIsTheOwnersAlone(t *testing.T) {
 		t.Skip("Windows files have no permission bits to read")
 	}
 	dir := filepath.Join(t.TempDir(), "cache")
-	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
+	if err := appstate.NewVaultFiles(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(filepath.Join(dir, "vault-a.json"))
@@ -93,7 +93,7 @@ func TestAWriteThatCannotReplaceTheFilePreservesNothingPrior(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err == nil {
+	if err := appstate.NewVaultFiles(dir).Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Fatal("replaced a folder with a file")
 	}
 	entries, err := os.ReadDir(dir)
@@ -119,7 +119,7 @@ func TestAFolderThatCannotBeSavedIntoFailsTheWrite(t *testing.T) {
 		}
 	})
 
-	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err == nil {
+	if err := appstate.NewVaultFiles(dir).Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Error("wrote into a read-only folder")
 	}
 }

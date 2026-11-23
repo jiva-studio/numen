@@ -44,7 +44,7 @@ func (c *comparer) convertComparison(expr ast.Expr, comparison searchquery.Compa
 		subject, other = other, subject
 		comparison = reverseComparison(comparison)
 	}
-	switch name := identName(subject); {
+	switch name := getIdentName(subject); {
 	case name == searchquery.VariableKind:
 		return c.convertKind(expr, other, comparison)
 	case name == searchquery.VariablePath:
@@ -131,7 +131,7 @@ func (c *comparer) convertIn(expr ast.Expr) searchquery.RawNode {
 	case isCallOf(list, searchquery.FunctionProperty):
 		return c.convertProperty(expr, list, searchquery.ComparisonContains, []ast.Expr{element})
 	case list.Kind() != ast.ListKind:
-		return c.reject(expr, getIdentMessage(identName(element)))
+		return c.reject(expr, getIdentMessage(getIdentName(element)))
 	case isCallOf(element, searchquery.FunctionProperty):
 		return c.convertProperty(expr, element, searchquery.ComparisonIn, list.AsList().Elements())
 	case isIdent(element, searchquery.VariableKind):
@@ -139,7 +139,7 @@ func (c *comparer) convertIn(expr ast.Expr) searchquery.RawNode {
 	case isIdent(element, searchquery.VariableTitle), isIdent(element, searchquery.VariableNoteType):
 		return c.convertTextList(expr, element, list)
 	}
-	return c.reject(expr, getIdentMessage(identName(element)))
+	return c.reject(expr, getIdentMessage(getIdentName(element)))
 }
 
 func (c *comparer) convertKindList(expr, list ast.Expr) searchquery.RawNode {
@@ -199,7 +199,7 @@ func (c *comparer) convertMethod(expr ast.Expr) searchquery.RawNode {
 	case isCallOf(target, searchquery.FunctionProperty):
 		return c.reject(expr, messageProperty)
 	}
-	return c.reject(expr, getIdentMessage(identName(target)))
+	return c.reject(expr, getIdentMessage(getIdentName(target)))
 }
 
 func (c *comparer) getValue(expr ast.Expr) (searchquery.Value, bool) {

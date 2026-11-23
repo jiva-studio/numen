@@ -55,7 +55,7 @@ func (a *App) Mount(s *server.Server) error {
 		return err
 	}
 	s.SetUpdateConfig(a.runtime.configure)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		a.runtime.stop()
 		return nil
 	})

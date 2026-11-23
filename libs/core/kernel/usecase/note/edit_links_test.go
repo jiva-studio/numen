@@ -64,7 +64,7 @@ func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 			return err
 		},
 		"pointing": func(c changeFixture, retained domain.FileStat) error {
-			_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series",
+			_, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series",
 				To: domain.Address{Scheme: domain.SchemeName, Value: "Order"}, Role: domain.RoleParent, Stat: retained})
 			return err
 		},
@@ -134,7 +134,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("no type", func(t *testing.T) {
 		t.Parallel()
 		c := openChangeFixture(t, map[string]string{"Heat.md": linkedHeat})
-		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{To: order, Role: domain.RoleParent})
+		_, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Heat.md", note.LinkPoint{To: order, Role: domain.RoleParent})
 		if err == nil {
 			t.Error("a link pointed at under no type was written")
 		}
@@ -145,7 +145,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("a role no one acts on", func(t *testing.T) {
 		t.Parallel()
 		c := openChangeFixture(t, map[string]string{"Heat.md": linkedHeat})
-		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series", To: order, Role: "sibling"})
+		_, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series", To: order, Role: "sibling"})
 		if err == nil || !strings.Contains(err.Error(), "sibling") {
 			t.Errorf("want an error naming the role, got %v", err)
 		}
@@ -156,7 +156,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("a role is not asked for when the link is taken out", func(t *testing.T) {
 		t.Parallel()
 		c := openChangeFixture(t, map[string]string{"Heat.md": linkedHeat})
-		if _, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series"}); err != nil {
+		if _, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series"}); err != nil {
 			t.Fatalf("taking a link out failed: %v", err)
 		}
 		if body := c.read(t, "Heat.md"); strings.Contains(body, "Entropy") {

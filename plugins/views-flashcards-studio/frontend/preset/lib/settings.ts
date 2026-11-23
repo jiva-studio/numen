@@ -1,7 +1,7 @@
 /**
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
-import { dayAfter, daysBetween, isDay } from '../../lib/day'
+import { addDays, countDays, isDay } from '../../lib/day'
 import type { BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { clamp, findNearestGridValue } from './curve'
 import type { Field } from './field'
@@ -115,7 +115,7 @@ export const findGridIndex = (
   if (typeof value === 'number') return findNearestGridValue(grid, value)
   // Stryker disable next-line ConditionalExpression: Non-string values evaluate to false in isDay.
   if (typeof value === 'string' && isDay(value)) {
-    return findNearestGridValue(grid, daysBetween(today, value))
+    return findNearestGridValue(grid, countDays(today, value))
   }
   return -1
 }
@@ -123,5 +123,5 @@ export const findGridIndex = (
 /** Sets a date goal and defaults byDate when empty. */
 export const applyGoal = (settings: Settings, goal: Goal, today: string): Settings =>
   goal === 'date' && settings.byDate === ''
-    ? { ...settings, goal, byDate: dayAfter(today, DATE_GOAL_OFFSET_DAYS) }
+    ? { ...settings, goal, byDate: addDays(today, DATE_GOAL_OFFSET_DAYS) }
     : { ...settings, goal }

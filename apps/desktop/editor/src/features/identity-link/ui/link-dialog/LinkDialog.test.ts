@@ -71,7 +71,7 @@ describe('the link dialog', () => {
     const startLink = () =>
       Promise.resolve({
         ok: false as const,
-        error: { errorCode: 'link_text_invalid' as const, detail: 'x' },
+        error: { error: 'linkTextInvalid' as const, message: 'x' },
       })
     const dialog = await mountDialog('host', createLinkInfo(), { startLink })
     await click(findButton(/^Scan a QR code$/))

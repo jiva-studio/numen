@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -50,11 +49,10 @@ func NewHandler(items Items, report Report, clearing Clear) *Handler {
 	return &Handler{items: items, report: report, clearing: clearing}
 }
 
-// NewRoute is where the service answers: its path, the handler of its calls and the handler it answers through. Each call goes
+// NewRoute is where the service answers: its path and the handler of its calls. Each call goes
 // through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewPluginHealthServiceHandler(handler, counted)
-	return path, served, handler
+func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewPluginHealthServiceHandler(handler, counted)
 }
 
 // ReportHealth puts the item of the plugin the request names in the list.
@@ -89,35 +87,27 @@ func (h *Handler) ClearHealth(
 func (h *Handler) WatchHealth(
 	ctx context.Context, _ *connect.Request[v1.WatchHealthRequest], out *connect.ServerStream[v1.WatchHealthResponse],
 ) error {
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-	watch := h.items.Watch(watching)
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	var last []plugin.HealthItem
-	for {
-		select {
-		case list, isOpen := <-watch:
-			if !isOpen {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchHealthResponse) error) error {
+		watch := h.items.Watch(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(&v1.WatchHealthResponse{Items: wire.DescribeHealthItems(list)}); err != nil {
-				return err
-			}
-			last = list
-			repeat.Reset(wire.ResendInterval)
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchHealthResponse{Items: wire.DescribeHealthItems(last)}); err != nil {
-				return err
+			case list, isOpen := <-watch:
+				if !isOpen {
+					return nil
+				}
+				if err := send(&v1.WatchHealthResponse{Items: wire.DescribeHealthItems(list)}); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 func getHealthError(err error) error {
 	if errors.Is(err, plugin.ErrInvalidHealth) {
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return connect.NewError(connect.CodeInternal, err)
+	return wire.NewInternalError(err)
 }

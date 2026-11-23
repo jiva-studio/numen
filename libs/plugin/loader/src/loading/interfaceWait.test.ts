@@ -6,6 +6,7 @@ import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './limits'
 import { waitWithinInterfaceLimit } from './interfaceWait'
 import { createStartLimit } from './startLimit'
 import { startLoader } from './startLoader'
+import { createPluginStyles } from '../styles'
 
 const track = (wait: Promise<void>) => {
   const state = { isEnded: false }
@@ -145,6 +146,7 @@ describe('the wait for the plugins of the window slots', () => {
       fetchFn: vi.fn() as never,
       importFn: vi.fn(),
       manifests: new Map(),
+      styles: createPluginStyles(),
       loaders: new Map(),
       host: {
         createContext: vi.fn((id: string) => ({

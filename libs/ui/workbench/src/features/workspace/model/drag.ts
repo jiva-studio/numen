@@ -179,21 +179,21 @@ function resolveDropTarget(
   const outer = getRect(frame)
   if (!isInside(point, outer)) return null
 
-  const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
+  const getLocalBox = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
   const underElement = doc.elementFromPoint(point.x, point.y)
 
   const strip = getClosestElement(underElement, '[data-workspace-strip]')
   const pane = getClosestElement(underElement, '[data-workspace-pane]')
   const id = pane?.getAttribute('data-workspace-pane')
 
-  if (strip && id) return getStripDropTarget({ x: point.x, strip, pane: id }, local)
+  if (strip && id) return getStripDropTarget({ x: point.x, strip, pane: id }, getLocalBox)
 
   const side = findEdgeSide(point, outer, getEdge())
-  if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
+  if (side) return { kind: 'edge', side, box: getLocalBox(getOverlay(side, outer)) }
 
   if (!pane || !id) return null
 
-  return getPaneDropTarget(point, { element: pane, id }, local)
+  return getPaneDropTarget(point, { element: pane, id }, getLocalBox)
 }
 
 const getScreenPosition = (point: Position): Position => {

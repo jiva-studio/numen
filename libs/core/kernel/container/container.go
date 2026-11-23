@@ -6,6 +6,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -31,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -61,6 +61,7 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
+	Scales             Scales
 	machine            Machine
 }
 
@@ -154,7 +155,7 @@ func getErrorHandler(indexPath string, res *Resources) window.ErrorHandler {
 	return windowlogs.ReportError(openOptionalRecordLog(indexPath, res), res.ErrorHandler, "Background operation failed")
 }
 
-func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsWiring {
+func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsWiring {
 	runtime := getPluginExecution(exec).Runtime
 	prefs = getPluginPreferences(prefs)
 	return settingsWiring{
@@ -171,11 +172,11 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 		PluginInfos:     prefs.Views.Infos,
 		Checks:          prefs.Views.Checks,
 		Detection:       prefs.Detection,
-		ErrorHandler:    getErrorHandler(c.IndexPath, res),
+		HandleError:     getErrorHandler(c.IndexPath, res),
 	}
 }
 
-func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
+func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, chunks)
 	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
@@ -185,19 +186,19 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks
 func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
-	settings := settingsOf(c, exec, prefs, res)
+	settings := createSettingsWiring(c, exec, prefs, res)
 	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
 	plan := vaultIndexPlan{
 		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Resolver},
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
-		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), ErrorHandler: settings.ErrorHandler,
+		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), HandleError: settings.HandleError,
 	}
-	return settings, plan, vaultWith(res, base, settings, plan.ChunkPolicy)
+	return settings, plan, createVaultWiring(res, base, settings, plan.ChunkPolicy)
 }
 
 func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
 	v.CutNotes = cutNotes(chunks)
-	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(chunks, scan) }
+	v.SetNoteCut = func(scan *indexing.Scan) { setNoteCut(chunks, scan) }
 	return v
 }
 

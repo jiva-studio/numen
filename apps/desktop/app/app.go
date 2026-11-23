@@ -4,7 +4,6 @@ package app
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
-	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -47,19 +46,8 @@ func NewOptions() *Options {
 	return &Options{}
 }
 
-// Run executes the application. If opts is not supplied or nil, command-line flags are parsed.
-func Run(opts ...*Options) error {
-	var opt *Options
-	if len(opts) > 0 && opts[0] != nil {
-		opt = opts[0]
-	} else {
-		parsed, err := parseFlags()
-		if err != nil {
-			return err
-		}
-		opt = parsed
-	}
-
+// Run executes the application with the options the command line gave.
+func Run(opt *Options) error {
 	if opt.ShowVersion {
 		_, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
 		return err
@@ -98,30 +86,6 @@ func Run(opts ...*Options) error {
 	return err
 }
 
-func parseFlags() (*Options, error) {
-	opts := NewOptions()
-	fs := flag.CommandLine
-	if !fs.Parsed() {
-		fs.StringVar(&opts.IndexPath, "index", "", "path to the index database")
-		fs.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
-		fs.StringVar(&opts.Vault, "vault", "",
-			"the vault to open: a name, a path or an identity; the one opened last by default")
-		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
-			"scale of the interface (controls and spacing); 1 is the default; this launch only")
-		fs.Float64Var(&opts.TextScale, "text-scale", 0,
-			"scale of note and book text; 1 is the default; this launch only")
-		fs.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
-			"read every file again and rewrite its index entries, whatever the index already holds")
-		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
-		fs.BoolVar(&opts.ShowVersion, "version", false, "print the version and exit")
-		RegisterDebugFlags(fs, opts)
-		if err := fs.Parse(os.Args[1:]); err != nil {
-			return nil, err
-		}
-	}
-	return opts, nil
-}
-
 func makeServices(out io.Writer) platform.Installation {
 	services := platform.NewPluginServices(platform.TargetEditor)
 	services.Resources.ErrorHandler = func(err error) {
@@ -154,9 +118,10 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	if err := debugOpts.ensureVault(cfg, services.Resources, vault); err != nil {
 		return err
 	}
-	defer shutdown.Report(appName, os.Stderr, "plugins", func() error {
+	pluginsStop := shutdown.NewSequence(shutdown.Report(appName, os.Stderr, "plugins", func() error {
 		return container.StopPlugins(services.Execution.Watch, context.Background())
-	})()
+	}))
+	defer pluginsStop.Run()
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -175,22 +140,18 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	displayed, err := openInstallation(ctx, cfg, services, vault, frame)
+	cfg.Scales = container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
+	displayed, err := openInstallation(ctx, cfg, services, vault, debugOpts.getFrame(frame))
 	if err != nil {
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation, scales, installation.RecordThemeWarning), os.Stdout)
-
 	installation.Report(notices)
 
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
 		shutdown.Report(appName, os.Stderr, "", installation.Close),
-		shutdown.Report(appName, os.Stderr, "plugins", func() error {
-			return container.StopPlugins(services.Execution.Watch, context.Background())
-		}),
+		pluginsStop.Run,
 		stop,
 	)
 
@@ -233,7 +194,7 @@ type shownInstallation struct {
 func openInstallation(
 	ctx context.Context, cfg container.Config, services platform.Installation, vault string, frame editor.Frame,
 ) (shownInstallation, error) {
-	pages, err := editor.Pages()
+	pages, err := editor.CreatePagesHandler()
 	if err != nil {
 		return shownInstallation{}, err
 	}
@@ -268,7 +229,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 }
 
 func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
-	return frame.Window(application.WebviewWindowOptions{
+	return frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
@@ -298,7 +259,7 @@ const (
 )
 
 func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
-	opts := frame.Window(application.WebviewWindowOptions{
+	opts := frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
@@ -329,6 +290,7 @@ type windowHooks struct {
 type windowFrame struct {
 	window *application.WebviewWindow
 	opened *editor.Installation
+	dialog *folderdialog.Dialog
 	detach func(tab windowdomain.DetachedTab) error
 }
 
@@ -336,6 +298,20 @@ func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	if f.window != nil {
 		f.window.SetTitle(getWindowTitle(f.opened.GetCurrentVault(), open))
 	}
+}
+
+func (f *windowFrame) ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFolder(ctx, title, startingAt)
+}
+
+func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFile(ctx, title, startingAt, accept)
 }
 
 func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {
@@ -371,9 +347,8 @@ func connectWindow(
 	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	frame *windowFrame, hooks windowHooks,
 ) {
-	opened.SetFolderDialog(folderdialog.New(window))
 	*frame = windowFrame{
-		window: window, opened: opened,
+		window: window, opened: opened, dialog: folderdialog.New(window),
 		detach: func(tab windowdomain.DetachedTab) error { return detachTab(ctx, app, opened, hooks, tab) },
 	}
 
@@ -391,7 +366,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 	if !marked {
 		return
 	}
-	opened.Imports(ctx, into, event.Context().DroppedFiles())
+	opened.ImportFiles(ctx, into, event.Context().DroppedFiles())
 }
 
 const droppedInto = "data-file-drop-target"

@@ -18,7 +18,7 @@ const createInside = (open: readonly string[] = []) => {
       open: vi.fn(),
       getPath: (id: string) => `decks/${id}.md`,
       getOpenIds: () => open,
-      stale: vi.fn(() => null as unknown),
+      findConflict: vi.fn(() => null as unknown),
       flushPending: vi.fn(async () => undefined),
     },
     vaultAnswers: { getTitle: (path: string) => `title of ${path}` },
@@ -102,7 +102,7 @@ describe('what a deck tab has unwritten for the file', () => {
     const { inside, state, kind } = createInside()
     expect(kind.isAsking?.(state)).toBe(false)
 
-    inside.store.stale.mockReturnValue({ says: 'moved' })
+    inside.store.findConflict.mockReturnValue({ says: 'moved' })
 
     expect(kind.isAsking?.(state)).toBe(true)
   })

@@ -48,7 +48,9 @@ export const SUMMARY: Summary = {
 
 const ok = <T>(value: T): Result<T, ApiError> => ({ ok: true, value })
 
-export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'text'>): Task => ({
+export const createTask = (
+  overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'text'>,
+): Task => ({
   proseLine: overrides.line,
   raw: `- [ ] ${overrides.text}`,
   status: 'open',
@@ -82,7 +84,7 @@ export const refuse = (
   request: SetTaskDoneRequest,
   error: SetTaskDoneResponse['error'],
 ): Result<SetTaskDoneResponse, ApiError> =>
-  ok({ task: task({ path: request.path, line: request.line, text: '' }), change: '', error })
+  ok({ task: createTask({ path: request.path, line: request.line, text: '' }), change: '', error })
 
 export function createFakeApi(init: FakeInit = {}) {
   let summary = init.summary ?? SUMMARY

@@ -20,7 +20,7 @@ import { createNoteFlushHandler } from './noteFlush'
 /** The calls the notes are read, written and made through, and the quit of the window. */
 interface NoteEditorsApi {
   readonly notes: NoteBufferApi
-  readonly making: NoteMakingApi
+  readonly noteMaking: NoteMakingApi
   readonly quit: QuitApi
 }
 
@@ -46,7 +46,7 @@ function createNoteStore(
     getPath: (id: string) => notes.getPath(id),
     getTitle: (id: string) =>
       windowTabs.tabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
-    asking: (id: string) => notes.stale(id) !== null,
+    isAsking: (id: string) => notes.stale(id) !== null,
     flushPending: (id: string) => notes.flushPending(id),
     close: (id: string) => runInBackground(notes.close(id), reportError),
     getTabAt: (path: string) => notes.getOpenIds().find((id) => notes.getPath(id) === path) ?? null,
@@ -55,7 +55,7 @@ function createNoteStore(
 
 export function createNoteEditors({ api, log, windowTabs }: NoteEditorsDeps) {
   const notes = flattenOpenNotes(useOpenNotes(api.notes))
-  const making = createNoteWriter(api.making, log.getWriter('made'))
+  const noteMaking = createNoteWriter(api.noteMaking, log.getWriter('made'))
   const fileFlush = createFileFlush(api.quit)
   fileFlush.addHandler(createNoteFlushHandler(notes))
   raiseConflicts(notes, fileFlush)
@@ -66,7 +66,7 @@ export function createNoteEditors({ api, log, windowTabs }: NoteEditorsDeps) {
 
   return {
     notes,
-    making,
+    making: noteMaking,
     fileFlush,
     store,
     getTitle: (id: string): string => (store.has(id) ? store.getTitle(id) : id),

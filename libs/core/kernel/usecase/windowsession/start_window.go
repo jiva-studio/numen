@@ -32,7 +32,7 @@ func (f ModelFollow) start(ctx context.Context) {
 	if f.model == nil {
 		return
 	}
-	f.model.OnModelChange(func(isChunkSizeChanged bool) {
+	f.model.SubscribeModelChange(func(isChunkSizeChanged bool) {
 		f.recorder.RecordModel(f.model.Describe())
 		if f.wake != nil {
 			f.wake.WakeSources()

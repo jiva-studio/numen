@@ -16,24 +16,24 @@ export interface IdentityInfo {
 
 /** Why a call of the identity was refused. */
 export type IdentityErrorCode =
-  | 'invalid_words'
-  | 'identity_exists'
-  | 'key_store_failed'
-  | 'link_active'
-  | 'no_link'
-  | 'link_text_invalid'
-  | 'last_device'
-  | 'revoke_raced'
-  | 'not_allowed_this_device'
-  | 'no_identity'
-  | 'device_revoked'
-  | 'unknown_device'
-  | 'code_invalid'
+  | 'invalidWords'
+  | 'identityExists'
+  | 'keyStoreFailed'
+  | 'linkActive'
+  | 'noLink'
+  | 'linkTextInvalid'
+  | 'lastDevice'
+  | 'revokeRaced'
+  | 'notAllowedThisDevice'
+  | 'noIdentity'
+  | 'deviceRevoked'
+  | 'unknownDevice'
+  | 'codeInvalid'
 
 /** A served refusal with the reason the core gives. */
 export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
+  readonly error: IdentityErrorCode
+  readonly message: string
 }
 
 /** The device that has the account is the host, a device with none is the joiner. */

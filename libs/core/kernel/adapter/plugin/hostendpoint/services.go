@@ -109,7 +109,7 @@ type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Activation   Activation
 	Lent         *Services
-	Tools        func() PluginTools
+	GetTools     func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes

@@ -53,7 +53,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	failures := supervision.NewFailures(sups, clock, errs, health)
 	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: getCoreClaims()})
 	files := storage.New(errs.Report, set.GetVersion)
-	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, Tools: toolbridge.ListKeptItems(files)})
+	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, GetTools: toolbridge.ListKeptItems(files)})
 	config := plugin.NewConfigPush(plugin.ConfigPushDeps{Set: set, Supervisors: sups, Report: errs.Report, Health: health})
 	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files, config.GetProcessNice)
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
@@ -69,7 +69,6 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	listeners := plugin.NewListeners(plugin.ListenersDeps{
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
-	keeper := plugin.NewKeeper(plugin.KeeperDeps{Set: set, Mode: mode, Supervisors: sups, Activation: activation})
 	processHost := &PluginSupervision{
 		RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services,
 		Endpoint: endpoint, Dependencies: dependencies, Storage: files, Health: health, Clock: clock,
@@ -93,7 +92,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 		ContentTypes: plugin.NewContentTypes(plugin.ContentTypesDeps{Set: set, Lookup: readers}),
 		Events:       events,
 		Mode:         mode,
-		Keeper:       keeper,
+		Keeper:       plugin.NewKeeper(plugin.KeeperDeps{Set: set, Mode: mode, Supervisors: sups, Activation: activation}),
 	}, processHost
 }
 

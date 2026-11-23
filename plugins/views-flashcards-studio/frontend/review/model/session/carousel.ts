@@ -126,7 +126,7 @@ function createCarouselMover(
     place.style.scrollBehavior = ''
   }
 
-  const snapTo = (where: PanelPlace) => {
+  const moveToPlace = (where: PanelPlace) => {
     win.clearTimeout(snapTimer)
     snapTimer = win.setTimeout(() => slideTo(aim ?? where), SNAP_DELAY_MS)
   }
@@ -144,7 +144,14 @@ function createCarouselMover(
     win.clearTimeout(snapTimer)
   }
 
-  return { slideTo, placeAt, snapTo, clearAimOnArrival, clear, isAiming: () => aim !== null }
+  return {
+    slideTo,
+    placeAt,
+    snapTo: moveToPlace,
+    clearAimOnArrival,
+    clear,
+    isAiming: () => aim !== null,
+  }
 }
 
 export const useCarouselStrip = (deps: CarouselStripDeps) => {

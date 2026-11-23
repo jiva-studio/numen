@@ -79,7 +79,7 @@ function keepFirstOfEachCommand<T>(
  * The entries of one slot as it draws them when nothing is stored: the first of each command, by group,
  * then order, then plugin id.
  */
-export function orderSlotEntries<T>(
+export function sortSlotEntries<T>(
   items: readonly T[],
   getEntry: (one: T) => DeclaredSlotEntry,
 ): T[] {
@@ -89,20 +89,20 @@ export function orderSlotEntries<T>(
 }
 
 /** What a slot in its default arrangement is made of: a row for each entry, a separator where the group changes. */
-export interface GroupedRows<T, R> {
+interface GroupedRows<T, R> {
   readonly group: (one: T) => string | undefined
-  readonly row: (one: T) => R
-  readonly separator: (group: string) => R
+  readonly buildRow: (one: T) => R
+  readonly buildSeparator: (group: string) => R
 }
 
 /** The ordered entries as rows, with a separator before each group after the first, named by the group it opens. */
-export function separateGroups<T, R>(ordered: readonly T[], read: GroupedRows<T, R>): R[] {
+export function insertSeparators<T, R>(ordered: readonly T[], read: GroupedRows<T, R>): R[] {
   const rows: R[] = []
   let previous: string | undefined
   for (const one of ordered) {
     const group = read.group(one) ?? ''
-    if (previous !== undefined && group !== previous) rows.push(read.separator(group))
-    rows.push(read.row(one))
+    if (previous !== undefined && group !== previous) rows.push(read.buildSeparator(group))
+    rows.push(read.buildRow(one))
     previous = group
   }
   return rows

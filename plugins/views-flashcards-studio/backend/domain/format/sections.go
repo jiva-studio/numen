@@ -17,7 +17,7 @@ type section struct {
 	to    int
 }
 
-func sections(body []byte, first, last int) []section {
+func splitSections(body []byte, first, last int) []section {
 	var out []section
 	var f markdown.Fence
 	for pos := 0; pos <= len(body); {
@@ -41,7 +41,7 @@ func sections(body []byte, first, last int) []section {
 }
 
 func openSection(out []section, line []byte, levels levelRange, offsets lineOffsets) []section {
-	level, name, ok := heading(line, levels.first, levels.last)
+	level, name, ok := parseHeading(line, levels.first, levels.last)
 	if !ok {
 		return out
 	}
@@ -61,7 +61,7 @@ type levelRange struct{ first, last int }
 // lineOffsets is where a line begins, where the next begins and where the body ends.
 type lineOffsets struct{ pos, next, size int }
 
-func heading(line []byte, first, last int) (level int, name string, ok bool) {
+func parseHeading(line []byte, first, last int) (level int, name string, ok bool) {
 	hashes := 0
 	for hashes < len(line) && line[hashes] == '#' {
 		hashes++
@@ -89,7 +89,7 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 func readTrimmedRun(body []byte, from, to int) (string, int) {
 	begin, end := from, to
 	for begin < end {
-		line, next := lineAt(body, begin, end)
+		line, next := readLine(body, begin, end)
 		if len(bytes.TrimSpace(line)) != 0 {
 			break
 		}
@@ -103,14 +103,14 @@ func getTrimmedEnd(body []byte, from, to int) int {
 	return from + len(bytes.TrimRight(body[from:to], " \t\r\n"))
 }
 
-func lineAt(body []byte, pos, to int) ([]byte, int) {
+func readLine(body []byte, pos, to int) ([]byte, int) {
 	if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {
 		return bytes.TrimRight(body[pos:pos+i], "\r"), pos + i + 1
 	}
 	return bytes.TrimRight(body[pos:to], "\r"), to
 }
 
-func lineFrom(body []byte, from, pos int) int {
+func findLineStart(body []byte, from, pos int) int {
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="bytes.LastIndexByte returns -1 when not found and >= 0 when found."
 	if i := bytes.LastIndexByte(body[from:pos], '\n'); i >= 0 {
 		return from + i + 1

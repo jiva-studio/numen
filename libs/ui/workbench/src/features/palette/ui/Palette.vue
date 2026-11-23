@@ -29,7 +29,7 @@ import { PaletteFrame } from './palette-frame'
 import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
-import { commandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
+import { getCommandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
 import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
 import { useMultiPick } from '../model/multiPick'
@@ -50,7 +50,7 @@ const props = withDefaults(defineProps<PaletteProps>(), {
   to: 'body',
   name: 'Palette',
   actionWords: () => ACTION_WORDS,
-  actionKey: () => commandKeyChord(getUserAgent()),
+  actionKey: () => getCommandKeyChord(getUserAgent()),
 })
 
 const searchQuery = defineModel<string>({ default: '' })
@@ -103,7 +103,7 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
 const multiPick = useMultiPick(props, searchQuery, emit)
 
-const places = usePalettePlaces({ groups: () => multiPick.groups.value })
+const places = usePalettePlaces({ getGroups: () => multiPick.groups.value })
 const { placed, announcement } = places
 
 const active = useActiveItem({
@@ -155,7 +155,7 @@ const onActionKey = (event: KeyboardEvent): void => {
 }
 
 const onOver = (pos: number, event: PointerEvent) => {
-  if (!isPanelOpen.value) active.lightAt(pos, event)
+  if (!isPanelOpen.value) active.highlightAt(pos, event)
 }
 
 /* --------------------------------- Helpers -------------------------------- */

@@ -46,7 +46,7 @@ func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) hos
 	return newHostVaultClient(
 		&http.Client{Timeout: 5 * time.Second},
 		"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
-		connect.WithInterceptors(transport.AuthInterceptor(token)),
+		connect.WithInterceptors(transport.CreateAuthInterceptor(token)),
 	)
 }
 
@@ -98,7 +98,7 @@ func createRawSearchClient(t *testing.T, host *pluginhost.Host, token string) nu
 	return numenv1connect.NewHostSearchServiceClient(
 		&http.Client{Timeout: 5 * time.Second},
 		"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
-		connect.WithInterceptors(transport.AuthInterceptor(token)),
+		connect.WithInterceptors(transport.CreateAuthInterceptor(token)),
 	)
 }
 

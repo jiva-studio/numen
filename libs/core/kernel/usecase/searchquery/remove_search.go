@@ -6,14 +6,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 )
 
-// RemoveSearch releases a search the caller started. The search is canceled and forgotten when no other
+// DeleteSearch releases a search the caller started. The search is canceled and forgotten when no other
 // caller that started an equal search still holds it.
-type RemoveSearch struct {
+type DeleteSearch struct {
 	kept keptSearches
 }
 
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin.
-func (u *RemoveSearch) Execute(_ context.Context, owner string, id searchrun.ID) error {
+func (u *DeleteSearch) Execute(_ context.Context, owner string, id searchrun.ID) error {
 	if _, _, err := u.kept.Find(owner, id); err != nil {
 		return err
 	}

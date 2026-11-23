@@ -1,15 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { Manifest } from '@numen/core-client'
-import {
-  createLicenseServiceBridge,
-  createUiServiceBridge,
-  createVaultServiceBridge,
-  createWorkServiceBridge,
-} from './bridge/services'
+import { createUiServiceBridge, createWorkServiceBridge } from './bridge/services'
+import { createSettingBridge } from './bridge/contextHosts'
 import { createPluginParts } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
+import { fillHostDeps } from '../testing/hostDeps'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('PluginContext', () => {
@@ -19,7 +16,7 @@ describe('PluginContext', () => {
       registerTabKind: 0,
       registerCommand: 0,
       getSetting: 0,
-      onSettingChange: 0,
+      watchSetting: 0,
       onVaultChange: 0,
       onFileSelect: 0,
       emitVaultChange: 0,
@@ -57,8 +54,8 @@ describe('PluginContext', () => {
           calls.getSetting++
           return key === 'enabled' ? true : undefined
         }) as PluginContextHost['settings']['getSetting'],
-        onSettingChange: vi.fn((_id, _key, _handler) => {
-          calls.onSettingChange++
+        watchSetting: vi.fn((_id, _key, _handler) => {
+          calls.watchSetting++
           return { dispose: vi.fn() }
         }),
       },
@@ -150,7 +147,7 @@ describe('PluginContext', () => {
 
     const sub4 = ctx.plugin.settings.onChange('enabled', vi.fn())
     expect(ctx.plugin.identity.subscriptions).toHaveLength(4)
-    expect(host.settings.onSettingChange).toHaveBeenCalledWith(
+    expect(host.settings.watchSetting).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
@@ -358,7 +355,7 @@ describe('PluginContext', () => {
         getLicenseKey: vi.fn((_pluginId, licenseId) =>
           licenseId === 'sync' ? 'KEY-SUP' : undefined,
         ),
-        onLicenseChange: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
+        watchLicense: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
       },
     })
 
@@ -397,47 +394,42 @@ describe('PluginContext', () => {
 
 describe('host service bridges', () => {
   it('bridges vault, ui, and work services with fallbacks when optional parts are absent', async () => {
-    const emptyVault = createVaultServiceBridge({})
-    expect(emptyVault.getNotes()).toBeUndefined()
-    expect(emptyVault.getRelations()).toBeUndefined()
-    expect(emptyVault.getFiles()).toBeUndefined()
-    expect(emptyVault.getTexts('p')).toBeUndefined()
-    expect(emptyVault.getBuffers()).toBeUndefined()
-    expect(emptyVault.getVaults()).toBeUndefined()
-
-    const emptyLicenses = createLicenseServiceBridge({})
+    const emptyLicenses = createSettingBridge(fillHostDeps())
     expect(emptyLicenses.hasLicense('p', 'sync')).toBe(false)
     expect(emptyLicenses.getLicenseKey('p', 'sync')).toBeUndefined()
-    expect(() => emptyLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()).not.toThrow()
+    expect(() => emptyLicenses.watchLicense('p', 'sync', vi.fn()).dispose()).not.toThrow()
 
     const unsubscribeLicense = vi.fn()
-    const fullLicenses = createLicenseServiceBridge({
-      plugins: {
-        hasLicense: (_p, id) => id === 'sync',
-        getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
-        onLicenseChange: () => unsubscribeLicense,
-      },
-    })
+    const fullLicenses = createSettingBridge(
+      fillHostDeps({
+        plugins: {
+          hasLicense: (_p, id) => id === 'sync',
+          getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
+          watchLicense: () => ({ dispose: unsubscribeLicense }),
+        },
+      }),
+    )
     expect(fullLicenses.hasLicense('p', 'sync')).toBe(true)
     expect(fullLicenses.getLicenseKey('p', 'sync')).toBe('K1')
-    fullLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()
+    fullLicenses.watchLicense('p', 'sync', vi.fn()).dispose()
     expect(unsubscribeLicense).toHaveBeenCalledOnce()
 
-    const emptyWork = createWorkServiceBridge({})
+    const emptyWork = createWorkServiceBridge(fillHostDeps())
     expect(emptyWork.getTasks('p')).toBeUndefined()
     expect(emptyWork.getBackgroundTasks()).toBeUndefined()
     expect(emptyWork.getProcesses()).toBeUndefined()
-    expect(emptyWork.getHealth('p')).toBeUndefined()
     expect(emptyWork.getConnections('p')).toBeUndefined()
 
     const processes = {} as never
     const connections = {} as never
-    const fullWork = createWorkServiceBridge({
-      work: {
-        getProcesses: () => processes,
-        getConnections: () => connections,
-      },
-    })
+    const fullWork = createWorkServiceBridge(
+      fillHostDeps({
+        work: {
+          getProcesses: () => processes,
+          getConnections: () => connections,
+        },
+      }),
+    )
     expect(fullWork.getProcesses()).toBe(processes)
     expect(fullWork.getConnections('p')).toBe(connections)
 
@@ -460,7 +452,7 @@ describe('host service bridges', () => {
       }[]
     } = {}
     const uiNoCommands = createUiServiceBridge(
-      { window: { target: 'desktop.editor' } },
+      fillHostDeps({ window: { target: 'desktop.editor' } }),
       { slots, manifests, readSlotEntries: () => slotState.entries as never },
     )
     expect(uiNoCommands.getNotices('p').show('info')).toBeUndefined()
@@ -481,7 +473,7 @@ describe('host service bridges', () => {
     expect(uiNoCommands.commandAccess.getPermission?.('md.other:open')).toBeUndefined()
 
     const uiWithCommands = createUiServiceBridge(
-      {
+      fillHostDeps({
         window: { target: 'desktop.editor' },
         commands: {
           getCommandDeclarations: () => [
@@ -489,7 +481,7 @@ describe('host service bridges', () => {
             { pluginId: 'md.decl', id: 'run', title: 'Run', permission: 'vault:read' },
           ],
         },
-      },
+      }),
       { slots, manifests, readSlotEntries: () => undefined },
     )
     expect(uiWithCommands.commandAccess.getPermission?.('md.decl:run')).toBe('vault:read')

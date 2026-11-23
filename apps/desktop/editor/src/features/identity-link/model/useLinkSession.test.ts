@@ -54,7 +54,7 @@ describe('useLinkSession', () => {
   it('shows the refusal of a start and holds no link', async () => {
     const { session } = mountSession({
       startLink: () =>
-        Promise.resolve({ ok: false, error: { errorCode: 'link_text_invalid', detail: 'x' } }),
+        Promise.resolve({ ok: false, error: { error: 'linkTextInvalid', message: 'x' } }),
     })
     await session.start('scan', 'x')
     expect(session.problem.value).toBe('This text is not the link of a QR code.')

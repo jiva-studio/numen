@@ -8,7 +8,7 @@ import (
 )
 
 func newTestWorkers() *pdf.Workers {
-	return pdf.NewWorkers(pdf.Options{Report: ReportError, CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
+	return pdf.NewWorkers(pdf.Options{Report: ReportError, CompilationCache: nil, StartTimer: nil, Workers: 0, IdleWorkers: 0})
 }
 
 func TestConfigureSizesTheWorkersToTheProfile(t *testing.T) {

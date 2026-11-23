@@ -54,7 +54,7 @@ func (l *Links) endTextFetch(ctx context.Context, link Link, task host.Task) err
 }
 
 func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
-	fetcher, settings := l.fetcher(), l.settings()
+	fetcher, settings := l.getFetcher(), l.getSettings()
 	fetched, err := fetcher.GetText(ctx, string(link.Address), fetch.PreferredCaptions{
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
