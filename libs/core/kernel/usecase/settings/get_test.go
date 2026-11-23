@@ -2,8 +2,9 @@ package settings_test
 
 import (
 	"errors"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"testing"
+
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"

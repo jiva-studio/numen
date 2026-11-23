@@ -8,10 +8,10 @@ The load test reports numbers and does not assert on them. It runs on any laptop
 
 ```
 cd libs/core/kernel
-go test ./usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
-go test ./usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
-go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
-NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
+go test ./usecase/indexing/ -run XXX -bench ColdScan -benchtime 1x
+go test ./usecase/indexing/ -run XXX -bench 'WarmScan|Incremental|Search'
+go test ./usecase/indexing/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
+NUMEN_LOAD=1 go test ./usecase/indexing/ -run TestLoad -v -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m

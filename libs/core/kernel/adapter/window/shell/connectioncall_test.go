@@ -2,11 +2,12 @@ package shell
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 
 	"connectrpc.com/connect"
 

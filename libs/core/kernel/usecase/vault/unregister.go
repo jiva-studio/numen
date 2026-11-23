@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -16,12 +17,12 @@ import (
 type Unregister struct {
 	vaults  vaultport.VaultList
 	remover vaultport.VaultRemover
-	index   VaultRepository
+	index   indexport.VaultRepository
 }
 
 // NewUnregister is what takes a vault off the list: the list this installation
 // keeps and its remover, and the index its rows are taken out of.
-func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, index VaultRepository) Unregister {
+func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, index indexport.VaultRepository) Unregister {
 	return Unregister{vaults: vaults, remover: remover, index: index}
 }
 

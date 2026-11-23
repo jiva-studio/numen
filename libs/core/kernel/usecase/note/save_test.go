@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -618,10 +618,10 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: vaultreader.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
 		Queries: c.db.Sources(), Sources: c.db.Sources(), Now: testsupport.NewClock(),
-		Ledger: vaults.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})

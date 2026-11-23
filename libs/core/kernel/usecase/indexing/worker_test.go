@@ -11,14 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -82,7 +84,7 @@ func newPass(
 func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 	t.Helper()
 
-	scan := vault.NewScan(made.GetVaultReaders(), db.Vaults, db.Notes, db.FileStats, db.Maintenance, noBacklog{})
+	scan := NewScan(made.GetVaultReaders(), db.Vaults, db.Notes, db.FileStats, db.Maintenance, noBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -596,12 +598,12 @@ func testCancelingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFu
 
 // WorkerIndex is the part of an open index the tests of the worker read and write.
 type WorkerIndex struct {
-	Vaults      vault.VaultRepository
+	Vaults      indexport.VaultRepository
 	Notes       noteport.NoteRepository
-	FileStats   vault.FileStats
-	Maintenance vault.IndexMaintenance
+	FileStats   FileStats
+	Maintenance IndexMaintenance
 	Progress    IndexProgress
-	Vectors     VectorIndex
+	Vectors     fitindex.VectorIndex
 	Closer      io.Closer
 }
 

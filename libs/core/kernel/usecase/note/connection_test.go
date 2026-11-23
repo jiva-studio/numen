@@ -3,9 +3,10 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"

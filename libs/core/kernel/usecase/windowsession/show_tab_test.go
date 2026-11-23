@@ -2,10 +2,11 @@ package windowsession
 
 import (
 	"errors"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"slices"
 	"testing"
 	"time"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )

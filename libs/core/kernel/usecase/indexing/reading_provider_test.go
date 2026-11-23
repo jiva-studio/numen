@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -18,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -33,12 +34,12 @@ func TestWorker(t *testing.T) {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
-		var walks vault.Walks
-		ledger := vault.NewLedger()
+		var walks indexing.Walks
+		ledger := indexing.NewLedger()
 		read := func(
 			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
-			if err := indexing.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
+			if err := fitindex.New(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
 				return indexing.ReadWholeVault{}, err
 			}
 			return createReadWholeVault(db, &walks, ledger, source, v, rebuild)
@@ -52,12 +53,12 @@ func TestWorker(t *testing.T) {
 }
 
 func createReadWholeVault(
-	db *index.DB, walks *vault.Walks, ledger *vault.Ledger, source searchsourceport.Source, v domain.Vault, rebuild bool,
+	db *index.DB, walks *indexing.Walks, ledger *indexing.Ledger, source searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	readers := vaultreader.Readers{}
-	scan := vault.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), db.Sources())
+	scan := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), db.Sources())
 	scan.Walks = walks
-	refresh := vault.NewRefreshFrom(vault.RefreshDeps{
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(), Queries: db.Sources(), Sources: db.Sources(),
 		Now: testsupport.GetMachine(), Ledger: ledger,
 	})

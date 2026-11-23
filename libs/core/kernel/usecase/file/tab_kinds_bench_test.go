@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // BenchmarkTabKinds compares the tab kinds of a batch of notes taken from the index with the same
@@ -24,7 +24,7 @@ func BenchmarkTabKinds(b *testing.B) {
 	}
 	testsupport.CloseAfter(b, db)
 	v := vaulttest.GenerateVault(b, 3431)
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}

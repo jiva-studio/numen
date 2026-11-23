@@ -19,8 +19,8 @@ import (
 // cutter is the second pass: it cuts the live text of the files that need it into chunks.
 type cutter struct {
 	sources      sourceport.SourceRepository
-	backlog      sourceport.SourceBacklog
-	lookup       sourceport.RemovalLookup
+	backlog      SourceBacklog
+	lookup       RemovalLookup
 	sizes        chunking.Sizes
 	legibility   chunking.Legibility
 	isSkipped    func(path string) bool
@@ -191,7 +191,7 @@ func (u cutter) source(
 		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
-	chunks := chunksOf(doc, sizes, u.legibility)
+	chunks := chunking.CutVersion(doc, sizes, u.legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    ref,
@@ -205,7 +205,7 @@ func (u cutter) source(
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++
-	res.Chunks += countChunks(chunks)
+	res.Chunks += chunking.CountChunks(chunks)
 	u.progress(*res)
 	return nil
 }
@@ -243,35 +243,6 @@ func (u cutter) dropVersionOfNote(ctx context.Context, v domain.Vault, path stri
 
 func (u cutter) reportError(err error) {
 	u.errorHandler(err)
-}
-
-func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
-	return chunking.Chunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
-		out := chunkAt(doc, c)
-		// The name of a section is kept on the chunk that begins it, and on that
-		// one only.
-		if isLarge {
-			out.Opens = doc.GetHeadingsAt(c.Start)
-		}
-		return out
-	})
-}
-
-func chunkAt(doc domain.VersionText, c chunking.Chunk) domain.Chunk {
-	return domain.Chunk{
-		Start:    c.Start,
-		Length:   c.Length,
-		Location: doc.Locate(c.Start),
-		Text:     c.ExtractText(doc.Text),
-	}
-}
-
-func countChunks(chunks []domain.Chunk) int {
-	n := len(chunks)
-	for _, c := range chunks {
-		n += len(c.Small)
-	}
-	return n
 }
 
 func (u cutter) progress(res vaultreading.IndexResult) {
