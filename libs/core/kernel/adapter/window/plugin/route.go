@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -75,30 +74,22 @@ func (h *Handler) RetryPlugin(
 func (h *Handler) WatchPluginProcesses(
 	ctx context.Context, _ *connect.Request[v1.WatchPluginProcessesRequest], out *connect.ServerStream[v1.WatchPluginProcessesResponse],
 ) error {
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-	watch := h.processes.Execute(watching)
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	var last plugindomain.ProcessList
-	for {
-		select {
-		case list, isOpen := <-watch:
-			if !isOpen {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchPluginProcessesResponse) error) error {
+		watch := h.processes.Execute(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(describe(list)); err != nil {
-				return err
-			}
-			last = list
-			repeat.Reset(wire.ResendInterval)
-		case <-repeat.C:
-			if err := out.Send(describe(last)); err != nil {
-				return err
+			case list, isOpen := <-watch:
+				if !isOpen {
+					return nil
+				}
+				if err := send(describe(list)); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 func describe(list plugindomain.ProcessList) *v1.WatchPluginProcessesResponse {

@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	licenses "github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -112,9 +113,9 @@ func (h *Handler) WatchLicenses(
 	if h.licenses.Watch == nil {
 		return out.Send(&v1.WatchLicensesResponse{})
 	}
-	return h.licenses.Watch.Execute(ctx, func(entries []license.Info) error {
-		return out.Send(&v1.WatchLicensesResponse{
-			Licenses: writeLicenses(entries),
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
+		return h.licenses.Watch.Execute(ctx, func(entries []license.Info) error {
+			return send(&v1.WatchLicensesResponse{Licenses: writeLicenses(entries)})
 		})
 	})
 }
