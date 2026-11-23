@@ -68,6 +68,18 @@ enum ErrorCode {
 
   // The call was cancelled before this note was changed: the note is as it was.
   ERROR_CODE_NOT_ATTEMPTED = 14;
+
+  // The file is listed and its bytes are not on this device.
+  ERROR_CODE_FILE_ABSENT = 15;
+
+  // A file with other content is already at the path of an absent file.
+  ERROR_CODE_FILE_PRESENT = 16;
+
+  // The bytes do not have the hash the call named. Nothing is placed.
+  ERROR_CODE_HASH_MISMATCH = 17;
+
+  // The file has changes that are not the content the call named. It is left as it is.
+  ERROR_CODE_CHANGED = 18;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

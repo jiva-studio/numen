@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostvault.proto.
  */
 export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QieQoaRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJwoFc3RhdGUYAiABKA4yGC5udW1lbi52MS5Ib3N0SW5kZXhTdGF0ZRIOCgZyZWFzb24YAyABKAkiEwoRV2F0Y2hNb3Zlc1JlcXVlc3QiFAoSV2F0Y2hNb3Zlc1Jlc3BvbnNlIhUKE0dldEhvc3RWYXVsdFJlcXVlc3QiYgoUR2V0SG9zdFZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEcGF0aBgCIAEoCRIKCgJpZBgDIAEoCRIMCgRuYW1lGAQgASgJIhIKEExvY2tWYXVsdFJlcXVlc3QiRQoRTG9ja1ZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEbG9jaxgCIAEoCSIiChJVbmxvY2tWYXVsdFJlcXVlc3QSDAoEbG9jaxgBIAEoCSIVChNVbmxvY2tWYXVsdFJlc3BvbnNlIhkKF0dldFBhcnNlUHJvYmxlbXNSZXF1ZXN0IjAKEEhvc3RQYXJzZVByb2JsZW0SDAoEcGF0aBgBIAEoCRIOCgZkZXRhaWwYAiABKAkibAoYR2V0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiwKCHByb2JsZW1zGAIgAygLMhoubnVtZW4udjEuSG9zdFBhcnNlUHJvYmxlbSIpChdHZXRWYXVsdFByb2JsZW1zUmVxdWVzdBIOCgZjaGVja3MYASADKAkigAEKEEhvc3RWYXVsdFByb2JsZW0SDAoEcGF0aBgBIAEoCRINCgVjaGVjaxgCIAEoCRIOCgZkZXRhaWwYAyABKAkSFQoNdGFyZ2V0X3NjaGVtZRgEIAEoCRIUCgx0YXJnZXRfdmFsdWUYBSABKAkSEgoKY2FuZGlkYXRlcxgGIAMoCSJ8ChhHZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0VmF1bHRQcm9ibGVtEg4KBmNoZWNrcxgDIAMoCSqMAQoOSG9zdEluZGV4U3RhdGUSIAocSE9TVF9JTkRFWF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEhPU1RfSU5ERVhfU1RBVEVfSU5ERVhFRBABEh0KGUhPU1RfSU5ERVhfU1RBVEVfSU5ERVhJTkcQAhIbChdIT1NUX0lOREVYX1NUQVRFX0ZBSUxFRBADMtUEChBIb3N0VmF1bHRTZXJ2aWNlEk0KDEdldEhvc3RWYXVsdBIdLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlcXVlc3QaHi5udW1lbi52MS5HZXRIb3N0VmF1bHRSZXNwb25zZRJfChJFbnN1cmVWYXVsdEluZGV4ZWQSIy5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0GiQubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USRAoJTG9ja1ZhdWx0EhoubnVtZW4udjEuTG9ja1ZhdWx0UmVxdWVzdBobLm51bWVuLnYxLkxvY2tWYXVsdFJlc3BvbnNlEkoKC1VubG9ja1ZhdWx0EhwubnVtZW4udjEuVW5sb2NrVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuVW5sb2NrVmF1bHRSZXNwb25zZRJZChBHZXRQYXJzZVByb2JsZW1zEiEubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USWQoQR2V0VmF1bHRQcm9ibGVtcxIhLm51bWVuLnYxLkdldFZhdWx0UHJvYmxlbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1Jlc3BvbnNlEkkKCldhdGNoTW92ZXMSGy5udW1lbi52MS5XYXRjaE1vdmVzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoTW92ZXNSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QieQoaRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJwoFc3RhdGUYAiABKA4yGC5udW1lbi52MS5Ib3N0SW5kZXhTdGF0ZRIOCgZyZWFzb24YAyABKAkiEwoRV2F0Y2hNb3Zlc1JlcXVlc3QiFAoSV2F0Y2hNb3Zlc1Jlc3BvbnNlIhUKE0dldEhvc3RWYXVsdFJlcXVlc3QiYgoUR2V0SG9zdFZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEcGF0aBgCIAEoCRIKCgJpZBgDIAEoCRIMCgRuYW1lGAQgASgJIhIKEExvY2tWYXVsdFJlcXVlc3QiRQoRTG9ja1ZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEbG9jaxgCIAEoCSIiChJVbmxvY2tWYXVsdFJlcXVlc3QSDAoEbG9jaxgBIAEoCSIVChNVbmxvY2tWYXVsdFJlc3BvbnNlIhkKF0dldFBhcnNlUHJvYmxlbXNSZXF1ZXN0IjAKEEhvc3RQYXJzZVByb2JsZW0SDAoEcGF0aBgBIAEoCRIOCgZkZXRhaWwYAiABKAkibAoYR2V0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiwKCHByb2JsZW1zGAIgAygLMhoubnVtZW4udjEuSG9zdFBhcnNlUHJvYmxlbSIpChdHZXRWYXVsdFByb2JsZW1zUmVxdWVzdBIOCgZjaGVja3MYASADKAkigAEKEEhvc3RWYXVsdFByb2JsZW0SDAoEcGF0aBgBIAEoCRINCgVjaGVjaxgCIAEoCRIOCgZkZXRhaWwYAyABKAkSFQoNdGFyZ2V0X3NjaGVtZRgEIAEoCRIUCgx0YXJnZXRfdmFsdWUYBSABKAkSEgoKY2FuZGlkYXRlcxgGIAMoCSJ8ChhHZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0VmF1bHRQcm9ibGVtEg4KBmNoZWNrcxgDIAMoCSJSCg5Ib3N0QWJzZW50RmlsZRIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSFgoObW9kaWZpZWRfYXRfbXMYAyABKAMSDAoEaGFzaBgEIAEoCSJAChVQdXRBYnNlbnRGaWxlc1JlcXVlc3QSJwoFZmlsZXMYASADKAsyGC5udW1lbi52MS5Ib3N0QWJzZW50RmlsZSJSChZQdXRBYnNlbnRGaWxlc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhQKDHByZXNlbnRfcGF0aBgCIAEoCSIYChZMaXN0QWJzZW50RmlsZXNSZXF1ZXN0ImYKF0xpc3RBYnNlbnRGaWxlc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEicKBWZpbGVzGAIgAygLMhgubnVtZW4udjEuSG9zdEFic2VudEZpbGUiMwoPRmlsbEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKc3RvcmVfbmFtZRgCIAEoCSI2ChBGaWxsRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlIjcKEEV2aWN0RmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIVCg1leHBlY3RlZF9oYXNoGAIgASgJIjcKEUV2aWN0RmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMyiwcKEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlEl8KEkVuc3VyZVZhdWx0SW5kZXhlZBIjLm51bWVuLnYxLkVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QaJC5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXNwb25zZRJECglMb2NrVmF1bHQSGi5udW1lbi52MS5Mb2NrVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuTG9ja1ZhdWx0UmVzcG9uc2USSgoLVW5sb2NrVmF1bHQSHC5udW1lbi52MS5VbmxvY2tWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5VbmxvY2tWYXVsdFJlc3BvbnNlElkKEEdldFBhcnNlUHJvYmxlbXMSIS5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVxdWVzdBoiLm51bWVuLnYxLkdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRJZChBHZXRWYXVsdFByb2JsZW1zEiEubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USSQoKV2F0Y2hNb3ZlcxIbLm51bWVuLnYxLldhdGNoTW92ZXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hNb3Zlc1Jlc3BvbnNlMAESUwoOUHV0QWJzZW50RmlsZXMSHy5udW1lbi52MS5QdXRBYnNlbnRGaWxlc1JlcXVlc3QaIC5udW1lbi52MS5QdXRBYnNlbnRGaWxlc1Jlc3BvbnNlElYKD0xpc3RBYnNlbnRGaWxlcxIgLm51bWVuLnYxLkxpc3RBYnNlbnRGaWxlc1JlcXVlc3QaIS5udW1lbi52MS5MaXN0QWJzZW50RmlsZXNSZXNwb25zZRJBCghGaWxsRmlsZRIZLm51bWVuLnYxLkZpbGxGaWxlUmVxdWVzdBoaLm51bWVuLnYxLkZpbGxGaWxlUmVzcG9uc2USRAoJRXZpY3RGaWxlEhoubnVtZW4udjEuRXZpY3RGaWxlUmVxdWVzdBobLm51bWVuLnYxLkV2aWN0RmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.EnsureVaultIndexedRequest
@@ -354,6 +354,202 @@ export const GetVaultProblemsResponseSchema: GenMessage<GetVaultProblemsResponse
   messageDesc(file_numen_v1_hostvault, 15);
 
 /**
+ * HostAbsentFile is a file the vault lists whose bytes are not on this device.
+ *
+ * @generated from message numen.v1.HostAbsentFile
+ */
+export type HostAbsentFile = Message<"numen.v1.HostAbsentFile"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * When the file was last modified, in milliseconds since the Unix epoch.
+   *
+   * @generated from field: int64 modified_at_ms = 3;
+   */
+  modifiedAtMs: bigint;
+
+  /**
+   * The SHA-256 of the content, hex.
+   *
+   * @generated from field: string hash = 4;
+   */
+  hash: string;
+};
+
+/**
+ * Describes the message numen.v1.HostAbsentFile.
+ * Use `create(HostAbsentFileSchema)` to create a new message.
+ */
+export const HostAbsentFileSchema: GenMessage<HostAbsentFile> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 16);
+
+/**
+ * @generated from message numen.v1.PutAbsentFilesRequest
+ */
+export type PutAbsentFilesRequest = Message<"numen.v1.PutAbsentFilesRequest"> & {
+  /**
+   * @generated from field: repeated numen.v1.HostAbsentFile files = 1;
+   */
+  files: HostAbsentFile[];
+};
+
+/**
+ * Describes the message numen.v1.PutAbsentFilesRequest.
+ * Use `create(PutAbsentFilesRequestSchema)` to create a new message.
+ */
+export const PutAbsentFilesRequestSchema: GenMessage<PutAbsentFilesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 17);
+
+/**
+ * @generated from message numen.v1.PutAbsentFilesResponse
+ */
+export type PutAbsentFilesResponse = Message<"numen.v1.PutAbsentFilesResponse"> & {
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * The path that holds a file of another hash, when the call is refused for it.
+   *
+   * @generated from field: string present_path = 2;
+   */
+  presentPath: string;
+};
+
+/**
+ * Describes the message numen.v1.PutAbsentFilesResponse.
+ * Use `create(PutAbsentFilesResponseSchema)` to create a new message.
+ */
+export const PutAbsentFilesResponseSchema: GenMessage<PutAbsentFilesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 18);
+
+/**
+ * @generated from message numen.v1.ListAbsentFilesRequest
+ */
+export type ListAbsentFilesRequest = Message<"numen.v1.ListAbsentFilesRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ListAbsentFilesRequest.
+ * Use `create(ListAbsentFilesRequestSchema)` to create a new message.
+ */
+export const ListAbsentFilesRequestSchema: GenMessage<ListAbsentFilesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 19);
+
+/**
+ * @generated from message numen.v1.ListAbsentFilesResponse
+ */
+export type ListAbsentFilesResponse = Message<"numen.v1.ListAbsentFilesResponse"> & {
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * @generated from field: repeated numen.v1.HostAbsentFile files = 2;
+   */
+  files: HostAbsentFile[];
+};
+
+/**
+ * Describes the message numen.v1.ListAbsentFilesResponse.
+ * Use `create(ListAbsentFilesResponseSchema)` to create a new message.
+ */
+export const ListAbsentFilesResponseSchema: GenMessage<ListAbsentFilesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 20);
+
+/**
+ * @generated from message numen.v1.FillFileRequest
+ */
+export type FillFileRequest = Message<"numen.v1.FillFileRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The file of the plugin's store folder that holds the bytes.
+   *
+   * @generated from field: string store_name = 2;
+   */
+  storeName: string;
+};
+
+/**
+ * Describes the message numen.v1.FillFileRequest.
+ * Use `create(FillFileRequestSchema)` to create a new message.
+ */
+export const FillFileRequestSchema: GenMessage<FillFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 21);
+
+/**
+ * @generated from message numen.v1.FillFileResponse
+ */
+export type FillFileResponse = Message<"numen.v1.FillFileResponse"> & {
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.FillFileResponse.
+ * Use `create(FillFileResponseSchema)` to create a new message.
+ */
+export const FillFileResponseSchema: GenMessage<FillFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 22);
+
+/**
+ * @generated from message numen.v1.EvictFileRequest
+ */
+export type EvictFileRequest = Message<"numen.v1.EvictFileRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The SHA-256 the file must have, hex.
+   *
+   * @generated from field: string expected_hash = 2;
+   */
+  expectedHash: string;
+};
+
+/**
+ * Describes the message numen.v1.EvictFileRequest.
+ * Use `create(EvictFileRequestSchema)` to create a new message.
+ */
+export const EvictFileRequestSchema: GenMessage<EvictFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 23);
+
+/**
+ * @generated from message numen.v1.EvictFileResponse
+ */
+export type EvictFileResponse = Message<"numen.v1.EvictFileResponse"> & {
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.EvictFileResponse.
+ * Use `create(EvictFileResponseSchema)` to create a new message.
+ */
+export const EvictFileResponseSchema: GenMessage<EvictFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostvault, 24);
+
+/**
  * @generated from enum numen.v1.HostIndexState
  */
 export enum HostIndexState {
@@ -481,6 +677,52 @@ export const HostVaultService: GenService<{
     methodKind: "server_streaming";
     input: typeof WatchMovesRequestSchema;
     output: typeof WatchMovesResponseSchema;
+  },
+  /**
+   * PutAbsentFiles lists files whose bytes are not on this device, replacing the entry of each path.
+   * The tree shows them and a read of one fails with FILE_ABSENT. A path with a file of another
+   * content hash is refused. It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostVaultService.PutAbsentFiles
+   */
+  putAbsentFiles: {
+    methodKind: "unary";
+    input: typeof PutAbsentFilesRequestSchema;
+    output: typeof PutAbsentFilesResponseSchema;
+  },
+  /**
+   * ListAbsentFiles lists the files put absent in the vault. It needs vault:read.
+   *
+   * @generated from rpc numen.v1.HostVaultService.ListAbsentFiles
+   */
+  listAbsentFiles: {
+    methodKind: "unary";
+    input: typeof ListAbsentFilesRequestSchema;
+    output: typeof ListAbsentFilesResponseSchema;
+  },
+  /**
+   * FillFile places the bytes of a file of the plugin's store folder at an absent path, once their
+   * SHA-256 equals the hash of the entry. It writes no file change event the plugin would upload.
+   * It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostVaultService.FillFile
+   */
+  fillFile: {
+    methodKind: "unary";
+    input: typeof FillFileRequestSchema;
+    output: typeof FillFileResponseSchema;
+  },
+  /**
+   * EvictFile deletes the bytes of a file whose SHA-256 equals the expected hash and lists the file as
+   * absent. It writes no removal event and no trash entry. A file of another hash is refused with
+   * CHANGED. It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostVaultService.EvictFile
+   */
+  evictFile: {
+    methodKind: "unary";
+    input: typeof EvictFileRequestSchema;
+    output: typeof EvictFileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostvault, 0);

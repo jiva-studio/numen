@@ -82,6 +82,12 @@ message Entry {
   // When the file or folder was last modified, in milliseconds since the Unix
   // epoch. 0 where the vault does not know it.
   int64 modified_at_ms = 8;
+
+  // Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
+  bool is_absent = 9;
+
+  // The id of the plugin that can fill an absent file. Empty for a file that is not absent.
+  string provider = 10;
 }
 
 message ListFileKindsRequest {

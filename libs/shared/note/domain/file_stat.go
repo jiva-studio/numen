@@ -24,6 +24,8 @@ type FileStat struct {
 	FileID  FileID
 	Hash    string
 	Version uint64
+	// IsAbsent is set when the vault lists the file and its bytes are not on this device.
+	IsAbsent bool
 }
 
 // FileID is the number a file system assigns to a file, which a rename keeps and a

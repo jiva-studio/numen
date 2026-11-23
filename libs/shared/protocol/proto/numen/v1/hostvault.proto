@@ -44,6 +44,24 @@ service HostVaultService {
   // until the caller disconnects. It says nothing of what moved. The first message is
   // sent at once, so that the caller knows the watch is on.
   rpc WatchMoves(WatchMovesRequest) returns (stream WatchMovesResponse);
+
+  // PutAbsentFiles lists files whose bytes are not on this device, replacing the entry of each path.
+  // The tree shows them and a read of one fails with FILE_ABSENT. A path with a file of another
+  // content hash is refused. It needs vault:write.
+  rpc PutAbsentFiles(PutAbsentFilesRequest) returns (PutAbsentFilesResponse);
+
+  // ListAbsentFiles lists the files put absent in the vault. It needs vault:read.
+  rpc ListAbsentFiles(ListAbsentFilesRequest) returns (ListAbsentFilesResponse);
+
+  // FillFile places the bytes of a file of the plugin's store folder at an absent path, once their
+  // SHA-256 equals the hash of the entry. It writes no file change event the plugin would upload.
+  // It needs vault:write.
+  rpc FillFile(FillFileRequest) returns (FillFileResponse);
+
+  // EvictFile deletes the bytes of a file whose SHA-256 equals the expected hash and lists the file as
+  // absent. It writes no removal event and no trash entry. A file of another hash is refused with
+  // CHANGED. It needs vault:write.
+  rpc EvictFile(EvictFileRequest) returns (EvictFileResponse);
 }
 
 enum HostIndexState {
@@ -129,4 +147,51 @@ message GetVaultProblemsResponse {
   repeated HostVaultProblem problems = 2;
   // The checks this result covers.
   repeated string checks = 3;
+}
+
+// HostAbsentFile is a file the vault lists whose bytes are not on this device.
+message HostAbsentFile {
+  string path = 1;
+  int64 size = 2;
+  // When the file was last modified, in milliseconds since the Unix epoch.
+  int64 modified_at_ms = 3;
+  // The SHA-256 of the content, hex.
+  string hash = 4;
+}
+
+message PutAbsentFilesRequest {
+  repeated HostAbsentFile files = 1;
+}
+
+message PutAbsentFilesResponse {
+  ErrorCode error = 1;
+  // The path that holds a file of another hash, when the call is refused for it.
+  string present_path = 2;
+}
+
+message ListAbsentFilesRequest {}
+
+message ListAbsentFilesResponse {
+  ErrorCode error = 1;
+  repeated HostAbsentFile files = 2;
+}
+
+message FillFileRequest {
+  string path = 1;
+  // The file of the plugin's store folder that holds the bytes.
+  string store_name = 2;
+}
+
+message FillFileResponse {
+  ErrorCode error = 1;
+}
+
+message EvictFileRequest {
+  string path = 1;
+  // The SHA-256 the file must have, hex.
+  string expected_hash = 2;
+}
+
+message EvictFileResponse {
+  ErrorCode error = 1;
 }

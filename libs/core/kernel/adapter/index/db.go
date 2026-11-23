@@ -21,6 +21,7 @@ import (
 	_ "modernc.org/sqlite"
 	_ "modernc.org/sqlite/vec"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
@@ -200,6 +201,10 @@ func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d
 // OpenTabs is the tabs the window has open on every vault. A rebuild of the
 // index leaves them as they are.
 func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
+
+// AbsentFiles is the registry of the files each vault lists and does not hold. A rebuild of the
+// index empties it, and the plugin that filled it sends it again.
+func (d *DB) AbsentFiles() *absent.Repository { return absent.NewRepository(d.read, d.write) }
 
 // SearchFloors is the effective similarity floor of every vault under every recipe. A rebuild of
 // the index leaves it as it is.
