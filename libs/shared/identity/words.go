@@ -17,13 +17,13 @@ const (
 //go:embed english.txt
 var englishText string
 
-func englishWords() []string {
+func listEnglishWords() []string {
 	return strings.Split(strings.TrimSuffix(englishText, "\n"), "\n")
 }
 
-func englishIndex() map[string]int {
+func indexEnglishWords() map[string]int {
 	index := make(map[string]int, 2048)
-	for i, word := range englishWords() {
+	for i, word := range listEnglishWords() {
 		index[word] = i
 	}
 	return index
@@ -46,7 +46,7 @@ func ParseRecoveryWords(words []string) (RecoveryWords, error) {
 		return RecoveryWords{}, fmt.Errorf("%w: got %d", ErrWordCount, len(words))
 	}
 	var packed [entropySize + 1]byte
-	index := englishIndex()
+	index := indexEnglishWords()
 	for i, word := range words {
 		at, ok := index[strings.ToLower(strings.TrimSpace(word))]
 		if !ok {
@@ -56,13 +56,13 @@ func ParseRecoveryWords(words []string) (RecoveryWords, error) {
 	}
 	var parsed RecoveryWords
 	copy(parsed.entropy[:], packed[:entropySize])
-	if parsed.packed()[entropySize] != packed[entropySize] {
+	if parsed.pack()[entropySize] != packed[entropySize] {
 		return RecoveryWords{}, fmt.Errorf("%v: %w", parsed, ErrChecksum)
 	}
 	return parsed, nil
 }
 
-func (w RecoveryWords) packed() [entropySize + 1]byte {
+func (w RecoveryWords) pack() [entropySize + 1]byte {
 	var packed [entropySize + 1]byte
 	copy(packed[:], w.entropy[:])
 	sum := sha256.Sum256(w.entropy[:])
@@ -71,8 +71,8 @@ func (w RecoveryWords) packed() [entropySize + 1]byte {
 }
 
 func (w RecoveryWords) List() []string {
-	packed := w.packed()
-	list := englishWords()
+	packed := w.pack()
+	list := listEnglishWords()
 	out := make([]string, WordCount)
 	for i := range out {
 		out[i] = list[readBits(packed[:], i*wordBits, wordBits)]

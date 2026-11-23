@@ -22,7 +22,7 @@ func (d Deps) createFromRecoveryKey(ctx context.Context, root identitylib.Recove
 	if err := d.keys.SetKey(ctx, keyName, value); err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
 	}
-	return identityOf(record)
+	return toIdentity(record)
 }
 
 func (d Deps) checkAbsent(ctx context.Context) error {
@@ -50,7 +50,7 @@ func (d Deps) buildRecord(root identitylib.RecoveryKey) (identitylib.Record, err
 	if err != nil {
 		return identitylib.Record{}, err
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), entryName(d.names.GetInstanceName()), now)
+	chain, err = chain.AppendDevice(root, device.Public(), normalizeEntryName(d.names.GetInstanceName()), now)
 	if err != nil {
 		return identitylib.Record{}, err
 	}
