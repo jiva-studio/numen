@@ -54,9 +54,6 @@ func (h *Handler) ResolveAddress(
 	if showing.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	if h.resolveAddress == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
-	}
 	resolved, err := h.resolveAddress.Execute(ctx, showing, r.Msg.GetAddress())
 	switch {
 	case errors.Is(err, file.ErrInvalidAddress):

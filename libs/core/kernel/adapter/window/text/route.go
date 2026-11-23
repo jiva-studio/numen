@@ -9,6 +9,6 @@ import (
 )
 
 // NewRoute is the path TextService is served at and the handler that serves it.
-func NewRoute(handler *Handler, options ...connect.HandlerOption) (string, http.Handler) {
+func NewRoute(handler numenv1connect.TextServiceHandler, options ...connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewTextServiceHandler(handler, options...)
 }

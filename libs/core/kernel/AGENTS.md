@@ -89,7 +89,7 @@ No use case exposes a collaborator.
 
 A dependency that may be absent is an optional field or a separate type, and the
 composition root decides it explicitly. A use case does not test a required
-collaborator for nil.
+collaborator for nil. An adapter does not test a required collaborator for nil either: where the installation may lack the whole service, the composition root passes the generated Unimplemented handler of that service instead.
 
 A policy is not a collaborator. How many pages a batch holds, where progress is
 reported, what to do after a write — those are set by an option of the constructor

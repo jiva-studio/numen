@@ -12,6 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
@@ -22,12 +23,30 @@ type Edits struct {
 	Delete *connections.Delete
 }
 
-// Reads are the use cases that read the connections, their kinds and the values of their row fields. A nil
-// RowOptions answers every list with no options.
+// RowOptions refreshes the values a row field can take.
+type RowOptions interface {
+	RefreshOptions(ctx context.Context, connectionID, field string, options map[string]string, operations []string) ([]modelcall.Option, error)
+}
+
+// NewRowOptions is options, or the list with no options where the installation has no provider to ask.
+func NewRowOptions(options *connections.Options) RowOptions {
+	if options == nil {
+		return noRowOptions{}
+	}
+	return options
+}
+
+type noRowOptions struct{}
+
+func (noRowOptions) RefreshOptions(context.Context, string, string, map[string]string, []string) ([]modelcall.Option, error) {
+	return nil, nil
+}
+
+// Reads are the use cases that read the connections, their kinds and the values of their row fields.
 type Reads struct {
 	List       *connections.List
 	ListTypes  *connections.ListTypes
-	RowOptions *connections.Options
+	RowOptions RowOptions
 }
 
 // UseCases are the use cases ProviderConnectionService is answered through.
@@ -154,9 +173,6 @@ func (h *Handler) DeleteProviderConnection(
 func (h *Handler) ListRowOptions(
 	ctx context.Context, r *connect.Request[v1.ListRowOptionsRequest],
 ) (*connect.Response[v1.ListRowOptionsResponse], error) {
-	if h.connections.RowOptions == nil {
-		return connect.NewResponse(&v1.ListRowOptionsResponse{}), nil
-	}
 	listed, err := h.connections.RowOptions.RefreshOptions(ctx, r.Msg.GetConnectionId(), r.Msg.GetField(), r.Msg.GetOptions(), r.Msg.GetOperations())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {

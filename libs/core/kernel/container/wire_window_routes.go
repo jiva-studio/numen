@@ -52,6 +52,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
@@ -83,7 +84,7 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 }
 
 func mountText(w *windowRoutes, vaultDeps vaultWiring) {
-	handler := windowtext.NewHandler(&w.session.Runtime, nil)
+	var handler numenv1connect.TextServiceHandler = numenv1connect.UnimplementedTextServiceHandler{}
 	if text := openFileText(vaultDeps.TextVersions); text != nil {
 		handler = windowtext.NewHandler(&w.session.Runtime, text)
 	}
@@ -188,18 +189,17 @@ func openGetSettings(s settingsWiring) *settings.Get {
 }
 
 func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.PathDialog) {
-	var choosePath *settings.ChoosePluginPath
+	var choice windowsettings.PathChoice = numenv1connect.UnimplementedSettingsServiceHandler{}
 	if dialog != nil {
-		choosePath = openChoosePluginPath(settingsDeps, dialog)
+		choice = windowsettings.NewPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	}
-	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), choosePath)
-	handler := windowsettings.NewHandler(values)
+	handler := windowsettings.NewHandler(windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps)), choice)
 	path, served := windowsettings.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
-	folders := windowsettings.NewPluginFolders(nil, nil)
+	var folders numenv1connect.PluginDataServiceHandler = numenv1connect.UnimplementedPluginDataServiceHandler{}
 	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
 		folders = windowsettings.NewPluginFolders(data, &w.session.Runtime)
 	}
