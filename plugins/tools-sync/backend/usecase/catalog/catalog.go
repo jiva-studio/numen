@@ -121,7 +121,7 @@ func (r reader) fold(ctx context.Context, entries []*syncv1.CatalogEntry) ([]rem
 		if !known {
 			at = len(vaults)
 			positions[key] = at
-			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{}})
+			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{LocalID: "", Name: "", Key: nil}})
 		}
 		vaults[at].last = entry
 	}

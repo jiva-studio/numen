@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -134,7 +135,7 @@ func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.Com
 }
 
 func joinRestore(restore *pendingRestore, chainBytes []byte) (identity.Record, error) {
-	now := time.Now()
+	now := clock.System{}.Now()
 	if len(chainBytes) == 0 {
 		keys, err := identity.NewAccountKeys(rand.Reader)
 		if err != nil {

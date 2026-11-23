@@ -124,6 +124,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	root := hosttest.New(vault)
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
+		Cloud: nil, State: nil, token: atomic.Value{},
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: http.DefaultClient, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,

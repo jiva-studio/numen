@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -77,5 +78,5 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 			return text
 		}
 	}
-	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone})
+	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}})
 }

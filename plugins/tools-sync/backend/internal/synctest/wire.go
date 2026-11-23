@@ -1,4 +1,4 @@
-package fakeserver
+package synctest
 
 import (
 	"google.golang.org/protobuf/proto"

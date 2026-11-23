@@ -27,7 +27,7 @@ type Server struct {
 func NewServer(t *testing.T, clock *Clock, cfg fakeserver.Config) *Server {
 	t.Helper()
 	cfg.Now = clock.Now
-	s := &Server{Fake: fakeserver.New(cfg)}
+	s := &Server{Fake: fakeserver.New(cfg), URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false}
 	served := httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(served.Close)
 	s.URL = served.URL

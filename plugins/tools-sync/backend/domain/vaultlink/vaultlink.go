@@ -4,6 +4,7 @@ package vaultlink
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,4 +71,10 @@ func GetCatalogContext(vaultID []byte, version uint64) []byte {
 // GetStateKeyContext returns the context the vault key in link.json is sealed under.
 func GetStateKeyContext(remoteID []byte) []byte {
 	return append([]byte(stateKeyContext), remoteID...)
+}
+
+// IsRemoteID reports whether text is the hex form of the id of a synced vault.
+func IsRemoteID(text string) bool {
+	_, err := hex.DecodeString(text)
+	return err == nil
 }

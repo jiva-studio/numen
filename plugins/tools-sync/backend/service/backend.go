@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"slices"
 	"strings"
@@ -109,7 +108,7 @@ func (b *Backend) ConnectVault(ctx context.Context, request api.ConnectVaultRequ
 	case api.ModeExisting:
 		input.Mode = catalog.ModeExisting
 	}
-	if _, err := hex.DecodeString(request.RemoteID); err != nil {
+	if !vaultlink.IsRemoteID(request.RemoteID) {
 		return api.ConnectVaultResponse{}, catalog.ErrUnknownRemoteVault
 	}
 	return api.ConnectVaultResponse{}, catalog.NewConnectVault(b.catalog).Execute(ctx, input)

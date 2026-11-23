@@ -169,14 +169,14 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 
 	wire := bytes.Clone(p.server.GetStoredBlobs(t))
 	for _, entry := range p.a.ReadCatalog(t) {
-		raw, err := fakeserver.EncodeMessage(entry)
+		raw, err := synctest.EncodeMessage(entry)
 		if err != nil {
 			t.Fatal(err)
 		}
 		wire = append(wire, raw...)
 	}
 	for _, change := range p.a.ReadChanges(t, p.a.GetRemoteID(t, source)) {
-		raw, err := fakeserver.EncodeMessage(change)
+		raw, err := synctest.EncodeMessage(change)
 		if err != nil {
 			t.Fatal(err)
 		}

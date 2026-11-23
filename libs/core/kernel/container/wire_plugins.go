@@ -204,7 +204,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	callers := hostendpoint.Callers{
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
-		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
+		Activation:   management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		Tools: func() hostendpoint.PluginTools {
 			return tools
@@ -216,6 +216,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	}
 	if processes.Account != nil {
 		callers.Account = processes.Account
+		callers.Restore = processes.Account
 	}
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers))
 	return services

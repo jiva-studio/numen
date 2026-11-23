@@ -25,7 +25,7 @@ type waiter struct {
 
 // NewClock returns a clock that reads now until it is moved.
 func NewClock(now time.Time) *Clock {
-	return &Clock{now: now, arrived: make(chan time.Duration, 64)}
+	return &Clock{mu: sync.Mutex{}, now: now, waiters: nil, arrived: make(chan time.Duration, 64)}
 }
 
 // GetStart is the time the tests start their clocks at.
