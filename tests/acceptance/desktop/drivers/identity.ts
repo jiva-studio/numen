@@ -67,14 +67,14 @@ export const readPdfPages = (pdf: Buffer): string[][] => {
   const pages: string[][] = []
   const text = pdf.toString('latin1')
   for (const found of text.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-    const raw = Buffer.from(found[1] ?? '', 'latin1')
+    const raw = Buffer.from(found[1], 'latin1')
     let content: string
     try {
       content = zlib.inflateSync(raw).toString('latin1')
     } catch {
       content = raw.toString('latin1')
     }
-    const shown = [...content.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g)].map((one) => one[1] ?? '')
+    const shown = [...content.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g)].map((one) => one[1])
     if (shown.length > 0) pages.push(shown)
   }
   return pages
@@ -252,7 +252,7 @@ export class IdentityDriver {
     await this.downloadWith(pickOtherWords(this.words))
   }
 
-  async expectKitSaved(count: number): Promise<void> {
+  expectKitSaved(count: number): void {
     expect(this.kitFile, 'no kit was downloaded').not.toBe('')
     const pdf = fs.readFileSync(this.kitFile)
     expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-')
@@ -260,7 +260,7 @@ export class IdentityDriver {
     for (const sheet of this.sheets) expect(sheet).toHaveLength(WORDS_ON_SHEET)
   }
 
-  async expectKitShowsAccount(): Promise<void> {
+  expectKitShowsAccount(): void {
     expect(this.account, 'no identity was created before').not.toBe('')
     const pages = readPdfPages(fs.readFileSync(this.kitFile))
     expect(pages).toHaveLength(SHEETS_IN_KIT)

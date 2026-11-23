@@ -23,14 +23,18 @@ const (
 	gridColumn = (right - margin) / 3
 )
 
-type color struct{ r, g, b int }
+type color int
 
-var (
-	ink    = color{24, 24, 27}
-	hushed = color{113, 113, 122}
-	rule   = color{212, 212, 216}
-	shade  = color{244, 244, 245}
+const (
+	ink    color = 0x18181B
+	hushed color = 0x71717A
+	rule   color = 0xD4D4D8
+	shade  color = 0xF4F4F5
 )
+
+func (c color) getRed() int   { return int(c>>16) & 0xFF }
+func (c color) getGreen() int { return int(c>>8) & 0xFF }
+func (c color) getBlue() int  { return int(c) & 0xFF }
 
 // Render writes the kit as a PDF: one A4 page for each sheet.
 func Render(kit identitydomain.Kit) ([]byte, error) {
@@ -71,7 +75,7 @@ func (p sheetPage) draw(sheet identitydomain.Sheet) {
 
 func (p sheetPage) setFont(family, style string, size float64, c color) {
 	p.pdf.SetFont(family, style, size)
-	p.pdf.SetTextColor(c.r, c.g, c.b)
+	p.pdf.SetTextColor(c.getRed(), c.getGreen(), c.getBlue())
 }
 
 func (p sheetPage) write(x, y float64, s string) { p.pdf.Text(x, y, p.toCodePage(s)) }
@@ -82,7 +86,7 @@ func (p sheetPage) writeRight(x, y float64, s string) {
 }
 
 func (p sheetPage) drawLine(y float64) {
-	p.pdf.SetDrawColor(rule.r, rule.g, rule.b)
+	p.pdf.SetDrawColor(rule.getRed(), rule.getGreen(), rule.getBlue())
 	p.pdf.SetLineWidth(0.2)
 	p.pdf.Line(margin, y, right, y)
 }
@@ -117,11 +121,11 @@ func (p sheetPage) drawWords(words []string, of string) {
 	p.setFont("Helvetica", "", 9, hushed)
 	p.writeRight(right, 65, fmt.Sprintf("%s · %d words", of, len(words)))
 	height := gridRows*gridRowH + 2*gridPad
-	p.pdf.SetFillColor(shade.r, shade.g, shade.b)
+	p.pdf.SetFillColor(shade.getRed(), shade.getGreen(), shade.getBlue())
 	for row := 1; row < gridRows; row += 2 {
 		p.pdf.Rect(margin, gridTop+gridPad+float64(row)*gridRowH, right-margin, gridRowH, "F")
 	}
-	p.pdf.SetDrawColor(rule.r, rule.g, rule.b)
+	p.pdf.SetDrawColor(rule.getRed(), rule.getGreen(), rule.getBlue())
 	p.pdf.SetLineWidth(0.2)
 	p.pdf.RoundedRect(margin, gridTop, right-margin, height, 2, "1234", "D")
 	for i, word := range words {
@@ -136,7 +140,7 @@ func (p sheetPage) drawWords(words []string, of string) {
 
 func (p sheetPage) drawRule() {
 	const top = 189.0
-	p.pdf.SetFillColor(shade.r, shade.g, shade.b)
+	p.pdf.SetFillColor(shade.getRed(), shade.getGreen(), shade.getBlue())
 	p.pdf.RoundedRect(margin, top, right-margin, 17, 2, "1234", "F")
 	p.setFont("Helvetica", "B", 11, ink)
 	p.write(margin+5, top+7, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.")
@@ -156,7 +160,7 @@ func (p sheetPage) drawKeptAt() {
 	const y = 252.0
 	p.setFont("Helvetica", "B", 10, ink)
 	p.write(margin, y, "Kept at:")
-	p.pdf.SetDrawColor(hushed.r, hushed.g, hushed.b)
+	p.pdf.SetDrawColor(hushed.getRed(), hushed.getGreen(), hushed.getBlue())
 	p.pdf.SetLineWidth(0.2)
 	p.pdf.Line(margin+17, y+0.8, right, y+0.8)
 }
