@@ -42,10 +42,8 @@ func (r reporter) settle(ctx context.Context, err error) error {
 }
 
 func (r reporter) report(ctx context.Context, conflicts, previousConflicts, unverified int) error {
-	for _, key := range []string{keyStorageFull, domain.WarningKey} {
-		if err := r.health.Clear(ctx, key); err != nil {
-			return err
-		}
+	if err := r.health.Clear(ctx, keyStorageFull); err != nil {
+		return err
 	}
 	if err := r.toggle(ctx, keyConflicts, conflicts > 0 || previousConflicts > 0, conflicts, GetConflictText(conflicts)); err != nil {
 		return err

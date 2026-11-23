@@ -48,7 +48,7 @@ describe('the fixtures of the subscription methods', () => {
       phase: 'grace',
       periodEndAt: '2026-11-20T12:00:00Z',
       writesEndAt: '2026-11-27T12:00:00Z',
-      deleteAt: '2027-01-26T12:00:00Z',
+      deleteAt: '2027-01-19T12:00:00Z',
     }
 
     expect(read('GetSubscription.request')).toStrictEqual({})

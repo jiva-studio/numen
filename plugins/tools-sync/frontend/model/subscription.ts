@@ -40,6 +40,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
   const problem = ref('')
   let pollTimer: ReturnType<typeof setTimeout> | undefined
   let limitTimer: ReturnType<typeof setTimeout> | undefined
+  let isDisposed = false
 
   const canBuy = computed(() => status.value === 'ready' && phase.value !== 'active')
   const view = computed(() =>
@@ -96,7 +97,6 @@ export function useSubscription(options: UseSubscriptionOptions) {
   }
 
   function beginPaymentPoll(): void {
-    waiting.value = true
     pollTimer = setTimeout(() => runInBackground(poll(), reportProblem), pollEveryMs)
     limitTimer = setTimeout(() => {
       endPaymentPoll()
@@ -106,18 +106,29 @@ export function useSubscription(options: UseSubscriptionOptions) {
 
   async function startPurchase(): Promise<void> {
     if (waiting.value) return
+    waiting.value = true
     problem.value = ''
     try {
-      const opened = await openExternal(await client.createCheckout())
+      const url = await client.createCheckout()
+      if (isDisposed) return
+      const opened = await openExternal(url)
+      if (isDisposed) return
       if (opened.ok) beginPaymentPoll()
-      else problem.value = words.checkoutNotOpened[opened.error.error]
+      else {
+        waiting.value = false
+        problem.value = words.checkoutNotOpened[opened.error.error]
+      }
     } catch (failure) {
+      waiting.value = false
       if (getFailureCode(failure) === 'already_exists') await load()
       else problem.value = getMessage(failure)
     }
   }
 
-  onScopeDispose(endPaymentPoll)
+  onScopeDispose(() => {
+    isDisposed = true
+    endPaymentPoll()
+  })
 
   return { status, phase, canBuy, waiting, problem, view, load, startPurchase }
 }

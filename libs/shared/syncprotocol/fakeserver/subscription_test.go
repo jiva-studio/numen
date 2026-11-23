@@ -472,7 +472,7 @@ func TestWrites_AreRefusedInReadOnlyOnTheCatalogTheRevisionsAndTheBlobs(t *testi
 
 func TestReads_AreAllowedInEveryPhase(t *testing.T) {
 	t.Parallel()
-	for _, phase := range []string{"grace", "read_only", "deleted", "none"} {
+	for _, phase := range []string{"grace", "read_only", "none"} {
 		b := createBillingEnv(t, true)
 		b.pay()
 		vault := b.env.newVault()
@@ -491,6 +491,23 @@ func TestReads_AreAllowedInEveryPhase(t *testing.T) {
 		if len(changes.GetChanges()) != 1 {
 			t.Errorf("phase %s: GetChanges returned %d changes, want 1", phase, len(changes.GetChanges()))
 		}
+	}
+}
+
+func TestDeleted_RemovesTheVaultsOfTheAccount(t *testing.T) {
+	t.Parallel()
+	b := createBillingEnv(t, true)
+	b.pay()
+	vault := b.env.newVault()
+	b.env.commit(vault, b.env.newFile(vault, newID(16), nil, "Shopping list.md", []byte("milk")))
+	b.setPhase("phase=deleted")
+
+	if got := b.phase(); got != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED {
+		t.Fatalf("phase = %v, want deleted", got)
+	}
+	changes, err := b.env.revision.GetChanges(t.Context(), vault, 0, 0)
+	if err == nil && len(changes.GetChanges()) != 0 {
+		t.Errorf("GetChanges returned %d changes after the deletion, want none", len(changes.GetChanges()))
 	}
 }
 
