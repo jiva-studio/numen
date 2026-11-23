@@ -117,11 +117,10 @@ func newAccountHost(t *testing.T) accountHost {
 	fake := newCallers()
 	fake.confined = true
 	fake.granted = []string{manifest.PermissionIdentity}
-	hosted := fake.asCallers()
-	hosted.Account = operations
-	hosted.Restore = operations
+	endpoint := &Endpoint{callers: fake.asCallers()}
+	calls := AccountCalls{Account: operations, Restore: operations}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{endpoint: &Endpoint{callers: hosted}}))
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return accountHost{operations: operations, callers: fake, client: func(token string) numenv1connect.HostAccountServiceClient {
@@ -249,8 +248,8 @@ func TestThePublicIdentityHasFingerprintsTheSignKeyAndTheChainAndNothingSecret(t
 		!bytes.Equal(got.GetDeviceSignKey(), want.DeviceSignKey) || !bytes.Equal(got.GetChain(), want.Chain) {
 		t.Errorf("response = %v, want %+v", got, want)
 	}
-	if fields := got.ProtoReflect().Descriptor().Fields().Len(); fields != 4 {
-		t.Errorf("the response has %d fields, want the 4 public ones", fields)
+	if fields := got.ProtoReflect().Descriptor().Fields().Len(); fields != 7 {
+		t.Errorf("the response has %d fields, want the 7 public ones: 4 of the identity, the key epoch, the length of the chain and the revoked flag", fields)
 	}
 }
 

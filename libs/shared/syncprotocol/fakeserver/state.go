@@ -30,6 +30,8 @@ var (
 	errQuotaExceeded   = errors.New("the quota is exceeded")
 	errNoUpload        = errors.New("no such upload")
 	errIncomplete      = errors.New("the upload is incomplete")
+	errRevokedAuthor   = errors.New("the author of the entry was revoked")
+	errChainStale      = errors.New("the chain does not extend the stored one")
 )
 
 type vaultState struct {

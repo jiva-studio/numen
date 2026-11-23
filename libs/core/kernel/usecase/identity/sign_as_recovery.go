@@ -7,10 +7,10 @@ import (
 )
 
 // SignAsRecovery signs a message of a plugin with the recovery key of the pending restore.
-type SignAsRecovery struct{ deps Deps }
+type SignAsRecovery struct{ restores *pendingStore }
 
 // NewSignAsRecovery returns the use case that signs with the recovery key.
-func NewSignAsRecovery(d Deps) *SignAsRecovery { return &SignAsRecovery{deps: d} }
+func NewSignAsRecovery(d Deps) *SignAsRecovery { return &SignAsRecovery{restores: d.progress.restores} }
 
 // Execute signs message under the plugin id with the recovery key, only while a restore is pending
 // (ErrNoPendingRestore otherwise).
@@ -18,7 +18,7 @@ func (u *SignAsRecovery) Execute(_ context.Context, pluginID string, message []b
 	if pluginID == "" {
 		return nil, errNoPluginID
 	}
-	restore := u.deps.pending.read()
+	restore := u.restores.read()
 	if restore == nil {
 		return nil, identitydomain.ErrNoPendingRestore
 	}

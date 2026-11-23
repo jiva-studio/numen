@@ -53,10 +53,8 @@ func TestAnAccountCallWithoutTheIdentityPermissionIsRefusedByTheCore(t *testing.
 		"token-vault":    `{"id":"md.numen.vault","name":"Vault","version":"1.0.0","protocol":1,"permissions":["vault:read","vault:write"]}`,
 		"token-none":     `{"id":"md.numen.none","name":"None","version":"1.0.0","protocol":1,"permissions":[]}`,
 	})
-	callers := lentCallers(host)
-	callers.Account = signingAccount{}
-	callers.Restore = signingAccount{}
-	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, callers)
+	accounts := hostendpoint.AccountCalls{Account: signingAccount{}, Restore: signingAccount{}}
+	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host), accounts)
 	if err != nil {
 		t.Fatal(err)
 	}

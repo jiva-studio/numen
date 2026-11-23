@@ -10,6 +10,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { IdentityApi } from '../api/identity'
 import type { IdentityFailure, IdentityInfo, KitProof, RecoveryKit } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
+import { createDeviceStore } from './devices'
 
 const RESTORE_POLL_MS = 1000
 
@@ -24,7 +25,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const load = async (): Promise<void> => {
     const mine = guard.acquireRequest()
     try {
-      const found = await api.getIdentity()
+      const found = await api.account.getIdentity()
       if (!mine.isCurrent) return
       identity.value = found
       notify('')
@@ -36,7 +37,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const generateWords = async (): Promise<Result<readonly string[], string>> => {
     try {
-      return { ok: true, value: await api.generateWords() }
+      return { ok: true, value: await api.account.generateWords() }
     } catch (caughtError) {
       return { ok: false, error: formatError(caughtError) }
     }
@@ -44,7 +45,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const create = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
-      const answer = await api.createIdentity(words)
+      const answer = await api.account.createIdentity(words)
       if (!answer.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
       }
@@ -58,14 +59,14 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const waitForIdentity = async (): Promise<IdentityInfo> => {
     for (;;) {
       await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-      const found = await api.getIdentity().catch(() => undefined)
+      const found = await api.account.getIdentity().catch(() => undefined)
       if (found !== undefined) return found
     }
   }
 
   const restore = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
-      const started = await api.startRestore(words)
+      const started = await api.account.startRestore(words)
       if (!started.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
       }
@@ -79,7 +80,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const remove = async (): Promise<Result<void, string>> => {
     try {
-      await api.deleteIdentity()
+      await api.account.deleteIdentity()
       identity.value = undefined
       return { ok: true, value: undefined }
     } catch (caughtError) {
@@ -102,15 +103,15 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   }
 
   const createKit = (proof: KitProof): Promise<Result<RecoveryKit, string>> =>
-    settle(() => api.createKit(proof), 'words' in proof ? 'words' : 'sheets')
+    settle(() => api.account.createKit(proof), 'words' in proof ? 'words' : 'sheets')
 
   const checkKit = (sheets: readonly (readonly string[])[]): Promise<Result<string, string>> =>
-    settle(() => api.checkKit(sheets), 'sheets')
+    settle(() => api.account.checkKit(sheets), 'sheets')
 
   const restoreFromKit = async (
     sheets: readonly (readonly string[])[],
   ): Promise<Result<IdentityInfo, string>> => {
-    const started = await settle(() => api.startRestoreFromKit(sheets), 'sheets')
+    const started = await settle(() => api.account.startRestoreFromKit(sheets), 'sheets')
     if (!started.ok) return started
     try {
       const found = await waitForIdentity()
@@ -121,8 +122,11 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
+  const devices = createDeviceStore(api, notify)
+
   return {
     identity,
+    devices,
     load,
     generateWords,
     create,

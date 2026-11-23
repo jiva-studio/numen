@@ -11,7 +11,7 @@ import type { ConnectionInfo } from '@/entities/connection'
 import type { InstallationConnections } from '../../types'
 import { useConnectionsPage } from '../../model/useConnectionsPage'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import ConnectionDialog from './ConnectionDialog.vue'
 import ConnectionList from './ConnectionList.vue'
 

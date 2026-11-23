@@ -156,6 +156,8 @@ export const WORDS = {
   kitSheetRule:
     'Any 2 of the 3 sheets restore your account. One sheet alone shows nothing. Keep each sheet in a different safe place.',
   kitSheetWarning: 'Numen cannot restore your account without the words or two sheets.',
+  deviceRevokedNotice: 'This device was revoked',
+  deviceDeleteRevoked: 'Delete identity from this device',
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:

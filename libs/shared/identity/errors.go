@@ -34,3 +34,15 @@ type SheetError struct {
 func (e *SheetError) Error() string { return fmt.Sprintf("sheet %d: %v", e.Position, e.Err) }
 
 func (e *SheetError) Unwrap() error { return e.Err }
+
+var (
+	ErrSelfRevoke     = errors.New("identity: a device cannot revoke itself")
+	ErrUnknownDevice  = errors.New("identity: device is not active in the chain")
+	ErrWrappedSet     = errors.New("identity: the wrapped keys do not name the active devices")
+	ErrTooManyDevices = errors.New("identity: too many active devices")
+	ErrChainTooLong   = errors.New("identity: the chain is too long")
+	ErrNotExtension   = errors.New("identity: the chain does not extend the chain of the state")
+	ErrLinkPayload    = errors.New("identity: not a link text")
+	ErrLinkAuth       = errors.New("identity: link message not authentic")
+	ErrLinkReplay     = errors.New("identity: link message replayed or out of order")
+)

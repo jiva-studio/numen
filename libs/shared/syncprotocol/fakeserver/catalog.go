@@ -24,7 +24,7 @@ func (s *Server) AppendCatalogEntry(_ context.Context, req *connect.Request[sync
 		return nil, err
 	}
 	if err := s.checkEntry(account, entry); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, asInvalid(err)
 	}
 	log := s.catalogs[account]
 	if !isNextEntry(log, entry) {
@@ -42,6 +42,9 @@ func (s *Server) checkEntry(account string, entry *syncv1.CatalogEntry) error {
 		return err
 	}
 	author := entry.GetAuthorDeviceSignKey()
+	if isRevoked(s.chains[account], author) {
+		return connect.NewError(connect.CodePermissionDenied, errRevokedAuthor)
+	}
 	if !isDeviceOf(s.chains[account], author) {
 		return fmt.Errorf("%w: the author is not a device of the account", errInvalidEntry)
 	}

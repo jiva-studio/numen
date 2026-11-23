@@ -5,10 +5,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
@@ -28,6 +30,7 @@ type Catalog interface {
 type Chain interface {
 	GetAccountChain(ctx context.Context) ([]byte, error)
 	SendAccountChain(ctx context.Context) error
+	AppendChain(ctx context.Context, chain []byte) ([]byte, error)
 }
 
 // Revisions is the revisions of the notes of a vault on the server.
@@ -259,4 +262,39 @@ type Hints interface {
 // Waker asks the sync loop to pass over a vault now.
 type Waker interface {
 	Wake(vault domain.VaultID)
+}
+
+// LinkWork is what the core of this device wants carried for its pending link.
+type LinkWork = account.LinkWork
+
+// LinkSide is the end of a link channel a message goes to or is read by.
+type LinkSide = syncclient.LinkSide
+
+const (
+	// LinkSideDisplayer is the device that shows the QR code.
+	LinkSideDisplayer = syncclient.LinkSideDisplayer
+	// LinkSideScanner is the device that reads it.
+	LinkSideScanner = syncclient.LinkSideScanner
+)
+
+// LinkCore is the pending link of the core of this device, as a courier carries it.
+type LinkCore interface {
+	GetLinkWork(ctx context.Context, sinceVersion uint64, wait time.Duration) (account.LinkWork, error)
+	SetLinkChannel(ctx context.Context, id []byte) error
+	PutLinkInbound(ctx context.Context, blob []byte) error
+}
+
+// ChainCore is the chain of this device that the core keeps and the courier publishes.
+type ChainCore interface {
+	GetChainPublish(ctx context.Context) (account.ChainPublish, error)
+	PutChainPublished(ctx context.Context, accepted bool, latest []byte) error
+	AdoptChain(ctx context.Context, chain []byte) error
+}
+
+// Relay is the link relay of the sync server.
+type Relay interface {
+	CreateChannel(ctx context.Context) (syncclient.LinkChannel, error)
+	PostMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
+	WaitMessages(ctx context.Context, channelID []byte, reader syncclient.LinkSide, afterSeq uint32, wait time.Duration) (syncclient.LinkMessages, error)
+	CloseChannel(ctx context.Context, channelID []byte) error
 }

@@ -18,6 +18,9 @@ var (
 // ReadError maps the failure of a call to the server to the errors of the protocol: a server of another version,
 // a refused sign-in, a server that is not there. Any other failure is returned as it came.
 func ReadError(err error) error {
+	if revoked, ok := readDeviceRevoked(err); ok {
+		return revoked
+	}
 	switch {
 	case errors.Is(err, ErrUpdateRequired):
 		return ErrUpdateRequired
@@ -58,6 +61,8 @@ func readDetail(failure *connect.Error) error {
 			continue
 		}
 		switch refusal := value.(type) {
+		case *syncv1.ChainStale:
+			return refusalError{sentinel: ChainStaleError{Head: refusal.GetChain()}, cause: failure}
 		case *syncv1.QuotaExceeded:
 			return QuotaExceededError{Used: refusal.GetUsedBytes(), Limit: refusal.GetLimitBytes()}
 		case *syncv1.BlobNotReady:
@@ -106,4 +111,19 @@ func ReadChangePlanError(err error) error {
 		}
 	}
 	return ReadError(err)
+}
+
+func readDeviceRevoked(err error) (error, bool) {
+	failure, ok := errors.AsType[*connect.Error](err)
+	if !ok {
+		return nil, false
+	}
+	for _, detail := range failure.Details() {
+		if value, valueErr := detail.Value(); valueErr == nil {
+			if revoked, isRevoked := value.(*syncv1.DeviceRevoked); isRevoked {
+				return refusalError{sentinel: DeviceRevokedError{Chain: revoked.GetChain()}, cause: failure}, true
+			}
+		}
+	}
+	return nil, false
 }

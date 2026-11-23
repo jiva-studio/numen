@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/identity.proto.
  */
 export const file_numen_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEidQoMSWRlbnRpdHlJbmZvEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSGgoSZGV2aWNlX2ZpbmdlcnByaW50GAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJEhcKD2RldmljZV9hZGRlZF9hdBgEIAEoCSIUChJHZXRJZGVudGl0eVJlcXVlc3QiPwoTR2V0SWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbyIeChxHZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0IjMKHUdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlEhIKBXdvcmRzGAEgAygJQgOAAQEiKwoVQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEifgoWQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIpChNTdGFydFJlc3RvcmVSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEiUgoUU3RhcnRSZXN0b3JlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiFwoVRGVsZXRlSWRlbnRpdHlSZXF1ZXN0IhgKFkRlbGV0ZUlkZW50aXR5UmVzcG9uc2UiIwoNUmVjb3ZlcnlTaGVldBISCgV3b3JkcxgBIAMoCUIDgAEBIigKElJlY292ZXJ5V29yZHNQcm9vZhISCgV3b3JkcxgBIAMoCUIDgAEBIj4KE1JlY292ZXJ5U2hlZXRzUHJvb2YSJwoGc2hlZXRzGAEgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCJjCgtSZWNvdmVyeUtpdBIOCgZraXRfaWQYASABKAkSGwoTYWNjb3VudF9maW5nZXJwcmludBgCIAEoCRInCgZzaGVldHMYAyADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0IoMBChhDcmVhdGVSZWNvdmVyeUtpdFJlcXVlc3QSLQoFd29yZHMYASABKAsyHC5udW1lbi52MS5SZWNvdmVyeVdvcmRzUHJvb2ZIABIvCgZzaGVldHMYAiABKAsyHS5udW1lbi52MS5SZWNvdmVyeVNoZWV0c1Byb29mSABCBwoFcHJvb2YiewoZQ3JlYXRlUmVjb3ZlcnlLaXRSZXNwb25zZRIiCgNraXQYASABKAsyFS5udW1lbi52MS5SZWNvdmVyeUtpdBIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJCChdDaGVja1JlY292ZXJ5S2l0UmVxdWVzdBInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0InMKGENoZWNrUmVjb3ZlcnlLaXRSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIkUKGlN0YXJ0UmVzdG9yZUZyb21LaXRSZXF1ZXN0EicKBnNoZWV0cxgBIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQiWQobU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJKtECChFJZGVudGl0eUVycm9yQ29kZRIjCh9JREVOVElUWV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJQohSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1dPUkRTEAESJwojSURFTlRJVFlfRVJST1JfQ09ERV9JREVOVElUWV9FWElTVFMQAhIoCiRJREVOVElUWV9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQAxImCiJJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfU0hFRVRTEAQSKQolSURFTlRJVFlfRVJST1JfQ09ERV9OT1RfRU5PVUdIX1NIRUVUUxAFEiUKIUlERU5USVRZX0VSUk9SX0NPREVfT1RIRVJfQUNDT1VOVBAGEiMKH0lERU5USVRZX0VSUk9SX0NPREVfTk9fSURFTlRJVFkQBzLdBQoPSWRlbnRpdHlTZXJ2aWNlEkoKC0dldElkZW50aXR5EhwubnVtZW4udjEuR2V0SWRlbnRpdHlSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0SWRlbnRpdHlSZXNwb25zZRJoChVHZW5lcmF0ZVJlY292ZXJ5V29yZHMSJi5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0GicubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVzcG9uc2USUwoOQ3JlYXRlSWRlbnRpdHkSHy5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlc3BvbnNlEk0KDFN0YXJ0UmVzdG9yZRIdLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlcXVlc3QaHi5udW1lbi52MS5TdGFydFJlc3RvcmVSZXNwb25zZRJTCg5EZWxldGVJZGVudGl0eRIfLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVzcG9uc2USXAoRQ3JlYXRlUmVjb3ZlcnlLaXQSIi5udW1lbi52MS5DcmVhdGVSZWNvdmVyeUtpdFJlcXVlc3QaIy5udW1lbi52MS5DcmVhdGVSZWNvdmVyeUtpdFJlc3BvbnNlElkKEENoZWNrUmVjb3ZlcnlLaXQSIS5udW1lbi52MS5DaGVja1JlY292ZXJ5S2l0UmVxdWVzdBoiLm51bWVuLnYxLkNoZWNrUmVjb3ZlcnlLaXRSZXNwb25zZRJiChNTdGFydFJlc3RvcmVGcm9tS2l0EiQubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlcXVlc3QaJS5udW1lbi52MS5TdGFydFJlc3RvcmVGcm9tS2l0UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEinAEKDElkZW50aXR5SW5mbxIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCRIXCg9kZXZpY2VfYWRkZWRfYXQYBCABKAkSEgoKaXNfcmV2b2tlZBgFIAEoCBIRCglrZXlfZXBvY2gYBiABKA0iFAoSR2V0SWRlbnRpdHlSZXF1ZXN0Ij8KE0dldElkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8iHgocR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdCIzCh1HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRISCgV3b3JkcxgBIAMoCUIDgAEBIisKFUNyZWF0ZUlkZW50aXR5UmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBIn4KFkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiKQoTU3RhcnRSZXN0b3JlUmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBIlIKFFN0YXJ0UmVzdG9yZVJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIhcKFURlbGV0ZUlkZW50aXR5UmVxdWVzdCIYChZEZWxldGVJZGVudGl0eVJlc3BvbnNlIiMKDVJlY292ZXJ5U2hlZXQSEgoFd29yZHMYASADKAlCA4ABASIoChJSZWNvdmVyeVdvcmRzUHJvb2YSEgoFd29yZHMYASADKAlCA4ABASI+ChNSZWNvdmVyeVNoZWV0c1Byb29mEicKBnNoZWV0cxgBIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQiYwoLUmVjb3ZlcnlLaXQSDgoGa2l0X2lkGAEgASgJEhsKE2FjY291bnRfZmluZ2VycHJpbnQYAiABKAkSJwoGc2hlZXRzGAMgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCKDAQoYQ3JlYXRlUmVjb3ZlcnlLaXRSZXF1ZXN0Ei0KBXdvcmRzGAEgASgLMhwubnVtZW4udjEuUmVjb3ZlcnlXb3Jkc1Byb29mSAASLwoGc2hlZXRzGAIgASgLMh0ubnVtZW4udjEuUmVjb3ZlcnlTaGVldHNQcm9vZkgAQgcKBXByb29mInsKGUNyZWF0ZVJlY292ZXJ5S2l0UmVzcG9uc2USIgoDa2l0GAEgASgLMhUubnVtZW4udjEuUmVjb3ZlcnlLaXQSKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoXQ2hlY2tSZWNvdmVyeUtpdFJlcXVlc3QSJwoGc2hlZXRzGAEgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCJzChhDaGVja1JlY292ZXJ5S2l0UmVzcG9uc2USGwoTYWNjb3VudF9maW5nZXJwcmludBgBIAEoCRIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJFChpTdGFydFJlc3RvcmVGcm9tS2l0UmVxdWVzdBInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0IlkKG1N0YXJ0UmVzdG9yZUZyb21LaXRSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSLgAgoITGlua0luZm8SIgoFcGhhc2UYASABKA4yEy5udW1lbi52MS5MaW5rUGhhc2USIAoEbW9kZRgCIAEoDjISLm51bWVuLnYxLkxpbmtNb2RlEiAKBHJvbGUYAyABKA4yEi5udW1lbi52MS5MaW5rUm9sZRIPCgdxcl90ZXh0GAQgASgJEhEKBGNvZGUYBSABKAlCA4ABARIRCglwZWVyX25hbWUYBiABKAkSGAoQcGVlcl9maW5nZXJwcmludBgHIAEoCRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAggASgJEhIKCnRyaWVzX2xlZnQYCSABKA0SJAoGcmVhc29uGAogASgOMhQubnVtZW4udjEuTGlua1JlYXNvbhITCgtkZXZpY2VfbmFtZRgLIAEoCRIaChJkZXZpY2VfZmluZ2VycHJpbnQYDCABKAkSEwoLaXNfYXBwcm92ZWQYDSABKAgibAoQU3RhcnRMaW5rUmVxdWVzdBIgCgRyb2xlGAEgASgOMhIubnVtZW4udjEuTGlua1JvbGUSIAoEbW9kZRgCIAEoDjISLm51bWVuLnYxLkxpbmtNb2RlEhQKDHNjYW5uZWRfdGV4dBgDIAEoCSJxChFTdGFydExpbmtSZXNwb25zZRIgCgRsaW5rGAEgASgLMhIubnVtZW4udjEuTGlua0luZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiEAoOR2V0TGlua1JlcXVlc3QibwoPR2V0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIkChFEZWNpZGVMaW5rUmVxdWVzdBIPCgdhcHByb3ZlGAEgASgIIlAKEkRlY2lkZUxpbmtSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSIpChRFbnRlckxpbmtDb2RlUmVxdWVzdBIRCgRjb2RlGAEgASgJQgOAAQEiUwoVRW50ZXJMaW5rQ29kZVJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIiUKEkNvbmZpcm1Kb2luUmVxdWVzdBIPCgdhcHByb3ZlGAEgASgIIlEKE0NvbmZpcm1Kb2luUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiEwoRQ2FuY2VsTGlua1JlcXVlc3QiUAoSQ2FuY2VsTGlua1Jlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJImYKCkRldmljZUluZm8SDAoEbmFtZRgBIAEoCRITCgtmaW5nZXJwcmludBgCIAEoCRIQCghhZGRlZF9hdBgDIAEoCRIPCgdpc190aGlzGAQgASgIEhIKCmlzX3Jldm9rZWQYBSABKAgiFAoSTGlzdERldmljZXNSZXF1ZXN0IngKE0xpc3REZXZpY2VzUmVzcG9uc2USJQoHZGV2aWNlcxgBIAMoCzIULm51bWVuLnYxLkRldmljZUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiKgoTUmV2b2tlRGV2aWNlUmVxdWVzdBITCgtmaW5nZXJwcmludBgBIAEoCSJSChRSZXZva2VEZXZpY2VSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSq0BQoRSWRlbnRpdHlFcnJvckNvZGUSIwofSURFTlRJVFlfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIUlERU5USVRZX0VSUk9SX0NPREVfSU5WQUxJRF9XT1JEUxABEicKI0lERU5USVRZX0VSUk9SX0NPREVfSURFTlRJVFlfRVhJU1RTEAISKAokSURFTlRJVFlfRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAMSJgoiSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1NIRUVUUxAEEikKJUlERU5USVRZX0VSUk9SX0NPREVfTk9UX0VOT1VHSF9TSEVFVFMQBRIlCiFJREVOVElUWV9FUlJPUl9DT0RFX09USEVSX0FDQ09VTlQQBhIjCh9JREVOVElUWV9FUlJPUl9DT0RFX05PX0lERU5USVRZEAcSIwofSURFTlRJVFlfRVJST1JfQ09ERV9MSU5LX0FDVElWRRAIEh8KG0lERU5USVRZX0VSUk9SX0NPREVfTk9fTElOSxAJEikKJUlERU5USVRZX0VSUk9SX0NPREVfTElOS19URVhUX0lOVkFMSUQQChIjCh9JREVOVElUWV9FUlJPUl9DT0RFX0xBU1RfREVWSUNFEAsSJAogSURFTlRJVFlfRVJST1JfQ09ERV9SRVZPS0VfUkFDRUQQDBIvCitJREVOVElUWV9FUlJPUl9DT0RFX05PVF9BTExPV0VEX1RISVNfREVWSUNFEA0SJgoiSURFTlRJVFlfRVJST1JfQ09ERV9ERVZJQ0VfUkVWT0tFRBAOEiYKIklERU5USVRZX0VSUk9SX0NPREVfVU5LTk9XTl9ERVZJQ0UQDxIkCiBJREVOVElUWV9FUlJPUl9DT0RFX0NPREVfSU5WQUxJRBAQKk8KCExpbmtSb2xlEhkKFUxJTktfUk9MRV9VTlNQRUNJRklFRBAAEhIKDkxJTktfUk9MRV9IT1NUEAESFAoQTElOS19ST0xFX0pPSU5FUhACKk0KCExpbmtNb2RlEhkKFUxJTktfTU9ERV9VTlNQRUNJRklFRBAAEhIKDkxJTktfTU9ERV9TSE9XEAESEgoOTElOS19NT0RFX1NDQU4QAiqwAgoJTGlua1BoYXNlEhoKFkxJTktfUEhBU0VfVU5TUEVDSUZJRUQQABIiCh5MSU5LX1BIQVNFX1dBSVRJTkdfRk9SX0NIQU5ORUwQARIfChtMSU5LX1BIQVNFX1dBSVRJTkdfRk9SX1BFRVIQAhIbChdMSU5LX1BIQVNFX0NPTkZJUk1fUEVFUhADEiEKHUxJTktfUEhBU0VfV0FJVElOR19GT1JfQUNDRVBUEAQSGQoVTElOS19QSEFTRV9FTlRFUl9DT0RFEAUSGQoVTElOS19QSEFTRV9QVUJMSVNISU5HEAYSHgoaTElOS19QSEFTRV9DT05GSVJNX0FDQ09VTlQQBxIVChFMSU5LX1BIQVNFX0xJTktFRBAIEhUKEUxJTktfUEhBU0VfRkFJTEVEEAkqkwIKCkxpbmtSZWFzb24SGwoXTElOS19SRUFTT05fVU5TUEVDSUZJRUQQABIYChRMSU5LX1JFQVNPTl9ERUNMSU5FRBABEiMKH0xJTktfUkVBU09OX0RFVklDRV9IQVNfSURFTlRJVFkQAhIaChZMSU5LX1JFQVNPTl9XUk9OR19DT0RFEAMSJAogTElOS19SRUFTT05fVE9PX01BTllfV1JPTkdfQ09ERVMQBBIbChdMSU5LX1JFQVNPTl9TVEFMRV9DSEFJThAFEhgKFExJTktfUkVBU09OX0NBTkNFTEVEEAYSFwoTTElOS19SRUFTT05fRVhQSVJFRBAHEhcKE0xJTktfUkVBU09OX0lOVkFMSUQQCDKuCgoPSWRlbnRpdHlTZXJ2aWNlEkoKC0dldElkZW50aXR5EhwubnVtZW4udjEuR2V0SWRlbnRpdHlSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0SWRlbnRpdHlSZXNwb25zZRJoChVHZW5lcmF0ZVJlY292ZXJ5V29yZHMSJi5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0GicubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVzcG9uc2USUwoOQ3JlYXRlSWRlbnRpdHkSHy5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlc3BvbnNlEk0KDFN0YXJ0UmVzdG9yZRIdLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlcXVlc3QaHi5udW1lbi52MS5TdGFydFJlc3RvcmVSZXNwb25zZRJTCg5EZWxldGVJZGVudGl0eRIfLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVzcG9uc2USXAoRQ3JlYXRlUmVjb3ZlcnlLaXQSIi5udW1lbi52MS5DcmVhdGVSZWNvdmVyeUtpdFJlcXVlc3QaIy5udW1lbi52MS5DcmVhdGVSZWNvdmVyeUtpdFJlc3BvbnNlElkKEENoZWNrUmVjb3ZlcnlLaXQSIS5udW1lbi52MS5DaGVja1JlY292ZXJ5S2l0UmVxdWVzdBoiLm51bWVuLnYxLkNoZWNrUmVjb3ZlcnlLaXRSZXNwb25zZRJiChNTdGFydFJlc3RvcmVGcm9tS2l0EiQubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlcXVlc3QaJS5udW1lbi52MS5TdGFydFJlc3RvcmVGcm9tS2l0UmVzcG9uc2USRAoJU3RhcnRMaW5rEhoubnVtZW4udjEuU3RhcnRMaW5rUmVxdWVzdBobLm51bWVuLnYxLlN0YXJ0TGlua1Jlc3BvbnNlEj4KB0dldExpbmsSGC5udW1lbi52MS5HZXRMaW5rUmVxdWVzdBoZLm51bWVuLnYxLkdldExpbmtSZXNwb25zZRJHCgpEZWNpZGVMaW5rEhsubnVtZW4udjEuRGVjaWRlTGlua1JlcXVlc3QaHC5udW1lbi52MS5EZWNpZGVMaW5rUmVzcG9uc2USUAoNRW50ZXJMaW5rQ29kZRIeLm51bWVuLnYxLkVudGVyTGlua0NvZGVSZXF1ZXN0Gh8ubnVtZW4udjEuRW50ZXJMaW5rQ29kZVJlc3BvbnNlEkoKC0NvbmZpcm1Kb2luEhwubnVtZW4udjEuQ29uZmlybUpvaW5SZXF1ZXN0Gh0ubnVtZW4udjEuQ29uZmlybUpvaW5SZXNwb25zZRJHCgpDYW5jZWxMaW5rEhsubnVtZW4udjEuQ2FuY2VsTGlua1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxMaW5rUmVzcG9uc2USSgoLTGlzdERldmljZXMSHC5udW1lbi52MS5MaXN0RGV2aWNlc1JlcXVlc3QaHS5udW1lbi52MS5MaXN0RGV2aWNlc1Jlc3BvbnNlEk0KDFJldm9rZURldmljZRIdLm51bWVuLnYxLlJldm9rZURldmljZVJlcXVlc3QaHi5udW1lbi52MS5SZXZva2VEZXZpY2VSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * IdentityInfo is what a person can see of the identity of this device.
@@ -43,6 +43,20 @@ export type IdentityInfo = Message<"numen.v1.IdentityInfo"> & {
    * @generated from field: string device_added_at = 4;
    */
   deviceAddedAt: string;
+
+  /**
+   * is_revoked is true when the account revoked this device.
+   *
+   * @generated from field: bool is_revoked = 5;
+   */
+  isRevoked: boolean;
+
+  /**
+   * key_epoch is the epoch of the account keys of this device, 0 until a device is revoked.
+   *
+   * @generated from field: uint32 key_epoch = 6;
+   */
+  keyEpoch: number;
 };
 
 /**
@@ -463,6 +477,463 @@ export const StartRestoreFromKitResponseSchema: GenMessage<StartRestoreFromKitRe
   messageDesc(file_numen_v1_identity, 20);
 
 /**
+ * LinkInfo is what a window shows of the link in progress. It holds no key.
+ *
+ * @generated from message numen.v1.LinkInfo
+ */
+export type LinkInfo = Message<"numen.v1.LinkInfo"> & {
+  /**
+   * @generated from field: numen.v1.LinkPhase phase = 1;
+   */
+  phase: LinkPhase;
+
+  /**
+   * @generated from field: numen.v1.LinkMode mode = 2;
+   */
+  mode: LinkMode;
+
+  /**
+   * @generated from field: numen.v1.LinkRole role = 3;
+   */
+  role: LinkRole;
+
+  /**
+   * qr_text is the text of the QR code, set on the device that shows it.
+   *
+   * @generated from field: string qr_text = 4;
+   */
+  qrText: string;
+
+  /**
+   * code is the confirmation code, set on the host that reads the QR code of a new device.
+   *
+   * @generated from field: string code = 5;
+   */
+  code: string;
+
+  /**
+   * @generated from field: string peer_name = 6;
+   */
+  peerName: string;
+
+  /**
+   * @generated from field: string peer_fingerprint = 7;
+   */
+  peerFingerprint: string;
+
+  /**
+   * @generated from field: string account_fingerprint = 8;
+   */
+  accountFingerprint: string;
+
+  /**
+   * @generated from field: uint32 tries_left = 9;
+   */
+  triesLeft: number;
+
+  /**
+   * @generated from field: numen.v1.LinkReason reason = 10;
+   */
+  reason: LinkReason;
+
+  /**
+   * device_name and device_fingerprint name this device.
+   *
+   * @generated from field: string device_name = 11;
+   */
+  deviceName: string;
+
+  /**
+   * @generated from field: string device_fingerprint = 12;
+   */
+  deviceFingerprint: string;
+
+  /**
+   * is_approved is true once the person approved the new device and the host waits for the code.
+   *
+   * @generated from field: bool is_approved = 13;
+   */
+  isApproved: boolean;
+};
+
+/**
+ * Describes the message numen.v1.LinkInfo.
+ * Use `create(LinkInfoSchema)` to create a new message.
+ */
+export const LinkInfoSchema: GenMessage<LinkInfo> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 21);
+
+/**
+ * @generated from message numen.v1.StartLinkRequest
+ */
+export type StartLinkRequest = Message<"numen.v1.StartLinkRequest"> & {
+  /**
+   * @generated from field: numen.v1.LinkRole role = 1;
+   */
+  role: LinkRole;
+
+  /**
+   * @generated from field: numen.v1.LinkMode mode = 2;
+   */
+  mode: LinkMode;
+
+  /**
+   * scanned_text is the text of the QR code in mode scan.
+   *
+   * @generated from field: string scanned_text = 3;
+   */
+  scannedText: string;
+};
+
+/**
+ * Describes the message numen.v1.StartLinkRequest.
+ * Use `create(StartLinkRequestSchema)` to create a new message.
+ */
+export const StartLinkRequestSchema: GenMessage<StartLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 22);
+
+/**
+ * @generated from message numen.v1.StartLinkResponse
+ */
+export type StartLinkResponse = Message<"numen.v1.StartLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.LinkInfo link = 1;
+   */
+  link?: LinkInfo | undefined;
+
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.StartLinkResponse.
+ * Use `create(StartLinkResponseSchema)` to create a new message.
+ */
+export const StartLinkResponseSchema: GenMessage<StartLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 23);
+
+/**
+ * @generated from message numen.v1.GetLinkRequest
+ */
+export type GetLinkRequest = Message<"numen.v1.GetLinkRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetLinkRequest.
+ * Use `create(GetLinkRequestSchema)` to create a new message.
+ */
+export const GetLinkRequestSchema: GenMessage<GetLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 24);
+
+/**
+ * @generated from message numen.v1.GetLinkResponse
+ */
+export type GetLinkResponse = Message<"numen.v1.GetLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.LinkInfo link = 1;
+   */
+  link?: LinkInfo | undefined;
+
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.GetLinkResponse.
+ * Use `create(GetLinkResponseSchema)` to create a new message.
+ */
+export const GetLinkResponseSchema: GenMessage<GetLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 25);
+
+/**
+ * @generated from message numen.v1.DecideLinkRequest
+ */
+export type DecideLinkRequest = Message<"numen.v1.DecideLinkRequest"> & {
+  /**
+   * @generated from field: bool approve = 1;
+   */
+  approve: boolean;
+};
+
+/**
+ * Describes the message numen.v1.DecideLinkRequest.
+ * Use `create(DecideLinkRequestSchema)` to create a new message.
+ */
+export const DecideLinkRequestSchema: GenMessage<DecideLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 26);
+
+/**
+ * @generated from message numen.v1.DecideLinkResponse
+ */
+export type DecideLinkResponse = Message<"numen.v1.DecideLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.DecideLinkResponse.
+ * Use `create(DecideLinkResponseSchema)` to create a new message.
+ */
+export const DecideLinkResponseSchema: GenMessage<DecideLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 27);
+
+/**
+ * @generated from message numen.v1.EnterLinkCodeRequest
+ */
+export type EnterLinkCodeRequest = Message<"numen.v1.EnterLinkCodeRequest"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message numen.v1.EnterLinkCodeRequest.
+ * Use `create(EnterLinkCodeRequestSchema)` to create a new message.
+ */
+export const EnterLinkCodeRequestSchema: GenMessage<EnterLinkCodeRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 28);
+
+/**
+ * @generated from message numen.v1.EnterLinkCodeResponse
+ */
+export type EnterLinkCodeResponse = Message<"numen.v1.EnterLinkCodeResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.EnterLinkCodeResponse.
+ * Use `create(EnterLinkCodeResponseSchema)` to create a new message.
+ */
+export const EnterLinkCodeResponseSchema: GenMessage<EnterLinkCodeResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 29);
+
+/**
+ * @generated from message numen.v1.ConfirmJoinRequest
+ */
+export type ConfirmJoinRequest = Message<"numen.v1.ConfirmJoinRequest"> & {
+  /**
+   * @generated from field: bool approve = 1;
+   */
+  approve: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ConfirmJoinRequest.
+ * Use `create(ConfirmJoinRequestSchema)` to create a new message.
+ */
+export const ConfirmJoinRequestSchema: GenMessage<ConfirmJoinRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 30);
+
+/**
+ * @generated from message numen.v1.ConfirmJoinResponse
+ */
+export type ConfirmJoinResponse = Message<"numen.v1.ConfirmJoinResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.ConfirmJoinResponse.
+ * Use `create(ConfirmJoinResponseSchema)` to create a new message.
+ */
+export const ConfirmJoinResponseSchema: GenMessage<ConfirmJoinResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 31);
+
+/**
+ * @generated from message numen.v1.CancelLinkRequest
+ */
+export type CancelLinkRequest = Message<"numen.v1.CancelLinkRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.CancelLinkRequest.
+ * Use `create(CancelLinkRequestSchema)` to create a new message.
+ */
+export const CancelLinkRequestSchema: GenMessage<CancelLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 32);
+
+/**
+ * @generated from message numen.v1.CancelLinkResponse
+ */
+export type CancelLinkResponse = Message<"numen.v1.CancelLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.CancelLinkResponse.
+ * Use `create(CancelLinkResponseSchema)` to create a new message.
+ */
+export const CancelLinkResponseSchema: GenMessage<CancelLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 33);
+
+/**
+ * DeviceInfo is one device of the account.
+ *
+ * @generated from message numen.v1.DeviceInfo
+ */
+export type DeviceInfo = Message<"numen.v1.DeviceInfo"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string fingerprint = 2;
+   */
+  fingerprint: string;
+
+  /**
+   * added_at is RFC 3339 in UTC.
+   *
+   * @generated from field: string added_at = 3;
+   */
+  addedAt: string;
+
+  /**
+   * @generated from field: bool is_this = 4;
+   */
+  isThis: boolean;
+
+  /**
+   * @generated from field: bool is_revoked = 5;
+   */
+  isRevoked: boolean;
+};
+
+/**
+ * Describes the message numen.v1.DeviceInfo.
+ * Use `create(DeviceInfoSchema)` to create a new message.
+ */
+export const DeviceInfoSchema: GenMessage<DeviceInfo> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 34);
+
+/**
+ * @generated from message numen.v1.ListDevicesRequest
+ */
+export type ListDevicesRequest = Message<"numen.v1.ListDevicesRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ListDevicesRequest.
+ * Use `create(ListDevicesRequestSchema)` to create a new message.
+ */
+export const ListDevicesRequestSchema: GenMessage<ListDevicesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 35);
+
+/**
+ * @generated from message numen.v1.ListDevicesResponse
+ */
+export type ListDevicesResponse = Message<"numen.v1.ListDevicesResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.DeviceInfo devices = 1;
+   */
+  devices: DeviceInfo[];
+
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.ListDevicesResponse.
+ * Use `create(ListDevicesResponseSchema)` to create a new message.
+ */
+export const ListDevicesResponseSchema: GenMessage<ListDevicesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 36);
+
+/**
+ * @generated from message numen.v1.RevokeDeviceRequest
+ */
+export type RevokeDeviceRequest = Message<"numen.v1.RevokeDeviceRequest"> & {
+  /**
+   * fingerprint is the fingerprint of the device to revoke, as ListDevices shows it.
+   *
+   * @generated from field: string fingerprint = 1;
+   */
+  fingerprint: string;
+};
+
+/**
+ * Describes the message numen.v1.RevokeDeviceRequest.
+ * Use `create(RevokeDeviceRequestSchema)` to create a new message.
+ */
+export const RevokeDeviceRequestSchema: GenMessage<RevokeDeviceRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 37);
+
+/**
+ * @generated from message numen.v1.RevokeDeviceResponse
+ */
+export type RevokeDeviceResponse = Message<"numen.v1.RevokeDeviceResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.RevokeDeviceResponse.
+ * Use `create(RevokeDeviceResponseSchema)` to create a new message.
+ */
+export const RevokeDeviceResponseSchema: GenMessage<RevokeDeviceResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 38);
+
+/**
  * IdentityErrorCode is why an identity call was refused. The zero value is a call that
  * succeeded.
  *
@@ -519,11 +990,74 @@ export enum IdentityErrorCode {
   OTHER_ACCOUNT = 6,
 
   /**
-   * IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity.
+   * IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity, or a call that needs one on a device with none.
    *
    * @generated from enum value: IDENTITY_ERROR_CODE_NO_IDENTITY = 7;
    */
   NO_IDENTITY = 7,
+
+  /**
+   * IDENTITY_ERROR_CODE_LINK_ACTIVE is a link that already runs on this device.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_LINK_ACTIVE = 8;
+   */
+  LINK_ACTIVE = 8,
+
+  /**
+   * IDENTITY_ERROR_CODE_NO_LINK is a call that needs a link and finds none.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_NO_LINK = 9;
+   */
+  NO_LINK = 9,
+
+  /**
+   * IDENTITY_ERROR_CODE_LINK_TEXT_INVALID is a text that is not the text of a QR code of a link.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_LINK_TEXT_INVALID = 10;
+   */
+  LINK_TEXT_INVALID = 10,
+
+  /**
+   * IDENTITY_ERROR_CODE_LAST_DEVICE is a revoke that would leave the account with no device.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_LAST_DEVICE = 11;
+   */
+  LAST_DEVICE = 11,
+
+  /**
+   * IDENTITY_ERROR_CODE_REVOKE_RACED is a revoke that was dropped because a device was added by the device to revoke.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_REVOKE_RACED = 12;
+   */
+  REVOKE_RACED = 12,
+
+  /**
+   * IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE is a revoke of the device it was asked on.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE = 13;
+   */
+  NOT_ALLOWED_THIS_DEVICE = 13,
+
+  /**
+   * IDENTITY_ERROR_CODE_DEVICE_REVOKED is a call that the account refuses to a revoked device.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_DEVICE_REVOKED = 14;
+   */
+  DEVICE_REVOKED = 14,
+
+  /**
+   * IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
+   */
+  UNKNOWN_DEVICE = 15,
+
+  /**
+   * IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
+   *
+   * @generated from enum value: IDENTITY_ERROR_CODE_CODE_INVALID = 16;
+   */
+  CODE_INVALID = 16,
 }
 
 /**
@@ -531,6 +1065,189 @@ export enum IdentityErrorCode {
  */
 export const IdentityErrorCodeSchema: GenEnum<IdentityErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_identity, 0);
+
+/**
+ * @generated from enum numen.v1.LinkRole
+ */
+export enum LinkRole {
+  /**
+   * @generated from enum value: LINK_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * LINK_ROLE_HOST is a device that has the account and links another to it.
+   *
+   * @generated from enum value: LINK_ROLE_HOST = 1;
+   */
+  HOST = 1,
+
+  /**
+   * LINK_ROLE_JOINER is a device with no identity that joins an account.
+   *
+   * @generated from enum value: LINK_ROLE_JOINER = 2;
+   */
+  JOINER = 2,
+}
+
+/**
+ * Describes the enum numen.v1.LinkRole.
+ */
+export const LinkRoleSchema: GenEnum<LinkRole> = /*@__PURE__*/
+  enumDesc(file_numen_v1_identity, 1);
+
+/**
+ * @generated from enum numen.v1.LinkMode
+ */
+export enum LinkMode {
+  /**
+   * @generated from enum value: LINK_MODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * LINK_MODE_SHOW is the device that shows the QR code.
+   *
+   * @generated from enum value: LINK_MODE_SHOW = 1;
+   */
+  SHOW = 1,
+
+  /**
+   * LINK_MODE_SCAN is the device that reads the QR code.
+   *
+   * @generated from enum value: LINK_MODE_SCAN = 2;
+   */
+  SCAN = 2,
+}
+
+/**
+ * Describes the enum numen.v1.LinkMode.
+ */
+export const LinkModeSchema: GenEnum<LinkMode> = /*@__PURE__*/
+  enumDesc(file_numen_v1_identity, 2);
+
+/**
+ * @generated from enum numen.v1.LinkPhase
+ */
+export enum LinkPhase {
+  /**
+   * @generated from enum value: LINK_PHASE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: LINK_PHASE_WAITING_FOR_CHANNEL = 1;
+   */
+  WAITING_FOR_CHANNEL = 1,
+
+  /**
+   * LINK_PHASE_WAITING_FOR_PEER is the QR code on screen, or the first message sent.
+   *
+   * @generated from enum value: LINK_PHASE_WAITING_FOR_PEER = 2;
+   */
+  WAITING_FOR_PEER = 2,
+
+  /**
+   * LINK_PHASE_CONFIRM_PEER is the host asking the person about the new device.
+   *
+   * @generated from enum value: LINK_PHASE_CONFIRM_PEER = 3;
+   */
+  CONFIRM_PEER = 3,
+
+  /**
+   * @generated from enum value: LINK_PHASE_WAITING_FOR_ACCEPT = 4;
+   */
+  WAITING_FOR_ACCEPT = 4,
+
+  /**
+   * @generated from enum value: LINK_PHASE_ENTER_CODE = 5;
+   */
+  ENTER_CODE = 5,
+
+  /**
+   * @generated from enum value: LINK_PHASE_PUBLISHING = 6;
+   */
+  PUBLISHING = 6,
+
+  /**
+   * LINK_PHASE_CONFIRM_ACCOUNT is the new device asking the person about the account; the host waits for the answer.
+   *
+   * @generated from enum value: LINK_PHASE_CONFIRM_ACCOUNT = 7;
+   */
+  CONFIRM_ACCOUNT = 7,
+
+  /**
+   * @generated from enum value: LINK_PHASE_LINKED = 8;
+   */
+  LINKED = 8,
+
+  /**
+   * @generated from enum value: LINK_PHASE_FAILED = 9;
+   */
+  FAILED = 9,
+}
+
+/**
+ * Describes the enum numen.v1.LinkPhase.
+ */
+export const LinkPhaseSchema: GenEnum<LinkPhase> = /*@__PURE__*/
+  enumDesc(file_numen_v1_identity, 3);
+
+/**
+ * @generated from enum numen.v1.LinkReason
+ */
+export enum LinkReason {
+  /**
+   * @generated from enum value: LINK_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: LINK_REASON_DECLINED = 1;
+   */
+  DECLINED = 1,
+
+  /**
+   * @generated from enum value: LINK_REASON_DEVICE_HAS_IDENTITY = 2;
+   */
+  DEVICE_HAS_IDENTITY = 2,
+
+  /**
+   * @generated from enum value: LINK_REASON_WRONG_CODE = 3;
+   */
+  WRONG_CODE = 3,
+
+  /**
+   * @generated from enum value: LINK_REASON_TOO_MANY_WRONG_CODES = 4;
+   */
+  TOO_MANY_WRONG_CODES = 4,
+
+  /**
+   * @generated from enum value: LINK_REASON_STALE_CHAIN = 5;
+   */
+  STALE_CHAIN = 5,
+
+  /**
+   * @generated from enum value: LINK_REASON_CANCELED = 6;
+   */
+  CANCELED = 6,
+
+  /**
+   * @generated from enum value: LINK_REASON_EXPIRED = 7;
+   */
+  EXPIRED = 7,
+
+  /**
+   * @generated from enum value: LINK_REASON_INVALID = 8;
+   */
+  INVALID = 8,
+}
+
+/**
+ * Describes the enum numen.v1.LinkReason.
+ */
+export const LinkReasonSchema: GenEnum<LinkReason> = /*@__PURE__*/
+  enumDesc(file_numen_v1_identity, 4);
 
 /**
  * IdentityService manages the account identity of this device. No secret key reaches the window; the
@@ -624,6 +1341,87 @@ export const IdentityService: GenService<{
     methodKind: "unary";
     input: typeof StartRestoreFromKitRequestSchema;
     output: typeof StartRestoreFromKitResponseSchema;
+  },
+  /**
+   * StartLink starts a link of this device to another: this device shows a QR code or reads the text of one. A
+   * device that has the account is the host, a device with none is the joiner. Only one link runs at a time.
+   *
+   * @generated from rpc numen.v1.IdentityService.StartLink
+   */
+  startLink: {
+    methodKind: "unary";
+    input: typeof StartLinkRequestSchema;
+    output: typeof StartLinkResponseSchema;
+  },
+  /**
+   * GetLink returns the link in progress. Poll it while the link dialog is open.
+   *
+   * @generated from rpc numen.v1.IdentityService.GetLink
+   */
+  getLink: {
+    methodKind: "unary";
+    input: typeof GetLinkRequestSchema;
+    output: typeof GetLinkResponseSchema;
+  },
+  /**
+   * DecideLink is the answer of the person on the host to the new device.
+   *
+   * @generated from rpc numen.v1.IdentityService.DecideLink
+   */
+  decideLink: {
+    methodKind: "unary";
+    input: typeof DecideLinkRequestSchema;
+    output: typeof DecideLinkResponseSchema;
+  },
+  /**
+   * EnterLinkCode sends the confirmation code the person read on the host.
+   *
+   * @generated from rpc numen.v1.IdentityService.EnterLinkCode
+   */
+  enterLinkCode: {
+    methodKind: "unary";
+    input: typeof EnterLinkCodeRequestSchema;
+    output: typeof EnterLinkCodeResponseSchema;
+  },
+  /**
+   * ConfirmJoin is the answer of the person on the new device to the account it is offered.
+   *
+   * @generated from rpc numen.v1.IdentityService.ConfirmJoin
+   */
+  confirmJoin: {
+    methodKind: "unary";
+    input: typeof ConfirmJoinRequestSchema;
+    output: typeof ConfirmJoinResponseSchema;
+  },
+  /**
+   * CancelLink ends the link in progress.
+   *
+   * @generated from rpc numen.v1.IdentityService.CancelLink
+   */
+  cancelLink: {
+    methodKind: "unary";
+    input: typeof CancelLinkRequestSchema;
+    output: typeof CancelLinkResponseSchema;
+  },
+  /**
+   * ListDevices lists the devices of the account: the active ones, then the revoked ones.
+   *
+   * @generated from rpc numen.v1.IdentityService.ListDevices
+   */
+  listDevices: {
+    methodKind: "unary";
+    input: typeof ListDevicesRequestSchema;
+    output: typeof ListDevicesResponseSchema;
+  },
+  /**
+   * RevokeDevice removes a device from the account; its keys stop working for new notes.
+   *
+   * @generated from rpc numen.v1.IdentityService.RevokeDevice
+   */
+  revokeDevice: {
+    methodKind: "unary";
+    input: typeof RevokeDeviceRequestSchema;
+    output: typeof RevokeDeviceResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_identity, 0);

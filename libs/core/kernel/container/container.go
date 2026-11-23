@@ -69,6 +69,7 @@ type Config struct {
 type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
+	ChainStore    identity.ChainStore
 	ErrorHandler  window.ErrorHandler
 	Now           installationClock
 	Chunks        *note.ChunkTokens
@@ -81,7 +82,7 @@ type Resources struct {
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
-	restore         *identity.PendingStore
+	progress        *identity.Progress
 }
 
 func NewResources() *Resources {
@@ -93,7 +94,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
-		restore:       identity.NewPendingStore(),
+		progress:      identity.NewProgress(),
 	}
 }
 

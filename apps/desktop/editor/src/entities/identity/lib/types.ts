@@ -1,6 +1,7 @@
 /**
  * What the identity of this device is, as the window holds it: two fingerprints and the name of the
- * device. No key and no recovery word is part of it.
+ * device, the link of a device to the account and the devices of the account. No key and no recovery
+ * word is part of it.
  */
 
 /** What a person can see of the identity of this device. */
@@ -9,9 +10,11 @@ export interface IdentityInfo {
   readonly deviceFingerprint: string
   readonly deviceName: string
   readonly deviceAddedAt: string
+  readonly isRevoked: boolean
+  readonly keyEpoch: number
 }
 
-/** Why an identity call was refused. */
+/** Why a call of the identity was refused. */
 export type IdentityErrorCode =
   | 'invalidWords'
   | 'identityExists'
@@ -19,7 +22,16 @@ export type IdentityErrorCode =
   | 'invalidSheets'
   | 'notEnoughSheets'
   | 'otherAccount'
+  | 'linkActive'
+  | 'noLink'
+  | 'linkTextInvalid'
+  | 'lastDevice'
+  | 'revokeRaced'
+  | 'notAllowedThisDevice'
   | 'noIdentity'
+  | 'deviceRevoked'
+  | 'unknownDevice'
+  | 'codeInvalid'
 
 /** Three sheets of one recovery kit, each the words of a sheet in order. */
 export interface RecoveryKit {
@@ -36,4 +48,59 @@ export type KitProof =
 export interface IdentityFailure {
   readonly error: IdentityErrorCode
   readonly message: string
+}
+
+/** The device that has the account is the host, a device with none is the joiner. */
+export type LinkRole = 'host' | 'joiner'
+
+/** The device that shows the QR code, or the one that reads it. */
+export type LinkMode = 'show' | 'scan'
+
+/** Where the link stands. */
+export type LinkPhase =
+  | 'waitingForChannel'
+  | 'waitingForPeer'
+  | 'confirmPeer'
+  | 'waitingForAccept'
+  | 'enterCode'
+  | 'publishing'
+  | 'confirmAccount'
+  | 'linked'
+  | 'failed'
+
+/** Why a link failed. */
+type LinkReason =
+  | 'declined'
+  | 'deviceHasIdentity'
+  | 'wrongCode'
+  | 'tooManyWrongCodes'
+  | 'staleChain'
+  | 'cancelled'
+  | 'expired'
+  | 'invalid'
+
+/** What the window shows of the link in progress. It holds no key. */
+export interface LinkInfo {
+  readonly phase: LinkPhase
+  readonly mode: LinkMode
+  readonly role: LinkRole
+  readonly qrText: string
+  readonly code: string
+  readonly peerName: string
+  readonly peerFingerprint: string
+  readonly accountFingerprint: string
+  readonly triesLeft: number
+  readonly reason: LinkReason | undefined
+  readonly deviceName: string
+  readonly deviceFingerprint: string
+  readonly isApproved: boolean
+}
+
+/** One device of the account. */
+export interface DeviceInfo {
+  readonly name: string
+  readonly fingerprint: string
+  readonly addedAt: string
+  readonly isThis: boolean
+  readonly isRevoked: boolean
 }

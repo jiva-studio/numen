@@ -71,7 +71,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
-	mountIdentity(opened, install, vaultDeps, res.restore)
+	mountIdentity(opened, install, vaultDeps, res)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
 	opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out)
 	return connectWindow(ctx, install, exec, vaultDeps, opened, startup)

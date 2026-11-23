@@ -323,11 +323,15 @@ func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 	if err != nil {
 		return transfer.Vault{}, err
 	}
-	key, err := p.use.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
+	keys, err := vaultlink.OpenKeys(ctx, p.use.deps.Crypto, link)
 	if err != nil {
 		return transfer.Vault{}, err
 	}
-	return transfer.Vault{ID: remote, Key: [32]byte(key)}, nil
+	vault := transfer.Vault{ID: remote, Key: [32]byte(keys[0].Key), Later: nil}
+	for _, key := range keys[1:] {
+		vault.Later = append(vault.Later, transfer.EpochKey{Epoch: key.Epoch, Key: [32]byte(key.Key)})
+	}
+	return vault, nil
 }
 
 func setRecord(records []transfer.FileRecord, record transfer.FileRecord) []transfer.FileRecord {

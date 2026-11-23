@@ -1,4 +1,18 @@
 /** The account identity of this device: its fingerprints, and the calls that keep or delete it. */
 export { createIdentityStore, type IdentityStore } from './model/identity'
-export { createIdentityApi, type IdentityApi } from './api/identity'
-export type { IdentityInfo, KitProof, RecoveryKit } from './lib/types'
+export {
+  createAccountApi,
+  createDevicesApi,
+  createDeviceLinkApi,
+  type IdentityApi,
+} from './api/identity'
+export type {
+  DeviceInfo,
+  IdentityInfo,
+  KitProof,
+  LinkInfo,
+  LinkMode,
+  LinkPhase,
+  LinkRole,
+  RecoveryKit,
+} from './lib/types'

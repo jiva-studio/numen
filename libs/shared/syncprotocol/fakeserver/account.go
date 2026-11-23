@@ -1,8 +1,10 @@
 package fakeserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
+	"slices"
 
 	"connectrpc.com/connect"
 
@@ -43,4 +45,63 @@ func (s *Server) isChainReadProven(req *syncv1.GetAccountChainByRootRequest) boo
 	}
 	message := syncprotocol.GetChainReadMessage(s.getChallengeResponse(pending), root, s.protocol)
 	return identity.VerifyForRecovery(root, syncprotocol.SignInPluginID, message, [64]byte(req.GetSignature()))
+}
+
+func isRevoked(chain identity.Chain, deviceSignKey []byte) bool {
+	return chain.IsKnownDevice(deviceSignKey) && !chain.IsActiveDevice(deviceSignKey)
+}
+
+func (s *Server) AppendChain(_ context.Context, req *connect.Request[syncv1.AppendChainRequest]) (*connect.Response[syncv1.AppendChainResponse], error) {
+	session, err := s.authenticateSession(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	presented, err := identity.ParseChain(req.Msg.GetChain())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stored := s.chains[session.AccountFingerprint]
+	if err := checkAppend(stored, presented, session); err != nil {
+		return nil, err
+	}
+	s.applyChain(session.AccountFingerprint, presented)
+	return connect.NewResponse(&syncv1.AppendChainResponse{Accepted: true, Chain: s.chains[session.AccountFingerprint].Bytes()}), nil
+}
+
+func checkAppend(stored, presented identity.Chain, session Session) error {
+	if presented.Root().Fingerprint().String() != session.AccountFingerprint {
+		return connect.NewError(connect.CodeInvalidArgument, errInvalidRequest)
+	}
+	if !presented.IsActiveDevice(session.DeviceSignKey) {
+		return connect.NewError(connect.CodePermissionDenied, errRevokedAuthor)
+	}
+	if !presented.IsExtensionOf(stored) {
+		return newChainStale(stored)
+	}
+	for _, signer := range presented.SignersSince(stored) {
+		if !bytes.Equal(signer, session.DeviceSignKey) && !bytes.Equal(signer, presented.Root().Sign) {
+			return connect.NewError(connect.CodePermissionDenied, errInvalidRequest)
+		}
+	}
+	return nil
+}
+
+func newChainStale(head identity.Chain) error {
+	failure := connect.NewError(connect.CodeFailedPrecondition, errChainStale)
+	if detail, err := connect.NewErrorDetail(&syncv1.ChainStale{Chain: head.Bytes()}); err == nil {
+		failure.AddDetail(detail)
+	}
+	return failure
+}
+
+func (s *Server) applyChain(account string, chain identity.Chain) {
+	stored := s.chains[account]
+	s.chains[account] = chain
+	for _, revoked := range chain.RevokedSince(stored) {
+		s.sessions = slices.DeleteFunc(s.sessions, func(one Session) bool {
+			return one.AccountFingerprint == account && bytes.Equal(one.DeviceSignKey, revoked)
+		})
+	}
 }

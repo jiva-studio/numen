@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -60,6 +61,9 @@ func (s *Server) newBatch(account string, req *syncv1.CommitRevisionsRequest) (*
 		return nil, err
 	}
 	if err := s.checkAuthors(account, req.GetRevisions()); err != nil {
+		return nil, asInvalid(err)
+	}
+	if err := checkEpochs(vault, req.GetRevisions()); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	b := &batch{account: account, vaultID: string(req.GetVaultId()), vault: vault, revs: req.GetRevisions()}
@@ -109,6 +113,9 @@ func (s *Server) checkAuthors(account string, revs []*syncv1.Revision) error {
 	for _, rev := range revs {
 		author := rev.GetAuthorDeviceSignKey()
 		message := syncprotocol.GetRevisionMessage(rev)
+		if isRevoked(chain, author) {
+			return connect.NewError(connect.CodePermissionDenied, errRevokedAuthor)
+		}
 		if !isDeviceOf(chain, author) || !identity.VerifyForPlugin(author, syncprotocol.SignInPluginID, message, [64]byte(rev.GetSignature())) {
 			return fmt.Errorf("%w: the author or the signature is not valid", errInvalidRevision)
 		}
@@ -327,4 +334,24 @@ func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
 	if _, err := fmt.Fprintln(w, s.PruneTombstones()); err != nil {
 		return
 	}
+}
+
+func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
+	var highest uint32
+	for _, stored := range vault.files {
+		highest = max(highest, stored.GetRevision().GetEpoch())
+	}
+	for _, rev := range revs {
+		if rev.GetEpoch() < highest {
+			return fmt.Errorf("%w: epoch %d is below the epoch %d of the vault", errInvalidRevision, rev.GetEpoch(), highest)
+		}
+	}
+	return nil
+}
+
+func asInvalid(err error) error {
+	if refused, ok := errors.AsType[*connect.Error](err); ok {
+		return refused
+	}
+	return connect.NewError(connect.CodeInvalidArgument, err)
 }

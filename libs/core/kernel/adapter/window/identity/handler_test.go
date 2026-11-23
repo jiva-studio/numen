@@ -65,7 +65,7 @@ func newHandler(keys *keyStore) *windowidentity.Handler {
 }
 
 func newHandlerAt(keys *keyStore, clock *testsupport.ManualClock) *windowidentity.Handler {
-	deps := identity.NewDeps(keys, names{}, clock)
+	deps := identity.NewDeps(keys, names{}, clock).WithChains(&chainFile{})
 	return windowidentity.NewHandler(windowidentity.UseCases{
 		Identity: windowidentity.IdentityUseCases{
 			Get:           identity.NewGetIdentity(deps),

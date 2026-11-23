@@ -84,7 +84,7 @@ func (r reader) mergeEntries(ctx context.Context, entries []*syncv1.CatalogEntry
 		if !known {
 			at = len(vaults)
 			positions[key] = at
-			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{LocalID: "", Name: "", Key: nil}})
+			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{LocalID: "", Name: "", Key: nil, Keys: nil}})
 		}
 		vaults[at].last = entry
 	}

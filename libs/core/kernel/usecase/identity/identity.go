@@ -3,18 +3,15 @@
 package identity
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
 
-	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -32,60 +29,45 @@ type Clock interface {
 	After(d time.Duration) <-chan time.Time
 }
 
-// Deps groups the collaborators the identity use cases share. Copies of one Deps share one pending restore.
+// Deps groups the collaborators the identity use cases are made from; each use case keeps the ones it calls. Copies
+// of one Deps share one Progress.
 type Deps struct {
-	keys    pluginport.KeyStore
-	names   DeviceName
-	clock   Clock
-	random  io.Reader
-	pending *PendingStore
+	records  records
+	names    DeviceName
+	clock    Clock
+	random   io.Reader
+	progress *Progress
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
-	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, pending: NewPendingStore()}
+	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: NewProgress()}
 }
 
-// WithPending returns the deps over another pending restore, so the use cases of a window and of the plugins share one.
-func (d Deps) WithPending(pending *PendingStore) Deps {
-	if pending != nil {
-		d.pending = pending
+// WithProgress returns the deps over another progress, so the use cases of a window and of the plugins share one.
+func (d Deps) WithProgress(progress *Progress) Deps {
+	if progress != nil {
+		d.progress = progress
 	}
 	return d
 }
 
-func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
-	value, err := d.keys.GetKey(ctx, keyName)
-	if isNoKey(err) {
-		return identitylib.Record{}, err
-	}
-	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
-	}
-	raw, err := base64.RawURLEncoding.DecodeString(value)
-	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: the record is not base64: %w", identitylib.ErrMalformed, err)
-	}
-	record, err := identitylib.ParseRecord(raw)
-	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: the record is not valid: %w", identitylib.ErrMalformed, err)
-	}
-	return record, nil
+// WithChains returns the deps over the chain file of this device.
+func (d Deps) WithChains(chains ChainStore) Deps {
+	d.records.chains = chains
+	return d
 }
 
-func toIdentity(record identitylib.Record) (identitydomain.Identity, error) {
-	own := record.Device.Public()
-	for _, device := range record.Chain.ListDevices() {
-		if string(device.Public.Sign) == string(own.Sign) {
-			return identitydomain.Identity{
-				AccountFingerprint: record.Chain.Root().Fingerprint().String(),
-				DeviceFingerprint:  own.Fingerprint().String(),
-				DeviceName:         device.Name,
-				DeviceAddedAt:      time.Unix(device.AddedAt.Unix(), 0).UTC(),
-			}, nil
-		}
-	}
-	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
+func (d Deps) getBuilder() stateBuilder {
+	return stateBuilder{names: d.names, clock: d.clock, random: d.random}
+}
+
+func (d Deps) getHost() linkHost {
+	return linkHost{records: d.records, clock: d.clock, random: d.random}
+}
+
+func (d Deps) getRevocation() revocation {
+	return revocation{records: d.records, clock: d.clock, random: d.random}
 }
 
 func normalizeEntryName(name string) string {
@@ -108,10 +90,10 @@ func normalizeEntryName(name string) string {
 
 func isNoKey(err error) bool { return errors.Is(err, plugindomain.ErrNoKey) }
 
-func readExistingRecord(ctx context.Context, deps Deps) (identitylib.Record, error) {
-	record, err := deps.readRecord(ctx)
-	if isNoKey(err) {
-		return identitylib.Record{}, identitydomain.ErrNoIdentity
-	}
-	return record, err
+func encodeRecord(record identitylib.Record) string {
+	return base64.RawURLEncoding.EncodeToString(record.Bytes())
+}
+
+func (d Deps) getCompletion() restoreCompletion {
+	return restoreCompletion{records: d.records, restores: d.progress.restores, builder: d.getBuilder()}
 }

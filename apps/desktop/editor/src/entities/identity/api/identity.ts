@@ -1,13 +1,38 @@
 /**
  * The calls of the identity: reading it, making recovery words, creating it from them, restoring it from them or from the
- * sheets of a recovery kit, making and checking a kit, and deleting it from this device.
+ * sheets of a recovery kit, making and checking a kit, and deleting it from this device; the link of a device; the
+ * devices of the account.
  */
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
-import type { IdentityFailure, IdentityInfo, KitProof, RecoveryKit } from '../lib/types'
+import type {
+  IdentityFailure,
+  IdentityInfo,
+  KitProof,
+  LinkMode,
+  LinkRole,
+  RecoveryKit,
+} from '../lib/types'
 
-/** The calls of the identity over `identity`. */
-export const createIdentityApi = (identity: IdentityClient) => ({
+type AccountClient = Pick<
+  IdentityClient,
+  | 'get'
+  | 'generateWords'
+  | 'create'
+  | 'startRestore'
+  | 'delete'
+  | 'createKit'
+  | 'checkKit'
+  | 'startRestoreFromKit'
+>
+type LinkClient = Pick<
+  IdentityClient,
+  'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'
+>
+type DevicesClient = Pick<IdentityClient, 'listDevices' | 'revokeDevice'>
+
+/** The calls that keep the identity of this device. */
+export const createAccountApi = (identity: AccountClient) => ({
   /** The identity of this device, or undefined when it has none. */
   getIdentity: async (): Promise<IdentityInfo | undefined> => {
     const found = await identity.get()
@@ -42,4 +67,44 @@ export const createIdentityApi = (identity: IdentityClient) => ({
   ): Promise<Result<undefined, IdentityFailure>> => identity.startRestoreFromKit(sheets),
 })
 
-export type IdentityApi = ReturnType<typeof createIdentityApi>
+/** The calls of a link of this device to an account. */
+export const createDeviceLinkApi = (identity: LinkClient) => ({
+  /** Starts a link of this device: the host that has the account, or the joiner that has none. */
+  startLink: (role: LinkRole, mode: LinkMode, scannedText: string) =>
+    identity.startLink(role, mode, scannedText),
+
+  /** The link in progress. */
+  getLink: () => identity.getLink(),
+
+  /** The answer of the person on the host to the new device. */
+  decideLink: (approve: boolean) => identity.decideLink(approve),
+
+  /** The confirmation code the person read on the host. */
+  enterLinkCode: (code: string) => identity.enterLinkCode(code),
+
+  /** The answer of the person on the new device to the account it is offered. */
+  confirmJoin: (approve: boolean) => identity.confirmJoin(approve),
+
+  /** Ends the link in progress. */
+  cancelLink: () => identity.cancelLink(),
+})
+
+/** The calls of the devices of the account. */
+export const createDevicesApi = (identity: DevicesClient) => ({
+  /** The devices of the account. */
+  listDevices: () => identity.listDevices(),
+
+  /** Removes a device from the account. */
+  revokeDevice: (fingerprint: string) => identity.revokeDevice(fingerprint),
+})
+
+type AccountApi = ReturnType<typeof createAccountApi>
+export type LinkApi = ReturnType<typeof createDeviceLinkApi>
+export type DevicesApi = ReturnType<typeof createDevicesApi>
+
+/** The calls of the identity of this device, in the three groups the store keeps apart. */
+export interface IdentityApi {
+  readonly account: AccountApi
+  readonly link: LinkApi
+  readonly devices: DevicesApi
+}

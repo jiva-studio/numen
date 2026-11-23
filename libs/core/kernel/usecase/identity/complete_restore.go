@@ -3,7 +3,6 @@ package identity
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -11,10 +10,12 @@ import (
 )
 
 // CompleteRestore finishes the pending restore with the chain a sync plugin read from its server.
-type CompleteRestore struct{ deps Deps }
+type CompleteRestore struct{ completion restoreCompletion }
 
 // NewCompleteRestore returns the use case that completes a restore.
-func NewCompleteRestore(d Deps) *CompleteRestore { return &CompleteRestore{deps: d} }
+func NewCompleteRestore(d Deps) *CompleteRestore {
+	return &CompleteRestore{completion: d.getCompletion()}
+}
 
 // Execute joins the account of chainBytes: the chain must verify and have the root of the pending words, the
 // recovery key unwraps the account keys, and this device is appended and wrapped for. Empty chainBytes means the
@@ -24,56 +25,63 @@ func (u *CompleteRestore) Execute(ctx context.Context, pluginID string, chainByt
 	if pluginID == "" {
 		return errNoPluginID
 	}
-	restore := u.deps.pending.read()
+	restore := u.completion.restores.read()
 	if restore == nil {
 		return identitydomain.ErrNoPendingRestore
 	}
-	return completeRestore(ctx, u.deps, restore, chainBytes)
+	return u.completion.complete(ctx, restore, chainBytes)
 }
 
-func completeRestore(ctx context.Context, deps Deps, restore *pendingRestore, chainBytes []byte) error {
-	deps.pending.mu.Lock()
-	defer deps.pending.mu.Unlock()
-	if deps.pending.current != restore {
+// restoreCompletion completes a pending restore: it keeps the identity the restore makes and forgets the restore.
+type restoreCompletion struct {
+	records  records
+	restores *pendingStore
+	builder  stateBuilder
+}
+
+func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore, chainBytes []byte) error {
+	c.restores.mu.Lock()
+	defer c.restores.mu.Unlock()
+	if c.restores.current != restore {
 		return identitydomain.ErrNoPendingRestore
 	}
-	if err := checkAbsent(ctx, deps); err != nil {
+	if err := c.records.checkAbsent(ctx); err != nil {
 		return err
 	}
-	record, err := buildRestoredRecord(deps, restore, chainBytes)
+	state, err := c.buildRestoredState(restore, chainBytes)
 	if err != nil {
 		return err
 	}
-	value := base64.RawURLEncoding.EncodeToString(record.Bytes())
-	if err := deps.keys.SetKey(ctx, keyName, value); err != nil {
-		return fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
+	if err := c.records.writeNewState(ctx, state.Record, state.Chain); err != nil {
+		return err
 	}
-	deps.pending.clearLocked()
+	c.restores.clearLocked()
 	return nil
 }
 
-func buildRestoredRecord(deps Deps, restore *pendingRestore, chainBytes []byte) (identitylib.Record, error) {
+func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
 	if len(chainBytes) == 0 {
-		return buildNewRecord(deps, restore.recovery, restore.device)
+		return c.builder.buildNew(restore.recovery, restore.device)
 	}
 	chain, err := identitylib.ParseChain(chainBytes)
 	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
-		return identitylib.Record{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
+		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
 	}
 	account, err := restore.recovery.UnwrapAccountKeys(chain.WrappedForRecovery())
 	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
-	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), normalizeEntryName(deps.names.GetInstanceName()), deps.clock.Now())
+	name := normalizeEntryName(c.builder.names.GetInstanceName())
+	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), name, c.builder.clock.Now())
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	wrapped, err := account.WrapForDevice(restore.device.Public())
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
-	return identitylib.Record{Device: restore.device, Wrapped: wrapped, Chain: chain}, nil
+	return identitylib.NewState(identitylib.Record{Device: restore.device, Wrapped: wrapped}, chain)
 }

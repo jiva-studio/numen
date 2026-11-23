@@ -144,3 +144,8 @@ func (c *Cloud) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []by
 // SendAccountChain signs in again, which sends the chain of this device, so a server that lost devices of the chain
 // takes the longer one.
 func (c *Cloud) SendAccountChain(ctx context.Context) error { return c.refresh(ctx) }
+
+// AppendChain presents a longer chain of the account and returns the chain the server stores after the call.
+func (c *Cloud) AppendChain(ctx context.Context, chain []byte) ([]byte, error) {
+	return call(ctx, c, func() ([]byte, error) { return c.account.AppendChain(ctx, chain) })
+}

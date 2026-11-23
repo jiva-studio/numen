@@ -43,8 +43,10 @@ func (a *App) Mount(s *server.Server) error {
 		return err
 	}
 	vaults := hostvault.New(host.NewClient(endpoint), host.NewStoreClient(endpoint))
+	client := account.NewClient(endpoint)
 	a.runtime = newRuntime(parts{
-		identity: accountadapter.New(account.NewClient(endpoint)),
+		identity: accountadapter.New(client),
+		client:   client,
 		health:   health.NewClient(endpoint),
 		clock:    clock.System{},
 		vaults:   vaults,

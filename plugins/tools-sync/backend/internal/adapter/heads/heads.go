@@ -45,7 +45,7 @@ func (h *Heads) ListHeads(ctx context.Context, remoteID string) ([]ports.Head, e
 	if err != nil {
 		return nil, err
 	}
-	key, err := h.getKey(ctx, vaultID, authors)
+	keys, err := h.getKeys(ctx, vaultID, authors)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Heads) ListHeads(ctx context.Context, remoteID string) ([]ports.Head, e
 		if err != nil {
 			return nil, err
 		}
-		listed = appendHeads(listed, page.GetChanges(), key, authors)
+		listed = appendHeads(listed, page.GetChanges(), keys, authors)
 		if !page.GetHasMore() {
 			return listed, nil
 		}
@@ -63,9 +63,13 @@ func (h *Heads) ListHeads(ctx context.Context, remoteID string) ([]ports.Head, e
 	}
 }
 
-func appendHeads(listed []ports.Head, changes []*syncv1.StoredRevision, key [keySize]byte, authors trust.Authors) []ports.Head {
+func appendHeads(listed []ports.Head, changes []*syncv1.StoredRevision, keys map[uint32][keySize]byte, authors trust.Authors) []ports.Head {
 	for _, stored := range changes {
 		if stored.GetRevision().GetDeleted() {
+			continue
+		}
+		key, isKnown := keys[stored.GetRevision().GetEpoch()]
+		if !isKnown {
 			continue
 		}
 		meta, err := note.OpenRevision(key, stored, authors.IsTrusted)
@@ -89,13 +93,13 @@ func (h *Heads) getAuthors(ctx context.Context) (trust.Authors, error) {
 	return trust.NewAuthors(own.Chain, stored)
 }
 
-func (h *Heads) getKey(ctx context.Context, vaultID []byte, authors trust.Authors) ([keySize]byte, error) {
+func (h *Heads) getKeys(ctx context.Context, vaultID []byte, authors trust.Authors) (map[uint32][keySize]byte, error) {
 	entries, err := h.deps.Catalog.GetCatalog(ctx, 0)
 	if err != nil {
-		return [keySize]byte{}, err
+		return nil, err
 	}
 	if err := vaultlink.CheckEntries(entries, authors); err != nil {
-		return [keySize]byte{}, err
+		return nil, err
 	}
 	var last *syncv1.CatalogEntry
 	for _, entry := range entries {
@@ -104,18 +108,22 @@ func (h *Heads) getKey(ctx context.Context, vaultID []byte, authors trust.Author
 		}
 	}
 	if last == nil {
-		return [keySize]byte{}, errUnknownRemoteVault
+		return nil, errUnknownRemoteVault
 	}
 	plain, err := h.deps.Crypto.OpenData(ctx, vaultlink.GetCatalogContext(vaultID, last.GetVersion()), last.GetEncBody())
 	if err != nil {
-		return [keySize]byte{}, fmt.Errorf("open the body of catalog entry %d: %w", last.GetVersion(), err)
+		return nil, fmt.Errorf("open the body of catalog entry %d: %w", last.GetVersion(), err)
 	}
 	body, err := vaultlink.ParseCatalogBody(plain)
 	if err != nil {
-		return [keySize]byte{}, err
+		return nil, err
 	}
-	if len(body.Key) != keySize {
-		return [keySize]byte{}, errUnknownRemoteVault
+	keys := map[uint32][keySize]byte{}
+	for _, one := range body.GetKeys() {
+		if len(one.Key) != keySize {
+			return nil, errUnknownRemoteVault
+		}
+		keys[one.Epoch] = [keySize]byte(one.Key)
 	}
-	return [keySize]byte(body.Key), nil
+	return keys, nil
 }

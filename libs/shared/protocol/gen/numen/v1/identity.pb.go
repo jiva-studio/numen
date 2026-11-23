@@ -41,31 +41,67 @@ const (
 	IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS IdentityErrorCode = 5
 	// IDENTITY_ERROR_CODE_OTHER_ACCOUNT is a proof that belongs to another account than this device.
 	IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT IdentityErrorCode = 6
-	// IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity.
+	// IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity, or a call that needs one on a device with none.
 	IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY IdentityErrorCode = 7
+	// IDENTITY_ERROR_CODE_LINK_ACTIVE is a link that already runs on this device.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_ACTIVE IdentityErrorCode = 8
+	// IDENTITY_ERROR_CODE_NO_LINK is a call that needs a link and finds none.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK IdentityErrorCode = 9
+	// IDENTITY_ERROR_CODE_LINK_TEXT_INVALID is a text that is not the text of a QR code of a link.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID IdentityErrorCode = 10
+	// IDENTITY_ERROR_CODE_LAST_DEVICE is a revoke that would leave the account with no device.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE IdentityErrorCode = 11
+	// IDENTITY_ERROR_CODE_REVOKE_RACED is a revoke that was dropped because a device was added by the device to revoke.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_REVOKE_RACED IdentityErrorCode = 12
+	// IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE is a revoke of the device it was asked on.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE IdentityErrorCode = 13
+	// IDENTITY_ERROR_CODE_DEVICE_REVOKED is a call that the account refuses to a revoked device.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED IdentityErrorCode = 14
+	// IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE IdentityErrorCode = 15
+	// IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_CODE_INVALID IdentityErrorCode = 16
 )
 
 // Enum value maps for IdentityErrorCode.
 var (
 	IdentityErrorCode_name = map[int32]string{
-		0: "IDENTITY_ERROR_CODE_UNSPECIFIED",
-		1: "IDENTITY_ERROR_CODE_INVALID_WORDS",
-		2: "IDENTITY_ERROR_CODE_IDENTITY_EXISTS",
-		3: "IDENTITY_ERROR_CODE_KEY_STORE_FAILED",
-		4: "IDENTITY_ERROR_CODE_INVALID_SHEETS",
-		5: "IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS",
-		6: "IDENTITY_ERROR_CODE_OTHER_ACCOUNT",
-		7: "IDENTITY_ERROR_CODE_NO_IDENTITY",
+		0:  "IDENTITY_ERROR_CODE_UNSPECIFIED",
+		1:  "IDENTITY_ERROR_CODE_INVALID_WORDS",
+		2:  "IDENTITY_ERROR_CODE_IDENTITY_EXISTS",
+		3:  "IDENTITY_ERROR_CODE_KEY_STORE_FAILED",
+		4:  "IDENTITY_ERROR_CODE_INVALID_SHEETS",
+		5:  "IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS",
+		6:  "IDENTITY_ERROR_CODE_OTHER_ACCOUNT",
+		7:  "IDENTITY_ERROR_CODE_NO_IDENTITY",
+		8:  "IDENTITY_ERROR_CODE_LINK_ACTIVE",
+		9:  "IDENTITY_ERROR_CODE_NO_LINK",
+		10: "IDENTITY_ERROR_CODE_LINK_TEXT_INVALID",
+		11: "IDENTITY_ERROR_CODE_LAST_DEVICE",
+		12: "IDENTITY_ERROR_CODE_REVOKE_RACED",
+		13: "IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE",
+		14: "IDENTITY_ERROR_CODE_DEVICE_REVOKED",
+		15: "IDENTITY_ERROR_CODE_UNKNOWN_DEVICE",
+		16: "IDENTITY_ERROR_CODE_CODE_INVALID",
 	}
 	IdentityErrorCode_value = map[string]int32{
-		"IDENTITY_ERROR_CODE_UNSPECIFIED":       0,
-		"IDENTITY_ERROR_CODE_INVALID_WORDS":     1,
-		"IDENTITY_ERROR_CODE_IDENTITY_EXISTS":   2,
-		"IDENTITY_ERROR_CODE_KEY_STORE_FAILED":  3,
-		"IDENTITY_ERROR_CODE_INVALID_SHEETS":    4,
-		"IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS": 5,
-		"IDENTITY_ERROR_CODE_OTHER_ACCOUNT":     6,
-		"IDENTITY_ERROR_CODE_NO_IDENTITY":       7,
+		"IDENTITY_ERROR_CODE_UNSPECIFIED":             0,
+		"IDENTITY_ERROR_CODE_INVALID_WORDS":           1,
+		"IDENTITY_ERROR_CODE_IDENTITY_EXISTS":         2,
+		"IDENTITY_ERROR_CODE_KEY_STORE_FAILED":        3,
+		"IDENTITY_ERROR_CODE_INVALID_SHEETS":          4,
+		"IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS":       5,
+		"IDENTITY_ERROR_CODE_OTHER_ACCOUNT":           6,
+		"IDENTITY_ERROR_CODE_NO_IDENTITY":             7,
+		"IDENTITY_ERROR_CODE_LINK_ACTIVE":             8,
+		"IDENTITY_ERROR_CODE_NO_LINK":                 9,
+		"IDENTITY_ERROR_CODE_LINK_TEXT_INVALID":       10,
+		"IDENTITY_ERROR_CODE_LAST_DEVICE":             11,
+		"IDENTITY_ERROR_CODE_REVOKE_RACED":            12,
+		"IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE": 13,
+		"IDENTITY_ERROR_CODE_DEVICE_REVOKED":          14,
+		"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE":          15,
+		"IDENTITY_ERROR_CODE_CODE_INVALID":            16,
 	}
 )
 
@@ -96,6 +132,248 @@ func (IdentityErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{0}
 }
 
+type LinkRole int32
+
+const (
+	LinkRole_LINK_ROLE_UNSPECIFIED LinkRole = 0
+	// LINK_ROLE_HOST is a device that has the account and links another to it.
+	LinkRole_LINK_ROLE_HOST LinkRole = 1
+	// LINK_ROLE_JOINER is a device with no identity that joins an account.
+	LinkRole_LINK_ROLE_JOINER LinkRole = 2
+)
+
+// Enum value maps for LinkRole.
+var (
+	LinkRole_name = map[int32]string{
+		0: "LINK_ROLE_UNSPECIFIED",
+		1: "LINK_ROLE_HOST",
+		2: "LINK_ROLE_JOINER",
+	}
+	LinkRole_value = map[string]int32{
+		"LINK_ROLE_UNSPECIFIED": 0,
+		"LINK_ROLE_HOST":        1,
+		"LINK_ROLE_JOINER":      2,
+	}
+)
+
+func (x LinkRole) Enum() *LinkRole {
+	p := new(LinkRole)
+	*p = x
+	return p
+}
+
+func (x LinkRole) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LinkRole) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_identity_proto_enumTypes[1].Descriptor()
+}
+
+func (LinkRole) Type() protoreflect.EnumType {
+	return &file_numen_v1_identity_proto_enumTypes[1]
+}
+
+func (x LinkRole) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LinkRole.Descriptor instead.
+func (LinkRole) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{1}
+}
+
+type LinkMode int32
+
+const (
+	LinkMode_LINK_MODE_UNSPECIFIED LinkMode = 0
+	// LINK_MODE_SHOW is the device that shows the QR code.
+	LinkMode_LINK_MODE_SHOW LinkMode = 1
+	// LINK_MODE_SCAN is the device that reads the QR code.
+	LinkMode_LINK_MODE_SCAN LinkMode = 2
+)
+
+// Enum value maps for LinkMode.
+var (
+	LinkMode_name = map[int32]string{
+		0: "LINK_MODE_UNSPECIFIED",
+		1: "LINK_MODE_SHOW",
+		2: "LINK_MODE_SCAN",
+	}
+	LinkMode_value = map[string]int32{
+		"LINK_MODE_UNSPECIFIED": 0,
+		"LINK_MODE_SHOW":        1,
+		"LINK_MODE_SCAN":        2,
+	}
+)
+
+func (x LinkMode) Enum() *LinkMode {
+	p := new(LinkMode)
+	*p = x
+	return p
+}
+
+func (x LinkMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LinkMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_identity_proto_enumTypes[2].Descriptor()
+}
+
+func (LinkMode) Type() protoreflect.EnumType {
+	return &file_numen_v1_identity_proto_enumTypes[2]
+}
+
+func (x LinkMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LinkMode.Descriptor instead.
+func (LinkMode) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{2}
+}
+
+type LinkPhase int32
+
+const (
+	LinkPhase_LINK_PHASE_UNSPECIFIED         LinkPhase = 0
+	LinkPhase_LINK_PHASE_WAITING_FOR_CHANNEL LinkPhase = 1
+	// LINK_PHASE_WAITING_FOR_PEER is the QR code on screen, or the first message sent.
+	LinkPhase_LINK_PHASE_WAITING_FOR_PEER LinkPhase = 2
+	// LINK_PHASE_CONFIRM_PEER is the host asking the person about the new device.
+	LinkPhase_LINK_PHASE_CONFIRM_PEER       LinkPhase = 3
+	LinkPhase_LINK_PHASE_WAITING_FOR_ACCEPT LinkPhase = 4
+	LinkPhase_LINK_PHASE_ENTER_CODE         LinkPhase = 5
+	LinkPhase_LINK_PHASE_PUBLISHING         LinkPhase = 6
+	// LINK_PHASE_CONFIRM_ACCOUNT is the new device asking the person about the account; the host waits for the answer.
+	LinkPhase_LINK_PHASE_CONFIRM_ACCOUNT LinkPhase = 7
+	LinkPhase_LINK_PHASE_LINKED          LinkPhase = 8
+	LinkPhase_LINK_PHASE_FAILED          LinkPhase = 9
+)
+
+// Enum value maps for LinkPhase.
+var (
+	LinkPhase_name = map[int32]string{
+		0: "LINK_PHASE_UNSPECIFIED",
+		1: "LINK_PHASE_WAITING_FOR_CHANNEL",
+		2: "LINK_PHASE_WAITING_FOR_PEER",
+		3: "LINK_PHASE_CONFIRM_PEER",
+		4: "LINK_PHASE_WAITING_FOR_ACCEPT",
+		5: "LINK_PHASE_ENTER_CODE",
+		6: "LINK_PHASE_PUBLISHING",
+		7: "LINK_PHASE_CONFIRM_ACCOUNT",
+		8: "LINK_PHASE_LINKED",
+		9: "LINK_PHASE_FAILED",
+	}
+	LinkPhase_value = map[string]int32{
+		"LINK_PHASE_UNSPECIFIED":         0,
+		"LINK_PHASE_WAITING_FOR_CHANNEL": 1,
+		"LINK_PHASE_WAITING_FOR_PEER":    2,
+		"LINK_PHASE_CONFIRM_PEER":        3,
+		"LINK_PHASE_WAITING_FOR_ACCEPT":  4,
+		"LINK_PHASE_ENTER_CODE":          5,
+		"LINK_PHASE_PUBLISHING":          6,
+		"LINK_PHASE_CONFIRM_ACCOUNT":     7,
+		"LINK_PHASE_LINKED":              8,
+		"LINK_PHASE_FAILED":              9,
+	}
+)
+
+func (x LinkPhase) Enum() *LinkPhase {
+	p := new(LinkPhase)
+	*p = x
+	return p
+}
+
+func (x LinkPhase) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LinkPhase) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_identity_proto_enumTypes[3].Descriptor()
+}
+
+func (LinkPhase) Type() protoreflect.EnumType {
+	return &file_numen_v1_identity_proto_enumTypes[3]
+}
+
+func (x LinkPhase) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LinkPhase.Descriptor instead.
+func (LinkPhase) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{3}
+}
+
+type LinkReason int32
+
+const (
+	LinkReason_LINK_REASON_UNSPECIFIED          LinkReason = 0
+	LinkReason_LINK_REASON_DECLINED             LinkReason = 1
+	LinkReason_LINK_REASON_DEVICE_HAS_IDENTITY  LinkReason = 2
+	LinkReason_LINK_REASON_WRONG_CODE           LinkReason = 3
+	LinkReason_LINK_REASON_TOO_MANY_WRONG_CODES LinkReason = 4
+	LinkReason_LINK_REASON_STALE_CHAIN          LinkReason = 5
+	LinkReason_LINK_REASON_CANCELED             LinkReason = 6
+	LinkReason_LINK_REASON_EXPIRED              LinkReason = 7
+	LinkReason_LINK_REASON_INVALID              LinkReason = 8
+)
+
+// Enum value maps for LinkReason.
+var (
+	LinkReason_name = map[int32]string{
+		0: "LINK_REASON_UNSPECIFIED",
+		1: "LINK_REASON_DECLINED",
+		2: "LINK_REASON_DEVICE_HAS_IDENTITY",
+		3: "LINK_REASON_WRONG_CODE",
+		4: "LINK_REASON_TOO_MANY_WRONG_CODES",
+		5: "LINK_REASON_STALE_CHAIN",
+		6: "LINK_REASON_CANCELED",
+		7: "LINK_REASON_EXPIRED",
+		8: "LINK_REASON_INVALID",
+	}
+	LinkReason_value = map[string]int32{
+		"LINK_REASON_UNSPECIFIED":          0,
+		"LINK_REASON_DECLINED":             1,
+		"LINK_REASON_DEVICE_HAS_IDENTITY":  2,
+		"LINK_REASON_WRONG_CODE":           3,
+		"LINK_REASON_TOO_MANY_WRONG_CODES": 4,
+		"LINK_REASON_STALE_CHAIN":          5,
+		"LINK_REASON_CANCELED":             6,
+		"LINK_REASON_EXPIRED":              7,
+		"LINK_REASON_INVALID":              8,
+	}
+)
+
+func (x LinkReason) Enum() *LinkReason {
+	p := new(LinkReason)
+	*p = x
+	return p
+}
+
+func (x LinkReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LinkReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_identity_proto_enumTypes[4].Descriptor()
+}
+
+func (LinkReason) Type() protoreflect.EnumType {
+	return &file_numen_v1_identity_proto_enumTypes[4]
+}
+
+func (x LinkReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LinkReason.Descriptor instead.
+func (LinkReason) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{4}
+}
+
 // IdentityInfo is what a person can see of the identity of this device.
 type IdentityInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -106,6 +384,10 @@ type IdentityInfo struct {
 	DeviceName        string `protobuf:"bytes,3,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
 	// device_added_at is when this device joined the account, RFC 3339 in UTC.
 	DeviceAddedAt string `protobuf:"bytes,4,opt,name=device_added_at,json=deviceAddedAt,proto3" json:"device_added_at,omitempty"`
+	// is_revoked is true when the account revoked this device.
+	IsRevoked bool `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
+	// key_epoch is the epoch of the account keys of this device, 0 until a device is revoked.
+	KeyEpoch      uint32 `protobuf:"varint,6,opt,name=key_epoch,json=keyEpoch,proto3" json:"key_epoch,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -166,6 +448,20 @@ func (x *IdentityInfo) GetDeviceAddedAt() string {
 		return x.DeviceAddedAt
 	}
 	return ""
+}
+
+func (x *IdentityInfo) GetIsRevoked() bool {
+	if x != nil {
+		return x.IsRevoked
+	}
+	return false
+}
+
+func (x *IdentityInfo) GetKeyEpoch() uint32 {
+	if x != nil {
+		return x.KeyEpoch
+	}
+	return 0
 }
 
 type GetIdentityRequest struct {
@@ -1147,17 +1443,1029 @@ func (x *StartRestoreFromKitResponse) GetDetail() string {
 	return ""
 }
 
+// LinkInfo is what a window shows of the link in progress. It holds no key.
+type LinkInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Phase LinkPhase              `protobuf:"varint,1,opt,name=phase,proto3,enum=numen.v1.LinkPhase" json:"phase,omitempty"`
+	Mode  LinkMode               `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.LinkMode" json:"mode,omitempty"`
+	Role  LinkRole               `protobuf:"varint,3,opt,name=role,proto3,enum=numen.v1.LinkRole" json:"role,omitempty"`
+	// qr_text is the text of the QR code, set on the device that shows it.
+	QrText string `protobuf:"bytes,4,opt,name=qr_text,json=qrText,proto3" json:"qr_text,omitempty"`
+	// code is the confirmation code, set on the host that reads the QR code of a new device.
+	Code               string     `protobuf:"bytes,5,opt,name=code,proto3" json:"code,omitempty"`
+	PeerName           string     `protobuf:"bytes,6,opt,name=peer_name,json=peerName,proto3" json:"peer_name,omitempty"`
+	PeerFingerprint    string     `protobuf:"bytes,7,opt,name=peer_fingerprint,json=peerFingerprint,proto3" json:"peer_fingerprint,omitempty"`
+	AccountFingerprint string     `protobuf:"bytes,8,opt,name=account_fingerprint,json=accountFingerprint,proto3" json:"account_fingerprint,omitempty"`
+	TriesLeft          uint32     `protobuf:"varint,9,opt,name=tries_left,json=triesLeft,proto3" json:"tries_left,omitempty"`
+	Reason             LinkReason `protobuf:"varint,10,opt,name=reason,proto3,enum=numen.v1.LinkReason" json:"reason,omitempty"`
+	// device_name and device_fingerprint name this device.
+	DeviceName        string `protobuf:"bytes,11,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	DeviceFingerprint string `protobuf:"bytes,12,opt,name=device_fingerprint,json=deviceFingerprint,proto3" json:"device_fingerprint,omitempty"`
+	// is_approved is true once the person approved the new device and the host waits for the code.
+	IsApproved    bool `protobuf:"varint,13,opt,name=is_approved,json=isApproved,proto3" json:"is_approved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LinkInfo) Reset() {
+	*x = LinkInfo{}
+	mi := &file_numen_v1_identity_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LinkInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LinkInfo) ProtoMessage() {}
+
+func (x *LinkInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LinkInfo.ProtoReflect.Descriptor instead.
+func (*LinkInfo) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *LinkInfo) GetPhase() LinkPhase {
+	if x != nil {
+		return x.Phase
+	}
+	return LinkPhase_LINK_PHASE_UNSPECIFIED
+}
+
+func (x *LinkInfo) GetMode() LinkMode {
+	if x != nil {
+		return x.Mode
+	}
+	return LinkMode_LINK_MODE_UNSPECIFIED
+}
+
+func (x *LinkInfo) GetRole() LinkRole {
+	if x != nil {
+		return x.Role
+	}
+	return LinkRole_LINK_ROLE_UNSPECIFIED
+}
+
+func (x *LinkInfo) GetQrText() string {
+	if x != nil {
+		return x.QrText
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetPeerName() string {
+	if x != nil {
+		return x.PeerName
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetPeerFingerprint() string {
+	if x != nil {
+		return x.PeerFingerprint
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetAccountFingerprint() string {
+	if x != nil {
+		return x.AccountFingerprint
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetTriesLeft() uint32 {
+	if x != nil {
+		return x.TriesLeft
+	}
+	return 0
+}
+
+func (x *LinkInfo) GetReason() LinkReason {
+	if x != nil {
+		return x.Reason
+	}
+	return LinkReason_LINK_REASON_UNSPECIFIED
+}
+
+func (x *LinkInfo) GetDeviceName() string {
+	if x != nil {
+		return x.DeviceName
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetDeviceFingerprint() string {
+	if x != nil {
+		return x.DeviceFingerprint
+	}
+	return ""
+}
+
+func (x *LinkInfo) GetIsApproved() bool {
+	if x != nil {
+		return x.IsApproved
+	}
+	return false
+}
+
+type StartLinkRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Role  LinkRole               `protobuf:"varint,1,opt,name=role,proto3,enum=numen.v1.LinkRole" json:"role,omitempty"`
+	Mode  LinkMode               `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.LinkMode" json:"mode,omitempty"`
+	// scanned_text is the text of the QR code in mode scan.
+	ScannedText   string `protobuf:"bytes,3,opt,name=scanned_text,json=scannedText,proto3" json:"scanned_text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartLinkRequest) Reset() {
+	*x = StartLinkRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartLinkRequest) ProtoMessage() {}
+
+func (x *StartLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartLinkRequest.ProtoReflect.Descriptor instead.
+func (*StartLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *StartLinkRequest) GetRole() LinkRole {
+	if x != nil {
+		return x.Role
+	}
+	return LinkRole_LINK_ROLE_UNSPECIFIED
+}
+
+func (x *StartLinkRequest) GetMode() LinkMode {
+	if x != nil {
+		return x.Mode
+	}
+	return LinkMode_LINK_MODE_UNSPECIFIED
+}
+
+func (x *StartLinkRequest) GetScannedText() string {
+	if x != nil {
+		return x.ScannedText
+	}
+	return ""
+}
+
+type StartLinkResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Link          *LinkInfo              `protobuf:"bytes,1,opt,name=link,proto3" json:"link,omitempty"`
+	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartLinkResponse) Reset() {
+	*x = StartLinkResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartLinkResponse) ProtoMessage() {}
+
+func (x *StartLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartLinkResponse.ProtoReflect.Descriptor instead.
+func (*StartLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StartLinkResponse) GetLink() *LinkInfo {
+	if x != nil {
+		return x.Link
+	}
+	return nil
+}
+
+func (x *StartLinkResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *StartLinkResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type GetLinkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLinkRequest) Reset() {
+	*x = GetLinkRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLinkRequest) ProtoMessage() {}
+
+func (x *GetLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLinkRequest.ProtoReflect.Descriptor instead.
+func (*GetLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{24}
+}
+
+type GetLinkResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Link          *LinkInfo              `protobuf:"bytes,1,opt,name=link,proto3" json:"link,omitempty"`
+	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLinkResponse) Reset() {
+	*x = GetLinkResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLinkResponse) ProtoMessage() {}
+
+func (x *GetLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLinkResponse.ProtoReflect.Descriptor instead.
+func (*GetLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *GetLinkResponse) GetLink() *LinkInfo {
+	if x != nil {
+		return x.Link
+	}
+	return nil
+}
+
+func (x *GetLinkResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *GetLinkResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type DecideLinkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Approve       bool                   `protobuf:"varint,1,opt,name=approve,proto3" json:"approve,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DecideLinkRequest) Reset() {
+	*x = DecideLinkRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecideLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecideLinkRequest) ProtoMessage() {}
+
+func (x *DecideLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecideLinkRequest.ProtoReflect.Descriptor instead.
+func (*DecideLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *DecideLinkRequest) GetApprove() bool {
+	if x != nil {
+		return x.Approve
+	}
+	return false
+}
+
+type DecideLinkResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DecideLinkResponse) Reset() {
+	*x = DecideLinkResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecideLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecideLinkResponse) ProtoMessage() {}
+
+func (x *DecideLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecideLinkResponse.ProtoReflect.Descriptor instead.
+func (*DecideLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *DecideLinkResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *DecideLinkResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type EnterLinkCodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnterLinkCodeRequest) Reset() {
+	*x = EnterLinkCodeRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnterLinkCodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnterLinkCodeRequest) ProtoMessage() {}
+
+func (x *EnterLinkCodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnterLinkCodeRequest.ProtoReflect.Descriptor instead.
+func (*EnterLinkCodeRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *EnterLinkCodeRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type EnterLinkCodeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnterLinkCodeResponse) Reset() {
+	*x = EnterLinkCodeResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnterLinkCodeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnterLinkCodeResponse) ProtoMessage() {}
+
+func (x *EnterLinkCodeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnterLinkCodeResponse.ProtoReflect.Descriptor instead.
+func (*EnterLinkCodeResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *EnterLinkCodeResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *EnterLinkCodeResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type ConfirmJoinRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Approve       bool                   `protobuf:"varint,1,opt,name=approve,proto3" json:"approve,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmJoinRequest) Reset() {
+	*x = ConfirmJoinRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmJoinRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmJoinRequest) ProtoMessage() {}
+
+func (x *ConfirmJoinRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmJoinRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmJoinRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ConfirmJoinRequest) GetApprove() bool {
+	if x != nil {
+		return x.Approve
+	}
+	return false
+}
+
+type ConfirmJoinResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmJoinResponse) Reset() {
+	*x = ConfirmJoinResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmJoinResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmJoinResponse) ProtoMessage() {}
+
+func (x *ConfirmJoinResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmJoinResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmJoinResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ConfirmJoinResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ConfirmJoinResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type CancelLinkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelLinkRequest) Reset() {
+	*x = CancelLinkRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelLinkRequest) ProtoMessage() {}
+
+func (x *CancelLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelLinkRequest.ProtoReflect.Descriptor instead.
+func (*CancelLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{32}
+}
+
+type CancelLinkResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelLinkResponse) Reset() {
+	*x = CancelLinkResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelLinkResponse) ProtoMessage() {}
+
+func (x *CancelLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelLinkResponse.ProtoReflect.Descriptor instead.
+func (*CancelLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *CancelLinkResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *CancelLinkResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+// DeviceInfo is one device of the account.
+type DeviceInfo struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Fingerprint string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	// added_at is RFC 3339 in UTC.
+	AddedAt       string `protobuf:"bytes,3,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
+	IsThis        bool   `protobuf:"varint,4,opt,name=is_this,json=isThis,proto3" json:"is_this,omitempty"`
+	IsRevoked     bool   `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceInfo) Reset() {
+	*x = DeviceInfo{}
+	mi := &file_numen_v1_identity_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceInfo) ProtoMessage() {}
+
+func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceInfo.ProtoReflect.Descriptor instead.
+func (*DeviceInfo) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *DeviceInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeviceInfo) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+func (x *DeviceInfo) GetAddedAt() string {
+	if x != nil {
+		return x.AddedAt
+	}
+	return ""
+}
+
+func (x *DeviceInfo) GetIsThis() bool {
+	if x != nil {
+		return x.IsThis
+	}
+	return false
+}
+
+func (x *DeviceInfo) GetIsRevoked() bool {
+	if x != nil {
+		return x.IsRevoked
+	}
+	return false
+}
+
+type ListDevicesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDevicesRequest) Reset() {
+	*x = ListDevicesRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDevicesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDevicesRequest) ProtoMessage() {}
+
+func (x *ListDevicesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDevicesRequest.ProtoReflect.Descriptor instead.
+func (*ListDevicesRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{35}
+}
+
+type ListDevicesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Devices       []*DeviceInfo          `protobuf:"bytes,1,rep,name=devices,proto3" json:"devices,omitempty"`
+	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDevicesResponse) Reset() {
+	*x = ListDevicesResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDevicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDevicesResponse) ProtoMessage() {}
+
+func (x *ListDevicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDevicesResponse.ProtoReflect.Descriptor instead.
+func (*ListDevicesResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *ListDevicesResponse) GetDevices() []*DeviceInfo {
+	if x != nil {
+		return x.Devices
+	}
+	return nil
+}
+
+func (x *ListDevicesResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ListDevicesResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type RevokeDeviceRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// fingerprint is the fingerprint of the device to revoke, as ListDevices shows it.
+	Fingerprint   string `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeDeviceRequest) Reset() {
+	*x = RevokeDeviceRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeDeviceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeDeviceRequest) ProtoMessage() {}
+
+func (x *RevokeDeviceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeDeviceRequest.ProtoReflect.Descriptor instead.
+func (*RevokeDeviceRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *RevokeDeviceRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type RevokeDeviceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeDeviceResponse) Reset() {
+	*x = RevokeDeviceResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeDeviceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeDeviceResponse) ProtoMessage() {}
+
+func (x *RevokeDeviceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeDeviceResponse.ProtoReflect.Descriptor instead.
+func (*RevokeDeviceResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *RevokeDeviceResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *RevokeDeviceResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
 var File_numen_v1_identity_proto protoreflect.FileDescriptor
 
 const file_numen_v1_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/identity.proto\x12\bnumen.v1\"\xb7\x01\n" +
+	"\x17numen/v1/identity.proto\x12\bnumen.v1\"\xf3\x01\n" +
 	"\fIdentityInfo\x12/\n" +
 	"\x13account_fingerprint\x18\x01 \x01(\tR\x12accountFingerprint\x12-\n" +
 	"\x12device_fingerprint\x18\x02 \x01(\tR\x11deviceFingerprint\x12\x1f\n" +
 	"\vdevice_name\x18\x03 \x01(\tR\n" +
 	"deviceName\x12&\n" +
-	"\x0fdevice_added_at\x18\x04 \x01(\tR\rdeviceAddedAt\"\x14\n" +
+	"\x0fdevice_added_at\x18\x04 \x01(\tR\rdeviceAddedAt\x12\x1d\n" +
+	"\n" +
+	"is_revoked\x18\x05 \x01(\bR\tisRevoked\x12\x1b\n" +
+	"\tkey_epoch\x18\x06 \x01(\rR\bkeyEpoch\"\x14\n" +
 	"\x12GetIdentityRequest\"I\n" +
 	"\x13GetIdentityResponse\x122\n" +
 	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\"\x1e\n" +
@@ -1205,7 +2513,75 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"h\n" +
 	"\x1bStartRestoreFromKitResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x02 \x01(\tR\x06detail*\xd1\x02\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\xee\x03\n" +
+	"\bLinkInfo\x12)\n" +
+	"\x05phase\x18\x01 \x01(\x0e2\x13.numen.v1.LinkPhaseR\x05phase\x12&\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x12.numen.v1.LinkModeR\x04mode\x12&\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x12.numen.v1.LinkRoleR\x04role\x12\x17\n" +
+	"\aqr_text\x18\x04 \x01(\tR\x06qrText\x12\x17\n" +
+	"\x04code\x18\x05 \x01(\tB\x03\x80\x01\x01R\x04code\x12\x1b\n" +
+	"\tpeer_name\x18\x06 \x01(\tR\bpeerName\x12)\n" +
+	"\x10peer_fingerprint\x18\a \x01(\tR\x0fpeerFingerprint\x12/\n" +
+	"\x13account_fingerprint\x18\b \x01(\tR\x12accountFingerprint\x12\x1d\n" +
+	"\n" +
+	"tries_left\x18\t \x01(\rR\ttriesLeft\x12,\n" +
+	"\x06reason\x18\n" +
+	" \x01(\x0e2\x14.numen.v1.LinkReasonR\x06reason\x12\x1f\n" +
+	"\vdevice_name\x18\v \x01(\tR\n" +
+	"deviceName\x12-\n" +
+	"\x12device_fingerprint\x18\f \x01(\tR\x11deviceFingerprint\x12\x1f\n" +
+	"\vis_approved\x18\r \x01(\bR\n" +
+	"isApproved\"\x85\x01\n" +
+	"\x10StartLinkRequest\x12&\n" +
+	"\x04role\x18\x01 \x01(\x0e2\x12.numen.v1.LinkRoleR\x04role\x12&\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x12.numen.v1.LinkModeR\x04mode\x12!\n" +
+	"\fscanned_text\x18\x03 \x01(\tR\vscannedText\"\x86\x01\n" +
+	"\x11StartLinkResponse\x12&\n" +
+	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x121\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x10\n" +
+	"\x0eGetLinkRequest\"\x84\x01\n" +
+	"\x0fGetLinkResponse\x12&\n" +
+	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x121\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"-\n" +
+	"\x11DecideLinkRequest\x12\x18\n" +
+	"\aapprove\x18\x01 \x01(\bR\aapprove\"_\n" +
+	"\x12DecideLinkResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"/\n" +
+	"\x14EnterLinkCodeRequest\x12\x17\n" +
+	"\x04code\x18\x01 \x01(\tB\x03\x80\x01\x01R\x04code\"b\n" +
+	"\x15EnterLinkCodeResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\".\n" +
+	"\x12ConfirmJoinRequest\x12\x18\n" +
+	"\aapprove\x18\x01 \x01(\bR\aapprove\"`\n" +
+	"\x13ConfirmJoinResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x13\n" +
+	"\x11CancelLinkRequest\"_\n" +
+	"\x12CancelLinkResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x95\x01\n" +
+	"\n" +
+	"DeviceInfo\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\x12\x19\n" +
+	"\badded_at\x18\x03 \x01(\tR\aaddedAt\x12\x17\n" +
+	"\ais_this\x18\x04 \x01(\bR\x06isThis\x12\x1d\n" +
+	"\n" +
+	"is_revoked\x18\x05 \x01(\bR\tisRevoked\"\x14\n" +
+	"\x12ListDevicesRequest\"\x90\x01\n" +
+	"\x13ListDevicesResponse\x12.\n" +
+	"\adevices\x18\x01 \x03(\v2\x14.numen.v1.DeviceInfoR\adevices\x121\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"7\n" +
+	"\x13RevokeDeviceRequest\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"a\n" +
+	"\x14RevokeDeviceResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail*\xb4\x05\n" +
 	"\x11IdentityErrorCode\x12#\n" +
 	"\x1fIDENTITY_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
 	"!IDENTITY_ERROR_CODE_INVALID_WORDS\x10\x01\x12'\n" +
@@ -1214,7 +2590,48 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\"IDENTITY_ERROR_CODE_INVALID_SHEETS\x10\x04\x12)\n" +
 	"%IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS\x10\x05\x12%\n" +
 	"!IDENTITY_ERROR_CODE_OTHER_ACCOUNT\x10\x06\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_NO_IDENTITY\x10\a2\xdd\x05\n" +
+	"\x1fIDENTITY_ERROR_CODE_NO_IDENTITY\x10\a\x12#\n" +
+	"\x1fIDENTITY_ERROR_CODE_LINK_ACTIVE\x10\b\x12\x1f\n" +
+	"\x1bIDENTITY_ERROR_CODE_NO_LINK\x10\t\x12)\n" +
+	"%IDENTITY_ERROR_CODE_LINK_TEXT_INVALID\x10\n" +
+	"\x12#\n" +
+	"\x1fIDENTITY_ERROR_CODE_LAST_DEVICE\x10\v\x12$\n" +
+	" IDENTITY_ERROR_CODE_REVOKE_RACED\x10\f\x12/\n" +
+	"+IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE\x10\r\x12&\n" +
+	"\"IDENTITY_ERROR_CODE_DEVICE_REVOKED\x10\x0e\x12&\n" +
+	"\"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE\x10\x0f\x12$\n" +
+	" IDENTITY_ERROR_CODE_CODE_INVALID\x10\x10*O\n" +
+	"\bLinkRole\x12\x19\n" +
+	"\x15LINK_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eLINK_ROLE_HOST\x10\x01\x12\x14\n" +
+	"\x10LINK_ROLE_JOINER\x10\x02*M\n" +
+	"\bLinkMode\x12\x19\n" +
+	"\x15LINK_MODE_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eLINK_MODE_SHOW\x10\x01\x12\x12\n" +
+	"\x0eLINK_MODE_SCAN\x10\x02*\xb0\x02\n" +
+	"\tLinkPhase\x12\x1a\n" +
+	"\x16LINK_PHASE_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1eLINK_PHASE_WAITING_FOR_CHANNEL\x10\x01\x12\x1f\n" +
+	"\x1bLINK_PHASE_WAITING_FOR_PEER\x10\x02\x12\x1b\n" +
+	"\x17LINK_PHASE_CONFIRM_PEER\x10\x03\x12!\n" +
+	"\x1dLINK_PHASE_WAITING_FOR_ACCEPT\x10\x04\x12\x19\n" +
+	"\x15LINK_PHASE_ENTER_CODE\x10\x05\x12\x19\n" +
+	"\x15LINK_PHASE_PUBLISHING\x10\x06\x12\x1e\n" +
+	"\x1aLINK_PHASE_CONFIRM_ACCOUNT\x10\a\x12\x15\n" +
+	"\x11LINK_PHASE_LINKED\x10\b\x12\x15\n" +
+	"\x11LINK_PHASE_FAILED\x10\t*\x93\x02\n" +
+	"\n" +
+	"LinkReason\x12\x1b\n" +
+	"\x17LINK_REASON_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14LINK_REASON_DECLINED\x10\x01\x12#\n" +
+	"\x1fLINK_REASON_DEVICE_HAS_IDENTITY\x10\x02\x12\x1a\n" +
+	"\x16LINK_REASON_WRONG_CODE\x10\x03\x12$\n" +
+	" LINK_REASON_TOO_MANY_WRONG_CODES\x10\x04\x12\x1b\n" +
+	"\x17LINK_REASON_STALE_CHAIN\x10\x05\x12\x18\n" +
+	"\x14LINK_REASON_CANCELED\x10\x06\x12\x17\n" +
+	"\x13LINK_REASON_EXPIRED\x10\a\x12\x17\n" +
+	"\x13LINK_REASON_INVALID\x10\b2\xae\n" +
+	"\n" +
 	"\x0fIdentityService\x12J\n" +
 	"\vGetIdentity\x12\x1c.numen.v1.GetIdentityRequest\x1a\x1d.numen.v1.GetIdentityResponse\x12h\n" +
 	"\x15GenerateRecoveryWords\x12&.numen.v1.GenerateRecoveryWordsRequest\x1a'.numen.v1.GenerateRecoveryWordsResponse\x12S\n" +
@@ -1223,7 +2640,17 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x0eDeleteIdentity\x12\x1f.numen.v1.DeleteIdentityRequest\x1a .numen.v1.DeleteIdentityResponse\x12\\\n" +
 	"\x11CreateRecoveryKit\x12\".numen.v1.CreateRecoveryKitRequest\x1a#.numen.v1.CreateRecoveryKitResponse\x12Y\n" +
 	"\x10CheckRecoveryKit\x12!.numen.v1.CheckRecoveryKitRequest\x1a\".numen.v1.CheckRecoveryKitResponse\x12b\n" +
-	"\x13StartRestoreFromKit\x12$.numen.v1.StartRestoreFromKitRequest\x1a%.numen.v1.StartRestoreFromKitResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x13StartRestoreFromKit\x12$.numen.v1.StartRestoreFromKitRequest\x1a%.numen.v1.StartRestoreFromKitResponse\x12D\n" +
+	"\tStartLink\x12\x1a.numen.v1.StartLinkRequest\x1a\x1b.numen.v1.StartLinkResponse\x12>\n" +
+	"\aGetLink\x12\x18.numen.v1.GetLinkRequest\x1a\x19.numen.v1.GetLinkResponse\x12G\n" +
+	"\n" +
+	"DecideLink\x12\x1b.numen.v1.DecideLinkRequest\x1a\x1c.numen.v1.DecideLinkResponse\x12P\n" +
+	"\rEnterLinkCode\x12\x1e.numen.v1.EnterLinkCodeRequest\x1a\x1f.numen.v1.EnterLinkCodeResponse\x12J\n" +
+	"\vConfirmJoin\x12\x1c.numen.v1.ConfirmJoinRequest\x1a\x1d.numen.v1.ConfirmJoinResponse\x12G\n" +
+	"\n" +
+	"CancelLink\x12\x1b.numen.v1.CancelLinkRequest\x1a\x1c.numen.v1.CancelLinkResponse\x12J\n" +
+	"\vListDevices\x12\x1c.numen.v1.ListDevicesRequest\x1a\x1d.numen.v1.ListDevicesResponse\x12M\n" +
+	"\fRevokeDevice\x12\x1d.numen.v1.RevokeDeviceRequest\x1a\x1e.numen.v1.RevokeDeviceResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_identity_proto_rawDescOnce sync.Once
@@ -1237,68 +2664,123 @@ func file_numen_v1_identity_proto_rawDescGZIP() []byte {
 	return file_numen_v1_identity_proto_rawDescData
 }
 
-var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_numen_v1_identity_proto_goTypes = []any{
 	(IdentityErrorCode)(0),                // 0: numen.v1.IdentityErrorCode
-	(*IdentityInfo)(nil),                  // 1: numen.v1.IdentityInfo
-	(*GetIdentityRequest)(nil),            // 2: numen.v1.GetIdentityRequest
-	(*GetIdentityResponse)(nil),           // 3: numen.v1.GetIdentityResponse
-	(*GenerateRecoveryWordsRequest)(nil),  // 4: numen.v1.GenerateRecoveryWordsRequest
-	(*GenerateRecoveryWordsResponse)(nil), // 5: numen.v1.GenerateRecoveryWordsResponse
-	(*CreateIdentityRequest)(nil),         // 6: numen.v1.CreateIdentityRequest
-	(*CreateIdentityResponse)(nil),        // 7: numen.v1.CreateIdentityResponse
-	(*StartRestoreRequest)(nil),           // 8: numen.v1.StartRestoreRequest
-	(*StartRestoreResponse)(nil),          // 9: numen.v1.StartRestoreResponse
-	(*DeleteIdentityRequest)(nil),         // 10: numen.v1.DeleteIdentityRequest
-	(*DeleteIdentityResponse)(nil),        // 11: numen.v1.DeleteIdentityResponse
-	(*RecoverySheet)(nil),                 // 12: numen.v1.RecoverySheet
-	(*RecoveryWordsProof)(nil),            // 13: numen.v1.RecoveryWordsProof
-	(*RecoverySheetsProof)(nil),           // 14: numen.v1.RecoverySheetsProof
-	(*RecoveryKit)(nil),                   // 15: numen.v1.RecoveryKit
-	(*CreateRecoveryKitRequest)(nil),      // 16: numen.v1.CreateRecoveryKitRequest
-	(*CreateRecoveryKitResponse)(nil),     // 17: numen.v1.CreateRecoveryKitResponse
-	(*CheckRecoveryKitRequest)(nil),       // 18: numen.v1.CheckRecoveryKitRequest
-	(*CheckRecoveryKitResponse)(nil),      // 19: numen.v1.CheckRecoveryKitResponse
-	(*StartRestoreFromKitRequest)(nil),    // 20: numen.v1.StartRestoreFromKitRequest
-	(*StartRestoreFromKitResponse)(nil),   // 21: numen.v1.StartRestoreFromKitResponse
+	(LinkRole)(0),                         // 1: numen.v1.LinkRole
+	(LinkMode)(0),                         // 2: numen.v1.LinkMode
+	(LinkPhase)(0),                        // 3: numen.v1.LinkPhase
+	(LinkReason)(0),                       // 4: numen.v1.LinkReason
+	(*IdentityInfo)(nil),                  // 5: numen.v1.IdentityInfo
+	(*GetIdentityRequest)(nil),            // 6: numen.v1.GetIdentityRequest
+	(*GetIdentityResponse)(nil),           // 7: numen.v1.GetIdentityResponse
+	(*GenerateRecoveryWordsRequest)(nil),  // 8: numen.v1.GenerateRecoveryWordsRequest
+	(*GenerateRecoveryWordsResponse)(nil), // 9: numen.v1.GenerateRecoveryWordsResponse
+	(*CreateIdentityRequest)(nil),         // 10: numen.v1.CreateIdentityRequest
+	(*CreateIdentityResponse)(nil),        // 11: numen.v1.CreateIdentityResponse
+	(*StartRestoreRequest)(nil),           // 12: numen.v1.StartRestoreRequest
+	(*StartRestoreResponse)(nil),          // 13: numen.v1.StartRestoreResponse
+	(*DeleteIdentityRequest)(nil),         // 14: numen.v1.DeleteIdentityRequest
+	(*DeleteIdentityResponse)(nil),        // 15: numen.v1.DeleteIdentityResponse
+	(*RecoverySheet)(nil),                 // 16: numen.v1.RecoverySheet
+	(*RecoveryWordsProof)(nil),            // 17: numen.v1.RecoveryWordsProof
+	(*RecoverySheetsProof)(nil),           // 18: numen.v1.RecoverySheetsProof
+	(*RecoveryKit)(nil),                   // 19: numen.v1.RecoveryKit
+	(*CreateRecoveryKitRequest)(nil),      // 20: numen.v1.CreateRecoveryKitRequest
+	(*CreateRecoveryKitResponse)(nil),     // 21: numen.v1.CreateRecoveryKitResponse
+	(*CheckRecoveryKitRequest)(nil),       // 22: numen.v1.CheckRecoveryKitRequest
+	(*CheckRecoveryKitResponse)(nil),      // 23: numen.v1.CheckRecoveryKitResponse
+	(*StartRestoreFromKitRequest)(nil),    // 24: numen.v1.StartRestoreFromKitRequest
+	(*StartRestoreFromKitResponse)(nil),   // 25: numen.v1.StartRestoreFromKitResponse
+	(*LinkInfo)(nil),                      // 26: numen.v1.LinkInfo
+	(*StartLinkRequest)(nil),              // 27: numen.v1.StartLinkRequest
+	(*StartLinkResponse)(nil),             // 28: numen.v1.StartLinkResponse
+	(*GetLinkRequest)(nil),                // 29: numen.v1.GetLinkRequest
+	(*GetLinkResponse)(nil),               // 30: numen.v1.GetLinkResponse
+	(*DecideLinkRequest)(nil),             // 31: numen.v1.DecideLinkRequest
+	(*DecideLinkResponse)(nil),            // 32: numen.v1.DecideLinkResponse
+	(*EnterLinkCodeRequest)(nil),          // 33: numen.v1.EnterLinkCodeRequest
+	(*EnterLinkCodeResponse)(nil),         // 34: numen.v1.EnterLinkCodeResponse
+	(*ConfirmJoinRequest)(nil),            // 35: numen.v1.ConfirmJoinRequest
+	(*ConfirmJoinResponse)(nil),           // 36: numen.v1.ConfirmJoinResponse
+	(*CancelLinkRequest)(nil),             // 37: numen.v1.CancelLinkRequest
+	(*CancelLinkResponse)(nil),            // 38: numen.v1.CancelLinkResponse
+	(*DeviceInfo)(nil),                    // 39: numen.v1.DeviceInfo
+	(*ListDevicesRequest)(nil),            // 40: numen.v1.ListDevicesRequest
+	(*ListDevicesResponse)(nil),           // 41: numen.v1.ListDevicesResponse
+	(*RevokeDeviceRequest)(nil),           // 42: numen.v1.RevokeDeviceRequest
+	(*RevokeDeviceResponse)(nil),          // 43: numen.v1.RevokeDeviceResponse
 }
 var file_numen_v1_identity_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	1,  // 1: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	5,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	5,  // 1: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
 	0,  // 2: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
 	0,  // 3: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
-	12, // 4: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
-	12, // 5: numen.v1.RecoveryKit.sheets:type_name -> numen.v1.RecoverySheet
-	13, // 6: numen.v1.CreateRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
-	14, // 7: numen.v1.CreateRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
-	15, // 8: numen.v1.CreateRecoveryKitResponse.kit:type_name -> numen.v1.RecoveryKit
+	16, // 4: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
+	16, // 5: numen.v1.RecoveryKit.sheets:type_name -> numen.v1.RecoverySheet
+	17, // 6: numen.v1.CreateRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
+	18, // 7: numen.v1.CreateRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
+	19, // 8: numen.v1.CreateRecoveryKitResponse.kit:type_name -> numen.v1.RecoveryKit
 	0,  // 9: numen.v1.CreateRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	12, // 10: numen.v1.CheckRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheet
+	16, // 10: numen.v1.CheckRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheet
 	0,  // 11: numen.v1.CheckRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	12, // 12: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
+	16, // 12: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
 	0,  // 13: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	2,  // 14: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
-	4,  // 15: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
-	6,  // 16: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
-	8,  // 17: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
-	10, // 18: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
-	16, // 19: numen.v1.IdentityService.CreateRecoveryKit:input_type -> numen.v1.CreateRecoveryKitRequest
-	18, // 20: numen.v1.IdentityService.CheckRecoveryKit:input_type -> numen.v1.CheckRecoveryKitRequest
-	20, // 21: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
-	3,  // 22: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
-	5,  // 23: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
-	7,  // 24: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
-	9,  // 25: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
-	11, // 26: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
-	17, // 27: numen.v1.IdentityService.CreateRecoveryKit:output_type -> numen.v1.CreateRecoveryKitResponse
-	19, // 28: numen.v1.IdentityService.CheckRecoveryKit:output_type -> numen.v1.CheckRecoveryKitResponse
-	21, // 29: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
-	22, // [22:30] is the sub-list for method output_type
-	14, // [14:22] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	3,  // 14: numen.v1.LinkInfo.phase:type_name -> numen.v1.LinkPhase
+	2,  // 15: numen.v1.LinkInfo.mode:type_name -> numen.v1.LinkMode
+	1,  // 16: numen.v1.LinkInfo.role:type_name -> numen.v1.LinkRole
+	4,  // 17: numen.v1.LinkInfo.reason:type_name -> numen.v1.LinkReason
+	1,  // 18: numen.v1.StartLinkRequest.role:type_name -> numen.v1.LinkRole
+	2,  // 19: numen.v1.StartLinkRequest.mode:type_name -> numen.v1.LinkMode
+	26, // 20: numen.v1.StartLinkResponse.link:type_name -> numen.v1.LinkInfo
+	0,  // 21: numen.v1.StartLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	26, // 22: numen.v1.GetLinkResponse.link:type_name -> numen.v1.LinkInfo
+	0,  // 23: numen.v1.GetLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 24: numen.v1.DecideLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 25: numen.v1.EnterLinkCodeResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 26: numen.v1.ConfirmJoinResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 27: numen.v1.CancelLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	39, // 28: numen.v1.ListDevicesResponse.devices:type_name -> numen.v1.DeviceInfo
+	0,  // 29: numen.v1.ListDevicesResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 30: numen.v1.RevokeDeviceResponse.error:type_name -> numen.v1.IdentityErrorCode
+	6,  // 31: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
+	8,  // 32: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
+	10, // 33: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
+	12, // 34: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
+	14, // 35: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
+	20, // 36: numen.v1.IdentityService.CreateRecoveryKit:input_type -> numen.v1.CreateRecoveryKitRequest
+	22, // 37: numen.v1.IdentityService.CheckRecoveryKit:input_type -> numen.v1.CheckRecoveryKitRequest
+	24, // 38: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
+	27, // 39: numen.v1.IdentityService.StartLink:input_type -> numen.v1.StartLinkRequest
+	29, // 40: numen.v1.IdentityService.GetLink:input_type -> numen.v1.GetLinkRequest
+	31, // 41: numen.v1.IdentityService.DecideLink:input_type -> numen.v1.DecideLinkRequest
+	33, // 42: numen.v1.IdentityService.EnterLinkCode:input_type -> numen.v1.EnterLinkCodeRequest
+	35, // 43: numen.v1.IdentityService.ConfirmJoin:input_type -> numen.v1.ConfirmJoinRequest
+	37, // 44: numen.v1.IdentityService.CancelLink:input_type -> numen.v1.CancelLinkRequest
+	40, // 45: numen.v1.IdentityService.ListDevices:input_type -> numen.v1.ListDevicesRequest
+	42, // 46: numen.v1.IdentityService.RevokeDevice:input_type -> numen.v1.RevokeDeviceRequest
+	7,  // 47: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
+	9,  // 48: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
+	11, // 49: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
+	13, // 50: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
+	15, // 51: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
+	21, // 52: numen.v1.IdentityService.CreateRecoveryKit:output_type -> numen.v1.CreateRecoveryKitResponse
+	23, // 53: numen.v1.IdentityService.CheckRecoveryKit:output_type -> numen.v1.CheckRecoveryKitResponse
+	25, // 54: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
+	28, // 55: numen.v1.IdentityService.StartLink:output_type -> numen.v1.StartLinkResponse
+	30, // 56: numen.v1.IdentityService.GetLink:output_type -> numen.v1.GetLinkResponse
+	32, // 57: numen.v1.IdentityService.DecideLink:output_type -> numen.v1.DecideLinkResponse
+	34, // 58: numen.v1.IdentityService.EnterLinkCode:output_type -> numen.v1.EnterLinkCodeResponse
+	36, // 59: numen.v1.IdentityService.ConfirmJoin:output_type -> numen.v1.ConfirmJoinResponse
+	38, // 60: numen.v1.IdentityService.CancelLink:output_type -> numen.v1.CancelLinkResponse
+	41, // 61: numen.v1.IdentityService.ListDevices:output_type -> numen.v1.ListDevicesResponse
+	43, // 62: numen.v1.IdentityService.RevokeDevice:output_type -> numen.v1.RevokeDeviceResponse
+	47, // [47:63] is the sub-list for method output_type
+	31, // [31:47] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_identity_proto_init() }
@@ -1315,8 +2797,8 @@ func file_numen_v1_identity_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_identity_proto_rawDesc), len(file_numen_v1_identity_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   21,
+			NumEnums:      5,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

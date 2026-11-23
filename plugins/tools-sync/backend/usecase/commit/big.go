@@ -37,13 +37,14 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	}
 	kind := note.GetKind(path)
 	meta := note.Meta{Path: path, Size: file.Stat.Size, MTime: file.ModifiedAt, Hash: file.Stat.Hash, Key: sent.Key[:], Kind: kind}
-	sealed, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
+	newest := r.vault.GetNewest()
+	sealed, err := note.SealMeta(r.deps.Random, newest.Key, r.vault.ID, fileID, meta)
 	if err != nil {
 		return transfer.Outcome{}, err
 	}
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobId: sent.BlobID, BlobHash: sent.BlobHash[:], BlobSize: sent.BlobSize,
-		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author,
+		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author, Epoch: newest.Epoch,
 	}
 	if revision.Signature, err = r.deps.Identity.SignAsDevice(ctx, syncprotocol.GetRevisionMessage(revision)); err != nil {
 		return transfer.Outcome{}, err

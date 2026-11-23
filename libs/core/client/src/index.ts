@@ -120,6 +120,7 @@ export {
   type IdentityFailure,
   type RecoveryKit,
   type KitProof,
+  type LinkInfo,
   type IdentityClient,
   createIdentityClient,
 } from './identity'

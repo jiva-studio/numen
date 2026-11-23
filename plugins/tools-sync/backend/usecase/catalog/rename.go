@@ -1,9 +1,11 @@
 package catalog
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -41,14 +43,32 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	if err != nil {
 		return fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := u.reader.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remoteID), link.SealedKey)
+	opened, err := vaultlink.OpenKeys(ctx, u.reader.deps.Crypto, link)
 	if err != nil {
-		return fmt.Errorf("open the vault key: %w", err)
+		return err
 	}
-	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: key}
+	keys, err := u.readKeys(ctx, remoteID)
+	if err != nil {
+		return err
+	}
+	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: opened[0].Key, Keys: keys}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: false, body: body}); err != nil {
 		return err
 	}
 	link.CatalogName = vault.Name
 	return u.reader.deps.State.WriteLink(ctx, vault.ID, link)
+}
+
+func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]vaultlink.VaultKey, error) {
+	entries, err := u.reader.read(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range slices.Backward(entries) {
+		if bytes.Equal(entry.GetVaultId(), remoteID) {
+			body, err := u.reader.openBody(ctx, entry)
+			return body.Keys, err
+		}
+	}
+	return nil, nil
 }

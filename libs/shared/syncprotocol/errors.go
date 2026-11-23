@@ -87,3 +87,8 @@ type MultipartIncompleteError struct {
 func (e MultipartIncompleteError) Error() string {
 	return fmt.Sprintf("the multipart upload is incomplete: %d parts missing, %d of the wrong size", len(e.Missing), len(e.WrongSize))
 }
+
+// NewLinkRefusal returns an error that reads as the sentinel and keeps the Connect error of the relay.
+func NewLinkRefusal(sentinel error, cause error) error {
+	return refusalError{sentinel: sentinel, cause: cause}
+}

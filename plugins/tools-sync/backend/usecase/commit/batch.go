@@ -75,14 +75,15 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 		return nil, err
 	}
 	meta := note.Meta{Path: path, Size: int64(len(file.Content)), MTime: file.ModifiedAt, Hash: note.Hash(file.Content), Key: key, Kind: kind}
-	sealed, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
+	newest := r.vault.GetNewest()
+	sealed, err := note.SealMeta(r.deps.Random, newest.Key, r.vault.ID, fileID, meta)
 	if err != nil {
 		return nil, err
 	}
 	hash := sha256.Sum256(blob)
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
-		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author,
+		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author, Epoch: newest.Epoch,
 	}
 	sealedKey, err := r.deps.Crypto.SealData(ctx, note.GetRecordKeyContext(r.vault.ID, fileID), key)
 	if err != nil {
@@ -183,7 +184,11 @@ func (r *batchRun) settleClash(outcome transfer.Outcome) transfer.Outcome {
 		return outcome
 	}
 	head := outcome.Head.GetRevision()
-	meta, err := note.OpenMeta(r.vault.Key, r.vault.ID, head.GetFileId(), head.GetEncMeta())
+	key, isKnown := r.vault.GetKey(head.GetEpoch())
+	if !isKnown {
+		return outcome
+	}
+	meta, err := note.OpenMeta(key, r.vault.ID, head.GetFileId(), head.GetEncMeta())
 	if err == nil && note.IsCaseClash(outcome.Path, meta.Path) {
 		outcome.Status = transfer.CaseClash
 	}

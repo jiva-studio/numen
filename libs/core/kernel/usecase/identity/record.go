@@ -10,10 +10,7 @@ import (
 )
 
 func (d Deps) proveAccount(ctx context.Context, secret identitylib.RecoverySecret) (string, error) {
-	record, err := d.readRecord(ctx)
-	if isNoKey(err) {
-		return "", identitydomain.ErrNoIdentity
-	}
+	state, err := d.records.readState(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -22,7 +19,7 @@ func (d Deps) proveAccount(ctx context.Context, secret identitylib.RecoverySecre
 		return "", err
 	}
 	fingerprint := key.Public().Fingerprint()
-	if fingerprint != record.Chain.Root().Fingerprint() {
+	if fingerprint != state.Chain.Root().Fingerprint() {
 		return "", identitydomain.ErrOtherAccount
 	}
 	return fingerprint.String(), nil

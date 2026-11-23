@@ -63,7 +63,11 @@ func (f *Fake) readAccountKeys() (identity.AccountKeys, error) {
 	if err != nil {
 		return identity.AccountKeys{}, err
 	}
-	return record.Device.UnwrapAccountKeys(record.Wrapped)
+	keys, err := record.Device.UnwrapAccountKeys(record.Wrapped)
+	if err != nil {
+		return identity.AccountKeys{}, err
+	}
+	return record.Chain.OpenKeyHistory(keys)
 }
 
 func (s *service) SealData(_ context.Context, req *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error) {
@@ -123,49 +127,49 @@ func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.Com
 	if err != nil {
 		return nil, err
 	}
-	record, err := joinRestore(restore, req.Msg.GetChain())
+	state, err := joinRestore(restore, req.Msg.GetChain())
 	if err != nil {
 		return nil, err
 	}
 	s.fake.mu.Lock()
 	defer s.fake.mu.Unlock()
-	s.fake.record = &record
+	s.fake.record = &state
 	s.fake.pending = nil
 	return connect.NewResponse(&v1.CompleteRestoreResponse{}), nil
 }
 
-func joinRestore(restore *pendingRestore, chainBytes []byte) (identity.Record, error) {
+func joinRestore(restore *pendingRestore, chainBytes []byte) (held, error) {
 	now := clock.System{}.Now()
 	if len(chainBytes) == 0 {
 		keys, err := identity.NewAccountKeys(rand.Reader)
 		if err != nil {
-			return identity.Record{}, connect.NewError(connect.CodeInternal, err)
+			return held{}, connect.NewError(connect.CodeInternal, err)
 		}
 		chain, err := identity.NewChain(restore.recovery, keys, now)
 		if err != nil {
-			return identity.Record{}, connect.NewError(connect.CodeInternal, err)
+			return held{}, connect.NewError(connect.CodeInternal, err)
 		}
 		return appendDevice(restore, chain, keys, now)
 	}
 	chain, err := identity.ParseChain(chainBytes)
 	if err != nil || !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
-		return identity.Record{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
 	keys, err := restore.recovery.UnwrapAccountKeys(chain.WrappedForRecovery())
 	if err != nil {
-		return identity.Record{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
 	return appendDevice(restore, chain, keys, now)
 }
 
-func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (identity.Record, error) {
+func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (held, error) {
 	chain, err := chain.AppendDevice(restore.recovery, restore.device.Public(), "Test device", now)
 	if err != nil {
-		return identity.Record{}, connect.NewError(connect.CodeInternal, err)
+		return held{}, connect.NewError(connect.CodeInternal, err)
 	}
 	wrapped, err := keys.WrapForDevice(restore.device.Public())
 	if err != nil {
-		return identity.Record{}, connect.NewError(connect.CodeInternal, err)
+		return held{}, connect.NewError(connect.CodeInternal, err)
 	}
-	return identity.Record{Device: restore.device, Wrapped: wrapped, Chain: chain}, nil
+	return held{Record: identity.Record{Device: restore.device, Wrapped: wrapped}, Chain: chain, root: restore.recovery, keys: keys}, nil
 }

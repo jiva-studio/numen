@@ -39,7 +39,7 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	tb.Helper()
 	keys := newFakeKeyStore()
 	clock := testsupport.NewClockAt(getNow())
-	deps := identity.NewDeps(keys, fakeNames{name: name}, clock)
+	deps := identity.NewDeps(keys, fakeNames{name: name}, clock).WithChains(&fakeChainStore{})
 	return restoreKit{
 		keys: keys, clock: clock,
 		get:       identity.NewGetIdentity(deps),

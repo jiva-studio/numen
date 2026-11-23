@@ -219,6 +219,197 @@ func (x *GetAccountChainByRootResponse) GetChain() []byte {
 	return nil
 }
 
+type AppendChainRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// chain is the chain to store, whole.
+	Chain         []byte `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendChainRequest) Reset() {
+	*x = AppendChainRequest{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendChainRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendChainRequest) ProtoMessage() {}
+
+func (x *AppendChainRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendChainRequest.ProtoReflect.Descriptor instead.
+func (*AppendChainRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AppendChainRequest) GetChain() []byte {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+type AppendChainResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Accepted bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	// chain is the stored head after the call.
+	Chain         []byte `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendChainResponse) Reset() {
+	*x = AppendChainResponse{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendChainResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendChainResponse) ProtoMessage() {}
+
+func (x *AppendChainResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendChainResponse.ProtoReflect.Descriptor instead.
+func (*AppendChainResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *AppendChainResponse) GetAccepted() bool {
+	if x != nil {
+		return x.Accepted
+	}
+	return false
+}
+
+func (x *AppendChainResponse) GetChain() []byte {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+// ChainStale is the detail of FAILED_PRECONDITION when the presented chain does not extend the stored one.
+type ChainStale struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// chain is the stored head.
+	Chain         []byte `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChainStale) Reset() {
+	*x = ChainStale{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChainStale) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChainStale) ProtoMessage() {}
+
+func (x *ChainStale) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChainStale.ProtoReflect.Descriptor instead.
+func (*ChainStale) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ChainStale) GetChain() []byte {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
+// DeviceRevoked is the detail of the UNAUTHENTICATED answer to a sign-in of a device that proved its key but is not
+// active in the stored chain of its account.
+type DeviceRevoked struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// chain is the stored chain.
+	Chain         []byte `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceRevoked) Reset() {
+	*x = DeviceRevoked{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceRevoked) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceRevoked) ProtoMessage() {}
+
+func (x *DeviceRevoked) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceRevoked.ProtoReflect.Descriptor instead.
+func (*DeviceRevoked) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeviceRevoked) GetChain() []byte {
+	if x != nil {
+		return x.Chain
+	}
+	return nil
+}
+
 var File_numen_sync_v1_account_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_account_proto_rawDesc = "" +
@@ -233,10 +424,21 @@ const file_numen_sync_v1_account_proto_rawDesc = "" +
 	"\tsignature\x18\x03 \x01(\fR\tsignature\"K\n" +
 	"\x1dGetAccountChainByRootResponse\x12\x14\n" +
 	"\x05found\x18\x01 \x01(\bR\x05found\x12\x14\n" +
-	"\x05chain\x18\x02 \x01(\fR\x05chain2\xe6\x01\n" +
+	"\x05chain\x18\x02 \x01(\fR\x05chain\"*\n" +
+	"\x12AppendChainRequest\x12\x14\n" +
+	"\x05chain\x18\x01 \x01(\fR\x05chain\"G\n" +
+	"\x13AppendChainResponse\x12\x1a\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x14\n" +
+	"\x05chain\x18\x02 \x01(\fR\x05chain\"\"\n" +
+	"\n" +
+	"ChainStale\x12\x14\n" +
+	"\x05chain\x18\x01 \x01(\fR\x05chain\"%\n" +
+	"\rDeviceRevoked\x12\x14\n" +
+	"\x05chain\x18\x01 \x01(\fR\x05chain2\xbc\x02\n" +
 	"\x0eAccountService\x12`\n" +
 	"\x0fGetAccountChain\x12%.numen.sync.v1.GetAccountChainRequest\x1a&.numen.sync.v1.GetAccountChainResponse\x12r\n" +
-	"\x15GetAccountChainByRoot\x12+.numen.sync.v1.GetAccountChainByRootRequest\x1a,.numen.sync.v1.GetAccountChainByRootResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
+	"\x15GetAccountChainByRoot\x12+.numen.sync.v1.GetAccountChainByRootRequest\x1a,.numen.sync.v1.GetAccountChainByRootResponse\x12T\n" +
+	"\vAppendChain\x12!.numen.sync.v1.AppendChainRequest\x1a\".numen.sync.v1.AppendChainResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
 var (
 	file_numen_sync_v1_account_proto_rawDescOnce sync.Once
@@ -250,20 +452,26 @@ func file_numen_sync_v1_account_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_account_proto_rawDescData
 }
 
-var file_numen_sync_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_numen_sync_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_sync_v1_account_proto_goTypes = []any{
 	(*GetAccountChainRequest)(nil),        // 0: numen.sync.v1.GetAccountChainRequest
 	(*GetAccountChainResponse)(nil),       // 1: numen.sync.v1.GetAccountChainResponse
 	(*GetAccountChainByRootRequest)(nil),  // 2: numen.sync.v1.GetAccountChainByRootRequest
 	(*GetAccountChainByRootResponse)(nil), // 3: numen.sync.v1.GetAccountChainByRootResponse
+	(*AppendChainRequest)(nil),            // 4: numen.sync.v1.AppendChainRequest
+	(*AppendChainResponse)(nil),           // 5: numen.sync.v1.AppendChainResponse
+	(*ChainStale)(nil),                    // 6: numen.sync.v1.ChainStale
+	(*DeviceRevoked)(nil),                 // 7: numen.sync.v1.DeviceRevoked
 }
 var file_numen_sync_v1_account_proto_depIdxs = []int32{
 	0, // 0: numen.sync.v1.AccountService.GetAccountChain:input_type -> numen.sync.v1.GetAccountChainRequest
 	2, // 1: numen.sync.v1.AccountService.GetAccountChainByRoot:input_type -> numen.sync.v1.GetAccountChainByRootRequest
-	1, // 2: numen.sync.v1.AccountService.GetAccountChain:output_type -> numen.sync.v1.GetAccountChainResponse
-	3, // 3: numen.sync.v1.AccountService.GetAccountChainByRoot:output_type -> numen.sync.v1.GetAccountChainByRootResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: numen.sync.v1.AccountService.AppendChain:input_type -> numen.sync.v1.AppendChainRequest
+	1, // 3: numen.sync.v1.AccountService.GetAccountChain:output_type -> numen.sync.v1.GetAccountChainResponse
+	3, // 4: numen.sync.v1.AccountService.GetAccountChainByRoot:output_type -> numen.sync.v1.GetAccountChainByRootResponse
+	5, // 5: numen.sync.v1.AccountService.AppendChain:output_type -> numen.sync.v1.AppendChainResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -280,7 +488,7 @@ func file_numen_sync_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_account_proto_rawDesc), len(file_numen_sync_v1_account_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

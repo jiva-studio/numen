@@ -16,6 +16,7 @@ import type {
   RowOption,
 } from '@/entities/connection'
 import type { IdentityInfo, KitProof, RecoveryKit } from '@/entities/identity'
+import type { DeviceCalls } from '@/features/identity-link'
 import type { Printer } from '@/pages/settings/api/print'
 import type { LicenseInfo } from '@/entities/license'
 import type {
@@ -169,6 +170,7 @@ export interface ConnectionEdits {
  */
 export interface InstallationIdentity {
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
+  readonly devices: DeviceCalls
   load(): Promise<void>
   generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>

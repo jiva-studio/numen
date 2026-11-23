@@ -2,13 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo, RecoveryKit } from '../lib/types'
-import { createIdentityApi } from '../api/identity'
 import { IDENTITY_WORDS } from '../words'
 import { createIdentityStore } from './identity'
+import { wrapIdentityClient } from '@/testing/identityClient'
 
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
 const asStarted = (): Result<undefined, IdentityFailure> => ({ ok: true, value: undefined })
+const asRefusal = (error: IdentityFailure['error']): Result<never, IdentityFailure> =>
+  asFailure({ error, message: 'refused' })
 
 const WORDS = [
   'legal',
@@ -30,6 +32,8 @@ const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityIn
   deviceFingerprint: 'AAAA BBBB CCCC DDDD 0000 1111 2222 3333',
   deviceName: 'Laptop',
   deviceAddedAt: '2026-11-22T12:00:00Z',
+  isRevoked: false,
+  keyEpoch: 0,
   ...overrides,
 })
 
@@ -52,12 +56,20 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
   createKit: () => Promise.resolve(asValue(createSampleKit())),
   checkKit: () => Promise.resolve(asValue(createSampleIdentity().accountFingerprint)),
   startRestoreFromKit: () => Promise.resolve(asStarted()),
+  startLink: () => Promise.resolve(asRefusal('noLink')),
+  getLink: () => Promise.resolve(asRefusal('noLink')),
+  decideLink: () => Promise.resolve(asStarted()),
+  enterLinkCode: () => Promise.resolve(asStarted()),
+  confirmJoin: () => Promise.resolve(asStarted()),
+  cancelLink: () => Promise.resolve(asStarted()),
+  listDevices: () => Promise.resolve(asValue([])),
+  revokeDevice: () => Promise.resolve(asStarted()),
   ...overrides,
 })
 
 const createStore = (client: IdentityClient) => {
   const notify = vi.fn()
-  return { notify, store: createIdentityStore(createIdentityApi(client), notify) }
+  return { notify, store: createIdentityStore(wrapIdentityClient(client), notify) }
 }
 
 describe('the identity store', () => {
@@ -446,5 +458,78 @@ describe('the identity store and the recovery kit', () => {
     })
     expect(get).not.toHaveBeenCalled()
     expect(store.identity.value).toBeUndefined()
+  })
+})
+
+describe('the devices and the link of the identity store', () => {
+  const DEVICES = [
+    { name: 'Laptop', fingerprint: 'A', addedAt: 'x', isThis: true, isRevoked: false },
+    { name: 'Phone', fingerprint: 'B', addedAt: 'y', isThis: false, isRevoked: true },
+  ]
+
+  it('loads the devices of the account', async () => {
+    const { store } = createStore(
+      createClient({ listDevices: () => Promise.resolve(asValue(DEVICES)) }),
+    )
+    await store.devices.load()
+    expect(store.devices.list.value).toStrictEqual(DEVICES)
+  })
+
+  it('reads the list again after a revoke, also when the revoke was refused', async () => {
+    let listed = 0
+    const { store } = createStore(
+      createClient({
+        listDevices: () => {
+          listed += 1
+          return Promise.resolve(asValue(DEVICES))
+        },
+        revokeDevice: () => Promise.resolve(asRefusal('revokeRaced')),
+      }),
+    )
+    const answer = await store.devices.revoke('B')
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: 'A device was added while you revoked. Check the list.',
+    })
+    expect(listed).toBe(1)
+  })
+
+  it('words the refusal of a revoke of this device', async () => {
+    const { store } = createStore(
+      createClient({ revokeDevice: () => Promise.resolve(asRefusal('notAllowedThisDevice')) }),
+    )
+    expect(await store.devices.revoke('A')).toStrictEqual({
+      ok: false,
+      error: 'This device cannot revoke itself.',
+    })
+  })
+
+  it('passes the answers of the person to the core', async () => {
+    const sent: string[] = []
+    const { store } = createStore(
+      createClient({
+        decideLink: (approve) => {
+          sent.push(`decide ${approve}`)
+          return Promise.resolve(asStarted())
+        },
+        enterLinkCode: (code) => {
+          sent.push(`code ${code}`)
+          return Promise.resolve(asStarted())
+        },
+      }),
+    )
+    await store.devices.link.decide(true)
+    await store.devices.link.enterCode('123456')
+    expect(sent).toStrictEqual(['decide true', 'code 123456'])
+  })
+
+  it('words a refused link text', async () => {
+    const { store } = createStore(
+      createClient({ startLink: () => Promise.resolve(asRefusal('linkTextInvalid')) }),
+    )
+    expect(await store.devices.link.start('host', 'scan', 'x')).toStrictEqual({
+      ok: false,
+      error: 'This text is not the link of a QR code.',
+    })
   })
 })

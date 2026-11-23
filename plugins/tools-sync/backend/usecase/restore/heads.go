@@ -22,7 +22,8 @@ type heads struct {
 	epochID []byte
 }
 
-func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byte) (heads, error) {
+func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (heads, error) {
+	remote := vault.ID
 	found := heads{byFile: map[string]domain.Head{}, blobs: map[string][]byte{}, epochID: nil}
 	var since uint64
 	for isFirst := true; ; isFirst = false {
@@ -35,7 +36,7 @@ func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byt
 		} else if !bytes.Equal(found.epochID, page.GetRestoreEpochId()) {
 			return heads{}, errEpochMoved
 		}
-		found.add(key, remote, page.GetChanges())
+		found.add(vault, page.GetChanges())
 		since = page.GetNextSeq()
 		if !page.GetHasMore() {
 			return found, nil
@@ -43,15 +44,17 @@ func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byt
 	}
 }
 
-func (h heads) add(key [32]byte, remote []byte, changes []*syncv1.StoredRevision) {
+func (h heads) add(vault transfer.Vault, changes []*syncv1.StoredRevision) {
 	for _, stored := range changes {
 		rev := stored.GetRevision()
 		head := domain.Head{
 			FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Hash: "", Path: "",
 			IsDeleted: rev.GetDeleted(), IsBlobMissing: false,
 		}
-		if meta, err := note.OpenMeta(key, remote, rev.GetFileId(), rev.GetEncMeta()); err == nil && !rev.GetDeleted() {
-			head.Hash, head.Path = meta.Hash, meta.Path
+		if key, isKnown := vault.GetKey(rev.GetEpoch()); isKnown && !rev.GetDeleted() {
+			if meta, err := note.OpenMeta(key, vault.ID, rev.GetFileId(), rev.GetEncMeta()); err == nil {
+				head.Hash, head.Path = meta.Hash, meta.Path
+			}
 		}
 		h.byFile[string(rev.GetFileId())] = head
 		if !rev.GetDeleted() {

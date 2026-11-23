@@ -28,6 +28,8 @@ var (
 type UseCases struct {
 	Identity IdentityUseCases
 	Kit      KitUseCases
+	Link     LinkUseCases
+	Account  AccountUseCases
 }
 
 // IdentityUseCases are the use cases that read, create and delete the identity.
@@ -133,6 +135,8 @@ func writeIdentity(found identitydomain.Identity) *v1.IdentityInfo {
 		DeviceFingerprint:  found.DeviceFingerprint,
 		DeviceName:         found.DeviceName,
 		DeviceAddedAt:      found.DeviceAddedAt.UTC().Format(time.RFC3339),
+		IsRevoked:          found.IsRevoked,
+		KeyEpoch:           found.KeyEpoch,
 	}
 }
 
@@ -259,5 +263,5 @@ func getErrorCode(err error) (v1.IdentityErrorCode, bool) {
 			return refusal.code, true
 		}
 	}
-	return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, false
+	return getLinkErrorCode(err)
 }

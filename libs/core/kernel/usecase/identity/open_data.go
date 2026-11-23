@@ -10,15 +10,15 @@ import (
 )
 
 // OpenData decrypts data that SealData sealed.
-type OpenData struct{ deps Deps }
+type OpenData struct{ records records }
 
 // NewOpenData returns the use case that opens data sealed for a plugin.
-func NewOpenData(d Deps) *OpenData { return &OpenData{deps: d} }
+func NewOpenData(d Deps) *OpenData { return &OpenData{records: d.records} }
 
 // Execute opens sealed for the plugin and the context. Bytes that do not open are ErrCannotOpen; a device with no
 // record is identity.ErrNoIdentity.
 func (u *OpenData) Execute(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error) {
-	keys, err := readAccountKeys(ctx, u.deps, pluginID)
+	keys, err := readAccountKeys(ctx, u.records, pluginID)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,18 @@ export const IDENTITY_WORDS = {
           : 'The sheets belong to another account.'
       case 'noIdentity':
         return 'This device has no identity to make a kit for.'
+      case 'lastDevice':
+        return 'The last device of the account cannot be revoked.'
+      case 'revokeRaced':
+        return 'A device was added while you revoked. Check the list.'
+      case 'notAllowedThisDevice':
+        return 'This device cannot revoke itself.'
+      case 'linkTextInvalid':
+        return 'This text is not the link of a QR code.'
+      case 'linkActive':
+        return 'Another link is in progress.'
+      case 'codeInvalid':
+        return 'The code has six digits.'
       default:
         return failure.message
     }

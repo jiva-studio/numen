@@ -26,10 +26,38 @@ const (
 	TooLarge
 )
 
-// Vault is the synced vault: its id on the server and its key.
+// EpochKey is a key of the synced vault made under the account keys of an epoch.
+type EpochKey struct {
+	Epoch uint32
+	Key   [32]byte
+}
+
+// Vault is the synced vault: its id on the server, its key of epoch 0, which keys the hashes of paths, and its keys of
+// later epochs by ascending epoch.
 type Vault struct {
-	ID  []byte
-	Key [32]byte
+	ID    []byte
+	Key   [32]byte
+	Later []EpochKey
+}
+
+func (v Vault) GetNewest() EpochKey {
+	if len(v.Later) == 0 {
+		return EpochKey{Epoch: 0, Key: v.Key}
+	}
+	return v.Later[len(v.Later)-1]
+}
+
+// GetKey returns the key of the epoch and whether the vault has one.
+func (v Vault) GetKey(epoch uint32) ([32]byte, bool) {
+	if epoch == 0 {
+		return v.Key, true
+	}
+	for _, one := range v.Later {
+		if one.Epoch == epoch {
+			return one.Key, true
+		}
+	}
+	return [32]byte{}, false
 }
 
 // File is a file to commit. A file the server knows has its FileID and the revision it was changed from. A file up

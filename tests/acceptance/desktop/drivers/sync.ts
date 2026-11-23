@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url'
 import { expect } from 'playwright/test'
 import { Gate } from './gate.js'
 import type { IdentityDriver } from './identity.js'
+import { getDeviceFingerprint } from './link.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import type { Scenario } from './scenario.js'
 
@@ -369,6 +370,18 @@ export class SyncDriver {
 
   async expectSession(): Promise<void> {
     await expect.poll(async () => (await this.readSessions()).length, { timeout: 15_000 }).toBeGreaterThan(0)
+  }
+
+  private async readSessionDevices(): Promise<string[]> {
+    return (await this.readSessions()).map((one) => getDeviceFingerprint(one.deviceSignKey))
+  }
+
+  async expectSessionOfDevice(fingerprint: string): Promise<void> {
+    await expect.poll(() => this.readSessionDevices(), { timeout: 15_000 }).toContain(fingerprint)
+  }
+
+  async expectNoSessionOfDevice(fingerprint: string): Promise<void> {
+    await expect.poll(() => this.readSessionDevices(), { timeout: 15_000 }).not.toContain(fingerprint)
   }
 
   async expectSessionForAccount(): Promise<void> {

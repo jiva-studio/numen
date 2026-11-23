@@ -46,22 +46,26 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
+	keys, err := vaultlink.OpenKeys(ctx, u.deps.Crypto, link)
 	if err != nil {
-		return fmt.Errorf("open the vault key: %w", err)
+		return err
+	}
+	vault := transfer.Vault{ID: remote, Key: [32]byte(keys[0].Key), Later: nil}
+	for _, key := range keys[1:] {
+		vault.Later = append(vault.Later, transfer.EpochKey{Epoch: key.Epoch, Key: [32]byte(key.Key)})
 	}
 	records, err := u.deps.State.ReadRecords(ctx, id)
 	if err != nil {
 		return err
 	}
-	found, err := u.readHeads(ctx, remote, [32]byte(key))
+	found, err := u.readHeads(ctx, vault)
 	if err != nil {
 		return err
 	}
 	if err := u.markMissingBlobs(ctx, remote, found, records); err != nil {
 		return err
 	}
-	run := &recovery{deps: u.deps, id: id, vault: transfer.Vault{ID: remote, Key: [32]byte(key)}, link: link, records: records, hashes: nil}
+	run := &recovery{deps: u.deps, id: id, vault: vault, link: link, records: records, hashes: nil}
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}

@@ -2,6 +2,8 @@ package hostendpoint
 
 import (
 	"context"
+	"time"
+
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -70,6 +72,28 @@ type AccountRestore interface {
 	CompleteRestore(ctx context.Context, pluginID string, chain []byte) error
 }
 
+// AccountLink is what a plugin with the identity permission may ask of the link in progress: it carries the blobs of the
+// link between the core and the relay of the sync server. Its calls return identity.ErrNoLink when no link is in progress.
+type AccountLink interface {
+	// GetLinkWork returns what the courier carries; it waits for a change when the version is the one given.
+	GetLinkWork(ctx context.Context, sinceVersion uint64, wait time.Duration) (identitydomain.LinkWork, error)
+	// SetLinkChannel gives the link the channel the courier made.
+	SetLinkChannel(ctx context.Context, id []byte) error
+	// PutLinkInbound hands the core a blob of the other side.
+	PutLinkInbound(ctx context.Context, blob []byte) error
+}
+
+// AccountChain is what a plugin with the identity permission may ask of the chain of this device: the chain the core
+// waits to have accepted by the server, and the chain the server holds.
+type AccountChain interface {
+	// GetChainPublish returns the chain the server must hold before the core goes on.
+	GetChainPublish(ctx context.Context) (identitydomain.ChainPublish, error)
+	// PutChainPublished tells the core the answer of the server.
+	PutChainPublished(ctx context.Context, accepted bool, latest []byte) error
+	// AdoptChain gives the core a chain the server holds.
+	AdoptChain(ctx context.Context, chain []byte) error
+}
+
 // Activation is what the host knows of a plugin that runs: who made a call and what that plugin may do, and the
 // leases that hold it from being stopped.
 type Activation interface {
@@ -78,21 +102,31 @@ type Activation interface {
 }
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Account and Restore are what a plugin may ask of the
-// identity of this device, and are nil where the host holds none. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Activation   Activation
-	Account      Account
-	Restore      AccountRestore
 	Lent         *Services
 	GetTools     func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes
 	CallCancels  *searchcancel.Searches
+}
+
+// AccountCalls is what a plugin with the identity permission may ask of the identity of this device. Each part is nil
+// where the host holds no identity.
+type AccountCalls struct {
+	Account Account
+	Restore AccountRestore
+	Link    AccountLink
+	Chain   AccountChain
+}
+
+func (c AccountCalls) isServed() bool {
+	return c.Account != nil || c.Restore != nil || c.Link != nil || c.Chain != nil
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.

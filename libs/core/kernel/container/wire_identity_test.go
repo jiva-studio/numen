@@ -2,9 +2,11 @@ package container
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
@@ -31,7 +33,7 @@ func (m memoryKeys) DeleteKey(_ context.Context, name string) error {
 
 func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *testing.T) {
 	t.Parallel()
-	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil); got != nil {
+	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, &Resources{}); got != nil {
 		t.Errorf("openIdentityUseCases() = %+v, want nil", got)
 	}
 }
@@ -39,7 +41,8 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil)
+	res := &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, res)
 	if use == nil || use.Identity.Get == nil || use.Identity.GenerateWords == nil || use.Identity.Create == nil || use.Identity.Delete == nil ||
 		use.Identity.StartRestore == nil || use.Kit.Create == nil || use.Kit.Check == nil || use.Kit.Restore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all eight use cases", use)
@@ -64,8 +67,8 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	t.Parallel()
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
-	res := &Resources{KeyStore: keys, Now: clock, restore: identity.NewPendingStore()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res.restore)
+	res := &Resources{KeyStore: keys, Now: clock, ChainStore: &memoryChain{}, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -102,4 +105,33 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	if err != nil || restored.AccountFingerprint != created.AccountFingerprint {
 		t.Errorf("restored = %+v, error = %v, want the account %q", restored, err, created.AccountFingerprint)
 	}
+}
+
+// memoryChain is the chain file of a device kept in memory.
+type memoryChain struct {
+	mu    sync.Mutex
+	chain []byte
+}
+
+func (m *memoryChain) Read(context.Context) ([]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.chain == nil {
+		return nil, identitydomain.ErrNoChain
+	}
+	return append([]byte(nil), m.chain...), nil
+}
+
+func (m *memoryChain) Write(_ context.Context, chain []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.chain = append([]byte(nil), chain...)
+	return nil
+}
+
+func (m *memoryChain) Delete(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.chain = nil
+	return nil
 }

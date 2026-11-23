@@ -56,13 +56,14 @@ func (u *CommitMoves) build(ctx context.Context, vault transfer.Vault, author []
 		return nil, fmt.Errorf("open the key of %s: %w", record.Path, err)
 	}
 	meta := note.Meta{Path: move.To, Size: record.Size, MTime: record.ModifiedAt, Hash: record.BaseHash, Key: key, Kind: record.Kind}
-	sealed, err := note.SealMeta(u.deps.Random, vault.Key, vault.ID, record.FileID, meta)
+	newest := vault.GetNewest()
+	sealed, err := note.SealMeta(u.deps.Random, newest.Key, vault.ID, record.FileID, meta)
 	if err != nil {
 		return nil, err
 	}
 	revision := &syncv1.Revision{
 		VaultId: vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, BlobId: record.BlobID, BlobHash: record.BlobHash, BlobSize: record.BlobSize,
-		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author,
+		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author, Epoch: newest.Epoch,
 	}
 	return revision, u.sign(ctx, revision)
 }

@@ -57,6 +57,29 @@ const (
 	// IdentityServiceStartRestoreFromKitProcedure is the fully-qualified name of the IdentityService's
 	// StartRestoreFromKit RPC.
 	IdentityServiceStartRestoreFromKitProcedure = "/numen.v1.IdentityService/StartRestoreFromKit"
+	// IdentityServiceStartLinkProcedure is the fully-qualified name of the IdentityService's StartLink
+	// RPC.
+	IdentityServiceStartLinkProcedure = "/numen.v1.IdentityService/StartLink"
+	// IdentityServiceGetLinkProcedure is the fully-qualified name of the IdentityService's GetLink RPC.
+	IdentityServiceGetLinkProcedure = "/numen.v1.IdentityService/GetLink"
+	// IdentityServiceDecideLinkProcedure is the fully-qualified name of the IdentityService's
+	// DecideLink RPC.
+	IdentityServiceDecideLinkProcedure = "/numen.v1.IdentityService/DecideLink"
+	// IdentityServiceEnterLinkCodeProcedure is the fully-qualified name of the IdentityService's
+	// EnterLinkCode RPC.
+	IdentityServiceEnterLinkCodeProcedure = "/numen.v1.IdentityService/EnterLinkCode"
+	// IdentityServiceConfirmJoinProcedure is the fully-qualified name of the IdentityService's
+	// ConfirmJoin RPC.
+	IdentityServiceConfirmJoinProcedure = "/numen.v1.IdentityService/ConfirmJoin"
+	// IdentityServiceCancelLinkProcedure is the fully-qualified name of the IdentityService's
+	// CancelLink RPC.
+	IdentityServiceCancelLinkProcedure = "/numen.v1.IdentityService/CancelLink"
+	// IdentityServiceListDevicesProcedure is the fully-qualified name of the IdentityService's
+	// ListDevices RPC.
+	IdentityServiceListDevicesProcedure = "/numen.v1.IdentityService/ListDevices"
+	// IdentityServiceRevokeDeviceProcedure is the fully-qualified name of the IdentityService's
+	// RevokeDevice RPC.
+	IdentityServiceRevokeDeviceProcedure = "/numen.v1.IdentityService/RevokeDevice"
 )
 
 // IdentityServiceClient is a client for the numen.v1.IdentityService service.
@@ -83,6 +106,23 @@ type IdentityServiceClient interface {
 	// StartRestoreFromKit starts to restore the account of two sheets of a kit on this device the way
 	// StartRestore does for the 12 words. Poll GetIdentity until it returns an identity.
 	StartRestoreFromKit(context.Context, *connect.Request[v1.StartRestoreFromKitRequest]) (*connect.Response[v1.StartRestoreFromKitResponse], error)
+	// StartLink starts a link of this device to another: this device shows a QR code or reads the text of one. A
+	// device that has the account is the host, a device with none is the joiner. Only one link runs at a time.
+	StartLink(context.Context, *connect.Request[v1.StartLinkRequest]) (*connect.Response[v1.StartLinkResponse], error)
+	// GetLink returns the link in progress. Poll it while the link dialog is open.
+	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
+	// DecideLink is the answer of the person on the host to the new device.
+	DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error)
+	// EnterLinkCode sends the confirmation code the person read on the host.
+	EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error)
+	// ConfirmJoin is the answer of the person on the new device to the account it is offered.
+	ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error)
+	// CancelLink ends the link in progress.
+	CancelLink(context.Context, *connect.Request[v1.CancelLinkRequest]) (*connect.Response[v1.CancelLinkResponse], error)
+	// ListDevices lists the devices of the account: the active ones, then the revoked ones.
+	ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error)
+	// RevokeDevice removes a device from the account; its keys stop working for new notes.
+	RevokeDevice(context.Context, *connect.Request[v1.RevokeDeviceRequest]) (*connect.Response[v1.RevokeDeviceResponse], error)
 }
 
 // NewIdentityServiceClient constructs a client for the numen.v1.IdentityService service. By
@@ -144,6 +184,54 @@ func NewIdentityServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(identityServiceMethods.ByName("StartRestoreFromKit")),
 			connect.WithClientOptions(opts...),
 		),
+		startLink: connect.NewClient[v1.StartLinkRequest, v1.StartLinkResponse](
+			httpClient,
+			baseURL+IdentityServiceStartLinkProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("StartLink")),
+			connect.WithClientOptions(opts...),
+		),
+		getLink: connect.NewClient[v1.GetLinkRequest, v1.GetLinkResponse](
+			httpClient,
+			baseURL+IdentityServiceGetLinkProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("GetLink")),
+			connect.WithClientOptions(opts...),
+		),
+		decideLink: connect.NewClient[v1.DecideLinkRequest, v1.DecideLinkResponse](
+			httpClient,
+			baseURL+IdentityServiceDecideLinkProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("DecideLink")),
+			connect.WithClientOptions(opts...),
+		),
+		enterLinkCode: connect.NewClient[v1.EnterLinkCodeRequest, v1.EnterLinkCodeResponse](
+			httpClient,
+			baseURL+IdentityServiceEnterLinkCodeProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("EnterLinkCode")),
+			connect.WithClientOptions(opts...),
+		),
+		confirmJoin: connect.NewClient[v1.ConfirmJoinRequest, v1.ConfirmJoinResponse](
+			httpClient,
+			baseURL+IdentityServiceConfirmJoinProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("ConfirmJoin")),
+			connect.WithClientOptions(opts...),
+		),
+		cancelLink: connect.NewClient[v1.CancelLinkRequest, v1.CancelLinkResponse](
+			httpClient,
+			baseURL+IdentityServiceCancelLinkProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("CancelLink")),
+			connect.WithClientOptions(opts...),
+		),
+		listDevices: connect.NewClient[v1.ListDevicesRequest, v1.ListDevicesResponse](
+			httpClient,
+			baseURL+IdentityServiceListDevicesProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("ListDevices")),
+			connect.WithClientOptions(opts...),
+		),
+		revokeDevice: connect.NewClient[v1.RevokeDeviceRequest, v1.RevokeDeviceResponse](
+			httpClient,
+			baseURL+IdentityServiceRevokeDeviceProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("RevokeDevice")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -157,6 +245,14 @@ type identityServiceClient struct {
 	createRecoveryKit     *connect.Client[v1.CreateRecoveryKitRequest, v1.CreateRecoveryKitResponse]
 	checkRecoveryKit      *connect.Client[v1.CheckRecoveryKitRequest, v1.CheckRecoveryKitResponse]
 	startRestoreFromKit   *connect.Client[v1.StartRestoreFromKitRequest, v1.StartRestoreFromKitResponse]
+	startLink             *connect.Client[v1.StartLinkRequest, v1.StartLinkResponse]
+	getLink               *connect.Client[v1.GetLinkRequest, v1.GetLinkResponse]
+	decideLink            *connect.Client[v1.DecideLinkRequest, v1.DecideLinkResponse]
+	enterLinkCode         *connect.Client[v1.EnterLinkCodeRequest, v1.EnterLinkCodeResponse]
+	confirmJoin           *connect.Client[v1.ConfirmJoinRequest, v1.ConfirmJoinResponse]
+	cancelLink            *connect.Client[v1.CancelLinkRequest, v1.CancelLinkResponse]
+	listDevices           *connect.Client[v1.ListDevicesRequest, v1.ListDevicesResponse]
+	revokeDevice          *connect.Client[v1.RevokeDeviceRequest, v1.RevokeDeviceResponse]
 }
 
 // GetIdentity calls numen.v1.IdentityService.GetIdentity.
@@ -199,6 +295,46 @@ func (c *identityServiceClient) StartRestoreFromKit(ctx context.Context, req *co
 	return c.startRestoreFromKit.CallUnary(ctx, req)
 }
 
+// StartLink calls numen.v1.IdentityService.StartLink.
+func (c *identityServiceClient) StartLink(ctx context.Context, req *connect.Request[v1.StartLinkRequest]) (*connect.Response[v1.StartLinkResponse], error) {
+	return c.startLink.CallUnary(ctx, req)
+}
+
+// GetLink calls numen.v1.IdentityService.GetLink.
+func (c *identityServiceClient) GetLink(ctx context.Context, req *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error) {
+	return c.getLink.CallUnary(ctx, req)
+}
+
+// DecideLink calls numen.v1.IdentityService.DecideLink.
+func (c *identityServiceClient) DecideLink(ctx context.Context, req *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error) {
+	return c.decideLink.CallUnary(ctx, req)
+}
+
+// EnterLinkCode calls numen.v1.IdentityService.EnterLinkCode.
+func (c *identityServiceClient) EnterLinkCode(ctx context.Context, req *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error) {
+	return c.enterLinkCode.CallUnary(ctx, req)
+}
+
+// ConfirmJoin calls numen.v1.IdentityService.ConfirmJoin.
+func (c *identityServiceClient) ConfirmJoin(ctx context.Context, req *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error) {
+	return c.confirmJoin.CallUnary(ctx, req)
+}
+
+// CancelLink calls numen.v1.IdentityService.CancelLink.
+func (c *identityServiceClient) CancelLink(ctx context.Context, req *connect.Request[v1.CancelLinkRequest]) (*connect.Response[v1.CancelLinkResponse], error) {
+	return c.cancelLink.CallUnary(ctx, req)
+}
+
+// ListDevices calls numen.v1.IdentityService.ListDevices.
+func (c *identityServiceClient) ListDevices(ctx context.Context, req *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error) {
+	return c.listDevices.CallUnary(ctx, req)
+}
+
+// RevokeDevice calls numen.v1.IdentityService.RevokeDevice.
+func (c *identityServiceClient) RevokeDevice(ctx context.Context, req *connect.Request[v1.RevokeDeviceRequest]) (*connect.Response[v1.RevokeDeviceResponse], error) {
+	return c.revokeDevice.CallUnary(ctx, req)
+}
+
 // IdentityServiceHandler is an implementation of the numen.v1.IdentityService service.
 type IdentityServiceHandler interface {
 	// GetIdentity returns the identity of this device, or none when the device holds no identity.
@@ -223,6 +359,23 @@ type IdentityServiceHandler interface {
 	// StartRestoreFromKit starts to restore the account of two sheets of a kit on this device the way
 	// StartRestore does for the 12 words. Poll GetIdentity until it returns an identity.
 	StartRestoreFromKit(context.Context, *connect.Request[v1.StartRestoreFromKitRequest]) (*connect.Response[v1.StartRestoreFromKitResponse], error)
+	// StartLink starts a link of this device to another: this device shows a QR code or reads the text of one. A
+	// device that has the account is the host, a device with none is the joiner. Only one link runs at a time.
+	StartLink(context.Context, *connect.Request[v1.StartLinkRequest]) (*connect.Response[v1.StartLinkResponse], error)
+	// GetLink returns the link in progress. Poll it while the link dialog is open.
+	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
+	// DecideLink is the answer of the person on the host to the new device.
+	DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error)
+	// EnterLinkCode sends the confirmation code the person read on the host.
+	EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error)
+	// ConfirmJoin is the answer of the person on the new device to the account it is offered.
+	ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error)
+	// CancelLink ends the link in progress.
+	CancelLink(context.Context, *connect.Request[v1.CancelLinkRequest]) (*connect.Response[v1.CancelLinkResponse], error)
+	// ListDevices lists the devices of the account: the active ones, then the revoked ones.
+	ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error)
+	// RevokeDevice removes a device from the account; its keys stop working for new notes.
+	RevokeDevice(context.Context, *connect.Request[v1.RevokeDeviceRequest]) (*connect.Response[v1.RevokeDeviceResponse], error)
 }
 
 // NewIdentityServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -280,6 +433,54 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 		connect.WithSchema(identityServiceMethods.ByName("StartRestoreFromKit")),
 		connect.WithHandlerOptions(opts...),
 	)
+	identityServiceStartLinkHandler := connect.NewUnaryHandler(
+		IdentityServiceStartLinkProcedure,
+		svc.StartLink,
+		connect.WithSchema(identityServiceMethods.ByName("StartLink")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceGetLinkHandler := connect.NewUnaryHandler(
+		IdentityServiceGetLinkProcedure,
+		svc.GetLink,
+		connect.WithSchema(identityServiceMethods.ByName("GetLink")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceDecideLinkHandler := connect.NewUnaryHandler(
+		IdentityServiceDecideLinkProcedure,
+		svc.DecideLink,
+		connect.WithSchema(identityServiceMethods.ByName("DecideLink")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceEnterLinkCodeHandler := connect.NewUnaryHandler(
+		IdentityServiceEnterLinkCodeProcedure,
+		svc.EnterLinkCode,
+		connect.WithSchema(identityServiceMethods.ByName("EnterLinkCode")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceConfirmJoinHandler := connect.NewUnaryHandler(
+		IdentityServiceConfirmJoinProcedure,
+		svc.ConfirmJoin,
+		connect.WithSchema(identityServiceMethods.ByName("ConfirmJoin")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceCancelLinkHandler := connect.NewUnaryHandler(
+		IdentityServiceCancelLinkProcedure,
+		svc.CancelLink,
+		connect.WithSchema(identityServiceMethods.ByName("CancelLink")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceListDevicesHandler := connect.NewUnaryHandler(
+		IdentityServiceListDevicesProcedure,
+		svc.ListDevices,
+		connect.WithSchema(identityServiceMethods.ByName("ListDevices")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceRevokeDeviceHandler := connect.NewUnaryHandler(
+		IdentityServiceRevokeDeviceProcedure,
+		svc.RevokeDevice,
+		connect.WithSchema(identityServiceMethods.ByName("RevokeDevice")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.IdentityService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case IdentityServiceGetIdentityProcedure:
@@ -298,6 +499,22 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 			identityServiceCheckRecoveryKitHandler.ServeHTTP(w, r)
 		case IdentityServiceStartRestoreFromKitProcedure:
 			identityServiceStartRestoreFromKitHandler.ServeHTTP(w, r)
+		case IdentityServiceStartLinkProcedure:
+			identityServiceStartLinkHandler.ServeHTTP(w, r)
+		case IdentityServiceGetLinkProcedure:
+			identityServiceGetLinkHandler.ServeHTTP(w, r)
+		case IdentityServiceDecideLinkProcedure:
+			identityServiceDecideLinkHandler.ServeHTTP(w, r)
+		case IdentityServiceEnterLinkCodeProcedure:
+			identityServiceEnterLinkCodeHandler.ServeHTTP(w, r)
+		case IdentityServiceConfirmJoinProcedure:
+			identityServiceConfirmJoinHandler.ServeHTTP(w, r)
+		case IdentityServiceCancelLinkProcedure:
+			identityServiceCancelLinkHandler.ServeHTTP(w, r)
+		case IdentityServiceListDevicesProcedure:
+			identityServiceListDevicesHandler.ServeHTTP(w, r)
+		case IdentityServiceRevokeDeviceProcedure:
+			identityServiceRevokeDeviceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -337,4 +554,36 @@ func (UnimplementedIdentityServiceHandler) CheckRecoveryKit(context.Context, *co
 
 func (UnimplementedIdentityServiceHandler) StartRestoreFromKit(context.Context, *connect.Request[v1.StartRestoreFromKitRequest]) (*connect.Response[v1.StartRestoreFromKitResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.StartRestoreFromKit is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) StartLink(context.Context, *connect.Request[v1.StartLinkRequest]) (*connect.Response[v1.StartLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.StartLink is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.GetLink is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.DecideLink is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.EnterLinkCode is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.ConfirmJoin is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) CancelLink(context.Context, *connect.Request[v1.CancelLinkRequest]) (*connect.Response[v1.CancelLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.CancelLink is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.ListDevices is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) RevokeDevice(context.Context, *connect.Request[v1.RevokeDeviceRequest]) (*connect.Response[v1.RevokeDeviceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.RevokeDevice is not implemented"))
 }

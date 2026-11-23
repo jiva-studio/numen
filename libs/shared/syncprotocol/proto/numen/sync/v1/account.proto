@@ -12,6 +12,13 @@ service AccountService {
   // GetAccountChainByRoot returns the stored chain of the account with a root key, to a caller that proves it
   // holds the recovery key. It needs no session.
   rpc GetAccountChainByRoot(GetAccountChainByRootRequest) returns (GetAccountChainByRootResponse);
+
+  // AppendChain presents a longer chain of the account of the session: a new device, or a revoke. The presented
+  // chain must extend the stored one, list the device of the session as active, and every entry after the stored
+  // head must be signed by that device or by the root key. A chain equal to the stored one is accepted again. When it
+  // does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
+  // sessions of the revoked device in the same step. It needs the session bearer.
+  rpc AppendChain(AppendChainRequest) returns (AppendChainResponse);
 }
 
 message GetAccountChainRequest {}
@@ -35,4 +42,28 @@ message GetAccountChainByRootResponse {
   bool found = 1;
   // chain is set when found.
   bytes chain = 2;
+}
+
+message AppendChainRequest {
+  // chain is the chain to store, whole.
+  bytes chain = 1;
+}
+
+message AppendChainResponse {
+  bool accepted = 1;
+  // chain is the stored head after the call.
+  bytes chain = 2;
+}
+
+// ChainStale is the detail of FAILED_PRECONDITION when the presented chain does not extend the stored one.
+message ChainStale {
+  // chain is the stored head.
+  bytes chain = 1;
+}
+
+// DeviceRevoked is the detail of the UNAUTHENTICATED answer to a sign-in of a device that proved its key but is not
+// active in the stored chain of its account.
+message DeviceRevoked {
+  // chain is the stored chain.
+  bytes chain = 1;
 }

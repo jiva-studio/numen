@@ -5,10 +5,12 @@ import (
 )
 
 // StartRestoreFromKit starts to restore the account of two sheets of a kit on this device.
-type StartRestoreFromKit struct{ deps Deps }
+type StartRestoreFromKit struct{ completion restoreCompletion }
 
 // NewStartRestoreFromKit returns the use case that starts a restore from sheets.
-func NewStartRestoreFromKit(d Deps) *StartRestoreFromKit { return &StartRestoreFromKit{deps: d} }
+func NewStartRestoreFromKit(d Deps) *StartRestoreFromKit {
+	return &StartRestoreFromKit{completion: d.getCompletion()}
+}
 
 // Execute restores the recovery secret from the sheets (ErrNotEnoughSheets, ErrInvalidSheets), refuses when an
 // identity exists (ErrIdentityExists) and then keeps a pending restore exactly as StartRestore does for the words.
@@ -17,12 +19,12 @@ func (u *StartRestoreFromKit) Execute(ctx context.Context, sheets [][]string) er
 	if err != nil {
 		return err
 	}
-	if err := checkAbsent(ctx, u.deps); err != nil {
+	if err := u.completion.records.checkAbsent(ctx); err != nil {
 		return err
 	}
 	recovery, err := secret.DeriveRecoveryKey()
 	if err != nil {
 		return err
 	}
-	return startPending(ctx, u.deps, recovery)
+	return u.completion.start(ctx, recovery)
 }

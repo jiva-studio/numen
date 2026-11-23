@@ -7,16 +7,17 @@ import (
 
 // Server opens the Endpoint on the first call to Open that finds something to serve, and closes it.
 type Server struct {
-	address string
-	callers Callers
+	address  string
+	callers  Callers
+	accounts AccountCalls
 
 	mu       sync.Mutex
 	endpoint serving
 }
 
-// NewServer creates a server that serves callers on address once Open finds a service set.
-func NewServer(address string, callers Callers) *Server {
-	return &Server{address: address, callers: callers}
+// NewServer creates a server that serves callers and accounts on address once Open finds a service set.
+func NewServer(address string, callers Callers, accounts AccountCalls) *Server {
+	return &Server{address: address, callers: callers, accounts: accounts}
 }
 
 // Open starts serving when the host lends the completer, the vault, the search, the queue of work, the
@@ -31,7 +32,7 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 	if !s.hasServices() {
 		return 0, nil
 	}
-	endpoint, err := Open(ctx, s.address, s.callers)
+	endpoint, err := Open(ctx, s.address, s.callers, s.accounts)
 	if err != nil {
 		return 0, err
 	}
@@ -42,7 +43,7 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 func (s *Server) hasServices() bool {
 	return s.callers.Lent.GetModelCalls() != nil || s.callers.Lent.GetPluginVault() != nil ||
 		s.callers.Lent.GetPluginWork() != nil ||
-		s.callers.Lent.GetPluginSearch() != nil || s.callers.Account != nil || s.callers.Restore != nil
+		s.callers.Lent.GetPluginSearch() != nil || s.accounts.isServed()
 }
 
 // GetPort returns the port the server serves on, or 0 while it is not open.

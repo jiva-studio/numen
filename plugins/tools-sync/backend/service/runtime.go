@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
@@ -15,7 +17,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -34,6 +39,7 @@ var errNotConfigured = errors.New("no sync server is set")
 // parts are the adapters the runtime builds a sync from.
 type parts struct {
 	identity *accountadapter.Account
+	client   *account.Client
 	health   *health.Client
 	clock    clock.System
 	vaults   *hostvault.Vaults
@@ -79,7 +85,7 @@ func (r *runtime) configure(values map[string]string) {
 func (r *runtime) start(_ context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
-	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock})
+	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 	})
@@ -103,5 +109,14 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
 	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
+		"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
+		"chain":  chaincourier.NewLoop(chaincourier.Deps{Identity: p.identity, Core: p.client, Chain: cloudSide}, p.clock).Execute,
+		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
+	}
+}
+
+func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {
+	return rotatevaultkeys.Deps{
+		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State, Random: deps.Random,
 	}
 }

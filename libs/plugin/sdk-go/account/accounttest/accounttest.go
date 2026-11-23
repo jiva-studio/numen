@@ -4,10 +4,12 @@
 package accounttest
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"sync"
 	"testing"
 
@@ -30,7 +32,8 @@ type Fake struct {
 	pluginID string
 
 	mu      sync.Mutex
-	record  *identity.Record
+	record  *held
+	link    *fakeLink
 	failure error
 	signed  int
 	pending *pendingRestore
@@ -71,6 +74,7 @@ func (f *Fake) CreateIdentity() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.record = &record
+	f.link = nil
 }
 
 // StartRestore makes the host keep a restore of the recovery words, as the window of a host does. The host has no
@@ -136,36 +140,40 @@ func (s *service) GetPublicIdentity(_ context.Context, _ *connect.Request[v1.Get
 	return connect.NewResponse(&v1.GetPublicIdentityResponse{
 		AccountFingerprint: public.AccountFingerprint, DeviceFingerprint: public.DeviceFingerprint,
 		DeviceSignKey: public.DeviceSignKey, Chain: public.Chain,
+		KeyEpoch: public.KeyEpoch, ChainLength: public.ChainLength, IsRevoked: public.IsRevoked,
 	}), nil
 }
 
-func (f *Fake) read() (identity.Record, error) {
+func (f *Fake) read() (held, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.failure != nil {
-		return identity.Record{}, connect.NewError(connect.CodeInternal, f.failure)
+		return held{}, connect.NewError(connect.CodeInternal, f.failure)
 	}
 	if f.record == nil {
 		failure := connect.NewError(connect.CodeFailedPrecondition, account.ErrNoIdentity)
 		if detail, err := connect.NewErrorDetail(&errdetails.ErrorInfo{Reason: "NO_IDENTITY"}); err == nil {
 			failure.AddDetail(detail)
 		}
-		return identity.Record{}, failure
+		return held{}, failure
 	}
 	return *f.record, nil
 }
 
-func toPublicIdentity(record identity.Record) account.PublicIdentity {
+func toPublicIdentity(record held) account.PublicIdentity {
 	device := record.Device.Public()
 	return account.PublicIdentity{
 		AccountFingerprint: record.Chain.Root().Fingerprint().String(),
 		DeviceFingerprint:  device.Fingerprint().String(),
 		DeviceSignKey:      device.Sign,
 		Chain:              record.Chain.Bytes(),
+		KeyEpoch:           record.Chain.Epoch(),
+		ChainLength:        uint32(record.Chain.Len()),
+		IsRevoked:          isRevoked(record),
 	}
 }
 
-func newRecord(t *testing.T) identity.Record {
+func newRecord(t *testing.T) held {
 	t.Helper()
 	words, err := identity.NewRecoveryWords(rand.Reader)
 	if err != nil {
@@ -191,7 +199,7 @@ func newRecord(t *testing.T) identity.Record {
 	return joinChain(t, chain, root, keys, device)
 }
 
-func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey) identity.Record {
+func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey) held {
 	t.Helper()
 	chain, err := chain.AppendDevice(root, device.Public(), "Test device", clock.System{}.Now())
 	if err != nil {
@@ -201,5 +209,19 @@ func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, ke
 	if err != nil {
 		t.Fatal(err)
 	}
-	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}
+	return held{Record: identity.Record{Device: device, Wrapped: wrapped}, Chain: chain, root: root, keys: keys}
+}
+
+// held is the identity of the fake: the record, the chain and the keys that make a revoke possible.
+type held struct {
+	identity.Record
+	Chain identity.Chain
+	root  identity.RecoveryKey
+	keys  identity.AccountKeys
+}
+
+func isRevoked(record held) bool {
+	return slices.ContainsFunc(record.Chain.ListRevokedDevices(), func(device identity.Device) bool {
+		return bytes.Equal(device.Public.Sign, record.Device.SignerKey())
+	})
 }

@@ -4,31 +4,25 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func newRecord(t *testing.T, name string) (identity.Record, account) {
-	t.Helper()
-	a := newChain(t)
-	device := newDevice(t)
-	chain, err := appended(a.chain, a.recovery, device.Public(), name, epoch().Add(time.Hour))
-	if err != nil {
-		t.Fatal(err)
-	}
+func newRecord(tb testing.TB) (identity.Record, account) {
+	tb.Helper()
+	a := newChainOf(tb)
+	device := newDeviceOf(tb)
 	wrapped, err := a.keys.WrapForDevice(device.Public())
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
-	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}, a
+	return identity.Record{Device: device, Wrapped: wrapped}, a
 }
 
 func TestParseRecord_RoundTrip(t *testing.T) {
 	t.Parallel()
-	record, a := newRecord(t, "Laptop")
+	record, a := newRecord(t)
 	parsed, err := identity.ParseRecord(record.Bytes())
 	if err != nil {
 		t.Fatal(err)
@@ -43,28 +37,30 @@ func TestParseRecord_RoundTrip(t *testing.T) {
 	if err != nil || opened.BoxPublicKey() != a.keys.BoxPublicKey() {
 		t.Errorf("the device cannot open the keys of its record: %v", err)
 	}
-	if len(parsed.Chain.ListDevices()) != 1 {
-		t.Errorf("devices of the chain = %+v", parsed.Chain.ListDevices())
-	}
 }
 
-func TestParseRecord_RefusesADeviceThatIsNotInItsChain(t *testing.T) {
+func TestRecord_ContainsOnlySeedAndWrappedKeys(t *testing.T) {
 	t.Parallel()
-	record, _ := newRecord(t, "Laptop")
-	record.Device = newDevice(t)
-	if _, err := identity.ParseRecord(record.Bytes()); !errors.Is(err, identity.ErrMalformed) {
-		t.Errorf("error = %v, want ErrMalformed", err)
+	record, _ := newRecord(t)
+	b := record.Bytes()
+	if b[0] != 0x02 {
+		t.Errorf("version byte = %#x, want 0x02", b[0])
+	}
+	if want := 1 + 32 + 1 + 112; len(b) != want {
+		t.Errorf("the record has %d bytes, want %d: no chain in it", len(b), want)
 	}
 }
 
 func TestParseRecord_RejectsAnotherVersionAndTruncatedBytes(t *testing.T) {
 	t.Parallel()
-	record, _ := newRecord(t, "Laptop")
+	record, _ := newRecord(t)
 	b := record.Bytes()
-	other := bytes.Clone(b)
-	other[0] = 0x02
-	if _, err := identity.ParseRecord(other); !errors.Is(err, identity.ErrUnsupportedVersion) {
-		t.Errorf("version 2: error = %v, want ErrUnsupportedVersion", err)
+	for _, version := range []byte{0x00, 0x01, 0x03} {
+		other := bytes.Clone(b)
+		other[0] = version
+		if _, err := identity.ParseRecord(other); !errors.Is(err, identity.ErrUnsupportedVersion) {
+			t.Errorf("version %d: error = %v, want ErrUnsupportedVersion", version, err)
+		}
 	}
 	for name, cut := range map[string][]byte{"no bytes": nil, "cut": b[:50], "trailing": append(bytes.Clone(b), 0)} {
 		if _, err := identity.ParseRecord(cut); !errors.Is(err, identity.ErrMalformed) {
@@ -73,31 +69,20 @@ func TestParseRecord_RejectsAnotherVersionAndTruncatedBytes(t *testing.T) {
 	}
 }
 
-func TestParseRecord_RefusesAChainWithABadSignature(t *testing.T) {
-	t.Parallel()
-	record, _ := newRecord(t, "Laptop")
-	b := record.Bytes()
-	at := bytes.Index(b, []byte("Laptop"))
-	b[at] ^= 0x01
-	if _, err := identity.ParseRecord(b); !errors.Is(err, identity.ErrBadSignature) {
-		t.Errorf("error = %v, want ErrBadSignature", err)
-	}
-}
-
 // The key store of the desktop keeps at most 2560 bytes of a value (apps/desktop/internal/keychain).
-func TestRecord_FitsTheKeyStoreWithTheLongestDeviceName(t *testing.T) {
+func TestRecord_FitsTheKeyStoreWithRoomToSpare(t *testing.T) {
 	t.Parallel()
-	record, _ := newRecord(t, strings.Repeat("n", 64))
+	record, _ := newRecord(t)
 	value := base64.RawURLEncoding.EncodeToString(record.Bytes())
-	if len(value) >= 2560 {
-		t.Errorf("the key store value has %d characters, the limit is 2560", len(value))
+	if len(value) > 256 {
+		t.Errorf("the key store value has %d characters, want at most 256", len(value))
 	}
 }
 
 func TestRecord_ContainsNoWord(t *testing.T) {
 	t.Parallel()
 	words := abandonWords(t)
-	record, _ := newRecord(t, "Laptop")
+	record, _ := newRecord(t)
 	b := record.Bytes()
 	for _, word := range words.List() {
 		if bytes.Contains(b, []byte(word)) {

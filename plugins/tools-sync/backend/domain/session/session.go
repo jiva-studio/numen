@@ -18,11 +18,20 @@ var (
 	ErrUnreachable = errors.New("the sync server could not be reached")
 )
 
+// DeviceRevokedError means the server refused the sign-in because the account revoked this device. Chain is the chain the
+// server stores, which says so.
+type DeviceRevokedError struct{ Chain []byte }
+
+func (DeviceRevokedError) Error() string { return "this device was revoked" }
+
 // Identity is what is public of the identity of this device.
 type Identity struct {
 	AccountFingerprint string
 	DeviceSignKey      []byte
 	Chain              []byte
+	KeyEpoch           uint32
+	ChainLength        uint32
+	IsRevoked          bool
 }
 
 // Challenge is what the server asks this device to sign: its id, and the bytes to sign.

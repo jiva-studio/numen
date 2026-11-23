@@ -77,13 +77,13 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (resto
 	if err != nil {
 		return restore.PullResult{}, fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
+	keys, err := vaultlink.OpenKeys(ctx, u.deps.Crypto, link)
 	if err != nil {
-		return restore.PullResult{}, fmt.Errorf("open the vault key: %w", err)
+		return restore.PullResult{}, err
 	}
 	r := &run{
 		deps: u.deps, in: in, files: u.deps.Host.GetFiles(in.VaultID), moves: u.deps.Host.GetTransfers(in.VaultID), remote: remote,
-		key: [32]byte(key), link: link, records: records,
+		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
 		removals: nil, removalSeq: 0, isListing: false,

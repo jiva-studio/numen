@@ -12,6 +12,7 @@ import { ConnectionsDriver } from './connections.js'
 import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
+import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
 import { ComputerDriver } from './computer.js'
 import { SyncDriver } from './sync.js'
@@ -91,7 +92,13 @@ export class Person {
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
-    this.computers = new ComputerDriver(this.scenario, viewport, { identity: this.identity, sync: this.sync, vaults: this.syncVaults, settings: this.settings })
+    this.computers = new ComputerDriver(this.scenario, viewport, {
+      identity: this.identity,
+      sync: this.sync,
+      vaults: this.syncVaults,
+      settings: this.settings,
+      devices: new DevicesDriver(this.scenario, this.settings),
+    })
     this.files = new SyncedFilesDriver(this.computers, this.sync, this.syncVaults)
   }
 

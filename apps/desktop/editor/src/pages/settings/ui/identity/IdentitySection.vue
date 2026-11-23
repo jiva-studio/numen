@@ -14,6 +14,7 @@ import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { useSheetFields } from '../../model/useSheetFields'
 import { WORDS as words } from '../../words'
+import { DevicesSection } from '@/features/identity-link'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
 import IdentityRestoreSheets from './IdentityRestoreSheets.vue'
@@ -45,6 +46,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
       :is-asking-delete="deletion.isAskingDelete.value"
+      :devices="identity.devices"
       @ask="deletion.askDelete"
       @confirm="deletion.confirmDelete"
       @cancel="deletion.cancelDelete"
@@ -91,6 +93,8 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
     </template>
     <div class="identity-section__body">
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
+
+      <DevicesSection v-if="step === 'idle'" :calls="identity.devices" :has-identity="false" />
 
       <IdentityRestore
         v-if="step === 'restore'"

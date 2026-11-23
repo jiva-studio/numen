@@ -13,18 +13,19 @@ var errNoKeyStore = errors.New("this installation has no key store")
 // Account is what a plugin with the identity permission may ask of the identity of this device. It reads
 // the key store when a call is made, so a key store set after the plugins start is the one used.
 type Account struct {
-	keys    func() pluginport.KeyStore
-	names   DeviceName
-	clock   Clock
-	pending *PendingStore
+	keys     func() pluginport.KeyStore
+	names    DeviceName
+	clock    Clock
+	chains   ChainStore
+	progress *Progress
 }
 
-// NewAccount returns the operations over the key store that keys returns at each call.
-func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock Clock, pending *PendingStore) *Account {
-	if pending == nil {
-		pending = NewPendingStore()
+// NewAccount returns the operations over the key store that keys returns at each call, the chain file and what is in progress.
+func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock Clock, progress *Progress, chains ChainStore) *Account {
+	if progress == nil {
+		progress = NewProgress()
 	}
-	return &Account{keys: keys, names: names, clock: clock, pending: pending}
+	return &Account{keys: keys, names: names, clock: clock, chains: chains, progress: progress}
 }
 
 // SignAsDevice signs message with the device key under the plugin id.
@@ -47,10 +48,10 @@ func (a *Account) GetPublicIdentity(ctx context.Context) (identitydomain.Public,
 
 func (a *Account) open() (Deps, error) {
 	store := a.keys()
-	if store == nil {
+	if store == nil || a.chains == nil {
 		return Deps{}, errNoKeyStore
 	}
-	return NewDeps(store, a.names, a.clock).WithPending(a.pending), nil
+	return NewDeps(store, a.names, a.clock).WithProgress(a.progress).WithChains(a.chains), nil
 }
 
 // SealData seals plain for the plugin with the account keys of this device.

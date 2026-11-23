@@ -16,8 +16,9 @@ const maxDeviceName = 64
 type EntryKind uint8
 
 const (
-	KindGenesis   EntryKind = 1
-	KindAddDevice EntryKind = 2
+	KindGenesis      EntryKind = 1
+	KindAddDevice    EntryKind = 2
+	KindRevokeDevice EntryKind = 3
 )
 
 type Entry struct {
@@ -28,6 +29,7 @@ type Entry struct {
 	Signer    ed25519.PublicKey
 	Genesis   *Genesis
 	AddDevice *AddDevice
+	Revoke    *Revoke
 	Signature [64]byte
 }
 
@@ -114,13 +116,18 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 	return next, nil
 }
 
-// Verify checks, entry by entry: the kind, the link to the entry before, the signer, the signature.
+// MaxChainBytes is the longest encoded chain a device or the server accepts.
+const MaxChainBytes = 192 << 10
+
+// MaxActiveDevices is the most devices a chain lists as active.
+const MaxActiveDevices = 32
+
+// Verify checks, entry by entry: the kind, the link to the entry before, the signer, the signature, the rules of each kind and the size.
 func (c Chain) Verify() error {
 	if len(c.entries) == 0 {
 		return fmt.Errorf("%w: the chain has no entries", ErrMalformed)
 	}
-	var root ed25519.PublicKey
-	known := make(map[string]struct{})
+	var state roster
 	for i, entry := range c.entries {
 		if (i == 0) != (entry.Kind == KindGenesis) {
 			return fmt.Errorf("%w: entry %d has kind %d", ErrMalformed, i, entry.Kind)
@@ -129,15 +136,20 @@ func (c Chain) Verify() error {
 			return err
 		}
 		if i == 0 {
-			var err error
-			if root, err = verifyGenesis(entry); err != nil {
+			root, err := verifyGenesis(entry)
+			if err != nil {
 				return err
 			}
+			state = newRoster(root)
 			continue
 		}
-		if err := verifyAddDevice(entry, i, root, known); err != nil {
+		if err := state.verify(entry, i); err != nil {
 			return err
 		}
+		state.apply(entry)
+	}
+	if len(c.Bytes()) > MaxChainBytes {
+		return fmt.Errorf("%w: more than %d bytes", ErrChainTooLong, MaxChainBytes)
 	}
 	return nil
 }
@@ -150,27 +162,6 @@ func verifyGenesis(entry Entry) (ed25519.PublicKey, error) {
 		return nil, fmt.Errorf("%w: entry 0", ErrBadSignature)
 	}
 	return entry.Genesis.Recovery.Sign, nil
-}
-
-func verifyAddDevice(entry Entry, i int, root ed25519.PublicKey, known map[string]struct{}) error {
-	if _, ok := known[string(entry.Signer)]; !ok && !bytes.Equal(entry.Signer, root) {
-		return fmt.Errorf("%w: entry %d", ErrUnknownSigner, i)
-	}
-	if !hasValidSignature(entry) {
-		return fmt.Errorf("%w: entry %d", ErrBadSignature, i)
-	}
-	if entry.AddDevice == nil {
-		return fmt.Errorf("%w: entry %d has no device", ErrMalformed, i)
-	}
-	if err := checkDeviceName(entry.AddDevice.Name); err != nil {
-		return err
-	}
-	added := string(entry.AddDevice.Device.Sign)
-	if _, ok := known[added]; ok || bytes.Equal(entry.AddDevice.Device.Sign, root) {
-		return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)
-	}
-	known[added] = struct{}{}
-	return nil
 }
 
 func hasValidSignature(entry Entry) bool {
@@ -195,29 +186,39 @@ func (c Chain) Root() RecoveryPublicKey {
 	return c.entries[0].Genesis.Recovery
 }
 
+// AccountBoxKey returns the account box public key of the latest epoch.
 func (c Chain) AccountBoxKey() [32]byte {
+	if revoke := c.latestRevoke(); revoke != nil {
+		return revoke.AccountBox
+	}
 	if len(c.entries) == 0 || c.entries[0].Genesis == nil {
 		return [32]byte{}
 	}
 	return c.entries[0].Genesis.AccountBox
 }
 
+// WrappedForRecovery returns the account keys of the latest epoch wrapped for the recovery key.
 func (c Chain) WrappedForRecovery() WrappedAccountKeys {
+	if revoke := c.latestRevoke(); revoke != nil {
+		return revoke.WrappedForRecovery
+	}
 	if len(c.entries) == 0 || c.entries[0].Genesis == nil {
 		return WrappedAccountKeys{}
 	}
 	return c.entries[0].Genesis.WrappedForRecovery
 }
 
-func (c Chain) ListDevices() []Device {
-	var devices []Device
-	for _, entry := range c.entries {
-		if entry.Kind == KindAddDevice && entry.AddDevice != nil {
-			devices = append(devices, Device{Public: entry.AddDevice.Device, Name: entry.AddDevice.Name, AddedAt: entry.Time})
+func (c Chain) latestRevoke() *Revoke {
+	for i := len(c.entries) - 1; i > 0; i-- {
+		if c.entries[i].Kind == KindRevokeDevice && c.entries[i].Revoke != nil {
+			return c.entries[i].Revoke
 		}
 	}
-	return devices
+	return nil
 }
+
+// ListDevices returns the active devices in the order they were added.
+func (c Chain) ListDevices() []Device { return c.replay().active }
 
 func sign(entry *Entry, by Signer) {
 	copy(entry.Signature[:], by.signEntry(encodeSignedMessage(*entry)))

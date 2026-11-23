@@ -18,12 +18,14 @@ const (
 
 var errDataSize = errors.New("the data to seal has at most 32 KiB")
 
+var errLinkSize = errors.New("a link call carries 1 to 262144 bytes, a channel 16")
+
 func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, error) {
-	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
 	if err != nil {
 		return "", nil, err
 	}
-	account := e.endpoint.callers.Account
+	account := e.calls.Account
 	if account == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}
@@ -31,11 +33,11 @@ func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, err
 }
 
 func (e *accountEndpoint) getRestoreOf(header http.Header) (string, AccountRestore, error) {
-	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
 	if err != nil {
 		return "", nil, err
 	}
-	restore := e.endpoint.callers.Restore
+	restore := e.calls.Restore
 	if restore == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}

@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -20,6 +21,9 @@ func (c Chain) Bytes() []byte {
 }
 
 func ParseChain(b []byte) (Chain, error) {
+	if len(b) > MaxChainBytes {
+		return Chain{}, fmt.Errorf("%w: %d bytes, at most %d", ErrChainTooLong, len(b), MaxChainBytes)
+	}
 	r := reader{b: b}
 	count := r.uvarint()
 	if r.err != nil || count == 0 || count > uint64(len(b)) {
@@ -67,6 +71,8 @@ func encodeEntryBody(entry Entry) []byte {
 		out = append(out, add.Device.Box[:]...)
 		out = binary.AppendUvarint(out, uint64(len(add.Name)))
 		out = append(out, add.Name...)
+	case entry.Revoke != nil:
+		out = appendRevoke(out, entry.Revoke)
 	}
 	return out
 }
@@ -100,6 +106,8 @@ func decodeEntry(b []byte) (Entry, error) {
 		copy(add.Device.Box[:], r.take(32))
 		add.Name = string(r.sized())
 		entry.AddDevice = add
+	case KindRevokeDevice:
+		entry.Revoke = readRevoke(&r)
 	default:
 		if r.err == nil {
 			r.err = fmt.Errorf("%w: entry kind %d", ErrMalformed, entry.Kind)
@@ -173,4 +181,44 @@ func (r *reader) sized() []byte {
 		return nil
 	}
 	return r.take(int(size))
+}
+
+func appendRevoke(out []byte, revoke *Revoke) []byte {
+	out = append(out, revoke.Device...)
+	out = binary.AppendUvarint(out, uint64(revoke.Epoch))
+	out = append(out, revoke.AccountBox[:]...)
+	out = binary.AppendUvarint(out, uint64(len(revoke.WrappedForRecovery.sealed)))
+	out = append(out, revoke.WrappedForRecovery.sealed...)
+	out = binary.AppendUvarint(out, uint64(len(revoke.PreviousKeys)))
+	out = append(out, revoke.PreviousKeys...)
+	out = binary.AppendUvarint(out, uint64(len(revoke.Wrapped)))
+	for _, wrap := range revoke.Wrapped {
+		out = append(out, wrap.Device...)
+		out = binary.AppendUvarint(out, uint64(len(wrap.Wrapped.sealed)))
+		out = append(out, wrap.Wrapped.sealed...)
+	}
+	return out
+}
+
+func readRevoke(r *reader) *Revoke {
+	revoke := &Revoke{Device: ed25519.PublicKey(r.take(ed25519.PublicKeySize))}
+	epoch := r.uvarint()
+	if epoch > math.MaxUint32 {
+		r.fail()
+	}
+	revoke.Epoch = uint32(epoch)
+	copy(revoke.AccountBox[:], r.take(32))
+	revoke.WrappedForRecovery.sealed = r.sized()
+	revoke.PreviousKeys = r.sized()
+	count := r.uvarint()
+	if count > uint64(len(r.b)) {
+		r.fail()
+		return revoke
+	}
+	for range count {
+		wrap := DeviceWrap{Device: ed25519.PublicKey(r.take(ed25519.PublicKeySize))}
+		wrap.Wrapped.sealed = r.sized()
+		revoke.Wrapped = append(revoke.Wrapped, wrap)
+	}
+	return revoke
 }

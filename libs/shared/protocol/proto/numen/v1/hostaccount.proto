@@ -37,6 +37,28 @@ service HostAccountService {
   // with no chain when the server has no such account. A chain that does not verify or does not belong to
   // the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
   rpc CompleteRestore(CompleteRestoreRequest) returns (CompleteRestoreResponse);
+
+  // GetLinkWork returns what the courier of a link carries: the channel to make or use, the blobs to post to
+  // the other side and whether the link ended. It returns at once when the version differs from since_version,
+  // otherwise after wait_seconds (at most 20) or the next change.
+  rpc GetLinkWork(GetLinkWorkRequest) returns (GetLinkWorkResponse);
+
+  // SetLinkChannel gives the link the channel the courier made on the relay, 16 bytes.
+  rpc SetLinkChannel(SetLinkChannelRequest) returns (SetLinkChannelResponse);
+
+  // PutLinkInbound hands the core a blob the other side posted. No link answers FAILED_PRECONDITION with the
+  // reason NO_LINK.
+  rpc PutLinkInbound(PutLinkInboundRequest) returns (PutLinkInboundResponse);
+
+  // GetChainPublish returns the chain the core waits to have accepted by the server.
+  rpc GetChainPublish(GetChainPublishRequest) returns (GetChainPublishResponse);
+
+  // PutChainPublished tells the core the answer of the server to the chain it published.
+  rpc PutChainPublished(PutChainPublishedRequest) returns (PutChainPublishedResponse);
+
+  // AdoptChain gives the core a chain the server holds. A chain that does not parse or does not extend the chain
+  // of this device answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+  rpc AdoptChain(AdoptChainRequest) returns (AdoptChainResponse);
 }
 
 message SignAsDeviceRequest {
@@ -59,6 +81,12 @@ message GetPublicIdentityResponse {
   bytes device_sign_key = 3;
   // chain is the signed device chain of the account.
   bytes chain = 4;
+  // key_epoch is the epoch of the account keys of this device, 0 until a device is revoked.
+  uint32 key_epoch = 5;
+  // chain_length is the number of entries of chain.
+  uint32 chain_length = 6;
+  // is_revoked is true when the account revoked this device.
+  bool is_revoked = 7;
 }
 
 message SealDataRequest {
@@ -107,3 +135,57 @@ message CompleteRestoreRequest {
 }
 
 message CompleteRestoreResponse {}
+
+message GetLinkWorkRequest {
+  uint64 since_version = 1;
+  // wait_seconds is at most 20.
+  uint32 wait_seconds = 2;
+}
+
+message GetLinkWorkResponse {
+  uint64 version = 1;
+  bool is_active = 2;
+  // wants_channel is true when the displayer waits for a channel id from the relay.
+  bool wants_channel = 3;
+  // channel_id is 16 bytes once known.
+  bytes channel_id = 4;
+  // server is the origin from the QR code, empty for the default server.
+  string server = 5;
+  // outbound holds the blobs to post to the other side, in order, until a call names a later version.
+  repeated bytes outbound = 6;
+  // is_closed is true when the link ended: close the channel.
+  bool is_closed = 7;
+}
+
+message SetLinkChannelRequest {
+  bytes channel_id = 1;
+}
+
+message SetLinkChannelResponse {}
+
+message PutLinkInboundRequest {
+  bytes blob = 1;
+}
+
+message PutLinkInboundResponse {}
+
+message GetChainPublishRequest {}
+
+message GetChainPublishResponse {
+  bool is_pending = 1;
+  bytes chain = 2;
+}
+
+message PutChainPublishedRequest {
+  bool accepted = 1;
+  // latest is the chain the server holds, set when it did not accept the chain because another device appended first.
+  bytes latest = 2;
+}
+
+message PutChainPublishedResponse {}
+
+message AdoptChainRequest {
+  bytes chain = 1;
+}
+
+message AdoptChainResponse {}

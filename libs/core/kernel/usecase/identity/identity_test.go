@@ -30,6 +30,7 @@ var fingerprint = regexp.MustCompile(`^([0-9A-F]{4} ){7}[0-9A-F]{4}$`)
 
 type kit struct {
 	keys     *fakeKeyStore
+	chains   *fakeChainStore
 	get      *identity.GetIdentity
 	generate *identity.GenerateRecoveryWords
 	create   *identity.CreateIdentity
@@ -40,10 +41,11 @@ type kit struct {
 }
 
 func newKit(name string) kit {
-	keys := newFakeKeyStore()
-	deps := identity.NewDeps(keys, fakeNames{name: name}, testsupport.NewClockAt(getNow()))
+	keys, chains := newFakeKeyStore(), &fakeChainStore{}
+	deps := identity.NewDeps(keys, fakeNames{name: name}, testsupport.NewClockAt(getNow())).WithChains(chains)
 	return kit{
 		keys:      keys,
+		chains:    chains,
 		get:       identity.NewGetIdentity(deps),
 		generate:  identity.NewGenerateRecoveryWords(deps),
 		create:    identity.NewCreateIdentity(deps),

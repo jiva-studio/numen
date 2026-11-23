@@ -164,7 +164,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers()
 	fakeCallers.modelCalls = &scriptedCalls{done: "ok"}
-	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
+	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers(), AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

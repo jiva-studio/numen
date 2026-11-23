@@ -36,6 +36,8 @@ type Identity struct {
 	DeviceFingerprint  string
 	DeviceName         string
 	DeviceAddedAt      time.Time
+	IsRevoked          bool
+	KeyEpoch           uint32
 }
 
 // Public is what the identity of this device shows to a plugin and to a server: fingerprints, the
@@ -45,6 +47,9 @@ type Public struct {
 	DeviceFingerprint  string
 	DeviceSignKey      []byte
 	Chain              []byte
+	KeyEpoch           uint32
+	ChainLength        int
+	IsRevoked          bool
 }
 
 // PendingRestore is what a restore that waits for the account chain shows to a plugin: public keys only.

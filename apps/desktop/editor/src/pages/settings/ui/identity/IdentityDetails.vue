@@ -1,19 +1,22 @@
 <script setup lang="ts">
 /**
  * The identity of this device as two cards: the account fingerprint with the way to delete the identity,
- * after a confirmation, and the list of devices it is linked to.
+ * after a confirmation, and the list of the devices of the account with the link of a new one and the revoke of
+ * another. A revoked device shows only itself.
  */
 import { computed } from 'vue'
 import { Button, IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
-import type { IdentityInfo } from '@/entities/identity'
+import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
+import { DevicesSection, type DeviceCalls } from '@/features/identity-link'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import SettingRow from '../setting-row/SettingRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   info: IdentityInfo
+  devices: DeviceCalls
   problem: string
   isBusy: boolean
   isAskingDelete: boolean
@@ -31,6 +34,16 @@ const date = computed(() => {
   if (Number.isNaN(added.getTime())) return ''
   return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(added)
 })
+const thisDevice = computed<DeviceInfo>(() => ({
+  name: props.info.deviceName,
+  fingerprint: props.info.deviceFingerprint,
+  addedAt: props.info.deviceAddedAt,
+  isThis: true,
+  isRevoked: false,
+}))
+const count = computed(() =>
+  props.info.isRevoked ? 1 : Math.max(props.devices.list.value.length, 1),
+)
 </script>
 
 <template>
@@ -49,15 +62,20 @@ const date = computed(() => {
       :detail="words.identityRemoveDetail"
     >
       <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-        {{ words.identityDelete }}
+        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
       </Button>
     </SettingRow>
+    <p v-if="info.isRevoked" role="alert" class="identity-details__revoked">
+      {{ words.deviceRevokedNotice }}
+    </p>
     <p v-if="problem !== ''" role="alert" class="identity-details__problem">{{ problem }}</p>
   </IslandCard>
 
   <IslandCard class="identity-details__devices" :title="words.identityDevices">
-    <template #aside>{{ words.identityDeviceCount(1) }}</template>
+    <template #aside>{{ words.identityDeviceCount(count) }}</template>
+    <DevicesSection v-if="!info.isRevoked" :calls="devices" has-identity :current="thisDevice" />
     <NavigationRow
+      v-else
       class="identity-details__current"
       category="device"
       is-static
@@ -100,6 +118,11 @@ const date = computed(() => {
 
 .identity-details__devices :deep(.island-card__body) {
   padding: 0;
+}
+
+.identity-details__devices :deep(.devices__actions),
+.identity-details__devices :deep(.devices__problem) {
+  padding: 0 1rem 0.75rem;
 }
 
 .identity-details__current,
