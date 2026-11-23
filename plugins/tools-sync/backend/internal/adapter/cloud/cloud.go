@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
@@ -188,4 +189,14 @@ func (c *Cloud) GetShareChanges(ctx context.Context, shareRootID []byte, sinceSe
 
 func (c *Cloud) GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
 	return call(ctx, c, func() ([]*syncv1.BlobDownload, error) { return c.shares.GetShareBlobUrls(ctx, shareRootID, blobIDs) })
+}
+
+// DeleteAccount asks the server to delete the account after its grace period, and returns when it deletes it for good.
+func (c *Cloud) DeleteAccount(ctx context.Context, challengeID, signature []byte) (time.Time, error) {
+	return call(ctx, c, func() (time.Time, error) { return c.account.DeleteAccount(ctx, challengeID, signature) })
+}
+
+// ExportAccount returns the JSON document of what the server holds of the account.
+func (c *Cloud) ExportAccount(ctx context.Context) ([]byte, error) {
+	return call(ctx, c, func() ([]byte, error) { return c.account.ExportAccount(ctx) })
 }

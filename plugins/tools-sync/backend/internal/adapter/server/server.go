@@ -47,7 +47,7 @@ func (s *Server) GetChallenge(ctx context.Context, deviceSignKey []byte) (sessio
 // SignIn sends the proof and returns the session the server gives.
 func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Session, error) {
 	opened, err := s.client.SignIn(ctx, syncclient.Proof{
-		ChallengeID: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
+		ChallengeID: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain, RestoreAccount: proof.RestoreAccount,
 	})
 	if err != nil {
 		return session.Session{}, readError(err)
@@ -56,6 +56,9 @@ func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Sessi
 }
 
 func readError(err error) error {
+	if deleting, ok := errors.AsType[syncprotocol.AccountDeletingError](err); ok {
+		return session.AccountDeletingError{DeleteAt: deleting.DeleteAt}
+	}
 	if revoked, ok := errors.AsType[syncprotocol.DeviceRevokedError](err); ok {
 		return session.DeviceRevokedError{Chain: revoked.Chain}
 	}
@@ -85,4 +88,14 @@ func (s *Server) GetChainReadChallenge(ctx context.Context, rootSignKey []byte) 
 func (s *Server) GetAccountChainByRoot(ctx context.Context, challengeID, rootSignKey, signature []byte) ([]byte, bool, error) {
 	chain, found, err := s.account.GetAccountChainByRoot(ctx, challengeID, rootSignKey, signature)
 	return chain, found, readError(err)
+}
+
+// GetAccountDeleteChallenge asks for a challenge of the device key, with the checks of GetChallenge. Its message is the
+// one the device signs to delete its account.
+func (s *Server) GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (session.Challenge, error) {
+	challenge, err := s.client.GetAccountDeleteChallenge(ctx, deviceSignKey)
+	if err != nil {
+		return session.Challenge{}, readError(err)
+	}
+	return session.Challenge{ID: challenge.ID, Message: challenge.Message}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -202,4 +203,23 @@ func getTokenFor(address string, token func() string) func() string {
 		return func() string { return "" }
 	}
 	return token
+}
+
+// DeleteAccount deletes the account of the session after the grace period. signature is the signature of the device of
+// the session over the message of a challenge from SignInClient.GetAccountDeleteChallenge. It returns when the server deletes the account for good.
+func (c *AccountClient) DeleteAccount(ctx context.Context, challengeID, signature []byte) (time.Time, error) {
+	response, err := c.rpc.DeleteAccount(ctx, connect.NewRequest(&syncv1.DeleteAccountRequest{ChallengeId: challengeID, Signature: signature}))
+	if err != nil {
+		return time.Time{}, syncprotocol.ReadCallError(err)
+	}
+	return time.Unix(response.Msg.GetDeleteAt(), 0), nil
+}
+
+// ExportAccount returns the JSON document of what the server holds of the account of the session.
+func (c *AccountClient) ExportAccount(ctx context.Context) ([]byte, error) {
+	response, err := c.rpc.ExportAccount(ctx, connect.NewRequest(&syncv1.ExportAccountRequest{}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg.GetDocument(), nil
 }

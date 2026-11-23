@@ -337,3 +337,39 @@ Then(
     await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) }, vault)
   },
 )
+
+When('the person asks to delete the cloud data', async ({ person }) => {
+  await person.identity.openDeleteQuestion()
+})
+
+When('the person asks to delete the cloud data and types {string}', async ({ person }, name: string) => {
+  await person.identity.tryDeleteCloudDataWithWrongName(name)
+})
+
+Then('the question says {string}', async ({ person }, text: string) => {
+  await person.identity.expectDeleteQuestion([text])
+})
+
+When('the person deletes the cloud data', async ({ person }) => {
+  await person.identity.deleteCloudData()
+})
+
+Then('the cloud data is being deleted', async ({ person }) => {
+  await person.identity.expectDeleting(true)
+})
+
+Then('the cloud data is not being deleted', async ({ person }) => {
+  await person.identity.expectDeleting(false)
+})
+
+When('the person restores the account', async ({ person }) => {
+  await person.identity.restoreAccount()
+})
+
+When('the person exports the account data', async ({ person }) => {
+  await person.identity.exportAccountData()
+})
+
+Then('the saved file names the account of the person', async ({ person }) => {
+  person.identity.expectExportNamesAccount()
+})

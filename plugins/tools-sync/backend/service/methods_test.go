@@ -22,6 +22,7 @@ func TestGetCode_MapsTheErrorsOfTheSubscriptionMethodsToTheCodesTheFrontendReads
 		"billing unavailable":    {err: syncprotocol.ErrBillingUnavailable, want: server.CodeFailedPrecondition},
 		"no identity":            {err: sessiondomain.ErrNoIdentity, want: server.CodeFailedPrecondition},
 		"no active subscription": {err: syncprotocol.ErrNoActiveSubscription, want: server.CodeFailedPrecondition},
+		"account deleting":       {err: sessiondomain.AccountDeletingError{}, want: server.CodeFailedPrecondition},
 		"same plan":              {err: fmt.Errorf("change: %w", syncprotocol.ErrSamePlan), want: server.CodeAlreadyExists},
 		"unknown plan":           {err: syncprotocol.ErrUnknownPlan, want: server.CodeInvalidArgument},
 		"another error":          {err: errors.New("broken"), want: server.CodeInternal},

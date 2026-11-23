@@ -1,5 +1,7 @@
 import { defineComponent, h } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
+import { accountClient } from '../api/wire'
+import { saveFile } from '../lib/saveFile'
 import SubscriptionCard from './SubscriptionCard.vue'
 
 export function createSubscriptionView(
@@ -15,6 +17,8 @@ export function createSubscriptionView(
       h(SubscriptionCard, {
         openExternal: plugin.identity.openExternal,
         settings: plugin.settings,
+        accountClient,
+        saveFile,
         openSettings,
       }),
   })

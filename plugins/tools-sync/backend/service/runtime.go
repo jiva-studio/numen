@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
@@ -114,15 +115,17 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	})
 	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{
-		"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
-		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Server: address}).Execute,
-		"chain": chaincourier.NewLoop(chaincourier.Deps{
-			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
-			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
-		}, p.clock).Execute,
-		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
-	}
+	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithAccountData(accountdata.Deps{
+			Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep,
+		}), map[string]func(context.Context) error{
+			"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
+			"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Server: address}).Execute,
+			"chain": chaincourier.NewLoop(chaincourier.Deps{
+				Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
+				Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
+			}, p.clock).Execute,
+			"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
+		}
 }
 
 func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {

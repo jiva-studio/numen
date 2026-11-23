@@ -54,6 +54,18 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodAcceptInvitation: {
 			CreateRequest: func() any { return &api.AcceptInvitationRequest{} }, CreateResponse: func() any { return &api.AcceptInvitationResponse{} },
 		},
+		api.MethodGetAccountState: {
+			CreateRequest: func() any { return &api.GetAccountStateRequest{} }, CreateResponse: func() any { return &api.GetAccountStateResponse{} },
+		},
+		api.MethodDeleteCloudData: {
+			CreateRequest: func() any { return &api.DeleteCloudDataRequest{} }, CreateResponse: func() any { return &api.DeleteCloudDataResponse{} },
+		},
+		api.MethodRestoreAccount: {
+			CreateRequest: func() any { return &api.RestoreAccountRequest{} }, CreateResponse: func() any { return &api.RestoreAccountResponse{} },
+		},
+		api.MethodExportAccountData: {
+			CreateRequest: func() any { return &api.ExportAccountDataRequest{} }, CreateResponse: func() any { return &api.ExportAccountDataResponse{} },
+		},
 		api.MethodListReceived: {
 			CreateRequest: func() any { return &api.ListReceivedRequest{} }, CreateResponse: func() any { return &api.ListReceivedResponse{} },
 		},

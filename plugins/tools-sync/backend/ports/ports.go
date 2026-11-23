@@ -347,3 +347,21 @@ type ShareStates interface {
 	ReadShareStates(ctx context.Context, id domain.VaultID) ([]share.Progress, error)
 	WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error
 }
+
+// DeleteChallenges is where this device gets the challenge it signs to delete its account.
+type DeleteChallenges interface {
+	GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (session.Challenge, error)
+}
+
+// AccountData is what the server holds of the account, and the deletion of it.
+type AccountData interface {
+	DeleteAccount(ctx context.Context, challengeID, signature []byte) (time.Time, error)
+	ExportAccount(ctx context.Context) ([]byte, error)
+}
+
+// Deletion is whether the account is being deleted, as the last sign-in found it, and the way back.
+type Deletion interface {
+	GetDeletion() (deleteAt time.Time, isDeleting bool)
+	SetDeletion(deleteAt time.Time)
+	Restore(ctx context.Context) error
+}
