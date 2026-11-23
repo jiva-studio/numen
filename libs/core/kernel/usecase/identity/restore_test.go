@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -532,4 +534,45 @@ func TestStartRestore_ANewStartMovesTheDeadlineOfTheFallback(t *testing.T) {
 		got, err := k.get.Execute(t.Context())
 		return err == nil && got.AccountFingerprint == expected.AccountFingerprint
 	})
+}
+
+func TestCompleteRestore_ACreateAtTheSameTimeLeavesOneIdentity(t *testing.T) {
+	t.Parallel()
+	k := newRestoreKit(t, "Phone")
+	other := identity.NewCreateIdentity(identity.NewDeps(k.keys, fakeNames{name: "Phone"}, testsupport.NewClockAt(getNow())))
+	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	var arrived atomic.Int32
+	k.keys.onGet = func() {
+		arrived.Add(1)
+		for deadline := time.Now().Add(300 * time.Millisecond); arrived.Load() < 2 && time.Now().Before(deadline); {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	errs := make([]error, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		errs[0] = k.complete.Execute(t.Context(), syncPlugin, nil)
+	}()
+	go func() {
+		defer wg.Done()
+		_, errs[1] = other.Execute(t.Context(), getOtherWords())
+	}()
+	wg.Wait()
+
+	succeeded, refused := 0, 0
+	for _, err := range errs {
+		switch {
+		case err == nil:
+			succeeded++
+		case errors.Is(err, identitydomain.ErrIdentityExists):
+			refused++
+		}
+	}
+	if succeeded != 1 || refused != 1 || k.keys.setCalled != 1 {
+		t.Errorf("succeeded = %d, refused = %d, writes = %d, want 1, 1, 1", succeeded, refused, k.keys.setCalled)
+	}
 }
