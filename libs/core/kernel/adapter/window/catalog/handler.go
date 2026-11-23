@@ -36,7 +36,7 @@ type Handler struct {
 // installation with no plugin folders lists none.
 func NewHandler(plugins Catalog, installed InstalledPlugins) *Handler {
 	if installed == nil {
-		panic("catalog: installed plugins are required")
+		panic("catalog: installed plugins are required") //nolint:forbidigo // a nil here is a wiring bug, and a constructor of an adapter returns no error
 	}
 	return &Handler{plugins: plugins, installed: installed}
 }
