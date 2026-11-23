@@ -33,3 +33,6 @@ func (v *Vaults) Indexer(id domain.VaultID) ports.Indexer { return v.client.With
 
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
+
+// Absent returns the files of the vault that the device lists and does not hold.
+func (v *Vaults) Absent(id domain.VaultID) ports.Absent { return v.client.With(id) }

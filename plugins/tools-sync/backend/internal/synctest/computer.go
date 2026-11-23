@@ -46,6 +46,9 @@ func (h Host) Files(id domain.VaultID) ports.Files { return h.Root.With(id) }
 // Indexer returns the index of the vault.
 func (h Host) Indexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
 
+// Absent returns the absent files of the vault.
+func (h Host) Absent(id domain.VaultID) ports.Absent { return h.Root.With(id) }
+
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
@@ -63,6 +66,8 @@ type Computer struct {
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
 	State    *hoststore.State
+	// LazyHeavy is set on a phone: files that are downloaded on tap are listed as absent.
+	LazyHeavy bool
 
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
@@ -196,7 +201,7 @@ func (c *Computer) CommitDeps() commit.Deps {
 
 // PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
-	return pull.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State}
+	return pull.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, LazyHeavy: c.LazyHeavy}
 }
 
 // JoinDeps are the dependencies of the join of an existing account.

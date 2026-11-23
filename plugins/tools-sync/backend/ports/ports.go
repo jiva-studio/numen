@@ -76,10 +76,20 @@ type Store interface {
 	Write(ctx context.Context, name string, content []byte) error
 }
 
+// Absent is the files of one vault that the device lists and does not hold.
+type Absent interface{ host.AbsentFiles }
+
+// BlobRanges downloads a part of a blob.
+type BlobRanges interface {
+	// GetBlobRange returns at most length bytes of the blob from offset; fewer only at its end.
+	GetBlobRange(ctx context.Context, url string, offset, length int64) ([]byte, error)
+}
+
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	Files(id domain.VaultID) Files
+	Absent(id domain.VaultID) Absent
 	Indexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }

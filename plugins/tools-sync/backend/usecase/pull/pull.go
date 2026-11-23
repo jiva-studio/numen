@@ -28,6 +28,8 @@ type Deps struct {
 	Crypto    ports.Crypto
 	Host      ports.Host
 	State     State
+	// LazyHeavy lists a file that is downloaded on tap as an absent file and downloads nothing of it. A phone sets it.
+	LazyHeavy bool
 }
 
 // PullChanges reads the changes after the position of the vault and applies them.

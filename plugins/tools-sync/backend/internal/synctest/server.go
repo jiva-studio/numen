@@ -21,13 +21,17 @@ type Server struct {
 	isDown      bool
 	lostPath    string
 	isCorrupted bool
+	requests    int
+	blobGets    int
+	blobBudget  int
+	hasBudget   bool
 }
 
 // NewServer starts the server on the clock and stops it when the test ends.
 func NewServer(t *testing.T, clock *Clock, cfg fakeserver.Config) *Server {
 	t.Helper()
 	cfg.Now = clock.Now
-	s := &Server{Fake: fakeserver.New(cfg), URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false}
+	s := &Server{Fake: fakeserver.New(cfg), URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, requests: 0, blobGets: 0, blobBudget: 0, hasBudget: false}
 	served := httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(served.Close)
 	s.URL = served.URL
@@ -82,7 +86,16 @@ func (s *Server) GetStoredBlobs(t *testing.T) []byte {
 
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
-	isDown, isCorrupted := s.isDown, s.isCorrupted
+	s.requests++
+	isBlobGet := r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/blobs/")
+	if isBlobGet {
+		s.blobGets++
+	}
+	isCut := isBlobGet && s.hasBudget && s.blobBudget <= 0
+	if isBlobGet && s.hasBudget && s.blobBudget > 0 {
+		s.blobBudget--
+	}
+	isDown, isCorrupted := s.isDown || isCut, s.isCorrupted
 	isLost := s.lostPath != "" && strings.HasSuffix(r.URL.Path, s.lostPath)
 	if isLost {
 		s.lostPath = ""
@@ -108,4 +121,26 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.Fake.ServeHTTP(w, r)
 	}
+}
+
+// CountRequests returns how many requests the server has taken, answered or not.
+func (s *Server) CountRequests() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.requests
+}
+
+// CountBlobGets returns how many downloads of a blob, whole or in a range, the server has taken.
+func (s *Server) CountBlobGets() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.blobGets
+}
+
+// FailBlobGetsAfter makes every download of a blob answer 503 once n more have been taken, as a connection that
+// drops in the middle of a file does. A negative n lifts the limit.
+func (s *Server) FailBlobGetsAfter(n int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.hasBudget, s.blobBudget = n >= 0, n
 }
