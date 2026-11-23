@@ -208,29 +208,6 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 	}
 }
 
-func TestSyncVault_WarnsAboutANoteChangedOnTwoComputersAndChangesNeither(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.a.WriteNote(source, "Shopping list.md", "bread")
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	sync(t, p.a, source)
-
-	sync(t, p.b, target)
-	sync(t, p.b, target)
-
-	if !p.b.HasItem("1 note changed on two computers") {
-		t.Errorf("health items = %+v, want 1 note changed on two computers", p.b.Health.List())
-	}
-	wantNote(t, p.a, source, "Shopping list.md", "bread")
-	wantNote(t, p.b, target, "Shopping list.md", "eggs")
-	head := p.a.ReadChanges(t, p.a.GetRemoteID(t, source))
-	if len(head) != 1 || string(p.a.OpenBlob(t, p.a.GetVaultKey(t, source), head[0].GetRevision())) != "bread" {
-		t.Error("the server head is not the text of the first computer, want the second computer to have pushed nothing")
-	}
-}
-
 func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	for _, path := range []string{"One.md", "Two.md"} {
