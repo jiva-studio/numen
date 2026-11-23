@@ -48,7 +48,6 @@ const SYNC: LicenseInfo = {
   keyHint: '',
   activeProvider: '',
   instanceName: '',
-  expiresAt: '',
   verifiedAt: '',
 }
 
