@@ -24,7 +24,7 @@ func (b *Backend) getPausedRemovals(ctx context.Context, id domain.VaultID) (*ap
 	if err != nil || state == nil {
 		return nil, err
 	}
-	return &api.PausedDeletions{Count: len(state.Files), Tracked: state.Tracked, Direction: string(state.Direction)}, nil
+	return &api.PausedDeletions{Count: len(state.Files), Tracked: state.Tracked, Direction: api.Direction(state.Direction)}, nil
 }
 
 // ResolveDeletions takes the answer of the person to the removals of a vault that wait for it.
