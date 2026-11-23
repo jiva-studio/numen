@@ -91,7 +91,9 @@ export const WORDS = {
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
   identityNoneDetail:
-    'An identity is a key kept only on your devices. Your devices use it to recognize each other, and your subscription is tied to it. Numen never sees it.',
+    'An identity is your Numen account. Unlike a usual account, it lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it, so nobody else can read your notes.',
+  identityNoneWords:
+    'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
   identityRestore: 'Restore',
   identitySetupTitle: 'Recovery words',

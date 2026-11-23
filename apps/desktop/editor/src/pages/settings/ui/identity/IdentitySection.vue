@@ -48,6 +48,7 @@ const { stage, recoveryWords } = setup
     </template>
     <div class="identity-section__body">
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
+      <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
       <IdentityRestore
         v-if="step === 'restore'"

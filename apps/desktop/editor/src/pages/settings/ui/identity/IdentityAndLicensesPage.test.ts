@@ -15,7 +15,7 @@ import { createInstallation, createSettingsState } from '@/pages/settings/testin
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
-const NO_IDENTITY = 'An identity is a key kept only on your devices.'
+const NO_IDENTITY = 'An identity is your Numen account.'
 
 const RECOVERY_WORDS = [
   'legal',
