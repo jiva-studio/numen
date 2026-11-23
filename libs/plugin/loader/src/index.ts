@@ -2,7 +2,6 @@ export {
   loadFrameRuntime,
   createWindowFrameControls,
   openExternalUrl,
-  type FrameRuntime,
   type FrameRuntimeLoader,
 } from './frameRuntime'
 export {
@@ -17,68 +16,37 @@ export {
   INTERFACE_WAIT_MS,
   PLUGIN_START_LIMIT_MS,
   waitWithinInterfaceLimit,
-  type ContributionMatch,
   type PluginStatus,
 } from './loading'
-export type { LoaderHost, PluginParts } from './host'
-export type { Manifest } from '@numen/core-client'
-export {
-  adoptPluginStyle,
-  adoptSheet,
-  clearPluginStyles,
-  createSheet,
-  getPluginSheet,
-  getPluginStyle,
-  loadPluginStyle,
-  registerPluginStyle,
-  unregisterPluginStyle,
-  type StyleRoot,
-} from './styles'
-export { createDropRegistry } from './drops'
-export { createEditorExtensionRegistry } from './editorExtensions'
-export {
-  findSlotView,
-  getDeclaredSlots,
-  SlotViewHost,
-  usePluginStyles,
-  type DeclaredSlotView,
-  type SlotViewManifest,
-} from './slot-views'
-export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
-export { createExternalOpener, type ExternalOpener } from './externalOpener'
-export { resolveTextLinks, type LinkClient } from './textLinks'
+export { createSheet, getPluginSheet, getPluginStyle } from './styles'
+export { SlotViewHost, usePluginStyles } from './slot-views'
+export { createAppInfo } from './appInfo'
+export { resolveTextLinks } from './textLinks'
 export { createPluginConnections } from './pluginConnections'
 export { createPluginTexts } from './pluginTexts'
 export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
 export * from './contract'
-export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
+export { createPluginNotices } from './pluginNotices'
 export {
   createBackgroundTaskHost,
   createFailedTask,
   getFailedTasks,
   type WorkTask,
 } from './background-tasks'
-export { createPluginTasks, type WindowTask } from './pluginTasks'
-export type { HealthReports } from './pluginHealth'
+export { createPluginTasks } from './pluginTasks'
 export {
   createCustomTabKind,
   pickCustomTabParts,
   createPluginHost,
-  createPluginPaneWrapper,
   createWindowHost,
   requireMountAccess,
   type AnyTabKind,
-  type BackendHandlerRun,
   type CommandDeclaration,
   type HandlerDeclaration,
-  type HostCommandReads,
   type NoteBuffer,
   type OpenTab,
-  type PluginContextHost,
   type PluginHost,
   type PluginHostDeps,
-  type HostWindow,
-  type HostPlugins,
   type HostCommands,
   type HostSlots,
   type HostKinds,
@@ -86,10 +54,8 @@ export {
   type HostVault,
   type HostWork,
   type PluginPaletteCommand,
-  type SlotCommandFinder,
   type SourceReader,
   type TabKind,
-  type TabTarget,
   type WindowControls,
 } from './hosting'
 export {
@@ -97,15 +63,12 @@ export {
   readManifestSlotEntries,
   type DeclaredSlotEntry,
   type SlotCommandLook,
-  type SlotRegistryDeps,
-  applyLayout,
   arrangeByLayout,
   collapseSeparators,
   SLOT_SEPARATOR_ID,
   getEntryKey,
   orderSlotEntries,
   separateGroups,
-  type GroupedRows,
   readManifestSlotPoints,
   type DeclaredSlotPoint,
   type SlotLayout,
@@ -118,15 +81,6 @@ export {
   type WhenCondition,
   type WhenReader,
   type WhenSettings,
-  type WhenValueParts,
   type WhenValues,
 } from './when'
-export {
-  createKeybindingRegistry,
-  parseKey,
-  type ParsedKey,
-  type Keybinding,
-  type KeybindingRegistry,
-  type KeybindingRegistryDeps,
-  type KeybindingSource,
-} from './keybindings'
+export {} from './keybindings'

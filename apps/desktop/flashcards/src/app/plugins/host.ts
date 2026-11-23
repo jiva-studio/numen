@@ -4,6 +4,7 @@
  * the views declared for the list of vaults; and the view of the slot titleBar. The slot entries are
  * read from the manifests of the plugins the host activated.
  */
+import type { Manifest } from '@numen/core-client'
 import {
   SLOT,
   createAppInfo,
@@ -16,7 +17,6 @@ import {
   type BackgroundTaskHost,
   type CommandsHost,
   type createPluginConnections,
-  type Manifest,
   type SlotLayout,
   type VaultRelations,
   type VaultsHost,
