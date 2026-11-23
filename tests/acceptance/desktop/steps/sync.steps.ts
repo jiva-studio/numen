@@ -171,10 +171,6 @@ When('{computer} removes the note {string} in {owned}', ({ person }, computer: C
   person.computers.removeNote(computer, title, vault)
 })
 
-When('the person buys the subscription again', async ({ person }) => {
-  await person.identity.buy()
-})
-
 Then('the synced vault {string} holds the note {string} with the text {string}', async ({ person }, synced: string, title: string, text: string) => {
   await person.computers.expectHeld(synced, title, text)
 })
