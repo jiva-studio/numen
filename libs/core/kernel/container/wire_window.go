@@ -69,7 +69,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
-	return connectWindow(ctx, install, exec, vaultDeps, opened, startup, launch.plugins)
+	return connectWindow(ctx, install, exec, vaultDeps, opened, startup)
 }
 
 func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
@@ -91,6 +91,7 @@ type windowRoutes struct {
 	*editor.Installation
 	session *editor.Session
 	page    *editor.PageAccess
+	plugins windowPluginAccess
 }
 
 type windowPluginAccess struct {
@@ -104,7 +105,6 @@ type windowLaunch struct {
 	start       windowsession.StartWindow
 	server      *editor.FileServer
 	closeSource func() error
-	plugins     windowPluginAccess
 	source      sourceAccess
 	generations *indexgeneration.Generations
 }
@@ -195,12 +195,12 @@ func buildWindow(
 	mountFile(window, vaultDeps, db, plugins.kinds, &moves.Tree.Move, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open)
+	window.plugins = windowPluginAccess{
+		writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
+	}
 	return window, windowLaunch{
 		start:  session.cases.start,
 		server: newFileServer(vaultDeps, &state.Runtime, page.Window, ports.Lookup), closeSource: closeEmbedder, source: source, generations: generations,
-		plugins: windowPluginAccess{
-			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
-		},
 	}
 }
 

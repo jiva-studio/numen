@@ -26,7 +26,7 @@ const NEWER_PROTOCOL = 1000
 const SETTLE_MS = 3_000
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */
-const PLUGINS: Readonly<Record<string, { readonly id: string; readonly backend: string }>> = {
+const PLUGINS: Readonly<Partial<Record<string, { readonly id: string; readonly backend: string }>>> = {
   'Numen Sync': { id: SYNC_PLUGIN, backend: 'tools-sync' },
 }
 
@@ -80,7 +80,7 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
   processes
     .split('\n')
     .map((line) => /^\s*(\d+)\s+(\S+)/.exec(line))
-    .flatMap((found) => (found?.[1] !== undefined && found[2]?.endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
+    .flatMap((found) => (found?.[1] !== undefined && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
 
 export class SyncDriver {
   private running: RunningSync | undefined
