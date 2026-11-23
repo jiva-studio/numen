@@ -33,7 +33,7 @@ func (c Config) OpenEditor(
 }
 
 func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *vaultIndex, error) {
-	ports, err := c.openRegistry()
+	ports, err := openVaultRegistry(c.RegistryPath)
 	if err != nil {
 		return ports, nil, err
 	}
@@ -41,7 +41,14 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(ctx context.Context, install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup) (*editor.Installation, error) {
+func connectWindow(
+	ctx context.Context,
+	install pluginInstall,
+	exec *PluginExecution,
+	vaultDeps vaultWiring,
+	opened *windowRoutes,
+	startup windowStartup,
+) (*editor.Installation, error) {
 	if !startup.isEditor {
 		return opened.Installation, nil
 	}
@@ -87,11 +94,12 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	log := opening.Log
+	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	api := &shell.API{
 		Window:          shell.NewWindow(opening.Target, nil),
 		Frontends:       shell.NewFrontendPlugins(exec.Runtime.Manifests.ListFrontendPluginIDs, func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }),
 		PluginServices:  servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing),
-		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
+		ConnectionCalls: connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, func(v domain.Vault) { ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(v) })
