@@ -5,7 +5,6 @@ package license
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"connectrpc.com/connect"
 
@@ -41,7 +40,7 @@ func (h *Handler) ListLicenses(
 ) (*connect.Response[v1.ListLicensesResponse], error) {
 	entries, err := h.licenses.List.Execute(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.ListLicensesResponse{
 		Licenses: writeLicenses(entries),
@@ -60,11 +59,11 @@ func (h *Handler) ActivateLicense(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.ActivateLicenseResponse{
 			Error:  code,
-			Detail: getDetail(err),
+			Detail: wire.GetErrorDetail(err, detailed...),
 		}), nil
 	}
 	return connect.NewResponse(&v1.ActivateLicenseResponse{
@@ -82,11 +81,11 @@ func (h *Handler) DeactivateLicense(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.DeactivateLicenseResponse{
 			Error:  code,
-			Detail: getDetail(err),
+			Detail: wire.GetErrorDetail(err, detailed...),
 		}), nil
 	}
 	return connect.NewResponse(&v1.DeactivateLicenseResponse{
@@ -108,23 +107,15 @@ func (h *Handler) WatchLicenses(
 	})
 }
 
-func getDetail(err error) string {
-	sentinels := []error{
-		license.ErrNotFound,
-		license.ErrInvalidKey,
-		license.ErrActivationLimitReached,
-		license.ErrExpired,
-		license.ErrDisabled,
-		license.ErrProductMismatch,
-		license.ErrProviderUnavailable,
-		license.ErrKeyStore,
-	}
-	for _, sentinel := range sentinels {
-		if errors.Is(err, sentinel) {
-			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
-		}
-	}
-	return err.Error()
+var detailed = []error{
+	license.ErrNotFound,
+	license.ErrInvalidKey,
+	license.ErrActivationLimitReached,
+	license.ErrExpired,
+	license.ErrDisabled,
+	license.ErrProductMismatch,
+	license.ErrProviderUnavailable,
+	license.ErrKeyStore,
 }
 
 func getErrorCode(err error) (v1.LicenseErrorCode, bool) {

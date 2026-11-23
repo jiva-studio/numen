@@ -11,6 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -60,7 +61,7 @@ func (h *Handler) SearchNames(
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	tabKinds := found.TabKinds
 	out := &v1.SearchNamesResponse{Matches: make([]*v1.NameMatch, 0, len(found.Matches))}
@@ -107,7 +108,7 @@ func (h *Handler) SearchText(
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 
 	out := &v1.SearchTextResponse{Results: make([]*v1.SearchResult, 0, len(found.Results))}

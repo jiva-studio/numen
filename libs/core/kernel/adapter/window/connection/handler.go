@@ -5,7 +5,6 @@ package connection
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"connectrpc.com/connect"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
@@ -73,11 +73,11 @@ func (h *Handler) ListProviderConnectionTypes(
 	response := &v1.ListProviderConnectionTypesResponse{}
 	list := h.connections.ListTypes.Execute()
 	for _, one := range list.Types {
-		wire, err := writeType(one)
+		wired, err := writeType(one)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		response.Types = append(response.Types, wire)
+		response.Types = append(response.Types, wired)
 	}
 	for _, one := range list.Operations {
 		response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
@@ -91,15 +91,15 @@ func (h *Handler) ListProviderConnections(
 ) (*connect.Response[v1.ListProviderConnectionsResponse], error) {
 	entries, err := h.connections.List.Execute(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	response := &v1.ListProviderConnectionsResponse{}
 	for _, one := range entries {
-		wire, err := writeConnection(one)
+		wired, err := writeConnection(one)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		response.Connections = append(response.Connections, wire)
+		response.Connections = append(response.Connections, wired)
 	}
 	return connect.NewResponse(response), nil
 }
@@ -117,15 +117,15 @@ func (h *Handler) CreateProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
 	}
-	wire, err := writeConnection(entry)
+	wired, err := writeConnection(entry)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.CreateProviderConnectionResponse{Connection: wire}), nil
+	return connect.NewResponse(&v1.CreateProviderConnectionResponse{Connection: wired}), nil
 }
 
 // UpdateProviderConnection changes the connection that has the revision the request carries.
@@ -142,15 +142,15 @@ func (h *Handler) UpdateProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
 	}
-	wire, err := writeConnection(entry)
+	wired, err := writeConnection(entry)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Connection: wire}), nil
+	return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Connection: wired}), nil
 }
 
 // DeleteProviderConnection removes a connection and its secret fields.
@@ -161,9 +161,9 @@ func (h *Handler) DeleteProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
 	}
 	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{RemovedUses: writeUses(removed)}), nil
 }
@@ -180,9 +180,9 @@ func (h *Handler) ListRowOptions(
 		}
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
 	}
 	options := make([]*v1.Option, len(listed))
 	for i, one := range listed {
@@ -191,18 +191,10 @@ func (h *Handler) ListRowOptions(
 	return connect.NewResponse(&v1.ListRowOptionsResponse{Options: options}), nil
 }
 
-func getDetail(err error) string {
-	sentinels := []error{
-		connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
-		connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
-		connections.ErrProviderUnavailable, connections.ErrNoOptions,
-	}
-	for _, sentinel := range sentinels {
-		if errors.Is(err, sentinel) {
-			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
-		}
-	}
-	return err.Error()
+var detailed = []error{
+	connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
+	connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
+	connections.ErrProviderUnavailable, connections.ErrNoOptions,
 }
 
 func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {

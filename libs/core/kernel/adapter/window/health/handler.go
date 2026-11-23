@@ -109,5 +109,5 @@ func getHealthError(err error) error {
 	if errors.Is(err, plugin.ErrInvalidHealth) {
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return connect.NewError(connect.CodeInternal, err)
+	return wire.NewInternalError(err)
 }

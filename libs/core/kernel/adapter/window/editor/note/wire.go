@@ -1,35 +1,11 @@
 package note
 
 import (
-	"errors"
 	"time"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-// errTooManyPaths is a filter naming more paths than are answered at once.
-var errTooManyPaths = errors.New("that is more paths than are answered at once")
-
-const maxQueryLength = 200
-
-func eachOnce(paths []string) ([]string, error) {
-	observed := make(map[string]bool, len(paths))
-	out := make([]string, 0, len(paths))
-	for _, path := range paths {
-		if observed[path] {
-			continue
-		}
-		observed[path] = true
-		out = append(out, path)
-	}
-	if len(out) > maxQueryLength {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
-	}
-	return out, nil
-}
 
 func convertNoteTypeToWire(noteType domain.NoteType) string {
 	if noteType == domain.TypeNote {

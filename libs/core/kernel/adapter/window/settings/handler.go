@@ -61,7 +61,7 @@ func (h *Values) GetSettings(
 ) (*connect.Response[v1.GetSettingsResponse], error) {
 	got, err := h.get.Execute()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	reply := &v1.GetSettingsResponse{
 		SettingsJson: got.Written,
@@ -89,7 +89,7 @@ func (h *Values) WriteSettings(
 		if errors.Is(err, settingsdomain.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.WriteSettingsResponse{SettingsJson: applied.Written, Version: applied.Version}), nil
 }

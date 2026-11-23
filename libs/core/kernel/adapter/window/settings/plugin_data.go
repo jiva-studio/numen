@@ -2,7 +2,6 @@ package settings
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
 // PluginData is the folders plugins keep in a vault's store.
@@ -23,8 +23,6 @@ type PluginData interface {
 type VaultProvider interface {
 	GetCurrentVault() domain.Vault
 }
-
-var errNoVault = errors.New("the window shows no vault")
 
 // PluginFolders answers the calls about the folders plugins keep in the shown vault.
 type PluginFolders struct {
@@ -62,10 +60,10 @@ func (h *PluginFolders) DeletePluginData(
 ) (*connect.Response[v1.DeletePluginDataResponse], error) {
 	v := h.vaults.GetCurrentVault()
 	if v.ID == "" {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+		return nil, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	if err := h.data.DeletePluginData(ctx, v, r.Msg.GetPluginId()); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.DeletePluginDataResponse{}), nil
 }

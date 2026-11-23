@@ -2,7 +2,6 @@ package editor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -64,9 +63,6 @@ type Installation struct {
 	imports   Importer
 	pages     pageSet
 }
-
-// errNoVault is returned for a vault query on a window with no vault open.
-var errNoVault = errors.New("the window has no vault")
 
 // Option sets what a window is put together with besides its state.
 type Option func(*Installation)

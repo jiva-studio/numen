@@ -23,6 +23,9 @@ import (
 // errNoPlugin is a call of a plugin's command that names no plugin.
 var errNoPlugin = errors.New("a command call names the plugin that declares the command")
 
+// errFailed is what a command that failed for a reason the core does not name is answered with.
+var errFailed = errors.New("the command failed")
+
 // VaultProvider names the vault the window shows. A window showing none answers a vault with no ID.
 type VaultProvider interface {
 	GetCurrentVault() domain.Vault
@@ -84,11 +87,21 @@ func (h *Handler) RunPluginCommand(
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 		}
-		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: err.Error()}), nil
+		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: getMessage(err)}), nil
 	}
 	return connect.NewResponse(&v1.RunPluginCommandResponse{
 		Message: result.Message, OpenedPath: result.OpenedPath,
 	}), nil
+}
+
+// getMessage is what a user reads of a failed command: the message of one the plugin ran and failed, the text
+// of an error the core names, and no text of any other error.
+func getMessage(err error) string {
+	var failed *plugin.CommandFailedError
+	if getErrorCode(err) == v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED && !errors.As(err, &failed) {
+		return errFailed.Error()
+	}
+	return err.Error()
 }
 
 func getErrorCode(err error) v1.CommandErrorCode {
