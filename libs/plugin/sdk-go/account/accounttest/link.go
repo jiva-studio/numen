@@ -127,21 +127,37 @@ func (f *Fake) CloseLink() error {
 // device and its revoke, and the account keys of the host are the new ones. The server does not hear of it
 // until the plugin publishes the chain.
 func (f *Fake) AdvanceEpoch() error {
+	stranger, err := identity.NewDeviceKey(rand.Reader)
+	if err != nil {
+		return err
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.record == nil {
 		return errors.New("the host has no identity")
-	}
-	stranger, err := identity.NewDeviceKey(rand.Reader)
-	if err != nil {
-		return err
 	}
 	now := clock.System{}.Now()
 	added, err := f.record.Chain.AppendDevice(f.record.root, stranger.Public(), "Stranger", now)
 	if err != nil {
 		return err
 	}
-	revoked, keys, err := added.RevokeDevice(f.record.Device, f.record.keys, stranger.Public().Sign, rand.Reader, now)
+	f.record.Chain = added
+	return f.revokeLocked(stranger.Public().Sign, now)
+}
+
+// RevokeDevice makes the host revoke the device with the signing key, which its chain lists since the plugin adopted the chain of
+// the server. The account keys of the host are the new ones, and the server does not hear of it until the plugin publishes the chain.
+func (f *Fake) RevokeDevice(deviceSignKey []byte) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.record == nil {
+		return errors.New("the host has no identity")
+	}
+	return f.revokeLocked(deviceSignKey, clock.System{}.Now())
+}
+
+func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {
+	revoked, keys, err := f.record.Chain.RevokeDevice(f.record.Device, f.record.keys, deviceSignKey, rand.Reader, now)
 	if err != nil {
 		return err
 	}

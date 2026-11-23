@@ -249,8 +249,8 @@ func TestThePublicIdentityHasFingerprintsTheSignKeyAndTheChainAndNothingSecret(t
 		!bytes.Equal(got.GetDeviceSignKey(), want.DeviceSignKey) || !bytes.Equal(got.GetChain(), want.Chain) {
 		t.Errorf("response = %v, want %+v", got, want)
 	}
-	if fields := got.ProtoReflect().Descriptor().Fields().Len(); fields != 4 {
-		t.Errorf("the response has %d fields, want the 4 public ones", fields)
+	if fields := got.ProtoReflect().Descriptor().Fields().Len(); fields != 7 {
+		t.Errorf("the response has %d fields, want the 7 public ones: 4 of the identity, the key epoch, the length of the chain and the revoked flag", fields)
 	}
 }
 

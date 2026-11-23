@@ -4,10 +4,12 @@
 package accounttest
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"sync"
 	"testing"
 
@@ -138,7 +140,7 @@ func (s *service) GetPublicIdentity(_ context.Context, _ *connect.Request[v1.Get
 	return connect.NewResponse(&v1.GetPublicIdentityResponse{
 		AccountFingerprint: public.AccountFingerprint, DeviceFingerprint: public.DeviceFingerprint,
 		DeviceSignKey: public.DeviceSignKey, Chain: public.Chain,
-		KeyEpoch: public.KeyEpoch, ChainLength: public.ChainLength,
+		KeyEpoch: public.KeyEpoch, ChainLength: public.ChainLength, IsRevoked: public.IsRevoked,
 	}), nil
 }
 
@@ -167,6 +169,7 @@ func publicOf(record held) account.PublicIdentity {
 		Chain:              record.Chain.Bytes(),
 		KeyEpoch:           record.Chain.Epoch(),
 		ChainLength:        uint32(record.Chain.Len()),
+		IsRevoked:          isRevoked(record),
 	}
 }
 
@@ -215,4 +218,11 @@ type held struct {
 	Chain identity.Chain
 	root  identity.RecoveryKey
 	keys  identity.AccountKeys
+}
+
+// isRevoked reports whether the chain of the record lists the device as revoked.
+func isRevoked(record held) bool {
+	return slices.ContainsFunc(record.Chain.ListRevokedDevices(), func(device identity.Device) bool {
+		return bytes.Equal(device.Public.Sign, record.Device.SignerKey())
+	})
 }

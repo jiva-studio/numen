@@ -2,11 +2,13 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"connectrpc.com/connect"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -115,7 +117,9 @@ func (e *accountEndpoint) PutChainPublished(
 	if err != nil {
 		return nil, err
 	}
-	if err := chain.PutChainPublished(ctx, req.Msg.GetAccepted(), req.Msg.GetLatest()); err != nil {
+	// A revoke the core ended because the device to revoke added a device meanwhile is the answer to the courier, not a failure of it.
+	err = chain.PutChainPublished(ctx, req.Msg.GetAccepted(), req.Msg.GetLatest())
+	if err != nil && !errors.Is(err, identitydomain.ErrRevokeRaced) {
 		return nil, getAccountError(err)
 	}
 	return connect.NewResponse(&v1.PutChainPublishedResponse{}), nil
