@@ -71,7 +71,7 @@ export function useQrScanner(
     }
     if (video.value === null) return stop()
     video.value.srcObject = stream
-    await video.value.play().catch(() => undefined)
+    await Promise.resolve(video.value.play()).catch(() => undefined)
     status.value = 'scanning'
     timer = setInterval(readFrame, 1000 / FRAMES_PER_SECOND)
   }
