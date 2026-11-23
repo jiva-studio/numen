@@ -16,6 +16,8 @@ type Vault struct {
 	ID   VaultID
 	Name string
 	Path string
+	// ManagedBy is the id of the plugin that alone writes this vault; empty for a vault anyone may write.
+	ManagedBy string
 }
 
 // VaultSummary is how much of a vault the index holds. A read model, shown to

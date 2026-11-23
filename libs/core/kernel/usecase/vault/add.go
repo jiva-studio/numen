@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -100,4 +101,10 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 			root, oldPath, root), vaultdomain.ErrCopy)
 	}
 	return nil
+}
+
+// ExecuteManaged is Execute for a vault that only the plugin with the id managedBy writes. The attribute is stored
+// with the vault on the list.
+func (u Add) ExecuteManaged(_, _, _ string) (domain.Vault, error) {
+	return domain.Vault{}, errors.New("not implemented")
 }

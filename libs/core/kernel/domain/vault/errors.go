@@ -40,3 +40,6 @@ var (
 	// ErrShowing is returned when the vault to remove is the one the window shows.
 	ErrShowing = errors.New("the vault is open in the window")
 )
+
+// ErrReadOnly is what a write to a vault gets from a caller that is not the plugin that manages the vault.
+var ErrReadOnly = errors.New("this vault is read only")
