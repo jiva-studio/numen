@@ -76,8 +76,7 @@ func ReadSubscriptionError(err error) error {
 }
 
 // ReadShareError is ReadCallError for the calls of the share service: it maps NOT_FOUND to ErrNoShare, ALREADY_EXISTS
-// to ErrShareExists, and the details ShareEnded, RateLimited and ReaderUnknown to ShareEndedError, RateLimitedError and
-// ErrReaderUnknown.
+// to ErrShareExists, and the details ShareEnded and RateLimited to ShareEndedError and RateLimitedError.
 func ReadShareError(err error) error {
 	err = ReadError(err)
 	failure, ok := errors.AsType[*connect.Error](err)
@@ -94,8 +93,6 @@ func ReadShareError(err error) error {
 			return ShareEndedError{Version: refusal.GetVersion()}
 		case *syncv1.RateLimited:
 			return RateLimitedError{RetryAfter: time.Duration(refusal.GetRetryAfterSeconds()) * time.Second}
-		case *syncv1.ReaderUnknown:
-			return refusalError{sentinel: ErrReaderUnknown, cause: failure}
 		}
 	}
 	switch failure.Code() {

@@ -68,9 +68,9 @@ func getCode(err error) server.ErrorCode {
 func getRefusals() []error {
 	return []error{
 		share.ErrWholeVault, share.ErrInsideShare, share.ErrHoldsShare, share.ErrNotConnected, share.ErrReceivedVault,
-		share.ErrReceivedNotSynced, share.ErrOwnIdentity, share.ErrAlreadyReader, share.ErrChangedIdentity, share.ErrReaderNotSignedIn,
+		share.ErrReceivedNotSynced, share.ErrOwnIdentity, share.ErrAlreadyReader, share.ErrChangedIdentity, share.ErrReaderNotAdded,
 		share.ErrNotForThisAccount, share.ErrAlreadyReceived, share.ErrOwnerChanged, share.ErrEnded, share.ErrDamagedLog, share.ErrNotReady,
-		share.ErrUnknownReader, share.ErrNotShared,
+		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack,
 	}
 }
 

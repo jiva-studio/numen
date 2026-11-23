@@ -16,11 +16,10 @@ const (
 )
 
 var (
-	errNoShare      = errors.New("no such share")
-	errShareExists  = errors.New("the share exists")
-	errShareEnded   = errors.New("the share ended")
-	errReaderAbsent = errors.New("no account has this reader")
-	errRateLimited  = errors.New("too many download URLs of this share")
+	errNoShare     = errors.New("no such share")
+	errShareExists = errors.New("the share exists")
+	errShareEnded  = errors.New("the share ended")
+	errRateLimited = errors.New("too many download URLs of this share")
 )
 
 type shareMember struct {
@@ -80,14 +79,6 @@ func (sh *shareState) listActive() []*shareMember {
 func newShareEnded(version uint64) error {
 	failure := connect.NewError(connect.CodePermissionDenied, errShareEnded)
 	if detail, err := connect.NewErrorDetail(&syncv1.ShareEnded{Version: version}); err == nil {
-		failure.AddDetail(detail)
-	}
-	return failure
-}
-
-func newReaderUnknown() error {
-	failure := connect.NewError(connect.CodeFailedPrecondition, errReaderAbsent)
-	if detail, err := connect.NewErrorDetail(&syncv1.ReaderUnknown{}); err == nil {
 		failure.AddDetail(detail)
 	}
 	return failure

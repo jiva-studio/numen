@@ -62,8 +62,10 @@ var (
 	ErrNoShare = errors.New("the sync server has no such share")
 	// ErrShareExists means a share root with this id exists already.
 	ErrShareExists = errors.New("the share exists on the sync server")
-	// ErrReaderUnknown means no account has the root key of the reader.
-	ErrReaderUnknown = errors.New("no account on the sync server has this reader")
+	// ErrReaderRefused means the server refused to add a reader. It gives no reason: the same answer covers a root no
+	// account has, the owner itself, a member already and a share that holds the most readers, so the call tells nobody
+	// whether an account has a root key.
+	ErrReaderRefused = errors.New("the sync server refused to add the reader")
 )
 
 // ShareEndedError means the owner removed the caller from a share, or closed it. Version is the version of the

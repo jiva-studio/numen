@@ -152,9 +152,6 @@ message ShareEnded {
   uint64 version = 1;
 }
 
-// ReaderUnknown is the detail of FAILED_PRECONDITION: no account has that root key.
-message ReaderUnknown {}
-
 // RateLimited is the detail of RESOURCE_EXHAUSTED.
 message RateLimited {
   uint32 retry_after_seconds = 1;

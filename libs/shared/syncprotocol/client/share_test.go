@@ -237,7 +237,6 @@ func TestShareClient_MapsTheRefusalsOfTheServer(t *testing.T) {
 		"no share":       {err: connect.NewError(connect.CodeNotFound, errors.New("no")), want: syncprotocol.ErrNoShare},
 		"share exists":   {err: connect.NewError(connect.CodeAlreadyExists, errors.New("no")), want: syncprotocol.ErrShareExists},
 		"no entitlement": {err: connect.NewError(connect.CodePermissionDenied, errors.New("no")), want: syncprotocol.ErrWriteNotAllowed},
-		"reader unknown": {err: newDetailedError(t, connect.CodeFailedPrecondition, &syncv1.ReaderUnknown{}), want: syncprotocol.ErrReaderUnknown},
 		"unauthorized":   {err: connect.NewError(connect.CodeUnauthenticated, errors.New("no")), want: syncprotocol.ErrUnauthenticated},
 	}
 	for name, c := range cases {
@@ -287,5 +286,22 @@ func TestShareClient_RefusesAServerOfAnotherVersion(t *testing.T) {
 
 	if !errors.Is(err, syncprotocol.ErrUpdateRequired) {
 		t.Errorf("error = %v, want ErrUpdateRequired", err)
+	}
+}
+
+func TestShareClient_ReadsARefusedAddReaderWithoutSayingWhy(t *testing.T) {
+	t.Parallel()
+	stub, address := serveShareStub(t, syncprotocol.Version)
+	stub.fail = connect.NewError(connect.CodeInvalidArgument, errors.New("no"))
+	entry := &syncv1.ShareLogEntry{Kind: syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER}
+
+	_, err := newShareClient(address).AppendShareLogEntry(t.Context(), entry)
+
+	if !errors.Is(err, syncprotocol.ErrReaderRefused) {
+		t.Errorf("error = %v, want ErrReaderRefused", err)
+	}
+	entry.Kind = syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE
+	if _, err := newShareClient(address).AppendShareLogEntry(t.Context(), entry); errors.Is(err, syncprotocol.ErrReaderRefused) {
+		t.Errorf("an update that the server refused reads as a refused reader: %v", err)
 	}
 }

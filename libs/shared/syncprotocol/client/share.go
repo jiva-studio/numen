@@ -86,5 +86,8 @@ func readAppendShareError(entry *syncv1.ShareLogEntry, err error) error {
 	if entry.GetKind() == syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE && errors.Is(failure, syncprotocol.ErrNoShare) {
 		return fmt.Errorf("%w: %w", syncprotocol.ErrNoVault, failure)
 	}
+	if entry.GetKind() == syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER && connect.CodeOf(failure) == connect.CodeInvalidArgument {
+		return fmt.Errorf("%w: %w", syncprotocol.ErrReaderRefused, failure)
+	}
 	return failure
 }

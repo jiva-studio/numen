@@ -15,8 +15,8 @@ var (
 	ErrAlreadyReader = errors.New("this person already reads the folder")
 	// ErrChangedIdentity means a label is used by a reader with another root and the caller has not confirmed.
 	ErrChangedIdentity = errors.New("this person has another identity than before")
-	// ErrReaderNotSignedIn means no account of the server has the root of the reader.
-	ErrReaderNotSignedIn = errors.New("the reader has not signed in to Numen Sync yet")
+	// ErrReaderNotAdded means the server refused to add the reader and gave no reason: the root may have no account.
+	ErrReaderNotAdded = errors.New("the reader could not be added; the person may not have signed in to Numen Sync yet")
 	// ErrNotForThisAccount means an invitation names the fingerprint of another reader.
 	ErrNotForThisAccount = errors.New("this invitation is for another person")
 	// ErrAlreadyReceived means this device holds the share already.
@@ -27,6 +27,10 @@ var (
 	ErrEnded = errors.New("the owner ended this share")
 	// ErrDamagedLog means the share log fails the checks of a reader.
 	ErrDamagedLog = errors.New("the share log is damaged")
+	// ErrRolledBack means the server served an older state of the share than this reader has seen: a log that lacks its
+	// last entry, a log with another entry in its place, a file back at an older revision, or a revision of an epoch the
+	// log has not reached.
+	ErrRolledBack = errors.New("the share went back to an older state")
 	// ErrNotReady means the owner has not finished making the share, so no reader is added yet.
 	ErrNotReady = errors.New("the share is not ready for readers")
 )

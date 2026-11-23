@@ -248,8 +248,8 @@ func (b base) sign(ctx context.Context, id []byte, version uint64, prev [32]byte
 // appendEntry adds the entry to the log. It returns errMoved when another device was first.
 func (b base) appendEntry(ctx context.Context, entry *syncv1.ShareLogEntry) error {
 	response, err := b.deps.Shares.AppendShareLogEntry(ctx, entry)
-	if errors.Is(err, syncprotocol.ErrReaderUnknown) {
-		return domainshare.ErrReaderNotSignedIn
+	if errors.Is(err, syncprotocol.ErrReaderRefused) {
+		return domainshare.ErrReaderNotAdded
 	}
 	if err != nil {
 		return err

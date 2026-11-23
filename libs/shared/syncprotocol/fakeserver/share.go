@@ -123,12 +123,12 @@ func getRemoveReaderProblem(share *shareState, entry *syncv1.ShareLogEntry) stri
 func (s *Server) checkAddReader(share *shareState, entry *syncv1.ShareLogEntry) error {
 	root := entry.GetSubjectRootSignKey()
 	account := identity.RecoveryPublicKey{Sign: root}.Fingerprint().String()
-	if _, known := s.chains[account]; !known {
-		return newReaderUnknown()
-	}
+	_, isKnown := s.chains[account]
 	member := share.findMemberByRoot(root)
 	var problem string
 	switch {
+	case !isKnown:
+		problem = "the reader is not valid"
 	case entry.GetEpoch() != share.epoch:
 		problem = "an addition keeps the epoch"
 	case account == share.account:

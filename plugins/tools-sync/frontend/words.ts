@@ -75,5 +75,5 @@ export const WORDS = {
   holdsShared: 'A folder that holds a shared folder cannot be shared',
   chooseFolder: 'Choose a folder, not the whole vault',
   ownerIdentityChanged: 'The owner identity changed',
-  readerNotSignedIn: 'The reader has not signed in to Numen Sync yet',
+  readerNotAdded: 'The reader could not be added; the person may not have signed in to Numen Sync yet',
 } as const

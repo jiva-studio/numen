@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -185,11 +187,11 @@ func TestShareService_AddReaderNeedsAnAccountOfTheRootAndExactlyOneSealForIt(t *
 	_, wrongSeal := s.tryAppend(s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER, 0, s.readerRoot(), newSealFor(stranger)))
 	_, own := s.tryAppend(s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER, 0, s.ownerRoot(), newSealFor(s.ownerRoot())))
 
-	if !errors.Is(unknown, syncprotocol.ErrReaderUnknown) {
-		t.Errorf("a root without an account: error = %v, want ErrReaderUnknown", unknown)
+	if unknown == nil || wrongSeal == nil || own == nil {
+		t.Fatalf("a root without an account, a seal for another key or the owner as reader was accepted: %v, %v, %v", unknown, wrongSeal, own)
 	}
-	if wrongSeal == nil || own == nil {
-		t.Errorf("a seal for another key or the owner as reader was accepted: %v, %v", wrongSeal, own)
+	if !errors.Is(unknown, syncprotocol.ErrReaderRefused) || !errors.Is(own, syncprotocol.ErrReaderRefused) || connect.CodeOf(unknown) != connect.CodeOf(own) {
+		t.Errorf("a root without an account answers %v and the owner as reader %v, want one refusal that says nothing of the accounts", connect.CodeOf(unknown), connect.CodeOf(own))
 	}
 }
 

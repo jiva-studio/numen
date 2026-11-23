@@ -272,10 +272,10 @@ func TestAddReader_RefusesTheOwnIdentityAnActiveReaderAndAReaderNotSignedIn(t *t
 		code string
 		want error
 	}{
-		"the own identity":  {code: own.Code, want: share.ErrOwnIdentity},
-		"an active reader":  {code: again.Code, want: share.ErrAlreadyReader},
-		"not signed in yet": {code: absent.Code, want: share.ErrReaderNotSignedIn},
-		"not a code":        {code: "numen-reader-1.AAAA", want: share.ErrBadCode},
+		"the own identity":      {code: own.Code, want: share.ErrOwnIdentity},
+		"an active reader":      {code: again.Code, want: share.ErrAlreadyReader},
+		"refused by the server": {code: absent.Code, want: share.ErrReaderNotAdded},
+		"not a code":            {code: "numen-reader-1.AAAA", want: share.ErrBadCode},
 	} {
 		if _, err := w.owner.AddReader(t.Context(), owned, folder, c.code, "Bo", false); !errors.Is(err, c.want) {
 			t.Errorf("%s: error = %v, want %v", name, err, c.want)

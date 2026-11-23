@@ -997,43 +997,6 @@ func (x *ShareEnded) GetVersion() uint64 {
 	return 0
 }
 
-// ReaderUnknown is the detail of FAILED_PRECONDITION: no account has that root key.
-type ReaderUnknown struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReaderUnknown) Reset() {
-	*x = ReaderUnknown{}
-	mi := &file_numen_sync_v1_share_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReaderUnknown) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReaderUnknown) ProtoMessage() {}
-
-func (x *ReaderUnknown) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_share_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReaderUnknown.ProtoReflect.Descriptor instead.
-func (*ReaderUnknown) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_share_proto_rawDescGZIP(), []int{15}
-}
-
 // RateLimited is the detail of RESOURCE_EXHAUSTED.
 type RateLimited struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -1044,7 +1007,7 @@ type RateLimited struct {
 
 func (x *RateLimited) Reset() {
 	*x = RateLimited{}
-	mi := &file_numen_sync_v1_share_proto_msgTypes[16]
+	mi := &file_numen_sync_v1_share_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1019,7 @@ func (x *RateLimited) String() string {
 func (*RateLimited) ProtoMessage() {}
 
 func (x *RateLimited) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_share_proto_msgTypes[16]
+	mi := &file_numen_sync_v1_share_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1032,7 @@ func (x *RateLimited) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RateLimited.ProtoReflect.Descriptor instead.
 func (*RateLimited) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_share_proto_rawDescGZIP(), []int{16}
+	return file_numen_sync_v1_share_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RateLimited) GetRetryAfterSeconds() uint32 {
@@ -1144,8 +1107,7 @@ const file_numen_sync_v1_share_proto_rawDesc = "" +
 	"\tdownloads\x18\x01 \x03(\v2\x1b.numen.sync.v1.BlobDownloadR\tdownloads\"&\n" +
 	"\n" +
 	"ShareEnded\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\x04R\aversion\"\x0f\n" +
-	"\rReaderUnknown\"=\n" +
+	"\aversion\x18\x01 \x01(\x04R\aversion\"=\n" +
 	"\vRateLimited\x12.\n" +
 	"\x13retry_after_seconds\x18\x01 \x01(\rR\x11retryAfterSeconds*\xda\x01\n" +
 	"\fShareLogKind\x12\x1e\n" +
@@ -1177,7 +1139,7 @@ func file_numen_sync_v1_share_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_sync_v1_share_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_sync_v1_share_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_numen_sync_v1_share_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_sync_v1_share_proto_goTypes = []any{
 	(ShareLogKind)(0),                   // 0: numen.sync.v1.ShareLogKind
 	(*ShareLogEntry)(nil),               // 1: numen.sync.v1.ShareLogEntry
@@ -1195,10 +1157,9 @@ var file_numen_sync_v1_share_proto_goTypes = []any{
 	(*GetShareBlobUrlsRequest)(nil),     // 13: numen.sync.v1.GetShareBlobUrlsRequest
 	(*GetShareBlobUrlsResponse)(nil),    // 14: numen.sync.v1.GetShareBlobUrlsResponse
 	(*ShareEnded)(nil),                  // 15: numen.sync.v1.ShareEnded
-	(*ReaderUnknown)(nil),               // 16: numen.sync.v1.ReaderUnknown
-	(*RateLimited)(nil),                 // 17: numen.sync.v1.RateLimited
-	(*StoredRevision)(nil),              // 18: numen.sync.v1.StoredRevision
-	(*BlobDownload)(nil),                // 19: numen.sync.v1.BlobDownload
+	(*RateLimited)(nil),                 // 16: numen.sync.v1.RateLimited
+	(*StoredRevision)(nil),              // 17: numen.sync.v1.StoredRevision
+	(*BlobDownload)(nil),                // 18: numen.sync.v1.BlobDownload
 }
 var file_numen_sync_v1_share_proto_depIdxs = []int32{
 	0,  // 0: numen.sync.v1.ShareLogEntry.kind:type_name -> numen.sync.v1.ShareLogKind
@@ -1208,8 +1169,8 @@ var file_numen_sync_v1_share_proto_depIdxs = []int32{
 	7,  // 4: numen.sync.v1.ListSharesResponse.shares:type_name -> numen.sync.v1.ShareSummary
 	1,  // 5: numen.sync.v1.GetShareLogResponse.entries:type_name -> numen.sync.v1.ShareLogEntry
 	12, // 6: numen.sync.v1.GetShareChangesResponse.changes:type_name -> numen.sync.v1.ShareChange
-	18, // 7: numen.sync.v1.ShareChange.change:type_name -> numen.sync.v1.StoredRevision
-	19, // 8: numen.sync.v1.GetShareBlobUrlsResponse.downloads:type_name -> numen.sync.v1.BlobDownload
+	17, // 7: numen.sync.v1.ShareChange.change:type_name -> numen.sync.v1.StoredRevision
+	18, // 8: numen.sync.v1.GetShareBlobUrlsResponse.downloads:type_name -> numen.sync.v1.BlobDownload
 	3,  // 9: numen.sync.v1.ShareService.AppendShareLogEntry:input_type -> numen.sync.v1.AppendShareLogEntryRequest
 	5,  // 10: numen.sync.v1.ShareService.ListShares:input_type -> numen.sync.v1.ListSharesRequest
 	8,  // 11: numen.sync.v1.ShareService.GetShareLog:input_type -> numen.sync.v1.GetShareLogRequest
@@ -1240,7 +1201,7 @@ func file_numen_sync_v1_share_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_share_proto_rawDesc), len(file_numen_sync_v1_share_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -106,10 +106,10 @@ export const FolderInsideSharedFolder: Story = {
 }
 
 export const ReaderNotSignedIn: Story = {
-  args: { state: createState({ refusal: 'The reader has not signed in to Numen Sync yet' }) },
+  args: { state: createState({ refusal: 'The reader could not be added; the person may not have signed in to Numen Sync yet' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('has not signed in')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('could not be added')
   },
 }
 
