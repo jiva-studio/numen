@@ -17,7 +17,12 @@ const (
 // share_root_id and author_device_sign_key, each as a uvarint length and its bytes, then blob_size as 8 bytes,
 // epoch as 4 bytes (both big endian) and deleted as one byte. The signature is not part of it.
 func GetRevisionMessage(revision *syncv1.Revision) []byte {
-	metaHash := sha256.Sum256(revision.GetEncMeta())
+	return GetRevisionMessageWithMetaHash(revision, sha256.Sum256(revision.GetEncMeta()))
+}
+
+// GetRevisionMessageWithMetaHash is GetRevisionMessage with metaHash in place of the SHA-256 of enc_meta, so a reader
+// can verify a revision whose enc_meta the server withheld.
+func GetRevisionMessageWithMetaHash(revision *syncv1.Revision, metaHash [32]byte) []byte {
 	message := append([]byte(revisionLabel), 0)
 	for _, field := range [][]byte{
 		revision.GetVaultId(), revision.GetFileId(), revision.GetParentRev(), revision.GetBlobId(), revision.GetBlobHash(),
@@ -34,6 +39,11 @@ func GetRevisionMessage(revision *syncv1.Revision) []byte {
 // revision of the file is this value.
 func GetRevisionID(revision *syncv1.Revision) [32]byte {
 	return sha256.Sum256(GetRevisionMessage(revision))
+}
+
+// GetRevisionIDWithMetaHash is the SHA-256 of GetRevisionMessageWithMetaHash.
+func GetRevisionIDWithMetaHash(revision *syncv1.Revision, metaHash [32]byte) [32]byte {
+	return sha256.Sum256(GetRevisionMessageWithMetaHash(revision, metaHash))
 }
 
 // GetCatalogEntryMessage returns the bytes a device signs to append a catalog entry: the label of the

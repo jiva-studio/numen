@@ -2,6 +2,7 @@ package syncprotocol
 
 import (
 	"errors"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -78,5 +79,30 @@ func ReadSubscriptionError(err error) error {
 // to ErrShareExists, and the details ShareEnded, RateLimited and ReaderUnknown to ShareEndedError, RateLimitedError and
 // ErrReaderUnknown.
 func ReadShareError(err error) error {
-	return err
+	err = ReadError(err)
+	failure, ok := errors.AsType[*connect.Error](err)
+	if !ok {
+		return err
+	}
+	for _, detail := range failure.Details() {
+		value, valueErr := detail.Value()
+		if valueErr != nil {
+			continue
+		}
+		switch refusal := value.(type) {
+		case *syncv1.ShareEnded:
+			return ShareEndedError{Version: refusal.GetVersion()}
+		case *syncv1.RateLimited:
+			return RateLimitedError{RetryAfter: time.Duration(refusal.GetRetryAfterSeconds()) * time.Second}
+		case *syncv1.ReaderUnknown:
+			return refusalError{sentinel: ErrReaderUnknown, cause: failure}
+		}
+	}
+	switch failure.Code() {
+	case connect.CodeNotFound:
+		return refusalError{sentinel: ErrNoShare, cause: failure}
+	case connect.CodeAlreadyExists:
+		return refusalError{sentinel: ErrShareExists, cause: failure}
+	}
+	return ReadCallError(err)
 }
