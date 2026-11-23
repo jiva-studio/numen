@@ -91,7 +91,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
+	vaults := openVaults(vaultDeps, db, log.Out, log.Label, func(v domain.Vault) { ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(v) })
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	api.Runs = ensureindexed.NewRuns(ctx, vaults.IndexVault)
 	setShellNotes(api, db)

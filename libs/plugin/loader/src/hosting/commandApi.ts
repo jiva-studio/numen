@@ -67,6 +67,8 @@ function createItemApi({ deps, registry, handlers, findOwner }: ItemParts) {
  * The commands the plugins registered: the palette's list, running one, and the keys that run them.
  * A shared command offers and runs the handlers the plugins declare, which `handlers` lists.
  */
+export type CommandApi = ReturnType<typeof createCommandApi>
+
 export function createCommandApi(
   deps: HostDeps,
   registry: HostRegistry,

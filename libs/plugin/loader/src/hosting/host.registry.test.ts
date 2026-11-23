@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { PluginHost } from './host'
+import type { PluginHost } from './hostApi'
 import { disposePluginEntry } from './registry'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'

@@ -128,7 +128,7 @@ func (h *Changes) MoveFile(
 	if moved.IsMoved {
 		out.MoveResult = newMoveResult(moved)
 	}
-	if err != nil && !isIndexOutdated {
+	if err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
@@ -161,7 +161,7 @@ func (h *Changes) RemoveFile(
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	if err != nil && !indexOutdated {
+	if err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
 			return nil, wire.NewInternalError(err)

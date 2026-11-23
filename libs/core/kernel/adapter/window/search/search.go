@@ -112,12 +112,12 @@ func (h *Handler) SearchText(
 	}
 
 	out := &v1.SearchTextResponse{Results: make([]*v1.SearchResult, 0, len(found.Results))}
-	for _, p := range found.Results {
-		text, pos := search.CutSnippet(p.Text, p.MatchOffset, query)
+	for i, p := range found.Results {
+		snippet := found.Snippets[i]
 		result := &v1.SearchResult{
 			Path:        p.Path,
-			Text:        text,
-			MatchRanges: convertUnitRangesToWire(pos),
+			Text:        snippet.Text,
+			MatchRanges: convertUnitRangesToWire(snippet.Ranges),
 			PlaceLabel:  p.PlaceLabel,
 			ByteRange:   &v1.Range{Start: int32(p.Start), End: int32(p.Start + p.Length)},
 			MatchLine:   int32(p.MatchLine),
