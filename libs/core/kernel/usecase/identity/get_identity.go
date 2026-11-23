@@ -22,5 +22,5 @@ func (u *GetIdentity) Execute(ctx context.Context) (identitydomain.Identity, err
 	if err != nil {
 		return identitydomain.Identity{}, err
 	}
-	return identityOf(record)
+	return toIdentity(record)
 }
