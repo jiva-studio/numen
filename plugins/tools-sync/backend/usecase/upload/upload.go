@@ -24,6 +24,7 @@ type Deps struct {
 	Crypto  ports.Crypto
 	Host    ports.Host
 	Random  io.Reader
+	Digests ports.Digests
 }
 
 // UploadFile sends one file.

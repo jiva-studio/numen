@@ -34,6 +34,7 @@ type Deps struct {
 	Blobs   ports.BlobReader
 	Entries ports.DownloadEntries
 	Host    ports.Host
+	Digests ports.Digests
 }
 
 // DownloadFile stages the body of a file.

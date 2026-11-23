@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 const keyContext = "numen-sync/upload-key/v1"
@@ -83,7 +82,7 @@ type session struct {
 	entry  transfer.UploadEntry
 	key    [32]byte
 	sealer *blobcipher.Sealer
-	hasher hash.Hash
+	hasher ports.Digest
 }
 
 func (r *run) sendParts(ctx context.Context, key [32]byte, salt [16]byte) (transfer.UploadResult, error) {
@@ -133,7 +132,7 @@ func (r *run) resume(ctx context.Context, e transfer.UploadEntry) (*session, err
 	if err != nil {
 		return nil, fmt.Errorf("open the key of an upload: %w", err)
 	}
-	s := &session{up: up, entry: e, key: [32]byte(opened), sealer: nil, hasher: sha256.New()}
+	s := &session{up: up, entry: e, key: [32]byte(opened), sealer: nil, hasher: r.deps.Digests.Create()}
 	if s.sealer, err = blobcipher.NewSealer(s.key, [16]byte(r.in.FileID), [16]byte(e.Salt), e.PlainSize); err != nil {
 		return nil, err
 	}
@@ -177,7 +176,7 @@ func (r *run) start(ctx context.Context, entries []transfer.UploadEntry, key [32
 	if err := r.deps.Entries.WriteUploads(ctx, r.in.Vault, append(entries, entry)); err != nil {
 		return nil, err
 	}
-	return &session{up: up, entry: entry, key: key, sealer: sealer, hasher: sha256.New()}, nil
+	return &session{up: up, entry: entry, key: key, sealer: sealer, hasher: r.deps.Digests.Create()}, nil
 }
 
 func (r *run) restoreHash(s *session) error {
@@ -202,11 +201,7 @@ func (r *run) unmarshalHash(s *session) error {
 	if s.entry.PartsDone == 0 {
 		return nil
 	}
-	unmarshaler, ok := s.hasher.(encoding.BinaryUnmarshaler)
-	if !ok {
-		return errors.New("the hash of the stored bytes cannot be restored")
-	}
-	if err := unmarshaler.UnmarshalBinary(s.entry.StoredHashState); err != nil {
+	if err := s.hasher.Restore(s.entry.StoredHashState); err != nil {
 		return fmt.Errorf("restore the hash of the stored bytes: %w", err)
 	}
 	return nil
@@ -220,7 +215,9 @@ func (r *run) readPart(s *session, number int, buffer []byte) ([]byte, error) {
 	if _, err := s.sealer.ReadStoredAt(buffer, int64(number-1)*s.up.PartSize, r.plain); err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
 	}
-	s.hasher.Write(buffer)
+	if _, err := s.hasher.Write(buffer); err != nil {
+		return nil, fmt.Errorf("hash the stored bytes: %w", err)
+	}
 	return buffer, nil
 }
 
@@ -241,15 +238,11 @@ func (r *run) sendRest(ctx context.Context, s *session) (transfer.UploadResult, 
 	if err := r.deps.Uploads.Finish(ctx, s.up); err != nil {
 		return transfer.UploadResult{}, err
 	}
-	return transfer.UploadResult{BlobID: s.up.Blob, BlobHash: [32]byte(s.hasher.Sum(nil)), BlobSize: uint64(s.sealer.StoredSize()), Key: s.key}, nil
+	return transfer.UploadResult{BlobID: s.up.Blob, BlobHash: [32]byte(s.hasher.Sum()), BlobSize: uint64(s.sealer.StoredSize()), Key: s.key}, nil
 }
 
 func (r *run) keep(ctx context.Context, s *session, number int) error {
-	marshaler, ok := s.hasher.(encoding.BinaryMarshaler)
-	if !ok {
-		return errors.New("the hash of the stored bytes cannot be kept")
-	}
-	state, err := marshaler.MarshalBinary()
+	state, err := s.hasher.Save()
 	if err != nil {
 		return fmt.Errorf("keep the hash of the stored bytes: %w", err)
 	}
