@@ -78,7 +78,7 @@ export interface ContextViewHost {
 export interface ContextLicenseHost {
   readonly hasLicense: (pluginId: string, licenseId: string) => boolean
   readonly getLicenseKey: (pluginId: string, licenseId: string) => string | undefined
-  readonly onLicenseChange: (
+  readonly watchLicense: (
     pluginId: string,
     licenseId: string,
     handler: (isActive: boolean) => void | Promise<void>,
@@ -90,13 +90,13 @@ export interface ContextSettingHost extends ContextLicenseHost {
     pluginId: string,
     key: string,
   ) => T | undefined
-  readonly onSettingChange: <T extends JsonValue = JsonValue>(
+  readonly watchSetting: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
   ) => Disposable
   readonly getEditorSettings: () => EditorSettings | undefined
-  readonly onEditorSettingsChange: (
+  readonly watchEditorSettings: (
     pluginId: string,
     handler: (settings: EditorSettings) => void | Promise<void>,
   ) => Disposable

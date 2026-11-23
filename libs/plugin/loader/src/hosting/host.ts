@@ -245,7 +245,7 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
       keybindings.unregisterAllKeybindings()
     },
     getSetting: contextHost.settings.getSetting,
-    onSettingChange: contextHost.settings.onSettingChange,
+    watchSetting: contextHost.settings.watchSetting,
   }
 }
 

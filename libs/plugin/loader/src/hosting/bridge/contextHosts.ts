@@ -20,29 +20,26 @@ export function createSettingBridge({
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T extends JsonValue = JsonValue>(
+    watchSetting: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
     ) => {
-      // Without a host subscription there is nothing to unsubscribe.
-      if (!plugins.onSettingChange) return { dispose: () => undefined }
-      return {
-        dispose: plugins.onSettingChange(
-          pluginId,
-          key,
-          handler as (v: JsonValue | undefined) => void | Promise<void>,
-        ),
-      }
+      if (!plugins.watchSetting) return { dispose: () => undefined }
+      return plugins.watchSetting(
+        pluginId,
+        key,
+        handler as (v: JsonValue | undefined) => void | Promise<void>,
+      )
     },
     getEditorSettings: () => plugins.getEditorSettings?.(),
-    onEditorSettingsChange: (pluginId, handler) => {
-      if (!plugins.onEditorSettingsChange) return { dispose: () => undefined }
-      return { dispose: plugins.onEditorSettingsChange(pluginId, handler) }
+    watchEditorSettings: (pluginId, handler) => {
+      if (!plugins.watchEditorSettings) return { dispose: () => undefined }
+      return plugins.watchEditorSettings(pluginId, handler)
     },
     hasLicense: licenses.hasLicense,
     getLicenseKey: licenses.getLicenseKey,
-    onLicenseChange: licenses.onLicenseChange,
+    watchLicense: licenses.watchLicense,
   }
 }
 

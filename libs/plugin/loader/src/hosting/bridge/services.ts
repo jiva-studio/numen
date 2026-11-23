@@ -23,9 +23,9 @@ export function createLicenseServiceBridge({
   return {
     hasLicense: (pluginId, licenseId) => plugins.hasLicense?.(pluginId, licenseId) ?? false,
     getLicenseKey: (pluginId, licenseId) => plugins.getLicenseKey?.(pluginId, licenseId),
-    onLicenseChange: (pluginId, licenseId, handler) => {
-      if (!plugins.onLicenseChange) return { dispose: () => undefined }
-      return { dispose: plugins.onLicenseChange(pluginId, licenseId, handler) }
+    watchLicense: (pluginId, licenseId, handler) => {
+      if (!plugins.watchLicense) return { dispose: () => undefined }
+      return plugins.watchLicense(pluginId, licenseId, handler)
     },
   }
 }

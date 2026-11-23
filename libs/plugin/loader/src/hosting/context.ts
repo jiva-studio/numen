@@ -81,10 +81,10 @@ function createSettings(pluginId: string, host: PluginContextHost, add: Track): 
     get: <T extends JsonValue = JsonValue>(key: string) =>
       host.settings.getSetting<T>(pluginId, key),
     onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
-      add(host.settings.onSettingChange<T>(pluginId, key, h)),
+      add(host.settings.watchSetting<T>(pluginId, key, h)),
     getEditor: () => host.settings.getEditorSettings(),
     onEditorChange: (h: (settings: EditorSettings) => void) =>
-      add(host.settings.onEditorSettingsChange(pluginId, h)),
+      add(host.settings.watchEditorSettings(pluginId, h)),
   }
 }
 
@@ -105,7 +105,7 @@ function createLicenses(
     },
     onChange: (licenseId: string, handler: (isActive: boolean) => void) => {
       requireDeclaredLicense(target, licenseId)
-      return add(host.settings.onLicenseChange(pluginId, licenseId, handler))
+      return add(host.settings.watchLicense(pluginId, licenseId, handler))
     },
   }
 }

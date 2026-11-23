@@ -19,7 +19,7 @@ describe('PluginContext', () => {
       registerTabKind: 0,
       registerCommand: 0,
       getSetting: 0,
-      onSettingChange: 0,
+      watchSetting: 0,
       onVaultChange: 0,
       onFileSelect: 0,
       emitVaultChange: 0,
@@ -57,8 +57,8 @@ describe('PluginContext', () => {
           calls.getSetting++
           return key === 'enabled' ? true : undefined
         }) as PluginContextHost['settings']['getSetting'],
-        onSettingChange: vi.fn((_id, _key, _handler) => {
-          calls.onSettingChange++
+        watchSetting: vi.fn((_id, _key, _handler) => {
+          calls.watchSetting++
           return { dispose: vi.fn() }
         }),
       },
@@ -150,7 +150,7 @@ describe('PluginContext', () => {
 
     const sub4 = ctx.plugin.settings.onChange('enabled', vi.fn())
     expect(ctx.plugin.identity.subscriptions).toHaveLength(4)
-    expect(host.settings.onSettingChange).toHaveBeenCalledWith(
+    expect(host.settings.watchSetting).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
@@ -358,7 +358,7 @@ describe('PluginContext', () => {
         getLicenseKey: vi.fn((_pluginId, licenseId) =>
           licenseId === 'sync' ? 'KEY-SUP' : undefined,
         ),
-        onLicenseChange: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
+        watchLicense: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
       },
     })
 
@@ -408,19 +408,19 @@ describe('host service bridges', () => {
     const emptyLicenses = createLicenseServiceBridge({})
     expect(emptyLicenses.hasLicense('p', 'sync')).toBe(false)
     expect(emptyLicenses.getLicenseKey('p', 'sync')).toBeUndefined()
-    expect(() => emptyLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()).not.toThrow()
+    expect(() => emptyLicenses.watchLicense('p', 'sync', vi.fn()).dispose()).not.toThrow()
 
     const unsubscribeLicense = vi.fn()
     const fullLicenses = createLicenseServiceBridge({
       plugins: {
         hasLicense: (_p, id) => id === 'sync',
         getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
-        onLicenseChange: () => unsubscribeLicense,
+        watchLicense: () => ({ dispose: unsubscribeLicense }),
       },
     })
     expect(fullLicenses.hasLicense('p', 'sync')).toBe(true)
     expect(fullLicenses.getLicenseKey('p', 'sync')).toBe('K1')
-    fullLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()
+    fullLicenses.watchLicense('p', 'sync', vi.fn()).dispose()
     expect(unsubscribeLicense).toHaveBeenCalledOnce()
 
     const emptyWork = createWorkServiceBridge({})

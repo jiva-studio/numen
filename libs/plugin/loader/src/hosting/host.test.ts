@@ -51,7 +51,7 @@ describe('createPluginHost', () => {
       ),
       openTab: vi.fn(async () => 'tab-1'),
       getSetting: vi.fn((_pluginId, key) => (key === 'fontSize' ? 14 : undefined)),
-      onSettingChange: vi.fn(() => vi.fn()),
+      watchSetting: vi.fn(() => ({ dispose: vi.fn() })),
     }
 
     return { deps, registeredKinds, extensionReaders }
@@ -357,7 +357,7 @@ describe('createPluginHost', () => {
     ).toBe(undefined)
   })
 
-  it('delegates getSetting and onSettingChange through host', () => {
+  it('delegates getSetting and watchSetting through host', () => {
     const { deps } = createMockDeps()
     const host = createTestPluginHost(deps)
 
@@ -365,8 +365,8 @@ describe('createPluginHost', () => {
     expect(deps.getSetting).toHaveBeenCalledWith('test.plugin', 'fontSize')
 
     const handler = vi.fn()
-    const sub = host.lifecycle.onSettingChange('test.plugin', 'fontSize', handler)
-    expect(deps.onSettingChange).toHaveBeenCalledWith(
+    const sub = host.lifecycle.watchSetting('test.plugin', 'fontSize', handler)
+    expect(deps.watchSetting).toHaveBeenCalledWith(
       'test.plugin',
       'fontSize',
       expect.any(Function),
@@ -387,9 +387,9 @@ describe('createPluginHost', () => {
     const deps: TestHostDeps = {
       ...baseDeps,
       getEditorSettings: vi.fn(() => held.value),
-      onEditorSettingsChange: vi.fn((_pluginId, handler) => {
+      watchEditorSettings: vi.fn((_pluginId, handler) => {
         handlers.push(handler)
-        return unsubscribe
+        return { dispose: unsubscribe }
       }),
     }
     const settings =
@@ -401,7 +401,7 @@ describe('createPluginHost', () => {
     held.value = { lineNumbers: true, softWrap: true }
     await handlers[0]?.(held.value)
 
-    expect(deps.onEditorSettingsChange).toHaveBeenCalledWith('test.plugin', expect.any(Function))
+    expect(deps.watchEditorSettings).toHaveBeenCalledWith('test.plugin', expect.any(Function))
     expect(settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: true })
     expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: true, softWrap: true })
     subscription.dispose()

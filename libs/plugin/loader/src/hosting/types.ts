@@ -3,6 +3,7 @@
  */
 import type {
   AppInfo,
+  Disposable,
   BackgroundTaskHost,
   BufferHost,
   CommandAnswers,
@@ -132,23 +133,23 @@ export interface HostPlugins {
   readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
   readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly getSetting?: (pluginId: string, key: string) => JsonValue | undefined
-  readonly onSettingChange?: (
+  readonly watchSetting?: (
     pluginId: string,
     key: string,
     handler: (value: JsonValue | undefined) => void | Promise<void>,
-  ) => () => void
+  ) => Disposable
   readonly getEditorSettings?: () => EditorSettings | undefined
-  readonly onEditorSettingsChange?: (
+  readonly watchEditorSettings?: (
     pluginId: string,
     handler: (settings: EditorSettings) => void | Promise<void>,
-  ) => () => void
+  ) => Disposable
   readonly hasLicense?: (pluginId: string, licenseId: string) => boolean
   readonly getLicenseKey?: (pluginId: string, licenseId: string) => string | undefined
-  readonly onLicenseChange?: (
+  readonly watchLicense?: (
     pluginId: string,
     licenseId: string,
     handler: (isActive: boolean) => void | Promise<void>,
-  ) => () => void
+  ) => Disposable
 }
 
 /** The commands the plugins declare, the handlers their backends run, and what their conditions read. */

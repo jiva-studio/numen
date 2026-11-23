@@ -537,7 +537,7 @@ describe('the plugins the window loads', () => {
     const tabId = await windowTabs.tabs.openTabOfKind('sample', 'a.md')
     expect(windowTabs.tabs.getTab(tabId ?? '')).toBeDefined()
 
-    // Failing onSettingChange handler reports to reportError
+    // Failing watchSetting handler reports to reportError
     ctx.plugin.settings.onChange('fontSize', (() =>
       Promise.reject(new Error('bad handler'))) as never)
     settings.value = { fontSize: 18 }
