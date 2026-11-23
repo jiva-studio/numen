@@ -406,7 +406,9 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Delete identity')
     await nextTick()
     const dialog = document.body.querySelector('[role="alertdialog"]')
-    expect(dialog?.textContent).toContain('Without the 12 words this identity cannot be restored.')
+    expect(dialog?.textContent).toContain(
+      'Without the 12 words or two sheets of the recovery kit this identity cannot be restored.',
+    )
     expect(remove).not.toHaveBeenCalled()
   })
 

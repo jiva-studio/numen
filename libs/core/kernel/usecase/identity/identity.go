@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -26,17 +27,19 @@ const (
 	maxDeviceName = 64
 )
 
-// Deps groups the collaborators the identity use cases share.
+// Deps groups the collaborators the identity use cases share. The writes lock makes the check for an
+// existing record and the write of a new one a single step.
 type Deps struct {
 	keys   pluginport.KeyStore
 	names  DeviceName
 	clock  machineport.Clock
 	random io.Reader
+	writes *sync.Mutex
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.Clock) Deps {
-	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader}
+	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, writes: &sync.Mutex{}}
 }
 
 func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {

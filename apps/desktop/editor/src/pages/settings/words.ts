@@ -127,7 +127,8 @@ export const WORDS = {
   identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   identityDelete: 'Delete identity',
   identityDeleteTitle: 'Delete the identity from this device?',
-  identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',
+  identityDeleteWarning:
+    'Without the 12 words or two sheets of the recovery kit this identity cannot be restored.',
   identityDeleteConfirm: 'Delete',
   identityDeleteCancel: 'Cancel',
   /** The recovery kit of three sheets on the identity section, saved as a PDF. */

@@ -4,7 +4,7 @@
  * for the 12 words or two sheets of an earlier kit in a dialog. The core makes the sheets and saves
  * them; none of them reaches this state. Leaving the page drops the held words and the proof.
  */
-import { onBeforeUnmount, ref, shallowRef } from 'vue'
+import { onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import type { KitProof } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
@@ -18,6 +18,14 @@ export function useRecoveryKit(getIdentity: () => InstallationIdentity) {
   const isAsking = ref(false)
   const isSaved = ref(false)
   const held = shallowRef<readonly string[]>([])
+
+  watch(
+    () => getIdentity().identity.value?.deviceFingerprint,
+    () => {
+      held.value = []
+    },
+    { flush: 'sync' },
+  )
 
   onBeforeUnmount(() => {
     held.value = []

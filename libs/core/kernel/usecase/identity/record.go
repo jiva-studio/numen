@@ -11,6 +11,8 @@ import (
 )
 
 func (d Deps) createFromRecoveryKey(ctx context.Context, root identitylib.RecoveryKey) (identitydomain.Identity, error) {
+	d.writes.Lock()
+	defer d.writes.Unlock()
 	if err := d.checkAbsent(ctx); err != nil {
 		return identitydomain.Identity{}, err
 	}

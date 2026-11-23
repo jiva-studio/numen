@@ -84,7 +84,10 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     sheets: readonly (readonly string[])[],
   ): Promise<Result<IdentityInfo, string>> => {
     const answer = await settle(() => api.restoreFromKit(sheets), 'sheets')
-    if (answer.ok) identity.value = answer.value
+    if (answer.ok) {
+      guard.acquireRequest()
+      identity.value = answer.value
+    }
     return answer
   }
 
