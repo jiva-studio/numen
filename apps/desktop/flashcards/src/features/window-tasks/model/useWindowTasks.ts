@@ -8,7 +8,7 @@ import { createBackgroundTaskHost, getFailedTasks, type WorkTask } from '@numen/
 import type { NoticeQueue } from '@numen/workbench'
 import { formatError } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { createFollower, type TaskApi } from '../api/tasks'
+import { createStreamReader, type TaskApi } from '../api/tasks'
 
 export function useWindowTasks(api: TaskApi, notices: NoticeQueue) {
   const { watchTasks, cancelTask } = api
@@ -16,7 +16,7 @@ export function useWindowTasks(api: TaskApi, notices: NoticeQueue) {
   let isOpen = true
   const abortController = new AbortController()
   const showError = (text: string) => notices.show(WINDOW_SOURCE, text, 'error')
-  const follow = createFollower({
+  const follow = createStreamReader({
     isOpen: () => isOpen,
     setLost: showError,
     wait: (ms) => new Promise((then) => setTimeout(then, ms)),
@@ -29,7 +29,7 @@ export function useWindowTasks(api: TaskApi, notices: NoticeQueue) {
         tasks.value = list
       },
     ).catch(
-      // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
+      // Stryker disable next-line all: createStreamReader catches stream errors and reports them through setLost
       (error: unknown) => showError(formatError(error)),
     )
   })

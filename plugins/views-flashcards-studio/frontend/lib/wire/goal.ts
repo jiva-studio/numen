@@ -7,7 +7,7 @@
  */
 import { Goal as Goals } from './schedule'
 
-import { getNames } from './names'
+import { getCodesByWord } from './names'
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'
@@ -25,4 +25,4 @@ export const goalOf: Readonly<Record<Goals, Goal | null>> = {
 }
 
 /** The goal as the schema names it, read off the words above. */
-export const goalNames: Readonly<Record<Goal, Goals>> = getNames<Goal, Goals>(goalOf)
+export const goalNames: Readonly<Record<Goal, Goals>> = getCodesByWord<Goal, Goals>(goalOf)

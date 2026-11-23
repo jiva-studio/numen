@@ -8,13 +8,13 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createAppearanceOutput } from '../api/appearanceOutput'
-import type { CreateFollower, ThemeSource, ThemeState } from '../lib/appearance'
+import type { CreateStreamReader, ThemeSource, ThemeState } from '../lib/appearance'
 import { createWindowAppearance as create } from './windowAppearance'
 
 type Themes = ThemeSource
 type Appearance = ThemeState
 
-const createFollower: CreateFollower = (deps) => async (stream, each) => {
+const createStreamReader: CreateStreamReader = (deps) => async (stream, each) => {
   while (deps.isOpen()) {
     try {
       for await (const item of stream()) {
@@ -30,8 +30,8 @@ const createFollower: CreateFollower = (deps) => async (stream, each) => {
   }
 }
 
-const createWindowAppearance = (deps: Omit<Parameters<typeof create>[0], 'createFollower'>) =>
-  create({ ...deps, createFollower })
+const createWindowAppearance = (deps: Omit<Parameters<typeof create>[0], 'createStreamReader'>) =>
+  create({ ...deps, createStreamReader })
 
 const words = { unlisted: 'Themes unavailable', themeUnreadable: 'Theme unreadable' }
 

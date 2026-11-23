@@ -13,7 +13,7 @@ export interface TabsHold {
 
 /**
  * `open` with the tabs written to the vault being left first. The writes name no vault, so one
- * made after the core shows the other vault would replace that vault's tabs. A refused switch
+ * made after the core shows the other vault would replace that vault's tabs. A switch that fails
  * leaves the vault where it was, and its tabs are written again.
  */
 export const openAfterSavingTabs = (open: Vaults['open'], hold: TabsHold): Vaults['open'] => {

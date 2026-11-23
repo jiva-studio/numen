@@ -1,23 +1,15 @@
-/**
- * What a window calls each value of a wire enumeration, and what it sends back.
- *
- * The table of words is keyed by the enumeration, so the compiler requires a word
- * whenever the enumeration gains a value, and the sending side is derived from
- * that table.
- */
-
-/** What each word a window uses is, as the wire enumeration names it. */
-export const getNames = <W extends string, E extends string>(
-  worded: Readonly<Record<E, W | null>>,
+/** The enumeration value of each word a window uses, as the wire names it. Two values may not share a word. */
+export const getCodesByWord = <W extends string, E extends string>(
+  wordOf: Readonly<Record<E, W | null>>,
 ): Record<W, E> => {
-  const named = Object.entries<W | null>(worded).flatMap(([value, word]) =>
+  const pairs = Object.entries<W | null>(wordOf).flatMap(([value, word]) =>
     word ? [[word, value as E] as const] : [],
   )
-  const reversed = Object.fromEntries(named) as Record<W, E>
-  if (Object.keys(reversed).length !== named.length) {
+  const codes = Object.fromEntries(pairs) as Record<W, E>
+  if (Object.keys(codes).length !== pairs.length) {
     throw new Error(
-      `two values of this enumeration answer to one word: ${named.map(([word]) => word).join(', ')}`,
+      `two values of this enumeration answer to one word: ${pairs.map(([word]) => word).join(', ')}`,
     )
   }
-  return reversed
+  return codes
 }
