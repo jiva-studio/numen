@@ -412,6 +412,103 @@ func (x *OpenDataResponse) GetPlain() []byte {
 	return nil
 }
 
+type OpenSealedBoxRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Context []byte                 `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
+	// sealed is 0 to 1024 bytes.
+	Sealed        []byte `protobuf:"bytes,2,opt,name=sealed,proto3" json:"sealed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenSealedBoxRequest) Reset() {
+	*x = OpenSealedBoxRequest{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenSealedBoxRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenSealedBoxRequest) ProtoMessage() {}
+
+func (x *OpenSealedBoxRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenSealedBoxRequest.ProtoReflect.Descriptor instead.
+func (*OpenSealedBoxRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *OpenSealedBoxRequest) GetContext() []byte {
+	if x != nil {
+		return x.Context
+	}
+	return nil
+}
+
+func (x *OpenSealedBoxRequest) GetSealed() []byte {
+	if x != nil {
+		return x.Sealed
+	}
+	return nil
+}
+
+type OpenSealedBoxResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plain         []byte                 `protobuf:"bytes,1,opt,name=plain,proto3" json:"plain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenSealedBoxResponse) Reset() {
+	*x = OpenSealedBoxResponse{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenSealedBoxResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenSealedBoxResponse) ProtoMessage() {}
+
+func (x *OpenSealedBoxResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenSealedBoxResponse.ProtoReflect.Descriptor instead.
+func (*OpenSealedBoxResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *OpenSealedBoxResponse) GetPlain() []byte {
+	if x != nil {
+		return x.Plain
+	}
+	return nil
+}
+
 type GetPendingRestoreRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -420,7 +517,7 @@ type GetPendingRestoreRequest struct {
 
 func (x *GetPendingRestoreRequest) Reset() {
 	*x = GetPendingRestoreRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -432,7 +529,7 @@ func (x *GetPendingRestoreRequest) String() string {
 func (*GetPendingRestoreRequest) ProtoMessage() {}
 
 func (x *GetPendingRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -445,7 +542,7 @@ func (x *GetPendingRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingRestoreRequest.ProtoReflect.Descriptor instead.
 func (*GetPendingRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{10}
 }
 
 type GetPendingRestoreResponse struct {
@@ -461,7 +558,7 @@ type GetPendingRestoreResponse struct {
 
 func (x *GetPendingRestoreResponse) Reset() {
 	*x = GetPendingRestoreResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -473,7 +570,7 @@ func (x *GetPendingRestoreResponse) String() string {
 func (*GetPendingRestoreResponse) ProtoMessage() {}
 
 func (x *GetPendingRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -486,7 +583,7 @@ func (x *GetPendingRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingRestoreResponse.ProtoReflect.Descriptor instead.
 func (*GetPendingRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetPendingRestoreResponse) GetIsPending() bool {
@@ -520,7 +617,7 @@ type SignAsRecoveryRequest struct {
 
 func (x *SignAsRecoveryRequest) Reset() {
 	*x = SignAsRecoveryRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -532,7 +629,7 @@ func (x *SignAsRecoveryRequest) String() string {
 func (*SignAsRecoveryRequest) ProtoMessage() {}
 
 func (x *SignAsRecoveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -545,7 +642,7 @@ func (x *SignAsRecoveryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignAsRecoveryRequest.ProtoReflect.Descriptor instead.
 func (*SignAsRecoveryRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SignAsRecoveryRequest) GetMessage() []byte {
@@ -565,7 +662,7 @@ type SignAsRecoveryResponse struct {
 
 func (x *SignAsRecoveryResponse) Reset() {
 	*x = SignAsRecoveryResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +674,7 @@ func (x *SignAsRecoveryResponse) String() string {
 func (*SignAsRecoveryResponse) ProtoMessage() {}
 
 func (x *SignAsRecoveryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +687,7 @@ func (x *SignAsRecoveryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignAsRecoveryResponse.ProtoReflect.Descriptor instead.
 func (*SignAsRecoveryResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SignAsRecoveryResponse) GetSignature() []byte {
@@ -610,7 +707,7 @@ type CompleteRestoreRequest struct {
 
 func (x *CompleteRestoreRequest) Reset() {
 	*x = CompleteRestoreRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -622,7 +719,7 @@ func (x *CompleteRestoreRequest) String() string {
 func (*CompleteRestoreRequest) ProtoMessage() {}
 
 func (x *CompleteRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -635,7 +732,7 @@ func (x *CompleteRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteRestoreRequest.ProtoReflect.Descriptor instead.
 func (*CompleteRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CompleteRestoreRequest) GetChain() []byte {
@@ -653,7 +750,7 @@ type CompleteRestoreResponse struct {
 
 func (x *CompleteRestoreResponse) Reset() {
 	*x = CompleteRestoreResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -665,7 +762,7 @@ func (x *CompleteRestoreResponse) String() string {
 func (*CompleteRestoreResponse) ProtoMessage() {}
 
 func (x *CompleteRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -678,7 +775,7 @@ func (x *CompleteRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteRestoreResponse.ProtoReflect.Descriptor instead.
 func (*CompleteRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{15}
 }
 
 var File_numen_v1_hostaccount_proto protoreflect.FileDescriptor
@@ -705,6 +802,11 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\acontext\x18\x01 \x01(\fR\acontext\x12\x16\n" +
 	"\x06sealed\x18\x02 \x01(\fR\x06sealed\"(\n" +
 	"\x10OpenDataResponse\x12\x14\n" +
+	"\x05plain\x18\x01 \x01(\fR\x05plain\"H\n" +
+	"\x14OpenSealedBoxRequest\x12\x18\n" +
+	"\acontext\x18\x01 \x01(\fR\acontext\x12\x16\n" +
+	"\x06sealed\x18\x02 \x01(\fR\x06sealed\"-\n" +
+	"\x15OpenSealedBoxResponse\x12\x14\n" +
 	"\x05plain\x18\x01 \x01(\fR\x05plain\"\x1a\n" +
 	"\x18GetPendingRestoreRequest\"\x86\x01\n" +
 	"\x19GetPendingRestoreResponse\x12\x1d\n" +
@@ -718,12 +820,13 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature\".\n" +
 	"\x16CompleteRestoreRequest\x12\x14\n" +
 	"\x05chain\x18\x01 \x01(\fR\x05chain\"\x19\n" +
-	"\x17CompleteRestoreResponse2\xd2\x04\n" +
+	"\x17CompleteRestoreResponse2\xa4\x05\n" +
 	"\x12HostAccountService\x12M\n" +
 	"\fSignAsDevice\x12\x1d.numen.v1.SignAsDeviceRequest\x1a\x1e.numen.v1.SignAsDeviceResponse\x12\\\n" +
 	"\x11GetPublicIdentity\x12\".numen.v1.GetPublicIdentityRequest\x1a#.numen.v1.GetPublicIdentityResponse\x12A\n" +
 	"\bSealData\x12\x19.numen.v1.SealDataRequest\x1a\x1a.numen.v1.SealDataResponse\x12A\n" +
-	"\bOpenData\x12\x19.numen.v1.OpenDataRequest\x1a\x1a.numen.v1.OpenDataResponse\x12\\\n" +
+	"\bOpenData\x12\x19.numen.v1.OpenDataRequest\x1a\x1a.numen.v1.OpenDataResponse\x12P\n" +
+	"\rOpenSealedBox\x12\x1e.numen.v1.OpenSealedBoxRequest\x1a\x1f.numen.v1.OpenSealedBoxResponse\x12\\\n" +
 	"\x11GetPendingRestore\x12\".numen.v1.GetPendingRestoreRequest\x1a#.numen.v1.GetPendingRestoreResponse\x12S\n" +
 	"\x0eSignAsRecovery\x12\x1f.numen.v1.SignAsRecoveryRequest\x1a .numen.v1.SignAsRecoveryResponse\x12V\n" +
 	"\x0fCompleteRestore\x12 .numen.v1.CompleteRestoreRequest\x1a!.numen.v1.CompleteRestoreResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -740,7 +843,7 @@ func file_numen_v1_hostaccount_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostaccount_proto_rawDescData
 }
 
-var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SignAsDeviceRequest)(nil),       // 0: numen.v1.SignAsDeviceRequest
 	(*SignAsDeviceResponse)(nil),      // 1: numen.v1.SignAsDeviceResponse
@@ -750,30 +853,34 @@ var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SealDataResponse)(nil),          // 5: numen.v1.SealDataResponse
 	(*OpenDataRequest)(nil),           // 6: numen.v1.OpenDataRequest
 	(*OpenDataResponse)(nil),          // 7: numen.v1.OpenDataResponse
-	(*GetPendingRestoreRequest)(nil),  // 8: numen.v1.GetPendingRestoreRequest
-	(*GetPendingRestoreResponse)(nil), // 9: numen.v1.GetPendingRestoreResponse
-	(*SignAsRecoveryRequest)(nil),     // 10: numen.v1.SignAsRecoveryRequest
-	(*SignAsRecoveryResponse)(nil),    // 11: numen.v1.SignAsRecoveryResponse
-	(*CompleteRestoreRequest)(nil),    // 12: numen.v1.CompleteRestoreRequest
-	(*CompleteRestoreResponse)(nil),   // 13: numen.v1.CompleteRestoreResponse
+	(*OpenSealedBoxRequest)(nil),      // 8: numen.v1.OpenSealedBoxRequest
+	(*OpenSealedBoxResponse)(nil),     // 9: numen.v1.OpenSealedBoxResponse
+	(*GetPendingRestoreRequest)(nil),  // 10: numen.v1.GetPendingRestoreRequest
+	(*GetPendingRestoreResponse)(nil), // 11: numen.v1.GetPendingRestoreResponse
+	(*SignAsRecoveryRequest)(nil),     // 12: numen.v1.SignAsRecoveryRequest
+	(*SignAsRecoveryResponse)(nil),    // 13: numen.v1.SignAsRecoveryResponse
+	(*CompleteRestoreRequest)(nil),    // 14: numen.v1.CompleteRestoreRequest
+	(*CompleteRestoreResponse)(nil),   // 15: numen.v1.CompleteRestoreResponse
 }
 var file_numen_v1_hostaccount_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.HostAccountService.SignAsDevice:input_type -> numen.v1.SignAsDeviceRequest
 	2,  // 1: numen.v1.HostAccountService.GetPublicIdentity:input_type -> numen.v1.GetPublicIdentityRequest
 	4,  // 2: numen.v1.HostAccountService.SealData:input_type -> numen.v1.SealDataRequest
 	6,  // 3: numen.v1.HostAccountService.OpenData:input_type -> numen.v1.OpenDataRequest
-	8,  // 4: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
-	10, // 5: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
-	12, // 6: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
-	1,  // 7: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
-	3,  // 8: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
-	5,  // 9: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
-	7,  // 10: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
-	9,  // 11: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
-	11, // 12: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
-	13, // 13: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
+	8,  // 4: numen.v1.HostAccountService.OpenSealedBox:input_type -> numen.v1.OpenSealedBoxRequest
+	10, // 5: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
+	12, // 6: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
+	14, // 7: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
+	1,  // 8: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
+	3,  // 9: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
+	5,  // 10: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
+	7,  // 11: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
+	9,  // 12: numen.v1.HostAccountService.OpenSealedBox:output_type -> numen.v1.OpenSealedBoxResponse
+	11, // 13: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
+	13, // 14: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
+	15, // 15: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
+	8,  // [8:16] is the sub-list for method output_type
+	0,  // [0:8] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -790,7 +897,7 @@ func file_numen_v1_hostaccount_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostaccount_proto_rawDesc), len(file_numen_v1_hostaccount_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

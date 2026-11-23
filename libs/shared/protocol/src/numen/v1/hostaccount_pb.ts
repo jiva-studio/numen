@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostaccount.proto.
  */
 export const file_numen_v1_hostaccount: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlMtIEChJIb3N0QWNjb3VudFNlcnZpY2USTQoMU2lnbkFzRGV2aWNlEh0ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlc3BvbnNlElwKEUdldFB1YmxpY0lkZW50aXR5EiIubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRJBCghTZWFsRGF0YRIZLm51bWVuLnYxLlNlYWxEYXRhUmVxdWVzdBoaLm51bWVuLnYxLlNlYWxEYXRhUmVzcG9uc2USQQoIT3BlbkRhdGESGS5udW1lbi52MS5PcGVuRGF0YVJlcXVlc3QaGi5udW1lbi52MS5PcGVuRGF0YVJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiNwoUT3BlblNlYWxlZEJveFJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBIOCgZzZWFsZWQYAiABKAwiJgoVT3BlblNlYWxlZEJveFJlc3BvbnNlEg0KBXBsYWluGAEgASgMIhoKGEdldFBlbmRpbmdSZXN0b3JlUmVxdWVzdCJfChlHZXRQZW5kaW5nUmVzdG9yZVJlc3BvbnNlEhIKCmlzX3BlbmRpbmcYASABKAgSFQoNcm9vdF9zaWduX2tleRgCIAEoDBIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwiKAoVU2lnbkFzUmVjb3ZlcnlSZXF1ZXN0Eg8KB21lc3NhZ2UYASABKAwiKwoWU2lnbkFzUmVjb3ZlcnlSZXNwb25zZRIRCglzaWduYXR1cmUYASABKAwiJwoWQ29tcGxldGVSZXN0b3JlUmVxdWVzdBINCgVjaGFpbhgBIAEoDCIZChdDb21wbGV0ZVJlc3RvcmVSZXNwb25zZTKkBQoSSG9zdEFjY291bnRTZXJ2aWNlEk0KDFNpZ25Bc0RldmljZRIdLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlcXVlc3QaHi5udW1lbi52MS5TaWduQXNEZXZpY2VSZXNwb25zZRJcChFHZXRQdWJsaWNJZGVudGl0eRIiLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVxdWVzdBojLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USQQoIU2VhbERhdGESGS5udW1lbi52MS5TZWFsRGF0YVJlcXVlc3QaGi5udW1lbi52MS5TZWFsRGF0YVJlc3BvbnNlEkEKCE9wZW5EYXRhEhkubnVtZW4udjEuT3BlbkRhdGFSZXF1ZXN0GhoubnVtZW4udjEuT3BlbkRhdGFSZXNwb25zZRJQCg1PcGVuU2VhbGVkQm94Eh4ubnVtZW4udjEuT3BlblNlYWxlZEJveFJlcXVlc3QaHy5udW1lbi52MS5PcGVuU2VhbGVkQm94UmVzcG9uc2USXAoRR2V0UGVuZGluZ1Jlc3RvcmUSIi5udW1lbi52MS5HZXRQZW5kaW5nUmVzdG9yZVJlcXVlc3QaIy5udW1lbi52MS5HZXRQZW5kaW5nUmVzdG9yZVJlc3BvbnNlElMKDlNpZ25Bc1JlY292ZXJ5Eh8ubnVtZW4udjEuU2lnbkFzUmVjb3ZlcnlSZXF1ZXN0GiAubnVtZW4udjEuU2lnbkFzUmVjb3ZlcnlSZXNwb25zZRJWCg9Db21wbGV0ZVJlc3RvcmUSIC5udW1lbi52MS5Db21wbGV0ZVJlc3RvcmVSZXF1ZXN0GiEubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.SignAsDeviceRequest
@@ -184,6 +184,47 @@ export const OpenDataResponseSchema: GenMessage<OpenDataResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_hostaccount, 7);
 
 /**
+ * @generated from message numen.v1.OpenSealedBoxRequest
+ */
+export type OpenSealedBoxRequest = Message<"numen.v1.OpenSealedBoxRequest"> & {
+  /**
+   * @generated from field: bytes context = 1;
+   */
+  context: Uint8Array;
+
+  /**
+   * sealed is 0 to 1024 bytes.
+   *
+   * @generated from field: bytes sealed = 2;
+   */
+  sealed: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenSealedBoxRequest.
+ * Use `create(OpenSealedBoxRequestSchema)` to create a new message.
+ */
+export const OpenSealedBoxRequestSchema: GenMessage<OpenSealedBoxRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 8);
+
+/**
+ * @generated from message numen.v1.OpenSealedBoxResponse
+ */
+export type OpenSealedBoxResponse = Message<"numen.v1.OpenSealedBoxResponse"> & {
+  /**
+   * @generated from field: bytes plain = 1;
+   */
+  plain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenSealedBoxResponse.
+ * Use `create(OpenSealedBoxResponseSchema)` to create a new message.
+ */
+export const OpenSealedBoxResponseSchema: GenMessage<OpenSealedBoxResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 9);
+
+/**
  * @generated from message numen.v1.GetPendingRestoreRequest
  */
 export type GetPendingRestoreRequest = Message<"numen.v1.GetPendingRestoreRequest"> & {
@@ -194,7 +235,7 @@ export type GetPendingRestoreRequest = Message<"numen.v1.GetPendingRestoreReques
  * Use `create(GetPendingRestoreRequestSchema)` to create a new message.
  */
 export const GetPendingRestoreRequestSchema: GenMessage<GetPendingRestoreRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 8);
+  messageDesc(file_numen_v1_hostaccount, 10);
 
 /**
  * @generated from message numen.v1.GetPendingRestoreResponse
@@ -225,7 +266,7 @@ export type GetPendingRestoreResponse = Message<"numen.v1.GetPendingRestoreRespo
  * Use `create(GetPendingRestoreResponseSchema)` to create a new message.
  */
 export const GetPendingRestoreResponseSchema: GenMessage<GetPendingRestoreResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 9);
+  messageDesc(file_numen_v1_hostaccount, 11);
 
 /**
  * @generated from message numen.v1.SignAsRecoveryRequest
@@ -244,7 +285,7 @@ export type SignAsRecoveryRequest = Message<"numen.v1.SignAsRecoveryRequest"> & 
  * Use `create(SignAsRecoveryRequestSchema)` to create a new message.
  */
 export const SignAsRecoveryRequestSchema: GenMessage<SignAsRecoveryRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 10);
+  messageDesc(file_numen_v1_hostaccount, 12);
 
 /**
  * @generated from message numen.v1.SignAsRecoveryResponse
@@ -263,7 +304,7 @@ export type SignAsRecoveryResponse = Message<"numen.v1.SignAsRecoveryResponse"> 
  * Use `create(SignAsRecoveryResponseSchema)` to create a new message.
  */
 export const SignAsRecoveryResponseSchema: GenMessage<SignAsRecoveryResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 11);
+  messageDesc(file_numen_v1_hostaccount, 13);
 
 /**
  * @generated from message numen.v1.CompleteRestoreRequest
@@ -282,7 +323,7 @@ export type CompleteRestoreRequest = Message<"numen.v1.CompleteRestoreRequest"> 
  * Use `create(CompleteRestoreRequestSchema)` to create a new message.
  */
 export const CompleteRestoreRequestSchema: GenMessage<CompleteRestoreRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 12);
+  messageDesc(file_numen_v1_hostaccount, 14);
 
 /**
  * @generated from message numen.v1.CompleteRestoreResponse
@@ -295,7 +336,7 @@ export type CompleteRestoreResponse = Message<"numen.v1.CompleteRestoreResponse"
  * Use `create(CompleteRestoreResponseSchema)` to create a new message.
  */
 export const CompleteRestoreResponseSchema: GenMessage<CompleteRestoreResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 13);
+  messageDesc(file_numen_v1_hostaccount, 15);
 
 /**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
@@ -349,6 +390,18 @@ export const HostAccountService: GenService<{
     methodKind: "unary";
     input: typeof OpenDataRequestSchema;
     output: typeof OpenDataResponseSchema;
+  },
+  /**
+   * OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for the
+   * plugin of the token and the same context. The secret key stays in the host. Bytes that do not open answer
+   * FAILED_PRECONDITION with the reason CANNOT_OPEN.
+   *
+   * @generated from rpc numen.v1.HostAccountService.OpenSealedBox
+   */
+  openSealedBox: {
+    methodKind: "unary";
+    input: typeof OpenSealedBoxRequestSchema;
+    output: typeof OpenSealedBoxResponseSchema;
   },
   /**
    * GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
