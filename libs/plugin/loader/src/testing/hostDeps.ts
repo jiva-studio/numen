@@ -13,11 +13,10 @@ import {
   type PluginHost,
   type PluginHostDeps,
 } from '../hosting'
-import type { HostPlugins } from '../hosting/types'
 
 /** Every member of every group of the deps of a plugin host, in one object. */
 export type TestHostDeps = PluginHostDeps['window'] &
-  HostPlugins &
+  NonNullable<PluginHostDeps['plugins']> &
   HostCommands &
   HostSlots &
   HostKinds &

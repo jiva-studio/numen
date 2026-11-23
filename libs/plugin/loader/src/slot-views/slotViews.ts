@@ -72,7 +72,6 @@ export function getDeclaredSlots(
   return slots
 }
 
-/** The view of the slot first by plugin id, of the views given. */
 function findSlotView(views: readonly DeclaredSlotView[], slot: string): DeclaredSlotView | null {
   const inSlot = views.filter((one) => one.slot === slot)
   inSlot.sort((a, b) => (a.pluginId < b.pluginId ? -1 : 1))

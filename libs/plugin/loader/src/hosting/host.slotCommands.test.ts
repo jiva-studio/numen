@@ -2,11 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SLOT } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { CommandDeclaration, PluginHostDeps } from './types'
-
-type SlotCommandFinder = ReturnType<NonNullable<PluginHostDeps['createSlotCommandFinder']>>
-type HostCommandReads = Parameters<NonNullable<PluginHostDeps['createSlotCommandFinder']>>[0]
+import type { CommandDeclaration, HostCommands } from './types'
 import { createTestPluginHost } from '../testing/hostDeps'
+
+type CreateFinder = NonNullable<HostCommands['createSlotCommandFinder']>
+type SlotCommandFinder = ReturnType<CreateFinder>
+type HostCommandReads = Parameters<CreateFinder>[0]
 
 const LEDGER: CommandDeclaration = {
   pluginId: 'org.example.ledger',

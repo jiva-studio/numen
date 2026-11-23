@@ -52,6 +52,7 @@ export {
   type NoteBuffer,
   type OpenTab,
   type PluginHost,
+  type PluginContextHost,
   type PluginHostDeps,
   type HostCommands,
   type HostSlots,
