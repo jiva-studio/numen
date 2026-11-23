@@ -3,12 +3,18 @@ package client
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
+
+var errNotStarted = errors.New("the sync server did not start the stream")
 
 // WatchClient opens the stream of change hints of one server with the bearer of the session. The http.Client
 // must have no Timeout: a Client.Timeout ends the read of the body, and so the stream.
@@ -23,20 +29,51 @@ func NewWatchClient(address string, httpClient *http.Client, token func() string
 }
 
 // WatchStream is an open stream of change hints whose Started message was read.
-type WatchStream struct{}
+type WatchStream struct {
+	stream    *connect.ServerStreamForClient[syncv1.WatchChangesResponse]
+	cancel    context.CancelFunc
+	heartbeat time.Duration
+}
 
-// WatchChanges opens the stream and reads its first message.
-func (c *WatchClient) WatchChanges(context.Context) (*WatchStream, error) {
-	return nil, errors.New("not implemented")
+// WatchChanges opens the stream and reads its first message, which must be Started. Connect reports the refusal
+// of an open at the first read, so the refusal is returned here, mapped by syncprotocol.ReadError.
+func (c *WatchClient) WatchChanges(ctx context.Context) (*WatchStream, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	stream, err := c.rpc.WatchChanges(ctx, connect.NewRequest(&syncv1.WatchChangesRequest{}))
+	if err != nil {
+		cancel()
+		return nil, syncprotocol.ReadError(err)
+	}
+	opened := &WatchStream{stream: stream, cancel: cancel}
+	first, err := opened.Receive()
+	if err != nil && !errors.Is(err, io.EOF) {
+		_ = opened.Close()
+		return nil, err
+	}
+	if first.GetStarted() == nil {
+		_ = opened.Close()
+		return nil, errNotStarted
+	}
+	opened.heartbeat = time.Duration(first.GetStarted().GetHeartbeatSeconds()) * time.Second
+	return opened, nil
 }
 
 // Heartbeat returns the longest silence the server announced.
-func (s *WatchStream) Heartbeat() time.Duration { return 0 }
+func (s *WatchStream) Heartbeat() time.Duration { return s.heartbeat }
 
 // Receive returns the next message, or io.EOF at a clean end.
 func (s *WatchStream) Receive() (*syncv1.WatchChangesResponse, error) {
-	return nil, errors.New("not implemented")
+	if s.stream.Receive() {
+		return s.stream.Msg(), nil
+	}
+	if err := s.stream.Err(); err != nil {
+		return nil, syncprotocol.ReadError(err)
+	}
+	return nil, io.EOF
 }
 
 // Close ends the stream.
-func (s *WatchStream) Close() error { return errors.New("not implemented") }
+func (s *WatchStream) Close() error {
+	defer s.cancel()
+	return s.stream.Close()
+}
