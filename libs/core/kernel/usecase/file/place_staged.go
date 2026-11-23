@@ -38,7 +38,7 @@ type PlaceInput struct {
 // Execute returns plugin.ErrHashMismatch for a content that does not have the expected hash, edit.ErrStale for a
 // file that changed since the baseline, and vault.ErrAlreadyExists for a path that is not free.
 func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput) (domain.FileStat, error) {
-	if err := checkStaged(in.Staged, in.ExpectedHash); err != nil {
+	if err := verifyStagedHash(in.Staged, in.ExpectedHash); err != nil {
 		return domain.FileStat{}, err
 	}
 	if err := u.checkTarget(ctx, v, in.Path, in.Baseline); err != nil {
@@ -62,7 +62,7 @@ func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput
 	return u.stat.Execute(ctx, v, in.Path)
 }
 
-func checkStaged(staged io.ReadSeeker, expectedHash string) error {
+func verifyStagedHash(staged io.ReadSeeker, expectedHash string) error {
 	hash, err := domain.HashReader(staged)
 	if err != nil {
 		return err

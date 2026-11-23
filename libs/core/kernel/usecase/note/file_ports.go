@@ -25,8 +25,6 @@ type FileMovers interface {
 	OpenFileMover(v domain.Vault) (vaultport.FileMover, error)
 }
 
-// isIndexOutdated reports whether err says the write reached the vault and the index did not follow. Without a
-// follow it reads the error itself.
 func isIndexOutdated(follow IndexFollow, err error) bool {
 	if follow == nil {
 		return errors.Is(err, edit.ErrIndexOutdated)
