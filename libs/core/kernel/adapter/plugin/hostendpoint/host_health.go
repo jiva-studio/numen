@@ -30,11 +30,11 @@ func (e *healthEndpoint) ReportHealth(
 	if err != nil {
 		return nil, err
 	}
-	report := e.endpoint.callers.Health.Report
-	if report == nil {
+	health := e.endpoint.callers.Health
+	if health == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoHealth)
 	}
-	if err := report.Execute(pluginID, wire.ReadHealthItem(req.Msg.GetItem())); err != nil {
+	if err := health.ReportHealth(pluginID, wire.ReadHealthItem(req.Msg.GetItem())); err != nil {
 		return nil, getHealthError(err)
 	}
 	return connect.NewResponse(&v1.ReportHealthResponse{}), nil
@@ -47,11 +47,11 @@ func (e *healthEndpoint) ClearHealth(
 	if err != nil {
 		return nil, err
 	}
-	clearing := e.endpoint.callers.Health.Clear
-	if clearing == nil {
+	health := e.endpoint.callers.Health
+	if health == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoHealth)
 	}
-	if err := clearing.Execute(pluginID, req.Msg.GetKey()); err != nil {
+	if err := health.ClearHealth(pluginID, req.Msg.GetKey()); err != nil {
 		return nil, getHealthError(err)
 	}
 	return connect.NewResponse(&v1.ClearHealthResponse{}), nil

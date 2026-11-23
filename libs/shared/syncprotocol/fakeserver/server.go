@@ -28,6 +28,15 @@ const (
 	failedSignIn      = "sign-in failed"
 )
 
+// clock reads the time.
+type clock interface{ Now() time.Time }
+
+// systemClock reads the clock of the machine.
+type systemClock struct{}
+
+// Now returns the time of the machine.
+func (systemClock) Now() time.Time { return time.Now() }
+
 // Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
 // tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
 // session lives (zero is an hour), the bytes an account may store (zero is 10 GiB) and whether an account needs a
@@ -98,7 +107,8 @@ func New(cfg Config) *Server {
 		s.protocol = syncprotocol.Version
 	}
 	if s.now == nil {
-		s.now = time.Now
+		var machine clock = systemClock{}
+		s.now = machine.Now
 	}
 	if s.ttl == 0 {
 		s.ttl = defaultSessionTTL
