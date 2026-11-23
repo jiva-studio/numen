@@ -118,8 +118,6 @@ export function useIdentitySection(
     actions: {
       startSetup,
       startRestore,
-      showCheck: setup.showCheck,
-      showWords: setup.showWords,
       cancel: reset,
       setEntered,
       keep,
