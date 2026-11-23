@@ -1,3 +1,78 @@
+function createFocusRequests() {
+  const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield queue.shift()!
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    ask: (target: { path: string; start: number; length: number }) => {
+      queue.push({
+        path: target.path,
+        ranges: [{ start: target.start, end: target.start + target.length }],
+        tabId: '',
+      })
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+}
+
+function createVaultChanges() {
+  interface Change {
+    paths: string[]
+    moves: { from: string; to: string }[]
+  }
+  const queue: Change[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield { isReloadRequired: false, versionPaths: [], ...queue.shift()! }
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    report: (change: Change) => {
+      queue.push(change)
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+}
+
+function createPluginNoteMaker() {
+  const filed = new Set<string>()
+  /** Whether the vault is reachable. */
+  let reached = true
+  return {
+    forget: () => {
+      filed.clear()
+      reached = true
+    },
+    /** Makes the vault unreachable, so file creation fails. */
+    fail: () => {
+      reached = false
+    },
+    createFile: (title: string, folder: string) => {
+      if (!reached) throw new Error('the vault could not be reached')
+      const path = `${folder ? `${folder}/` : ''}${title}.note`
+      if (filed.has(path)) return { ok: false as const, error: 'alreadyExists' as const }
+      filed.add(path)
+      return { ok: true as const, value: { path } }
+    },
+  }
+}
+
 /**
  * What the mocked application answers, and what a test sets before the window
  * draws.
@@ -104,61 +179,9 @@ export async function* createPendingStream(): AsyncGenerator<never> {
  * Place focus requests that originate outside the window, and the stream the
  * window receives them on.
  */
-function createFocusRequests() {
-  const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
-  let wake: (() => void) | null = null
-  async function* stream() {
-    for (;;) {
-      while (queue.length > 0) yield queue.shift()!
-      await new Promise<void>((woken) => {
-        wake = woken
-      })
-    }
-  }
-  return {
-    ask: (target: { path: string; start: number; length: number }) => {
-      queue.push({
-        path: target.path,
-        ranges: [{ start: target.start, end: target.start + target.length }],
-        tabId: '',
-      })
-      wake?.()
-      wake = null
-    },
-    forget: () => queue.splice(0),
-    stream,
-  }
-}
-
 export const focusRequests = createFocusRequests()
 
 /** The changes to the files of the vault that the core reports, and the stream the window receives them on. */
-function createVaultChanges() {
-  interface Change {
-    paths: string[]
-    moves: { from: string; to: string }[]
-  }
-  const queue: Change[] = []
-  let wake: (() => void) | null = null
-  async function* stream() {
-    for (;;) {
-      while (queue.length > 0) yield { isReloadRequired: false, versionPaths: [], ...queue.shift()! }
-      await new Promise<void>((woken) => {
-        wake = woken
-      })
-    }
-  }
-  return {
-    report: (change: Change) => {
-      queue.push(change)
-      wake?.()
-      wake = null
-    },
-    forget: () => queue.splice(0),
-    stream,
-  }
-}
-
 export const vaultChanges = createVaultChanges()
 
 /**
@@ -166,29 +189,6 @@ export const vaultChanges = createVaultChanges()
  * title, and the vault chooses the extension, not the caller. The extension is
  * not markdown, so a window that builds the path itself does not match it.
  */
-function createPluginNoteMaker() {
-  const filed = new Set<string>()
-  /** Whether the vault is reachable. */
-  let reached = true
-  return {
-    forget: () => {
-      filed.clear()
-      reached = true
-    },
-    /** Makes the vault unreachable, so file creation fails. */
-    fail: () => {
-      reached = false
-    },
-    createFile: (title: string, folder: string) => {
-      if (!reached) throw new Error('the vault could not be reached')
-      const path = `${folder ? `${folder}/` : ''}${title}.note`
-      if (filed.has(path)) return { ok: false as const, error: 'alreadyExists' as const }
-      filed.add(path)
-      return { ok: true as const, value: { path } }
-    },
-  }
-}
-
 const pluginNoteMaker = createPluginNoteMaker()
 
 /** One name the vault answers a search with, of a note of some kind, as the core sends it. */
