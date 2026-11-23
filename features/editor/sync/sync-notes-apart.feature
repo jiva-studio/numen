@@ -15,7 +15,6 @@ Feature: Sync notes when the computers are apart
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
 
-
   Rule: Numen Sync keeps working when the server is away
 
     Scenario: A note written while the server is away arrives later
