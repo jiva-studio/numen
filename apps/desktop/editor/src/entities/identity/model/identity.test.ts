@@ -282,9 +282,9 @@ describe('the identity store and the recovery kit', () => {
   })
 
   it('describes the failures of a kit with words of their own', () => {
-    const texts = (
-      ['invalidSheets', 'notEnoughSheets', 'otherAccount', 'noIdentity'] as const
-    ).map((error) => IDENTITY_WORDS.describeFailure({ error, message: '' }))
+    const texts = (['invalidSheets', 'notEnoughSheets', 'otherAccount', 'noIdentity'] as const).map(
+      (error) => IDENTITY_WORDS.describeFailure({ error, message: '' }),
+    )
     expect(new Set(texts).size).toBe(4)
     expect(texts.every((text) => text !== '')).toBe(true)
   })
@@ -315,8 +315,7 @@ describe('the identity store and the recovery kit', () => {
   it('holds no identity when the sheets are refused', async () => {
     const { store } = createStore(
       createClient({
-        restoreFromKit: () =>
-          Promise.resolve(asFailure({ error: 'notEnoughSheets', message: '' })),
+        restoreFromKit: () => Promise.resolve(asFailure({ error: 'notEnoughSheets', message: '' })),
       }),
     )
     expect(await store.restoreFromKit(SHEETS.slice(0, 1))).toStrictEqual({
