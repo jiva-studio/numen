@@ -23,8 +23,8 @@ import {
   formatItemKey,
   getFullCommand,
   getValuesKey,
-  orderSlotEntries,
-  separateGroups,
+  sortSlotEntries,
+  insertSeparators,
 } from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
@@ -84,12 +84,12 @@ const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
 const layOut = (slot: string, placed: readonly Placed[]): SlotItem[] =>
-  separateGroups(
-    orderSlotEntries(placed, (one) => one.entry),
+  insertSeparators(
+    sortSlotEntries(placed, (one) => one.entry),
     {
       group: (one) => one.entry.group,
-      row: (one) => one.item,
-      separator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
+      buildRow: (one) => one.item,
+      buildSeparator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
     },
   )
 

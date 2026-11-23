@@ -51,7 +51,7 @@ function trackSubscription(subscriptions: SubscriptionList, disposable: Disposab
   }
 }
 
-function nameUnsaved(pluginId: string, flush: () => Promise<void>): () => Promise<void> {
+function wrapUnsavedFlush(pluginId: string, flush: () => Promise<void>): () => Promise<void> {
   return async () => {
     try {
       await flush()
@@ -68,11 +68,11 @@ function createBuffers(pluginId: string, buffers: BufferHost, add: Track): Buffe
       add(
         buffers.track(
           Object.assign(Object.create(open) as FileBuffers, {
-            flush: nameUnsaved(pluginId, open.flush),
+            flush: wrapUnsavedFlush(pluginId, open.flush),
           }),
         ),
       ),
-    addFlushHandler: (handler) => add(buffers.addFlushHandler(nameUnsaved(pluginId, handler))),
+    addFlushHandler: (handler) => add(buffers.addFlushHandler(wrapUnsavedFlush(pluginId, handler))),
   }
 }
 

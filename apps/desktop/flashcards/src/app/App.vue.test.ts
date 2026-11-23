@@ -134,7 +134,7 @@ const createDeps = (listVaults?: () => Promise<readonly VaultRow[]>) => {
   serveCore(['md.numen.views.flashcards.studio'], listVaults)
   return {
     fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
-    dynamicImport: async () => ({ activate: activateCards }),
+    importModule: async () => ({ activate: activateCards }),
   }
 }
 
@@ -235,7 +235,7 @@ describe('App', () => {
               if (url.includes('broken')) return new Response('not json', { status: 200 })
               return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
             }) as unknown as typeof fetch,
-            dynamicImport: async () => ({
+            importModule: async () => ({
               activate: (
                 plugin: {
                   identity: { subscriptions: { dispose: () => void }[] }
@@ -689,7 +689,7 @@ const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) =
       new Response(
         JSON.stringify(findPlugin(String(url))?.manifest ?? MANIFEST),
       )) as unknown as typeof fetch,
-    dynamicImport: async (url: string) => {
+    importModule: async (url: string) => {
       const plugin = findPlugin(url)
       return plugin ? { activate: plugin.activate } : { activate: activateCards }
     },
@@ -812,10 +812,10 @@ describe('the title bar of the flashcards window', () => {
     const window = mount(
       createRoot(core, {
         ...deps,
-        dynamicImport: (url: string) =>
+        importModule: (url: string) =>
           url.includes('/md.numen.views.flashcards.studio/')
             ? new Promise<object>(() => undefined)
-            : deps.dynamicImport(url),
+            : deps.importModule(url),
       }),
       {
         attachTo: document.body,
@@ -835,10 +835,10 @@ describe('the title bar of the flashcards window', () => {
     const window = mount(
       createRoot(core, {
         ...deps,
-        dynamicImport: (url: string) =>
+        importModule: (url: string) =>
           url.includes('/org.example.ledger/')
             ? new Promise<object>(() => undefined)
-            : deps.dynamicImport(url),
+            : deps.importModule(url),
       }),
       {
         attachTo: document.body,
@@ -860,10 +860,10 @@ describe('the title bar of the flashcards window', () => {
     const window = mount(
       createRoot(core, {
         ...deps,
-        dynamicImport: async (url: string) => {
+        importModule: async (url: string) => {
           if (url.includes('/org.example.ledger/'))
             await new Promise((resolve) => setTimeout(resolve, 3_000 + 2_000))
-          return deps.dynamicImport(url)
+          return deps.importModule(url)
         },
       }),
       {

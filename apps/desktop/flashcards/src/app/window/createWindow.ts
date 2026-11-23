@@ -37,7 +37,7 @@ import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
 
 /** What the window is given: how a plugin module is fetched and imported. */
-export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
+export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'importModule'>
 
 export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const clients = createWindowClients(transport)
