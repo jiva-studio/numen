@@ -1,5 +1,5 @@
 export {
-  loadFrameRuntime,
+  createFrameRuntimeLoader,
   createWindowFrameControls,
   openExternalUrl,
   type FrameRuntimeLoader,
@@ -18,14 +18,7 @@ export {
   waitWithinInterfaceLimit,
   type PluginStatus,
 } from './loading'
-export {
-  adoptSheet,
-  clearPluginStyles,
-  createSheet,
-  getPluginSheet,
-  getPluginStyle,
-  registerPluginStyle,
-} from './styles'
+export { createPluginStyles, createSheet, type PluginStyles } from './styles'
 export { SlotViewHost, usePluginStyles } from './slot-views'
 export { createAppInfo } from './appInfo'
 export { createPluginConnections } from './pluginConnections'

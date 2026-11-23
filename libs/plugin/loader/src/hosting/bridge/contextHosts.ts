@@ -2,6 +2,7 @@ import type { DropRegistry, EditorExtensionRegistry, JsonValue, SlotHost } from 
 import type { DeclaredSlotEntry } from '../../slots'
 import type { SlotViewRegistry } from '../../slot-views'
 import type { ViewRegistry } from '../../views'
+import type { PluginStyles } from '../../styles'
 import type { ContextSettingHost, ContextViewHost, PluginHostDeps } from '../types'
 
 export function createSettingBridge({
@@ -53,5 +54,6 @@ export interface SharedRegistries {
   readonly editorExtensions: EditorExtensionRegistry
   readonly slotViews: SlotViewRegistry
   readonly slots: SlotHost
+  readonly styles: PluginStyles
   readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
 }

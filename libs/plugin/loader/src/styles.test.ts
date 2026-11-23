@@ -1,15 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  adoptPluginStyle,
-  adoptSheet,
-  clearPluginStyles,
-  createSheet,
-  getPluginSheet,
-  getPluginStyle,
-  loadPluginStyle,
-  registerPluginStyle,
-  unregisterPluginStyle,
-} from './styles'
+import { createPluginStyles, createSheet, type PluginStyles } from './styles'
 
 /** A sheet as an engine that constructs them makes one: it keeps the text it was given. */
 class TextSheet {
@@ -37,8 +27,10 @@ const deleteAdoptedStyleSheets = (): void => {
   Reflect.deleteProperty(Document.prototype, 'adoptedStyleSheets')
 }
 
-describe('loadPluginStyle and adoptPluginStyle', () => {
+describe('the plugin styles', () => {
+  let styles: PluginStyles
   beforeEach(() => {
+    styles = createPluginStyles()
     vi.stubGlobal('CSSStyleSheet', TextSheet)
     Object.defineProperty(document, 'adoptedStyleSheets', {
       value: [],
@@ -47,7 +39,7 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
     })
   })
   afterEach(() => {
-    clearPluginStyles()
+    styles.clear()
     vi.unstubAllGlobals()
     Reflect.deleteProperty(document, 'adoptedStyleSheets')
     if (nativeAdoptedDescriptor) {
@@ -88,54 +80,54 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
   it('reads the stylesheet into a sheet the panes adopt', async () => {
     const fetchFn = answer('.sketch { color: red }')
 
-    await loadPluginStyle('md.numen.sketch', '/plugin/md.numen.sketch/dist/styles.css', fetchFn)
+    await styles.load('md.numen.sketch', '/plugin/md.numen.sketch/dist/styles.css', fetchFn)
 
     expect(fetchFn).toHaveBeenCalledWith('/plugin/md.numen.sketch/dist/styles.css')
-    expect(getPluginStyle('md.numen.sketch')).toBe('/plugin/md.numen.sketch/dist/styles.css')
-    const sheet = getPluginSheet('md.numen.sketch') as unknown as TextSheet
+    expect(styles.getUrl('md.numen.sketch')).toBe('/plugin/md.numen.sketch/dist/styles.css')
+    const sheet = styles.getSheet('md.numen.sketch') as unknown as TextSheet
     expect(sheet.text).toBe('.sketch { color: red }')
     expect(sheet.baseURL).toContain('/plugin/md.numen.sketch/dist/styles.css')
 
-    registerPluginStyle('md.numen.sketch', '/plugin/md.numen.sketch/dist/next.css')
-    expect(getPluginSheet('md.numen.sketch')).toBeUndefined()
+    styles.register('md.numen.sketch', '/plugin/md.numen.sketch/dist/next.css')
+    expect(styles.getSheet('md.numen.sketch')).toBeUndefined()
 
-    await loadPluginStyle('md.numen.sketch', '/plugin/md.numen.sketch/dist/next.css', fetchFn)
-    expect(getPluginSheet('md.numen.sketch')).toBeDefined()
-    clearPluginStyles()
-    expect(getPluginStyle('md.numen.sketch')).toBeUndefined()
-    expect(getPluginSheet('md.numen.sketch')).toBeUndefined()
+    await styles.load('md.numen.sketch', '/plugin/md.numen.sketch/dist/next.css', fetchFn)
+    expect(styles.getSheet('md.numen.sketch')).toBeDefined()
+    styles.clear()
+    expect(styles.getUrl('md.numen.sketch')).toBeUndefined()
+    expect(styles.getSheet('md.numen.sketch')).toBeUndefined()
   })
 
   it('skips fetching when sheets cannot be constructed or when sheet creation fails or races', async () => {
     deleteAdoptedStyleSheets()
     const skippedFetch = answer('.a {}')
-    await loadPluginStyle('md.numen.sketch', '/s.css', skippedFetch)
+    await styles.load('md.numen.sketch', '/s.css', skippedFetch)
     expect(skippedFetch).not.toHaveBeenCalled()
-    expect(getPluginStyle('md.numen.sketch')).toBe('/s.css')
+    expect(styles.getUrl('md.numen.sketch')).toBe('/s.css')
 
     Object.defineProperty(document, 'adoptedStyleSheets', {
       value: [],
       writable: true,
       configurable: true,
     })
-    await loadPluginStyle('md.numen.sketch', '/bad.css', answer('THROW'))
-    expect(getPluginSheet('md.numen.sketch')).toBeUndefined()
+    await styles.load('md.numen.sketch', '/bad.css', answer('THROW'))
+    expect(styles.getSheet('md.numen.sketch')).toBeUndefined()
 
-    await loadPluginStyle('md.numen.sketch', '/stale.css', async () => {
-      registerPluginStyle('md.numen.sketch', '/newer.css')
+    await styles.load('md.numen.sketch', '/stale.css', async () => {
+      styles.register('md.numen.sketch', '/newer.css')
       return { ok: true, text: async () => '.stale {}' } as unknown as Response
     })
-    expect(getPluginSheet('md.numen.sketch')).toBeUndefined()
+    expect(styles.getSheet('md.numen.sketch')).toBeUndefined()
   })
 
   it('adopts a sheet into a root once and removes it on the last release', async () => {
     const existing = new TextSheet() as unknown as CSSStyleSheet
     document.adoptedStyleSheets = [existing]
-    await loadPluginStyle('md.numen.sketch', '/s.css', answer('.a {}'))
-    const sheet = getPluginSheet('md.numen.sketch')!
+    await styles.load('md.numen.sketch', '/s.css', answer('.a {}'))
+    const sheet = styles.getSheet('md.numen.sketch')!
 
-    const releaseFirst = adoptPluginStyle('md.numen.sketch', document)
-    const releaseSecond = adoptPluginStyle('md.numen.sketch', document)
+    const releaseFirst = styles.adopt('md.numen.sketch', document)
+    const releaseSecond = styles.adopt('md.numen.sketch', document)
     expect(document.adoptedStyleSheets).toStrictEqual([existing, sheet])
 
     releaseFirst?.()
@@ -144,32 +136,40 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
     releaseSecond?.()
     expect(document.adoptedStyleSheets).toStrictEqual([existing])
 
-    const releaseAgain = adoptSheet(document, sheet)
+    const releaseAgain = styles.adoptSheet(document, sheet)
     expect(document.adoptedStyleSheets).toStrictEqual([existing, sheet])
     releaseAgain()
     expect(document.adoptedStyleSheets).toStrictEqual([existing])
 
     // Adopting when sheet is already present in adoptedStyleSheets does not duplicate it
     document.adoptedStyleSheets = [existing, sheet]
-    const releasePreExisting = adoptSheet(document, sheet)
+    const releasePreExisting = styles.adoptSheet(document, sheet)
     expect(document.adoptedStyleSheets).toStrictEqual([existing, sheet])
     releasePreExisting()
     expect(document.adoptedStyleSheets).toStrictEqual([existing])
   })
 
   it('keeps the link for a stylesheet that cannot be read', async () => {
-    await loadPluginStyle('md.numen.sketch', '/s.css', answer('', false))
+    await styles.load('md.numen.sketch', '/s.css', answer('', false))
 
-    expect(getPluginStyle('md.numen.sketch')).toBe('/s.css')
-    expect(adoptPluginStyle('md.numen.sketch', document)).toBeUndefined()
+    expect(styles.getUrl('md.numen.sketch')).toBe('/s.css')
+    expect(styles.adopt('md.numen.sketch', document)).toBeUndefined()
+  })
+
+  it('keeps the styles of each store apart', async () => {
+    const other = createPluginStyles()
+    await styles.load('md.numen.sketch', '/s.css', answer('.a {}'))
+
+    expect(other.getUrl('md.numen.sketch')).toBeUndefined()
+    expect(other.getSheet('md.numen.sketch')).toBeUndefined()
   })
 
   it('drops the sheet when the plugin is unregistered', async () => {
-    await loadPluginStyle('md.numen.sketch', '/s.css', answer('.a {}'))
+    await styles.load('md.numen.sketch', '/s.css', answer('.a {}'))
 
-    unregisterPluginStyle('md.numen.sketch')
+    styles.unregister('md.numen.sketch')
 
-    expect(getPluginSheet('md.numen.sketch')).toBeUndefined()
-    expect(adoptPluginStyle('md.numen.sketch', document)).toBeUndefined()
+    expect(styles.getSheet('md.numen.sketch')).toBeUndefined()
+    expect(styles.adopt('md.numen.sketch', document)).toBeUndefined()
   })
 })

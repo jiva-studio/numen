@@ -29,7 +29,6 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createPluginParts } from '../context'
-import { disposeSubscriptions } from './subscriptions'
 import { SERVICE_RULES, type RulesOf } from './servicePermissions'
 import type { PluginContextHost } from '../types'
 import { createTestContextHost, type ContextHostParts } from '../../testing/contextHost'
@@ -339,10 +338,9 @@ describe('the services of a plugin context', () => {
 })
 
 describe('the subscriptions of a plugin', () => {
-  const createSubscriptions = () => {
-    const context = createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
-    return context.plugin.identity.subscriptions
-  }
+  const createContext = () =>
+    createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
+  const createSubscriptions = () => createContext().plugin.identity.subscriptions
 
   it('cannot be spliced, popped, shifted or reassigned', () => {
     const subscriptions = createSubscriptions() as unknown as Record<string, unknown>
@@ -362,17 +360,16 @@ describe('the subscriptions of a plugin', () => {
   })
 
   it('still releases what the plugin added when the host disposes them', () => {
-    const subscriptions = createSubscriptions()
+    const context = createContext()
     const first = vi.fn()
     const second = vi.fn()
-    subscriptions.push({ dispose: first }, { dispose: second })
+    context.plugin.identity.subscriptions.push({ dispose: first }, { dispose: second })
 
-    disposeSubscriptions(subscriptions)
+    context.subscriptions.disposeAll()
 
     expect(first).toHaveBeenCalledOnce()
     expect(second).toHaveBeenCalledOnce()
-    expect(subscriptions.length).toBe(0)
-    expect(() => disposeSubscriptions([] as never)).not.toThrow()
+    expect(context.plugin.identity.subscriptions.length).toBe(0)
   })
 })
 
