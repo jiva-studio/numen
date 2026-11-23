@@ -2,6 +2,7 @@ package synctest
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"net/http"
 	"sync/atomic"
@@ -18,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
@@ -71,14 +73,16 @@ func (h Host) GetRemover(id domain.VaultID) ports.Remover { return h.Root.With(i
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
 type Computer struct {
-	Clock    *Clock
-	Server   *Server
-	Fake     *accounttest.Fake
-	Client   *account.Client
-	Health   *healthtest.Host
-	Vaults   *hosttest.Vault
-	Host     ports.Host
-	Cloud    *cloud.Cloud
+	Clock  *Clock
+	Server *Server
+	Fake   *accounttest.Fake
+	Client *account.Client
+	Health *healthtest.Host
+	Vaults *hosttest.Vault
+	Host   ports.Host
+	Cloud  *cloud.Cloud
+	// Roots are the epoch roots the cloud of this computer trusts; the stand-in server certifies with the first of GetTestRoots.
+	Roots    []ed25519.PublicKey
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
 	State    *hoststore.State
@@ -149,7 +153,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
+		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -335,7 +339,7 @@ func (c *Computer) RestoreDeps() restore.Deps {
 // timeout, both over the network link of this computer, and refresh as the way to sign in again.
 func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
 	return cloud.New(cloud.Config{
-		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh,
+		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots,
 	})
 }
 
@@ -379,4 +383,10 @@ func (c *Computer) ReceiveDeps() receive.Deps {
 		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Links: c.State,
 		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock,
 	}
+}
+
+// DistrustServer makes this computer trust no root key, as a build without an embedded root does.
+func (c *Computer) DistrustServer() {
+	c.Roots = nil
+	c.Cloud = c.NewCloud(c.Server.URL, c.SignIn)
 }

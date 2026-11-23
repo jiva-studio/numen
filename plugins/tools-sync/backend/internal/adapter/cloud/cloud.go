@@ -5,6 +5,7 @@ package cloud
 import (
 	"cmp"
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"net/http"
 	"time"
@@ -23,6 +24,10 @@ type Config struct {
 	Stream  *http.Client
 	// Storage moves the blobs over presigned addresses; a nil Storage uses HTTP.
 	Storage *http.Client
+	// Roots are the keys that may sign the certificate of the epoch key of the server; with none, every restore announcement is ignored.
+	Roots []ed25519.PublicKey
+	// Now is the clock the certificate is checked against; nil is the system clock.
+	Now func() time.Time
 }
 
 // Cloud is the sync server at an address.
@@ -51,7 +56,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token),
+		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, cmp.Or(cfg.Now, time.Now)),
 		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 		shares:       syncclient.NewShareClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}

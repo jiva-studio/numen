@@ -105,29 +105,7 @@ func TestRecoverAccount_SendsTheCachedCatalogEntriesTheServerLost(t *testing.T) 
 	}
 }
 
-func TestRecoverAccount_PinsTheKeyOfTheServerTheFirstTime(t *testing.T) {
-	t.Parallel()
-	p := newFirst(t)
-	p.a.Connect(t, source)
-	if _, err := p.server.Fake.IssueRestoreEpoch(); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-
-	_, key, err := p.a.Cloud.GetRestoreEpoch(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	pinned, err := p.a.State.ReadPin(t.Context(), p.server.URL)
-	if err != nil || !bytes.Equal(pinned, key) {
-		t.Errorf("pinned key = %x, %v, want %x", pinned, err, key)
-	}
-}
-
-func TestRecoverAccount_RefusesAKeyThatIsNotThePinnedOneAndSendsNothing(t *testing.T) {
+func TestRecoverAccount_RefusesAnAnnouncementNoKnownRootVouchesForAndSendsNothing(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	kept, err := p.server.Fake.Snapshot()
@@ -135,18 +113,28 @@ func TestRecoverAccount_RefusesAKeyThatIsNotThePinnedOneAndSendsNothing(t *testi
 		t.Fatal(err)
 	}
 	p.a.Connect(t, source)
-	if err := p.a.State.WritePin(t.Context(), p.server.URL, bytes.Repeat([]byte{9}, 32)); err != nil {
-		t.Fatal(err)
-	}
 	p.restoreAndAnnounce(t, kept)
+	p.a.DistrustServer()
 
 	err = usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context())
 
-	if !errors.Is(err, usecase.ErrKeyChanged) {
-		t.Errorf("Execute = %v, want ErrKeyChanged", err)
+	if !errors.Is(err, usecase.ErrEpochUntrusted) {
+		t.Errorf("Execute = %v, want ErrEpochUntrusted", err)
 	}
 	if got := len(p.a.ReadCatalog(t)); got != 0 {
 		t.Errorf("server holds %d catalog entries, want none sent", got)
+	}
+}
+
+func TestRecoverAccount_RefusesAServerThatAnnouncedNoRestore(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+
+	err := usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context())
+
+	if !errors.Is(err, usecase.ErrEpochUntrusted) {
+		t.Errorf("Execute = %v, want ErrEpochUntrusted", err)
 	}
 }
 

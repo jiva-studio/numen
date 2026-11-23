@@ -52,18 +52,19 @@ type parts struct {
 // runtime keeps the sign-in, the restore of an identity and the sync loop running against the server of the
 // setting server, and runs them again when that address changes.
 type runtime struct {
-	parts    parts
-	wakes    *loops.Wakes
-	interval *loops.Interval
-	removal  *loops.Interval
-	received *loops.Text
-	session  *loops.Supervisor[*Backend]
+	parts     parts
+	wakes     *loops.Wakes
+	interval  *loops.Interval
+	removal   *loops.Interval
+	received  *loops.Text
+	epochRoot *loops.Text
+	session   *loops.Supervisor[*Backend]
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), session: nil,
+		received: loops.NewText(), epochRoot: loops.NewText(), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -85,6 +86,7 @@ func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
+	r.epochRoot.Set(values[settingEpochRoot])
 	r.session.Configure(r.readServerAddress(values[settingServer]))
 }
 
@@ -92,9 +94,11 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
+	roots := r.readEpochRoots(address)
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),
+		Roots:   roots, Now: p.clock.Now,
 	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,

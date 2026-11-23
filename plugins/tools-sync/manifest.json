@@ -51,6 +51,13 @@
       "min": 1
     },
     {
+      "key": "epochRootKey",
+      "type": "string",
+      "title": "Epoch root key",
+      "description": "Public root key (64 hex digits) that vouches for restore announcements of a server you typed above; it never counts for the default server",
+      "default": ""
+    },
+    {
       "key": "receivedFolder",
       "type": "string",
       "title": "Folder for shared vaults",

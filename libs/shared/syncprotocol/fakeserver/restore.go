@@ -10,10 +10,12 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"time"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -98,7 +100,14 @@ func (s *Server) GetRestoreEpoch(_ context.Context, req *connect.Request[syncv1.
 	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, errors.New("the key of the epochs is not an Ed25519 key"))
 	}
-	return connect.NewResponse(&syncv1.GetRestoreEpochResponse{EpochSignKey: public, Epoch: s.restore.epoch}), nil
+	cert, err := epochtrust.SignCert(getTestRootKey(), public, 1, time.Unix(1, 0), time.Unix(testCertEnd, 0))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&syncv1.GetRestoreEpochResponse{
+		EpochSignKey: public, Epoch: s.restore.epoch, EpochSerial: cert.Serial, EpochNotBefore: cert.NotBefore, EpochNotAfter: cert.NotAfter,
+		RootSignature: cert.RootSignature,
+	}), nil
 }
 
 func newMissingBlobFailure(ids [][]byte) error {
@@ -176,4 +185,25 @@ func (s *Server) serveBlobLoss(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
+}
+
+// testRootSeed is the seed of the root key of the stand-in. A test that trusts the stand-in passes GetTestRoots
+// as the roots of its client.
+const testRootSeed = "numen sync stand-in epoch root key"
+
+// testCertEnd is the end of the certificate of the stand-in, far past any clock of a test.
+const testCertEnd = 1 << 40
+
+func getTestRootKey() ed25519.PrivateKey {
+	seed := sha256.Sum256([]byte(testRootSeed))
+	return ed25519.NewKeyFromSeed(seed[:])
+}
+
+// GetTestRoots returns the root key that signs the epoch certificate of every stand-in server.
+func GetTestRoots() []ed25519.PublicKey {
+	public, ok := getTestRootKey().Public().(ed25519.PublicKey)
+	if !ok {
+		return nil
+	}
+	return []ed25519.PublicKey{public}
 }

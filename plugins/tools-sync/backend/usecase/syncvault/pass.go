@@ -44,9 +44,6 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := p.pinRestoreKey(ctx); err != nil {
-		return err
-	}
 	if isReady, err := p.pullOrRecover(ctx); err != nil || !isReady {
 		return err
 	}
