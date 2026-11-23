@@ -70,8 +70,8 @@ func (p *Provider) Calls() []Recorded {
 	return append([]Recorded(nil), p.recorded...)
 }
 
-// CallsTo returns the calls received for the address.
-func (p *Provider) CallsTo(address string) []Recorded {
+// ListCallsTo returns the calls received for the address.
+func (p *Provider) ListCallsTo(address string) []Recorded {
 	var calls []Recorded
 	for _, one := range p.Calls() {
 		if one.Address == address {
@@ -111,9 +111,9 @@ type script struct {
 	err    error
 }
 
-// Script makes the calls to the address send the frames and then return err, or the done payload
+// SetScript makes the calls to the address send the frames and then return err, or the done payload
 // "answer from <address>" where err is nil.
-func (p *Provider) Script(address string, err error, frames ...string) {
+func (p *Provider) SetScript(address string, err error, frames ...string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.scripts[address] = script{frames: frames, err: err}
@@ -155,8 +155,8 @@ func (p *Provider) Answer(address string, answer func(payload []byte) ([]byte, e
 	p.answers[address] = answer
 }
 
-// ScriptOptions makes the listings of options of the address answer listed.
-func (p *Provider) ScriptOptions(address string, listed modelcall.ListedOptions) {
+// SetListedOptions makes the listings of options of the address answer listed.
+func (p *Provider) SetListedOptions(address string, listed modelcall.ListedOptions) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.listings[address] = listed
@@ -188,11 +188,11 @@ func (p *Provider) ListDetected(context.Context, modelcall.ProviderCall) ([]mode
 	return nil, nil
 }
 
-// Entered receives the address of each call as the provider takes it.
-func (p *Provider) Entered() <-chan string { return p.entered }
+// GetEntered receives the address of each call as the provider takes it.
+func (p *Provider) GetEntered() <-chan string { return p.entered }
 
-// Unblock answers the calls waiting at the address and lets the next ones answer at once.
-func (p *Provider) Unblock(address string) {
+// ReleaseCalls answers the calls waiting at the address and lets the next ones answer at once.
+func (p *Provider) ReleaseCalls(address string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if block, isBlocked := p.blocked[address]; isBlocked {

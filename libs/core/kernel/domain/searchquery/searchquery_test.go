@@ -142,12 +142,12 @@ func TestFuseScoresTheChunkFirstInBothRankingsOneAndAChunkFirstInOneHalf(t *test
 		{Document: getNote("a.md"), Start: 0, MeaningScore: new(0.9), WordScore: new(5.0)},
 		{Document: getNote("b.md"), Start: 0, MeaningScore: new(0.8), WordScore: new(4.0)},
 	}
-	searchquery.Fuse(results, searchquery.ScoreFused)
+	searchquery.SetScores(results, searchquery.ScoreFused)
 	if math.Abs(*results[0].Score-1) > 1e-9 {
 		t.Errorf("the chunk first in both scored %v, want 1", *results[0].Score)
 	}
 	half := []searchquery.SearchResult{{Document: getNote("a.md"), MeaningScore: new(0.9)}}
-	searchquery.Fuse(half, searchquery.ScoreFused)
+	searchquery.SetScores(half, searchquery.ScoreFused)
 	if math.Abs(*half[0].Score-0.5) > 1e-9 {
 		t.Errorf("the chunk first by meaning and absent from words scored %v, want 0.5", *half[0].Score)
 	}

@@ -15,11 +15,11 @@ var ErrClosing = errors.New("the window is closing")
 
 // OpenVaults is every vault this window has open.
 type OpenVaults[I any] struct {
-	Opener      func(I) *VaultOpener
-	Index       I
-	Label       string
-	RecordVault func(domain.Vault)
-	Out         io.Writer
+	CreateOpener func(I) *VaultOpener
+	Index        I
+	Label        string
+	RecordVault  func(domain.Vault)
+	Out          io.Writer
 
 	running   sync.WaitGroup
 	mu        sync.Mutex
@@ -76,7 +76,7 @@ func (o *OpenVaults[I]) getOpenedVault(ctx context.Context, v domain.Vault) *ope
 }
 
 func (o *OpenVaults[I]) openVault(ctx context.Context, v domain.Vault, one *openedVault) {
-	opening := o.Opener(o.Index)
+	opening := o.CreateOpener(o.Index)
 
 	lifetime, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	o.mu.Lock()

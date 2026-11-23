@@ -80,5 +80,5 @@ func createReadWholeVault(
 		source = none.SearchSource{}
 	}
 	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
-	return indexing.NewReadWholeVault(scan.Rebuilding(rebuild), texts, embed), nil
+	return indexing.NewReadWholeVault(scan.SetRebuild(rebuild), texts, embed), nil
 }

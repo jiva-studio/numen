@@ -65,9 +65,9 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
-		OnNotesProgress:   func(vaultreading.ScanResult) { order = append(order, "notes") },
-		OnTextsProgress:   func(vaultreading.IndexResult) { order = append(order, "books") },
-		OnVectorsProgress: func(vaultreading.EmbedResult) { order = append(order, "vectors") },
+		NotifyNotesProgress:   func(vaultreading.ScanResult) { order = append(order, "notes") },
+		NotifyTextsProgress:   func(vaultreading.IndexResult) { order = append(order, "books") },
+		NotifyVectorsProgress: func(vaultreading.EmbedResult) { order = append(order, "vectors") },
 	}); err != nil {
 		t.Fatal(err)
 	}

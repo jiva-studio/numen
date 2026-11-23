@@ -254,8 +254,8 @@ func (u Scan) removeGoneFiles(
 	return nil
 }
 
-// Rebuilding returns the walk set to rebuild the index, or to trust it where a note is unchanged.
-func (u Scan) Rebuilding(rebuild bool) Scan {
+// SetRebuild returns the walk set to rebuild the index, or to trust it where a note is unchanged.
+func (u Scan) SetRebuild(rebuild bool) Scan {
 	u.ShouldRebuildIndex = rebuild
 	return u
 }

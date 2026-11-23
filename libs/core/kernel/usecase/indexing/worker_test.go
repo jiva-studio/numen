@@ -73,9 +73,9 @@ func newPass(
 		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress.GetProgress(ctx, v.ID, recipe)
 		},
-		Events: events,
-		Quiet:  time.Hour,
-		After:  time.After,
+		Events:      events,
+		Quiet:       time.Hour,
+		CreateTimer: time.After,
 	})
 	session := worker.NewSession(v)
 	return &testPass{pass: worker.newPass(session, false), worker: worker, session: session}
@@ -458,7 +458,7 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 }
 
 func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
-	worker := NewWorker(Config{Quiet: time.Hour, After: time.After})
+	worker := NewWorker(Config{Quiet: time.Hour, CreateTimer: time.After})
 	v := domain.Vault{ID: "v1"}
 	session := worker.NewSession(v)
 

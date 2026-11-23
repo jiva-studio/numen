@@ -79,7 +79,7 @@ func makeOpenVaults(t *testing.T) (*indexing.OpenVaults[*Index], []domain.Vault,
 	}
 	var openings atomic.Int32
 	vaults := &indexing.OpenVaults[*Index]{
-		Opener: func(i *Index) *indexing.VaultOpener {
+		CreateOpener: func(i *Index) *indexing.VaultOpener {
 			openings.Add(1)
 			return vaultOpener(cfg.buildVaultWiring(), i)
 		},
