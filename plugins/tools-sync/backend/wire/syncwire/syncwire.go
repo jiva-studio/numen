@@ -28,6 +28,7 @@ type Deps struct {
 	Approvals       ports.Approvals
 	Absences        localchanges.DetectState
 	RemovalDelay    func() time.Duration
+	Digests         ports.Digests
 }
 
 // NewResolveDeletions returns the use case that takes the answer of the person to a pause.
@@ -42,7 +43,7 @@ func NewGuard(deps Deps) *deletions.GuardDeletions {
 
 // NewDownloads returns the use case that stages the files the pull brings down.
 func NewDownloads(deps Deps) *download.DownloadFile {
-	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Host: deps.Host})
+	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Host: deps.Host, Digests: deps.Digests})
 }
 
 func newDeletionsDeps(deps Deps) deletions.Deps {
@@ -53,7 +54,7 @@ func newDeletionsDeps(deps Deps) deletions.Deps {
 func NewSyncVault(deps Deps) *syncvault.SyncVault {
 	downloads := NewDownloads(deps)
 	uploads := upload.NewUploadFile(upload.Deps{
-		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random,
+		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random, Digests: deps.Digests,
 	})
 	guard := NewGuard(deps)
 	commitDeps := commit.Deps{

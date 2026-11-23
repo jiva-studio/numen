@@ -23,6 +23,20 @@ type UploadEntries interface {
 	WriteUploads(ctx context.Context, id domain.VaultID, entries []transfer.UploadEntry) error
 }
 
+// Digest is the running hash of the stored bytes of a blob: it takes bytes, gives the sum so far, and saves its state
+// so a later run can restore it and go on.
+type Digest interface {
+	Write(p []byte) (int, error)
+	Sum() []byte
+	Save() ([]byte, error)
+	Restore(state []byte) error
+}
+
+// Digests makes the digests of the blobs.
+type Digests interface {
+	Create() Digest
+}
+
 // BlobReader reads the blobs on the server.
 type BlobReader interface {
 	// GetBlob returns a whole blob of up to note.BigFileLimit bytes.
