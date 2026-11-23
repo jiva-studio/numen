@@ -42,6 +42,12 @@ const (
 	// AccountServiceAppendChainProcedure is the fully-qualified name of the AccountService's
 	// AppendChain RPC.
 	AccountServiceAppendChainProcedure = "/numen.sync.v1.AccountService/AppendChain"
+	// AccountServiceDeleteAccountProcedure is the fully-qualified name of the AccountService's
+	// DeleteAccount RPC.
+	AccountServiceDeleteAccountProcedure = "/numen.sync.v1.AccountService/DeleteAccount"
+	// AccountServiceExportAccountProcedure is the fully-qualified name of the AccountService's
+	// ExportAccount RPC.
+	AccountServiceExportAccountProcedure = "/numen.sync.v1.AccountService/ExportAccount"
 )
 
 // AccountServiceClient is a client for the numen.sync.v1.AccountService service.
@@ -57,6 +63,16 @@ type AccountServiceClient interface {
 	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
 	// sessions of the revoked device in the same step. It needs the session bearer.
 	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
+	// DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
+	// key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
+	// the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
+	// account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
+	// row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
+	// A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
+	// ExportAccount returns what the server holds of the account of the session, as one JSON document. It needs the
+	// session bearer.
+	ExportAccount(context.Context, *connect.Request[v1.ExportAccountRequest]) (*connect.Response[v1.ExportAccountResponse], error)
 }
 
 // NewAccountServiceClient constructs a client for the numen.sync.v1.AccountService service. By
@@ -88,6 +104,18 @@ func NewAccountServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(accountServiceMethods.ByName("AppendChain")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteAccount: connect.NewClient[v1.DeleteAccountRequest, v1.DeleteAccountResponse](
+			httpClient,
+			baseURL+AccountServiceDeleteAccountProcedure,
+			connect.WithSchema(accountServiceMethods.ByName("DeleteAccount")),
+			connect.WithClientOptions(opts...),
+		),
+		exportAccount: connect.NewClient[v1.ExportAccountRequest, v1.ExportAccountResponse](
+			httpClient,
+			baseURL+AccountServiceExportAccountProcedure,
+			connect.WithSchema(accountServiceMethods.ByName("ExportAccount")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -96,6 +124,8 @@ type accountServiceClient struct {
 	getAccountChain       *connect.Client[v1.GetAccountChainRequest, v1.GetAccountChainResponse]
 	getAccountChainByRoot *connect.Client[v1.GetAccountChainByRootRequest, v1.GetAccountChainByRootResponse]
 	appendChain           *connect.Client[v1.AppendChainRequest, v1.AppendChainResponse]
+	deleteAccount         *connect.Client[v1.DeleteAccountRequest, v1.DeleteAccountResponse]
+	exportAccount         *connect.Client[v1.ExportAccountRequest, v1.ExportAccountResponse]
 }
 
 // GetAccountChain calls numen.sync.v1.AccountService.GetAccountChain.
@@ -113,6 +143,16 @@ func (c *accountServiceClient) AppendChain(ctx context.Context, req *connect.Req
 	return c.appendChain.CallUnary(ctx, req)
 }
 
+// DeleteAccount calls numen.sync.v1.AccountService.DeleteAccount.
+func (c *accountServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return c.deleteAccount.CallUnary(ctx, req)
+}
+
+// ExportAccount calls numen.sync.v1.AccountService.ExportAccount.
+func (c *accountServiceClient) ExportAccount(ctx context.Context, req *connect.Request[v1.ExportAccountRequest]) (*connect.Response[v1.ExportAccountResponse], error) {
+	return c.exportAccount.CallUnary(ctx, req)
+}
+
 // AccountServiceHandler is an implementation of the numen.sync.v1.AccountService service.
 type AccountServiceHandler interface {
 	// GetAccountChain returns the stored chain of the account of the session. It needs the session bearer.
@@ -126,6 +166,16 @@ type AccountServiceHandler interface {
 	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
 	// sessions of the revoked device in the same step. It needs the session bearer.
 	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
+	// DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
+	// key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
+	// the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
+	// account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
+	// row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
+	// A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
+	// ExportAccount returns what the server holds of the account of the session, as one JSON document. It needs the
+	// session bearer.
+	ExportAccount(context.Context, *connect.Request[v1.ExportAccountRequest]) (*connect.Response[v1.ExportAccountResponse], error)
 }
 
 // NewAccountServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -153,6 +203,18 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 		connect.WithSchema(accountServiceMethods.ByName("AppendChain")),
 		connect.WithHandlerOptions(opts...),
 	)
+	accountServiceDeleteAccountHandler := connect.NewUnaryHandler(
+		AccountServiceDeleteAccountProcedure,
+		svc.DeleteAccount,
+		connect.WithSchema(accountServiceMethods.ByName("DeleteAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
+	accountServiceExportAccountHandler := connect.NewUnaryHandler(
+		AccountServiceExportAccountProcedure,
+		svc.ExportAccount,
+		connect.WithSchema(accountServiceMethods.ByName("ExportAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.AccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AccountServiceGetAccountChainProcedure:
@@ -161,6 +223,10 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 			accountServiceGetAccountChainByRootHandler.ServeHTTP(w, r)
 		case AccountServiceAppendChainProcedure:
 			accountServiceAppendChainHandler.ServeHTTP(w, r)
+		case AccountServiceDeleteAccountProcedure:
+			accountServiceDeleteAccountHandler.ServeHTTP(w, r)
+		case AccountServiceExportAccountProcedure:
+			accountServiceExportAccountHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -180,4 +246,12 @@ func (UnimplementedAccountServiceHandler) GetAccountChainByRoot(context.Context,
 
 func (UnimplementedAccountServiceHandler) AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.AccountService.AppendChain is not implemented"))
+}
+
+func (UnimplementedAccountServiceHandler) DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.AccountService.DeleteAccount is not implemented"))
+}
+
+func (UnimplementedAccountServiceHandler) ExportAccount(context.Context, *connect.Request[v1.ExportAccountRequest]) (*connect.Response[v1.ExportAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.AccountService.ExportAccount is not implemented"))
 }

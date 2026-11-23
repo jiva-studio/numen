@@ -410,6 +410,187 @@ func (x *DeviceRevoked) GetChain() []byte {
 	return nil
 }
 
+type DeleteAccountRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// challenge_id is the id of a challenge asked with the device key of the session as device_sign_key.
+	ChallengeId []byte `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3" json:"challenge_id,omitempty"`
+	// signature is 64 bytes over syncprotocol.GetAccountDeleteMessage, by the device key of the session.
+	Signature     []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountRequest) Reset() {
+	*x = DeleteAccountRequest{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountRequest) ProtoMessage() {}
+
+func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DeleteAccountRequest) GetChallengeId() []byte {
+	if x != nil {
+		return x.ChallengeId
+	}
+	return nil
+}
+
+func (x *DeleteAccountRequest) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type DeleteAccountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// delete_at is the Unix time in seconds after which the server deletes the account for good.
+	DeleteAt      int64 `protobuf:"varint,1,opt,name=delete_at,json=deleteAt,proto3" json:"delete_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountResponse) Reset() {
+	*x = DeleteAccountResponse{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountResponse) ProtoMessage() {}
+
+func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteAccountResponse) GetDeleteAt() int64 {
+	if x != nil {
+		return x.DeleteAt
+	}
+	return 0
+}
+
+type ExportAccountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportAccountRequest) Reset() {
+	*x = ExportAccountRequest{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportAccountRequest) ProtoMessage() {}
+
+func (x *ExportAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportAccountRequest.ProtoReflect.Descriptor instead.
+func (*ExportAccountRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{10}
+}
+
+type ExportAccountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// document is a UTF-8 JSON document that lists the device chain, the devices, the vaults, the metadata and sizes
+	// of the revisions, and the plan and payment references of the account. It holds no key and no text of a note.
+	Document      []byte `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportAccountResponse) Reset() {
+	*x = ExportAccountResponse{}
+	mi := &file_numen_sync_v1_account_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportAccountResponse) ProtoMessage() {}
+
+func (x *ExportAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_account_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportAccountResponse.ProtoReflect.Descriptor instead.
+func (*ExportAccountResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ExportAccountResponse) GetDocument() []byte {
+	if x != nil {
+		return x.Document
+	}
+	return nil
+}
+
 var File_numen_sync_v1_account_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_account_proto_rawDesc = "" +
@@ -434,11 +615,21 @@ const file_numen_sync_v1_account_proto_rawDesc = "" +
 	"ChainStale\x12\x14\n" +
 	"\x05chain\x18\x01 \x01(\fR\x05chain\"%\n" +
 	"\rDeviceRevoked\x12\x14\n" +
-	"\x05chain\x18\x01 \x01(\fR\x05chain2\xbc\x02\n" +
+	"\x05chain\x18\x01 \x01(\fR\x05chain\"W\n" +
+	"\x14DeleteAccountRequest\x12!\n" +
+	"\fchallenge_id\x18\x01 \x01(\fR\vchallengeId\x12\x1c\n" +
+	"\tsignature\x18\x02 \x01(\fR\tsignature\"4\n" +
+	"\x15DeleteAccountResponse\x12\x1b\n" +
+	"\tdelete_at\x18\x01 \x01(\x03R\bdeleteAt\"\x16\n" +
+	"\x14ExportAccountRequest\"3\n" +
+	"\x15ExportAccountResponse\x12\x1a\n" +
+	"\bdocument\x18\x01 \x01(\fR\bdocument2\xf4\x03\n" +
 	"\x0eAccountService\x12`\n" +
 	"\x0fGetAccountChain\x12%.numen.sync.v1.GetAccountChainRequest\x1a&.numen.sync.v1.GetAccountChainResponse\x12r\n" +
 	"\x15GetAccountChainByRoot\x12+.numen.sync.v1.GetAccountChainByRootRequest\x1a,.numen.sync.v1.GetAccountChainByRootResponse\x12T\n" +
-	"\vAppendChain\x12!.numen.sync.v1.AppendChainRequest\x1a\".numen.sync.v1.AppendChainResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
+	"\vAppendChain\x12!.numen.sync.v1.AppendChainRequest\x1a\".numen.sync.v1.AppendChainResponse\x12Z\n" +
+	"\rDeleteAccount\x12#.numen.sync.v1.DeleteAccountRequest\x1a$.numen.sync.v1.DeleteAccountResponse\x12Z\n" +
+	"\rExportAccount\x12#.numen.sync.v1.ExportAccountRequest\x1a$.numen.sync.v1.ExportAccountResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
 var (
 	file_numen_sync_v1_account_proto_rawDescOnce sync.Once
@@ -452,7 +643,7 @@ func file_numen_sync_v1_account_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_account_proto_rawDescData
 }
 
-var file_numen_sync_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_sync_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_sync_v1_account_proto_goTypes = []any{
 	(*GetAccountChainRequest)(nil),        // 0: numen.sync.v1.GetAccountChainRequest
 	(*GetAccountChainResponse)(nil),       // 1: numen.sync.v1.GetAccountChainResponse
@@ -462,19 +653,27 @@ var file_numen_sync_v1_account_proto_goTypes = []any{
 	(*AppendChainResponse)(nil),           // 5: numen.sync.v1.AppendChainResponse
 	(*ChainStale)(nil),                    // 6: numen.sync.v1.ChainStale
 	(*DeviceRevoked)(nil),                 // 7: numen.sync.v1.DeviceRevoked
+	(*DeleteAccountRequest)(nil),          // 8: numen.sync.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),         // 9: numen.sync.v1.DeleteAccountResponse
+	(*ExportAccountRequest)(nil),          // 10: numen.sync.v1.ExportAccountRequest
+	(*ExportAccountResponse)(nil),         // 11: numen.sync.v1.ExportAccountResponse
 }
 var file_numen_sync_v1_account_proto_depIdxs = []int32{
-	0, // 0: numen.sync.v1.AccountService.GetAccountChain:input_type -> numen.sync.v1.GetAccountChainRequest
-	2, // 1: numen.sync.v1.AccountService.GetAccountChainByRoot:input_type -> numen.sync.v1.GetAccountChainByRootRequest
-	4, // 2: numen.sync.v1.AccountService.AppendChain:input_type -> numen.sync.v1.AppendChainRequest
-	1, // 3: numen.sync.v1.AccountService.GetAccountChain:output_type -> numen.sync.v1.GetAccountChainResponse
-	3, // 4: numen.sync.v1.AccountService.GetAccountChainByRoot:output_type -> numen.sync.v1.GetAccountChainByRootResponse
-	5, // 5: numen.sync.v1.AccountService.AppendChain:output_type -> numen.sync.v1.AppendChainResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: numen.sync.v1.AccountService.GetAccountChain:input_type -> numen.sync.v1.GetAccountChainRequest
+	2,  // 1: numen.sync.v1.AccountService.GetAccountChainByRoot:input_type -> numen.sync.v1.GetAccountChainByRootRequest
+	4,  // 2: numen.sync.v1.AccountService.AppendChain:input_type -> numen.sync.v1.AppendChainRequest
+	8,  // 3: numen.sync.v1.AccountService.DeleteAccount:input_type -> numen.sync.v1.DeleteAccountRequest
+	10, // 4: numen.sync.v1.AccountService.ExportAccount:input_type -> numen.sync.v1.ExportAccountRequest
+	1,  // 5: numen.sync.v1.AccountService.GetAccountChain:output_type -> numen.sync.v1.GetAccountChainResponse
+	3,  // 6: numen.sync.v1.AccountService.GetAccountChainByRoot:output_type -> numen.sync.v1.GetAccountChainByRootResponse
+	5,  // 7: numen.sync.v1.AccountService.AppendChain:output_type -> numen.sync.v1.AppendChainResponse
+	9,  // 8: numen.sync.v1.AccountService.DeleteAccount:output_type -> numen.sync.v1.DeleteAccountResponse
+	11, // 9: numen.sync.v1.AccountService.ExportAccount:output_type -> numen.sync.v1.ExportAccountResponse
+	5,  // [5:10] is the sub-list for method output_type
+	0,  // [0:5] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_numen_sync_v1_account_proto_init() }
@@ -488,7 +687,7 @@ func file_numen_sync_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_account_proto_rawDesc), len(file_numen_sync_v1_account_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
