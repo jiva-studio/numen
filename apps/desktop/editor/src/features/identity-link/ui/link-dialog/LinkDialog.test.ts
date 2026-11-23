@@ -1,10 +1,14 @@
 /** The dialog of a link: the choice, the QR code, the new device, the code and the account, against the real store. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import type { IdentityClient } from '@numen/core-client'
 import { createIdentityStore, type LinkInfo, type LinkRole } from '@/entities/identity'
 import { click, dispose, enterText, findButton, textInputs } from '@/testing/dom'
-import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
+import {
+  createIdentityClient,
+  createLinkInfo,
+  wrapIdentityClient,
+  type IdentityCalls,
+} from '@/testing/identityClient'
 import LinkDialog from './LinkDialog.vue'
 
 let wrapper: VueWrapper | undefined
@@ -18,7 +22,7 @@ const ok = <T>(value: T) => Promise.resolve({ ok: true as const, value })
 const mountDialog = async (
   role: LinkRole,
   link: LinkInfo,
-  overrides: Partial<IdentityClient> = {},
+  overrides: Partial<IdentityCalls> = {},
 ) => {
   const client = createIdentityClient({
     startLink: () => ok(link),

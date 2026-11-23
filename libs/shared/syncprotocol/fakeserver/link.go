@@ -67,7 +67,7 @@ func (s *Server) CreateChannel(_ context.Context, _ *connect.Request[syncv1.Crea
 	return connect.NewResponse(&syncv1.CreateChannelResponse{ChannelId: id, ExpiresAt: expiresAt.Unix()}), nil
 }
 
-func (s *Server) PostMessage(_ context.Context, req *connect.Request[syncv1.PostMessageRequest]) (*connect.Response[syncv1.PostMessageResponse], error) {
+func (s *Server) SendMessage(_ context.Context, req *connect.Request[syncv1.SendMessageRequest]) (*connect.Response[syncv1.SendMessageResponse], error) {
 	body := req.Msg.GetBody()
 	if len(body) == 0 || len(body) > syncprotocol.MaxLinkMessage {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errLinkBody)
@@ -87,7 +87,7 @@ func (s *Server) PostMessage(_ context.Context, req *connect.Request[syncv1.Post
 		channel.isClosed = true
 	}
 	channel.wake()
-	return connect.NewResponse(&syncv1.PostMessageResponse{Seq: channel.lastNumber}), nil
+	return connect.NewResponse(&syncv1.SendMessageResponse{Seq: channel.lastNumber}), nil
 }
 
 func (s *Server) CloseChannel(_ context.Context, req *connect.Request[syncv1.CloseChannelRequest]) (*connect.Response[syncv1.CloseChannelResponse], error) {

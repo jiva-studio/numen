@@ -24,7 +24,7 @@ func (s *Server) AppendCatalogEntry(_ context.Context, req *connect.Request[sync
 		return nil, err
 	}
 	if err := s.checkEntry(account, entry); err != nil {
-		return nil, asInvalid(err)
+		return nil, wrapInvalidArgument(err)
 	}
 	log := s.catalogs[account]
 	if !isNextEntry(log, entry) {

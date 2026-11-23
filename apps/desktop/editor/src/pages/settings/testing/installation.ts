@@ -156,18 +156,18 @@ export const createSettingsState = (
 
 /** The devices and the link of an identity that does nothing: no device, and every call refused. */
 export function createInertDevices() {
-  const refused = () => Promise.resolve(asFailure('Not done.'))
+  const refuseCall = () => Promise.resolve(asFailure('Not done.'))
   return {
     list: ref([]),
     load: fn(() => Promise.resolve()),
-    revoke: fn(refused),
+    revoke: fn(refuseCall),
     link: {
-      start: fn(refused),
-      get: fn(refused),
-      decide: fn(refused),
-      enterCode: fn(refused),
-      confirmJoin: fn(refused),
-      cancel: fn(refused),
+      start: fn(refuseCall),
+      get: fn(refuseCall),
+      decide: fn(refuseCall),
+      enterCode: fn(refuseCall),
+      confirmJoin: fn(refuseCall),
+      cancel: fn(refuseCall),
     },
   }
 }

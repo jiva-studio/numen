@@ -47,13 +47,13 @@ type IdentityErrorCode =
 export type IdentityFailure = Failure<IdentityErrorCode>
 
 /** The device that has the account is the host, a device with none is the joiner. */
-export type LinkRole = 'host' | 'joiner'
+type LinkRole = 'host' | 'joiner'
 
 /** The device that shows the QR code, or the one that reads it. */
-export type LinkMode = 'show' | 'scan'
+type LinkMode = 'show' | 'scan'
 
 /** Where the link stands. */
-export type LinkPhase =
+type LinkPhase =
   | 'waitingForChannel'
   | 'waitingForPeer'
   | 'confirmPeer'
@@ -65,7 +65,7 @@ export type LinkPhase =
   | 'failed'
 
 /** Why a link failed. */
-export type LinkReason =
+type LinkReason =
   | 'declined'
   | 'deviceHasIdentity'
   | 'wrongCode'
@@ -93,7 +93,7 @@ export interface LinkInfo {
 }
 
 /** One device of the account. */
-export interface DeviceInfo {
+interface DeviceInfo {
   readonly name: string
   readonly fingerprint: string
   readonly addedAt: string
@@ -159,7 +159,11 @@ export interface DevicesClient {
 }
 
 /** The identity of this device, its link and the devices of its account. */
-export type IdentityClient = AccountClient & LinkClient & DevicesClient
+export interface IdentityClient {
+  readonly account: AccountClient
+  readonly link: LinkClient
+  readonly devices: DevicesClient
+}
 
 const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
   accountFingerprint: info.accountFingerprint,
@@ -286,8 +290,7 @@ const readLinkAnswer = (
   return asValue(readLink(answer.link))
 }
 
-/** The calls that keep the identity of this device, over an IdentityService client. */
-export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
+const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
     const { identity } = await rpc.getIdentity({})
     return identity === undefined ? undefined : readInfo(identity)
@@ -300,8 +303,7 @@ export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   },
 })
 
-/** The calls of the link of this device to an account, over an IdentityService client. */
-export const createLinkClient = (rpc: LinkRpc): LinkClient => ({
+const createLinkClient = (rpc: LinkRpc): LinkClient => ({
   startLink: async (role, mode, scannedText) =>
     readLinkAnswer(
       await rpc.startLink({
@@ -317,8 +319,7 @@ export const createLinkClient = (rpc: LinkRpc): LinkClient => ({
   cancelLink: async () => readStartAnswer(await rpc.cancelLink({})),
 })
 
-/** The calls of the devices of the account, over an IdentityService client. */
-export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
+const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
   listDevices: async () => {
     const answer = await rpc.listDevices({})
     const error = readErrorCode(answer.error)
@@ -331,7 +332,7 @@ export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
 
 /** The identity managed through an IdentityService client. */
 export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
-  ...createAccountClient(rpc),
-  ...createLinkClient(rpc),
-  ...createDevicesClient(rpc),
+  account: createAccountClient(rpc),
+  link: createLinkClient(rpc),
+  devices: createDevicesClient(rpc),
 })

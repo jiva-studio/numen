@@ -2,12 +2,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { IdentityClient } from '@numen/core-client'
 import { createIdentityStore } from '@/entities/identity'
-import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
+import {
+  createIdentityClient,
+  createLinkInfo,
+  wrapIdentityClient,
+  type IdentityCalls,
+} from '@/testing/identityClient'
 import { useLinkSession } from './useLinkSession'
 
-const mountSession = (overrides: Partial<IdentityClient>) => {
+const mountSession = (overrides: Partial<IdentityCalls>) => {
   const store = createIdentityStore(wrapIdentityClient(createIdentityClient(overrides)), vi.fn())
   let session!: ReturnType<typeof useLinkSession>
   const wrapper = mount(

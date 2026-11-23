@@ -15,22 +15,35 @@ const asRefused = (): Result<never, IdentityFailure> => ({
   error: { error: 'noLink', message: 'No link.' },
 })
 
-export const createIdentityClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({
-  get: () => Promise.resolve(undefined),
-  generateWords: () => Promise.resolve([]),
-  create: () => Promise.resolve(asRefused()),
-  startRestore: () => Promise.resolve(asRefused()),
-  delete: () => Promise.resolve(),
-  startLink: () => Promise.resolve(asRefused()),
-  getLink: () => Promise.resolve(asRefused()),
-  decideLink: () => Promise.resolve(asDone()),
-  enterLinkCode: () => Promise.resolve(asDone()),
-  confirmJoin: () => Promise.resolve(asDone()),
-  cancelLink: () => Promise.resolve(asDone()),
-  listDevices: () => Promise.resolve({ ok: true, value: [] }),
-  revokeDevice: () => Promise.resolve(asDone()),
-  ...overrides,
+/** Every call of an identity client of the core in one list, for a test to override any of them. */
+export type IdentityCalls = IdentityClient['account'] &
+  IdentityClient['link'] &
+  IdentityClient['devices']
+
+/** The identity client of the core whose groups answer with the calls. */
+export const groupIdentityCalls = (calls: IdentityCalls): IdentityClient => ({
+  account: calls,
+  link: calls,
+  devices: calls,
 })
+
+export const createIdentityClient = (overrides: Partial<IdentityCalls> = {}): IdentityClient =>
+  groupIdentityCalls({
+    get: () => Promise.resolve(undefined),
+    generateWords: () => Promise.resolve([]),
+    create: () => Promise.resolve(asRefused()),
+    startRestore: () => Promise.resolve(asRefused()),
+    delete: () => Promise.resolve(),
+    startLink: () => Promise.resolve(asRefused()),
+    getLink: () => Promise.resolve(asRefused()),
+    decideLink: () => Promise.resolve(asDone()),
+    enterLinkCode: () => Promise.resolve(asDone()),
+    confirmJoin: () => Promise.resolve(asDone()),
+    cancelLink: () => Promise.resolve(asDone()),
+    listDevices: () => Promise.resolve({ ok: true, value: [] }),
+    revokeDevice: () => Promise.resolve(asDone()),
+    ...overrides,
+  })
 
 /** A link in the phase and with the fields the test gives; the rest is empty. */
 export const createLinkInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => ({
@@ -61,7 +74,7 @@ export const createDeviceInfo = (overrides: Partial<DeviceInfo> = {}): DeviceInf
 
 /** The calls of the identity over a client of the core. */
 export const wrapIdentityClient = (client: IdentityClient): IdentityApi => ({
-  account: createAccountApi(client),
-  link: createDeviceLinkApi(client),
-  devices: createDevicesApi(client),
+  account: createAccountApi(client.account),
+  link: createDeviceLinkApi(client.link),
+  devices: createDevicesApi(client.devices),
 })

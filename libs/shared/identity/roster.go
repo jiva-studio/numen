@@ -143,8 +143,8 @@ func (c Chain) IsSignedSince(prefix Chain, sign ed25519.PublicKey) bool {
 	return false
 }
 
-// SignersSince returns the signing key of each entry after the prefix, in order.
-func (c Chain) SignersSince(prefix Chain) []ed25519.PublicKey {
+// ListSignersSince returns the signing key of each entry after the prefix, in order.
+func (c Chain) ListSignersSince(prefix Chain) []ed25519.PublicKey {
 	var signers []ed25519.PublicKey
 	for i := len(prefix.entries); i < len(c.entries); i++ {
 		signers = append(signers, bytes.Clone(c.entries[i].Signer))

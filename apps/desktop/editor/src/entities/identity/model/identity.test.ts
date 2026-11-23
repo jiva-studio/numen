@@ -4,7 +4,11 @@ import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 import { createIdentityStore } from './identity'
-import { wrapIdentityClient } from '@/testing/identityClient'
+import {
+  groupIdentityCalls,
+  wrapIdentityClient,
+  type IdentityCalls,
+} from '@/testing/identityClient'
 
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
@@ -37,22 +41,23 @@ const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityIn
   ...overrides,
 })
 
-const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({
-  get: () => Promise.resolve(undefined),
-  generateWords: () => Promise.resolve(WORDS),
-  create: () => Promise.resolve(asValue(createSampleIdentity())),
-  startRestore: () => Promise.resolve(asStarted()),
-  delete: () => Promise.resolve(),
-  startLink: () => Promise.resolve(asRefusal('noLink')),
-  getLink: () => Promise.resolve(asRefusal('noLink')),
-  decideLink: () => Promise.resolve(asStarted()),
-  enterLinkCode: () => Promise.resolve(asStarted()),
-  confirmJoin: () => Promise.resolve(asStarted()),
-  cancelLink: () => Promise.resolve(asStarted()),
-  listDevices: () => Promise.resolve(asValue([])),
-  revokeDevice: () => Promise.resolve(asStarted()),
-  ...overrides,
-})
+const createClient = (overrides: Partial<IdentityCalls> = {}) =>
+  groupIdentityCalls({
+    get: () => Promise.resolve(undefined),
+    generateWords: () => Promise.resolve(WORDS),
+    create: () => Promise.resolve(asValue(createSampleIdentity())),
+    startRestore: () => Promise.resolve(asStarted()),
+    delete: () => Promise.resolve(),
+    startLink: () => Promise.resolve(asRefusal('noLink')),
+    getLink: () => Promise.resolve(asRefusal('noLink')),
+    decideLink: () => Promise.resolve(asStarted()),
+    enterLinkCode: () => Promise.resolve(asStarted()),
+    confirmJoin: () => Promise.resolve(asStarted()),
+    cancelLink: () => Promise.resolve(asStarted()),
+    listDevices: () => Promise.resolve(asValue([])),
+    revokeDevice: () => Promise.resolve(asStarted()),
+    ...overrides,
+  })
 
 const createStore = (client: IdentityClient) => {
   const notify = vi.fn()

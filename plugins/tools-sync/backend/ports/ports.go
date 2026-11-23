@@ -165,7 +165,7 @@ type ChainCore interface {
 // Relay is the link relay of the sync server.
 type Relay interface {
 	CreateChannel(ctx context.Context) (syncclient.LinkChannel, error)
-	PostMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
+	SendMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
 	WaitMessages(ctx context.Context, channelID []byte, reader syncclient.LinkSide, afterSeq uint32, wait time.Duration) (syncclient.LinkMessages, error)
 	CloseChannel(ctx context.Context, channelID []byte) error
 }

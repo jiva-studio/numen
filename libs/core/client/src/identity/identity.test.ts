@@ -56,19 +56,19 @@ describe('createIdentityClient', () => {
     const client = createClient({
       getIdentity: () => create(GetIdentityResponseSchema, { identity: INFO }),
     })
-    expect(await client.get()).toStrictEqual(EXPECTED)
+    expect(await client.account.get()).toStrictEqual(EXPECTED)
   })
 
   it('reads no identity when the core answers none', async () => {
     const client = createClient({ getIdentity: () => create(GetIdentityResponseSchema, {}) })
-    expect(await client.get()).toBeUndefined()
+    expect(await client.account.get()).toBeUndefined()
   })
 
   it('reads the twelve new recovery words', async () => {
     const client = createClient({
       generateRecoveryWords: () => create(GenerateRecoveryWordsResponseSchema, { words: WORDS }),
     })
-    expect(await client.generateWords()).toStrictEqual(WORDS)
+    expect(await client.account.generateWords()).toStrictEqual(WORDS)
   })
 
   it('sends the words to create and reads the identity', async () => {
@@ -79,7 +79,7 @@ describe('createIdentityClient', () => {
         return create(CreateIdentityResponseSchema, { identity: INFO })
       },
     })
-    const answer = await client.create(WORDS)
+    const answer = await client.account.create(WORDS)
     expect(answer).toStrictEqual({ ok: true, value: EXPECTED })
     expect(sent).toStrictEqual(WORDS)
   })
@@ -95,7 +95,7 @@ describe('createIdentityClient', () => {
         createIdentity: () =>
           create(CreateIdentityResponseSchema, { error: code, detail: 'refused' }),
       })
-      expect(await client.create(WORDS)).toStrictEqual({
+      expect(await client.account.create(WORDS)).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
@@ -104,7 +104,7 @@ describe('createIdentityClient', () => {
 
   it('fails when the core answers neither an identity nor an error', async () => {
     const client = createClient({ createIdentity: () => create(CreateIdentityResponseSchema, {}) })
-    const answer = await client.create(WORDS)
+    const answer = await client.account.create(WORDS)
     expect(answer.ok).toBe(false)
   })
 
@@ -116,7 +116,7 @@ describe('createIdentityClient', () => {
         return create(DeleteIdentityResponseSchema, {})
       },
     })
-    await client.delete()
+    await client.account.delete()
     expect(calls).toBe(1)
   })
 
@@ -128,7 +128,7 @@ describe('createIdentityClient', () => {
         return create(StartRestoreResponseSchema, {})
       },
     })
-    const answer = await client.startRestore(WORDS)
+    const answer = await client.account.startRestore(WORDS)
     expect(answer).toStrictEqual({ ok: true, value: undefined })
     expect(sent).toStrictEqual(WORDS)
   })
@@ -143,7 +143,7 @@ describe('createIdentityClient', () => {
       const client = createClient({
         startRestore: () => create(StartRestoreResponseSchema, { error: code, detail: 'refused' }),
       })
-      expect(await client.startRestore(WORDS)).toStrictEqual({
+      expect(await client.account.startRestore(WORDS)).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
@@ -176,7 +176,7 @@ describe('createIdentityClient link', () => {
         return create(StartLinkResponseSchema, { link: LINK })
       },
     })
-    const answer = await client.startLink('host', 'scan', 'numen://link?v=1')
+    const answer = await client.link.startLink('host', 'scan', 'numen://link?v=1')
     expect(sent).toStrictEqual({
       role: LinkRole.HOST,
       mode: LinkMode.SCAN,
@@ -201,7 +201,7 @@ describe('createIdentityClient link', () => {
           link: { ...LINK, phase: LinkPhase.FAILED, reason: LinkReason.TOO_MANY_WRONG_CODES },
         }),
     })
-    expect(await client.getLink()).toMatchObject({
+    expect(await client.link.getLink()).toMatchObject({
       ok: true,
       value: { phase: 'failed', reason: 'tooManyWrongCodes' },
     })
@@ -224,11 +224,11 @@ describe('createIdentityClient link', () => {
         create(CancelLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
     })
     const noLink = { ok: false, error: { error: 'noLink', message: 'none' } }
-    expect(await client.getLink()).toStrictEqual(noLink)
-    expect(await client.decideLink(true)).toStrictEqual(noLink)
-    expect(await client.confirmJoin(true)).toStrictEqual(noLink)
-    expect(await client.cancelLink()).toStrictEqual(noLink)
-    expect(await client.enterLinkCode('12')).toStrictEqual({
+    expect(await client.link.getLink()).toStrictEqual(noLink)
+    expect(await client.link.decideLink(true)).toStrictEqual(noLink)
+    expect(await client.link.confirmJoin(true)).toStrictEqual(noLink)
+    expect(await client.link.cancelLink()).toStrictEqual(noLink)
+    expect(await client.link.enterLinkCode('12')).toStrictEqual({
       ok: false,
       error: { error: 'codeInvalid', message: 'six' },
     })
@@ -250,9 +250,9 @@ describe('createIdentityClient link', () => {
         return create(ConfirmJoinResponseSchema, {})
       },
     })
-    await client.decideLink(false)
-    await client.enterLinkCode('654321')
-    await client.confirmJoin(true)
+    await client.link.decideLink(false)
+    await client.link.enterLinkCode('654321')
+    await client.link.confirmJoin(true)
     expect(sent).toStrictEqual(['decide false', 'code 654321', 'join true'])
   })
 
@@ -266,7 +266,7 @@ describe('createIdentityClient link', () => {
           ],
         }),
     })
-    expect(await client.listDevices()).toStrictEqual({
+    expect(await client.devices.listDevices()).toStrictEqual({
       ok: true,
       value: [
         { name: 'Laptop', fingerprint: 'A', addedAt: 'x', isThis: true, isRevoked: false },
@@ -290,7 +290,7 @@ describe('createIdentityClient link', () => {
           return create(RevokeDeviceResponseSchema, { error: code, detail: 'refused' })
         },
       })
-      expect(await client.revokeDevice('B')).toStrictEqual({
+      expect(await client.devices.revokeDevice('B')).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
@@ -303,6 +303,6 @@ describe('createIdentityClient link', () => {
       getIdentity: () =>
         create(GetIdentityResponseSchema, { identity: { ...INFO, isRevoked: true, keyEpoch: 2 } }),
     })
-    expect(await client.get()).toMatchObject({ isRevoked: true, keyEpoch: 2 })
+    expect(await client.account.get()).toMatchObject({ isRevoked: true, keyEpoch: 2 })
   })
 })

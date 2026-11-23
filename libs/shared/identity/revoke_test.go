@@ -346,12 +346,12 @@ func TestRevokedSince_NamesTheDevicesRevokedAfterAPrefix(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	chain, _ := m.revokeSecond(t)
-	revoked := chain.RevokedSince(m.chain)
+	revoked := chain.ListRevokedSince(m.chain)
 	if len(revoked) != 1 || !bytes.Equal(revoked[0], m.second.Public().Sign) {
-		t.Errorf("RevokedSince() = %x, want the key of the phone", revoked)
+		t.Errorf("ListRevokedSince() = %x, want the key of the phone", revoked)
 	}
-	if got := chain.RevokedSince(chain); len(got) != 0 {
-		t.Errorf("RevokedSince(itself) = %x, want none", got)
+	if got := chain.ListRevokedSince(chain); len(got) != 0 {
+		t.Errorf("ListRevokedSince(itself) = %x, want none", got)
 	}
 }
 

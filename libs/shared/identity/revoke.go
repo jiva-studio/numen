@@ -190,7 +190,7 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 	return keys, nil
 }
 
-func (c Chain) heldEpoch(sign ed25519.PublicKey) uint32 {
+func (c Chain) getHeldEpoch(sign ed25519.PublicKey) uint32 {
 	var epoch, held uint32
 	for _, entry := range c.entries[min(1, len(c.entries)):] {
 		switch {
@@ -218,8 +218,8 @@ func (r *Revoke) getWrapFor(sign ed25519.PublicKey) (WrappedAccountKeys, bool) {
 	return WrappedAccountKeys{}, false
 }
 
-// RevokedSince returns the signing keys revoked by the entries after the prefix.
-func (c Chain) RevokedSince(prefix Chain) []ed25519.PublicKey {
+// ListRevokedSince returns the signing keys revoked by the entries after the prefix.
+func (c Chain) ListRevokedSince(prefix Chain) []ed25519.PublicKey {
 	var revoked []ed25519.PublicKey
 	for i := len(prefix.entries); i < len(c.entries); i++ {
 		if entry := c.entries[i]; entry.Kind == KindRevokeDevice && entry.Revoke != nil {

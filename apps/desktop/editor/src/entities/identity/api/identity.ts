@@ -6,15 +6,9 @@ import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo, LinkMode, LinkRole } from '../lib/types'
 
-type AccountClient = Pick<
-  IdentityClient,
-  'get' | 'generateWords' | 'create' | 'startRestore' | 'delete'
->
-type LinkClient = Pick<
-  IdentityClient,
-  'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'
->
-type DevicesClient = Pick<IdentityClient, 'listDevices' | 'revokeDevice'>
+type AccountClient = IdentityClient['account']
+type LinkClient = IdentityClient['link']
+type DevicesClient = IdentityClient['devices']
 
 /** The calls that keep the identity of this device. */
 export const createAccountApi = (identity: AccountClient) => ({

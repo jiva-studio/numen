@@ -10,10 +10,10 @@ import { useQrScanner } from './useQrScanner'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
-  defineProps<{ camera?: ScannerCamera; accepts?: (text: string) => boolean }>(),
+  defineProps<{ camera?: ScannerCamera; isAccepted?: (text: string) => boolean }>(),
   {
     camera: openMachineCamera,
-    accepts: () => true,
+    isAccepted: () => true,
   },
 )
 

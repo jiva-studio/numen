@@ -36,8 +36,8 @@ const (
 	// LinkServiceCreateChannelProcedure is the fully-qualified name of the LinkService's CreateChannel
 	// RPC.
 	LinkServiceCreateChannelProcedure = "/numen.sync.v1.LinkService/CreateChannel"
-	// LinkServicePostMessageProcedure is the fully-qualified name of the LinkService's PostMessage RPC.
-	LinkServicePostMessageProcedure = "/numen.sync.v1.LinkService/PostMessage"
+	// LinkServiceSendMessageProcedure is the fully-qualified name of the LinkService's SendMessage RPC.
+	LinkServiceSendMessageProcedure = "/numen.sync.v1.LinkService/SendMessage"
 	// LinkServiceWaitMessagesProcedure is the fully-qualified name of the LinkService's WaitMessages
 	// RPC.
 	LinkServiceWaitMessagesProcedure = "/numen.sync.v1.LinkService/WaitMessages"
@@ -50,8 +50,8 @@ const (
 type LinkServiceClient interface {
 	// CreateChannel makes a channel of 16 random bytes that lives ten minutes.
 	CreateChannel(context.Context, *connect.Request[v1.CreateChannelRequest]) (*connect.Response[v1.CreateChannelResponse], error)
-	// PostMessage stores a message of 1 to 262144 bytes for the other side. The channel holds 24 messages and closes with the last.
-	PostMessage(context.Context, *connect.Request[v1.PostMessageRequest]) (*connect.Response[v1.PostMessageResponse], error)
+	// SendMessage stores a message of 1 to 262144 bytes for the other side. The channel holds 24 messages and closes with the last.
+	SendMessage(context.Context, *connect.Request[v1.SendMessageRequest]) (*connect.Response[v1.SendMessageResponse], error)
 	// WaitMessages returns the messages for the reader after after_seq, or waits up to wait_seconds (at most 20) for
 	// one. A second wait on the same side of a channel is ABORTED. On a closed channel one wait returns is_closed.
 	WaitMessages(context.Context, *connect.Request[v1.WaitMessagesRequest]) (*connect.Response[v1.WaitMessagesResponse], error)
@@ -76,10 +76,10 @@ func NewLinkServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(linkServiceMethods.ByName("CreateChannel")),
 			connect.WithClientOptions(opts...),
 		),
-		postMessage: connect.NewClient[v1.PostMessageRequest, v1.PostMessageResponse](
+		sendMessage: connect.NewClient[v1.SendMessageRequest, v1.SendMessageResponse](
 			httpClient,
-			baseURL+LinkServicePostMessageProcedure,
-			connect.WithSchema(linkServiceMethods.ByName("PostMessage")),
+			baseURL+LinkServiceSendMessageProcedure,
+			connect.WithSchema(linkServiceMethods.ByName("SendMessage")),
 			connect.WithClientOptions(opts...),
 		),
 		waitMessages: connect.NewClient[v1.WaitMessagesRequest, v1.WaitMessagesResponse](
@@ -100,7 +100,7 @@ func NewLinkServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // linkServiceClient implements LinkServiceClient.
 type linkServiceClient struct {
 	createChannel *connect.Client[v1.CreateChannelRequest, v1.CreateChannelResponse]
-	postMessage   *connect.Client[v1.PostMessageRequest, v1.PostMessageResponse]
+	sendMessage   *connect.Client[v1.SendMessageRequest, v1.SendMessageResponse]
 	waitMessages  *connect.Client[v1.WaitMessagesRequest, v1.WaitMessagesResponse]
 	closeChannel  *connect.Client[v1.CloseChannelRequest, v1.CloseChannelResponse]
 }
@@ -110,9 +110,9 @@ func (c *linkServiceClient) CreateChannel(ctx context.Context, req *connect.Requ
 	return c.createChannel.CallUnary(ctx, req)
 }
 
-// PostMessage calls numen.sync.v1.LinkService.PostMessage.
-func (c *linkServiceClient) PostMessage(ctx context.Context, req *connect.Request[v1.PostMessageRequest]) (*connect.Response[v1.PostMessageResponse], error) {
-	return c.postMessage.CallUnary(ctx, req)
+// SendMessage calls numen.sync.v1.LinkService.SendMessage.
+func (c *linkServiceClient) SendMessage(ctx context.Context, req *connect.Request[v1.SendMessageRequest]) (*connect.Response[v1.SendMessageResponse], error) {
+	return c.sendMessage.CallUnary(ctx, req)
 }
 
 // WaitMessages calls numen.sync.v1.LinkService.WaitMessages.
@@ -129,8 +129,8 @@ func (c *linkServiceClient) CloseChannel(ctx context.Context, req *connect.Reque
 type LinkServiceHandler interface {
 	// CreateChannel makes a channel of 16 random bytes that lives ten minutes.
 	CreateChannel(context.Context, *connect.Request[v1.CreateChannelRequest]) (*connect.Response[v1.CreateChannelResponse], error)
-	// PostMessage stores a message of 1 to 262144 bytes for the other side. The channel holds 24 messages and closes with the last.
-	PostMessage(context.Context, *connect.Request[v1.PostMessageRequest]) (*connect.Response[v1.PostMessageResponse], error)
+	// SendMessage stores a message of 1 to 262144 bytes for the other side. The channel holds 24 messages and closes with the last.
+	SendMessage(context.Context, *connect.Request[v1.SendMessageRequest]) (*connect.Response[v1.SendMessageResponse], error)
 	// WaitMessages returns the messages for the reader after after_seq, or waits up to wait_seconds (at most 20) for
 	// one. A second wait on the same side of a channel is ABORTED. On a closed channel one wait returns is_closed.
 	WaitMessages(context.Context, *connect.Request[v1.WaitMessagesRequest]) (*connect.Response[v1.WaitMessagesResponse], error)
@@ -151,10 +151,10 @@ func NewLinkServiceHandler(svc LinkServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(linkServiceMethods.ByName("CreateChannel")),
 		connect.WithHandlerOptions(opts...),
 	)
-	linkServicePostMessageHandler := connect.NewUnaryHandler(
-		LinkServicePostMessageProcedure,
-		svc.PostMessage,
-		connect.WithSchema(linkServiceMethods.ByName("PostMessage")),
+	linkServiceSendMessageHandler := connect.NewUnaryHandler(
+		LinkServiceSendMessageProcedure,
+		svc.SendMessage,
+		connect.WithSchema(linkServiceMethods.ByName("SendMessage")),
 		connect.WithHandlerOptions(opts...),
 	)
 	linkServiceWaitMessagesHandler := connect.NewUnaryHandler(
@@ -173,8 +173,8 @@ func NewLinkServiceHandler(svc LinkServiceHandler, opts ...connect.HandlerOption
 		switch r.URL.Path {
 		case LinkServiceCreateChannelProcedure:
 			linkServiceCreateChannelHandler.ServeHTTP(w, r)
-		case LinkServicePostMessageProcedure:
-			linkServicePostMessageHandler.ServeHTTP(w, r)
+		case LinkServiceSendMessageProcedure:
+			linkServiceSendMessageHandler.ServeHTTP(w, r)
 		case LinkServiceWaitMessagesProcedure:
 			linkServiceWaitMessagesHandler.ServeHTTP(w, r)
 		case LinkServiceCloseChannelProcedure:
@@ -192,8 +192,8 @@ func (UnimplementedLinkServiceHandler) CreateChannel(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.LinkService.CreateChannel is not implemented"))
 }
 
-func (UnimplementedLinkServiceHandler) PostMessage(context.Context, *connect.Request[v1.PostMessageRequest]) (*connect.Response[v1.PostMessageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.LinkService.PostMessage is not implemented"))
+func (UnimplementedLinkServiceHandler) SendMessage(context.Context, *connect.Request[v1.SendMessageRequest]) (*connect.Response[v1.SendMessageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.LinkService.SendMessage is not implemented"))
 }
 
 func (UnimplementedLinkServiceHandler) WaitMessages(context.Context, *connect.Request[v1.WaitMessagesRequest]) (*connect.Response[v1.WaitMessagesResponse], error) {
