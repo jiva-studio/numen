@@ -30,7 +30,6 @@ type absencesDocument struct {
 	Absent map[string]int64 `json:"absent"`
 }
 
-// ReadUploads returns the uploads of the vault that are not finished.
 func (s *State) ReadUploads(ctx context.Context, id domain.VaultID) ([]transfer.UploadEntry, error) {
 	var document uploadsDocument
 	_, err := s.read(ctx, id, uploadsFile, &document)
@@ -42,7 +41,6 @@ func (s *State) WriteUploads(ctx context.Context, id domain.VaultID, entries []t
 	return s.write(ctx, id, uploadsFile, uploadsDocument{Uploads: entries})
 }
 
-// ReadDownloads returns the downloads of the vault that are not finished.
 func (s *State) ReadDownloads(ctx context.Context, id domain.VaultID) ([]transfer.DownloadEntry, error) {
 	var document downloadsDocument
 	_, err := s.read(ctx, id, downloadsFile, &document)

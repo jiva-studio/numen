@@ -15,7 +15,6 @@ import (
 // MostBytes is how many bytes of a file one read of bytes carries.
 const MostBytes = 4 << 20
 
-// ReadBytes reads bytes of any file as they are.
 type ReadBytes struct {
 	readers vaultport.VaultReaders
 	stat    *HashFile

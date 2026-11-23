@@ -15,7 +15,6 @@ var (
 	ErrInvalidRange = errors.New("the range is invalid")
 )
 
-// MaxReadBytes is the most bytes one ReadBytes returns.
 const MaxReadBytes = 4 << 20
 
 // MoveFileResult is the count of files under the new path.
