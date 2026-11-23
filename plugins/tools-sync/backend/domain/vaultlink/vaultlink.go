@@ -36,6 +36,7 @@ type Link struct {
 	RestoreEpochID []byte                `json:"restoreEpochId,omitempty"`
 	Recovery       *RecoveryProgress     `json:"recovery,omitempty"`
 	Removed        []RemovedFile         `json:"removed,omitempty"`
+	Retired        []RetiredFile         `json:"retired,omitempty"`
 	Kind           string                `json:"kind,omitempty"`
 	Received       *Received             `json:"received,omitempty"`
 }
@@ -105,12 +106,13 @@ func IsRemoteID(text string) bool {
 	return err == nil
 }
 
-// RemovedFile is a file this device removed on the server: its id, its path and the revision of the removal. A
-// restored server that holds the file again gets the removal sent again.
+// RemovedFile is a file this device removed on the server: its id, its path, the revision of the removal and its
+// signed version. A restored server that holds the file again gets the removal sent again.
 type RemovedFile struct {
 	FileID  []byte `json:"fileId"`
 	Path    string `json:"path"`
 	HeadRev []byte `json:"headRev"`
+	Version uint64 `json:"version"`
 }
 
 const maxRemoved = 1000
@@ -251,4 +253,38 @@ func (r *Received) RecordRevision(fileID, revID []byte) {
 		seen = seen[len(seen)-maxSeen:]
 	}
 	r.Seen[key] = seen
+}
+
+// RetiredFile is a file another computer removed and this device applied: its id and the signed version of the removal.
+type RetiredFile struct {
+	FileID  []byte `json:"fileId"`
+	Version uint64 `json:"version"`
+}
+
+const maxRetired = 10000
+
+// AddRetired records the removal of a file in place of an older one and drops the oldest beyond maxRetired.
+func (l *Link) AddRetired(one RetiredFile) {
+	l.Retired = slices.DeleteFunc(l.Retired, func(old RetiredFile) bool { return bytes.Equal(old.FileID, one.FileID) })
+	l.Retired = append(l.Retired, one)
+	if len(l.Retired) > maxRetired {
+		l.Retired = l.Retired[len(l.Retired)-maxRetired:]
+	}
+}
+
+// GetFloor returns the highest signed version at which this device saw the file removed, or 0 for a file it never saw
+// removed. A revision of the file at or below it is older than the removal.
+func (l Link) GetFloor(fileID []byte) uint64 {
+	var floor uint64
+	for _, one := range l.Removed {
+		if bytes.Equal(one.FileID, fileID) {
+			floor = max(floor, one.Version)
+		}
+	}
+	for _, one := range l.Retired {
+		if bytes.Equal(one.FileID, fileID) {
+			floor = max(floor, one.Version)
+		}
+	}
+	return floor
 }

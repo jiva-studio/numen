@@ -15,7 +15,7 @@ const (
 // GetRevisionMessage returns the bytes a device signs to commit a revision: the label of the protocol, a
 // zero byte, the fields vault_id, file_id, parent_rev, blob_id, blob_hash, SHA-256 of enc_meta, path_hash,
 // share_root_id and author_device_sign_key, each as a uvarint length and its bytes, then blob_size as 8 bytes,
-// epoch as 4 bytes (both big endian) and deleted as one byte. The signature is not part of it.
+// file_version as 8 bytes, epoch as 4 bytes (all big endian) and deleted as one byte. The signature is not part of it.
 func GetRevisionMessage(revision *syncv1.Revision) []byte {
 	return GetRevisionMessageWithMetaHash(revision, sha256.Sum256(revision.GetEncMeta()))
 }
@@ -31,6 +31,7 @@ func GetRevisionMessageWithMetaHash(revision *syncv1.Revision, metaHash [32]byte
 		message = appendField(message, field)
 	}
 	message = binary.BigEndian.AppendUint64(message, revision.GetBlobSize())
+	message = binary.BigEndian.AppendUint64(message, revision.GetFileVersion())
 	message = binary.BigEndian.AppendUint32(message, revision.GetEpoch())
 	return append(message, encodeBool(revision.GetDeleted()))
 }

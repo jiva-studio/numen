@@ -48,7 +48,7 @@ func (h heads) add(vault transfer.Vault, changes []*syncv1.StoredRevision) {
 	for _, stored := range changes {
 		rev := stored.GetRevision()
 		head := domain.Head{
-			FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Hash: "", Path: "",
+			FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Version: rev.GetFileVersion(), Hash: "", Path: "",
 			IsDeleted: rev.GetDeleted(), IsBlobMissing: false,
 		}
 		if key, isKnown := vault.GetKey(rev.GetEpoch()); isKnown && !rev.GetDeleted() {

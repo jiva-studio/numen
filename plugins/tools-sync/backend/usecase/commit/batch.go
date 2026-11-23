@@ -92,7 +92,7 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
 		EncMeta: sealed.encoded, PathHash: note.HashPath(r.vault.Key, path), ShareRootId: sealed.shareID, Epoch: sealed.epoch,
-		AuthorDeviceSignKey: r.author,
+		AuthorDeviceSignKey: r.author, FileVersion: file.ParentVersion + 1,
 	}
 	sealedKey, err := r.deps.Crypto.SealData(ctx, note.GetRecordKeyContext(r.vault.ID, fileID), key)
 	if err != nil {
@@ -100,7 +100,7 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 	}
 	record := transfer.FileRecord{
 		FileID: fileID, Path: path, BaseHash: meta.Hash, HeadRev: nil, Size: meta.Size, ModifiedAt: meta.MTime, Kind: kind,
-		BlobID: nil, BlobHash: hash[:], BlobSize: uint64(len(blob)), SealedKey: sealedKey,
+		BlobID: nil, BlobHash: hash[:], BlobSize: uint64(len(blob)), SealedKey: sealedKey, Version: revision.GetFileVersion(),
 	}
 	return &prepared{index: index, blob: blob, revision: revision, record: record}, nil
 }
