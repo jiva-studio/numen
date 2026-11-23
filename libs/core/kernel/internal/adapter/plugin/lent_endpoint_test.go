@@ -15,8 +15,8 @@ func lendEndpoint(host *pluginhost.Host, address string) (*hostendpoint.Lender, 
 	lender := hostendpoint.NewLender()
 	services := hostendpoint.NewServices(lender.Get)
 	callers := hostendpoint.Callers{
-		Identity: host.Management.Activation, Leases: host.Management.Activation,
-		Lent: services,
+		Activation: host.Management.Activation,
+		Lent:       services,
 		Tools: func() hostendpoint.PluginTools {
 			toolHost := plugin.NewToolHost(host.Management.Activation, host.Management.Registry)
 			return toolbridge.NewCatalog(toolHost, toolHost, host.Supervision.Storage, func() string { return "r1" }, testsupport.NewClock(), io.Discard)

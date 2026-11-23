@@ -57,7 +57,6 @@ type Account interface {
 	SealData(ctx context.Context, pluginID string, dataContext, plain []byte) ([]byte, error)
 	// OpenData opens what SealData sealed for the plugin and the context; failure is identity.ErrCannotOpen.
 	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
-	AccountRestore
 }
 
 // AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits
@@ -71,16 +70,23 @@ type AccountRestore interface {
 	CompleteRestore(ctx context.Context, pluginID string, chain []byte) error
 }
 
+// Activation is what the host knows of a plugin that runs: who made a call and what that plugin may do, and the
+// leases that hold it from being stopped.
+type Activation interface {
+	Identity
+	Leases
+}
+
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Account is what a plugin may ask of the
-// identity of this device, and is nil where the host holds none. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Account and Restore are what a plugin may ask of the
+// identity of this device, and are nil where the host holds none. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies *plugindependency.Fetch
-	Identity     Identity
+	Activation   Activation
 	Account      Account
-	Leases       Leases
+	Restore      AccountRestore
 	Lent         *Services
 	Tools        func() PluginTools
 	Health       HealthCalls

@@ -73,7 +73,7 @@ func (c *callers) asCallers() Callers {
 		}
 	})
 	return Callers{
-		Identity: c, Leases: c, Lent: lent,
+		Activation: c, Lent: lent,
 		Tools: func() PluginTools { return c.tools },
 	}
 }
