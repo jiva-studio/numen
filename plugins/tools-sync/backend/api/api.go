@@ -12,6 +12,11 @@ const (
 	MethodGetStatus        = "GetStatus"
 	MethodGetSubscription  = "GetSubscription"
 	MethodCreateCheckout   = "CreateCheckout"
+	MethodFetchFile        = "FetchFile"
+	MethodDropDownload     = "DropDownload"
+	MethodGetDownloads     = "GetDownloads"
+	MethodSuspend          = "Suspend"
+	MethodResume           = "Resume"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -130,3 +135,49 @@ type CreateCheckoutRequest struct{}
 type CreateCheckoutResponse struct {
 	CheckoutURL string `json:"checkoutUrl"`
 }
+
+// FetchFileRequest asks to download the absent file at Path of a vault.
+type FetchFileRequest struct {
+	VaultID string `json:"vaultId"`
+	Path    string `json:"path"`
+}
+
+// FetchFileResponse is the answer to a download that went through.
+type FetchFileResponse struct{}
+
+// DropDownloadRequest asks to remove the download of the file at Path of a vault.
+type DropDownloadRequest struct {
+	VaultID string `json:"vaultId"`
+	Path    string `json:"path"`
+}
+
+// DropDownloadResponse is the answer to a removal that went through.
+type DropDownloadResponse struct{}
+
+// GetDownloadsRequest asks for the downloads that run.
+type GetDownloadsRequest struct{}
+
+// Download is a download that runs: the bytes that came and the bytes of the file.
+type Download struct {
+	VaultID string `json:"vaultId"`
+	Path    string `json:"path"`
+	Bytes   int64  `json:"bytes"`
+	Total   int64  `json:"total"`
+}
+
+// GetDownloadsResponse is the downloads that run.
+type GetDownloadsResponse struct {
+	Downloads []Download `json:"downloads"`
+}
+
+// SuspendRequest tells that the application left the screen.
+type SuspendRequest struct{}
+
+// SuspendResponse is the answer to a suspension that stopped the sync.
+type SuspendResponse struct{}
+
+// ResumeRequest tells that the application is on the screen again.
+type ResumeRequest struct{}
+
+// ResumeResponse is the answer to a resumption that started the sync.
+type ResumeResponse struct{}
