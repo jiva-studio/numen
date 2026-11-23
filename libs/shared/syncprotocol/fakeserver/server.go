@@ -93,6 +93,7 @@ type Server struct {
 	calls         map[string]int
 	subscriptions map[string]time.Time
 	checkouts     map[string]string
+	links         map[string]*linkChannel
 }
 
 // New returns the server for the config.
@@ -101,7 +102,7 @@ func New(cfg Config) *Server {
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, checkouts: map[string]string{},
+		subscriptions: map[string]time.Time{}, checkouts: map[string]string{}, links: map[string]*linkChannel{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -125,6 +126,7 @@ func (s *Server) newMux() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle(syncv1connect.NewSignInServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewAccountServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewLinkServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewCatalogServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
@@ -202,27 +204,56 @@ func (s *Server) GetChallenge(_ context.Context, req *connect.Request[syncv1.Get
 }
 
 func (s *Server) SignIn(_ context.Context, req *connect.Request[syncv1.SignInRequest]) (*connect.Response[syncv1.SignInResponse], error) {
-	session, ok := s.openSession(req.Msg)
-	if !ok {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New(failedSignIn))
+	session, err := s.openSession(req.Msg)
+	if err != nil {
+		return nil, err
 	}
 	return connect.NewResponse(&syncv1.SignInResponse{
 		SessionToken: session.Token, ExpiresAt: session.ExpiresAt.Unix(), AccountFingerprint: session.AccountFingerprint,
 	}), nil
 }
 
-func (s *Server) openSession(req *syncv1.SignInRequest) (Session, bool) {
+func (s *Server) openSession(req *syncv1.SignInRequest) (Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	pending, found := s.popChallenge(req.GetChallengeId())
 	if !found {
-		return Session{}, false
+		return Session{}, newFailedSignIn()
 	}
 	chain, ok := s.checkProof(pending, req)
-	if !ok || !s.storeChain(chain) {
-		return Session{}, false
+	if !ok {
+		return Session{}, newFailedSignIn()
 	}
-	return s.addSession(req.GetDeviceSignKey(), chain.Root().Fingerprint().String())
+	head, ok := s.mergeChain(chain)
+	if !ok {
+		return Session{}, newFailedSignIn()
+	}
+	key := req.GetDeviceSignKey()
+	if !head.IsActiveDevice(key) {
+		if head.IsKnownDevice(key) {
+			return Session{}, newDeviceRevoked(head)
+		}
+		return Session{}, newFailedSignIn()
+	}
+	session, ok := s.addSession(key, head.Root().Fingerprint().String())
+	if !ok {
+		return Session{}, newFailedSignIn()
+	}
+	return session, nil
+}
+
+func newFailedSignIn() error {
+	return connect.NewError(connect.CodeUnauthenticated, errors.New(failedSignIn))
+}
+
+func newDeviceRevoked(head identity.Chain) error {
+	failure := newFailedSignIn()
+	if detail, err := connect.NewErrorDetail(&syncv1.DeviceRevoked{Chain: head.Bytes()}); err == nil {
+		if refusal, ok := failure.(*connect.Error); ok {
+			refusal.AddDetail(detail)
+		}
+	}
+	return failure
 }
 
 func (s *Server) popChallenge(id []byte) (challenge, bool) {
@@ -241,7 +272,7 @@ func (s *Server) checkProof(pending challenge, req *syncv1.SignInRequest) (ident
 		return identity.Chain{}, false
 	}
 	chain, err := identity.ParseChain(req.GetChain())
-	if err != nil || !isDeviceOf(chain, key) {
+	if err != nil || !chain.IsKnownDevice(key) {
 		return identity.Chain{}, false
 	}
 	return chain, true
@@ -255,14 +286,19 @@ func isDeviceOf(chain identity.Chain, deviceSignKey []byte) bool {
 	return slices.ContainsFunc(chain.ListDevices(), func(d identity.Device) bool { return bytes.Equal(d.Public.Sign, deviceSignKey) })
 }
 
-func (s *Server) storeChain(chain identity.Chain) bool {
+// mergeChain keeps the longer of the presented chain and the stored one when one extends the other, and ends the sessions of the
+// devices a longer presented chain revokes. It returns the chain the server holds then.
+func (s *Server) mergeChain(chain identity.Chain) (identity.Chain, bool) {
 	account := chain.Root().Fingerprint().String()
 	stored, known := s.chains[account]
 	if !known || chain.IsExtensionOf(stored) {
-		s.chains[account] = chain
-		return true
+		s.applyChain(account, chain)
+		return chain, true
 	}
-	return stored.IsExtensionOf(chain)
+	if stored.IsExtensionOf(chain) {
+		return stored, true
+	}
+	return identity.Chain{}, false
 }
 
 func (s *Server) addSession(deviceSignKey []byte, account string) (Session, bool) {

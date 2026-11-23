@@ -55,3 +55,8 @@ type refusalError struct {
 func (r refusalError) Error() string { return r.sentinel.Error() }
 
 func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }
+
+// NewLinkRefusal returns an error that reads as the sentinel and keeps the Connect error of the relay.
+func NewLinkRefusal(sentinel error, cause error) error {
+	return refusalError{sentinel: sentinel, cause: cause}
+}

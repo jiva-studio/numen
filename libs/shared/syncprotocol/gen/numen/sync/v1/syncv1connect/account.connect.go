@@ -39,6 +39,9 @@ const (
 	// AccountServiceGetAccountChainByRootProcedure is the fully-qualified name of the AccountService's
 	// GetAccountChainByRoot RPC.
 	AccountServiceGetAccountChainByRootProcedure = "/numen.sync.v1.AccountService/GetAccountChainByRoot"
+	// AccountServiceAppendChainProcedure is the fully-qualified name of the AccountService's
+	// AppendChain RPC.
+	AccountServiceAppendChainProcedure = "/numen.sync.v1.AccountService/AppendChain"
 )
 
 // AccountServiceClient is a client for the numen.sync.v1.AccountService service.
@@ -48,6 +51,12 @@ type AccountServiceClient interface {
 	// GetAccountChainByRoot returns the stored chain of the account with a root key, to a caller that proves it
 	// holds the recovery key. It needs no session.
 	GetAccountChainByRoot(context.Context, *connect.Request[v1.GetAccountChainByRootRequest]) (*connect.Response[v1.GetAccountChainByRootResponse], error)
+	// AppendChain presents a longer chain of the account of the session: a new device, or a revoke. The presented
+	// chain must extend the stored one, list the device of the session as active, and every entry after the stored
+	// head must be signed by that device or by the root key. A chain equal to the stored one is accepted again. When it
+	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
+	// sessions of the revoked device in the same step. It needs the session bearer.
+	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
 }
 
 // NewAccountServiceClient constructs a client for the numen.sync.v1.AccountService service. By
@@ -73,6 +82,12 @@ func NewAccountServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(accountServiceMethods.ByName("GetAccountChainByRoot")),
 			connect.WithClientOptions(opts...),
 		),
+		appendChain: connect.NewClient[v1.AppendChainRequest, v1.AppendChainResponse](
+			httpClient,
+			baseURL+AccountServiceAppendChainProcedure,
+			connect.WithSchema(accountServiceMethods.ByName("AppendChain")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -80,6 +95,7 @@ func NewAccountServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 type accountServiceClient struct {
 	getAccountChain       *connect.Client[v1.GetAccountChainRequest, v1.GetAccountChainResponse]
 	getAccountChainByRoot *connect.Client[v1.GetAccountChainByRootRequest, v1.GetAccountChainByRootResponse]
+	appendChain           *connect.Client[v1.AppendChainRequest, v1.AppendChainResponse]
 }
 
 // GetAccountChain calls numen.sync.v1.AccountService.GetAccountChain.
@@ -92,6 +108,11 @@ func (c *accountServiceClient) GetAccountChainByRoot(ctx context.Context, req *c
 	return c.getAccountChainByRoot.CallUnary(ctx, req)
 }
 
+// AppendChain calls numen.sync.v1.AccountService.AppendChain.
+func (c *accountServiceClient) AppendChain(ctx context.Context, req *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error) {
+	return c.appendChain.CallUnary(ctx, req)
+}
+
 // AccountServiceHandler is an implementation of the numen.sync.v1.AccountService service.
 type AccountServiceHandler interface {
 	// GetAccountChain returns the stored chain of the account of the session. It needs the session bearer.
@@ -99,6 +120,12 @@ type AccountServiceHandler interface {
 	// GetAccountChainByRoot returns the stored chain of the account with a root key, to a caller that proves it
 	// holds the recovery key. It needs no session.
 	GetAccountChainByRoot(context.Context, *connect.Request[v1.GetAccountChainByRootRequest]) (*connect.Response[v1.GetAccountChainByRootResponse], error)
+	// AppendChain presents a longer chain of the account of the session: a new device, or a revoke. The presented
+	// chain must extend the stored one, list the device of the session as active, and every entry after the stored
+	// head must be signed by that device or by the root key. A chain equal to the stored one is accepted again. When it
+	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
+	// sessions of the revoked device in the same step. It needs the session bearer.
+	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
 }
 
 // NewAccountServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -120,12 +147,20 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 		connect.WithSchema(accountServiceMethods.ByName("GetAccountChainByRoot")),
 		connect.WithHandlerOptions(opts...),
 	)
+	accountServiceAppendChainHandler := connect.NewUnaryHandler(
+		AccountServiceAppendChainProcedure,
+		svc.AppendChain,
+		connect.WithSchema(accountServiceMethods.ByName("AppendChain")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.AccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AccountServiceGetAccountChainProcedure:
 			accountServiceGetAccountChainHandler.ServeHTTP(w, r)
 		case AccountServiceGetAccountChainByRootProcedure:
 			accountServiceGetAccountChainByRootHandler.ServeHTTP(w, r)
+		case AccountServiceAppendChainProcedure:
+			accountServiceAppendChainHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -141,4 +176,8 @@ func (UnimplementedAccountServiceHandler) GetAccountChain(context.Context, *conn
 
 func (UnimplementedAccountServiceHandler) GetAccountChainByRoot(context.Context, *connect.Request[v1.GetAccountChainByRootRequest]) (*connect.Response[v1.GetAccountChainByRootResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.AccountService.GetAccountChainByRoot is not implemented"))
+}
+
+func (UnimplementedAccountServiceHandler) AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.AccountService.AppendChain is not implemented"))
 }
