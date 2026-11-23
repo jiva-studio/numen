@@ -722,7 +722,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// hearSegments errors: readReachedPosition error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
 	s2 := newScene(t)
 	s2.model.segmentErr = errBoom
-	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+	if _, reached, err := recognizeBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
 		t.Fatalf("expected (500, segmentErr), got (%d, %v)", reached, err)
 	}
 	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -730,7 +730,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	}
 	s2.model.segmentErr = nil
 	s2.model.transcribeErr = errBoom
-	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+	if _, reached, err := recognizeBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
 		t.Fatalf("expected (500, transcribeErr), got (%d, %v)", reached, err)
 	}
 	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {

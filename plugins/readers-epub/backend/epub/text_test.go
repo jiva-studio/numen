@@ -237,7 +237,7 @@ const twoDocumentOpf = `<?xml version="1.0"?>
 func readOne(t *testing.T, markup string) (*epub.Book, *epub.Markup) {
 	t.Helper()
 	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{"OEBPS/one.xhtml": markup}))
-	rendered, err := book.Markup("OEBPS/one.xhtml")
+	rendered, err := book.ParseMarkup("OEBPS/one.xhtml")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}

@@ -30,7 +30,7 @@ export interface WorkLineOptions {
   readonly drop: (id: string) => void
   readonly paths: Map<string, string>
   readonly waitWords: string
-  readonly nextId: () => string
+  readonly createId: () => string
 }
 
 interface CallLine {
@@ -43,7 +43,7 @@ interface CallLine {
 
 /** The lines of one exchange, under `wait` for the wait line and names taken from `nextId` for each call. */
 export function createWorkLine(options: WorkLineOptions, wait: string): WorkLine {
-  const { put, drop, paths, waitWords, nextId } = options
+  const { put, drop, paths, waitWords, createId: nextId } = options
   const lines = new Map<string, CallLine>()
 
   const show = (line: CallLine) => {

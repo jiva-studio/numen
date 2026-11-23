@@ -164,7 +164,7 @@ func TestVectorMathAndDefaultDimensions(t *testing.T) {
 	}
 	for _, dims := range []int{0, -1} {
 		srv := New(Config{Dimensions: dims})
-		if got := len(srv.Vector("ferry")); got != 8 {
+		if got := len(srv.BuildVector("ferry")); got != 8 {
 			t.Errorf("New(Dimensions=%d).Vector len = %d, want 8", dims, got)
 		}
 		if got := cap(srv.Aborted()); got != 64 {
@@ -172,7 +172,7 @@ func TestVectorMathAndDefaultDimensions(t *testing.T) {
 		}
 	}
 
-	vec := New(Config{Dimensions: 28}).Vector("ferry")
+	vec := New(Config{Dimensions: 28}).BuildVector("ferry")
 	if len(vec) != 28 {
 		t.Fatalf("len(vec) = %d, want 28", len(vec))
 	}

@@ -26,7 +26,12 @@ const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 const Sketch = () => h('em', 'sketch')
 
-const command = (pluginId: string, id: string, title: string, icon?: Component): SlotCommand => ({
+const buildCommand = (
+  pluginId: string,
+  id: string,
+  title: string,
+  icon?: Component,
+): SlotCommand => ({
   kind: 'command',
   key: `${pluginId}/command/${id}`,
   pluginId,
@@ -37,18 +42,18 @@ const command = (pluginId: string, id: string, title: string, icon?: Component):
   hasItems: false,
 })
 
-const separator = (index: number): SlotSeparator => ({
+const buildSeparator = (index: number): SlotSeparator => ({
   kind: 'separator',
   key: `separator/${index}`,
 })
 
-export const OPEN = command('app', 'file.open', 'Open note', Icon)
-const RENAME_ENTRY = command(TREE, 'tree.renameFile', 'Rename')
-export const COPY_PATH = command('app', 'file.copyPath', 'Copy path')
-export const TRASH = command('app', 'file.remove', 'Move to trash')
-const NEW_NOTE_ENTRY = command('app', 'note.create', 'Create note')
-const NEW_FOLDER_ENTRY = command('app', 'folder.create', 'Create folder')
-export const ASK = command(CHAT, 'note.ask', 'Ask about the note')
+export const OPEN = buildCommand('app', 'file.open', 'Open note', Icon)
+const RENAME_ENTRY = buildCommand(TREE, 'tree.renameFile', 'Rename')
+export const COPY_PATH = buildCommand('app', 'file.copyPath', 'Copy path')
+export const TRASH = buildCommand('app', 'file.remove', 'Move to trash')
+const NEW_NOTE_ENTRY = buildCommand('app', 'note.create', 'Create note')
+const NEW_FOLDER_ENTRY = buildCommand('app', 'folder.create', 'Create folder')
+export const ASK = buildCommand(CHAT, 'note.ask', 'Ask about the note')
 
 export const NEW_MENU: SlotSubmenu = {
   kind: 'submenu',
@@ -70,15 +75,15 @@ const SKETCH: SlotView = {
 /** The entries of the menu on a row, as the slot registry resolves them. */
 export const ROW_MENU: readonly SlotItem[] = [
   OPEN,
-  separator(1),
+  buildSeparator(1),
   NEW_MENU,
-  separator(2),
+  buildSeparator(2),
   RENAME_ENTRY,
   COPY_PATH,
-  separator(3),
+  buildSeparator(3),
   ASK,
   SKETCH,
-  separator(4),
+  buildSeparator(4),
   TRASH,
 ]
 

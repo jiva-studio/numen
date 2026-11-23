@@ -16,7 +16,7 @@ type Measure = (node: PlexNode) => number
 /** What a plex measures its own text with. */
 export interface PlexMetrics {
   readonly node: Measure
-  readonly label: (label: string) => number
+  readonly measureLabel: (label: string) => number
   readonly labelType: LabelType
 }
 
@@ -91,7 +91,7 @@ export function useTitleWidths(
   } else {
     const observer = new ResizeObserver(() => {
       const now = readType(probe)
-      if (!sameType(now, type.value)) type.value = now
+      if (!isSameType(now, type.value)) type.value = now
     })
     observer.observe(probe.box, { box: 'border-box' })
 
@@ -112,15 +112,15 @@ function openProbe(): Probe | null {
   box.style.cssText = PROBE
 
   // Stryker disable next-line StringLiteral: the mutated value is "Stryker was here!", which is not a declaration, so the style engine drops it and the word keeps the box's own type, as with the empty string.
-  const title = word('')
-  const label = word(LABEL)
+  const title = createWordElement('')
+  const label = createWordElement(LABEL)
   box.append(title, label)
   doc.body.append(box)
 
   return { box, label }
 }
 
-function word(style: string): HTMLElement {
+function createWordElement(style: string): HTMLElement {
   const span = doc.createElement('span')
   span.style.cssText = style
   span.textContent = SAMPLE
@@ -139,21 +139,21 @@ function getType(probe: Probe): PlexType {
   }
 }
 
-const sameType = (one: PlexType, other: PlexType): boolean =>
+const isSameType = (one: PlexType, other: PlexType): boolean =>
   one.font === other.font && one.labelFont === other.labelFont && one.gap === other.gap
 
 function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetrics | undefined {
   const context = getMeasuringContext()
   if (!context) return undefined
 
-  const title = textWidths(context, type.font)
-  const label = textWidths(context, type.labelFont)
+  const title = createWidthMeasurer(context, type.font)
+  const label = createWidthMeasurer(context, type.labelFont)
 
   const room = beside.reduce((sum, width) => sum + width + type.gap, 2 * padding)
 
   return {
     node: (node) => Math.ceil(title(node.title) + room),
-    label: (words) => Math.ceil(label(words)),
+    measureLabel: (words) => Math.ceil(label(words)),
     labelType: getLabelType(context, type.labelFont),
   }
 }
@@ -168,7 +168,10 @@ function getLabelType(context: CanvasRenderingContext2D, font: string): LabelTyp
   }
 }
 
-function textWidths(context: CanvasRenderingContext2D, font: string): (text: string) => number {
+function createWidthMeasurer(
+  context: CanvasRenderingContext2D,
+  font: string,
+): (text: string) => number {
   const widths = new Map<string, number>()
 
   return (text) => {

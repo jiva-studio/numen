@@ -4,8 +4,12 @@
  * on its own, and the clock a box opens on.
  */
 import { EXPANSION_DELAY } from './sizing/expansion'
-import { byHandle, byLongPress, type ReachStrategy } from './interaction/reachStrategy'
-import { byDoubleClick, byDoubleTap, type ShowStrategy } from './interaction/destination'
+import { byHandle, createLongPressStrategy, type ReachStrategy } from './interaction/reachStrategy'
+import {
+  byDoubleClick,
+  createDoubleTapStrategy,
+  type ShowStrategy,
+} from './interaction/destination'
 import { browserClock, nav, type Clock } from '@numen/ui'
 
 export interface PlexBehavior {
@@ -34,5 +38,5 @@ export const hasTouchPointer = (): boolean => nav.maxTouchPoints > 0
 
 export const getInputStrategies = (isTouch: boolean): Pick<PlexBehavior, 'reaching' | 'showing'> =>
   isTouch
-    ? { reaching: byLongPress(), showing: byDoubleTap() }
+    ? { reaching: createLongPressStrategy(), showing: createDoubleTapStrategy() }
     : { reaching: byHandle, showing: byDoubleClick }

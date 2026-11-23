@@ -16,7 +16,7 @@ type silentReporter struct{}
 func (silentReporter) ReportCloseError(error) {}
 
 func newHolder(open Opener) *Holder {
-	return NewHolder(settings.Defaults(), open, silentReporter{})
+	return NewHolder(settings.NewDefaultConfig(), open, silentReporter{})
 }
 
 // opened counts the recognizers a factory opened and the ones closed.

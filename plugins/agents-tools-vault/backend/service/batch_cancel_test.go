@@ -55,7 +55,7 @@ func (c canceledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([]
 func newCanceledBatchRegistry(t *testing.T) *tools.Registry {
 	t.Helper()
 	v, _ := newGeologyVault(t)
-	registry, err := service.New(canceledBatchVault{v}.vaults()).Registry()
+	registry, err := service.New(canceledBatchVault{v}.vaults()).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

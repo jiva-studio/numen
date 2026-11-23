@@ -552,7 +552,7 @@ func getForeignToolNames() []string {
 
 func TestNoteReadAndFileReadReturnTheTextKey(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -572,7 +572,7 @@ func TestNoteReadAndFileReadReturnTheTextKey(t *testing.T) {
 
 func TestNoteWriteAndFileCreateTakeTheTextArgument(t *testing.T) {
 	v, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -589,7 +589,7 @@ func TestNoteWriteAndFileCreateTakeTheTextArgument(t *testing.T) {
 
 func TestNoteWriteAndFileCreateRejectTheContentArgument(t *testing.T) {
 	v, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -608,7 +608,7 @@ func TestNoteWriteAndFileCreateRejectTheContentArgument(t *testing.T) {
 
 func TestNoteHeadingListReturnsTheStartAndTheLineCountedFromOne(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -638,7 +638,7 @@ func TestNoteHeadingListReturnsTheStartAndTheLineCountedFromOne(t *testing.T) {
 
 func TestNoteSearchReturnsTheLineCountedInTheBody(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -668,7 +668,7 @@ func TestNoteSearchReturnsTheLineCountedInTheBody(t *testing.T) {
 func TestNoteSearchReturnsLineOneForAMatchOnTheFirstBodyLine(t *testing.T) {
 	v, svc := setupTestVault()
 	v.File("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +696,7 @@ func TestVaultGetFindsTheVaultByItsNameFolderOrIdentifier(t *testing.T) {
 			geology, _, withList := newTwoVaults(t)
 			registry := withList
 			if !isListed {
-				unlisted, err := service.New(vaultsOf(geology)).Registry()
+				unlisted, err := service.New(vaultsOf(geology)).BuildRegistry()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -772,7 +772,7 @@ func TestVaultProblemListNamesTheChecksInItsDescriptionOnly(t *testing.T) {
 
 func TestFileCreateReturnsThePathAndSizeWithoutSuccess(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

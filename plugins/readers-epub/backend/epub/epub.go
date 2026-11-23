@@ -161,12 +161,12 @@ func Read(raw []byte) (*Book, error) {
 	return book, nil
 }
 
-// Entry is the bytes of one entry of the archive, which is how a picture a book
+// ReadEntry is the bytes of one entry of the archive, which is how a picture a book
 // carries is drawn. An entry larger than a document is read at is not there.
 //
 // What the entry holds is the file's own bytes, and what the manifest calls it
 // is not among them.
-func (b *Book) Entry(name string) ([]byte, error) {
+func (b *Book) ReadEntry(name string) ([]byte, error) {
 	return readEntry(b.files, name)
 }
 
@@ -222,8 +222,8 @@ func OpenArchive(r io.ReaderAt, size int64) (*Archive, error) {
 	return &Archive{files: files}, nil
 }
 
-// Entry is the bytes of one entry of the archive, as Book.Entry answers them.
-func (a *Archive) Entry(name string) ([]byte, error) {
+// ReadEntry is the bytes of one entry of the archive, as Book.ReadEntry answers them.
+func (a *Archive) ReadEntry(name string) ([]byte, error) {
 	return readEntry(a.files, name)
 }
 
