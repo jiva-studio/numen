@@ -109,14 +109,14 @@ func TestPreviewConnect_MatchesPathsThatDifferInUnicodeCompositionOnly(t *testin
 	}
 }
 
-func TestPreviewConnect_LeavesAnotherFileTypeOutOfBothSides(t *testing.T) {
+func TestPreviewConnect_LeavesAFileThatIsNotSyncedOutOfBothSides(t *testing.T) {
 	w := newWorld(t)
-	w.b.WriteNote(target, "photo.png", "bytes")
+	w.b.WriteNote(target, "draft.tmp", "bytes")
 
 	got := w.preview(t)
 
 	if len(got.LocalOnly) != 0 {
-		t.Errorf("local only = %v, want no file that is not a note", got.LocalOnly)
+		t.Errorf("local only = %v, want no file that is not synced", got.LocalOnly)
 	}
 }
 

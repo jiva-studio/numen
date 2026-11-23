@@ -546,26 +546,3 @@ func TestSyncVault_DeletesAStagedFileNoDownloadNamesAtTheStartOfAPassEvenWhenThe
 		}
 	}
 }
-
-func TestSyncVault_StopsAtAServerThatAsksForAFullCheckAndSendsNothing(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, pdf, pdfText)
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.a.Vaults.With(source).Remove(pdf)
-	sync(t, p.a, source)
-	p.afterDelay()
-	sync(t, p.a, source)
-	p.server.Fake.PruneTombstones()
-	p.b.WriteNote(target, "Papers/New.pdf", "new")
-	heads := len(p.heads(t))
-
-	sync(t, p.b, target)
-
-	if !p.b.HasItem("Sync needs to compare the vault again") {
-		t.Errorf("health items = %+v, want the full check asked for", p.b.Health.List())
-	}
-	if got := len(p.heads(t)); got != heads {
-		t.Errorf("heads grew from %d to %d, want nothing sent in a pass that stops at a reset", heads, got)
-	}
-}

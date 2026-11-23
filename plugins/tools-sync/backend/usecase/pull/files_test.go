@@ -433,29 +433,6 @@ func TestPullChanges_CountsAnUnverifiedMoveOnce(t *testing.T) {
 	}
 }
 
-func TestPullChanges_StopsAtAPageThatAsksForAFullCheckAndStoresNothing(t *testing.T) {
-	p := newPair(t)
-	first := p.push(t, pdf, pdfText, nil)
-	p.pull(t, trustAll)
-	p.remove(t, first.Record)
-	if pruned := p.server.Fake.PruneTombstones(); pruned != 1 {
-		t.Fatalf("pruned = %d, want the one removal", pruned)
-	}
-	before := p.b.Link(t, target)
-
-	result := p.pull(t, trustAll)
-
-	if !result.IsReset || !p.b.HasItem("Sync needs to compare the vault again") {
-		t.Errorf("result = %+v with items %+v, want the reset noted and the item raised", result, p.b.Health.List())
-	}
-	if after := p.b.Link(t, target); after.ServerSeq != before.ServerSeq {
-		t.Errorf("position = %d, want %d unchanged", after.ServerSeq, before.ServerSeq)
-	}
-	if got := p.readNote(t, pdf); got != pdfText {
-		t.Errorf("file = %q, want it untouched", got)
-	}
-}
-
 // watchedBlobs reports a call of check at every read of a blob body.
 type watchedBlobs struct {
 	ports.BlobReader

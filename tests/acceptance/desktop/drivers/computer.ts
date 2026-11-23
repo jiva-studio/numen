@@ -230,9 +230,9 @@ export class ComputerDriver {
     await expect.poll(() => world.getEntryKind(name, getNotePath(title)), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
   }
 
-  /** Makes the computer unable to reach the sync server, or able again. Waits for the gate of the conflict scenarios, which keeps the plugin of each computer behind a gate of its own. */
-  setOnline(_computer: ComputerName, _isOnline: boolean): Promise<void> {
-    return Promise.reject(new Error('not implemented: the gate between a computer and the sync server comes with the conflict scenarios'))
+  /** Makes the computer unable to reach the sync server, or able again. */
+  setOnline(computer: ComputerName, isOnline: boolean): void {
+    this.sync.setReachable(this.getScenario(computer), isOnline)
   }
 
   async answerConfirmation(computer: ComputerName, vault: string, synced: string, answer: 'Connect' | 'Cancel'): Promise<void> {

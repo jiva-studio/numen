@@ -141,7 +141,10 @@ export function useVaults(options: UseVaultsOptions) {
     try {
       const { differCount } = await client.previewConnect({ vaultId, remoteId })
       error.value = ''
-      if (differCount === 0) return await connect({ vaultId, mode: 'existing', remoteId })
+      if (differCount === 0) {
+        await connect({ vaultId, mode: 'existing', remoteId })
+        return
+      }
       pendingConfirm.value = { vaultId, remoteId, text: words.notesDiffer(differCount) }
       closeRemote()
     } catch (failure) {

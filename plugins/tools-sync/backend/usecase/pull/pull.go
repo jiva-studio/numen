@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -20,8 +19,6 @@ var ErrCorruptBlob = errors.New("the blob of a revision is damaged")
 const (
 	// KeyIntegrity is the health item of a file from the server that does not match its revision.
 	KeyIntegrity = "integrity-error"
-	// KeyNeedsFullCheck is the health item of a server that asks for the vault to be compared again.
-	KeyNeedsFullCheck = "needs-full-check"
 )
 
 // State is what a pull keeps of the vault.
@@ -101,10 +98,7 @@ func (r *run) execute(ctx context.Context) error {
 			return err
 		}
 		if page.GetReset_() {
-			r.result.IsReset = true
-			return r.deps.Health.Report(ctx, health.Item{
-				Key: KeyNeedsFullCheck, Severity: health.Warning, Text: "Sync needs to compare the vault again", Detail: "", Action: nil,
-			})
+			return r.reconcile(ctx)
 		}
 		if err := r.applyPage(ctx, page.GetChanges()); err != nil {
 			return err
@@ -124,11 +118,14 @@ func (r *run) save(ctx context.Context) error {
 	if err := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); err != nil {
 		return err
 	}
+	if r.isListing {
+		return nil
+	}
 	r.link.ServerSeq = r.next
 	if r.isHeld {
 		r.link.ServerSeq = min(r.next, r.holdSeq)
 	}
-	if r.hasRemovals {
+	if len(r.removals) > 0 {
 		r.link.ServerSeq = min(r.link.ServerSeq, r.removalSeq-1)
 	}
 	return r.deps.State.WriteLink(ctx, r.in.VaultID, r.link)

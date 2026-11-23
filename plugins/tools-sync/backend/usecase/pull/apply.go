@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/identity"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
@@ -22,8 +20,6 @@ import (
 )
 
 var errBlobMissing = errors.New("the server has no blob for a revision")
-
-var errUnverified = errors.New("the revision does not verify")
 
 type run struct {
 	deps    Deps
@@ -39,9 +35,9 @@ type run struct {
 	isHeld  bool
 	next    uint64
 
-	removals    []removal
-	removalSeq  uint64
-	hasRemovals bool
+	removals   []removal
+	removalSeq uint64
+	isListing  bool
 }
 
 func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) error {
@@ -119,24 +115,7 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 }
 
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
-	rev := stored.GetRevision()
-	id := syncprotocol.GetRevisionID(rev)
-	if syncprotocol.CheckRevision(rev) != nil || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
-		!identity.VerifyForPlugin(rev.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(rev), [64]byte(rev.GetSignature())) ||
-		!r.in.Authors(rev.GetAuthorDeviceSignKey()) {
-		return note.Meta{}, errUnverified
-	}
-	if rev.GetDeleted() {
-		return note.Meta{}, nil
-	}
-	meta, err := note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
-	if err != nil || len(meta.Key) != 32 {
-		return note.Meta{}, errUnverified
-	}
-	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
-		return note.Meta{}, errUnverified
-	}
-	return meta, nil
+	return note.OpenRevision(r.key, stored, r.in.Authors)
 }
 
 func (r *run) readLocal(ctx context.Context, path string) (string, domain.FileStat, error) {

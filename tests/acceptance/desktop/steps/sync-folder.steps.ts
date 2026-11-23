@@ -53,12 +53,12 @@ Then('the vault {string} does not have the note {string}', async ({ person }, va
   await person.computers.expectNoNote('first', title, vault)
 })
 
-Given('the second computer is offline', async ({ person }) => {
-  await person.computers.setOnline('second', false)
+Given('the second computer is offline', ({ person }) => {
+  person.computers.setOnline('second', false)
 })
 
-When('the second computer is online', async ({ person }) => {
-  await person.computers.setOnline('second', true)
+When('the second computer is online', ({ person }) => {
+  person.computers.setOnline('second', true)
 })
 
 Given('the sync server forgets which notes were removed', async ({ person }) => {

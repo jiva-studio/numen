@@ -29,6 +29,12 @@ export const WORDS = {
   chooseRemote: 'Choose a synced vault',
   noRemoteVaults: 'No synced vaults in your account',
   closeRemote: 'Cancel',
+  notesDiffer: (count: number): string =>
+    count === 1
+      ? '1 note differs from the synced vault'
+      : ` notes differ from the synced vault`,
+  confirmConnect: 'Connect',
+  cancelConnect: 'Cancel',
   loading: 'Loading vaults…',
   stateNotConnected: 'Not connected',
   stateConnected: 'Connected',

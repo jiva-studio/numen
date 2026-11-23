@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 )
 
 const trash = ".trash/"
@@ -237,4 +238,33 @@ func commitAsAway(t *testing.T, w *away, path, text string) transfer.Outcome {
 		t.Fatal(err)
 	}
 	return outcomes[0]
+}
+
+func TestPullChanges_PausesWhenAResetWouldRemoveMostOfTheNotesAndKeepsThemUntilTheAnswer(t *testing.T) {
+	p := newPair(t)
+	paths := []string{"A.md", "B.md", "C.md", "D.md", "E.md", "F.md"}
+	outcomes := map[string]transfer.Outcome{}
+	for _, path := range paths {
+		outcomes[path] = p.push(t, path, "text of "+path, nil)
+	}
+	p.pull(t, trustAll)
+	before := p.b.Link(t, target)
+	for _, path := range paths[:5] {
+		p.a.CommitRemoval(t, p.vault, path, outcomes[path])
+	}
+	p.server.ForgetRemovals()
+
+	p.pull(t, trustAll)
+
+	for _, path := range paths {
+		if _, isThere := p.b.ReadNote(target, path); !isThere {
+			t.Errorf("note %s was removed although five of six removals wait for an answer", path)
+		}
+	}
+	if !p.b.HasItemKey(deletions.HealthKey) {
+		t.Error("no paused removals were reported")
+	}
+	if after := p.b.Link(t, target); after.ServerSeq != before.ServerSeq {
+		t.Errorf("position = %d, want %d kept, so the next pass reads the vault again", after.ServerSeq, before.ServerSeq)
+	}
 }
