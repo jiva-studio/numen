@@ -20,6 +20,7 @@ import (
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -197,7 +198,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
 	return syncwire.Deps{
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
-		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay },
+		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
 	}
 }
 
@@ -205,7 +206,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 func (c *Computer) CommitDeps() commit.Deps {
 	wired := c.WireDeps()
 	uploads := upload.NewUploadFile(upload.Deps{
-		Uploads: wired.Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader,
+		Uploads: wired.Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader, Digests: digest.Sha256{},
 	})
 	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Crypto: c.Account, Uploads: uploads, Random: rand.Reader}
 }
