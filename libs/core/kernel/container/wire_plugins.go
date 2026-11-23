@@ -159,17 +159,9 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 			dependencyReporter: roles.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
-<<<<<<< HEAD
-		Health:    supervision.Health,
-		Processes: supervision.RunningProcesses,
-		Keeper:    management.Keeper,
-||||||| 0c1d456f1
-		Health:    supervision.Health,
-		Processes: supervision.RunningProcesses,
-=======
 		Health:    roles.Health,
 		Processes: roles.RunningProcesses,
->>>>>>> origin/feat/2565-identity-core
+		Keeper:    management.Keeper,
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
@@ -179,16 +171,8 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 			PluginSettings:        management.Settings,
 		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
-<<<<<<< HEAD
-			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: supervision.Health, Keeper: management.Keeper,
-||||||| 0c1d456f1
-			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: supervision.Health,
-=======
 			Values: management.Settings, Stopper: management.Teardown, Failures: roles.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: roles.Health,
->>>>>>> origin/feat/2565-identity-core
+			Health: roles.Health, Keeper: management.Keeper,
 		}).Execute,
 		Views: pluginViews{
 			Types: types, Operations: types,
@@ -225,16 +209,8 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	manifests := pluginmanifest.Open(management.Registry, management.Registry, processes.Failures)
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
-<<<<<<< HEAD
 	callers := hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
-||||||| 0c1d456f1
-	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
-=======
-	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
->>>>>>> origin/feat/2565-identity-core
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		Tools: func() hostendpoint.PluginTools {

@@ -35,7 +35,10 @@ func newRecord(t *testing.T) identity.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := words.DeriveRecoveryKey()
+	root, err := words.DeriveRecoveryKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	keys, err := identity.NewAccountKeys(rand.Reader)
 	if err != nil {
 		t.Fatal(err)

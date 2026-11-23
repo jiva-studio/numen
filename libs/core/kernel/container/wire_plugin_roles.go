@@ -6,13 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-<<<<<<< HEAD
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
-||||||| 0c1d456f1
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-=======
->>>>>>> origin/feat/2565-identity-core
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 

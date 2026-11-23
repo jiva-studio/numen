@@ -297,7 +297,7 @@ func TestParseChain_RejectsNoEntriesAndTruncatedBytes(t *testing.T) {
 func TestLen_CountsEntries(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
-	longer, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch.Add(time.Minute))
+	longer, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch().Add(time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,11 +315,11 @@ func TestLen_CountsEntries(t *testing.T) {
 func TestIsExtensionOf(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
-	laptop, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch.Add(time.Minute))
+	laptop, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch().Add(time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
-	phone, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Phone", epoch.Add(time.Minute))
+	phone, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Phone", epoch().Add(time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
