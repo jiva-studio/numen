@@ -2,6 +2,8 @@ package identity_test
 
 import (
 	"bytes"
+	"crypto/ecdh"
+	"crypto/hpke"
 	"crypto/rand"
 	"errors"
 	"testing"
@@ -126,5 +128,59 @@ func TestOpenSealedBox_RefusesShortInput(t *testing.T) {
 		if _, err := account.OpenSealedBox(sealPluginID, []byte(boxContext), make([]byte, size)); !errors.Is(err, identity.ErrUnwrap) {
 			t.Errorf("%d bytes: error = %v, want ErrUnwrap", size, err)
 		}
+	}
+}
+
+func TestOpenSealedBox_OpensABoxOfTheStandardHPKESender(t *testing.T) {
+	t.Parallel()
+	account := newAccount(t)
+	box := account.BoxPublicKey()
+	public, err := ecdh.X25519().NewPublicKey(box[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	recipient, err := hpke.NewDHKEMPublicKey(public)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info := append([]byte("numen/v1/plugin-box/"+sealPluginID+"\x00"), []byte(boxContext)...)
+	sealed, err := hpke.Seal(recipient, hpke.HKDFSHA256(), hpke.ChaCha20Poly1305(), info, []byte("epoch key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := account.OpenSealedBox(sealPluginID, []byte(boxContext), sealed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "epoch key" {
+		t.Errorf("opened = %q, want the plain of the standard sender", got)
+	}
+}
+
+func TestSealToAccountBox_StartsWithTheEphemeralPublicKeyOfTheRandomReader(t *testing.T) {
+	t.Parallel()
+	account := newAccount(t)
+	fixed := allByteValues()
+	ephemeral, err := ecdh.X25519().NewPrivateKey(fixed[:32])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sealed, err := identity.SealToAccountBox(bytes.NewReader(fixed), account.BoxPublicKey(), sealPluginID, []byte(boxContext), []byte("x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := ephemeral.PublicKey().Bytes(); !bytes.HasPrefix(sealed, want) || len(sealed) != 32+1+16 {
+		t.Errorf("sealed = %x, want the ephemeral key %x and 17 bytes of ciphertext", sealed, want)
+	}
+}
+
+func TestSealToAccountBox_RefusesAShortRandomReader(t *testing.T) {
+	t.Parallel()
+	_, err := identity.SealToAccountBox(bytes.NewReader(make([]byte, 31)), newAccount(t).BoxPublicKey(), sealPluginID, []byte(boxContext), []byte("x"))
+	if err == nil {
+		t.Error("a reader of 31 bytes sealed a box")
 	}
 }

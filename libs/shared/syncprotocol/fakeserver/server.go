@@ -65,7 +65,7 @@ type challenge struct {
 	expiresAt     int64
 }
 
-// Server serves the sign-in, account, catalog, revision and blob services from memory, the presigned blob
+// Server serves the sign-in, account, catalog, revision, blob and share services from memory, the presigned blob
 // URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
 // the id and the body of every stored blob, raw). The subscription service has the pay page at /pay/ and the admin
@@ -93,6 +93,7 @@ type Server struct {
 	calls         map[string]int
 	subscriptions map[string]time.Time
 	checkouts     map[string]string
+	shares        map[string]*shareState
 }
 
 // New returns the server for the config.
@@ -101,7 +102,7 @@ func New(cfg Config) *Server {
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, checkouts: map[string]string{},
+		subscriptions: map[string]time.Time{}, checkouts: map[string]string{}, shares: map[string]*shareState{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -129,7 +130,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
-	mux.Handle(syncv1connect.NewShareServiceHandler(shareService{}, options))
+	mux.Handle(syncv1connect.NewShareServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/blobs/", s.serveBlob)

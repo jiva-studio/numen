@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,7 +29,7 @@ func NewShareClient(address string, httpClient *http.Client, token func() string
 func (c *ShareClient) AppendShareLogEntry(ctx context.Context, entry *syncv1.ShareLogEntry) (*syncv1.AppendShareLogEntryResponse, error) {
 	response, err := c.rpc.AppendShareLogEntry(ctx, connect.NewRequest(&syncv1.AppendShareLogEntryRequest{Entry: entry}))
 	if err != nil {
-		return nil, syncprotocol.ReadShareError(err)
+		return nil, readAppendShareError(entry, err)
 	}
 	return response.Msg, nil
 }
@@ -78,4 +79,12 @@ func (c *ShareClient) GetShareBlobUrls(ctx context.Context, shareRootID []byte, 
 		return nil, syncprotocol.ReadShareError(err)
 	}
 	return response.Msg.GetDownloads(), nil
+}
+
+func readAppendShareError(entry *syncv1.ShareLogEntry, err error) error {
+	failure := syncprotocol.ReadShareError(err)
+	if entry.GetKind() == syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE && errors.Is(failure, syncprotocol.ErrNoShare) {
+		return fmt.Errorf("%w: %w", syncprotocol.ErrNoVault, failure)
+	}
+	return failure
 }

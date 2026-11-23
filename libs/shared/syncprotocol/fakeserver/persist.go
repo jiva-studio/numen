@@ -18,6 +18,17 @@ type snapshot struct {
 	Blobs         map[string]blobSnapshot  `json:"blobs"`
 	Used          map[string]uint64        `json:"used"`
 	Subscriptions map[string]time.Time     `json:"subscriptions"`
+	Shares        map[string]shareSnapshot `json:"shares"`
+}
+
+type shareSnapshot struct {
+	Account  string            `json:"account"`
+	Vault    string            `json:"vault"`
+	Epoch    uint32            `json:"epoch"`
+	IsClosed bool              `json:"isClosed"`
+	Log      [][]byte          `json:"log"`
+	Members  []*shareMember    `json:"members"`
+	Exits    map[string]uint64 `json:"exits"`
 }
 
 type vaultSnapshot struct {
@@ -44,7 +55,7 @@ func (s *Server) Snapshot() ([]byte, error) {
 	defer s.mu.Unlock()
 	out := snapshot{
 		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]vaultSnapshot{},
-		Blobs: map[string]blobSnapshot{}, Used: s.used, Subscriptions: s.subscriptions,
+		Blobs: map[string]blobSnapshot{}, Used: s.used, Subscriptions: s.subscriptions, Shares: map[string]shareSnapshot{},
 	}
 	for account, chain := range s.chains {
 		out.Chains[account] = chain.Bytes()
@@ -71,7 +82,28 @@ func (s *Server) Snapshot() ([]byte, error) {
 			IsUploaded: row.isUploaded,
 		}
 	}
+	for id, share := range s.shares {
+		kept, err := snapshotShare(share)
+		if err != nil {
+			return nil, err
+		}
+		out.Shares[id] = kept
+	}
 	return json.Marshal(out)
+}
+
+func snapshotShare(share *shareState) (shareSnapshot, error) {
+	kept := shareSnapshot{
+		Account: share.account, Vault: share.vault, Epoch: share.epoch, IsClosed: share.isClosed, Members: share.members, Exits: share.exits,
+	}
+	for _, entry := range share.log {
+		raw, err := proto.Marshal(entry)
+		if err != nil {
+			return shareSnapshot{}, fmt.Errorf("keep a share log entry: %w", err)
+		}
+		kept.Log = append(kept.Log, raw)
+	}
+	return kept, nil
 }
 
 func snapshotVault(vault *vaultState) (vaultSnapshot, error) {
@@ -104,12 +136,17 @@ func (s *Server) Restore(raw []byte) error {
 	if err != nil {
 		return err
 	}
+	shares, err := restoreShares(in.Shares)
+	if err != nil {
+		return err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.chains, s.catalogs, s.vaults, s.blobs, s.used = chains, catalogs, vaults, restoreBlobs(in.Blobs), in.Used
 	if s.used == nil {
 		s.used = map[string]uint64{}
 	}
+	s.shares = shares
 	s.subscriptions = in.Subscriptions
 	if s.subscriptions == nil {
 		s.subscriptions = map[string]time.Time{}
@@ -172,4 +209,24 @@ func restoreBlobs(in map[string]blobSnapshot) map[string]*blobRow {
 		}
 	}
 	return out
+}
+
+func restoreShares(in map[string]shareSnapshot) (map[string]*shareState, error) {
+	out := map[string]*shareState{}
+	for id, kept := range in {
+		share := newShareState(kept.Account, kept.Vault)
+		share.epoch, share.isClosed, share.members = kept.Epoch, kept.IsClosed, kept.Members
+		if kept.Exits != nil {
+			share.exits = kept.Exits
+		}
+		for _, raw := range kept.Log {
+			entry := &syncv1.ShareLogEntry{}
+			if err := proto.Unmarshal(raw, entry); err != nil {
+				return nil, fmt.Errorf("read a share log entry: %w", err)
+			}
+			share.log = append(share.log, entry)
+		}
+		out[id] = share
+	}
+	return out, nil
 }

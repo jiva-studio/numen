@@ -73,6 +73,9 @@ func NewRevisionClient(address string, httpClient *http.Client, token func() str
 func (c *RevisionClient) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
 	response, err := c.rpc.CommitRevisions(ctx, connect.NewRequest(&syncv1.CommitRevisionsRequest{VaultId: vaultID, Revisions: revisions}))
 	if err != nil {
+		if failure := syncprotocol.ReadCallError(err); connect.CodeOf(failure) == connect.CodeInvalidArgument {
+			return nil, fmt.Errorf("%w: %w", syncprotocol.ErrInvalidRevision, failure)
+		}
 		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg, nil
