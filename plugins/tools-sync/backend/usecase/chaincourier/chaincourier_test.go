@@ -133,3 +133,4 @@ func TestAdopt_ClearsTheNoticeWhenTheCoolingOffEnds(t *testing.T) {
 	if items := observer.Health.List(); len(items) != 0 {
 		t.Errorf("health items = %+v, want none after the cooling-off", items)
 	}
+}
