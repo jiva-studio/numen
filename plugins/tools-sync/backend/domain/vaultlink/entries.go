@@ -8,8 +8,12 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 )
+
+// Authors tells which signing keys belong to the devices of the account.
+type Authors interface {
+	IsTrusted(signKey []byte) bool
+}
 
 // ErrInvalidCatalog means the catalog of the server is not a signed, unbroken log of the devices of the account.
 var ErrInvalidCatalog = errors.New("the catalog of the account is not valid")
@@ -22,7 +26,7 @@ var (
 )
 
 // CheckEntries verifies that the entries are the unbroken log of the catalog, each signed by a device of the account.
-func CheckEntries(entries []*syncv1.CatalogEntry, authors trust.Authors) error {
+func CheckEntries(entries []*syncv1.CatalogEntry, authors Authors) error {
 	var previous [32]byte
 	for i, entry := range entries {
 		if err := checkEntry(entry, uint64(i)+1, previous, authors); err != nil {
@@ -33,7 +37,7 @@ func CheckEntries(entries []*syncv1.CatalogEntry, authors trust.Authors) error {
 	return nil
 }
 
-func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, authors trust.Authors) error {
+func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, authors Authors) error {
 	if err := syncprotocol.CheckCatalogEntry(entry); err != nil {
 		return err
 	}
