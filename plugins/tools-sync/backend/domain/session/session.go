@@ -24,6 +24,12 @@ type DeviceRevokedError struct{ Chain []byte }
 
 func (DeviceRevokedError) Error() string { return "this device was revoked" }
 
+// AccountDeletingError means the server refused the sign-in because the account is deleting. DeleteAt is when the
+// server deletes it for good.
+type AccountDeletingError struct{ DeleteAt time.Time }
+
+func (AccountDeletingError) Error() string { return "the account is being deleted" }
+
 // Identity is what is public of the identity of this device.
 type Identity struct {
 	AccountFingerprint string
@@ -46,6 +52,8 @@ type Proof struct {
 	DeviceSignKey []byte
 	Signature     []byte
 	Chain         []byte
+	// RestoreAccount asks the server to cancel the deletion of the account.
+	RestoreAccount bool
 }
 
 // Session is a session of the server. It lives in memory only and prints as [session], so its token

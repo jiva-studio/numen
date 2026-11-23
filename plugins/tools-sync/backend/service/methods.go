@@ -46,6 +46,18 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodCreatePortalSession, func(ctx context.Context, request api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
 		return handle(r, func(b *Backend) (api.CreatePortalSessionResponse, error) { return b.CreatePortalSession(ctx, request) })
 	})
+	server.Handle(service, api.MethodGetAccountState, func(ctx context.Context, request api.GetAccountStateRequest) (api.GetAccountStateResponse, error) {
+		return handle(r, func(b *Backend) (api.GetAccountStateResponse, error) { return b.GetAccountState(ctx, request) })
+	})
+	server.Handle(service, api.MethodDeleteCloudData, func(ctx context.Context, request api.DeleteCloudDataRequest) (api.DeleteCloudDataResponse, error) {
+		return handle(r, func(b *Backend) (api.DeleteCloudDataResponse, error) { return b.DeleteCloudData(ctx, request) })
+	})
+	server.Handle(service, api.MethodRestoreAccount, func(ctx context.Context, request api.RestoreAccountRequest) (api.RestoreAccountResponse, error) {
+		return handle(r, func(b *Backend) (api.RestoreAccountResponse, error) { return b.RestoreAccount(ctx, request) })
+	})
+	server.Handle(service, api.MethodExportAccountData, func(ctx context.Context, request api.ExportAccountDataRequest) (api.ExportAccountDataResponse, error) {
+		return handle(r, func(b *Backend) (api.ExportAccountDataResponse, error) { return b.ExportAccountData(ctx, request) })
+	})
 	mountShareMethods(service, r)
 }
 
@@ -74,6 +86,8 @@ func getCode(err error) server.ErrorCode {
 		return server.CodeNotFound
 	case isRefusal(err):
 		return server.CodeFailedPrecondition
+	case isAccountDeleting(err):
+		return server.CodeFailedPrecondition
 	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable), errors.Is(err, syncprotocol.ErrNoActiveSubscription):
 		return server.CodeFailedPrecondition
 	}
@@ -87,6 +101,11 @@ func getRefusals() []error {
 		share.ErrNotForThisAccount, share.ErrAlreadyReceived, share.ErrOwnerChanged, share.ErrEnded, share.ErrDamagedLog, share.ErrNotReady,
 		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack,
 	}
+}
+
+func isAccountDeleting(err error) bool {
+	_, isDeleting := errors.AsType[sessiondomain.AccountDeletingError](err)
+	return isDeleting
 }
 
 func isRefusal(err error) bool { return findRefusal(err) != nil }

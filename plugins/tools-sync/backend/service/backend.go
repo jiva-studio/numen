@@ -15,6 +15,7 @@ import (
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -32,6 +33,7 @@ type Backend struct {
 	catalog  catalog.Deps
 	pending  ports.PausedStore
 	resolve  *deletions.ResolveDeletions
+	account  *accountdata.Deps
 	shares   *sharewire.Shares
 	received *sharewire.Received
 }
@@ -45,7 +47,7 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Journals: deps.Restore.Mirror,
 			Random:   deps.Random,
 		},
-		pending: nil, resolve: nil,
+		pending: nil, resolve: nil, account: nil,
 		shares:   sharewire.New(deps),
 		received: sharewire.NewReceived(deps),
 	}

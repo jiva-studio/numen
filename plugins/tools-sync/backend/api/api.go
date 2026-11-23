@@ -16,6 +16,10 @@ const (
 	MethodListPlans           = "ListPlans"
 	MethodChangePlan          = "ChangePlan"
 	MethodCreatePortalSession = "CreatePortalSession"
+	MethodGetAccountState     = "GetAccountState"
+	MethodDeleteCloudData     = "DeleteCloudData"
+	MethodRestoreAccount      = "RestoreAccount"
+	MethodExportAccountData   = "ExportAccountData"
 	MethodGetReaderCode       = "GetReaderCode"
 	MethodReadReaderCode      = "ReadReaderCode"
 	MethodGetShare            = "GetShare"
@@ -382,4 +386,38 @@ type ReceivedShare struct {
 // ListReceivedResponse is the shares this computer received.
 type ListReceivedResponse struct {
 	Shares []ReceivedShare `json:"shares"`
+}
+
+// GetAccountStateRequest asks whether the account is being deleted on the server.
+type GetAccountStateRequest struct{}
+
+// GetAccountStateResponse is the state of the deletion of the account. HasIdentity is false on a device with no identity.
+// Account is the account fingerprint, the name of the account that the person types to confirm a deletion. DeleteAt is an RFC 3339
+// time, empty unless IsDeleting.
+type GetAccountStateResponse struct {
+	HasIdentity bool   `json:"hasIdentity"`
+	Account     string `json:"account"`
+	IsDeleting  bool   `json:"isDeleting"`
+	DeleteAt    string `json:"deleteAt"`
+}
+
+// DeleteCloudDataRequest asks the server to delete the account after its grace period.
+type DeleteCloudDataRequest struct{}
+
+// DeleteCloudDataResponse says when the server deletes the account for good, an RFC 3339 time.
+type DeleteCloudDataResponse struct {
+	DeleteAt string `json:"deleteAt"`
+}
+
+// RestoreAccountRequest cancels the deletion of an account that is being deleted.
+type RestoreAccountRequest struct{}
+
+type RestoreAccountResponse struct{}
+
+// ExportAccountDataRequest asks for what the server holds of the account.
+type ExportAccountDataRequest struct{}
+
+// ExportAccountDataResponse is the JSON document of what the server holds of the account, as text.
+type ExportAccountDataResponse struct {
+	Document string `json:"document"`
 }
