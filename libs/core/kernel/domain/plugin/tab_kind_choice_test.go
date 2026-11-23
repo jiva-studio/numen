@@ -1,4 +1,4 @@
-package file_test
+package plugin_test
 
 import (
 	"testing"
@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 // declared is the tab kinds of the enabled plugins, in the order of their ids.
@@ -29,10 +27,9 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) plugin.TabKindE
 	}
 }
 
-func newChoose(t *testing.T, kinds declared, config pluginport.WhenConfig) *file.ChooseTabKind {
+func newChoose(t *testing.T, kinds declared, config func() map[string]any) *plugin.TabKindChoice {
 	t.Helper()
-	choose := file.NewChooseTabKind(kinds, notes{}, config)
-	return choose
+	return plugin.NewTabKindChoice(kinds.ListTabKinds, notes{}.GetContentType, config)
 }
 
 func getKinds() declared {
@@ -61,7 +58,7 @@ func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
 		{"a deck that two kinds take, chosen by the lower plugin id", "decks/verbs.md", "deck", map[string]any{}, "deck"},
 	}
 	for _, one := range cases {
-		if got := choose.Execute(one.path, one.noteType, one.properties); got != one.want {
+		if got := choose.Choose(one.path, one.noteType, one.properties); got != one.want {
 			t.Errorf("%s: kind = %q, want %q", one.name, got, one.want)
 		}
 	}
@@ -70,7 +67,7 @@ func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
 func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
 	choose := newChoose(t, declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, nil)
 
-	if got := choose.Execute("plain.md", domain.TypeNote, nil); got != "" {
+	if got := choose.Choose("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
 	}
 }
@@ -84,7 +81,7 @@ func TestChoose_ReadsTheSettingsAsConfig(t *testing.T) {
 	kinds := declared{entry("org.example.viewer", "media", "target.isNote && config.org.example.viewer.isOn == true", domain.RankDefault)}
 	on := settingsOf{"org": map[string]any{"example": map[string]any{"viewer": map[string]any{"isOn": true}}}}
 
-	if got := newChoose(t, kinds, on).Execute("talk.md", domain.TypeNote, nil); got != "media" {
+	if got := newChoose(t, kinds, on.GetWhenConfig).Choose("talk.md", domain.TypeNote, nil); got != "media" {
 		t.Errorf("kind = %q, want media while its setting holds", got)
 	}
 }

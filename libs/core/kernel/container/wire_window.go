@@ -5,9 +5,11 @@ import (
 	"errors"
 	"io"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
@@ -25,9 +27,9 @@ import (
 
 // tabKinds are the use cases that name the kind of a file for the tabs of a window.
 type tabKinds struct {
-	files   *file.GetFileKinds
-	chooser file.TabKindChooser
-	list    *file.ListTabKinds
+	files  *file.GetFileKinds
+	choice *plugin.TabKindChoice
+	list   windowport.TabKinds
 }
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
@@ -214,8 +216,10 @@ func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex) tabKinds {
 	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
-	chooser := file.NewChooseTabKind(exec.Runtime.Manifests, exec.Watch.ContentTypeTable, getWhenConfig(settingsDeps, exec.Runtime.Listing))
-	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
+	choice := plugin.NewTabKindChoice(
+		exec.Runtime.Manifests.ListTabKinds, exec.Watch.ContentTypeTable.GetContentType, getWhenConfig(settingsDeps, exec.Runtime.Listing).GetWhenConfig,
+	)
+	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
 func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find vaultport.VaultLookup) *editor.FileServer {

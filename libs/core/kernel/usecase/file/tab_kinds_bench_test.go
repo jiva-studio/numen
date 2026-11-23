@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -29,7 +30,7 @@ func BenchmarkTabKinds(b *testing.B) {
 		b.Fatal(err)
 	}
 	choose := newShippedChoice()
-	fromIndex := file.NewListTabKinds(db.NoteQueries(), choose)
+	fromIndex := indexnote.NewTabKinds(db.NoteQueries(), choose)
 	fromFiles := file.NewListFileKinds(file.NewGetFileKinds(vaultreader.Readers{}, db.NoteQueries()), choose)
 
 	for _, size := range []int{13, 50} {
@@ -40,7 +41,7 @@ func BenchmarkTabKinds(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("index/%d", size), func(b *testing.B) {
 			for range b.N {
-				if _, err := fromIndex.Execute(b.Context(), v, paths); err != nil {
+				if _, err := fromIndex.ListTabKinds(b.Context(), v, paths); err != nil {
 					b.Fatal(err)
 				}
 			}

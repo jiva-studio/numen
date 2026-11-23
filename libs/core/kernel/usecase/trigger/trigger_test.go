@@ -180,7 +180,7 @@ func (p *plugins) listCommands(isShared bool) []plugin.CommandEntry {
 	return out
 }
 
-func (p *plugins) Execute(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
+func (p *plugins) Run(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	if p.hold != nil {
 		p.started <- struct{}{}
 		<-p.hold

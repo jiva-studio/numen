@@ -101,7 +101,7 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
+	run := plugincommand.NewRunner(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
 	return pluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch.ContentTypeTable),
