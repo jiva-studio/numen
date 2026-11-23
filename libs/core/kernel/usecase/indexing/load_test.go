@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
