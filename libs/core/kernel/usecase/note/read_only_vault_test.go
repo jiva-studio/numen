@@ -3,6 +3,8 @@ package note_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -42,6 +44,10 @@ func TestWriteToVaultManagedByOtherPluginIsRefused(t *testing.T) {
 			_, err := c.remove().Execute(ctx, managed, "Milk.md")
 			return err
 		},
+		"destroy": func(ctx context.Context) error {
+			_, err := c.remove().Destroy(ctx, managed, "Milk.md")
+			return err
+		},
 		"rename": func(ctx context.Context) error {
 			_, err := note.NewRename(c.moveDeps(), c.move(), nil).Execute(ctx, managed, "Milk.md", "Bread")
 			return err
@@ -78,5 +84,17 @@ func TestAnyCallerWritesToUnmanagedVault(t *testing.T) {
 
 	if _, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Bread"}); err != nil {
 		t.Errorf("create from the window: error = %v", err)
+	}
+}
+
+func TestAnyCallerDestroysInUnmanagedVault(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Milk.md": "# Milk\n"})
+
+	if _, err := c.remove().Destroy(t.Context(), c.vault, "Milk.md"); err != nil {
+		t.Errorf("destroy from the window: error = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(c.vault.Path, "Milk.md")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the file after destroy: stat error = %v, want it gone", err)
 	}
 }

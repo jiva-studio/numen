@@ -140,6 +140,10 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 
 // Destroy takes the file off the disk. Nothing brings it back.
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	return writeUnder(ctx, v, u.admission, func() (RemoveResult, error) { return u.destroy(ctx, v, path) })
+}
+
+func (u Remove) destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	pointing, err := u.links.ListBacklinks(ctx, v.ID, path)
