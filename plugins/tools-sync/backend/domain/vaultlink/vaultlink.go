@@ -27,6 +27,8 @@ type Link struct {
 	CatalogName   string                `json:"catalogName"`
 	ServerSeq     uint64                `json:"serverSeq"`
 	FeedCursor    host.FileChangeCursor `json:"feedCursor"`
+	Kind          string                `json:"kind,omitempty"`
+	Received      *Received             `json:"received,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.
@@ -77,4 +79,20 @@ func GetStateKeyContext(remoteID []byte) []byte {
 func IsRemoteID(text string) bool {
 	_, err := hex.DecodeString(text)
 	return err == nil
+}
+
+const (
+	// KindOwn is a link of a vault the person syncs with its own account.
+	KindOwn = "own"
+	// KindReceived is a link of a vault that is a share of another person.
+	KindReceived = "received"
+)
+
+// Received is what a received vault knows of its share: the share, the pinned root of the owner and the sealed keys.
+type Received struct {
+	ShareRootID   string `json:"shareRootId"`
+	OwnerRoot     []byte `json:"ownerRoot"`
+	OwnerChain    []byte `json:"ownerChain"`
+	SealedKeys    []byte `json:"sealedKeys"`
+	ServerVersion uint64 `json:"serverVersion"`
 }
