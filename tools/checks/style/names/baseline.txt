@@ -768,6 +768,7 @@ plugins/views-file-tree/eslint.config.js	own
 plugins/views-file-tree/frontend/fixtures/host.ts	command
 plugins/views-file-tree/frontend/fixtures/host.ts	separator
 plugins/views-file-tree/frontend/model/useFileTree.ts	queries
+plugins/views-flashcards-studio/eslint.config.js	own
 plugins/views-flashcards-studio/frontend/lib/wire/review.ts	rating
 plugins/views-flashcards-studio/frontend/review/model/session/session.ts	rating
 plugins/views-media-viewer/eslint.config.js	own
