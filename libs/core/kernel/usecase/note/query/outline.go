@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -31,6 +32,9 @@ func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types 
 // Execute gathers the related notes of the notes at the paths, one view for each path in the order of the paths. DepthFar adds the notes related to each of them. The types are read once for all the graphs, and so are the tab kinds.
 // A tab kind is chosen for a focus and the notes related to it, and not for a note that is only related to one of them.
 func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, paths []string, depth domain.RelationDepth) ([]RelatedNotesView, error) {
+	if len(paths) > domain.MaxRelatedNotePaths {
+		return nil, fmt.Errorf("%w: at most %d, not %d", domain.ErrTooManyRelatedPaths, domain.MaxRelatedNotePaths, len(paths))
+	}
 	graphs, err := u.relatedNotes.Execute(ctx, v, paths, depth)
 	if err != nil {
 		return nil, err
