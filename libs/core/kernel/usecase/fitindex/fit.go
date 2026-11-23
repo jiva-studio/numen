@@ -13,7 +13,7 @@ type Fit struct {
 	index VectorIndex
 
 	shouldRebuildIndex bool
-	errorHandler       func(error)
+	handleError        func(error)
 }
 
 // New returns the use case over the vector index given. A nil errorHandler ignores the error of the
@@ -22,7 +22,7 @@ func New(index VectorIndex, errorHandler func(error), shouldRebuildIndex bool) F
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
-	return Fit{index: index, errorHandler: errorHandler, shouldRebuildIndex: shouldRebuildIndex}
+	return Fit{index: index, handleError: errorHandler, shouldRebuildIndex: shouldRebuildIndex}
 }
 
 // Execute fits the index to the description of the source. Without a source, or with one that has not
@@ -48,7 +48,7 @@ func (u Fit) Execute(ctx context.Context, source searchsourceport.Source) error 
 		return err
 	}
 	if err := u.index.Compact(ctx); err != nil {
-		u.errorHandler(err)
+		u.handleError(err)
 	}
 	return nil
 }

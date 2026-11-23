@@ -115,7 +115,7 @@ func (c corpus) vectorize(t *testing.T, v domain.Vault, direction []float32) {
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(),
-			Value: precise(direction), Coarse: vector.Bits(direction),
+			Value: precise(direction), Coarse: vector.QuantizeBits(direction),
 		})
 	}
 	if err := c.db.Chunks().SaveVectors(t.Context(), vectors); err != nil {
@@ -124,7 +124,7 @@ func (c corpus) vectorize(t *testing.T, v domain.Vault, direction []float32) {
 }
 
 func precise(v []float32) []byte {
-	q := vector.Bytes(vector.Normalize(slices.Clone(v)))
+	q := vector.QuantizeBytes(vector.Normalize(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

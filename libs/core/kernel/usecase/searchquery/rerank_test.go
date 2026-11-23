@@ -65,7 +65,7 @@ func (s *services) answerBy(address string, score func(text string) float32) {
 
 func (s *services) sentTexts(address string) [][]string {
 	var sent [][]string
-	for _, call := range s.world.Provider.CallsTo(address) {
+	for _, call := range s.world.Provider.ListCallsTo(address) {
 		_, documents := readRerankRequest(call.Payload)
 		sent = append(sent, documents)
 	}
@@ -146,7 +146,7 @@ func TestTheSecondRowAnswersWhenTheFirstFailsAndTheResultIsInItsOrder(t *testing
 	if got.ScoreKind != searchquerydomain.ScoreRerank || len(got.Reranks) != 1 || got.Reranks[0].ConnectionName != "Second" {
 		t.Errorf("reports %+v, want one naming Second", got.Reranks)
 	}
-	if query, _ := readRerankRequest(s.world.Provider.CallsTo(secondAddress)[0].Payload); query != "tide" {
+	if query, _ := readRerankRequest(s.world.Provider.ListCallsTo(secondAddress)[0].Payload); query != "tide" {
 		t.Errorf("the rerank query is %q, want the text of the condition", query)
 	}
 }
@@ -188,7 +188,7 @@ func TestASecondRunReusesTheScoresAndAChangedChunkIsSentAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if calls := len(s.world.Provider.CallsTo(secondAddress)); calls != 1 {
+	if calls := len(s.world.Provider.ListCallsTo(secondAddress)); calls != 1 {
 		t.Errorf("the service was called %d times, want once", calls)
 	}
 	if report := again.Reranks[0]; report.ReusedCount != 3 || report.SentCount != 0 {
@@ -320,7 +320,7 @@ func TestACanceledCallReturnsTheCancellationAndStoresNothing(t *testing.T) {
 	s.world.Provider.Block(secondAddress)
 	ctx, cancel := context.WithCancel(t.Context())
 	go func() {
-		<-s.world.Provider.Entered()
+		<-s.world.Provider.GetEntered()
 		cancel()
 	}()
 
@@ -351,7 +351,7 @@ func TestTheResultsBeforeTheFirstRerankAreReportedBeforeTheServiceIsAsked(t *tes
 	var callsAtReport int
 	report := func(partial searchquerydomain.SearchResults) {
 		partials = append(partials, getPaths(partial))
-		callsAtReport = len(s.world.Provider.CallsTo(secondAddress))
+		callsAtReport = len(s.world.Provider.ListCallsTo(secondAddress))
 	}
 	find := w.newRerankingFind(s, searchquerydomain.StageLimits{})
 	words, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide")`})
@@ -426,17 +426,17 @@ func TestAWaitingInteractiveRerankGoesBeforeTheNextBatchOfABackgroundRerank(t *t
 	}
 
 	background := run(`words("tide").rerank("background")`, modelcalldomain.PriorityBackground)
-	<-s.world.Provider.Entered()
+	<-s.world.Provider.GetEntered()
 	interactive := run(`words("tide").rerank("person")`, modelcalldomain.PriorityInteractive)
 	s.world.Waits.AwaitCount(t, 1)
 	s.world.Provider.Release(secondAddress)
-	<-s.world.Provider.Entered()
+	<-s.world.Provider.GetEntered()
 
-	calls := s.world.Provider.CallsTo(secondAddress)
+	calls := s.world.Provider.ListCallsTo(secondAddress)
 	if query, _ := readRerankRequest(calls[len(calls)-1].Payload); query != "person" {
 		t.Errorf("the call after the first background batch reranks for %q, want the interactive query", query)
 	}
-	s.world.Provider.Unblock(secondAddress)
+	s.world.Provider.ReleaseCalls(secondAddress)
 	if err := <-interactive; err != nil {
 		t.Errorf("the interactive rerank answered %v", err)
 	}
@@ -456,7 +456,7 @@ func TestAPassageThatIsNotUTF8FailsTheRerankWithoutACall(t *testing.T) {
 	if !ok || rerankError == nil {
 		t.Fatalf("the query answered %v, want a RerankError", err)
 	}
-	if calls := len(s.world.Provider.CallsTo(firstAddress)) + len(s.world.Provider.CallsTo(secondAddress)); calls != 0 {
+	if calls := len(s.world.Provider.ListCallsTo(firstAddress)) + len(s.world.Provider.ListCallsTo(secondAddress)); calls != 0 {
 		t.Errorf("%d calls were made, want none for a request that cannot be written", calls)
 	}
 }

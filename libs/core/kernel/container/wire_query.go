@@ -48,12 +48,12 @@ func newFindSearchResults(
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
-		Catalog:       ports.catalog,
+		GetCatalog:    ports.catalog,
 		Clock:         ports.clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,
 		FillDocuments: evaluate.FillDocuments,
-		Stages:        stages.Execute,
+		RunStages:     stages.Execute,
 	})
 }
 

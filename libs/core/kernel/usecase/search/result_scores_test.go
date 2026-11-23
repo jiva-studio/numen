@@ -53,7 +53,7 @@ func (c corpus) vectorizePath(t *testing.T, v domain.Vault, path string, directi
 			t.Fatal(err)
 		}
 		one := direction(p)
-		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.Bits(one)})
+		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.QuantizeBits(one)})
 	}
 	if len(vectors) == 0 {
 		t.Fatalf("no small chunk of %s to embed", path)
@@ -71,7 +71,7 @@ func TestASearchResultHasTheSimilarityOfTheMeaningSearchAndNoneWithoutIt(t *test
 
 	found := c.searchIn(t, c.first, "shared", oneWay{direction: newVector(+1)})
 
-	want := vector.SimilarityBytes(newVector(+1), precise(newVector(+1)))
+	want := vector.ComputeSimilarityBytes(newVector(+1), precise(newVector(+1)))
 	if entropy := findResult(t, found, "notes/Entropy.md"); entropy.Similarity == nil || *entropy.Similarity != want {
 		t.Errorf("the result the meaning search found has the similarity %v, want %v", entropy.Similarity, want)
 	}
