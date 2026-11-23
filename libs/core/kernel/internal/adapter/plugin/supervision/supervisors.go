@@ -31,7 +31,6 @@ type Supervisors struct {
 	idleLimits map[string]time.Duration
 	stopIdle   func(pluginID string)
 
-	// A process that ends before its handshake is not reported to Exits.
 	Exits    exitwatch.Hook
 	watchers []chan struct{}
 }
