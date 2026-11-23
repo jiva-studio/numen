@@ -37,11 +37,26 @@ type RemoteVault struct {
 }
 
 // CatalogBody is what an entry of the catalog seals: the vault on the computer that wrote it, the name and the
-// key of the synced vault.
+// keys of the synced vault by epoch.
 type CatalogBody struct {
-	LocalID string `json:"localId"`
-	Name    string `json:"name"`
-	Key     []byte `json:"key"`
+	LocalID string     `json:"localId"`
+	Name    string     `json:"name"`
+	Key     []byte     `json:"key"`
+	Keys    []VaultKey `json:"keys"`
+}
+
+// VaultKey is a key of a synced vault with the epoch of the account keys it was made under.
+type VaultKey struct {
+	Epoch uint32 `json:"epoch"`
+	Key   []byte `json:"key"`
+}
+
+// GetKeys returns every key of the vault by epoch: the keys the body lists, or the one key of epoch 0 of a body that lists none.
+func (b CatalogBody) GetKeys() []VaultKey {
+	if len(b.Keys) > 0 {
+		return b.Keys
+	}
+	return []VaultKey{{Epoch: 0, Key: b.Key}}
 }
 
 // Encode returns the JSON of the body.

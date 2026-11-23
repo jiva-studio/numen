@@ -23,7 +23,10 @@ func (a *Account) GetPublicIdentity(ctx context.Context) (session.Identity, erro
 	if err != nil {
 		return session.Identity{}, readError(err)
 	}
-	return session.Identity{AccountFingerprint: public.AccountFingerprint, DeviceSignKey: public.DeviceSignKey, Chain: public.Chain}, nil
+	return session.Identity{
+		AccountFingerprint: public.AccountFingerprint, DeviceSignKey: public.DeviceSignKey, Chain: public.Chain,
+		KeyEpoch: public.KeyEpoch, ChainLength: public.ChainLength, IsRevoked: public.IsRevoked,
+	}, nil
 }
 
 // SignAsDevice signs the message with the key of the device, or fails with session.ErrNoIdentity.

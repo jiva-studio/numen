@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -45,10 +46,29 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	if err != nil {
 		return fmt.Errorf("open the vault key: %w", err)
 	}
-	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: key}
+	keys, err := u.readKeys(ctx, remoteID)
+	if err != nil {
+		return err
+	}
+	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: key, Keys: keys}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: false, body: body}); err != nil {
 		return err
 	}
 	link.CatalogName = vault.Name
 	return u.reader.deps.State.WriteLink(ctx, vault.ID, link)
+}
+
+// readKeys returns the keys by epoch the last entry of the vault lists, so a new name does not drop the keys a revoke gave it.
+func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]vaultlink.VaultKey, error) {
+	entries, err := u.reader.read(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := len(entries) - 1; i >= 0; i-- {
+		if bytes.Equal(entries[i].GetVaultId(), remoteID) {
+			body, err := u.reader.openBody(ctx, entries[i])
+			return body.Keys, err
+		}
+	}
+	return nil, nil
 }

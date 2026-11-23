@@ -48,12 +48,19 @@ type Clock interface {
 	Wait(ctx context.Context, d time.Duration) error
 }
 
-// Deps are what Keep signs in with.
+// Chains is the core that takes the chain of the server which says this device was revoked.
+type Chains interface {
+	// AdoptChain gives the core a chain the server holds.
+	AdoptChain(ctx context.Context, chain []byte) error
+}
+
+// Deps are what Keep signs in with. Chains is optional.
 type Deps struct {
 	Identity Identity
 	Server   Server
 	Health   Health
 	Clock    Clock
+	Chains   Chains
 }
 
 // concern is an item of health the plugin raises, and how long it waits before it tries again.
@@ -72,6 +79,10 @@ func newServerUnreachableConcern() concern {
 
 func newUpdateRequiredConcern() concern {
 	return concern{"update-required", "Update Numen", retryAfterFailure}
+}
+
+func newRevokedConcern() concern {
+	return concern{"device-revoked", "This device was revoked", retryAfterFailure}
 }
 
 func newSignInFailedConcern() concern {
@@ -157,6 +168,9 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	}
 	what := newSignInFailedConcern()
 	switch {
+	case isRevoked(cause):
+		what = newRevokedConcern()
+		u.adopt(ctx, cause)
 	case errors.Is(cause, domain.ErrNoIdentity):
 		what = newNoIdentityConcern()
 	case errors.Is(cause, domain.ErrUpdateRequired):
@@ -177,5 +191,18 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 func (u *Keep) clear(ctx context.Context) {
 	if u.raised != "" && u.deps.Health.Clear(ctx, u.raised) == nil {
 		u.raised = ""
+	}
+}
+
+func isRevoked(cause error) bool {
+	_, ok := errors.AsType[domain.DeviceRevokedError](cause)
+	return ok
+}
+
+// adopt gives the core the chain the server sent with the refusal, so the core marks this device revoked.
+func (u *Keep) adopt(ctx context.Context, cause error) {
+	revoked, ok := errors.AsType[domain.DeviceRevokedError](cause)
+	if ok && u.deps.Chains != nil {
+		_ = u.deps.Chains.AdoptChain(ctx, revoked.Chain)
 	}
 }

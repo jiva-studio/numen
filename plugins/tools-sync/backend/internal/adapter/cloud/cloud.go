@@ -112,5 +112,5 @@ func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 
 // AppendChain presents a longer chain of the account and returns the chain the server stores after the call.
 func (c *Cloud) AppendChain(ctx context.Context, chain []byte) ([]byte, error) {
-	return nil, errors.New("not implemented")
+	return call(ctx, c, func() ([]byte, error) { return c.account.AppendChain(ctx, chain) })
 }

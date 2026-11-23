@@ -96,7 +96,7 @@ func (u *ConnectVault) connectNew(ctx context.Context, id domain.VaultID, name s
 	if err != nil {
 		return err
 	}
-	body := vaultlink.CatalogBody{LocalID: string(id), Name: name, Key: key}
+	body := vaultlink.CatalogBody{LocalID: string(id), Name: name, Key: key, Keys: nil}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: true, body: body}); err != nil {
 		return err
 	}

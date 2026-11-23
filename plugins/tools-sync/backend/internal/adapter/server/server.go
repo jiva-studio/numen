@@ -56,6 +56,9 @@ func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Sessi
 }
 
 func readError(err error) error {
+	if revoked, ok := errors.AsType[syncprotocol.DeviceRevokedError](err); ok {
+		return session.DeviceRevokedError{Chain: revoked.Chain}
+	}
 	switch {
 	case errors.Is(err, syncprotocol.ErrUpdateRequired):
 		return session.ErrUpdateRequired

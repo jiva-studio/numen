@@ -2,10 +2,25 @@
 package linkcourier
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"sync"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+)
+
+const (
+	healthKey   = "link-needs-server"
+	healthText  = "Linking needs the sync server"
+	workWait    = 20 * time.Second
+	retryAfter  = time.Second
+	inboundWait = 10 * time.Second
 )
 
 // Deps are what the courier needs.
@@ -22,5 +37,174 @@ type Courier struct{ deps Deps }
 // NewCourier returns the courier over the dependencies.
 func NewCourier(deps Deps) *Courier { return &Courier{deps: deps} }
 
-// Execute carries work until ctx ends.
-func (u *Courier) Execute(ctx context.Context) error { return errors.New("not implemented") }
+// channelState is the channel the courier works on: whether it made it, which side it is, and the reader of the
+// messages of the other side.
+type channelState struct {
+	id        []byte
+	side      syncclient.LinkSide
+	isClosed  bool
+	stopWaits context.CancelFunc
+}
+
+// Execute carries work until ctx ends. The core holds every key and decides when the link ends; the courier posts what
+// the core hands over, passes what the other side posts, and closes the channel when the core says the link ended.
+func (u *Courier) Execute(ctx context.Context) error {
+	var (
+		since   uint64
+		created []byte
+		current channelState
+	)
+	defer func() { stopWaits(&current) }()
+	for {
+		work, err := u.deps.Core.GetLinkWork(ctx, since, workWait)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err != nil {
+			if waitErr := u.deps.Clock.Wait(ctx, retryAfter); waitErr != nil {
+				return waitErr
+			}
+			continue
+		}
+		if work.Version == since && !work.IsActive {
+			continue
+		}
+		if u.carry(ctx, work, &created, &current) {
+			since = work.Version
+		} else if waitErr := u.deps.Clock.Wait(ctx, retryAfter); waitErr != nil {
+			return waitErr
+		}
+	}
+}
+
+func stopWaits(current *channelState) {
+	if current.stopWaits != nil {
+		current.stopWaits()
+	}
+}
+
+// carry does what one answer of the core asks. It returns whether the answer was carried out whole, so the core may drop its blobs.
+func (u *Courier) carry(ctx context.Context, work account.LinkWork, created *[]byte, current *channelState) bool {
+	if work.WantsChannel && len(work.ChannelID) == 0 {
+		return u.makeChannel(ctx, created)
+	}
+	if len(work.ChannelID) == 0 {
+		return true
+	}
+	if !bytes.Equal(current.id, work.ChannelID) {
+		stopWaits(current)
+		*current = channelState{id: bytes.Clone(work.ChannelID), side: getSide(work.ChannelID, *created), isClosed: false, stopWaits: nil}
+	}
+	if !u.post(ctx, current, work.Outbound) {
+		return false
+	}
+	if work.IsClosed {
+		return u.close(ctx, current)
+	}
+	u.startWaits(ctx, current)
+	return true
+}
+
+func getSide(id, created []byte) syncclient.LinkSide {
+	if bytes.Equal(id, created) {
+		return syncclient.LinkSideDisplayer
+	}
+	return syncclient.LinkSideScanner
+}
+
+func getOtherSide(side syncclient.LinkSide) syncclient.LinkSide {
+	if side == syncclient.LinkSideDisplayer {
+		return syncclient.LinkSideScanner
+	}
+	return syncclient.LinkSideDisplayer
+}
+
+func (u *Courier) makeChannel(ctx context.Context, created *[]byte) bool {
+	channel, err := u.deps.Relay.CreateChannel(ctx)
+	if err != nil {
+		u.report(ctx)
+		return false
+	}
+	if err := u.deps.Core.SetLinkChannel(ctx, channel.ID); err != nil {
+		return false
+	}
+	*created = bytes.Clone(channel.ID)
+	u.clear(ctx)
+	return true
+}
+
+func (u *Courier) post(ctx context.Context, current *channelState, blobs [][]byte) bool {
+	for _, blob := range blobs {
+		_, err := u.deps.Relay.PostMessage(ctx, current.id, getOtherSide(current.side), blob)
+		if errors.Is(err, syncprotocol.ErrChannelGone) {
+			return true
+		}
+		if err != nil {
+			u.report(ctx)
+			return false
+		}
+	}
+	return true
+}
+
+func (u *Courier) close(ctx context.Context, current *channelState) bool {
+	stopWaits(current)
+	if current.isClosed {
+		return true
+	}
+	err := u.deps.Relay.CloseChannel(ctx, current.id)
+	if err != nil && !errors.Is(err, syncprotocol.ErrChannelGone) {
+		u.report(ctx)
+		return false
+	}
+	current.isClosed = true
+	return true
+}
+
+// startWaits reads the messages of the other side in the background and hands each to the core, until the channel ends.
+func (u *Courier) startWaits(ctx context.Context, current *channelState) {
+	if current.stopWaits != nil || current.isClosed {
+		return
+	}
+	waitCtx, stop := context.WithCancel(ctx)
+	current.stopWaits = stop
+	id, side := bytes.Clone(current.id), current.side
+	var started sync.WaitGroup
+	started.Add(1)
+	go func() {
+		started.Done()
+		u.readInbound(waitCtx, id, side)
+	}()
+	started.Wait()
+}
+
+func (u *Courier) readInbound(ctx context.Context, id []byte, side syncclient.LinkSide) {
+	var after uint32
+	for ctx.Err() == nil {
+		answer, err := u.deps.Relay.WaitMessages(ctx, id, side, after, inboundWait)
+		if errors.Is(err, syncprotocol.ErrChannelGone) {
+			return
+		}
+		if err != nil {
+			if u.deps.Clock.Wait(ctx, retryAfter) != nil {
+				return
+			}
+			continue
+		}
+		for _, message := range answer.Messages {
+			after = max(after, message.Seq)
+			if err := u.deps.Core.PutLinkInbound(ctx, message.Body); err != nil {
+				return
+			}
+		}
+		if answer.IsClosed {
+			return
+		}
+	}
+}
+
+func (u *Courier) report(ctx context.Context) {
+	_ = u.deps.Health.Report(ctx, health.Item{Key: healthKey, Severity: health.Warning, Text: healthText})
+}
+
+func (u *Courier) clear(ctx context.Context) { _ = u.deps.Health.Clear(ctx, healthKey) }
