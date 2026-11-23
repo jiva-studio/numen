@@ -29,7 +29,7 @@ func NewFocusNote(queries noteport.NoteRefs, view windowport.PlaceFocus) *FocusN
 // index returns edit.ErrNotExist.
 func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error) {
 	if path == "" {
-		return domain.NoteRef{}, plugin.InvalidFocus(ErrNoNotePath)
+		return domain.NoteRef{}, plugin.CreateInvalidFocus(ErrNoNotePath)
 	}
 	found, err := u.queries.GetNotes(ctx, v.ID, []string{path})
 	if err != nil {

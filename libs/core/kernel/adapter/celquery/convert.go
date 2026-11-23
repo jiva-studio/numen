@@ -188,7 +188,7 @@ func (c *linkConverter) convertLink(expr ast.Expr) searchquery.RawNode {
 	return c.newLeaf(expr, leaf)
 }
 
-func identName(expr ast.Expr) string {
+func getIdentName(expr ast.Expr) string {
 	if expr.Kind() != ast.IdentKind {
 		return ""
 	}

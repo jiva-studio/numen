@@ -14,7 +14,7 @@ import { todosApi, type TodosApi } from './api/wire'
 import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { createFieldCache } from './model/createFieldCache'
-import { freshTaskLine } from './model/freshTaskLine'
+import { createTaskLine } from './model/freshTaskLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import type { Filter, Task } from './types'
 import { TodosStatus, type ShownGroups } from './status'
@@ -40,7 +40,7 @@ const browserParts: TodosParts = {
 
 type OpenTarget = { path: string; line: number; raw: string }
 
-async function currentTasks(
+async function listCurrentTasks(
   api: TodosApi,
   today: string,
   target: OpenTarget,
@@ -62,19 +62,19 @@ async function currentTasks(
   return result.ok ? result.value.tasks : null
 }
 
-async function editorLine(
+async function readEditorLine(
   api: TodosApi,
   today: string,
   target: OpenTarget,
   showError: (message: string) => void,
 ): Promise<number | undefined> {
   // an unreachable backend is the same as a refused read: reported below, the note still opens
-  const tasks = await currentTasks(api, today, target).catch((): null => null)
+  const tasks = await listCurrentTasks(api, today, target).catch((): null => null)
   if (tasks === null) {
     showError(WORDS.taskNotRead)
     return undefined
   }
-  const proseLine = freshTaskLine(tasks, target)?.proseLine
+  const proseLine = createTaskLine(tasks, target)?.proseLine
   return Number.isInteger(proseLine) && proseLine !== undefined && proseLine >= 1
     ? proseLine
     : undefined
@@ -109,7 +109,7 @@ function createTodosView(
         onOpen: async (target: OpenTarget) => {
           const showError = (message: string) => workspace.messages.showError(message)
           try {
-            const line = await editorLine(api, workspace.window.getToday(), target, showError)
+            const line = await readEditorLine(api, workspace.window.getToday(), target, showError)
             workspace.files.open(target.path, line === undefined ? undefined : { line: line - 1 })
           } catch {
             showError(WORDS.noteNotOpened)

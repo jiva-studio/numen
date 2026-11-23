@@ -14,12 +14,12 @@ import (
 // vaultSession is what the backend and its handlers share about the vault a call works on: how to reach
 // a vault by identity, the vault the window shows, and the title of a note in it.
 type vaultSession struct {
-	vaults func(domain.VaultID) ports.HostVault
-	notes  hostports.Notes
+	getHostVault func(domain.VaultID) ports.HostVault
+	notes        hostports.Notes
 }
 
 func (s *vaultSession) getCurrentVault(ctx context.Context) (domain.Vault, error) {
-	v, err := s.vaults("").Selector.GetVault(ctx)
+	v, err := s.getHostVault("").Selector.GetVault(ctx)
 	if err != nil {
 		return domain.Vault{}, apierror.NewCurrentVaultError(err)
 	}
@@ -27,7 +27,7 @@ func (s *vaultSession) getCurrentVault(ctx context.Context) (domain.Vault, error
 }
 
 func (s *vaultSession) getVault(ctx context.Context, id string) (domain.Vault, error) {
-	v, err := s.vaults(domain.VaultID(id)).Selector.GetVault(ctx)
+	v, err := s.getHostVault(domain.VaultID(id)).Selector.GetVault(ctx)
 	if err != nil {
 		return domain.Vault{}, apierror.NewVaultError(err)
 	}

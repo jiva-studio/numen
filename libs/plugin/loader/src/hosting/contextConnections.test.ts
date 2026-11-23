@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
 import { createPluginParts } from './context'
 import { createTestContextHost } from '../testing/contextHost'
-import { disposeSubscriptions } from './guards/subscriptions'
 
 const createContext = (permissions: readonly string[]) => {
   const connections: ConnectionHost = {
@@ -62,7 +61,7 @@ describe('the connections of a plugin', () => {
     context.host.work.connections!.onChange!(changed)
     for (const handler of handlers) handler()
 
-    disposeSubscriptions(context.plugin.identity.subscriptions)
+    context.subscriptions.disposeAll()
 
     expect(changed).toHaveBeenCalledTimes(1)
     expect(handlers.size).toBe(0)

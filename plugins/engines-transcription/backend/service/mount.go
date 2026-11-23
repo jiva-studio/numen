@@ -40,7 +40,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 // was started for. The model is the mock one where NUMEN_TEST_MOCK_ML is "true". The transcriptions and
 // the model end with s.
 func (a *App) Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}
@@ -52,10 +52,10 @@ func (a *App) Mount(s *server.Server) error {
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*feed.Automatic, error) {
 	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock, hosted.FetchModelFile))
 	report := process.Process{}.ReportError
-	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, report)
-	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
+	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.GetVault), hosted.Store, hosted.GetTexts, hosted.Queue, holder.GetRecognizer, report)
+	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.GetVault(id) })
 	feeds := func(id domain.VaultID) feed.Vault {
-		return feed.Vault{Feed: hosted.Vaults(id), Store: hosted.Store(id)}
+		return feed.Vault{Feed: hosted.GetVault(id), Store: hosted.Store(id)}
 	}
 	auto := feed.NewAutomatic(newFollower(requests, feeds, report), requests.GetShownVaultID, report)
 	s.SetUpdateConfig(func(values map[string]string) {
@@ -66,13 +66,13 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	if err != nil {
 		return nil, err
 	}
-	registry, err := newTools(requests).registry()
+	registry, err := newTools(requests).buildRegistry()
 	if err != nil {
 		return nil, err
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		auto.Close()
 		transcriber.Close()
 		return holder.Close()

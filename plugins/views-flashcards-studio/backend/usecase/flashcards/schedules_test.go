@@ -358,7 +358,7 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: true\nload: {%s: 0}\n",
-			review.DayName(fell.Weekday()))),
+			review.GetDayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
 	on := review.CardID{Card: cardID(0), Template: "Say it"}
@@ -436,7 +436,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: false\nload: {%s: 0}\n",
-			review.DayName(fell.Weekday()))),
+			review.GetDayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
 	on := review.CardID{Card: cardID(0), Template: "Say it"}
@@ -475,7 +475,7 @@ func (m mockScheduler) Next(s review.Schedule, pos time.Time, _ review.Rating) r
 	s.Reps++
 	return s
 }
-func (m mockScheduler) Endings(s review.Schedule, pos time.Time) (good, again review.Schedule) {
+func (m mockScheduler) ComputeEndings(s review.Schedule, pos time.Time) (good, again review.Schedule) {
 	good = m.Next(s, pos, review.Good)
 	again = m.Next(s, pos, review.Again)
 	return good, again
@@ -675,9 +675,9 @@ func (b countingBy) Next(s review.Schedule, pos time.Time, r review.Rating) revi
 	return b.inner.Next(s, pos, r)
 }
 
-func (b countingBy) Endings(s review.Schedule, pos time.Time) (review.Schedule, review.Schedule) {
+func (b countingBy) ComputeEndings(s review.Schedule, pos time.Time) (review.Schedule, review.Schedule) {
 	b.on.Dated += 2
-	return b.inner.Endings(s, pos)
+	return b.inner.ComputeEndings(s, pos)
 }
 
 func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s) }
@@ -713,10 +713,10 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 		s.standings,
 		s.presets,
 	)
-	schedules.Cache = countingKept{inner: s.env.Ports.Schedules("reviewCards"), on: on}
+	schedules.Cache = countingKept{inner: s.env.Ports.GetScheduleStore("reviewCards"), on: on}
 	loadAnswers(tb, s, now.Now(), cards, days, perDay)
 	reviewUseCase := flashcards.NewCountReviews(logs, schedules, getToday(), now)
-	reviewUseCase.Cache = countingKept{inner: s.env.Ports.Schedules("days"), on: on}
+	reviewUseCase.Cache = countingKept{inner: s.env.Ports.GetScheduleStore("days"), on: on}
 	return loaded{
 		vaulted:   s,
 		on:        on,
@@ -918,9 +918,9 @@ type lookups struct {
 	looks map[string]int
 }
 
-func (a lookups) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (a lookups) ListLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	a.looks[from]++
-	return a.LinkQueries.GetLinks(ctx, vaultID, from)
+	return a.LinkQueries.ListLinks(ctx, vaultID, from)
 }
 
 // Counting a vault reads it once: every deck is opened once and queried once

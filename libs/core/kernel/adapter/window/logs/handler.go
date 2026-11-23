@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -47,19 +46,13 @@ func NewHandler(
 }
 
 func (h *Handler) GetLogLevel(_ context.Context, _ *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error) {
-	level := domainlogs.DefaultLevel
-	if h.getLevel != nil {
-		level = h.getLevel()
-	}
+	level := h.getLevel()
 	return connect.NewResponse(&v1.GetLogLevelResponse{Level: wire.DescribeLogLevel(level)}), nil
 }
 
 func (h *Handler) SetLogLevel(_ context.Context, req *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error) {
-	if h.setLevel == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errors.New("logging settings are unavailable"))
-	}
 	if err := h.setLevel(wire.ReadLogLevel(req.Msg.GetLevel())); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.SetLogLevelResponse{}), nil
 }
@@ -81,7 +74,7 @@ func (h *Handler) WriteLog(
 		if errors.Is(err, domainlogs.ErrEmptyMessage) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.WriteLogResponse{}), nil
 }
@@ -91,28 +84,20 @@ func (h *Handler) WriteLog(
 func (h *Handler) WatchLogs(
 	ctx context.Context, _ *connect.Request[v1.WatchLogsRequest], out *connect.ServerStream[v1.WatchLogsResponse],
 ) error {
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-	watch := h.watcher.Execute(watching)
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case batch, isOpen := <-watch:
-			if !isOpen {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchLogsResponse) error) error {
+		watch := h.watcher.Execute(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
+			case batch, isOpen := <-watch:
+				if !isOpen {
+					return nil
+				}
+				if err := send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
+					return err
+				}
 			}
-			if err := out.Send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
-				return err
-			}
-			repeat.Reset(wire.ResendInterval)
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchLogsResponse{}); err != nil {
-				return err
-			}
-		case <-ctx.Done():
-			return nil
 		}
-	}
+	})
 }

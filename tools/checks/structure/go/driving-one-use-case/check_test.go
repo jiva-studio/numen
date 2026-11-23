@@ -17,7 +17,7 @@ func TestDrivingFunctionCallsOneUseCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks libs/core/kernel")
 	}
-	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
+	pkgs := load.GetModulePackages(t, load.LoadWorkspace(t, "libs/core/kernel"), "libs/core/kernel")
 	found, functions := load.ListManyUseCaseCalls(pkgs, load.CoreImportPath)
 	for _, one := range found {
 		t.Errorf("%s %s: a driving adapter calls one use case", one.Position, one.Name)
@@ -157,5 +157,5 @@ func (h *Handler) Both() { _, _ = h.open(context.Background(), ""); _ = h.close(
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

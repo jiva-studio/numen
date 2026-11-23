@@ -119,7 +119,7 @@ func (l *linkFinder) getFiles(ctx context.Context) (map[string][]string, error) 
 func (l *linkFinder) findLinksTo(ctx context.Context, t target, role domain.LinkRole, linkType string) (map[string]bool, error) {
 	set := map[string]bool{}
 	if t.isNote {
-		backlinks, err := l.links.GetBacklinksOf(ctx, l.req.Vault.ID, []string{t.path})
+		backlinks, err := l.links.ListBacklinksOf(ctx, l.req.Vault.ID, []string{t.path})
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (l *linkFinder) findLinksTo(ctx context.Context, t target, role domain.Link
 	if t.address != "" {
 		value = domain.ParseAddress(t.address).Value
 	}
-	links, err := l.links.ListLinksByName(ctx, l.req.Vault.ID, domain.FoldName(domain.LinkName(value)))
+	links, err := l.links.ListLinksByName(ctx, l.req.Vault.ID, domain.NormalizeName(domain.LinkName(value)))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func isLinkToFile(l domain.ResolvedLink, t target, files map[string][]string) bo
 }
 
 func (l *linkFinder) findLinksFrom(ctx context.Context, from string, role domain.LinkRole, linkType string) (map[string]bool, error) {
-	links, err := l.links.GetLinksOf(ctx, l.req.Vault.ID, []string{from})
+	links, err := l.links.ListLinksOf(ctx, l.req.Vault.ID, []string{from})
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (l *linkFinder) findLinksFrom(ctx context.Context, from string, role domain
 		switch {
 		case !searchquery.IsLinkMatch(link, role, linkType):
 		case link.To != "":
-			if _, isCrossed := link.InVault(l.req.Vault.ID); !isCrossed {
+			if _, isCrossed := link.ResolveVault(l.req.Vault.ID); !isCrossed {
 				set[link.To] = true
 			}
 		default:
@@ -231,11 +231,11 @@ func (l *linkFinder) checkHierarchy(start string, step, freshCount, visitedCount
 }
 
 func (l *linkFinder) getRelatives(ctx context.Context, notes []string, direction searchquery.LinkDirection, linkType string) ([]string, error) {
-	links, err := l.links.GetLinksOf(ctx, l.req.Vault.ID, notes)
+	links, err := l.links.ListLinksOf(ctx, l.req.Vault.ID, notes)
 	if err != nil {
 		return nil, err
 	}
-	backlinks, err := l.links.GetBacklinksOf(ctx, l.req.Vault.ID, notes)
+	backlinks, err := l.links.ListBacklinksOf(ctx, l.req.Vault.ID, notes)
 	if err != nil {
 		return nil, err
 	}

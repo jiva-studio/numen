@@ -28,7 +28,7 @@ export const render = (
   pieces: LinkPieces = NO_PIECES,
 ): VNode[] => {
   const env: LinkPiecesEnv = { pieces }
-  return nodes(marks.parse(text, env), deadAddresses)
+  return buildNodes(marks.parse(text, env), deadAddresses)
 }
 
 /**
@@ -41,11 +41,11 @@ interface Frame {
   children: (VNode | string)[]
 }
 
-const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
+const buildNodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
   const root: VNode[] = []
   // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
-  const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
+  const getOpenChildren = (): (VNode | string)[] => stack.at(-1)?.children ?? root
   let placedCount = 0
 
   for (const token of tokens) {
@@ -54,17 +54,17 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
     if (token.hidden) continue
 
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
+      stack.push({ tag: token.tag, attrs: getAttributes(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
       for (const frame of stack.splice(-1)) {
-        top().push(h(frame.tag, frame.attrs, frame.children))
+        getOpenChildren().push(h(frame.tag, frame.attrs, frame.children))
       }
       continue
     }
 
-    top().push(...block(token, deadAddresses, () => placedCount++))
+    getOpenChildren().push(...block(token, deadAddresses, () => placedCount++))
   }
   return root
 }
@@ -82,7 +82,7 @@ const block = (
       return [h('hr')]
     default:
       // A fence or a code block.
-      return [h('pre', attrs(token), [h('code', token.content)])]
+      return [h('pre', getAttributes(token), [h('code', token.content)])]
   }
 }
 
@@ -94,21 +94,21 @@ const inline = (
   const root: (VNode | string)[] = []
   // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
-  const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
+  const getOpenChildren = (): (VNode | string)[] => stack.at(-1)?.children ?? root
 
   for (const token of tokens) {
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
+      stack.push({ tag: token.tag, attrs: getAttributes(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
       for (const frame of stack.splice(-1)) {
-        top().push(h(frame.tag, frame.attrs, frame.children))
+        getOpenChildren().push(h(frame.tag, frame.attrs, frame.children))
       }
       continue
     }
 
-    top().push(...mark(token, next))
+    getOpenChildren().push(...mark(token, next))
   }
   return root
 }
@@ -116,7 +116,7 @@ const inline = (
 const mark = (token: Token, next: () => number): (VNode | string)[] => {
   switch (token.type) {
     case 'text':
-      return words(token.content, next)
+      return splitWords(token.content, next)
     case 'code_inline':
       return [h('code', { key: next() }, token.content)]
     case 'softbreak':
@@ -126,7 +126,7 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
     default:
       // An image.
       // Stryker disable next-line ArrayDeclaration: markdown-it always populates children on image tokens
-      return [h('img', { ...attrs(token), alt: getPlainText(token.children ?? []) })]
+      return [h('img', { ...getAttributes(token), alt: getPlainText(token.children ?? []) })]
   }
 }
 
@@ -141,14 +141,17 @@ const getPlainText = (tokens: readonly Token[]): string =>
     .join('')
 
 /* Stryker disable Regex: splitting by (\s+) or (\S+) with empty filter yields alternating whitespace and non-whitespace runs */
-const words = (text: string, next: () => number): (VNode | string)[] =>
+const splitWords = (text: string, next: () => number): (VNode | string)[] =>
   text
     .split(/(\s+)/)
     .filter((piece) => piece !== '')
     .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
 /* Stryker restore Regex */
 
-const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
+const getAttributes = (
+  token: Token,
+  deadAddresses: BrokenAddresses = NONE,
+): Record<string, string> => {
   const content: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )

@@ -24,9 +24,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -48,7 +48,7 @@ func newWorld(t *testing.T, files map[string]string) world {
 
 func newWorldAt(t *testing.T, files map[string]string, modified map[string]time.Time) world {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func newWorldAt(t *testing.T, files map[string]string, modified map[string]time.
 			t.Fatal(err)
 		}
 	}
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func (w world) vectorize(t *testing.T, filePath string, direction func(record ch
 			t.Fatal(err)
 		}
 		one := direction(p)
-		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.Bits(one)})
+		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.QuantizeBits(one)})
 	}
 	if len(vectors) == 0 {
 		t.Fatalf("no small chunk of %s to embed", filePath)
@@ -140,7 +140,7 @@ func (w world) vectorize(t *testing.T, filePath string, direction func(record ch
 }
 
 func precise(v []float32) []byte {
-	q := vector.Bytes(vector.Normalize(slices.Clone(v)))
+	q := vector.QuantizeBytes(vector.Normalize(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

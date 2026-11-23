@@ -47,7 +47,7 @@ type Manifest = Entry & {
 
 type Field = JsonValue | undefined
 
-const item = (text: string, detail = '', keys = ''): PluginContributionItem => ({
+const createItem = (text: string, detail = '', keys = ''): PluginContributionItem => ({
   text,
   detail,
   keys,
@@ -55,8 +55,8 @@ const item = (text: string, detail = '', keys = ''): PluginContributionItem => (
 
 const getText = (value: Field): string => (typeof value === 'string' ? value : '')
 
-const titled = (title: Field, id: Field): PluginContributionItem =>
-  item(getText(title) || getText(id), getText(id))
+const createTitledItem = (title: Field, id: Field): PluginContributionItem =>
+  createItem(getText(title) || getText(id), getText(id))
 
 const listCommands = (contributes: NonNullable<Manifest['contributes']>) => {
   const keys = new Map<string, string>()
@@ -65,7 +65,7 @@ const listCommands = (contributes: NonNullable<Manifest['contributes']>) => {
     if (!keys.has(command)) keys.set(command, getText(one.key))
   }
   return (contributes.commands ?? []).map((one) =>
-    item(getText(one.title) || getText(one.id), getText(one.id), keys.get(getText(one.id)) ?? ''),
+    createItem(getText(one.title) || getText(one.id), getText(one.id), keys.get(getText(one.id)) ?? ''),
   )
 }
 
@@ -73,7 +73,7 @@ const listForeignKeybindings = (contributes: NonNullable<Manifest['contributes']
   const declared = new Set((contributes.commands ?? []).map((one) => getText(one.id)))
   return (contributes.keybindings ?? [])
     .filter((one) => !declared.has(getText(one.command)))
-    .map((one) => item(getText(one.command), '', getText(one.key)))
+    .map((one) => createItem(getText(one.command), '', getText(one.key)))
 }
 
 const getSlotTarget = (one: Entry): string =>
@@ -94,31 +94,31 @@ const fromEntry =
   (one) =>
     read(asEntry(one))
 
-const fromText: ToItem = (one) => item(getText(one))
+const fromText: ToItem = (one) => createItem(getText(one))
 
 /** The kinds of contributes, in the order a page lists them, each with how an entry becomes an item. */
 const CONTRIBUTION_KINDS: readonly (readonly [PluginContributionKind, ToItem])[] = [
-  ['tabKinds', fromEntry((one) => titled(one.title, one.kind))],
-  ['readers', fromEntry((one) => item(getText(one.id), getList(one.contentTypes).join(', ')))],
-  ['handlers', fromEntry((one) => titled(one.title, one.command))],
-  ['triggers', fromEntry((one) => item(getText(one.event), getText(one.command)))],
-  ['textKinds', fromEntry((one) => titled(one.title, one.kind))],
-  ['noteTypes', fromEntry((one) => item(getText(one.type)))],
-  ['themes', fromEntry((one) => titled(one.name, one.id))],
-  ['slots', fromEntry((one) => item(getText(one.slot), getSlotTarget(one)))],
-  ['listeners', fromEntry((one) => item(getText(one.name), getListenerPort(one)))],
+  ['tabKinds', fromEntry((one) => createTitledItem(one.title, one.kind))],
+  ['readers', fromEntry((one) => createItem(getText(one.id), getList(one.contentTypes).join(', ')))],
+  ['handlers', fromEntry((one) => createTitledItem(one.title, one.command))],
+  ['triggers', fromEntry((one) => createItem(getText(one.event), getText(one.command)))],
+  ['textKinds', fromEntry((one) => createTitledItem(one.title, one.kind))],
+  ['noteTypes', fromEntry((one) => createItem(getText(one.type)))],
+  ['themes', fromEntry((one) => createTitledItem(one.name, one.id))],
+  ['slots', fromEntry((one) => createItem(getText(one.slot), getSlotTarget(one)))],
+  ['listeners', fromEntry((one) => createItem(getText(one.name), getListenerPort(one)))],
   ['viewCapabilities', fromText],
-  ['dropHandlers', fromEntry((one) => item(getList(one.types).join(', ')))],
+  ['dropHandlers', fromEntry((one) => createItem(getList(one.types).join(', ')))],
   ['frameOrigins', fromText],
-  ['connectionTypes', fromEntry((one) => titled(one.title, one.id))],
-  ['operations', fromEntry((one) => titled(one.title, one.name))],
-  ['licenses', fromEntry((one) => titled(one.title, one.id))],
+  ['connectionTypes', fromEntry((one) => createTitledItem(one.title, one.id))],
+  ['operations', fromEntry((one) => createTitledItem(one.title, one.name))],
+  ['licenses', fromEntry((one) => createTitledItem(one.title, one.id))],
 ]
 
 /** The lists at the top of a manifest that a page shows with the contributions. */
 const MANIFEST_KINDS: readonly (readonly [PluginContributionKind, ToItem])[] = [
   ['permissions', fromText],
-  ['dependencies', fromEntry((one) => item(getText(one.id), getText(one.kind)))],
+  ['dependencies', fromEntry((one) => createItem(getText(one.id), getText(one.kind)))],
   ['services', fromText],
   ['capabilities', fromText],
   ['activationEvents', fromText],

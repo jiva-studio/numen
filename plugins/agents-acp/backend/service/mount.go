@@ -21,7 +21,7 @@ const idleCheck = time.Minute
 // Mount registers the plugin's services on s, with the tools of the host the process environment names.
 func Mount(s *server.Server) error {
 	var host task.Tools
-	if endpoint, err := hostcall.FromEnv(); err == nil {
+	if endpoint, err := hostcall.ReadEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
 	return mountMachine(s, machine{
@@ -41,7 +41,7 @@ func mount(s *server.Server, agent *agentServer) error {
 	s.SetUpdateConfig(agent.settings.Apply)
 	connection.Mount(s, agent.Provider())
 	stopChecks := ticker.Start(idleCheck, func() error { return agent.tasks.CloseIdle(context.Background()) })
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		return errors.Join(stopChecks(), agent.tasks.Close(context.Background()))
 	})
 	return nil

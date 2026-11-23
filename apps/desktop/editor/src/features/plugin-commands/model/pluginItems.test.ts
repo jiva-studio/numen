@@ -22,8 +22,8 @@ const TARGET = {
 
 type WindowLists = Parameters<typeof createItemLists>[1]['paletteLists']
 
-const WINDOW_LISTS: WindowLists = { getStepGroups: () => [], previewItem: () => undefined }
-const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
+const WINDOW_LISTS: WindowLists = { getStepGroups: () => [], applyItemPreview: () => undefined }
+const RUNS: RunSupport = { canRun: () => true, reportCannotRun: () => undefined }
 
 const createCommand = (id: string): Command => ({
   id,
@@ -78,7 +78,7 @@ describe('the commands with items in the palette', () => {
     const lists = createItemLists(
       { hasCommandItems: (id: string) => id === 'broken' || id === 'tab.move', listCommandItems },
       {
-        paletteLists: { getStepGroups, previewItem },
+        paletteLists: { getStepGroups, applyItemPreview: previewItem },
         getTarget: () => TARGET,
         runs: RUNS,
       },
@@ -98,7 +98,7 @@ describe('the commands with items in the palette', () => {
     expect(lists.lists.getStepGroups('unknown', 'q')).toStrictEqual([
       { id: 'fallback', title: 'Fallback', items: [] },
     ])
-    lists.lists.previewItem('tab.move', 'w1')
+    lists.lists.applyItemPreview('tab.move', 'w1')
     expect(previewItem).toHaveBeenCalledWith('tab.move', 'w1')
 
     lists.removeEmptyCommands([createCommand('broken')])

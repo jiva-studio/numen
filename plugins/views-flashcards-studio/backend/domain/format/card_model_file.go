@@ -87,8 +87,8 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 		if body[pos[2]:pos[3]] != from {
 			continue
 		}
-		// gomutants:disable-next-line BRANCH_IF reason="SpliceBody on a document whose frontmatter SetFields just succeeded does not fail."
-		if err := f.doc.SpliceBody(pos[0], pos[1], content); err != nil {
+		// gomutants:disable-next-line BRANCH_IF reason="ReplaceBody on a document whose frontmatter SetFields just succeeded does not fail."
+		if err := f.doc.ReplaceBody(pos[0], pos[1], content); err != nil {
 			return err
 		}
 	}
@@ -100,11 +100,11 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 func (f *CardModelFile) AddTemplate(template CardTemplate) error {
 	body := []byte(f.doc.Body())
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, formatTemplate(template)))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, formatTemplate(template)))
 }
 
 func formatTemplate(template CardTemplate) string {
-	blocks := []string{headingLine(2, template.Name)}
+	blocks := []string{buildHeadingLine(2, template.Name)}
 	if lead := trimBlankLines(markdown.Normalize(template.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
@@ -116,17 +116,17 @@ func formatTemplate(template CardTemplate) string {
 		if text == "" {
 			continue
 		}
-		blocks = append(blocks, headingLine(3, side.heading), text)
+		blocks = append(blocks, buildHeadingLine(3, side.heading), text)
 	}
 	return strings.Join(blocks, "\n\n")
 }
 
-// CardModelBody is the markdown these templates are written as, in the order they are
+// BuildCardModelBody is the markdown these templates are written as, in the order they are
 // to stand in the note: the preamble as it arrived, each template laid down by the
 // format itself, and the tail verbatim below the last side.
 //
 // The templates are written into a card model of no templates, one after another, so every
-func CardModelBody(preamble string, templates []CardTemplate, tail string) (string, error) {
+func BuildCardModelBody(preamble string, templates []CardTemplate, tail string) (string, error) {
 	scratch, err := OpenCardModel(markdown.Create("", preamble))
 	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that OpenCardModel always opens."
 	if err != nil {

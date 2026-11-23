@@ -23,7 +23,7 @@ interface VaultKeyPress {
  * The letter that selects one vault of the list; positions past the alphabet
  * have none. With thirty vaults, the last four are opened with the pointer.
  */
-export const vaultLetter = (pos: number): string => VAULT_LETTERS[pos] ?? ''
+export const getVaultLetter = (pos: number): string => VAULT_LETTERS[pos] ?? ''
 
 /**
  * Which vault of the list a keystroke opens, counting from the top, or nothing.

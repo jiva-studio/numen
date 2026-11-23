@@ -5,8 +5,8 @@ const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'b
 
 describe('readPosition', () => {
   it('reads the place a confirmation asks for', () => {
-    expect(readPosition('Confirm word 4')).toBe(4)
-    expect(readPosition('Confirm word 12')).toBe(12)
+    expect(readPosition('Word 4')).toBe(4)
+    expect(readPosition('Word 12')).toBe(12)
   })
 
   it('refuses a label that is not a confirmation', () => {

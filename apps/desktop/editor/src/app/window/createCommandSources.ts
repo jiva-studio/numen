@@ -17,7 +17,7 @@ import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 export interface CommandSourcesDeps {
   readonly appCommands: readonly Command[]
   readonly settingPalette: { readonly getCommands: () => readonly Command[] }
-  readonly declaredCommands: DeclaredCommands
+  readonly commandDeclarations: DeclaredCommands
   readonly pluginHost: Pick<PluginHost, 'commands'>
   readonly plugin: Pick<
     ReturnType<typeof usePluginCommands>,
@@ -31,7 +31,7 @@ export function createCommandSources(deps: CommandSourcesDeps) {
   const paletteCommands = createPaletteCommandList({
     getAppCommands: () => deps.appCommands,
     getSettingCommands: deps.settingPalette.getCommands,
-    declaredCommands: deps.declaredCommands,
+    declaredCommands: deps.commandDeclarations,
     getPluginEntries: deps.plugin.getPaletteEntries,
   })
   const items = createCommandItems({

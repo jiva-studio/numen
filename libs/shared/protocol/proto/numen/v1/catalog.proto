@@ -11,9 +11,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 service CatalogService {
   // ListCatalog lists the entries of every source, one for each plugin id.
   rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
-  // GetCatalogEntry returns the entry of one plugin.
   rpc GetCatalogEntry(GetCatalogEntryRequest) returns (GetCatalogEntryResponse);
-  // FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
   rpc FindCatalogEntryByTabKind(FindCatalogEntryByTabKindRequest) returns (FindCatalogEntryByTabKindResponse);
   // GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
   // enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin

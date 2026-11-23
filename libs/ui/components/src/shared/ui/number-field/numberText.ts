@@ -6,7 +6,7 @@
  * field hands on can be named without drawing it.
  */
 import type { Bounds } from '@/shared/lib/math/bounds'
-import { snapToBounds } from './snapToBounds'
+import { fitToBounds } from './fitToBounds'
 import { stepBy } from './stepBy'
 
 /** Text a number could still be typed out of: a lone sign, a trailing point. */
@@ -36,7 +36,7 @@ export const parseNumber = (text: string): number | null => {
 export const isAllowed = (text: string, bounds: Bounds): boolean => {
   const value = parseNumber(text)
   // Stryker disable next-line ConditionalExpression: value !== null narrows number | null for TypeScript
-  return value !== null && value === snapToBounds(value, bounds)
+  return value !== null && value === fitToBounds(value, bounds)
 }
 
 /** How many steps a page key covers at once. */
@@ -44,8 +44,8 @@ const PACES = 10
 
 /** Where a key leaves the number, and nothing for a key the field does not answer. */
 export const stepForKey = (key: string, value: number | null, bounds: Bounds): number | null => {
-  if (key === 'Home') return snapToBounds(bounds.min, bounds)
-  if (key === 'End') return snapToBounds(bounds.max, bounds)
+  if (key === 'Home') return fitToBounds(bounds.min, bounds)
+  if (key === 'End') return fitToBounds(bounds.max, bounds)
   if (key === 'ArrowUp') return stepBy(value, 1, bounds)
   if (key === 'ArrowDown') return stepBy(value, -1, bounds)
   if (key === 'PageUp') return stepBy(value, PACES, bounds)

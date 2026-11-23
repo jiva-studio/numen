@@ -8,7 +8,7 @@ const createAnsweredSettings = (answers: CoreAnswers) =>
   createAnsweredApi(answers).configuration.settings
 
 const words = {
-  stopped: (name: string, reason: string) => `${name} stopped: ${reason}`,
+  formatStopped: (name: string, reason: string) => `${name} stopped: ${reason}`,
   retryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,
 }
 

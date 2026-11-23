@@ -31,7 +31,7 @@ func newQueueClientOver(t *testing.T, fakeCallers *callers, work *run.PluginWork
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostQueueServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewHostQueueServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func openWork(
@@ -100,7 +100,7 @@ func TestReportTaskUsesCallerPluginID(t *testing.T) {
 	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, tasks, nil), "token-a")
 
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
-		Id: "scan.pdf", Title: "Recognizing", About: "scan.pdf", Done: 2, Total: 9, Unit: v1.Unit_UNIT_BYTES,
+		Id: "scan.pdf", Title: "Recognizing", Detail: "scan.pdf", CompletedCount: 2, TotalCount: 9, Unit: v1.Unit_UNIT_BYTES,
 		IsUserStarted: true, PluginId: "md.numen.other",
 	}}))
 	if err != nil {

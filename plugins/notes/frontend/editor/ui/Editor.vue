@@ -64,9 +64,9 @@ const editor = useEditor({
   text,
   keysId,
   emit,
-  softWrap: () => props.softWrap,
-  lineNumbers: () => props.lineNumbers,
-  tabSize: () => props.tabSize,
+  shouldSoftWrap: () => props.softWrap,
+  shouldShowLineNumbers: () => props.lineNumbers,
+  getTabSize: () => props.tabSize,
 })
 </script>
 

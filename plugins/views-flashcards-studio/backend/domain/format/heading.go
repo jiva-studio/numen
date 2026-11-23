@@ -48,11 +48,11 @@ func WriteHeading(text string, carried ID) string {
 	return text + " " + caret + string(carried)
 }
 
-// Project is the heading text a card's first field gives. The heading holds nothing of its
+// GetHeadingText is the heading text a card's first field gives. The heading holds nothing of its
 // own: throw it away and this writes it again from the field. The text stops at the first line
 // break and at HeadingRunes characters, and the spaces at either end are dropped. A field that
 // is empty or only spaces projects to nothing. The value has normalized line endings.
-func Project(value string) string {
+func GetHeadingText(value string) string {
 	line := markdown.Normalize(value)
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
 		line = line[:pos]
@@ -94,7 +94,7 @@ var emphasisRe = regexp.MustCompile(
 const maskRune = 'x'
 
 func getUnsplittableRanges(line string) [][]int {
-	found := links(line)
+	found := findLinks(line)
 	masked := []byte(line)
 	for _, span := range found {
 		for pos := span[0]; pos < span[1]; pos++ {
@@ -132,7 +132,7 @@ func linkStart(line string, pos int) int {
 	return pos
 }
 
-func links(line string) [][]int {
+func findLinks(line string) [][]int {
 	var out [][]int
 	for pos := 0; pos+1 < len(line); {
 		if line[pos] != '[' || line[pos+1] != '[' {
@@ -150,7 +150,7 @@ func links(line string) [][]int {
 	return out
 }
 
-func oneLine(name string) string {
+func collapseToLine(name string) string {
 	line := markdown.Normalize(name)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, line[:0] is empty and TrimSpace on the rest is only affected if newline is at index 0."
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
@@ -159,7 +159,7 @@ func oneLine(name string) string {
 	return strings.TrimSpace(line)
 }
 
-func headingLine(level int, name string) string {
+func buildHeadingLine(level int, name string) string {
 	hashes := strings.Repeat("#", level)
 	if name == "" {
 		return hashes

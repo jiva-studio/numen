@@ -29,7 +29,7 @@ func TestCreateCommandWritesTheNoteInTheFolderOfTheRow(t *testing.T) {
 	if result.OpenedPath != stormsPath {
 		t.Errorf("OpenedPath = %q, want %q", result.OpenedPath, stormsPath)
 	}
-	if _, isThere := f.vault.Content(stormsPath); !isThere {
+	if _, isThere := f.vault.ReadContent(stormsPath); !isThere {
 		t.Error("no note was written")
 	}
 }

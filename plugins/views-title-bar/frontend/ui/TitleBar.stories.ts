@@ -9,7 +9,7 @@ import { h, markRaw, type FunctionalComponent } from 'vue'
 import { FilePlus, FolderTree, Search, Settings, Waypoints } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
 import type { AppInfo, SlotItem, VaultsState, VaultSummary } from '@numen/plugin-sdk'
-import { command, separator, submenu, view } from '../testing/entries'
+import { buildCommand, buildSeparator, submenu, view } from '../testing/entries'
 import { LONG, RUSSIAN } from './fixtures'
 
 interface Knobs {
@@ -27,17 +27,21 @@ interface Knobs {
   width: string
 }
 
-const FILES = command('files', {
+const FILES = buildCommand('files', {
   title: 'Open file tree',
   icon: FolderTree,
   shortcut: 'mod+shift+e',
 })
-const PLEX = command('plex', { title: 'Open plex graph', icon: Waypoints, shortcut: 'mod+shift+x' })
-const NEW_NOTE = command('note', { title: 'Create note', icon: FilePlus })
-const SEARCH = command('search', { title: 'Search vault', icon: Search })
-const SETTINGS = command('settings', { title: 'Open settings', icon: Settings })
-const THREE = [FILES, PLEX, separator(1), NEW_NOTE]
-const ALL = [FILES, PLEX, separator(1), NEW_NOTE, separator(2), SEARCH, SETTINGS]
+const PLEX = buildCommand('plex', {
+  title: 'Open plex graph',
+  icon: Waypoints,
+  shortcut: 'mod+shift+x',
+})
+const NEW_NOTE = buildCommand('note', { title: 'Create note', icon: FilePlus })
+const SEARCH = buildCommand('search', { title: 'Search vault', icon: Search })
+const SETTINGS = buildCommand('settings', { title: 'Open settings', icon: Settings })
+const THREE = [FILES, PLEX, buildSeparator(1), NEW_NOTE]
+const ALL = [FILES, PLEX, buildSeparator(1), NEW_NOTE, buildSeparator(2), SEARCH, SETTINGS]
 
 const createChip = (text: string): FunctionalComponent =>
   markRaw(() =>
@@ -248,8 +252,8 @@ export const Submenu: Story = {
   args: {
     commands: [
       FILES,
-      separator(1),
-      submenu('tide.new', [NEW_NOTE, command('deck', { title: 'Create deck' })], {
+      buildSeparator(1),
+      submenu('tide.new', [NEW_NOTE, buildCommand('deck', { title: 'Create deck' })], {
         icon: FilePlus,
       }),
     ],

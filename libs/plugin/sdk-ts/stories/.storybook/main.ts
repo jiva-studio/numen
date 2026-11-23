@@ -10,7 +10,7 @@ import { createStoryUtilitiesPlugin } from './utilities.ts'
  */
 const drawing = !process.env['VITEST']
 
-const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
+const extendViteConfig: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
   ...config,
   plugins: [
     ...(config.plugins ?? []),
@@ -24,7 +24,7 @@ const config: StorybookConfig = {
   stories: ['../../../../../plugins/*/frontend/**/*.stories.ts'],
   addons: ['@storybook/addon-vitest'],
   framework: { name: '@storybook/vue3-vite', options: {} },
-  ...(drawing ? { viteFinal: reaching } : {}),
+  ...(drawing ? { viteFinal: extendViteConfig } : {}),
 }
 
 export default config

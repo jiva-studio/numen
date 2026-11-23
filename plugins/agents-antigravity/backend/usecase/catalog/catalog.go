@@ -46,9 +46,9 @@ func (c *Catalog) List(ctx context.Context, program string) []reasoning.Family {
 	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, []string{program}) }
 	items, _, err := c.models.Get(ctx, program, list)
 	if err != nil {
-		return model.Fold(nil)
+		return model.GroupFamilies(nil)
 	}
-	return model.Fold(items)
+	return model.GroupFamilies(items)
 }
 
 // ResolveModel returns the listed model that the model name and the reasoning level choose. The default

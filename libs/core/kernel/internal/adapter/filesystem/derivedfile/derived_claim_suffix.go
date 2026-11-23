@@ -116,7 +116,7 @@ func (d *DerivedStore) RemoveAll(_ context.Context, name string) (err error) {
 }
 
 func (d *DerivedStore) checkVaultIdentity() error {
-	if now, err := os.Stat(vaultconfig.ConfigAt(d.vault, d.service)); err == nil && d.last.Load().isSameFile(now) {
+	if now, err := os.Stat(vaultconfig.GetConfigPath(d.vault, d.service)); err == nil && d.last.Load().isSameFile(now) {
 		return nil
 	}
 	id, was, err := readIdentity(d.vault, d.service)
@@ -147,7 +147,7 @@ func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 		serviceDir = vaultconfig.DefaultServiceDir
 	}
 	var was *fileInfo
-	if info, err := os.Stat(vaultconfig.ConfigAt(root, serviceDir)); err == nil {
+	if info, err := os.Stat(vaultconfig.GetConfigPath(root, serviceDir)); err == nil {
 		was = &fileInfo{stat: info}
 	}
 	cfg, err := vaultconfig.ReadConfig(root, serviceDir)

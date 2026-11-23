@@ -43,7 +43,7 @@ func TestListFieldsCountsTheTagsOfNotesCaseInsensitivelyAndReplacesThemWhenTheFr
 		t.Fatalf("tags = %v, want %v", got, want)
 	}
 
-	f.vault.File("a.md", "---\ntags: [wharf]\n---\n- [ ] one")
+	f.vault.WriteFile("a.md", "---\ntags: [wharf]\n---\n- [ ] one")
 	if err := f.index.Refresh(t.Context(), []string{"a.md"}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -68,14 +68,14 @@ func TestTagsOfANoteAreNotTagsOfItsTasks(t *testing.T) {
 
 func TestAWarmStartKeepsTheTagsAndReadsAFrontmatterChangeWithNoTaskChange(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "---\ntags: [port]\n---\n- [ ] one\n")
-	vault.File("b.md", "---\ntags: [sea]\n---\n- [ ] two\n")
+	vault.WriteFile("a.md", "---\ntags: [port]\n---\n- [ ] one\n")
+	vault.WriteFile("b.md", "---\ntags: [sea]\n---\n- [ ] two\n")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	first, _ := persisted(vault, snapshots, clock)
 	start(t, first)
 	flush(t, first)
 
-	vault.File("b.md", "---\ntags: [quay]\n---\n- [ ] two\n")
+	vault.WriteFile("b.md", "---\ntags: [quay]\n---\n- [ ] two\n")
 	second, files := persisted(vault, snapshots, clock)
 	start(t, second)
 
@@ -89,8 +89,8 @@ func TestAWarmStartKeepsTheTagsAndReadsAFrontmatterChangeWithNoTaskChange(t *tes
 
 func TestTagsFollowANoteThatIsRemovedOrMoved(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "---\ntags: [port]\n---\nbody")
-	vault.File("b.md", "---\ntags: [sea]\n---\nbody")
+	vault.WriteFile("a.md", "---\ntags: [port]\n---\nbody")
+	vault.WriteFile("b.md", "---\ntags: [sea]\n---\nbody")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	one, _ := persisted(vault, snapshots, clock)
 	start(t, one)

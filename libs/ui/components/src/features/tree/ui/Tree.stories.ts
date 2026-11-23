@@ -157,7 +157,7 @@ interface Knobs {
   onClose?: (row: RowId) => void
   rows?: never
   open?: never
-  counted?: never
+  getCountText?: never
   clock?: never
 }
 
@@ -177,7 +177,7 @@ const meta: Meta<Knobs> = {
     selected: { control: 'object' },
     rows: { table: { disable: true } },
     open: { table: { disable: true } },
-    counted: { table: { disable: true } },
+    getCountText: { table: { disable: true } },
     clock: { table: { disable: true } },
   },
   args: { corpus: 'a few', threshold: 4, name: 'Tree', renamingPath: null, selected: [] },

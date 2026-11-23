@@ -2,9 +2,9 @@ package command_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -14,21 +14,21 @@ import (
 type useCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
-	Run        plugincommand.Run
+	Run        plugincommand.Runner
 	RunCommand plugincommand.RunCommand
 	ListItems  plugincommand.ListItems
 }
 
 func newUseCases(
-	commands plugincommand.PluginCommands, runs plugincommand.PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	readers vaultport.VaultReaders, config pluginport.WhenConfig,
+	commands plugincommand.PluginCommands, runs commandrun.Runs, types contenttypeport.ContentTypeTable,
+	config pluginport.WhenConfig,
 ) useCases {
 	if types == nil {
 		types = noTypes{}
 	}
 	conditions := when.NewConditions()
 	list := plugincommand.NewList(commands, nil, conditions)
-	run := plugincommand.NewRun(commands, runs, types, readers, config, conditions)
+	run := plugincommand.NewRunner(commands, runs, types, nil, config, conditions)
 	return useCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, types),

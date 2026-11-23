@@ -10,11 +10,11 @@ import (
 // ErrInvalidName is a title no note can be given. Nothing is written.
 var ErrInvalidName = errors.New("a note cannot be given this title")
 
-// Filename rejects a title no note can be given, and for every other returns the name
+// CreateFilename rejects a title no note can be given, and for every other returns the name
 // it is filed under and whether it survived the conversion unchanged.
 //
 // one carrying a line break. The title comes in trimmed.
-func Filename(title string) (name string, exact bool, err error) {
+func CreateFilename(title string) (name string, exact bool, err error) {
 	switch name, exact = GetReducedFilename(title); {
 	case name == "":
 		return "", false, fmt.Errorf("%w: %q generates empty filename", ErrInvalidName, title)
@@ -101,13 +101,13 @@ func truncateAtRuneBoundary(s string, n int) string {
 	if len(s) <= n {
 		return s
 	}
-	for n > 0 && !utf8Start(s[n]) {
+	for n > 0 && !isUTF8Start(s[n]) {
 		n--
 	}
 	return s[:n]
 }
 
-func utf8Start(b byte) bool { return b&0xC0 != 0x80 }
+func isUTF8Start(b byte) bool { return b&0xC0 != 0x80 }
 
 // CheckPath rejects a vault path that a file cannot be given on every supported
 // platform: a part holding one of `\ : * ? " < > |`, or ending in a space or a dot.

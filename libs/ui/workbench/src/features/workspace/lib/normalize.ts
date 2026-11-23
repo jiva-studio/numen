@@ -3,7 +3,7 @@
  *
  * A pane holding nothing goes, and so does a branch holding one child.
  */
-import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
+import { branch, getCrossOrientation, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
 import { isBranch, isPane, getPanes, withChildren } from './tree'
 
@@ -42,7 +42,7 @@ function reduce(node: WorkspaceNode): readonly Piece[] {
   ]
 }
 
-const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
+const createEmptyPane = (root: WorkspaceNode): WorkspaceNode => {
   const first = getPanes(root)[0]
   return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }
 }
@@ -51,7 +51,7 @@ export function normalize(workspace: Workspace): Workspace {
   const pieces = reduce(workspace.root)
 
   const [only, ...others] = pieces
-  if (!only) return { ...workspace, root: emptyPane(workspace.root) }
+  if (!only) return { ...workspace, root: createEmptyPane(workspace.root) }
   if (others.length === 0) return { ...workspace, root: only.node }
 
   // The root itself kept one child and handed its children up. There is no
@@ -66,6 +66,6 @@ export function normalize(workspace: Workspace): Workspace {
         pieces.length,
       ),
     ),
-    axis: orthogonal(workspace.axis),
+    axis: getCrossOrientation(workspace.axis),
   }
 }

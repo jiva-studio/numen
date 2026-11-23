@@ -40,7 +40,7 @@ func newFindSearchResults(
 		Calls:   ports.calls,
 		Rows:    ports.rows,
 		Resolve: ports.resolve,
-		Results: db.OperationResults(operationResultRows),
+		Results: db.GetOperationResults(operationResultRows),
 		Clock:   ports.clock,
 		Readers: searchDeps.VaultReaders,
 		Texts:   searchDeps.TextReaders,
@@ -48,12 +48,12 @@ func newFindSearchResults(
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
-		Catalog:       ports.catalog,
+		GetCatalog:    ports.getCatalog,
 		Clock:         ports.clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,
 		FillDocuments: evaluate.FillDocuments,
-		Stages:        stages.Execute,
+		RunStages:     stages.Execute,
 	})
 }
 
@@ -69,7 +69,7 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 type queryPorts struct {
 	functions    searchqueryusecase.SearchFunctions
 	contentTypes contenttypeport.ContentTypeTable
-	catalog      func() searchquerydomain.Catalog
+	getCatalog   func() searchquerydomain.Catalog
 	clock        machineport.Clock
 	resolve      connectionport.ResolveConnection
 	rows         searchqueryusecase.RerankRows
@@ -78,7 +78,7 @@ type queryPorts struct {
 
 func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) queryPorts {
 	ports := queryPorts{functions: searchfunctionbridge.Open(exec.Runtime.Activator), contentTypes: exec.Watch.ContentTypeTable,
-		catalog: getSearchCatalog(exec.Runtime.Manifests), clock: vaultDeps.Clock, rows: none.RerankRows{}}
+		getCatalog: getSearchCatalog(exec.Runtime.Manifests), clock: vaultDeps.Clock, rows: none.RerankRows{}}
 	connections, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return ports

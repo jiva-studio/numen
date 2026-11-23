@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -58,7 +57,7 @@ func (openDoor) Close() {}
 
 func (w wiring) startSession(
 	t *testing.T, ctx context.Context, db *testIndex, state *testWindow, v domain.Vault,
-	readers vaultport.VaultReaders, watcher vaults.VaultWatcher, opts sessionOptions,
+	readers vaultport.VaultReaders, watcher indexing.VaultWatcher, opts sessionOptions,
 ) (end func()) {
 	t.Helper()
 	embedding := opts.embedding
@@ -76,7 +75,7 @@ func (w wiring) startSession(
 		IndexChanged: state.Events.EmitIndexChanged,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
 		Quiet:        opts.idle,
-		After:        time.After,
+		CreateTimer:  time.After,
 	})
 	state.writeReport.WriteWake = worker.WakeWrittenVault
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
@@ -112,7 +111,7 @@ type testPasses struct {
 	wiring
 	db      *testIndex
 	readers vaultport.VaultReaders
-	watcher vaults.VaultWatcher
+	watcher indexing.VaultWatcher
 }
 
 func (p testPasses) ReadWholeVault(
@@ -126,9 +125,9 @@ func (p testPasses) StartVault(
 ) windowsession.Started {
 	opening := p.reading.OpenVaultWith(p.db, p.readers, p.watcher)
 	opening.ShouldRebuild = rebuild
-	var changed func(vaults.VaultChanges)
-	if report.Changed != nil {
-		changed = func(m vaults.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+	var changed func(indexing.VaultChanges)
+	if report.NotifyChanged != nil {
+		changed = func(m indexing.VaultChanges) { report.NotifyChanged(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v, changed, report.Failed)

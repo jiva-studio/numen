@@ -23,7 +23,7 @@ describe('the tag map that is loaded', () => {
       },
     })
     let isLoaded = false
-    const loading = map.whenLoaded().then(() => {
+    const loading = map.waitForLoad().then(() => {
       isLoaded = true
     })
     await flush()
@@ -44,12 +44,12 @@ describe('the tag map that is loaded', () => {
       },
     })
 
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     expect(map.getTags('notes/Quay.md')).toStrictEqual([])
   })
 
-  it('resolves whenLoaded after the first read even when a vault change queues a refresh', async () => {
+  it('resolves waitForLoad after the first read even when a vault change queues a refresh', async () => {
     let releaseFirst: () => void = () => undefined
     let releaseSecond: () => void = () => undefined
     const firstGate = new Promise<void>((resolve) => {
@@ -82,7 +82,7 @@ describe('the tag map that is loaded', () => {
     const scope = effectScope()
     scope.run(() => watchEffect(() => map.getTags('notes/Quay.md')))
     let isLoaded = false
-    const loading = map.whenLoaded().then(() => {
+    const loading = map.waitForLoad().then(() => {
       isLoaded = true
     })
     await onVaultChange?.({})

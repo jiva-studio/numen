@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupDigits, many, percent, plural } from './digits'
+import { groupDigits, formatCount, formatPercent, pickPlural } from './digits'
 
 describe('a whole number', () => {
   it('is grouped in thousands', () => {
@@ -11,51 +11,51 @@ describe('a whole number', () => {
 
 describe('a share', () => {
   it('is read as a percentage', () => {
-    expect(percent(0)).toBe('0%')
-    expect(percent(0.5)).toBe('50%')
-    expect(percent(1)).toBe('100%')
+    expect(formatPercent(0)).toBe('0%')
+    expect(formatPercent(0.5)).toBe('50%')
+    expect(formatPercent(1)).toBe('100%')
   })
 
   it('is rounded to the whole per cent', () => {
-    expect(percent(0.3749)).toBe('37%')
-    expect(percent(0.375)).toBe('38%')
+    expect(formatPercent(0.3749)).toBe('37%')
+    expect(formatPercent(0.375)).toBe('38%')
   })
 })
 
 describe('the thing a count counts', () => {
   it('is singular where there is one of it', () => {
-    expect(plural(1, 'tray')).toBe('tray')
-    expect(plural(0, 'tray')).toBe('trays')
-    expect(plural(2, 'card')).toBe('cards')
+    expect(pickPlural(1, 'tray')).toBe('tray')
+    expect(pickPlural(0, 'tray')).toBe('trays')
+    expect(pickPlural(2, 'card')).toBe('cards')
   })
 
   it('rounds a fraction before it is made plural', () => {
-    expect(plural(1.4, 'card')).toBe('card')
-    expect(plural(1.5, 'card')).toBe('cards')
+    expect(pickPlural(1.4, 'card')).toBe('card')
+    expect(pickPlural(1.5, 'card')).toBe('cards')
   })
 
   // An `s` suffix does not form the plural of an irregular noun or of a phrase whose
   // plural falls inside it, so the whole plural can be supplied.
   it('takes the whole plural where an s does not give it', () => {
-    expect(plural(1, 'child', 'children')).toBe('child')
-    expect(plural(2, 'child', 'children')).toBe('children')
-    expect(plural(3, 'day to learn it', 'days to learn it')).toBe('days to learn it')
+    expect(pickPlural(1, 'child', 'children')).toBe('child')
+    expect(pickPlural(2, 'child', 'children')).toBe('children')
+    expect(pickPlural(3, 'day to learn it', 'days to learn it')).toBe('days to learn it')
   })
 })
 
 describe('a count and the thing it counts', () => {
   it('is singular where there is one of it', () => {
-    expect(many(1, 'card')).toBe('1 card')
-    expect(many(0, 'card')).toBe('0 cards')
-    expect(many(2, 'day')).toBe('2 days')
+    expect(formatCount(1, 'card')).toBe('1 card')
+    expect(formatCount(0, 'card')).toBe('0 cards')
+    expect(formatCount(2, 'day')).toBe('2 days')
   })
 
   // A curve returns fractions, and the two windows display one number to the user:
   // the count is rounded before it is formatted and pluralised, so no text reads
   // "1.4 cards".
   it('rounds a fraction before it is read out', () => {
-    expect(many(1.4, 'card')).toBe('1 card')
-    expect(many(1.5, 'card')).toBe('2 cards')
-    expect(many(0.6, 'minute')).toBe('1 minute')
+    expect(formatCount(1.4, 'card')).toBe('1 card')
+    expect(formatCount(1.5, 'card')).toBe('2 cards')
+    expect(formatCount(0.6, 'minute')).toBe('1 minute')
   })
 })

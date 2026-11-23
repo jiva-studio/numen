@@ -32,7 +32,7 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
 const connections: ConnectionHost = {
   call: async function* () {
     yield* []
-    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+    return { ok: false, error: { error: 'noConnection', message: 'no row', failures: [] } }
   },
 }
 
@@ -40,8 +40,8 @@ const panels = (more: { card?: ReviewCard | null } = {}) => {
   const notices: string[] = []
   const target = usePanels({
     connections,
-    card: () => (more.card === undefined ? card() : more.card),
-    vault: () => 'garden',
+    getCard: () => (more.card === undefined ? card() : more.card),
+    getVault: () => 'garden',
     showNotice: (text) => notices.push(text),
     resolveLinks: async () => [],
   })

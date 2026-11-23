@@ -36,13 +36,13 @@ const MostAhead = projection.MostAhead
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
 type ProjectCurve struct {
-	reviewCards ListReviewCards
-	schedules   Schedules
-	presets     OpenPresetReads
-	day         review.Day
-	now         ports.Clock
-	By          func(retention float64) review.Scheduler
-	Cores       int
+	reviewCards  ListReviewCards
+	schedules    Schedules
+	presets      OpenPresetReads
+	day          review.Day
+	now          ports.Clock
+	GetScheduler func(retention float64) review.Scheduler
+	Cores        int
 }
 
 // NewProjectCurve is what a preset's one control is projected through: what
@@ -54,8 +54,8 @@ func NewProjectCurve(
 ) ProjectCurve {
 	return ProjectCurve{
 		reviewCards: reviewCards, schedules: schedules, presets: presets, day: day, now: now,
-		By:    nil,
-		Cores: 0,
+		GetScheduler: nil,
+		Cores:        0,
 	}
 }
 
@@ -74,7 +74,7 @@ func checkGoal(p review.Preset) error {
 	default:
 		return nil
 	}
-	if bounds.Contains(value) {
+	if bounds.IsWithin(value) {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -146,8 +146,8 @@ func (u ProjectCurve) Execute(
 	}
 	cards := ConvertSchedulesToCards(pos)
 	bounds := review.GetRetentionBounds()
-	drawn, err := run.Curve(ctx, now, ConvertPresetToSettings(p), projection.CurveInputs{
-		Cards: cards, UnbegunCount: unbegunCount, Scheduler: u.getProjectionScheduler, Places: u.computePlaces,
+	drawn, err := run.ComputeCurve(ctx, now, ConvertPresetToSettings(p), projection.CurveInputs{
+		Cards: cards, UnbegunCount: unbegunCount, GetScheduler: u.getProjectionScheduler, VisitPlaces: u.computePlaces,
 		RetentionBounds: projection.Bounds{Min: bounds.Min, Max: bounds.Max},
 	})
 	if err != nil {
@@ -210,7 +210,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 		return decks, err
 	}
 
-	pos, err := reads.GetBacklinks(ctx, v.ID, path)
+	pos, err := reads.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}
@@ -274,8 +274,8 @@ func (u ProjectCurve) computePlaces(count int, each func(index int) error) error
 }
 
 func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
-	if u.By != nil {
-		return u.By(retention)
+	if u.GetScheduler != nil {
+		return u.GetScheduler(retention)
 	}
 	return review.NewFSRSAt(retention)
 }

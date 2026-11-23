@@ -71,7 +71,7 @@ describe('the line to a point awaiting a node', () => {
 
 describe('the box a gesture would leave', () => {
   const to = { x: 30, y: 40 }
-  const options = { relationName: getRelationLabel, nodeSize: SIZE }
+  const options = { getRelationName: getRelationLabel, nodeSize: SIZE }
 
   it('is a box with the relation name where the pointer is when dropping creates', () => {
     expect(getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, to, options)).toEqual({

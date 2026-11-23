@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { couldHold, findGroup, parseMasks } from './masks'
+import { canHold, findGroup, parseMasks } from './masks'
 
 interface Table {
   readonly parse: readonly { raw: string; masks: readonly string[] }[]
@@ -60,10 +60,10 @@ describe('the folders that could hold a template', () => {
     ['Notes', false],
     ['Models/Other', false],
   ])('reads %j as %j', (folder, expected) => {
-    expect(couldHold(masks, folder)).toBe(expected)
+    expect(canHold(masks, folder)).toBe(expected)
   })
 
   it('holds any folder under a leading **', () => {
-    expect(couldHold(parseMasks('**/*.template.md'), 'any/folder')).toBe(true)
+    expect(canHold(parseMasks('**/*.template.md'), 'any/folder')).toBe(true)
   })
 })

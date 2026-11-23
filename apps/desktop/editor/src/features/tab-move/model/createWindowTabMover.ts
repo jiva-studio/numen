@@ -15,7 +15,7 @@ export interface WindowTabMoverDeps {
   readonly api: Pick<TabMoveApi, 'detachTab' | 'moveTab' | 'highlightWindow'>
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'panes'>
-  readonly notes: Pick<Notes, 'asking' | 'flushPending'>
+  readonly notes: Pick<Notes, 'isAsking' | 'flushPending'>
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
 }
@@ -32,7 +32,7 @@ export function createWindowTabMover(deps: WindowTabMoverDeps) {
   let lastHighlight: Promise<void> = Promise.resolve()
   return {
     windowId: deps.windowId,
-    isTabAsking: (id: string): boolean => deps.notes.asking(id),
+    isTabAsking: (id: string): boolean => deps.notes.isAsking(id),
     highlightWindow: (windowId: string, isOn: boolean): void => {
       lastHighlight = lastHighlight
         .then(() => deps.api.highlightWindow(windowId, isOn))

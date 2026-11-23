@@ -59,7 +59,7 @@ export function createConnectionStore(api: ConnectionApi, notify: MessageWriter)
     try {
       const answer = await operation()
       if (!answer.ok) {
-        if (answer.error.errorCode === 'stale_revision') await load()
+        if (answer.error.error === 'staleRevision') await load()
         return { ok: false, error: CONNECTION_WORDS.describeFailure(answer.error) }
       }
       await load()

@@ -41,9 +41,9 @@ type kind struct {
 func New(create cards.Create, files cards.FileStatter, createNote CreateNote) (*command.Registry, error) {
 	registry := command.New()
 	for id, one := range map[string]kind{
-		CreateDeck:      {create: cards.Create.Deck, fields: nil},
-		CreateCardModel: {create: cards.Create.CardModel, fields: []string{firstCardModelField}},
-		CreatePreset:    {create: cards.Create.Preset, fields: nil},
+		CreateDeck:      {create: cards.Create.CreateDeck, fields: nil},
+		CreateCardModel: {create: cards.Create.CreateCardModel, fields: []string{firstCardModelField}},
+		CreatePreset:    {create: cards.Create.CreatePreset, fields: nil},
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="Static command identifiers are non-empty and unique."
 		if err := registry.Add(id, newRun(one, create, files, createNote)); err != nil {

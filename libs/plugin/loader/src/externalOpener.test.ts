@@ -20,7 +20,10 @@ describe('opening an address from a plugin', () => {
 
     const result = await createExternalOpener(open)('file:///etc/passwd')
 
-    expect(result).toEqual({ ok: false, error: 'not a web address: file:///etc/passwd' })
+    expect(result).toEqual({
+      ok: false,
+      error: { error: 'notWebAddress', message: 'not a web address: file:///etc/passwd' },
+    })
     expect(open).not.toHaveBeenCalled()
   })
 
@@ -29,6 +32,9 @@ describe('opening an address from a plugin', () => {
 
     const result = await createExternalOpener(open)('https://numen.md/')
 
-    expect(result).toMatchObject({ ok: false, error: expect.any(String) })
+    expect(result).toEqual({
+      ok: false,
+      error: { error: 'openFailed', message: expect.any(String) },
+    })
   })
 })

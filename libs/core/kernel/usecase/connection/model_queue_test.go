@@ -29,8 +29,8 @@ func newQueueSetup(t *testing.T, parallelRequests int) *queueSetup {
 	w := modelcalltest.New()
 	entry := w.AddLimited(t, "Limited", addressLimited, parallelRequests)
 	for _, plugin := range []string{consumerID, otherConsumerID} {
-		w.Rows.Set(plugin, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
-		w.Rows.Set(plugin, modelcalltest.EmbedOperation, modelcalltest.Row(entry, "m"))
+		w.Rows.Set(plugin, modelcalltest.CompleteOperation, modelcalltest.CreateRow(entry, "m"))
+		w.Rows.Set(plugin, modelcalltest.EmbedOperation, modelcalltest.CreateRow(entry, "m"))
 	}
 	return &queueSetup{
 		world: w, entry: entry,
@@ -63,7 +63,7 @@ func (s *queueSetup) embed(ctx context.Context, plugin string, priority modelcal
 func (s *queueSetup) awaitEntered(t *testing.T) {
 	t.Helper()
 	select {
-	case <-s.world.Provider.Entered():
+	case <-s.world.Provider.GetEntered():
 	case <-time.After(10 * time.Second):
 		t.Fatal("no call reached the provider")
 	}
@@ -128,7 +128,7 @@ func TestTwoPluginsOfOneConnectionShareItsLimit(t *testing.T) {
 	if got := s.texts(); len(got) != 1 {
 		t.Errorf("provider received %v while another plugin held the only slot", got)
 	}
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	if err := errors.Join(awaitDone(t, first), awaitDone(t, second)); err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestTheStoredParallelRequestsSetTheLimit(t *testing.T) {
 	if got := s.texts(); len(got) != 3 {
 		t.Errorf("provider received %v, want three calls at once", got)
 	}
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	for _, one := range calls {
 		if err := awaitDone(t, one); err != nil {
 			t.Fatal(err)
@@ -172,7 +172,7 @@ func TestTheDefaultOfTheTypeSetsTheLimitWhereNothingIsStored(t *testing.T) {
 	if got := s.texts(); len(got) != 2 {
 		t.Errorf("provider received %v, want the default of two calls at once", got)
 	}
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	for _, one := range calls {
 		if err := awaitDone(t, one); err != nil {
 			t.Fatal(err)
@@ -183,7 +183,7 @@ func TestTheDefaultOfTheTypeSetsTheLimitWhereNothingIsStored(t *testing.T) {
 func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	w := modelcalltest.New()
 	entry := w.AddServer(t, "First", addressOne, keyOne)
-	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
+	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(entry, "m"))
 	connections := connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}
 	s := &queueSetup{world: w, calls: connection.NewCalls(connections, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
 	w.Provider.Block(addressOne)
@@ -196,7 +196,7 @@ func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	if got := w.Waits.List(); len(got) != 0 {
 		t.Errorf("waits = %v, want none", got)
 	}
-	w.Provider.Unblock(addressOne)
+	w.Provider.ReleaseCalls(addressOne)
 	for _, one := range calls {
 		if err := awaitDone(t, one); err != nil {
 			t.Fatal(err)
@@ -218,7 +218,7 @@ func TestAnInteractiveCallGoesBeforeABackgroundCallThatWaitedLonger(t *testing.T
 	s.awaitEntered(t)
 	s.world.Provider.Release(addressLimited)
 	s.awaitEntered(t)
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 
 	for _, one := range []<-chan error{running, interactive, background} {
 		if err := awaitDone(t, one); err != nil {
@@ -243,7 +243,7 @@ func TestCallsOfOnePriorityGoInTheOrderTheyWaited(t *testing.T) {
 
 	s.world.Provider.Release(addressLimited)
 	s.awaitEntered(t)
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 
 	for _, one := range []<-chan error{running, second, third} {
 		if err := awaitDone(t, one); err != nil {
@@ -292,7 +292,7 @@ func TestAnEmbedCallWaitsAsLongAsItsPriorityAllows(t *testing.T) {
 func TestATimedOutWaitIsSkippedAsBusyAndTheNextRowServes(t *testing.T) {
 	s := newQueueSetup(t, 1)
 	second := s.world.AddServer(t, "Second", addressTwo, keyTwo)
-	s.world.Rows.Set(otherConsumerID, modelcalltest.CompleteOperation, modelcalltest.Row(s.entry, "m"), modelcalltest.Row(second, "m"))
+	s.world.Rows.Set(otherConsumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.entry, "m"), modelcalltest.CreateRow(second, "m"))
 	s.world.Provider.Block(addressLimited)
 	s.complete(t.Context(), consumerID, "running", modelcalldomain.PriorityBackground)
 	s.awaitEntered(t)
@@ -304,7 +304,7 @@ func TestATimedOutWaitIsSkippedAsBusyAndTheNextRowServes(t *testing.T) {
 	if err := awaitDone(t, queued); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressTwo)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressTwo)); got != 1 {
 		t.Errorf("the second row was called %d times, want once", got)
 	}
 	if got := s.world.Notices.List(); len(got) != 0 {
@@ -326,7 +326,7 @@ func TestATimedOutWaitSetsNoCooldown(t *testing.T) {
 		all.Failures[0].ConnectionName != "Limited" || all.Failures[0].Reason != "busy" {
 		t.Fatalf("err = %v, want Limited: busy", err)
 	}
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	if err := awaitDone(t, running); err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +355,7 @@ func TestACanceledQueuedCallIsRemovedFromTheQueueAndFreesNoSlot(t *testing.T) {
 	if got := s.texts(); len(got) != 1 {
 		t.Errorf("provider received %v, the canceled call freed a slot it did not hold", got)
 	}
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	for _, one := range []<-chan error{running, next} {
 		if err := awaitDone(t, one); err != nil {
 			t.Fatal(err)
@@ -381,7 +381,7 @@ func TestACanceledRunningCallFreesItsSlotWhenTheProviderReturns(t *testing.T) {
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
 	s.awaitEntered(t)
-	s.world.Provider.Unblock(addressLimited)
+	s.world.Provider.ReleaseCalls(addressLimited)
 	if err := awaitDone(t, next); err != nil {
 		t.Fatal(err)
 	}

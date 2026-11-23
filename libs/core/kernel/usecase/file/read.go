@@ -163,7 +163,7 @@ func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, 
 	}
 	raw = raw[:read]
 
-	start, raw = text.WholeCharacters(start, raw, out.Whole)
+	start, raw = text.TrimToWholeCharacters(start, raw, out.Whole)
 	out.Start = start
 	if !utf8.Valid(raw) {
 		out.Outcome = NotText

@@ -13,7 +13,7 @@ interface PromptView {
   readonly placeholder: string
   readonly heading: string
   readonly groups: readonly PaletteGroup[]
-  readonly type: (text: string) => void
+  readonly enterText: (text: string) => void
   readonly answer: (id: string) => void
   readonly submit: () => void
 }
@@ -72,7 +72,7 @@ export function createPromptSession(): PromptSession {
     }
   }
 
-  const type = (text: string): void => {
+  const enterText = (text: string): void => {
     typed.value = text
   }
 
@@ -99,7 +99,7 @@ export function createPromptSession(): PromptSession {
       placeholder: current.options.title,
       heading: current.options.title,
       groups: current.kind === 'promptText' ? [] : [getOptionGroup(current.options)],
-      type,
+      enterText,
       answer: (id) => {
         if (current.kind === 'selectOption') reply(id)
       },

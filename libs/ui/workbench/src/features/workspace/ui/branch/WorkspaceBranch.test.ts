@@ -5,18 +5,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WorkspacePane } from '../pane'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
-import { split, stack } from '../../fixtures/build'
+import { split, createStack } from '../../fixtures/build'
 import { type Branch, type Tab, type TabId } from '../../lib/node'
 
 const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three: 'Three' }
 
 const twoPanes = (): Branch =>
-  split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch
+  split('root', [createStack('left', 'one'), createStack('right', 'two')], [0.7, 0.3]) as Branch
 
 const createNestedBranch = (): Branch =>
   split('root', [
-    stack('left', 'one'),
-    split('down', [stack('upper', 'two'), stack('lower', 'three')]),
+    createStack('left', 'one'),
+    split('down', [createStack('upper', 'two'), createStack('lower', 'three')]),
   ]) as Branch
 
 const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
@@ -32,7 +32,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
     choose: vi.fn(),
     close: vi.fn(),
     startTabPress: vi.fn(),
-    menu: vi.fn(),
+    openMenu: vi.fn(),
     claim,
     resize,
     show: vi.fn(),

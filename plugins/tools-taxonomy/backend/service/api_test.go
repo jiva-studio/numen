@@ -85,7 +85,7 @@ func TestGetTagMapAnswersTheUpdatedPathsAfterFilesChange(t *testing.T) {
 	web := p.serve(t)
 	readTagMap(t, web)
 
-	p.vault.File("a.md", "---\ntags: [river, delta]\n---\n")
+	p.vault.WriteFile("a.md", "---\ntags: [river, delta]\n---\n")
 	p.vault.Remove("b.md")
 	p.deliver(t, "onFilesChanged:garden")
 

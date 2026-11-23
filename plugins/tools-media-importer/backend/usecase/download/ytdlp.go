@@ -137,7 +137,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want fetch.Preferred
 	if err != nil {
 		return fetch.Text{}, err
 	}
-	cues, err := v.subtitles(ctx, target, chooseLanguage(meta, want.Languages, want.IsAutomatic))
+	cues, err := v.fetchSubtitles(ctx, target, chooseLanguage(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
 		return fetch.Text{}, err
 	}
@@ -150,7 +150,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want fetch.Preferred
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]fetch.Cue, error) {
+func (v *ytDLP) fetchSubtitles(ctx context.Context, pos string, language string) ([]fetch.Cue, error) {
 	if language == "" {
 		return nil, fetch.ErrNothingDownloaded
 	}

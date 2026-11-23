@@ -31,7 +31,7 @@ describe('the tag chips view of a plex node', () => {
   it('draws the tags the map holds for the path it is given', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     const wrapper = mount(createPlexTags(map), { props: { path: 'notes/Dock.md' } })
 
@@ -42,7 +42,7 @@ describe('the tag chips view of a plex node', () => {
   it('draws nothing for a path without tags', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     const wrapper = mount(createPlexTags(map), { props: { path: 'notes/Pier.md' } })
 
@@ -53,7 +53,7 @@ describe('the tag chips view of a plex node', () => {
   it('draws the tags again when the tags of its path change, without another request', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const wrapper = mount(createPlexTags(map), { props: { path: 'notes/Pier.md' } })
 
     map.setTags({ 'notes/Pier.md': ['Sea'] })
@@ -67,7 +67,7 @@ describe('the tag chips view of a plex node', () => {
   it('draws nothing again when its path is left with no tags', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const wrapper = mount(createPlexTags(map), { props: { path: 'notes/Quay.md' } })
 
     map.setTags({ 'notes/Quay.md': [] })
@@ -80,7 +80,7 @@ describe('the tag chips view of a plex node', () => {
   it('makes no request of its own for each node it is drawn under', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const view = createPlexTags(map)
 
     for (let i = 0; i < 30; i++) mount(view, { props: { path: `notes/Note ${i}.md` } })

@@ -30,7 +30,7 @@ func NewRead(readers ports.VaultReaders, links ports.LinkQueries) Read {
 //
 // An error means the vault is unavailable. A problem with the file itself is
 // reported in the outcome.
-func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (format.DeckContents, error) {
+func (u Read) ReadDeck(ctx context.Context, v domain.Vault, path string) (format.DeckContents, error) {
 	out := format.DeckContents{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before Deck returns."
 		Path: path, Outcome: "", Type: "", Body: format.Deck{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil},
@@ -64,7 +64,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (format.Dec
 			Preamble: "",
 			Tail:     "",
 			Sections: nil,
-			Cards:    nil, Problems: []format.Problem{format.OnFile(
+			Cards:    nil, Problems: []format.Problem{format.BuildFileProblem(
 				format.FaultTooLarge,
 				fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, format.MaxDeckBytes),
 			)}}
@@ -126,7 +126,7 @@ func (u Read) readCardModels(
 	for content, path := range pos {
 		target, observed := read[path]
 		if !observed {
-			found, err := u.CardModel(ctx, v, path)
+			found, err := u.ReadCardModel(ctx, v, path)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -148,13 +148,13 @@ func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.P
 		if !ordinary[card.CardModelLink] {
 			continue
 		}
-		out = append(out, format.OnCard(item, format.FaultNotACardModel,
+		out = append(out, format.BuildCardProblem(item, format.FaultNotACardModel,
 			card.CardModelLink+" is a note and not a card model, so this card is shown by no template"))
 	}
 	return out
 }
 
-func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (format.CardModelContents, error) {
+func (u Read) ReadCardModel(ctx context.Context, v domain.Vault, path string) (format.CardModelContents, error) {
 	out := format.CardModelContents{
 		Path: path, Title: "", Outcome: "", Type: "",
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before CardModel returns."
@@ -192,15 +192,15 @@ func (u Read) readNote(
 	case target:
 		if ref.Kind != domain.KindNote {
 			// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
-			return emptyNote(), ref, edit.NotANote, nil
+			return newEmptyNote(), ref, edit.NotANote, nil
 		}
 		if ref.Size > maxSize {
 			// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
-			return emptyNote(), ref, edit.TooLarge, nil
+			return newEmptyNote(), ref, edit.TooLarge, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):
 		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="emptyNote returns the zero value of domain.Note and NotANote callers ignore FileStat Size."
-		return emptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, edit.NotANote, nil
+		return newEmptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, edit.NotANote, nil
 	case !errors.Is(err, ports.ErrNotExist):
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
@@ -209,10 +209,10 @@ func (u Read) readNote(
 	switch {
 	case errors.Is(err, ports.ErrNotExist):
 		// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
-		return emptyNote(), ref, edit.Missing, nil
+		return newEmptyNote(), ref, edit.Missing, nil
 	case !target && err == nil:
 		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="emptyNote returns the zero value of domain.Note and NotANote callers ignore FileStat Size."
-		return emptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, edit.NotANote, nil
+		return newEmptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, edit.NotANote, nil
 	case err != nil:
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
@@ -226,11 +226,11 @@ func parseNoteBytes(ref domain.FileStat, raw []byte, path string) (domain.Note, 
 	// characters over the original bytes.
 	if !utf8.Valid(raw) {
 		// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
-		return emptyNote(), ref, edit.NotText, nil
+		return newEmptyNote(), ref, edit.NotText, nil
 	}
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
-		return emptyNote(), ref, edit.Unreadable, nil
+		return newEmptyNote(), ref, edit.Unreadable, nil
 		// gomutants:disable-next-line BRANCH_IF reason="markdown.Open returns only nil or markdown.ErrUnreadable."
 	} else if err != nil {
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
@@ -238,7 +238,7 @@ func parseNoteBytes(ref domain.FileStat, raw []byte, path string) (domain.Note, 
 	return markdown.Parse(ref, raw), ref, edit.Ok, nil
 }
 
-func emptyNote() domain.Note {
+func newEmptyNote() domain.Note {
 	// gomutants:disable-next-line RETURN_ZERO reason="emptyNote constructs the explicit zero value of domain.Note."
 	return domain.Note{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="emptyNote FileStat is unused by callers."

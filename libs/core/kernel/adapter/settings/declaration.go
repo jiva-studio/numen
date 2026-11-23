@@ -148,9 +148,9 @@ func getAppBounds(key string) settingsdomain.Bounds {
 	return bounds
 }
 
-// ThemeRegistry answers the registry of themes with the themes list returns, and every other registry
+// BuildThemeRegistry answers the registry of themes with the themes list returns, and every other registry
 // as unknown.
-func ThemeRegistry(list func() []themedomain.Theme) RegistryOptions {
+func BuildThemeRegistry(list func() []themedomain.Theme) RegistryOptions {
 	return func(name string) (manifest.SettingOptions, bool) {
 		if name != settingsdomain.RegistryThemes {
 			return nil, false

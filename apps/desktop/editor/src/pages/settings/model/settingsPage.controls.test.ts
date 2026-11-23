@@ -294,7 +294,7 @@ const THEME = {
     >
     return {
       themes: [],
-      applied: appearance['theme'] as string,
+      appliedTheme: appearance['theme'] as string,
       mode: MODES[appearance['mode'] as string] ?? THEME_MODE.SYSTEM,
       interfaceScale: appearance['interfaceScale'] as number,
       textScale: 1,

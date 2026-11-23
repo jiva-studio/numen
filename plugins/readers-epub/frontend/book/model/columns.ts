@@ -15,12 +15,12 @@ import {
   GAP,
   LARGEST,
   SMALLEST,
-  columnHeight,
+  getColumnHeight,
   countColumns,
   countFilledColumns,
   type Flow,
 } from '../lib/spread'
-import { columnWidth, countSpreads } from '../lib/columnGrid'
+import { getColumnWidth, countSpreads } from '../lib/columnGrid'
 import type { SettledBookProps } from '../lib/props'
 
 const getLine = (text: HTMLElement): number => {
@@ -33,7 +33,7 @@ function createBookSetting(flow: Flow, height: number, textSize: number) {
   return {
     '--book-run': flow.columns === 1 ? '200%' : '100%',
     '--book-gap': `${GAP}px`,
-    '--book-column': `${columnWidth(flow)}px`,
+    '--book-column': `${getColumnWidth(flow)}px`,
     '--book-height': `${height}px`,
     '--book-size': `calc(var(--numen-prose-size) * ${textSize})`,
   }
@@ -116,7 +116,7 @@ export function useBookColumns(options: BookColumnsOptions) {
    * Returns the column height in pixels, which is also written to `--book-paper` on the text.
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): number => {
-    const paperHeight = columnHeight(box.clientHeight, getLine(text))
+    const paperHeight = getColumnHeight(box.clientHeight, getLine(text))
     text.style.setProperty('--book-paper', `${paperHeight}px`)
     runMarks.gather()
     const readFlow: Flow = { ...viewportFlow.value, width: box.clientWidth }

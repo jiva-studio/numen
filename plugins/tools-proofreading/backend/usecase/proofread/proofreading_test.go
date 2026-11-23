@@ -50,13 +50,13 @@ func newScene(t *testing.T) *scene {
 		model:  newReplyModel(""),
 		config: settings.DefaultConfig(),
 	}
-	s.texts.File(scanPath, []byte("the scan"))
-	s.texts.File(talkPath, []byte("the recording"))
+	s.texts.WriteFile(scanPath, []byte("the scan"))
+	s.texts.WriteFile(talkPath, []byte("the recording"))
 	s.texts.SetStore(pluginID, s.store)
 	s.run = New(Host{
-		Store: func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
-		Texts: func(id domain.VaultID) Texts { return s.texts.With(id) },
-		Queue: s.queue,
+		Store:    func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
+		GetTexts: func(id domain.VaultID) Texts { return s.texts.With(id) },
+		Queue:    s.queue,
 	}, GetProofreadKinds(), s.model.ask, func() settings.Config { return s.config })
 	return s
 }
@@ -66,7 +66,7 @@ func (s *scene) hold(t *testing.T, owner, path, key string, kind domain.TextKind
 	if err := host.WriteText(t.Context(), s.texts.GetStore(owner), key+".jsonl", parts); err != nil {
 		t.Fatal(err)
 	}
-	version, err := s.texts.As(owner).PutVersion(t.Context(), host.TextPut{
+	version, err := s.texts.UsePlugin(owner).PutVersion(t.Context(), host.TextPut{
 		Path: path, Key: key, Kind: kind, InputHash: domain.HashContent([]byte(raw)), File: key + ".jsonl",
 	})
 	if err != nil {
@@ -281,14 +281,14 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
+	s.vault.LinkBeside(chemistry)
 	other := s.texts.With("Chemistry")
-	other.File(scanPath, []byte("the scan"))
+	other.WriteFile(scanPath, []byte("the scan"))
 	other.SetStore(pluginID, chemistry.Store())
 	if err := host.WriteText(t.Context(), other.GetStore(ocrID), "recognition.jsonl", []domain.TextSegment{{Text: "A rotor spinnig.\n\n"}}); err != nil {
 		t.Fatal(err)
 	}
-	scan, err := other.As(ocrID).PutVersion(t.Context(), host.TextPut{
+	scan, err := other.UsePlugin(ocrID).PutVersion(t.Context(), host.TextPut{
 		Path: scanPath, Key: "recognition", Kind: kindRecognition, InputHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
 	})
 	if err != nil {
@@ -455,7 +455,7 @@ func TestProofreadQueueAndHostFailures(t *testing.T) {
 
 	s.run.host.Queue = s.queue
 	listBoom := errors.New("list failed")
-	s.run.host.Texts = func(id domain.VaultID) Texts {
+	s.run.host.GetTexts = func(id domain.VaultID) Texts {
 		return &stubTexts{Texts: s.texts.With(id), listErr: listBoom}
 	}
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, listBoom) {
@@ -463,7 +463,7 @@ func TestProofreadQueueAndHostFailures(t *testing.T) {
 	}
 
 	readBoom := errors.New("read failed")
-	s.run.host.Texts = func(id domain.VaultID) Texts {
+	s.run.host.GetTexts = func(id domain.VaultID) Texts {
 		return &stubTexts{Texts: s.texts.With(id), readErr: readBoom}
 	}
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, readBoom) {
@@ -471,14 +471,14 @@ func TestProofreadQueueAndHostFailures(t *testing.T) {
 	}
 
 	putBoom := errors.New("put failed")
-	s.run.host.Texts = func(id domain.VaultID) Texts {
+	s.run.host.GetTexts = func(id domain.VaultID) Texts {
 		return &stubTexts{Texts: s.texts.With(id), putErr: putBoom}
 	}
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, putBoom) {
 		t.Errorf("put failure got %v", err)
 	}
 
-	s.run.host.Texts = func(id domain.VaultID) Texts { return s.texts.With(id) }
+	s.run.host.GetTexts = func(id domain.VaultID) Texts { return s.texts.With(id) }
 	writeBoom := errors.New("write failed")
 	s.run.host.Store = func(id domain.VaultID) host.StoreWriter {
 		return failingStore{StoreWriter: s.store.With(id), writeErr: writeBoom}

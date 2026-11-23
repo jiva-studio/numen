@@ -35,13 +35,13 @@ type Outcome struct {
 // already there.
 type Requests struct {
 	transcriber *Transcriber
-	vaults      func(domain.VaultID) Vault
+	getVault    func(domain.VaultID) Vault
 }
 
 // NewRequests returns the requests over the transcriber, which check the requested recordings
 // through the vault.
 func NewRequests(transcriber *Transcriber, vaults func(domain.VaultID) Vault) *Requests {
-	return &Requests{transcriber: transcriber, vaults: vaults}
+	return &Requests{transcriber: transcriber, getVault: vaults}
 }
 
 // IsRunning reports whether a transcription of the recording of the vault runs.
@@ -76,7 +76,7 @@ func (r *Requests) create(
 	if path == "" {
 		return Outcome{}, errors.New("path required")
 	}
-	if _, err := r.vaults(vault).StatFile(ctx, path); err != nil {
+	if _, err := r.getVault(vault).StatFile(ctx, path); err != nil {
 		if errors.Is(err, host.ErrNotExist) {
 			return Outcome{}, fmt.Errorf("%s: %w", path, errNotFound)
 		}

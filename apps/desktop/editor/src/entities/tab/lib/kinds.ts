@@ -36,14 +36,14 @@ export interface WindowHandle {
    * Every tab of a kind, ordered by last focus. The last entry is the most
    * recently focused tab.
    */
-  each<TabState>(kind: string): readonly KindTab<TabState>[]
+  listTabs<TabState>(kind: string): readonly KindTab<TabState>[]
   /** The most recently focused tab of a kind, or null when there is none. */
-  last<TabState>(kind: string): KindTab<TabState> | null
+  findLastTab<TabState>(kind: string): KindTab<TabState> | null
   /**
    * The tab visible in the focused pane, of any kind. Null when the pane is
    * empty.
    */
-  front(): ActiveTab | null
+  getFrontTab(): ActiveTab | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */
   getTabState<TabState>(kind: string, id: string): TabState | null
 }

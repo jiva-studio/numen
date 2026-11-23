@@ -10,11 +10,11 @@ import type { Connection } from '@numen/plugin-sdk'
 import type { LinkInspectorRequest } from '../types'
 import {
   addReverseSide,
-  cycleDirection,
+  rotateDirection,
   getNextDirection,
   getRows,
   isConnectionEmpty,
-  removeSide,
+  deleteConnectionSide,
   setSideLabel,
   type SideKey,
 } from '../model/connectionDraft'
@@ -68,7 +68,7 @@ function onKeyDown(event: KeyboardEvent) {
 }
 
 function onCycleDirection(key: SideKey) {
-  draft.value = cycleDirection(draft.value, key)
+  draft.value = rotateDirection(draft.value, key)
 }
 
 function onLabelChanged(key: SideKey, label: string) {
@@ -80,7 +80,7 @@ function onAddReverse() {
 }
 
 function onRemoveRow(key: SideKey) {
-  draft.value = removeSide(draft.value, key)
+  draft.value = deleteConnectionSide(draft.value, key)
 }
 
 function onDone() {

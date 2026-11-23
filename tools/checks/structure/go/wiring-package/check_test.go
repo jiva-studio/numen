@@ -125,9 +125,9 @@ func TestNoWiringPackageExistsOutsideTheContainer(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkNoWiringPackageExistsOutsideTheContainer(t, load.Workspace(t))
+	checkNoWiringPackageExistsOutsideTheContainer(t, load.LoadWorkspace(t))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

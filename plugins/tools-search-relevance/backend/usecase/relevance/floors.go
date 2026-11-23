@@ -50,9 +50,9 @@ type ProbeResult struct {
 // Host is the part of the host the floors work through: the search index, the notes of the vault and
 // the records the plugin keeps in its own folder.
 type Host struct {
-	Search func(domain.VaultID) Search
-	Vaults func(domain.VaultID) host.NoteLookup
-	Store  func(domain.VaultID) Records
+	Search   func(domain.VaultID) Search
+	GetVault func(domain.VaultID) host.NoteLookup
+	Store    func(domain.VaultID) Records
 }
 
 // Search is the calls the floors make on the search of one vault, each through the narrow interface it needs.
@@ -82,7 +82,7 @@ type scope struct {
 }
 
 func (f *Floors) open(vault domain.VaultID) scope {
-	return scope{search: f.host.Search(vault), notes: f.host.Vaults(vault), records: f.host.Store(vault)}
+	return scope{search: f.host.Search(vault), notes: f.host.GetVault(vault), records: f.host.Store(vault)}
 }
 
 // Get returns the floor in force for the vault. An installation with no model has the default floor.
@@ -252,7 +252,7 @@ func (f *Floors) Probe(ctx context.Context, vault domain.VaultID, query string) 
 	if strings.TrimSpace(query) == "" {
 		return ProbeResult{BestSimilarity: 0, Floor: applied.Floor, DoesPass: false}, nil
 	}
-	embedded, err := s.search.Index.EmbedTexts(ctx, []string{clipText(query, host.MaxEmbeddedBytes)})
+	embedded, err := s.search.Index.EmbedTexts(ctx, []string{truncateText(query, host.MaxEmbeddedBytes)})
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("embed the query: %w", err)
 	}

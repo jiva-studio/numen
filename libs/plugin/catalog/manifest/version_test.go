@@ -118,7 +118,7 @@ func TestAPluginRunsWhereItsRequirementsAreMet(t *testing.T) {
 	if err := m.CheckCompatibility(env); err != nil {
 		t.Errorf("%+v: %v", env, err)
 	}
-	if !m.Supports("desktop.editor") || m.Supports("desktop.flashcards") {
+	if !m.CanTarget("desktop.editor") || m.CanTarget("desktop.flashcards") {
 		t.Error("Supports does not follow the targets")
 	}
 }

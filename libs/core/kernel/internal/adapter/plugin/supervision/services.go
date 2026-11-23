@@ -62,34 +62,34 @@ type Dependencies interface {
 // through and the provisioner of the dependencies they declare. Both are read from the functions
 // the services are made with, at each use.
 type Services struct {
-	closing      Closing
-	endpoint     func() HostEndpoint
-	dependencies func() Dependencies
+	closing         Closing
+	getEndpoint     func() HostEndpoint
+	getDependencies func() Dependencies
 
 	mu          sync.Mutex
-	observer    func(manifest.DependencyRequirement, plugindomain.DependencyStatus)
+	observe     func(manifest.DependencyRequirement, plugindomain.DependencyStatus)
 	downloading map[string]manifest.DependencyRequirement
 }
 
 // NewServices returns services that read the endpoint and the provisioner of the dependencies from the
 // given functions; a nil result means there is none. They open no endpoint once closing reports the host shut down.
 func NewServices(
-	closing Closing, endpoint func() HostEndpoint, dependencies func() Dependencies,
+	closing Closing, getEndpoint func() HostEndpoint, getDependencies func() Dependencies,
 ) *Services {
-	return &Services{closing: closing, endpoint: endpoint, dependencies: dependencies, downloading: map[string]manifest.DependencyRequirement{}}
+	return &Services{closing: closing, getEndpoint: getEndpoint, getDependencies: getDependencies, downloading: map[string]manifest.DependencyRequirement{}}
 }
 
 // GetDependencies returns what provisions the dependencies, or nil when nothing does.
 func (s *Services) GetDependencies() Dependencies {
-	return s.dependencies()
+	return s.getDependencies()
 }
 
 // ObserveDependencies sets the function that observes each change of the state of a dependency. A
 // host that provisions none observes none.
-func (s *Services) ObserveDependencies(observer func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
+func (s *Services) ObserveDependencies(observe func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.observer = observer
+	s.observe = observe
 }
 
 // Observe records the change of the state of a dependency and passes it to the observer. A provisioner of
@@ -101,10 +101,10 @@ func (s *Services) Observe(req manifest.DependencyRequirement, status plugindoma
 	} else {
 		delete(s.downloading, req.GetIdentity())
 	}
-	observer := s.observer
+	observe := s.observe
 	s.mu.Unlock()
-	if observer != nil {
-		observer(req, status)
+	if observe != nil {
+		observe(req, status)
 	}
 }
 
@@ -129,7 +129,7 @@ func (s *Services) CancelDependencies() {
 // there is no endpoint or nothing to lend through it.
 func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 	isClosed := s.closing.IsClosed()
-	endpoint := s.endpoint()
+	endpoint := s.getEndpoint()
 	if endpoint == nil {
 		return 0, nil
 	}
@@ -140,7 +140,7 @@ func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 }
 
 func (s *Services) CloseHostEndpoint(ctx context.Context) error {
-	endpoint := s.endpoint()
+	endpoint := s.getEndpoint()
 	if endpoint == nil {
 		return nil
 	}
@@ -149,7 +149,7 @@ func (s *Services) CloseHostEndpoint(ctx context.Context) error {
 
 // ClearPlugin forgets what the endpoint holds for a plugin whose process ended.
 func (s *Services) ClearPlugin(pluginID string) {
-	endpoint := s.endpoint()
+	endpoint := s.getEndpoint()
 	if endpoint != nil {
 		endpoint.ClearPlugin(pluginID)
 	}

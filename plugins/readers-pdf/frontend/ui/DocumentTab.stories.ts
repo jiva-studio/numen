@@ -10,12 +10,12 @@ import { expect, waitFor } from 'storybook/test'
 import { shallowRef } from 'vue'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { frameStory } from '../fixtures/frame'
+import { decorateFrame } from '../fixtures/frame'
 import type { Documents, TextRange } from '../types'
 
 const meta = {
   title: 'Reading/Document tab',
-  decorators: [frameStory],
+  decorators: [decorateFrame],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 

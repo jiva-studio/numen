@@ -10,7 +10,7 @@ import { EditorView } from '@codemirror/view'
 import type { EditorChange } from '../lib/change/change'
 import {
   extensionsCompartment,
-  code,
+  createCodeExtension,
   previewCompartment,
   createEditableExtension,
   editableCompartment,
@@ -18,8 +18,8 @@ import {
   getTabSizeExtension,
   getWrapExtension,
   lineNumbersCompartment,
-  preview,
-  prose,
+  createPreviewExtension,
+  createProseExtension,
   setup,
   showChange,
   changeCompartment,
@@ -57,23 +57,28 @@ export interface EditorStateOptions {
   readonly text: Ref<string>
   readonly keysId: string
   readonly emit: EditorEmit
-  readonly softWrap?: () => boolean | undefined
-  readonly lineNumbers?: () => boolean | undefined
-  readonly tabSize?: () => number | undefined
+  readonly shouldSoftWrap?: () => boolean | undefined
+  readonly shouldShowLineNumbers?: () => boolean | undefined
+  readonly getTabSize?: () => number | undefined
 }
 
 export function useEditor(options: EditorStateOptions) {
   let view: EditorView | null = null
   let lastEmitted: string | null = null
 
-  const readSoftWrap = () => (options.softWrap ? options.softWrap() : options.props.softWrap)
+  const readSoftWrap = () =>
+    options.shouldSoftWrap ? options.shouldSoftWrap() : options.props.softWrap
   const readLineNumbers = () =>
-    options.lineNumbers ? options.lineNumbers() : options.props.lineNumbers
-  const readTabSize = () => (options.tabSize ? options.tabSize() : options.props.tabSize)
+    options.shouldShowLineNumbers ? options.shouldShowLineNumbers() : options.props.lineNumbers
+  const readTabSize = () => (options.getTabSize ? options.getTabSize() : options.props.tabSize)
 
   function setLanguage(name: string, support: LanguageSupport | null): void {
     if (!view || name !== options.props.language) return
-    view.dispatch({ effects: languageCompartment.reconfigure(support ? code(support) : prose()) })
+    view.dispatch({
+      effects: languageCompartment.reconfigure(
+        support ? createCodeExtension(support) : createProseExtension(),
+      ),
+    })
   }
 
   /** Loads the language pack of the name; a pack that fails to load leaves the document plain. */
@@ -137,7 +142,10 @@ export function useEditor(options: EditorStateOptions) {
 
   watch(
     () => options.props.isLive,
-    (on) => view?.dispatch({ effects: previewCompartment.reconfigure(preview(on ?? true)) }),
+    (on) =>
+      view?.dispatch({
+        effects: previewCompartment.reconfigure(createPreviewExtension(on ?? true)),
+      }),
   )
 
   watch(

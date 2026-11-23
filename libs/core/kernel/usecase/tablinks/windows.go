@@ -87,7 +87,7 @@ func (w *Windows) WriteTabs(window Window, tabs []tablink.Tab) {
 			claimed = append(claimed, one)
 		}
 	}
-	for _, id := range s.roster.tabIDsOf(windowID) {
+	for _, id := range s.roster.listTabIDs(windowID) {
 		if !slices.Contains(reported, id) {
 			s.forgetTab(id)
 		}

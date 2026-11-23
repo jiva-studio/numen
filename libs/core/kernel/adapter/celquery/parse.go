@@ -83,7 +83,7 @@ func (p Parser) newSyntaxError(source queryText, catalog searchquery.Catalog) *s
 
 func isInsideAny(source queryText, spans []span, position searchquery.Position) bool {
 	offset := source.lineStarts[position.Line-1] + position.Column - 1
-	return slices.ContainsFunc(spans, func(s span) bool { return s.contains(offset) })
+	return slices.ContainsFunc(spans, func(s span) bool { return s.hasOffset(offset) })
 }
 
 func getExprPosition(source queryText, info *ast.SourceInfo, expr ast.Expr) searchquery.Position {

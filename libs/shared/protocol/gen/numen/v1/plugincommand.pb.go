@@ -432,7 +432,6 @@ func (x *PluginCommand) GetWarns() *ManifestCommandWarns {
 	return nil
 }
 
-// CommandArgument is one argument a command takes.
 type CommandArgument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`

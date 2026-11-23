@@ -14,20 +14,20 @@ type Store interface {
 
 // Record validates, filters by the active log level, buffers and persists a structured log entry.
 type Record struct {
-	entries *Entries
-	store   Store
-	level   func() logs.Level
-	clock   machineport.Clock
+	entries  *Entries
+	store    Store
+	getLevel func() logs.Level
+	clock    machineport.Clock
 }
 
 // NewRecord returns the use case over the in-memory buffer, the file store, the active log level
 // reader and the clock.
 func NewRecord(entries *Entries, store Store, level func() logs.Level, clock machineport.Clock) *Record {
 	return &Record{
-		entries: entries,
-		store:   store,
-		level:   level,
-		clock:   clock,
+		entries:  entries,
+		store:    store,
+		getLevel: level,
+		clock:    clock,
 	}
 }
 
@@ -35,10 +35,10 @@ func NewRecord(entries *Entries, store Store, level func() logs.Level, clock mac
 // the in-memory stream and writes it to the store.
 func (r *Record) Execute(entry logs.Entry) error {
 	activeLevel := logs.DefaultLevel
-	if r.level != nil {
-		activeLevel = r.level()
+	if r.getLevel != nil {
+		activeLevel = r.getLevel()
 	}
-	if !activeLevel.Allows(entry.Level) {
+	if !activeLevel.CanRecord(entry.Level) {
 		if strings.TrimSpace(entry.Message) == "" {
 			return logs.ErrEmptyMessage
 		}

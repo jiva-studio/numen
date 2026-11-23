@@ -209,8 +209,6 @@ export const PluginCommandSchema: GenMessage<PluginCommand> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 4);
 
 /**
- * CommandArgument is one argument a command takes.
- *
  * @generated from message numen.v1.CommandArgument
  */
 export type CommandArgument = Message<"numen.v1.CommandArgument"> & {

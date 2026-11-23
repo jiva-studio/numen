@@ -16,7 +16,7 @@ const MaxSize = 256 << 10
 // PluginPrefix starts the name of a plugin theme: `plugin:<pluginId>/<themeId>`.
 const PluginPrefix = string(Plugin) + ":"
 
-func PluginName(pluginID, themeID string) string {
+func BuildPluginName(pluginID, themeID string) string {
 	return PluginPrefix + pluginID + "/" + themeID
 }
 

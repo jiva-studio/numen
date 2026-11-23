@@ -36,7 +36,7 @@ type Queue interface {
 // other work holds the queue.
 type Work struct {
 	IsUserStarted bool
-	OnWaiting     func()
+	NotifyWaiting func()
 }
 
 // Turn is the work's hold on the queue.
@@ -82,7 +82,7 @@ var _ Queue = (*QueueClient)(nil)
 // NewQueueClientFromEnv connects to the host the process was started for. It
 // returns hostcall.ErrNoHost when no host is configured.
 func NewQueueClientFromEnv() (*QueueClient, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +90,11 @@ func NewQueueClientFromEnv() (*QueueClient, error) {
 }
 
 func NewQueueClient(endpoint hostcall.Endpoint) *QueueClient {
-	return newQueueClientOver(transport.HTTPClient(), endpoint)
+	return newQueueClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newQueueClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *QueueClient {
-	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // EnqueueWork holds the stream of the call open for as long as the turn lasts.
@@ -108,8 +108,8 @@ func (c *QueueClient) EnqueueWork(ctx context.Context, work Work) (Turn, error) 
 	for stream.Receive() {
 		switch stream.Msg().GetState() {
 		case v1.WorkState_WORK_STATE_WAITING:
-			if work.OnWaiting != nil {
-				work.OnWaiting()
+			if work.NotifyWaiting != nil {
+				work.NotifyWaiting()
 			}
 		case v1.WorkState_WORK_STATE_RUNNING, v1.WorkState_WORK_STATE_CONTENDED:
 			turn := &clientTurn{cancel: cancel, waiting: make(chan struct{}), ended: make(chan struct{})}
@@ -134,14 +134,14 @@ func (c *QueueClient) EnqueueWork(ctx context.Context, work Work) (Turn, error) 
 
 func (c *QueueClient) ReportTask(ctx context.Context, task Task) error {
 	_, err := c.rpc.ReportTask(ctx, connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
-		Id:            task.ID,
-		Title:         task.Title,
-		About:         task.Detail,
-		Done:          task.CompletedCount,
-		Total:         task.TotalCount,
-		Unit:          writeUnit(task.Unit),
-		Error:         task.FailureReason,
-		IsUserStarted: task.IsUserStarted,
+		Id:             task.ID,
+		Title:          task.Title,
+		Detail:         task.Detail,
+		CompletedCount: task.CompletedCount,
+		TotalCount:     task.TotalCount,
+		Unit:           writeUnit(task.Unit),
+		FailureReason:  task.FailureReason,
+		IsUserStarted:  task.IsUserStarted,
 	}}))
 	return err
 }
