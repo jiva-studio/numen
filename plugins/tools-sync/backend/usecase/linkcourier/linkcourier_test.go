@@ -180,7 +180,7 @@ func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T
 	if !waitHealthKey(t, r, "link-other-server") {
 		t.Fatalf("health = %+v, want the item that names another server", r.computer.Health.List())
 	}
-	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideScanner, 0, 200*time.Millisecond)
+	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideDisplayer, 0, 200*time.Millisecond)
 	if err != nil || len(got.Messages) != 0 {
 		t.Errorf("the relay holds %+v, %v, want nothing posted for another server", got, err)
 	}
@@ -200,9 +200,9 @@ func TestExecute_CarriesALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideScanner, 0, 10*time.Second)
+	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideDisplayer, 0, 10*time.Second)
 
 	if err != nil || len(got.Messages) != 1 || !bytes.Equal(got.Messages[0].Body, []byte("sealed blob")) {
-		t.Errorf("the scanner reads %+v, %v, want the blob of the core", got, err)
+		t.Errorf("the displayer reads %+v, %v, want the blob of the core", got, err)
 	}
 }
