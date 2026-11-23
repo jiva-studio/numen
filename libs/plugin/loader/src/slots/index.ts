@@ -3,10 +3,8 @@ export {
   readManifestSlotEntries,
   type DeclaredSlotEntry,
   type SlotCommandLook,
-  type SlotRegistryDeps,
 } from './slotRegistry'
 export {
-  applyLayout,
   arrangeByLayout,
   collapseSeparators,
   SLOT_SEPARATOR_ID,

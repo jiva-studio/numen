@@ -7,7 +7,7 @@ import { getTargetValues, type TargetNote, type TargetPath } from './targetValue
 import type { WhenSettings, WhenValues } from './when'
 
 /** What the values of one evaluation are made of. */
-export interface WhenValueParts {
+interface WhenValueParts {
   readonly window?: WhenValues | undefined
   readonly target: TargetPath | undefined
   readonly note?: TargetNote | undefined

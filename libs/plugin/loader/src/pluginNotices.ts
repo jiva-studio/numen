@@ -4,7 +4,7 @@
 import type { NoticeHost } from '@numen/plugin-sdk'
 
 /** The work a window's notice list holds for a source. */
-export interface NoticeListTask {
+interface NoticeListTask {
   readonly id: string
   readonly label: string
   readonly about: string

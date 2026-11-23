@@ -18,7 +18,14 @@ export {
   waitWithinInterfaceLimit,
   type PluginStatus,
 } from './loading'
-export { createSheet, getPluginSheet, getPluginStyle } from './styles'
+export {
+  adoptSheet,
+  clearPluginStyles,
+  createSheet,
+  getPluginSheet,
+  getPluginStyle,
+  registerPluginStyle,
+} from './styles'
 export { SlotViewHost, usePluginStyles } from './slot-views'
 export { createAppInfo } from './appInfo'
 export { createPluginConnections } from './pluginConnections'

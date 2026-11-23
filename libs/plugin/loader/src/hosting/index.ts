@@ -1,12 +1,9 @@
-export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './host'
+export { createPluginHost, type PluginHost } from './host'
 export { requireMountAccess } from './guards/viewPermissions'
 export { createCustomTabKind, pickCustomTabParts } from './customTabKind'
 export type {
   NoteBuffer,
-  PluginContextHost,
   PluginHostDeps,
-  HostWindow,
-  HostPlugins,
   HostCommands,
   HostSlots,
   HostKinds,
@@ -16,9 +13,6 @@ export type {
   PluginPaletteCommand,
   CommandDeclaration,
   HandlerDeclaration,
-  BackendHandlerRun,
-  HostCommandReads,
-  SlotCommandFinder,
 } from './types'
-export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './tabKinds'
+export type { AnyTabKind, OpenTab, SourceReader, TabKind } from './tabKinds'
 export { createWindowHost, type WindowControls } from './windowHost'
