@@ -117,7 +117,7 @@ describe('the identity store', () => {
       createClient({
         create: () =>
           Promise.resolve(
-            asFailure({ errorCode: 'invalid_words', detail: 'word 4 is not a recovery word' }),
+            asFailure({ error: 'invalidWords', message: 'word 4 is not a recovery word' }),
           ),
       }),
     )
@@ -130,7 +130,7 @@ describe('the identity store', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        create: () => Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+        create: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
@@ -140,8 +140,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalid_words', 'identity_exists', 'key_store_failed'] as const).map(
-      (errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }),
+    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map(
+      (error) => IDENTITY_WORDS.describeFailure({ error, message: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
