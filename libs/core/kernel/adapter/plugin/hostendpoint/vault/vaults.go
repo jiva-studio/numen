@@ -21,6 +21,7 @@ var (
 	errNoVaultList      = errors.New("this host has no list of vaults to change")
 	errNoTrash          = errors.New("a plugin removes a vault from the list and leaves its folder")
 	errManagerNotCaller = errors.New("a vault is managed by the plugin that adds it")
+	errNotManager       = errors.New("a plugin removes only the vaults it manages")
 )
 
 func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
@@ -55,6 +56,9 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 	}
 	if errors.Is(err, domain.ErrUnavailable) {
 		return 0, "", connect.NewError(connect.CodeUnavailable, err)
+	}
+	if errors.Is(err, vaultdomain.ErrManagedExisting) {
+		return 0, "", connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return 0, "", connect.NewError(connect.CodeInternal, err)
 }
@@ -165,7 +169,7 @@ func (e *vaultsCalls) RenameVault(
 func (e *vaultsCalls) RemoveVault(
 	ctx context.Context, req *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	list, err := e.beginList(req.Header())
+	pluginID, list, err := e.beginListAs(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +179,9 @@ func (e *vaultsCalls) RemoveVault(
 	id := domain.VaultID(req.Msg.GetId())
 	// The folder is read from the list before the vault leaves it.
 	entry, err := e.findVault(id)
+	if err == nil && entry.ManagedBy != pluginID {
+		return nil, connect.NewError(connect.CodePermissionDenied, errNotManager)
+	}
 	if err == nil {
 		err = list.RemoveVault(ctx, id)
 	}

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -58,5 +59,40 @@ func TestAManagedVaultStillRefusesAFolderInsideAnotherVault(t *testing.T) {
 
 	if _, err := add.ExecuteManaged(inner, "inner", managingPlugin); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("error = %v, want ErrOverlaps", err)
+	}
+}
+
+func TestAManagedVaultRefusesAFolderThatIsAVaultAlready(t *testing.T) {
+	t.Parallel()
+	add, registry := newAdd(t)
+	own := folder(t, "notes")
+	if _, err := add.Execute(own, "notes"); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := add.ExecuteManaged(own, "notes", managingPlugin)
+
+	if !errors.Is(err, vaultdomain.ErrManagedExisting) {
+		t.Errorf("error = %v, want ErrManagedExisting", err)
+	}
+	listed, listErr := registry.List()
+	if listErr != nil || len(listed) != 1 || listed[0].ManagedBy != "" {
+		t.Errorf("list = %+v, error = %v, want the vault of the person still unmanaged", listed, listErr)
+	}
+}
+
+func TestAManagedVaultRefusesAFolderThatCarriesAVaultIdentityOffTheList(t *testing.T) {
+	t.Parallel()
+	add, _ := newAdd(t)
+	own := folder(t, "notes")
+	if _, err := add.Execute(own, "notes"); err != nil {
+		t.Fatal(err)
+	}
+	other, _ := newAdd(t)
+
+	_, err := other.ExecuteManaged(own, "notes", managingPlugin)
+
+	if !errors.Is(err, vaultdomain.ErrManagedExisting) {
+		t.Errorf("error = %v, want ErrManagedExisting for a folder with an identity of its own", err)
 	}
 }

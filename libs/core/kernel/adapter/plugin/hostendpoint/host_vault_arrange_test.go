@@ -53,7 +53,7 @@ func newFakeNoteVault() *fakeNoteVault {
 func (a *fakeNoteVault) GetVaults() ([]domain.Vault, error) {
 	return []domain.Vault{
 		{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
-		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes", ManagedBy: "md.numen.tools.sync"},
+		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes", ManagedBy: "md.numen.a"},
 	}, nil
 }
 

@@ -40,7 +40,8 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 }
 
 // ExecuteManaged is Execute for a vault that only the plugin with the id managedBy writes. The attribute is stored
-// with the vault on the list.
+// with the vault on the list. It is given only to a folder that is no vault yet: a folder that carries a vault
+// identity is refused with ErrManagedExisting, so a plugin cannot take a vault of the person.
 func (u Add) ExecuteManaged(root, name, managedBy string) (domain.Vault, error) {
 	return u.add(root, name, managedBy)
 }
@@ -62,6 +63,10 @@ func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 	}
 	recognized := domain.Vaults(target)
 	if err := recognized.CheckOverlap(root); err != nil {
+		return domain.Vault{}, err
+	}
+
+	if err := u.checkNew(root, managedBy); err != nil {
 		return domain.Vault{}, err
 	}
 
@@ -97,6 +102,21 @@ func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	return v, nil
+}
+
+// checkNew refuses a folder that carries a vault identity: only a folder that is no vault yet can be given to a plugin.
+func (u Add) checkNew(root, managedBy string) error {
+	if managedBy == "" {
+		return nil
+	}
+	_, carriesIt, err := u.identity.GetVaultID(root)
+	if err != nil {
+		return err
+	}
+	if carriesIt {
+		return domain.NewDetailError(fmt.Sprintf("%s is a vault already", root), vaultdomain.ErrManagedExisting)
+	}
+	return nil
 }
 
 func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {

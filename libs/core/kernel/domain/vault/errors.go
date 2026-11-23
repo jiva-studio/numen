@@ -41,5 +41,9 @@ var (
 	ErrShowing = errors.New("the vault is open in the window")
 )
 
+// ErrManagedExisting is what adding a vault with a manager gets for a folder that is a vault already: a plugin takes
+// the writing of a folder it makes, never of one the person already has.
+var ErrManagedExisting = errors.New("a managed vault needs a folder that is not a vault yet")
+
 // ErrReadOnly is what a write to a vault gets from a caller that is not the plugin that manages the vault.
 var ErrReadOnly = errors.New("this vault is read only")
