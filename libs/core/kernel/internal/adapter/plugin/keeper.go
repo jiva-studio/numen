@@ -20,8 +20,9 @@ type heldStarter interface {
 }
 
 // Keeper keeps the processes of the plugins whose manifest asks to stay running: it holds a lease on each,
-// starts it, and starts it again once for each exit of a process that was up. A start has the activation
-// limit; one that fails is not repeated by the keeper until the next exit, use or enabling.
+// starts it, and starts it again once for each exit of a process that was up, also an exit that comes before
+// the start that brought the process up has returned. A start has the activation limit; one that fails is not
+// repeated by the keeper until the next exit, use or enabling.
 type Keeper struct {
 	set     pluginViews
 	mode    hostState
@@ -30,7 +31,7 @@ type Keeper struct {
 
 	mu       sync.Mutex
 	kept     map[string]struct{}
-	starting map[string]struct{}
+	starting map[string]bool
 }
 
 // KeeperDeps are what a Keeper reads the plugins from and starts them with.
@@ -45,7 +46,7 @@ type KeeperDeps struct {
 func NewKeeper(d KeeperDeps) *Keeper {
 	k := &Keeper{
 		set: d.Set, mode: d.Mode, sups: d.Supervisors, starter: d.Activation,
-		kept: make(map[string]struct{}), starting: make(map[string]struct{}),
+		kept: make(map[string]struct{}), starting: make(map[string]bool),
 	}
 	d.Supervisors.Exits.Set(k.restartAfterExit)
 	return k
@@ -112,7 +113,7 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 	if !k.isKept(pluginID) || !k.beginStart(pluginID) {
 		return
 	}
-	defer k.endStart(pluginID)
+	defer k.endStart(ctx, pluginID)
 	if !k.isKeepable(pluginID) {
 		k.Drop(ctx, pluginID)
 		return
@@ -132,16 +133,21 @@ func (k *Keeper) beginStart(pluginID string) bool {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if _, busy := k.starting[pluginID]; busy {
+		k.starting[pluginID] = true
 		return false
 	}
-	k.starting[pluginID] = struct{}{}
+	k.starting[pluginID] = false
 	return true
 }
 
-func (k *Keeper) endStart(pluginID string) {
+func (k *Keeper) endStart(ctx context.Context, pluginID string) {
 	k.mu.Lock()
-	defer k.mu.Unlock()
+	isAskedAgain := k.starting[pluginID]
 	delete(k.starting, pluginID)
+	k.mu.Unlock()
+	if isAskedAgain {
+		go k.start(ctx, pluginID)
+	}
 }
 
 func (k *Keeper) isHolding(pluginID string) bool {
