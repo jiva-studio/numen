@@ -63,7 +63,7 @@ func (h *Handler) ActivateLicense(
 		}
 		return connect.NewResponse(&v1.ActivateLicenseResponse{
 			Error:  code,
-			Detail: wire.GetErrorDetail(err, detailed...),
+			Detail: getDetail(err),
 		}), nil
 	}
 	return connect.NewResponse(&v1.ActivateLicenseResponse{
@@ -85,7 +85,7 @@ func (h *Handler) DeactivateLicense(
 		}
 		return connect.NewResponse(&v1.DeactivateLicenseResponse{
 			Error:  code,
-			Detail: wire.GetErrorDetail(err, detailed...),
+			Detail: getDetail(err),
 		}), nil
 	}
 	return connect.NewResponse(&v1.DeactivateLicenseResponse{
@@ -107,15 +107,17 @@ func (h *Handler) WatchLicenses(
 	})
 }
 
-var detailed = []error{
-	license.ErrNotFound,
-	license.ErrInvalidKey,
-	license.ErrActivationLimitReached,
-	license.ErrExpired,
-	license.ErrDisabled,
-	license.ErrProductMismatch,
-	license.ErrProviderUnavailable,
-	license.ErrKeyStore,
+func getDetail(err error) string {
+	return wire.GetErrorDetail(err,
+		license.ErrNotFound,
+		license.ErrInvalidKey,
+		license.ErrActivationLimitReached,
+		license.ErrExpired,
+		license.ErrDisabled,
+		license.ErrProductMismatch,
+		license.ErrProviderUnavailable,
+		license.ErrKeyStore,
+	)
 }
 
 func getErrorCode(err error) (v1.LicenseErrorCode, bool) {

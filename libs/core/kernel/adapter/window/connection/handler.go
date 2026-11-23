@@ -119,7 +119,7 @@ func (h *Handler) CreateProviderConnection(
 		if !served {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
+		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	wired, err := writeConnection(entry)
 	if err != nil {
@@ -144,7 +144,7 @@ func (h *Handler) UpdateProviderConnection(
 		if !served {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
+		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	wired, err := writeConnection(entry)
 	if err != nil {
@@ -163,7 +163,7 @@ func (h *Handler) DeleteProviderConnection(
 		if !served {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
+		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{RemovedUses: writeUses(removed)}), nil
 }
@@ -182,7 +182,7 @@ func (h *Handler) ListRowOptions(
 		if !served {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: wire.GetErrorDetail(err, detailed...)}), nil
+		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: getDetail(err)}), nil
 	}
 	options := make([]*v1.Option, len(listed))
 	for i, one := range listed {
@@ -191,10 +191,12 @@ func (h *Handler) ListRowOptions(
 	return connect.NewResponse(&v1.ListRowOptionsResponse{Options: options}), nil
 }
 
-var detailed = []error{
-	connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
-	connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
-	connections.ErrProviderUnavailable, connections.ErrNoOptions,
+func getDetail(err error) string {
+	return wire.GetErrorDetail(err,
+		connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
+		connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
+		connections.ErrProviderUnavailable, connections.ErrNoOptions,
+	)
 }
 
 func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {
