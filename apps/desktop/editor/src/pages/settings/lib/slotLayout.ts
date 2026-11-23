@@ -1,4 +1,4 @@
-import { arrangeByLayout, separateGroups, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
+import { arrangeByLayout, insertSeparators, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
 import type { JsonValue } from '@/shared/api/json'
 import type { SlotContributor, SlotGroup } from '../types'
 
@@ -34,10 +34,10 @@ function getStoredEntries(layout: JsonValue | undefined, slot: string): readonly
 }
 
 const getDefaults = (contributors: readonly SlotContributor[]): (SlotContributor | null)[] =>
-  separateGroups<SlotContributor, SlotContributor | null>(contributors, {
+  insertSeparators<SlotContributor, SlotContributor | null>(contributors, {
     group: (one) => one.group,
-    row: (one) => one,
-    separator: () => null,
+    buildRow: (one) => one,
+    buildSeparator: () => null,
   })
 
 /**
@@ -52,18 +52,18 @@ export function getSlotRows(group: SlotGroup, layout: JsonValue | undefined): re
   let separators = 0
   const rows = arranged.map((one): SlotRow =>
     one === null
-      ? { kind: 'separator', key: separatorKey(separators++) }
+      ? { kind: 'separator', key: createSeparatorKey(separators++) }
       : { kind: 'entry', ...one, isHidden: hidden.has(one.key) },
   )
   return rows
 }
 
-const separatorKey = (ordinal: number): string => `separator:${ordinal}`
+const createSeparatorKey = (ordinal: number): string => `separator:${ordinal}`
 
-function keySeparators(rows: readonly SlotRow[]): readonly SlotRow[] {
+function assignSeparatorKeys(rows: readonly SlotRow[]): readonly SlotRow[] {
   let ordinal = 0
   return rows.map((one) =>
-    one.kind === 'separator' ? { kind: 'separator', key: separatorKey(ordinal++) } : one,
+    one.kind === 'separator' ? { kind: 'separator', key: createSeparatorKey(ordinal++) } : one,
   )
 }
 
@@ -89,7 +89,7 @@ export function moveSlotRow(
   if (!moved || from === to || to < 0 || to >= rows.length) return rows
   const next = rows.filter((_, at) => at !== from)
   next.splice(to, 0, moved)
-  return keySeparators(next)
+  return assignSeparatorKeys(next)
 }
 
 /** The rows with the visibility of the entry at `at` turned over. */

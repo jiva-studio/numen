@@ -94,14 +94,14 @@ func NewUseCases[P any](cfg Config, newPresets NewPresets[P]) (ReviewUseCases, S
 	var defaultScheduler review.Scheduler = review.NewFSRS()
 	var createScheduler func(retention float64) review.Scheduler
 	if cfg.Scheduler != nil {
-		defaultScheduler = cfg.Scheduler.CreateScheduler(review.Defaults().Retention)
+		defaultScheduler = cfg.Scheduler.CreateScheduler(review.NewDefaultPreset().Retention)
 		createScheduler = cfg.Scheduler.CreateScheduler
 	}
 	schedules := NewSchedules(cfg.Logs, defaultScheduler, cfg.Day, reviewCards, deckPresets)
 	schedules.Cache = cfg.Schedules
 	schedules.Report = cfg.Report
 	if createScheduler != nil {
-		schedules.At = createScheduler
+		schedules.GetScheduler = createScheduler
 	}
 
 	counted := NewCountReviews(cfg.Logs, schedules, cfg.Day, cfg.Now)
@@ -111,7 +111,7 @@ func NewUseCases[P any](cfg Config, newPresets NewPresets[P]) (ReviewUseCases, S
 	curves := NewProjectCurve(reviewCards, schedules, deckPresets, cfg.Day, cfg.Now)
 	curves.Cores = cfg.Cores
 	if createScheduler != nil {
-		curves.By = createScheduler
+		curves.GetScheduler = createScheduler
 	}
 
 	return ReviewUseCases{

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flatten, getMarkOf, type RowId, type RowMarker } from './row'
-import { everyRow, resolveSelection, isSameSelection, PLAIN, type Press } from './select'
+import { getAllRows, resolveSelection, isSameSelection, PLAIN, type Press } from './select'
 import { getRowsBetween } from './rowsBetween'
 import { isTreeKey, stepTo } from './step'
 import { TREE_KEYS } from './treeKeys'
@@ -430,18 +430,18 @@ describe('what a press makes the selection', () => {
 
 describe('every row drawn, selected at once', () => {
   it('is all of them, in the order they are drawn', () => {
-    expect(everyRow(getShownRows('work'), 'pages')).toStrictEqual({
+    expect(getAllRows(getShownRows('work'), 'pages')).toStrictEqual({
       rows: ['work', 'plans', 'pages', 'empty', 'loose'],
       anchor: 'pages',
     })
   })
 
   it('puts the anchor on the first row where there is none', () => {
-    expect(everyRow(getShownRows(), null).anchor).toBe('work')
+    expect(getAllRows(getShownRows(), null).anchor).toBe('work')
   })
 
   it('is nothing at all where nothing is drawn', () => {
-    expect(everyRow([], null)).toStrictEqual({ rows: [], anchor: null })
+    expect(getAllRows([], null)).toStrictEqual({ rows: [], anchor: null })
   })
 })
 

@@ -35,11 +35,11 @@ func (u *UseCase) List(ctx context.Context, name string) (LinkList, error) {
 		return LinkList{}, errors.New("path is required")
 	}
 	path := u.resolver.Resolve(ctx, name)
-	outgoing, err := u.lookup.GetLinks(ctx, path)
+	outgoing, err := u.lookup.ListLinks(ctx, path)
 	if err != nil {
 		return LinkList{}, err
 	}
-	incoming, err := u.lookup.GetBacklinks(ctx, path)
+	incoming, err := u.lookup.ListBacklinks(ctx, path)
 	if err != nil {
 		return LinkList{}, err
 	}

@@ -29,7 +29,7 @@ const card = (
 const connections: ConnectionHost = {
   call: async function* () {
     yield* []
-    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+    return { ok: false, error: { error: 'noConnection', message: 'no row', failures: [] } }
   },
 }
 
@@ -43,8 +43,8 @@ const panel = (
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
   const target = useAgentPanel({
     connections,
-    card: () => on.value,
-    vault: () => 'vault-garden',
+    getCard: () => on.value,
+    getVault: () => 'vault-garden',
     open: () => showing.value === 'asking',
     showPanel: (open) => {
       if (open) showing.value = 'asking'

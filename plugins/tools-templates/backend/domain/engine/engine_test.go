@@ -292,7 +292,7 @@ func TestFailClearly(t *testing.T) {
 		})
 	}
 	t.Run("fails the same way when the fields are listed", func(t *testing.T) {
-		_, err := engine.New(nil).Fields(t.Context(), "T.md", "{{ nope }}", getData())
+		_, err := engine.New(nil).ListFields(t.Context(), "T.md", "{{ nope }}", getData())
 
 		if !errors.Is(err, engine.ErrTemplate) {
 			t.Errorf("error = %v", err)
@@ -321,7 +321,7 @@ func TestTakeExtraFunctionsThroughOneSeam(t *testing.T) {
 func TestListTheFields(t *testing.T) {
 	text := `{{ $c := prompt "Client" "Acme" }}{{ $k := select "Kind" "call" "visit" }}{{ prompt "Notes" }}{{ prompt "Client" "again" }}`
 
-	fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
+	fields, err := engine.New(nil).ListFields(t.Context(), "T.md", text, getData())
 
 	want := []engine.Field{
 		{Kind: "text", Label: "Client", Options: []string{}, Default: "Acme"},
@@ -334,14 +334,14 @@ func TestListTheFields(t *testing.T) {
 		t.Errorf("fields = %+v, %v", fields, err)
 	}
 	t.Run("lists no field for a template that asks nothing", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields(t.Context(), "T.md", "# {{ .title }}", getData())
+		fields, err := engine.New(nil).ListFields(t.Context(), "T.md", "# {{ .title }}", getData())
 
 		if err != nil || len(fields) != 0 {
 			t.Errorf("fields = %+v, %v", fields, err)
 		}
 	})
 	t.Run("lists the fields a branch reaches", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields(t.Context(), "T.md", `{{ if eq (select "A" "x" "y") "y" }}{{ prompt "B" }}{{ else }}{{ prompt "C" }}{{ end }}`, getData())
+		fields, err := engine.New(nil).ListFields(t.Context(), "T.md", `{{ if eq (select "A" "x" "y") "y" }}{{ prompt "B" }}{{ else }}{{ prompt "C" }}{{ end }}`, getData())
 
 		if err != nil || len(fields) != 2 || fields[1].Label != "C" {
 			t.Errorf("fields = %+v, %v", fields, err)
@@ -399,7 +399,7 @@ func FuzzRenderNeverPanics(f *testing.F) {
 func TestAskOnceForTheSameField(t *testing.T) {
 	text := `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`
 
-	fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
+	fields, err := engine.New(nil).ListFields(t.Context(), "T.md", text, getData())
 
 	if err != nil || len(fields) != 2 {
 		t.Fatalf("fields = %+v, %v", fields, err)
@@ -420,7 +420,7 @@ func TestUseAFieldAsAVariable(t *testing.T) {
 	text := `{{ $name := prompt "Имя" }}{{ if eq $name "" }}anon{{ else }}{{ $name | upper }}{{ end }}/{{ $name | default "none" }}/{{ $name }}`
 
 	t.Run("runs the collecting pass over the placeholder", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
+		fields, err := engine.New(nil).ListFields(t.Context(), "T.md", text, getData())
 
 		if err != nil || len(fields) != 1 || fields[0].Label != "Имя" {
 			t.Errorf("fields = %+v, %v", fields, err)

@@ -40,7 +40,7 @@ func (u GetConnection) Execute(
 func (u GetConnection) getSide(
 	ctx context.Context, v domain.Vault, from, to, kind string,
 ) (*domain.Side, error) {
-	links, err := u.links.GetLinks(ctx, v.ID, from)
+	links, err := u.links.ListLinks(ctx, v.ID, from)
 	if err != nil {
 		return nil, err
 	}

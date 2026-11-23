@@ -141,7 +141,7 @@ func TestPluginPackage_Success(t *testing.T) {
 
 	archivePath := filepath.Join(tmpDir, "dist", "my-plugin.zip")
 	var pkgBuf bytes.Buffer
-	resPath, err := Package(pluginDir, archivePath, &pkgBuf)
+	resPath, err := BuildPackage(pluginDir, archivePath, &pkgBuf)
 	if err != nil {
 		t.Fatalf("unexpected package error: %v", err)
 	}
@@ -175,10 +175,10 @@ func TestPluginPackage_Success(t *testing.T) {
 		t.Errorf("archive holds %v, want %v", zippedFiles, want)
 	}
 
-	if _, err := Package(pluginDir, archivePath, failingWriter{}); !errors.Is(err, errWriteFailed) || !strings.Contains(err.Error(), "report bundle:") {
+	if _, err := BuildPackage(pluginDir, archivePath, failingWriter{}); !errors.Is(err, errWriteFailed) || !strings.Contains(err.Error(), "report bundle:") {
 		t.Errorf("expected wrapped report bundle error, got %v", err)
 	}
-	if _, err := Package(
+	if _, err := BuildPackage(
 		filepath.Join(tmpDir, "missing"),
 		archivePath,
 		&bytes.Buffer{},
@@ -187,7 +187,7 @@ func TestPluginPackage_Success(t *testing.T) {
 		t.Errorf("expected direct resolveManifestPath error without validate prefix, got %v", err)
 	}
 	emptyDir := t.TempDir()
-	if _, err := Package(emptyDir, archivePath, &bytes.Buffer{}); !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "validate plugin:") {
+	if _, err := BuildPackage(emptyDir, archivePath, &bytes.Buffer{}); !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "validate plugin:") {
 		t.Errorf("expected validate plugin error for directory without manifest, got %v", err)
 	}
 }
@@ -216,7 +216,7 @@ func TestPluginPackage_ContainsOnlyShippedFiles(t *testing.T) {
 		}
 	}
 
-	archivePath, err := Package(pluginDir, "", &bytes.Buffer{})
+	archivePath, err := BuildPackage(pluginDir, "", &bytes.Buffer{})
 	if err != nil {
 		t.Fatalf("unexpected package error: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestPluginPackage_ContainsOnlyShippedFiles(t *testing.T) {
 
 	inBinOut := filepath.Join(pluginDir, "bin", "out.bundle")
 	for range 2 {
-		if _, err := Package(pluginDir, inBinOut, &bytes.Buffer{}); err != nil {
+		if _, err := BuildPackage(pluginDir, inBinOut, &bytes.Buffer{}); err != nil {
 			t.Fatalf("unexpected package error for bin output: %v", err)
 		}
 	}
@@ -411,16 +411,16 @@ func TestPluginCLI_Run(t *testing.T) {
 
 	cw1 := &countdownWriter{remaining: 0}
 	out1 := &output{w: cw1}
-	out1.printf("first")
-	out1.printf("second")
+	out1.writeFormat("first")
+	out1.writeFormat("second")
 	if out1.err == nil || cw1.calls != 1 {
 		t.Errorf("printf after error: err=%v calls=%d", out1.err, cw1.calls)
 	}
 
 	cw2 := &countdownWriter{remaining: 0}
 	out2 := &output{w: cw2}
-	out2.println("first")
-	out2.println("second")
+	out2.writeLine("first")
+	out2.writeLine("second")
 	if out2.err == nil || cw2.calls != 1 {
 		t.Errorf("println after error: err=%v calls=%d", out2.err, cw2.calls)
 	}

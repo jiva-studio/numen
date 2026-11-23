@@ -56,10 +56,10 @@ type RenameField struct {
 // under the vault's write lock, so the queries it makes are limited: one query per
 // note of the vault would block every other write behind it.
 type TypeQueries interface {
-	// 	// GetPathsOfType returns every note of one type in the vault, by path. A
+	// 	// ListPathsOfType returns every note of one type in the vault, by path. A
 	// 	// caller that needs the decks or the card models of a vault uses it, and no
 	// 	// file is opened to determine the type of each note.
-	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
 // NewRenameField renames a card model's field across its decks. A vault of more than maxDecks decks is
@@ -145,7 +145,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 		return out, err
 	}
 	// The name the cards write is the name the card model is linked by.
-	named := domain.Basename(in.CardModel)
+	named := domain.GetBasename(in.CardModel)
 	one := deckWriter{
 		reader: reader, writer: writer, links: u.links, vault: v,
 		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier, createCardID: newCardIDs(u.entropy),
@@ -156,7 +156,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 		}
 		cards, err := one.rename(ctx, path, in)
 		if err != nil {
-			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.OnFile(
+			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.BuildFileProblem(
 				format.FaultNotWritten,
 				"a field renamed in "+named+" did not reach this deck: "+err.Error(),
 			)})
@@ -211,7 +211,7 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 }
 
 func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string, error) {
-	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	return u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
 // deckWriter is the read and write of one deck. A failure on one deck is reported
@@ -247,7 +247,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
-	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.BuildDeck(on))
 	if err != nil {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
@@ -267,7 +267,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		return 0, err
 	}
 	// gomutants:disable-next-line BRANCH_IF reason="DeckFile.Whole does not fail on a deck that already passed OpenDeck and RenameField."
-	if _, err := f.Whole(delta, d.createCardID); err != nil {
+	if _, err := f.AssignCardIDs(delta, d.createCardID); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

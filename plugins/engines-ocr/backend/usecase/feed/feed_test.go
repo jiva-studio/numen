@@ -106,7 +106,7 @@ func newScene(t *testing.T, files ...string) *scene {
 	t.Helper()
 	v := hosttest.New("Physics")
 	for _, path := range files {
-		v.File(path, "the bytes of "+path)
+		v.WriteFile(path, "the bytes of "+path)
 	}
 	s := &scene{vault: v, feed: &readFeed{Vault: v}, store: v.Store()}
 	s.restart(newRuns())
@@ -141,7 +141,7 @@ func TestANewScanIsStartedOnce(t *testing.T) {
 	s.update(t)
 	s.runs.finish("books/ohm.pdf", true)
 	s.update(t)
-	s.vault.File("photos/board.png", "a photo of the board")
+	s.vault.WriteFile("photos/board.png", "a photo of the board")
 	s.update(t)
 
 	s.checkStartedPaths(t, "books/ohm.pdf", "photos/board.png")
@@ -153,7 +153,7 @@ func TestAChangedScanIsStartedAgain(t *testing.T) {
 	s.runs.finish("books/ohm.pdf", false)
 	s.update(t)
 
-	s.vault.File("books/ohm.pdf", "the second edition")
+	s.vault.WriteFile("books/ohm.pdf", "the second edition")
 	s.update(t)
 
 	s.checkStartedPaths(t, "books/ohm.pdf", "books/ohm.pdf")
@@ -202,13 +202,13 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.vault.File("books/faraday.pdf", "the bytes of Faraday")
+	s.vault.WriteFile("books/faraday.pdf", "the bytes of Faraday")
 	s.update(t)
 
-	s.store.File(feed.CursorFile, cursor)
+	s.store.WriteFile(feed.CursorFile, cursor)
 	s.update(t)
 	s.runs.finish("books/faraday.pdf", true)
-	s.store.File(feed.CursorFile, cursor)
+	s.store.WriteFile(feed.CursorFile, cursor)
 	s.update(t)
 
 	s.checkStartedPaths(t, "books/ohm.pdf", "books/faraday.pdf")
@@ -217,7 +217,7 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 func TestAnUpdateThatFailedIsRetriedOnTheNextUpdate(t *testing.T) {
 	s := newScene(t, "books/ohm.pdf")
 	s.update(t)
-	s.vault.File("books/faraday.pdf", "the bytes of Faraday")
+	s.vault.WriteFile("books/faraday.pdf", "the bytes of Faraday")
 	s.store.Refuse(feed.CursorFile, errors.New("disk full"))
 
 	if err := s.follower.Execute(t.Context(), "Physics"); err == nil {
@@ -250,7 +250,7 @@ func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
 	s.update(t)
 
 	s.restart(newRuns("books/ohm.pdf"))
-	s.vault.File("books/faraday.pdf", "the bytes of Faraday")
+	s.vault.WriteFile("books/faraday.pdf", "the bytes of Faraday")
 	s.feed.take()
 	s.update(t)
 
@@ -276,7 +276,7 @@ func TestARecognitionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
 	s.runs.finish("books/ohm.pdf", false)
 
 	s.update(t)
-	s.vault.File("photos/board.png", "a photo of the board")
+	s.vault.WriteFile("photos/board.png", "a photo of the board")
 	s.update(t)
 
 	s.checkStartedPaths(t, "books/ohm.pdf", "photos/board.png")

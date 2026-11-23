@@ -2,14 +2,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { WatchTasksResponseSchema } from '@numen/protocol'
-import { TASK_KIND, TASK_UNIT, createWindowClient } from '../clients'
+import { TASK_KIND, TASK_UNIT, createWindowRpc } from '../clients'
 import { createCoreTransport, createLostConnection } from '../testing'
 import { createTaskClient, type TaskRpc } from './tasks'
 
 const request = { watchTasks: vi.fn(), cancelTask: vi.fn() }
 
 const tasks = createTaskClient(
-  createWindowClient(createCoreTransport({ windowService: request })),
+  createWindowRpc(createCoreTransport({ windowService: request })),
   'desktop.example',
 )
 
@@ -31,11 +31,11 @@ describe('the work under way', () => {
           {
             id: 'scan',
             title: 'Recognizing a scan',
-            about: 'library/scan.pdf',
-            done: 3n,
-            total: 10n,
+            detail: 'library/scan.pdf',
+            completedCount: 3n,
+            totalCount: 10n,
             unit: TASK_UNIT.BYTES,
-            error: '',
+            failureReason: '',
             isUserStarted: true,
             pluginId: 'org.example.scans',
             pluginName: 'Scan reader',
@@ -46,7 +46,7 @@ describe('the work under way', () => {
             id: 'later',
             title: 'Later',
             unit: 99,
-            error: 'stopped',
+            failureReason: 'stopped',
             kind: TASK_KIND.UNSPECIFIED,
           },
         ],
@@ -77,7 +77,7 @@ describe('the work under way', () => {
         },
       ],
     ])
-    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ window: 'desktop.example' })
+    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ windowId: 'desktop.example' })
   })
 
   it('forwards the abort signal to watchTasks', async () => {
@@ -89,7 +89,7 @@ describe('the work under way', () => {
 
     await readAll(createTaskClient(rpc, 'desktop.example').watchTasks(signal))
 
-    expect(watchTasks).toHaveBeenCalledWith({ window: 'desktop.example' }, { signal })
+    expect(watchTasks).toHaveBeenCalledWith({ windowId: 'desktop.example' }, { signal })
   })
 })
 
@@ -100,7 +100,7 @@ describe('a cancel', () => {
     await tasks.cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
-      window: 'desktop.example',
+      windowId: 'desktop.example',
       id: 'making the vectors',
     })
   })

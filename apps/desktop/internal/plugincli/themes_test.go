@@ -29,7 +29,7 @@ func TestPluginPackage_ShipsDeclaredThemeFiles(t *testing.T) {
 		}
 	}
 
-	archivePath, err := Package(pluginDir, "", &bytes.Buffer{})
+	archivePath, err := BuildPackage(pluginDir, "", &bytes.Buffer{})
 	if err != nil {
 		t.Fatalf("unexpected package error: %v", err)
 	}

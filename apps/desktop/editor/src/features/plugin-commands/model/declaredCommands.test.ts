@@ -97,7 +97,7 @@ describe('a declared command in the palette', () => {
       pdf: 'application/pdf',
       epub: 'application/epub+zip',
     })
-    const runs = { canRun: () => true, cannotRun: vi.fn() }
+    const runs = { canRun: () => true, reportCannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')
     expect(one?.when).toBe("target.contentType == 'application/pdf'")
@@ -135,7 +135,7 @@ describe('a declared command with items', () => {
   it('asks for one of its items, which it lists over the file of the target', async () => {
     const listItems = vi.fn(async () => [{ id: 'org.example.ears/ears', title: 'transcript' }])
     const [one] = await createPaletteCommands([proofread], {}, { listItems })
-    const runs = { canRun: () => true, cannotRun: vi.fn() }
+    const runs = { canRun: () => true, reportCannotRun: vi.fn() }
 
     expect(one?.input).toBe('items')
     expect(one?.isAvailable(front('talks/a.mp3'), runs)).toBe(true)

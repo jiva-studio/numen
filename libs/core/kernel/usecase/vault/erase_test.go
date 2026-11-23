@@ -21,7 +21,7 @@ type bin struct {
 	steps *[]string
 }
 
-func (b *bin) Trash(path string) error {
+func (b *bin) MoveToTrash(path string) error {
 	b.moved = append(b.moved, path)
 	if b.steps != nil {
 		*b.steps = append(*b.steps, "trash")

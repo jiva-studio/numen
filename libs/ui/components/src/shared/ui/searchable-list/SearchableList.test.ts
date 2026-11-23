@@ -339,11 +339,11 @@ describe('what it announces', () => {
 
     const emptyRows = useListRows({
       query: ref(''),
-      items: () => [],
-      current: () => null,
+      getItems: () => [],
+      getCurrent: () => null,
       isFiltered: () => false,
       hasAction: () => false,
-      needsQuery: () => false,
+      shouldWaitForQuery: () => false,
     })
     emptyRows.moveToEnd(true)
     expect(emptyRows.activeKey.value).toBeNull()

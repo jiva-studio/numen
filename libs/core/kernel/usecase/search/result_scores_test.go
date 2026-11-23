@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -30,7 +30,7 @@ func findResult(t *testing.T, found []domain.SearchResult, path string) domain.S
 func (c corpus) addVault(t *testing.T, notes map[string]string) domain.Vault {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	scan := vaults.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), nil)
+	scan := indexing.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), nil)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func (c corpus) vectorizePath(t *testing.T, v domain.Vault, path string, directi
 			t.Fatal(err)
 		}
 		one := direction(p)
-		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.Bits(one)})
+		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.QuantizeBits(one)})
 	}
 	if len(vectors) == 0 {
 		t.Fatalf("no small chunk of %s to embed", path)
@@ -71,7 +71,7 @@ func TestASearchResultHasTheSimilarityOfTheMeaningSearchAndNoneWithoutIt(t *test
 
 	found := c.searchIn(t, c.first, "shared", oneWay{direction: newVector(+1)})
 
-	want := vector.SimilarityBytes(newVector(+1), precise(newVector(+1)))
+	want := vector.ComputeSimilarityBytes(newVector(+1), precise(newVector(+1)))
 	if entropy := findResult(t, found, "notes/Entropy.md"); entropy.Similarity == nil || *entropy.Similarity != want {
 		t.Errorf("the result the meaning search found has the similarity %v, want %v", entropy.Similarity, want)
 	}

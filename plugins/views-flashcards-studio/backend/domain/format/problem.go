@@ -49,14 +49,14 @@ const (
 	FaultTooLarge Fault = "too-large"
 )
 
-// OnFile files a problem about a whole file, of no card of it and no template of
+// BuildFileProblem files a problem about a whole file, of no card of it and no template of
 // it.
-func OnFile(fault Fault, detail string) Problem {
+func BuildFileProblem(fault Fault, detail string) Problem {
 	return Problem{Fault: fault, Card: NoPosition, Template: NoPosition, Field: "", Detail: detail}
 }
 
-// OnCard files a problem about one card, counted from the deck's first card.
-func OnCard(card int, fault Fault, detail string) Problem {
+// BuildCardProblem files a problem about one card, counted from the deck's first card.
+func BuildCardProblem(card int, fault Fault, detail string) Problem {
 	return newCardProblem(card, fault, detail)
 }
 
@@ -64,10 +64,10 @@ func newCardProblem(card int, fault Fault, detail string) Problem {
 	return Problem{Fault: fault, Card: card, Template: NoPosition, Field: "", Detail: detail}
 }
 
-func onTemplate(template int, fault Fault, detail string) Problem {
+func buildTemplateProblem(template int, fault Fault, detail string) Problem {
 	return Problem{Fault: fault, Card: NoPosition, Template: template, Field: "", Detail: detail}
 }
 
-func onField(name string, fault Fault, detail string) Problem {
+func buildFieldProblem(name string, fault Fault, detail string) Problem {
 	return Problem{Fault: fault, Card: NoPosition, Template: NoPosition, Field: name, Detail: detail}
 }

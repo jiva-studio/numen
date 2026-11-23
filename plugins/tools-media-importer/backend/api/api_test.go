@@ -11,9 +11,9 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		MethodGetLink:     {Request: func() any { return &GetLinkRequest{} }, Response: func() any { return &GetLinkResponse{} }},
-		MethodCopyMedia:   {Request: func() any { return &CopyMediaRequest{} }, Response: func() any { return &CopyMediaResponse{} }},
-		MethodCreateLinks: {Request: func() any { return &CreateLinksRequest{} }, Response: func() any { return &CreateLinksResponse{} }},
+		MethodGetLink:     {CreateRequest: func() any { return &GetLinkRequest{} }, CreateResponse: func() any { return &GetLinkResponse{} }},
+		MethodCopyMedia:   {CreateRequest: func() any { return &CopyMediaRequest{} }, CreateResponse: func() any { return &CopyMediaResponse{} }},
+		MethodCreateLinks: {CreateRequest: func() any { return &CreateLinksRequest{} }, CreateResponse: func() any { return &CreateLinksResponse{} }},
 	}
 }
 

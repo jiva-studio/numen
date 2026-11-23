@@ -13,5 +13,5 @@ export function takeConflict(conflict: ConflictPrompt): void {
 
 /** Postpones the decision on the note. */
 export function postponeConflict(conflict: ConflictPrompt): void {
-  conflict.later()
+  conflict.defer()
 }

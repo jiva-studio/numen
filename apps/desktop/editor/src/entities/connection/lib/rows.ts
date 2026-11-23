@@ -27,7 +27,7 @@ export interface RowDraft extends StoredRow {
 export interface UsabilityWords {
   readonly unavailable: string
   readonly incomplete: string
-  readonly cannot: (operation: string) => string
+  readonly formatCannot: (operation: string) => string
 }
 
 /** The operations a setting needs, with the titles the plugins give them. */
@@ -129,7 +129,7 @@ export function getConnectionUsability(
   }
   const missing = operations.ids.find((one) => !type.operations.includes(one))
   if (missing !== undefined) {
-    return { isUsable: false, reason: words.cannot(operations.titles[missing] ?? missing) }
+    return { isUsable: false, reason: words.formatCannot(operations.titles[missing] ?? missing) }
   }
   if (!connection.isComplete) return { isUsable: false, reason: words.incomplete }
   return { isUsable: true, reason: '' }

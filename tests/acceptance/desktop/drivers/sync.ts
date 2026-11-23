@@ -111,7 +111,7 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
   processes
     .split('\n')
     .map((line) => /^\s*(\d+)\s+(\S+)/.exec(line))
-    .flatMap((found) => (found !== null && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
+    .flatMap((found) => (found?.[1] !== undefined && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
 
 export class SyncDriver {
   private running: RunningSync | undefined

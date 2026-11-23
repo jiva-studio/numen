@@ -157,7 +157,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	for i := range all {
 		all[i] = i
 	}
-	boxes, err := book.Highlights(workers, raw, all)
+	boxes, err := book.FindHighlights(workers, raw, all)
 	if err != nil {
 		t.Fatal(err)
 	}

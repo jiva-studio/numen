@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedqueries"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -56,9 +56,9 @@ func buildPluginSearch(
 	}
 }
 
-func newEmbedQueries(queries searchsourceport.QueryEmbedder) *indexing.EmbedQueries {
+func newEmbedQueries(queries searchsourceport.QueryEmbedder) *embedqueries.Embed {
 	if queries == nil {
 		return nil
 	}
-	return indexing.NewEmbedQueries(queries)
+	return embedqueries.New(queries)
 }

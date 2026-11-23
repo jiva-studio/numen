@@ -111,7 +111,7 @@ func createMinimalEpub(t *testing.T) []byte {
 func TestReaderGetBookAndMarkup(t *testing.T) {
 	epubBytes := createMinimalEpub(t)
 	files := hosttest.New("vault")
-	files.File("test.epub", string(epubBytes))
+	files.WriteFile("test.epub", string(epubBytes))
 
 	reader := bookwire.NewMethods(books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) }))
 	ctx := t.Context()
@@ -165,7 +165,7 @@ func TestReaderVaultBoundary(t *testing.T) {
 	}
 
 	files := hosttest.New("vault")
-	files.File("inside.epub", string(epubBytes))
+	files.WriteFile("inside.epub", string(epubBytes))
 	reader := bookwire.NewMethods(books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) }))
 	ctx := t.Context()
 

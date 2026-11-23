@@ -40,7 +40,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
     plugin.register.command({
       id: 'tags.set',
       handler: async (note) => {
-        await tagMap.whenLoaded()
+        await tagMap.waitForLoad()
         await setTags.handler(note)
       },
     })

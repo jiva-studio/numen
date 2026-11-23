@@ -26,7 +26,7 @@ export const byHandle: ReachStrategy = {
 }
 
 /** A finger left still on the node. Milliseconds, if the wait is to be another. */
-export const byLongPress = (after: number = LONG_PRESS_DELAY): ReachStrategy => ({
+export const createLongPressStrategy = (after: number = LONG_PRESS_DELAY): ReachStrategy => ({
   hasHandle: false,
   listeners: (site) => {
     const target = useLongPress(site.ready, site.reach, () => after)

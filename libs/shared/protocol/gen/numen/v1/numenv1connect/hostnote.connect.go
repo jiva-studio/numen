@@ -33,18 +33,18 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// HostNoteServiceGetNoteRefsProcedure is the fully-qualified name of the HostNoteService's
-	// GetNoteRefs RPC.
-	HostNoteServiceGetNoteRefsProcedure = "/numen.v1.HostNoteService/GetNoteRefs"
-	// HostNoteServiceGetNoteTypesProcedure is the fully-qualified name of the HostNoteService's
-	// GetNoteTypes RPC.
-	HostNoteServiceGetNoteTypesProcedure = "/numen.v1.HostNoteService/GetNoteTypes"
-	// HostNoteServiceGetNamedPathsProcedure is the fully-qualified name of the HostNoteService's
-	// GetNamedPaths RPC.
-	HostNoteServiceGetNamedPathsProcedure = "/numen.v1.HostNoteService/GetNamedPaths"
-	// HostNoteServiceGetPathsOfTypeProcedure is the fully-qualified name of the HostNoteService's
-	// GetPathsOfType RPC.
-	HostNoteServiceGetPathsOfTypeProcedure = "/numen.v1.HostNoteService/GetPathsOfType"
+	// HostNoteServiceListNoteRefsProcedure is the fully-qualified name of the HostNoteService's
+	// ListNoteRefs RPC.
+	HostNoteServiceListNoteRefsProcedure = "/numen.v1.HostNoteService/ListNoteRefs"
+	// HostNoteServiceListNoteTypesProcedure is the fully-qualified name of the HostNoteService's
+	// ListNoteTypes RPC.
+	HostNoteServiceListNoteTypesProcedure = "/numen.v1.HostNoteService/ListNoteTypes"
+	// HostNoteServiceListNamedPathsProcedure is the fully-qualified name of the HostNoteService's
+	// ListNamedPaths RPC.
+	HostNoteServiceListNamedPathsProcedure = "/numen.v1.HostNoteService/ListNamedPaths"
+	// HostNoteServiceListPathsOfTypeProcedure is the fully-qualified name of the HostNoteService's
+	// ListPathsOfType RPC.
+	HostNoteServiceListPathsOfTypeProcedure = "/numen.v1.HostNoteService/ListPathsOfType"
 	// HostNoteServiceReadFrontmatterProcedure is the fully-qualified name of the HostNoteService's
 	// ReadFrontmatter RPC.
 	HostNoteServiceReadFrontmatterProcedure = "/numen.v1.HostNoteService/ReadFrontmatter"
@@ -64,15 +64,14 @@ const (
 
 // HostNoteServiceClient is a client for the numen.v1.HostNoteService service.
 type HostNoteServiceClient interface {
-	// GetNoteRefs names the notes at the paths given, and leaves out a path with
+	// ListNoteRefs names the notes at the paths given, and leaves out a path with
 	// no note.
-	GetNoteRefs(context.Context, *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error)
-	// GetNoteTypes says what type each note at the paths given is.
-	GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error)
-	// GetNamedPaths lists the notes filed under a name.
-	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
-	// GetPathsOfType lists the notes of a type.
-	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
+	ListNoteRefs(context.Context, *connect.Request[v1.ListNoteRefsRequest]) (*connect.Response[v1.ListNoteRefsResponse], error)
+	// ListNoteTypes says what type each note at the paths given is.
+	ListNoteTypes(context.Context, *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error)
+	// ListNamedPaths lists the notes filed under a name.
+	ListNamedPaths(context.Context, *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error)
+	ListPathsOfType(context.Context, *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error)
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.
 	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
@@ -102,28 +101,28 @@ func NewHostNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 	baseURL = strings.TrimRight(baseURL, "/")
 	hostNoteServiceMethods := v1.File_numen_v1_hostnote_proto.Services().ByName("HostNoteService").Methods()
 	return &hostNoteServiceClient{
-		getNoteRefs: connect.NewClient[v1.GetNoteRefsRequest, v1.GetNoteRefsResponse](
+		listNoteRefs: connect.NewClient[v1.ListNoteRefsRequest, v1.ListNoteRefsResponse](
 			httpClient,
-			baseURL+HostNoteServiceGetNoteRefsProcedure,
-			connect.WithSchema(hostNoteServiceMethods.ByName("GetNoteRefs")),
+			baseURL+HostNoteServiceListNoteRefsProcedure,
+			connect.WithSchema(hostNoteServiceMethods.ByName("ListNoteRefs")),
 			connect.WithClientOptions(opts...),
 		),
-		getNoteTypes: connect.NewClient[v1.GetNoteTypesRequest, v1.GetNoteTypesResponse](
+		listNoteTypes: connect.NewClient[v1.ListNoteTypesRequest, v1.ListNoteTypesResponse](
 			httpClient,
-			baseURL+HostNoteServiceGetNoteTypesProcedure,
-			connect.WithSchema(hostNoteServiceMethods.ByName("GetNoteTypes")),
+			baseURL+HostNoteServiceListNoteTypesProcedure,
+			connect.WithSchema(hostNoteServiceMethods.ByName("ListNoteTypes")),
 			connect.WithClientOptions(opts...),
 		),
-		getNamedPaths: connect.NewClient[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse](
+		listNamedPaths: connect.NewClient[v1.ListNamedPathsRequest, v1.ListNamedPathsResponse](
 			httpClient,
-			baseURL+HostNoteServiceGetNamedPathsProcedure,
-			connect.WithSchema(hostNoteServiceMethods.ByName("GetNamedPaths")),
+			baseURL+HostNoteServiceListNamedPathsProcedure,
+			connect.WithSchema(hostNoteServiceMethods.ByName("ListNamedPaths")),
 			connect.WithClientOptions(opts...),
 		),
-		getPathsOfType: connect.NewClient[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse](
+		listPathsOfType: connect.NewClient[v1.ListPathsOfTypeRequest, v1.ListPathsOfTypeResponse](
 			httpClient,
-			baseURL+HostNoteServiceGetPathsOfTypeProcedure,
-			connect.WithSchema(hostNoteServiceMethods.ByName("GetPathsOfType")),
+			baseURL+HostNoteServiceListPathsOfTypeProcedure,
+			connect.WithSchema(hostNoteServiceMethods.ByName("ListPathsOfType")),
 			connect.WithClientOptions(opts...),
 		),
 		readFrontmatter: connect.NewClient[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse](
@@ -161,10 +160,10 @@ func NewHostNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // hostNoteServiceClient implements HostNoteServiceClient.
 type hostNoteServiceClient struct {
-	getNoteRefs      *connect.Client[v1.GetNoteRefsRequest, v1.GetNoteRefsResponse]
-	getNoteTypes     *connect.Client[v1.GetNoteTypesRequest, v1.GetNoteTypesResponse]
-	getNamedPaths    *connect.Client[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse]
-	getPathsOfType   *connect.Client[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse]
+	listNoteRefs     *connect.Client[v1.ListNoteRefsRequest, v1.ListNoteRefsResponse]
+	listNoteTypes    *connect.Client[v1.ListNoteTypesRequest, v1.ListNoteTypesResponse]
+	listNamedPaths   *connect.Client[v1.ListNamedPathsRequest, v1.ListNamedPathsResponse]
+	listPathsOfType  *connect.Client[v1.ListPathsOfTypeRequest, v1.ListPathsOfTypeResponse]
 	readFrontmatter  *connect.Client[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse]
 	writeFrontmatter *connect.Client[v1.WriteFrontmatterRequest, v1.WriteFrontmatterResponse]
 	renameNote       *connect.Client[v1.HostNoteServiceRenameNoteRequest, v1.HostNoteServiceRenameNoteResponse]
@@ -172,24 +171,24 @@ type hostNoteServiceClient struct {
 	removeNotes      *connect.Client[v1.HostNoteServiceRemoveNotesRequest, v1.HostNoteServiceRemoveNotesResponse]
 }
 
-// GetNoteRefs calls numen.v1.HostNoteService.GetNoteRefs.
-func (c *hostNoteServiceClient) GetNoteRefs(ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	return c.getNoteRefs.CallUnary(ctx, req)
+// ListNoteRefs calls numen.v1.HostNoteService.ListNoteRefs.
+func (c *hostNoteServiceClient) ListNoteRefs(ctx context.Context, req *connect.Request[v1.ListNoteRefsRequest]) (*connect.Response[v1.ListNoteRefsResponse], error) {
+	return c.listNoteRefs.CallUnary(ctx, req)
 }
 
-// GetNoteTypes calls numen.v1.HostNoteService.GetNoteTypes.
-func (c *hostNoteServiceClient) GetNoteTypes(ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	return c.getNoteTypes.CallUnary(ctx, req)
+// ListNoteTypes calls numen.v1.HostNoteService.ListNoteTypes.
+func (c *hostNoteServiceClient) ListNoteTypes(ctx context.Context, req *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error) {
+	return c.listNoteTypes.CallUnary(ctx, req)
 }
 
-// GetNamedPaths calls numen.v1.HostNoteService.GetNamedPaths.
-func (c *hostNoteServiceClient) GetNamedPaths(ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error) {
-	return c.getNamedPaths.CallUnary(ctx, req)
+// ListNamedPaths calls numen.v1.HostNoteService.ListNamedPaths.
+func (c *hostNoteServiceClient) ListNamedPaths(ctx context.Context, req *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error) {
+	return c.listNamedPaths.CallUnary(ctx, req)
 }
 
-// GetPathsOfType calls numen.v1.HostNoteService.GetPathsOfType.
-func (c *hostNoteServiceClient) GetPathsOfType(ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	return c.getPathsOfType.CallUnary(ctx, req)
+// ListPathsOfType calls numen.v1.HostNoteService.ListPathsOfType.
+func (c *hostNoteServiceClient) ListPathsOfType(ctx context.Context, req *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error) {
+	return c.listPathsOfType.CallUnary(ctx, req)
 }
 
 // ReadFrontmatter calls numen.v1.HostNoteService.ReadFrontmatter.
@@ -219,15 +218,14 @@ func (c *hostNoteServiceClient) RemoveNotes(ctx context.Context, req *connect.Re
 
 // HostNoteServiceHandler is an implementation of the numen.v1.HostNoteService service.
 type HostNoteServiceHandler interface {
-	// GetNoteRefs names the notes at the paths given, and leaves out a path with
+	// ListNoteRefs names the notes at the paths given, and leaves out a path with
 	// no note.
-	GetNoteRefs(context.Context, *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error)
-	// GetNoteTypes says what type each note at the paths given is.
-	GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error)
-	// GetNamedPaths lists the notes filed under a name.
-	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
-	// GetPathsOfType lists the notes of a type.
-	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
+	ListNoteRefs(context.Context, *connect.Request[v1.ListNoteRefsRequest]) (*connect.Response[v1.ListNoteRefsResponse], error)
+	// ListNoteTypes says what type each note at the paths given is.
+	ListNoteTypes(context.Context, *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error)
+	// ListNamedPaths lists the notes filed under a name.
+	ListNamedPaths(context.Context, *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error)
+	ListPathsOfType(context.Context, *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error)
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.
 	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
@@ -253,28 +251,28 @@ type HostNoteServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewHostNoteServiceHandler(svc HostNoteServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	hostNoteServiceMethods := v1.File_numen_v1_hostnote_proto.Services().ByName("HostNoteService").Methods()
-	hostNoteServiceGetNoteRefsHandler := connect.NewUnaryHandler(
-		HostNoteServiceGetNoteRefsProcedure,
-		svc.GetNoteRefs,
-		connect.WithSchema(hostNoteServiceMethods.ByName("GetNoteRefs")),
+	hostNoteServiceListNoteRefsHandler := connect.NewUnaryHandler(
+		HostNoteServiceListNoteRefsProcedure,
+		svc.ListNoteRefs,
+		connect.WithSchema(hostNoteServiceMethods.ByName("ListNoteRefs")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostNoteServiceGetNoteTypesHandler := connect.NewUnaryHandler(
-		HostNoteServiceGetNoteTypesProcedure,
-		svc.GetNoteTypes,
-		connect.WithSchema(hostNoteServiceMethods.ByName("GetNoteTypes")),
+	hostNoteServiceListNoteTypesHandler := connect.NewUnaryHandler(
+		HostNoteServiceListNoteTypesProcedure,
+		svc.ListNoteTypes,
+		connect.WithSchema(hostNoteServiceMethods.ByName("ListNoteTypes")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostNoteServiceGetNamedPathsHandler := connect.NewUnaryHandler(
-		HostNoteServiceGetNamedPathsProcedure,
-		svc.GetNamedPaths,
-		connect.WithSchema(hostNoteServiceMethods.ByName("GetNamedPaths")),
+	hostNoteServiceListNamedPathsHandler := connect.NewUnaryHandler(
+		HostNoteServiceListNamedPathsProcedure,
+		svc.ListNamedPaths,
+		connect.WithSchema(hostNoteServiceMethods.ByName("ListNamedPaths")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostNoteServiceGetPathsOfTypeHandler := connect.NewUnaryHandler(
-		HostNoteServiceGetPathsOfTypeProcedure,
-		svc.GetPathsOfType,
-		connect.WithSchema(hostNoteServiceMethods.ByName("GetPathsOfType")),
+	hostNoteServiceListPathsOfTypeHandler := connect.NewUnaryHandler(
+		HostNoteServiceListPathsOfTypeProcedure,
+		svc.ListPathsOfType,
+		connect.WithSchema(hostNoteServiceMethods.ByName("ListPathsOfType")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostNoteServiceReadFrontmatterHandler := connect.NewUnaryHandler(
@@ -309,14 +307,14 @@ func NewHostNoteServiceHandler(svc HostNoteServiceHandler, opts ...connect.Handl
 	)
 	return "/numen.v1.HostNoteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case HostNoteServiceGetNoteRefsProcedure:
-			hostNoteServiceGetNoteRefsHandler.ServeHTTP(w, r)
-		case HostNoteServiceGetNoteTypesProcedure:
-			hostNoteServiceGetNoteTypesHandler.ServeHTTP(w, r)
-		case HostNoteServiceGetNamedPathsProcedure:
-			hostNoteServiceGetNamedPathsHandler.ServeHTTP(w, r)
-		case HostNoteServiceGetPathsOfTypeProcedure:
-			hostNoteServiceGetPathsOfTypeHandler.ServeHTTP(w, r)
+		case HostNoteServiceListNoteRefsProcedure:
+			hostNoteServiceListNoteRefsHandler.ServeHTTP(w, r)
+		case HostNoteServiceListNoteTypesProcedure:
+			hostNoteServiceListNoteTypesHandler.ServeHTTP(w, r)
+		case HostNoteServiceListNamedPathsProcedure:
+			hostNoteServiceListNamedPathsHandler.ServeHTTP(w, r)
+		case HostNoteServiceListPathsOfTypeProcedure:
+			hostNoteServiceListPathsOfTypeHandler.ServeHTTP(w, r)
 		case HostNoteServiceReadFrontmatterProcedure:
 			hostNoteServiceReadFrontmatterHandler.ServeHTTP(w, r)
 		case HostNoteServiceWriteFrontmatterProcedure:
@@ -336,20 +334,20 @@ func NewHostNoteServiceHandler(svc HostNoteServiceHandler, opts ...connect.Handl
 // UnimplementedHostNoteServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedHostNoteServiceHandler struct{}
 
-func (UnimplementedHostNoteServiceHandler) GetNoteRefs(context.Context, *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.GetNoteRefs is not implemented"))
+func (UnimplementedHostNoteServiceHandler) ListNoteRefs(context.Context, *connect.Request[v1.ListNoteRefsRequest]) (*connect.Response[v1.ListNoteRefsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.ListNoteRefs is not implemented"))
 }
 
-func (UnimplementedHostNoteServiceHandler) GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.GetNoteTypes is not implemented"))
+func (UnimplementedHostNoteServiceHandler) ListNoteTypes(context.Context, *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.ListNoteTypes is not implemented"))
 }
 
-func (UnimplementedHostNoteServiceHandler) GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.GetNamedPaths is not implemented"))
+func (UnimplementedHostNoteServiceHandler) ListNamedPaths(context.Context, *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.ListNamedPaths is not implemented"))
 }
 
-func (UnimplementedHostNoteServiceHandler) GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.GetPathsOfType is not implemented"))
+func (UnimplementedHostNoteServiceHandler) ListPathsOfType(context.Context, *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.ListPathsOfType is not implemented"))
 }
 
 func (UnimplementedHostNoteServiceHandler) ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error) {

@@ -43,7 +43,7 @@ func newRerankingQuery(t *testing.T) stubSession {
 			w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside,
 		)
 		deps.Stages.Rows = connectionusecase.NewRows(w.Resolve, w.Rows.ListRows, nil)
-		deps.Stages.Resolve, deps.Stages.Results, deps.Clock = w.Resolve, db.OperationResults(100), w.Clock
+		deps.Stages.Resolve, deps.Stages.Results, deps.Clock = w.Resolve, db.GetOperationResults(100), w.Clock
 	})
 }
 

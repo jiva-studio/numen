@@ -84,7 +84,7 @@ describe('a piece named as a link', () => {
     const rule = md.inline.ruler
       .getRules('')
       .find((each) => !recognized.has(each) && each.name === 'linkPiece')
-    const textRule = md.inline.ruler.getRules('').find((each) => each.name === 'text')
+    const textRule = md.inline.ruler.getRules('').find((each) => each.name === 'parseText')
     const src = '[[Entropy]]'
     const state = new md.inline.State(src, md, { pieces: indexLinkPieces([ENTROPY]) }, [])
 

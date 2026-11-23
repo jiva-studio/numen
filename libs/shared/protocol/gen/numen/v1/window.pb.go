@@ -8,8 +8,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it closes, are its
-// own. Every question here names the window it is about.
+// each runs, and what has to be saved before it closes, are its own. Every question here names the window it is about.
 
 package numenv1
 
@@ -35,7 +34,7 @@ const (
 	// Work that runs, stops, or fails.
 	TaskKind_TASK_KIND_UNSPECIFIED TaskKind = 0
 	// A message of the core, such as a notice of the read of the settings. It is
-	// neither running nor failed, and About holds the message.
+	// neither running nor failed, and detail holds the message.
 	TaskKind_TASK_KIND_NOTICE TaskKind = 1
 )
 
@@ -195,7 +194,7 @@ type WatchTasksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -230,9 +229,9 @@ func (*WatchTasksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *WatchTasksRequest) GetWindow() string {
+func (x *WatchTasksRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -284,28 +283,24 @@ func (x *WatchTasksResponse) GetTasks() []*Task {
 	return nil
 }
 
-// A Task is one piece of work the application is doing behind the window.
-//
-// Every kind of work is one of these. That is the point: the next kind is an
-// entry in a list and not another field on the state, another thing for the
-// window to poll, and another branch in what draws it.
+// A Task is one piece of work the application runs for the window. Every kind of
+// work is a Task, so a new kind adds an entry to the list and no new field.
 type Task struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id is what this work is called, so that the same work reported again
-	// replaces itself and not appearing twice.
+	// Id identifies the work. A task reported again with the same id replaces the
+	// earlier one.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Title is the work, in the words to show. About is what it is on, and is
-	// empty for work that is on nothing in particular.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	About string `protobuf:"bytes,3,opt,name=about,proto3" json:"about,omitempty"`
-	// Done and total are how far it has got, when there is a total to count
-	// against. Both zero is work running with nothing to count, which is an
-	// ordinary state and not an unknown one.
-	Done  int64 `protobuf:"varint,4,opt,name=done,proto3" json:"done,omitempty"`
-	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
-	// Error is why the work stopped, when it stopped badly.
-	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
-	// Set for work a person started and is waiting to be notified about.
+	// Title names the work. Detail names what it is on, and is empty for work with
+	// no particular subject.
+	Title  string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	// Progress of the work: completed_count out of total_count. Both zero means the
+	// work runs with nothing to count.
+	CompletedCount int64 `protobuf:"varint,4,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
+	TotalCount     int64 `protobuf:"varint,5,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	// The reason the work failed. Empty when it did not fail.
+	FailureReason string `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	// Set for work a person started and is waiting on.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
@@ -365,30 +360,30 @@ func (x *Task) GetTitle() string {
 	return ""
 }
 
-func (x *Task) GetAbout() string {
+func (x *Task) GetDetail() string {
 	if x != nil {
-		return x.About
+		return x.Detail
 	}
 	return ""
 }
 
-func (x *Task) GetDone() int64 {
+func (x *Task) GetCompletedCount() int64 {
 	if x != nil {
-		return x.Done
+		return x.CompletedCount
 	}
 	return 0
 }
 
-func (x *Task) GetTotal() int64 {
+func (x *Task) GetTotalCount() int64 {
 	if x != nil {
-		return x.Total
+		return x.TotalCount
 	}
 	return 0
 }
 
-func (x *Task) GetError() string {
+func (x *Task) GetFailureReason() string {
 	if x != nil {
-		return x.Error
+		return x.FailureReason
 	}
 	return ""
 }
@@ -435,29 +430,29 @@ func (x *Task) GetKind() TaskKind {
 	return TaskKind_TASK_KIND_UNSPECIFIED
 }
 
-type WatchQuitRequest struct {
+type WatchWindowCloseRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WatchQuitRequest) Reset() {
-	*x = WatchQuitRequest{}
+func (x *WatchWindowCloseRequest) Reset() {
+	*x = WatchWindowCloseRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WatchQuitRequest) String() string {
+func (x *WatchWindowCloseRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WatchQuitRequest) ProtoMessage() {}
+func (*WatchWindowCloseRequest) ProtoMessage() {}
 
-func (x *WatchQuitRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchWindowCloseRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -469,43 +464,43 @@ func (x *WatchQuitRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WatchQuitRequest.ProtoReflect.Descriptor instead.
-func (*WatchQuitRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchWindowCloseRequest.ProtoReflect.Descriptor instead.
+func (*WatchWindowCloseRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *WatchQuitRequest) GetWindow() string {
+func (x *WatchWindowCloseRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
 
-type WatchQuitResponse struct {
+type WatchWindowCloseResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// What this caller answers ReportFlush with. The stream opens by saying it, so
+	// What this caller answers ReportPendingWork with. The stream opens by saying it, so
 	// a caller knows it is listening before anything is asked of it.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	// Set when the window is going and this caller's unwritten work has to land.
-	Flush         bool `protobuf:"varint,2,opt,name=flush,proto3" json:"flush,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Set when this caller has unsaved work that has to be saved before the window closes.
+	IsFlushRequired bool `protobuf:"varint,2,opt,name=is_flush_required,json=isFlushRequired,proto3" json:"is_flush_required,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
-func (x *WatchQuitResponse) Reset() {
-	*x = WatchQuitResponse{}
+func (x *WatchWindowCloseResponse) Reset() {
+	*x = WatchWindowCloseResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WatchQuitResponse) String() string {
+func (x *WatchWindowCloseResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WatchQuitResponse) ProtoMessage() {}
+func (*WatchWindowCloseResponse) ProtoMessage() {}
 
-func (x *WatchQuitResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchWindowCloseResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -517,30 +512,30 @@ func (x *WatchQuitResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WatchQuitResponse.ProtoReflect.Descriptor instead.
-func (*WatchQuitResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchWindowCloseResponse.ProtoReflect.Descriptor instead.
+func (*WatchWindowCloseResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *WatchQuitResponse) GetToken() string {
+func (x *WatchWindowCloseResponse) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *WatchQuitResponse) GetFlush() bool {
+func (x *WatchWindowCloseResponse) GetIsFlushRequired() bool {
 	if x != nil {
-		return x.Flush
+		return x.IsFlushRequired
 	}
 	return false
 }
 
-type ReportFlushRequest struct {
+type ReportPendingWorkRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// The token this caller was given when it began listening.
 	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	// What this caller has left. A request naming none has said nothing, and is
@@ -550,20 +545,20 @@ type ReportFlushRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReportFlushRequest) Reset() {
-	*x = ReportFlushRequest{}
+func (x *ReportPendingWorkRequest) Reset() {
+	*x = ReportPendingWorkRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReportFlushRequest) String() string {
+func (x *ReportPendingWorkRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReportFlushRequest) ProtoMessage() {}
+func (*ReportPendingWorkRequest) ProtoMessage() {}
 
-func (x *ReportFlushRequest) ProtoReflect() protoreflect.Message {
+func (x *ReportPendingWorkRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -575,52 +570,52 @@ func (x *ReportFlushRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReportFlushRequest.ProtoReflect.Descriptor instead.
-func (*ReportFlushRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportPendingWorkRequest.ProtoReflect.Descriptor instead.
+func (*ReportPendingWorkRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ReportFlushRequest) GetWindow() string {
+func (x *ReportPendingWorkRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
 
-func (x *ReportFlushRequest) GetToken() string {
+func (x *ReportPendingWorkRequest) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *ReportFlushRequest) GetResult() FlushResult {
+func (x *ReportPendingWorkRequest) GetResult() FlushResult {
 	if x != nil {
 		return x.Result
 	}
 	return FlushResult_FLUSH_RESULT_UNSPECIFIED
 }
 
-type ReportFlushResponse struct {
+type ReportPendingWorkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReportFlushResponse) Reset() {
-	*x = ReportFlushResponse{}
+func (x *ReportPendingWorkResponse) Reset() {
+	*x = ReportPendingWorkResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReportFlushResponse) String() string {
+func (x *ReportPendingWorkResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReportFlushResponse) ProtoMessage() {}
+func (*ReportPendingWorkResponse) ProtoMessage() {}
 
-func (x *ReportFlushResponse) ProtoReflect() protoreflect.Message {
+func (x *ReportPendingWorkResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -632,8 +627,8 @@ func (x *ReportFlushResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReportFlushResponse.ProtoReflect.Descriptor instead.
-func (*ReportFlushResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportPendingWorkResponse.ProtoReflect.Descriptor instead.
+func (*ReportPendingWorkResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{6}
 }
 
@@ -641,7 +636,7 @@ type GetCurrentVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -676,9 +671,9 @@ func (*GetCurrentVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetCurrentVaultRequest) GetWindow() string {
+func (x *GetCurrentVaultRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -688,7 +683,7 @@ type GetCurrentVaultResponse struct {
 	// The identity the list of vaults holds that vault under. Empty in a window
 	// showing none, and in one that is open on the installation and not on
 	// any one vault.
-	Vault         string `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	VaultId       string `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -723,9 +718,9 @@ func (*GetCurrentVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetCurrentVaultResponse) GetVault() string {
+func (x *GetCurrentVaultResponse) GetVaultId() string {
 	if x != nil {
-		return x.Vault
+		return x.VaultId
 	}
 	return ""
 }
@@ -734,7 +729,7 @@ type CancelTaskRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// The id that WatchTasks lists the task under.
 	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -771,9 +766,9 @@ func (*CancelTaskRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *CancelTaskRequest) GetWindow() string {
+func (x *CancelTaskRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -825,18 +820,19 @@ var File_numen_v1_window_proto protoreflect.FileDescriptor
 
 const file_numen_v1_window_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/window.proto\x12\bnumen.v1\"+\n" +
-	"\x11WatchTasksRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
+	"\x15numen/v1/window.proto\x12\bnumen.v1\"0\n" +
+	"\x11WatchTasksRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xdb\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x8e\x03\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05about\x18\x03 \x01(\tR\x05about\x12\x12\n" +
-	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
-	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x14\n" +
-	"\x05error\x18\x06 \x01(\tR\x05error\x12&\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\x12'\n" +
+	"\x0fcompleted_count\x18\x04 \x01(\x03R\x0ecompletedCount\x12\x1f\n" +
+	"\vtotal_count\x18\x05 \x01(\x03R\n" +
+	"totalCount\x12%\n" +
+	"\x0efailure_reason\x18\x06 \x01(\tR\rfailureReason\x12&\n" +
 	"\x0fis_user_started\x18\a \x01(\bR\risUserStarted\x12\"\n" +
 	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\x12\x1b\n" +
 	"\tplugin_id\x18\t \x01(\tR\bpluginId\x12\x1f\n" +
@@ -844,23 +840,23 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	" \x01(\tR\n" +
 	"pluginName\x12%\n" +
 	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12&\n" +
-	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"*\n" +
-	"\x10WatchQuitRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
-	"\x11WatchQuitResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05flush\x18\x02 \x01(\bR\x05flush\"q\n" +
-	"\x12ReportFlushRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
+	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"6\n" +
+	"\x17WatchWindowCloseRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"\\\n" +
+	"\x18WatchWindowCloseResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12*\n" +
+	"\x11is_flush_required\x18\x02 \x01(\bR\x0fisFlushRequired\"|\n" +
+	"\x18ReportPendingWorkRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +
-	"\x06result\x18\x03 \x01(\x0e2\x15.numen.v1.FlushResultR\x06result\"\x15\n" +
-	"\x13ReportFlushResponse\"0\n" +
-	"\x16GetCurrentVaultRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"/\n" +
-	"\x17GetCurrentVaultResponse\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault\";\n" +
-	"\x11CancelTaskRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\x12\x0e\n" +
+	"\x06result\x18\x03 \x01(\x0e2\x15.numen.v1.FlushResultR\x06result\"\x1b\n" +
+	"\x19ReportPendingWorkResponse\"5\n" +
+	"\x16GetCurrentVaultRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"4\n" +
+	"\x17GetCurrentVaultResponse\x12\x19\n" +
+	"\bvault_id\x18\x01 \x01(\tR\avaultId\"@\n" +
+	"\x11CancelTaskRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"\x14\n" +
 	"\x12CancelTaskResponse*;\n" +
 	"\bTaskKind\x12\x19\n" +
@@ -876,12 +872,12 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14FLUSH_RESULT_NOTHING\x10\x01\x12\x18\n" +
 	"\x14FLUSH_RESULT_WRITTEN\x10\x02\x12\x18\n" +
-	"\x14FLUSH_RESULT_UNSAVED\x10\x032\x8f\x03\n" +
+	"\x14FLUSH_RESULT_UNSAVED\x10\x032\xb6\x03\n" +
 	"\rWindowService\x12I\n" +
 	"\n" +
-	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +
-	"\tWatchQuit\x12\x1a.numen.v1.WatchQuitRequest\x1a\x1b.numen.v1.WatchQuitResponse0\x01\x12J\n" +
-	"\vReportFlush\x12\x1c.numen.v1.ReportFlushRequest\x1a\x1d.numen.v1.ReportFlushResponse\x12V\n" +
+	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12[\n" +
+	"\x10WatchWindowClose\x12!.numen.v1.WatchWindowCloseRequest\x1a\".numen.v1.WatchWindowCloseResponse0\x01\x12\\\n" +
+	"\x11ReportPendingWork\x12\".numen.v1.ReportPendingWorkRequest\x1a#.numen.v1.ReportPendingWorkResponse\x12V\n" +
 	"\x0fGetCurrentVault\x12 .numen.v1.GetCurrentVaultRequest\x1a!.numen.v1.GetCurrentVaultResponse\x12G\n" +
 	"\n" +
 	"CancelTask\x12\x1b.numen.v1.CancelTaskRequest\x1a\x1c.numen.v1.CancelTaskResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -901,34 +897,34 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_window_proto_goTypes = []any{
-	(TaskKind)(0),                   // 0: numen.v1.TaskKind
-	(Unit)(0),                       // 1: numen.v1.Unit
-	(FlushResult)(0),                // 2: numen.v1.FlushResult
-	(*WatchTasksRequest)(nil),       // 3: numen.v1.WatchTasksRequest
-	(*WatchTasksResponse)(nil),      // 4: numen.v1.WatchTasksResponse
-	(*Task)(nil),                    // 5: numen.v1.Task
-	(*WatchQuitRequest)(nil),        // 6: numen.v1.WatchQuitRequest
-	(*WatchQuitResponse)(nil),       // 7: numen.v1.WatchQuitResponse
-	(*ReportFlushRequest)(nil),      // 8: numen.v1.ReportFlushRequest
-	(*ReportFlushResponse)(nil),     // 9: numen.v1.ReportFlushResponse
-	(*GetCurrentVaultRequest)(nil),  // 10: numen.v1.GetCurrentVaultRequest
-	(*GetCurrentVaultResponse)(nil), // 11: numen.v1.GetCurrentVaultResponse
-	(*CancelTaskRequest)(nil),       // 12: numen.v1.CancelTaskRequest
-	(*CancelTaskResponse)(nil),      // 13: numen.v1.CancelTaskResponse
+	(TaskKind)(0),                     // 0: numen.v1.TaskKind
+	(Unit)(0),                         // 1: numen.v1.Unit
+	(FlushResult)(0),                  // 2: numen.v1.FlushResult
+	(*WatchTasksRequest)(nil),         // 3: numen.v1.WatchTasksRequest
+	(*WatchTasksResponse)(nil),        // 4: numen.v1.WatchTasksResponse
+	(*Task)(nil),                      // 5: numen.v1.Task
+	(*WatchWindowCloseRequest)(nil),   // 6: numen.v1.WatchWindowCloseRequest
+	(*WatchWindowCloseResponse)(nil),  // 7: numen.v1.WatchWindowCloseResponse
+	(*ReportPendingWorkRequest)(nil),  // 8: numen.v1.ReportPendingWorkRequest
+	(*ReportPendingWorkResponse)(nil), // 9: numen.v1.ReportPendingWorkResponse
+	(*GetCurrentVaultRequest)(nil),    // 10: numen.v1.GetCurrentVaultRequest
+	(*GetCurrentVaultResponse)(nil),   // 11: numen.v1.GetCurrentVaultResponse
+	(*CancelTaskRequest)(nil),         // 12: numen.v1.CancelTaskRequest
+	(*CancelTaskResponse)(nil),        // 13: numen.v1.CancelTaskResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
 	5,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
 	1,  // 1: numen.v1.Task.unit:type_name -> numen.v1.Unit
 	0,  // 2: numen.v1.Task.kind:type_name -> numen.v1.TaskKind
-	2,  // 3: numen.v1.ReportFlushRequest.result:type_name -> numen.v1.FlushResult
+	2,  // 3: numen.v1.ReportPendingWorkRequest.result:type_name -> numen.v1.FlushResult
 	3,  // 4: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
-	6,  // 5: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
-	8,  // 6: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
+	6,  // 5: numen.v1.WindowService.WatchWindowClose:input_type -> numen.v1.WatchWindowCloseRequest
+	8,  // 6: numen.v1.WindowService.ReportPendingWork:input_type -> numen.v1.ReportPendingWorkRequest
 	10, // 7: numen.v1.WindowService.GetCurrentVault:input_type -> numen.v1.GetCurrentVaultRequest
 	12, // 8: numen.v1.WindowService.CancelTask:input_type -> numen.v1.CancelTaskRequest
 	4,  // 9: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
-	7,  // 10: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
-	9,  // 11: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
+	7,  // 10: numen.v1.WindowService.WatchWindowClose:output_type -> numen.v1.WatchWindowCloseResponse
+	9,  // 11: numen.v1.WindowService.ReportPendingWork:output_type -> numen.v1.ReportPendingWorkResponse
 	11, // 12: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
 	13, // 13: numen.v1.WindowService.CancelTask:output_type -> numen.v1.CancelTaskResponse
 	9,  // [9:14] is the sub-list for method output_type

@@ -21,7 +21,7 @@ export interface ActiveItemState {
   readonly actions: ComputedRef<readonly PaletteAction[]>
   readonly goTo: (pos: number) => void
   readonly selectedId: Ref<string>
-  readonly lightAt: (pos: number, event: PointerEvent) => void
+  readonly highlightAt: (pos: number, event: PointerEvent) => void
   readonly chooseAt: (pos: number, second: boolean) => void
 }
 
@@ -79,7 +79,7 @@ export function useActiveItem(options: ActiveItemOptions): ActiveItemState {
    */
   let status = { x: -1, y: -1 }
 
-  const lightAt = (pos: number, event: PointerEvent): void => {
+  const highlightAt = (pos: number, event: PointerEvent): void => {
     if (event.clientX === status.x && event.clientY === status.y) return
     status = { x: event.clientX, y: event.clientY }
     // An item the keyboard steps over is one the pointer passes over.
@@ -94,5 +94,5 @@ export function useActiveItem(options: ActiveItemOptions): ActiveItemState {
     options.tellChoice(item.id, action)
   }
 
-  return { here, activeItem, actions, goTo, selectedId: target, lightAt, chooseAt }
+  return { here, activeItem, actions, goTo, selectedId: target, highlightAt, chooseAt }
 }

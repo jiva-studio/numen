@@ -49,19 +49,19 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
       calls.push(`rename ${request.id} ${request.name}`)
       return answers.renamed ?? { vault: wireVault(request.id, request.name) }
     },
-    removeVault: (request: { id: string; trash: boolean }) => {
-      calls.push(`${request.trash ? 'erase' : 'remove'} ${request.id}`)
+    removeVault: (request: { id: string; isFolderTrashed: boolean }) => {
+      calls.push(`${request.isFolderTrashed ? 'erase' : 'remove'} ${request.id}`)
       return answers.removed ?? {}
     },
     emptyTrash: () => {
       calls.push('emptyTrash')
-      return { undeleted: answers.undeleted ?? [] }
+      return { failedPaths: answers.undeleted ?? [] }
     },
   })
   const set = createVaultCommands(
     {
       vaults: api.vault.vaults,
-      emptyTrash: api.vault.file.emptyTrash,
+      clearTrash: api.vault.file.emptyTrash,
       ...(withHold ? { tabsHold: hold } : {}),
       setVaultName,
       reload,

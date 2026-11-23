@@ -24,17 +24,17 @@ type Endpoint struct {
 	Token   string
 }
 
-// FromEnv is the endpoint the environment of the process names.
-func FromEnv() (Endpoint, error) {
-	return FromVars(map[string]string{
+// ReadEnv returns the endpoint the environment of the process names.
+func ReadEnv() (Endpoint, error) {
+	return ReadVars(map[string]string{
 		HostPortEnv:    os.Getenv(HostPortEnv),
 		PluginTokenEnv: os.Getenv(PluginTokenEnv),
 	})
 }
 
-// FromVars is the endpoint the NUMEN_HOST_PORT and NUMEN_PLUGIN_TOKEN entries of vars name. They are
+// ReadVars returns the endpoint the NUMEN_HOST_PORT and NUMEN_PLUGIN_TOKEN entries of vars name. They are
 // the variables a host gives a plugin it links into its own process.
-func FromVars(vars map[string]string) (Endpoint, error) {
+func ReadVars(vars map[string]string) (Endpoint, error) {
 	port := strings.TrimSpace(vars[HostPortEnv])
 	if port == "" {
 		return Endpoint{}, ErrNoHost

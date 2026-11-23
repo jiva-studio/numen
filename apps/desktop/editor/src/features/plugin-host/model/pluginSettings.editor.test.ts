@@ -114,7 +114,7 @@ describe('the handler of the editor settings', () => {
   it('is called with the values when they first arrive', async () => {
     const { store, accessor } = createWindow({ app: { editor: { lineNumbers: true } } })
     const handler = vi.fn()
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await store.start()
 
@@ -129,7 +129,7 @@ describe('the handler of the editor settings', () => {
       { getSettings: () => Promise.reject(createLostConnection('the core is busy')) },
     )
     const handler = vi.fn()
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await expect(store.start()).rejects.toThrow('the core is busy')
     await Promise.resolve()
@@ -141,7 +141,7 @@ describe('the handler of the editor settings', () => {
     const { store, accessor } = createWindow({})
     await store.start()
     const handler = vi.fn()
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await store.write.writeSetting(['app', 'editor', 'softWrap'], false)
 
@@ -154,7 +154,7 @@ describe('the handler of the editor settings', () => {
     const { store, accessor } = createWindow({})
     await store.start()
     const handler = vi.fn()
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await store.write.writeSetting(['app', 'editor', 'lineNumbers'], true)
 
@@ -167,7 +167,7 @@ describe('the handler of the editor settings', () => {
     const { store, accessor } = createWindow({})
     await store.start()
     const handler = vi.fn()
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await store.write.writeSetting(['app', 'editor', 'fontSize'], 22)
     await store.write.writeSetting(['app', 'editor', 'softWrap'], false)
@@ -180,8 +180,8 @@ describe('the handler of the editor settings', () => {
     const { store, accessor } = createWindow({})
     await store.start()
     const handler = vi.fn()
-    const stop = accessor.onEditorSettingsChange(PLUGIN, handler)
-    stop()
+    const stop = accessor.watchEditorSettings(PLUGIN, handler)
+    stop.dispose()
 
     await store.write.writeSetting(['app', 'editor', 'softWrap'], false)
     await Promise.resolve()
@@ -194,7 +194,7 @@ describe('the handler of the editor settings', () => {
     await store.start()
     const failure = new Error('the handler broke')
     const handler = vi.fn().mockRejectedValueOnce(failure).mockResolvedValue(undefined)
-    accessor.onEditorSettingsChange(PLUGIN, handler)
+    accessor.watchEditorSettings(PLUGIN, handler)
 
     await store.write.writeSetting(['app', 'editor', 'softWrap'], false)
     await vi.waitFor(() => expect(reportError).toHaveBeenCalledWith(PLUGIN, expect.anything()))

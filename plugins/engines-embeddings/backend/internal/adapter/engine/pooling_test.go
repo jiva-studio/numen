@@ -34,7 +34,7 @@ func TestPoolKinds(t *testing.T) {
 		{model.PoolMean, [][]float32{{1.0 / 3, 1, 5.0 / 3}, {2, 1, 0}}},
 	}
 	for _, tc := range cases {
-		got, err := pool(tc.kind, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
+		got, err := computePool(tc.kind, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
 		if err != nil {
 			t.Fatalf("%s: %v", tc.kind, err)
 		}
@@ -48,14 +48,14 @@ func TestPoolKinds(t *testing.T) {
 
 func TestPoolNormalizesOnlyWhereTheProfileAsksForIt(t *testing.T) {
 	flat, mask := twoRows()
-	raw, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
+	raw, err := computePool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if raw[0][2] != 5 {
 		t.Errorf("a vector that is not normalized is scaled: %v", raw[0])
 	}
-	unit, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true)
+	unit, err := computePool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestPoolNormalizesOnlyWhereTheProfileAsksForIt(t *testing.T) {
 
 func TestPoolOutputIsNoPerTokenPooling(t *testing.T) {
 	flat, mask := twoRows()
-	if _, err := pool(model.PoolOutput, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true); err == nil {
+	if _, err := computePool(model.PoolOutput, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true); err == nil {
 		t.Error("output pooling of a per-token tensor gave no error")
 	}
 }
@@ -163,7 +163,7 @@ func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 		t.Errorf("getWindow(CPU, 1024) = %d, want 1024", got)
 	}
 
-	unmasked := lastPool([]float32{3, 4, 9, 9}, []int64{0, 0}, 1, 2, 2, false)
+	unmasked := computeLastPool([]float32{3, 4, 9, 9}, []int64{0, 0}, 1, 2, 2, false)
 	if !isNear(unmasked[0], []float32{3, 4}) {
 		t.Errorf("lastPool with all-zero mask = %v, want [3 4]", unmasked[0])
 	}

@@ -82,7 +82,7 @@ func TestGetResultsReadsTheQueryFromTheNoteAsItIsNow(t *testing.T) {
 	f.addStormsNote()
 	f.handleIndexChange(t)
 
-	f.vault.File(stormsPath, formatSearchNote(stormsID, wordsQuery))
+	f.vault.WriteFile(stormsPath, formatSearchNote(stormsID, wordsQuery))
 	res := f.getResults(t, stormsPath)
 
 	if res.Query != wordsQuery || !res.IsStale {
@@ -99,7 +99,7 @@ func TestGetResultsKeepsTheLastGoodResultsWithTheProblemsOfTheQuery(t *testing.T
 	f.handleIndexChange(t)
 
 	f.clock.Advance(time.Minute)
-	f.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
+	f.vault.WriteFile(stormsPath, formatSearchNote(stormsID, brokenQuery))
 	f.handleIndexChange(t)
 
 	res := f.getResults(t, stormsPath)
@@ -113,11 +113,11 @@ func TestGetResultsKeepsTheLastGoodResultsWithTheProblemsOfTheQuery(t *testing.T
 
 func TestGetResultsCountsTheProblemsFromTheQueryAfterTheFrontmatterGrows(t *testing.T) {
 	f := newFixture(t, 10)
-	f.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
+	f.vault.WriteFile(stormsPath, formatSearchNote(stormsID, brokenQuery))
 	f.handleIndexChange(t)
 
 	grown := strings.Replace(formatSearchNote(stormsID, brokenQuery), "---\n", "---\ntitle: Winter storms\nsource: logbooks\n", 1)
-	f.vault.File(stormsPath, grown)
+	f.vault.WriteFile(stormsPath, grown)
 	res := f.getResults(t, stormsPath)
 
 	if len(res.Errors) != 1 || res.Errors[0].Line != 1 || res.Errors[0].Column != 20 {
@@ -127,7 +127,7 @@ func TestGetResultsCountsTheProblemsFromTheQueryAfterTheFrontmatterGrows(t *test
 
 func TestGetResultsReturnsAProblemOfTheNoteAtLineOneColumnOneOfTheQuery(t *testing.T) {
 	f := newFixture(t, 10)
-	f.vault.File(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n\n```numen-query\n```\n")
+	f.vault.WriteFile(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n\n```numen-query\n```\n")
 
 	res := f.getResults(t, stormsPath)
 
@@ -388,7 +388,7 @@ func TestUpdateSearchRunsTheSearchInteractivelyWithinTheCooldown(t *testing.T) {
 func TestUpdateSearchReturnsTheProblemsOfTheCoreAndChangesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
-	before, _ := f.vault.Content(stormsPath)
+	before, _ := f.vault.ReadContent(stormsPath)
 
 	var res api.UpdateSearchResponse
 	failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: brokenQuery}, &res)
@@ -399,7 +399,7 @@ func TestUpdateSearchReturnsTheProblemsOfTheCoreAndChangesNothing(t *testing.T) 
 	if len(res.Errors) != 1 || res.Errors[0].Line != 1 || res.Errors[0].Column != 20 || !strings.Contains(res.Errors[0].Message, "unexpected end") {
 		t.Errorf("errors = %+v, want the problem at line 1, column 20 of the query", res.Errors)
 	}
-	if after, _ := f.vault.Content(stormsPath); after != before {
+	if after, _ := f.vault.ReadContent(stormsPath); after != before {
 		t.Errorf("note = %q, want it unchanged", after)
 	}
 }

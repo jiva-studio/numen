@@ -6,7 +6,7 @@
  * It is read at a glance and is placed above the main content.
  */
 import Heatmap from '../heatmap/Heatmap.vue'
-import { dayName as heatmapDayName } from '../../lib/heatmap/dates'
+import { formatDayName as heatmapDayName } from '../../lib/heatmap/dates'
 import type { Tally as HeatmapTally } from '../../lib/heatmap/tally'
 import type { Words as HeatmapWords } from '../../lib/heatmap/words'
 

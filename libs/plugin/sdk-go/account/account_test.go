@@ -16,7 +16,7 @@ const pluginID = "md.numen.tools.sync"
 
 func newClient(t *testing.T, fake *accounttest.Fake) *account.Client {
 	t.Helper()
-	endpoint, err := hostcall.FromVars(fake.Vars("token-of-the-plugin"))
+	endpoint, err := hostcall.ReadVars(fake.BuildVars("token-of-the-plugin"))
 	if err != nil {
 		t.Fatal(err)
 	}

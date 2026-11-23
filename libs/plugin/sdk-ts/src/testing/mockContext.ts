@@ -19,13 +19,14 @@ import type {
   FileSelectEvent,
   JsonValue,
   VaultChangeEvent,
+  OpenExternalErrorCode,
 } from '../types'
 import type { BufferHost } from '../buffers'
 import type { NoticeHost } from '../notices'
 import type { PickerHost } from '../picker'
 import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 import { isWebAddress } from '../webAddress'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
@@ -259,8 +260,12 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       target: init.target ?? 'desktop.editor',
       subscriptions,
       app: init.app ?? DEFAULT_APP,
-      openExternal(url: string): Promise<Result<null>> {
-        if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))
+      openExternal(url: string): Promise<Result<null, Failure<OpenExternalErrorCode>>> {
+        if (!isWebAddress(url)) {
+          return Promise.resolve(
+            asFailure({ error: 'notWebAddress', message: `not a web address: ${url}` }),
+          )
+        }
         openedAddresses.push(url)
         return Promise.resolve(asValue(null))
       },

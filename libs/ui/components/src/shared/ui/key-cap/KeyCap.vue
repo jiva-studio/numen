@@ -23,7 +23,7 @@ const labelText = computed(() =>
     .join(' '),
 )
 
-const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills })
+const getIconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills })
 </script>
 
 <template>
@@ -34,7 +34,7 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
       v-for="icon in keys.icons"
       :key="icon"
       class="cap__icon"
-      :style="iconStyle(icon)"
+      :style="getIconStyle(icon)"
       :stroke-width="ICONS[icon].stroke"
       aria-hidden="true"
       focusable="false"

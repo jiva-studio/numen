@@ -25,7 +25,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 			t.Errorf("%v came across as %v", response, got)
 		}
 	}
-	if got := ParseRating(api.RatingUnspecified); got.Valid() {
+	if got := ParseRating(api.RatingUnspecified); got.IsValid() {
 		t.Errorf("nothing said came across as %v", got)
 	}
 	if got := ParseRating(api.Rating("unknown")); got != 0 {

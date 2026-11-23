@@ -146,7 +146,7 @@ func (v *Vault) TrimRemovals() {
 func (v *Vault) ListFileChanges(ctx context.Context, q host.FileChangeQuery) (host.FileChangePage, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return host.FileChangePage{}, err
 	}
 	if q.Limit < 0 || q.Limit > fileChangePageSize || len(q.Events) == 0 || slices.ContainsFunc(q.Events, isUnknownEvent) {
@@ -179,7 +179,7 @@ func (v *Vault) fillContent(change *host.FileChange) {
 	if err != nil {
 		return
 	}
-	at, err = v.hashed(at)
+	at, err = v.hashStat(at)
 	if err != nil {
 		return
 	}

@@ -34,7 +34,7 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 			pos = end + 1
 			continue
 		}
-		for _, found := range WikilinksIn(line) {
+		for _, found := range FindWikilinks(line) {
 			if found.Target != from {
 				continue
 			}

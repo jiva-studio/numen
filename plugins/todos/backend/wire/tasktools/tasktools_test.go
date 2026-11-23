@@ -45,8 +45,8 @@ type session struct {
 func newSession(t *testing.T) *session {
 	t.Helper()
 	vault := hosttest.New("notes")
-	vault.File("Home.md", homeNote)
-	vault.File("work/Plan.md", "- [ ] ship release +work due:2026-11-20\n")
+	vault.WriteFile("Home.md", homeNote)
+	vault.WriteFile("work/Plan.md", "- [ ] ship release +work due:2026-11-20\n")
 	tasks := testsupport.NewIndex(vault, vault, vault)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func newSession(t *testing.T) *session {
 		Editor:    edit.New(vault, vault, tasks, lock),
 		Completer: complete.New(vault, vault, tasks, lock),
 	}
-	registry, err := tasktools.New(oneVault{scope: scope}, fixedClock{}).Registry()
+	registry, err := tasktools.New(oneVault{scope: scope}, fixedClock{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestTaskAddAppendsALineTheIndexListsAtOnce(t *testing.T) {
 
 	task := call[tasktools.TaskOutput](t, s, "task_add", map[string]any{"path": "Home.md", "text": "file taxes +money due:2026-12-01"})
 
-	if got, _ := s.vault.Content("Home.md"); got != homeNote+"- [ ] file taxes +money due:2026-12-01\n" {
+	if got, _ := s.vault.ReadContent("Home.md"); got != homeNote+"- [ ] file taxes +money due:2026-12-01\n" {
 		t.Errorf("note = %q", got)
 	}
 	if task.Line != 6 || task.Due != "2026-12-01" || task.Status != "open" {
@@ -205,14 +205,14 @@ func TestTaskTickChangesTheCheckbox(t *testing.T) {
 
 	ticked := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": true, "expectedText": "water plants"})
 
-	if got, _ := s.vault.Content("Home.md"); !strings.Contains(got, "- [x] water plants due:2026-11-14 done:2026-11-14\n") {
+	if got, _ := s.vault.ReadContent("Home.md"); !strings.Contains(got, "- [x] water plants due:2026-11-14 done:2026-11-14\n") {
 		t.Errorf("note = %q", got)
 	}
 	if ticked.Status != "done" || ticked.Path != "Home.md" || ticked.Line != 3 {
 		t.Errorf("ticked = %+v", ticked)
 	}
 	reopened := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": false, "expectedText": "water plants"})
-	if got, _ := s.vault.Content("Home.md"); got != homeNote || reopened.Status != "open" {
+	if got, _ := s.vault.ReadContent("Home.md"); got != homeNote || reopened.Status != "open" {
 		t.Errorf("note = %q, task = %+v, want the first note back", got, reopened)
 	}
 }
@@ -236,7 +236,7 @@ func TestTaskTickRejectsAChangeTheTaskDoesNotAllow(t *testing.T) {
 			if got := getError(t, s, "task_set_done", c.args); !strings.Contains(got, c.want) {
 				t.Errorf("error = %q, want it to mention %q", got, c.want)
 			}
-			if got, _ := s.vault.Content("Home.md"); got != homeNote {
+			if got, _ := s.vault.ReadContent("Home.md"); got != homeNote {
 				t.Errorf("note changed to %q", got)
 			}
 		})
@@ -248,7 +248,7 @@ func TestTaskEditReplacesTheTextAndRefusesAChangedTask(t *testing.T) {
 
 	task := call[tasktools.TaskOutput](t, s, "task_edit", map[string]any{"path": "Home.md", "line": 5, "text": "read two books", "expectedText": "read a book"})
 
-	if got, _ := s.vault.Content("Home.md"); !strings.HasSuffix(got, "- [ ] read two books\n") || task.Text != "read two books" {
+	if got, _ := s.vault.ReadContent("Home.md"); !strings.HasSuffix(got, "- [ ] read two books\n") || task.Text != "read two books" {
 		t.Errorf("note = %q, task = %+v", got, task)
 	}
 	if got := getError(t, s, "task_edit", map[string]any{"path": "Home.md", "line": 5, "text": "x", "expectedText": "read a book"}); !strings.Contains(got, "expected text") {
@@ -265,7 +265,7 @@ func TestTaskRemoveDeletesTheLine(t *testing.T) {
 	removed := call[tasktools.TaskOutput](t, s, "task_remove", map[string]any{"path": "Home.md", "line": 4, "expectedText": "buy milk"})
 
 	want := strings.Replace(homeNote, "- [x] buy milk done:2026-11-01\n", "", 1)
-	if got, _ := s.vault.Content("Home.md"); got != want || removed.Text != "buy milk" {
+	if got, _ := s.vault.ReadContent("Home.md"); got != want || removed.Text != "buy milk" {
 		t.Errorf("note = %q, removed = %+v", got, removed)
 	}
 	if got := getError(t, s, "task_remove", map[string]any{"path": "Home.md", "line": 1, "expectedText": "x"}); !strings.Contains(got, "not a task") {

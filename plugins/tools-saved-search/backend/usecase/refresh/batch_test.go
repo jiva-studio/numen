@@ -12,7 +12,7 @@ import (
 const taskID = "saved-search-refresh"
 
 func addGalesNote(w *world) {
-	w.vault.File(galesPath, formatSearchNote(galesID, galesQuery))
+	w.vault.WriteFile(galesPath, formatSearchNote(galesID, galesQuery))
 }
 
 func TestRunDueDeletesTheCacheOfARemovedSearch(t *testing.T) {
@@ -39,7 +39,7 @@ func TestRunDueDeletesTheCacheOfANoteThatIsNoLongerASearch(t *testing.T) {
 		t.Fatal("no cache for the gales")
 	}
 
-	w.vault.File(galesPath, "---\nid: "+galesID+"\n---\nThe gales of 1911.\n")
+	w.vault.WriteFile(galesPath, "---\nid: "+galesID+"\n---\nThe gales of 1911.\n")
 	w.runDueSearches(t)
 
 	if w.hasRecord(t, galesID+".json") {

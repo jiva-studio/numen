@@ -71,7 +71,7 @@ func (f Files) ListPresets() []themedomain.File {
 		files = append(files, themedomain.File{
 			Title:    strings.TrimSuffix(entry.Name(), themedomain.Extension),
 			Text:     css,
-			IsPinned: DeclaresColorScheme(css),
+			IsPinned: HasColorScheme(css),
 		})
 	}
 	return files
@@ -111,7 +111,7 @@ func (f Files) ListOwnThemes() []themedomain.File {
 		files = append(files, themedomain.File{
 			Title:    title,
 			Text:     text,
-			IsPinned: DeclaresColorScheme(text),
+			IsPinned: HasColorScheme(text),
 		})
 	}
 	return files
@@ -147,8 +147,8 @@ func read(path string) (_ string, err error) {
 	return string(text), nil
 }
 
-// DeclaresColorScheme reports whether the stylesheet pins `color-scheme`, outside its comments.
-func DeclaresColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
+// HasColorScheme reports whether the stylesheet pins `color-scheme`, outside its comments.
+func HasColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
 
 func stripComments(css string) string {
 	var text strings.Builder

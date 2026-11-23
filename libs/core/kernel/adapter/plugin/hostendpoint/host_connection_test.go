@@ -94,7 +94,7 @@ func newConnectionClientFor(t *testing.T, fakeCallers *callers, token string) (n
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	recording := &recordingClient{inner: server.Client()}
-	return numenv1connect.NewConnectionCallServiceClient(recording, server.URL, connect.WithInterceptors(transport.AuthInterceptor(token))), recording
+	return numenv1connect.NewConnectionCallServiceClient(recording, server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token))), recording
 }
 
 // received is what a consumer read from a call: the data frames, the done payload and the failure.
@@ -250,14 +250,14 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 			w.Provider.FailAlways("https://two.test/v1", errors.New("Bearer "+keyTwo))
 		},
 		"a provider that echoes its key after a frame": func(w *modelcalltest.World) {
-			w.Provider.Script("https://one.test/v1", errors.New("Bearer "+keyOne), "partial")
+			w.Provider.SetScript("https://one.test/v1", errors.New("Bearer "+keyOne), "partial")
 		},
 	} {
 		world := modelcalltest.New()
 		one := world.AddServer(t, "One", "https://one.test/v1", keyOne)
 		two := world.AddServer(t, "Two", "https://two.test/v1", keyTwo)
-		world.Rows.Set("md.numen.b", modelcalltest.CompleteOperation, modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
-		world.Rows.Set("md.numen.b", modelcalltest.ChatOperation, modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
+		world.Rows.Set("md.numen.b", modelcalltest.CompleteOperation, modelcalltest.CreateRow(one, "m"), modelcalltest.CreateRow(two, "m"))
+		world.Rows.Set("md.numen.b", modelcalltest.ChatOperation, modelcalltest.CreateRow(one, "m"), modelcalltest.CreateRow(two, "m"))
 		arrange(world)
 		client, recording := newConnectionClient(t, connectionusecase.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 

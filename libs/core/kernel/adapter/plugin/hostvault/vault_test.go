@@ -43,7 +43,7 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 		index = func(context.Context, domain.Vault, []string) error { return nil }
 	}
 	return NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return v, true }, WriteWake: hooks.onWrite, Find: hooks.find},
+		Session{GetCurrent: func() (domain.Vault, bool) { return v, true }, WriteWake: hooks.onWrite, Find: hooks.find},
 		Files{
 			Stat:        file.NewHashFile(vaultreader.Readers{}, writers),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}, writers),
@@ -63,7 +63,7 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 			StoreWriters: func(v domain.Vault, pluginID string) (vault.StoreWriter, error) {
 				return derivedfile.PluginStores{}.OpenWriter(v, pluginID)
 			},
-			Cache: appstate.PluginCachesAt(t.TempDir()),
+			Cache: appstate.NewPluginCaches(t.TempDir()),
 		},
 	), v
 }
@@ -214,7 +214,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
+		Session{GetCurrent: func() (domain.Vault, bool) { return domain.Vault{}, false }},
 		Files{}, Writer{}, Lookups{}, Arranger{}, Stores{},
 	)
 

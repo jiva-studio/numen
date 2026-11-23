@@ -72,7 +72,7 @@ func (s *feedStub) events() FeedEvents {
 			s.emitted <- v.ID
 			s.types <- types
 		},
-		After: func(time.Duration) <-chan time.Time { return s.quiet },
+		CreateTimer: func(time.Duration) <-chan time.Time { return s.quiet },
 	}
 }
 

@@ -53,7 +53,7 @@ func (l *Limits) Get(typeID, address, model, op string) time.Duration {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if typeID == typeCompatible {
-		if _, isServed := l.served[servedKey(address, model)]; !isServed {
+		if _, isServed := l.served[buildServedKey(address, model)]; !isServed {
 			return FirstRequestLimit
 		}
 	}
@@ -73,9 +73,9 @@ func (l *Limits) MarkServed(address, model string) {
 	if l.served == nil {
 		l.served = map[string]struct{}{}
 	}
-	l.served[servedKey(address, model)] = struct{}{}
+	l.served[buildServedKey(address, model)] = struct{}{}
 }
 
-func servedKey(address, model string) string {
+func buildServedKey(address, model string) string {
 	return address + "\x00" + model
 }

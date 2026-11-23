@@ -5,13 +5,14 @@ package connection
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
@@ -22,12 +23,30 @@ type Edits struct {
 	Delete *connections.Delete
 }
 
-// Reads are the use cases that read the connections, their kinds and the values of their row fields. A nil
-// RowOptions answers every list with no options.
+// RowOptions refreshes the values a row field can take.
+type RowOptions interface {
+	RefreshOptions(ctx context.Context, connectionID, field string, options map[string]string, operations []string) ([]modelcall.Option, error)
+}
+
+// NewRowOptions is options, or the list with no options where the installation has no provider to ask.
+func NewRowOptions(options *connections.Options) RowOptions {
+	if options == nil {
+		return noRowOptions{}
+	}
+	return options
+}
+
+type noRowOptions struct{}
+
+func (noRowOptions) RefreshOptions(context.Context, string, string, map[string]string, []string) ([]modelcall.Option, error) {
+	return nil, nil
+}
+
+// Reads are the use cases that read the connections, their kinds and the values of their row fields.
 type Reads struct {
 	List       *connections.List
 	ListTypes  *connections.ListTypes
-	RowOptions *connections.Options
+	RowOptions RowOptions
 }
 
 // UseCases are the use cases ProviderConnectionService is answered through.
@@ -54,11 +73,11 @@ func (h *Handler) ListProviderConnectionTypes(
 	response := &v1.ListProviderConnectionTypesResponse{}
 	list := h.connections.ListTypes.Execute()
 	for _, one := range list.Types {
-		wire, err := writeType(one)
+		wired, err := writeType(one)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		response.Types = append(response.Types, wire)
+		response.Types = append(response.Types, wired)
 	}
 	for _, one := range list.Operations {
 		response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
@@ -72,15 +91,15 @@ func (h *Handler) ListProviderConnections(
 ) (*connect.Response[v1.ListProviderConnectionsResponse], error) {
 	entries, err := h.connections.List.Execute(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	response := &v1.ListProviderConnectionsResponse{}
 	for _, one := range entries {
-		wire, err := writeConnection(one)
+		wired, err := writeConnection(one)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
-		response.Connections = append(response.Connections, wire)
+		response.Connections = append(response.Connections, wired)
 	}
 	return connect.NewResponse(response), nil
 }
@@ -98,15 +117,15 @@ func (h *Handler) CreateProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.CreateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
-	wire, err := writeConnection(entry)
+	wired, err := writeConnection(entry)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.CreateProviderConnectionResponse{Connection: wire}), nil
+	return connect.NewResponse(&v1.CreateProviderConnectionResponse{Connection: wired}), nil
 }
 
 // UpdateProviderConnection changes the connection that has the revision the request carries.
@@ -123,15 +142,15 @@ func (h *Handler) UpdateProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
-	wire, err := writeConnection(entry)
+	wired, err := writeConnection(entry)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Connection: wire}), nil
+	return connect.NewResponse(&v1.UpdateProviderConnectionResponse{Connection: wired}), nil
 }
 
 // DeleteProviderConnection removes a connection and its secret fields.
@@ -142,7 +161,7 @@ func (h *Handler) DeleteProviderConnection(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.DeleteProviderConnectionResponse{Error: code, Detail: getDetail(err)}), nil
 	}
@@ -154,9 +173,6 @@ func (h *Handler) DeleteProviderConnection(
 func (h *Handler) ListRowOptions(
 	ctx context.Context, r *connect.Request[v1.ListRowOptionsRequest],
 ) (*connect.Response[v1.ListRowOptionsResponse], error) {
-	if h.connections.RowOptions == nil {
-		return connect.NewResponse(&v1.ListRowOptionsResponse{}), nil
-	}
 	listed, err := h.connections.RowOptions.RefreshOptions(ctx, r.Msg.GetConnectionId(), r.Msg.GetField(), r.Msg.GetOptions(), r.Msg.GetOperations())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -164,7 +180,7 @@ func (h *Handler) ListRowOptions(
 		}
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: getDetail(err)}), nil
 	}
@@ -176,17 +192,11 @@ func (h *Handler) ListRowOptions(
 }
 
 func getDetail(err error) string {
-	sentinels := []error{
+	return wire.GetErrorDetail(err,
 		connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
 		connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
 		connections.ErrProviderUnavailable, connections.ErrNoOptions,
-	}
-	for _, sentinel := range sentinels {
-		if errors.Is(err, sentinel) {
-			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
-		}
-	}
-	return err.Error()
+	)
 }
 
 func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {

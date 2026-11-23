@@ -252,7 +252,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
       })
   }
 
-  function stale(id: string): ConflictWords | null {
+  function findConflict(id: string): ConflictWords | null {
     const tab = tabs.get(id)
     return tab && tab.state === 'stale' ? STALE_CONFLICT : null
   }
@@ -320,7 +320,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     flush,
     keep,
     take,
-    stale,
+    findConflict,
     applyPathChanges,
   }
 }

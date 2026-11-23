@@ -51,7 +51,7 @@ type windowSession struct {
 func newWindowSession(
 	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
-	identity := windowsession.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
+	identity := windowsession.NewCheckIdentity(createVaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(page.Window, page.Writes)

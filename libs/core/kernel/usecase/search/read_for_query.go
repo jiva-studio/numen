@@ -95,14 +95,14 @@ func fillSource(
 	if err != nil {
 		return fmt.Errorf("read %s: %w", source, err)
 	}
-	opens := proseOpens(prose)
+	opens := countProseOpens(prose)
 	for _, i := range indices {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 		p := found[i]
-		p.Text = span(prose, p.Start, p.Length)
-		p.MatchLine = lineOf(prose, opens, p.Start+p.MatchOffset)
+		p.Text = cutSpan(prose, p.Start, p.Length)
+		p.MatchLine = findLine(prose, opens, p.Start+p.MatchOffset)
 		if version != nil {
 			matchOffset := p.MatchOffset
 			if matchOffset == 0 {
@@ -170,7 +170,7 @@ func (s sourceTexts) getText(ctx context.Context, path, version string) (string,
 	return doc.Text, &doc, nil
 }
 
-func span(raw string, start, length int) string {
+func cutSpan(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""
 	}
@@ -178,7 +178,7 @@ func span(raw string, start, length int) string {
 	return strings.Clone(raw[start:end])
 }
 
-func lineOf(raw string, opens, start int) int {
+func findLine(raw string, opens, start int) int {
 	if start > len(raw) {
 		start = len(raw)
 	}
@@ -188,7 +188,7 @@ func lineOf(raw string, opens, start int) int {
 	return strings.Count(raw[opens:start], "\n")
 }
 
-func proseOpens(raw string) int {
+func countProseOpens(raw string) int {
 	rest := strings.TrimPrefix(raw, "\ufeff")
 	first, after, found := strings.Cut(rest, "\n")
 	if !found || strings.TrimRight(first, "\r") != "---" {

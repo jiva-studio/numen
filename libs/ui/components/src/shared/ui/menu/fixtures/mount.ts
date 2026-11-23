@@ -26,7 +26,7 @@ export const createMenuMount = (items: MenuItem[]) => {
   const mountMenu = (props: Partial<MenuProps> = {}, slots: Record<string, string> = {}) => {
     now = 1_000
     const menu = mount(Menu, {
-      props: { items, at: { x: 40, y: 40 }, isOpen: true, clock: () => now, ...props },
+      props: { items, at: { x: 40, y: 40 }, isOpen: true, getTime: () => now, ...props },
       slots,
       attachTo: document.body,
     })

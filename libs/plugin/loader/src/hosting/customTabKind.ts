@@ -24,7 +24,7 @@ import {
   type TabKindRegistration,
   type TextRange,
 } from '@numen/plugin-sdk'
-import { adoptPluginStyle } from '../styles'
+import type { PluginStyles } from '../styles'
 import {
   getReaderKindId,
   type AnyTabKind,
@@ -50,11 +50,18 @@ import type { PluginHostDeps } from './types'
 import { pickDeclaredParts, type DeclaredParts } from './pluginTabKind'
 import { createBufferedNoteState } from './customTabBuffer'
 
-export function createPluginPaneWrapper(
+/** What a pane takes of its host: the stylesheets it adopts, and the context of its plugin. */
+interface PaneHost {
+  readonly styles: PluginStyles
+  readonly getContext?: (() => PluginContext | undefined) | undefined
+}
+
+function createPluginPaneWrapper(
   pluginId: string,
   rawComponent: PluginComponentSource,
-  getContext?: () => PluginContext | undefined,
+  host: PaneHost,
 ): Component {
+  const { styles, getContext } = host
   const component = parsePluginComponent(rawComponent)
   const sanitizedId = pluginId.replace(/[^a-zA-Z0-9_-]/g, '-')
   const classes = {
@@ -81,7 +88,7 @@ export function createPluginPaneWrapper(
 
       onMounted(() => {
         shadowRoot.value = attachPluginRoot(hostEl.value)
-        if (shadowRoot.value) releaseStyle = adoptPluginStyle(pluginId, shadowRoot.value)
+        if (shadowRoot.value) releaseStyle = styles.adopt(pluginId, shadowRoot.value)
         isReady.value = true
       })
       onBeforeUnmount(() => releaseStyle?.())
@@ -92,6 +99,7 @@ export function createPluginPaneWrapper(
           ? renderPaneContent({
               pluginId,
               component,
+              styles,
               state: props.state,
               shadowRoot: shadowRoot.value,
               containerClass: classes.container,
@@ -144,7 +152,7 @@ const getReaderOpenTab = (state: ReaderState): OpenTab =>
 export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
-  getContext?: () => PluginContext | undefined,
+  host: PaneHost,
 ): AnyTabKind {
   const kindId = getReaderKindId(registration.id)
   const display: TabKindDisplay<ReaderState> = {
@@ -158,7 +166,7 @@ export function createReaderTabKind(
     kind: kindId,
     pluginId,
     open: (targetPath, _id, saved) => createReaderState(pluginId, targetPath, saved),
-    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
+    pane: createPluginPaneWrapper(pluginId, registration.component, host),
     // A reader may keep the title as a ref, which the state of a tab does not unwrap.
     getTitle: (state) =>
       parseTitle(state.title) || extractFilename(state.path) || registration.title || '',
@@ -265,16 +273,16 @@ function resolveCustomTabTarget(state: CustomTabState, registration: CustomTabRe
 function notifyCustomTabShown(
   state: CustomTabState,
   id: string | undefined,
-  deps?: Pick<PluginHostDeps, 'window'>,
+  deps: Pick<PluginHostDeps, 'window'>,
 ): void {
   state.measure()
-  const getWorkspace = deps?.window.getWorkspace
-  if (!id || !getWorkspace) return
-  if (state.path) getWorkspace()?.files.syncPath(id, state.path, state.title)
+  if (!id) return
+  if (state.path) deps.window.getWorkspace()?.files.syncPath(id, state.path, state.title)
 }
 
 /** What a custom tab kind reads of the window, the context of its plugin, and whether it edits notes. */
 type CustomTabKindDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'vault'> & {
+  readonly styles: PluginStyles
   readonly getContext?: (() => PluginContext | undefined) | undefined
   readonly isNoteEditor?: boolean
 }
@@ -301,7 +309,7 @@ export function pickCustomTabParts(registration: TabKindRegistration): CustomTab
 export function createCustomTabKind(
   pluginId: string,
   registration: CustomTabRegistration,
-  deps?: CustomTabKindDeps,
+  deps: CustomTabKindDeps,
 ): AnyTabKind {
   const { declared } = registration
   const display: TabKindDisplay<CustomTabState> = {
@@ -322,7 +330,7 @@ export function createCustomTabKind(
     kind: registration.kind,
     pluginId,
     open: (targetPath, id) => {
-      const buffer = deps?.isNoteEditor ? deps.kinds.getNoteBuffer?.() : undefined
+      const buffer = deps.isNoteEditor ? deps.kinds.getNoteBuffer() : undefined
       if (!buffer) return createCustomTabState(targetPath, { pluginId, hostDeps: deps })
       return createBufferedNoteState(
         { targetPath, id, buffer },
@@ -332,7 +340,7 @@ export function createCustomTabKind(
         },
       )
     },
-    pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
+    pane: createPluginPaneWrapper(pluginId, registration.component, deps),
     getTitle: (state) =>
       state.title ||
       stripMarkdownExtension(extractFilename(state.path)) ||

@@ -59,20 +59,20 @@ function createHostRef(tab: TabId): (element: Element | ComponentPublicInstance 
   return ref
 }
 
-const tabName = (pos: number): string => getTabName(props.pane.id, pos)
-const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
+const getPaneTabName = (pos: number): string => getTabName(props.pane.id, pos)
+const getPaneTabPanelName = (pos: number): string => getPanelName(props.pane.id, pos)
 </script>
 
 <template>
   <div class="pane__body min-h-0 min-w-0 flex-1">
     <div
       v-for="(tab, at) in pane.tabs"
-      :id="panelName(at)"
+      :id="getPaneTabPanelName(at)"
       :key="tab"
       class="pane__pending"
       role="tabpanel"
       tabindex="0"
-      :aria-labelledby="tabName(at)"
+      :aria-labelledby="getPaneTabName(at)"
       :data-showing="tab === pane.active || undefined"
       @keydown.escape="onPanelEscape"
     >

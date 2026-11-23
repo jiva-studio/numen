@@ -14,7 +14,7 @@ type Level struct {
 	Title string `json:"title"`
 }
 
-func containsLevel(levels []Level, name string) bool {
+func hasLevel(levels []Level, name string) bool {
 	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
 }
 

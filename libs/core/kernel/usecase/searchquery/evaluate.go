@@ -8,8 +8,8 @@ import (
 )
 
 type evaluator struct {
-	req      *searchquery.Evaluation
-	document func(path string, sourceKind domain.SourceKind) searchquery.Document
+	req         *searchquery.Evaluation
+	getDocument func(path string, sourceKind domain.SourceKind) searchquery.Document
 }
 
 func (e evaluator) evaluate(
@@ -18,14 +18,14 @@ func (e evaluator) evaluate(
 ) []searchquery.SearchResult {
 	var matched []searchquery.SearchResult
 	for i, c := range candidates {
-		d := e.document(c.Path, c.Kind)
+		d := e.getDocument(c.Path, c.Kind)
 		o := searchquery.Evaluate(e.req.Query.Root, e.req.Query.Conditions, scores[i], e.req.Floor, d)
 		if !o.IsMatch {
 			continue
 		}
 		matched = append(matched, newChunkResult(d, c, o, texts[c.Path]))
 	}
-	searchquery.Fuse(matched, kind)
+	searchquery.SetScores(matched, kind)
 	results := e.mergeFiles(matched)
 	hasChunks := map[string]bool{}
 	for _, r := range results {

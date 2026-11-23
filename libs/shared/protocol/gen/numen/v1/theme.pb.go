@@ -280,7 +280,7 @@ type ListThemesResponse struct {
 	// Every theme, the shipped ones first and each origin by name.
 	Themes []*Theme `protobuf:"bytes,1,rep,name=themes,proto3" json:"themes,omitempty"`
 	// The theme that is applied, by its name.
-	Applied string `protobuf:"bytes,2,opt,name=applied,proto3" json:"applied,omitempty"`
+	AppliedTheme string `protobuf:"bytes,2,opt,name=applied_theme,json=appliedTheme,proto3" json:"applied_theme,omitempty"`
 	// Which half of a pair the tokens resolve to.
 	Mode Mode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
 	// How large the interface is drawn, and how large the text a person reads is
@@ -332,9 +332,9 @@ func (x *ListThemesResponse) GetThemes() []*Theme {
 	return nil
 }
 
-func (x *ListThemesResponse) GetApplied() string {
+func (x *ListThemesResponse) GetAppliedTheme() string {
 	if x != nil {
-		return x.Applied
+		return x.AppliedTheme
 	}
 	return ""
 }
@@ -679,10 +679,10 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
 	"appearance\x18\x06 \x01(\tR\n" +
 	"appearance\"\x13\n" +
-	"\x11ListThemesRequest\"\xc9\x02\n" +
+	"\x11ListThemesRequest\"\xd4\x02\n" +
 	"\x12ListThemesResponse\x12'\n" +
-	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
-	"\aapplied\x18\x02 \x01(\tR\aapplied\x12\"\n" +
+	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12#\n" +
+	"\rapplied_theme\x18\x02 \x01(\tR\fappliedTheme\x12\"\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12'\n" +
 	"\x0finterface_scale\x18\x04 \x01(\x01R\x0einterfaceScale\x12\x1d\n" +
 	"\n" +

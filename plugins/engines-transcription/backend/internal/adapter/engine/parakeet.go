@@ -240,11 +240,11 @@ func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value,
 		Frames:  frames.width,
 		Blank:   t.blank,
 		Encoded: encoded,
-		Encoder: func(pos int, dst []float32) []float32 {
+		RunEncoder: func(pos int, dst []float32) []float32 {
 			frames.copyFrame(pos, dst)
 			return dst
 		},
-		Predictor: func(token int) ([]float32, error) {
+		RunPredictor: func(token int) ([]float32, error) {
 			buf.target[0] = int32(token)
 			if decoderRun == nil || !predicted {
 				predicted = true
@@ -252,7 +252,7 @@ func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value,
 			}
 			return t.predictRaw(decoderRun, buf.prediction, buf.state, buf.cell)
 		},
-		Joint: func(encodedFrame, _ []float32) ([]float32, error) {
+		RunJoint: func(encodedFrame, _ []float32) ([]float32, error) {
 			var err error
 			if joinerRun == nil || !joined {
 				joined = true

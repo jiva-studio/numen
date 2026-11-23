@@ -30,7 +30,7 @@ interface WorkspaceParts extends Pick<WorkspaceFilesDeps, 'writeMessage'> {
   readonly tabSync?: WorkspaceFilesDeps['tabSync']
   readonly getNoteInFocus: WorkspaceHostDeps['getNoteInFocus']
   readonly getMessageWriter: (name: string) => WorkspaceFilesDeps['writeMessage']
-  readonly today: WorkspaceHostDeps['today']
+  readonly today: WorkspaceHostDeps['getToday']
 }
 
 const createWorkspace = (overrides: Partial<WorkspaceParts> = {}) => {
@@ -71,7 +71,7 @@ const createWorkspaceFromParts = (parts: WorkspaceParts) =>
       getMessageWriter: parts.getMessageWriter,
     }),
     getNoteInFocus: parts.getNoteInFocus,
-    today: parts.today,
+    getToday: parts.today,
   })
 
 describe('the window a plugin is handed', () => {
@@ -210,7 +210,7 @@ describe('the notes of the vault a plugin is handed', () => {
       graphs: request.paths.map((path) => ({
         focus: { path, title: 'Root' },
         focusType: 'note',
-        related: [
+        relatedNotes: [
           { note: { path: 'Child.md', title: 'Child' }, relation: 2, relatedTo: '' },
           { note: { path: 'Leaf.md', title: 'Leaf' }, relation: 2, relatedTo: 'Child.md' },
         ],
@@ -225,7 +225,7 @@ describe('the notes of the vault a plugin is handed', () => {
       files: { listFileKinds },
     })
     const search = {
-      names: vi.fn(() =>
+      searchNames: vi.fn(() =>
         Promise.resolve([
           { path: 'One.md', title: 'One', heading: '', line: -1, at: [], type: 'note' as const },
         ]),
@@ -324,8 +324,8 @@ describe('the notes of the vault a plugin is handed', () => {
     expect(await notes.findNotes('On')).toStrictEqual([{ path: 'One.md', title: 'One' }])
     await notes.findNotes('On', 5)
 
-    expect(search.names).toHaveBeenNthCalledWith(1, 'On', 20)
-    expect(search.names).toHaveBeenNthCalledWith(2, 'On', 5)
+    expect(search.searchNames).toHaveBeenNthCalledWith(1, 'On', 20)
+    expect(search.searchNames).toHaveBeenNthCalledWith(2, 'On', 5)
   })
 
   it('makes notes through the note maker, untitled at the root of the vault', async () => {
@@ -400,7 +400,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
       notes: api.vault.note,
       files: api.vault.file,
       relations: { roles: [] } as never,
-      search: { names: async () => [] },
+      search: { searchNames: async () => [] },
       making: { createUntitledNote, createWithTitle: async () => null } as never,
       pluginNotes: {
         readNote: async () => ({ body: '' }),

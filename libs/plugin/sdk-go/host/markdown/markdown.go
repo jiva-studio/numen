@@ -34,4 +34,4 @@ func IsFrontmatterStart(text string) bool { return notesmarkdown.IsFrontmatterSt
 
 func Normalize(text string) string { return notesmarkdown.Normalize(text) }
 
-func WikilinksIn(line string) []notesmarkdown.Wikilink { return notesmarkdown.WikilinksIn(line) }
+func FindWikilinks(line string) []notesmarkdown.Wikilink { return notesmarkdown.FindWikilinks(line) }

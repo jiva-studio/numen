@@ -1,6 +1,6 @@
 /** Taking cut notes back asks the window for a set at most once. */
 import { describe, expect, it } from 'vitest'
-import { refill } from './admission'
+import { fillCells } from './admission'
 import type { NodesByRelation } from './placement'
 import { createRandom } from '../../../fixtures/random'
 import { RELATION_NAMES } from '../../relation'
@@ -72,7 +72,7 @@ describe('refill', () => {
       const after = { count: 0 }
 
       const expected = refillEveryRound(admitted, requested, createAcceptor(before))
-      const actual = refill(admitted, requested, createAcceptor(after))
+      const actual = fillCells(admitted, requested, createAcceptor(after))
 
       expect(actual, `round ${round}`).toStrictEqual(expected)
       expect(after.count).toBeLessThanOrEqual(before.count)

@@ -40,7 +40,7 @@ func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -52,7 +52,7 @@ func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 		after.MTime = math.MaxInt64
 		after.Source = math.MaxInt64
 	}
-	ctx, err = sqlwrite.Uninterrupted(ctx)
+	ctx, err = sqlwrite.DetachCancel(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +79,14 @@ func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 //
 // An unknown vault has no chunks and no remaining work.
 func (q *Vectors) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (target, embedded int64, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
 	}
 	if err != nil {
 		return 0, 0, err
 	}
-	ctx, err = sqlwrite.Uninterrupted(ctx)
+	ctx, err = sqlwrite.DetachCancel(ctx)
 	if err != nil {
 		return 0, 0, err
 	}

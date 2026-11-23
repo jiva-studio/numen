@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
-import { registerPluginStyle, unregisterPluginStyle } from '../styles'
+import { createPluginStyles } from '../styles'
 import { SlotViewHost } from './slotViewHost'
 import type { DeclaredSlotView } from './slotViews'
 
@@ -17,23 +17,27 @@ const createView = (pluginId = PLUGIN): DeclaredSlotView => ({
   },
 })
 
+const styles = createPluginStyles()
+
 const getLinks = () => [...document.head.querySelectorAll<HTMLLinkElement>('link[data-plugin-id]')]
 
 afterEach(() => {
-  unregisterPluginStyle(PLUGIN)
+  styles.unregister(PLUGIN)
   document.head.innerHTML = ''
 })
 
 describe('the host of a slot view', () => {
   it('draws nothing without a view', () => {
-    expect(mount(SlotViewHost, { props: { view: null } }).element.nodeType).toBe(Node.COMMENT_NODE)
+    expect(mount(SlotViewHost, { props: { view: null, styles } }).element.nodeType).toBe(
+      Node.COMMENT_NODE,
+    )
   })
 
   it('draws the view with the stylesheet of its plugin, and removes the stylesheet when the view is removed', async () => {
-    registerPluginStyle(PLUGIN, 'http://127.0.0.1:1/plugins/bar/style.css')
+    styles.register(PLUGIN, 'http://127.0.0.1:1/plugins/bar/style.css')
     const view = ref<DeclaredSlotView | null>(createView())
     const wrapper = mount(
-      defineComponent({ setup: () => () => h(SlotViewHost, { view: view.value }) }),
+      defineComponent({ setup: () => () => h(SlotViewHost, { view: view.value, styles }) }),
     )
 
     expect(wrapper.find(`[data-bar="${PLUGIN}"]`).exists()).toBe(true)

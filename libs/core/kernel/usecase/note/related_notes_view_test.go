@@ -24,7 +24,7 @@ func (everyType) GetTypes(_ context.Context, _ domain.VaultID, paths []string) (
 // everyTabKind gives every path it is asked about the tab kind "reader".
 type everyTabKind struct{}
 
-func (everyTabKind) Execute(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
+func (everyTabKind) ListTabKinds(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, p := range paths {
 		out[p] = "reader"
@@ -73,9 +73,9 @@ type countingTabKinds struct {
 	calls [][]string
 }
 
-func (c *countingTabKinds) Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+func (c *countingTabKinds) ListTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
 	c.calls = append(c.calls, slices.Clone(paths))
-	return c.everyTabKind.Execute(ctx, v, paths)
+	return c.everyTabKind.ListTabKinds(ctx, v, paths)
 }
 
 func TestTheTypesAndTheTabKindsOfAllTheGraphsAreReadOnce(t *testing.T) {

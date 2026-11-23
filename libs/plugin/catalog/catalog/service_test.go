@@ -261,7 +261,7 @@ func TestAPluginOnDiskIsNotInstalledAgain(t *testing.T) {
 func TestTheFakeSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(_ *testing.T, entries []catalog.Entry) catalog.Source {
 		return catalogtest.NewFakeSource("fake", entries...)
-	}, append(catalogtest.OnDiskEntries(), catalogtest.AvailableEntries()...))
+	}, append(catalogtest.ListOnDiskEntries(), catalogtest.ListAvailableEntries()...))
 }
 
 func TestAnEntryCarriesTheWarningsOfItsManifest(t *testing.T) {

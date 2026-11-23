@@ -29,17 +29,17 @@ const CREATE = { id: 'create', text: 'Create' }
 
 const isOn = (item: PaletteMultiItem): boolean => item.state === 'set' || item.state === 'mixed'
 
-const byTitle = (one: PaletteMultiItem, other: PaletteMultiItem): number =>
+const compareByTitle = (one: PaletteMultiItem, other: PaletteMultiItem): number =>
   one.title.localeCompare(other.title)
 
 export const orderMultiItems = (
   items: readonly PaletteMultiItem[],
   recent: readonly string[],
 ): readonly PaletteMultiItem[] => {
-  const on = items.filter(isOn).sort(byTitle)
+  const on = items.filter(isOn).sort(compareByTitle)
   const off = items.filter((item) => !isOn(item))
   const recents = recent.flatMap((id) => off.find((item) => item.id === id) ?? [])
-  const rest = off.filter((item) => !recents.includes(item)).sort(byTitle)
+  const rest = off.filter((item) => !recents.includes(item)).sort(compareByTitle)
   return [...on, ...recents, ...rest]
 }
 

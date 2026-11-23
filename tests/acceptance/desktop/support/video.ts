@@ -11,7 +11,7 @@ const DEFAULT_SIZE: ViewportSize = { width: 1280, height: 860 }
 export const isVideoOn = (): boolean => Boolean(process.env.PLAYWRIGHT_VIDEO)
 
 export type VideoRecorder = {
-  readonly recording: Recording
+  readonly videoRecording: Recording
   readonly attachVideos: () => Promise<void>
 }
 
@@ -21,7 +21,7 @@ export const createVideoRecorder = (
 ): VideoRecorder => {
   const pages: Page[] = []
   const inputs: RecordedInput[] = []
-  const recording: Recording = {
+  const videoRecording: Recording = {
     contextOptions: {
       recordVideo: {
         dir: testInfo.outputPath('window-videos'),
@@ -35,7 +35,7 @@ export const createVideoRecorder = (
     },
   }
   return {
-    recording,
+    videoRecording,
     attachVideos: async () => {
       await attachInputs(testInfo, inputs)
       await attachVideos(testInfo, pages)

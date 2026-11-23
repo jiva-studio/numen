@@ -1,4 +1,4 @@
-import { branch, pane, type Tab, type Workspace } from '@numen/workbench'
+import { branch, createPane, type Tab, type Workspace } from '@numen/workbench'
 import { BOLTZMANN_PATH } from './documents'
 
 export type TabKind = 'files' | 'plex' | 'agent' | 'note' | 'pdf' | 'recording' | 'link' | 'deck'
@@ -33,16 +33,16 @@ export function createDemoWorkspace(): Workspace {
     root: branch(
       'root',
       [
-        pane('main', [FILES_TAB]),
+        createPane('main', [FILES_TAB]),
         branch(
           'middle',
           [
-            pane('map', [PLEX_TAB]),
-            pane('note', [NOTE_TAB, PDF_TAB, RECORDING_TAB, LINK_TAB, DECK_TAB], NOTE_TAB),
+            createPane('map', [PLEX_TAB]),
+            createPane('note', [NOTE_TAB, PDF_TAB, RECORDING_TAB, LINK_TAB, DECK_TAB], NOTE_TAB),
           ],
           [0.52, 0.48],
         ),
-        pane('aside', [AGENT_TAB]),
+        createPane('aside', [AGENT_TAB]),
       ],
       [0.22, 0.5, 0.28],
     ),

@@ -8,8 +8,8 @@ const createReports = (): NodeReports => ({
   show: vi.fn(),
   reach: vi.fn(),
   ask: vi.fn(),
-  menu: vi.fn(),
-  attend: vi.fn(),
+  openMenu: vi.fn(),
+  setAttention: vi.fn(),
 })
 
 describe('the listeners of a note that left the frame', () => {
