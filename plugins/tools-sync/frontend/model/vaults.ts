@@ -15,12 +15,12 @@ export interface VaultRow {
   readonly canConnect: boolean
 }
 
-export interface UseVaultsOptions {
+interface UseVaultsOptions {
   readonly client?: VaultsClient | undefined
   readonly now: () => Date
 }
 
-export type VaultsStatus = 'loading' | 'ready' | 'error'
+type VaultsStatus = 'loading' | 'ready' | 'error'
 
 const STATE_LABELS: Record<VaultState, string> = {
   notConnected: words.stateNotConnected,

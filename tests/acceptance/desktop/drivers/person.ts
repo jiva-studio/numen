@@ -94,9 +94,9 @@ export class Person {
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
-    this.computers = new ComputerDriver({ first: this.scenario, viewport, identity: this.identity, sync: this.sync, firstVaults: this.syncVaults })
     this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
     this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity, this.scenario)
+    this.computers = new ComputerDriver(this.scenario, viewport, { identity: this.identity, sync: this.sync, vaults: this.syncVaults })
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */

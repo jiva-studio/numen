@@ -29,7 +29,7 @@ export interface IdentityFailure {
 }
 
 /** The calls of IdentityService the identity is managed through. */
-export type IdentityRpc = Pick<
+type IdentityRpc = Pick<
   Client<typeof IdentityService>,
   'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'startRestore' | 'deleteIdentity'
 >
