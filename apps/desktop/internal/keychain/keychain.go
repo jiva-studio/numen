@@ -39,9 +39,16 @@ type Store struct {
 	wait    machine.Wait
 	backend keychainBackend
 
+	kdf  kdfParams
+	warn func(string)
+
 	mu           sync.Mutex
 	isKeychainUp bool
 	probe        *probeCall
+	fileMode     FileMode
+	source       PassphraseSource
+	passphrase   string
+	hasWarned    bool
 }
 
 // keychainBackend is the keychain a store calls. The system keychain is the default.
@@ -94,7 +101,7 @@ func (s *Store) GetKey(ctx context.Context, name string) (string, error) {
 	if isUp {
 		return s.getFromKeychain(ctx, name)
 	}
-	return s.readFromFile(name)
+	return s.readFromFile(ctx, name)
 }
 
 // SetKey stores the key under the name and replaces the one already there. A key over the limit of
