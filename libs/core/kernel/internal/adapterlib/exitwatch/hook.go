@@ -1,4 +1,4 @@
-// Package exitwatch holds the function that is told when a process that was up exits.
+// Package exitwatch holds the function that is notified when a process that was up exits.
 package exitwatch
 
 import "sync"
