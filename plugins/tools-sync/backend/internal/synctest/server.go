@@ -83,7 +83,7 @@ func (s *Server) GetStoredBlobs(t *testing.T) []byte {
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	isDown, isCorrupted := s.isDown, s.isCorrupted
-	isLost := s.lostPath != "" && strings.HasSuffix(r.URL.Path, s.lostPath)
+	isLost := !isDown && s.lostPath != "" && strings.HasSuffix(r.URL.Path, s.lostPath)
 	if isLost {
 		s.lostPath = ""
 	}
