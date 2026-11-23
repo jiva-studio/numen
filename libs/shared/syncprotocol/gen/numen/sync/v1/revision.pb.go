@@ -104,7 +104,11 @@ type Revision struct {
 	// author_device_sign_key is 32 bytes.
 	AuthorDeviceSignKey []byte `protobuf:"bytes,12,opt,name=author_device_sign_key,json=authorDeviceSignKey,proto3" json:"author_device_sign_key,omitempty"`
 	// signature is 64 bytes over syncprotocol.GetRevisionMessage, under the plugin domain.
-	Signature     []byte `protobuf:"bytes,13,opt,name=signature,proto3" json:"signature,omitempty"`
+	Signature []byte `protobuf:"bytes,13,opt,name=signature,proto3" json:"signature,omitempty"`
+	// file_version is signed: 1 for the first revision of a file, the version of the parent plus one for every later one.
+	// A device that holds a version never takes an older revision of the file as its head. A file written again after a
+	// removal or a restore continues from the highest version its author knows. A revision of a version below 1 is invalid.
+	FileVersion   uint64 `protobuf:"varint,14,opt,name=file_version,json=fileVersion,proto3" json:"file_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -228,6 +232,13 @@ func (x *Revision) GetSignature() []byte {
 		return x.Signature
 	}
 	return nil
+}
+
+func (x *Revision) GetFileVersion() uint64 {
+	if x != nil {
+		return x.FileVersion
+	}
+	return 0
 }
 
 type StoredRevision struct {
@@ -652,7 +663,7 @@ var File_numen_sync_v1_revision_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	"\n" +
-	"\x1cnumen/sync/v1/revision.proto\x12\rnumen.sync.v1\"\x8f\x03\n" +
+	"\x1cnumen/sync/v1/revision.proto\x12\rnumen.sync.v1\"\xb2\x03\n" +
 	"\bRevision\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x17\n" +
 	"\afile_id\x18\x02 \x01(\fR\x06fileId\x12\x1d\n" +
@@ -668,7 +679,8 @@ const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	" \x01(\bR\adeleted\x12\x14\n" +
 	"\x05epoch\x18\v \x01(\rR\x05epoch\x123\n" +
 	"\x16author_device_sign_key\x18\f \x01(\fR\x13authorDeviceSignKey\x12\x1c\n" +
-	"\tsignature\x18\r \x01(\fR\tsignature\"n\n" +
+	"\tsignature\x18\r \x01(\fR\tsignature\x12!\n" +
+	"\ffile_version\x18\x0e \x01(\x04R\vfileVersion\"n\n" +
 	"\x0eStoredRevision\x123\n" +
 	"\brevision\x18\x01 \x01(\v2\x17.numen.sync.v1.RevisionR\brevision\x12\x15\n" +
 	"\x06rev_id\x18\x02 \x01(\fR\x05revId\x12\x10\n" +

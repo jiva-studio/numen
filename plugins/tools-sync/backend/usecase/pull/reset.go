@@ -1,11 +1,8 @@
 package pull
 
 import (
-	"bytes"
 	"context"
 	"slices"
-
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 func (r *run) reconcile(ctx context.Context) error {
@@ -32,36 +29,19 @@ func (r *run) reconcile(ctx context.Context) error {
 		since = page.GetNextSeq()
 	}
 	r.isListing = false
-	if err := r.settleAbsent(ctx, present); err != nil {
-		return err
-	}
+	r.forgetAbsent(present)
 	if err := r.save(ctx); err != nil {
 		return err
 	}
 	return r.settleRemovals(ctx)
 }
 
-func (r *run) settleAbsent(ctx context.Context, present map[string]bool) error {
-	oldSeq := r.link.ServerSeq
+// forgetAbsent drops the record of every file the listing lacks, so the next push sends the local file again as a new file.
+// The listing proves no removal: only a signed removal revision removes a file of this device.
+func (r *run) forgetAbsent(present map[string]bool) {
 	for _, record := range slices.Clone(r.records) {
-		if present[string(record.FileID)] {
-			continue
-		}
-		hash, stat, err := r.readLocal(ctx, record.Path)
-		if err != nil {
-			return err
-		}
-		if hash == "" || hash != record.BaseHash || len(present) == 0 || r.hasOtherRecordAt(record) {
+		if !present[string(record.FileID)] {
 			r.removeRecord(record.FileID)
-			continue
 		}
-		r.queueRemoval(removal{record: record, stat: stat, revID: nil}, oldSeq+1)
 	}
-	return nil
-}
-
-func (r *run) hasOtherRecordAt(record transfer.FileRecord) bool {
-	return slices.ContainsFunc(r.records, func(other transfer.FileRecord) bool {
-		return other.Path == record.Path && !bytes.Equal(other.FileID, record.FileID)
-	})
 }

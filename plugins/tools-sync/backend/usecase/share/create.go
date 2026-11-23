@@ -197,7 +197,7 @@ func (r *rewrap) build(head *syncv1.StoredRevision) (*syncv1.Revision, error) {
 	next := &syncv1.Revision{
 		VaultId: rev.GetVaultId(), FileId: rev.GetFileId(), ParentRev: head.GetRevId(), BlobId: rev.GetBlobId(), BlobHash: rev.GetBlobHash(),
 		BlobSize: rev.GetBlobSize(), EncMeta: sealed, PathHash: rev.GetPathHash(), ShareRootId: r.root.ID, Epoch: r.root.Epoch,
-		AuthorDeviceSignKey: r.author,
+		AuthorDeviceSignKey: r.author, FileVersion: head.GetRevision().GetFileVersion() + 1,
 	}
 	return next, nil
 }

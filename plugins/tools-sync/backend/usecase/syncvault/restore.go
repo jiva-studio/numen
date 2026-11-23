@@ -44,3 +44,18 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 	}
 	return p.verdict == restore.Same, nil
 }
+
+// pinRestoreKey pins the key that signs restore epochs the first time a pass sees one, before the server has announced
+// any epoch, so a server that later signs an epoch with another key is refused as a changed key.
+func (p *pass) pinRestoreKey(ctx context.Context) error {
+	deps := p.use.deps.Restore
+	pinned, err := deps.Mirror.ReadPin(ctx, deps.Address)
+	if err != nil || len(pinned) > 0 {
+		return err
+	}
+	_, key, err := deps.Epochs.GetRestoreEpoch(ctx)
+	if err != nil || len(key) == 0 {
+		return err
+	}
+	return deps.Mirror.WritePin(ctx, deps.Address, key)
+}
