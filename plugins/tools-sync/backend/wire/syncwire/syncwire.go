@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
@@ -60,10 +61,16 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 	commitDeps := commit.Deps{
 		Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Crypto: deps.Crypto, Uploads: uploads, Random: deps.Random,
 	}
+	recovery := restore.Deps{
+		Address: deps.Restore.Address, Epochs: deps.Restore.Epochs, Mirror: deps.Restore.Mirror,
+		Catalog: deps.Catalog, Chain: deps.Chain, Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host,
+		State: deps.State, Commit: commit.NewCommitRevisions(commitDeps), Remove: commit.NewCommitRemovals(commitDeps),
+	}
+	recoverAccount := restore.NewRecoverAccount(recovery)
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Random: deps.Random,
+			Journals: deps.Restore.Mirror, Random: deps.Random,
 		}),
 		Sweep: downloads,
 		Pull: pull.NewPullChanges(pull.Deps{
@@ -71,12 +78,14 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 			Downloads: downloads, Guard: guard, Health: deps.Health,
 			Conflicts: deps.Conflicts, Clock: deps.Clock,
 		}),
-		Scan:         localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
-		Detect:       localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),
-		Commit:       commit.NewCommitRevisions(commitDeps),
-		Move:         commit.NewCommitMoves(commitDeps),
-		Remove:       commit.NewCommitRemovals(commitDeps),
-		Guard:        guard,
-		Subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions}),
+		Scan:           localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
+		Detect:         localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),
+		Commit:         commit.NewCommitRevisions(commitDeps),
+		Move:           commit.NewCommitMoves(commitDeps),
+		Remove:         commit.NewCommitRemovals(commitDeps),
+		Guard:          guard,
+		Subscription:   subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions}),
+		RecoverAccount: recoverAccount,
+		RecoverVault:   restore.NewRecoverVault(recovery),
 	})
 }

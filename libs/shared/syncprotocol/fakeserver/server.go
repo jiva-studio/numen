@@ -79,7 +79,9 @@ type challenge struct {
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
 // may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The admin paths
 // /admin/trial and /admin/cancel-trial (POST, plan=id and an optional account) start and cancel a trial, and /admin/usage (POST, bytes=N and an
-// optional account) sets the bytes the cloud holds.
+// optional account) sets the bytes the cloud holds. The restore service has the admin paths /admin/backup (POST keeps the state),
+// /admin/restore (POST puts the kept state back and announces nothing), /admin/announce (POST issues a restore epoch),
+// /admin/retention (POST deletes the vaults of every account) and /admin/blob-loss (POST drops the body of every blob).
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 
@@ -105,6 +107,7 @@ type Server struct {
 	planOf        map[string]string
 	checkouts     map[string]checkout
 	shop          shop
+	restore       restoreState
 	store         *bodyStore
 	partLog       []partLogEntry
 	stopUpload    stopAfter
@@ -150,6 +153,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewRestoreServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/admin/usage", s.serveUsage)
@@ -160,6 +164,11 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	mux.HandleFunc("/admin/backup", s.serveBackup)
+	mux.HandleFunc("/admin/restore", s.serveRestore)
+	mux.HandleFunc("/admin/announce", s.serveAnnounce)
+	mux.HandleFunc("/admin/retention", s.serveRetention)
+	mux.HandleFunc("/admin/blob-loss", s.serveBlobLoss)
 	mux.HandleFunc("/admin/part-log", s.servePartLog)
 	mux.HandleFunc("/admin/stop-after-bytes", s.serveStopAfter(&s.stopUpload))
 	mux.HandleFunc("/admin/stop-after-download-bytes", s.serveStopAfter(&s.stopDownload))

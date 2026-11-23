@@ -104,4 +104,6 @@ message GetChangesResponse {
   // reset is true when since_seq is older than the deletion records the server keeps; changes is empty and the client lists
   // the vault again from since_seq 0.
   bool reset = 5;
+  // restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
+  bytes restore_epoch_id = 6;
 }

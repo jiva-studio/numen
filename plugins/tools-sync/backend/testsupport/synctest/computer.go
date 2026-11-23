@@ -33,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
@@ -72,6 +73,7 @@ type Computer struct {
 	Sessions *serveradapter.Server
 	State    *hoststore.State
 
+	network        *link
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
 }
@@ -130,16 +132,18 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	}
 	client := account.NewClient(accountEndpoint)
 	root := hosttest.New(vault)
+	network := &link{}
+	web := &http.Client{Transport: network}
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, token: atomic.Value{},
+		Cloud: nil, State: nil, token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
-		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: http.DefaultClient, Now: clock.Now}),
+		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
 	}
 	c.State = hoststore.New(c.Host)
 	c.token.Store("")
-	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: http.DefaultClient, Token: c.getToken, Refresh: c.SignIn})
+	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: web, Token: c.getToken, Refresh: c.SignIn})
 	return c
 }
 
@@ -187,7 +191,7 @@ func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.health
 // CatalogDeps are the dependencies of the catalog use cases.
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
-		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Random: rand.Reader,
+		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State, Random: rand.Reader,
 	}
 }
 
@@ -236,7 +240,7 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
-		Pauses: c.State,
+		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
 	}
 }
 
@@ -296,5 +300,14 @@ func (c *Computer) PreviewDeps() preview.Deps {
 	return preview.Deps{
 		Heads: heads.New(heads.Deps{Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Crypto: c.Account, Identity: c.Account}),
 		Host:  c.Host,
+	}
+}
+
+// RestoreDeps are the dependencies of the recovery after the server was restored.
+func (c *Computer) RestoreDeps() restore.Deps {
+	return restore.Deps{
+		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
+		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
+		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}
 }

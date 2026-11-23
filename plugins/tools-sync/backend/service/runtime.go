@@ -84,6 +84,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.NewRandom(),
 		Subscriptions: cloudSide, Shop: cloudSide, Pauses: p.state,
+		Restore: syncvault.RestoreDeps{Address: address, Epochs: cloudSide, Mirror: p.state},
 	}
 	wired := syncwire.Deps{
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),

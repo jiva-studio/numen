@@ -40,6 +40,7 @@ type Deps struct {
 	Identity ports.Identity
 	Host     ports.Host
 	State    ports.Links
+	Journals ports.Journals
 	Random   io.Reader
 }
 
@@ -68,7 +69,10 @@ func (r reader) read(ctx context.Context) ([]*syncv1.CatalogEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return entries, vaultlink.CheckEntries(entries, authors)
+	if err := vaultlink.CheckEntries(entries, authors); err != nil {
+		return nil, err
+	}
+	return entries, r.keep(ctx, entries)
 }
 
 func (r reader) mergeEntries(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {

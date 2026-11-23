@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -22,9 +23,11 @@ type Catalog interface {
 	GetCatalog(ctx context.Context, sinceVersion uint64) ([]*syncv1.CatalogEntry, error)
 }
 
-// Chain is the chain of devices of the account the server stores.
+// Chain is the chain of devices of the account the server stores. SendAccountChain signs in again with the chain of this
+// device, which a server that lost devices of its chain takes over.
 type Chain interface {
 	GetAccountChain(ctx context.Context) ([]byte, error)
+	SendAccountChain(ctx context.Context) error
 }
 
 // Revisions is the revisions of the notes of a vault on the server.
@@ -168,6 +171,29 @@ type Head struct {
 // Heads lists the verified heads of the live notes of a synced vault of the account.
 type Heads interface {
 	ListHeads(ctx context.Context, remoteID string) ([]Head, error)
+}
+
+// Epochs is the restore epoch of the server.
+type Epochs interface {
+	GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []byte, error)
+}
+
+// Pins keeps the key that signs the restore epochs of each server, by the address of the server.
+type Pins interface {
+	ReadPin(ctx context.Context, address string) ([]byte, error)
+	WritePin(ctx context.Context, address string, key []byte) error
+}
+
+// Mirror keeps the pinned keys and the copies of the logs of the account in one place.
+type Mirror interface {
+	Pins
+	Journals
+}
+
+// Journals keeps the last verified entries of the logs of the account.
+type Journals interface {
+	ReadJournal(ctx context.Context, kind restore.Kind) (restore.Journal, error)
+	WriteJournal(ctx context.Context, journal restore.Journal) error
 }
 
 // Pauses reports whether the removals of a vault wait for an answer.

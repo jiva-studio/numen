@@ -186,7 +186,7 @@ func TestKeep_SignsInOnceTheIdentityIsCreatedAndClearsTheItem(t *testing.T) {
 }
 
 func TestKeep_AsksToUpdateWhenTheServerNeedsAnotherProtocolAndTriesAgainEvery30Seconds(t *testing.T) {
-	k := newKit(t, setup{protocol: 2})
+	k := newKit(t, setup{protocol: syncprotocol.Version + 1})
 
 	first := k.clock.awaitWait(t)
 	k.clock.Advance(30 * time.Second)

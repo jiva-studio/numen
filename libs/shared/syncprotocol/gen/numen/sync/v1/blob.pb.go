@@ -456,6 +456,51 @@ func (x *BlobNotReady) GetRevisionIndex() uint32 {
 	return 0
 }
 
+// BlobMissing is the detail of the NOT_FOUND of GetBlobUrls: the bodies of these blobs are gone from the store.
+type BlobMissing struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BlobIds       [][]byte               `protobuf:"bytes,1,rep,name=blob_ids,json=blobIds,proto3" json:"blob_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BlobMissing) Reset() {
+	*x = BlobMissing{}
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlobMissing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlobMissing) ProtoMessage() {}
+
+func (x *BlobMissing) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlobMissing.ProtoReflect.Descriptor instead.
+func (*BlobMissing) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *BlobMissing) GetBlobIds() [][]byte {
+	if x != nil {
+		return x.BlobIds
+	}
+	return nil
+}
+
 // ReserveMultipartBlobRequest reserves quota for a body above 64 MiB and starts a multipart upload.
 type ReserveMultipartBlobRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
@@ -470,7 +515,7 @@ type ReserveMultipartBlobRequest struct {
 
 func (x *ReserveMultipartBlobRequest) Reset() {
 	*x = ReserveMultipartBlobRequest{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -482,7 +527,7 @@ func (x *ReserveMultipartBlobRequest) String() string {
 func (*ReserveMultipartBlobRequest) ProtoMessage() {}
 
 func (x *ReserveMultipartBlobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -495,7 +540,7 @@ func (x *ReserveMultipartBlobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveMultipartBlobRequest.ProtoReflect.Descriptor instead.
 func (*ReserveMultipartBlobRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{8}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ReserveMultipartBlobRequest) GetVaultId() []byte {
@@ -532,7 +577,7 @@ type ReserveMultipartBlobResponse struct {
 
 func (x *ReserveMultipartBlobResponse) Reset() {
 	*x = ReserveMultipartBlobResponse{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[9]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +589,7 @@ func (x *ReserveMultipartBlobResponse) String() string {
 func (*ReserveMultipartBlobResponse) ProtoMessage() {}
 
 func (x *ReserveMultipartBlobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[9]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +602,7 @@ func (x *ReserveMultipartBlobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveMultipartBlobResponse.ProtoReflect.Descriptor instead.
 func (*ReserveMultipartBlobResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{9}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ReserveMultipartBlobResponse) GetBlobId() []byte {
@@ -600,7 +645,7 @@ type GetPartUrlsRequest struct {
 
 func (x *GetPartUrlsRequest) Reset() {
 	*x = GetPartUrlsRequest{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[10]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -612,7 +657,7 @@ func (x *GetPartUrlsRequest) String() string {
 func (*GetPartUrlsRequest) ProtoMessage() {}
 
 func (x *GetPartUrlsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[10]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -625,7 +670,7 @@ func (x *GetPartUrlsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPartUrlsRequest.ProtoReflect.Descriptor instead.
 func (*GetPartUrlsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{10}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetPartUrlsRequest) GetVaultId() []byte {
@@ -659,7 +704,7 @@ type GetPartUrlsResponse struct {
 
 func (x *GetPartUrlsResponse) Reset() {
 	*x = GetPartUrlsResponse{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[11]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -671,7 +716,7 @@ func (x *GetPartUrlsResponse) String() string {
 func (*GetPartUrlsResponse) ProtoMessage() {}
 
 func (x *GetPartUrlsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[11]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -684,7 +729,7 @@ func (x *GetPartUrlsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPartUrlsResponse.ProtoReflect.Descriptor instead.
 func (*GetPartUrlsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{11}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetPartUrlsResponse) GetUploads() []*PartUpload {
@@ -708,7 +753,7 @@ type PartUpload struct {
 
 func (x *PartUpload) Reset() {
 	*x = PartUpload{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[12]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -720,7 +765,7 @@ func (x *PartUpload) String() string {
 func (*PartUpload) ProtoMessage() {}
 
 func (x *PartUpload) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[12]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -733,7 +778,7 @@ func (x *PartUpload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartUpload.ProtoReflect.Descriptor instead.
 func (*PartUpload) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{12}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *PartUpload) GetPartNumber() uint32 {
@@ -775,7 +820,7 @@ type ListPartsRequest struct {
 
 func (x *ListPartsRequest) Reset() {
 	*x = ListPartsRequest{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[13]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -787,7 +832,7 @@ func (x *ListPartsRequest) String() string {
 func (*ListPartsRequest) ProtoMessage() {}
 
 func (x *ListPartsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[13]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -800,7 +845,7 @@ func (x *ListPartsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartsRequest.ProtoReflect.Descriptor instead.
 func (*ListPartsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{13}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListPartsRequest) GetVaultId() []byte {
@@ -827,7 +872,7 @@ type ListPartsResponse struct {
 
 func (x *ListPartsResponse) Reset() {
 	*x = ListPartsResponse{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[14]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -839,7 +884,7 @@ func (x *ListPartsResponse) String() string {
 func (*ListPartsResponse) ProtoMessage() {}
 
 func (x *ListPartsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[14]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -852,7 +897,7 @@ func (x *ListPartsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartsResponse.ProtoReflect.Descriptor instead.
 func (*ListPartsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{14}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListPartsResponse) GetParts() []*PartInfo {
@@ -872,7 +917,7 @@ type PartInfo struct {
 
 func (x *PartInfo) Reset() {
 	*x = PartInfo{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[15]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -884,7 +929,7 @@ func (x *PartInfo) String() string {
 func (*PartInfo) ProtoMessage() {}
 
 func (x *PartInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[15]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -897,7 +942,7 @@ func (x *PartInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartInfo.ProtoReflect.Descriptor instead.
 func (*PartInfo) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{15}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *PartInfo) GetPartNumber() uint32 {
@@ -925,7 +970,7 @@ type CompleteMultipartBlobRequest struct {
 
 func (x *CompleteMultipartBlobRequest) Reset() {
 	*x = CompleteMultipartBlobRequest{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[16]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -937,7 +982,7 @@ func (x *CompleteMultipartBlobRequest) String() string {
 func (*CompleteMultipartBlobRequest) ProtoMessage() {}
 
 func (x *CompleteMultipartBlobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[16]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -950,7 +995,7 @@ func (x *CompleteMultipartBlobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteMultipartBlobRequest.ProtoReflect.Descriptor instead.
 func (*CompleteMultipartBlobRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{16}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CompleteMultipartBlobRequest) GetVaultId() []byte {
@@ -975,7 +1020,7 @@ type CompleteMultipartBlobResponse struct {
 
 func (x *CompleteMultipartBlobResponse) Reset() {
 	*x = CompleteMultipartBlobResponse{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[17]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +1032,7 @@ func (x *CompleteMultipartBlobResponse) String() string {
 func (*CompleteMultipartBlobResponse) ProtoMessage() {}
 
 func (x *CompleteMultipartBlobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[17]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1045,7 @@ func (x *CompleteMultipartBlobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteMultipartBlobResponse.ProtoReflect.Descriptor instead.
 func (*CompleteMultipartBlobResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{17}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{18}
 }
 
 // AbortMultipartBlobRequest drops an open upload and frees its quota. A repeat is a success.
@@ -1014,7 +1059,7 @@ type AbortMultipartBlobRequest struct {
 
 func (x *AbortMultipartBlobRequest) Reset() {
 	*x = AbortMultipartBlobRequest{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[18]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1026,7 +1071,7 @@ func (x *AbortMultipartBlobRequest) String() string {
 func (*AbortMultipartBlobRequest) ProtoMessage() {}
 
 func (x *AbortMultipartBlobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[18]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1039,7 +1084,7 @@ func (x *AbortMultipartBlobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AbortMultipartBlobRequest.ProtoReflect.Descriptor instead.
 func (*AbortMultipartBlobRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{18}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *AbortMultipartBlobRequest) GetVaultId() []byte {
@@ -1064,7 +1109,7 @@ type AbortMultipartBlobResponse struct {
 
 func (x *AbortMultipartBlobResponse) Reset() {
 	*x = AbortMultipartBlobResponse{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[19]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1076,7 +1121,7 @@ func (x *AbortMultipartBlobResponse) String() string {
 func (*AbortMultipartBlobResponse) ProtoMessage() {}
 
 func (x *AbortMultipartBlobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[19]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1089,7 +1134,7 @@ func (x *AbortMultipartBlobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AbortMultipartBlobResponse.ProtoReflect.Descriptor instead.
 func (*AbortMultipartBlobResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{19}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{20}
 }
 
 // MultipartIncomplete is the detail of FAILED_PRECONDITION from CompleteMultipartBlob. Each list holds the first 100 numbers.
@@ -1103,7 +1148,7 @@ type MultipartIncomplete struct {
 
 func (x *MultipartIncomplete) Reset() {
 	*x = MultipartIncomplete{}
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[20]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1115,7 +1160,7 @@ func (x *MultipartIncomplete) String() string {
 func (*MultipartIncomplete) ProtoMessage() {}
 
 func (x *MultipartIncomplete) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_blob_proto_msgTypes[20]
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1128,7 +1173,7 @@ func (x *MultipartIncomplete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MultipartIncomplete.ProtoReflect.Descriptor instead.
 func (*MultipartIncomplete) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{20}
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *MultipartIncomplete) GetMissing() []uint32 {
@@ -1179,7 +1224,9 @@ const file_numen_sync_v1_blob_proto_rawDesc = "" +
 	"\vlimit_bytes\x18\x02 \x01(\x04R\n" +
 	"limitBytes\"5\n" +
 	"\fBlobNotReady\x12%\n" +
-	"\x0erevision_index\x18\x01 \x01(\rR\rrevisionIndex\"i\n" +
+	"\x0erevision_index\x18\x01 \x01(\rR\rrevisionIndex\"(\n" +
+	"\vBlobMissing\x12\x19\n" +
+	"\bblob_ids\x18\x01 \x03(\fR\ablobIds\"i\n" +
 	"\x1bReserveMultipartBlobRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x04R\x04size\x12\x1b\n" +
@@ -1247,7 +1294,7 @@ func file_numen_sync_v1_blob_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_blob_proto_rawDescData
 }
 
-var file_numen_sync_v1_blob_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_numen_sync_v1_blob_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_sync_v1_blob_proto_goTypes = []any{
 	(*ReserveBlobsRequest)(nil),           // 0: numen.sync.v1.ReserveBlobsRequest
 	(*ReserveBlobsResponse)(nil),          // 1: numen.sync.v1.ReserveBlobsResponse
@@ -1257,39 +1304,40 @@ var file_numen_sync_v1_blob_proto_goTypes = []any{
 	(*BlobDownload)(nil),                  // 5: numen.sync.v1.BlobDownload
 	(*QuotaExceeded)(nil),                 // 6: numen.sync.v1.QuotaExceeded
 	(*BlobNotReady)(nil),                  // 7: numen.sync.v1.BlobNotReady
-	(*ReserveMultipartBlobRequest)(nil),   // 8: numen.sync.v1.ReserveMultipartBlobRequest
-	(*ReserveMultipartBlobResponse)(nil),  // 9: numen.sync.v1.ReserveMultipartBlobResponse
-	(*GetPartUrlsRequest)(nil),            // 10: numen.sync.v1.GetPartUrlsRequest
-	(*GetPartUrlsResponse)(nil),           // 11: numen.sync.v1.GetPartUrlsResponse
-	(*PartUpload)(nil),                    // 12: numen.sync.v1.PartUpload
-	(*ListPartsRequest)(nil),              // 13: numen.sync.v1.ListPartsRequest
-	(*ListPartsResponse)(nil),             // 14: numen.sync.v1.ListPartsResponse
-	(*PartInfo)(nil),                      // 15: numen.sync.v1.PartInfo
-	(*CompleteMultipartBlobRequest)(nil),  // 16: numen.sync.v1.CompleteMultipartBlobRequest
-	(*CompleteMultipartBlobResponse)(nil), // 17: numen.sync.v1.CompleteMultipartBlobResponse
-	(*AbortMultipartBlobRequest)(nil),     // 18: numen.sync.v1.AbortMultipartBlobRequest
-	(*AbortMultipartBlobResponse)(nil),    // 19: numen.sync.v1.AbortMultipartBlobResponse
-	(*MultipartIncomplete)(nil),           // 20: numen.sync.v1.MultipartIncomplete
+	(*BlobMissing)(nil),                   // 8: numen.sync.v1.BlobMissing
+	(*ReserveMultipartBlobRequest)(nil),   // 9: numen.sync.v1.ReserveMultipartBlobRequest
+	(*ReserveMultipartBlobResponse)(nil),  // 10: numen.sync.v1.ReserveMultipartBlobResponse
+	(*GetPartUrlsRequest)(nil),            // 11: numen.sync.v1.GetPartUrlsRequest
+	(*GetPartUrlsResponse)(nil),           // 12: numen.sync.v1.GetPartUrlsResponse
+	(*PartUpload)(nil),                    // 13: numen.sync.v1.PartUpload
+	(*ListPartsRequest)(nil),              // 14: numen.sync.v1.ListPartsRequest
+	(*ListPartsResponse)(nil),             // 15: numen.sync.v1.ListPartsResponse
+	(*PartInfo)(nil),                      // 16: numen.sync.v1.PartInfo
+	(*CompleteMultipartBlobRequest)(nil),  // 17: numen.sync.v1.CompleteMultipartBlobRequest
+	(*CompleteMultipartBlobResponse)(nil), // 18: numen.sync.v1.CompleteMultipartBlobResponse
+	(*AbortMultipartBlobRequest)(nil),     // 19: numen.sync.v1.AbortMultipartBlobRequest
+	(*AbortMultipartBlobResponse)(nil),    // 20: numen.sync.v1.AbortMultipartBlobResponse
+	(*MultipartIncomplete)(nil),           // 21: numen.sync.v1.MultipartIncomplete
 }
 var file_numen_sync_v1_blob_proto_depIdxs = []int32{
 	2,  // 0: numen.sync.v1.ReserveBlobsResponse.uploads:type_name -> numen.sync.v1.BlobUpload
 	5,  // 1: numen.sync.v1.GetBlobUrlsResponse.downloads:type_name -> numen.sync.v1.BlobDownload
-	12, // 2: numen.sync.v1.GetPartUrlsResponse.uploads:type_name -> numen.sync.v1.PartUpload
-	15, // 3: numen.sync.v1.ListPartsResponse.parts:type_name -> numen.sync.v1.PartInfo
+	13, // 2: numen.sync.v1.GetPartUrlsResponse.uploads:type_name -> numen.sync.v1.PartUpload
+	16, // 3: numen.sync.v1.ListPartsResponse.parts:type_name -> numen.sync.v1.PartInfo
 	0,  // 4: numen.sync.v1.BlobService.ReserveBlobs:input_type -> numen.sync.v1.ReserveBlobsRequest
 	3,  // 5: numen.sync.v1.BlobService.GetBlobUrls:input_type -> numen.sync.v1.GetBlobUrlsRequest
-	8,  // 6: numen.sync.v1.BlobService.ReserveMultipartBlob:input_type -> numen.sync.v1.ReserveMultipartBlobRequest
-	10, // 7: numen.sync.v1.BlobService.GetPartUrls:input_type -> numen.sync.v1.GetPartUrlsRequest
-	13, // 8: numen.sync.v1.BlobService.ListParts:input_type -> numen.sync.v1.ListPartsRequest
-	16, // 9: numen.sync.v1.BlobService.CompleteMultipartBlob:input_type -> numen.sync.v1.CompleteMultipartBlobRequest
-	18, // 10: numen.sync.v1.BlobService.AbortMultipartBlob:input_type -> numen.sync.v1.AbortMultipartBlobRequest
+	9,  // 6: numen.sync.v1.BlobService.ReserveMultipartBlob:input_type -> numen.sync.v1.ReserveMultipartBlobRequest
+	11, // 7: numen.sync.v1.BlobService.GetPartUrls:input_type -> numen.sync.v1.GetPartUrlsRequest
+	14, // 8: numen.sync.v1.BlobService.ListParts:input_type -> numen.sync.v1.ListPartsRequest
+	17, // 9: numen.sync.v1.BlobService.CompleteMultipartBlob:input_type -> numen.sync.v1.CompleteMultipartBlobRequest
+	19, // 10: numen.sync.v1.BlobService.AbortMultipartBlob:input_type -> numen.sync.v1.AbortMultipartBlobRequest
 	1,  // 11: numen.sync.v1.BlobService.ReserveBlobs:output_type -> numen.sync.v1.ReserveBlobsResponse
 	4,  // 12: numen.sync.v1.BlobService.GetBlobUrls:output_type -> numen.sync.v1.GetBlobUrlsResponse
-	9,  // 13: numen.sync.v1.BlobService.ReserveMultipartBlob:output_type -> numen.sync.v1.ReserveMultipartBlobResponse
-	11, // 14: numen.sync.v1.BlobService.GetPartUrls:output_type -> numen.sync.v1.GetPartUrlsResponse
-	14, // 15: numen.sync.v1.BlobService.ListParts:output_type -> numen.sync.v1.ListPartsResponse
-	17, // 16: numen.sync.v1.BlobService.CompleteMultipartBlob:output_type -> numen.sync.v1.CompleteMultipartBlobResponse
-	19, // 17: numen.sync.v1.BlobService.AbortMultipartBlob:output_type -> numen.sync.v1.AbortMultipartBlobResponse
+	10, // 13: numen.sync.v1.BlobService.ReserveMultipartBlob:output_type -> numen.sync.v1.ReserveMultipartBlobResponse
+	12, // 14: numen.sync.v1.BlobService.GetPartUrls:output_type -> numen.sync.v1.GetPartUrlsResponse
+	15, // 15: numen.sync.v1.BlobService.ListParts:output_type -> numen.sync.v1.ListPartsResponse
+	18, // 16: numen.sync.v1.BlobService.CompleteMultipartBlob:output_type -> numen.sync.v1.CompleteMultipartBlobResponse
+	20, // 17: numen.sync.v1.BlobService.AbortMultipartBlob:output_type -> numen.sync.v1.AbortMultipartBlobResponse
 	11, // [11:18] is the sub-list for method output_type
 	4,  // [4:11] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
@@ -1308,7 +1356,7 @@ func file_numen_sync_v1_blob_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_blob_proto_rawDesc), len(file_numen_sync_v1_blob_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

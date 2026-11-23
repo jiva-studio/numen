@@ -71,6 +71,11 @@ message BlobNotReady {
   uint32 revision_index = 1;
 }
 
+// BlobMissing is the detail of the NOT_FOUND of GetBlobUrls: the bodies of these blobs are gone from the store.
+message BlobMissing {
+  repeated bytes blob_ids = 1;
+}
+
 // ReserveMultipartBlobRequest reserves quota for a body above 64 MiB and starts a multipart upload.
 message ReserveMultipartBlobRequest {
   bytes vault_id = 1;

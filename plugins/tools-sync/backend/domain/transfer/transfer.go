@@ -110,16 +110,6 @@ type PullInput struct {
 	IsAuthor func(deviceSignKey []byte) bool
 }
 
-// PullResult is the files written, the files whose conflict kept the other text in a copy, the files left as they were
-// because a conflict could not be settled, the number of revisions skipped because their author or their content could
-// not be verified.
-type PullResult struct {
-	Applied    []string
-	Conflicts  []string
-	Unverified int
-	Resolved   []string
-}
-
 // NewEmptyRecord returns the record of a file that has none.
 func NewEmptyRecord() FileRecord {
 	return FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil, Size: 0, ModifiedAt: 0, Kind: "", BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil}

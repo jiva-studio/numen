@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
@@ -36,7 +37,7 @@ func (failingResolver) Resolve(context.Context, ports.ConflictInput) (ports.Conf
 	return ports.ConflictOutcome{Applied: nil, Copy: ""}, errors.New("the resolver cannot settle the conflict")
 }
 
-func (p *pair) pullWith(t *testing.T, resolver ports.ConflictResolver) transfer.PullResult {
+func (p *pair) pullWith(t *testing.T, resolver ports.ConflictResolver) restore.PullResult {
 	t.Helper()
 	deps := p.b.PullDeps()
 	deps.Conflicts = resolver

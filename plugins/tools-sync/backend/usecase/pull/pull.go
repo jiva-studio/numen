@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -60,28 +61,31 @@ type PullChanges struct{ deps Deps }
 // NewPullChanges returns the use case over the dependencies.
 func NewPullChanges(deps Deps) *PullChanges { return &PullChanges{deps: deps} }
 
-// Execute applies every change after the position kept in the link. The position stops before the first file
+// Execute applies every change after the position kept in the link, unless the server announced a restore this device
+// has not run or went back to an earlier state: then it applies nothing and the result says which. The position stops before the first file
 // that is left as it was, so the next pull reads it again.
-func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error) {
+func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (restore.PullResult, error) {
 	link, err := u.deps.State.ReadLink(ctx, in.VaultID)
 	if err != nil {
-		return transfer.PullResult{}, err
+		return restore.PullResult{}, err
 	}
 	records, err := u.deps.State.ReadRecords(ctx, in.VaultID)
 	if err != nil {
-		return transfer.PullResult{}, err
+		return restore.PullResult{}, err
 	}
 	remote, err := hex.DecodeString(link.RemoteVaultID)
 	if err != nil {
-		return transfer.PullResult{}, fmt.Errorf("read the remote id of the link: %w", err)
+		return restore.PullResult{}, fmt.Errorf("read the remote id of the link: %w", err)
 	}
 	key, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
 	if err != nil {
-		return transfer.PullResult{}, fmt.Errorf("open the vault key: %w", err)
+		return restore.PullResult{}, fmt.Errorf("open the vault key: %w", err)
 	}
 	r := &run{
 		deps: u.deps, in: in, files: u.deps.Host.GetFiles(in.VaultID), moves: u.deps.Host.GetTransfers(in.VaultID), remote: remote,
-		key: [32]byte(key), link: link, records: records, result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil}, holdSeq: 0, isHeld: false, next: 0,
+		key: [32]byte(key), link: link, records: records,
+		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
+		holdSeq: 0, isHeld: false, next: 0,
 		removals: nil, removalSeq: 0, isListing: false,
 	}
 	err = r.execute(ctx)
@@ -97,6 +101,14 @@ func (r *run) execute(ctx context.Context) error {
 		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
 		if err != nil {
 			return err
+		}
+		r.result.EpochID = page.GetRestoreEpochId()
+		r.result.Verdict = restore.GetVerdict(
+			restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, PinnedKey: nil},
+			restore.Look{EpochID: r.result.EpochID, HeadSeq: page.GetHeadSeq(), SignKey: nil},
+		)
+		if r.result.Verdict != restore.Same {
+			return nil
 		}
 		if page.GetReset_() {
 			return r.reconcile(ctx)

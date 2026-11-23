@@ -117,8 +117,15 @@ func (s *Server) GetBlobUrls(_ context.Context, req *connect.Request[syncv1.GetB
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%w: %d ids", errInvalidRequest, len(ids)))
 	}
 	downloads := make([]*syncv1.BlobDownload, 0, len(ids))
+	var missing [][]byte
 	for _, id := range ids {
 		downloads = append(downloads, s.getDownload(account, string(req.Msg.GetVaultId()), id))
+		if row, found := s.blobs[string(id)]; found && row.account == account && row.state == blobCommitted && !row.isUploaded {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		return nil, newMissingBlobFailure(missing)
 	}
 	return connect.NewResponse(&syncv1.GetBlobUrlsResponse{Downloads: downloads}), nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -24,6 +25,8 @@ type pass struct {
 	resolved   int
 	clashes    []string
 	unverified int
+	verdict    restore.Verdict
+	isSent     bool
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -37,14 +40,14 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := p.pull(ctx); err != nil {
+	if isReady, err := p.pullOrRecover(ctx); err != nil || !isReady {
 		return err
 	}
 	isRetry, err := p.push(ctx)
 	if err != nil {
 		return p.use.reports.settle(ctx, err)
 	}
-	if isRetry {
+	if isRetry || p.isSent {
 		if err := p.pull(ctx); err != nil {
 			return err
 		}
@@ -65,6 +68,7 @@ func (p *pass) pull(ctx context.Context) error {
 	p.conflicts = result.Conflicts
 	p.resolved += len(result.Resolved)
 	p.unverified = result.Unverified
+	p.verdict = result.Verdict
 	return nil
 }
 
@@ -93,6 +97,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if verdict == transfer.Keep {
 		return true, p.restore(ctx, records, removals)
 	}
+	p.isSent = hasWork(changes, scan.Moves, removals)
 	isRetry := false
 	for _, step := range []func(context.Context, transfer.Vault, []transfer.FileRecord) ([]transfer.FileRecord, bool, error){
 		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
@@ -112,6 +117,10 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 		isRetry = isRetry || retry
 	}
 	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)
+}
+
+func hasWork(changes []transfer.Change, moves []transfer.Move, removals []transfer.FileRecord) bool {
+	return len(changes)+len(moves)+len(removals) > 0
 }
 
 func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.Change {
@@ -178,7 +187,20 @@ func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, 
 		}
 		isRetry = isRetry || outcome.Status == transfer.ParentMismatch || outcome.Status == transfer.PathTaken
 	}
-	return records, isRetry, nil
+	return records, isRetry, p.keepRemoved(ctx, outcomes)
+}
+
+func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) error {
+	link, err := p.use.deps.State.ReadLink(ctx, p.id)
+	if err != nil {
+		return err
+	}
+	for _, outcome := range outcomes {
+		if outcome.Status == transfer.Committed {
+			link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID})
+		}
+	}
+	return p.use.deps.State.WriteLink(ctx, p.id, link)
 }
 
 func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {

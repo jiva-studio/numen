@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	subscriptiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
@@ -52,6 +53,15 @@ type Deps struct {
 	Subscriptions ports.Subscriptions
 	Shop          ports.Shop
 	Pauses        ports.Pauses
+	Restore       RestoreDeps
+}
+
+// RestoreDeps are where the recovery after a restored server reads the epoch and keeps the pinned key and the copies of
+// the logs. Address is the address of the server, the name its key is pinned under.
+type RestoreDeps struct {
+	Address string
+	Epochs  ports.Epochs
+	Mirror  ports.Mirror
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.
@@ -66,7 +76,7 @@ type Sweeper interface {
 
 // Puller brings the changes of the server into the vault.
 type Puller interface {
-	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
+	Execute(ctx context.Context, in transfer.PullInput) (restore.PullResult, error)
 }
 
 // Scanner lists the notes that changed on this device.
@@ -102,18 +112,30 @@ type SubscriptionReader interface {
 	Execute(ctx context.Context) (subscriptiondomain.State, error)
 }
 
+// AccountRecoverer recovers the logs of the account after the server was restored.
+type AccountRecoverer interface {
+	Execute(ctx context.Context) error
+}
+
+// VaultRecoverer recovers the notes of one vault after the server was restored.
+type VaultRecoverer interface {
+	Execute(ctx context.Context, id domain.VaultID) error
+}
+
 // Steps are the use cases a pass runs.
 type Steps struct {
-	Rename       Renamer
-	Sweep        Sweeper
-	Pull         Puller
-	Scan         Scanner
-	Commit       Committer
-	Detect       Detector
-	Move         MoveCommitter
-	Remove       RemovalCommitter
-	Guard        Guard
-	Subscription SubscriptionReader
+	Rename         Renamer
+	Sweep          Sweeper
+	Pull           Puller
+	Scan           Scanner
+	Commit         Committer
+	Detect         Detector
+	Move           MoveCommitter
+	Remove         RemovalCommitter
+	Guard          Guard
+	Subscription   SubscriptionReader
+	RecoverAccount AccountRecoverer
+	RecoverVault   VaultRecoverer
 }
 
 // SyncVault runs one pass over one vault.
@@ -144,7 +166,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.GetIndexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, resolved: 0, clashes: nil, unverified: 0}
+	p := &pass{use: u, id: id, authors: authors, conflicts: nil, resolved: 0, clashes: nil, unverified: 0, verdict: restore.Same, isSent: false}
 	return p.run(ctx)
 }
 

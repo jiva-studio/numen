@@ -3,6 +3,7 @@ package client_test
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"net/http"
@@ -153,7 +154,7 @@ func TestGetChainReadChallenge_ReturnsTheIDAndTheChainReadMessageOfTheRootKey(t 
 	}
 
 	label := []byte("numen-sync/chain-read/v1\x00")
-	tail := append(bytes.Clone(root), 0, 0, 0, 1)
+	tail := binary.BigEndian.AppendUint32(bytes.Clone(root), syncprotocol.Version)
 	if len(read.ID) != 16 || !bytes.HasPrefix(read.Message, label) || !bytes.HasSuffix(read.Message, tail) {
 		t.Errorf("challenge = %x %x, want a 16-byte id and a message of the chain-read label ending with the root key and the version", read.ID, read.Message)
 	}

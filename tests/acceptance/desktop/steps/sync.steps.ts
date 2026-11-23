@@ -219,6 +219,34 @@ Then('the subscription shows the day the trial ends', async ({ person }) => {
   await person.identity.expectTrialUntil(person.sync.getTrialEnd())
 })
 
+When('the operator makes a backup of the sync server', async ({ person }) => {
+  await person.sync.makeBackup()
+})
+
+When('the operator restores the sync server from the backup', async ({ person }) => {
+  await person.sync.restoreFromBackup()
+})
+
+When('the operator announces the restore', async ({ person }) => {
+  await person.sync.announceRestore()
+})
+
+When('{computer} goes offline', ({ person }, computer: ComputerName) => {
+  person.computers.setOnline(computer, false)
+})
+
+When('{computer} goes online', ({ person }, computer: ComputerName) => {
+  person.computers.setOnline(computer, true)
+})
+
+Then('the synced vault {string} holds the note {string} with the text {string}', async ({ person }, synced: string, title: string, text: string) => {
+  await person.computers.expectHeld(synced, title, text)
+})
+
+Then('the synced vault {string} does not hold the note {string}', async ({ person }, synced: string, title: string) => {
+  await person.computers.expectHeld(synced, title, undefined)
+})
+
 Then('{holder} has the same file {string}{inside}', async ({ person }, holder: Holder, filePath: string, vault: string | undefined) => {
   await person.files.expectSameFile(holder, filePath, vault)
 })
