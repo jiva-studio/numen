@@ -3,11 +3,13 @@
 package vaultlink
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
@@ -29,6 +31,7 @@ type Link struct {
 	FeedCursor     host.FileChangeCursor `json:"feedCursor"`
 	RestoreEpochID []byte                `json:"restoreEpochId,omitempty"`
 	Recovery       *RecoveryProgress     `json:"recovery,omitempty"`
+	Removed        []RemovedFile         `json:"removed,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.
@@ -79,6 +82,25 @@ func GetStateKeyContext(remoteID []byte) []byte {
 func IsRemoteID(text string) bool {
 	_, err := hex.DecodeString(text)
 	return err == nil
+}
+
+// RemovedFile is a file this device removed on the server: its id, its path and the revision of the removal. A
+// restored server that holds the file again gets the removal sent again.
+type RemovedFile struct {
+	FileID  []byte `json:"fileId"`
+	Path    string `json:"path"`
+	HeadRev []byte `json:"headRev"`
+}
+
+const maxRemoved = 1000
+
+// AddRemoved records a removal in place of an older one of the same file and drops the oldest beyond maxRemoved.
+func (l *Link) AddRemoved(one RemovedFile) {
+	l.Removed = slices.DeleteFunc(l.Removed, func(old RemovedFile) bool { return bytes.Equal(old.FileID, one.FileID) })
+	l.Removed = append(l.Removed, one)
+	if len(l.Removed) > maxRemoved {
+		l.Removed = l.Removed[len(l.Removed)-maxRemoved:]
+	}
 }
 
 // RecoveryProgress is what a recovery of one vault has still to examine: the ids of the files, 16 bytes each.

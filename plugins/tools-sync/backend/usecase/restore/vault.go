@@ -65,7 +65,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}
-	work := run.getWork(domainrestore.PlanRecovery(getKnownFiles(records), found.byFile, run.hashes))
+	work := run.getWork(domainrestore.PlanRecovery(run.getKnown(), found.byFile, run.hashes))
 	if err := run.execute(ctx, work); err != nil {
 		return err
 	}
@@ -222,6 +222,7 @@ func (r *recovery) remove(ctx context.Context, removals []transfer.FileRecord) e
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
+			r.link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID})
 		}
 	}
 	return nil
@@ -236,10 +237,17 @@ func (r *recovery) setRecord(record transfer.FileRecord) {
 	r.records[at] = record
 }
 
-func getKnownFiles(records []transfer.FileRecord) []domainrestore.Known {
-	known := make([]domainrestore.Known, len(records))
-	for i, record := range records {
+func (r *recovery) getKnown() []domainrestore.Known {
+	known := make([]domainrestore.Known, len(r.records), len(r.records)+len(r.link.Removed))
+	for i, record := range r.records {
 		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev}
+	}
+	for _, gone := range r.link.Removed {
+		_, isLocal := r.hashes[gone.Path]
+		isKnown := slices.ContainsFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, gone.FileID) })
+		if !isLocal && !isKnown {
+			known = append(known, domainrestore.Known{FileID: gone.FileID, Path: gone.Path, BaseHash: "", HeadRev: gone.HeadRev})
+		}
 	}
 	return known
 }

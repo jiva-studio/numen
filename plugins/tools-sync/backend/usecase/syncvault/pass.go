@@ -25,6 +25,7 @@ type pass struct {
 	unverified int
 	verdict    restore.Verdict
 	isReset    bool
+	isSent     bool
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -45,7 +46,7 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return p.use.reports.settle(ctx, err)
 	}
-	if isRetry {
+	if isRetry || p.isSent {
 		if err := p.pull(ctx); err != nil {
 			return err
 		}
@@ -93,6 +94,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if verdict == transfer.Keep {
 		return true, p.restore(ctx, records, removals)
 	}
+	p.isSent = len(scan.Moves) > 0 || len(removals) > 0 || len(changes) > 0
 	isRetry := false
 	for _, step := range []func(context.Context, transfer.Vault, []transfer.FileRecord) ([]transfer.FileRecord, bool, error){
 		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
@@ -175,7 +177,20 @@ func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, 
 			records = slices.DeleteFunc(records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
 		}
 	}
-	return records, hasMismatch(outcomes), nil
+	return records, hasMismatch(outcomes), p.keepRemoved(ctx, outcomes)
+}
+
+func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) error {
+	link, err := p.use.deps.State.ReadLink(ctx, p.id)
+	if err != nil {
+		return err
+	}
+	for _, outcome := range outcomes {
+		if outcome.Status == transfer.Committed {
+			link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID})
+		}
+	}
+	return p.use.deps.State.WriteLink(ctx, p.id, link)
 }
 
 func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {
