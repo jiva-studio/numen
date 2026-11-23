@@ -62,7 +62,7 @@ func (u *CommitMoves) build(ctx context.Context, vault transfer.Vault, author []
 	}
 	revision := &syncv1.Revision{
 		VaultId: vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, BlobId: record.BlobID, BlobHash: record.BlobHash, BlobSize: record.BlobSize,
-		EncMeta: sealed, PathHash: note.PathHash(vault.Key, move.To), AuthorDeviceSignKey: author,
+		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author,
 	}
 	return revision, u.sign(ctx, revision)
 }
@@ -92,7 +92,7 @@ func (u *CommitRemovals) Execute(ctx context.Context, in transfer.RemoveInput) (
 		for i, record := range batch {
 			revisions[i] = &syncv1.Revision{
 				VaultId: in.Vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, Deleted: true,
-				PathHash: note.PathHash(in.Vault.Key, record.Path), AuthorDeviceSignKey: author.DeviceSignKey,
+				PathHash: note.HashPath(in.Vault.Key, record.Path), AuthorDeviceSignKey: author.DeviceSignKey,
 			}
 			signature, err := u.deps.Identity.SignAsDevice(ctx, syncprotocol.GetRevisionMessage(revisions[i]))
 			if err != nil {

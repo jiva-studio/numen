@@ -4,7 +4,7 @@
  * server says of the subscription, and the one action, to buy it.
  */
 import { onMounted } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { Failure, OpenExternalErrorCode, Result } from '@numen/plugin-sdk'
 import { Button } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
 import { useSubscription } from '../model/subscription'
@@ -13,12 +13,12 @@ import { WORDS as words } from '../words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   client?: SubscriptionClient | undefined
-  openExternal: (url: string) => Promise<Result<null>>
+  openExternal: (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
   now?: (() => Date) | undefined
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { canBuy, waiting, problem, view, load, buy } = useSubscription({
+const { canBuy, waiting, problem, view, load, startPurchase } = useSubscription({
   openExternal: props.openExternal,
   client: props.client,
   now: props.now,
@@ -31,7 +31,7 @@ onMounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBuy(): void {
-  buy().catch(onFailure)
+  startPurchase().catch(onFailure)
 }
 
 function onFailure(failure: unknown): void {

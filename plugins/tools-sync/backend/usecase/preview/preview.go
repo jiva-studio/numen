@@ -43,7 +43,7 @@ func (u *PreviewConnect) Execute(ctx context.Context, in Input) (Preview, error)
 	if err != nil {
 		return Preview{}, err
 	}
-	local, err := listLocal(ctx, u.deps.Host.Files(in.VaultID))
+	local, err := listLocal(ctx, u.deps.Host.GetFiles(in.VaultID))
 	if err != nil {
 		return Preview{}, err
 	}
@@ -78,7 +78,7 @@ func pair(local, remote []ports.Head) Preview {
 func index(heads []ports.Head) map[string]ports.Head {
 	byKey := make(map[string]ports.Head, len(heads))
 	for _, one := range heads {
-		byKey[note.PathKey(one.Path)] = one
+		byKey[note.GetPathKey(one.Path)] = one
 	}
 	return byKey
 }

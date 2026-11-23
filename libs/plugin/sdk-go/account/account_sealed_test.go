@@ -56,7 +56,7 @@ func newFirstDevice(tb testing.TB) firstDevice {
 func newRestoringClient(t *testing.T, words []string) (*account.Client, *accounttest.Fake) {
 	t.Helper()
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	fake.StartRestore(words)
 	return newClient(t, fake), fake
 }
@@ -82,7 +82,7 @@ func TestSealData_ReturnsBytesThatOpenDataOpensForTheSameContext(t *testing.T) {
 func TestSealData_SealsWithTheAccountKeysOfTheIdentityOfTheHost(t *testing.T) {
 	first := newFirstDevice(t)
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	fake.StartRestore(first.words)
 	client := newClient(t, fake)
 	if err := client.CompleteRestore(t.Context(), first.chain.Bytes()); err != nil {
@@ -133,7 +133,7 @@ func TestOpenData_ReportsErrCannotOpenForAnotherContextAnotherAccountAndChangedB
 
 func TestSealDataAndOpenData_AnswerErrNoIdentityWhereTheHostHasNone(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	client := newClient(t, fake)
 
 	_, sealErr := client.SealData(t.Context(), []byte(dataContext), []byte("milk"))

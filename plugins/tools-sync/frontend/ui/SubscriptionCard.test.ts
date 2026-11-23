@@ -1,6 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { asValue, type Result } from '@numen/plugin-sdk'
+import { asValue, type Failure, type OpenExternalErrorCode, type Result } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -25,9 +25,9 @@ const createClient = (answer: () => Promise<SubscriptionResponse>) => ({
 
 const render = async (response: SubscriptionResponse) => {
   const client = createClient(() => Promise.resolve(response))
-  const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
-    Promise.resolve(asValue(null)),
-  )
+  const openExternal = vi.fn<
+    (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
+  >(() => Promise.resolve(asValue(null)))
   const wrapper = mount(SubscriptionCard, { props: { client, openExternal, now: () => NOW } })
   await flushPromises()
   return { wrapper, client, openExternal }

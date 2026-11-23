@@ -47,7 +47,7 @@ func newSetup(t *testing.T) *setup {
 
 func (s *setup) input(t *testing.T, path, headText string, replaced *int) ports.ConflictInput {
 	t.Helper()
-	stat, err := s.host.Files(vaultID).StatFile(t.Context(), path)
+	stat, err := s.host.GetFiles(vaultID).StatFile(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func (s *setup) input(t *testing.T, path, headText string, replaced *int) ports.
 			Hash: note.Hash([]byte(headText)), Size: int64(len(headText)),
 			Replace: func(ctx context.Context, baseline domain.FileStat) error {
 				*replaced++
-				_, err := s.host.Files(vaultID).Write(ctx, path, []byte(headText), baseline)
+				_, err := s.host.GetFiles(vaultID).Write(ctx, path, []byte(headText), baseline)
 				return err
 			},
 		},

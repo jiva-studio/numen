@@ -119,7 +119,7 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 }
 
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
-	return note.OpenRevision(r.key, stored, r.in.Authors)
+	return note.OpenRevision(r.key, stored, r.in.IsAuthor)
 }
 
 func (r *run) readLocal(ctx context.Context, path string) (string, domain.FileStat, error) {

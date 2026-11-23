@@ -106,8 +106,8 @@ type Scan struct {
 
 // PullInput is the vault and the check of the author of a revision.
 type PullInput struct {
-	VaultID domain.VaultID
-	Authors func(deviceSignKey []byte) bool
+	VaultID  domain.VaultID
+	IsAuthor func(deviceSignKey []byte) bool
 }
 
 // PullResult is the files written, the files whose conflict kept the other text in a copy, the files left as they were

@@ -28,7 +28,7 @@ func (c *Computer) CommitRemoval(t *testing.T, vault transfer.Vault, notePath st
 	}
 	revision := &syncv1.Revision{
 		VaultId: vault.ID, FileId: previous.FileID, ParentRev: previous.RevID, Deleted: true, EncMeta: sealed,
-		PathHash: note.PathHash(vault.Key, notePath), AuthorDeviceSignKey: public.DeviceSignKey,
+		PathHash: note.HashPath(vault.Key, notePath), AuthorDeviceSignKey: public.DeviceSignKey,
 	}
 	if revision.Signature, err = c.Account.SignAsDevice(t.Context(), syncprotocol.GetRevisionMessage(revision)); err != nil {
 		t.Fatal(err)

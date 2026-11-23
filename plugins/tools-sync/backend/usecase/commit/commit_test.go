@@ -78,7 +78,7 @@ func TestCommitRevisions_CommitsANewNoteAsASignedRevision(t *testing.T) {
 	if !identity.VerifyForPlugin(revision.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(revision), [64]byte(revision.GetSignature())) {
 		t.Error("the signature of the revision does not verify under the plugin id")
 	}
-	if !bytes.Equal(revision.GetPathHash(), note.PathHash(s.vault.Key, "Shopping list.md")) {
+	if !bytes.Equal(revision.GetPathHash(), note.HashPath(s.vault.Key, "Shopping list.md")) {
 		t.Error("the path hash is not the keyed hash of the path")
 	}
 }
@@ -108,7 +108,7 @@ func TestCommitRevisions_NormalizesThePathToNFC(t *testing.T) {
 	if meta := synctest.OpenMeta(t, s.vault.Key, revision); meta.Path != "Café.md" {
 		t.Errorf("meta path = %q, want the composed form", meta.Path)
 	}
-	if !bytes.Equal(revision.GetPathHash(), note.PathHash(s.vault.Key, "Café.md")) {
+	if !bytes.Equal(revision.GetPathHash(), note.HashPath(s.vault.Key, "Café.md")) {
 		t.Error("the path hash is not the hash of the composed path")
 	}
 }

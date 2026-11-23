@@ -47,15 +47,17 @@ type Host struct {
 
 func (h Host) GetVaults(ctx context.Context) ([]domain.Vault, error) { return h.Root.GetVaults(ctx) }
 
-func (h Host) Files(id domain.VaultID) ports.Files { return h.Root.With(id) }
+// Files returns the files of the vault.
+func (h Host) GetFiles(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
-func (h Host) Indexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
+// Indexer returns the index of the vault.
+func (h Host) GetIndexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
 // Transfers returns what the host does with the bytes of the files of the vault.
-func (h Host) Transfers(id domain.VaultID) ports.Transfers { return h.Root.With(id) }
+func (h Host) GetTransfers(id domain.VaultID) ports.Transfers { return h.Root.With(id) }
 
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.

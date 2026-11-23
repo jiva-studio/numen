@@ -82,7 +82,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 }
 
 func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record transfer.FileRecord) (bool, error) {
-	_, err := u.deps.Host.Files(in.VaultID).StatFile(ctx, record.Path)
+	_, err := u.deps.Host.GetFiles(in.VaultID).StatFile(ctx, record.Path)
 	if errors.Is(err, host.ErrNotExist) {
 		return true, nil
 	}

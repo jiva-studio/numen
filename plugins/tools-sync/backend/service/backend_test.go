@@ -155,7 +155,7 @@ func TestGetStatus_ReportsAnIdentityAndAReachableServer(t *testing.T) {
 
 func TestGetStatus_WarnsThatThisDeviceHasNoIdentity(t *testing.T) {
 	w := newWorld(t)
-	w.c.Fake.NoIdentity()
+	w.c.Fake.RemoveIdentity()
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	status, err := backend.GetStatus(t.Context(), api.GetStatusRequest{})
