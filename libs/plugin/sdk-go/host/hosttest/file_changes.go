@@ -179,7 +179,7 @@ func (v *Vault) fillContent(change *host.FileChange) {
 	if err != nil {
 		return
 	}
-	at, err = v.hashed(at)
+	at, err = v.hashStat(at)
 	if err != nil {
 		return
 	}
