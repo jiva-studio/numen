@@ -26,7 +26,7 @@ Feature: Connect a folder that holds notes
     Scenario: A note with the same text asks nothing
       Given the second computer writes the note "Shopping list" with the text "milk" in its vault "Copy"
       When the second computer connects its vault "Copy" to the synced vault "Test"
-      Then the second computer is not asked to confirm
+      Then the connection of the second computer needs no confirmation
 
   Rule: A note on one side only goes to the other side
 
@@ -61,4 +61,4 @@ Feature: Connect a folder that holds notes
       When the second computer connects its vault "Copy" to the synced vault "Test"
       And the second computer cancels the connection
       Then the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
-      And the sync settings of the second computer do not show the vault "Copy" as connected
+      And the sync settings of the second computer list the vault "Copy" as unconnected

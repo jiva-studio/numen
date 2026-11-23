@@ -26,8 +26,8 @@ Feature: Sync after a long absence
       Given the person removes the note "Shopping list" in the vault "Test"
       And the sync server forgets which notes were removed
       When the second computer is online
-      Then the vault "Test" does not have the note "Shopping list"
-      And the second computer does not have the note "Shopping list" in its vault "Copy"
+      Then the vault "Test" is without the note "Shopping list"
+      And the second computer is without the note "Shopping list" in its vault "Copy"
 
     Scenario: A note that did not change stays
       Given the person removes the note "Shopping list" in the vault "Test"
