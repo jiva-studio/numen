@@ -2,12 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { HealthSeverity, WatchPluginProcessesResponseSchema } from '@numen/protocol'
-import { createPluginProcessClient } from '../clients'
+import { createPluginProcessRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createProcessClient, type ProcessRpc } from './processes'
 
 const createProcesses = (answers: CoreAnswers) =>
-  createProcessClient(createPluginProcessClient(createCoreTransport(answers)))
+  createProcessClient(createPluginProcessRpc(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one
