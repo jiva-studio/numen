@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -190,9 +191,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		recorded := httptest.NewRecorder()
 		s.Fake.ServeHTTP(recorded, r)
 		hook()
-		for name, values := range recorded.Header() {
-			w.Header()[name] = values
-		}
+		maps.Copy(w.Header(), recorded.Header())
 		w.WriteHeader(recorded.Code)
 		if _, err := w.Write(recorded.Body.Bytes()); err != nil {
 			return

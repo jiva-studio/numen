@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -33,7 +32,7 @@ func countChecked(
 		return count, nil
 	}
 	now, err := hashes.Execute(ctx, v, path)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		return 0, fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
 	}
 	if err != nil {
@@ -57,7 +56,7 @@ func NewMoveChecked(move MoveFile, files FileCounter, hashes FileHasher) MoveChe
 	return MoveChecked{move: move, files: files, hashes: hashes}
 }
 
-// Execute returns edit.ErrStale for a file that changed since the baseline, and fs.ErrNotExist for a path with
+// Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
 func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error) {
 	count, err := countChecked(ctx, u.files, u.hashes, v, from, baseline)
@@ -66,7 +65,7 @@ func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to strin
 	}
 	_, _, err = u.move.Execute(ctx, v, from, to)
 	if errors.Is(err, edit.ErrNoNote) {
-		err = fmt.Errorf("%s: %w", from, fs.ErrNotExist)
+		err = fmt.Errorf("%s: %w", from, edit.ErrNotExist)
 	}
 	if err != nil {
 		return 0, err
@@ -86,7 +85,7 @@ func NewRemoveChecked(remove RemoveFile, files FileCounter, hashes FileHasher) R
 	return RemoveChecked{remove: remove, files: files, hashes: hashes}
 }
 
-// Execute returns edit.ErrStale for a file that changed since the baseline, and fs.ErrNotExist for a path with
+// Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
 func (u RemoveChecked) Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
 	count, err := countChecked(ctx, u.files, u.hashes, v, path, baseline)

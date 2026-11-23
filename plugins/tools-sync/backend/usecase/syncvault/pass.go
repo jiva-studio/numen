@@ -88,7 +88,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	if verdict == transfer.Keep {
-		return true, p.rewind(ctx)
+		return true, p.restore(ctx, records, removals)
 	}
 	isRetry := false
 	for _, step := range []func(context.Context, transfer.Vault, []transfer.FileRecord) ([]transfer.FileRecord, bool, error){
@@ -127,6 +127,16 @@ func (p *pass) guard(ctx context.Context, removals []transfer.FileRecord, tracke
 	}
 	verdict, err := p.use.steps.Guard.Execute(ctx, transfer.GuardInput{Vault: p.id, Direction: transfer.DirectionSend, Candidates: candidates, Tracked: tracked})
 	return removals, verdict, err
+}
+
+func (p *pass) restore(ctx context.Context, records, removals []transfer.FileRecord) error {
+	kept := slices.DeleteFunc(slices.Clone(records), func(one transfer.FileRecord) bool {
+		return slices.ContainsFunc(removals, func(gone transfer.FileRecord) bool { return bytes.Equal(gone.FileID, one.FileID) })
+	})
+	if err := p.use.deps.State.WriteRecords(ctx, p.id, kept); err != nil {
+		return err
+	}
+	return p.rewind(ctx)
 }
 
 func (p *pass) rewind(ctx context.Context) error {

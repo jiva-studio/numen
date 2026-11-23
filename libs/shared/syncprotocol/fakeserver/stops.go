@@ -86,8 +86,11 @@ func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, bod
 		return
 	}
 	if isEnd {
-		_ = http.NewResponseController(w).Flush()
+		controller := http.NewResponseController(w)
+		_ = controller.Flush()
 		s.requestStop()
-		panic(http.ErrAbortHandler)
+		if conn, _, err := controller.Hijack(); err == nil {
+			_ = conn.Close()
+		}
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -80,9 +79,9 @@ func (u *PlaceStaged) checkTarget(ctx context.Context, v domain.Vault, path stri
 	switch {
 	case baseline == nil && err == nil:
 		return fmt.Errorf("%s: %w", path, vaultdomain.ErrAlreadyExists)
-	case baseline == nil && errors.Is(err, fs.ErrNotExist):
+	case baseline == nil && errors.Is(err, edit.ErrNotExist):
 		return nil
-	case err != nil && errors.Is(err, fs.ErrNotExist):
+	case err != nil && errors.Is(err, edit.ErrNotExist):
 		return fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
 	case err != nil:
 		return err
