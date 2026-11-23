@@ -157,9 +157,10 @@ func (c *Computer) OpenCatalogBody(t *testing.T, entry *syncv1.CatalogEntry) Cat
 
 // CatalogBody is the body of a catalog entry once opened.
 type CatalogBody struct {
-	LocalID string `json:"localId"`
-	Name    string `json:"name"`
-	Key     []byte `json:"key"`
+	LocalID string     `json:"localId"`
+	Name    string     `json:"name"`
+	Key     []byte     `json:"key"`
+	Keys    []VaultKey `json:"keys"`
 }
 
 // WriteNote writes a file in the vault as another window would, and the host indexes it.
@@ -186,4 +187,10 @@ func (c *Computer) HasItemKey(key string) bool {
 func GetCatalogContext(entry *syncv1.CatalogEntry) []byte {
 	sealedFor := append([]byte(catalogContext), entry.GetVaultId()...)
 	return binary.BigEndian.AppendUint64(sealedFor, entry.GetVersion())
+}
+
+// VaultKey is a key of a synced vault with the epoch of the account keys it was made under.
+type VaultKey struct {
+	Epoch uint32 `json:"epoch"`
+	Key   []byte `json:"key"`
 }

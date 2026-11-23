@@ -109,3 +109,8 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
 }
+
+// AppendChain presents a longer chain of the account and returns the chain the server stores after the call.
+func (c *Cloud) AppendChain(ctx context.Context, chain []byte) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}

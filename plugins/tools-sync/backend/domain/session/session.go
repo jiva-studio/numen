@@ -23,6 +23,9 @@ type Identity struct {
 	AccountFingerprint string
 	DeviceSignKey      []byte
 	Chain              []byte
+	KeyEpoch           uint32
+	ChainLength        uint32
+	IsRevoked          bool
 }
 
 // Challenge is what the server asks this device to sign: its id, and the bytes to sign.

@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
@@ -24,10 +25,13 @@ import (
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
@@ -243,5 +247,24 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
+	}
+}
+
+// RotateDeps are the dependencies of the rotation of the vault keys.
+func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
+	return rotatevaultkeys.Deps{
+		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Random: rand.Reader,
+	}
+}
+
+// ChainDeps are the dependencies of the couriers of the chain.
+func (c *Computer) ChainDeps() chaincourier.Deps {
+	return chaincourier.Deps{Identity: c.Account, Core: c.Client, Chain: c.Cloud}
+}
+
+// LinkDeps are the dependencies of the courier of a link over the relay of the server.
+func (c *Computer) LinkDeps() linkcourier.Deps {
+	return linkcourier.Deps{
+		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock,
 	}
 }
