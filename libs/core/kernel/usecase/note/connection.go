@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -36,7 +35,7 @@ type connectionEditor struct {
 	links     noteport.LinkQueries
 	names     edit.NameQueries
 	admission vaultport.WriteAdmission
-	follow    indexport.IndexFollow
+	follow    IndexFollow
 }
 
 // ConnectionDeps are what the use cases that write connections work over. Where Follow
@@ -49,7 +48,7 @@ type ConnectionDeps struct {
 	Links     noteport.LinkQueries
 	Names     edit.NameQueries
 	Admission vaultport.WriteAdmission
-	Follow    indexport.IndexFollow
+	Follow    IndexFollow
 }
 
 func newConnectionEditor(d ConnectionDeps) connectionEditor {

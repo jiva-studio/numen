@@ -15,9 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// Tree moves and imports the files of a vault.
+// Tree imports the files of a vault.
 type Tree struct {
-	Move   Move
 	Import Import
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -100,7 +99,7 @@ func vaultIdentity(options vaultconfig.Options) vaultport.VaultIdentity {
 
 func vaultTrash(clock machineport.Clock) vault.Trash { return trash.New(clock) }
 
-func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, notes note.Move) vaultUseCases {
+func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex) vaultUseCases {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	identity := vaultIdentity(c.Options)
@@ -114,7 +113,7 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, no
 			Erase:      erase,
 		},
 		Tree: vault.Tree{
-			Move:   vault.NewMove(c.Writers, db.NoteQueries(), db.Sources(), db.Sources(), notes),
+
 			Import: vault.NewImport(c.Writers, filesystem.ImportedFiles{}),
 		},
 	}

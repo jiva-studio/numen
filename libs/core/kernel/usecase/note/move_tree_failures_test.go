@@ -1,4 +1,4 @@
-package vault_test
+package note_test
 
 import (
 	"context"
@@ -16,13 +16,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // watchedLinks answers like the index, records each note whose backlinks were
@@ -51,7 +49,7 @@ func (w *watchedLinks) GetLinks(ctx context.Context, id domain.VaultID, from str
 
 // unknowing is an index that cannot say what the vault holds under a path.
 type unknowing struct {
-	sourceport.SourcesUnder
+	note.SourcesUnder
 	err error
 }
 
@@ -70,9 +68,9 @@ func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) e
 // wiring is everything a Move relies on that a test may replace.
 type wiring struct {
 	links   noteport.LinkQueries
-	queries sourceport.SourcesUnder
+	queries note.SourcesUnder
 	sources sourceport.SourceRepository
-	writers vaultport.FileMovers
+	writers note.MoveWriting
 	index   func(context.Context, domain.Vault, []string) error
 }
 
@@ -86,17 +84,17 @@ func (f filing) wiring() wiring {
 	}
 }
 
-func (f filing) moveOver(w wiring) vaults.Move {
+func (f filing) moveOver(w wiring) tree {
 	notes := note.NewMove(note.MoveDeps{
-		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: w.links, Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
+		Readers: f.readers, Writers: w.writers,
+		Links: w.links, Names: f.db.NoteQueries(), Sources: w.sources, Index: w.index, Now: testsupport.NewClock(),
 		Sync: func() naming.SyncTitleAndFilename { return true },
 		Drawing: func(_ context.Context, _ domain.Vault, went domain.Move) error {
 			*f.went = append(*f.went, went)
 			return nil
 		},
 	})
-	return vaults.NewMove(w.writers, w.links, w.queries, w.sources, notes)
+	return tree{note.NewMoveFile(notes, w.queries, nil, indexedAlways{})}
 }
 
 func (f filing) recordBooks(t *testing.T) {
@@ -239,7 +237,7 @@ func TestAMoveInAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the vault cannot be written")
 	w := f.wiring()
-	w.writers = unwritable{err: cannot}
+	w.writers = unwritable{MoveWriting: w.writers, err: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
