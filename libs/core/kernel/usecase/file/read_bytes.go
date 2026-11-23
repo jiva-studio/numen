@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -32,6 +33,9 @@ func (u *ReadBytes) Execute(ctx context.Context, v domain.Vault, path string, st
 		return nil, domain.FileStat{}, fmt.Errorf("read %d bytes of %s from %d: %w", length, path, start, plugin.ErrInvalidRange)
 	}
 	stat, err := u.stat.ExecuteKnown(ctx, v, path)
+	if errors.Is(err, edit.ErrNotANote) {
+		return nil, domain.FileStat{}, fmt.Errorf("%s: %w", path, edit.ErrNotExist)
+	}
 	if err != nil {
 		return nil, domain.FileStat{}, err
 	}
