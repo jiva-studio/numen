@@ -22,6 +22,7 @@ import type {
   PluginVault,
   PluginWork,
 } from '@numen/plugin-sdk'
+import type { Failure } from '@numen/result'
 
 /** What a member of a service holds: the guard passes members on without knowing their type. */
 export type Value = object | string | number | bigint | boolean | symbol | null | undefined | void
@@ -39,10 +40,11 @@ const LOGS_READ = 'logs:read'
 const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 
 /**
- * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
- * rule that lists no permission cannot refuse, so it fits either.
+ * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, a
+ * result member answers `{ ok: false, error: { error: 'permissionDenied', message } }`, and a rule
+ * that lists no permission cannot refuse, so it fits any.
  */
-type Mode = 'sync' | 'async' | 'none'
+type Mode = 'sync' | 'async' | 'result' | 'none'
 
 /** What a member needs: every permission listed, and whether a refusal throws or rejects. */
 export class Rule<M extends Mode = Mode> {
@@ -71,6 +73,10 @@ function requirePermissionsAsync(...permissions: string[]): Rule<'async'> {
   return new Rule(permissions, 'async', { reason: '' })
 }
 
+function requirePermissionsResult(...permissions: string[]): Rule<'result'> {
+  return new Rule(permissions, 'result', { reason: '' })
+}
+
 function requireNothing(reason: string): Rule<'none'> {
   return new Rule([], 'none', { reason })
 }
@@ -97,14 +103,21 @@ type Leaf =
   | number
   | boolean
 
+/** The failure a refusal answers with where the member answers a Result. */
+export type PermissionDenied = Failure<'permissionDenied'>
+
 /**
- * The rule a member can have, from its type: a member that returns a promise (or may) takes an
- * async rule, so a refusal rejects; any other member takes a sync rule, so a refusal throws.
+ * The rule a member can have, from its type: a member that answers a promise of a Result whose failure
+ * can be `permissionDenied` takes a result rule, so a refusal is an answer; any other member that
+ * returns a promise (or may) takes an async rule, so a refusal rejects; any other member takes a sync
+ * rule, so a refusal throws.
  */
 type RuleOf<M> = M extends (...args: never[]) => infer R
   ? [Extract<R, PromiseLike<Value>>] extends [never]
     ? Rule<'sync' | 'none'>
-    : Rule<'async' | 'none'>
+    : [PermissionDenied] extends [Extract<Awaited<R>, { readonly ok: false }>['error']]
+      ? Rule<'result' | 'none'>
+      : Rule<'async' | 'none'>
   : Rule<'sync' | 'none'>
 
 /** The rules of a service: one for each member, nested for a member that is a service itself. */
@@ -136,7 +149,7 @@ const EDITOR_LIST = explain(
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
   identity: {
-    openExternal: requirePermissionsAsync(LINK_OPEN),
+    openExternal: requirePermissionsResult(LINK_OPEN),
   },
   register: {
     reader: requireNothing('a reader names the extensions the manifest of the plugin declares'),
@@ -221,7 +234,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
     texts: {
       readLiveText: requirePermissionsAsync(READ),
-      createEdit: requirePermissionsAsync(WRITE),
+      createEdit: requirePermissionsResult(WRITE),
     },
     buffers: {
       track: requirePermissions(WRITE),

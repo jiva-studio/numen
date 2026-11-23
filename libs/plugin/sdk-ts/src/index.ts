@@ -21,6 +21,7 @@ export type {
   VaultChangeEvent,
   FileSelectEvent,
   Subscriptions,
+  OpenExternalErrorCode,
   PluginIdentity,
   PluginRegistrations,
   EditorSettings,
@@ -186,7 +187,14 @@ export type {
 } from './editorExtensions'
 export { createApi, UNAVAILABLE } from './api'
 export type { Api, ApiError } from './api'
-export { asFailure, asValue, formatErrorMessage, type ErrorCode, type Result } from '@numen/result'
+export {
+  asFailure,
+  asValue,
+  formatErrorMessage,
+  type ErrorCode,
+  type Failure,
+  type Result,
+} from '@numen/result'
 export {
   formatFingerprint,
   getAssetUrl,

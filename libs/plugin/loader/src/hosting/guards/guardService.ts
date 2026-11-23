@@ -1,4 +1,5 @@
 import type { RequirePermission } from './permission'
+import { asFailure } from '@numen/result'
 import { READ, Rule, WRITE, type RulesOf, type Value } from './servicePermissions'
 
 type Members = Record<string, Value>
@@ -7,6 +8,13 @@ type Members = Record<string, Value>
 export interface Guard {
   readonly check: RequirePermission
   readonly path?: string
+}
+
+function denyPermission(error: unknown) {
+  return asFailure({
+    error: 'permissionDenied',
+    message: error instanceof Error ? error.message : String(error),
+  })
 }
 
 function requireAll(
@@ -40,6 +48,7 @@ function guardMember(
         try {
           requireAll(rule, { operation, args }, check)
         } catch (error) {
+          if (rule.mode === 'result') return Promise.resolve(denyPermission(error))
           if (rule.isAsync) return Promise.reject(error)
           throw error
         }
