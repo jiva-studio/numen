@@ -188,9 +188,7 @@ func listKernelPackages(t *testing.T, workspace load.WorkspacePackages) []*packa
 }
 
 func getKnownInterfaceExceptions() map[string]string {
-	return map[string]string{
-		"TriggerRunner is implemented by the use case trigger.Triggers": "waits for the window adapters of PR 8",
-	}
+	return map[string]string{}
 }
 
 func checkNoUseCaseIsBehindAnInterface(t *testing.T, workspace load.WorkspacePackages) {

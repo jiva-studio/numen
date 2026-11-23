@@ -45,13 +45,12 @@ type PluginServices interface {
 type Route struct {
 	path    string
 	handler http.Handler
-	service any
 }
 
 // NewRoute is the route of a service of the schema. Handler is what the schema
-// generated for the service, and service is the handler it answers through.
-func NewRoute(path string, handler http.Handler, service any) Route {
-	return Route{path: path, handler: handler, service: service}
+// generated for the service.
+func NewRoute(path string, handler http.Handler) Route {
+	return Route{path: path, handler: handler}
 }
 
 // pageSet is what answers the requests that reach a window: the routes of its

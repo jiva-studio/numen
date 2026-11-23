@@ -21,9 +21,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -142,13 +142,13 @@ func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps
 	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch.ContentTypeTable)
 }
 
-func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *trigger.Triggers {
+func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowsession.Triggers {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
 	config := getWhenConfig(settingsDeps, exec.Runtime.Listing)
-	return trigger.NewTriggers(trigger.TriggersDeps{
+	return windowsession.NewTriggers(windowsession.TriggersDeps{
 		Plugins: running.Runtime.Manifests, Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
 		Types: running.Watch.ContentTypeTable, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
