@@ -33,7 +33,7 @@ func openHostAt(endpoint hostcall.Endpoint) proofread.Host {
 // host that the environment names. The model is the mock proofreader when the
 // environment enables mock models.
 func Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}

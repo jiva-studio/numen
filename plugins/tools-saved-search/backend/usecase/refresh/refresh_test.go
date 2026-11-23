@@ -106,7 +106,7 @@ func TestRunDueRunsASearchWithoutACache(t *testing.T) {
 func TestABrokenCacheFileRunsAgain(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
-	w.vault.Store().File(stormsID+".json", []byte(`{"path": "Searches/Winter storms.md", "results": [`))
+	w.vault.Store().WriteFile(stormsID+".json", []byte(`{"path": "Searches/Winter storms.md", "results": [`))
 
 	ranAt := w.clock.Advance(time.Minute)
 	w.runDueSearches(t)
@@ -226,21 +226,21 @@ func TestCanceledRunRemovesItsSearch(t *testing.T) {
 func TestASearchWithoutAnIDIsCachedByAHashOfItsPath(t *testing.T) {
 	w := newWorld(t, 0)
 	note := formatSearchNote("", stormsQuery)
-	w.vault.File(galesPath, note)
+	w.vault.WriteFile(galesPath, note)
 
 	w.runDueSearches(t)
 
 	if name := resultcache.GetFileName("", galesPath); !w.hasRecord(t, name) {
 		t.Errorf("no cache %s for the note without id", name)
 	}
-	if content, _ := w.vault.Content(galesPath); content != note {
+	if content, _ := w.vault.ReadContent(galesPath); content != note {
 		t.Errorf("note = %q, want it unchanged", content)
 	}
 }
 
 func TestRunOfANoteWithoutAQueryBlockRecordsTheProblem(t *testing.T) {
 	w := newWorld(t, 0)
-	w.vault.File(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n")
+	w.vault.WriteFile(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n")
 
 	w.runDueSearches(t)
 
@@ -258,7 +258,7 @@ func TestRunOfANoteWithoutAQueryBlockRecordsTheProblem(t *testing.T) {
 
 func TestRunRecordsTheProblemsOfTheCoreAtTheirLineInTheQuery(t *testing.T) {
 	w := newWorld(t, 0)
-	w.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, brokenQuery))
 
 	w.runDueSearches(t)
 
@@ -275,7 +275,7 @@ func TestRunOfAProblemKeepsTheLastGoodResults(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
 
-	w.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, brokenQuery))
 	failedAt := w.clock.Advance(time.Minute)
 	w.runDueSearches(t)
 

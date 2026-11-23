@@ -122,7 +122,7 @@ func readNoteID(filePath, content string) string {
 func TestURLImportOfSameAddressToSameFolderUpdatesLinkNote(t *testing.T) {
 	s := newRevisedFixture(t)
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
-	before, isThere := s.vault.Content(first.Path)
+	before, isThere := s.vault.ReadContent(first.Path)
 	if !isThere {
 		t.Fatalf("the first import made no note at %s", first.Path)
 	}
@@ -142,7 +142,7 @@ func TestURLImportOfSameAddressToSameFolderUpdatesLinkNote(t *testing.T) {
 	if second.Title != first.Title || second.Producer != first.Producer || second.Error != "" {
 		t.Errorf("the second import returned %+v, want the title and the producer of the first %+v and no error", second, first)
 	}
-	after, isKept := s.vault.Content(first.Path)
+	after, isKept := s.vault.ReadContent(first.Path)
 	if !isKept || after != before {
 		t.Errorf("the note %s reads %q after the second import, want it unchanged as %q", first.Path, after, before)
 	}
@@ -189,7 +189,7 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 			probe := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "probe"})
 			targetPath := path.Join("desk", path.Base(probe.Path))
 			s.vault.Remove(probe.Path)
-			s.vault.File(targetPath, content)
+			s.vault.WriteFile(targetPath, content)
 
 			res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "desk"})
 
@@ -199,7 +199,7 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 			if text := res.GetResult().GetText(); !strings.Contains(text, targetPath) {
 				t.Errorf("the error %q does not name the path %s", text, targetPath)
 			}
-			if after, _ := s.vault.Content(targetPath); after != content {
+			if after, _ := s.vault.ReadContent(targetPath); after != content {
 				t.Errorf("%s reads %q after the rejected import, want it unchanged as %q", targetPath, after, content)
 			}
 		})

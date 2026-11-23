@@ -12,7 +12,7 @@ import (
 // Mount registers the window tools on s, using the vault and the window of the host the
 // environment names.
 func Mount(s *server.Server) error {
-	return mount(s, tools.New(), connectHost(hostcall.FromEnv()))
+	return mount(s, tools.New(), connectHost(hostcall.ReadEnv()))
 }
 
 func connectHost(endpoint hostcall.Endpoint, err error) Host {

@@ -95,7 +95,7 @@ func (l *Lookup) listCachedTypes(cache *cache, mask domain.ContentType) []string
 	}
 	slices.Sort(candidates)
 	candidates = slices.DeleteFunc(slices.Compact(candidates), func(extension string) bool {
-		return !mask.Matches(l.GetContentType("file." + extension))
+		return !mask.IsMatch(l.GetContentType("file." + extension))
 	})
 	cache.extensions[mask] = candidates
 	return candidates

@@ -123,8 +123,8 @@ func listed(one *Index) []string {
 
 func TestAWarmStartReadsNoUnchangedNoteAndAnswersWithTheSameTasksAndFields(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one +home @phone\n")
-	vault.File("b.md", "- [ ] two +work\n")
+	vault.WriteFile("a.md", "- [ ] one +home @phone\n")
+	vault.WriteFile("b.md", "- [ ] two +work\n")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	first, _ := persisted(vault, snapshots, clock)
 	start(t, first)
@@ -149,16 +149,16 @@ func TestAWarmStartReadsNoUnchangedNoteAndAnswersWithTheSameTasksAndFields(t *te
 
 func TestAWarmStartReadsOnlyTheNotesChangedAddedOrRemovedWhileTheAppWasClosed(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("keep.md", "- [ ] kept\n")
-	vault.File("edit.md", "- [ ] before\n")
-	vault.File("gone.md", "- [ ] gone +old\n")
+	vault.WriteFile("keep.md", "- [ ] kept\n")
+	vault.WriteFile("edit.md", "- [ ] before\n")
+	vault.WriteFile("gone.md", "- [ ] gone +old\n")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	first, _ := persisted(vault, snapshots, clock)
 	start(t, first)
 	flush(t, first)
 
-	vault.File("edit.md", "- [ ] after\n")
-	vault.File("new.md", "- [ ] fresh +new\n")
+	vault.WriteFile("edit.md", "- [ ] after\n")
+	vault.WriteFile("new.md", "- [ ] fresh +new\n")
 	vault.Remove("gone.md")
 	second, files := persisted(vault, snapshots, clock)
 	start(t, second)
@@ -180,7 +180,7 @@ func TestAWarmStartReadsOnlyTheNotesChangedAddedOrRemovedWhileTheAppWasClosed(t 
 
 func TestAStartWithNoSnapshotReadsEveryNote(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one\n")
+	vault.WriteFile("a.md", "- [ ] one\n")
 	second, files := persisted(vault, new(memorySnapshots), new(timers))
 
 	start(t, second)
@@ -192,7 +192,7 @@ func TestAStartWithNoSnapshotReadsEveryNote(t *testing.T) {
 
 func TestAStartWhenTheFeedCannotContinueFromTheSnapshotReadsEveryNoteAgain(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one\n")
+	vault.WriteFile("a.md", "- [ ] one\n")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	first, _ := persisted(vault, snapshots, clock)
 	start(t, first)
@@ -209,17 +209,17 @@ func TestAStartWhenTheFeedCannotContinueFromTheSnapshotReadsEveryNoteAgain(t *te
 
 func TestPersist_WritesOnceAfterTheDelayAndOnlyOnceReady(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one\n")
+	vault.WriteFile("a.md", "- [ ] one\n")
 	snapshots, clock := new(memorySnapshots), new(timers)
 	one, _ := persisted(vault, snapshots, clock)
 	start(t, one)
 
-	vault.File("a.md", "- [ ] two\n")
-	vault.File("b.md", "- [ ] three\n")
+	vault.WriteFile("a.md", "- [ ] two\n")
+	vault.WriteFile("b.md", "- [ ] three\n")
 	if err := one.Refresh(t.Context(), []string{"a.md", "b.md"}, nil); err != nil {
 		t.Fatal(err)
 	}
-	vault.File("c.md", "- [ ] four\n")
+	vault.WriteFile("c.md", "- [ ] four\n")
 	if err := one.Refresh(t.Context(), []string{"c.md"}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -240,13 +240,13 @@ func TestPersist_WritesOnceAfterTheDelayAndOnlyOnceReady(t *testing.T) {
 
 func TestPersist_ReportsAFailedSaveAfterTheDelayToTheLog(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one\n")
+	vault.WriteFile("a.md", "- [ ] one\n")
 	snapshots, clock, log := &memorySnapshots{failure: errors.New("disk full")}, new(timers), new(recordingLog)
 	one := NewPersistent(newReader(vault), vault, vault, todo.ParseNote, Persistence{
 		Snapshots: snapshots, Feed: vault, After: clock.after, Cursors: snapshot.NewCursorStore, Log: log,
 	})
 	start(t, one)
-	vault.File("a.md", "- [ ] two\n")
+	vault.WriteFile("a.md", "- [ ] two\n")
 	if err := one.Refresh(t.Context(), []string{"a.md"}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestPersist_ReportsAFailedSaveAfterTheDelayToTheLog(t *testing.T) {
 
 func TestPersist_FlushReturnsAFailedSave(t *testing.T) {
 	vault := hosttest.New("notes")
-	vault.File("a.md", "- [ ] one\n")
+	vault.WriteFile("a.md", "- [ ] one\n")
 	failure := errors.New("disk full")
 	one, _ := persisted(vault, &memorySnapshots{failure: failure}, new(timers))
 	start(t, one)

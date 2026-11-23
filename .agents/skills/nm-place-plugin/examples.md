@@ -40,7 +40,7 @@ Placing a new feature here: a new question the scenarios ask of the vault is a m
 
 - `Mount` (`:14-33`) builds each host client from the environment, once: `host.NewTextClientFromEnv`, `NewStoreClientFromEnv`, `NewClientFromEnv`, `NewQueueClientFromEnv`.
 - It passes them to the servers as narrow SDK interfaces such as `host.FileReader` and `host.TextVersions` (`mount`, `:35`), so `hosttest` fakes replace them in tests.
-- It registers the API (`s.NewAPI(APIService)`), the page route, the commands (`command.Mount`) and what to close (`s.OnClose`).
+- It registers the API (`s.NewAPI(APIService)`), the page route, the commands (`command.Mount`) and what to close (`s.AddCloser`).
 - The engine is the package `backend/pdf`, outside `service`. `service` calls it, and `pdf` imports nothing of `service`.
 - The manifest declares `vault:read` and `vault:write` (`manifest.json:50`), the permissions the vault calls need; the host rejects a call of a backend without them in `hostendpoint.authorize` (`libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go:185`).
 

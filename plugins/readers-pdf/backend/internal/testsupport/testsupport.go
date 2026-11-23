@@ -109,9 +109,9 @@ func NewVault(t *testing.T, name, fixture string) (*hosttest.Texts, *extract.Wri
 // text layers.
 func NewVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *extract.Writer, []byte) {
 	t.Helper()
-	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
+	files := hosttest.CreateOnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", PluginID)
-	texts.File(name, raw)
+	texts.WriteFile(name, raw)
 	texts.SetStore(PluginID, files.Store())
 	return texts, NewWriter(t, NewFiles(files), files, texts, hosttest.NewQueue()), raw
 }
@@ -159,10 +159,10 @@ func NewFollowedVault(t *testing.T, files map[string][]byte) FollowedVault {
 	for name, raw := range files {
 		notes[name] = string(raw)
 	}
-	vault := hosttest.OnDisk(t, "vault", notes)
+	vault := hosttest.CreateOnDisk(t, "vault", notes)
 	texts := hosttest.NewTexts("vault", PluginID)
 	for name, raw := range files {
-		texts.File(name, raw)
+		texts.WriteFile(name, raw)
 	}
 	texts.SetStore(PluginID, vault.Store())
 	return FollowedVault{Vault: vault, Texts: texts, Writer: NewWriter(t, NewFiles(vault), vault, texts, hosttest.NewQueue())}
@@ -170,8 +170,8 @@ func NewFollowedVault(t *testing.T, files map[string][]byte) FollowedVault {
 
 // Add puts a file in the vault, as another window would.
 func (f FollowedVault) Add(name string, raw []byte) {
-	f.Texts.File(name, raw)
-	f.Vault.File(name, string(raw))
+	f.Texts.WriteFile(name, raw)
+	f.Vault.WriteFile(name, string(raw))
 }
 
 // NewFollower returns a follower of the feed of the vault, as a plugin that has just started has.

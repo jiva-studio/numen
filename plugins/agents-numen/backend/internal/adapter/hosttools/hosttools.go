@@ -31,7 +31,7 @@ func New(client tools.Client) *Tools {
 
 // NewFromEnvironment returns Tools of the host the process environment names.
 func NewFromEnvironment() (*Tools, error) {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}

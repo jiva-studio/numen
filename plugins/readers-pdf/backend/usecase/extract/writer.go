@@ -173,7 +173,7 @@ func (s *Writer) finishTask(ctx context.Context, task host.Task, err error) {
 }
 
 func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err error) {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, NotifyWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}

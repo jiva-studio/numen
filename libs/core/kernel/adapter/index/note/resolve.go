@@ -176,7 +176,7 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name + domain.NoteExtension
-	base := domain.FoldName(domain.LinkName(name))
+	base := domain.NormalizeName(domain.LinkName(name))
 
 	rows, err := r.statements.QueryContext(ctx, candidatesSQL,
 		r.vault, name, r.vault, withExt, r.vault, base)
@@ -285,7 +285,7 @@ func createCandidateNames(missing []string, named map[string][]string) candidate
 
 func (c *candidateNames) add(name string) {
 	withExt := name + domain.NoteExtension
-	base := domain.FoldName(domain.LinkName(name))
+	base := domain.NormalizeName(domain.LinkName(name))
 	c.paths = append(c.paths, name, withExt)
 	c.byPath[name] = append(c.byPath[name], name)
 	c.byPath[withExt] = append(c.byPath[withExt], name)

@@ -359,7 +359,7 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 
 func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault, path string) (domain.Address, error) {
 	if names == nil {
-		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(path)}, nil
+		return domain.Address{Scheme: domain.SchemeName, Value: domain.GetBasename(path)}, nil
 	}
 	return edit.GetAddress(ctx, names, v.ID, path)
 }

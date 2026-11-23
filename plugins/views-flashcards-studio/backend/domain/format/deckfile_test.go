@@ -1285,7 +1285,7 @@ func TestWriteIdentifier(t *testing.T) {
 		if err != nil {
 			t.Fatalf("reopen: %v", err)
 		}
-		if id, ok := doc.Identifier(); !ok || id != "abc123" {
+		if id, ok := doc.GetIdentifier(); !ok || id != "abc123" {
 			t.Errorf("identifier = %q, %v", id, ok)
 		}
 	})

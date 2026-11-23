@@ -93,7 +93,7 @@ func (l *Links) copy(ctx context.Context, fetcher ports.Fetcher, settings fetch.
 	if settings.CopyMaxSize > 0 && meta.Bytes > settings.CopyMaxSize {
 		return meta.Bytes, fmt.Errorf("%w: %d bytes", ErrTooLarge, meta.Bytes)
 	}
-	turn, err := l.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
+	turn, err := l.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, NotifyWaiting: nil})
 	if err != nil {
 		return 0, err
 	}

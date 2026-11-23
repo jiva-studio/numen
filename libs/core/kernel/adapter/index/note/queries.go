@@ -80,7 +80,7 @@ func (q *Queries) ListNamedPaths(ctx context.Context, vaultID domain.VaultID, na
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.NormalizeName(name))
 	if err != nil {
 		return nil, err
 	}

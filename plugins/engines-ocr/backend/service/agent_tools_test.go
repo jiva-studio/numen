@@ -140,17 +140,17 @@ func newToolFixture(t *testing.T) *toolFixture {
 		t.Fatal(err)
 	}
 	vault := hosttest.New("Physics")
-	vault.File(scanPath, string(raw))
+	vault.WriteFile(scanPath, string(raw))
 	texts := hosttest.NewTexts("Physics", PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	texts.File(scanPath, raw)
+	texts.WriteFile(scanPath, raw)
 
 	chemistry := hosttest.New("Chemistry")
-	vault.Beside(chemistry)
-	chemistry.File(chemistryScan, string(raw))
+	vault.LinkBeside(chemistry)
+	chemistry.WriteFile(chemistryScan, string(raw))
 	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
-	chemTexts.File(chemistryScan, raw)
+	chemTexts.WriteFile(chemistryScan, raw)
 
 	s := &toolFixture{
 		ended: map[string]bool{},
@@ -444,7 +444,7 @@ func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) doma
 	if source != (domain.TextVersion{}) {
 		params.Source, params.InputHash = source.GetID(), source.TextHash
 	}
-	version, err := s.texts.As(proofreaderPluginID).PutVersion(t.Context(), params)
+	version, err := s.texts.UsePlugin(proofreaderPluginID).PutVersion(t.Context(), params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -535,8 +535,8 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.chemistry.File(scanPath, string(raw))
-	s.chemTexts.File(scanPath, raw)
+	s.chemistry.WriteFile(scanPath, string(raw))
+	s.chemTexts.WriteFile(scanPath, raw)
 
 	first := s.recognize(t, "Physics", scanPath)
 	if want := (RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}); first != want {

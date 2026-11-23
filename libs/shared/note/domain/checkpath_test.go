@@ -31,21 +31,21 @@ func TestCheckPathKeepsOrdinaryPaths(t *testing.T) {
 
 func TestFilenameAndLengthBoundary(t *testing.T) {
 	for _, title := range []string{"", "   ", "...", "\x00", ". ."} {
-		name, exact, err := Filename(title)
+		name, exact, err := CreateFilename(title)
 		if !errors.Is(err, ErrInvalidName) || name != "" || exact {
 			t.Errorf("Filename(%q) = %q, %v, %v", title, name, exact, err)
 		}
 	}
 	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
-		name, exact, err := Filename(title)
+		name, exact, err := CreateFilename(title)
 		if !errors.Is(err, ErrInvalidName) || name != "" || exact {
 			t.Errorf("Filename(%q) = %q, %v, %v", title, name, exact, err)
 		}
 	}
-	if got, exact, err := Filename("Entropy"); err != nil || got != "Entropy" || !exact {
+	if got, exact, err := CreateFilename("Entropy"); err != nil || got != "Entropy" || !exact {
 		t.Errorf("Filename(\"Entropy\") = %q, %v, %v", got, exact, err)
 	}
-	if got, exact, err := Filename("a/b"); err != nil || got != "a-b" || exact {
+	if got, exact, err := CreateFilename("a/b"); err != nil || got != "a-b" || exact {
 		t.Errorf("Filename(\"a/b\") = %q, %v, %v", got, exact, err)
 	}
 	if got, exact := GetReducedFilename(`a/b\c:d*e?f"g<h>i|j#k`); got != "a-b-c-d-e-f-g-h-i-j-k" || exact {

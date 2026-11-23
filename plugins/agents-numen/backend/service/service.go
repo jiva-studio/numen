@@ -48,7 +48,7 @@ func mount(s *server.Server, reach host) error {
 	}
 	s.SetUpdateConfig(agent.settings.Configure)
 	connection.Mount(s, agent.provider)
-	s.OnClose(agent.answerer.Close)
+	s.AddCloser(agent.answerer.Close)
 	return nil
 }
 

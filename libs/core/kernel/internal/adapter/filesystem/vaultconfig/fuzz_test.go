@@ -160,7 +160,7 @@ func FuzzReadConfig(f *testing.F) {
 		}
 
 		target, err := ReadConfig(root, DefaultServiceDir)
-		if err == nil && !ulid.Valid(target.ID) {
+		if err == nil && !ulid.IsValid(target.ID) {
 			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {

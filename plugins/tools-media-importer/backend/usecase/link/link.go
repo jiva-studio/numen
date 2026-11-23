@@ -205,7 +205,7 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err != nil {
 		return Link{}, err
 	}
-	name, _, err := domain.Filename(string(parsed))
+	name, _, err := domain.CreateFilename(string(parsed))
 	// gomutants:disable-next-line BRANCH_IF reason="domain.Filename cannot fail on a validated http or https URL"
 	if err != nil {
 		return Link{}, err
@@ -278,7 +278,7 @@ func (l *Links) findOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	if !errors.Is(err, host.ErrAlreadyExists) {
 		return made, false, err
 	}
-	name, _, err := domain.Filename(string(parsed))
+	name, _, err := domain.CreateFilename(string(parsed))
 	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it opened the file"
 	if err != nil {
 		return Link{}, false, err
