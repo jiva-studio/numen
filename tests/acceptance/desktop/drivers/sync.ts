@@ -82,6 +82,11 @@ const startProgram = (listen: string, flags: readonly string[]): Promise<Running
     })
   })
 
+/** The seconds a scenario names as an interval: "1 hour" is 3600 and "1 second" is 1. */
+export const getIntervalSeconds = (_text: string): number => {
+  throw new Error('not implemented')
+}
+
 /** The phase the stand-in of the payment sets for a subscription that ended some days ago. */
 export const getSubscriptionPhase = (daysAgo: number): string => {
   if (daysAgo < GRACE_DAYS) return 'grace'
@@ -185,6 +190,16 @@ export class SyncDriver {
     fs.rmSync(this.stateDir, { recursive: true, force: true })
     freeFromRemoval('dir', this.stateDir)
     this.stateDir = undefined
+  }
+
+  /** Ends every open stream of change hints at the server, as a connection that drops does, and waits until none is open. */
+  async dropStreams(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  /** Waits until the server holds exactly this many open streams of change hints. */
+  async expectStreams(_count: number): Promise<void> {
+    throw new Error('not implemented')
   }
 
   async expectSession(): Promise<void> {

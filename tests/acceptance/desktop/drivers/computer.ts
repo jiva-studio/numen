@@ -131,6 +131,21 @@ export class ComputerDriver {
       .toBe(text)
   }
 
+  /** Asks every computer for changes only after the interval the text names. */
+  async setInterval(_text: string): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  /** Cuts the connection of the second computer to the sync server and waits until the server holds none. */
+  async dropConnection(): Promise<void> {
+    await this.sync.dropStreams()
+  }
+
+  /** Expects the note within the seconds the scenario names, with the settings the plugin has now. */
+  async expectNoteWithin(_holder: Holder, _title: string, _text: string, _seconds: number, _vault: string | undefined): Promise<void> {
+    throw new Error('not implemented')
+  }
+
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
     const world = this.getScenario(computer).getWorld()
     const name = this.resolveVault(computer, vault)

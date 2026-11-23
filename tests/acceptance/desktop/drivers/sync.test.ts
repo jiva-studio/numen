@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids, getSubscriptionPhase } from './sync.js'
+import { findBackendPids, getIntervalSeconds, getSubscriptionPhase } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -35,5 +35,16 @@ describe('getSubscriptionPhase', () => {
   it('is deleted from 60 days after the end', () => {
     expect(getSubscriptionPhase(60)).toBe('deleted')
     expect(getSubscriptionPhase(70)).toBe('deleted')
+  })
+})
+
+describe('getIntervalSeconds', () => {
+  it('reads the units a scenario names', () => {
+    expect(getIntervalSeconds('1 second')).toBe(1)
+    expect(getIntervalSeconds('1 hour')).toBe(3600)
+  })
+
+  it('refuses a text that is not a number of a unit', () => {
+    expect(() => getIntervalSeconds('often')).toThrow('does not name an interval')
   })
 })
