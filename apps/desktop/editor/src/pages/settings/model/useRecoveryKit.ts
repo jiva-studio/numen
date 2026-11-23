@@ -66,5 +66,16 @@ export function useRecoveryKit(getIdentity: () => InstallationIdentity) {
     await save(given)
   }
 
-  return { call, proof, isAsking, isSaved, actions: { hold, download, submit, close } }
+  /** Takes the toast that says the kit is saved away. */
+  const dismissSaved = (): void => {
+    isSaved.value = false
+  }
+
+  return {
+    call,
+    proof,
+    isAsking,
+    isSaved,
+    actions: { hold, download, submit, close, dismissSaved },
+  }
 }

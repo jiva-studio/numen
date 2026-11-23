@@ -213,6 +213,12 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: "Vault changes not watched", "Vault unreadable", "Themes unavailable", "Theme unreadable".
 - Not: not a toast, not a banner, not a "notification". The e2e spec says "the window shows no corner notices".
 
+### toast
+
+- Is: A short message at the bottom of the window that says something the person did is done, and goes away by itself after a few seconds (`Toast` of `@numen/ui`, a live status region).
+- Texts: "Recovery kit saved".
+- Not: not a notice and not a task; it shows no error.
+
 ### fatal start report
 
 - Is: The message shown when Numen cannot start.
@@ -565,8 +571,8 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### recovery kit
 
 - Is: Three sheets that restore an identity: any two of them give back the account, one alone reveals nothing. The core makes them from the 12 words and saves them as one PDF, one A4 sheet to a page; no sheet is shown in the window.
-- Actions: "Download PDF" in the row "Recovery kit" of the Identity card. Right after the identity is created it saves the kit at once; later it asks in the dialog "Download recovery kit" for the 12 words or two sheets of an earlier kit. The file is saved where the person chooses, as "Numen recovery kit.pdf" by default. A new kit does not cancel an earlier one.
-- Texts: "Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places."; "The recovery kit is saved."; each sheet: "Numen recovery kit", "Sheet N of 3", the account fingerprint, the 33 numbered words, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.", the date, "Kept at:" and the way to restore ("Settings › Identity and licenses › Restore", then "Recovery kit sheets").
+- Actions: "Download PDF" in the row "Recovery kit" of the Identity card. Right after the identity is created it saves the kit at once; later it asks in the dialog "Download recovery kit" for the 12 words or two sheets of an earlier kit. The file is saved where the person chooses, as "Numen recovery kit.pdf" by default. A new kit does not cancel an earlier one. A saved kit is announced by the toast "Recovery kit saved"; a cancelled save dialog shows nothing; a refusal shows under the row.
+- Texts: "Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places."; "Recovery kit saved" (toast); each sheet: "Numen recovery kit", "Sheet N of 3", the account fingerprint, the 33 numbered words, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.", the date, "Kept at:" and the way to restore ("Settings › Identity and licenses › Restore", then "Recovery kit sheets").
 - Not: not printed from the window and not checked in the window.
 
 ### row

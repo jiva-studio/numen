@@ -137,7 +137,7 @@ export const WORDS = {
     'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
-  kitSaved: 'The recovery kit is saved.',
+  kitSaved: 'Recovery kit saved',
   kitDialogTitle: 'Download recovery kit',
   kitProofHint:
     'A new kit needs your 12 recovery words or two sheets of an earlier kit. An earlier kit keeps working.',
