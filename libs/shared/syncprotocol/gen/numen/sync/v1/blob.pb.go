@@ -456,6 +456,51 @@ func (x *BlobNotReady) GetRevisionIndex() uint32 {
 	return 0
 }
 
+// BlobMissing is the detail of the NOT_FOUND of GetBlobUrls: the bodies of these blobs are gone from the store.
+type BlobMissing struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BlobIds       [][]byte               `protobuf:"bytes,1,rep,name=blob_ids,json=blobIds,proto3" json:"blob_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BlobMissing) Reset() {
+	*x = BlobMissing{}
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlobMissing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlobMissing) ProtoMessage() {}
+
+func (x *BlobMissing) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_blob_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlobMissing.ProtoReflect.Descriptor instead.
+func (*BlobMissing) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_blob_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *BlobMissing) GetBlobIds() [][]byte {
+	if x != nil {
+		return x.BlobIds
+	}
+	return nil
+}
+
 var File_numen_sync_v1_blob_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_blob_proto_rawDesc = "" +
@@ -490,7 +535,9 @@ const file_numen_sync_v1_blob_proto_rawDesc = "" +
 	"\vlimit_bytes\x18\x02 \x01(\x04R\n" +
 	"limitBytes\"5\n" +
 	"\fBlobNotReady\x12%\n" +
-	"\x0erevision_index\x18\x01 \x01(\rR\rrevisionIndex2\xbc\x01\n" +
+	"\x0erevision_index\x18\x01 \x01(\rR\rrevisionIndex\"(\n" +
+	"\vBlobMissing\x12\x19\n" +
+	"\bblob_ids\x18\x01 \x03(\fR\ablobIds2\xbc\x01\n" +
 	"\vBlobService\x12W\n" +
 	"\fReserveBlobs\x12\".numen.sync.v1.ReserveBlobsRequest\x1a#.numen.sync.v1.ReserveBlobsResponse\x12T\n" +
 	"\vGetBlobUrls\x12!.numen.sync.v1.GetBlobUrlsRequest\x1a\".numen.sync.v1.GetBlobUrlsResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
@@ -507,7 +554,7 @@ func file_numen_sync_v1_blob_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_blob_proto_rawDescData
 }
 
-var file_numen_sync_v1_blob_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_sync_v1_blob_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_sync_v1_blob_proto_goTypes = []any{
 	(*ReserveBlobsRequest)(nil),  // 0: numen.sync.v1.ReserveBlobsRequest
 	(*ReserveBlobsResponse)(nil), // 1: numen.sync.v1.ReserveBlobsResponse
@@ -517,6 +564,7 @@ var file_numen_sync_v1_blob_proto_goTypes = []any{
 	(*BlobDownload)(nil),         // 5: numen.sync.v1.BlobDownload
 	(*QuotaExceeded)(nil),        // 6: numen.sync.v1.QuotaExceeded
 	(*BlobNotReady)(nil),         // 7: numen.sync.v1.BlobNotReady
+	(*BlobMissing)(nil),          // 8: numen.sync.v1.BlobMissing
 }
 var file_numen_sync_v1_blob_proto_depIdxs = []int32{
 	2, // 0: numen.sync.v1.ReserveBlobsResponse.uploads:type_name -> numen.sync.v1.BlobUpload
@@ -543,7 +591,7 @@ func file_numen_sync_v1_blob_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_blob_proto_rawDesc), len(file_numen_sync_v1_blob_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -55,3 +55,15 @@ type refusalError struct {
 func (r refusalError) Error() string { return r.sentinel.Error() }
 
 func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }
+
+// ErrBlobMissing means the store of the server no longer holds the body of a blob.
+var ErrBlobMissing = errors.New("the sync server lost the body of a file")
+
+// BlobMissingError names the blobs the server lost the bodies of. It reads as ErrBlobMissing.
+type BlobMissingError struct {
+	IDs [][]byte
+}
+
+func (e BlobMissingError) Error() string { return ErrBlobMissing.Error() }
+
+func (e BlobMissingError) Is(target error) bool { return false }

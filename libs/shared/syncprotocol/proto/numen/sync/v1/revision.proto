@@ -100,4 +100,6 @@ message GetChangesResponse {
   bool has_more = 3;
   // head_seq is the vault seq when the page was read.
   uint64 head_seq = 4;
+  // restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
+  bytes restore_epoch_id = 5;
 }

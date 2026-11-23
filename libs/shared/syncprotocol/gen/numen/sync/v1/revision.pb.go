@@ -552,9 +552,11 @@ type GetChangesResponse struct {
 	NextSeq uint64 `protobuf:"varint,2,opt,name=next_seq,json=nextSeq,proto3" json:"next_seq,omitempty"`
 	HasMore bool   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	// head_seq is the vault seq when the page was read.
-	HeadSeq       uint64 `protobuf:"varint,4,opt,name=head_seq,json=headSeq,proto3" json:"head_seq,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	HeadSeq uint64 `protobuf:"varint,4,opt,name=head_seq,json=headSeq,proto3" json:"head_seq,omitempty"`
+	// restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
+	RestoreEpochId []byte `protobuf:"bytes,5,opt,name=restore_epoch_id,json=restoreEpochId,proto3" json:"restore_epoch_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetChangesResponse) Reset() {
@@ -615,6 +617,13 @@ func (x *GetChangesResponse) GetHeadSeq() uint64 {
 	return 0
 }
 
+func (x *GetChangesResponse) GetRestoreEpochId() []byte {
+	if x != nil {
+		return x.RestoreEpochId
+	}
+	return nil
+}
+
 var File_numen_sync_v1_revision_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_revision_proto_rawDesc = "" +
@@ -656,12 +665,13 @@ const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	"\x11GetChangesRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x1b\n" +
 	"\tsince_seq\x18\x02 \x01(\x04R\bsinceSeq\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\rR\x05limit\"\x9e\x01\n" +
+	"\x05limit\x18\x03 \x01(\rR\x05limit\"\xc8\x01\n" +
 	"\x12GetChangesResponse\x127\n" +
 	"\achanges\x18\x01 \x03(\v2\x1d.numen.sync.v1.StoredRevisionR\achanges\x12\x19\n" +
 	"\bnext_seq\x18\x02 \x01(\x04R\anextSeq\x12\x19\n" +
 	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12\x19\n" +
-	"\bhead_seq\x18\x04 \x01(\x04R\aheadSeq*n\n" +
+	"\bhead_seq\x18\x04 \x01(\x04R\aheadSeq\x12(\n" +
+	"\x10restore_epoch_id\x18\x05 \x01(\fR\x0erestoreEpochId*n\n" +
 	"\fConflictKind\x12\x1d\n" +
 	"\x19CONFLICT_KIND_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dCONFLICT_KIND_PARENT_MISMATCH\x10\x01\x12\x1c\n" +

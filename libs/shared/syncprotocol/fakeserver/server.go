@@ -129,6 +129,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewRestoreServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/blobs/", s.serveBlob)
