@@ -23,6 +23,10 @@ const SYNC_PLUGIN = 'md.numen.tools.sync'
 const SESSION_SECONDS = 62
 /** How often the plugin asks the server for changes, so a scenario waits seconds and not half a minute. */
 const SYNC_INTERVAL_SECONDS = '1'
+/** A subscription that ended fewer days ago than this is in the grace period; the server allows writes then. */
+const GRACE_DAYS = 7
+/** A subscription that ended this many days ago or more is deleted. */
+const RETENTION_DAYS = 60
 /** A protocol version no build of the application implements. */
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
@@ -78,6 +82,12 @@ const startProgram = (listen: string, flags: readonly string[]): Promise<Running
     })
   })
 
+/** The phase the stand-in of the payment sets for a subscription that ended some days ago. */
+export const getSubscriptionPhase = (daysAgo: number): string => {
+  if (daysAgo < GRACE_DAYS) return 'grace'
+  return daysAgo < RETENTION_DAYS ? 'read_only' : 'deleted'
+}
+
 /** The ids of the processes whose program is the file of the backend of a plugin, as the system lists them. */
 export const findBackendPids = (processes: string, backend: string): number[] =>
   processes
@@ -87,6 +97,7 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
 
 export class SyncDriver {
   private running: RunningSync | undefined
+  private extraFlags: readonly string[] = []
   private stateDir: string | undefined
   private listen: string | undefined
 
@@ -94,6 +105,19 @@ export class SyncDriver {
     private readonly scenario: Scenario,
     private readonly identity: IdentityDriver,
   ) {}
+
+  /** Starts the sync server that sells subscriptions: an account has none until it pays on the page the server serves. */
+  async startSelling(): Promise<void> {
+    this.extraFlags = ['-subscriptions']
+    await this.start()
+  }
+
+  /** Sets the subscription of every account to one that ended some days ago. */
+  async endSubscription(daysAgo: number): Promise<void> {
+    const phase = getSubscriptionPhase(daysAgo)
+    const answer = await fetch(`${this.requireRunning().address}/admin/subscription?phase=${phase}`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the end of the subscription`)
+  }
 
   /** Starts the sync server and tells the plugin its address, before the application starts. The server keeps its state in a folder, so it can stop and run again. */
   async start(): Promise<void> {
@@ -133,7 +157,8 @@ export class SyncDriver {
   }
 
   private getStateFlags(): string[] {
-    return this.stateDir === undefined ? [] : ['-state-dir', this.stateDir]
+    const state = this.stateDir === undefined ? [] : ['-state-dir', this.stateDir]
+    return [...state, ...this.extraFlags]
   }
 
   /** Makes the sync server need a protocol no application implements, where it listened before. */

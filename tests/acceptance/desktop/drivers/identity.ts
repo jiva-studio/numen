@@ -1,5 +1,5 @@
 /** The person at the page "Identity and licenses": sets up an identity, restores it from its words and deletes it. */
-import { expect, type Locator } from 'playwright/test'
+import { expect, type Locator, type Page } from 'playwright/test'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
@@ -7,6 +7,12 @@ const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
 const NO_IDENTITY = 'No identity on this device'
+const SUBSCRIPTION_TITLE = 'Numen Sync'
+const BUY = 'Buy'
+const PAYMENT_RECEIVED = 'Payment received'
+const PAYMENT_ROUTE = /\/pay\//
+/** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
+const SUBSCRIPTION_LIMIT_MS = 20_000
 
 /** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
@@ -144,5 +150,58 @@ export class IdentityDriver {
   async expectSameAccount(): Promise<void> {
     expect(this.account, 'no identity was created before').not.toBe('')
     await expect.poll(async () => this.readAccount(await this.showPage())).toBe(this.account)
+  }
+
+  private getCard(panel: Locator): Locator {
+    return panel.locator('.settings-card').filter({ hasText: SUBSCRIPTION_TITLE })
+  }
+
+  /** Expects the card of the subscription to show the badge or the text; the plugin asks the server every 3 seconds while a payment is awaited. */
+  async expectSubscription(text: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(card.getByText(text, { exact: true }).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  /** Expects the page to have the text, in the card of the subscription or beside it. */
+  async expectPageSays(text: string): Promise<void> {
+    await expect((await this.showPage()).getByText(text).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  async expectOffer(isOffered: boolean): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const buy = card.getByRole('button', { name: BUY, exact: true })
+    if (isOffered) await expect(buy).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    else {
+      await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+      await expect(buy).toHaveCount(0)
+    }
+  }
+
+  /** Activates Buy and takes the page the application opens for the payment: in the browser run the window opens it. */
+  private async openPayment(): Promise<Page> {
+    const card = this.getCard(await this.showPage())
+    const opened = this.scenario.page.waitForEvent('popup')
+    await card.getByRole('button', { name: BUY, exact: true }).click()
+    return opened
+  }
+
+  /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
+  async buy(): Promise<void> {
+    const payment = await this.openPayment()
+    await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
+    await payment.close()
+    await this.expectSubscription('Active')
+  }
+
+  /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */
+  async openPaymentWithoutPaying(): Promise<void> {
+    const context = this.scenario.page.context()
+    await context.route(PAYMENT_ROUTE, (route) => route.abort())
+    try {
+      const payment = await this.openPayment()
+      await payment.close()
+    } finally {
+      await context.unroute(PAYMENT_ROUTE)
+    }
   }
 }

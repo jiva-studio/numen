@@ -19,7 +19,12 @@ interface Manifest {
   readonly services?: readonly string[]
   readonly activationEvents?: readonly string[]
   readonly settings: readonly Setting[]
-  readonly settingsViews?: readonly { readonly id: string; readonly title: string }[]
+  readonly settingsViews?: readonly {
+    readonly id: string
+    readonly title: string
+    readonly page?: string
+  }[]
+  readonly contributes?: Record<string, unknown>
 }
 
 const manifest = JSON.parse(
@@ -53,7 +58,18 @@ describe('the manifest of the sync plugin', () => {
     expect(manifest.settings.map((one) => one.key)).toContain('server')
   })
 
-  it('declares the vaults settings view', () => {
-    expect(manifest.settingsViews).toStrictEqual([{ id: 'vaults', title: 'Vaults' }])
+  it('declares the vaults view and the subscription view that the page of the identity draws', () => {
+    expect(manifest.settingsViews).toStrictEqual([
+      { id: 'vaults', title: 'Vaults' },
+      { id: 'subscription', title: 'Subscription', page: 'identity' },
+    ])
+  })
+
+  it('asks to open links of the system browser', () => {
+    expect(manifest.permissions).toContain('link:open')
+  })
+
+  it('declares no license of its own', () => {
+    expect(manifest.contributes).not.toHaveProperty('licenses')
   })
 })

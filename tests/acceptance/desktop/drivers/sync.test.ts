@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids } from './sync.js'
+import { findBackendPids, getSubscriptionPhase } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -17,5 +17,23 @@ describe('findBackendPids', () => {
   it('finds none where no process runs the file', () => {
     expect(findBackendPids(LISTING, 'tools-other')).toStrictEqual([])
     expect(findBackendPids('', 'tools-sync')).toStrictEqual([])
+  })
+})
+
+describe('getSubscriptionPhase', () => {
+  it('is grace for a subscription that ended fewer than 7 days ago', () => {
+    expect(getSubscriptionPhase(3)).toBe('grace')
+    expect(getSubscriptionPhase(6)).toBe('grace')
+  })
+
+  it('is read only from 7 days to fewer than 60 days after the end', () => {
+    expect(getSubscriptionPhase(7)).toBe('read_only')
+    expect(getSubscriptionPhase(10)).toBe('read_only')
+    expect(getSubscriptionPhase(59)).toBe('read_only')
+  })
+
+  it('is deleted from 60 days after the end', () => {
+    expect(getSubscriptionPhase(60)).toBe('deleted')
+    expect(getSubscriptionPhase(70)).toBe('deleted')
   })
 })

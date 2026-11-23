@@ -17,6 +17,12 @@ func getContracts() map[string]plugintest.MessageContract {
 		},
 		api.MethodConnectVault: {Request: func() any { return &api.ConnectVaultRequest{} }, Response: func() any { return &api.ConnectVaultResponse{} }},
 		api.MethodGetStatus:    {Request: func() any { return &api.GetStatusRequest{} }, Response: func() any { return &api.GetStatusResponse{} }},
+		api.MethodGetSubscription: {
+			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
+		},
+		api.MethodCreateCheckout: {
+			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
+		},
 	}
 }
 
@@ -39,5 +45,14 @@ func TestTheValuesOfStateAndMode(t *testing.T) {
 	if api.StateNotConnected != "notConnected" || api.StateConnected != "connected" || api.StateCopy != "copy" ||
 		api.ModeNew != "new" || api.ModeExisting != "existing" {
 		t.Errorf("states %q, %q, %q and modes %q, %q", api.StateNotConnected, api.StateConnected, api.StateCopy, api.ModeNew, api.ModeExisting)
+	}
+}
+
+func TestTheNamesOfTheSubscriptionMethodsAndPhases(t *testing.T) {
+	if api.MethodGetSubscription != "GetSubscription" || api.MethodCreateCheckout != "CreateCheckout" {
+		t.Errorf("methods %q and %q", api.MethodGetSubscription, api.MethodCreateCheckout)
+	}
+	if api.PhaseNone != "none" || api.PhaseActive != "active" || api.PhaseGrace != "grace" || api.PhaseReadOnly != "readOnly" || api.PhaseDeleted != "deleted" {
+		t.Errorf("phases %q, %q, %q, %q, %q", api.PhaseNone, api.PhaseActive, api.PhaseGrace, api.PhaseReadOnly, api.PhaseDeleted)
 	}
 }

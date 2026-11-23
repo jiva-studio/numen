@@ -53,6 +53,7 @@ export const getNotePath = (title: string): string => `${title}.md`
 
 interface SecondComputer {
   readonly scenario: Scenario
+  readonly identity: IdentityDriver
   readonly vaults: SyncVaultsDriver
 }
 
@@ -89,7 +90,7 @@ export class ComputerDriver {
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
-    this.second = { scenario, vaults: new SyncVaultsDriver(scenario, settings) }
+    this.second = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings) }
     await application.startApplication('editor')
     await identity.restoreFromWords(words.join(' '))
     await identity.expectIdentity(true)
@@ -138,6 +139,11 @@ export class ComputerDriver {
 
   async expectConnected(computer: ComputerName, vault: string): Promise<void> {
     await this.getVaults(computer).expectConnected(vault)
+  }
+
+  async expectSubscription(computer: ComputerName, text: string): Promise<void> {
+    const identity = computer === 'first' ? this.identity : this.requireSecond().identity
+    await identity.expectSubscription(text)
   }
 
   /** Ends the second computer: its window, its application and its folders. */

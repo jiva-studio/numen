@@ -1,51 +1,109 @@
-import { describe, expect, it, vi } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { createSyncState, SYNC_LICENSE_ID } from './sync'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { GetStatusResponse, VaultsClient } from '../api/vaults'
+import { createSyncState } from './sync'
+
+const createStatus = (patch: Partial<GetStatusResponse> = {}): GetStatusResponse => ({
+  hasIdentity: true,
+  isReachable: true,
+  items: [],
+  ...patch,
+})
+
+const createClient = (answer: () => Promise<GetStatusResponse>) => ({
+  getStatus: vi.fn<VaultsClient['getStatus']>(answer),
+})
+
+beforeEach(() => {
+  vi.useFakeTimers()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('createSyncState', () => {
-  it('enters syncing when activated and transitions to synced after the sync window', () => {
-    vi.useFakeTimers()
-    try {
-      const context = createMockPluginContext()
-      const state = createSyncState(context.licenses, 2000)
+  it('is hidden before it starts', () => {
+    const state = createSyncState(createClient(() => Promise.resolve(createStatus())))
 
-      state.start()
-      expect(state.phase.value).toBe('hidden')
-
-      context.setLicense(SYNC_LICENSE_ID, true)
-      expect(state.phase.value).toBe('syncing')
-
-      vi.advanceTimersByTime(2000)
-      expect(state.phase.value).toBe('synced')
-
-      context.setLicense(SYNC_LICENSE_ID, false)
-      expect(state.phase.value).toBe('hidden')
-
-      state.stop()
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(state.phase.value).toBe('hidden')
   })
 
-  it('starts in syncing when the license is initially active and stops listening on stop()', () => {
-    vi.useFakeTimers()
-    try {
-      const context = createMockPluginContext({
-        initialLicenses: { [SYNC_LICENSE_ID]: true },
-      })
-      const state = createSyncState(context.licenses, 2000)
+  it('is syncing until the first status arrives and then synced', async () => {
+    let answer: (status: GetStatusResponse) => void = () => undefined
+    const client = createClient(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    )
+    const state = createSyncState(client)
 
-      state.start()
-      expect(state.phase.value).toBe('syncing')
+    state.start()
+    expect(state.phase.value).toBe('syncing')
+    answer(createStatus())
+    await vi.advanceTimersByTimeAsync(0)
 
-      vi.advanceTimersByTime(2000)
-      expect(state.phase.value).toBe('synced')
+    expect(state.phase.value).toBe('synced')
+    state.stop()
+  })
 
-      state.stop()
-      context.setLicense(SYNC_LICENSE_ID, false)
-      expect(state.phase.value).toBe('synced')
-    } finally {
-      vi.useRealTimers()
-    }
+  it('is hidden while the device has no identity', async () => {
+    const state = createSyncState(
+      createClient(() => Promise.resolve(createStatus({ hasIdentity: false }))),
+    )
+
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(state.phase.value).toBe('hidden')
+    state.stop()
+  })
+
+  it('asks for the status every 10 seconds', async () => {
+    const client = createClient(() => Promise.resolve(createStatus()))
+    const state = createSyncState(client)
+
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(client.getStatus).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(9999)
+    expect(client.getStatus).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(client.getStatus).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(client.getStatus).toHaveBeenCalledTimes(3)
+    state.stop()
+  })
+
+  it('is hidden again when the identity is gone and shown again when it returns', async () => {
+    let hasIdentity = true
+    const state = createSyncState(
+      createClient(() => Promise.resolve(createStatus({ hasIdentity }))),
+    )
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(state.phase.value).toBe('synced')
+
+    hasIdentity = false
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(state.phase.value).toBe('hidden')
+    hasIdentity = true
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(state.phase.value).toBe('synced')
+    state.stop()
+  })
+
+  it('asks no more after it stops', async () => {
+    const client = createClient(() => Promise.resolve(createStatus()))
+    const state = createSyncState(client)
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+
+    state.stop()
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(client.getStatus).toHaveBeenCalledTimes(1)
   })
 })

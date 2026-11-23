@@ -118,3 +118,39 @@ Then(
 Then('{computer} does not have the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   await person.computers.expectNoFile(computer, filePath, vault)
 })
+
+Given('a sync server that sells subscriptions runs', async ({ person }) => {
+  await person.sync.startSelling()
+})
+
+When('the subscription ended {int} days ago', async ({ person }, days: number) => {
+  await person.sync.endSubscription(days)
+})
+
+Then('the subscription shows {string}', async ({ person }, text: string) => {
+  await person.computers.expectSubscription('first', text)
+})
+
+Then('{computer} shows the subscription {string}', async ({ person }, computer: ComputerName, text: string) => {
+  await person.computers.expectSubscription(computer, text)
+})
+
+When('the person buys the subscription', async ({ person }) => {
+  await person.identity.buy()
+})
+
+When('the person opens the payment page without paying', async ({ person }) => {
+  await person.identity.openPaymentWithoutPaying()
+})
+
+Then('the page offers to buy the subscription', async ({ person }) => {
+  await person.identity.expectOffer(true)
+})
+
+Then('the page does not offer to buy the subscription', async ({ person }) => {
+  await person.identity.expectOffer(false)
+})
+
+Then('the page says {string}', async ({ person }, text: string) => {
+  await person.identity.expectPageSays(text)
+})
