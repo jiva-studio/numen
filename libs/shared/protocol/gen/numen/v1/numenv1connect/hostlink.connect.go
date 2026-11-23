@@ -33,12 +33,12 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// HostLinkServiceGetLinksProcedure is the fully-qualified name of the HostLinkService's GetLinks
+	// HostLinkServiceListLinksProcedure is the fully-qualified name of the HostLinkService's ListLinks
 	// RPC.
-	HostLinkServiceGetLinksProcedure = "/numen.v1.HostLinkService/GetLinks"
-	// HostLinkServiceGetBacklinksProcedure is the fully-qualified name of the HostLinkService's
-	// GetBacklinks RPC.
-	HostLinkServiceGetBacklinksProcedure = "/numen.v1.HostLinkService/GetBacklinks"
+	HostLinkServiceListLinksProcedure = "/numen.v1.HostLinkService/ListLinks"
+	// HostLinkServiceListBacklinksProcedure is the fully-qualified name of the HostLinkService's
+	// ListBacklinks RPC.
+	HostLinkServiceListBacklinksProcedure = "/numen.v1.HostLinkService/ListBacklinks"
 	// HostLinkServiceResolveLinksProcedure is the fully-qualified name of the HostLinkService's
 	// ResolveLinks RPC.
 	HostLinkServiceResolveLinksProcedure = "/numen.v1.HostLinkService/ResolveLinks"
@@ -55,10 +55,10 @@ const (
 
 // HostLinkServiceClient is a client for the numen.v1.HostLinkService service.
 type HostLinkServiceClient interface {
-	// GetLinks lists the links written in a note, with what each reaches now.
-	GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error)
-	// GetBacklinks lists the links that reach a note.
-	GetBacklinks(context.Context, *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error)
+	// ListLinks lists the links written in a note, with what each reaches now.
+	ListLinks(context.Context, *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error)
+	// ListBacklinks lists the links that reach a note.
+	ListBacklinks(context.Context, *connect.Request[v1.HostLinkServiceListBacklinksRequest]) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error)
 	// ResolveLinks says what each link written in a note reaches now.
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
 	// AddLinks writes links into the frontmatter links of notes. The links of one
@@ -86,16 +86,16 @@ func NewHostLinkServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 	baseURL = strings.TrimRight(baseURL, "/")
 	hostLinkServiceMethods := v1.File_numen_v1_hostlink_proto.Services().ByName("HostLinkService").Methods()
 	return &hostLinkServiceClient{
-		getLinks: connect.NewClient[v1.GetLinksRequest, v1.GetLinksResponse](
+		listLinks: connect.NewClient[v1.ListLinksRequest, v1.ListLinksResponse](
 			httpClient,
-			baseURL+HostLinkServiceGetLinksProcedure,
-			connect.WithSchema(hostLinkServiceMethods.ByName("GetLinks")),
+			baseURL+HostLinkServiceListLinksProcedure,
+			connect.WithSchema(hostLinkServiceMethods.ByName("ListLinks")),
 			connect.WithClientOptions(opts...),
 		),
-		getBacklinks: connect.NewClient[v1.GetBacklinksRequest, v1.GetBacklinksResponse](
+		listBacklinks: connect.NewClient[v1.HostLinkServiceListBacklinksRequest, v1.HostLinkServiceListBacklinksResponse](
 			httpClient,
-			baseURL+HostLinkServiceGetBacklinksProcedure,
-			connect.WithSchema(hostLinkServiceMethods.ByName("GetBacklinks")),
+			baseURL+HostLinkServiceListBacklinksProcedure,
+			connect.WithSchema(hostLinkServiceMethods.ByName("ListBacklinks")),
 			connect.WithClientOptions(opts...),
 		),
 		resolveLinks: connect.NewClient[v1.ResolveLinksRequest, v1.ResolveLinksResponse](
@@ -127,22 +127,22 @@ func NewHostLinkServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // hostLinkServiceClient implements HostLinkServiceClient.
 type hostLinkServiceClient struct {
-	getLinks     *connect.Client[v1.GetLinksRequest, v1.GetLinksResponse]
-	getBacklinks *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
-	resolveLinks *connect.Client[v1.ResolveLinksRequest, v1.ResolveLinksResponse]
-	addLinks     *connect.Client[v1.HostLinkServiceAddLinksRequest, v1.HostLinkServiceAddLinksResponse]
-	updateLinks  *connect.Client[v1.HostLinkServiceUpdateLinksRequest, v1.HostLinkServiceUpdateLinksResponse]
-	removeLinks  *connect.Client[v1.HostLinkServiceRemoveLinksRequest, v1.HostLinkServiceRemoveLinksResponse]
+	listLinks     *connect.Client[v1.ListLinksRequest, v1.ListLinksResponse]
+	listBacklinks *connect.Client[v1.HostLinkServiceListBacklinksRequest, v1.HostLinkServiceListBacklinksResponse]
+	resolveLinks  *connect.Client[v1.ResolveLinksRequest, v1.ResolveLinksResponse]
+	addLinks      *connect.Client[v1.HostLinkServiceAddLinksRequest, v1.HostLinkServiceAddLinksResponse]
+	updateLinks   *connect.Client[v1.HostLinkServiceUpdateLinksRequest, v1.HostLinkServiceUpdateLinksResponse]
+	removeLinks   *connect.Client[v1.HostLinkServiceRemoveLinksRequest, v1.HostLinkServiceRemoveLinksResponse]
 }
 
-// GetLinks calls numen.v1.HostLinkService.GetLinks.
-func (c *hostLinkServiceClient) GetLinks(ctx context.Context, req *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {
-	return c.getLinks.CallUnary(ctx, req)
+// ListLinks calls numen.v1.HostLinkService.ListLinks.
+func (c *hostLinkServiceClient) ListLinks(ctx context.Context, req *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error) {
+	return c.listLinks.CallUnary(ctx, req)
 }
 
-// GetBacklinks calls numen.v1.HostLinkService.GetBacklinks.
-func (c *hostLinkServiceClient) GetBacklinks(ctx context.Context, req *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error) {
-	return c.getBacklinks.CallUnary(ctx, req)
+// ListBacklinks calls numen.v1.HostLinkService.ListBacklinks.
+func (c *hostLinkServiceClient) ListBacklinks(ctx context.Context, req *connect.Request[v1.HostLinkServiceListBacklinksRequest]) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error) {
+	return c.listBacklinks.CallUnary(ctx, req)
 }
 
 // ResolveLinks calls numen.v1.HostLinkService.ResolveLinks.
@@ -167,10 +167,10 @@ func (c *hostLinkServiceClient) RemoveLinks(ctx context.Context, req *connect.Re
 
 // HostLinkServiceHandler is an implementation of the numen.v1.HostLinkService service.
 type HostLinkServiceHandler interface {
-	// GetLinks lists the links written in a note, with what each reaches now.
-	GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error)
-	// GetBacklinks lists the links that reach a note.
-	GetBacklinks(context.Context, *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error)
+	// ListLinks lists the links written in a note, with what each reaches now.
+	ListLinks(context.Context, *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error)
+	// ListBacklinks lists the links that reach a note.
+	ListBacklinks(context.Context, *connect.Request[v1.HostLinkServiceListBacklinksRequest]) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error)
 	// ResolveLinks says what each link written in a note reaches now.
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
 	// AddLinks writes links into the frontmatter links of notes. The links of one
@@ -194,16 +194,16 @@ type HostLinkServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewHostLinkServiceHandler(svc HostLinkServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	hostLinkServiceMethods := v1.File_numen_v1_hostlink_proto.Services().ByName("HostLinkService").Methods()
-	hostLinkServiceGetLinksHandler := connect.NewUnaryHandler(
-		HostLinkServiceGetLinksProcedure,
-		svc.GetLinks,
-		connect.WithSchema(hostLinkServiceMethods.ByName("GetLinks")),
+	hostLinkServiceListLinksHandler := connect.NewUnaryHandler(
+		HostLinkServiceListLinksProcedure,
+		svc.ListLinks,
+		connect.WithSchema(hostLinkServiceMethods.ByName("ListLinks")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostLinkServiceGetBacklinksHandler := connect.NewUnaryHandler(
-		HostLinkServiceGetBacklinksProcedure,
-		svc.GetBacklinks,
-		connect.WithSchema(hostLinkServiceMethods.ByName("GetBacklinks")),
+	hostLinkServiceListBacklinksHandler := connect.NewUnaryHandler(
+		HostLinkServiceListBacklinksProcedure,
+		svc.ListBacklinks,
+		connect.WithSchema(hostLinkServiceMethods.ByName("ListBacklinks")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostLinkServiceResolveLinksHandler := connect.NewUnaryHandler(
@@ -232,10 +232,10 @@ func NewHostLinkServiceHandler(svc HostLinkServiceHandler, opts ...connect.Handl
 	)
 	return "/numen.v1.HostLinkService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case HostLinkServiceGetLinksProcedure:
-			hostLinkServiceGetLinksHandler.ServeHTTP(w, r)
-		case HostLinkServiceGetBacklinksProcedure:
-			hostLinkServiceGetBacklinksHandler.ServeHTTP(w, r)
+		case HostLinkServiceListLinksProcedure:
+			hostLinkServiceListLinksHandler.ServeHTTP(w, r)
+		case HostLinkServiceListBacklinksProcedure:
+			hostLinkServiceListBacklinksHandler.ServeHTTP(w, r)
 		case HostLinkServiceResolveLinksProcedure:
 			hostLinkServiceResolveLinksHandler.ServeHTTP(w, r)
 		case HostLinkServiceAddLinksProcedure:
@@ -253,12 +253,12 @@ func NewHostLinkServiceHandler(svc HostLinkServiceHandler, opts ...connect.Handl
 // UnimplementedHostLinkServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedHostLinkServiceHandler struct{}
 
-func (UnimplementedHostLinkServiceHandler) GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostLinkService.GetLinks is not implemented"))
+func (UnimplementedHostLinkServiceHandler) ListLinks(context.Context, *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostLinkService.ListLinks is not implemented"))
 }
 
-func (UnimplementedHostLinkServiceHandler) GetBacklinks(context.Context, *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostLinkService.GetBacklinks is not implemented"))
+func (UnimplementedHostLinkServiceHandler) ListBacklinks(context.Context, *connect.Request[v1.HostLinkServiceListBacklinksRequest]) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostLinkService.ListBacklinks is not implemented"))
 }
 
 func (UnimplementedHostLinkServiceHandler) ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error) {

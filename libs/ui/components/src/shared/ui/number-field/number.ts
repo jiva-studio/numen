@@ -8,7 +8,7 @@ import {
   parseNumber,
   stepForKey,
 } from './numberText'
-import { snapToBounds } from './snapToBounds'
+import { fitToBounds } from './fitToBounds'
 
 export const DEFAULT_BOUNDS: Bounds = { min: 0, max: 999, step: 1 }
 
@@ -89,7 +89,7 @@ export const useNumberEntry = (
    */
   const commit = async (): Promise<void> => {
     const value = parseNumber(formattedValue.value)
-    const now = value === null ? null : snapToBounds(value, getBounds())
+    const now = value === null ? null : fitToBounds(value, getBounds())
     model.value = now
     formattedValue.value = formatNumber(now)
     if (now !== rested) {

@@ -15,7 +15,7 @@ import (
 
 func TestSearchToolsListHasOnlyNoteSearch(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestSearchToolsListHasOnlyNoteSearch(t *testing.T) {
 
 func TestCallOfSearchQueryIsAnUnknownTool(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestCallOfSearchQueryIsAnUnknownTool(t *testing.T) {
 
 func TestNoteSearchAnswersWithPathAndSnippetOnly(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestNoteSearchAnswersWithPathAndSnippetOnly(t *testing.T) {
 
 func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 
 func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	vault, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if content, ok := vault.Content("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
+	if content, ok := vault.ReadContent("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
 		t.Errorf("the text of the argument body was stored: %q", content)
 	}
 	if !res.GetResult().GetIsError() {
@@ -151,7 +151,7 @@ func getRemovedToolNames() []string {
 
 func TestToolsListHasOneNameForEachTool(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestToolsListHasOneNameForEachTool(t *testing.T) {
 
 func TestCallOfARemovedToolNameIsAnUnknownTool(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

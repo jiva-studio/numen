@@ -75,10 +75,10 @@ export interface ContextViewHost {
 }
 
 /** The settings and licenses a plugin reads and follows. */
-export interface ContextLicenseHost {
+interface ContextLicenseHost {
   readonly hasLicense: (pluginId: string, licenseId: string) => boolean
   readonly getLicenseKey: (pluginId: string, licenseId: string) => string | undefined
-  readonly onLicenseChange: (
+  readonly watchLicense: (
     pluginId: string,
     licenseId: string,
     handler: (isActive: boolean) => void | Promise<void>,
@@ -90,13 +90,13 @@ export interface ContextSettingHost extends ContextLicenseHost {
     pluginId: string,
     key: string,
   ) => T | undefined
-  readonly onSettingChange: <T extends JsonValue = JsonValue>(
+  readonly watchSetting: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
   ) => Disposable
   readonly getEditorSettings: () => EditorSettings | undefined
-  readonly onEditorSettingsChange: (
+  readonly watchEditorSettings: (
     pluginId: string,
     handler: (settings: EditorSettings) => void | Promise<void>,
   ) => Disposable
@@ -117,14 +117,14 @@ export interface ContextEventHost {
 }
 
 /** The tabs a plugin opens, navigates and closes. A window without tabs answers no id. */
-export interface ContextTabHost {
+interface ContextTabHost {
   readonly openTab: (kind: string, at?: string) => Promise<string> | undefined
   readonly navigateTab: (kind: string, path: string) => Promise<string> | undefined
   readonly closeTab: (id: string) => void
 }
 
 /** The services that read and write the vault; a service the window lacks answers undefined. */
-export interface ContextVaultHost {
+interface ContextVaultHost {
   readonly getNotes: () => VaultNotes | undefined
   readonly getRelations: () => VaultRelations | undefined
   readonly getFiles: () => VaultFiles | undefined

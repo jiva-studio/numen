@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
+import { createPluginStyles } from '../styles'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createBufferedNoteState, isNoteEditorKind } from './customTabBuffer'
 import {
-  createCustomTabKind,
-  createPluginPaneWrapper,
-  createReaderTabKind,
+  createCustomTabKind as createKindOver,
+  createReaderTabKind as createReaderKindOver,
   pickCustomTabParts,
 } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
@@ -25,6 +24,27 @@ import type { PluginContext, ReaderHandle, TabKindRegistration } from '@numen/pl
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 import { createTestHostDeps, type TestHostDeps } from '../testing/hostDeps'
+
+const styles = createPluginStyles()
+
+const NO_HOST = createTestHostDeps({
+  target: 'desktop.editor',
+  registerKind: () => () => undefined,
+})
+
+const createReaderTabKind = (
+  pluginId: string,
+  registration: Parameters<typeof createReaderKindOver>[1],
+) => createReaderKindOver(pluginId, registration, { styles })
+
+const createCustomTabKind = (
+  pluginId: string,
+  registration: Parameters<typeof createKindOver>[1],
+  deps?: Partial<Parameters<typeof createKindOver>[2]>,
+) => createKindOver(pluginId, registration, { ...NO_HOST, styles, ...deps })
+
+const createPluginPaneWrapper = (pluginId: string, component: TabKindRegistration['component']) =>
+  createCustomTabKind(pluginId, pickCustomTabParts({ kind: 'test.kind', component })).pane
 
 /** The deps of a custom tab kind written flat, with the context of its plugin and whether it edits notes. */
 type FlatTabKindDeps = TestHostDeps & {
@@ -423,6 +443,7 @@ describe('createReaderTabKind (place)', () => {
     const state = kind.open('audio/730707BG.LON.mp3', 'tab')
     const nodes = renderPaneContent({
       pluginId: 'viewer-plugin',
+      styles,
       component: FakeReader,
       state,
       shadowRoot: null,
@@ -1234,6 +1255,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(
       renderPaneContent({
         pluginId: 'p',
+        styles,
         component: null,
         state: {},
         shadowRoot: null,
@@ -1241,10 +1263,11 @@ describe('pluginView helpers and stylesheet adoption', () => {
       }),
     ).toBeNull()
 
-    registerPluginStyle('p', '/p.css')
+    styles.register('p', '/p.css')
     const Comp = defineComponent({ setup: () => () => h('span', 'hi') })
     const adoptedNodes = renderPaneContent({
       pluginId: 'p',
+      styles,
       component: Comp,
       state: {},
       shadowRoot: null,
@@ -1257,7 +1280,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(adoptedNodes[2]?.props?.class).toBe(
       'custom-container h-full w-full min-h-0 min-w-0 flex flex-col flex-1',
     )
-    clearPluginStyles()
+    styles.clear()
 
     // 1-arg createPluginPaneWrapper and non-Error throw
     let singleCompSetups = 0
@@ -1306,7 +1329,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
       configurable: true,
     })
     try {
-      await loadPluginStyle(
+      await styles.load(
         'styled.pane',
         '/styled.css',
         async () => ({ ok: true, text: async () => '.a {}' }) as unknown as Response,
@@ -1334,7 +1357,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
       mountedNoShadow.unmount()
       attachSpy.mockRestore()
     } finally {
-      clearPluginStyles()
+      styles.clear()
       vi.unstubAllGlobals()
       Reflect.deleteProperty(document, 'adoptedStyleSheets')
       Reflect.deleteProperty(ShadowRoot.prototype, 'adoptedStyleSheets')

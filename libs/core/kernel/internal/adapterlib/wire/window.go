@@ -33,7 +33,7 @@ type Window struct {
 
 	Tasks TaskList
 
-	Vault func() string
+	GetVault func() string
 
 	clients flushCoordinator
 }
@@ -53,7 +53,7 @@ func (w *Window) WatchTasks(
 	r *connect.Request[v1.WatchTasksRequest],
 	out *connect.ServerStream[v1.WatchTasksResponse],
 ) error {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return err
 	}
 	if w.Tasks == nil {
@@ -62,87 +62,78 @@ func (w *Window) WatchTasks(
 		return out.Send(&v1.WatchTasksResponse{})
 	}
 
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-
-	watch := w.Tasks.Watch(watching)
-	repeat := time.NewTicker(ResendInterval)
-	defer repeat.Stop()
-
-	var last []work.Task
-	for {
-		select {
-		case list, ok := <-watch:
-			if !ok {
+	return RunWatch(ctx, out, ResendInterval, GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchTasksResponse) error) error {
+		watch := w.Tasks.Watch(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(list)}); err != nil {
-				return err
-			}
-			last = list
-			repeat.Reset(ResendInterval)
-
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(last)}); err != nil {
-				return err
+			case list, ok := <-watch:
+				if !ok {
+					return nil
+				}
+				if err := send(&v1.WatchTasksResponse{Tasks: describeTasks(list)}); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
-// WatchQuit streams quit notifications until the client disconnects.
-func (w *Window) WatchQuit(
+// WatchWindowClose streams quit notifications until the client disconnects.
+func (w *Window) WatchWindowClose(
 	ctx context.Context,
-	r *connect.Request[v1.WatchQuitRequest],
-	out *connect.ServerStream[v1.WatchQuitResponse],
+	r *connect.Request[v1.WatchWindowCloseRequest],
+	out *connect.ServerStream[v1.WatchWindowCloseResponse],
 ) error {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return err
 	}
 	token, notified, isDone := w.clients.registerClient()
 	defer isDone()
 
-	// The token is sent first: a client without one cannot respond to a flush
-	// request, and a stream silent until quit is indistinguishable from one
-	// that never opened.
-	if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
-		return err
+	// The token is resent as the keepalive, and a client without one cannot respond to a flush
+	// request, so it is sent first: a stream silent until quit is indistinguishable from one that never
+	// opened.
+	resendToken := func(*v1.WatchWindowCloseResponse) *v1.WatchWindowCloseResponse {
+		return &v1.WatchWindowCloseResponse{Token: token}
 	}
+	return RunWatch(ctx, out, ResendInterval, resendToken, func(ctx context.Context, send func(*v1.WatchWindowCloseResponse) error) error {
+		if err := send(&v1.WatchWindowCloseResponse{Token: token}); err != nil {
+			return err
+		}
+		return sendFlushRequests(ctx, notified, send)
+	})
+}
 
-	repeat := time.NewTicker(ResendInterval)
-	defer repeat.Stop()
-
+func sendFlushRequests(
+	ctx context.Context, notified <-chan string, send func(*v1.WatchWindowCloseResponse) error,
+) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-repeat.C:
-			// The same token is resent. A disconnected page fails the write, which ends
-			// this stream and releases the quit.
-			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
-				return err
-			}
 		case request, isOpen := <-notified:
 			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true}); err != nil {
+			if err := send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-// ReportFlush records the flush state a client reports.
-func (w *Window) ReportFlush(
+// ReportPendingWork records the flush state a client reports.
+func (w *Window) ReportPendingWork(
 	_ context.Context,
-	r *connect.Request[v1.ReportFlushRequest],
-) (*connect.Response[v1.ReportFlushResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	r *connect.Request[v1.ReportPendingWorkRequest],
+) (*connect.Response[v1.ReportPendingWorkResponse], error) {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	w.clients.recordFlush(r.Msg.GetToken(), parseFlushResult(r.Msg.GetResult()))
-	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
+	return connect.NewResponse(&v1.ReportPendingWorkResponse{}), nil
 }
 
 // GetCurrentVault returns the identity of the vault open in this window.
@@ -150,12 +141,12 @@ func (w *Window) GetCurrentVault(
 	_ context.Context,
 	r *connect.Request[v1.GetCurrentVaultRequest],
 ) (*connect.Response[v1.GetCurrentVaultResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	out := &v1.GetCurrentVaultResponse{}
-	if w.Vault != nil {
-		out.Vault = w.Vault()
+	if w.GetVault != nil {
+		out.VaultId = w.GetVault()
 	}
 	return connect.NewResponse(out), nil
 }
@@ -165,7 +156,7 @@ func (w *Window) CancelTask(
 	_ context.Context,
 	r *connect.Request[v1.CancelTaskRequest],
 ) (*connect.Response[v1.CancelTaskResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	if w.Tasks == nil || !w.Tasks.Cancel(r.Msg.GetId()) {
@@ -239,18 +230,18 @@ func describeTasks(list []work.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {
 		out = append(out, &v1.Task{
-			Id:            item.ID,
-			Title:         item.Title,
-			About:         item.About,
-			Done:          item.Count,
-			Total:         item.Total,
-			Error:         item.Error,
-			IsUserStarted: item.IsUserStarted,
-			Unit:          convertUnit(item.Unit),
-			PluginId:      item.PluginID,
-			PluginName:    item.PluginName,
-			IsCancellable: item.Cancel != nil,
-			Kind:          convertKind(item.Kind),
+			Id:             item.ID,
+			Title:          item.Title,
+			Detail:         item.About,
+			CompletedCount: item.Count,
+			TotalCount:     item.Total,
+			FailureReason:  item.Error,
+			IsUserStarted:  item.IsUserStarted,
+			Unit:           convertUnit(item.Unit),
+			PluginId:       item.PluginID,
+			PluginName:     item.PluginName,
+			IsCancellable:  item.Cancel != nil,
+			Kind:           convertKind(item.Kind),
 		})
 	}
 	return out

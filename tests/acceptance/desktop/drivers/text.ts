@@ -72,7 +72,7 @@ export class TextDriver {
   async writeTranscript(words: string, kind: TabKindChoice, reference: string, name: string): Promise<void> {
     const { page } = this.scenario
     const panel = await this.tab.getTabPanel(kind, reference, name)
-    await new TabPanel(panel).transcript().click()
+    await new TabPanel(panel).getTranscript().click()
     await page.keyboard.press('ControlOrMeta+End')
     await page.keyboard.type(` ${words}`)
     const saved = page.waitForResponse((answer) => answer.url().includes(CREATE_TEXT_EDIT))

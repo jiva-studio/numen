@@ -24,7 +24,7 @@ func (f statFailingFiles) StatFile(context.Context, string) (domain.FileStat, er
 func newGuidedReader(t *testing.T) (*Reader, *hosttest.Vault) {
 	t.Helper()
 	files := hosttest.New("vault")
-	files.File("guided.epub", string(testsupport.CreateGuidedEpub(t)))
+	files.WriteFile("guided.epub", string(testsupport.CreateGuidedEpub(t)))
 	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	return books, files
@@ -67,7 +67,7 @@ func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	files.File("guided.epub", string(testsupport.CreateImageEpub(t)))
+	files.WriteFile("guided.epub", string(testsupport.CreateImageEpub(t)))
 
 	second, err := books.GetCfi(t.Context(), "guided.epub", 0)
 
@@ -111,7 +111,7 @@ func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 		t.Errorf("FindOffset on missing file: %v, want not found", err)
 	}
 	deniedBooks := NewReader(func(id domain.VaultID) host.FileReader {
-		return statFailingFiles{FileReader: books.vaults(id), err: os.ErrPermission}
+		return statFailingFiles{FileReader: books.getVault(id), err: os.ErrPermission}
 	})
 	t.Cleanup(deniedBooks.Close)
 	if _, err := deniedBooks.GetCfi(t.Context(), "guided.epub", 0); codeOf(err) != KindNotFound {
@@ -127,8 +127,8 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 		"EPUB/c1.xhtml": []byte(`<html><body><img src="cover.png"/></body></html>`),
 	})
 	files := hosttest.New("vault")
-	files.File("blank.epub", string(raw))
-	files.File("corrupt.epub", "not an epub")
+	files.WriteFile("blank.epub", string(raw))
+	files.WriteFile("corrupt.epub", "not an epub")
 	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 

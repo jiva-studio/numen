@@ -6,7 +6,7 @@
  * responsibility of the surrounding component, which defines the maximum height.
  */
 import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@numen/ui'
+import { joinClasses } from '@numen/ui'
 
 const props = defineProps<{
   id?: string
@@ -35,7 +35,7 @@ const element = useTemplateRef<HTMLTextAreaElement>('element')
     v-model="model"
     data-slot="textarea"
     :class="
-      cn(
+      joinClasses(
         'rounded-node border-field-rule bg-field w-full border px-3 py-2',
         'text-ink placeholder:text-hushed font-sans text-base',
         'ring-numen outline-none',

@@ -16,9 +16,9 @@ type Problems struct{ db *sql.DB }
 // NewProblems creates the queries about problems over the read pool.
 func NewProblems(db *sql.DB) *Problems { return &Problems{db: db} }
 
-// GetParseProblems is what parsing each file turned up. The wording is the
+// ListParseProblems is what parsing each file turned up. The wording is the
 // parser's and is carried through as it was written.
-func (q *Problems) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+func (q *Problems) ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, problemsSQL)
 }
 
@@ -28,7 +28,7 @@ func (q *Problems) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([
 }
 
 func (q *Problems) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -58,7 +58,7 @@ func (q *Problems) getProblems(ctx context.Context, vaultID domain.VaultID, quer
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
 func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.ResolvedLink, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}

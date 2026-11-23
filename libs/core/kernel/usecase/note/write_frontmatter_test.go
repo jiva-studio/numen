@@ -180,7 +180,7 @@ func TestWriteFrontmatterWritesANoteWhoseBaselineIsTheStateOnDisk(t *testing.T) 
 	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
-	if title, _ := readKeys(t, c.read(t, "River.md")).Title(); title != "Rivers" {
+	if title, _ := readKeys(t, c.read(t, "River.md")).GetTitle(); title != "Rivers" {
 		t.Errorf("the title is %q, want Rivers", title)
 	}
 }

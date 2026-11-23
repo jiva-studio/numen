@@ -2,11 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { PluginHost } from './host'
+import type { PluginHost } from './hostApi'
 import { createShortcutHandler } from './shortcuts'
 import { createWhenReader, getTargetValues } from '../when'
+import { NO_COMMANDS } from './nullDeps'
 import type { CommandDeclaration } from './types'
-import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+import { createTestPluginHost, fillHostDeps, type TestHostDeps } from '../testing/hostDeps'
 
 type Manifest = Parameters<PluginHost['lifecycle']['registerManifest']>[1]
 
@@ -357,9 +358,8 @@ describe('the keys of the plugins', () => {
     const fallbackErr = new Error('fallback owner error')
     const handleFallback = createShortcutHandler({
       deps: {
-        window: { target: 'desktop.editor', onError },
-        kinds: { registerKind: vi.fn(() => vi.fn()) },
-        commands: { whenReader: createWhenReader() },
+        ...fillHostDeps({ window: { onError }, kinds: { registerKind: vi.fn(() => vi.fn()) } }),
+        commands: { ...NO_COMMANDS, whenReader: createWhenReader() },
       },
       keybindings: {
         register: vi.fn(),

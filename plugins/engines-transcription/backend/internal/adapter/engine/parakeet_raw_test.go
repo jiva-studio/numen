@@ -15,7 +15,7 @@ import (
 
 func openCachedTranscriber(tb testing.TB) *Transcriber {
 	tb.Helper()
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	cfg.ShouldDownload = false
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir

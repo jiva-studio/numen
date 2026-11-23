@@ -21,7 +21,7 @@ export type FrameInit = acptest.TaskFrameInit
  */
 export interface TaskScript {
   readonly frames?: readonly FrameInit[]
-  readonly pace?: (index: number) => Promise<void>
+  readonly delay?: (index: number) => Promise<void>
   readonly end?: Result<acp.StopReason, ConnectionError>
   readonly hold?: Promise<void>
 }
@@ -37,12 +37,12 @@ const waitForAbort = (signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', () => resolve(), { once: true })
   })
 
-async function* playScript(
+async function* streamScript(
   script: TaskScript,
   signal: AbortSignal | undefined,
 ): AsyncGenerator<FrameInit, Result<acp.StopReason, ConnectionError>> {
   for (const [index, frame] of (script.frames ?? []).entries()) {
-    await script.pace?.(index)
+    await script.delay?.(index)
     if (signal?.aborted) return CANCELED
     yield frame
   }
@@ -77,7 +77,7 @@ export function createAgentConnections(
   const tasks = acptest.createTaskHost((request, options) => {
     calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
     const script = typeof answer === 'function' ? answer(request, options) : answer
-    return playScript(script, options?.signal)
+    return streamScript(script, options?.signal)
   })
   if (!listing) return { host: tasks, calls }
   const host: ConnectionHost = {
@@ -113,7 +113,7 @@ export const callTool = (
 })
 
 /** A piece of the reasoning of the model. */
-export const think = (text: string, messageId = 'thought'): FrameInit => ({
+export const createThought = (text: string, messageId = 'thought'): FrameInit => ({
   update: { case: 'agentThoughtChunk', value: { messageId, text } },
 })
 

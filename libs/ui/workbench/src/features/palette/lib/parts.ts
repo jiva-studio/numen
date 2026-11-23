@@ -34,8 +34,8 @@ export const getParts = (
 const mergeRanges = (text: string, at: readonly TextRange[]): TextRange[] => {
   const retainedAt = at
     .map((span) => ({
-      start: whole(text, clampToText(text, Math.min(span.start, span.end)), -1),
-      end: whole(text, clampToText(text, Math.max(span.start, span.end)), 1),
+      start: findCharacterEdge(text, clampToText(text, Math.min(span.start, span.end)), -1),
+      end: findCharacterEdge(text, clampToText(text, Math.max(span.start, span.end)), 1),
     }))
     .filter((span) => span.start < span.end)
     .sort((one, other) => one.start - other.start)
@@ -55,7 +55,7 @@ const mergeRanges = (text: string, at: readonly TextRange[]): TextRange[] => {
 const clampToText = (text: string, pos: number): number =>
   Math.max(0, Math.min(Math.trunc(pos) || 0, text.length))
 
-const whole = (text: string, pos: number, delta: 1 | -1): number => {
+const findCharacterEdge = (text: string, pos: number, delta: 1 | -1): number => {
   let here = pos
   while (isInsideCharacter(text, here)) here += delta
   return here

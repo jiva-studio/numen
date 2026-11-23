@@ -14,7 +14,7 @@ type fakeDeclarations struct {
 	plugins []manifest.Discovered
 }
 
-func (f *fakeDeclarations) GetPlugins() []manifest.Discovered {
+func (f *fakeDeclarations) ListPlugins() []manifest.Discovered {
 	return f.plugins
 }
 

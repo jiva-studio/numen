@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -47,13 +48,13 @@ func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"
 func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewindow.Handler {
 	t.Helper()
 	open := window{vault: vaulttest.NewVault(t, notes)}
-	choose := file.NewChooseTabKind(kinds, notesOnly{}, nil)
+	choose := pluginentries.NewTabKindChoice(kinds.ListTabKinds, notesOnly{}.GetContentType, nil)
 	readers := vaultreader.Readers{}
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
 			open,
-			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(parsedHeads(notes), choose)),
+			file.NewListFolder(file.NewGetFolderEntries(readers, nil), indexnote.NewTabKinds(parsedHeads(notes), choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
 		filewindow.NewChanges(open, open, nil, nil, nil),

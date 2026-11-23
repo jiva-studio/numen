@@ -74,12 +74,12 @@ export class ApplicationDriver {
 
   async runCommand(label: string): Promise<void> {
     await this.scenario.ensureWorkspace()
-    this.scenario.noteAction()
+    this.scenario.countAction()
     const { page } = this.scenario
-    const field = this.palette.field()
+    const field = this.palette.getField()
     const row = SECOND_ACTIONS[label]
     const name = new RegExp('^' + escapeRegExp(row ?? label) + '$')
-    const command = this.palette.rowNamed(name)
+    const command = this.palette.getRowNamed(name)
     if (label === DELETE_TEXT) await this.expectOpenTabHasText()
     if (label === PROOFREAD_TEXT) await this.expectActiveFileHasMadeText()
     await page.keyboard.press('Control+p')
@@ -88,7 +88,7 @@ export class ApplicationDriver {
     await expect(command).toHaveAttribute('data-here', 'true')
     if (row === undefined) await command.click()
     else await page.keyboard.press('Shift+Enter')
-    const crumb = this.palette.crumb()
+    const crumb = this.palette.getCrumb()
     await expect
       .poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label), {
         timeout: PLUGIN_START_LIMIT_MS,
@@ -102,10 +102,10 @@ export class ApplicationDriver {
     assertPaletteField('pick', kind)
     const name = new RegExp(`^${escapeRegExp(value)}$`)
     if (kind === 'item') {
-      await this.palette.optionNamed(name).click()
+      await this.palette.getOptionNamed(name).click()
     } else {
       await field.fill(value)
-      await this.palette.rowNamed(name).first().click()
+      await this.palette.getRowNamed(name).first().click()
     }
     await expect(field).toBeHidden()
   }

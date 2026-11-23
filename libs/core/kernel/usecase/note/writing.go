@@ -13,7 +13,7 @@ type NoteWriting interface {
 // reached it again: a vault opened to move files and to write notes, and the
 // vault's lock.
 type MoveWriting interface {
-	vaultport.FileMovers
+	FileMovers
 	vaultport.NoteWriters
 	vaultport.VaultLocks
 }

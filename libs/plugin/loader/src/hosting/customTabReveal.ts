@@ -7,14 +7,14 @@ import type { EditorHandle } from '@numen/plugin-sdk'
 /** How many frames a line the editor refused is offered again; the editor takes the text within a few. */
 const MAX_RETRIES = 10
 
-const nextFrame = (run: () => void): void => {
+const requestNextFrame = (run: () => void): void => {
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
   else setTimeout(run, 16)
 }
 
 export function createLineReveal(
   isLoaded: () => boolean,
-  schedule: (run: () => void) => void = nextFrame,
+  schedule: (run: () => void) => void = requestNextFrame,
 ) {
   let editor: EditorHandle | null = null
   let owed: number | null = null

@@ -18,7 +18,7 @@ export interface LoaderHost {
   disposeAll(): void
   registerManifest?(pluginId: string, manifest: Manifest): void
   getSetting?(pluginId: string, key: string): JsonValue | undefined
-  onSettingChange?<T extends JsonValue = JsonValue>(
+  watchSetting?<T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,

@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { branch, getPanes, pane, type Workspace } from '@numen/workbench'
+import { branch, getPanes, createPane, type Workspace } from '@numen/workbench'
 import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '../lib/kinds'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -48,14 +48,14 @@ describe('the open tabs of a window whose files tab is in focus', () => {
       'note-1',
     )
     window.panes.show('files-1')
-    expect(window.handle.front()?.id).toBe('files-1')
+    expect(window.handle.getFrontTab()?.id).toBe('files-1')
 
     const { open } = createOpenTabs(window)
 
     expect(open.value.activeId).toBe('note-1')
     const restarted = createWindow()
     restarted.restored.restoreTabs(parseSavedTabs(open.value), open.value.activeId)
-    expect(restarted.handle.front()?.id).toBe('note-1')
+    expect(restarted.handle.getFrontTab()?.id).toBe('note-1')
   })
 
   it('keep the files tab as the active tab where no other tab shows', () => {
@@ -141,8 +141,12 @@ describe('saved pane layouts', () => {
       root: branch(
         'root',
         [
-          pane('stack', ['reader', 'note'], 'reader'),
-          branch('lower', [pane('file-pane', ['files']), pane('last', ['missing'])], [0.2, 0.8]),
+          createPane('stack', ['reader', 'note'], 'reader'),
+          branch(
+            'lower',
+            [createPane('file-pane', ['files']), createPane('last', ['missing'])],
+            [0.2, 0.8],
+          ),
         ],
         [0.45, 0.55],
       ),
@@ -155,13 +159,13 @@ describe('saved pane layouts', () => {
     restored.restored.restoreTabs(parseSavedTabs(snapshot), snapshot.activeId, snapshot.layout)
 
     expect(restored.panes.layout.value).toStrictEqual(layout)
-    expect(restored.handle.front()?.id).toBe('files')
+    expect(restored.handle.getFrontTab()?.id).toBe('files')
     expect(restored.tabs.getTab('missing')?.kind.kind).toBe('missing.plugin')
   })
 
   it('restores saved tabs by kind placement when their layout has an obsolete tab id', () => {
     const window = createWindow()
-    const layout = { axis: 'vertical', root: pane('stack', ['gone']), focus: 'stack' }
+    const layout = { axis: 'vertical', root: createPane('stack', ['gone']), focus: 'stack' }
     window.restored.restoreTabs(
       [
         { id: 'note', kind: 'note', path: 'Notes/First.md' },
@@ -175,6 +179,6 @@ describe('saved pane layouts', () => {
       ['note'],
       ['files'],
     ])
-    expect(window.handle.front()?.id).toBe('note')
+    expect(window.handle.getFrontTab()?.id).toBe('note')
   })
 })

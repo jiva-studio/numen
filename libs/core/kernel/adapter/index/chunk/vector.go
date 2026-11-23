@@ -53,7 +53,7 @@ func (r *Repository) SaveVectorsInBatches(ctx context.Context, vectors []Vector,
 }
 
 func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	return sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		for _, v := range vectors {
 			// The coarse index takes no conflict clause, so a row that is being
 			// replaced is removed first.

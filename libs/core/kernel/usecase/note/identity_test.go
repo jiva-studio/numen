@@ -54,7 +54,7 @@ func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 	if err != nil {
 		t.Fatalf("open %s: %v", path, err)
 	}
-	return doc.Identifier()
+	return doc.GetIdentifier()
 }
 
 // TestANoteKeepsItsIdentifierAcrossRenameAndMove checks that a note keeps its

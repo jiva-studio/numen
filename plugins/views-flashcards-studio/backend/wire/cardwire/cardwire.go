@@ -88,7 +88,7 @@ func newWireCard(c format.Card, pos string) *api.Card {
 	out := &api.Card{
 		Heading:       c.Heading,
 		CardID:        string(c.CardID),
-		SectionIndex:  section(c.Section),
+		SectionIndex:  buildSection(c.Section),
 		CardModelLink: c.CardModelLink,
 		CardModelPath: pos,
 		Preamble:      c.Preamble,
@@ -100,7 +100,7 @@ func newWireCard(c format.Card, pos string) *api.Card {
 	return out
 }
 
-func section(pos int) *int32 {
+func buildSection(pos int) *int32 {
 	if pos == format.NoSection {
 		return nil
 	}
@@ -108,7 +108,7 @@ func section(pos int) *int32 {
 	return &index
 }
 
-func sectionOf(index *int32) int {
+func readSection(index *int32) int {
 	if index == nil {
 		return format.NoSection
 	}
@@ -135,14 +135,14 @@ func newWireProblem(p format.Problem) *api.Problem {
 	}
 	return &api.Problem{
 		Kind:     kind,
-		Card:     position(p.Card),
-		Template: position(p.Template),
+		Card:     buildPosition(p.Card),
+		Template: buildPosition(p.Template),
 		Field:    p.Field,
 		Text:     p.Detail,
 	}
 }
 
-func position(offset int) *int32 {
+func buildPosition(offset int) *int32 {
 	if offset == format.NoPosition {
 		return nil
 	}
@@ -204,7 +204,7 @@ func newCards(cs []*api.Card) []format.Card {
 		card := format.Card{
 			Heading:       c.Heading,
 			CardID:        format.ID(c.CardID),
-			Section:       sectionOf(c.SectionIndex),
+			Section:       readSection(c.SectionIndex),
 			CardModelLink: c.CardModelLink,
 			Preamble:      c.Preamble,
 			Values:        nil,

@@ -149,7 +149,7 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	if when == nil {
 		return nil
 	}
-	if names, isFact := Facts()[when.Setting]; isFact {
+	if names, isFact := GetFacts()[when.Setting]; isFact {
 		return listFactConditionIssues(subject, when, names)
 	}
 	parent, ok := declared[when.Setting]

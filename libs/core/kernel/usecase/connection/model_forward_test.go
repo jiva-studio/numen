@@ -14,7 +14,7 @@ import (
 
 func TestForwardedCallsReachTheCallsSetLaterAndFindNoConnectionBefore(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, nil, "partial")
+	s.world.Provider.SetScript(addressOne, nil, "partial")
 	var current connectionport.ModelCalls
 	forwarded := connection.NewForwardedCalls(func() connectionport.ModelCalls { return current })
 	request := modelcalldomain.Request{Operation: modelcalltest.ChatOperation}

@@ -30,7 +30,7 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, clients hostclient.Clients) error {
-	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, Now: clock.System{}, Cores: machine.GetCores(), Scheduler: nil})
+	backend := New(Config{GetVault: clients.GetVault, Store: clients.GetFolder, Now: clock.System{}, Cores: machine.GetCores(), Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil
@@ -48,13 +48,13 @@ func (b *Backend) Mount(s *server.Server) error {
 	if err := rpcwire.Mount(s.NewAPI(ServiceName), b.Handlers()); err != nil {
 		return err
 	}
-	registry, err := b.Tools()
+	registry, err := b.BuildTools()
 	// gomutants:disable-next-line BRANCH_IF reason="Static tool schemas are always valid."
 	if err != nil {
 		return err
 	}
 	registry.Mount(s)
-	commands, err := b.Commands()
+	commands, err := b.BuildCommands()
 	// gomutants:disable-next-line BRANCH_IF reason="Static command registrations are always valid."
 	if err != nil {
 		return err
@@ -63,20 +63,20 @@ func (b *Backend) Mount(s *server.Server) error {
 	return nil
 }
 
-// Commands runs the commands the manifest declares.
-func (b *Backend) Commands() (*command.Registry, error) {
-	return cardcommands.New(cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy), b.vaults("").Files, b.createCardNote)
+// BuildCommands runs the commands the manifest declares.
+func (b *Backend) BuildCommands() (*command.Registry, error) {
+	return cardcommands.New(cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy), b.getHostVault("").Files, b.createCardNote)
 }
 
-// Tools provides the MCP tools for interacting with flashcards and decks.
-func (b *Backend) Tools() (*tools.Registry, error) {
-	selector := func(id domain.VaultID) host.VaultSelector { return b.vaults(id).Selector }
+// BuildTools provides the MCP tools for interacting with flashcards and decks.
+func (b *Backend) BuildTools() (*tools.Registry, error) {
+	selector := func(id domain.VaultID) host.VaultSelector { return b.getHostVault(id).Selector }
 	cfg := b.getCardsConfig()
 	set := cards.NewUseCases(cfg)
 	return cardtools.New(
 		selector, set, cards.NewAgentRename(cfg),
 		deckedit.NewCardUseCases(set.Read, set.Write), deckedit.NewSectionUseCases(set.Read, set.Write),
-	).Registry()
+	).BuildRegistry()
 }
 
 // Handlers returns the handlers of the JSON methods.

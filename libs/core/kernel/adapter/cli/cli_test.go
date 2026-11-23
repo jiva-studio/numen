@@ -64,7 +64,7 @@ func (s *session) mustRun(args ...string) string {
 
 func (s *session) addVault(name string) string {
 	s.t.Helper()
-	dir := testsupport.TempDir(s.t)
+	dir := testsupport.CreateTempDir(s.t)
 	s.mustRun("vault", "add", dir, "--name", name)
 	return dir
 }
@@ -93,7 +93,7 @@ type fakeTrash struct {
 	took   []string
 }
 
-func (b *fakeTrash) Trash(path string) error {
+func (b *fakeTrash) MoveToTrash(path string) error {
 	if b.refuse != nil {
 		return fmt.Errorf("%s: %w", path, b.refuse)
 	}

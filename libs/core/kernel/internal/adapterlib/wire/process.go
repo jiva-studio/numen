@@ -38,7 +38,7 @@ func describeUnixMilli(instant time.Time) int64 {
 }
 
 func describeHolder(holder plugin.Holder) *v1.PluginLeaseHolder {
-	return &v1.PluginLeaseHolder{Who: holder.Who, Why: holder.Why}
+	return &v1.PluginLeaseHolder{Requester: holder.Who, Reason: holder.Why}
 }
 
 func describeHolders(holders []plugin.Holder) []*v1.PluginLeaseHolder {

@@ -4,6 +4,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import type { ThemeService } from '@numen/protocol'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 import { THEME_MODE, THEME_ORIGIN, type ThemeModeCode, type ThemeOriginCode } from '../clients'
 
 /** Which half of a `light-dark()` pair every token is read as. */
@@ -52,8 +53,8 @@ export type ThemeRpc = Pick<
 export interface ThemeClient {
   getAppearance(): Promise<ThemeAppearance>
   readTheme(name: string): Promise<string>
-  /** Writes the theme and the mode chosen, and answers why they were not written; empty where they were. */
-  writeAppearance(name: string, mode: ThemeMode): Promise<string>
+  /** Writes the theme and the mode chosen, and answers why they were not written. */
+  writeAppearance(name: string, mode: ThemeMode): Promise<Result<void, Failure<'notWritten'>>>
   /**
    * The names of themes changed in the user's folder, and of plugin themes that appeared or vanished
    * with the enabled plugins, until the signal aborts. A theme whose file was deleted is included.
@@ -104,7 +105,7 @@ export function createThemeClient(rpc: ThemeRpc): ThemeClient {
           pluginId: one.pluginId,
           isPinned: one.isPinned,
         })),
-        applied: answer.applied,
+        applied: answer.appliedTheme,
         mode: WORDED[answer.mode] ?? 'system',
         sizes: { interfaceScale: answer.interfaceScale, textScale: answer.textScale },
         bounds: {
@@ -114,8 +115,11 @@ export function createThemeClient(rpc: ThemeRpc): ThemeClient {
       }
     },
     readTheme: async (name) => (await rpc.readTheme({ name })).css,
-    writeAppearance: async (name, mode) =>
-      (await rpc.writeAppearance({ name, mode: CODES[mode] })).error,
+    writeAppearance: async (name, mode) => {
+      const { error } = await rpc.writeAppearance({ name, mode: CODES[mode] })
+      if (error === '') return asValue(undefined)
+      return asFailure({ error: 'notWritten', message: error })
+    },
     watchThemes: async function* (signal) {
       for await (const update of rpc.watchThemes({}, { signal })) yield update.names
     },

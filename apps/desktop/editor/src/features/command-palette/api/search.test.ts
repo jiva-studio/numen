@@ -22,9 +22,9 @@ beforeEach(() => {
 
 describe('a name searched for', () => {
   it('is requested for with the words typed, as many as the window shows', async () => {
-    search.searchNames.mockResolvedValue({ found: [] })
+    search.searchNames.mockResolvedValue({ matches: [] })
 
-    await searchCore.names('lla', 8)
+    await searchCore.searchNames('lla', 8)
 
     expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({
       query: 'lla',
@@ -35,7 +35,7 @@ describe('a name searched for', () => {
 
   it('carries the note and the heading it was found at', async () => {
     search.searchNames.mockResolvedValue({
-      found: [
+      matches: [
         {
           note: { path: 'Llama.md', title: 'Llama' },
           heading: { text: 'Diet', line: 4 },
@@ -44,15 +44,15 @@ describe('a name searched for', () => {
       ],
     })
 
-    expect(await searchCore.names('lla', 8)).toMatchObject([
+    expect(await searchCore.searchNames('lla', 8)).toMatchObject([
       { path: 'Llama.md', title: 'Llama', heading: 'Diet', line: 4 },
     ])
   })
 
   it('is at no note and no heading where the answer names neither', async () => {
-    search.searchNames.mockResolvedValue({ found: [{ ranges: [] }] })
+    search.searchNames.mockResolvedValue({ matches: [{ ranges: [] }] })
 
-    expect(await searchCore.names('lla', 8)).toMatchObject([
+    expect(await searchCore.searchNames('lla', 8)).toMatchObject([
       { path: '', title: '', heading: '', line: -1 },
     ])
   })
@@ -60,7 +60,7 @@ describe('a name searched for', () => {
 
 describe('a passage searched for', () => {
   it('is requested for in the mode chosen', async () => {
-    search.searchText.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ results: [] })
 
     await searchCore.search('grass', 'meaning', 8)
 
@@ -74,7 +74,7 @@ describe('a passage searched for', () => {
 
   it('starts where its run of text starts, as long as that run', async () => {
     search.searchText.mockResolvedValue({
-      found: [
+      results: [
         {
           path: 'Llama.md',
           note: { title: 'Llama' },
@@ -93,7 +93,7 @@ describe('a passage searched for', () => {
 
   it('is untitled and empty where the answer names no note and no run', async () => {
     search.searchText.mockResolvedValue({
-      found: [
+      results: [
         {
           path: 'library/book.epub',
           text: 'grass',
@@ -141,21 +141,21 @@ describe('a passage searched for', () => {
 describe('the kind of a note found by name', () => {
   it('is an ordinary note where the answer carries no kind at all', async () => {
     search.searchNames.mockResolvedValue({
-      found: [{ note: { path: 'Entropy.md', title: 'Entropy' }, ranges: [] }],
+      matches: [{ note: { path: 'Entropy.md', title: 'Entropy' }, ranges: [] }],
     })
-    expect((await searchCore.names('ent', 8))[0]?.type).toBe('note')
+    expect((await searchCore.searchNames('ent', 8))[0]?.type).toBe('note')
   })
 
   it('is drawn as whichever of four the answer names', async () => {
     search.searchNames.mockResolvedValue({
-      found: [
+      matches: [
         { note: { path: 'Ants.md', title: 'Ants' }, ranges: [], type: '' },
         { note: { path: 'Animals.md', title: 'Animals' }, ranges: [], type: 'sample' },
         { note: { path: 'Animal.md', title: 'Animal' }, ranges: [], type: 'form' },
         { note: { path: 'Daily.md', title: 'Daily' }, ranges: [], type: 'sheet' },
       ],
     })
-    expect((await searchCore.names('an', 8)).map((one) => one.type)).toEqual([
+    expect((await searchCore.searchNames('an', 8)).map((one) => one.type)).toEqual([
       'note',
       'sample',
       'form',
@@ -165,16 +165,16 @@ describe('the kind of a note found by name', () => {
 
   it('is the type a plugin declares as the answer names it', async () => {
     search.searchNames.mockResolvedValue({
-      found: [{ note: { path: 'Later.md', title: 'Later' }, ranges: [], type: 'later' }],
+      matches: [{ note: { path: 'Later.md', title: 'Later' }, ranges: [], type: 'later' }],
     })
-    expect((await searchCore.names('la', 8))[0]?.type).toBe('later')
+    expect((await searchCore.searchNames('la', 8))[0]?.type).toBe('later')
   })
 })
 
 describe('the kind of a passage', () => {
   it('is the kind of the note it was read out of', async () => {
     search.searchText.mockResolvedValue({
-      found: [
+      results: [
         {
           path: 'Daily.md',
           note: { path: 'Daily.md', title: 'Daily' },
@@ -191,7 +191,7 @@ describe('the kind of a passage', () => {
 
   it('is no note at all where the answer names none', async () => {
     search.searchText.mockResolvedValue({
-      found: [{ path: 'library/mahabharata.epub', text: 'war', matchRanges: [] }],
+      results: [{ path: 'library/mahabharata.epub', text: 'war', matchRanges: [] }],
     })
     const found = await searchCore.search('war', 'words', 8)
     expect(found[0]?.isNote).toBe(false)
@@ -218,7 +218,7 @@ describe('a passage search the window aborts', () => {
   })
 
   it('is not cancelled once the core has answered it', async () => {
-    search.searchText.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ results: [] })
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
@@ -230,7 +230,7 @@ describe('a passage search the window aborts', () => {
   })
 
   it('sends a new search id with each search', async () => {
-    search.searchText.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ results: [] })
 
     await searchCore.search('seeds', 'meaning', 8, new AbortController().signal)
     await searchCore.search('seeds', 'words', 8, new AbortController().signal)
@@ -248,7 +248,7 @@ describe('a name search the window aborts', () => {
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
-    const answer = searchCore.names('lla', 8, asking.signal)
+    const answer = searchCore.searchNames('lla', 8, asking.signal)
     await vi.waitFor(() => expect(search.searchNames).toHaveBeenCalled())
     asking.abort()
     await expect(answer).rejects.toThrow()
@@ -261,10 +261,10 @@ describe('a name search the window aborts', () => {
   })
 
   it('is not cancelled once the core has answered it', async () => {
-    search.searchNames.mockResolvedValue({ found: [] })
+    search.searchNames.mockResolvedValue({ matches: [] })
     const asking = new AbortController()
 
-    await searchCore.names('lla', 8, asking.signal)
+    await searchCore.searchNames('lla', 8, asking.signal)
     asking.abort()
 
     expect(search.cancelSearch).not.toHaveBeenCalled()
@@ -279,7 +279,7 @@ describe('the three questions of a query the window aborts', () => {
     const asking = new AbortController()
 
     const answers = [
-      searchCore.names('seeds', 8, asking.signal),
+      searchCore.searchNames('seeds', 8, asking.signal),
       searchCore.search('seeds', 'words', 8, asking.signal),
       searchCore.search('seeds', 'meaning', 8, asking.signal),
     ]

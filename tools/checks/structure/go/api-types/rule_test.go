@@ -597,7 +597,7 @@ func checkPluginAPITypes(t *testing.T) {
 			modules = append(modules, rel)
 		}
 	}
-	workspace := load.Workspace(t, modules...)
+	workspace := load.LoadWorkspace(t, modules...)
 	var pkgs []*packages.Package
 	for _, rel := range modules {
 		pkgs = append(pkgs, load.GetModulePackages(t, workspace, rel)...)

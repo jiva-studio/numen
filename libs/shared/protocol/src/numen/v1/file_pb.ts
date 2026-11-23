@@ -19,7 +19,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5In8KBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSDwoHaXNfbm90ZRgGIAEoCBIMCgR0eXBlGAUgASgJEhAKCHRhYl9raW5kGAcgASgJEhYKDm1vZGlmaWVkX2F0X21zGAggASgDIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kInYKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJEisKCnByb3BlcnRpZXMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRhYl9raW5kGAcgASgJIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIoUBChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIQggKBl9tb3ZlZCJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiIQoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSITChFFbXB0eVRyYXNoUmVxdWVzdCInChJFbXB0eVRyYXNoUmVzcG9uc2USEQoJdW5kZWxldGVkGAEgAygJInYKElJlbW92ZUZpbGVSZXNwb25zZRIPCgd0cmFzaGVkGAEgASgJEhAKCGRhbmdsaW5nGAIgAygJEiIKBWVycm9yGAMgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAQgASgIIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSI6ChRDcmVhdGVGb2xkZXJSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTLJAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEkcKCkVtcHR5VHJhc2gSGy5udW1lbi52MS5FbXB0eVRyYXNoUmVxdWVzdBocLm51bWVuLnYxLkVtcHR5VHJhc2hSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IoEBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kInYKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJEisKCnByb3BlcnRpZXMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRhYl9raW5kGAcgASgJIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIpEBChBNb3ZlRmlsZVJlc3BvbnNlEi4KC21vdmVfcmVzdWx0GAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIQg4KDF9tb3ZlX3Jlc3VsdCJWCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSFgoOcmVwYWlyZWRfbm90ZXMYAyADKAkSFgoOZGFuZ2xpbmdfbm90ZXMYBCADKAkiIQoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSITChFFbXB0eVRyYXNoUmVxdWVzdCIqChJFbXB0eVRyYXNoUmVzcG9uc2USFAoMZmFpbGVkX3BhdGhzGAEgAygJIn8KElJlbW92ZUZpbGVSZXNwb25zZRISCgp0cmFzaF9wYXRoGAEgASgJEhYKDmRhbmdsaW5nX25vdGVzGAIgAygJEiIKBWVycm9yGAMgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAQgASgIIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSI6ChRDcmVhdGVGb2xkZXJSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTLJAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEkcKCkVtcHR5VHJhc2gSGy5udW1lbi52MS5FbXB0eVRyYXNoUmVxdWVzdBocLm51bWVuLnYxLkVtcHR5VHJhc2hSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -117,9 +117,9 @@ export type Entry = Message<"numen.v1.Entry"> & {
    * When the file or folder was last modified, in milliseconds since the Unix
    * epoch. 0 where the vault does not know it.
    *
-   * @generated from field: int64 modified_at_ms = 8;
+   * @generated from field: int64 modified_unix_ms = 8;
    */
-  modifiedAtMs: bigint;
+  modifiedUnixMs: bigint;
 };
 
 /**
@@ -134,7 +134,7 @@ export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
  */
 export type ListFileKindsRequest = Message<"numen.v1.ListFileKindsRequest"> & {
   /**
-   * The paths to answer about, as the vault files them. More than the vault
+   * The paths to answer about, as the vault files them.
    *
    * @generated from field: repeated string paths = 1;
    */
@@ -249,9 +249,9 @@ export type MoveFileResponse = Message<"numen.v1.MoveFileResponse"> & {
   /**
    * What the file did. Absent when nothing was moved.
    *
-   * @generated from field: optional numen.v1.MoveResult moved = 1;
+   * @generated from field: optional numen.v1.MoveResult move_result = 1;
    */
-  moved?: MoveResult | undefined;
+  moveResult?: MoveResult | undefined;
 
   /**
    * Set when nothing was moved, and why.
@@ -301,9 +301,9 @@ export type MoveResult = Message<"numen.v1.MoveResult"> & {
   /**
    * The notes whose link stopped resolving and was written again, by name.
    *
-   * @generated from field: repeated string repaired = 3;
+   * @generated from field: repeated string repaired_notes = 3;
    */
-  repaired: string[];
+  repairedNotes: string[];
 
   /**
    * The notes whose link stopped resolving and could not be written again, by
@@ -311,9 +311,9 @@ export type MoveResult = Message<"numen.v1.MoveResult"> & {
    * returns to it: a move that reports only what it repaired reports a
    * vault it did not leave behind.
    *
-   * @generated from field: repeated string dangling = 4;
+   * @generated from field: repeated string dangling_notes = 4;
    */
-  dangling: string[];
+  danglingNotes: string[];
 };
 
 /**
@@ -362,9 +362,9 @@ export type EmptyTrashResponse = Message<"numen.v1.EmptyTrashResponse"> & {
   /**
    * The paths in the trash that could not be deleted. Empty when all went.
    *
-   * @generated from field: repeated string undeleted = 1;
+   * @generated from field: repeated string failed_paths = 1;
    */
-  undeleted: string[];
+  failedPaths: string[];
 };
 
 /**
@@ -381,16 +381,16 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   /**
    * and when nothing was removed.
    *
-   * @generated from field: string trashed = 1;
+   * @generated from field: string trash_path = 1;
    */
-  trashed: string;
+  trashPath: string;
 
   /**
    * The notes whose links pointed at what was removed and now reach nothing.
    *
-   * @generated from field: repeated string dangling = 2;
+   * @generated from field: repeated string dangling_notes = 2;
    */
-  dangling: string[];
+  danglingNotes: string[];
 
   /**
    * Set when nothing was removed, and why.

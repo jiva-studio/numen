@@ -7,7 +7,9 @@
 import {
   createPluginLoader,
   createWindowHost,
+  createFrameRuntimeLoader,
   createWindowFrameControls,
+  openExternalUrl,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
@@ -35,24 +37,26 @@ import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
 
 /** What the window is given: how a plugin module is fetched and imported. */
-export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
+export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'importModule'>
 
 export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const clients = createWindowClients(transport)
   const listPlugins = createPluginLister(clients.pluginService)
-  const notices = createNoticeQueue()
+  const noticeQueue = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(createWindowFrameControls())
+  const frameRuntime = createFrameRuntimeLoader()
+  const frame = useWindowFrame(createWindowFrameControls(frameRuntime))
   const { vaults, isListing } = useVaults(createVaultLister(clients.vaultsService), (text) =>
-    notices.show(WINDOW_SOURCE, text, 'error'),
+    noticeQueue.show(WINDOW_SOURCE, text, 'error'),
   )
-  const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), notices)
+  const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), noticeQueue)
   const { getSlotLayout } = useSlotLayouts(clients.settingsService)
-  const { host, mountView, titleBarView } = createShellHost({
+  const { host, styles, mountView, titleBarView } = createShellHost({
+    openExternal: (href) => openExternalUrl(href, frameRuntime),
     relations: createWindowRelations(clients.notes),
     getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
-    notices,
+    notices: noticeQueue,
     getPlatform: () => frame.platform.value,
     getSlotLayout,
     services: {
@@ -63,27 +67,28 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
         openTab: tabs.openTab,
       }),
       window: createWindowHost(frame, (error) =>
-        notices.show(WINDOW_SOURCE, formatError(error), 'error'),
+        noticeQueue.show(WINDOW_SOURCE, formatError(error), 'error'),
       ),
       backgroundTasks,
     },
   })
   const loader = createPluginLoader({
     host,
+    styles,
     ...deps,
   })
   const start = useAppStart(listPlugins, loader)
   useWindowKeys({ tabs, vaults })
-  const appearance = useAppearance({ themes: createThemes(clients.theme), listPlugins }, notices)
+  const appearance = useAppearance({ themes: createThemes(clients.theme), listPlugins }, noticeQueue)
 
-  usePluginStyles(() => tabs.frontPlugins.value)
+  usePluginStyles(styles, () => tabs.frontPlugins.value)
 
   return {
     tabs,
     vaults: { list: vaults, isListing },
     plugins: start,
-    titleBarView,
-    notices,
+    views: { titleBar: titleBarView, styles },
+    notices: noticeQueue,
     backgroundTasks,
     mountView,
     appearance,

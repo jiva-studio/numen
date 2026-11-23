@@ -45,10 +45,10 @@ func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 	return &Transaction{Tx: tx, ready: map[string]*sql.Stmt{}}, nil
 }
 
-// InTransaction begins a write transaction, calls run, and commits it. A run
+// RunInTransaction begins a write transaction, calls run, and commits it. A run
 // that fails rolls the transaction back and returns its error, joined with the
 // rollback error when the rollback itself failed.
-func InTransaction(ctx context.Context, db *sql.DB, run func(tx *Transaction) error) error {
+func RunInTransaction(ctx context.Context, db *sql.DB, run func(tx *Transaction) error) error {
 	tx, err := Begin(ctx, db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -85,9 +85,9 @@ type Transaction struct {
 }
 
 // ExecContext, QueryContext and QueryRowContext start a statement only while
-// ctx is live and then run it to its end. See Uninterrupted.
+// ctx is live and then run it to its end. See DetachCancel.
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	ctx, err := Uninterrupted(ctx)
+	ctx, err := DetachCancel(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any
 }
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	ctx, err := Uninterrupted(ctx)
+	ctx, err := DetachCancel(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (t *Transaction) QueryContext(ctx context.Context, query string, args ...an
 // transaction itself, so the error is returned to the caller: a row carries the error
 // and there is no other channel for it.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	ctx, err := Uninterrupted(ctx)
+	ctx, err := DetachCancel(ctx)
 	if err != nil {
 		return t.Tx.QueryRowContext(ctx, query, args...)
 	}
@@ -123,12 +123,12 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 	return row
 }
 
-// Uninterrupted returns ctx with its error when ctx is done, otherwise a context not canceled while the statement runs.
+// DetachCancel returns ctx with its error when ctx is done, otherwise a context not canceled while the statement runs.
 // The driver answers cancellation by interrupting the connection, and an
 // interrupted prepare in the vec0 table leaves a nil statement that it then
 // clears, which ends the process. A write transaction still rolls back on
 // cancellation, between statements.
-func Uninterrupted(ctx context.Context) (context.Context, error) {
+func DetachCancel(ctx context.Context) (context.Context, error) {
 	if err := ctx.Err(); err != nil {
 		return ctx, err
 	}

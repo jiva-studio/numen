@@ -21,12 +21,12 @@ type config struct {
 	isAsync        bool
 	isDiskEnabled  bool
 	clock          Clock
-	onError        func(error)
+	handleError    func(error)
 }
 
 // WithErrorHandler sets the function that receives background and disk persistence errors.
 func WithErrorHandler(handler func(error)) Option {
-	return func(c *config) { c.onError = handler }
+	return func(c *config) { c.handleError = handler }
 }
 
 // WithDir sets an explicit directory for disk cache files.
@@ -92,7 +92,7 @@ type Cache[V any] struct {
 	isAsync        bool
 	isDiskEnabled  bool
 	clock          Clock
-	onError        func(error)
+	handleError    func(error)
 	entries        map[string]entry[V]
 	failed         map[string]bool
 	failedAt       map[string]time.Time
@@ -119,7 +119,7 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 		isAsync:        cfg.isAsync,
 		isDiskEnabled:  cfg.isDiskEnabled,
 		clock:          cfg.clock,
-		onError:        cfg.onError,
+		handleError:    cfg.handleError,
 		entries:        make(map[string]entry[V]),
 		failed:         make(map[string]bool),
 		failedAt:       make(map[string]time.Time),
@@ -406,7 +406,7 @@ func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V]
 }
 
 func (c *Cache[V]) reportError(err error) {
-	if c.onError != nil {
-		c.onError(err)
+	if c.handleError != nil {
+		c.handleError(err)
 	}
 }

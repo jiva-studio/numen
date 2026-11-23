@@ -20,7 +20,7 @@ export interface TabLinkingDeps {
 
 export function createTabLinking(deps: TabLinkingDeps) {
   const { windowId, writeTabLinks, writeMessage } = deps
-  const reports = createTabReports({
+  const tabReports = createTabReports({
     writeTabLinks,
     windowId,
     getReport: () => getWindowReport(deps.windowTabs, deps.isMain),
@@ -30,8 +30,8 @@ export function createTabLinking(deps: TabLinkingDeps) {
   // The core ignores a link to a tab it has no report of, so a link or unlink waits for the
   // pending tab reports.
   const tabLinks = useTabLinks({
-    write: (change) => reports.waitForReports().then(() => writeTabLinks(windowId, change)),
+    write: (change) => tabReports.waitForReports().then(() => writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
-  return { tabLinks, reports }
+  return { tabLinks, reports: tabReports }
 }

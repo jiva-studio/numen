@@ -16,7 +16,7 @@ const (
 	mostDepth = 32
 )
 
-func (d *document) outline(starts []int) []Part {
+func (d *document) buildOutline(starts []int) []Part {
 	w := &outlineWalk{doc: d, starts: starts, parts: nil, bookmarks: map[references.FPDF_BOOKMARK]bool{}}
 	w.walk(nil, 1)
 	return w.parts
@@ -101,7 +101,7 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 	})
 	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL,BRANCH_IF reason="destination lookup requires both successful call and present destination"
 	if err == nil && dest.Dest != nil {
-		return d.pageOf(*dest.Dest)
+		return d.findPage(*dest.Dest)
 	}
 
 	action, err := d.worker.FPDFBookmark_GetAction(&requests.FPDFBookmark_GetAction{Bookmark: bookmark})
@@ -123,10 +123,10 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 	if err != nil || within.Dest == nil {
 		return 0, false
 	}
-	return d.pageOf(*within.Dest)
+	return d.findPage(*within.Dest)
 }
 
-func (d *document) pageOf(dest references.FPDF_DEST) (int, bool) {
+func (d *document) findPage(dest references.FPDF_DEST) (int, bool) {
 	pos, err := d.worker.FPDFDest_GetDestPageIndex(&requests.FPDFDest_GetDestPageIndex{
 		Document: d.ref, Dest: dest,
 	})

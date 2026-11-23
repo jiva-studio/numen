@@ -32,8 +32,8 @@ func newFollowedVault(t *testing.T, files map[string][]byte) followedVault {
 }
 
 func (f followedVault) add(name string, raw []byte) {
-	f.texts.File(name, raw)
-	f.vault.File(name, string(raw))
+	f.texts.WriteFile(name, raw)
+	f.vault.WriteFile(name, string(raw))
 }
 
 func (f followedVault) newFollower(t *testing.T) *Follower {
@@ -103,7 +103,7 @@ func TestABatchOfBooksAppliedTwiceMakesOneText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.vault.Store().File(CursorFile, content)
+	f.vault.Store().WriteFile(CursorFile, content)
 	follow(t, follower)
 
 	if got := f.texts.TakeChanges(); len(got) != 0 {

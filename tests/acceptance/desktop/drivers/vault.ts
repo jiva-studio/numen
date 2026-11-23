@@ -367,11 +367,11 @@ const parseLinkRows = (
       `the table must have the header "| ${required.join(' | ')} |", and may add "${optional.join(', ')}"`,
     )
   }
-  const cell = (row: readonly string[], column: string): string => row[header.indexOf(column)] ?? ''
+  const readCell = (row: readonly string[], column: string): string => row[header.indexOf(column)] ?? ''
   return body.map((row) => ({
-    from: cell(row, 'from'),
-    to: cell(row, 'to'),
-    role: cell(row, 'role'),
-    description: cell(row, 'description'),
+    from: readCell(row, 'from'),
+    to: readCell(row, 'to'),
+    role: readCell(row, 'role'),
+    description: readCell(row, 'description'),
   }))
 }

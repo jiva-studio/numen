@@ -38,7 +38,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
 
   let answer: Curve
   try {
-    answer = await core.curve(path, settings)
+    answer = await core.getCurve(path, settings)
   } catch {
     // The window states what failed; the error returned by the call adds nothing the user can act on.
     if (!mine.isCurrent) return

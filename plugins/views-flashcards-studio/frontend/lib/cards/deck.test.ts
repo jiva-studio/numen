@@ -325,11 +325,11 @@ describe('grid', () => {
 
 describe('DECK_WORDS', () => {
   it('names the card model a card is waiting for', () => {
-    expect(DECK_WORDS.unknown('Gone')).toBe('No card model called Gone')
+    expect(DECK_WORDS.describeUnknown('Gone')).toBe('No card model called Gone')
   })
 
   it('says of a card cut by nothing that nothing cut it', () => {
-    expect(DECK_WORDS.unknown(null)).toBe('Cut by no card model')
+    expect(DECK_WORDS.describeUnknown(null)).toBe('Cut by no card model')
   })
 })
 

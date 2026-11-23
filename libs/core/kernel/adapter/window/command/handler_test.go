@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"path"
 	"slices"
@@ -65,7 +66,7 @@ func (p pluginCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.
 
 func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequest) *v1.RunPluginCommandResponse {
 	t.Helper()
-	res, err := newHandler(newUseCases(commands, commands, fileTypes{".md": "text/markdown"}, nil, nil)).RunPluginCommand(t.Context(), connect.NewRequest(request))
+	res, err := newHandler(newUseCases(commands, commands, fileTypes{".md": "text/markdown"}, nil)).RunPluginCommand(t.Context(), connect.NewRequest(request))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 }
 
 func TestListCommands_ListsTheCommandsWithTheirCondition(t *testing.T) {
-	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListCommands(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +93,7 @@ func TestListCommands_ListsTheCommandsWithTheirCondition(t *testing.T) {
 }
 
 func TestListContentTypes_ListsTheContentTypesByExtension(t *testing.T) {
-	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListContentTypes(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListContentTypes(
 		t.Context(), connect.NewRequest(&v1.ListContentTypesRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -132,6 +133,10 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 			pluginCommands{err: &plugin.UnavailableError{PluginID: "org.example.sample", Reason: plugin.Failed}}, valid,
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
 		},
+		"a failure the core does not name": {
+			pluginCommands{err: errors.New("open /home/user/key: denied")}, valid,
+			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the command failed",
+		},
 	}
 	for name, one := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -166,7 +171,7 @@ func (f fileTypes) GetContentType(name string) domain.ContentType {
 func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 	var out []string
 	for extension, one := range f {
-		if mask.Matches(one) {
+		if mask.IsMatch(one) {
 			out = append(out, extension[1:])
 		}
 	}
@@ -174,7 +179,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 }
 
 func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
-	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil, nil)).ListCommands(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -195,7 +200,7 @@ func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
 }
 
 func TestListCommands_CarriesTheConfirmationAManifestDeclares(t *testing.T) {
-	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil, nil)).ListCommands(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)

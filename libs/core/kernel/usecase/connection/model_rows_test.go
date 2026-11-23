@@ -31,10 +31,10 @@ func TestAPreferredRowIsAskedFirstWithItsOptions(t *testing.T) {
 	if err != nil || text != "answer from "+addressTwo {
 		t.Fatalf("Complete = %q, %v, want the answer of the second row", text, err)
 	}
-	if len(s.world.Provider.CallsTo(addressOne)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressOne)) != 0 {
 		t.Error("the first row was asked before the preferred one")
 	}
-	got := s.world.Provider.CallsTo(addressTwo)[0].Call.Options
+	got := s.world.Provider.ListCallsTo(addressTwo)[0].Call.Options
 	if got["model"] != "model-three" || got["reasoning"] != "high" {
 		t.Errorf("options = %v, want the preferred ones", got)
 	}
@@ -49,7 +49,7 @@ func TestTheRowsAfterAPreferredRowThatFailsAreAskedInOrder(t *testing.T) {
 	if err != nil || text != "answer from "+addressOne {
 		t.Fatalf("Complete = %q, %v, want the answer of the first row", text, err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressTwo)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressTwo)); got != 1 {
 		t.Errorf("the preferred row was asked %d times, want once", got)
 	}
 }
@@ -63,7 +63,7 @@ func TestAPreferredConnectionOutsideTheRowsKeepsTheirOrder(t *testing.T) {
 	if err != nil || text != "answer from "+addressOne {
 		t.Fatalf("Complete = %q, %v, want the answer of the first row", text, err)
 	}
-	if len(s.world.Provider.CallsTo("https://three.test/v1")) != 0 {
+	if len(s.world.Provider.ListCallsTo("https://three.test/v1")) != 0 {
 		t.Error("a connection that is not among the rows was called")
 	}
 }
@@ -82,7 +82,7 @@ func TestAnExclusiveRowThatFailsEndsTheCallWithItsFailure(t *testing.T) {
 	if !slices.Equal(failed.Failures, want) {
 		t.Errorf("failures = %v, want %v", failed.Failures, want)
 	}
-	if len(s.world.Provider.CallsTo(addressOne)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressOne)) != 0 {
 		t.Error("a row other than the exclusive one was asked")
 	}
 }
@@ -97,7 +97,7 @@ func TestAnExclusiveRowIsAskedWithItsOptions(t *testing.T) {
 	if err != nil || text != "answer from "+addressTwo {
 		t.Fatalf("Complete = %q, %v, want the answer of the second row", text, err)
 	}
-	if got := s.world.Provider.CallsTo(addressTwo)[0].Call.Options["model"]; got != "model-three" {
+	if got := s.world.Provider.ListCallsTo(addressTwo)[0].Call.Options["model"]; got != "model-three" {
 		t.Errorf("model = %q, want model-three", got)
 	}
 }
@@ -111,7 +111,7 @@ func TestAnExclusiveConnectionOutsideTheRowsGetsNoConnection(t *testing.T) {
 	if !errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Fatalf("err = %v, want ErrNoConnection", err)
 	}
-	if len(s.world.Provider.CallsTo(addressOne)) != 0 || len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressOne)) != 0 || len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("a row was asked for a connection that is not among the rows")
 	}
 }
@@ -140,7 +140,7 @@ func TestTheRowsAreListedWithTheirConnectionAndTheRowFieldsOfItsType(t *testing.
 func TestTheRowsListOmitsAConnectionThatCannotServeTheOperation(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
 	completer := s.world.Add(t, modelcalltest.CompleterTypeID, "Completer", "https://three.test/v1", "")
-	s.world.Rows.Set(consumerID, modelcalltest.ChatOperation, modelcalltest.Row(completer, "m"), modelcalltest.Row(s.one, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.ChatOperation, modelcalltest.CreateRow(completer, "m"), modelcalltest.CreateRow(s.one, "m"))
 
 	rows, err := newRows(s.world, &listedOptions{}).ListRows(consumerID, modelcalltest.ChatOperation)
 

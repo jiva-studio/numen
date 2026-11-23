@@ -53,12 +53,12 @@ func newTaskClient(t *testing.T, host *pluginhost.Host) numenv1connect.HostQueue
 	}
 	token := endpointOf(host.Management, workingPlugin).Token
 	return numenv1connect.NewHostQueueServiceClient(
-		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.AuthInterceptor(token)))
+		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func (w taskHost) reportTask(t *testing.T, id string, done, total int64) {
 	t.Helper()
-	_, err := w.client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{Id: id, Done: done, Total: total}}))
+	_, err := w.client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{Id: id, CompletedCount: done, TotalCount: total}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,8 +96,8 @@ func TestAnOpenTaskBlocksIdleEviction(t *testing.T) {
 
 func TestATaskEndedByItsReportAllowsIdleEviction(t *testing.T) {
 	for name, report := range map[string]*v1.Task{
-		"counted to its total": {Id: "scan.sample", Done: 5, Total: 5},
-		"failed":               {Id: "scan.sample", Done: 1, Total: 5, Error: "disk full"},
+		"counted to its total": {Id: "scan.sample", CompletedCount: 5, TotalCount: 5},
+		"failed":               {Id: "scan.sample", CompletedCount: 1, TotalCount: 5, FailureReason: "disk full"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newTaskHost(t)

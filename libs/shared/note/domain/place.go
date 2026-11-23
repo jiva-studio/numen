@@ -16,8 +16,8 @@ type ByteRange struct {
 	End   int
 }
 
-// Empty is a span naming no run at all.
-func (s ByteRange) Empty() bool { return s.End <= s.Start }
+// IsEmpty reports whether the span names no run at all.
+func (s ByteRange) IsEmpty() bool { return s.End <= s.Start }
 
 // Len is how many bytes the span covers.
 func (s ByteRange) Len() int { return s.End - s.Start }
@@ -29,8 +29,8 @@ type UnitRange struct {
 	End   int
 }
 
-// Empty is a span naming no run at all.
-func (s UnitRange) Empty() bool { return s.End <= s.Start }
+// IsEmpty reports whether the span names no run at all.
+func (s UnitRange) IsEmpty() bool { return s.End <= s.Start }
 
 // Len is how many code units the span covers.
 func (s UnitRange) Len() int { return s.End - s.Start }

@@ -108,13 +108,13 @@ func (r Run) walk(visit func(char, out, n int) bool) int {
 			return char
 		}
 		out += n
-		char += utf16Len(ch)
+		char += countUTF16Units(ch)
 		i += size
 	}
 	return char
 }
 
-func utf16Len(ch rune) int {
+func countUTF16Units(ch rune) int {
 	if ch >= 0x10000 {
 		return 2
 	}

@@ -30,7 +30,7 @@ func getProfiles() map[domain.NoteType]domain.NoteProfile {
 }
 
 func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
-	cutNotes := chunking.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+	cutNotes := chunking.CutNotes{FindProfile: func(t domain.NoteType) (domain.NoteProfile, bool) {
 		profile, declared := getProfiles()[t]
 		return profile, declared
 	}}

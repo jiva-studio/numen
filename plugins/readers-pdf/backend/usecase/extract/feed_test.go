@@ -75,7 +75,7 @@ func TestABatchAppliedTwiceMakesOneTextLayer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.Vault.Store().File(extract.CursorFile, content)
+	f.Vault.Store().WriteFile(extract.CursorFile, content)
 	follow(t, follower)
 
 	if got := f.Texts.TakeChanges(); len(got) != 0 {

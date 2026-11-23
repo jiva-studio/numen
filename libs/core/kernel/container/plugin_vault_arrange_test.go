@@ -57,7 +57,7 @@ func readVaultFile(t *testing.T, v domain.Vault, path string) (string, bool) {
 
 func getLinkTargets(t *testing.T, shared *vaultapi.Access, from string) []string {
 	t.Helper()
-	links, err := shared.Links.GetLinks(t.Context(), from)
+	links, err := shared.Links.ListLinks(t.Context(), from)
 	if err != nil {
 		t.Fatalf("links of %s: %v", from, err)
 	}

@@ -3,7 +3,7 @@
  * panes, and the kinds that can open one.
  */
 import { ref, shallowRef, type EffectScope, type Ref, type ShallowRef } from 'vue'
-import { openTab, pane } from '@numen/workbench'
+import { openTab, createPane } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { AnyTabKind, WindowTab } from '../lib/kinds'
 import { browserTabIds, type TabIds } from '../api/tabIds'
@@ -37,7 +37,7 @@ export function createTabStore(
   }
   return {
     open: shallowRef<ReadonlyMap<string, WindowTab>>(new Map()),
-    layout: ref<Workspace>({ root: pane('main', []), axis: 'horizontal', focus: 'main' }),
+    layout: ref<Workspace>({ root: createPane('main', []), axis: 'horizontal', focus: 'main' }),
     byKind: shallowRef<ReadonlyMap<string, AnyTabKind>>(new Map()),
     scopes,
     drop,

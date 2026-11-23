@@ -12,21 +12,18 @@ import (
 // FrontendPlugins lists the plugins for the window and locates their frontend files.
 type FrontendPlugins struct {
 	numenv1connect.UnimplementedPluginServiceHandler
-	getIDs    func() []string
-	directory func(string) (string, bool)
+	getIDs       func() []string
+	getPluginDir func(string) (string, bool)
 }
 
-func NewFrontendPlugins(getIDs func() []string, directory func(string) (string, bool)) FrontendPlugins {
-	return FrontendPlugins{getIDs: getIDs, directory: directory}
+func NewFrontendPlugins(getIDs func() []string, getPluginDir func(string) (string, bool)) FrontendPlugins {
+	return FrontendPlugins{getIDs: getIDs, getPluginDir: getPluginDir}
 }
 
-func (l FrontendPlugins) GetPlugins(
-	context.Context, *connect.Request[v1.GetPluginsRequest],
-) (*connect.Response[v1.GetPluginsResponse], error) {
-	out := &v1.GetPluginsResponse{}
-	if l.getIDs == nil {
-		return connect.NewResponse(out), nil
-	}
+func (l FrontendPlugins) ListPlugins(
+	context.Context, *connect.Request[v1.ListPluginsRequest],
+) (*connect.Response[v1.ListPluginsResponse], error) {
+	out := &v1.ListPluginsResponse{}
 	for _, id := range l.getIDs() {
 		out.Plugins = append(out.Plugins, &v1.PluginInfo{Id: id})
 	}

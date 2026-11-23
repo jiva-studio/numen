@@ -16,20 +16,20 @@ var pages embed.FS
 
 func getPolicy() string { return csp.Sources{Images: []string{"data:"}}.Policy() }
 
-// Pages is the interface itself, built by `make interface` and embedded in the
+// CreatePagesHandler is the interface itself, built by `make interface` and embedded in the
 // binary. A binary built without it reports that.
-func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
+func CreatePagesHandler() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // NewHandler is everything this window answers: the window itself, its themes, the calls its plugin
 // views make through their connections, the list of vaults, where the links of a text land, its
 // plugins and the files of their frontends, the services they serve, and the files the page is made
-// of. A window given no ConnectionCalls answers each such call as unimplemented.
+// of. A window given no ConnectionCalls, Vaults or ResolveLinks answers each such call as unimplemented.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(a.Frontends)
 	callsRoute, calls := numenv1connect.NewConnectionCallServiceHandler(a.getConnectionCalls())
-	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
-	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks})
+	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(a.getVaults())
+	notesRoute, notes := numenv1connect.NewNoteServiceHandler(a.getNotes())
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
 	if a.Themes != nil {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)
@@ -49,6 +49,20 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	})
 }
 
+func (a *API) getVaults() numenv1connect.VaultsServiceHandler {
+	if a.Vaults == nil {
+		return numenv1connect.UnimplementedVaultsServiceHandler{}
+	}
+	return vaultList{list: a.Vaults.Execute}
+}
+
+func (a *API) getNotes() numenv1connect.NoteServiceHandler {
+	if a.ResolveLinks == nil {
+		return numenv1connect.UnimplementedNoteServiceHandler{}
+	}
+	return noteLinks{resolve: a.ResolveLinks}
+}
+
 func (a *API) getConnectionCalls() numenv1connect.ConnectionCallServiceHandler {
 	if a.ConnectionCalls == nil {
 		return numenv1connect.UnimplementedConnectionCallServiceHandler{}
@@ -66,10 +80,10 @@ func (a *API) serveOther(w http.ResponseWriter, r *http.Request, files http.Hand
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		// The shell runs no plugin backend: the route serves only the files of a plugin folder.
-		if !wire.ServePluginFile(w, r, a.Frontends.directory) {
+		if !wire.ServePluginFile(w, r, a.Frontends.getPluginDir) {
 			http.Error(w, "plugin file not found", http.StatusNotFound)
 		}
-	case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
+	case a.PluginServices != nil && a.PluginServices.CanServe(r.URL.Path):
 		a.PluginServices.ServeHTTP(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, a.Themes, files)

@@ -19,7 +19,7 @@ type LifecycleClient struct {
 
 // NewLifecycleClient returns a client that presents token on every call, as the host does.
 func NewLifecycleClient(httpClient *http.Client, baseURL, token string) *LifecycleClient {
-	rpc := numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)))
+	rpc := numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.NewBearer(token)))
 	return &LifecycleClient{rpc: rpc}
 }
 

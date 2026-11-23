@@ -58,7 +58,7 @@ When('the person opens the file at {string}', async ({ person }, filePath: strin
 })
 
 When('the person plays the recording in the {tab} {reference} {string}', async ({ person }, kind: TabKindChoice, reference: string, name: string) => {
-  await person.tab.playRecording(kind, reference, name)
+  await person.tab.pressPlay(kind, reference, name)
 })
 
 Then('the recording in the {tab} {reference} {string} is playing', async ({ person }, kind: TabKindChoice, reference: string, name: string) => {

@@ -104,11 +104,11 @@ func (c Card) Value(field string) (string, bool) {
 	return "", false
 }
 
-// Card is the card with the given card id. A deck holding none of that card id
+// FindCard is the card with the given card id. A deck holding none of that card id
 // yields ErrNoSuchCard, and a deck holding two yields ErrTwoCards: both are
 // reported, and choosing automatically between them would guess which one the
 // author meant.
-func (d Deck) Card(carried ID) (Card, error) {
+func (d Deck) FindCard(carried ID) (Card, error) {
 	found := Card{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial found Card is overwritten before Card returns on success."
 		Heading: "", CardID: "", CardModelLink: "", Preamble: "", Section: 0, Values: nil,

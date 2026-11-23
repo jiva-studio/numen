@@ -14,7 +14,7 @@ export interface MenuProps {
   asking?: number
   margin?: number
   to?: string | HTMLElement
-  clock?: () => number
+  getTime?: () => number
   name?: string
 }
 

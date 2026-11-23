@@ -59,10 +59,10 @@ func newRunCallers(t *testing.T) (*callers, queriedVaults) {
 func newCallersRunning(run searchqueryusecase.RunQuery) *callers {
 	clock := testsupport.NewClock()
 	runs := searchqueryusecase.NewSearchRuns(searchqueryusecase.Deps{
-		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Clock: clock, After: clock.After,
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Clock: clock, CreateTimer: clock.After,
 		Policy: searchrun.DefaultPolicy(), Slots: searchslot.New(searchrun.DefaultPolicy().MaxRunning),
 		Generations: indexgeneration.New("epoch"), Run: run, Names: func(id string) string { return id },
-		Catalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
+		GetCatalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
 	})
 	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(newMemoryVault(nil))
@@ -77,7 +77,7 @@ func TestTheSearchCallsNeedIndexRead(t *testing.T) {
 	ctx := t.Context()
 	_, startErr := client.StartSearch(ctx, connect.NewRequest(&v1.StartSearchRequest{Query: `words("tide")`}))
 	_, getErr := client.GetSearch(ctx, connect.NewRequest(&v1.GetSearchRequest{Id: "x"}))
-	_, removeErr := client.RemoveSearch(ctx, connect.NewRequest(&v1.RemoveSearchRequest{Id: "x"}))
+	_, removeErr := client.DeleteSearch(ctx, connect.NewRequest(&v1.DeleteSearchRequest{Id: "x"}))
 	_, listErr := client.ListSearchFunctions(ctx, connect.NewRequest(&v1.ListSearchFunctionsRequest{}))
 	for name, err := range map[string]error{"start": startErr, "get": getErr, "remove": removeErr, "list": listErr} {
 		if readCode(t, err) != connect.CodePermissionDenied {
@@ -122,7 +122,7 @@ func TestASearchRoundTripsItsStateAndAnotherPluginCannotReadIt(t *testing.T) {
 	if err != nil || read.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND {
 		t.Errorf("read by another plugin %v (%v), want SEARCH_NOT_FOUND", read.Msg, err)
 	}
-	removed, err := client.RemoveSearch(ctx, connect.NewRequest(&v1.RemoveSearchRequest{Id: started.Msg.GetId()}))
+	removed, err := client.DeleteSearch(ctx, connect.NewRequest(&v1.DeleteSearchRequest{Id: started.Msg.GetId()}))
 	if err != nil || removed.Msg.GetError() != 0 {
 		t.Errorf("remove %v (%v)", removed.Msg, err)
 	}

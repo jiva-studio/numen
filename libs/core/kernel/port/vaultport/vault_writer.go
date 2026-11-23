@@ -30,8 +30,8 @@ type FileMover interface {
 
 // TrashEmptier deletes what a vault keeps in its trash.
 type TrashEmptier interface {
-	// EmptyTrash deletes everything under the vault's trash and returns the paths it could not delete.
-	EmptyTrash(ctx context.Context) (undeleted []string, err error)
+	// ClearTrash deletes everything under the vault's trash and returns the paths it could not delete.
+	ClearTrash(ctx context.Context) (undeleted []string, err error)
 }
 
 // NoteWriters opens a vault for writing notes. Which vault a use case works on
@@ -43,11 +43,6 @@ type NoteWriters interface {
 // FolderWriters opens a vault for filling its folders.
 type FolderWriters interface {
 	OpenFolderWriter(v domain.Vault) (FolderWriter, error)
-}
-
-// FileMovers opens a vault for moving and removing its files.
-type FileMovers interface {
-	OpenFileMover(v domain.Vault) (FileMover, error)
 }
 
 // VaultLocks holds a vault's write lock, so two writers do not change a vault at once.

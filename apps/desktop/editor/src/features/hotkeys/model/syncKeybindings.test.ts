@@ -1,7 +1,18 @@
 /** The keybindings the core lists reach the keys of the plugin host as the list changes. All names are invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { createPluginHost, getWhenValues } from '@numen/plugin-loader'
+import {
+  createPluginHost,
+  getWhenValues,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
+} from '@numen/plugin-loader'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 import { syncKeybindings } from './syncKeybindings'
 
@@ -31,13 +42,17 @@ const TARGET = { path: 'Tides.md', title: 'Tides', isFolder: false, others: [], 
 const create = (list?: readonly DeclaredKeybinding[]) => {
   const window = { 'window.isFieldFocused': false }
   const host = createPluginHost({
-    window: { target: 'desktop.editor' },
-    kinds: {
-      registerKind: () => () => undefined,
-      registerExtensionReader: () => () => undefined,
+    window: { ...NO_WINDOW, target: 'desktop.editor' },
+    plugins: NO_PLUGINS,
+    commands: NO_COMMANDS,
+    kinds: { ...NO_KINDS, registerKind: () => () => undefined },
+    tabs: { ...NO_TABS, openTab: async () => 'tab-1' },
+    slots: {
+      ...NO_SLOTS,
+      getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }),
     },
-    tabs: { openTab: async () => 'tab-1' },
-    slots: { getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }) },
+    vault: NO_VAULT,
+    work: NO_WORK,
   })
   const keybindings = ref<readonly DeclaredKeybinding[] | undefined>(list)
   const plugins = ref<readonly object[]>([])

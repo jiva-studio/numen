@@ -28,7 +28,7 @@ func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
 	if found.URL != videoAddress {
 		t.Errorf("the note created reads %+v", found)
 	}
-	if raw, _, err := hosted.Vaults("").Files.Read(t.Context(), created.Paths[0]); err != nil || !strings.Contains(string(raw), "page: ") || !strings.Contains(string(raw), "media: ") {
+	if raw, _, err := hosted.GetVault("").Files.Read(t.Context(), created.Paths[0]); err != nil || !strings.Contains(string(raw), "page: ") || !strings.Contains(string(raw), "media: ") {
 		t.Errorf("the note created holds %s (%v), want its page and media", raw, err)
 	}
 	if !strings.HasPrefix(created.Paths[0], "talks/") {

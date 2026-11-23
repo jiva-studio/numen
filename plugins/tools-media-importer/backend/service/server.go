@@ -33,7 +33,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	texts := host.NewTextClient(endpoint)
 	return link.Host{
 		PluginID: PluginID,
-		Vaults: func(id domain.VaultID) link.Vault {
+		GetVault: func(id domain.VaultID) link.Vault {
 			on := client.With(id)
 			return link.Vault{Files: on, Writer: on, Feed: on}
 		},
@@ -41,11 +41,11 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 			on := store.With(id)
 			return link.Folder{Files: on, Writer: on}
 		},
-		Texts:   func(id domain.VaultID) link.Texts { return texts.With(id) },
-		Queue:   host.NewQueueClient(endpoint),
-		Clock:   clock.System{},
-		Entropy: random.Entropy{},
-		Report:  process.Runner{}.ReportError,
+		GetTexts: func(id domain.VaultID) link.Texts { return texts.With(id) },
+		Queue:    host.NewQueueClient(endpoint),
+		Clock:    clock.System{},
+		Entropy:  random.Entropy{},
+		Report:   process.Runner{}.ReportError,
 	}
 }
 
@@ -87,13 +87,13 @@ func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	if err := mountAPI(s, links); err != nil {
 		return err
 	}
-	registry, err := NewTools(links).Registry()
+	registry, err := NewTools(links).BuildRegistry()
 	if err != nil {
 		return err
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		links.Close()
 		return nil
 	})
@@ -102,7 +102,7 @@ func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 
 // MountFromEnv mounts the plugin over the host the process was started for.
 func (a *App) MountFromEnv(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}

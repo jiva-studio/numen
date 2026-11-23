@@ -139,11 +139,11 @@ func TestContainerDetectionAndMonoBoundaries(t *testing.T) {
 	}
 
 	negZero := float32(math.Copysign(0, -1))
-	gotMono := mono([]float32{negZero}, 1)
+	gotMono := mixToMono([]float32{negZero}, 1)
 	if len(gotMono) != 1 || math.Float32bits(gotMono[0]) != 0x80000000 {
 		t.Fatalf("expected mono(1) to return slice unchanged with -0.0, got %v", gotMono)
 	}
-	gotZeroCh := mono([]float32{negZero}, 0)
+	gotZeroCh := mixToMono([]float32{negZero}, 0)
 	if len(gotZeroCh) != 1 || math.Float32bits(gotZeroCh[0]) != 0x80000000 {
 		t.Fatalf("expected mono(0) to return slice unchanged, got %v", gotZeroCh)
 	}

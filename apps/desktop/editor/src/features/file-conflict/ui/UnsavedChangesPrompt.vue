@@ -20,7 +20,7 @@ interface UnsavedChangesWords {
 // --- Props & Emits ---
 const props = defineProps<{
   conflicts: readonly ConflictPrompt[]
-  called: (note: string) => string
+  getNoteTitle: (note: string) => string
   words: UnsavedChangesWords
 }>()
 
@@ -37,7 +37,7 @@ const onLater = postponeConflict
     <p class="unsaved__says">{{ props.words.going }}</p>
     <ul class="unsaved__notes">
       <li v-for="one in props.conflicts" :key="one.note" class="unsaved__note">
-        <span class="unsaved__title">{{ props.called(one.note) }}</span>
+        <span class="unsaved__title">{{ props.getNoteTitle(one.note) }}</span>
         <Button size="small" @click="onKeep(one)">
           {{ props.words.keep }}
         </Button>

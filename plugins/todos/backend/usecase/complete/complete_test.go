@@ -34,8 +34,8 @@ func (w *writer) Write(ctx context.Context, path string, content []byte, baselin
 	isStale := w.writes <= w.stale
 	w.mu.Unlock()
 	if isStale {
-		now, _ := w.vault.Content(path)
-		w.vault.File(path, w.edit(now))
+		now, _ := w.vault.ReadContent(path)
+		w.vault.WriteFile(path, w.edit(now))
 	}
 	return w.vault.Write(ctx, path, content, baseline)
 }
@@ -53,7 +53,7 @@ func (discardStore) StoreNote(string, []byte, domain.FileStat) {}
 func setup(t *testing.T, path, content string) (*hosttest.Vault, *writer, *SetTaskDone) {
 	t.Helper()
 	vault := hosttest.New("notes")
-	vault.File(path, content)
+	vault.WriteFile(path, content)
 	w := &writer{vault: vault}
 	return vault, w, New(vault, w, discardStore{}, ports.NewWriteLock())
 }
@@ -69,7 +69,7 @@ func execute(t *testing.T, u *SetTaskDone, req Request) Result {
 
 func content(t *testing.T, vault *hosttest.Vault, path string) string {
 	t.Helper()
-	text, ok := vault.Content(path)
+	text, ok := vault.ReadContent(path)
 	if !ok {
 		t.Fatalf("%s is gone", path)
 	}
@@ -196,7 +196,7 @@ func TestExecuteUnticksATickedTaskAndRemovesItsCompletionDate(t *testing.T) {
 
 func TestExecuteFindsALineThatMovedByItsText(t *testing.T) {
 	vault, _, u := setup(t, "a.md", "- [ ] one\n- [ ] two\n")
-	vault.File("a.md", "new first\nnew second\n- [ ] one\n- [ ] two\n")
+	vault.WriteFile("a.md", "new first\nnew second\n- [ ] one\n- [ ] two\n")
 
 	got := execute(t, u, tick("a.md", 2, "- [ ] two"))
 

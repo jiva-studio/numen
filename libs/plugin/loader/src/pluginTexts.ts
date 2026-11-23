@@ -16,6 +16,7 @@ import type {
   TextVersion,
   VaultTexts,
 } from '@numen/plugin-sdk'
+import { asFailure } from '@numen/result'
 
 const readSelector = (raw: string): Selector | undefined => {
   try {
@@ -74,6 +75,8 @@ export const createPluginTexts = (client: TextClient, pluginId: string): VaultTe
     if (answer.version !== undefined && answer.error === TEXT_ERROR_CODE.UNSPECIFIED) {
       return { ok: true, value: readVersion(answer.version) }
     }
-    return { ok: false, error: answer.error === TEXT_ERROR_CODE.NOT_FOUND ? 'missing' : 'invalid' }
+    return answer.error === TEXT_ERROR_CODE.NOT_FOUND
+      ? asFailure({ error: 'notFound', message: `no live version ${sourceVersionId} at ${path}` })
+      : asFailure({ error: 'invalid', message: `the segments of the edit of ${path} are not valid` })
   },
 })

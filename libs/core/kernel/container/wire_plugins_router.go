@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
+	licensingadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/licensing"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
@@ -21,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -73,9 +75,9 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // shutdown of a plugin.
 func NewPluginHost(indexPath string, res *Resources, report func(error), target string, dirs ...string) (*PluginExecution, *PluginPreferences, *PluginEndpoints, error) {
 	management, supervision := NewPluginRoles(GetClock(res), target, dirs...)
-	supervision.Account = openAccount(res)
+	supervision.Account = identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res))
 	err := InitializePluginRoles(indexPath, res, management, supervision, report)
-	exec, prefs, endpoints := AdaptPluginHost(management, supervision)
+	exec, prefs, endpoints := CreatePluginHost(management, supervision)
 	return exec, prefs, endpoints, err
 }
 
@@ -101,7 +103,7 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
+	run := plugincommand.NewRunner(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
 	return pluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch.ContentTypeTable),
@@ -111,15 +113,15 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	}
 }
 
-func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks) *run.PluginWork {
+func openPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks) *run.PluginWork {
 	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, func(pluginID string) string {
-		return pluginsGetPluginName(exec.Runtime.Resolver, pluginID)
+		return getPluginName(exec.Runtime.Resolver, pluginID)
 	})
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work
 }
 
-func pluginsGetPluginName(resolver pluginResolver, pluginID string) string {
+func getPluginName(resolver pluginResolver, pluginID string) string {
 	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}

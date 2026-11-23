@@ -103,7 +103,7 @@ func TestReadRangeOfAFolderOrAMissingPathIsNotExist(t *testing.T) {
 
 func TestReadRangeWithoutAVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
+		Session{GetCurrent: func() (domain.Vault, bool) { return domain.Vault{}, false }},
 		Files{}, Writer{}, Lookups{}, Arranger{}, Stores{},
 	)
 

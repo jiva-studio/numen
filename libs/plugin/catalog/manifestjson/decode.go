@@ -38,7 +38,7 @@ func Read(r io.Reader) (manifest.Manifest, error) {
 
 // Decode decodes a manifest from JSON without validating the rules between its fields.
 func Decode(data []byte) (manifest.Manifest, error) {
-	canonical, unknown, err := canonicalize(data)
+	canonical, unknown, err := normalizeManifest(data)
 	if err != nil {
 		return manifest.Manifest{}, err
 	}
@@ -58,7 +58,7 @@ func Decode(data []byte) (manifest.Manifest, error) {
 
 var errTrailingData = errors.New("unexpected data after the manifest")
 
-func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
+func normalizeManifest(data []byte) (canonical []byte, unknown []string, err error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="UseNumber preserves exact numeric tokens before protojson unmarshaling"
 	decoder.UseNumber()

@@ -137,7 +137,7 @@ func OpenFeed(ctx context.Context, tx *sqlwrite.Transaction, vault int64) error 
 
 // Trim drops the removals stored longer ago than the age and raises the number each feed dropped removals up to.
 func Trim(ctx context.Context, db *sql.DB, age time.Duration) error {
-	return sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
+	return sqlwrite.RunInTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
 		for _, name := range []string{"trim_seq", "trim"} {
 			if _, err := tx.ExecContext(ctx, getStatement(name), manifest.EventFileRemoved, age.Nanoseconds()); err != nil {
 				return fmt.Errorf("%s: %w", name, err)

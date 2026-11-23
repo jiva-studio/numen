@@ -1,7 +1,15 @@
 /** The layout of the row of pages in the viewport, and what of it is drawn. */
 import { computed, type ComputedRef, type Ref } from 'vue'
 import type { Size } from '@numen/ui'
-import { GAP, SHARP, getCurrentPage, getPagesWithin, row, type Page, type Row } from '../lib/strip'
+import {
+  GAP,
+  SHARP,
+  getCurrentPage,
+  getPagesWithin,
+  buildRow,
+  type Page,
+  type Row,
+} from '../lib/strip'
 
 export interface RowLayoutSources {
   readonly getPages: () => readonly Page[]
@@ -20,7 +28,7 @@ export interface RowLayout {
 }
 
 export function useRowLayout({ getPages, viewport, zoom, offset }: RowLayoutSources): RowLayout {
-  const pageLayout = computed(() => row(getPages(), viewport.value, zoom.value))
+  const pageLayout = computed(() => buildRow(getPages(), viewport.value, zoom.value))
   const visiblePages = computed(() =>
     getPagesWithin(pageLayout.value, viewport.value, offset.value),
   )

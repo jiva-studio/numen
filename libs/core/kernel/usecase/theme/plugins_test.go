@@ -25,11 +25,11 @@ func TestAPluginThemeIsPinnedByTheAppearanceItDeclares(t *testing.T) {
 
 	for _, one := range desk.getThemes().List {
 		switch one.Name {
-		case themedomain.PluginName(pluginID, "night"):
+		case themedomain.BuildPluginName(pluginID, "night"):
 			if !one.IsPinned || one.Appearance != "dark" || one.PluginID != pluginID || one.Title != "Night" {
 				t.Errorf("night = %+v", one)
 			}
-		case themedomain.PluginName(pluginID, "day"):
+		case themedomain.BuildPluginName(pluginID, "day"):
 			if one.IsPinned || one.Appearance != "" {
 				t.Errorf("day = %+v", one)
 			}
@@ -40,7 +40,7 @@ func TestAPluginThemeIsPinnedByTheAppearanceItDeclares(t *testing.T) {
 func TestAPluginThemeIsReadByItsName(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 
-	text, err := desk.readTheme(themedomain.PluginName(pluginID, "night"))
+	text, err := desk.readTheme(themedomain.BuildPluginName(pluginID, "night"))
 
 	if err != nil || text != nightCSS {
 		t.Errorf("text = %q, error = %v", text, err)
@@ -73,16 +73,16 @@ func TestABuildWithoutPluginsAnswersForNoPluginName(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 	desk.sources.Plugins = nil
 
-	if text, err := desk.readTheme(themedomain.PluginName(pluginID, "night")); text != "" || err != nil {
+	if text, err := desk.readTheme(themedomain.BuildPluginName(pluginID, "night")); text != "" || err != nil {
 		t.Errorf("text = %q, error = %v, want nothing", text, err)
 	}
-	if hasTheme(desk.getThemes().List, themedomain.PluginName(pluginID, "night")) {
+	if hasTheme(desk.getThemes().List, themedomain.BuildPluginName(pluginID, "night")) {
 		t.Error("a build with no source lists plugin themes")
 	}
 }
 
 func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *testing.T) {
-	name := themedomain.PluginName(pluginID, "night")
+	name := themedomain.BuildPluginName(pluginID, "night")
 	desk := createThemesDesk(t, themedomain.Appearance{ThemeName: name})
 	if applied := desk.getThemes().Applied; applied != name {
 		t.Fatalf("applied %q before the plugin is disabled", applied)
@@ -101,7 +101,7 @@ func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *
 
 func TestChoosingAPluginThemeWritesItsName(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{ThemeName: themedomain.Default})
-	name := themedomain.PluginName(pluginID, "night")
+	name := themedomain.BuildPluginName(pluginID, "night")
 
 	if err := desk.writeAppearance(themedomain.Appearance{ThemeName: name, Mode: themedomain.Dark}); err != nil {
 		t.Fatalf("failed: %v", err)

@@ -15,15 +15,15 @@ import (
 // presetsHandler answers about the presets decks are scheduled by.
 type presetsHandler struct {
 	*vaultSession
-	create cards.Create
-	flash  func() *flashReview
+	create         cards.Create
+	getFlashReview func() *flashReview
 }
 
 func (b *Backend) newPresetsHandler() *presetsHandler {
 	return &presetsHandler{
-		vaultSession: b.vaultSession,
-		create:       cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy),
-		flash:        b.flash.Get,
+		vaultSession:   b.vaultSession,
+		create:         cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy),
+		getFlashReview: b.flash.Get,
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *presetsHandler) GetDeckPreset(ctx context.Context, req *api.GetDeckPres
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.GetForDeck.Execute(ctx, showing, req.Deck)
+	found, err := h.getFlashReview().Schedules.Presets.GetForDeck.Execute(ctx, showing, req.Deck)
 	return presetwire.NewDeckPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -41,13 +41,13 @@ func (h *presetsHandler) ListPresets(ctx context.Context, _ *api.ListPresetsRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.List.Execute(ctx, showing)
+	found, err := h.getFlashReview().Schedules.Presets.List.Execute(ctx, showing)
 	return presetwire.NewListResponse(found, err)
 }
 
 func (h *presetsHandler) CreatePreset(ctx context.Context, req *api.CreatePresetRequest) (*api.CreatePresetResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return h.create.Preset(ctx, showing, in)
+		return h.create.CreatePreset(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (h *presetsHandler) ScheduleDeck(ctx context.Context, req *api.ScheduleDeck
 	if err != nil {
 		return nil, err
 	}
-	pos, err := h.flash().Schedules.Presets.Point.Execute(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
+	pos, err := h.getFlashReview().Schedules.Presets.Point.Execute(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
 	return presetwire.NewScheduleDeckResponse(pos, err)
 }
 
@@ -69,7 +69,7 @@ func (h *presetsHandler) ReadPreset(ctx context.Context, req *api.ReadPresetRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.Read.Execute(ctx, showing, req.Path)
+	found, err := h.getFlashReview().Schedules.Presets.Read.Execute(ctx, showing, req.Path)
 	return presetwire.NewReadPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -82,7 +82,7 @@ func (h *presetsHandler) WritePreset(ctx context.Context, req *api.WritePresetRe
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.flash().Schedules.Presets.Save.Execute(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
+	pos, err := h.getFlashReview().Schedules.Presets.Save.Execute(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
 	return presetwire.NewWritePresetResponse(pos, err)
 }
 
@@ -95,6 +95,6 @@ func (h *presetsHandler) ComputeCurve(ctx context.Context, req *api.ComputeCurve
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	curve, err := h.flash().Schedules.Curves.Execute(ctx, showing, req.Path, settings)
+	curve, err := h.getFlashReview().Schedules.Curves.Execute(ctx, showing, req.Path, settings)
 	return presetwire.NewCurveResponse(curve, err)
 }

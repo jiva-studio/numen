@@ -9,19 +9,19 @@ import (
 
 // WhenConfig reads the resolved settings of the application and of the plugins.
 type WhenConfig struct {
-	App     func() []plugin.Setting
-	Plugins func() []plugin.Info
+	ListAppSettings func() []plugin.Setting
+	ListPlugins     func() []plugin.Info
 }
 
 // GetWhenConfig returns the config of the settings App and Plugins give; see BuildWhenConfig.
 func (s WhenConfig) GetWhenConfig() map[string]any {
 	var app []plugin.Setting
-	if s.App != nil {
-		app = s.App()
+	if s.ListAppSettings != nil {
+		app = s.ListAppSettings()
 	}
 	var plugins []plugin.Info
-	if s.Plugins != nil {
-		plugins = s.Plugins()
+	if s.ListPlugins != nil {
+		plugins = s.ListPlugins()
 	}
 	return BuildWhenConfig(app, plugins)
 }

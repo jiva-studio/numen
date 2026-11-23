@@ -5,8 +5,8 @@
 import { describe, expect, it } from 'vitest'
 import type { FieldValue } from './card'
 import {
-  templateRows,
-  fieldRows,
+  buildTemplateRows,
+  buildFieldRows,
   getPanes,
   CARD_MODEL_WORDS,
   type CardModelTemplate,
@@ -16,31 +16,31 @@ describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
 
   it('draws a row per field, in the order they were handed in', () => {
-    expect(fieldRows(FIELDS, null).map((row) => row.field)).toEqual(FIELDS)
+    expect(buildFieldRows(FIELDS, null).map((row) => row.field)).toEqual(FIELDS)
   })
 
   it('numbers the rows from one, each knowing how many stand with it', () => {
-    expect(fieldRows(FIELDS, null).map((row) => [row.at, row.of])).toEqual([
+    expect(buildFieldRows(FIELDS, null).map((row) => [row.at, row.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
   })
 
   it('marks the one row on its way and no other', () => {
-    const rows = fieldRows(FIELDS, 'Weight')
+    const rows = buildFieldRows(FIELDS, 'Weight')
     expect(rows.map((row) => row.isDragged)).toEqual([false, true])
   })
 
   it('marks the first row as the one naming the cards, and no other', () => {
-    expect(fieldRows(FIELDS, null).map((row) => row.hasNames)).toEqual([true, false])
+    expect(buildFieldRows(FIELDS, null).map((row) => row.hasNames)).toEqual([true, false])
   })
 
   it('marks nothing as naming where a card model names no field', () => {
-    expect(fieldRows([], null)).toEqual([])
+    expect(buildFieldRows([], null)).toEqual([])
   })
 
   it('draws one row for a name declared twice, and counts it once', () => {
-    const rows = fieldRows(['Height', 'Weight', 'Height'], null)
+    const rows = buildFieldRows(['Height', 'Weight', 'Height'], null)
     expect(rows.map((row) => row.field)).toEqual(['Height', 'Weight'])
     expect(rows.map((row) => [row.at, row.of])).toEqual([
       [1, 2],
@@ -51,18 +51,18 @@ describe('fieldRows', () => {
 
 describe('CARD_MODEL_WORDS', () => {
   it('says what is wrong with a field name', () => {
-    expect(CARD_MODEL_WORDS.objection('blank')).toBe('A field needs a name')
-    expect(CARD_MODEL_WORDS.objection('taken')).toBe('That name is taken')
-    expect(CARD_MODEL_WORDS.objection('braced')).toBe('A name cannot hold a brace')
+    expect(CARD_MODEL_WORDS.describeObjection('blank')).toBe('A field needs a name')
+    expect(CARD_MODEL_WORDS.describeObjection('taken')).toBe('That name is taken')
+    expect(CARD_MODEL_WORDS.describeObjection('braced')).toBe('A name cannot hold a brace')
   })
 
   it('says what is wrong with a template name', () => {
-    expect(CARD_MODEL_WORDS.templateObjection('blank')).toBe('A template needs a name')
-    expect(CARD_MODEL_WORDS.templateObjection('taken')).toBe('That name is taken')
+    expect(CARD_MODEL_WORDS.describeTemplateObjection('blank')).toBe('A template needs a name')
+    expect(CARD_MODEL_WORDS.describeTemplateObjection('taken')).toBe('That name is taken')
   })
 
   it('names every stray field, separated by commas', () => {
-    expect(CARD_MODEL_WORDS.stray(['A', 'B'])).toBe('Not a field: A, B')
+    expect(CARD_MODEL_WORDS.describeStray(['A', 'B'])).toBe('Not a field: A, B')
   })
 })
 
@@ -78,27 +78,27 @@ describe('templateRows', () => {
   ]
 
   it('numbers the templates from one, each knowing how many stand with it', () => {
-    expect(templateRows(TEMPLATES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
+    expect(buildTemplateRows(TEMPLATES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
   })
 
   it('shows each half with the sample values standing in it', () => {
-    const template = templateRows(TEMPLATES, FIELDS, SAMPLE)[0]
+    const template = buildTemplateRows(TEMPLATES, FIELDS, SAMPLE)[0]
     expect(template?.frontPreview).toBe('Llama')
     expect(template?.backPreview).toBe('about 45"')
   })
 
   it('keeps the markup a half was written with along with what it shows', () => {
-    expect(templateRows(TEMPLATES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
+    expect(buildTemplateRows(TEMPLATES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
   })
 
   it('says the slots each half names that the fields do not, each once', () => {
     const templates: readonly CardModelTemplate[] = [
       { id: 'one', name: 'One', front: '{{Colour}}', back: '{{Weight}} {{Weight}}' },
     ]
-    const template = templateRows(templates, FIELDS, SAMPLE)[0]
+    const template = buildTemplateRows(templates, FIELDS, SAMPLE)[0]
     expect(template?.frontStray).toEqual(['Colour'])
     expect(template?.backStray).toEqual(['Weight'])
   })
@@ -107,30 +107,30 @@ describe('templateRows', () => {
     const templates: readonly CardModelTemplate[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
-    expect(templateRows(templates, FIELDS, SAMPLE)[0]?.frontPreview).toBe(
+    expect(buildTemplateRows(templates, FIELDS, SAMPLE)[0]?.frontPreview).toBe(
       'Llama <mark>{{Colour}}</mark>',
     )
   })
 
   it('says nothing stray of a template naming only declared fields', () => {
-    const template = templateRows(TEMPLATES, FIELDS, SAMPLE)[0]
+    const template = buildTemplateRows(TEMPLATES, FIELDS, SAMPLE)[0]
     expect(template?.frontStray).toEqual([])
     expect(template?.backStray).toEqual([])
   })
 
   it('passes each template the names of the other templates', () => {
-    expect(templateRows(TEMPLATES, FIELDS, SAMPLE).map((each) => each.taken)).toEqual([
+    expect(buildTemplateRows(TEMPLATES, FIELDS, SAMPLE).map((each) => each.taken)).toEqual([
       ['Name it'],
       ['Recognise'],
     ])
   })
 
   it('draws nothing for a card model with no templates', () => {
-    expect(templateRows([], FIELDS, SAMPLE)).toEqual([])
+    expect(buildTemplateRows([], FIELDS, SAMPLE)).toEqual([])
   })
 
   it('carries the identity and the name each template was handed in under', () => {
-    const renderedRows = templateRows(TEMPLATES, FIELDS, SAMPLE)
+    const renderedRows = buildTemplateRows(TEMPLATES, FIELDS, SAMPLE)
     expect(renderedRows.map((each) => each.id)).toEqual(['recognise', 'name-it'])
     expect(renderedRows.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
   })
@@ -148,7 +148,7 @@ describe('panes', () => {
     fields: readonly string[],
     sample: readonly FieldValue[],
   ) => {
-    const renderedRows = templateRows([template], fields, sample)[0]
+    const renderedRows = buildTemplateRows([template], fields, sample)[0]
     if (!renderedRows) throw new Error('no template')
     return renderedRows
   }
