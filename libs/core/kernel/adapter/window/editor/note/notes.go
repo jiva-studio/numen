@@ -54,8 +54,8 @@ func (h *Prose) WriteNote(
 		return nil, err
 	}
 	pos, err := h.save.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
-	indexOutdated := h.writes.IsIndexOutdated(err)
 	h.writes.ReportWrites(showing.ID, err)
+	indexOutdated, err := h.writes.Follow.Execute(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
@@ -63,7 +63,7 @@ func (h *Prose) WriteNote(
 	// file stat the client uses at its next save. The response also sets
 	// IsIndexOutdated when the index did not follow, because the prose is on disk
 	// but search does not include it.
-	if err == nil || indexOutdated {
+	if err == nil {
 		return connect.NewResponse(&v1.WriteNoteResponse{
 			FileStat: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
@@ -93,7 +93,7 @@ func (h *Prose) CreateNote(
 	}
 	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Named: links}
 	made, err := h.createNote(ctx, showing, creating)
-	indexOutdated := h.writes.IsIndexOutdated(err)
+	indexOutdated, err := h.writes.Follow.Execute(err)
 	switch {
 	case errors.Is(err, note.ErrInvalidLink):
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -151,12 +151,10 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	paths := r.Msg.GetPaths()
-	if len(paths) > domain.MaxRelatedNotePaths {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("at most %d notes at once, not %d", domain.MaxRelatedNotePaths, len(paths)))
+	views, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPaths(), depth)
+	if errors.Is(err, domain.ErrTooManyRelatedPaths) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	views, err := h.getRelatedNotes.Execute(ctx, showing, paths, depth)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -384,7 +382,7 @@ func (h *Prose) RenameNote(
 		return nil, err
 	}
 	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
-	isIndexOutdated := h.writes.IsIndexOutdated(err)
+	isIndexOutdated, err := h.writes.Follow.Execute(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
@@ -397,7 +395,7 @@ func (h *Prose) RenameNote(
 	if renamed.Moved != nil {
 		out.MoveResult = newMoveResult(*renamed.Moved)
 	}
-	if err != nil && !isIndexOutdated {
+	if err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:

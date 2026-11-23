@@ -38,7 +38,7 @@ func newNoteMoverFailingToIndex(db *index.DB) note.Move {
 func mountNoteEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
 	t.Helper()
 	state := editor.SessionOf(t, installation)
-	prose := notewindow.NewProse(state, nil, write, create, rename, &notewindow.Writes{IsIndexOutdated: editor.PagesOf(installation).Writes.IsIndexOutdated})
+	prose := notewindow.NewProse(state, nil, write, create, rename, &notewindow.Writes{Follow: note.NewFollowIndex(editor.PagesOf(installation).Writes)})
 	_, handler := numenv1connect.NewNoteServiceHandler(notewindow.NewHandler(state.Notices, prose, nil, nil, nil))
 	mux.Handle(procedure, handler)
 }

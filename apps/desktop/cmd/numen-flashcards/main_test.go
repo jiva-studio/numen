@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -148,7 +149,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	api.ReportVaultRead(target[0])
+	ensureindexed.NewReportRead(&api.Runs, &api.Changes).Execute(target[0])
 	select {
 	case <-moved:
 	case <-time.After(time.Second):

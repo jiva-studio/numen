@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -55,6 +56,6 @@ func instant(nanos int64) time.Time {
 // Writes tells what a write of the window did: whether the index followed it, and the embedder that a note
 // holds new prose.
 type Writes struct {
-	IsIndexOutdated func(error) bool
+	Follow *note.FollowIndex
 	indexing.WriteWake
 }

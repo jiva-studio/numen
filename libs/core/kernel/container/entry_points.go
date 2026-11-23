@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"io"
 	"time"
 
@@ -90,7 +91,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
+	vaults := openVaults(vaultDeps, db, log.Out, log.Label, ensureindexed.NewReportRead(&api.Runs, &api.Changes).Execute)
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	setShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
