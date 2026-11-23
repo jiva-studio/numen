@@ -78,10 +78,10 @@ func TestLibrarySearchWithoutAPrefixSearchesTheWholeVault(t *testing.T) {
 func newShelfNotes(t *testing.T) *hosttest.Vault {
 	t.Helper()
 	v := hosttest.New(testVault)
-	v.File("notes/Tea.md", "---\ntitle: Tea\n---\nGreen tea.")
-	v.File("notes2/Coffee.md", "---\ntitle: Coffee\n---\nDark roast.")
-	v.File(shelfNFC+"/Lied.md", "---\ntitle: Lied\n---\nA song.")
-	v.File("Index.md", "---\ntitle: Index\n---\nEvery shelf.")
+	v.WriteFile("notes/Tea.md", "---\ntitle: Tea\n---\nGreen tea.")
+	v.WriteFile("notes2/Coffee.md", "---\ntitle: Coffee\n---\nDark roast.")
+	v.WriteFile(shelfNFC+"/Lied.md", "---\ntitle: Lied\n---\nA song.")
+	v.WriteFile("Index.md", "---\ntitle: Index\n---\nEvery shelf.")
 	return v
 }
 
@@ -115,8 +115,8 @@ func TestNoteListFindsAComposedFolderGivenDecomposed(t *testing.T) {
 
 func TestNoteListFindsADecomposedFolderGivenComposed(t *testing.T) {
 	v := hosttest.New(testVault)
-	v.File(shelfNFD+"/Lied.md", "---\ntitle: Lied\n---\nA song.")
-	v.File("notes/Tea.md", "---\ntitle: Tea\n---\nGreen tea.")
+	v.WriteFile(shelfNFD+"/Lied.md", "---\ntitle: Lied\n---\nA song.")
+	v.WriteFile("notes/Tea.md", "---\ntitle: Tea\n---\nGreen tea.")
 	_, registry := newRecordedSearch(t, v, nil)
 
 	var out noteListOutput

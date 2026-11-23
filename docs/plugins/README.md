@@ -8,7 +8,7 @@ Numen features a modular plugin architecture that decouples specialized capabili
 
 Every plugin runs as an independent subprocess that communicates with the core host over loopback Connect-RPC HTTP/2. The desktop application and every library import no plugin package: the host discovers plugins on disk from their `manifest.json` and launches them. The mobile app links the plugins it ships into its binary ([`architecture.md`](../../.agents/rules/architecture.md) §11 (m)).
 
-A plugin's backend lives in the package `backend/service`, whose `Mount(s *server.Server) error` registers its services. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down.
+A plugin's backend lives in the package `backend/service`, whose `Mount(s *server.Server) error` registers its services. What the plugin holds open is closed with `s.AddCloser`, which runs when the host shuts the plugin down.
 
 ### The vault, through the host
 

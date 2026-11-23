@@ -142,13 +142,13 @@ func TestRedirectProseAndParseHelpers(t *testing.T) {
 	}
 
 	// Wikilink and code-span edge cases.
-	w1 := WikilinksIn("[[A]] text [[B]] and [[]] and [[[Good]] and `unclosed [[AfterUnclosed]]")
+	w1 := FindWikilinks("[[A]] text [[B]] and [[]] and [[[Good]] and `unclosed [[AfterUnclosed]]")
 	if len(w1) != 4 || w1[0].Inside != "A" || w1[1].Inside != "B" || w1[1].At != 11 || w1[2].Inside != "Good" || w1[3].Inside != "AfterUnclosed" {
-		t.Errorf("WikilinksIn edge cases = %+v", w1)
+		t.Errorf("FindWikilinks edge cases = %+v", w1)
 	}
-	w2 := WikilinksInText("\n```\n[[Ignored]]\n```\n[[Kept]]")
+	w2 := FindTextWikilinks("\n```\n[[Ignored]]\n```\n[[Kept]]")
 	if len(w2) != 1 || w2[0].Inside != "Kept" {
-		t.Errorf("WikilinksInText leading newline = %+v", w2)
+		t.Errorf("FindTextWikilinks leading newline = %+v", w2)
 	}
 	if spans := getCodeSpans("`unclosed"); len(spans) != 0 {
 		t.Errorf("getCodeSpans(`unclosed) = %v", spans)

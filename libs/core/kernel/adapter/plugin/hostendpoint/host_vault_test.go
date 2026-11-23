@@ -163,7 +163,7 @@ func (m *memoryVault) GetTypes(_ context.Context, paths []string) (map[string]do
 func (m *memoryVault) ListNamedPaths(_ context.Context, name string) ([]string, error) {
 	var out []string
 	for path := range m.files {
-		if domain.Basename(path) == name {
+		if domain.GetBasename(path) == name {
 			out = append(out, path)
 		}
 	}

@@ -66,7 +66,7 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 	case l.IsAmbiguous:
 		where += "  (several notes answer to that name)"
 	}
-	if vault, crossed := l.InVault(from.ID); crossed {
+	if vault, crossed := l.ResolveVault(from.ID); crossed {
 		where += "  (in another vault: " + string(vault) + ")"
 	}
 	line := fmt.Sprintf("%-10s %s", l.Role, where)

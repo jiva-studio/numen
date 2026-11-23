@@ -73,12 +73,12 @@ type vaultProblemsOutput struct {
 func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(skyVault)
-	v.File("Sky/Orion.md", "---\ntitle: The Hunter Orion\n---\nOrion rises in winter.")
-	v.File("Sky/Comets.md", "---\ntitle: Comets and Their Tails\n---\nA tail points away from the sun.")
-	v.File("Sky/Deep/Nebula.md", "---\ntitle: The Crab Nebula\n---\nRemnant of a supernova.")
-	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
-	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
-	v.File("Sky/chart.txt", "RA 05h 35m\n")
+	v.WriteFile("Sky/Orion.md", "---\ntitle: The Hunter Orion\n---\nOrion rises in winter.")
+	v.WriteFile("Sky/Comets.md", "---\ntitle: Comets and Their Tails\n---\nA tail points away from the sun.")
+	v.WriteFile("Sky/Deep/Nebula.md", "---\ntitle: The Crab Nebula\n---\nRemnant of a supernova.")
+	v.WriteFile("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
+	v.WriteFile("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
+	v.WriteFile("Sky/chart.txt", "RA 05h 35m\n")
 	registry, err := service.New(vaultsOf(v)).WithVaultList(v).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
@@ -198,7 +198,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 	v := hosttest.New(skyVault)
 	for i := range 120 {
-		v.File(fmt.Sprintf("Stars/Star %03d.md", i), fmt.Sprintf("# Star %03d\nA star.", i))
+		v.WriteFile(fmt.Sprintf("Stars/Star %03d.md", i), fmt.Sprintf("# Star %03d\nA star.", i))
 	}
 	registry, err := service.New(vaultsOf(v)).BuildRegistry()
 	if err != nil {
@@ -244,7 +244,7 @@ func TestNoteTitleListReturnsTitlesAndMissingPaths(t *testing.T) {
 
 func TestNoteTitleListReturnsTheIDOfANoteThatHasOne(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("Sky/Pulsar.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: The Vela Pulsar\n---\nIt spins.")
+	v.WriteFile("Sky/Pulsar.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: The Vela Pulsar\n---\nIt spins.")
 
 	var out noteTitlesWithIDsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_title_list", `{"paths":["Sky/Pulsar.md","Tides.md"]}`), &out)
@@ -293,8 +293,8 @@ func TestNoteTitleListRejectsMoreThanFiftyPaths(t *testing.T) {
 
 func TestNoteResolveReturnsEveryNoteWithTheName(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("A/Comet.md", "# Comet\nHalley.")
-	v.File("B/Comet.md", "# Comet\nHale-Bopp.")
+	v.WriteFile("A/Comet.md", "# Comet\nHalley.")
+	v.WriteFile("B/Comet.md", "# Comet\nHale-Bopp.")
 
 	var out noteResolveOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_resolve", `{"name":"Comet"}`), &out)
@@ -323,8 +323,8 @@ func TestNoteResolveReturnsEmptyListForUnknownName(t *testing.T) {
 func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 	sky, registry := newSkyVault(t)
 	garden := hosttest.New("garden-vault")
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	sky.Beside(garden)
+	garden.WriteFile("Beds.md", "# Beds\nRaised beds of oak.")
+	sky.LinkBeside(garden)
 
 	var out vaultListOutput
 	decodeInto(t, callTool(t, registry, "garden-vault", "vault_list", `{}`), &out)
@@ -362,7 +362,7 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 func TestVaultListMarksAVaultWithoutItsFolderAsMissing(t *testing.T) {
 	sky, registry := newSkyVault(t)
 	garden := hosttest.New("garden-vault")
-	sky.Beside(garden)
+	sky.LinkBeside(garden)
 	garden.SetMissing(true)
 
 	var out vaultListOutput
@@ -395,7 +395,7 @@ func filterProblems(problems []vaultProblem, check string) []vaultProblem {
 
 func TestVaultProblemListRunsThreeChecksByDefault(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
+	v.WriteFile("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problem_list", `{}`), &out)
@@ -413,7 +413,7 @@ func TestVaultProblemListRunsThreeChecksByDefault(t *testing.T) {
 
 func TestVaultProblemListRunsOnlyTheNamedParseCheck(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
+	v.WriteFile("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problem_list", `{"checks":["parse"]}`), &out)
@@ -439,9 +439,9 @@ func TestVaultProblemListReturnsNoProblemsForValidNotes(t *testing.T) {
 
 func TestVaultProblemListReturnsAmbiguousLinkCandidates(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("A/Comet.md", "# Comet\nHalley.")
-	v.File("B/Comet.md", "# Comet\nHale-Bopp.")
-	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, unlike a [[Comet]].")
+	v.WriteFile("A/Comet.md", "# Comet\nHalley.")
+	v.WriteFile("B/Comet.md", "# Comet\nHale-Bopp.")
+	v.WriteFile("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, unlike a [[Comet]].")
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problem_list", `{}`), &out)
@@ -465,7 +465,7 @@ func TestVaultProblemListReturnsAmbiguousLinkCandidates(t *testing.T) {
 
 func TestVaultProblemListRunsTheDanglingCheckOnlyWhenNamed(t *testing.T) {
 	v, registry := newSkyVault(t)
-	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, see [[Quasar]].")
+	v.WriteFile("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, see [[Quasar]].")
 
 	var byDefault vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problem_list", `{}`), &byDefault)

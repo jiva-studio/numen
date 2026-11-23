@@ -945,7 +945,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.env.Store.File(target[0], spaces(len(was)))
+	s.env.Store.WriteFile(target[0], spaces(len(was)))
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -1025,7 +1025,7 @@ func writeConflictedCopies(t *testing.T, s vaulted) {
 		}
 		stem := strings.TrimSuffix(name, ".jsonl") +
 			" (conflicted copy).jsonl"
-		s.env.Store.File(stem, raw)
+		s.env.Store.WriteFile(stem, raw)
 	}
 }
 

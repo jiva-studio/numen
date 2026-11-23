@@ -30,7 +30,7 @@ func getCheckList() string {
 func (v *Vault) GetProblems(ctx context.Context, checks []string) (host.VaultProblems, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return host.VaultProblems{}, err
 	}
 	selectedChecks := getDefaultChecks()
@@ -55,7 +55,7 @@ func (v *Vault) GetProblems(ctx context.Context, checks []string) (host.VaultPro
 
 func (v *Vault) findProblems(notes map[string]domain.Note, check notesdomain.Check) []domain.VaultProblem {
 	var out []domain.VaultProblem
-	for _, notePath := range sortedPaths(notes) {
+	for _, notePath := range listSortedPaths(notes) {
 		note := notes[notePath]
 		switch check {
 		case notesdomain.CheckParse:
@@ -86,7 +86,7 @@ func (v *Vault) findLinkProblems(
 		switch {
 		case check == notesdomain.CheckAmbiguous && r.IsAmbiguous:
 			out = append(out, domain.VaultProblem{
-				Path: notePath, Kind: check, Target: link.Target, Candidates: candidates(notes, link.Target.Value),
+				Path: notePath, Kind: check, Target: link.Target, Candidates: findCandidates(notes, link.Target.Value),
 				Detail: fmt.Sprintf("%s resolves to several notes", link.Target.Value),
 			})
 		case check == notesdomain.CheckDangling && r.To == "":
@@ -102,12 +102,12 @@ func (v *Vault) findLinkProblems(
 func (v *Vault) ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
 	var out []domain.VaultProblem
-	for _, p := range sortedPaths(notes) {
+	for _, p := range listSortedPaths(notes) {
 		for _, detail := range notes[p].Problems {
 			out = append(out, domain.VaultProblem{Path: p, Kind: domain.CheckParse, Detail: detail})
 		}

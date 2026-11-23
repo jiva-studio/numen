@@ -17,7 +17,7 @@ func TestANoteIsFoundByTheLastSegmentWithoutItsExtension(t *testing.T) {
 		"notes/Lecture 3.notes.md": "Lecture 3.notes",
 		"":                         "",
 	} {
-		if got := domain.Basename(path); got != want {
+		if got := domain.GetBasename(path); got != want {
 			t.Errorf("%q is found by %q, want %q", path, got, want)
 		}
 	}
@@ -30,7 +30,7 @@ func TestALeadingDotIsPartOfTheName(t *testing.T) {
 		".hidden":          ".hidden",
 		"notes/.hidden.md": ".hidden",
 	} {
-		if got := domain.Basename(path); got != want {
+		if got := domain.GetBasename(path); got != want {
 			t.Errorf("%q is found by %q, want %q", path, got, want)
 		}
 	}
@@ -80,7 +80,7 @@ func TestAPathFromTheRootIsFoundByItsLastSegment(t *testing.T) {
 		"/":                 "",
 		"notes/a.b/Entropy": "Entropy",
 	} {
-		if got := domain.Basename(path); got != want {
+		if got := domain.GetBasename(path); got != want {
 			t.Errorf("%q is found by %q, want %q", path, got, want)
 		}
 	}
@@ -108,7 +108,7 @@ func TestANameIsFoldedToLowerCase(t *testing.T) {
 		"İstanbul": "i̇stanbul",
 		"\x7f":     "\x7f",
 	} {
-		if got := domain.FoldName(name); got != want {
+		if got := domain.NormalizeName(name); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
 		}
 	}

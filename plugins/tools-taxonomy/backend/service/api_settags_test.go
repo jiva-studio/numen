@@ -49,7 +49,7 @@ func newTaggingPlugin(t *testing.T, files map[string]string) taggingPlugin {
 	t.Helper()
 	v := hosttest.New("garden")
 	for path, content := range files {
-		v.File(path, content)
+		v.WriteFile(path, content)
 	}
 	app, err := service.NewApp(func(id domain.VaultID) tagcache.Vault {
 		return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id), Properties: v.With(id)}
@@ -183,7 +183,7 @@ func TestSetTagsWritesTheTagsToTheNoteAndAnswersWithTheTagsItHasNow(t *testing.T
 	if got := p.getNoteTags(t, "notes/Pier.md"); !slices.Equal(got, []string{"Port", "Sea"}) {
 		t.Errorf("the pier has the tags %q, want Port and Sea", got)
 	}
-	if content, _ := p.vault.Content("notes/Pier.md"); !strings.Contains(content, "The pier.") {
+	if content, _ := p.vault.ReadContent("notes/Pier.md"); !strings.Contains(content, "The pier.") {
 		t.Errorf("the pier is %q, want its text kept", content)
 	}
 }

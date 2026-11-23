@@ -69,7 +69,7 @@ func TestSetAddsAKeyThatWasNotThere(t *testing.T) {
 	if !strings.Contains(got, "apple: 2\n") || !strings.Contains(got, "id: 01J8F3K2M9QRSTVWXYZ012\n") {
 		t.Fatalf("expected both keys:\n%s", got)
 	}
-	if id, ok := reopen(t, got).Identifier(); !ok || id != "01J8F3K2M9QRSTVWXYZ012" {
+	if id, ok := reopen(t, got).GetIdentifier(); !ok || id != "01J8F3K2M9QRSTVWXYZ012" {
 		t.Errorf("the identifier did not survive a reopen: %q %v", id, ok)
 	}
 }
@@ -682,7 +682,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 
 	got := string(d.Bytes())
 	back := reopen(t, got)
-	if id, ok := back.Identifier(); !ok || id != "01J8" {
+	if id, ok := back.GetIdentifier(); !ok || id != "01J8" {
 		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
 	}
 	front := Parse(domain.FileStat{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
@@ -998,7 +998,7 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 	if err := oneByteFrontDoc.SetIdentifier("01J8"); err != nil {
 		t.Fatalf("SetIdentifier on 1-byte comment front: %v", err)
 	}
-	if id, ok := oneByteFrontDoc.Identifier(); !ok || id != "01J8" {
+	if id, ok := oneByteFrontDoc.GetIdentifier(); !ok || id != "01J8" {
 		t.Fatalf("Identifier after 1-byte comment front = (%q, %v)", id, ok)
 	}
 
@@ -1250,10 +1250,10 @@ func TestReadMappingAndNodePredicates(t *testing.T) {
 
 func TestKeysMethodsAndBoundaries(t *testing.T) {
 	emptyDoc := &Document{}
-	if id, ok := emptyDoc.Identifier(); id != "" || ok {
+	if id, ok := emptyDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("emptyDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := emptyDoc.Title(); title != "" || ok {
+	if title, ok := emptyDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("emptyDoc.Title() = (%q, %v)", title, ok)
 	}
 	if list, ok := emptyDoc.List("tags"); list != nil || ok {
@@ -1261,16 +1261,16 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	}
 
 	badDoc := &Document{front: []byte(": bad")}
-	if id, ok := badDoc.Identifier(); id != "" || ok {
+	if id, ok := badDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("badDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := badDoc.Title(); title != "" || ok {
+	if title, ok := badDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("badDoc.Title() = (%q, %v)", title, ok)
 	}
 	if list, ok := badDoc.List("tags"); list != nil || ok {
 		t.Fatalf("badDoc.List() = (%v, %v)", list, ok)
 	}
-	if names, ok := badDoc.EntryNames("load"); names != nil || ok {
+	if names, ok := badDoc.ListEntryNames("load"); names != nil || ok {
 		t.Fatalf("badDoc.EntryNames() = (%v, %v)", names, ok)
 	}
 
@@ -1280,10 +1280,10 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 			Content: []*yaml.Node{{Kind: yaml.ScalarNode, Value: "id"}},
 		},
 	}
-	if id, ok := oddMappingDoc.Identifier(); id != "" || ok {
+	if id, ok := oddMappingDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("oddMappingDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := oddMappingDoc.Title(); title != "" || ok {
+	if title, ok := oddMappingDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("oddMappingDoc.Title() = (%q, %v)", title, ok)
 	}
 
@@ -1291,10 +1291,10 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open valCollisionDoc: %v", err)
 	}
-	if id, ok := valCollisionDoc.Identifier(); !ok || id != "real-id" {
+	if id, ok := valCollisionDoc.GetIdentifier(); !ok || id != "real-id" {
 		t.Fatalf("valCollisionDoc.Identifier() = (%q, %v), want real-id", id, ok)
 	}
-	if title, ok := valCollisionDoc.Title(); !ok || title != "real-title" {
+	if title, ok := valCollisionDoc.GetTitle(); !ok || title != "real-title" {
 		t.Fatalf("valCollisionDoc.Title() = (%q, %v), want real-title", title, ok)
 	}
 
@@ -1302,7 +1302,7 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open blankTitleDoc: %v", err)
 	}
-	if title, ok := blankTitleDoc.Title(); title != "" || ok {
+	if title, ok := blankTitleDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("blankTitleDoc.Title() = (%q, %v), want empty/false", title, ok)
 	}
 
@@ -1332,13 +1332,13 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open nullEntryDoc: %v", err)
 	}
-	if names, ok := nullEntryDoc.EntryNames("load"); !ok || len(names) != 0 {
+	if names, ok := nullEntryDoc.ListEntryNames("load"); !ok || len(names) != 0 {
 		t.Fatalf("EntryNames(null load) = (%v, %v), want empty/true", names, ok)
 	}
-	if names, ok := nullEntryDoc.EntryNames("missing"); !ok || len(names) != 0 {
+	if names, ok := nullEntryDoc.ListEntryNames("missing"); !ok || len(names) != 0 {
 		t.Fatalf("EntryNames(missing) = (%v, %v), want empty/true", names, ok)
 	}
-	if names, ok := nullEntryDoc.EntryNames("scalar"); ok || names != nil {
+	if names, ok := nullEntryDoc.ListEntryNames("scalar"); ok || names != nil {
 		t.Fatalf("EntryNames(scalar) = (%v, %v), want nil/false", names, ok)
 	}
 
@@ -1360,7 +1360,7 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}, {Key: "sat", IsVerbatim: true}}); err != nil {
 		t.Fatalf("SetMapping partial verbatim: %v", err)
 	}
-	if names, ok := verbatimDoc.EntryNames("load"); !ok || !reflect.DeepEqual(names, []string{"sat"}) {
+	if names, ok := verbatimDoc.ListEntryNames("load"); !ok || !reflect.DeepEqual(names, []string{"sat"}) {
 		t.Fatalf("EntryNames after partial verbatim = (%v, %v)", names, ok)
 	}
 	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}}); err != nil {

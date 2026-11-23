@@ -61,7 +61,7 @@ func (a *fakeNoteVault) GetNotes(_ context.Context, paths []string) (map[string]
 	out := map[string]domain.NoteRef{}
 	for _, one := range paths {
 		if _, found := a.files[one]; found {
-			out[one] = domain.NoteRef{Path: one, Title: domain.Basename(one), ID: "01JRIVER" + domain.Basename(one)}
+			out[one] = domain.NoteRef{Path: one, Title: domain.GetBasename(one), ID: "01JRIVER" + domain.GetBasename(one)}
 		}
 	}
 	return out, nil

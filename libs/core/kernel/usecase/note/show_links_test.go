@@ -230,7 +230,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	if c.Links[0].To != "elsewhere.md" {
 		t.Fatalf("resolved to %q", c.Links[0].To)
 	}
-	vault, crossed := c.Links[0].InVault(first.ID)
+	vault, crossed := c.Links[0].ResolveVault(first.ID)
 	if !crossed || vault != other.ID {
 		t.Errorf("landed in vault %q, crossed=%v", vault, crossed)
 	}

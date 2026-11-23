@@ -13,10 +13,10 @@ type Wikilink struct {
 	Target domain.Address
 }
 
-// WikilinksIn is every wikilink in one line, in the order they are written.
+// FindWikilinks returns every wikilink in one line, in the order they are written.
 // Brackets holding nothing point nowhere, so they are the text they are
 // written as. Brackets inside inline code are an example of a link, not one.
-func WikilinksIn(line string) []Wikilink {
+func FindWikilinks(line string) []Wikilink {
 	var out []Wikilink
 	spans := getCodeSpans(line)
 	pos := 0
@@ -54,10 +54,10 @@ func WikilinksIn(line string) []Wikilink {
 	return out
 }
 
-// WikilinksInText is every wikilink in a text, in the order they are written,
+// FindTextWikilinks returns every wikilink in a text, in the order they are written,
 // with At and To counted from the start of the text. Lines inside a code fence
 // hold none.
-func WikilinksInText(text string) []Wikilink {
+func FindTextWikilinks(text string) []Wikilink {
 	var out []Wikilink
 	var f Fence
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at lineStart == len(text) the trailing empty slice contains no wikilinks"
@@ -68,7 +68,7 @@ func WikilinksInText(text string) []Wikilink {
 		}
 		line := strings.TrimRight(text[lineStart:lineEnd], "\r")
 		if !f.IsCrossedBy(line) && !f.IsInside() {
-			for _, found := range WikilinksIn(line) {
+			for _, found := range FindWikilinks(line) {
 				found.At += lineStart
 				found.To += lineStart
 				out = append(out, found)

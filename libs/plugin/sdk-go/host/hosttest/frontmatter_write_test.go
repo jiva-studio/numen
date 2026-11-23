@@ -15,7 +15,7 @@ const riverNote = "---\ntitle: River\ntags: [lake]\nstatus: open\n---\nThe river
 
 func TestWriteFrontmatterSetsAKeyAndKeepsTheOtherKeysAndTheBody(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("river.md", riverNote)
+	v.WriteFile("river.md", riverNote)
 
 	results, err := v.WriteFrontmatter(t.Context(), []host.FrontmatterWrite{
 		{Path: "river.md", Values: map[string]any{"tags": []string{"river", "lake"}}},
@@ -32,7 +32,7 @@ func TestWriteFrontmatterSetsAKeyAndKeepsTheOtherKeysAndTheBody(t *testing.T) {
 	if !reflect.DeepEqual(got["tags"], []any{"river", "lake"}) || got["title"] != "River" || got["status"] != "open" {
 		t.Errorf("the frontmatter is %v, want the new tags beside the title and status", got)
 	}
-	if content, _ := v.Content("river.md"); !strings.HasSuffix(content, "---\nThe river runs.\n") {
+	if content, _ := v.ReadContent("river.md"); !strings.HasSuffix(content, "---\nThe river runs.\n") {
 		t.Errorf("the note is %q, want the body kept", content)
 	}
 	if now, err := v.StatFile(t.Context(), "river.md"); err != nil || results[0].Stat.Size != now.Size || !results[0].Stat.ModTime.Equal(now.ModTime) {
@@ -42,7 +42,7 @@ func TestWriteFrontmatterSetsAKeyAndKeepsTheOtherKeysAndTheBody(t *testing.T) {
 
 func TestWriteFrontmatterRemovesAKeyWhoseValueIsNull(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("river.md", riverNote)
+	v.WriteFile("river.md", riverNote)
 
 	if _, err := v.WriteFrontmatter(t.Context(), []host.FrontmatterWrite{{Path: "river.md", Values: map[string]any{"tags": nil}}}); err != nil {
 		t.Fatal(err)
@@ -59,7 +59,7 @@ func TestWriteFrontmatterRemovesAKeyWhoseValueIsNull(t *testing.T) {
 
 func TestWriteFrontmatterShowsOnTheFeedAsAChangedFrontmatter(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("river.md", riverNote)
+	v.WriteFile("river.md", riverNote)
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
 
 	if _, err := v.WriteFrontmatter(t.Context(), []host.FrontmatterWrite{{Path: "river.md", Values: map[string]any{"tags": "river"}}}); err != nil {
@@ -73,13 +73,13 @@ func TestWriteFrontmatterShowsOnTheFeedAsAChangedFrontmatter(t *testing.T) {
 
 func TestWriteFrontmatterRefusesAStaleNoteAndWritesTheOthers(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("river.md", riverNote)
-	v.File("lake.md", "---\ntitle: Lake\n---\nStill.\n")
+	v.WriteFile("river.md", riverNote)
+	v.WriteFile("lake.md", "---\ntitle: Lake\n---\nStill.\n")
 	stale, err := v.StatFile(t.Context(), "river.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.File("river.md", riverNote+"More water.\n")
+	v.WriteFile("river.md", riverNote+"More water.\n")
 
 	results, err := v.WriteFrontmatter(t.Context(), []host.FrontmatterWrite{
 		{Path: "river.md", Values: map[string]any{"tags": "river"}, Baseline: stale},
@@ -99,7 +99,7 @@ func TestWriteFrontmatterRefusesAStaleNoteAndWritesTheOthers(t *testing.T) {
 	if results[2].Err == nil {
 		t.Error("a note that is not there was written")
 	}
-	if content, _ := v.Content("river.md"); strings.Contains(content, "tags: river") {
+	if content, _ := v.ReadContent("river.md"); strings.Contains(content, "tags: river") {
 		t.Errorf("the stale note was written: %q", content)
 	}
 }

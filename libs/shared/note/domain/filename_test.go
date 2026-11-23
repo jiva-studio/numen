@@ -138,7 +138,7 @@ func TestEveryFilenameATitleReducesToCanBeSavedAsALink(t *testing.T) {
 		if !domain.IsNameable(name) {
 			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
 		}
-		if domain.Basename(name+".md") != name {
+		if domain.GetBasename(name+".md") != name {
 			t.Errorf("%q is filed as %q, which is not the name a link resolves by", title, name)
 		}
 		if domain.LinkName(name) != name {
@@ -167,12 +167,12 @@ func TestAFilenamePreservesWhatALinkCanBeSavedWith(t *testing.T) {
 }
 
 func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
-	name, exact, err := domain.Filename("Entropy")
+	name, exact, err := domain.CreateFilename("Entropy")
 	if err != nil || name != "Entropy" || !exact {
 		t.Errorf("got %q, exact %v, err %v", name, exact, err)
 	}
 
-	name, exact, err = domain.Filename("a/b")
+	name, exact, err = domain.CreateFilename("a/b")
 	if err != nil || name != "a-b" || exact {
 		t.Errorf("got %q, exact %v, err %v", name, exact, err)
 	}
@@ -180,7 +180,7 @@ func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
 
 func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 	for _, title := range []string{"", "   ", "...", "\x00"} {
-		name, exact, err := domain.Filename(title)
+		name, exact, err := domain.CreateFilename(title)
 		if !errors.Is(err, domain.ErrInvalidName) {
 			t.Errorf("%q: err %v", title, err)
 		}
@@ -195,7 +195,7 @@ func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 
 func TestFilenameRejectsATitleOfMoreThanOneLine(t *testing.T) {
 	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
-		name, exact, err := domain.Filename(title)
+		name, exact, err := domain.CreateFilename(title)
 		if !errors.Is(err, domain.ErrInvalidName) {
 			t.Errorf("%q: err %v", title, err)
 		}

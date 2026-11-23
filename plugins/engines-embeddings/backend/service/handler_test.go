@@ -38,7 +38,7 @@ func noHealth() (*health.Client, error) { return nil, hostcall.ErrNoHost }
 func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
 	hostHealth := healthtest.NewHost(t)
-	for name, value := range hostHealth.Vars(linkedToken) {
+	for name, value := range hostHealth.BuildVars(linkedToken) {
 		t.Setenv(name, value)
 	}
 	h := newHandler(newServer(nil, nil, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))

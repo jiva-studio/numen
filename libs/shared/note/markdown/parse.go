@@ -73,7 +73,7 @@ func parseNoteID(fm map[string]any) (id string, problem string) {
 	if !isText {
 		return "", "id is not text"
 	}
-	if !ulid.Valid(text) {
+	if !ulid.IsValid(text) {
 		return "", "id " + text + " is not a ULID"
 	}
 	return text, ""

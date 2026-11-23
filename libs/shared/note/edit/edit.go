@@ -170,7 +170,7 @@ func (e Edit) getExpectedStat(path string, on domain.FileStat, looked error) (do
 }
 
 func (e Edit) addIdentifier(doc *markdown.Document) error {
-	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
+	if _, carried := doc.GetIdentifier(); carried || e.ShouldOverwrite {
 		return nil
 	}
 	identifier, err := ulid.NewGenerator(e.Entropy).NewID(e.Clock.Now())

@@ -45,7 +45,7 @@ func newFunctionScene(t *testing.T, files map[string]string) functionScene {
 	t.Helper()
 	v := hosttest.New("garden")
 	for path, content := range files {
-		v.File(path, content)
+		v.WriteFile(path, content)
 	}
 	isFailing := &atomic.Bool{}
 	app, err := service.NewApp(func(id domain.VaultID) tagcache.Vault {
@@ -146,7 +146,7 @@ func TestTagsThatCannotBeUpdatedAnswerWithAWarningOfTheGeneration(t *testing.T) 
 		t.Fatal(err)
 	}
 	s.isFailing.Store(true)
-	s.vault.File("e.md", "---\ntags: a\n---\n")
+	s.vault.WriteFile("e.md", "---\ntags: a\n---\n")
 
 	paths, _, warning, err := s.client.FindDocuments(t.Context(), callTags("a"), 10)
 	if err != nil {

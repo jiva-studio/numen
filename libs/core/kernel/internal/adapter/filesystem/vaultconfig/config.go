@@ -54,7 +54,7 @@ func ReadConfig(root, serviceDir string) (Config, error) {
 	if err := json.Unmarshal(raw, &c); err != nil {
 		return Config{}, fmt.Errorf("vault configuration is unreadable: %w", err)
 	}
-	if !ulid.Valid(c.ID) {
+	if !ulid.IsValid(c.ID) {
 		return Config{}, fmt.Errorf("vault configuration holds %q: %w", c.ID, ulid.ErrInvalid)
 	}
 	return c, nil

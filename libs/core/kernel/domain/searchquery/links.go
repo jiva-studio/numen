@@ -170,7 +170,7 @@ func CleanPath(value string) string {
 // GetFileName returns the folded last segment of a written file address, the key GroupFilesByName files a
 // path under.
 func GetFileName(value string) string {
-	return domain.FoldName(path.Base(CleanPath(value)))
+	return domain.NormalizeName(path.Base(CleanPath(value)))
 }
 
 // GroupFilesByName returns the paths keyed by GetFileName.
