@@ -59,9 +59,9 @@ const (
 // the version of the protocol library.
 const ProtocolVersion = 1
 
-// PluginPermissions is every permission a manifest may declare, in its canonical spelling, besides the
+// ListPluginPermissions returns every permission a manifest may declare, in its canonical spelling, besides the
 // permissions connections:use:<operation>.
-func PluginPermissions() []string {
+func ListPluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
@@ -100,14 +100,14 @@ const ActivationEventIndexChanged = "onIndexChanged"
 // feed of a vault.
 const ActivationEventFilesChanged = "onFilesChanged"
 
-// PluginActivationEvents is every activation event pattern a manifest may declare.
-func PluginActivationEvents() []string {
+// ListPluginActivationEvents returns every activation event pattern a manifest may declare.
+func ListPluginActivationEvents() []string {
 	return []string{ActivationEventIndexChanged, ActivationEventFilesChanged}
 }
 
-// PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
+// ListPluginCapabilities returns every capability a manifest may declare: the capabilities the host resolves
 // a plugin by.
-func PluginCapabilities() []string {
+func ListPluginCapabilities() []string {
 	return []string{
 		"search.source",
 		"tools",
@@ -396,7 +396,7 @@ func (m Manifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
 		_, isGrant := ParseConnectionsUse(p)
-		if !isGrant && !slices.Contains(PluginPermissions(), p) {
+		if !isGrant && !slices.Contains(ListPluginPermissions(), p) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
 		}
 	}
@@ -413,7 +413,7 @@ func (m Manifest) listPermissionIssues() []error {
 func (m Manifest) listCapabilityIssues() []error {
 	var issues []error
 	for _, c := range m.Capabilities {
-		if !slices.Contains(PluginCapabilities(), c) {
+		if !slices.Contains(ListPluginCapabilities(), c) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidCapability, c))
 		}
 	}
@@ -431,7 +431,7 @@ func (m Manifest) listActivationEventIssues() []error {
 }
 
 func isValidActivationEvent(event string) bool {
-	if slices.Contains(PluginActivationEvents(), event) {
+	if slices.Contains(ListPluginActivationEvents(), event) {
 		return true
 	}
 	_, isMasked := getFilesChangedMask(event)
@@ -464,7 +464,7 @@ func (m Manifest) IsTakingFileTypes(types []domain.FileType) bool {
 			if mask.Note != "" {
 				return mask.Note == file.Note
 			}
-			return mask.Content.Matches(file.Content)
+			return mask.Content.IsMatch(file.Content)
 		}) {
 			return true
 		}
@@ -484,11 +484,6 @@ func (m Manifest) CanTarget(target string) bool {
 		return true
 	}
 	return slices.Contains(m.Targets, target)
-}
-
-// Supports reports whether this plugin runs in the given workspace target.
-func (m Manifest) Supports(target string) bool {
-	return m.CanTarget(target)
 }
 
 // HasCapability reports whether this plugin provides the given capability.

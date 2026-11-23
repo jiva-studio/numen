@@ -28,7 +28,7 @@ func newHealthClient(t *testing.T, items *pluginhealth.Items, token string) nume
 	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: &Endpoint{callers: callers}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewPluginHealthServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewPluginHealthServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 // A plugin reports and clears items of its own: the token names the plugin, whatever the request says.

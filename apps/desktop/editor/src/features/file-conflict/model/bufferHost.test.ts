@@ -65,11 +65,11 @@ describe('the files a plugin has open', () => {
 describe('the text a plugin could not write when the window quits', () => {
   /** A quit is requested once, and the stream then stays open. */
   const requestQuit = () => ({
-    watchQuit: async function* () {
+    watchWindowClose: async function* () {
       yield { token: '1', flush: true }
       await new Promise(() => undefined)
     },
-    reportFlush: vi.fn(() => Promise.resolve()),
+    reportPendingWork: vi.fn(() => Promise.resolve()),
   })
   const settle = async () => {
     for (let i = 0; i < 10; i++) await new Promise((done) => setTimeout(done, 0))
@@ -105,7 +105,7 @@ describe('the text a plugin could not write when the window quits', () => {
     expect(fileFlush.conflicts.value.map((one) => one.note)).toEqual([
       'md.numen.flashcards-studio: Decks.md',
     ])
-    expect(quits.reportFlush).toHaveBeenCalledWith('1', 'unsaved')
+    expect(quits.reportPendingWork).toHaveBeenCalledWith('1', 'unsaved')
     await fileFlush.conflicts.value[0]?.keep()
     expect(settled).toEqual(['keep'])
     await fileFlush.conflicts.value[0]?.take()
@@ -133,7 +133,7 @@ describe('the text a plugin could not write when the window quits', () => {
     fileFlush.close()
 
     expect(fileFlush.conflicts.value.map((one) => one.note)).toEqual(['Plain.md'])
-    expect(quits.reportFlush).toHaveBeenCalledWith('1', 'unsaved')
+    expect(quits.reportPendingWork).toHaveBeenCalledWith('1', 'unsaved')
   })
 })
 

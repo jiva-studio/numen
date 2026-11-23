@@ -6,12 +6,12 @@ import {
   WatchHealthResponseSchema,
   type ReportHealthRequest,
 } from '@numen/protocol'
-import { createPluginHealthClient } from '../clients'
+import { createPluginHealthRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createHealthClient, type HealthRpc } from './health'
 
 const createHealth = (answers: CoreAnswers) =>
-  createHealthClient(createPluginHealthClient(createCoreTransport(answers)))
+  createHealthClient(createPluginHealthRpc(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one

@@ -42,7 +42,7 @@ func readFingerprint(t *testing.T, registry *tools.Registry, notePath string) st
 
 func readLinks(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	t.Helper()
-	content, ok := v.Content(notePath)
+	content, ok := v.ReadContent(notePath)
 	if !ok {
 		t.Fatalf("%s is not in the vault", notePath)
 	}
@@ -61,7 +61,7 @@ func findLink(links []domain.Link, to string, role domain.LinkRole) (domain.Link
 func newLinkedGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v, registry := newGeologyVault(t)
-	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\nlinks:\n"+
+	v.WriteFile("Rocks/Basalt.md", "---\ntitle: Basalt\nlinks:\n"+
 		"  - to: Granite\n    role: jump\n    label: cousin\n    note: both are igneous\n"+
 		"  - to: Granite\n    role: ref\n"+
 		"  - to: Minerals\n    role: parent\n"+
@@ -101,7 +101,7 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 		t.Errorf("fingerprint of Rocks/Basalt.md = %q, want the one returned, %q", now, out.Results[0].Fingerprint)
 	}
 
-	content, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
 	if !strings.Contains(content, "links:") || !strings.HasSuffix(content, "A volcanic rock.\n") {
 		t.Errorf("Rocks/Basalt.md contains %q, want a links block and the body kept", content)
 	}
@@ -121,8 +121,8 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 	v, registry := newGeologyVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock, changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock, changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 	minerals := readFingerprint(t, registry, "Minerals.md")
 
 	arguments := fmt.Sprintf(`{"links":[
@@ -187,8 +187,8 @@ func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 	basalt := readFingerprint(t, registry, "Rocks/Basalt.md")
 	minerals := readFingerprint(t, registry, "Minerals.md")
 	granite := readFingerprint(t, registry, "Rocks/Granite.md")
-	mineralsBefore, _ := v.Content("Minerals.md")
-	graniteBefore, _ := v.Content("Rocks/Granite.md")
+	mineralsBefore, _ := v.ReadContent("Minerals.md")
+	graniteBefore, _ := v.ReadContent("Rocks/Granite.md")
 
 	arguments := fmt.Sprintf(`{"links":[
 		{"from":"Minerals.md","fingerprint":%q,"address":"Granite","role":"sideways"},
@@ -217,7 +217,7 @@ func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 
 func TestLinkAddWithoutAFingerprintWritesNothing(t *testing.T) {
 	v, registry := newGeologyVault(t)
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	arguments := `{"links":[{"from":"Rocks/Basalt.md","address":"Granite","role":"jump"}]}`
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: geologyVault, Name: "link_add", Arguments: []byte(arguments)})
@@ -294,7 +294,7 @@ func TestLinkToolsNameTheTargetAddress(t *testing.T) {
 func TestLinkToolsRejectTheToArgument(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	for name, arguments := range map[string]string{
 		"link_add":    fmt.Sprintf(`{"links":[{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Fossils","role":"jump"}]}`, fingerprint),
@@ -348,7 +348,7 @@ func TestLinkUpdateChangesTheLabelAndKeepsTheRoleLeftOut(t *testing.T) {
 
 func TestLinkUpdateKeepsTheFieldsLeftOut(t *testing.T) {
 	v, registry := newGeologyVault(t)
-	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\nlinks:\n"+
+	v.WriteFile("Rocks/Basalt.md", "---\ntitle: Basalt\nlinks:\n"+
 		"  - to: Granite\n    role: jump\n    type: contrast\n    label: cousin\n    note: both are igneous\n"+
 		"---\nA volcanic rock.\n")
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
@@ -371,9 +371,9 @@ func TestLinkUpdateKeepsTheFieldsLeftOut(t *testing.T) {
 func TestLinkUpdateWithAnOldFingerprintIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	content, _ := v.Content("Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", content+"Changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	requireRejection(t, registry, geologyVault, "link_update", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"label":"made of"}`, oldFingerprint))
@@ -383,7 +383,7 @@ func TestLinkUpdateWithAnOldFingerprintIsRejected(t *testing.T) {
 func TestLinkUpdateWithMissingOrUnknownFieldsIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	for _, arguments := range []string{
 		`{"from":"Rocks/Basalt.md","address":"Minerals","label":"made of"}`,
@@ -435,9 +435,9 @@ func TestLinkRemoveWithARoleRemovesOnlyTheLinkOfThatRole(t *testing.T) {
 func TestLinkRemoveWithAnOldFingerprintIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	content, _ := v.Content("Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", content+"Changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	requireRejection(t, registry, geologyVault, "link_remove", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q}`, oldFingerprint))
@@ -447,7 +447,7 @@ func TestLinkRemoveWithAnOldFingerprintIsRejected(t *testing.T) {
 func TestLinkRemoveWithoutAFingerprintOrAMatchingLinkIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	for _, arguments := range []string{
 		`{"from":"Rocks/Basalt.md","address":"Granite"}`,

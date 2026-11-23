@@ -32,8 +32,8 @@ func TestTheMapIsBroughtUpToDateBeforeItIsGiven(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
 
-	s.vault.File("a.md", "---\ntags: [lake]\n---\n")
-	s.vault.File("b.md", "---\ntags: delta\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: [lake]\n---\n")
+	s.vault.WriteFile("b.md", "---\ntags: delta\n---\n")
 
 	want := map[string][]string{"a.md": {"lake"}, "b.md": {"delta"}}
 	if got := s.getMap(t); !maps.EqualFunc(got, want, slices.Equal) {
@@ -58,7 +58,7 @@ func TestGetMapDropsNoteWithoutTags(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
 
-	s.vault.File("a.md", "# no tags\n")
+	s.vault.WriteFile("a.md", "# no tags\n")
 
 	if got := s.getMap(t); len(got) != 0 {
 		t.Errorf("map = %v, want no note", got)

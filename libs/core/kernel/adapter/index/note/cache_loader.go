@@ -148,7 +148,7 @@ func (r *cachedResolution) resolveLink(from string, l *domain.ResolvedLink) {
 }
 
 func lookupCandidatesInMemory(name string, byPath map[string]string, byFolded map[string][]string) []string {
-	base := domain.FoldName(domain.LinkName(name))
+	base := domain.NormalizeName(domain.LinkName(name))
 	candidates := byFolded[base]
 	withExt := name + domain.NoteExtension
 	_, hasExact := byPath[name]

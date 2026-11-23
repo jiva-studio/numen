@@ -12,7 +12,7 @@ import (
 
 func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 	t.Helper()
-	dsn := dsnOf(path, []string{"journal_mode(WAL)", "foreign_keys(1)", "busy_timeout(200)", shipped})
+	dsn := buildDSNWithPragmas(path, []string{"journal_mode(WAL)", "foreign_keys(1)", "busy_timeout(200)", shipped})
 	db, err := sql.Open("sqlite", dsn+"&_txlock=immediate")
 	if err != nil {
 		t.Fatal(err)

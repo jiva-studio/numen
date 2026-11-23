@@ -65,8 +65,8 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
             deps.tabSync.applyGroupPaths(event.links.groups)
           } else if (event.sync) {
             deps.tabSync.applySync(event.sync)
-          } else if (event.movedTab) {
-            deps.openMovedTab(event.movedTab)
+          } else if (event.tabMove) {
+            deps.openMovedTab(event.tabMove)
           } else if (event.isHighlighted !== undefined) {
             deps.setHighlighted(event.isHighlighted)
           }
@@ -111,7 +111,7 @@ function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsRepo
 
 /** Returns the linkable tabs, the active tab and the tab count of the window. */
 export function getWindowReport(windowTabs: ReportedTabs, isMain: boolean): WindowTabsReport {
-  const front = windowTabs.handle.front()
+  const front = windowTabs.handle.getFrontTab()
   const activeTitle = windowTabs.tabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
   return {
     tabs: getLinkableTabs(windowTabs),

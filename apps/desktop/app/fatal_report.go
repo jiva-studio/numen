@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -21,7 +20,7 @@ import (
 )
 
 func failWithDialog(cfg container.Config, why error) error {
-	page, err := fatalReport{}.page(cfg, why)
+	page, err := fatalReport{}.buildPage(cfg, why)
 	if err != nil {
 		return err
 	}
@@ -58,7 +57,7 @@ func failWithDialog(cfg container.Config, why error) error {
 }
 
 func getFatalWindowOptions() application.WebviewWindowOptions {
-	return frame.Window(application.WebviewWindowOptions{
+	return frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:  appName,
 		Width:  720,
 		Height: 520,
@@ -90,7 +89,7 @@ const (
 	factSettings = "settings"
 )
 
-func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
+func (fatalReport) buildPage(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
 	if constructed, ok := debug.ReadBuildInfo(); ok {
@@ -133,11 +132,8 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		}
 	}
 
-	// sqlite reports a failure as a result code, and the accompanying message
-	// is the library's own.
-	var coded interface{ Code() int }
-	if errors.As(why, &coded) {
-		return getIndexFatalReport(cfg, coded.Code(), why)
+	if failure, ok := index.GetOpenFailure(getIndexPath(cfg), why); ok {
+		return getIndexFatalReport(cfg, failure, why)
 	}
 
 	if name, ok := container.GetUnknownVaultName(why); ok {
@@ -200,30 +196,18 @@ func getSizeFatalReport(cfg container.Config, outside *settingsdomain.OutsideBou
 	}
 }
 
-// The result codes sqlite answers with: a file that is not a database, and a
-// file it could neither open nor make.
-const (
-	notADatabase = 26
-	cannotOpen   = 14
-)
-
-func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
+func getIndexFatalReport(cfg container.Config, failure index.OpenFailure, why error) fatalReport {
 	pos := getIndexPath(cfg)
 	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{factIndex, pos}}}
 
-	folder := false
-	if info, err := os.Stat(pos); err == nil {
-		folder = info.IsDir()
-	}
-
-	switch {
-	case code == notADatabase:
+	switch failure {
+	case index.NotAnIndex:
 		response.Sentence = "This file is not a Numen index."
 		response.Remedy = "Move it aside. The index is a cache; Numen rebuilds it from your vaults."
-	case code == cannotOpen && folder:
+	case index.PathIsFolder:
 		response.Sentence = "The index path is a folder."
 		response.Remedy = "Point -index at a file, or move the folder out of the way."
-	case code == cannotOpen:
+	case index.CannotCreate:
 		response.Sentence = "The index can't be opened or created here."
 		response.Facts = append(response.Facts, detail{"folder", filepath.Dir(pos)})
 		response.Remedy = "Allow writing in the folder (check its permission), " +
@@ -245,7 +229,7 @@ func getSettingsPath(cfg container.Config) string {
 	if cfg.RegistryPath != "" {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
-	path, err := settings.Path()
+	path, err := settings.GetPath()
 	if err != nil {
 		return ""
 	}

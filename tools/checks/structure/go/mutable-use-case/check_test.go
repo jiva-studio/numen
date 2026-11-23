@@ -96,7 +96,7 @@ func TestConstructorsReportCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks every module of the workspace")
 	}
-	workspace := load.Workspace(t)
+	workspace := load.LoadWorkspace(t)
 	kernelDir, err := filepath.Abs(filepath.Join(load.RepoRootDir, "libs/core/kernel"))
 	if err != nil {
 		t.Fatal(err)
@@ -128,16 +128,16 @@ func TestNoUseCaseHasAMutatingWithMethod(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkNoUseCaseHasAMutatingWithMethod(t, load.Workspace(t))
+	checkNoUseCaseHasAMutatingWithMethod(t, load.LoadWorkspace(t))
 }
 
 func TestNoFunctionFieldIsAssignedAfterConstruction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkNoFunctionFieldIsAssignedAfterConstruction(t, load.Workspace(t))
+	checkNoFunctionFieldIsAssignedAfterConstruction(t, load.LoadWorkspace(t))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

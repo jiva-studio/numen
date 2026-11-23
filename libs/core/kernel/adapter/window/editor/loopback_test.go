@@ -107,7 +107,7 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody received")
 	}
-	if pos := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); pos != "" {
+	if pos := back.BuildAddress(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); pos != "" {
 		t.Errorf("a socket that answers nothing gave out %s", pos)
 	}
 }
@@ -118,7 +118,7 @@ func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	right := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
+	right := back.BuildAddress(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
 	if out := ask(t, handler, right); out.Code != http.StatusOK {
 		t.Fatalf("the address this run gave out was answered %d", out.Code)
 	}
@@ -145,7 +145,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	// The window moves to a vault holding nothing of the kind.
 	api.state.Runtime.SetVault(vaulttest.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
-	if out := ask(t, handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
+	if out := ask(t, handler, back.BuildAddress(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
 			out.Code, out.Body)
 	}
@@ -159,7 +159,7 @@ func TestAFileOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	elsewhere := api.state.GetCurrentVault()
 	ref := statOf(t, api, elsewhere, talk)
 	elsewhere.ID = "01ANOTHERVAULTALTOGETHER00"
-	if out := ask(t, handler, back.Address(elsewhere, ref)); out.Code != http.StatusNotFound {
+	if out := ask(t, handler, back.BuildAddress(elsewhere, ref)); out.Code != http.StatusNotFound {
 		t.Errorf("a vault nobody holds was answered %d", out.Code)
 	}
 }
@@ -175,11 +175,11 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	api.state.Runtime.SetVault(vault)
 	back, handler := openLoopback(t, api)
 
-	if out := ask(t, handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
+	if out := ask(t, handler, back.BuildAddress(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
 		t.Errorf("a note of the vault was answered %d", out.Code)
 	}
 	for _, outside := range []string{"../secrets", "/etc/passwd"} {
-		pos := back.Address(vault, statOf(t, api, vault, outside))
+		pos := back.BuildAddress(vault, statOf(t, api, vault, outside))
 		if out := ask(t, handler, pos); out.Code == http.StatusOK {
 			t.Errorf("%s was served", outside)
 		}
@@ -192,7 +192,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, back.BuildAddress(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -209,7 +209,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
-	address := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
+	address := back.BuildAddress(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
 
 	whole := ask(t, handler, address)
 	if got := whole.Header().Get("Accept-Ranges"); got != "bytes" {
@@ -246,7 +246,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	}
 	defer testsupport.Close(t, loopbackCloser{back})
 
-	out := fetch(t, http.DefaultClient, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
+	out := fetch(t, http.DefaultClient, back.BuildAddress(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if out.StatusCode != http.StatusOK {
 		t.Fatalf("the socket answered %d", out.StatusCode)
 	}
@@ -284,7 +284,7 @@ func TestTheAddressCarriesNanosecondsSinceTheEpoch(t *testing.T) {
 	ref := domain.FileStat{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
 	back := &Loopback{address: "http://127.0.0.1:1", token: "given-out"}
 	want := "?size=12&mtime=1788433445123456789"
-	if targetVal := back.Address(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(targetVal, want) {
+	if targetVal := back.BuildAddress(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(targetVal, want) {
 		t.Errorf("the address is %q, and it should end %q", targetVal, want)
 	}
 }

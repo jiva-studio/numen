@@ -10,7 +10,7 @@
 import type { HTMLAttributes } from 'vue'
 import type { AcceptableValue } from 'reka-ui'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
-import { cn } from '@/shared/lib/dom/classes'
+import { joinClasses } from '@/shared/lib/dom/classes'
 import type { SegmentedChoice } from '.'
 
 const props = withDefaults(
@@ -49,7 +49,7 @@ const onKey = (event: KeyboardEvent) => {
     :disabled="isDisabled"
     loop
     :class="
-      cn(
+      joinClasses(
         // One row tall, which every control standing on a row is drawn at.
         'h-action rounded-tight border-rule bg-raised inline-flex items-stretch gap-px border p-px',
         props.class,
@@ -63,7 +63,7 @@ const onKey = (event: KeyboardEvent) => {
       :key="choice.id"
       :value="choice.id"
       :class="
-        cn(
+        joinClasses(
           'rounded-tight inline-flex shrink-0 items-center justify-center whitespace-nowrap',
           // A segment fills the row height and keeps its own clearance at the ends, measured
           // to the painted glyph edge.

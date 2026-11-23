@@ -28,7 +28,7 @@ function createItemApi({ deps, registry, handlers, findOwner }: ItemParts) {
   /** The registered command, once its plugin has started. */
   const findStartedEntry = async (id: string) => {
     const pluginId = findOwner(id)
-    if (!registry.commands.value.has(id) && pluginId) await deps.plugins?.startPlugin?.(pluginId)
+    if (!registry.commands.value.has(id) && pluginId) await deps.plugins.startPlugin(pluginId)
     return registry.commands.value.get(id)
   }
   return {
@@ -67,6 +67,8 @@ function createItemApi({ deps, registry, handlers, findOwner }: ItemParts) {
  * The commands the plugins registered: the palette's list, running one, and the keys that run them.
  * A shared command offers and runs the handlers the plugins declare, which `handlers` lists.
  */
+export type CommandApi = ReturnType<typeof createCommandApi>
+
 export function createCommandApi(
   deps: HostDeps,
   registry: HostRegistry,
@@ -86,7 +88,7 @@ export function createCommandApi(
     if (!command || !isCommandAvailable(command.declaration, note, deps.commands)) return false
     let entry = command.entry
     if (!entry) {
-      await deps.plugins?.startPlugin?.(command.declaration.pluginId)
+      await deps.plugins.startPlugin(command.declaration.pluginId)
       entry = registry.commands.value.get(id)
     }
     if (!entry) return false

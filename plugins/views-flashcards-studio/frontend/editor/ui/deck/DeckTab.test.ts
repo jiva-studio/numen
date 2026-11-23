@@ -149,7 +149,7 @@ const mountDeck = async (
       return asValue({ at: 'scheduled', version: 2n })
     },
     write: async () => asValue({ at: '', version: 1n }),
-    curve: async () => ({
+    getCurve: async () => ({
       goal: 'minutes',
       grid: [],
       days: [],

@@ -14,13 +14,13 @@ export function useTabs(store: TabStore) {
       return { id, title, ...(mark ? { mark } : {}) }
     }),
   )
-  const queries = createTabQueries(store)
+  const tabQueries = createTabQueries(store)
   const openers = createTabOpeners(store)
   const navigation = createTabNavigation(store, openers)
 
   return {
     tabs,
-    getTab: queries.getTab,
+    getTab: tabQueries.getTab,
     createTab: openers.createTab,
     openTabOfKind: openers.openTabOfKind,
     openTabAdjacentOfKind: openers.openTabAdjacentOfKind,

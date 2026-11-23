@@ -54,16 +54,16 @@ func setQuery(doc *markdown.Document, query string) error {
 		if body != "" && !strings.HasSuffix(body, "\n") {
 			separator = "\n\n"
 		}
-		return doc.SpliceBody(len(body), len(body), separator+formatBlock(query))
+		return doc.ReplaceBody(len(body), len(body), separator+formatBlock(query))
 	}
 	found := blocks[0]
 	if found.isClosed && getFenceLength(query, found.mark) <= found.length {
 		start, end := found.opening.end, found.closing.start
-		return doc.SpliceBody(start, end, query+"\n")
+		return doc.ReplaceBody(start, end, query+"\n")
 	}
 	end := len(body)
 	if found.isClosed {
 		end = found.closing.end
 	}
-	return doc.SpliceBody(found.opening.start, end, formatBlock(query))
+	return doc.ReplaceBody(found.opening.start, end, formatBlock(query))
 }

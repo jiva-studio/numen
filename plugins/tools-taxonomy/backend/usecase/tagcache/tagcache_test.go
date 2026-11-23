@@ -90,7 +90,7 @@ type scene struct {
 func newScene(files map[string]string) *scene {
 	v := hosttest.New("garden")
 	for path, content := range files {
-		v.File(path, content)
+		v.WriteFile(path, content)
 	}
 	s := &scene{vault: v, reads: &recordedReads{Vault: v}, store: &cursorStore{Store: v.Store()}}
 	s.restart()
@@ -179,7 +179,7 @@ func TestAnUpdateReadsTheNoteWhoseFrontmatterChangedAlone(t *testing.T) {
 	s.getCounts(t)
 	s.reads.take()
 
-	s.vault.File("a.md", "---\ntags: [lake]\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: [lake]\n---\n")
 	s.update(t)
 
 	if asked := s.reads.take(); len(asked) != 1 || !slices.Equal(asked[0].Paths, []string{"a.md"}) {
@@ -266,7 +266,7 @@ func TestAListAskedDuringTheFirstReadWaitsForIt(t *testing.T) {
 func TestAFailedUpdateReadsTheSameChangesAtTheNextUse(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getCounts(t)
-	s.vault.File("a.md", "---\ntags: lake\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: lake\n---\n")
 	s.reads.failing = true
 	if err := s.cache.UpdateVault(t.Context(), "garden"); err == nil {
 		t.Fatal("a failed read was not reported")
@@ -287,7 +287,7 @@ func TestAFailedUpdateReadsTheSameChangesAtTheNextUse(t *testing.T) {
 func TestApplyingABatchTwiceMatchesApplyingItOnce(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 	s.getCounts(t)
-	s.vault.File("a.md", "---\ntags: delta\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: delta\n---\n")
 	s.vault.Remove("b.md")
 	s.store.isRefused = true
 	if err := s.cache.UpdateVault(t.Context(), "garden"); err == nil {
@@ -309,8 +309,8 @@ func TestAnUpdateOfSeveralNotesReadsThemInOneRead(t *testing.T) {
 	s.getCounts(t)
 	s.reads.take()
 
-	s.vault.File("a.md", "---\ntags: lake\n---\n")
-	s.vault.File("b.md", "---\ntags: delta\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: lake\n---\n")
+	s.vault.WriteFile("b.md", "---\ntags: delta\n---\n")
 	s.update(t)
 
 	if asked := s.reads.take(); len(asked) != 1 || !slices.Equal(asked[0].Paths, []string{"a.md", "b.md"}) {
@@ -325,8 +325,8 @@ func TestARestartReadsOnlyTheChangesMadeWhileThePluginWasNotRunning(t *testing.T
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n"})
 	s.getCounts(t)
 
-	s.vault.File("a.md", "---\ntags: lake\n---\n")
-	s.vault.File("c.md", "---\ntags: delta\n---\n")
+	s.vault.WriteFile("a.md", "---\ntags: lake\n---\n")
+	s.vault.WriteFile("c.md", "---\ntags: delta\n---\n")
 	s.vault.Remove("b.md")
 	s.restart()
 	s.reads.take()

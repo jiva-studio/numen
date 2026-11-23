@@ -1,6 +1,6 @@
 /** Typing into a drawn table: what a cell writes back, and what the keys do. */
 import { EditorView } from '@codemirror/view'
-import { emptyRow, withColumn, writeCell } from '../../lib/table/table'
+import { createEmptyRow, withColumn, writeCell } from '../../lib/table/table'
 
 const getSpan = (frame: HTMLElement) => {
   const from = Number(frame.dataset['from'])
@@ -47,7 +47,7 @@ const grow = (frame: HTMLElement, view: EditorView) => {
     row: () => ({
       changes: {
         from: view.state.doc.lineAt(where.to).to,
-        insert: emptyRow(countColumns(frame)),
+        insert: createEmptyRow(countColumns(frame)),
       },
     }),
     column: () => ({
@@ -132,6 +132,6 @@ function handleCellKeydown(event: KeyboardEvent, frame: HTMLElement, view: Edito
   if (!range) return
   const end = view.state.doc.lineAt(range.to).to
   const columns = countColumns(frame)
-  view.dispatch({ changes: { from: end, insert: emptyRow(columns) } })
+  view.dispatch({ changes: { from: end, insert: createEmptyRow(columns) } })
   focus(getCells(frame)[pos + 1])
 }

@@ -5,13 +5,13 @@
  * Without a view it draws nothing.
  */
 import { computed, defineComponent, h, onBeforeUnmount, watch, type PropType } from 'vue'
-import { adoptPluginStyle, getPluginStyle } from '../styles'
+import type { PluginStyles } from '../styles'
 import type { DeclaredSlotView } from './slotViews'
 
-function addPluginStyle(pluginId: string): () => void {
-  const release = adoptPluginStyle(pluginId, document)
+function addPluginStyle(styles: PluginStyles, pluginId: string): () => void {
+  const release = styles.adopt(pluginId, document)
   if (release) return release
-  const href = getPluginStyle(pluginId)
+  const href = styles.getUrl(pluginId)
   if (!href) return () => undefined
   const link = document.createElement('link')
   link.rel = 'stylesheet'
@@ -22,7 +22,10 @@ function addPluginStyle(pluginId: string): () => void {
 }
 
 /** Keeps the stylesheet of each plugin whose view is drawn, and releases it once none is. */
-export function usePluginStyles(getViews: () => readonly { readonly pluginId: string }[]): void {
+export function usePluginStyles(
+  styles: PluginStyles,
+  getViews: () => readonly { readonly pluginId: string }[],
+): void {
   const releases = new Map<string, () => void>()
 
   const sync = (views: readonly { readonly pluginId: string }[]): void => {
@@ -32,7 +35,7 @@ export function usePluginStyles(getViews: () => readonly { readonly pluginId: st
       release()
       releases.delete(id)
     }
-    for (const id of ids) if (!releases.has(id)) releases.set(id, addPluginStyle(id))
+    for (const id of ids) if (!releases.has(id)) releases.set(id, addPluginStyle(styles, id))
   }
 
   watch(getViews, sync, { immediate: true })
@@ -44,10 +47,11 @@ export const SlotViewHost = defineComponent({
   name: 'SlotViewHost',
   props: {
     view: { type: Object as PropType<DeclaredSlotView | null>, default: null },
+    styles: { type: Object as PropType<PluginStyles>, required: true },
   },
   setup(props) {
     const views = computed(() => (props.view ? [props.view] : []))
-    usePluginStyles(() => views.value)
+    usePluginStyles(props.styles, () => views.value)
     return () =>
       props.view ? h(props.view.registration.component, { key: props.view.pluginId }) : null
   },

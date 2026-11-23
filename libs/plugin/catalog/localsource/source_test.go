@@ -49,7 +49,7 @@ func manifestOf(entry catalog.Entry) map[string]any {
 }
 
 func TestTheLocalSourceSatisfiesTheSourceContract(t *testing.T) {
-	disabledEntries := catalogtest.OnDiskEntries()
+	disabledEntries := catalogtest.ListOnDiskEntries()
 	catalogtest.RunSourceContract(t, func(t *testing.T, entries []catalog.Entry) catalog.Source {
 		t.Helper()
 		dir := t.TempDir()
@@ -65,7 +65,7 @@ func TestTheLocalSourceSatisfiesTheSourceContract(t *testing.T) {
 func TestADisabledPluginIsListedWithItsState(t *testing.T) {
 	t.Helper()
 	dir := t.TempDir()
-	for _, entry := range catalogtest.OnDiskEntries() {
+	for _, entry := range catalogtest.ListOnDiskEntries() {
 		writePlugin(t, dir, entry.ID, manifestOf(entry))
 	}
 	source := localsource.New([]string{dir}, settings{disabled: map[string]bool{"org.example.beta": true}})
@@ -86,7 +86,7 @@ func TestADisabledPluginIsListedWithItsState(t *testing.T) {
 
 func TestAPluginOfAnotherWindowIsListedAndKeepsItsTargets(t *testing.T) {
 	dir := t.TempDir()
-	entry := catalogtest.OnDiskEntries()[0]
+	entry := catalogtest.ListOnDiskEntries()[0]
 	entry.Requirements.Targets = []string{"desktop.flashcards"}
 	writePlugin(t, dir, entry.ID, manifestOf(entry))
 
@@ -99,7 +99,7 @@ func TestAPluginOfAnotherWindowIsListedAndKeepsItsTargets(t *testing.T) {
 
 func TestABrokenFolderIsReportedWithThePluginsThatRead(t *testing.T) {
 	dir := t.TempDir()
-	entry := catalogtest.OnDiskEntries()[0]
+	entry := catalogtest.ListOnDiskEntries()[0]
 	writePlugin(t, dir, entry.ID, manifestOf(entry))
 	writePlugin(t, dir, "broken", map[string]any{"id": "nodots", "name": "Broken", "version": "1.0.0"})
 	src := localsource.New([]string{dir}, settings{disabled: nil})

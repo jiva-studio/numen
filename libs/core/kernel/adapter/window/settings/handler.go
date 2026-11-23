@@ -14,56 +14,62 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 // Handler answers every setting read and written.
 type Handler struct {
 	Values
+	PathChoice
 }
 
-// Values answers the reads and writes of the settings and the choice of a path. A value with no
-// use case set answers that the build serves no settings.
+// PathChoice answers ChoosePluginPath. A build with no native dialog uses the generated
+// UnimplementedSettingsServiceHandler.
+type PathChoice interface {
+	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
+}
+
+// Values answers the reads and writes of the settings.
 type Values struct {
-	get        *setting.Get
-	write      *setting.WriteSettings
-	watch      *setting.WatchSettingChanges
+	get   *setting.Get
+	write *setting.WriteSettings
+	watch *setting.WatchSettingChanges
+}
+
+func NewValues(get *setting.Get, write *setting.WriteSettings, watch *setting.WatchSettingChanges) Values {
+	return Values{get: get, write: write, watch: watch}
+}
+
+// NewHandler is the handler of SettingsService over its values and the choice of a path.
+func NewHandler(values Values, choice PathChoice) *Handler {
+	return &Handler{Values: values, PathChoice: choice}
+}
+
+// PathChooser shows the machine's native picker for a plugin's path setting.
+type PathChooser struct {
 	choosePath *setting.ChoosePluginPath
 }
 
-func NewValues(
-	get *setting.Get, write *setting.WriteSettings, watch *setting.WatchSettingChanges,
-	choosePath *setting.ChoosePluginPath,
-) Values {
-	return Values{get: get, write: write, watch: watch, choosePath: choosePath}
+func NewPathChooser(choosePath *setting.ChoosePluginPath) *PathChooser {
+	return &PathChooser{choosePath: choosePath}
 }
-
-// NewHandler is the handler of SettingsService over its values.
-func NewHandler(values Values) *Handler {
-	return &Handler{Values: values}
-}
-
-// errNoSettings is what a build that serves no settings answers.
-var errNoSettings = errors.New("this build serves no settings")
 
 // GetSettings returns every setting of the file this installation is configured in.
 func (h *Values) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
-	if h.get == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	got, err := h.get.Execute()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	reply := &v1.GetSettingsResponse{
-		Written:   got.Written,
-		Version:   got.Version,
-		Path:      got.Path,
-		Plugins:   NewWirePluginInfos(got.Plugins),
-		App:       newWirePluginSettings(got.App),
-		AppGroups: newWireSettingGroups(got.AppGroups),
+		SettingsJson: got.Written,
+		Version:      got.Version,
+		Path:         got.Path,
+		Plugins:      NewWirePluginInfos(got.Plugins),
+		App:          newWirePluginSettings(got.App),
+		AppGroups:    newWireSettingGroups(got.AppGroups),
 	}
 	return connect.NewResponse(reply), nil
 }
@@ -74,27 +80,24 @@ func (h *Values) GetSettings(
 func (h *Values) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
-	if h.write == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	content := make([]settingsdomain.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		content = append(content, settingsdomain.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		content = append(content, settingsdomain.Setting{Path: one.GetKeyPath(), JSON: one.GetValue()})
 	}
 	applied, err := h.write.Write(content)
 	if err != nil {
 		if errors.Is(err, settingsdomain.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.WriteSettingsResponse{Written: applied.Written, Version: applied.Version}), nil
+	return connect.NewResponse(&v1.WriteSettingsResponse{SettingsJson: applied.Written, Version: applied.Version}), nil
 }
 
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
-		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
+		content = append(content, &v1.Setting{KeyPath: one.Path, Value: one.JSON})
 	}
 	return content
 }
@@ -190,17 +193,11 @@ func newWireCondition(target *manifest.Condition) *v1.PluginSettingCondition {
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-// SetPathChooser sets the native dialog a path setting is chosen with, once the application has one.
-func (h *Values) SetPathChooser(choose *setting.ChoosePluginPath) { h.choosePath = choose }
-
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting
 // and writes the chosen path. A path the setting does not accept returns the reason.
-func (h *Values) ChoosePluginPath(
+func (h *PathChooser) ChoosePluginPath(
 	ctx context.Context, r *connect.Request[v1.ChoosePluginPathRequest],
 ) (*connect.Response[v1.ChoosePluginPathResponse], error) {
-	if h.choosePath == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	chosen, err := h.choosePath.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetKey())
 	reply := &v1.ChoosePluginPathResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}
 	switch {
@@ -242,29 +239,28 @@ func newWireReaders(readers []plugin.ReaderInfo) []*v1.PluginReader {
 func (h *Values) WatchSettings(
 	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
 ) error {
-	if h.watch == nil {
-		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	changes, stop := h.watch.Execute()
 	defer stop()
-	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+	return wire.RunWatch(ctx, out, keepalive, nil, func(ctx context.Context, send func(*v1.WatchSettingsResponse) error) error {
+		return sendSettingChanges(ctx, changes, send)
+	})
+}
+
+func sendSettingChanges(
+	ctx context.Context, changes <-chan []settingsdomain.Setting, send func(*v1.WatchSettingsResponse) error,
+) error {
+	if err := send(&v1.WatchSettingsResponse{}); err != nil {
 		return err
 	}
-	repeat := time.NewTicker(keepalive)
-	defer repeat.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
-				return err
-			}
 		case batch, open := <-changes:
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.WatchSettingsResponse{Changed: newWireSettings(batch)}); err != nil {
+			if err := send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
 				return err
 			}
 		}

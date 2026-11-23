@@ -44,7 +44,7 @@ type Workers struct {
 	open        int
 	isWarmed    bool
 	release     Timer
-	afterFunc   func(time.Duration, func()) Timer
+	startTimer  func(time.Duration, func()) Timer
 	idleRelease time.Duration
 	compilation wazero.CompilationCache
 	report      func(what string, err error)
@@ -57,7 +57,7 @@ type Workers struct {
 type Options struct {
 	Report           func(what string, err error)
 	CompilationCache wazero.CompilationCache
-	AfterFunc        func(time.Duration, func()) Timer
+	StartTimer       func(time.Duration, func()) Timer
 	Workers          int
 	IdleWorkers      int
 }
@@ -67,7 +67,7 @@ func NewWorkers(options Options) *Workers {
 	return &Workers{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
 		mu: sync.Mutex{}, pool: nil, size: options.Workers, idle: max(options.IdleWorkers, 0), open: 0, isWarmed: false,
-		release: nil, afterFunc: options.AfterFunc, idleRelease: defaultIdleRelease,
+		release: nil, startTimer: options.StartTimer, idleRelease: defaultIdleRelease,
 		compilation: options.CompilationCache, report: options.Report, isStale: false,
 		starting: nil, startPool: webassembly.Init,
 	}
@@ -207,8 +207,8 @@ func (w *Workers) markDocumentClosed() {
 		w.release.Stop()
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="markDocumentClosed schedules pool release after idle timeout"
-	if w.afterFunc != nil {
-		w.release = w.afterFunc(w.idleRelease, w.releasePool)
+	if w.startTimer != nil {
+		w.release = w.startTimer(w.idleRelease, w.releasePool)
 	}
 }
 
@@ -377,7 +377,7 @@ func (d *document) title() string {
 	return normalizeSpaces(meta.Value)
 }
 
-func (d *document) text(index int) string {
+func (d *document) readText(index int) string {
 	page, err := d.worker.GetPageText(&requests.GetPageText{
 		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil},
 	})
@@ -394,8 +394,8 @@ func (w *Workers) GetWorkers() int {
 	return w.getPoolSize()
 }
 
-// Warmup starts the pool and keeps at least one worker ready to serve requests.
-func (w *Workers) Warmup() {
+// WarmWorkers starts the pool and keeps at least one worker ready to serve requests.
+func (w *Workers) WarmWorkers() {
 	w.mu.Lock()
 	if w.isWarmed {
 		w.mu.Unlock()

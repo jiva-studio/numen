@@ -105,7 +105,7 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	if err := base.Close(); err != nil {
 		t.Fatal(err)
 	}
-	pool := sql.OpenDB(connector{name: dsn(path, settings{synchronous: shipped}), driver: tallied})
+	pool := sql.OpenDB(connector{name: buildDSN(path, settings{synchronous: shipped}), driver: tallied})
 	testsupport.CloseAfter(t, pool)
 	return db, note.NewQueries(pool), tallied.ran
 }
@@ -163,17 +163,17 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	saveTypedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy", domain.TypeNote)
 	saveTypedNote(t, db, getSecond(), "samples/quasars.md", "Quasars", sampleType)
 
-	if _, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType); err != nil {
+	if _, err := queries.ListPathsOfType(ctx, getFirstVault().ID, sampleType); err != nil {
 		t.Fatal(err)
 	}
 	if questionCount := questions(t, ran, func() error {
-		_, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType)
+		_, err := queries.ListPathsOfType(ctx, getFirstVault().ID, sampleType)
 		return err
 	}); questionCount > 2 {
 		t.Errorf("the samples of a vault cost %d questions", questionCount)
 	}
 
-	found, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType)
+	found, err := queries.ListPathsOfType(ctx, getFirstVault().ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +183,7 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	}
 	// One database holds every vault, and the second vault's sample is not this
 	// vault's.
-	other, err := queries.GetPathsOfType(ctx, getSecond().ID, sampleType)
+	other, err := queries.ListPathsOfType(ctx, getSecond().ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import { X } from '@lucide/vue'
 import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
-import { orderTasks } from '../lib/summary'
+import { sortTasks } from '../lib/summary'
 import { WORDS as words } from '../lib/words'
 import TaskItem from './TaskItem.vue'
 
@@ -26,7 +26,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const closeTip = useTooltip()
-const taskList = computed(() => orderTasks(props.tasks))
+const taskList = computed(() => sortTasks(props.tasks))
 </script>
 
 <template>

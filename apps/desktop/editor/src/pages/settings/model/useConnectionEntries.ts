@@ -16,7 +16,7 @@ import { WORDS as words } from '../words'
 const USABILITY_WORDS = {
   unavailable: words.connectionUnavailable,
   incomplete: words.connectionIncomplete,
-  cannot: words.connectionCannot,
+  formatCannot: words.connectionCannot,
 }
 
 export function useConnectionEntries(

@@ -11,14 +11,14 @@ export function useWidgetsLoading(
   drawn: { isMeasured: Readonly<Ref<boolean>>; refresh: () => void },
   report: (isReady: boolean | null) => void,
 ): SlotLoading {
-  const loading = createSlotLoading({ clock })
+  const slotLoading = createSlotLoading({ clock })
 
   watchPostEffect(() => {
-    const isLoaded = loading.isReady.value
+    const isLoaded = slotLoading.isReady.value
     if (isLoaded) drawn.refresh()
     report(isLoaded && drawn.isMeasured.value)
   })
   onScopeDispose(() => report(null))
 
-  return loading
+  return slotLoading
 }

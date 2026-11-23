@@ -42,7 +42,7 @@ export function getDays(
   // the last week kept for what is still to come.
   const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
   const last = new Date(now)
-  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
+  last.setDate(last.getDate() + ((7 - getWeekday(last)) % 7) + weeks * ROWS)
 
   // The grid takes the width it is given and starts on the week of the first
   // recorded day: its days run from the left, and the space after the last day
@@ -51,7 +51,7 @@ export function getDays(
   const startDate = new Date(last)
   startDate.setDate(startDate.getDate() - (columns * ROWS - 1))
 
-  const opens = monday(getFirstDay(did, due, now))
+  const opens = findMonday(getFirstDay(did, due, now))
   const first = opens > startDate ? opens : startDate
 
   for (let offset = 0; offset < columns * ROWS; offset += 1) {
@@ -87,13 +87,13 @@ function getFirstDay<Did, Due>(
   return date > now ? now : date
 }
 
-function monday(date: Date): Date {
+function findMonday(date: Date): Date {
   const out = new Date(date)
-  out.setDate(out.getDate() - (weekday(out) - 1))
+  out.setDate(out.getDate() - (getWeekday(out) - 1))
   return out
 }
 
-function weekday(date: Date): number {
+function getWeekday(date: Date): number {
   const day = date.getDay()
   return day === 0 ? 7 : day
 }

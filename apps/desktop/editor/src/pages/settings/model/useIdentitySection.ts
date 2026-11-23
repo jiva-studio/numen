@@ -1,8 +1,8 @@
 /**
  * The state of the identity section: showing the recovery words of a new identity and checking
- * three of them, opening a restore, and deleting the identity from this device. The words live in
- * this state only while a setup is open; leaving the page or cancelling drops them, and a kept
- * identity hands them on to the recovery kit once.
+ * three of them in two steps, opening a restore, and deleting the identity from this device. The
+ * words live in this state only while a setup is open; leaving the page or cancelling drops them,
+ * and a kept identity hands them on to the recovery kit once.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
@@ -13,6 +13,7 @@ import { useIdentityDelete } from './useIdentityDelete'
 import type { useIdentityCall } from './useIdentityCall'
 import { useIdentityRestore } from './useIdentityRestore'
 import { useWordsConfirmation } from './useWordsConfirmation'
+import { useSetupStage } from './useSetupStage'
 
 type Step = 'idle' | 'setup' | 'restore' | 'restoreSheets'
 
@@ -30,8 +31,9 @@ export function useIdentitySection(
 ) {
   const identity = computed(() => getIdentity().identity.value)
   const step = ref<Step>('idle')
-  const recoveryWords = ref<readonly string[]>([])
   const { problem, isBusy, run } = call
+  const setup = useSetupStage(problem)
+  const { stage, recoveryWords } = setup
   const confirmation = useWordsConfirmation(recoveryWords)
   const restoring = useIdentityRestore(getIdentity, call, fields, reset)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
@@ -48,7 +50,7 @@ export function useIdentitySection(
 
   function reset(): void {
     step.value = 'idle'
-    recoveryWords.value = []
+    setup.clear()
     confirmation.clear()
     restoring.clear()
     problem.value = ''
@@ -61,6 +63,7 @@ export function useIdentitySection(
     if (!answer.ok) return
     recoveryWords.value = answer.value
     confirmation.pick()
+    stage.value = 'words'
     step.value = 'setup'
   }
 
@@ -90,10 +93,18 @@ export function useIdentitySection(
   return {
     identity,
     step,
-    recoveryWords,
+    setup,
     confirmation,
     restoring,
     deletion,
-    actions: { startSetup, startRestore, cancel: reset, setEntered, keep },
+    actions: {
+      startSetup,
+      startRestore,
+      showCheck: setup.showCheck,
+      showWords: setup.showWords,
+      cancel: reset,
+      setEntered,
+      keep,
+    },
   }
 }

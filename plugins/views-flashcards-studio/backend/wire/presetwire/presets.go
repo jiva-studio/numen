@@ -92,7 +92,7 @@ func ConvertSettingsToWire(p review.Preset) *api.Settings {
 		out.ByDate = p.By.Format(review.DayLayout)
 	}
 	for day, share := range p.Load {
-		out.Load[review.DayName(day)] = int32(share)
+		out.Load[review.GetDayName(day)] = int32(share)
 	}
 	return out
 }
@@ -130,7 +130,7 @@ func ConvertSettingsFromWire(s *api.Settings) (review.Preset, error) {
 		out.By = day
 	}
 	for _, name := range slices.Sorted(maps.Keys(s.Load)) {
-		day, recognized := review.Weekday(name)
+		day, recognized := review.ParseWeekday(name)
 		if !recognized {
 			return review.Preset{}, errors.New(name + " is not a day of the week")
 		}

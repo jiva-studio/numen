@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -17,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
@@ -81,18 +82,18 @@ func (markdownTypes) GetContentType(path string) domain.ContentType {
 
 func (markdownTypes) ListExtensions(domain.ContentType) []string { return []string{"md"} }
 
-func newShippedChoice() *file.ChooseTabKind {
+func newShippedChoice() *pluginentries.TabKindChoice {
 	entry := func(plugin, kind, when string, rank domain.HandlerRank) pluginentries.TabKindEntry {
 		return pluginentries.TabKindEntry{PluginID: plugin, TabKind: manifest.TabKind{Kind: kind, Title: kind, When: when, Rank: rank}}
 	}
-	return file.NewChooseTabKind(shipped{
+	return pluginentries.NewTabKindChoice(shipped{
 		entry("org.example.editor", "note", "target.isNote", domain.RankAlternate),
 		entry("org.example.decks", "deck", "target.noteType == 'deck'", domain.RankDefault),
 		entry("org.example.search", "search", "target.noteType == 'search'", domain.RankDefault),
 		entry("org.example.links", "link", "target.noteType == 'link' && has(target.properties.url)", domain.RankDefault),
 		entry("org.example.media", "media", "has(target.properties.media)", domain.RankDefault),
 		entry("org.example.rated", "rated", "has(target.properties.rank) && target.properties.rank > 2", domain.RankDefault),
-	}, markdownTypes{}, nil)
+	}.ListTabKinds, markdownTypes{}.GetContentType, nil)
 }
 
 func getTabKindNotes() map[string]string {
@@ -117,18 +118,18 @@ type tabKindWorld struct {
 	reads  *atomic.Int64
 	stats  *atomic.Int64
 	heads  *countingHeads
-	choose *file.ChooseTabKind
+	choose *pluginentries.TabKindChoice
 }
 
 func newTabKindWorld(t *testing.T, notes map[string]string) tabKindWorld {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 	v := vaulttest.NewVault(t, notes)
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +155,7 @@ func (w tabKindWorld) fromFiles(t *testing.T, paths []string) map[string]string 
 			continue
 		}
 		parsed := markdown.Parse(domain.FileStat{Path: path, Kind: domain.KindNote}, raw)
-		if kind := w.choose.Execute(path, parsed.Type, parsed.Frontmatter); kind != "" {
+		if kind := w.choose.Choose(path, parsed.Type, parsed.Frontmatter); kind != "" {
 			out[path] = kind
 		}
 	}
@@ -163,7 +164,7 @@ func (w tabKindWorld) fromFiles(t *testing.T, paths []string) map[string]string 
 
 func (w tabKindWorld) listTabKinds(t *testing.T, paths []string) map[string]string {
 	t.Helper()
-	kinds, err := file.NewListTabKinds(w.heads, w.choose).Execute(t.Context(), w.vault, paths)
+	kinds, err := indexnote.NewTabKinds(w.heads, w.choose).ListTabKinds(t.Context(), w.vault, paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +204,7 @@ func TestTheTabKindsOfIndexedNotesAreTheOnesTheirFilesGive(t *testing.T) {
 func TestTheTabKindsOfAFolderAreChosenWithoutReadingAFile(t *testing.T) {
 	w := newTabKindWorld(t, getTabKindNotes())
 	readers := countingReaders{VaultReaders: vaultreader.Readers{}, reads: w.reads, stats: w.stats}
-	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), file.NewListTabKinds(w.heads, w.choose))
+	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), indexnote.NewTabKinds(w.heads, w.choose))
 
 	listing, err := folder.Execute(t.Context(), w.vault, "")
 	if err != nil {
@@ -224,7 +225,7 @@ func TestANoteTheIndexDoesNotHoldYetHasNoTabKindAndIsNotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	readers := countingReaders{VaultReaders: vaultreader.Readers{}, reads: w.reads, stats: w.stats}
-	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), file.NewListTabKinds(w.heads, w.choose))
+	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), indexnote.NewTabKinds(w.heads, w.choose))
 
 	listing, err := folder.Execute(t.Context(), w.vault, "")
 	if err != nil {

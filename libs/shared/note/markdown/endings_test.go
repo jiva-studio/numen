@@ -27,7 +27,7 @@ func TestALineEndingIsWhatEveryBreakUses(t *testing.T) {
 		"short crlf":             {"a\r\n", "\r\n"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := lineEnding([]byte(c.raw)); got != c.want {
+			if got := detectLineEnding([]byte(c.raw)); got != c.want {
 				t.Errorf("want %q, got %q", c.want, got)
 			}
 		})
@@ -97,7 +97,7 @@ func TestOffsetLineFindsTheNextLineWhenNoneBeginsThere(t *testing.T) {
 		"past every line":       {20, 4},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := offsetLine(lines, c.offset); got != c.want {
+			if got := findLine(lines, c.offset); got != c.want {
 				t.Errorf("offsetLine(%v, %d) = %d, want %d", lines, c.offset, got, c.want)
 			}
 		})
@@ -151,18 +151,18 @@ func TestBreakWidthsEndsWithBreakAndLineOffsets(t *testing.T) {
 		{[]byte("a\u2029"), true},
 		{[]byte("\u2028a"), false},
 	} {
-		if got := endsWithBreak(tc.block); got != tc.want {
+		if got := hasTrailingBreak(tc.block); got != tc.want {
 			t.Errorf("endsWithBreak(%q) = %v, want %v", tc.block, got, tc.want)
 		}
 	}
 
-	if got := lineOffsets([]byte("\na")); !slices.Equal(got, []int{0, 1, 2}) {
+	if got := getLineOffsets([]byte("\na")); !slices.Equal(got, []int{0, 1, 2}) {
 		t.Errorf("lineOffsets(\\na) = %v", got)
 	}
-	if got := lineOffsets([]byte("a\n")); !slices.Equal(got, []int{0, 2}) {
+	if got := getLineOffsets([]byte("a\n")); !slices.Equal(got, []int{0, 2}) {
 		t.Errorf("lineOffsets(a\\n) = %v", got)
 	}
-	if got := lineOffsets([]byte("a\nb")); !slices.Equal(got, []int{0, 2, 3}) {
+	if got := getLineOffsets([]byte("a\nb")); !slices.Equal(got, []int{0, 2, 3}) {
 		t.Errorf("lineOffsets(a\\nb) = %v", got)
 	}
 }

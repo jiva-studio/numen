@@ -80,7 +80,7 @@ func (r *Runner) runSearch(ctx context.Context, search ports.Search, start host.
 		return found{}, err
 	}
 	defer func() {
-		if err := search.RemoveSearch(context.WithoutCancel(ctx), id); err != nil {
+		if err := search.DeleteSearch(context.WithoutCancel(ctx), id); err != nil {
 			r.log.Debug("saved search: remove a search", "id", id, "error", err)
 		}
 	}()

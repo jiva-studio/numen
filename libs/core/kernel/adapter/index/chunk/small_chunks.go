@@ -15,7 +15,7 @@ func (q *Search) ListSmallChunks(ctx context.Context, vaultID domain.VaultID, id
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -24,7 +24,7 @@ func (q *Search) ListSmallChunks(ctx context.Context, vaultID domain.VaultID, id
 	}
 	rows := make([]int64, len(ids))
 	for i, id := range ids {
-		if rows[i], err = Row(id); err != nil {
+		if rows[i], err = ParseRow(id); err != nil {
 			return nil, err
 		}
 	}
@@ -40,7 +40,7 @@ func (q *Search) ListSmallChunks(ctx context.Context, vaultID domain.VaultID, id
 		if err := found.Scan(&given, &small); err != nil {
 			return nil, err
 		}
-		out = append(out, source.SmallChunk{Chunk: ID(given), Small: ID(small)})
+		out = append(out, source.SmallChunk{Chunk: FormatID(given), Small: FormatID(small)})
 	}
 	return out, found.Err()
 }

@@ -15,7 +15,7 @@ tools/checks/
                         kernel) and one folder per check with check.go, check_test.go
   structure/ts/<name>/  check.mjs (the verifiers), check.test.mjs (planted violations)
   style/comments/       comments the name and type already state (Go command and TypeScript reader)
-  style/names/          narrative identifiers, test names, comments, documents and strings
+  style/names/          narrative identifiers, function names that start with no verb, test names, comments, documents and strings (known violations in `baseline.txt`)
   docs/paths-exist/     backticked paths in the architecture documents name files that exist
 ```
 

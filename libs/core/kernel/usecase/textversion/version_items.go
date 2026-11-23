@@ -109,7 +109,7 @@ func (u *VersionItems) RunVersionItem(
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
 			text.ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
 	}
-	return u.run.Execute(ctx, v, plugin.CommandCall{
+	return u.run.Run(ctx, v, plugin.CommandCall{
 		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
 		Arguments: map[string]string{manifest.CommandArgumentVersion: string(version)},
 	})

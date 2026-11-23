@@ -12,14 +12,14 @@ export interface PluginsListDeps {
   readonly getSettings: () => Pick<InstallationSettings, 'getSetting' | 'write'>
   readonly getCatalog: () => readonly CatalogEntry[]
   readonly getQuery: () => string
-  readonly getPlugins: () => readonly PluginInfo[]
+  readonly listPlugins: () => readonly PluginInfo[]
   readonly updateQuery: (query: string) => void
 }
 
 export function usePluginsList(deps: PluginsListDeps) {
   const searchQuery = ref(deps.getQuery())
 
-  const managed = computed(() => createManagedFromEntries(deps.getPlugins(), deps.getCatalog()))
+  const managed = computed(() => createManagedFromEntries(deps.listPlugins(), deps.getCatalog()))
 
   function isPluginEnabled(pluginId: string): boolean {
     const val = deps.getSettings().getSetting([pluginId, 'enabled'])
@@ -27,7 +27,7 @@ export function usePluginsList(deps: PluginsListDeps) {
   }
 
   const enabled = computed(() =>
-    Object.fromEntries(deps.getPlugins().map((one) => [one.id, isPluginEnabled(one.id)])),
+    Object.fromEntries(deps.listPlugins().map((one) => [one.id, isPluginEnabled(one.id)])),
   )
 
   watch(deps.getQuery, (newQuery) => {

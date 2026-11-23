@@ -9,10 +9,10 @@ import { Palette, type PaletteGroup } from '@numen/workbench'
 import {
   DEBOUNCE,
   mountWindowWithPalette,
-  nameAnswer,
+  createNameAnswer,
   requests,
   settle,
-  sourceAnswer,
+  createSourceAnswer,
   vaultState,
 } from '@/testing/window'
 
@@ -39,7 +39,7 @@ const ROW = 'Ants.md'
 
 describe('the actions that create a note, chosen on the window', () => {
   it('follows the action of a row with the command that makes the note alone where no note is in front', async () => {
-    vaultState.names = [nameAnswer(ROW, 'Ants')]
+    vaultState.names = [createNameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
 
     await search(window, 'Entropy')
@@ -51,7 +51,7 @@ describe('the actions that create a note, chosen on the window', () => {
   })
 
   it('makes one note under the words typed on the choice of app:note.create, and closes the search', async () => {
-    vaultState.names = [nameAnswer(ROW, 'Ants')]
+    vaultState.names = [createNameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
     await search(window, '  Entropy  ')
 
@@ -63,7 +63,7 @@ describe('the actions that create a note, chosen on the window', () => {
   })
 
   it('makes no note on the choice of an action that is no command of the row', async () => {
-    vaultState.names = [nameAnswer(ROW, 'Ants')]
+    vaultState.names = [createNameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
     await search(window, 'Entropy')
 
@@ -76,7 +76,7 @@ describe('the actions that create a note, chosen on the window', () => {
 describe('the row of a passage of a document, chosen on the window', () => {
   it('draws the command that opens the document as its first action', async () => {
     vaultState.names = []
-    vaultState.searchResults = [sourceAnswer('Ants.bin', { page: 3 })]
+    vaultState.searchResults = [createSourceAnswer('Ants.bin', { page: 3 })]
     const window = await mountWindowWithPalette()
 
     await search(window, 'ants')
@@ -90,7 +90,7 @@ describe('the row of a passage of a document, chosen on the window', () => {
 
   it('closes the search once and writes no message on the choice of that command', async () => {
     vaultState.names = []
-    vaultState.searchResults = [sourceAnswer('Ants.bin', { page: 3 })]
+    vaultState.searchResults = [createSourceAnswer('Ants.bin', { page: 3 })]
     const window = await mountWindowWithPalette()
     await search(window, 'ants')
     const item = getGroups(window).find((one) => one.items.length > 0)?.items[0]?.id ?? ''

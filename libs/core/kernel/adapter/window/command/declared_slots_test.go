@@ -38,7 +38,7 @@ func (menuPlacingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListContributions_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifests(t *testing.T) {
-	handler := newHandler(newUseCases(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil))
 
 	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {
@@ -72,7 +72,7 @@ func TestListContributions_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheMan
 }
 
 func TestListContributions_ListsNoMenuEntryOfASuspendedPlugin(t *testing.T) {
-	handler := newHandler(newUseCases(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil))
 
 	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {
@@ -100,7 +100,7 @@ func (viewAndSubmenuPlugins) ListSlots() []plugin.SlotEntry {
 }
 
 func TestListContributions_CarriesAViewAndASubmenuWithTheirTitleIconAndCondition(t *testing.T) {
-	handler := newHandler(newUseCases(viewAndSubmenuPlugins{}, viewAndSubmenuPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(viewAndSubmenuPlugins{}, viewAndSubmenuPlugins{}, nil, nil))
 
 	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {

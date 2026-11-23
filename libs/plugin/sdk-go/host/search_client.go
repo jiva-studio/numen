@@ -29,7 +29,7 @@ var (
 // NewSearchClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
 // where the host named none.
 func NewSearchClientFromEnv() (*SearchClient, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +37,11 @@ func NewSearchClientFromEnv() (*SearchClient, error) {
 }
 
 func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
-	return newSearchClientOver(transport.HTTPClient(), endpoint)
+	return newSearchClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *SearchClient {
-	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on

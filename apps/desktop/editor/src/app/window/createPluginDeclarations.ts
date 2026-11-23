@@ -44,8 +44,8 @@ export interface PluginDeclarationsDeps {
 export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   const { api, rest, log, itemLists, tabOpeners } = deps
   const catalog = createPluginCatalog(rest)
-  const reports = createPluginReports(log, catalog.getName)
-  const declared = createDeclaredState({
+  const pluginReports = createPluginReports(log, catalog.getName)
+  const declarationState = createDeclaredState({
     list: api.listDeclaredCommands,
     getConfig: () => getWindowConfig(rest),
     paletteNotes: {
@@ -54,17 +54,17 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
     },
   })
   const slots = createWindowSlots({
-    declaredCommands: declared,
+    declaredCommands: declarationState,
     facts: createWindowFacts({
       appCommands: deps.appCommands,
       getTarget: deps.getTarget,
       isPaletteOpen: deps.isPaletteOpen,
     }),
     getSlotLayout: (pluginId) => getSlotLayout(rest, pluginId),
-    writeIssue: reports.writeIssue,
+    writeIssue: pluginReports.writeIssue,
   })
   const handlers = createBackendHandlers({
-    getHandlers: () => declared.contributions.handlers.value,
+    getHandlers: () => declarationState.contributions.handlers.value,
     list: itemLists.listItems,
     run: api.runDeclaredHandler,
     writeMessage: log.getWriter('command'),
@@ -75,11 +75,11 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
     { commands: handlers },
     {
       commands: {
-        getCommandDeclarations: () => declared.declarations.value,
-        reportCommandIssue: reports.reportCommandIssue,
+        getCommandDeclarations: () => declarationState.declarations.value,
+        reportCommandIssue: pluginReports.reportCommandIssue,
       },
-      slots: { reportViewIssue: reports.reportViewIssue },
+      slots: { reportViewIssue: pluginReports.reportViewIssue },
     },
   ]
-  return { catalog, reports, declared, hostParts }
+  return { catalog, reports: pluginReports, declared: declarationState, hostParts }
 }

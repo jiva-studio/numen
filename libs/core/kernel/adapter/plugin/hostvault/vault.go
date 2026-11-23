@@ -19,7 +19,7 @@ func NewAccess(
 	session Session, files Files, writer Writer, lookups Lookups, arranger Arranger, stores Stores,
 ) *vault.Access {
 	session.rebuild = func(found domain.Vault) *vault.Access {
-		return NewAccess(session.showing(found), files, writer, lookups, arranger, stores)
+		return NewAccess(session.selectVault(found), files, writer, lookups, arranger, stores)
 	}
 	files.session, writer.session, lookups.Notes.session, lookups.Changes.session, lookups.Links.session, arranger.session, stores.session =
 		&session, &session, &session, &session, &session, &session, &session

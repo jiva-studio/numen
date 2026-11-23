@@ -11,15 +11,15 @@ const DesktopScaleEnvVar = "GDK_DPI_SCALE"
 // Bounds is how far a multiplier goes, at each end.
 type Bounds struct{ Min, Max float64 }
 
-// Contains is whether a number is one the setting takes.
-func (b Bounds) Contains(value float64) bool {
+// IsInside is whether a number is one the setting takes.
+func (b Bounds) IsInside(value float64) bool {
 	return value >= b.Min && value <= b.Max
 }
 
 // Check returns what is wrong with a number the setting does not accept, and
 // nothing where it takes it. targetPath names the setting or the flag the number came from.
 func (b Bounds) Check(targetPath string, value float64) error {
-	if b.Contains(value) {
+	if b.IsInside(value) {
 		return nil
 	}
 	return &OutsideBoundsError{At: targetPath, Number: value, Bounds: b}
@@ -32,7 +32,7 @@ func ResolveDesktopScale(getenv func(string) string, bounds Bounds, fallback flo
 		return fallback
 	}
 	scale, err := strconv.ParseFloat(getenv(DesktopScaleEnvVar), 64)
-	if err != nil || !bounds.Contains(scale) {
+	if err != nil || !bounds.IsInside(scale) {
 		return fallback
 	}
 	return scale

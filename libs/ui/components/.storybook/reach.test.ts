@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { faults, type Stop, type Walk } from './reach'
+import { findFaults, type Stop, type Walk } from './reach'
 
 const walkOf = (stops: Stop[]): Walk => ({ stops, trapped: null, settled: true })
 
@@ -32,19 +32,19 @@ describe('what the keyboard rule refuses', () => {
 
   it('refuses what it is meant to and nothing else', () => {
     const refused = cases
-      .filter((one) => faults(walkOf([one.stop])).length > 0)
+      .filter((one) => findFaults(walkOf([one.stop])).length > 0)
       .map((one) => one.says)
     expect(refused).toEqual(cases.filter((one) => !one.allowed).map((one) => one.says))
   })
 
   it('says where each fault stands, so a person can find it', () => {
-    expect(faults(walkOf([stop({ shown: false })]))).toEqual([
+    expect(findFaults(walkOf([stop({ shown: false })]))).toEqual([
       'button.tab__close (Close) is a stop a person cannot see',
     ])
   })
 
   it('lets a story holding nothing focusable through', () => {
-    expect(faults(walkOf([]))).toEqual([])
+    expect(findFaults(walkOf([]))).toEqual([])
   })
 })
 
@@ -52,10 +52,10 @@ describe('a stop that answers Tab by keeping it', () => {
   const target: Walk = { stops: [SOUND], trapped: 'div.editor__text', settled: true }
 
   it('is a fault wherever the walk ends on one', () => {
-    expect(faults(target)).toEqual(['div.editor__text answers Tab by keeping it'])
+    expect(findFaults(target)).toEqual(['div.editor__text answers Tab by keeping it'])
   })
 
   it('is what a story says it is, where the story says how a person leaves', () => {
-    expect(faults(target, true)).toEqual([])
+    expect(findFaults(target, true)).toEqual([])
   })
 })

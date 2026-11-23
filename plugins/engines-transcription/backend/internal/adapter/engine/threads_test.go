@@ -8,7 +8,7 @@ import (
 )
 
 func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {
-	got := getSessionThreads(settings.Defaults())
+	got := getSessionThreads(settings.NewDefaultConfig())
 	want := sessionThreads{encoder: onnx.GetDefaultThreads(), decoder: 1, joiner: 1, segmenter: 1}
 	if got != want {
 		t.Errorf("the sessions take %+v threads, want %+v", got, want)
@@ -17,7 +17,7 @@ func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {
 
 func TestTheEncoderConsumesTheThreadsItIsGiven(t *testing.T) {
 	for _, count := range []int{1, 3} {
-		cfg := settings.Defaults()
+		cfg := settings.NewDefaultConfig()
 		cfg.Threads = count
 		got := getSessionThreads(cfg)
 		want := sessionThreads{encoder: count, decoder: 1, joiner: 1, segmenter: 1}

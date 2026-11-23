@@ -2,12 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { LogLevel, WatchLogsResponseSchema } from '@numen/protocol'
-import { createLogServiceClient } from '../clients'
+import { createLogRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createLogClient, type LogRpc } from './logs'
 
 const createLogs = (answers: CoreAnswers) =>
-  createLogClient(createLogServiceClient(createCoreTransport(answers)))
+  createLogClient(createLogRpc(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one

@@ -15,9 +15,9 @@ export const mapRange = (range: { start: number; end: number }) => ({
 export const mapMoveResult = (answer: {
   readonly from: string
   readonly to: string
-  readonly repaired: readonly string[]
+  readonly repairedNotes: readonly string[]
 }) => ({
   from: answer.from,
   to: answer.to,
-  repaired: answer.repaired,
+  repaired: answer.repairedNotes,
 })

@@ -63,7 +63,7 @@ export class Scenario {
     return this.actionCount
   }
 
-  noteAction(): void {
+  countAction(): void {
     this.actionCount += 1
   }
 

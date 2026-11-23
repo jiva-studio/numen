@@ -155,7 +155,7 @@ func (m Manifest) listCommandPermissionIssues(command Command) []error {
 	if command.Permission == "" {
 		return nil
 	}
-	if !slices.Contains(PluginPermissions(), command.Permission) {
+	if !slices.Contains(ListPluginPermissions(), command.Permission) {
 		return []error{fmt.Errorf("%w: %q: %w: %s", ErrInvalidCommand, command.ID, ErrInvalidPermission, command.Permission)}
 	}
 	if !m.HasPermission(command.Permission) {

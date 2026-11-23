@@ -8,7 +8,7 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -26,7 +26,7 @@ func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
 
 func emitIndexChanged(generations *indexgeneration.Generations, events *editor.Events) func(context.Context, domain.Vault) {
 	return func(ctx context.Context, v domain.Vault) {
-		generations.IncreaseGeneration(v.ID)
+		generations.BumpGeneration(v.ID)
 		events.EmitIndexChanged(ctx, v)
 	}
 }
@@ -34,7 +34,7 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 type windowSearch struct {
 	index  *vaultIndex
 	source sourceAccess
-	kinds  *file.ListTabKinds
+	kinds  windowport.TabKinds
 }
 
 func newSearchRuns(
@@ -46,15 +46,15 @@ func newSearchRuns(
 		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       tasks,
 		Clock:       clock,
-		After:       clock.After,
+		CreateTimer: clock.After,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
-			return pluginsGetPluginName(resolver, pluginID)
+			return getPluginName(resolver, pluginID)
 		},
-		Catalog:    getSearchCatalog(manifests),
+		GetCatalog: getSearchCatalog(manifests),
 		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs

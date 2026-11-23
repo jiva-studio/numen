@@ -76,7 +76,7 @@ describe('createLlmHost', () => {
       error: 'stopped' as const,
       message: 'Harbor: key rejected',
       failures: [
-        { connectionName: 'Harbor', reason: 'key rejected', code: 'rejected_key' as const },
+        { connectionName: 'Harbor', reason: 'key rejected', code: 'rejectedKey' as const },
       ],
     }
     const host = createLlmHost({ complete: async () => ({ ok: false, error }) })
@@ -84,12 +84,12 @@ describe('createLlmHost', () => {
     expect(await complete(host, { messages: [] })).toEqual({ ok: false, error })
   })
 
-  it('ends an operation the roles leave out with no_connection', async () => {
+  it('ends an operation the roles leave out with noConnection', async () => {
     const host = createLlmHost({})
 
     expect(await complete(host, { messages: [] })).toMatchObject({
       ok: false,
-      error: { error: 'no_connection' },
+      error: { error: 'noConnection' },
     })
   })
 

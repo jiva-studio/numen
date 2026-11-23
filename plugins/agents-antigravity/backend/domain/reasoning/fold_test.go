@@ -34,7 +34,7 @@ func listing() []Listed {
 }
 
 func TestModelsListedOncePerLevelFoldIntoOneFamily(t *testing.T) {
-	got := Fold(listing())
+	got := GroupFamilies(listing())
 	if len(got) != 3 {
 		t.Fatalf("got %d families, want 3: %v", len(got), got)
 	}
@@ -58,26 +58,26 @@ func TestModelsListedOncePerLevelFoldIntoOneFamily(t *testing.T) {
 }
 
 func TestTheFamilyNameFallsBackToTheFirstListedName(t *testing.T) {
-	got := Fold([]Listed{{"alpha", "M (Low)"}, {"beta", "M (High)"}})
+	got := GroupFamilies([]Listed{{"alpha", "M (Low)"}, {"beta", "M (High)"}})
 	if got[0].Name != "alpha" || got[0].GetVariant("high") != "beta" {
 		t.Errorf("got %+v", got[0])
 	}
-	mismatched := Fold([]Listed{{"alpha-low", "M (Low)"}, {"beta-high", "M (High)"}})
+	mismatched := GroupFamilies([]Listed{{"alpha-low", "M (Low)"}, {"beta-high", "M (High)"}})
 	if mismatched[0].Name != "alpha-low" {
 		t.Errorf("mismatched prefix family name = %q, want alpha-low", mismatched[0].Name)
 	}
-	emptyPrefix := Fold([]Listed{{"-low", "M (Low)"}, {"-high", "M (High)"}})
+	emptyPrefix := GroupFamilies([]Listed{{"-low", "M (Low)"}, {"-high", "M (High)"}})
 	if emptyPrefix[0].Name != "-low" {
 		t.Errorf("empty prefix family name = %q, want -low", emptyPrefix[0].Name)
 	}
-	unleveled := Fold([]Listed{{"a", "Plain"}, {"b", "Plain"}})
+	unleveled := GroupFamilies([]Listed{{"a", "Plain"}, {"b", "Plain"}})
 	if len(unleveled) != 2 || unleveled[0].Name != "a" || unleveled[1].Name != "b" {
 		t.Errorf("unleveled models folded into %+v, want two separate families", unleveled)
 	}
 }
 
 func TestAChosenLevelResolvesToTheListedModel(t *testing.T) {
-	families := Fold(listing())
+	families := GroupFamilies(listing())
 	cases := []struct{ model, level, want string }{
 		{"flash", "low", "flash-low"},
 		{"flash", "high", "flash-high"},
@@ -96,7 +96,7 @@ func TestAChosenLevelResolvesToTheListedModel(t *testing.T) {
 }
 
 func TestTheFamilyIsAvailableWithItsLevelsAndDefault(t *testing.T) {
-	got := Fold(listing())[0]
+	got := GroupFamilies(listing())[0]
 	if len(got.Levels) != 3 || got.Default != "medium" || got.Name != "flash" {
 		t.Errorf("got %v", got)
 	}
@@ -126,7 +126,7 @@ func TestLevelHelpers(t *testing.T) {
 }
 
 func TestResolveModel_FamilyWithoutLevelUsesDefaultLevel(t *testing.T) {
-	families := Fold([]Listed{
+	families := GroupFamilies([]Listed{
 		{"gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"},
 		{"gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)"},
 		{"gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)"},

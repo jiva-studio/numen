@@ -54,7 +54,7 @@ type Callers struct {
 	Identity     Identity
 	Leases       Leases
 	Lent         *Services
-	Tools        func() PluginTools
+	GetTools     func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes

@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -21,13 +21,13 @@ import (
 func newIndexedVault(t *testing.T, notes map[string]string) (*index.DB, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	if c.Links[0].To != "elsewhere.md" {
 		t.Fatalf("resolved to %q", c.Links[0].To)
 	}
-	vault, crossed := c.Links[0].InVault(first.ID)
+	vault, crossed := c.Links[0].ResolveVault(first.ID)
 	if !crossed || vault != other.ID {
 		t.Errorf("landed in vault %q, crossed=%v", vault, crossed)
 	}
@@ -256,7 +256,7 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 
 func addVault(t *testing.T, db *index.DB, v domain.Vault) domain.Vault {
 	t.Helper()
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -376,18 +376,18 @@ type failingLinks struct {
 	links, backlinks error
 }
 
-func (f failingLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) ListLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.links != nil {
 		return nil, f.links
 	}
-	return f.LinkQueries.GetLinks(ctx, id, from)
+	return f.LinkQueries.ListLinks(ctx, id, from)
 }
 
-func (f failingLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) ListBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinks != nil {
 		return nil, f.backlinks
 	}
-	return f.LinkQueries.GetBacklinks(ctx, id, to)
+	return f.LinkQueries.ListBacklinks(ctx, id, to)
 }
 
 func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {

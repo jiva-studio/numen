@@ -9,7 +9,7 @@
 import { computed, type ComponentPublicInstance, type VNode } from 'vue'
 import { Spinner } from '@numen/ui'
 import { PaletteRow } from '../palette-row'
-import { optionId, type PlacedGroup } from '../../../lib/place'
+import { getOptionId, type PlacedGroup } from '../../../lib/place'
 
 const props = defineProps<{
   placed: PlacedGroup
@@ -43,7 +43,7 @@ const hold = (item: string, row: Element | ComponentPublicInstance | null): void
 /** What this group's name is addressed by, which the list points at. */
 const titleId = computed(() => `${props.uid}-group-${props.placed.group.id}`)
 
-const rowId = (pos: number): string => optionId(props.uid, pos)
+const getRowId = (pos: number): string => getOptionId(props.uid, pos)
 
 function reveal(item: string): void {
   itemElements.get(item)?.scrollIntoView({ block: 'nearest' })
@@ -73,7 +73,7 @@ function reveal(item: string): void {
       :ref="(element) => hold(row.item.id, element)"
       :key="row.item.id"
       :row="row"
-      :id="rowId(row.at)"
+      :id="getRowId(row.at)"
       :is-current="row.at === here"
       @point-at="(moved) => emit('point-at', row.at, moved)"
       @choose="(second) => emit('choose', row.at, second)"

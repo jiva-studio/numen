@@ -69,8 +69,8 @@ func DefaultPerformance() Performance {
 	return Performance{Profile: getAppString(keyProfile), DisableDmabufRenderer: getAppBool(keyDisableDmabufRenderer)}
 }
 
-// Path is where the settings live.
-func Path() (string, error) {
+// GetPath is where the settings live.
+func GetPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
@@ -131,9 +131,9 @@ func (f *Files) write(path string, target Document) error {
 	return err
 }
 
-// Adjacent returns the path of name in the folder of the registry file, and false while no registry path is
+// GetAdjacentPath returns the path of name in the folder of the registry file, and false while no registry path is
 // set.
-func Adjacent(registryPath, name string) (string, bool) {
+func GetAdjacentPath(registryPath, name string) (string, bool) {
 	if registryPath == "" {
 		return "", false
 	}
@@ -146,10 +146,10 @@ func LocateFile(settingsPath, registryPath string) (string, error) {
 	if settingsPath != "" {
 		return settingsPath, nil
 	}
-	if file, isAdjacent := Adjacent(registryPath, "numen.json"); isAdjacent {
+	if file, isAdjacent := GetAdjacentPath(registryPath, "numen.json"); isAdjacent {
 		return file, nil
 	}
-	return Path()
+	return GetPath()
 }
 
 // LocateThemes returns the folder of the user's themes: themesPath where one is set, else the themes folder
@@ -158,5 +158,5 @@ func LocateThemes(themesPath, registryPath string) (string, bool) {
 	if themesPath != "" {
 		return themesPath, true
 	}
-	return Adjacent(registryPath, "themes")
+	return GetAdjacentPath(registryPath, "themes")
 }

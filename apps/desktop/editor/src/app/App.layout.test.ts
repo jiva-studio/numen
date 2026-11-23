@@ -10,7 +10,7 @@ import { type VueWrapper } from '@vue/test-utils'
 import { WelcomePage } from '@numen/workbench'
 import { WorkspaceLayout, getPanes, type TabMenu, type Workspace } from '@numen/workbench'
 import { BootstrapFailure } from '@/features/app-start'
-import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
+import { requests, listCards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {
   /** Every tab closed, by the keystroke that closes the one in front. */
@@ -57,7 +57,7 @@ describe('the window holding no tab', () => {
 
     const window = await mountWindow()
 
-    expect(cards().join(' ')).toContain('Vault list unavailable')
+    expect(listCards().join(' ')).toContain('Vault list unavailable')
     expect(window.findComponent(WelcomePage).exists()).toBe(false)
     const retry = window.getComponent(BootstrapFailure).get('button')
 

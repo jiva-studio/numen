@@ -1,6 +1,7 @@
 /** Whether the host runs a command of a plugin over a note: its when condition. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
 import { createWhenReader } from '../when'
+import { NO_COMMANDS } from './nullDeps'
 import { isCommandAvailable } from './commandWhen'
 
 const declaration = (when?: string) => ({
@@ -63,6 +64,7 @@ describe('a command of a plugin', () => {
     expect(isCommandAvailable(declaration('target.isRemote'), NOTE, deps)).toBe(false)
     expect(
       isCommandAvailable(declaration("target.contentType == ''"), NOTE, {
+        ...NO_COMMANDS,
         whenReader: createWhenReader(),
       }),
     ).toBe(true)

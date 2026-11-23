@@ -49,9 +49,9 @@ type FloorHint func(ctx context.Context) float64
 // names none. The first source with an answer wins: the floor stored for the
 // vault under the recipe, then the hint of the embedding model, then DefaultFloor.
 type FloorPolicy struct {
-	store        FloorStore
-	hint         FloorHint
-	errorHandler func(error)
+	store       FloorStore
+	hint        FloorHint
+	handleError func(error)
 }
 
 // NewFloorPolicy returns the policy over a store of floors. A nil store holds no floors, a nil hint
@@ -60,7 +60,7 @@ func NewFloorPolicy(store FloorStore, hint FloorHint, errorHandler func(error)) 
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
-	return FloorPolicy{store: store, hint: hint, errorHandler: errorHandler}
+	return FloorPolicy{store: store, hint: hint, handleError: errorHandler}
 }
 
 // Get returns the floor in force for the vault under the recipe. A store that cannot be read is
@@ -71,7 +71,7 @@ func (p FloorPolicy) Get(ctx context.Context, v domain.Vault, recipe string) Eff
 		stored, found, err := p.store.ReadFloor(ctx, v, recipe)
 		switch {
 		case err != nil:
-			p.errorHandler(err)
+			p.handleError(err)
 		case found && isValidFloor(stored):
 			out.Stored = stored
 		}

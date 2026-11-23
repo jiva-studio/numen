@@ -9,7 +9,7 @@ import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
 import { assertGraph } from '../graph'
 import type { PlacedNode, Position } from '../node'
-import { admitNodes, countOverflow, refill, requestNodes } from './layout/admission'
+import { admitNodes, countOverflow, fillCells, requestNodes } from './layout/admission'
 import { clusters } from './layout/clusters'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { applyRoom } from './look'
@@ -27,7 +27,7 @@ import {
 } from './layout/placement'
 import { createRouting } from './edges/routing'
 import { routeEdges } from './edges/routeEdges'
-import { separateTitles } from './edges/titles'
+import { placeTitles } from './edges/titles'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 /**
@@ -139,7 +139,7 @@ export function arrangePlex(
           viewport,
           { margin, rooms },
         )
-      return from && canHold(from) ? refill(from, requested, canHold) : {}
+      return from && canHold(from) ? fillCells(from, requested, canHold) : {}
     }
     const admittedCrowded = getLargerSet(admitAt(crowded), growAt(crowded, seed))
     const isTightestBetter =
@@ -196,12 +196,7 @@ export function arrangePlex(
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const edgeRouting = createRouting(resolved, measureLabel, labelType)
-  const edges = separateTitles(
-    routeEdges(graph.edges, byId, edgeRouting),
-    nodes,
-    edgeRouting,
-    rooms,
-  )
+  const edges = placeTitles(routeEdges(graph.edges, byId, edgeRouting), nodes, edgeRouting, rooms)
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }

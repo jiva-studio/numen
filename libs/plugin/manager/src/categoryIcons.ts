@@ -3,6 +3,7 @@ import {
   BookOpen,
   Cpu,
   KeyRound,
+  Laptop,
   PenLine,
   Search,
   LayoutPanelLeft,
@@ -18,6 +19,7 @@ import type { Component } from 'vue'
 const ICONS: Readonly<Record<string, Component>> = {
   agents: Bot,
   connections: Plug,
+  device: Laptop,
   engines: Cpu,
   identity: KeyRound,
   readers: BookOpen,

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints and the recovery kit when it has one, and otherwise
- * the way to make one (write down twelve words, confirm three of them) or to restore one from its
- * words or from two sheets of a kit.
+ * The identity of this device: its fingerprints, devices and recovery kit when it has one, and
+ * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of
+ * them) or to restore one from its words or from two sheets of a kit.
  */
-import { Button } from '@numen/ui'
+import { computed } from 'vue'
+import { Button, IslandCard } from '@numen/ui'
 import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity } from '../../types'
 import { useIdentityCall } from '../../model/useIdentityCall'
@@ -31,22 +32,16 @@ const kit = useRecoveryKit(
   fields,
 )
 const section = useIdentitySection(() => props.identity, call, fields, kit.actions.showAfterSetup)
-const {
-  identity: current,
-  step,
-  recoveryWords,
-  confirmation,
-  restoring,
-  deletion,
-  actions,
-} = section
+const { identity: current, step, setup, confirmation, restoring, deletion, actions } = section
+const { stage, recoveryWords } = setup
+const isRestoring = computed(() => step.value === 'restore' || step.value === 'restoreSheets')
 </script>
 
 <template>
-  <section class="settings-card identity-section" :aria-label="words.identitySection">
+  <template v-if="current">
     <IdentityDetails
-      v-if="current"
       :info="current"
+      :problem="call.problem.value"
       :is-busy="call.isBusy.value"
       :is-asking-delete="deletion.isAskingDelete.value"
       @ask="deletion.askDelete"
@@ -54,15 +49,33 @@ const {
       @cancel="deletion.cancelDelete"
     />
 
-    <template v-else>
-      <div class="identity-section__empty">
-        <p class="identity-section__title">{{ words.identityNone }}</p>
-        <p v-if="step === 'idle'" class="identity-section__detail">
-          {{ words.identityNoneDetail }}
-        </p>
-      </div>
+    <RecoveryKitSection :model="kit" :texts="fields.texts.value" :is-busy="call.isBusy.value" />
+  </template>
 
-      <div v-if="step === 'idle'" class="identity-section__actions">
+  <IslandCard v-else :title="words.identitySection">
+    <template #aside>{{ words.identityNone }}</template>
+    <div class="identity-section__body">
+      <p v-if="!isRestoring" class="identity-section__detail">
+        {{ words.identityNoneDetail }}
+      </p>
+
+      <div v-if="!isRestoring" class="identity-section__actions">
+        <Button
+          type="button"
+          variant="ghost"
+          :disabled="call.isBusy.value"
+          @click="actions.startRestore('restore')"
+        >
+          {{ words.identityRestore }}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          :disabled="call.isBusy.value"
+          @click="actions.startRestore('restoreSheets')"
+        >
+          {{ words.identityRestoreSheets }}
+        </Button>
         <Button
           type="button"
           variant="solid"
@@ -71,34 +84,7 @@ const {
         >
           {{ words.identityCreate }}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore('restore')"
-        >
-          {{ words.identityRestore }}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore('restoreSheets')"
-        >
-          {{ words.identityRestoreSheets }}
-        </Button>
       </div>
-
-      <IdentitySetup
-        v-else-if="step === 'setup'"
-        :recovery-words="recoveryWords"
-        :positions="confirmation.positions.value"
-        :entered="confirmation.entered.value"
-        :is-busy="call.isBusy.value"
-        @change="actions.setEntered"
-        @keep="actions.keep"
-        @cancel="actions.cancel"
-      />
 
       <IdentityRestore
         v-else-if="step === 'restore'"
@@ -117,54 +103,56 @@ const {
         @restore="restoring.restoreSheets"
         @cancel="actions.cancel"
       />
-    </template>
 
-    <RecoveryKitSection
-      v-if="current"
-      :model="kit"
-      :texts="fields.texts.value"
+      <p
+        v-if="call.problem.value !== '' && step !== 'setup'"
+        role="alert"
+        class="identity-section__problem"
+      >
+        {{ call.problem.value }}
+      </p>
+    </div>
+
+    <IdentitySetup
+      v-if="step === 'setup'"
+      :stage="stage"
+      :recovery-words="recoveryWords"
+      :positions="confirmation.positions.value"
+      :entered="confirmation.entered.value"
+      :is-complete="confirmation.isComplete.value"
+      :problem="call.problem.value"
       :is-busy="call.isBusy.value"
+      @change="actions.setEntered"
+      @check="actions.showCheck"
+      @back="actions.showWords"
+      @keep="actions.keep"
+      @cancel="actions.cancel"
     />
-
-    <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">
-      {{ call.problem.value }}
-    </p>
-  </section>
+  </IslandCard>
 </template>
 
 <style scoped>
-.identity-section {
+.identity-section__body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: var(--settings-card-pad);
+  padding-block: 0.375rem;
 }
 
-.identity-section__empty {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.identity-section__title {
+.identity-section__detail,
+.identity-section__problem {
   margin: 0;
-  font-weight: 500;
-}
-
-.identity-section__detail {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 
 .identity-section__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 
 .identity-section__problem {
-  margin: 0;
   font-size: var(--numen-text-1);
   color: var(--numen-alarm);
 }

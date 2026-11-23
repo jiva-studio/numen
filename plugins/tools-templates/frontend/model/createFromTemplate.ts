@@ -18,7 +18,7 @@ export interface CreateFromTemplateDeps {
   readonly picker: Pick<PickerHost, 'promptText' | 'selectOption'> | undefined
 }
 
-const failed = (message: string): Outcome => ({ kind: 'failed', message })
+const createFailedOutcome = (message: string): Outcome => ({ kind: 'failed', message })
 
 /**
  * Asks the name of the note and then the fields of the template in the palette, and makes the note.
@@ -32,8 +32,8 @@ export async function createFromTemplate(
 ): Promise<Outcome> {
   const { api, picker } = deps
   const asked = await api.listFields({ template, folder })
-  if (!asked.ok) return failed(asked.error.message)
-  if (!picker) return failed('the window cannot ask the name of the note')
+  if (!asked.ok) return createFailedOutcome(asked.error.message)
+  if (!picker) return createFailedOutcome('the window cannot ask the name of the note')
   const title = getTitle(template)
   const askName = (value: string, refusal: string): Promise<string | undefined> =>
     picker.promptText({ title: `${title} · Name${refusal ? ` · ${refusal}` : ''}`, value })
@@ -45,7 +45,7 @@ export async function createFromTemplate(
   for (;;) {
     const answer = await api.createNote({ template, folder, name, values, etag: asked.value.etag })
     if (answer.ok) return { kind: 'made', answer: answer.value }
-    if (!NAME_REFUSAL_CODES.has(answer.error.code)) return failed(answer.error.message)
+    if (!NAME_REFUSAL_CODES.has(answer.error.code)) return createFailedOutcome(answer.error.message)
     name = await askName(name, answer.error.message)
     if (name === undefined) return { kind: 'cancelled' }
   }

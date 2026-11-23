@@ -11,7 +11,7 @@ describe('settings step groups', () => {
     } as never
     const windowTabs = {
       handle: {
-        front: () => null,
+        getFrontTab: () => null,
         open: vi.fn(),
         close: vi.fn(),
       },

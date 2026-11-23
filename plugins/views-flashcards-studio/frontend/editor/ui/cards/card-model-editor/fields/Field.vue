@@ -45,7 +45,7 @@ const objections = useObjection(
   () => props.row.field,
 )
 
-const says = useObjectionMessage(objections, () => props.words.objection)
+const says = useObjectionMessage(objections, () => props.words.describeObjection)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGripKey(event: KeyboardEvent): void {

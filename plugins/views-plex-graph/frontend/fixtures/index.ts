@@ -150,7 +150,7 @@ export const createVault = (takes = true, connection: Connection | null = null) 
       saved.push(saving)
       return takes ? asValue(undefined) : asFailure('cycle')
     },
-    removeConnection: async (first, second) => {
+    deleteConnection: async (first, second) => {
       removed.push([first, second])
       return takes ? asValue(undefined) : asFailure('notFound')
     },

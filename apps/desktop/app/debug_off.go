@@ -31,3 +31,5 @@ func (d *DebugOptions) serveHTTP(
 ) error {
 	return nil
 }
+
+func (d *DebugOptions) getFrame(frame editor.Frame) editor.Frame { return frame }

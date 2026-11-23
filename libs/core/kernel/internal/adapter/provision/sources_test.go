@@ -216,7 +216,7 @@ func TestASearchPatternFindsTheDependencyOnThisMachine(t *testing.T) {
 	req.Search = []string{"relative/lib/libsample.so*", "$SAMPLE_UNSET/lib/libsample.so*", "$SAMPLE_ROOT/lib/libsample.so*"}
 	provisioner := newTestProvisioner(t, false)
 	provisioner.cfg.Client = server.Client()
-	provisioner.cfg.Getenv = func(name string) string {
+	provisioner.cfg.GetEnv = func(name string) string {
 		if name == "SAMPLE_ROOT" {
 			return root
 		}

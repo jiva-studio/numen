@@ -16,6 +16,14 @@ Then('the identity does not show the recovery words', async ({ person }) => {
   await person.identity.expectNoWords()
 })
 
+When('the person writes the recovery words down', async ({ person }) => {
+  await person.identity.writeWordsDown()
+})
+
+Then('the identity asks for {int} of the recovery words', async ({ person }, count: number) => {
+  await person.identity.expectWordsAsked(count)
+})
+
 When('the person confirms {int} of the recovery words', async ({ person }, count: number) => {
   await person.identity.confirmWords(count)
 })

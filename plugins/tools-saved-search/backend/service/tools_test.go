@@ -26,7 +26,7 @@ func mustJSON(t *testing.T, value any) string {
 
 func readNote(t *testing.T, f *fixture, notePath string) (string, map[string]any) {
 	t.Helper()
-	content, isThere := f.vault.Content(notePath)
+	content, isThere := f.vault.ReadContent(notePath)
 	if !isThere {
 		t.Fatalf("no note at %s", notePath)
 	}
@@ -212,21 +212,21 @@ func TestCreateRejectsAQueryTheCoreReportsAndWritesNothing(t *testing.T) {
 	if problem, isObject := problems[0].(map[string]any); !isObject || problem["line"] != float64(1) || problem["column"] != float64(20) {
 		t.Errorf("problem = %v, want line 1, column 20 of the query", problems[0])
 	}
-	if _, isThere := f.vault.Content("Winter storms.md"); isThere || out["path"] != nil {
+	if _, isThere := f.vault.ReadContent("Winter storms.md"); isThere || out["path"] != nil {
 		t.Errorf("output = %v, want no note written", out)
 	}
 }
 
 func TestCreateRejectsAPathThatExists(t *testing.T) {
 	f := newFixture(t, 10)
-	f.vault.File("Winter storms.md", "The winter of 1911.\n")
+	f.vault.WriteFile("Winter storms.md", "The winter of 1911.\n")
 
 	_, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": stormsQuery}))
 
 	if !strings.Contains(failure, "a file is at Winter storms.md; choose another title") {
 		t.Errorf("failure = %q, want the existing file named", failure)
 	}
-	if content, _ := f.vault.Content("Winter storms.md"); content != "The winter of 1911.\n" {
+	if content, _ := f.vault.ReadContent("Winter storms.md"); content != "The winter of 1911.\n" {
 		t.Errorf("file = %q, want it unchanged", content)
 	}
 }
@@ -263,7 +263,7 @@ func TestUpdateWithoutAQueryIsAnError(t *testing.T) {
 func TestUpdateRejectsAQueryTheCoreReportsAndChangesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
-	before, _ := f.vault.Content(stormsPath)
+	before, _ := f.vault.ReadContent(stormsPath)
 
 	out, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": stormsPath, "query": brokenQuery}))
 
@@ -273,7 +273,7 @@ func TestUpdateRejectsAQueryTheCoreReportsAndChangesNothing(t *testing.T) {
 	if problems, isList := out["errors"].([]any); !isList || len(problems) == 0 {
 		t.Errorf("output = %v, want the problems", out)
 	}
-	if after, _ := f.vault.Content(stormsPath); after != before {
+	if after, _ := f.vault.ReadContent(stormsPath); after != before {
 		t.Errorf("note = %q, want it unchanged", after)
 	}
 }

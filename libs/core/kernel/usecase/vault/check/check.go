@@ -41,7 +41,7 @@ type Checks struct {
 	List []Checker
 }
 
-func Standard(queries ProblemQueries) Checks {
+func CreateStandard(queries ProblemQueries) Checks {
 	return Checks{List: []Checker{
 		parseCheck{queries},
 		frontmatterCheck{queries},

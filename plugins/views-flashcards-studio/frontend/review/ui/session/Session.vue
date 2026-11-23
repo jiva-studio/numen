@@ -6,7 +6,7 @@
  * what has been written belong to the session model, and this component renders
  * them.
  */
-import { Button, KeyCap, keyChord, nav } from '@numen/ui'
+import { Button, KeyCap, getKeyChord, nav } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'
@@ -40,7 +40,7 @@ defineEmits<{
 }>()
 
 /* -------------------------------- Helpers --------------------------------- */
-const chord = (letter: string) => keyChord(letter, nav.userAgent)
+const buildChord = (letter: string) => getKeyChord(letter, nav.userAgent)
 </script>
 
 <template>
@@ -62,11 +62,11 @@ const chord = (letter: string) => keyChord(letter, nav.userAgent)
       <!-- The two panels stand in the order they stand in the strip: what is
            read is to the left of the card, and what is asked to the right. -->
       <Button variant="ghost" size="small" @click="$emit('read', '')">
-        <KeyCap :keys="chord(READ_KEY)" />
+        <KeyCap :keys="buildChord(READ_KEY)" />
         Read
       </Button>
       <Button variant="ghost" size="small" @click="$emit('ask')">
-        <KeyCap :keys="chord(ASK_KEY)" />
+        <KeyCap :keys="buildChord(ASK_KEY)" />
         Ask
       </Button>
       <Button variant="ghost" size="small" @click="$emit('leave')">

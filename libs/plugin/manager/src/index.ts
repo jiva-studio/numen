@@ -34,7 +34,7 @@ export {
   formatCategoryLabel,
   getFilteredPluginItems,
   getPluginCategory,
-  matchesPluginQuery,
+  isPluginQueryMatch,
   parsePluginQuery,
   type FlatPluginItem,
   type ParsedPluginQuery,

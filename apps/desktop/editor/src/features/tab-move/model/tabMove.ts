@@ -5,7 +5,6 @@
 import { win } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
-import { focusWindow } from '@/entities/window'
 import type { Result } from '@numen/result'
 import {
   formatSavedState,
@@ -34,7 +33,7 @@ export interface TabMoverDeps {
   readonly api: Pick<TabMoveApi, 'detachTab' | 'moveTab'>
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
-  readonly notes: Pick<Notes, 'asking' | 'flushPending'>
+  readonly notes: Pick<Notes, 'isAsking' | 'flushPending'>
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
   readonly getPaneRect: (id: string) => PaneRect | null
@@ -49,10 +48,10 @@ export function createTabMover(deps: TabMoverDeps) {
    * tab id that is not open or a tab that is asking.
    */
   const readTab = async (id: string): Promise<Tab | null> => {
-    if (!deps.windowTabs.tabs.getTab(id) || deps.notes.asking(id)) return null
+    if (!deps.windowTabs.tabs.getTab(id) || deps.notes.isAsking(id)) return null
     await deps.notes.flushPending(id)
     const one = deps.windowTabs.tabs.getTab(id)
-    if (!one || deps.notes.asking(id)) return null
+    if (!one || deps.notes.isAsking(id)) return null
     return {
       id,
       kind: one.kind.kind,
@@ -108,7 +107,7 @@ export interface MovedTabOpenerDeps {
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'restored'>
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
-  readonly focusWindow?: () => Promise<void>
+  readonly focusWindow: () => Promise<void>
   readonly wait?: (ms: number) => Promise<void>
   readonly onError: (error: unknown) => void
 }
@@ -125,7 +124,7 @@ export const createMoveAcceptor =
 /** Opens a tab sent from another window as the active tab and focuses the window. */
 export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
   const wait = deps.wait ?? waitMs
-  const focus = deps.focusWindow ?? focusWindow
+  const focus = deps.focusWindow
   /**
    * Sends AcceptTabMove, and sends it again after a thrown request. The core returns success for
    * a repeated accept of a completed move, so a success result means the move completed.

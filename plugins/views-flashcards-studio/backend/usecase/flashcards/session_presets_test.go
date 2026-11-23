@@ -30,7 +30,7 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 	if target.Path != "" {
 		t.Errorf("read from %q", target.Path)
 	}
-	if !reflect.DeepEqual(target.Settings, review.Defaults()) {
+	if !reflect.DeepEqual(target.Settings, review.NewDefaultPreset()) {
 		t.Errorf("preset = %+v", target.Settings)
 	}
 	if len(target.Problems) != 1 || !strings.Contains(target.Problems[0], "Sanskrit") {

@@ -4,17 +4,13 @@
 import { parseManifest, type Manifest } from '@numen/core-client'
 import type { PluginLifecycle, SlotName } from '@numen/plugin-sdk'
 import { WINDOW_SLOTS } from './slots'
-import { loadPluginStyle, unregisterPluginStyle } from './styles'
+import type { PluginStyles } from './styles'
 
 /** The bundle every plugin frontend builds to, relative to the plugin folder. */
 const FRONTEND_ENTRYPOINT = 'dist/index.js'
 
 /** The stylesheet every plugin frontend builds to, relative to the plugin folder. */
 const FRONTEND_STYLES = 'dist/styles.css'
-
-export function removePluginStyles(pluginId: string): void {
-  unregisterPluginStyle(pluginId)
-}
 
 /**
  * What a plugin bundle exports: the lifecycle hooks at the top or under `default`. An ES module
@@ -51,6 +47,7 @@ export interface LoadModuleOptions {
   readonly baseUrl: string
   readonly fetchFn: typeof fetch
   readonly importFn: (url: string) => Promise<PluginModule>
+  readonly styles: PluginStyles
   readonly manifests: Map<string, Manifest>
 }
 
@@ -88,7 +85,7 @@ async function loadDynamicModule(
   const { baseUrl, fetchFn, importFn } = options
   const manifest = await readPluginManifest(pluginId, options)
   if (options.signal?.aborted || manifest.frontend === undefined) return undefined
-  const style = loadPluginStyle(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
+  const style = options.styles.load(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
   const [loaded] = await Promise.all([
     importFn(`${baseUrl}/${pluginId}/${FRONTEND_ENTRYPOINT}`),
     style,

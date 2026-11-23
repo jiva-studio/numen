@@ -26,7 +26,7 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 		vs.ports.Readers, shut{t: t, isWatched: true, hold: errOutOfReach},
 		unanswered{}, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
-	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md",
+	_, err := w.WriteDeck(t.Context(), vs.first, "decks/Wrens.md",
 		wrenDeck+strings.Repeat("a", format.MaxDeckBytes), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("write = %v, want too large", err)
@@ -43,7 +43,7 @@ func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 		vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",
+	_, err := w.WriteCardModel(t.Context(), vs.first, "Animal.md",
 		"\n## Recognize\n\n"+strings.Repeat("a", note.MaxBytes), []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("write = %v, want too large", err)
@@ -62,7 +62,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, unanswered{}, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
-	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck+"\n## Crow\n\n[[Animal]]\n", domain.FileStat{})
+	_, err := w.WriteDeck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck+"\n## Crow\n\n[[Animal]]\n", domain.FileStat{})
 	if !errors.Is(err, errOutOfReach) {
 		t.Fatalf("write = %v, want the index's error", err)
 	}
@@ -77,13 +77,13 @@ func TestAStaleWritePassesBackNothing(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	observed, err := cards.NewRead(vs.ports.Readers, vs.queries).
-		Deck(t.Context(), vs.first, "decks/Wrens.md")
+		ReadDeck(t.Context(), vs.first, "decks/Wrens.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 	write(t, vs.first, "decks/Wrens.md", "---\ntype: deck\n---\n"+wrenDeck+"\nChanged under the reader.\n")
 
-	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, observed.FileStat)
+	got, err := w.WriteDeck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, observed.FileStat)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("write = %v, want stale", err)
 	}
@@ -97,7 +97,7 @@ func TestADeckSavedAndNotIndexedPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeckIndexed(t, vs, "decks/Wrens.md", wrenDeck, func(_ context.Context, _ domain.Vault, _ []string) error { return errOutOfReach })
 
-	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, domain.FileStat{})
+	got, err := w.WriteDeck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, domain.FileStat{})
 	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errOutOfReach) {
 		t.Fatalf("write = %v, want the file written and the index not level", err)
 	}
@@ -119,7 +119,7 @@ func TestACardModelBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := w.CardModel(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.FileStat{})
+	_, err := w.WriteCardModel(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, note.ErrBodyUnwritable) {
 		t.Fatalf("write = %v, want the body unwritable", err)
 	}
@@ -137,7 +137,7 @@ func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
-	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.FileStat{})
+	_, err := w.WriteCardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
 		t.Fatalf("write = %v, want the frontmatter unterminated", err)
 	}
@@ -154,7 +154,7 @@ func TestWriteCardModel_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
-	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.FileStat{})
+	_, err := w.WriteCardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
 		t.Fatalf("write = %v, want the frontmatter unterminated", err)
 	}

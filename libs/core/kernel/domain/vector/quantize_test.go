@@ -25,7 +25,7 @@ func TestBitsKeepTheSign(t *testing.T) {
 		{"no dimensions", []float32{}, []byte{}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := vector.Bits(c.in); !slices.Equal(got, c.want) {
+			if got := vector.QuantizeBits(c.in); !slices.Equal(got, c.want) {
 				t.Errorf("got %08b, want %08b", got, c.want)
 			}
 		})
@@ -48,7 +48,7 @@ func TestCoarseKeepsTheSignOfAQuantizedVector(t *testing.T) {
 		{"no dimensions", []int8{}, []byte{}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := vector.Coarse(c.in); got == nil || !slices.Equal(got, c.want) {
+			if got := vector.QuantizeCoarse(c.in); got == nil || !slices.Equal(got, c.want) {
 				t.Errorf("got %#v, want %08b", got, c.want)
 			}
 		})
@@ -72,7 +72,7 @@ func TestBytesRoundTrip(t *testing.T) {
 		{"negative rounds the same way", float32(-step * 2.7), -3},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := vector.Bytes([]float32{c.in})
+			got := vector.QuantizeBytes([]float32{c.in})
 			if got[0] != c.want {
 				t.Fatalf("got %d, want %d", got[0], c.want)
 			}
@@ -92,10 +92,10 @@ func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
 		stored[i] = byte(i)
 		want[i] = int8(i)
 	}
-	if got := vector.Dimensions(stored); !slices.Equal(got, want) {
+	if got := vector.ReadDimensions(stored); !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
-	if got := vector.Dimensions(nil); len(got) != 0 {
+	if got := vector.ReadDimensions(nil); len(got) != 0 {
 		t.Errorf("got %v for no vector", got)
 	}
 }
@@ -106,8 +106,8 @@ func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
 func TestQuantizationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 	unit := vector.Normalize([]float32{0.1, -0.4, 0.02, 0.9, -0.01, 0.3, 0.0, -0.7})
 
-	first := vector.Bytes(unit)
-	firstBits := vector.Bits(unit)
+	first := vector.QuantizeBytes(unit)
+	firstBits := vector.QuantizeBits(unit)
 
 	// A second run over a corpus with a different spread — every other vector
 	// far larger, as a book of another language would be.
@@ -117,11 +117,11 @@ func TestQuantizationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 		for i := range other {
 			other[i] = float32(crowd.Float64()*40 - 20)
 		}
-		vector.Bytes(other)
-		vector.Bits(other)
+		vector.QuantizeBytes(other)
+		vector.QuantizeBits(other)
 	}
-	second := vector.Bytes(unit)
-	secondBits := vector.Bits(unit)
+	second := vector.QuantizeBytes(unit)
+	secondBits := vector.QuantizeBits(unit)
 
 	if !slices.Equal(first, second) {
 		t.Errorf("bytes moved: %v then %v", first, second)
@@ -164,7 +164,7 @@ func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
 			for i, v := range c.stored {
 				bytes[i] = byte(v)
 			}
-			gotBytes := vector.SimilarityBytes(c.query, bytes)
+			gotBytes := vector.ComputeSimilarityBytes(c.query, bytes)
 			if math.Abs(gotBytes-c.want) > 1e-9 {
 				t.Errorf("gotBytes %v, want %v", gotBytes, c.want)
 			}
@@ -183,12 +183,12 @@ func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
 	}
 	vector.Normalize(v)
 
-	quantized := vector.Bytes(v)
+	quantized := vector.QuantizeBytes(v)
 	raw := make([]byte, len(quantized))
 	for i, q := range quantized {
 		raw[i] = byte(q)
 	}
-	got := vector.SimilarityBytes(v, raw)
+	got := vector.ComputeSimilarityBytes(v, raw)
 	if got < 0.999 {
 		t.Errorf("a vector against its own quantization is at %v", got)
 	}
@@ -204,7 +204,7 @@ func BenchmarkDimensions(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 			for b.Loop() {
-				_ = vector.Dimensions(raw)
+				_ = vector.ReadDimensions(raw)
 			}
 		})
 	}
@@ -226,7 +226,7 @@ func TestBytesClampAtTheLastLevelEitherSide(t *testing.T) {
 		{"one step past the last level, negative", float32(-step * 128), -127},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := vector.Bytes([]float32{c.in}); got[0] != c.want {
+			if got := vector.QuantizeBytes([]float32{c.in}); got[0] != c.want {
 				t.Errorf("got %d, want %d", got[0], c.want)
 			}
 		})
@@ -234,10 +234,10 @@ func TestBytesClampAtTheLastLevelEitherSide(t *testing.T) {
 }
 
 func TestDimensionsOfAnEmptyVectorAreNone(t *testing.T) {
-	if got := vector.Dimensions([]byte{}); got != nil {
+	if got := vector.ReadDimensions([]byte{}); got != nil {
 		t.Errorf("got %#v for an empty stored vector, want nil", got)
 	}
-	if got := vector.Dimensions([]byte{0xff}); !slices.Equal(got, []int8{-1}) {
+	if got := vector.ReadDimensions([]byte{0xff}); !slices.Equal(got, []int8{-1}) {
 		t.Errorf("got %v for one stored byte, want [-1]", got)
 	}
 }
@@ -259,7 +259,7 @@ func TestSimilarityIsTheCosineAtEveryWidth(t *testing.T) {
 			raw[i] = byte(stored[i])
 		}
 		want := getCosine(query, stored)
-		if got := vector.SimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
+		if got := vector.ComputeSimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
 			t.Errorf("width %d: SimilarityBytes = %v, want %v", width, got, want)
 		}
 	}
@@ -284,7 +284,7 @@ func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
 			for i, v := range c.stored {
 				raw[i] = byte(v)
 			}
-			if got := vector.SimilarityBytes(c.query, raw); got != c.want {
+			if got := vector.ComputeSimilarityBytes(c.query, raw); got != c.want {
 				t.Errorf("SimilarityBytes = %v, want %v", got, c.want)
 			}
 		})
@@ -307,7 +307,7 @@ func getCosine(query []float32, stored []int8) float64 {
 func TestSimilaritySumsFourElementsAStepInSinglePrecision(t *testing.T) {
 	query := []float32{1 << 24, 1, 0, 0}
 	want := math.Sqrt2 / 2
-	if got := vector.SimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
+	if got := vector.ComputeSimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
 		t.Errorf("SimilarityBytes = %v, want %v", got, want)
 	}
 }
@@ -322,12 +322,12 @@ func TestSimilarityIsTheSameOnEveryArchitecture(t *testing.T) {
 		query[i] = float32(values.NormFloat64())
 		passage[i] = float32(values.NormFloat64())
 	}
-	quantized := vector.Bytes(vector.Normalize(passage))
+	quantized := vector.QuantizeBytes(vector.Normalize(passage))
 	raw := make([]byte, len(quantized))
 	for i, q := range quantized {
 		raw[i] = byte(q)
 	}
-	got := vector.SimilarityBytes(vector.Normalize(query), raw)
+	got := vector.ComputeSimilarityBytes(vector.Normalize(query), raw)
 	if bits := math.Float64bits(got); bits != 0xbfa4bfceeef9c364 {
 		t.Errorf("the similarity is %v, bits %#x", got, bits)
 	}

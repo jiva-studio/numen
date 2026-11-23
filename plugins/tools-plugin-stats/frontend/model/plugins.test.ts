@@ -17,7 +17,7 @@ const create = (pluginId: string, pluginName: string, extra: Partial<PluginProce
     isInProcess: false,
     health: 'ok',
     healthText: '',
-    startedBy: { who: 'Settings', why: 'list tools' },
+    startedBy: { requester: 'Settings', reason: 'list tools' },
     holders: [],
     ...extra,
   }) satisfies PluginProcess

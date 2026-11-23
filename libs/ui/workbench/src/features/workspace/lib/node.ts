@@ -51,12 +51,12 @@ export interface Workspace {
   readonly focus: NodeId
 }
 
-export const orthogonal = (orientation: Orientation): Orientation =>
+export const getCrossOrientation = (orientation: Orientation): Orientation =>
   orientation === 'horizontal' ? 'vertical' : 'horizontal'
 
 /** How a branch at this depth divides its length. */
 export const getOrientation = (axis: Orientation, depth: number): Orientation =>
-  depth % 2 === 0 ? axis : orthogonal(axis)
+  depth % 2 === 0 ? axis : getCrossOrientation(axis)
 
 /** The orientation a split towards a side needs. Center splits nothing. */
 export const findSideOrientation = (side: Side): Orientation | null => {
@@ -67,7 +67,7 @@ export const findSideOrientation = (side: Side): Orientation | null => {
 /** Whether a side puts what lands on it ahead of what it landed on. */
 export const isLeading = (side: Side): boolean => side === 'left' || side === 'top'
 
-export const pane = (id: NodeId, tabs: readonly TabId[], active?: TabId): Pane => ({
+export const createPane = (id: NodeId, tabs: readonly TabId[], active?: TabId): Pane => ({
   kind: 'pane',
   id,
   tabs,

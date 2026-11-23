@@ -238,7 +238,7 @@ function createInstallationConnections(
       operations: readonly string[],
     ) => {
       const answer = await api.listRowOptions(connectionId, field, options, operations)
-      return answer.ok ? answer : { ok: false as const, error: answer.error.detail }
+      return answer.ok ? answer : { ok: false as const, error: answer.error.message }
     },
     countNotes: () => countNotes(api.listFiles),
   }
@@ -304,7 +304,7 @@ export function createSettingsPage({
   )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
-    words: { stopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
+    words: { formatStopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.refresh(),
     getName: getPluginName,

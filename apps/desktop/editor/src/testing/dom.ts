@@ -5,34 +5,34 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 
 /** The root a query runs in: the document body, so a menu or a dialog drawn outside the component is found. */
-export const root = (): HTMLElement => document.body
+export const getRoot = (): HTMLElement => document.body
 
 /** The accessible name of an element: its label, else its title, else its text. */
-export const nameOf = (element: Element): string =>
+export const getAccessibleName = (element: Element): string =>
   element.getAttribute('aria-label') ??
   element.getAttribute('title') ??
   element.textContent.replace(/\s+/g, ' ').trim()
 
-const buttons = (scope: ParentNode = root()): HTMLElement[] =>
+const buttons = (scope: ParentNode = getRoot()): HTMLElement[] =>
   Array.from(scope.querySelectorAll<HTMLElement>('button, [role="button"]'))
 
 /** The buttons in a scope whose accessible name matches. */
-export const findButtons = (pattern: RegExp, scope: ParentNode = root()): HTMLElement[] =>
-  buttons(scope).filter((one) => pattern.test(nameOf(one)))
+export const findButtons = (pattern: RegExp, scope: ParentNode = getRoot()): HTMLElement[] =>
+  buttons(scope).filter((one) => pattern.test(getAccessibleName(one)))
 
 /** The one button in a scope whose accessible name matches. */
-export const findButton = (pattern: RegExp, scope: ParentNode = root()): HTMLElement => {
+export const findButton = (pattern: RegExp, scope: ParentNode = getRoot()): HTMLElement => {
   const found = findButtons(pattern, scope)
   if (found.length !== 1) {
     throw new Error(
-      `${found.length} buttons match ${pattern}; the buttons are: ${buttons(scope).map(nameOf).join(' | ')}`,
+      `${found.length} buttons match ${pattern}; the buttons are: ${buttons(scope).map(getAccessibleName).join(' | ')}`,
     )
   }
   return found[0] as HTMLElement
 }
 
-const findTexts = (text: string | RegExp, scope: ParentNode = root()): HTMLElement[] => {
-  const matches = (element: Element): boolean => {
+const findTexts = (text: string | RegExp, scope: ParentNode = getRoot()): HTMLElement[] => {
+  const isMatch = (element: Element): boolean => {
     const own = Array.from(element.childNodes)
       .filter((node) => node.nodeType === Node.TEXT_NODE)
       .map((node) => node.textContent ?? '')
@@ -41,19 +41,19 @@ const findTexts = (text: string | RegExp, scope: ParentNode = root()): HTMLEleme
       .trim()
     return typeof text === 'string' ? own === text : text.test(own)
   }
-  return Array.from(scope.querySelectorAll<HTMLElement>('*')).filter(matches)
+  return Array.from(scope.querySelectorAll<HTMLElement>('*')).filter(isMatch)
 }
 
 /** The first smallest element in a scope that holds the text. */
-export const findText = (text: string | RegExp, scope: ParentNode = root()): HTMLElement | null =>
+export const findText = (text: string | RegExp, scope: ParentNode = getRoot()): HTMLElement | null =>
   findTexts(text, scope)[0] ?? null
 
 /** The password inputs in a scope. */
-export const maskedInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
+export const maskedInputs = (scope: ParentNode = getRoot()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="password"]'))
 
 /** The single-line inputs in a scope; a masked input is not one. */
-export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
+export const textInputs = (scope: ParentNode = getRoot()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="text"]'))
 
 /** Types into an input and commits with Enter, a change and a blur. */
@@ -79,11 +79,11 @@ export function dispose(wrapper: VueWrapper): void {
 
 /** The menu item whose text matches, in the menu drawn into the document. */
 export const findMenuItem = (pattern: RegExp): HTMLElement => {
-  const items = Array.from(root().querySelectorAll<HTMLElement>('[role="menuitem"]'))
-  const found = items.filter((one) => pattern.test(nameOf(one)))
+  const items = Array.from(getRoot().querySelectorAll<HTMLElement>('[role="menuitem"]'))
+  const found = items.filter((one) => pattern.test(getAccessibleName(one)))
   if (found.length !== 1) {
     throw new Error(
-      `${found.length} menu items match ${pattern}; the items are: ${items.map(nameOf).join(' | ')}`,
+      `${found.length} menu items match ${pattern}; the items are: ${items.map(getAccessibleName).join(' | ')}`,
     )
   }
   return found[0] as HTMLElement

@@ -54,10 +54,10 @@ const listProps = computed(() => {
 })
 
 const { setSize, menuStyle } = useMenuPlacement({
-  at: () => props.at,
-  viewport: () => props.viewport,
-  margin: () => 8,
-  asking: () => props.asking,
+  getPosition: () => props.at,
+  getViewport: () => props.viewport,
+  getMargin: () => 8,
+  getAskedWidth: () => props.asking,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
