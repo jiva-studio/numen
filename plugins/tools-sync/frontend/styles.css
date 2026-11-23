@@ -155,20 +155,30 @@
 }
 
 .subscription__text,
+.subscription__plan,
+.subscription__usage,
+.subscription__full,
 .subscription__problem {
   margin: 0;
 }
 
-.subscription__text {
+.subscription__text,
+.subscription__usage {
   color: var(--numen-hushed);
 }
 
+.subscription__plan {
+  font-weight: 500;
+}
+
+.subscription__full,
 .subscription__problem {
   color: var(--numen-alarm);
 }
 
 .subscription__controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--numen-chrome-unit) / 2);
 }

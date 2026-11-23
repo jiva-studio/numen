@@ -29,6 +29,8 @@ export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
+  /** True while a trial runs that no payment has followed; the end of the period is then the end of the trial. */
+  readonly isTrial?: boolean | undefined
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -46,13 +48,21 @@ function formatDate(time: string): string {
   return `${parts.get('day') ?? ''} ${month} ${parts.get('year') ?? ''}`
 }
 
-const getPhaseView = (phase: SubscriptionPhase, dates: SubscriptionDates): SubscriptionView => {
+const getPhaseView = (
+  phase: SubscriptionPhase,
+  dates: SubscriptionDates,
+  isTrial: boolean,
+): SubscriptionView => {
   const periodEnd = formatDate(dates.periodEnd)
   switch (phase) {
     case 'none':
       return { badge: words.noSubscription, text: words.noSubscriptionText, tone: 'neutral' }
     case 'active':
-      return { badge: words.active, text: words.activeText(periodEnd), tone: 'positive' }
+      return {
+        badge: words.active,
+        text: isTrial ? words.trialText(periodEnd) : words.activeText(periodEnd),
+        tone: 'positive',
+      }
     case 'grace':
       return {
         badge: words.ended,
@@ -82,7 +92,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
     case 'ready':
       return snapshot.phase === ''
         ? { badge: '', text: '', tone: 'neutral' }
-        : getPhaseView(snapshot.phase, snapshot.dates)
+        : getPhaseView(snapshot.phase, snapshot.dates, snapshot.isTrial === true)
   }
 }
 
@@ -95,27 +105,37 @@ export interface PlanSize {
   readonly currency: string
 }
 
+const BYTES_IN_GB = 2 ** 30
+const CENTS_IN_UNIT = 100
+const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = { USD: '$', EUR: '€', GBP: '£' }
+
 /** The size in GB, where 1 GB is 2^30 bytes, such as "10 GB" or "1.5 GB". */
-export function formatSize(_bytes: number): string {
-  throw new Error('not implemented')
+export function formatSize(bytes: number): string {
+  return `${Number((bytes / BYTES_IN_GB).toFixed(1))} GB`
 }
 
 /** The price for one period, such as "$5", "$4.99", "€10" or "7 CHF"; empty when the plan has no price. */
-export function formatPrice(_cents: number, _currency: string): string {
-  throw new Error('not implemented')
+export function formatPrice(cents: number, currency: string): string {
+  if (cents === 0) return ''
+  const units = cents / CENTS_IN_UNIT
+  const amount = Number.isInteger(units) ? String(units) : units.toFixed(2)
+  const symbol = CURRENCY_SYMBOLS[currency]
+  return symbol === undefined ? `${amount} ${currency}` : `${symbol}${amount}`
 }
 
 /** The name and the size of a plan, such as "Plus, 100 GB"; only the size when the plan has no name. */
-export function getPlanLabel(_plan: PlanSize): string {
-  throw new Error('not implemented')
+export function getPlanLabel(plan: PlanSize): string {
+  const size = formatSize(plan.quotaBytes)
+  return plan.name === '' ? size : `${plan.name}, ${size}`
 }
 
 /** The label of an offer: the name, the size and the price, such as "Plus, 100 GB, $15". */
-export function getOfferLabel(_plan: PlanSize): string {
-  throw new Error('not implemented')
+export function getOfferLabel(plan: PlanSize): string {
+  const price = formatPrice(plan.priceCents, plan.currency)
+  return price === '' ? getPlanLabel(plan) : `${getPlanLabel(plan)}, ${price}`
 }
 
 /** The space in use against the quota, such as "2 GB of 100 GB used". It may be above the quota. */
-export function getUsageText(_usedBytes: number, _quotaBytes: number): string {
-  throw new Error('not implemented')
+export function getUsageText(usedBytes: number, quotaBytes: number): string {
+  return `${formatSize(usedBytes)} of ${formatSize(quotaBytes)} used`
 }

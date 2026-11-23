@@ -6,6 +6,5 @@
   "deleteAt": "2027-01-26T12:00:00Z",
   "plan": "plus",
   "quotaBytes": 107374182400,
-  "usedBytes": 2147483648,
-  "isTrial": false
+  "usedBytes": 2147483648
 }

@@ -9,6 +9,7 @@ export const WORDS = {
   noSubscriptionText: 'Buy a subscription to sync your vaults between your devices.',
   active: 'Active',
   activeText: (periodEnd: string): string => `Active until ${periodEnd}.`,
+  trialText: (end: string): string => `Trial until ${end}.`,
   ended: 'Ended',
   graceText: (periodEnd: string, writesEnd: string): string =>
     `The subscription ended on ${periodEnd}. Changes are sent until ${writesEnd}, then the vaults in the cloud can only be read.`,
@@ -21,6 +22,9 @@ export const WORDS = {
   noIdentityText: 'Create an identity to buy a subscription.',
   syncServerUnreachable: 'Could not reach the sync server',
   buy: 'Buy',
+  changePlanTo: (name: string): string => `Change plan to ${name}`,
+  manageSubscription: 'Manage subscription',
+  cloudFull: 'Cloud storage is full: changes stay on this device',
   waitingForPayment: 'Waiting for the payment…',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',

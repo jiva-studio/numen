@@ -20,6 +20,8 @@ export interface SubscriptionResponse {
   readonly plan: string
   readonly quotaBytes: number
   readonly usedBytes: number
+  /** True while a trial runs that no payment has followed; the backend leaves it out otherwise. */
+  readonly isTrial?: boolean | undefined
 }
 
 /** A plan the server sells. */
@@ -44,6 +46,10 @@ interface ChangePlanResponse {
   readonly subscription: SubscriptionResponse
 }
 
+interface CreatePortalSessionResponse {
+  readonly portalUrl: string
+}
+
 export interface SubscriptionClient {
   getSubscription(): Promise<SubscriptionResponse>
   /** The plans ascending by quota. */
@@ -52,6 +58,8 @@ export interface SubscriptionClient {
   createCheckout(plan: string): Promise<string>
   /** The subscription after the active subscription moved to the plan with this id. */
   changePlan(plan: string): Promise<SubscriptionResponse>
+  /** The address of the page of the payment provider where the person manages the subscription. */
+  createPortalSession?(): Promise<string>
 }
 
 /** A failed call: the message of the backend and its code, such as `unavailable` or `already_exists`. */
@@ -78,6 +86,9 @@ export function createSubscriptionClient(api: Api): SubscriptionClient {
         .checkoutUrl,
     changePlan: async (plan) =>
       (await call<{ plan: string }, ChangePlanResponse>('ChangePlan', { plan })).subscription,
+    createPortalSession: async () =>
+      (await call<Record<string, never>, CreatePortalSessionResponse>('CreatePortalSession', {}))
+        .portalUrl,
   }
 }
 

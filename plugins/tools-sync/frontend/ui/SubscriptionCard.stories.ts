@@ -212,3 +212,22 @@ export const EndedWithPlan: Story = {
     await expect(canvas.queryByRole('button', { name: /^Change plan to / })).toBeNull()
   },
 }
+
+export const Trial: Story = {
+  args: createArgs(() =>
+    Promise.resolve(
+      createResponse({
+        phase: 'active',
+        periodEndAt: '2026-12-07T12:00:00Z',
+        plan: 'plus',
+        quotaBytes: 100 * GIB,
+        isTrial: true,
+      }),
+    ),
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Trial until 7 Dec 2026.')).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
+  },
+}

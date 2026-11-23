@@ -1,10 +1,19 @@
 import { computed, onScopeDispose, ref } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
-import { getFailureCode, type SubscriptionClient } from '../api/subscription'
+import {
+  getFailureCode,
+  type PlanResponse,
+  type SubscriptionClient,
+  type SubscriptionResponse,
+} from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
 import {
+  formatSize,
+  getOfferLabel,
+  getPlanLabel,
   getSubscriptionView,
+  getUsageText,
   type SubscriptionPhase,
   type SubscriptionDates,
   type PlanOffer,
@@ -37,6 +46,11 @@ export function useSubscription(options: UseSubscriptionOptions) {
   const status = ref<SubscriptionStatus>('loading')
   const phase = ref<SubscriptionPhase | ''>('')
   const dates = ref<SubscriptionDates>(NO_DATES)
+  const plan = ref('')
+  const quotaBytes = ref(0)
+  const usedBytes = ref(0)
+  const isTrial = ref(false)
+  const plans = ref<readonly PlanResponse[]>([])
   const waiting = ref(false)
   const problem = ref('')
   let pollTimer: ReturnType<typeof setTimeout> | undefined
@@ -44,16 +58,37 @@ export function useSubscription(options: UseSubscriptionOptions) {
 
   const canBuy = computed(() => status.value === 'ready' && phase.value !== 'active')
   const view = computed(() =>
-    getSubscriptionView({ status: status.value, phase: phase.value, dates: dates.value }),
+    getSubscriptionView({
+      status: status.value,
+      phase: phase.value,
+      dates: dates.value,
+      isTrial: isTrial.value,
+    }),
   )
 
-  async function read(): Promise<void> {
-    const answer = await client.getSubscription()
+  function apply(answer: SubscriptionResponse): void {
     status.value = answer.hasIdentity ? 'ready' : 'noIdentity'
     phase.value = answer.hasIdentity ? answer.phase : ''
     dates.value = answer.hasIdentity
       ? { periodEnd: answer.periodEndAt, writesEnd: answer.writesEndAt, deleteAt: answer.deleteAt }
       : NO_DATES
+    plan.value = answer.hasIdentity ? answer.plan : ''
+    quotaBytes.value = answer.hasIdentity ? answer.quotaBytes : 0
+    usedBytes.value = answer.hasIdentity ? answer.usedBytes : 0
+    isTrial.value = answer.hasIdentity && answer.isTrial === true
+  }
+
+  async function read(): Promise<void> {
+    apply(await client.getSubscription())
+  }
+
+  async function loadPlans(): Promise<void> {
+    try {
+      plans.value = await client.listPlans()
+    } catch (failure) {
+      plans.value = []
+      problem.value = getMessage(failure)
+    }
   }
 
   async function load(): Promise<void> {
@@ -62,7 +97,9 @@ export function useSubscription(options: UseSubscriptionOptions) {
     } catch (failure) {
       status.value = 'unreachable'
       if (getFailureCode(failure) !== 'unavailable') problem.value = getMessage(failure)
+      return
     }
+    if (status.value === 'ready') await loadPlans()
   }
 
   function reportProblem(failure: unknown): void {
@@ -105,11 +142,11 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }, pollLimitMs)
   }
 
-  async function buy(plan: string): Promise<void> {
+  async function buy(offer: string): Promise<void> {
     if (waiting.value) return
     problem.value = ''
     try {
-      const opened = await openExternal(await client.createCheckout(plan))
+      const opened = await openExternal(await client.createCheckout(offer))
       if (opened.ok) beginPaymentPoll()
       else problem.value = opened.error
     } catch (failure) {
@@ -118,22 +155,70 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }
   }
 
+  async function change(offer: string): Promise<void> {
+    problem.value = ''
+    try {
+      apply(await client.changePlan(offer))
+    } catch (failure) {
+      const code = getFailureCode(failure)
+      if (code === 'already_exists' || code === 'failed_precondition') await readIfReachable()
+      else problem.value = getMessage(failure)
+    }
+  }
+
+  async function manage(): Promise<void> {
+    problem.value = ''
+    try {
+      const address = await client.createPortalSession?.()
+      if (address === undefined) return
+      const opened = await openExternal(address)
+      if (!opened.ok) problem.value = opened.error
+    } catch (failure) {
+      problem.value = getMessage(failure)
+    }
+  }
+
   onScopeDispose(endPaymentPoll)
 
-  const buyOffers = computed<readonly PlanOffer[]>(() => [])
-  const changeOffers = computed<readonly PlanOffer[]>(() => [])
-  const planLine = computed(() => '')
-  const usage = computed(() => '')
-  const isFull = computed(() => false)
-
-  function change(_plan: string): Promise<void> {
-    return Promise.reject(new Error('not implemented'))
-  }
+  const toOffer = (one: PlanResponse): PlanOffer => ({
+    id: one.id,
+    name: one.name,
+    label: getOfferLabel(one),
+  })
+  const buyOffers = computed<readonly PlanOffer[]>(() =>
+    canBuy.value ? plans.value.map(toOffer) : [],
+  )
+  const changeOffers = computed<readonly PlanOffer[]>(() =>
+    status.value === 'ready' && phase.value === 'active'
+      ? plans.value.filter((one) => one.id !== plan.value).map(toOffer)
+      : [],
+  )
+  const planLine = computed(() => {
+    if (plan.value === '') return ''
+    const known = plans.value.find((one) => one.id === plan.value)
+    return known === undefined
+      ? formatSize(quotaBytes.value)
+      : getPlanLabel({ ...known, quotaBytes: quotaBytes.value })
+  })
+  const hasUsage = computed(
+    () =>
+      status.value === 'ready' &&
+      quotaBytes.value > 0 &&
+      (phase.value === 'active' || phase.value === 'grace'),
+  )
+  const usage = computed(() =>
+    hasUsage.value ? getUsageText(usedBytes.value, quotaBytes.value) : '',
+  )
+  const isFull = computed(() => hasUsage.value && usedBytes.value >= quotaBytes.value)
+  const canManage = computed(
+    () => status.value === 'ready' && phase.value !== 'none' && phase.value !== '',
+  )
 
   return {
     status,
     phase,
     canBuy,
+    canManage,
     waiting,
     problem,
     view,
@@ -145,5 +230,6 @@ export function useSubscription(options: UseSubscriptionOptions) {
     load,
     buy,
     change,
+    manage,
   }
 }

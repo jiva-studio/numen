@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The card of the subscription of the account on the page "Identity and licenses": the title, what the
- * server says of the subscription, and the one action, to buy it.
+ * server says of the subscription, the plan with the space used, and the actions: to buy a plan, to change it and to manage the subscription.
  */
 import { onMounted } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
@@ -18,7 +18,21 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { buyOffers, changeOffers, waiting, problem, view, load, buy, change } = useSubscription({
+const {
+  buyOffers,
+  changeOffers,
+  canManage,
+  planLine,
+  usage,
+  isFull,
+  waiting,
+  problem,
+  view,
+  load,
+  buy,
+  change,
+  manage,
+} = useSubscription({
   openExternal: props.openExternal,
   client: props.client,
   now: props.now,
@@ -36,6 +50,10 @@ function onBuy(plan: string): void {
 
 function onChange(plan: string): void {
   change(plan).catch(onFailure)
+}
+
+function onManage(): void {
+  manage().catch(onFailure)
 }
 
 function onFailure(failure: unknown): void {
@@ -56,7 +74,13 @@ function onFailure(failure: unknown): void {
       </span>
     </div>
     <p v-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
-    <div v-if="buyOffers.length > 0 || changeOffers.length > 0" class="subscription__controls">
+    <p v-if="planLine !== ''" class="subscription__plan">{{ planLine }}</p>
+    <p v-if="usage !== ''" class="subscription__usage">{{ usage }}</p>
+    <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
+    <div
+      v-if="buyOffers.length > 0 || changeOffers.length > 0 || canManage"
+      class="subscription__controls"
+    >
       <Button
         v-for="offer in buyOffers"
         :key="`buy-${offer.id}`"
@@ -74,7 +98,10 @@ function onFailure(failure: unknown): void {
         variant="outline"
         @click="onChange(offer.id)"
       >
-        {{ `Change plan to ${offer.name}` }}
+        {{ words.changePlanTo(offer.name) }}
+      </Button>
+      <Button v-if="canManage" type="button" variant="outline" @click="onManage">
+        {{ words.manageSubscription }}
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>

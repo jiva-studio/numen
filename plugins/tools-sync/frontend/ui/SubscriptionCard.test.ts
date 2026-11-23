@@ -274,3 +274,41 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).not.toContain('gold')
   })
 })
+
+describe('SubscriptionCard trial and portal', () => {
+  const PORTAL_URL = 'https://portal.example/session/1'
+
+  it('says the day the trial ends', async () => {
+    const { wrapper } = await render(
+      createResponse({ ...ACTIVE_ON_PLUS, isTrial: true, periodEndAt: '2026-12-07T12:00:00Z' }),
+    )
+
+    expect(wrapper.text()).toContain('Trial until 7 Dec 2026.')
+    expect(wrapper.text()).not.toContain('Active until')
+  })
+
+  it('opens the portal in the browser with the one button Manage subscription', async () => {
+    const client = {
+      ...createClient(() => Promise.resolve(ACTIVE_ON_PLUS)),
+      createPortalSession: vi.fn<() => Promise<string>>(() => Promise.resolve(PORTAL_URL)),
+    }
+    const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
+      Promise.resolve(asValue(null)),
+    )
+    const wrapper = mount(SubscriptionCard, { props: { client, openExternal, now: () => NOW } })
+    await flushPromises()
+
+    const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')
+    await manage[0]?.trigger('click')
+    await flushPromises()
+
+    expect(manage).toHaveLength(1)
+    expect(openExternal).toHaveBeenCalledExactlyOnceWith(PORTAL_URL)
+  })
+
+  it('offers no portal to an account without a subscription', async () => {
+    const { wrapper } = await render(createResponse())
+
+    expect(wrapper.text()).not.toContain('Manage subscription')
+  })
+})

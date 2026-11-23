@@ -129,7 +129,7 @@ type GetSubscriptionResponse struct {
 	Plan        string `json:"plan"`
 	QuotaBytes  uint64 `json:"quotaBytes"`
 	UsedBytes   uint64 `json:"usedBytes"`
-	IsTrial     bool   `json:"isTrial"`
+	IsTrial     bool   `json:"isTrial,omitempty"`
 }
 
 // CreateCheckoutRequest asks for a payment page for the plan with this id.
