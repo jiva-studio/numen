@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/dropdownload"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
@@ -78,4 +79,68 @@ func (c *Computer) IsAbsent(t *testing.T, id domain.VaultID, path string) bool {
 		}
 	}
 	return false
+}
+
+const (
+	// ComputerVault and PhoneVault are the names of the two vaults of a PhoneWorld.
+	ComputerVault = "Test"
+	PhoneVault    = "Phone"
+)
+
+// PhoneWorld is one account on a server with a computer and a phone, the phone connected to the synced vault of
+// the computer, as the background of the phone features has it.
+type PhoneWorld struct {
+	Server   *Server
+	Clock    *Clock
+	Computer *Computer
+	Phone    *Computer
+}
+
+// NewPhoneWorld makes the world. No pass has run on the phone.
+func NewPhoneWorld(t *testing.T) *PhoneWorld {
+	t.Helper()
+	clock := NewClock(GetStart())
+	server := NewServer(t, clock, fakeserver.Config{})
+	words := NewWords(t)
+	computer := NewFirstComputer(t, server, clock, ComputerVault, words)
+	computer.Connect(t, ComputerVault)
+	phone := NewPhone(t, server, clock, PhoneVault, words)
+	phone.ConnectExisting(t, PhoneVault, computer.Link(t, ComputerVault).RemoteVaultID)
+	return &PhoneWorld{Server: server, Clock: clock, Computer: computer, Phone: phone}
+}
+
+// ComputerSync runs a pass of the computer.
+func (w *PhoneWorld) ComputerSync(t *testing.T) {
+	t.Helper()
+	if err := w.Computer.Sync(t.Context(), ComputerVault); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// PhoneSync runs a pass of the phone.
+func (w *PhoneWorld) PhoneSync(t *testing.T) {
+	t.Helper()
+	if err := w.Phone.Sync(t.Context(), PhoneVault); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Fetch downloads the absent file of the phone.
+func (w *PhoneWorld) Fetch(ctx context.Context, path string) error {
+	return fetchfile.NewFetchFile(w.Phone.FetchDeps()).Execute(ctx, PhoneVault, path)
+}
+
+// DropDownload removes the download of the file of the phone.
+func (w *PhoneWorld) DropDownload(ctx context.Context, path string) error {
+	return dropdownload.NewDropDownload(w.Phone.DropDeps()).Execute(ctx, PhoneVault, path)
+}
+
+// WriteGuide writes the file of 5 MiB on the computer and sends it, and the phone pass lists it.
+func (w *PhoneWorld) WriteGuide(t *testing.T, path string) string {
+	t.Helper()
+	content := w.Computer.WriteFileOfSize(ComputerVault, path, 5<<20)
+	w.Clock.Advance(time.Minute)
+	w.ComputerSync(t)
+	w.PhoneSync(t)
+	return content
 }
