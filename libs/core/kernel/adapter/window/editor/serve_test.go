@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -176,7 +175,7 @@ type behind struct {
 	recordedVal <-chan window.Change
 }
 
-func opening(t *testing.T, notes map[string]string, watcher vault.VaultWatcher, readers vaultport.VaultReaders) *behind {
+func opening(t *testing.T, notes map[string]string, watcher indexing.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
 	return openingWith(t, notes, watcher, readers, nil, indexing.QuietPeriod)
 }
@@ -184,7 +183,7 @@ func opening(t *testing.T, notes map[string]string, watcher vault.VaultWatcher, 
 func openingWith(
 	t *testing.T,
 	notes map[string]string,
-	watcher vault.VaultWatcher,
+	watcher indexing.VaultWatcher,
 	readers vaultport.VaultReaders,
 	embedder sourcefake.Embedder,
 	idleDuration time.Duration,

@@ -2,10 +2,11 @@ package note_test
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // A rename that cannot be applied reports nothing for a name the note never

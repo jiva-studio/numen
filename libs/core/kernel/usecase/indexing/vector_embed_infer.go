@@ -136,14 +136,6 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 	}, nil
 }
 
-func packVector(q []int8) []byte {
-	out := make([]byte, len(q))
-	for i, x := range q {
-		out[i] = byte(x)
-	}
-	return out
-}
-
 // extracted is the text of one source, to which chunk offsets refer, read from
 // the source again. The most recently opened source is cached, because the
 // chunks of one source are processed together.
@@ -203,7 +195,7 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 		}
 		quantized := vector.Bytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
-			value:  packVector(quantized),
+			value:  vector.Pack(quantized),
 			coarse: vector.Coarse(quantized),
 		}
 	}

@@ -15,8 +15,8 @@ import (
 
 type sourceQueries struct {
 	records SourceRecords
-	backlog sourceport.SourceBacklog
-	lookup  sourceport.RemovalLookup
+	backlog SourceBacklog
+	lookup  RemovalLookup
 }
 
 // discoverer is the first pass: it records every file of the vault by its path, size and modification time,
@@ -24,7 +24,7 @@ type sourceQueries struct {
 type discoverer struct {
 	sources       sourceport.SourceRepository
 	records       SourceRecords
-	lookup        sourceport.RemovalLookup
+	lookup        RemovalLookup
 	shouldRebuild bool
 }
 

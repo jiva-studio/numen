@@ -16,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -385,8 +384,3 @@ func (s *Store) GetSmallChunks(vaultID domain.VaultID) []Chunk {
 	}
 	return out
 }
-
-var (
-	_ sourceport.RemovalLookup = (*Store)(nil)
-	_ sourceport.SourceBacklog = (*Store)(nil)
-)

@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -36,7 +37,7 @@ func (s *session) parts(where cli.Locations) vaultParts {
 		identity: vaultreader.Identity{Options: options},
 		trash:    s.bin,
 		now:      testsupport.NewClock(),
-		rows: func(ctx context.Context) (vaults.VaultRepository, func() error, error) {
+		rows: func(ctx context.Context) (indexport.VaultRepository, func() error, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return nil, nil, err
@@ -131,7 +132,7 @@ func (s *session) openIndexedSession(
 	readers := vaultreader.Readers{Options: vaultOptions}
 	find := parts.ports.Lookup
 
-	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	notes := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	notes = notes.Rebuilding(options.Rebuild)
 	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
@@ -162,7 +163,7 @@ type vaultParts struct {
 	identity vaultport.VaultIdentity
 	trash    vaults.Trash
 	now      machineport.Clock
-	rows     func(context.Context) (vaults.VaultRepository, func() error, error)
+	rows     func(context.Context) (indexport.VaultRepository, func() error, error)
 }
 
 func (p vaultParts) build() cli.Vaults {
@@ -174,7 +175,7 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-func (p vaultParts) indexedOver(rows vaults.VaultRepository) cli.Indexed {
+func (p vaultParts) indexedOver(rows indexport.VaultRepository) cli.Indexed {
 	find := p.ports.Lookup
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
 	return cli.Indexed{Changes: cli.VaultChanges{

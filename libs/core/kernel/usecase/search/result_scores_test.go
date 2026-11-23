@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -30,7 +30,7 @@ func findResult(t *testing.T, found []domain.SearchResult, path string) domain.S
 func (c corpus) addVault(t *testing.T, notes map[string]string) domain.Vault {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	scan := vaults.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), nil)
+	scan := indexing.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), nil)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

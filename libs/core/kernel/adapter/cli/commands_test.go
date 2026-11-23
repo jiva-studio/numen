@@ -495,7 +495,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			closes.add(db.Close)
 			readerOptions := vaultconfig.Options{}
 			readers := vaultreader.Readers{Options: readerOptions}
-			notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+			notes := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 			books := indexing.NewIndex(indexing.IndexDeps{
 				Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 				Texts: testsupport.Texts{Readers: readers},

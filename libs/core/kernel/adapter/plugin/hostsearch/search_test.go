@@ -11,13 +11,14 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedqueries"
+
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -150,7 +151,7 @@ func newFixture() *fixture {
 	}
 	f.search = Search{
 		Source:   f.embedder,
-		Queries:  indexing.NewEmbedQueries(f.embedder),
+		Queries:  embedqueries.New(f.embedder),
 		Samples:  f.samples,
 		Nearest:  f.nearest,
 		Progress: stubProgress{total: 10, embedded: 10},

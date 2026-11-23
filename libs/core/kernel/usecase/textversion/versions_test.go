@@ -2,10 +2,11 @@ package textversion_test
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
