@@ -152,7 +152,7 @@ func FuzzReadConfig(f *testing.F) {
 	if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
 		f.Fatal(err)
 	}
-	pos := ConfigAt(root, DefaultServiceDir)
+	pos := GetConfigPath(root, DefaultServiceDir)
 
 	f.Fuzz(func(t *testing.T, raw string) {
 		if err := os.WriteFile(pos, []byte(raw), 0o644); err != nil {

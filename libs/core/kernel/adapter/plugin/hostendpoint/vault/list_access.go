@@ -17,15 +17,15 @@ type ListAccess struct {
 	remove  vaults.Remove
 	open    windowsession.OpenPluginVault
 	missing registry.FolderCheck
-	current func() domain.VaultID
+	getCurrentVault func() domain.VaultID
 }
 
 // NewListAccess makes the list over the use cases, and current, the vault the window shows.
 func NewListAccess(
 	add *vaults.AddVault, rename *vaults.RenameVault, remove vaults.Remove, open windowsession.OpenPluginVault,
-	missing registry.FolderCheck, current func() domain.VaultID,
+	missing registry.FolderCheck, getCurrentVault func() domain.VaultID,
 ) ListAccess {
-	return ListAccess{add: add, rename: rename, remove: remove, open: open, missing: missing, current: current}
+	return ListAccess{add: add, rename: rename, remove: remove, open: open, missing: missing, getCurrentVault: getCurrentVault}
 }
 
 // AddVault adds the folder at the absolute root. An empty name means the folder's name.
@@ -41,7 +41,7 @@ func (l ListAccess) RenameVault(ctx context.Context, id domain.VaultID, name str
 
 // RemoveVault removes the vault from the list and from the index, and does not delete its folder.
 func (l ListAccess) RemoveVault(ctx context.Context, id domain.VaultID) error {
-	return l.remove.Execute(ctx, string(id), l.current(), false)
+	return l.remove.Execute(ctx, string(id), l.getCurrentVault(), false)
 }
 
 // OpenVault shows the vault the id names in the window.

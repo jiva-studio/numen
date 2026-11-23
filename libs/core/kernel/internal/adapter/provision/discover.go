@@ -29,11 +29,11 @@ func getSystemDirs() []string {
 // discovery looks for a dependency the machine already holds.
 type discovery struct {
 	dirs     []string
-	ldconfig func() []byte
+	runLdconfig func() []byte
 }
 
 func newDiscovery() discovery {
-	return discovery{dirs: getSystemDirs(), ldconfig: readLoaderCache}
+	return discovery{dirs: getSystemDirs(), runLdconfig: readLoaderCache}
 }
 
 func readLoaderCache() []byte {
@@ -81,8 +81,8 @@ func (d discovery) locate(req manifest.DependencyRequirement) string {
 	if found := findFile(d.dirs, getFileNames(name, req.Kind)); found != "" {
 		return found
 	}
-	if req.Kind == manifest.DependencyKindRuntime && d.ldconfig != nil {
-		return findInLoaderCache(d.ldconfig(), name)
+	if req.Kind == manifest.DependencyKindRuntime && d.runLdconfig != nil {
+		return findInLoaderCache(d.runLdconfig(), name)
 	}
 	return ""
 }

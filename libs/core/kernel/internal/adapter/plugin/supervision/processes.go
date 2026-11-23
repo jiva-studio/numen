@@ -215,10 +215,10 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	plug := launch.Plugin
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
-		return NoEndpoint(), fmt.Errorf("generate token: %w", err)
+		return CreateNoEndpoint(), fmt.Errorf("generate token: %w", err)
 	}
 	if token == "" {
-		return NoEndpoint(), errors.New("empty auth token")
+		return CreateNoEndpoint(), errors.New("empty auth token")
 	}
 	launcher := p.getLauncher()
 	if launcher == nil {
@@ -229,7 +229,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 
 	proc, stdout, err := launcher(ctx, plug, 0, token)
 	if err != nil {
-		return NoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
+		return CreateNoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
 	}
 
 	handshake, err := p.waitForReady(ctx, stdout)
@@ -238,7 +238,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 	if err != nil {
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)
-		return NoEndpoint(), fmt.Errorf("handshake plugin %s: %w", plug.Manifest.ID, err)
+		return CreateNoEndpoint(), fmt.Errorf("handshake plugin %s: %w", plug.Manifest.ID, err)
 	}
 
 	go func() {
@@ -253,18 +253,18 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	if err := transport.CheckPluginProtocol(ctx, p.sups.Clients().Get(endpoint), plug.Manifest, endpoint); err != nil {
 		p.sups.Clients().Remove(token)
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)
-		return NoEndpoint(), err
+		return CreateNoEndpoint(), err
 	}
 
 	err = p.sups.AttachProcess(ctx, ProcessAttachment{
 		PluginID: plug.Manifest.ID, Supervisor: sup, Process: proc, Endpoint: endpoint,
 		Listeners: handshake.Listeners, Now: p.clock.Now(),
-		OnExit: func() { p.CloseStdin(plug.Manifest.ID, proc.Pid) },
+		HandleExit: func() { p.CloseStdin(plug.Manifest.ID, proc.Pid) },
 		Lease:  launch.Lease,
 	})
 	if err != nil {
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)
-		return NoEndpoint(), err
+		return CreateNoEndpoint(), err
 	}
 	return endpoint, nil
 }

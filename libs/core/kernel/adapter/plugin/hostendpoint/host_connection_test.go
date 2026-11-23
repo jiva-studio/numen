@@ -94,7 +94,7 @@ func newConnectionClientFor(t *testing.T, fakeCallers *callers, token string) (n
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	recording := &recordingClient{inner: server.Client()}
-	return numenv1connect.NewConnectionCallServiceClient(recording, server.URL, connect.WithInterceptors(transport.AuthInterceptor(token))), recording
+	return numenv1connect.NewConnectionCallServiceClient(recording, server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token))), recording
 }
 
 // received is what a consumer read from a call: the data frames, the done payload and the failure.

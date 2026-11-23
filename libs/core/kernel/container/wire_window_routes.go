@@ -55,7 +55,7 @@ import (
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
-	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
+	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.HandleError); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.ListPlugins)
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served, handler))
@@ -120,7 +120,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 		search.NewFindText(finds, session.index.NoteQueries(), session.index.NoteQueries(), session.kinds),
 		searchcancel.NewSearches(clock),
 	)
-	access := buildPluginSearch(searchDeps, session.index, session.source, status.ReportFloorError, clock).Access(runs)
+	access := buildPluginSearch(searchDeps, session.index, session.source, status.ReportFloorError, clock).CreateAccess(runs)
 	lender.Update(func(l *hostendpoint.Lent) { l.Search = access })
 	path, served := windowsearch.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
@@ -161,7 +161,7 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 
 func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
 	state := w.session
-	queries := vaultQueries(db)
+	queries := createQueryUseCases(db)
 	writes := w.page.Writes
 	prose := notewindow.NewProse(
 		&state.Runtime, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, &notewindow.Writes{IsIndexOutdated: writes.IsIndexOutdated, WriteWake: wake},
@@ -255,7 +255,7 @@ func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInst
 }
 
 func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
-	view := windowView(opened.session.Notices)
+	view := createWindowView(opened.session.Notices)
 	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
 	setPluginWindow(install.Endpoints.Lender, hostendpoint.NewWindowAccess(
 		&opened.session.Runtime, &opened.session.Tabs, query.NewFocusNote(db.NoteQueries(), view), focusFile, showTab,
@@ -284,7 +284,7 @@ func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultWiring, db *vaultInd
 	) (indexing.ReadWholeVault, error) {
 		search := searchDeps
 		search.ShouldRebuildIndex = rebuild
-		return readWholeVault(search, ctx, db, source, v, vaultMakeRefresh(vaultDeps, db, db.Notes()))
+		return readWholeVault(search, ctx, db, source, v, createRefresh(vaultDeps, db, db.Notes()))
 	}
 }
 
@@ -338,7 +338,7 @@ func startVault(vaultDeps vaultWiring, db *vaultIndex, current *indexing.Current
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {
-		opening := vaultOpener(vaultDeps, db)
+		opening := createVaultOpener(vaultDeps, db)
 		opening.ShouldRebuild = rebuild
 		var changed func(indexing.VaultChanges)
 		if report.Changed != nil {

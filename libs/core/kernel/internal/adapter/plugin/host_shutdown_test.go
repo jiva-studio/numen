@@ -277,7 +277,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	evicted := plugin.GetStopper(host.Management.Teardown).EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
+	evicted := plugin.GetStopper(host.Management.Teardown).EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.CreateNoEndpoint()}}, time.Millisecond)
 
 	if len(evicted) != 0 {
 		t.Fatalf("a failed eviction was counted: %v", evicted)

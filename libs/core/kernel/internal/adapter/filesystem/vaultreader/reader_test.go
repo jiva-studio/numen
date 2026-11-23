@@ -45,7 +45,7 @@ func walkPaths(t *testing.T, root string) []string {
 // of the vault, whatever its type, and no others: the note in the hidden folder
 // and the service folder are the vault's and not the application's to index.
 func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
-	got := walkPaths(t, vaulttest.VaultDir(t))
+	got := walkPaths(t, vaulttest.CreateVaultDir(t))
 	want := []string{
 		"Thermodynamics.md",
 		"assets/llama.png",
@@ -178,7 +178,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 }
 
 func TestWalkSkipsTheServiceFolderAndOtherToolsFolders(t *testing.T) {
-	for _, p := range walkPaths(t, vaulttest.VaultDir(t)) {
+	for _, p := range walkPaths(t, vaulttest.CreateVaultDir(t)) {
 		if p[0] == '.' {
 			t.Errorf("walk reported %q from a hidden folder", p)
 		}
@@ -188,7 +188,7 @@ func TestWalkSkipsTheServiceFolderAndOtherToolsFolders(t *testing.T) {
 func TestWalkPathsAreRelativeAndSlashed(t *testing.T) {
 	// The index describes the same note on every platform, so a walk may not
 	// leak an absolute path or a backslash into it.
-	for _, p := range walkPaths(t, vaulttest.VaultDir(t)) {
+	for _, p := range walkPaths(t, vaulttest.CreateVaultDir(t)) {
 		if filepath.IsAbs(p) {
 			t.Errorf("%q is absolute", p)
 		}
@@ -201,7 +201,7 @@ func TestWalkPathsAreRelativeAndSlashed(t *testing.T) {
 }
 
 func TestWalkReportsSizeAndTime(t *testing.T) {
-	src, err := vaultreader.Open(vaulttest.VaultDir(t), vaultconfig.Options{})
+	src, err := vaultreader.Open(vaulttest.CreateVaultDir(t), vaultconfig.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +336,7 @@ func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
 }
 
 func TestOpenRejectsWhatIsNotAFolder(t *testing.T) {
-	if _, err := vaultreader.Open(filepath.Join(vaulttest.VaultDir(t), "Thermodynamics.md"), vaultconfig.Options{}); err == nil {
+	if _, err := vaultreader.Open(filepath.Join(vaulttest.CreateVaultDir(t), "Thermodynamics.md"), vaultconfig.Options{}); err == nil {
 		t.Error("a file was accepted as a vault")
 	}
 	if _, err := vaultreader.Open(filepath.Join(t.TempDir(), "nope"), vaultconfig.Options{}); err == nil {
@@ -345,7 +345,7 @@ func TestOpenRejectsWhatIsNotAFolder(t *testing.T) {
 }
 
 func TestReadReturnsTheFile(t *testing.T) {
-	src, err := vaultreader.Open(vaulttest.VaultDir(t), vaultconfig.Options{})
+	src, err := vaultreader.Open(vaulttest.CreateVaultDir(t), vaultconfig.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

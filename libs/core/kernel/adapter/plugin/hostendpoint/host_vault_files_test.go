@@ -68,7 +68,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 	}
 	return hostvault.NewAccess(
 		hostvault.Session{
-			Current: func() (domain.Vault, bool) {
+			GetCurrent: func() (domain.Vault, bool) {
 				d.mu.Lock()
 				defer d.mu.Unlock()
 				if d.current == nil {
@@ -76,7 +76,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 				}
 				return *d.current, true
 			},
-			Vaults: func() ([]domain.Vault, error) {
+			ListVaults: func() ([]domain.Vault, error) {
 				d.mu.Lock()
 				defer d.mu.Unlock()
 				out := []domain.Vault{}
@@ -100,7 +100,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 				defer d.mu.Unlock()
 				return d.state, nil
 			},
-			Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
+			WatchMoves: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
 		},
 		hostvault.Files{
 			Stat:        file.NewHashFile(readers, writers),
@@ -115,7 +115,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 		},
 		hostvault.Lookups{},
 		hostvault.Arranger{},
-		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
+		hostvault.Stores{Cache: appstate.NewPluginCaches(t.TempDir())},
 	)
 }
 

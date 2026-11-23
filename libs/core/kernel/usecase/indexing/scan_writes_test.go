@@ -132,7 +132,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 // scanned at every startup and must not pay for it.
 func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 

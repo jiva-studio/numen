@@ -20,7 +20,7 @@ import (
 // small chunks with a vector under the recipe, in order of path, at most q.Limit+1 of them; all of them when
 // q.Limit is zero or below.
 func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, query searchquery.DocumentQuery) (_ []searchquery.Document, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -68,7 +68,7 @@ func (q *Search) ListDocumentVectors(ctx context.Context, vaultID domain.VaultID
 	if len(query.Paths) == 0 {
 		return nil, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -77,7 +77,7 @@ func (q *Search) ListDocumentVectors(ctx context.Context, vaultID domain.VaultID
 	}
 	after := int64(0)
 	if query.After != "" {
-		if after, err = Row(query.After); err != nil {
+		if after, err = ParseRow(query.After); err != nil {
 			return nil, err
 		}
 	}
@@ -101,7 +101,7 @@ func scanStoredVectors(rows *sql.Rows) (_ []source.StoredVector, err error) {
 		if err := rows.Scan(&row, &stored); err != nil {
 			return nil, err
 		}
-		out = append(out, source.StoredVector{Chunk: ID(row), Vector: stored})
+		out = append(out, source.StoredVector{Chunk: FormatID(row), Vector: stored})
 	}
 	return out, rows.Err()
 }

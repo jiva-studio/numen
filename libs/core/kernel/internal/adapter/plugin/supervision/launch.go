@@ -97,11 +97,11 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	plug := launch.Plugin
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
-		return NoEndpoint(), fmt.Errorf("generate token: %w", err)
+		return CreateNoEndpoint(), fmt.Errorf("generate token: %w", err)
 	}
 	runtimeVars, err := exportRuntimeVars(ctx, p, launch.Requirements)
 	if err != nil {
-		return NoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
+		return CreateNoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
 	}
 	vars := make(map[string]string)
 	launchVars := p.getEnvironmentVars(ctx, plug.Manifest.ID, launch.VaultPath, 0, token, runtimeVars)
@@ -111,7 +111,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	}
 	handler, err := launch.BuiltIn.Serve(vars)
 	if err != nil {
-		return NoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
+		return CreateNoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
 	}
 
 	endpoint := transport.Endpoint{Host: "inprocess", Port: 0, Token: token}
@@ -119,12 +119,12 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	if err := transport.CheckPluginProtocol(ctx, p.sups.Clients().Get(endpoint), plug.Manifest, endpoint); err != nil {
 		p.sups.Clients().Remove(token)
 		shutdownBuiltIn(ctx, p, endpoint)
-		return NoEndpoint(), err
+		return CreateNoEndpoint(), err
 	}
 
 	if err := p.sups.AttachInProcess(plug.Manifest.ID, sup, endpoint, launch.Lease, p.clock.Now()); err != nil {
 		shutdownBuiltIn(ctx, p, endpoint)
-		return NoEndpoint(), err
+		return CreateNoEndpoint(), err
 	}
 	return endpoint, nil
 }

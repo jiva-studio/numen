@@ -25,11 +25,11 @@ options:
   --service-dir <name>  the folder a vault keeps its identity in (default: .numen)
 `
 
-// Main runs the command line and returns a process exit code. open supplies the
+// Execute runs the command line and returns a process exit code. open supplies the
 // session this run works with, once the locations given on the command line have been
 // read from the arguments. The session is closed when the command ends; what its background work
 // failed at is printed as a warning and does not change the exit code.
-func Main(ctx context.Context, out, errOut io.Writer, args []string,
+func Execute(ctx context.Context, out, errOut io.Writer, args []string,
 	open func(Locations) Session,
 ) int {
 	if err := Run(ctx, out, errOut, args, open); err != nil {

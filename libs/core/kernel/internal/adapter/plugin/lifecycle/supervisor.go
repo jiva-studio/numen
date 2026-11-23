@@ -72,17 +72,17 @@ type Supervisor struct {
 	teardownBegun bool
 	leases        plugin.Leases
 	exitCh        chan struct{}
-	onExit        func()
+	handleExit        func()
 	activatingCh  chan struct{}
 	activationErr error
-	rpcShutdown   func(ctx context.Context) error
-	onError       func(error)
+	callShutdown   func(ctx context.Context) error
+	handleError       func(error)
 }
 
 // New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside
 // a call, such as a failed wait for the process; it may be nil.
-func New(onError func(error)) *Supervisor {
-	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, onError: onError}
+func New(handleError func(error)) *Supervisor {
+	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, handleError: handleError}
 }
 
 // Usage is what a running plugin holds: when it started or a use lease was last taken or returned, the
@@ -121,7 +121,7 @@ func (s *Supervisor) GetUsage() (Usage, bool) {
 func (s *Supervisor) SetOnExit(fn func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.onExit = fn
+	s.handleExit = fn
 }
 
 // GetState returns the current lifecycle state of the supervised plugin.
@@ -142,8 +142,8 @@ func (s *Supervisor) SetActivating(starter plugin.Holder) <-chan struct{} {
 	return s.activatingCh
 }
 
-// ActivatingChan returns a channel closed when the pending activation completes.
-func (s *Supervisor) ActivatingChan() <-chan struct{} {
+// GetActivatingChan returns a channel closed when the pending activation completes.
+func (s *Supervisor) GetActivatingChan() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.activatingCh == nil {
@@ -154,8 +154,8 @@ func (s *Supervisor) ActivatingChan() <-chan struct{} {
 	return s.activatingCh
 }
 
-// ActivationError returns the error from the most recent failed activation attempt.
-func (s *Supervisor) ActivationError() error {
+// GetActivationError returns the error from the most recent failed activation attempt.
+func (s *Supervisor) GetActivationError() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.activationErr
@@ -208,19 +208,19 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 
 	go func() {
 		_, waitErr := p.Wait()
-		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) && s.onError != nil {
-			s.onError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
+		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) && s.handleError != nil {
+			s.handleError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
 		}
 		s.mu.Lock()
-		var onExit func()
+		var handleExit func()
 		if s.Child.GetProcess() == p {
-			onExit = s.onExit
+			handleExit = s.handleExit
 		}
 		s.mu.Unlock()
 		// The supervisor holds p until onExit returns, so no replacement starts before the host has
 		// forgotten the state of the ended process.
-		if onExit != nil {
-			onExit()
+		if handleExit != nil {
+			handleExit()
 		}
 		s.mu.Lock()
 		if s.Child.GetProcess() == p {
@@ -310,12 +310,12 @@ func (s *Supervisor) WaitWhileDeactivating(ctx context.Context) error {
 func (s *Supervisor) Teardown(
 	ctx context.Context,
 	gracePeriod time.Duration,
-	rpcShutdown func(ctx context.Context) error,
+	callShutdown func(ctx context.Context) error,
 ) error {
 	s.mu.Lock()
 	if s.Child.GetProcess() == nil {
 		s.mu.Unlock()
-		return s.teardownNilProcess(ctx, rpcShutdown)
+		return s.teardownNilProcess(ctx, callShutdown)
 	}
 	if s.state == StateDeactivating && s.teardownBegun {
 		exitCh := s.exitCh
@@ -327,13 +327,13 @@ func (s *Supervisor) Teardown(
 	closeActivationSignal(&s.activatingCh)
 	proc := s.Child.GetProcess()
 	exitCh := s.exitCh
-	if rpcShutdown == nil {
-		rpcShutdown = s.rpcShutdown
+	if callShutdown == nil {
+		callShutdown = s.callShutdown
 	}
 	s.mu.Unlock()
 
 	// A plugin that cannot be asked to stop is killed without waiting out the grace period.
-	if rpcShutdown == nil || rpcShutdown(ctx) == nil {
+	if callShutdown == nil || callShutdown(ctx) == nil {
 		select {
 		case <-exitCh:
 			s.markDormant(proc)
@@ -348,11 +348,11 @@ func (s *Supervisor) Teardown(
 	return nil
 }
 
-func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ctx context.Context) error) error {
+func (s *Supervisor) teardownNilProcess(ctx context.Context, callShutdown func(ctx context.Context) error) error {
 	var shutdownErr error
 	defer func() {
-		if shutdownErr != nil && s.onError != nil {
-			s.onError(fmt.Errorf("request plugin shutdown: %w", shutdownErr))
+		if shutdownErr != nil && s.handleError != nil {
+			s.handleError(fmt.Errorf("request plugin shutdown: %w", shutdownErr))
 		}
 	}()
 	s.mu.Lock()
@@ -365,8 +365,8 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.teardownBegun = false
 	s.leases.Clear()
 	closeActivationSignal(&s.activatingCh)
-	if rpcShutdown != nil {
-		shutdownErr = rpcShutdown(ctx)
+	if callShutdown != nil {
+		shutdownErr = callShutdown(ctx)
 	}
 	return nil
 }
@@ -413,7 +413,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 func (s *Supervisor) SetRPCShutdown(fn func(ctx context.Context) error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.rpcShutdown = fn
+	s.callShutdown = fn
 }
 
 // GetExitSignal returns the channel the supervisor closes once it has reaped its current process, run

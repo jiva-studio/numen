@@ -26,7 +26,7 @@ type Registry struct {
 	mode    safeModeReader
 	sups    *supervision.Supervisors
 	readers *contenttypes.Lookup
-	tools   func(pluginID string) []plugindomain.ContributionItem
+	getTools   func(pluginID string) []plugindomain.ContributionItem
 }
 
 // safeModeReader reports whether the host runs in safe mode.
@@ -40,17 +40,17 @@ type RegistryDeps struct {
 	Mode        safeModeReader
 	Supervisors *supervision.Supervisors
 	Readers     *contenttypes.Lookup
-	Tools       func(pluginID string) []plugindomain.ContributionItem
+	GetTools       func(pluginID string) []plugindomain.ContributionItem
 }
 
 // NewRegistry creates the registry over the set of plugins.
 func NewRegistry(d RegistryDeps) *Registry {
-	return &Registry{set: d.Set, mode: d.Mode, sups: d.Supervisors, readers: d.Readers, tools: d.Tools}
+	return &Registry{set: d.Set, mode: d.Mode, sups: d.Supervisors, readers: d.Readers, getTools: d.GetTools}
 }
 
 // ListPlugins returns all discovered plugins registered with the host, in the order of their ids.
 func (r *Registry) ListPlugins() []manifest.Discovered {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	if r.mode.IsSafeMode() {
 		return nil
@@ -60,7 +60,7 @@ func (r *Registry) ListPlugins() []manifest.Discovered {
 
 // GetPlugin retrieves a single enabled plugin by its unique identifier.
 func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	if r.mode.IsSafeMode() {
 		return manifest.Discovered{}, false
@@ -74,7 +74,7 @@ func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
 
 // IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 func (r *Registry) IsPluginEnabled(pluginID string) bool {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	return v.isEnabled(pluginID)
 }
@@ -84,7 +84,7 @@ func (r *Registry) IsPluginEnabled(pluginID string) bool {
 // plugin declares it and it is switched off or the host is in safe mode, NotInstalled when
 // none declares it.
 func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, error) {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 
 	isSafe := r.mode.IsSafeMode()
@@ -109,7 +109,7 @@ func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, er
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
 func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	for _, p := range v.enabled() {
 		if p.Manifest.HasService(service) {
@@ -123,7 +123,7 @@ func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
 // defined by the enabled plugin with the lowest id among those declaring the
 // type.
 func (r *Registry) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool) {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	for _, p := range v.enabled() {
 		if declared, found := p.Manifest.GetNoteType(string(noteType)); found {

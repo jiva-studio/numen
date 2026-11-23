@@ -50,7 +50,7 @@ func (c scanCommand) Run(ctx context.Context, term terminal, args []string) erro
 	if open.Now != nil {
 		elapsed = ", in " + readClock(open.Now).Sub(started).Round(time.Millisecond).String()
 	}
-	r.Printf("index now holds %d notes and %d headings%s\n", summary.Notes, summary.Headings, elapsed)
+	r.WriteFormat("index now holds %d notes and %d headings%s\n", summary.Notes, summary.Headings, elapsed)
 	return r.Err()
 }
 
@@ -89,31 +89,31 @@ func getProgressReporting(r *reporter) indexing.Reporting {
 	return indexing.Reporting{
 		OnVaultFound: func(v domain.Vault, unembedded error) {
 			if unembedded != nil {
-				r.Printf("not embedding %s: %v\n", v.Name, unembedded)
+				r.WriteFormat("not embedding %s: %v\n", v.Name, unembedded)
 			}
 		},
 		OnNotesProgress: func(res vaultreading.ScanResult) {
-			r.Printf("  %d indexed\r", res.Indexed)
+			r.WriteFormat("  %d indexed\r", res.Indexed)
 		},
 		OnTextsProgress: func(res vaultreading.IndexResult) {
 			if res.CurrentSource != "" {
-				r.Printf("  cutting %s\r", res.CurrentSource)
+				r.WriteFormat("  cutting %s\r", res.CurrentSource)
 			}
 		},
 		OnVectorsProgress: func(res vaultreading.EmbedResult) {
-			r.Printf("  %d embedded\r", res.Embedded)
+			r.WriteFormat("  %d embedded\r", res.Embedded)
 		},
 	}
 }
 
 func reportMade(r *reporter, vaultName string, made indexing.ReadWholeVaultResult) {
 	if made.Texts.Seen > 0 {
-		r.Println(describeSources(made.Texts))
+		r.WriteLine(describeSources(made.Texts))
 	}
 	switch {
 	case made.Vectors.IsBusy:
-		r.Printf("indexing %s is already running\n", vaultName)
+		r.WriteFormat("indexing %s is already running\n", vaultName)
 	case made.Vectors.Embedded > 0:
-		r.Printf("%d vectors made\n", made.Vectors.Embedded)
+		r.WriteFormat("%d vectors made\n", made.Vectors.Embedded)
 	}
 }

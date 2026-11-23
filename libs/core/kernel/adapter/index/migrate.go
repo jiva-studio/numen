@@ -108,7 +108,7 @@ func checkFile(ctx context.Context, file string) error {
 	if err != nil {
 		return err
 	}
-	plain, err := sql.Open("sqlite", dsnOf(file, nil))
+	plain, err := sql.Open("sqlite", buildDSNWithPragmas(file, nil))
 	if err != nil {
 		return fmt.Errorf("open the index at %s: %w", file, err)
 	}
@@ -127,7 +127,7 @@ func createBookkeeping(ctx context.Context, tx *sqlwrite.Transaction) error {
 }
 
 func apply(ctx context.Context, db *sql.DB, m migration) error {
-	return sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
+	return sqlwrite.RunInTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
 		if err := createBookkeeping(ctx, tx); err != nil {
 			return err
 		}

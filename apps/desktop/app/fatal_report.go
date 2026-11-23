@@ -229,7 +229,7 @@ func getSettingsPath(cfg container.Config) string {
 	if cfg.RegistryPath != "" {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
-	path, err := settings.Path()
+	path, err := settings.GetPath()
 	if err != nil {
 		return ""
 	}

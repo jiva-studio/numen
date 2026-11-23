@@ -22,7 +22,7 @@ import (
 type ConnectionRowsSource struct {
 	Connections connectionport.Repository
 	Detected    connectionport.Detected
-	Plugins     func() []plugin.Info
+	ListPlugins     func() []plugin.Info
 	Declared    settingsdomain.Declarations
 	ReadStored  func() (File, error)
 	Write       func(entries []settingsdomain.Setting) error
@@ -47,7 +47,7 @@ func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.
 	if pluginID == settingsdomain.AppOwner {
 		return r.readAppRowSetting(operation)
 	}
-	for _, plugin := range r.source.Plugins() {
+	for _, plugin := range r.source.ListPlugins() {
 		if plugin.ID != pluginID {
 			continue
 		}
@@ -67,7 +67,7 @@ func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.
 
 // ListPlugins returns the plugins in force, in the order of the plugin ids.
 func (r *ConnectionRows) ListPlugins() []plugin.Info {
-	return r.source.Plugins()
+	return r.source.ListPlugins()
 }
 
 func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, error) {
@@ -121,9 +121,9 @@ func (r *ConnectionRows) ListUses(connectionID string) ([]connection.Use, error)
 	if err != nil {
 		return nil, err
 	}
-	for _, plugin := range r.source.Plugins() {
+	for _, plugin := range r.source.ListPlugins() {
 		for _, one := range plugin.Settings {
-			if one.Type != manifest.SettingTypeConnections || !one.IsShown || !namesConnection(readRowsJSON(one.ValueJSON), connectionID) {
+			if one.Type != manifest.SettingTypeConnections || !one.IsShown || !hasConnection(readRowsJSON(one.ValueJSON), connectionID) {
 				continue
 			}
 			uses = append(uses, connection.Use{PluginID: plugin.ID, PluginName: plugin.Name, Operations: one.Operations})
@@ -132,7 +132,7 @@ func (r *ConnectionRows) ListUses(connectionID string) ([]connection.Use, error)
 	return uses, nil
 }
 
-func namesConnection(rows []connection.Row, connectionID string) bool {
+func hasConnection(rows []connection.Row, connectionID string) bool {
 	return slices.ContainsFunc(rows, func(row connection.Row) bool { return row.ConnectionID == connectionID })
 }
 

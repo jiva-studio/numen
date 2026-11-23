@@ -200,7 +200,7 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	if err := management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	install.services.Execution, install.services.Preferences, install.services.Endpoints = container.AdaptPluginHost(management, supervision)
+	install.services.Execution, install.services.Preferences, install.services.Endpoints = container.CreatePluginHost(management, supervision)
 	api := openShell(t, install)
 	listed, err := api.Frontends.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {

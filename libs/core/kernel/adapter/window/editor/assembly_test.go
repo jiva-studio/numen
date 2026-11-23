@@ -255,7 +255,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		Events:  settingevents.New(),
 		GetPath: getPath,
 		Read:    list.Execute,
-		Initial: func() settingsdomain.Values {
+		GetInitial: func() settingsdomain.Values {
 			values, err := list.ListDefaults()
 			if err != nil {
 				return settingsdomain.Values{}

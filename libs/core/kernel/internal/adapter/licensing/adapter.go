@@ -35,11 +35,11 @@ type Adapter struct {
 	mu          sync.Mutex
 	subscribers map[int]chan struct{}
 	nextSubID   int
-	onChange    func(ctx context.Context)
+	handleChange    func(ctx context.Context)
 }
 
 // NewAdapter creates a licensing adapter configured from the environment.
-func NewAdapter(onChange func(ctx context.Context)) *Adapter {
+func NewAdapter(handleChange func(ctx context.Context)) *Adapter {
 	creem := sharedlicensing.NewCreemProvider()
 	creem.Configure(os.Getenv(envCreemBaseURL), os.Getenv(envCreemAPIKey), nil)
 
@@ -52,7 +52,7 @@ func NewAdapter(onChange func(ctx context.Context)) *Adapter {
 			sharedlicensing.ProviderIDDodo:  dodo,
 		},
 		subscribers: make(map[int]chan struct{}),
-		onChange:    onChange,
+		handleChange:    handleChange,
 	}
 }
 
@@ -186,8 +186,8 @@ func (a *Adapter) NotifyChange(ctx context.Context) {
 		}
 	}
 	a.mu.Unlock()
-	if a.onChange != nil {
-		a.onChange(ctx)
+	if a.handleChange != nil {
+		a.handleChange(ctx)
 	}
 }
 

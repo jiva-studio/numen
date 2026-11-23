@@ -14,7 +14,7 @@ import (
 
 func failureReports(bridge *sourcebridge.Source) chan error {
 	reports := make(chan error, 8)
-	bridge.OnDescriptionReadError(func(err error) { reports <- err })
+	bridge.SetDescriptionReadErrorHandler(func(err error) { reports <- err })
 	return reports
 }
 

@@ -64,7 +64,7 @@ func queryEachPath[T any](
 	if len(paths) == 0 {
 		return out, nil
 	}
-	vault, err := vaultRow(ctx, db, vaultID)
+	vault, err := getVaultRow(ctx, db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return out, nil
 	}
@@ -138,7 +138,7 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 
 // ListPathsOfType is every note of one type the vault holds, by path.
 func (q *Queries) ListPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) (_ []string, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -196,7 +196,7 @@ func getHeadingsAt(
 // GetOpeningNote is the note a vault is shown at when nothing else has been chosen.
 func (q *Queries) GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error) {
 	var ref domain.NoteRef
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return ref, false, nil
 	}

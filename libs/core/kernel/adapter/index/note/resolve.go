@@ -47,7 +47,7 @@ func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.Reso
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, out); err != nil {
+	if err := r.preloadCandidates(ctx, out); err != nil {
 		return nil, err
 	}
 
@@ -196,8 +196,8 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	return out, rows.Err()
 }
 
-func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
-	if err := r.prefetchIdentifiers(ctx, links); err != nil {
+func (r *resolution) preloadCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
+	if err := r.preloadIdentifiers(ctx, links); err != nil {
 		return err
 	}
 	requested := getRequestedNames(links, r.named)
@@ -317,7 +317,7 @@ func appendCandidatePath(path, folded string, candidates candidateNames, named m
 	}
 }
 
-func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
+func (r *resolution) preloadIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
 	var missing []string
 	seen := map[string]bool{}
 	for _, l := range links {
@@ -386,7 +386,7 @@ func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.Reso
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, candidates); err != nil {
+	if err := r.preloadCandidates(ctx, candidates); err != nil {
 		return nil, err
 	}
 

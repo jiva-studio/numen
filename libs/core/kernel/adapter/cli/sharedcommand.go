@@ -30,14 +30,14 @@ func getSharedCommandSynopsis(list plugincommand.List, handlers []plugin.Command
 
 // sharedCommand is a command that several plugins may handle; the --plugin flag picks the handler.
 type sharedCommand struct {
-	plugins  func() PluginCommands
+	getPlugins  func() PluginCommands
 	handlers []plugin.CommandEntry
 }
 
 func (c sharedCommand) Name() string { return c.handlers[0].Command.ID }
 
 func (c sharedCommand) Synopsis() string {
-	lines := []string{"  numen-cli " + getSharedCommandSynopsis(c.plugins().List, c.handlers)}
+	lines := []string{"  numen-cli " + getSharedCommandSynopsis(c.getPlugins().List, c.handlers)}
 	for _, one := range c.handlers {
 		lines = append(lines, fmt.Sprintf("      %s (%s)", one.Command.Title, one.PluginID))
 	}
@@ -46,7 +46,7 @@ func (c sharedCommand) Synopsis() string {
 
 func (c sharedCommand) Run(ctx context.Context, term terminal, args []string) error {
 	handlers := c.handlers
-	commands := c.plugins()
+	commands := c.getPlugins()
 	list := commands.List
 	usage := errors.New("usage: numen-cli " + getSharedCommandSynopsis(list, handlers))
 	fs, arguments := newArgumentFlags(handlers[0].Command)

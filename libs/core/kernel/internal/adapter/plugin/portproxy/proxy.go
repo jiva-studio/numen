@@ -29,7 +29,7 @@ type Target func(ctx context.Context) (addr string, release func(), err error)
 type Proxy struct {
 	listener net.Listener
 	target   Target
-	onError  func(error)
+	handleError  func(error)
 	cancel   context.CancelFunc
 
 	mu       sync.Mutex
@@ -40,20 +40,20 @@ type Proxy struct {
 
 // Open binds addr and forwards each connection accepted on it to the address target returns.
 // onError receives the failures of a connection; the port stays bound after them.
-func Open(ctx context.Context, addr string, target Target, onError func(error)) (*Proxy, error) {
+func Open(ctx context.Context, addr string, target Target, handleError func(error)) (*Proxy, error) {
 	listener, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("listen on %s: %w", addr, err)
 	}
-	return newProxy(ctx, listener, target, onError), nil
+	return newProxy(ctx, listener, target, handleError), nil
 }
 
-func newProxy(ctx context.Context, listener net.Listener, target Target, onError func(error)) *Proxy {
+func newProxy(ctx context.Context, listener net.Listener, target Target, handleError func(error)) *Proxy {
 	proxyCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p := &Proxy{
 		listener: listener,
 		target:   target,
-		onError:  onError,
+		handleError:  handleError,
 		cancel:   cancel,
 		mu:       sync.Mutex{},
 		conns:    make(map[net.Conn]struct{}),
@@ -104,7 +104,7 @@ func (p *Proxy) acceptConnections(ctx context.Context) {
 			if errors.Is(err, net.ErrClosed) {
 				return
 			}
-			p.onError(fmt.Errorf("accept on %s: %w", p.listener.Addr(), err))
+			p.handleError(fmt.Errorf("accept on %s: %w", p.listener.Addr(), err))
 			retryDelay = min(max(2*retryDelay, minAcceptRetryDelay), maxAcceptRetryDelay)
 			if !waitFor(ctx, retryDelay) {
 				return
@@ -142,7 +142,7 @@ func (p *Proxy) track(conn net.Conn) bool {
 	return true
 }
 
-func (p *Proxy) untrack(conn net.Conn) {
+func (p *Proxy) removeConnection(conn net.Conn) {
 	p.mu.Lock()
 	delete(p.conns, conn)
 	p.mu.Unlock()
@@ -151,7 +151,7 @@ func (p *Proxy) untrack(conn net.Conn) {
 
 func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 	defer p.wg.Done()
-	defer p.untrack(client)
+	defer p.removeConnection(client)
 
 	addr, release, err := p.target(ctx)
 	if err != nil {
@@ -171,7 +171,7 @@ func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 		p.closeConn(upstream)
 		return
 	}
-	defer p.untrack(upstream)
+	defer p.removeConnection(upstream)
 
 	var copies sync.WaitGroup
 	copies.Add(2)
@@ -204,12 +204,12 @@ func (p *Proxy) copyStream(dst, src net.Conn) {
 
 func (p *Proxy) closeConn(conn net.Conn) {
 	if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
-		p.onError(fmt.Errorf("close connection %s: %w", conn.RemoteAddr(), err))
+		p.handleError(fmt.Errorf("close connection %s: %w", conn.RemoteAddr(), err))
 	}
 }
 
 func (p *Proxy) reportUnlessClosed(ctx context.Context, err error) {
 	if ctx.Err() == nil {
-		p.onError(err)
+		p.handleError(err)
 	}
 }

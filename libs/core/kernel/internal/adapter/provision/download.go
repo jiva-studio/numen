@@ -35,8 +35,8 @@ type transfer struct {
 	sum        string
 	backoff    backoff
 	clock      machineport.Clock
-	onDigest   func(string)
-	onProgress func(count, total int64)
+	handleDigest   func(string)
+	handleProgress func(count, total int64)
 }
 
 func newClient() *http.Client {
@@ -161,7 +161,7 @@ func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, t
 	if err != nil {
 		return 0, err
 	}
-	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), body, offset, total, t.onProgress)
+	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), body, offset, total, t.handleProgress)
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
@@ -173,11 +173,11 @@ func (t transfer) finish(hasher hash.Hash, size int64) error {
 	if t.sum != "" && found != t.sum {
 		return fmt.Errorf("%w: %s holds %s, and %s is pinned", ErrChecksum, t.address, found, t.sum)
 	}
-	if t.onDigest != nil {
-		t.onDigest(found)
+	if t.handleDigest != nil {
+		t.handleDigest(found)
 	}
-	if t.onProgress != nil {
-		t.onProgress(size, size)
+	if t.handleProgress != nil {
+		t.handleProgress(size, size)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 	return io.Copy(hasher, file)
 }
 
-func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
+func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset, total int64, handleProgress func(count, total int64)) (int64, error) {
 	buffer := make([]byte, 64*1024)
 	var byteCount int64
 	last := clock.Now()
@@ -205,8 +205,8 @@ func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset,
 				return byteCount, err
 			}
 			byteCount += int64(count)
-			if onProgress != nil && clock.Now().Sub(last) >= progressInterval {
-				onProgress(offset+byteCount, total)
+			if handleProgress != nil && clock.Now().Sub(last) >= progressInterval {
+				handleProgress(offset+byteCount, total)
 				last = clock.Now()
 			}
 		}

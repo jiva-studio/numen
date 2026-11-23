@@ -33,8 +33,8 @@ type Config struct {
 // never been added to the application.
 var ErrNotAVault = errors.New("no vault configuration in this folder")
 
-// ConfigAt is where a folder's identity is written.
-func ConfigAt(root, serviceDir string) string {
+// GetConfigPath is where a folder's identity is written.
+func GetConfigPath(root, serviceDir string) string {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir
 	}
@@ -43,7 +43,7 @@ func ConfigAt(root, serviceDir string) string {
 
 // ReadConfig returns the identity the vault carries.
 func ReadConfig(root, serviceDir string) (Config, error) {
-	raw, err := os.ReadFile(ConfigAt(root, serviceDir))
+	raw, err := os.ReadFile(GetConfigPath(root, serviceDir))
 	if errors.Is(err, fs.ErrNotExist) {
 		return Config{}, ErrNotAVault
 	}

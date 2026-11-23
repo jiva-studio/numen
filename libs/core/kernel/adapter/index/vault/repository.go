@@ -23,26 +23,26 @@ func getStatement(name string) string { return sqlfile.Read(files, "sql", name) 
 // is why a vault is registered before anything is stored for it.
 type Repository struct {
 	db       *sql.DB
-	onChange func()
+	handleChange func()
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// OnChange returns a copy of Repository that calls report after registering or unregistering a vault.
-func (r *Repository) OnChange(report func()) *Repository {
-	return &Repository{db: r.db, onChange: report}
+// SetChangeHandler returns a copy of Repository that calls report after registering or unregistering a vault.
+func (r *Repository) SetChangeHandler(report func()) *Repository {
+	return &Repository{db: r.db, handleChange: report}
 }
 
 func (r *Repository) notifyChange() {
-	if r.onChange != nil {
-		r.onChange()
+	if r.handleChange != nil {
+		r.handleChange()
 	}
 }
 
 // Register creates a row for the vault that other rows reference. A vault the
 // index already tracks keeps its existing row and its change feed.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		if _, err := tx.ExecContext(ctx, getStatement("register"), string(vaultID)); err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func getForgettingStatements() []string {
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
 func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) error {
-	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		var row int64
 		err := tx.QueryRowContext(ctx, getStatement("vault_row"), string(vaultID)).Scan(&row)
 		if errors.Is(err, sql.ErrNoRows) {

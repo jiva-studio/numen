@@ -12,7 +12,7 @@ import (
 // Source is where the events come from.
 type Source struct {
 	Read    func() (settings.Values, error)
-	Initial func() settings.Values
+	GetInitial func() settings.Values
 	Report  func(error)
 	Hub     *watchhub.Hub
 	Path    string
@@ -64,7 +64,7 @@ func (e *Events) begin(source Source) {
 	values, err := source.Read()
 	if err != nil {
 		source.Report(err)
-		values = source.Initial()
+		values = source.GetInitial()
 	}
 	e.values = values
 }

@@ -17,13 +17,13 @@ type Runtime struct {
 	Cause  error
 }
 
-func (r Runtime) unavailable(capability, pluginID string) error {
+func (r Runtime) createUnavailableError(capability, pluginID string) error {
 	return &plugindomain.UnavailableError{Capability: capability, PluginID: pluginID, Reason: r.Reason, Err: r.Cause}
 }
 
 // EnsureActive reports that the plugin is unavailable.
 func (r Runtime) EnsureActive(_ context.Context, pluginID string, _ plugindomain.Holder) (transport.Endpoint, error) {
-	return transport.Endpoint{}, r.unavailable("", pluginID)
+	return transport.Endpoint{}, r.createUnavailableError("", pluginID)
 }
 
 // EnsureActiveForQuestion reports that the plugin is unavailable.
@@ -35,12 +35,12 @@ func (r Runtime) EnsureActiveForQuestion(
 
 // RetryPlugin reports that the plugin is unavailable.
 func (r Runtime) RetryPlugin(_ context.Context, pluginID string) (*plugindomain.Failure, error) {
-	return nil, r.unavailable("", pluginID)
+	return nil, r.createUnavailableError("", pluginID)
 }
 
 // ResolveCapability reports that no plugin answers for the capability.
 func (r Runtime) ResolveCapability(capability string) (manifest.Discovered, error) {
-	return manifest.Discovered{}, r.unavailable(capability, "")
+	return manifest.Discovered{}, r.createUnavailableError(capability, "")
 }
 
 // ResolveService finds no plugin.

@@ -95,7 +95,7 @@ func runResolution[T any](
 	gen := cache.getGeneration()
 	vault, ok := cache.getVaultRow(vaultID)
 	if !ok {
-		vault, err = vaultRow(ctx, statements, vaultID)
+		vault, err = getVaultRow(ctx, statements, vaultID)
 		if errors.Is(err, errNoVault) {
 			return none, nil
 		}

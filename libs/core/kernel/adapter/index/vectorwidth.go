@@ -29,7 +29,7 @@ func (d *VectorIndex) FitVectors(ctx context.Context, dims int, recipe string) e
 	if err != nil {
 		return err
 	}
-	filledBy, recorded, err := coarseRecipe(ctx, d.write)
+	filledBy, recorded, err := readCoarseRecipe(ctx, d.write)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (d *VectorIndex) FitVectors(ctx context.Context, dims int, recipe string) e
 		return nil
 	}
 
-	return sqlwrite.InTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
+	return sqlwrite.RunInTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
 		for _, statement := range []string{
 			`DROP TABLE IF EXISTS chunks_vec`,
 			fmt.Sprintf(`CREATE VIRTUAL TABLE chunks_vec USING vec0 (
@@ -62,7 +62,7 @@ func (d *VectorIndex) FitVectors(ctx context.Context, dims int, recipe string) e
 	})
 }
 
-func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
+func readCoarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
 	var recipe string
 	err := db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&recipe)
 	if errors.Is(err, sql.ErrNoRows) {

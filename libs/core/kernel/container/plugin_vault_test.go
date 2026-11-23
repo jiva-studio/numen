@@ -18,7 +18,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	t.Helper()
 	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{
-			IndexPath:       indexfile.Path(t),
+			IndexPath:       indexfile.GetPath(t),
 			PluginCachePath: t.TempDir(),
 			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
 		},

@@ -37,7 +37,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, allLinks); err != nil {
+	if err := r.preloadCandidates(ctx, allLinks); err != nil {
 		return nil, err
 	}
 	return r.resolveLinksOf(ctx, grouped, order)
@@ -130,7 +130,7 @@ func (r *resolution) getBacklinksOf(ctx context.Context, to []string) (_ map[str
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, candidates); err != nil {
+	if err := r.preloadCandidates(ctx, candidates); err != nil {
 		return nil, err
 	}
 

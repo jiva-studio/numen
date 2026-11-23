@@ -81,7 +81,7 @@ func makeOpenVaults(t *testing.T) (*indexing.OpenVaults[*Index], []domain.Vault,
 	vaults := &indexing.OpenVaults[*Index]{
 		Opener: func(i *Index) *indexing.VaultOpener {
 			openings.Add(1)
-			return vaultOpener(cfg.buildVaultWiring(), i)
+			return createVaultOpener(cfg.buildVaultWiring(), i)
 		},
 		Index:       db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
@@ -94,7 +94,7 @@ func makeSampleVault(t *testing.T, cfg TestInstallation) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := vaultIdentity(cfg.buildVaultWiring().Options).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
+	if _, err := createVaultIdentity(cfg.buildVaultWiring().Options).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range getOpenVaultsSamples() {

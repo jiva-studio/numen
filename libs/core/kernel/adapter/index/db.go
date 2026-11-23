@@ -79,12 +79,12 @@ type Option func(*settings)
 type settings struct {
 	synchronous string
 	clock       QueryClock
-	onQuery     func(logs.Entry)
+	handleQuery     func(logs.Entry)
 }
 
-// Unsynchronized opens an index that does not wait for the disk on a commit. WAL, the single
+// DisableSync opens an index that does not wait for the disk on a commit. WAL, the single
 // writer and the busy timeout stay as they are; only the moment of the flush moves.
-func Unsynchronized() Option {
+func DisableSync() Option {
 	return func(s *settings) { s.synchronous = unsynchronized }
 }
 
@@ -118,7 +118,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		return nil, errors.Join(err, write.Close())
 	}
 
-	read, err := openSQLitePool(dsn(path, pos), "read", pos)
+	read, err := openSQLitePool(buildDSN(path, pos), "read", pos)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("open the index at %s: %w", path, err), write.Close())
 	}
@@ -129,7 +129,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 	feed := &changefeed.Changes{}
 	noteCache := note.NewCache()
-	feed.OnPublish(noteCache.Invalidate)
+	feed.SetPublishHandler(noteCache.Invalidate)
 	return &DB{
 		write:       write,
 		read:        read,
@@ -148,12 +148,12 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) Vaults() *vault.Repository {
-	return vault.NewRepository(d.write).OnChange(d.noteCache.Invalidate)
+	return vault.NewRepository(d.write).SetChangeHandler(d.noteCache.Invalidate)
 }
 func (d *DB) Notes() *note.Repository {
-	return note.NewRepository(d.write).ReportingTo(d.frontmatter).ReportingFeedTo(d.feed)
+	return note.NewRepository(d.write).SetFrontmatterChanges(d.frontmatter).SetChangeFeed(d.feed)
 }
-func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write).ReportingTo(d.feed) }
+func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write).SetChangeFeed(d.feed) }
 
 // FrontmatterChanges reports the notes whose frontmatter a write through Notes changed.
 func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatter }
@@ -207,13 +207,13 @@ func (d *DB) SearchFloors() *searchpolicy.Repository {
 	return searchpolicy.NewRepository(d.read, d.write)
 }
 
-func dsn(path string, pos settings) string {
-	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
+func buildDSN(path string, pos settings) string {
+	return buildDSNWithPragmas(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
 
-func writeDSN(path string, pos settings) string { return dsn(path, pos) + "&_txlock=immediate" }
+func writeDSN(path string, pos settings) string { return buildDSN(path, pos) + "&_txlock=immediate" }
 
-func dsnOf(path string, pragmas []string) string {
+func buildDSNWithPragmas(path string, pragmas []string) string {
 	q := url.Values{}
 	for _, p := range pragmas {
 		q.Add("_pragma", p)
@@ -225,8 +225,8 @@ func dsnOf(path string, pragmas []string) string {
 	return path + separator + q.Encode()
 }
 
-// OperationResults is the stored results of connection operations, at most maxRows of them. A rebuild of the
+// GetOperationResults is the stored results of connection operations, at most maxRows of them. A rebuild of the
 // index empties it.
-func (d *DB) OperationResults(maxRows int) *operationresult.Repository {
+func (d *DB) GetOperationResults(maxRows int) *operationresult.Repository {
 	return operationresult.NewRepository(d.write, maxRows)
 }

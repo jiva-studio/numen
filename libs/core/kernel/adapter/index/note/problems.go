@@ -28,7 +28,7 @@ func (q *Problems) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([
 }
 
 func (q *Problems) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -58,7 +58,7 @@ func (q *Problems) getProblems(ctx context.Context, vaultID domain.VaultID, quer
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
 func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.ResolvedLink, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}

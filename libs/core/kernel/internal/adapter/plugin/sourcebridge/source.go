@@ -45,7 +45,7 @@ type Source struct {
 	changeMu    sync.Mutex
 	announced   searchsource.Description
 	listeners   []func()
-	onReadError func(error)
+	handleReadError func(error)
 	stopWatch   func()
 }
 
@@ -72,13 +72,13 @@ func Open(ctx context.Context, activator bridge.Activator, plugins Plugins, kept
 // sentence a person reads, and onReadError receives that sentence. It fails only when the plugin cannot be
 // resolved or started.
 func OpenWatching(
-	ctx context.Context, activator bridge.Activator, plugins Plugins, kept *Descriptions, onReadError func(error),
+	ctx context.Context, activator bridge.Activator, plugins Plugins, kept *Descriptions, handleReadError func(error),
 ) (*Source, error) {
 	b, readErr, err := open(ctx, activator, plugins, kept)
 	if err != nil {
 		return nil, err
 	}
-	b.onReadError = onReadError
+	b.handleReadError = handleReadError
 	b.stopWatch = plugins.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
 	b.reportReadError(readErr)
 	return b, nil
@@ -260,19 +260,19 @@ func (b *Source) OnDescriptionChange(fn func()) {
 	b.listeners = append(b.listeners, fn)
 }
 
-// OnDescriptionReadError registers fn to receive the outcome of a read of the description that follows a
+// SetDescriptionReadErrorHandler registers fn to receive the outcome of a read of the description that follows a
 // configuration of the plugin: the error of a read that fails, and nil for a read that succeeds. After a
 // failed read the description and the listeners stay as they were, and the next read that succeeds
 // announces the change.
-func (b *Source) OnDescriptionReadError(fn func(error)) {
+func (b *Source) SetDescriptionReadErrorHandler(fn func(error)) {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
-	b.onReadError = fn
+	b.handleReadError = fn
 }
 
 func (b *Source) reportReadError(err error) {
-	if b.onReadError != nil {
-		b.onReadError(err)
+	if b.handleReadError != nil {
+		b.handleReadError(err)
 	}
 }
 

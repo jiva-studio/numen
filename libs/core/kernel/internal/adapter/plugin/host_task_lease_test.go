@@ -53,7 +53,7 @@ func newTaskClient(t *testing.T, host *pluginhost.Host) numenv1connect.HostQueue
 	}
 	token := endpointOf(host.Management, workingPlugin).Token
 	return numenv1connect.NewHostQueueServiceClient(
-		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.AuthInterceptor(token)))
+		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func (w taskHost) reportTask(t *testing.T, id string, done, total int64) {

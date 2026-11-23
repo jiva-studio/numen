@@ -29,12 +29,12 @@ type QueryLogFunc func(logs.Entry)
 func WithQueryLog(clock QueryClock, onQuery QueryLogFunc) Option {
 	return func(s *settings) {
 		s.clock = clock
-		s.onQuery = onQuery
+		s.handleQuery = onQuery
 	}
 }
 
 func openSQLitePool(dsn, pool string, pos settings) (*sql.DB, error) {
-	if pos.onQuery == nil || pos.clock == nil {
+	if pos.handleQuery == nil || pos.clock == nil {
 		return sql.Open("sqlite", dsn)
 	}
 	return sql.OpenDB(&tracedConnector{
@@ -42,7 +42,7 @@ func openSQLitePool(dsn, pool string, pos settings) (*sql.DB, error) {
 		dsn:     dsn,
 		pool:    pool,
 		clock:   pos.clock,
-		onQuery: pos.onQuery,
+		handleQuery: pos.handleQuery,
 	}), nil
 }
 
@@ -51,7 +51,7 @@ type tracedConnector struct {
 	dsn     string
 	pool    string
 	clock   QueryClock
-	onQuery func(logs.Entry)
+	handleQuery func(logs.Entry)
 }
 
 func (c *tracedConnector) Connect(_ context.Context) (driver.Conn, error) {
@@ -63,7 +63,7 @@ func (c *tracedConnector) Connect(_ context.Context) (driver.Conn, error) {
 		conn:    conn,
 		pool:    c.pool,
 		clock:   c.clock,
-		onQuery: c.onQuery,
+		handleQuery: c.handleQuery,
 	}, nil
 }
 
@@ -73,7 +73,7 @@ type tracedConn struct {
 	conn    driver.Conn
 	pool    string
 	clock   QueryClock
-	onQuery func(logs.Entry)
+	handleQuery func(logs.Entry)
 }
 
 func (c *tracedConn) Prepare(query string) (driver.Stmt, error) {
@@ -168,7 +168,7 @@ func (c *tracedConn) record(start time.Time, query string, args []driver.NamedVa
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		props["error"] = strconv.Quote(err.Error())
 	}
-	c.onQuery(logs.Entry{
+	c.handleQuery(logs.Entry{
 		Time:       start,
 		Level:      level,
 		Source:     logs.SourceSQL,
@@ -220,7 +220,7 @@ func (s *tracedStmt) Close() error { return s.stmt.Close() }
 func (s *tracedStmt) NumInput() int { return s.stmt.NumInput() }
 
 func (s *tracedStmt) Exec(args []driver.Value) (driver.Result, error) {
-	return s.ExecContext(context.Background(), toNamedValues(args))
+	return s.ExecContext(context.Background(), convertNamedValues(args))
 }
 
 func (s *tracedStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
@@ -235,7 +235,7 @@ func (s *tracedStmt) ExecContext(ctx context.Context, args []driver.NamedValue) 
 }
 
 func (s *tracedStmt) Query(args []driver.Value) (driver.Rows, error) {
-	return s.QueryContext(context.Background(), toNamedValues(args))
+	return s.QueryContext(context.Background(), convertNamedValues(args))
 }
 
 func (s *tracedStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
@@ -285,7 +285,7 @@ func (r *tracedRows) Close() error {
 	return err
 }
 
-func toNamedValues(args []driver.Value) []driver.NamedValue {
+func convertNamedValues(args []driver.Value) []driver.NamedValue {
 	out := make([]driver.NamedValue, len(args))
 	for i, v := range args {
 		out[i] = driver.NamedValue{Ordinal: i + 1, Value: v}

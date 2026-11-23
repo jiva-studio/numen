@@ -197,8 +197,8 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 	}
 }
 
-// Access returns the capabilities of the search the way hostendpoint serves them, with the searches of the
+// CreateAccess returns the capabilities of the search the way hostendpoint serves them, with the searches of the
 // query language.
-func (s Search) Access(runs *searchqueryusecase.SearchRuns) *hostendpoint.SearchAccess {
+func (s Search) CreateAccess(runs *searchqueryusecase.SearchRuns) *hostendpoint.SearchAccess {
 	return &hostendpoint.SearchAccess{SearchIndex: s, TextSearch: s, SearchFloors: s, Runs: runs}
 }

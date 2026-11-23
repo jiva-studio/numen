@@ -44,8 +44,8 @@ func Wrap(model Embedder) *Source {
 	return &Source{Model: model}
 }
 
-// Over returns the source answering queries with the nearest chunks the function finds.
-func (s *Source) Over(nearest Nearest) *Source {
+// UseNearest returns the source answering queries with the nearest chunks the function finds.
+func (s *Source) UseNearest(nearest Nearest) *Source {
 	s.Nearest = nearest
 	return s
 }

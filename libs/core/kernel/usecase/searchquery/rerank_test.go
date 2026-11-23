@@ -81,7 +81,7 @@ func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimit
 	)
 	deps.Stages.Rows = connectionusecase.NewRows(world.Resolve, world.Rows.ListRows, nil)
 	deps.Stages.Resolve = world.Resolve
-	deps.Stages.Results = w.db.OperationResults(1000)
+	deps.Stages.Results = w.db.GetOperationResults(1000)
 	deps.Clock = world.Clock
 	deps.Stages.Limits = limits
 	return searchquerytest.New(deps)
@@ -329,7 +329,7 @@ func TestACanceledCallReturnsTheCancellationAndStoresNothing(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the query answered %v, want context.Canceled", err)
 	}
-	removed, err := w.db.OperationResults(1000).ClearResults(t.Context())
+	removed, err := w.db.GetOperationResults(1000).ClearResults(t.Context())
 	if err != nil || removed != 0 {
 		t.Errorf("the canceled run stored %d results, %v", removed, err)
 	}

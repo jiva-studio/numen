@@ -15,7 +15,7 @@ func newSource(t *testing.T, read func() (settings.Values, error)) settingevents
 	t.Helper()
 	return settingevents.Source{
 		Read:    read,
-		Initial: func() settings.Values { return settings.Values{} },
+		GetInitial: func() settings.Values { return settings.Values{} },
 		Report:  func(error) {},
 		Path:    filepath.Join(t.TempDir(), "numen.json"),
 	}

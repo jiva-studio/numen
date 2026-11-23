@@ -64,7 +64,7 @@ func (s *session) mustRun(args ...string) string {
 
 func (s *session) addVault(name string) string {
 	s.t.Helper()
-	dir := testsupport.TempDir(s.t)
+	dir := testsupport.CreateTempDir(s.t)
 	s.mustRun("vault", "add", dir, "--name", name)
 	return dir
 }

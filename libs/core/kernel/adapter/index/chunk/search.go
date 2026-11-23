@@ -62,7 +62,7 @@ func getExpression(query source.LexicalQuery) string {
 	if query.IsRaw {
 		return strings.TrimSpace(query.Text)
 	}
-	return Expression(query.Text, query.IsGrowing)
+	return BuildExpression(query.Text, query.IsGrowing)
 }
 
 func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search resultStatements) ([]domain.SearchResult, error) {
@@ -70,7 +70,7 @@ func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query 
 	if expression == "" {
 		return nil, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -106,7 +106,7 @@ func (q *Search) readResults(ctx context.Context, vault int64, expression string
 		if err := rows.Scan(&row, &p.Path, &p.Kind, &p.VersionID, &p.FileHash, &p.Start, &p.Length, &p.PlaceLabel, &p.MatchOffset, &score); err != nil {
 			return nil, err
 		}
-		p.ChunkID = ID(row)
+		p.ChunkID = FormatID(row)
 		if search.hasWordScore {
 			p.WordScore = &score
 		}
@@ -128,7 +128,7 @@ func (q *Search) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultI
 	if len(query.Vector) == 0 {
 		return nil, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -144,7 +144,7 @@ func (q *Search) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultI
 	}
 	ids := make([]domain.ChunkID, len(rows))
 	for i, row := range rows {
-		ids[i] = ID(row)
+		ids[i] = FormatID(row)
 	}
 	return ids, nil
 }
@@ -159,7 +159,7 @@ func (q *Search) findNearestWithPrefix(ctx context.Context, vault int64, query [
 	if pathPrefix == "" {
 		return q.findNearestByBits(ctx, vault, query, k)
 	}
-	ctx, err = sqlwrite.Uninterrupted(ctx)
+	ctx, err = sqlwrite.DetachCancel(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func getUpperBound(prefix string) any {
 }
 
 func (q *Search) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) (_ []int64, err error) {
-	ctx, err = sqlwrite.Uninterrupted(ctx)
+	ctx, err = sqlwrite.DetachCancel(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (q *Search) GetEnclosingResults(ctx context.Context, vaultID domain.VaultID
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -238,7 +238,7 @@ func (q *Search) GetEnclosingResults(ctx context.Context, vaultID domain.VaultID
 
 	out := make([]domain.SearchResult, 0, len(ids))
 	for _, id := range ids {
-		chunk, err := Row(id)
+		chunk, err := ParseRow(id)
 		if err != nil {
 			return nil, err
 		}

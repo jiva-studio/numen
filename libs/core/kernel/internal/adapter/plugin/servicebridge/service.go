@@ -37,18 +37,18 @@ type Proxy struct {
 	activator bridge.Activator
 	plugins   Plugins
 	services  ServiceResolver
-	onError   func(error)
+	handleError   func(error)
 }
 
 // SetErrorHandler sets the callback that receives errors the proxy meets after a response has begun.
 // It must be called before the proxy serves.
 func (p *Proxy) SetErrorHandler(handler func(error)) {
-	p.onError = handler
+	p.handleError = handler
 }
 
 func (p *Proxy) reportError(err error) {
-	if err != nil && p.onError != nil {
-		p.onError(err)
+	if err != nil && p.handleError != nil {
+		p.handleError(err)
 	}
 }
 
