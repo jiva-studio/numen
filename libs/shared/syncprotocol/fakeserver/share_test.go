@@ -228,8 +228,8 @@ func TestShareService_ReaderReadsAShareWithoutASubscriptionAndMakesNoWriteCall(t
 		t.Fatal(err)
 	}
 
-	for _, procedure := range []string{"/numen.sync.v1.RevisionService/CommitRevisions", "/numen.sync.v1.BlobService/ReserveBlobs", "/numen.sync.v1.ShareService/AppendShareLogEntry"} {
-		if got := s.server.CountCalls(procedure); procedure != "/numen.sync.v1.ShareService/AppendShareLogEntry" && got != 0 {
+	for _, procedure := range []string{"/numen.sync.v1.RevisionService/CommitRevisions", "/numen.sync.v1.BlobService/ReserveBlobs"} {
+		if got := s.server.CountCalls(procedure); got != 0 {
 			t.Errorf("%s ran %d times for a reader", procedure, got)
 		}
 	}
