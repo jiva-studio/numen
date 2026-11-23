@@ -45,7 +45,7 @@ func newQueryDeps(t *testing.T) stubSession {
 
 func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquerytest.Deps)) stubSession {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchqueryte
 			return cli.Indexed{Query: searchquery.NewFindSearchResultsByName(
 				singleVaultList{v},
 				func(context.Context, domain.Vault) (*searchquery.FindSearchResults, error) { return find, nil },
-			), OperationResults: operationresult.NewClearOperationResults(db.OperationResults(100))}, nil
+			), OperationResults: operationresult.NewClearOperationResults(db.GetOperationResults(100))}, nil
 		},
 	}
 }

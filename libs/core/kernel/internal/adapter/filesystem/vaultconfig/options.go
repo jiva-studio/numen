@@ -31,9 +31,9 @@ type Ignoring struct {
 	vaults   *ignore.GitIgnore
 }
 
-// MatchesPath reports whether the path is excluded. It applies to files and
+// IsMatch reports whether the path is excluded. It applies to files and
 // folders, and the path is relative to the vault root.
-func (i *Ignoring) MatchesPath(path string) bool {
+func (i *Ignoring) IsMatch(path string) bool {
 	return i.defaults.MatchesPath(path) || i.vaults.MatchesPath(path)
 }
 
@@ -72,8 +72,8 @@ func (o Options) IsService(name string) bool {
 	return vaultdomain.IsServiceDir(name, o.GetServiceDir())
 }
 
-// Kind returns the source kind for a file name: a note or any other file.
-func (o Options) Kind(name string) domain.SourceKind {
+// GetKind returns the source kind for a file name: a note or any other file.
+func (o Options) GetKind(name string) domain.SourceKind {
 	return vaultdomain.GetSourceKind(name)
 }
 

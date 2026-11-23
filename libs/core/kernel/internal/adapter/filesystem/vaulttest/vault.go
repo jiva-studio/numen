@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// VaultDir returns the fixture vault that every test scans.
+// CreateVaultDir returns the fixture vault that every test scans.
 //
 // It walks up from this file until it finds the repository root, so a test
 // works unchanged when its package moves.
-func VaultDir(t *testing.T) string {
+func CreateVaultDir(t *testing.T) string {
 	t.Helper()
 
 	_, self, _, ok := runtime.Caller(0)
@@ -41,8 +41,8 @@ func VaultDir(t *testing.T) string {
 // they scan. The fixture itself must stay exactly as committed.
 func CopyVault(t *testing.T) string {
 	t.Helper()
-	dst := testsupport.TempDir(t)
-	if err := os.CopyFS(dst, os.DirFS(VaultDir(t))); err != nil {
+	dst := testsupport.CreateTempDir(t)
+	if err := os.CopyFS(dst, os.DirFS(CreateVaultDir(t))); err != nil {
 		t.Fatal(err)
 	}
 	return dst
@@ -52,7 +52,7 @@ func CopyVault(t *testing.T) string {
 // tests that need a second vault whose content is nothing like the fixture's.
 func NewVault(tb testing.TB, notes map[string]string) domain.Vault {
 	tb.Helper()
-	root := testsupport.TempDir(tb)
+	root := testsupport.CreateTempDir(tb)
 	for name, body := range notes {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -77,7 +77,7 @@ func WriteBook(tb testing.TB, root, path string) {
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		tb.Fatal(err)
 	}
-	if err := os.WriteFile(target, testsupport.Book(tb), 0o644); err != nil {
+	if err := os.WriteFile(target, testsupport.ReadBook(tb), 0o644); err != nil {
 		tb.Fatal(err)
 	}
 }

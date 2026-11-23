@@ -1194,7 +1194,7 @@ func TestAResultReturnsWhichOfFourItsNoteIs(t *testing.T) {
 func TestAResultReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
-		"library/A Book.epub": string(testsupport.Book(t)),
+		"library/A Book.epub": string(testsupport.ReadBook(t)),
 	})
 
 	// The text of a book is extracted in the background, and the search returns

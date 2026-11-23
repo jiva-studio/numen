@@ -40,15 +40,15 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// ReportingTo returns the repository that hands the paths of the notes whose frontmatter a write
+// SetFrontmatterChanges returns the repository that hands the paths of the notes whose frontmatter a write
 // changed to changes.
-func (r *Repository) ReportingTo(changes *FrontmatterChanges) *Repository {
+func (r *Repository) SetFrontmatterChanges(changes *FrontmatterChanges) *Repository {
 	return &Repository{db: r.db, changes: changes, feed: r.feed}
 }
 
-// ReportingFeedTo returns the repository that tells feed of each committed write that can change the file
+// SetChangeFeed returns the repository that tells feed of each committed write that can change the file
 // change feed.
-func (r *Repository) ReportingFeedTo(feed *changefeed.Changes) *Repository {
+func (r *Repository) SetChangeFeed(feed *changefeed.Changes) *Repository {
 	return &Repository{db: r.db, changes: r.changes, feed: feed}
 }
 
@@ -70,9 +70,9 @@ func (r *Repository) Save(
 		return nil
 	}
 	var changed []string
-	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		changed = nil
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func saveNote(
 func saveNoteParts(ctx context.Context, tx *sqlwrite.Transaction, vault, row int64, indexed domain.NoteChunks) error {
 	n := indexed.Note
 	// A chunk whose text is what it was keeps its row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, chunk.FromDomain(indexed.Chunks)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, chunk.ConvertChunks(indexed.Chunks)); err != nil {
 		return err
 	}
 	for _, h := range indexed.Headings {
@@ -179,7 +179,7 @@ func saveSourceAndNote(
 		return 0, stored, fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.NormalizeName(domain.GetBasename(n.FileStat.Path)),
-		n.Title, string(noteType(n)), newNullableValue(n.ID), frontmatter, newNullableValue(problem)); err != nil {
+		n.Title, string(getNoteType(n)), newNullableValue(n.ID), frontmatter, newNullableValue(problem)); err != nil {
 		return 0, stored, err
 	}
 	if !updated {
@@ -225,9 +225,9 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 		return nil
 	}
 	var changed []string
-	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		changed = nil
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -287,7 +287,7 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 	return string(raw), ""
 }
 
-func noteType(n domain.Note) domain.NoteType {
+func getNoteType(n domain.Note) domain.NoteType {
 	if n.Type == "" {
 		return domain.TypeNote
 	}

@@ -314,7 +314,7 @@ func openVault(t *testing.T, notes map[string]string) (container.TestInstallatio
 	t.Helper()
 
 	cfg := container.NewTestInstallation(container.Config{
-		Paths: container.Paths{IndexPath: indexfile.Path(t)},
+		Paths: container.Paths{IndexPath: indexfile.GetPath(t)},
 	}, nil)
 	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {

@@ -49,12 +49,12 @@ func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (
 	return &vaultIndex{DB: db, File: path, Ledger: indexing.NewLedger(), Versions: version.NewIndexVersions(db.TextVersions())}, nil
 }
 
-func vaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watcher) (<-chan struct{}, error) {
+func watchMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watcher) (<-chan struct{}, error) {
 	path, err := indexfolder.Prepare(indexPath)
 	if err != nil {
 		return nil, err
 	}
-	return watcher.File(ctx, path)
+	return watcher.WatchFile(ctx, path)
 }
 
 // noteViews configures move notifications, write admission and index status for note operations.
@@ -64,7 +64,7 @@ type noteViews struct {
 	Follow    note.IndexFollow
 }
 
-func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
+func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := c.Readers
@@ -113,7 +113,7 @@ func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views no
 	}
 }
 
-func vaultQueries(db *vaultIndex) query.UseCases {
+func createQueryUseCases(db *vaultIndex) query.UseCases {
 	links := db.NoteQueries()
 	return query.UseCases{
 		Refer: query.Referring{
@@ -127,11 +127,11 @@ func vaultQueries(db *vaultIndex) query.UseCases {
 	}
 }
 
-func vaultOpener(c vaultWiring, db *vaultIndex) *indexing.VaultOpener {
-	return vaultOpenerWith(c, db, c.Readers, c.Watcher)
+func createVaultOpener(c vaultWiring, db *vaultIndex) *indexing.VaultOpener {
+	return createVaultOpenerWith(c, db, c.Readers, c.Watcher)
 }
 
-func vaultOpenerWith(c vaultWiring,
+func createVaultOpenerWith(c vaultWiring,
 	db *vaultIndex, walking vaultport.VaultReaders, watcher indexing.VaultWatcher,
 ) *indexing.VaultOpener {
 	scan := indexing.NewScan(
@@ -148,10 +148,10 @@ func vaultOpenerWith(c vaultWiring,
 	scan.Walks = &db.Walks
 
 	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
-	return indexing.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
+	return indexing.ConfigureVaultOpener(watcher, scan, buffered, createRefresh(c, db, buffered))
 }
 
-func vaultMakeRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteRepository) indexing.Refresh {
+func createRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteRepository) indexing.Refresh {
 	return indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: c.Readers, Vaults: db.Vaults(), Notes: notes, Queries: db.Sources(), Sources: db.Sources(),
 		Now: c.Clock, Cut: c.CutNotes, Ledger: db.Ledger,
@@ -210,7 +210,7 @@ func getMediaType() *file.GetMediaType {
 
 func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, record func(domain.Vault)) *indexing.OpenVaults[*vaultIndex] {
 	return &indexing.OpenVaults[*vaultIndex]{
-		CreateOpener: func(i *vaultIndex) *indexing.VaultOpener { return vaultOpener(c, i) }, Index: db, Out: out, Label: label,
+		CreateOpener: func(i *vaultIndex) *indexing.VaultOpener { return createVaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,
 	}
 }

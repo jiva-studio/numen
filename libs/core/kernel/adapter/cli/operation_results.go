@@ -30,6 +30,6 @@ func (c operationResultsCommand) Run(ctx context.Context, term terminal, args []
 		return err
 	}
 	r := newReporter(term.out)
-	r.Printf("removed %d stored results\n", removed)
+	r.WriteFormat("removed %d stored results\n", removed)
 	return r.Err()
 }

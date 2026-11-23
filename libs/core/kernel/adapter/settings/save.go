@@ -130,13 +130,13 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 			continue
 		}
 		if len(pos) == 1 {
-			return splice(object, one.from, one.to, value), nil
+			return replaceRange(object, one.from, one.to, value), nil
 		}
 		section, err := replaceValueAt(object[one.from:one.to], pos[1:], value, target.indent)
 		if err != nil {
 			return nil, fmt.Errorf("%q: %w", one.key, err)
 		}
-		return splice(object, one.from, one.to, section), nil
+		return replaceRange(object, one.from, one.to, section), nil
 	}
 
 	return target.appendMember(object, pos, value, outer)
@@ -242,7 +242,7 @@ func (s shape) appendMember(object []byte, pos []string, value []byte, outer str
 			return nil, err
 		}
 		body := string(name) + ": " + string(wrapped)
-		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer)), nil
+		return replaceRange(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer)), nil
 	}
 
 	wrapped, err := wrapInSections(pos[1:], value, s.indent)
@@ -251,9 +251,9 @@ func (s shape) appendMember(object []byte, pos []string, value []byte, outer str
 	}
 	body := string(name) + ": " + string(wrapped)
 	if s.indent == "" {
-		return splice(object, s.last, s.last, []byte(", "+body)), nil
+		return replaceRange(object, s.last, s.last, []byte(", "+body)), nil
 	}
-	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body)), nil
+	return replaceRange(object, s.last, s.last, []byte(",\n"+s.indent+body)), nil
 }
 
 func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
@@ -367,7 +367,7 @@ func (f *Files) run(path string, work func(path string) error) (uint64, error) {
 	return version, err
 }
 
-func splice(raw []byte, from, to int, with []byte) []byte {
+func replaceRange(raw []byte, from, to int, with []byte) []byte {
 	if from < 0 || to < from || to > len(raw) {
 		return raw
 	}

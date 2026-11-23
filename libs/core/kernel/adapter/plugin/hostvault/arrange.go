@@ -26,21 +26,21 @@ type NoteChanges struct {
 
 // Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
 type Arranger struct {
-	Notes       NoteChanges
-	Window      NoteChanges
-	WindowVault func() (domain.Vault, bool)
-	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
-	Problems    *vaults.ListParseProblems
-	Frontmatter note.WriteFrontmatter
+	Notes          NoteChanges
+	Window         NoteChanges
+	GetWindowVault func() (domain.Vault, bool)
+	RunChecks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
+	Problems       *vaults.ListParseProblems
+	Frontmatter    note.WriteFrontmatter
 
 	session sessionAccess
 }
 
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
-	if a.WindowVault == nil {
+	if a.GetWindowVault == nil {
 		return a.Notes
 	}
-	if current, isShowing := a.WindowVault(); !isShowing || current.ID != v.ID {
+	if current, isShowing := a.GetWindowVault(); !isShowing || current.ID != v.ID {
 		return a.Notes
 	}
 	return a.Window
@@ -92,10 +92,10 @@ func (a Arranger) GetProblems(ctx context.Context, checks []domain.Check) ([]dom
 	if err != nil {
 		return nil, nil, err
 	}
-	if a.Checks == nil {
+	if a.RunChecks == nil {
 		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, domain.ErrUnavailable)
 	}
-	return a.Checks(ctx, v, checks...)
+	return a.RunChecks(ctx, v, checks...)
 }
 func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	v, err := a.session.open()

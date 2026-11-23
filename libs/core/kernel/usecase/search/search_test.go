@@ -55,7 +55,7 @@ func newCorpus(t *testing.T) corpus {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(ctx, indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func (c corpus) participants(model sourcefake.Embedder) []search.Participant {
 	if model == nil {
 		return nil
 	}
-	source := sourcefake.Wrap(model).Over(search.NewFindNearest(c.db.ChunkSearch()).Execute)
+	source := sourcefake.Wrap(model).UseNearest(search.NewFindNearest(c.db.ChunkSearch()).Execute)
 	return []search.Participant{search.NewSource(source, c.db.ChunkSearch())}
 }
 

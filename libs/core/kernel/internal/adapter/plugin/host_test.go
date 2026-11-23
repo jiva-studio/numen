@@ -1144,7 +1144,7 @@ func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 }
 
 // TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
-func TestHelperProcessIdles(t *testing.T) { wiretest.IdleChild(t) }
+func TestHelperProcessIdles(t *testing.T) { wiretest.RunIdleChild(t) }
 
 // runningPlugin is a plugin that the test host treats as running.
 type runningPlugin struct {

@@ -26,7 +26,7 @@ type Supervisors struct {
 	runs       map[string]*processRun
 	clients    *transport.Clients
 	report     func(error)
-	onDrop     func(pluginID string)
+	handleDrop func(pluginID string)
 	idleLimits map[string]time.Duration
 	stopIdle   func(pluginID string)
 	watchers   []chan struct{}
@@ -43,14 +43,14 @@ type processRun struct {
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
 // a supervisor meets, and onDrop is called with the id of a plugin whose process ended.
-func NewSupervisors(report func(error), onDrop func(pluginID string)) *Supervisors {
+func NewSupervisors(report func(error), handleDrop func(pluginID string)) *Supervisors {
 	return &Supervisors{
 		byPlugin:   make(map[string]*lifecycle.Supervisor),
 		runs:       make(map[string]*processRun),
 		clients:    transport.NewClients(),
 		idleLimits: make(map[string]time.Duration),
 		report:     report,
-		onDrop:     onDrop,
+		handleDrop: handleDrop,
 	}
 }
 
@@ -230,7 +230,7 @@ func (s *Supervisors) Drop(pluginID string) {
 	s.clients.Remove(getEndpointLocked(s, pluginID).Token)
 	forgetEndpointLocked(s, pluginID)
 	s.mu.Unlock()
-	s.onDrop(pluginID)
+	s.handleDrop(pluginID)
 }
 
 func forgetEndpointLocked(s *Supervisors, pluginID string) {
@@ -254,10 +254,10 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, lease li
 		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
 	}
 	if state := sup.GetState(); state != lifecycle.StateDormant {
-		return Claim{Endpoint: NoEndpoint(), Running: false, State: state, Started: false}
+		return Claim{Endpoint: CreateNoEndpoint(), Running: false, State: state, Started: false}
 	}
 	sup.SetActivating(lease.Holder)
-	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
+	return Claim{Endpoint: CreateNoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 
 // AcquireRunning takes the lease on the plugin and returns its endpoint if a process of it runs. A use
@@ -275,7 +275,7 @@ func acquireRunningLocked(
 ) (transport.Endpoint, bool) {
 	run, ok := s.runs[pluginID]
 	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(lease, now) {
-		return NoEndpoint(), false
+		return CreateNoEndpoint(), false
 	}
 	if lease.Kind == lifecycle.UseLease {
 		run.isReleased = false
@@ -293,7 +293,7 @@ type ProcessAttachment struct {
 	Endpoint   transport.Endpoint
 	Listeners  map[string]int
 	Now        time.Time
-	OnExit     func()
+	HandleExit func()
 	Lease      lifecycle.Lease
 }
 
@@ -302,7 +302,7 @@ type ProcessAttachment struct {
 // runs after the endpoint is forgotten when the process exits.
 func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachment) error {
 	pluginID, sup, proc, endpoint := attach.PluginID, attach.Supervisor, attach.Process, attach.Endpoint
-	now, listeners, onExit := attach.Now, attach.Listeners, attach.OnExit
+	now, listeners, onExit := attach.Now, attach.Listeners, attach.HandleExit
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if sup.GetState() != lifecycle.StateActivating {

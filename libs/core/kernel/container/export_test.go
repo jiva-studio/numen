@@ -38,7 +38,7 @@ func DefaultSettings() settingsadapter.File { return settingsadapter.DefaultFile
 
 // Themes returns the themes service the window offers.
 func (c TestInstallation) Themes(say func(string)) (*theme.Service, error) {
-	return settingsThemes(c.buildSettingsWiring(), Scales{}, say)
+	return createThemeService(c.buildSettingsWiring(), Scales{}, say)
 }
 
 // The methods below are the wiring the tests of this package reach from outside it.
@@ -71,7 +71,7 @@ func (c TestInstallation) OpenWatchSettings() *settings.WatchSettingChanges {
 }
 
 func (c TestInstallation) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
-	return feed(c.buildSettingsWiring()).Subscribe()
+	return getFeed(c.buildSettingsWiring()).Subscribe()
 }
 
 // SubscribeAppliedPluginSettings reports when the host finishes applying a settings batch.
@@ -80,7 +80,7 @@ func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, fun
 }
 
 func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher indexing.VaultWatcher) *indexing.VaultOpener {
-	return vaultOpenerWith(c.buildVaultWiring(), db, walking, watcher)
+	return createVaultOpenerWith(c.buildVaultWiring(), db, walking, watcher)
 }
 
 func (c TestInstallation) VaultWatcher() indexing.VaultWatcher {
@@ -92,7 +92,7 @@ func (c TestInstallation) VaultWatcher() indexing.VaultWatcher {
 func NotesShowingMoves(
 	c TestInstallation, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
 ) NoteUseCases {
-	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view)})
+	return createNoteUseCases(c.buildVaultWiring(), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view)})
 }
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
@@ -111,7 +111,7 @@ func notifyHost(c TestInstallation, batch []settingsdomain.Setting) {
 }
 
 func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
-	return settingsStore(c).ReadUncheckedAt(path)
+	return createSettingsStore(c).ReadUncheckedAt(path)
 }
 
 func Scan(c TestInstallation, db *Index) indexing.Scan { return searchScan(indexPlanOf(c), db) }
@@ -146,7 +146,7 @@ func VaultReaders(c TestInstallation) vaultport.VaultReaders {
 }
 
 func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
-	refresh := vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
+	refresh := createRefresh(c.buildVaultWiring(), db, db.Notes())
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -155,19 +155,19 @@ func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
 
 func Moves(c TestInstallation, ctx context.Context) (<-chan struct{}, error) {
 	access := c.buildVaultWiring()
-	return vaultMoves(ctx, access.IndexPath, access.Watcher)
+	return watchMoves(ctx, access.IndexPath, access.Watcher)
 }
 
 func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases {
-	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{})
+	return createNoteUseCases(c.buildVaultWiring(), db, index, noteViews{})
 }
 
 func VaultOpener(c TestInstallation, db *Index) *indexing.VaultOpener {
-	return vaultOpener(c.buildVaultWiring(), db)
+	return createVaultOpener(c.buildVaultWiring(), db)
 }
 
 func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks) error {
-	vaults, err := c.registry()
+	vaults, err := c.openRegistry()
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func NewTestInstallation(c Config, host *TestPlugins) TestInstallation {
 }
 
 func (c TestInstallation) buildSettingsWiring() settingsWiring {
-	return settingsOf(c.Config, c.Execution, c.Preferences, c.Resources)
+	return createSettingsWiring(c.Config, c.Execution, c.Preferences, c.Resources)
 }
 
 func (c TestInstallation) buildPluginInstall() pluginInstall {
@@ -220,12 +220,12 @@ type TestPlugins struct {
 }
 
 func AdaptTestPlugins(management *PluginManagement, supervision *PluginSupervision) *TestPlugins {
-	execution, preferences, endpoints := AdaptPluginHost(management, supervision)
+	execution, preferences, endpoints := CreatePluginHost(management, supervision)
 	return &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}
 }
 
 func GetRefresh(c TestInstallation, db *Index) indexing.Refresh {
-	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
+	return createRefresh(c.buildVaultWiring(), db, db.Notes())
 }
 
 func (c TestInstallation) openTextVersions(db *Index) *textVersions {

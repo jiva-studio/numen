@@ -33,7 +33,7 @@ type Window struct {
 
 	Tasks TaskList
 
-	Vault func() string
+	GetVault func() string
 
 	clients flushCoordinator
 }
@@ -145,8 +145,8 @@ func (w *Window) GetCurrentVault(
 		return nil, err
 	}
 	out := &v1.GetCurrentVaultResponse{}
-	if w.Vault != nil {
-		out.VaultId = w.Vault()
+	if w.GetVault != nil {
+		out.VaultId = w.GetVault()
 	}
 	return connect.NewResponse(out), nil
 }

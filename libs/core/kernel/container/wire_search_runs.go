@@ -52,7 +52,7 @@ func newSearchRuns(
 		Generations: generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
-			return pluginsGetPluginName(resolver, pluginID)
+			return getPluginName(resolver, pluginID)
 		},
 		GetCatalog: getSearchCatalog(manifests),
 		MaxResults: find.Limits.MaxLimit,

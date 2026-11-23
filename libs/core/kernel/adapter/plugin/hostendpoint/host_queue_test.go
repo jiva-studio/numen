@@ -31,7 +31,7 @@ func newQueueClientOver(t *testing.T, fakeCallers *callers, work *run.PluginWork
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostQueueServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewHostQueueServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func openWork(

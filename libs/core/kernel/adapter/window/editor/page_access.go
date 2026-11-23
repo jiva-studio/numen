@@ -27,7 +27,7 @@ type PageAccess struct {
 
 // NewPageAccess creates the request and write gates for one window.
 func NewPageAccess(tasks *run.Tasks, session pageSession) *PageAccess {
-	window := &wire.Window{Name: wire.Editor, Tasks: tasks, Vault: func() string { return string(session.GetCurrentVault().ID) }}
+	window := &wire.Window{Name: wire.Editor, Tasks: tasks, GetVault: func() string { return string(session.GetCurrentVault().ID) }}
 	return &PageAccess{session: session, Gate: &wire.Gate{}, Writes: wire.NewWrites(window), Window: window}
 }
 

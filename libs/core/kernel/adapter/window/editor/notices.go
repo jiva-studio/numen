@@ -53,8 +53,8 @@ type broadcaster[T any] struct {
 func newChangeBroadcaster() broadcaster[window.Change] {
 	return broadcaster[window.Change]{
 		inner: broadcast.Broadcaster[window.Change]{
-			Fallback: func(window.Change) window.Change { return window.Change{ShouldReload: true} },
-			Capacity: 8,
+			GetFallback: func(window.Change) window.Change { return window.Change{ShouldReload: true} },
+			Capacity:    8,
 		},
 	}
 }

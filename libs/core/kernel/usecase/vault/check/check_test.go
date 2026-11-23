@@ -20,7 +20,7 @@ import (
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -19,7 +19,7 @@ import (
 //
 //	go test ./usecase/file/ -run XXX -bench BenchmarkTabKinds -benchtime 200x
 func BenchmarkTabKinds(b *testing.B) {
-	db, err := index.Open(b.Context(), indexfile.Path(b), index.Unsynchronized())
+	db, err := index.Open(b.Context(), indexfile.GetPath(b), index.DisableSync())
 	if err != nil {
 		b.Fatal(err)
 	}

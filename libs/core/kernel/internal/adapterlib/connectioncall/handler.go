@@ -43,16 +43,16 @@ type Identify func(ctx context.Context, header http.Header, requested string) (c
 // Handler serves ConnectionCallService over the calls and the rows the sources return at each request, for
 // the plugin that identify names.
 type Handler struct {
-	calls    func() Calls
-	rows     func() Rows
+	getCalls func() Calls
+	getRows  func() Rows
 	identify Identify
 	cancels  Cancels
 }
 
 // NewHandler is the handler over the calls and rows its sources return, for the plugin identify names.
 // cancels holds the cancels of the calls it serves.
-func NewHandler(calls func() Calls, rows func() Rows, identify Identify, cancels Cancels) *Handler {
-	return &Handler{calls: calls, rows: rows, identify: identify, cancels: cancels}
+func NewHandler(getCalls func() Calls, getRows func() Rows, identify Identify, cancels Cancels) *Handler {
+	return &Handler{getCalls: getCalls, getRows: getRows, identify: identify, cancels: cancels}
 }
 
 // Call streams the frames of one call through the rows of the plugin. A call the core could not serve ends
@@ -73,7 +73,7 @@ func (h *Handler) Call(
 	return wire.RunWatch(ctx, stream, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.ConnectionCallServiceCallResponse) error) error {
 		var done []byte
 		err := connection.ErrNoConnection
-		if calls := h.calls(); calls != nil {
+		if calls := h.getCalls(); calls != nil {
 			done, err = calls.Call(ctx, pluginID, modelcall.Request{
 				Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(),
 				Priority:  wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
@@ -115,7 +115,7 @@ func (h *Handler) ListRows(
 		return nil, err
 	}
 	var rows []modelcall.Row
-	if lists := h.rows(); lists != nil {
+	if lists := h.getRows(); lists != nil {
 		rows, err = lists.ListRows(pluginID, request.Msg.GetOperation())
 	}
 	if err != nil {
@@ -133,7 +133,7 @@ func (h *Handler) ListRowOptions(
 	if err != nil {
 		return nil, err
 	}
-	lists := h.rows()
+	lists := h.getRows()
 	if lists == nil {
 		return nil, wire.NewRowListError(ctx, connection.ErrNotFound)
 	}

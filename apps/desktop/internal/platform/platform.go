@@ -71,7 +71,7 @@ func reportPluginFailure(stage string, err error) {
 }
 
 func getKeyStore() *keychain.Store {
-	path, err := settings.Path()
+	path, err := settings.GetPath()
 	if err != nil {
 		return &keychain.Store{}
 	}

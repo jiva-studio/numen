@@ -105,7 +105,7 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	if err := base.Close(); err != nil {
 		t.Fatal(err)
 	}
-	pool := sql.OpenDB(connector{name: dsn(path, settings{synchronous: shipped}), driver: tallied})
+	pool := sql.OpenDB(connector{name: buildDSN(path, settings{synchronous: shipped}), driver: tallied})
 	testsupport.CloseAfter(t, pool)
 	return db, note.NewQueries(pool), tallied.ran
 }

@@ -21,7 +21,7 @@ import (
 func newIndexedVault(t *testing.T, notes map[string]string) (*index.DB, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}

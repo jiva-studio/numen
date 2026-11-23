@@ -42,7 +42,7 @@ type scanIndex struct {
 
 func openIndex(t *testing.T) *scanIndex {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func scanner(readers vaultport.VaultReaders, db *scanIndex) indexing.Scan {
 func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
 	res, err := scanner(readers, db).Execute(ctx, v)
@@ -211,7 +211,7 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -227,7 +227,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 func TestSecondScanOpensNoFiles(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
@@ -356,7 +356,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 	ctx := t.Context()
 	db := openIndex(t)
 
-	first, readers := vaultAt(t, vaulttest.VaultDir(t))
+	first, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	second := vaulttest.NewVault(t, map[string]string{
 		"quasar.md": "# Quasar\n\nA word that exists in no other vault.\n",
 	})
@@ -468,7 +468,7 @@ func (v vanishingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error
 func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
 	scan := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: "notes/Entropy.md"}, db)
@@ -518,7 +518,7 @@ func (r refusingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error)
 func TestAnUnreadableFileDoesNotStopAScan(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
 	scan := scanner(refusingReaders{VaultReaders: readers, failingPath: "notes/Entropy.md"}, db)
@@ -543,7 +543,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	// A scan that catches that moment must not take the note out of search
 	// until the next one.
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaulttest.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {

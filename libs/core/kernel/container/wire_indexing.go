@@ -34,7 +34,7 @@ type vaultIndexPlan struct {
 	ShouldRebuildIndex bool
 	VaultReaders       vaultport.VaultReaders
 	TextReaders        textport.Readers
-	ErrorHandler       func(error)
+	HandleError        func(error)
 }
 
 func newTextSearch(plan vaultIndexPlan, workers int) textSearch {
@@ -71,7 +71,7 @@ func searchScan(c vaultIndexPlan, db *vaultIndex) indexing.Scan {
 func readWholeVault(c vaultIndexPlan,
 	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh indexing.Refresh,
 ) (indexing.ReadWholeVault, error) {
-	fit := fitindex.New(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
+	fit := fitindex.New(db.VectorIndex(), c.HandleError, c.ShouldRebuildIndex)
 	if err := fit.Execute(ctx, source); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -121,5 +121,5 @@ func indexTexts(
 		Readers: c.VaultReaders, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: c.TextReaders, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: c.ShouldRebuildIndex,
 	})
-	return indexing.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
+	return indexing.NewHandlingIndex(index, c.HandleError, readNote), nil
 }

@@ -40,7 +40,7 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err != nil {
 		return nil, err
 	}
-	ports, err := c.registry()
+	ports, err := c.openRegistry()
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
@@ -133,7 +133,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch.dependencyReporter, tasks, vaultDeps.RecordLog)
-	pluginsOpenPluginWork(install, exec, tasks)
+	openPluginWork(install, exec, tasks)
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
 		source: source,
@@ -168,10 +168,10 @@ func buildWindow(
 	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refreshing {
 		v := vaultDeps
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
-		return vaultMakeRefresh(v, db, db.Notes())
+		return createRefresh(v, db, db.Notes())
 	}}
 	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Admission: page.Writes.AdmitWrite, Follow: page.Writes}, current)
-	moves := vaultVaults(vaultDeps, ports, db)
+	moves := createVaultUseCases(vaultDeps, ports, db)
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
@@ -211,10 +211,10 @@ func buildWindow(
 
 func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := indexing.NewUpdateIndex(current.Get).Execute
-	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state.Notices))
+	moves := note.NewTellMoveInShownVault(state.GetShownVault, createWindowView(state.Notices))
 	views.Moves = moves
-	notes := vaultNotes(vaultDeps, db, update, views)
-	pluginNotes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves})
+	notes := createNoteUseCases(vaultDeps, db, update, views)
+	pluginNotes := createNoteUseCases(vaultDeps, db, update, noteViews{Moves: moves})
 	return notes, getNoteChanges(pluginNotes)
 }
 
@@ -246,7 +246,7 @@ func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution
 	mountCatalog(w, install, exec, settingsDeps)
 }
 
-func windowView(notices *editor.Notices) windowsession.View {
+func createWindowView(notices *editor.Notices) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 

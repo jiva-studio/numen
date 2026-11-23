@@ -55,7 +55,7 @@ func (d *VectorIndex) ApplyMinChunkLength(ctx context.Context, length int) (int6
 }
 
 func (d *VectorIndex) deleteShortVectors(ctx context.Context, length int) (removed int64, err error) {
-	err = sqlwrite.InTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
+	err = sqlwrite.RunInTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
 		coarse, err := tx.ExecContext(ctx,
 			`DELETE FROM chunks_vec WHERE chunk_id IN (SELECT id FROM chunks WHERE parent_id IS NOT NULL AND length < ?)`, length)
 		if err != nil {

@@ -32,7 +32,7 @@ func (c Config) OpenEditor(
 }
 
 func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *vaultIndex, error) {
-	ports, err := c.registry()
+	ports, err := c.openRegistry()
 	if err != nil {
 		return ports, nil, err
 	}
@@ -98,7 +98,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
-	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchIndexChanges}
+	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, WatchMoves: api.WatchIndexChanges}
 	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
@@ -115,13 +115,13 @@ type ShellLog struct {
 }
 
 func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
+	changes, err := watchMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {
 		api.ReportChangesFrom(ctx, changes)
 	}
-	service, themesErr := settingsThemes(settingsDeps, Scales{}, func(response string) {
+	service, themesErr := createThemeService(settingsDeps, Scales{}, func(response string) {
 		if response != "" {
 			notify("themes: " + response)
 		}

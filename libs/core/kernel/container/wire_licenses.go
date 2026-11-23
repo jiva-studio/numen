@@ -14,9 +14,9 @@ func openLicenseUseCases(install pluginInstall, settingsDeps settingsWiring, vau
 	}
 	adapter := licensingadapter.NewAdapter(func(ctx context.Context) {
 		if err := install.Configuration.Refresh(ctx); err != nil {
-			settingsDeps.ErrorHandler(err)
+			settingsDeps.HandleError(err)
 		}
 	})
-	deps := license.NewDeps(install.Licenses, install.KeyStore, adapter, adapter, vaultDeps.Clock, adapter).WithErrorReporter(settingsDeps.ErrorHandler)
+	deps := license.NewDeps(install.Licenses, install.KeyStore, adapter, adapter, vaultDeps.Clock, adapter).WithErrorReporter(settingsDeps.HandleError)
 	return &windowlicense.UseCases{List: license.NewList(deps), Activate: license.NewActivate(deps), Deactivate: license.NewDeactivate(deps), Watch: license.NewWatch(deps)}
 }

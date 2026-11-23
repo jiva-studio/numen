@@ -20,7 +20,7 @@ type scanIndex struct {
 
 func openIndex(t *testing.T) *scanIndex {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}

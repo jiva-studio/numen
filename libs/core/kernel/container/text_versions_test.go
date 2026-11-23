@@ -193,7 +193,7 @@ func newTalkIndex(t *testing.T) (vaultIndexPlan, vaultWiring, *Index, domain.Vau
 
 func refreshPaths(t *testing.T, vaultDeps vaultWiring, db *Index, v domain.Vault, paths ...string) {
 	t.Helper()
-	if _, err := vaultMakeRefresh(vaultDeps, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
+	if _, err := createRefresh(vaultDeps, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
 }

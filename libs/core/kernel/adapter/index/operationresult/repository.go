@@ -40,7 +40,7 @@ func (r *Repository) FindResults(
 	ctx context.Context, operation, recipeHash string, inputHashes []string, at time.Time,
 ) (map[string][]byte, error) {
 	found := map[string][]byte{}
-	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		for start := 0; start < len(inputHashes); start += batchSize {
 			batch, err := json.Marshal(inputHashes[start:min(start+batchSize, len(inputHashes))])
 			if err != nil {
@@ -81,7 +81,7 @@ func readOutputs(ctx context.Context, tx *sqlwrite.Transaction, found map[string
 // SaveResults stores the outputs by input hash, used at at, replacing equal keys, then removes the least
 // recently used rows above the row limit.
 func (r *Repository) SaveResults(ctx context.Context, operation, recipeHash string, outputs map[string][]byte, at time.Time) error {
-	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		for hash, output := range outputs {
 			if _, err := tx.ExecContext(ctx, getStatement("save"), operation, recipeHash, hash, output, at.UnixNano()); err != nil {
 				return err
