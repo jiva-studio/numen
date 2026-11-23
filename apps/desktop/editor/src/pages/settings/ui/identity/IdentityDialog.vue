@@ -2,9 +2,10 @@
 /**
  * The modal dialog of the identity card: a titled form over a backdrop. Escape and a press on the
  * backdrop cancel, Tab stays inside the dialog, and the first field or button takes the focus when
- * the dialog opens and each time `step` changes.
+ * the dialog opens and each time `step` changes. When it closes, the focus returns to the control
+ * that was focused when it opened.
  */
-import { onMounted, useId, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ title: string; step?: string }>()
@@ -17,10 +18,14 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
+const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
 
 /* ---------------------------------- Hooks --------------------------------- */
 onMounted(focusFirst)
 watch(() => props.step, focusFirst, { flush: 'post' })
+onBeforeUnmount(() => {
+  if (opener?.isConnected) opener.focus()
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeepFocus(event: KeyboardEvent): void {
