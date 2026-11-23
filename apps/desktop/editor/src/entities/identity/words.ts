@@ -5,28 +5,28 @@ import type { IdentityErrorCode } from './lib/types'
 export const IDENTITY_WORDS = {
   loadFailed: 'The identity could not be read.',
   describeFailure: (
-    failure: { readonly errorCode: IdentityErrorCode; readonly detail: string },
+    failure: { readonly error: IdentityErrorCode; readonly message: string },
     proves: 'words' | 'sheets' = 'sheets',
   ): string => {
-    switch (failure.errorCode) {
-      case 'invalid_words':
+    switch (failure.error) {
+      case 'invalidWords':
         return 'Some words are not valid.'
-      case 'identity_exists':
+      case 'identityExists':
         return 'This device already has an identity.'
-      case 'key_store_failed':
+      case 'keyStoreFailed':
         return 'The identity could not be saved. Check the system keychain.'
-      case 'not_enough_sheets':
+      case 'notEnoughSheets':
         return 'One more sheet is needed.'
-      case 'invalid_sheets':
+      case 'invalidSheets':
         return 'Some sheets are not valid.'
-      case 'other_account':
+      case 'otherAccount':
         return proves === 'words'
           ? 'The words belong to another account.'
           : 'The sheets belong to another account.'
-      case 'no_identity':
+      case 'noIdentity':
         return 'This device has no identity to make a kit for.'
       default:
-        return failure.detail
+        return failure.message
     }
   },
 }

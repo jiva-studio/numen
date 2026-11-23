@@ -76,9 +76,9 @@ describe('createIdentityClient', () => {
 
   it('reads each served error code as a failure', async () => {
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identity_exists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
+      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
+      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -87,7 +87,7 @@ describe('createIdentityClient', () => {
       })
       expect(await client.create(WORDS)).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })
@@ -159,11 +159,11 @@ describe('createIdentityClient recovery kit', () => {
 
   it('reads each served error code of a kit as a failure', async () => {
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
-      [IdentityErrorCode.INVALID_SHEETS, 'invalid_sheets'],
-      [IdentityErrorCode.NOT_ENOUGH_SHEETS, 'not_enough_sheets'],
-      [IdentityErrorCode.OTHER_ACCOUNT, 'other_account'],
-      [IdentityErrorCode.NO_IDENTITY, 'no_identity'],
+      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
+      [IdentityErrorCode.INVALID_SHEETS, 'invalidSheets'],
+      [IdentityErrorCode.NOT_ENOUGH_SHEETS, 'notEnoughSheets'],
+      [IdentityErrorCode.OTHER_ACCOUNT, 'otherAccount'],
+      [IdentityErrorCode.NO_IDENTITY, 'noIdentity'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -172,7 +172,7 @@ describe('createIdentityClient recovery kit', () => {
       })
       expect(await client.createKit({ words: WORDS })).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })
@@ -211,7 +211,7 @@ describe('createIdentityClient recovery kit', () => {
     })
     expect(await client.checkKit([SHEET_ONE, SHEET_TWO])).toStrictEqual({
       ok: false,
-      error: { errorCode: 'invalid_sheets', detail: 'sheet 2 is not valid' },
+      error: { error: 'invalidSheets', message: 'sheet 2 is not valid' },
     })
   })
 
@@ -239,7 +239,7 @@ describe('createIdentityClient recovery kit', () => {
     })
     expect(await refused.restoreFromKit([SHEET_ONE])).toMatchObject({
       ok: false,
-      error: { errorCode: 'not_enough_sheets' },
+      error: { error: 'notEnoughSheets' },
     })
     const empty = createClient({
       restoreIdentityFromKit: () => create(RestoreIdentityFromKitResponseSchema, {}),

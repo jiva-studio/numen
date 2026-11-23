@@ -128,7 +128,7 @@ describe('the identity store', () => {
       createClient({
         create: () =>
           Promise.resolve(
-            asFailure({ errorCode: 'invalid_words', detail: 'word 4 is not a recovery word' }),
+            asFailure({ error: 'invalidWords', message: 'word 4 is not a recovery word' }),
           ),
       }),
     )
@@ -141,7 +141,7 @@ describe('the identity store', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        create: () => Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+        create: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
@@ -151,8 +151,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalid_words', 'identity_exists', 'key_store_failed'] as const).map(
-      (errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }),
+    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map(
+      (error) => IDENTITY_WORDS.describeFailure({ error, message: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
@@ -220,7 +220,7 @@ describe('the identity store and the recovery kit', () => {
   it('says that words of another account are not those of this account', async () => {
     const { store } = createStore(
       createClient({
-        createKit: () => Promise.resolve(asFailure({ errorCode: 'other_account', detail: '' })),
+        createKit: () => Promise.resolve(asFailure({ error: 'otherAccount', message: '' })),
       }),
     )
     expect(await store.createKit({ words: WORDS })).toStrictEqual({
@@ -232,7 +232,7 @@ describe('the identity store and the recovery kit', () => {
   it('says that sheets of another account are not those of this account', async () => {
     const { store } = createStore(
       createClient({
-        createKit: () => Promise.resolve(asFailure({ errorCode: 'other_account', detail: '' })),
+        createKit: () => Promise.resolve(asFailure({ error: 'otherAccount', message: '' })),
       }),
     )
     expect(await store.createKit({ sheets: SHEETS })).toStrictEqual({
@@ -244,7 +244,7 @@ describe('the identity store and the recovery kit', () => {
   it('says that words are not valid when the kit is made for words that are not', async () => {
     const { store } = createStore(
       createClient({
-        createKit: () => Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: '' })),
+        createKit: () => Promise.resolve(asFailure({ error: 'invalidWords', message: '' })),
       }),
     )
     expect(await store.createKit({ words: WORDS })).toStrictEqual({
@@ -266,15 +266,15 @@ describe('the identity store and the recovery kit', () => {
   })
 
   it('says what is wrong with the sheets in the words of the page', async () => {
-    const texts: Array<[IdentityFailure['errorCode'], string]> = [
-      ['not_enough_sheets', 'One more sheet is needed.'],
-      ['invalid_sheets', 'Some sheets are not valid.'],
-      ['other_account', 'The sheets belong to another account.'],
+    const texts: Array<[IdentityFailure['error'], string]> = [
+      ['notEnoughSheets', 'One more sheet is needed.'],
+      ['invalidSheets', 'Some sheets are not valid.'],
+      ['otherAccount', 'The sheets belong to another account.'],
     ]
-    for (const [errorCode, text] of texts) {
+    for (const [error, text] of texts) {
       const { store } = createStore(
         createClient({
-          checkKit: () => Promise.resolve(asFailure({ errorCode, detail: 'sheet 2 is not valid' })),
+          checkKit: () => Promise.resolve(asFailure({ error, message: 'sheet 2 is not valid' })),
         }),
       )
       expect(await store.checkKit(SHEETS)).toStrictEqual({ ok: false, error: text })
@@ -283,8 +283,8 @@ describe('the identity store and the recovery kit', () => {
 
   it('describes the failures of a kit with words of their own', () => {
     const texts = (
-      ['invalid_sheets', 'not_enough_sheets', 'other_account', 'no_identity'] as const
-    ).map((errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }))
+      ['invalidSheets', 'notEnoughSheets', 'otherAccount', 'noIdentity'] as const
+    ).map((error) => IDENTITY_WORDS.describeFailure({ error, message: '' }))
     expect(new Set(texts).size).toBe(4)
     expect(texts.every((text) => text !== '')).toBe(true)
   })
@@ -316,7 +316,7 @@ describe('the identity store and the recovery kit', () => {
     const { store } = createStore(
       createClient({
         restoreFromKit: () =>
-          Promise.resolve(asFailure({ errorCode: 'not_enough_sheets', detail: '' })),
+          Promise.resolve(asFailure({ error: 'notEnoughSheets', message: '' })),
       }),
     )
     expect(await store.restoreFromKit(SHEETS.slice(0, 1))).toStrictEqual({

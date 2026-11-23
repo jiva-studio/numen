@@ -10,7 +10,7 @@ import {
   type IdentityService,
   type RecoveryKit as ProtoRecoveryKit,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** What a person can see of the identity of this device. */
 export interface IdentityInfo {
@@ -22,19 +22,16 @@ export interface IdentityInfo {
 
 /** Why an identity call was refused. */
 export type IdentityErrorCode =
-  | 'invalid_words'
-  | 'identity_exists'
-  | 'key_store_failed'
-  | 'invalid_sheets'
-  | 'not_enough_sheets'
-  | 'other_account'
-  | 'no_identity'
+  | 'invalidWords'
+  | 'identityExists'
+  | 'keyStoreFailed'
+  | 'invalidSheets'
+  | 'notEnoughSheets'
+  | 'otherAccount'
+  | 'noIdentity'
 
 /** A served refusal with the reason the core gives. */
-export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
-}
+export type IdentityFailure = Failure<IdentityErrorCode>
 
 /** The calls of IdentityService the identity is managed through. */
 export type IdentityRpc = Pick<
@@ -88,19 +85,19 @@ const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefi
     case ProtoIdentityErrorCode.UNSPECIFIED:
       return undefined
     case ProtoIdentityErrorCode.INVALID_WORDS:
-      return 'invalid_words'
+      return 'invalidWords'
     case ProtoIdentityErrorCode.IDENTITY_EXISTS:
-      return 'identity_exists'
+      return 'identityExists'
     case ProtoIdentityErrorCode.KEY_STORE_FAILED:
-      return 'key_store_failed'
+      return 'keyStoreFailed'
     case ProtoIdentityErrorCode.INVALID_SHEETS:
-      return 'invalid_sheets'
+      return 'invalidSheets'
     case ProtoIdentityErrorCode.NOT_ENOUGH_SHEETS:
-      return 'not_enough_sheets'
+      return 'notEnoughSheets'
     case ProtoIdentityErrorCode.OTHER_ACCOUNT:
-      return 'other_account'
+      return 'otherAccount'
     case ProtoIdentityErrorCode.NO_IDENTITY:
-      return 'no_identity'
+      return 'noIdentity'
   }
 }
 
@@ -108,12 +105,12 @@ const readAnswer = <T, U>(
   answer: { error: ProtoIdentityErrorCode; detail: string },
   { value, read, missing }: { value: U | undefined; read: (value: U) => T; missing: string },
 ): Result<T, IdentityFailure> => {
-  const errorCode = readErrorCode(answer.error)
-  if (errorCode !== undefined) {
-    return asFailure({ errorCode, detail: answer.detail })
+  const error = readErrorCode(answer.error)
+  if (error !== undefined) {
+    return asFailure({ error, message: answer.detail })
   }
   if (value === undefined) {
-    return asFailure({ errorCode: 'key_store_failed', detail: missing })
+    return asFailure({ error: 'keyStoreFailed', message: missing })
   }
   return asValue(read(value))
 }

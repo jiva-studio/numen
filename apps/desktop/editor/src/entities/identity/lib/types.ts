@@ -13,13 +13,13 @@ export interface IdentityInfo {
 
 /** Why an identity call was refused. */
 export type IdentityErrorCode =
-  | 'invalid_words'
-  | 'identity_exists'
-  | 'key_store_failed'
-  | 'invalid_sheets'
-  | 'not_enough_sheets'
-  | 'other_account'
-  | 'no_identity'
+  | 'invalidWords'
+  | 'identityExists'
+  | 'keyStoreFailed'
+  | 'invalidSheets'
+  | 'notEnoughSheets'
+  | 'otherAccount'
+  | 'noIdentity'
 
 /** Three sheets of one recovery kit, each the words of a sheet in order. */
 export interface RecoveryKit {
@@ -34,6 +34,6 @@ export type KitProof =
 
 /** A served refusal with the reason the core gives. */
 export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
+  readonly error: IdentityErrorCode
+  readonly message: string
 }
