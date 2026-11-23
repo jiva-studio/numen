@@ -11,7 +11,7 @@ import (
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 )
 
-func serveStorage(t *testing.T) *httptest.Server {
+func serveTLSStorage(t *testing.T) *httptest.Server {
 	t.Helper()
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("sealed")) }))
 	t.Cleanup(server.Close)
@@ -32,7 +32,7 @@ func TestNewBlobHTTPClient_ReachesLoopbackStorageOfALoopbackServer(t *testing.T)
 
 func TestNewBlobHTTPClient_RefusesAddressesOnTheMachineOrTheNetworkOfAServerElsewhere(t *testing.T) {
 	t.Parallel()
-	storage := serveStorage(t)
+	storage := serveTLSStorage(t)
 	port := mustGetPort(t, storage.URL)
 	web := syncclient.NewBlobHTTPClient("https://sync.example.org", time.Minute)
 
