@@ -231,7 +231,7 @@ export class IdentityDriver {
   }
 
   private getProductOwnedMark(card: Locator, name: string): Locator {
-    return card.getByRole('list', { name: 'Products' }).getByRole('listitem').filter({ hasText: name }).getByText('Owned', { exact: true })
+    return card.getByRole('list', { name: 'Products' }).getByRole('listitem').filter({ hasText: name }).getByText('Purchased', { exact: true })
   }
 
   /** Buys the product of a name on the page of the stand-in and waits until the card shows it as owned. */

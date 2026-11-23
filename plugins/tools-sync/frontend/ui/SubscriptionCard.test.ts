@@ -351,12 +351,12 @@ describe('SubscriptionCard products', () => {
     return { wrapper, client, openExternal }
   }
 
-  it('marks an owned product Owned and offers to buy the other one', async () => {
+  it('marks a bought product Purchased and offers to buy the other one', async () => {
     const { wrapper } = await renderProducts(['extra'])
 
     const list = wrapper.find('ul[aria-label="Products"]')
     expect(list.text()).toContain('Extra')
-    expect(list.text()).toContain('Owned')
+    expect(list.text()).toContain('Purchased')
     expect(list.text()).not.toContain('Theme')
     expect(findBuy(wrapper, 'Theme, €1.99')).toBeDefined()
     expect(findBuy(wrapper, 'Extra, €4.99')).toBeUndefined()
