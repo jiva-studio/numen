@@ -19,7 +19,7 @@ const HANDLER: HandlerDeclaration = {
   hasItems: false,
 }
 
-const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
+const RUNS: RunSupport = { canRun: () => true, reportCannotRun: () => undefined }
 
 const createHost = () =>
   ({
@@ -34,13 +34,13 @@ describe('a shared command in the palette', () => {
   it('is an entry with a pick list while a plugin handles it, and none otherwise', () => {
     const handled = usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       createHost(),
       { getHandlers: () => [HANDLER] },
     )
     const unhandled = usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       createHost(),
       { getHandlers: () => [] },
     )
@@ -54,7 +54,7 @@ describe('a shared command in the palette', () => {
   it('is available over a file and not over the window alone', () => {
     const [entry] = usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       createHost(),
       { getHandlers: () => [HANDLER] },
     ).getPaletteEntries()

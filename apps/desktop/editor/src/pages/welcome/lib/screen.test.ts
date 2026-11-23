@@ -234,7 +234,7 @@ describe('useWelcomeScreen', () => {
     notes: {
       getTabAt: () => null,
       getPath: () => '',
-      asking: () => false,
+      isAsking: () => false,
       flushPending: vi.fn(() => Promise.resolve()),
       close: vi.fn(),
       openFile: vi.fn(),
@@ -247,7 +247,7 @@ describe('useWelcomeScreen', () => {
     },
     runSupport: {
       canRun: () => true,
-      cannotRun: vi.fn(),
+      reportCannotRun: vi.fn(),
     },
     registry: {
       get: () => undefined,

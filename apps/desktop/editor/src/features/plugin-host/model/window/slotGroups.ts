@@ -33,7 +33,7 @@ interface SlotGroupsSource {
   }
 }
 
-const prettify = (name: string): string => {
+const formatTitle = (name: string): string => {
   const words = name
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/[.-]/g, ' ')
@@ -49,11 +49,11 @@ export function createSlotGroups(source: SlotGroupsSource) {
     )
     const getLabel = (entry: DeclaredSlotEntry): string => {
       if (entry.title) return entry.title
-      if (!entry.command) return prettify(entry.view ?? entry.submenu ?? '')
+      if (!entry.command) return formatTitle(entry.view ?? entry.submenu ?? '')
       const full = entry.command.includes(':')
         ? entry.command
         : formatCommandId(entry.pluginId, entry.command)
-      return titles.get(full) ?? prettify(entry.command.split(':').pop() ?? '')
+      return titles.get(full) ?? formatTitle(entry.command.split(':').pop() ?? '')
     }
     const entries = readSlotEntries(source.slots.value) ?? []
     return (source.contributions.slotPoints.value ?? [])

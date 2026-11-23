@@ -73,7 +73,7 @@ const setup = (asking: () => boolean = () => false) => {
       },
     },
     notes: {
-      asking: vi.fn((_id: string) => asking()),
+      isAsking: vi.fn((_id: string) => asking()),
       flushPending: vi.fn(async () => {
         steps.push('flush')
         tab.state.focus = 'Newton'

@@ -14,16 +14,16 @@ import { createInvocation, PALETTE_WORDS } from '@/features/command-palette'
 import { createPluginNotes } from '@/features/plugin-host'
 import { createTestTransports } from '@/testing/coreAnswers'
 import {
-  cards,
+  listCards,
   createWindowTransport,
   getWindowParts,
   mountWindow,
   mountWindowWithPalette,
-  nameAnswer,
+  createNameAnswer,
   requests,
   settle,
   submitPalette,
-  typeInPalette,
+  enterPaletteText,
   vaultState,
 } from '@/testing/window'
 import { createPluginDeclarations } from './createPluginDeclarations'
@@ -50,7 +50,7 @@ describe('a command run through the palette of the window', () => {
 
     palette.runCommand(COMMAND.createNote, palette.getTarget())
     await settle()
-    await typeInPalette('Entropy')
+    await enterPaletteText('Entropy')
     await submitPalette()
 
     expect(requests.made).toStrictEqual(['Entropy'])
@@ -63,7 +63,7 @@ describe('a command run through the palette of the window', () => {
     palette.runCommand(COMMAND.openFile, { ...palette.getTarget(), path: '' })
     await settle()
 
-    expect(cards().join(' ')).toContain(PALETTE_WORDS.noNote)
+    expect(listCards().join(' ')).toContain(PALETTE_WORDS.noNote)
   })
 })
 
@@ -233,7 +233,7 @@ describe('the parts of the window wired together', () => {
     expect(getWriterSpy).toHaveBeenCalledWith('command')
     vaultCheck.editing.notes.open('note-tab-1', 'notes/Entropy.md')
     expect(vaultCheck.editing.reached.getPath('note-tab-1')).toBe('notes/Entropy.md')
-    expect(await vaultCheck.itemLists.fileKinds(['notes/Entropy.md'])).toBeInstanceOf(Map)
+    expect(await vaultCheck.itemLists.readFileKinds(['notes/Entropy.md'])).toBeInstanceOf(Map)
 
     base.foundation.rest.state.app.value = [
       {
@@ -275,7 +275,7 @@ describe('the parts of the window wired together', () => {
       appCommands: base.appCommands,
       itemLists: {
         ...base.vault.itemLists,
-        fileKinds: vi.fn().mockRejectedValueOnce(new ReportedError('note-kind-failed')),
+        readFileKinds: vi.fn().mockRejectedValueOnce(new ReportedError('note-kind-failed')),
       },
       tabOpeners: { openFile: openFileSpy },
     })
@@ -467,7 +467,7 @@ describe('the parts of the window wired together', () => {
     vi.spyOn(plugins.pluginHost.slots, 'getEntries').mockImplementation((slot) =>
       slot === SLOT.paletteSearchResult ? [renameSlotEntry] : [],
     )
-    vaultState.names = [nameAnswer('notes/Entropy.md', 'Entropy')]
+    vaultState.names = [createNameAnswer('notes/Entropy.md', 'Entropy')]
     await palettes.palette.search.setTyped('Entropy')
     await vi.waitFor(() =>
       expect(

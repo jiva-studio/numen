@@ -61,7 +61,7 @@ const createWindow = (answers: Answers = {}) => {
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,
-      asking: () => answers.isAsking === true,
+      isAsking: () => answers.isAsking === true,
       flushPending: async (id: string) => {
         actions.push(`flushPending ${id}`)
       },
