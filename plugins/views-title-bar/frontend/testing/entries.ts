@@ -8,7 +8,7 @@ const REEF = 'org.example.reef'
 /** An icon that draws an empty mark, which a test finds by `data-icon`. */
 const MARK: FunctionalComponent = markRaw(() => h('svg', { 'data-icon': 'mark' }))
 
-export const createCommand = (id: string, extra: Partial<SlotCommand> = {}): SlotCommand => ({
+export const buildCommand = (id: string, extra: Partial<SlotCommand> = {}): SlotCommand => ({
   kind: 'command',
   key: `${TIDE}/command/${id}`,
   pluginId: TIDE,
@@ -24,8 +24,8 @@ const createLabelView = (text: string): FunctionalComponent =>
   markRaw(() => h('span', { 'data-label-view': text }, text))
 
 /** A command the bar draws without an icon. */
-export const createCommandWithoutIcon = (id: string): SlotCommand => {
-  const { icon: _icon, ...rest } = createCommand(id)
+export const buildCommandWithoutIcon = (id: string): SlotCommand => {
+  const { icon: _icon, ...rest } = buildCommand(id)
   return rest
 }
 
@@ -37,7 +37,7 @@ export const view = (id: string, component: Component = createLabelView(id)): Sl
   component,
 })
 
-export const createSeparator = (index: number): SlotSeparator => ({
+export const buildSeparator = (index: number): SlotSeparator => ({
   kind: 'separator',
   key: `separator/${index}`,
 })

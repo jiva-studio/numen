@@ -64,7 +64,6 @@ func (t *Tools) getScope(ctx context.Context) (Scope, error) {
 	return t.vaults.GetScope(ctx, tools.GetVault(ctx))
 }
 
-// BuildRegistry builds the registry of the five tools.
 func (t *Tools) BuildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{t.addTaskList, t.addTaskAdd, t.addTaskSetDone, t.addTaskEdit, t.addTaskRemove} {

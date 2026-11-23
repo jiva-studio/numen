@@ -24,7 +24,6 @@ func (b *Book) PageCount() int {
 	return max(1, (len(b.Text)+size-1)/size)
 }
 
-// FindPage is the page an offset falls on.
 func (b *Book) FindPage(offset int) int {
 	return min(max(1, offset/b.PageBytes()+1), b.PageCount())
 }

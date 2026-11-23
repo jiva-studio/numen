@@ -5,7 +5,7 @@ import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk
 import TitleBar from './TitleBar.vue'
 import { getControlsRoom } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
-import { createCommand, createSeparator, submenu, view } from '../testing/entries'
+import { buildCommand, buildSeparator, submenu, view } from '../testing/entries'
 
 interface Options {
   vaultName?: string
@@ -85,7 +85,7 @@ describe('the place of the title', () => {
       )
 
   it('is a middle cell between the cell of the buttons and the cell of the status', () => {
-    const wrapper = mountBar({ commands: [createCommand('a')], status: [view('tasks')] })
+    const wrapper = mountBar({ commands: [buildCommand('a')], status: [view('tasks')] })
 
     expect(cells(wrapper)).toStrictEqual([
       'data-title-bar-lead',
@@ -98,7 +98,7 @@ describe('the place of the title', () => {
   })
 
   it('is in the middle cell whether or not the buttons are drawn', async () => {
-    const wrapper = mountBar({ commands: [createCommand('a')] })
+    const wrapper = mountBar({ commands: [buildCommand('a')] })
     const before = cells(wrapper)
 
     await wrapper.setProps({ commands: [] })
@@ -113,10 +113,10 @@ describe('the buttons of plugins', () => {
 
   it('draw no pressed state before or after a press', async () => {
     const commands = [
-      createCommand('chart.open'),
-      createCommand('map.open'),
-      createSeparator(1),
-      createCommand('log.open'),
+      buildCommand('chart.open'),
+      buildCommand('map.open'),
+      buildSeparator(1),
+      buildCommand('log.open'),
     ]
     const wrapper = mountBar({ commands })
     const before = wrapper.find('[data-title-bar]').html()
@@ -134,7 +134,7 @@ describe('the buttons of plugins', () => {
   })
 
   it('do not toggle maximize on a double click', async () => {
-    const wrapper = mountBar({ commands: [createCommand('chart.open')] })
+    const wrapper = mountBar({ commands: [buildCommand('chart.open')] })
 
     await button(wrapper, 'chart.open').trigger('dblclick')
 
@@ -175,7 +175,7 @@ describe('the window controls', () => {
   })
 
   it('draw the three circles of the mac style before the commands', () => {
-    const wrapper = mountBar({ platform: 'linux', buttons: 'mac', commands: [createCommand('a')] })
+    const wrapper = mountBar({ platform: 'linux', buttons: 'mac', commands: [buildCommand('a')] })
     const close = control(wrapper, 'close').element
     const first = button(wrapper, 'a').element
 
@@ -204,7 +204,7 @@ describe('the window controls', () => {
 })
 
 describe('the keyboard', () => {
-  const COMMANDS = [createCommand('a'), createCommand('b'), createSeparator(1), createCommand('c')]
+  const COMMANDS = [buildCommand('a'), buildCommand('b'), buildSeparator(1), buildCommand('c')]
   const focused = () => document.activeElement?.getAttribute('data-title-bar-command') ?? ''
   const press = async (key: string) => {
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
@@ -306,13 +306,13 @@ describe('the entries that do not fit', () => {
   }
 
   const FIVE = [
-    createCommand('a'),
-    createCommand('b'),
-    createSeparator(1),
-    createCommand('c'),
-    createCommand('d'),
-    createSeparator(2),
-    createCommand('e'),
+    buildCommand('a'),
+    buildCommand('b'),
+    buildSeparator(1),
+    buildCommand('c'),
+    buildCommand('d'),
+    buildSeparator(2),
+    buildCommand('e'),
   ]
 
   const mountOverflowingBar = async (room: number, options: Options = {}): Promise<VueWrapper> => {
@@ -414,8 +414,8 @@ describe('the entries that do not fit', () => {
 
   it('moves the commands of titleBar.status into the menu before those of titleBar.commands', async () => {
     const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH + VIEW_WIDTH, {
-      commands: [createCommand('a'), createCommand('b'), createCommand('c')],
-      status: [view('tasks'), createCommand('f')],
+      commands: [buildCommand('a'), buildCommand('b'), buildCommand('c')],
+      status: [view('tasks'), buildCommand('f')],
     })
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
@@ -426,7 +426,7 @@ describe('the entries that do not fit', () => {
 
   it('hides the views from the edge once every command is in the menu, and never lists one in it', async () => {
     const wrapper = await mountOverflowingBar(BUTTON_WIDTH + VIEW_WIDTH, {
-      commands: [createCommand('a'), view('due')],
+      commands: [buildCommand('a'), view('due')],
       status: [view('tasks'), view('stats')],
     })
 
@@ -450,7 +450,7 @@ describe('the entries that do not fit', () => {
 })
 
 describe('a command with items', () => {
-  const MOVE = createCommand('tab.move', { hasItems: true, title: 'Move to window' })
+  const MOVE = buildCommand('tab.move', { hasItems: true, title: 'Move to window' })
   const items = [
     { id: 'w1', title: 'Window 1' },
     { id: 'w2', title: 'Window 2' },

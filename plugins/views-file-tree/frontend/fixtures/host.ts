@@ -26,7 +26,7 @@ const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 const Sketch = () => h('em', 'sketch')
 
-const createCommand = (
+const buildCommand = (
   pluginId: string,
   id: string,
   title: string,
@@ -42,18 +42,18 @@ const createCommand = (
   hasItems: false,
 })
 
-const createSeparator = (index: number): SlotSeparator => ({
+const buildSeparator = (index: number): SlotSeparator => ({
   kind: 'separator',
   key: `separator/${index}`,
 })
 
-export const OPEN = createCommand('app', 'file.open', 'Open note', Icon)
-const RENAME_ENTRY = createCommand(TREE, 'tree.renameFile', 'Rename')
-export const COPY_PATH = createCommand('app', 'file.copyPath', 'Copy path')
-export const TRASH = createCommand('app', 'file.remove', 'Move to trash')
-const NEW_NOTE_ENTRY = createCommand('app', 'note.create', 'Create note')
-const NEW_FOLDER_ENTRY = createCommand('app', 'folder.create', 'Create folder')
-export const ASK = createCommand(CHAT, 'note.ask', 'Ask about the note')
+export const OPEN = buildCommand('app', 'file.open', 'Open note', Icon)
+const RENAME_ENTRY = buildCommand(TREE, 'tree.renameFile', 'Rename')
+export const COPY_PATH = buildCommand('app', 'file.copyPath', 'Copy path')
+export const TRASH = buildCommand('app', 'file.remove', 'Move to trash')
+const NEW_NOTE_ENTRY = buildCommand('app', 'note.create', 'Create note')
+const NEW_FOLDER_ENTRY = buildCommand('app', 'folder.create', 'Create folder')
+export const ASK = buildCommand(CHAT, 'note.ask', 'Ask about the note')
 
 export const NEW_MENU: SlotSubmenu = {
   kind: 'submenu',
@@ -75,15 +75,15 @@ const SKETCH: SlotView = {
 /** The entries of the menu on a row, as the slot registry resolves them. */
 export const ROW_MENU: readonly SlotItem[] = [
   OPEN,
-  createSeparator(1),
+  buildSeparator(1),
   NEW_MENU,
-  createSeparator(2),
+  buildSeparator(2),
   RENAME_ENTRY,
   COPY_PATH,
-  createSeparator(3),
+  buildSeparator(3),
   ASK,
   SKETCH,
-  createSeparator(4),
+  buildSeparator(4),
   TRASH,
 ]
 

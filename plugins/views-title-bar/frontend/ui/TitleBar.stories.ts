@@ -9,7 +9,7 @@ import { h, markRaw, type FunctionalComponent } from 'vue'
 import { FilePlus, FolderTree, Search, Settings, Waypoints } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
 import type { AppInfo, SlotItem, VaultsState, VaultSummary } from '@numen/plugin-sdk'
-import { createCommand, createSeparator, submenu, view } from '../testing/entries'
+import { buildCommand, buildSeparator, submenu, view } from '../testing/entries'
 import { LONG, RUSSIAN } from './fixtures'
 
 interface Knobs {
@@ -27,21 +27,21 @@ interface Knobs {
   width: string
 }
 
-const FILES = createCommand('files', {
+const FILES = buildCommand('files', {
   title: 'Open file tree',
   icon: FolderTree,
   shortcut: 'mod+shift+e',
 })
-const PLEX = createCommand('plex', {
+const PLEX = buildCommand('plex', {
   title: 'Open plex graph',
   icon: Waypoints,
   shortcut: 'mod+shift+x',
 })
-const NEW_NOTE = createCommand('note', { title: 'Create note', icon: FilePlus })
-const SEARCH = createCommand('search', { title: 'Search vault', icon: Search })
-const SETTINGS = createCommand('settings', { title: 'Open settings', icon: Settings })
-const THREE = [FILES, PLEX, createSeparator(1), NEW_NOTE]
-const ALL = [FILES, PLEX, createSeparator(1), NEW_NOTE, createSeparator(2), SEARCH, SETTINGS]
+const NEW_NOTE = buildCommand('note', { title: 'Create note', icon: FilePlus })
+const SEARCH = buildCommand('search', { title: 'Search vault', icon: Search })
+const SETTINGS = buildCommand('settings', { title: 'Open settings', icon: Settings })
+const THREE = [FILES, PLEX, buildSeparator(1), NEW_NOTE]
+const ALL = [FILES, PLEX, buildSeparator(1), NEW_NOTE, buildSeparator(2), SEARCH, SETTINGS]
 
 const createChip = (text: string): FunctionalComponent =>
   markRaw(() =>
@@ -252,8 +252,8 @@ export const Submenu: Story = {
   args: {
     commands: [
       FILES,
-      createSeparator(1),
-      submenu('tide.new', [NEW_NOTE, createCommand('deck', { title: 'Create deck' })], {
+      buildSeparator(1),
+      submenu('tide.new', [NEW_NOTE, buildCommand('deck', { title: 'Create deck' })], {
         icon: FilePlus,
       }),
     ],
