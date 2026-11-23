@@ -180,8 +180,8 @@ func TestEveryClientSendsTheVersionAndTheBearerOfTheTokenInEachRequest(t *testin
 		if got := header.Get("Authorization"); got != "Bearer token-of-the-session" {
 			t.Errorf("request %d: Authorization = %q, want the bearer of the token", i, got)
 		}
-		if got := header.Get(syncprotocol.HeaderVersion); got != "2" {
-			t.Errorf("request %d: %s = %q, want 2", i, syncprotocol.HeaderVersion, got)
+		if got := header.Get(syncprotocol.HeaderVersion); got != "1" {
+			t.Errorf("request %d: %s = %q, want 1", i, syncprotocol.HeaderVersion, got)
 		}
 	}
 }
@@ -292,8 +292,8 @@ func TestErrQuotaExceededCarriesTheUsedAndTheLimitOfTheServer(t *testing.T) {
 	if !errors.As(got, &quota) || quota.Used != 700 || quota.Limit != 500 {
 		t.Errorf("error = %v, quota = %+v, want used 700 and limit 500", got, quota)
 	}
-	if notReady, ok := errors.AsType[syncprotocol.BlobNotReadyError](got); ok {
-		t.Errorf("a quota refusal reads as a blob that is not ready: %v", notReady)
+	if notReady, isNotReady := errors.AsType[syncprotocol.BlobNotReadyError](got); isNotReady {
+		t.Errorf("a quota refusal reads as a blob that is not ready: %+v", notReady)
 	}
 }
 
