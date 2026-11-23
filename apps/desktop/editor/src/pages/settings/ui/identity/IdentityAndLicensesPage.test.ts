@@ -48,8 +48,8 @@ const SYNC: LicenseInfo = {
   keyHint: '',
   activeProvider: '',
   instanceName: '',
-  expiresAt: '',
-  verifiedAt: '',
+  expiresUnixMs: 0,
+  verifiedUnixMs: 0,
 }
 
 const mounted: VueWrapper[] = []
