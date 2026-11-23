@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 )
@@ -22,16 +23,16 @@ func newComputer(t *testing.T) *synctest.Computer {
 	return synctest.NewFirstComputer(t, server, clock, string(vault), synctest.NewWords(t))
 }
 
-func scan(t *testing.T, c *synctest.Computer, bases map[string]string) []localchanges.Change {
+func scan(t *testing.T, c *synctest.Computer, bases map[string]string) []transfer.Change {
 	t.Helper()
-	changes, err := localchanges.NewScanLocalChanges(c.LocalChangesDeps()).Execute(t.Context(), localchanges.Input{VaultID: vault, Bases: bases})
+	changes, err := localchanges.NewScanLocalChanges(c.LocalChangesDeps()).Execute(t.Context(), transfer.ScanInput{VaultID: vault, Bases: bases})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return changes
 }
 
-func getPaths(changes []localchanges.Change) []string {
+func getPaths(changes []transfer.Change) []string {
 	paths := make([]string, len(changes))
 	for i, change := range changes {
 		paths[i] = change.Path
@@ -49,7 +50,7 @@ func TestScanLocalChanges_ListsANoteWithItsHashSizeAndTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := localchanges.Change{Path: "Shopping list.md", Hash: note.Hash([]byte("milk")), Size: 4, ModifiedAt: stat.ModTime.UnixNano()}
+	want := transfer.Change{Path: "Shopping list.md", Hash: note.Hash([]byte("milk")), Size: 4, ModifiedAt: stat.ModTime.UnixNano()}
 	if len(changes) != 1 || changes[0] != want {
 		t.Errorf("changes = %+v, want [%+v]", changes, want)
 	}

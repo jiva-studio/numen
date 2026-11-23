@@ -35,7 +35,7 @@ func (e *accountEndpoint) getRestoreOf(header http.Header) (string, AccountResto
 	if err != nil {
 		return "", nil, err
 	}
-	restore := e.endpoint.callers.Restore
+	restore := e.endpoint.callers.Account
 	if restore == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}

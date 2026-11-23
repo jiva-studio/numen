@@ -15,6 +15,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 )
@@ -22,7 +23,7 @@ import (
 type setup struct {
 	c      *synctest.Computer
 	server *synctest.Server
-	vault  commit.Vault
+	vault  transfer.Vault
 }
 
 func newSetup(t *testing.T, cfg fakeserver.Config) *setup {
@@ -31,12 +32,12 @@ func newSetup(t *testing.T, cfg fakeserver.Config) *setup {
 	server := synctest.NewServer(t, clock, cfg)
 	c := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
 	c.Connect(t, "Test")
-	return &setup{c: c, server: server, vault: commit.Vault{ID: c.GetRemoteID(t, "Test"), Key: c.GetVaultKey(t, "Test")}}
+	return &setup{c: c, server: server, vault: transfer.Vault{ID: c.GetRemoteID(t, "Test"), Key: c.GetVaultKey(t, "Test")}}
 }
 
-func (s *setup) run(t *testing.T, files ...commit.File) []commit.Outcome {
+func (s *setup) run(t *testing.T, files ...transfer.File) []transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), commit.Input{Vault: s.vault, Files: files})
+	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: s.vault, Files: files})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,9 +52,9 @@ func (s *setup) read(t *testing.T) []*syncv1.StoredRevision {
 func TestCommitRevisions_CommitsANewNoteAsASignedRevision(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 
-	outcomes := s.run(t, commit.File{Path: "Shopping list.md", Content: []byte("milk"), ModifiedAt: 1_700_000_005_000_000_000})
+	outcomes := s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk"), ModifiedAt: 1_700_000_005_000_000_000})
 
-	if len(outcomes) != 1 || outcomes[0].Status != commit.Committed || len(outcomes[0].FileID) != 16 {
+	if len(outcomes) != 1 || outcomes[0].Status != transfer.Committed || len(outcomes[0].FileID) != 16 {
 		t.Fatalf("outcomes = %+v, want one committed with a new file id of 16 bytes", outcomes)
 	}
 	stored := s.read(t)
@@ -84,7 +85,7 @@ func TestCommitRevisions_CommitsANewNoteAsASignedRevision(t *testing.T) {
 func TestCommitRevisions_SealsThePathAndTheHashInTheMetadata(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 
-	s.run(t, commit.File{Path: "Food/Shopping list.md", Content: []byte("milk"), ModifiedAt: 1_700_000_005_000_000_000})
+	s.run(t, transfer.File{Path: "Food/Shopping list.md", Content: []byte("milk"), ModifiedAt: 1_700_000_005_000_000_000})
 
 	revision := s.read(t)[0].GetRevision()
 	meta := synctest.OpenMeta(t, s.vault.Key, revision)
@@ -100,7 +101,7 @@ func TestCommitRevisions_SealsThePathAndTheHashInTheMetadata(t *testing.T) {
 func TestCommitRevisions_NormalizesThePathToNFC(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 
-	s.run(t, commit.File{Path: "Café.md", Content: []byte("tea")})
+	s.run(t, transfer.File{Path: "Café.md", Content: []byte("tea")})
 
 	revision := s.read(t)[0].GetRevision()
 	if meta := synctest.OpenMeta(t, s.vault.Key, revision); meta.Path != "Café.md" {
@@ -114,7 +115,7 @@ func TestCommitRevisions_NormalizesThePathToNFC(t *testing.T) {
 func TestCommitRevisions_UploadsNoPlainText(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 
-	s.run(t, commit.File{Path: "Shopping list.md", Content: []byte("milk and bread and eggs")})
+	s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk and bread and eggs")})
 
 	revision := s.read(t)[0].GetRevision()
 	wire, err := fakeserver.EncodeMessage(revision)
@@ -135,7 +136,7 @@ func TestCommitRevisions_UploadsNoPlainText(t *testing.T) {
 func TestCommitRevisions_UsesANewKeyForEachRevision(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 
-	s.run(t, commit.File{Path: "a.md", Content: []byte("same")}, commit.File{Path: "b.md", Content: []byte("same")})
+	s.run(t, transfer.File{Path: "a.md", Content: []byte("same")}, transfer.File{Path: "b.md", Content: []byte("same")})
 
 	keys := map[string]bool{}
 	for _, one := range s.read(t) {
@@ -148,11 +149,11 @@ func TestCommitRevisions_UsesANewKeyForEachRevision(t *testing.T) {
 
 func TestCommitRevisions_CommitsAChangedNoteAsAChildOfItsHead(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
-	first := s.run(t, commit.File{Path: "Shopping list.md", Content: []byte("milk")})[0]
+	first := s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk")})[0]
 
-	second := s.run(t, commit.File{FileID: first.FileID, ParentRev: first.RevID, Path: "Shopping list.md", Content: []byte("bread")})[0]
+	second := s.run(t, transfer.File{FileID: first.FileID, ParentRev: first.RevID, Path: "Shopping list.md", Content: []byte("bread")})[0]
 
-	if second.Status != commit.Committed || !bytes.Equal(second.FileID, first.FileID) {
+	if second.Status != transfer.Committed || !bytes.Equal(second.FileID, first.FileID) {
 		t.Fatalf("outcome = %+v, want committed under the same file", second)
 	}
 	stored := s.read(t)
@@ -166,15 +167,15 @@ func TestCommitRevisions_CommitsAChangedNoteAsAChildOfItsHead(t *testing.T) {
 
 func TestCommitRevisions_ReportsAParentThatIsNotTheHead(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
-	first := s.run(t, commit.File{Path: "Shopping list.md", Content: []byte("milk")})[0]
+	first := s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk")})[0]
 	wrong := make([]byte, 32)
 	if _, err := rand.Read(wrong); err != nil {
 		t.Fatal(err)
 	}
 
-	outcome := s.run(t, commit.File{FileID: first.FileID, ParentRev: wrong, Path: "Shopping list.md", Content: []byte("bread")})[0]
+	outcome := s.run(t, transfer.File{FileID: first.FileID, ParentRev: wrong, Path: "Shopping list.md", Content: []byte("bread")})[0]
 
-	if outcome.Status != commit.ParentMismatch || outcome.Head == nil || !bytes.Equal(outcome.Head.GetRevId(), first.RevID) {
+	if outcome.Status != transfer.ParentMismatch || outcome.Head == nil || !bytes.Equal(outcome.Head.GetRevId(), first.RevID) {
 		t.Errorf("outcome = %+v, want ParentMismatch with the first revision as head", outcome)
 	}
 	if stored := s.read(t); len(stored) != 1 || !bytes.Equal(stored[0].GetRevId(), first.RevID) {
@@ -184,26 +185,26 @@ func TestCommitRevisions_ReportsAParentThatIsNotTheHead(t *testing.T) {
 
 func TestCommitRevisions_ReportsAPathThatAnotherFileUses(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
-	first := s.run(t, commit.File{Path: "Plan.md", Content: []byte("tea")})[0]
+	first := s.run(t, transfer.File{Path: "Plan.md", Content: []byte("tea")})[0]
 
-	outcome := s.run(t, commit.File{Path: "plan.md", Content: []byte("coffee")})[0]
+	outcome := s.run(t, transfer.File{Path: "plan.md", Content: []byte("coffee")})[0]
 
-	if outcome.Status != commit.PathTaken || !bytes.Equal(outcome.ExistingFileID, first.FileID) || outcome.Head == nil || !bytes.Equal(outcome.Head.GetRevId(), first.RevID) {
+	if outcome.Status != transfer.PathTaken || !bytes.Equal(outcome.ExistingFileID, first.FileID) || outcome.Head == nil || !bytes.Equal(outcome.Head.GetRevId(), first.RevID) {
 		t.Errorf("outcome = %+v, want PathTaken by the first file, with its revision as head, for a path that differs in case only", outcome)
 	}
 }
 
 func TestCommitRevisions_CommitsManyNotesInBatchesOfOneHundred(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
-	files := make([]commit.File, 205)
+	files := make([]transfer.File, 205)
 	for i := range files {
-		files[i] = commit.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
+		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
 	}
 
 	outcomes := s.run(t, files...)
 
 	for i, outcome := range outcomes {
-		if outcome.Status != commit.Committed || outcome.Path != files[i].Path {
+		if outcome.Status != transfer.Committed || outcome.Path != files[i].Path {
 			t.Fatalf("outcome %d = %+v, want committed for %s, in the order of the input", i, outcome, files[i].Path)
 		}
 	}
@@ -222,9 +223,9 @@ func TestCommitRevisions_SkipsANoteTooLargeForTheServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outcomes := s.run(t, commit.File{Path: "large.md", Content: large}, commit.File{Path: "small.md", Content: []byte("milk")})
+	outcomes := s.run(t, transfer.File{Path: "large.md", Content: large}, transfer.File{Path: "small.md", Content: []byte("milk")})
 
-	if len(outcomes) != 2 || outcomes[0].Status != commit.TooLarge || outcomes[1].Status != commit.Committed {
+	if len(outcomes) != 2 || outcomes[0].Status != transfer.TooLarge || outcomes[1].Status != transfer.Committed {
 		t.Fatalf("outcomes = %+v, want the large note skipped and the small note committed", outcomes)
 	}
 	if stored := s.read(t); len(stored) != 1 {
@@ -236,7 +237,7 @@ func TestCommitRevisions_ReturnsTheQuotaTheServerRefusesOn(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{QuotaBytes: 4000})
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		commit.Input{Vault: s.vault, Files: []commit.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
 
 	var quota syncprotocol.QuotaExceededError
 	if !errors.As(err, &quota) || quota.Limit != 4000 {
@@ -252,7 +253,7 @@ func TestCommitRevisions_ReturnsUnreachableWhenTheServerIsDown(t *testing.T) {
 	s.server.SetDown(true)
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		commit.Input{Vault: s.vault, Files: []commit.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
 
 	if !errors.Is(err, syncprotocol.ErrUnreachable) {
 		t.Errorf("error = %v, want ErrUnreachable", err)
@@ -264,7 +265,7 @@ func TestCommitRevisions_KeepsTheTextOfTheNoteOutOfTheError(t *testing.T) {
 	s.server.SetDown(true)
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		commit.Input{Vault: s.vault, Files: []commit.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
 
 	if err == nil || strings.Contains(err.Error(), "milk") || strings.Contains(err.Error(), hex.EncodeToString(s.vault.Key[:])) {
 		t.Errorf("error = %v, want an error with neither the text nor the vault key", err)

@@ -19,7 +19,6 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
-// machineClock reads the clock of the machine.
 type machineClock struct{}
 
 func (machineClock) Now() time.Time { return time.Now() }

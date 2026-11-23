@@ -7,14 +7,11 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	subscriptiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 )
 
 // ErrNotConnected means the vault has no synced vault to sync with.
@@ -55,38 +52,50 @@ type Deps struct {
 	Subscriptions ports.Subscriptions
 }
 
-// passSteps are the use cases a pass runs.
-type passSteps struct {
-	rename *catalog.RenameRemoteVault
-	pull   *pull.PullChanges
-	scan   *localchanges.ScanLocalChanges
-	commit *commit.CommitRevisions
+// Renamer gives the synced vault the name of its local vault, and reports whether it did.
+type Renamer interface {
+	Execute(ctx context.Context, id domain.VaultID) (bool, error)
+}
+
+// Puller brings the changes of the server into the vault.
+type Puller interface {
+	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
+}
+
+// Scanner lists the notes that changed on this device.
+type Scanner interface {
+	Execute(ctx context.Context, in transfer.ScanInput) ([]transfer.Change, error)
+}
+
+// Committer commits notes to the server.
+type Committer interface {
+	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
+}
+
+// SubscriptionReader reads the subscription of the account from the server.
+type SubscriptionReader interface {
+	Execute(ctx context.Context) (subscriptiondomain.State, error)
+}
+
+// Steps are the use cases a pass runs.
+type Steps struct {
+	Rename       Renamer
+	Pull         Puller
+	Scan         Scanner
+	Commit       Committer
+	Subscription SubscriptionReader
 }
 
 // SyncVault runs one pass over one vault.
 type SyncVault struct {
 	deps    Deps
-	steps   passSteps
+	steps   Steps
 	reports reporter
 }
 
-// NewSyncVault returns the use case over the dependencies.
-func NewSyncVault(deps Deps) *SyncVault {
-	return &SyncVault{
-		deps: deps,
-		steps: passSteps{
-			rename: catalog.NewRenameRemoteVault(catalog.Deps{
-				Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-				Random: deps.Random,
-			}),
-			pull: pull.NewPullChanges(pull.Deps{
-				Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
-			}),
-			scan:   localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
-			commit: commit.NewCommitRevisions(commit.Deps{Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Random: deps.Random}),
-		},
-		reports: reporter{health: deps.Health, subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions})},
-	}
+// NewSyncVault returns the use case over the dependencies and the steps of a pass.
+func NewSyncVault(deps Deps, steps Steps) *SyncVault {
+	return &SyncVault{deps: deps, steps: steps, reports: reporter{health: deps.Health, subscription: steps.Subscription}}
 }
 
 // Execute pulls, then pushes, and keeps the warnings of the vault. It returns ErrNotConnected for a vault that is
@@ -95,7 +104,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.State.ReadLink(ctx, id); err != nil {
 		return err
 	}
-	if _, err := u.steps.rename.Execute(ctx, id); err != nil {
+	if _, err := u.steps.Rename.Execute(ctx, id); err != nil {
 		return err
 	}
 	authors, err := u.getAuthors(ctx)

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
@@ -23,7 +24,7 @@ const (
 type pair struct {
 	server *synctest.Server
 	a, b   *synctest.Computer
-	vault  commit.Vault
+	vault  transfer.Vault
 }
 
 func newPair(t *testing.T) *pair {
@@ -35,20 +36,20 @@ func newPair(t *testing.T) *pair {
 	a.Connect(t, source)
 	b := synctest.NewSecondComputer(t, server, clock, target, words)
 	b.ConnectExisting(t, target, a.Link(t, source).RemoteVaultID)
-	return &pair{server: server, a: a, b: b, vault: commit.Vault{ID: a.GetRemoteID(t, source), Key: a.GetVaultKey(t, source)}}
+	return &pair{server: server, a: a, b: b, vault: transfer.Vault{ID: a.GetRemoteID(t, source), Key: a.GetVaultKey(t, source)}}
 }
 
-func (p *pair) push(t *testing.T, path, text string, previous *commit.Outcome) commit.Outcome {
+func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome) transfer.Outcome {
 	t.Helper()
-	file := commit.File{Path: path, Content: []byte(text)}
+	file := transfer.File{Path: path, Content: []byte(text)}
 	if previous != nil {
 		file.FileID, file.ParentRev = previous.FileID, previous.RevID
 	}
-	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), commit.Input{Vault: p.vault, Files: []commit.File{file}})
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if outcomes[0].Status != commit.Committed {
+	if outcomes[0].Status != transfer.Committed {
 		t.Fatalf("push of %s = %+v, want committed", path, outcomes[0])
 	}
 	return outcomes[0]
@@ -56,9 +57,9 @@ func (p *pair) push(t *testing.T, path, text string, previous *commit.Outcome) c
 
 func trustAll([]byte) bool { return true }
 
-func (p *pair) pull(t *testing.T, authors func([]byte) bool) pull.Result {
+func (p *pair) pull(t *testing.T, authors func([]byte) bool) transfer.PullResult {
 	t.Helper()
-	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), pull.Input{VaultID: target, Authors: authors})
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +192,7 @@ func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 	p.push(t, "Shopping list.md", "milk", nil)
 	p.server.CorruptBlobs(true)
 
-	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), pull.Input{VaultID: target, Authors: trustAll})
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
 
 	if !errors.Is(err, pull.ErrCorruptBlob) {
 		t.Errorf("error = %v, want ErrCorruptBlob", err)
@@ -206,11 +207,11 @@ func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 
 func TestPullChanges_ReadsEveryPageOfChanges(t *testing.T) {
 	p := newPair(t)
-	files := make([]commit.File, 205)
+	files := make([]transfer.File, 205)
 	for i := range files {
-		files[i] = commit.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
+		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
 	}
-	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), commit.Input{Vault: p.vault, Files: files}); err != nil {
+	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: files}); err != nil {
 		t.Fatal(err)
 	}
 

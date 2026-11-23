@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -26,20 +26,6 @@ type Deps struct {
 	Clock ports.Clock
 }
 
-// Input is the vault and the hash each synced note had when both computers last agreed, by path.
-type Input struct {
-	VaultID domain.VaultID
-	Bases   map[string]string
-}
-
-// Change is a note that differs from its base.
-type Change struct {
-	Path       string
-	Hash       string
-	Size       int64
-	ModifiedAt int64
-}
-
 // ScanLocalChanges follows the file change feed of a vault and lists the notes that are not what their base says.
 type ScanLocalChanges struct{ deps Deps }
 
@@ -48,7 +34,7 @@ func NewScanLocalChanges(deps Deps) *ScanLocalChanges { return &ScanLocalChanges
 
 // Execute returns the changed notes in the order of their paths. A note listed once is listed again until its base
 // is its hash; a note written less than ten seconds ago is listed once it is older.
-func (u *ScanLocalChanges) Execute(ctx context.Context, in Input) ([]Change, error) {
+func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) ([]transfer.Change, error) {
 	seen, err := u.deps.State.ReadSightings(ctx, in.VaultID)
 	if err != nil {
 		return nil, err
@@ -101,13 +87,13 @@ func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note
 	}
 }
 
-func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.Seen, bases map[string]string) ([]Change, error) {
+func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.Seen, bases map[string]string) ([]transfer.Change, error) {
 	paths := make([]string, 0, len(seen))
 	for path := range seen {
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
-	var found []Change
+	var found []transfer.Change
 	for _, path := range paths {
 		if seen[path].Hash != "" && seen[path].Hash == bases[path] {
 			continue
@@ -122,7 +108,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 		}
 		seen[path] = note.Seen{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}
 		if stat.Hash != bases[path] && u.deps.Clock.Now().Sub(stat.ModTime) >= settleTime {
-			found = append(found, Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
+			found = append(found, transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
 		}
 	}
 	return found, nil

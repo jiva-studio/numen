@@ -31,7 +31,6 @@ const NUMERIC_DATE = new Intl.DateTimeFormat('en-GB', {
   year: 'numeric',
 })
 
-/** A local date such as `2 Jan 2006`, and an empty text for a time that is not there. */
 function formatDate(time: string): string {
   const at = Date.parse(time)
   if (Number.isNaN(at)) return ''

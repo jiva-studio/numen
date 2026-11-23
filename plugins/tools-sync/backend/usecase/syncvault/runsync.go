@@ -11,13 +11,17 @@ import (
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 )
 
 const (
 	keyUnreachable = "server-unreachable"
 	keyFailed      = "sync-failed"
 )
+
+// Warner tells what the subscription means for the changes.
+type Warner interface {
+	Execute(ctx context.Context) error
+}
 
 // Pass is one pass over one vault.
 type Pass interface {
@@ -26,26 +30,21 @@ type Pass interface {
 
 // RunDeps are what the loop needs. Interval is read before each wait. Changed names a vault whose files changed.
 type RunDeps struct {
-	Pass          Pass
-	Host          ports.Host
-	State         ports.Links
-	Health        ports.Health
-	Clock         ports.Clock
-	Subscriptions ports.Subscriptions
-	Interval      func() time.Duration
-	Changed       <-chan domain.VaultID
+	Pass     Pass
+	Host     ports.Host
+	State    ports.Links
+	Health   ports.Health
+	Clock    ports.Clock
+	Warn     Warner
+	Interval func() time.Duration
+	Changed  <-chan domain.VaultID
 }
 
 // RunSync passes over every connected vault at a fixed interval, and at once over a vault whose files changed.
-type RunSync struct {
-	deps RunDeps
-	warn *subscription.Warn
-}
+type RunSync struct{ deps RunDeps }
 
 // NewRunSync returns the use case over the dependencies.
-func NewRunSync(deps RunDeps) *RunSync {
-	return &RunSync{deps: deps, warn: subscription.NewWarn(subscription.WarnDeps{Subscriptions: deps.Subscriptions, Health: deps.Health})}
-}
+func NewRunSync(deps RunDeps) *RunSync { return &RunSync{deps: deps} }
 
 // Execute runs until ctx ends and returns its error. A server that is away raises a warning and the loop waits the
 // same interval again.
@@ -120,7 +119,7 @@ func (u *RunSync) finish(ctx context.Context, failure error, isConnected bool) e
 		return err
 	}
 	if failure == nil && isConnected {
-		failure = u.warn.Execute(ctx)
+		failure = u.deps.Warn.Execute(ctx)
 	}
 	switch {
 	case failure == nil:

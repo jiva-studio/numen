@@ -20,7 +20,9 @@ import (
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
 const (
@@ -111,9 +113,9 @@ func (r *runtime) startWithLock(address string) {
 	}
 	r.current = NewBackend(deps)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: syncvault.NewSyncVault(deps), Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock,
-		Subscriptions: cloudSide,
-		Interval:      func() time.Duration { return time.Duration(r.secs.Load()) * time.Second }, Changed: r.woken,
+		Pass: syncwire.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
+		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
+		Interval: func() time.Duration { return time.Duration(r.secs.Load()) * time.Second }, Changed: r.woken,
 	})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
 	var group sync.WaitGroup
