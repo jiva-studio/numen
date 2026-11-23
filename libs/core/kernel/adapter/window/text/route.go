@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Service answers TextService.
 type Service interface {
 	ReadLiveText(context.Context, *connect.Request[v1.ReadLiveTextRequest]) (*connect.Response[v1.ReadLiveTextResponse], error)
 	CreateTextEdit(context.Context, *connect.Request[v1.CreateTextEditRequest]) (*connect.Response[v1.CreateTextEditResponse], error)
