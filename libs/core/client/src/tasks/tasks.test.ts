@@ -2,14 +2,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { WatchTasksResponseSchema } from '@numen/protocol'
-import { TASK_KIND, TASK_UNIT, createWindowClient } from '../clients'
+import { TASK_KIND, TASK_UNIT, createWindowRpc } from '../clients'
 import { createCoreTransport, createLostConnection } from '../testing'
 import { createTaskClient, type TaskRpc } from './tasks'
 
 const request = { watchTasks: vi.fn(), cancelTask: vi.fn() }
 
 const tasks = createTaskClient(
-  createWindowClient(createCoreTransport({ windowService: request })),
+  createWindowRpc(createCoreTransport({ windowService: request })),
   'desktop.example',
 )
 

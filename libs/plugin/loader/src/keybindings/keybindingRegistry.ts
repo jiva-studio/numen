@@ -30,7 +30,7 @@ export interface Keybinding {
   readonly condition: WhenCondition
 }
 
-export interface KeybindingRegistryDeps {
+interface KeybindingRegistryDeps {
   readonly isMac: () => boolean
   readonly whenReader: WhenReader
   readonly report?: ((owner: string, message: string) => void) | undefined

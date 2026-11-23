@@ -1,18 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
-import { resolveTextLinks, type LinkClient } from './textLinks'
+import { create } from '@bufbuild/protobuf'
+import { ResolveAddressesResponseSchema } from '@numen/protocol'
+import { resolveTextLinks, type TextLinkRpc } from './textLinks'
 
 const createClient = () => {
-  const resolveAddresses = vi.fn<LinkClient['resolveAddresses']>(async () => ({
-    links: [
-      { raw: '[[B]]', address: 'name://B', text: 'B' },
-      { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
-      { raw: '[[D]]', address: 'name://D', text: 'D' },
-    ],
-    resolved: [
-      { address: 'name://B', path: 'b.md', isCrossed: false },
-      { address: 'name://C', path: 'c.md', isCrossed: true },
-    ],
-  }))
+  const resolveAddresses = vi.fn<TextLinkRpc['resolveAddresses']>(async () =>
+    create(ResolveAddressesResponseSchema, {
+      links: [
+        { raw: '[[B]]', address: 'name://B', text: 'B' },
+        { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
+        { raw: '[[D]]', address: 'name://D', text: 'D' },
+      ],
+      resolved: [
+        { address: 'name://B', path: 'b.md', isCrossed: false },
+        { address: 'name://C', path: 'c.md', isCrossed: true },
+      ],
+    }),
+  )
   return { resolveAddresses }
 }
 

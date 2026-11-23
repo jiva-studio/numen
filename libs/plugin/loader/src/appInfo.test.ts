@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createAppInfo, DEV_VERSION } from './appInfo'
+import { createAppInfo } from './appInfo'
 import type { AppInfo } from '@numen/plugin-sdk'
 
 describe('the build number', () => {
@@ -26,7 +26,7 @@ describe('the application info', () => {
   it('names a build made without a version the development build', () => {
     expect(createAppInfo({ getPlatform: () => 'linux' })).toEqual({
       name: 'numen',
-      version: DEV_VERSION,
+      version: '0.0.0-dev',
       build: 0,
       platform: 'linux',
     })

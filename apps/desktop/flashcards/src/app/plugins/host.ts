@@ -16,7 +16,6 @@ import {
   type BackgroundTaskHost,
   type CommandsHost,
   type createPluginConnections,
-  type Manifest,
   type SlotLayout,
   type VaultRelations,
   type VaultsHost,
@@ -52,12 +51,14 @@ interface ShellHostDeps {
   readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
 }
 
-const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
+type SlotManifest = Parameters<typeof readManifestSlotPoints>[1]
+
+const readSlotEntries = (manifests: ReadonlyMap<string, SlotManifest>) =>
   [...manifests].flatMap(([pluginId, manifest]) =>
     readManifestSlotEntries(pluginId, manifest, createNamedIcon),
   )
 
-const readSlotPoints = (manifests: ReadonlyMap<string, Manifest>) =>
+const readSlotPoints = (manifests: ReadonlyMap<string, SlotManifest>) =>
   [...manifests].flatMap(([pluginId, manifest]) => readManifestSlotPoints(pluginId, manifest))
 
 export function createShellHost(deps: ShellHostDeps) {
