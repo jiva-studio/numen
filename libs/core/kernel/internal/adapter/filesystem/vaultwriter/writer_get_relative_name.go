@@ -20,8 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
-func (w *VaultWriter) getRelativeName(target string) (string, error) {
-	name, err := filepath.Rel(w.root, target)
+func getRelativeName(root, target string) (string, error) {
+	name, err := filepath.Rel(root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("%s: %w", target, vault.ErrOutside)
 	}
