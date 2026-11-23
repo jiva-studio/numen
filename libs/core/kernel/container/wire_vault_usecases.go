@@ -139,9 +139,7 @@ func createVaultOpenerWith(c vaultWiring,
 		db.Maintenance(),
 		db.Sources(),
 	)
-	if c.SetNoteCut != nil {
-		c.SetNoteCut(&scan)
-	}
+	c.SetNoteCut(&scan)
 	scan.Walks = &db.Walks
 
 	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
