@@ -376,3 +376,29 @@ func TestChangePlan_ReturnsNoIdentityAndAsksNoServerWhenThisDeviceHasNoIdentity(
 		t.Errorf("the server ran %d change calls, want none", calls)
 	}
 }
+
+func TestCreatePortalSession_ReturnsThePortalPageOfTheServerAfterPayment(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+	payFor(t, backend, "basic")
+
+	got, err := backend.CreatePortalSession(t.Context(), api.CreatePortalSessionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.PortalURL != w.server.URL+"/portal/" {
+		t.Errorf("portal url = %q, want %q", got.PortalURL, w.server.URL+"/portal/")
+	}
+}
+
+func TestCreatePortalSession_RefusesAnAccountThatNeverPaid(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.CreatePortalSession(t.Context(), api.CreatePortalSessionRequest{})
+
+	if !errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
+		t.Errorf("error = %v, want ErrNoActiveSubscription", err)
+	}
+}

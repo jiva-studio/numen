@@ -105,16 +105,14 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     } catch (failure) {
       const code = getFailureCode(failure)
       if (code === 'already_exists' || code === 'failed_precondition') await readIfReachable()
-      else problem.value = getMessage(failure)
+      problem.value = getMessage(failure)
     }
   }
 
   async function manage(): Promise<void> {
     problem.value = ''
     try {
-      const address = await client.createPortalSession?.()
-      if (address === undefined) return
-      const opened = await openExternal(address)
+      const opened = await openExternal(await client.createPortalSession())
       if (!opened.ok) problem.value = opened.error
     } catch (failure) {
       problem.value = getMessage(failure)

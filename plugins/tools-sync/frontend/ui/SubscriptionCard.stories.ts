@@ -36,6 +36,7 @@ const createArgs = (answer: () => Promise<SubscriptionResponse>) => ({
     changePlan: (plan: string) =>
       Promise.resolve(createResponse({ phase: 'active', plan, quotaBytes: 100 * GIB })),
     createCheckout: () => Promise.resolve('https://pay.example/checkout/abc'),
+    createPortalSession: () => Promise.resolve('https://portal.example/session/1'),
   },
   openExternal: () => Promise.resolve(asValue(null)),
   now: () => NOW,
@@ -128,7 +129,11 @@ export const NoIdentity: Story = {
   args: createArgs(() => Promise.resolve(createResponse({ hasIdentity: false, phase: '' }))),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Create an identity to buy a subscription.')).toBeVisible()
+    await expect(
+      await canvas.findByText(
+        'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      ),
+    ).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }

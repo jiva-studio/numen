@@ -82,7 +82,9 @@ describe('getSubscriptionView', () => {
     const view = getSubscriptionView({ status: 'noIdentity', phase: '', dates: DATES })
 
     expect(view.badge).toBe('')
-    expect(view.text).toBe('Create an identity to buy a subscription.')
+    expect(view.text).toBe(
+      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+    )
   })
 
   it('badges an unreachable server as offline and names it in the text', () => {

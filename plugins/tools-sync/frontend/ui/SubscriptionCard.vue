@@ -90,7 +90,7 @@ function onFailure(failure: unknown): void {
         {{ view.badge }}
       </span>
     </template>
-    <div class="subscription__content" :inert="isPaying" :aria-busy="isPaying">
+    <div class="subscription__content" :inert="isPaying || undefined" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
       <p v-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
       <div v-if="planLine !== ''" class="subscription__row">

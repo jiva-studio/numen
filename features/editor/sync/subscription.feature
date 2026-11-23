@@ -44,7 +44,7 @@ Feature: Numen Sync subscription
     Scenario: A subscription is not offered without an identity
       Given the person deletes the identity from this device
       When the person opens the page "Identity and licenses"
-      Then the page says "Create an identity to buy a subscription"
+      Then the page says "Numen Sync needs an identity to tell your devices apart"
       And the page does not offer to buy the subscription
 
     Scenario: The page tells when the server is away
