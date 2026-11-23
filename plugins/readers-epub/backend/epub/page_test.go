@@ -17,24 +17,24 @@ func TestThePagesABookIsRead(t *testing.T) {
 	if book.PageCount() < 1 {
 		t.Fatalf("pages = %d, want the page a person is looking at", book.PageCount())
 	}
-	if got := book.PageOf(0); got != 1 {
+	if got := book.FindPage(0); got != 1 {
 		t.Errorf("the first byte is on page %d", got)
 	}
-	if got := book.PageOf(len(book.Text) - 1); got != book.PageCount() {
+	if got := book.FindPage(len(book.Text) - 1); got != book.PageCount() {
 		t.Errorf("the last byte is on page %d of %d", got, book.PageCount())
 	}
 	for page := 1; page <= book.PageCount(); page++ {
-		pos := book.PageStart(page)
+		pos := book.GetPageStart(page)
 		if pos < 0 || pos > len(book.Text) {
 			t.Fatalf("page %d begins at %d in %d bytes of text", page, pos, len(book.Text))
 		}
-		if got := book.PageOf(pos); got != page {
+		if got := book.FindPage(pos); got != page {
 			t.Errorf("page %d begins at %d, which is on page %d", page, pos, got)
 		}
 	}
 	// An offset outside the text is still answered, because a caller holding a
 	// stale offset is shown a page and not a panic.
-	if got := book.PageOf(len(book.Text) * 2); got != book.PageCount() {
+	if got := book.FindPage(len(book.Text) * 2); got != book.PageCount() {
 		t.Errorf("an offset past the text is on page %d of %d", got, book.PageCount())
 	}
 }
@@ -60,7 +60,7 @@ func TestAPageIsThatManyLetters(t *testing.T) {
 	// A page opened in the middle of a letter is a page of broken text, and an
 	// offset that names no place in the book.
 	for page := 1; page <= cyrillic.PageCount(); page++ {
-		pos := cyrillic.PageStart(page)
+		pos := cyrillic.GetPageStart(page)
 		if r, _ := utf8.DecodeRuneInString(cyrillic.Text[pos:]); r == utf8.RuneError {
 			t.Fatalf("page %d begins at %d, in the middle of a letter", page, pos)
 		}
@@ -94,14 +94,14 @@ func TestAPageOfUnmeasuredTextIsAKibibyte(t *testing.T) {
 	book := textOfBytes(3000)
 	offsets := map[int]int{-2000: 1, -1: 1, 0: 1, 1023: 1, 1024: 2, 2047: 2, 2048: 3, 2999: 3, 9000: 3}
 	for offset, want := range offsets {
-		if got := book.PageOf(offset); got != want {
+		if got := book.FindPage(offset); got != want {
 			t.Errorf("offset %d is on page %d, want %d", offset, got, want)
 		}
 	}
 
 	starts := map[int]int{-3: 0, 0: 0, 1: 0, 2: 1024, 3: 2048, 4: 3000, 100: 3000}
 	for page, want := range starts {
-		if got := book.PageStart(page); got != want {
+		if got := book.GetPageStart(page); got != want {
 			t.Errorf("page %d begins at %d, want %d", page, got, want)
 		}
 	}
@@ -145,7 +145,7 @@ func TestAPageBeginsAtTheFirstLetterAtOrAfterItsMeasure(t *testing.T) {
 			}
 			for page := 1; page <= book.PageCount(); page++ {
 				measure := (page - 1) * book.PageBytes()
-				pos := book.PageStart(page)
+				pos := book.GetPageStart(page)
 				if pos < measure || pos-measure >= utf8.UTFMax {
 					t.Fatalf("page %d begins at %d, measure %d", page, pos, measure)
 				}

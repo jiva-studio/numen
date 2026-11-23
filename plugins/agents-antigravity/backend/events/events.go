@@ -97,7 +97,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	case "content_block_start":
 		r.startBlock(evObj)
 	case "content_block_delta":
-		r.continueBlock(evObj)
+		r.readContinuedBlock(evObj)
 	case "content_block_stop":
 		if r.currentTool != "" {
 			r.sendToolCall(r.currentTool, r.currentArgs.String())
@@ -126,7 +126,7 @@ func (r *eventReader) startBlock(evObj map[string]any) {
 	}
 }
 
-func (r *eventReader) continueBlock(evObj map[string]any) {
+func (r *eventReader) readContinuedBlock(evObj map[string]any) {
 	delta, ok := evObj["delta"].(map[string]any)
 	if !ok {
 		return

@@ -27,7 +27,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	return a.Err()
 }
 
-func toAPIError(err error) error {
+func buildAPIError(err error) error {
 	switch {
 	// gomutants:disable-next-line BRANCH_CASE reason="nil error falls through to return err which is nil"
 	case err == nil:
@@ -43,7 +43,7 @@ func toAPIError(err error) error {
 func (s linkServer) readLink(ctx context.Context, path string) (link.Link, error) {
 	found, err := s.links.Read(ctx, path)
 	if err != nil {
-		return link.Link{}, toAPIError(err)
+		return link.Link{}, buildAPIError(err)
 	}
 	return found, nil
 }

@@ -22,11 +22,11 @@ func getStats(stats *indexstats.Stats) func(context.Context, api.GetStatsRequest
 		if err != nil {
 			return api.Stats{}, convertError(err)
 		}
-		return toStats(summary), nil
+		return buildStats(summary), nil
 	}
 }
 
-func toStats(summary indexstats.Summary) api.Stats {
+func buildStats(summary indexstats.Summary) api.Stats {
 	kinds := make([]api.KindCount, 0, len(summary.Kinds))
 	for _, one := range summary.Kinds {
 		kinds = append(kinds, api.KindCount{Kind: api.Kind(one.Kind), Sources: one.Sources, Chunks: one.Chunks})

@@ -147,7 +147,7 @@ type extracted struct {
 	isIndexed bool
 }
 
-func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
+func (e *extracted) readText(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isIndexed, nil
 	}
@@ -193,10 +193,10 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 		if len(v) != prep.model.Width {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
-		quantized := vector.Bytes(vector.Normalize(v))
+		quantized := vector.QuantizeBytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
 			value:  vector.Pack(quantized),
-			coarse: vector.Coarse(quantized),
+			coarse: vector.QuantizeCoarse(quantized),
 		}
 	}
 	return unique, nil

@@ -81,7 +81,7 @@ export function getNextDirection(
  * gains or loses its own arrow, so none of them moves. A draft without that record is returned
  * as it is.
  */
-export function cycleDirection(draft: Connection, key: SideKey): Connection {
+export function rotateDirection(draft: Connection, key: SideKey): Connection {
   const rows = getRows(draft)
   const row = rows.length > 1 ? rows.find((candidate) => candidate.key === key) : rows[0]
   if (!row) return draft

@@ -33,9 +33,9 @@ type ImportResult struct {
 // before the rest are counted.
 const namedInAFailureText = 3
 
-// DirectChildren returns the imported paths that sit directly in the folder
+// ListDirectChildren returns the imported paths that sit directly in the folder
 // into; the root is the empty path.
-func (r ImportResult) DirectChildren(into string) []string {
+func (r ImportResult) ListDirectChildren(into string) []string {
 	children := make([]string, 0, len(r.Imported))
 	for _, imported := range r.Imported {
 		if path.Dir(imported) == into || (into == "" && !strings.Contains(imported, "/")) {

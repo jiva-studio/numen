@@ -35,7 +35,7 @@ func newSetup(t *testing.T, operation string) *setup {
 	w := modelcalltest.New()
 	one := w.AddServer(t, "First", addressOne, keyOne)
 	two := w.AddServer(t, "Second", addressTwo, keyTwo)
-	w.Rows.Set(consumerID, operation, modelcalltest.Row(one, "model-one"), modelcalltest.Row(two, "model-two"))
+	w.Rows.Set(consumerID, operation, modelcalltest.CreateRow(one, "model-one"), modelcalltest.CreateRow(two, "model-two"))
 	return &setup{
 		world: w, one: one, two: two,
 		calls: connection.NewCalls(connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
@@ -81,7 +81,7 @@ func TestTheFirstRowThatAnswersServesTheCall(t *testing.T) {
 	if err != nil || result.Text != "answer from "+addressOne {
 		t.Fatalf("Complete = %v, %v", result, err)
 	}
-	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("the second row was called though the first answered")
 	}
 }
@@ -95,7 +95,7 @@ func TestTheCallCarriesTheSnapshotOfTheRow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := s.world.Provider.CallsTo(addressOne)[0].Call
+	got := s.world.Provider.ListCallsTo(addressOne)[0].Call
 	if got.Priority != modelcalldomain.PriorityInteractive || got.Type != "server" || got.ConnectionID != s.one.ID || got.Options["model"] != "model-one" || got.Options["reasoning"] != "low" ||
 		got.Fields["baseUrl"] != addressOne || got.Secrets["apiKey"] != keyOne {
 		t.Errorf("call = %+v", got)
@@ -111,7 +111,7 @@ func TestAFailureToTryTheNextGoesToTheNextRow(t *testing.T) {
 	if err != nil || result.Text != "answer from "+addressTwo {
 		t.Fatalf("Complete = %v, %v", result, err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressOne)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressOne)); got != 1 {
 		t.Errorf("a rate limit was tried %d times, want once", got)
 	}
 }
@@ -126,7 +126,7 @@ func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "First" || rejected.Reason != "invalid request" {
 		t.Fatalf("err = %v, want a rejection by First for an invalid request", err)
 	}
-	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("the call went on to the next row after a stop")
 	}
 }
@@ -140,7 +140,7 @@ func TestAStopSetsNoCooldown(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := len(s.world.Provider.CallsTo(addressOne)); got != 2 {
+	if got := len(s.world.Provider.ListCallsTo(addressOne)); got != 2 {
 		t.Errorf("the first row was called %d times, want 2", got)
 	}
 }
@@ -200,7 +200,7 @@ func TestARowSetAsideEarlierStillAppearsInTheErrorWithItsReason(t *testing.T) {
 	if err == nil || err.Error() != "First: payment required; Second: rate limited" {
 		t.Errorf("err = %v", err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressOne)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressOne)); got != 1 {
 		t.Errorf("a connection set aside was called %d times, want once", got)
 	}
 }
@@ -230,8 +230,8 @@ func TestTheRowsOfAnotherOperationAreNotUsed(t *testing.T) {
 
 func TestAPluginReachesOnlyTheConnectionsOfItsOwnRows(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Rows.Set("md.example.first", modelcalltest.CompleteOperation, modelcalltest.Row(s.one, "m"))
-	s.world.Rows.Set("md.example.second", modelcalltest.CompleteOperation, modelcalltest.Row(s.two, "m"))
+	s.world.Rows.Set("md.example.first", modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.one, "m"))
+	s.world.Rows.Set("md.example.second", modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.two, "m"))
 
 	first, err := s.callAs(t.Context(), "md.example.first", modelcalltest.CompleteOperation)
 	if err != nil {
@@ -253,7 +253,7 @@ func TestAPluginReachesOnlyTheConnectionsOfItsOwnRows(t *testing.T) {
 func TestTheKeysGoOnlyToThePluginThatProvidesTheType(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	other := s.world.Add(t, modelcalltest.OtherServerTypeID, "Other", "https://other.test/v1", "sk-other")
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(other, "m"), modelcalltest.Row(s.one, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(other, "m"), modelcalltest.CreateRow(s.one, "m"))
 	s.world.Provider.FailAlways("https://other.test/v1", tryNext(connectiondomain.FailureReasonUnavailable, 0))
 
 	if _, err := s.complete(t); err != nil {
@@ -374,17 +374,17 @@ func TestACallCanceledWhileTheProviderWorksReturnsTheCancellationAndSetsNothingA
 		_, err := s.callAs(ctx, consumerID, modelcalltest.CompleteOperation)
 		failed <- err
 	}()
-	<-s.world.Provider.Entered()
+	<-s.world.Provider.GetEntered()
 
 	cancel()
 
 	if err := <-failed; !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
-	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("the call went on to the next row after it was canceled")
 	}
-	s.world.Provider.Unblock(addressOne)
+	s.world.Provider.ReleaseCalls(addressOne)
 	result, err := s.complete(t)
 	if err != nil || result.Text != "answer from "+addressOne {
 		t.Errorf("the canceled connection was set aside: %v, %v", result, err)
@@ -397,7 +397,7 @@ func TestACallCanceledWhileTheProviderWorksReturnsTheCancellationAndSetsNothingA
 func TestARowWhoseKeyIsMissingIsSkippedAndTheNextRowServes(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	clear(s.world.Keys.Values)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(s.one, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.one, "m"))
 
 	_, err := s.complete(t)
 	if err == nil || err.Error() != "First: key missing" {
@@ -409,7 +409,7 @@ func TestARowWhoseTypeIsNotProvidedIsSkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	other := s.world.Add(t, modelcalltest.OtherServerTypeID, "Other", "https://other.test/v1", "sk-other")
 	s.world.SetAvailable(modelcalltest.ProviderPluginID, false)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(s.one, "m"), modelcalltest.Row(other, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.one, "m"), modelcalltest.CreateRow(other, "m"))
 
 	result, err := s.complete(t)
 
@@ -421,7 +421,7 @@ func TestARowWhoseTypeIsNotProvidedIsSkipped(t *testing.T) {
 func TestARowWhoseTypeDoesNotHaveTheOperationIsSkippedWithTheReason(t *testing.T) {
 	s := newSetup(t, modelcalltest.EmbedOperation)
 	completer := s.world.Add(t, modelcalltest.CompleterTypeID, "Completer", "https://completer.test/v1", "")
-	s.world.Rows.Set(consumerID, modelcalltest.EmbedOperation, modelcalltest.Row(completer, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.EmbedOperation, modelcalltest.CreateRow(completer, "m"))
 
 	_, err := s.callAs(t.Context(), consumerID, modelcalltest.EmbedOperation)
 
@@ -432,7 +432,7 @@ func TestARowWhoseTypeDoesNotHaveTheOperationIsSkippedWithTheReason(t *testing.T
 
 func TestARowThatNamesNoConnectionIsSkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connectiondomain.Row{ConnectionID: "c0000dead", Options: map[string]string{"model": "m"}}, modelcalltest.Row(s.two, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connectiondomain.Row{ConnectionID: "c0000dead", Options: map[string]string{"model": "m"}}, modelcalltest.CreateRow(s.two, "m"))
 
 	result, err := s.complete(t)
 
@@ -444,7 +444,7 @@ func TestARowThatNamesNoConnectionIsSkipped(t *testing.T) {
 func TestAConnectionThatChangedWhileItsKeyWasReadIsReadAgain(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	changes := 0
-	s.world.Keys.OnGet = func() {
+	s.world.Keys.RunBeforeGet = func() {
 		if changes == 0 {
 			s.world.ChangeRevision(t, s.one.ID)
 		}
@@ -456,21 +456,21 @@ func TestAConnectionThatChangedWhileItsKeyWasReadIsReadAgain(t *testing.T) {
 	if err != nil || result.Text != "answer from "+addressOne {
 		t.Errorf("Complete = %v, %v, want the answer of the first row", result, err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressOne)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressOne)); got != 1 {
 		t.Errorf("the first row was called %d times, want once with its new snapshot", got)
 	}
 }
 
 func TestAConnectionThatKeepsChangingWhileItsKeyIsReadIsSkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Keys.OnGet = func() { s.world.ChangeRevision(t, s.one.ID) }
+	s.world.Keys.RunBeforeGet = func() { s.world.ChangeRevision(t, s.one.ID) }
 
 	result, err := s.complete(t)
 
 	if err != nil || result.Text != "answer from "+addressTwo {
 		t.Errorf("Complete = %v, %v, want the answer of the second row", result, err)
 	}
-	if len(s.world.Provider.CallsTo(addressOne)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressOne)) != 0 {
 		t.Error("a provider was called with the snapshot of a connection that changed")
 	}
 }
@@ -492,7 +492,7 @@ func TestTheOperationAndThePayloadReachTheProviderWhole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := s.world.Provider.CallsTo(addressTwo)[0]
+	got := s.world.Provider.ListCallsTo(addressTwo)[0]
 	if got.Operation != modelcalltest.EmbedOperation || string(got.Payload) != "fix this" {
 		t.Errorf("call = %+v", got)
 	}
@@ -500,7 +500,7 @@ func TestTheOperationAndThePayloadReachTheProviderWhole(t *testing.T) {
 
 func TestTheDataFramesAndTheFinalPayloadReachTheConsumerInOrder(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, nil, "The answer", " is short.")
+	s.world.Provider.SetScript(addressOne, nil, "The answer", " is short.")
 
 	got, err := s.callAs(t.Context(), consumerID, modelcalltest.ChatOperation)
 

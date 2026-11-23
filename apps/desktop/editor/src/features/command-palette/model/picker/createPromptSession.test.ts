@@ -46,7 +46,7 @@ describe('a question session', () => {
     const session = createPromptSession()
     const asking = session.promptText({ title: 'Owner', value: 'Ann' })
 
-    session.view.value?.type('  Bob ')
+    session.view.value?.enterText('  Bob ')
     session.view.value?.submit()
 
     await expect(asking).resolves.toBe('Bob')
@@ -66,7 +66,7 @@ describe('a question session', () => {
     const choosing = session.selectOption({ title: 'Level', options: OPTIONS })
 
     expect(session.view.value?.groups[0]?.items.map((one) => one.id)).toStrictEqual(['low', 'high'])
-    session.view.value?.type('hi')
+    session.view.value?.enterText('hi')
     expect(session.view.value?.groups[0]?.items.map((one) => one.id)).toStrictEqual(['high'])
     session.dismiss()
     await choosing
@@ -145,7 +145,7 @@ describe('a question session', () => {
       const session = createPromptSession()
       const asking = session.promptText({ title: 'Owner', value: 'Ann' })
       session.view.value?.submit()
-      session.view.value?.type('Bob')
+      session.view.value?.enterText('Bob')
       session.view.value?.submit()
 
       await expect(asking).resolves.toBe('Ann')

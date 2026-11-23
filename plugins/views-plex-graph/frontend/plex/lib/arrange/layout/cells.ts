@@ -62,7 +62,7 @@ function listFromMiddle(count: number): readonly number[] {
   return order
 }
 
-function forEachCell(
+function visitCells(
   block: Block,
   shape: BlockShape,
   grid: Grid,
@@ -94,7 +94,7 @@ function forEachCell(
 
 export function listCells(block: Block, shape: BlockShape, grid: Grid): Position[] {
   const cells: Position[] = []
-  forEachCell(block, shape, grid, (x, y) => cells.push({ x, y }))
+  visitCells(block, shape, grid, (x, y) => cells.push({ x, y }))
   return cells
 }
 
@@ -118,7 +118,7 @@ export function scoreBlock(block: Block, shape: BlockShape, grid: Grid): Score {
   const stepY = cell.height + grid.lineGap
   let inside = 0
   let distance = 0
-  forEachCell(block, shape, grid, (x, y) => {
+  visitCells(block, shape, grid, (x, y) => {
     if (Math.abs(x) + cell.width / 2 <= window.x && Math.abs(y) + cell.height / 2 <= window.y)
       inside++
     distance += Math.hypot(x / stepX, y / stepY)
@@ -142,7 +142,8 @@ const addScores = (first: Score, second: Score): Score => ({
   distance: first.distance + second.distance,
 })
 
-export const sumScores = (scores: readonly Score[]): Score => scores.reduce(addScores, NO_SCORE)
+export const computeTotalScore = (scores: readonly Score[]): Score =>
+  scores.reduce(addScores, NO_SCORE)
 
 function getMaxColumns(block: Block, grid: Grid): number {
   const { gap, reach, window } = grid

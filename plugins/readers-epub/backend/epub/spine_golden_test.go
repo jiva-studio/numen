@@ -137,7 +137,7 @@ func TestAPictureIsNamedByTheEntryItIsGeneratedFrom(t *testing.T) {
 		t.Fatal("the document draws no picture")
 	}
 	for _, name := range named {
-		if _, err := book.Entry(name); err != nil {
+		if _, err := book.ReadEntry(name); err != nil {
 			t.Errorf("the markup draws %q, and the archive answers %v", name, err)
 		}
 	}
@@ -179,7 +179,7 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 
 func seamMarkup(t *testing.T) *epub.Markup {
 	t.Helper()
-	rendered, err := read(t, seamBook(t)).Markup(middleDoc)
+	rendered, err := read(t, seamBook(t)).ParseMarkup(middleDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}

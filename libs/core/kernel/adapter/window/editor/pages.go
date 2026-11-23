@@ -23,15 +23,15 @@ var pages embed.FS
 // answers no further requests.
 var errShut = wire.ErrShut
 
-// Pages is the interface itself, built by `make interface` and embedded in the
+// CreatePagesHandler is the interface itself, built by `make interface` and embedded in the
 // binary. A binary built without it reports an error.
-func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
+func CreatePagesHandler() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.
 type PluginServices interface {
 	http.Handler
-	// Serves reports whether an enabled plugin serves the service the path names.
-	Serves(urlPath string) bool
+	// CanServe reports whether an enabled plugin serves the service the path names.
+	CanServe(urlPath string) bool
 	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
 	ServeRoute(w http.ResponseWriter, r *http.Request)
 	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
@@ -57,12 +57,12 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
-	window    *PageAccess
-	routes    []Route
-	themes    numenv1connect.ThemeServiceHandler
-	plugins   PluginServices
-	pluginDir func(id string) (string, bool)
-	assets    *file.OpenVaultFile
+	window       *PageAccess
+	routes       []Route
+	themes       numenv1connect.ThemeServiceHandler
+	plugins      PluginServices
+	getPluginDir func(id string) (string, bool)
+	assets       *file.OpenVaultFile
 }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
@@ -102,7 +102,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 		}
 		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.Header)))
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
+		if isWhole && s.plugins != nil && s.plugins.CanServe(r.URL.Path) {
 			s.setRequestVault(r)
 			s.plugins.ServeHTTP(w, r)
 			return
@@ -190,7 +190,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 }
 
 func (s pageSet) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
-	if wire.ServePluginFile(w, r, s.pluginDir) {
+	if wire.ServePluginFile(w, r, s.getPluginDir) {
 		return
 	}
 	if !isWhole || s.plugins == nil {

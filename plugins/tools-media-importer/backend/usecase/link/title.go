@@ -22,7 +22,7 @@ func (l *Links) getPageTitle(ctx context.Context, parsed address.URL) string {
 	defer cancel()
 	fetchCtx, cancelTimeout := context.WithTimeout(fetchCtx, titleTimeout)
 	defer cancelTimeout()
-	meta, err := l.fetcher().GetMetadata(fetchCtx, string(parsed))
+	meta, err := l.getFetcher().GetMetadata(fetchCtx, string(parsed))
 	if err != nil {
 		return ""
 	}

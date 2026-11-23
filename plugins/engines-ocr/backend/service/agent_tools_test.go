@@ -162,7 +162,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 	}
 	documents := document.NewReader()
 	recognitions, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue, Documents: documents},
+		recognition.Host{GetVault: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), GetTexts: textsOf(texts), Queue: s.queue, Documents: documents},
 		func(context.Context) (ports.Recognizer, error) {
 			s.openCount.Add(1)
 			return s.recognizer, nil
@@ -655,10 +655,10 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	counted := countingVault{Vault: s.vault, counts: counts}
 	recognitions, err := recognition.New(
 		recognition.Host{
-			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: func(id domain.VaultID) recognition.Folder {
+			GetVault: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: func(id domain.VaultID) recognition.Folder {
 				return countingStore{Folder: s.vault.Store().With(id), counts: counts}
 			},
-			Texts: textsOf(s.texts), Queue: s.queue, Documents: document.NewReader(),
+			GetTexts: textsOf(s.texts), Queue: s.queue, Documents: document.NewReader(),
 		},
 		func(context.Context) (ports.Recognizer, error) {
 			s.openCount.Add(1)

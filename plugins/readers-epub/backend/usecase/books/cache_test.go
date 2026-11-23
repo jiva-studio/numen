@@ -159,7 +159,7 @@ func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	books.Close()
-	body, err := book.archive.Entry("EPUB/cover.png")
+	body, err := book.archive.ReadEntry("EPUB/cover.png")
 	if err != nil || !bytes.Equal(body, testsupport.GetPNGBytes()) {
 		t.Fatalf("entry = %q, %v, want the picture's bytes while the request reads", body, err)
 	}

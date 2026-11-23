@@ -67,7 +67,7 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media fetch.Media) (
 		// again after the first was deleted points at it.
 		return nil, kept.Size, l.publishCopy(ctx, link, kept.Name)
 	}
-	if !l.fetcher().CanCopy(string(link.Address)) {
+	if !l.getFetcher().CanCopy(string(link.Address)) {
 		return nil, 0, ErrNotCopyable
 	}
 	task := host.Task{
@@ -80,7 +80,7 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media fetch.Media) (
 
 func (l *Links) endCopy(ctx context.Context, link Link, media fetch.Media, task host.Task) (int64, error) {
 	defer l.release("copy", link, link.Key)
-	size, err := l.copy(ctx, l.fetcher(), l.settings(), link, media, task)
+	size, err := l.copy(ctx, l.getFetcher(), l.getSettings(), link, media, task)
 	l.endTask(ctx, task, err)
 	return size, err
 }

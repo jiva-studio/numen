@@ -58,11 +58,25 @@ type noteRemoveOutput struct {
 func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(geologyVault)
+<<<<<<< HEAD
 	v.WriteFile("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
 	v.WriteFile("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 	v.WriteFile("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
 	v.WriteFile("Fossils.md", "Shells kept in limestone.\n")
 	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
+||||||| a8fdfeeb1
+	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
+	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
+	v.File("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
+	v.File("Fossils.md", "Shells kept in limestone.\n")
+	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
+=======
+	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
+	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
+	v.File("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
+	v.File("Fossils.md", "Shells kept in limestone.\n")
+	registry, err := service.New(vaultsOf(v)).WithVaultList(v).BuildRegistry()
+>>>>>>> origin/main
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -339,7 +353,7 @@ func newLimitedBatchRegistry(t *testing.T) (*tools.Registry, *[]int) {
 	t.Helper()
 	v, _ := newGeologyVault(t)
 	counts := &[]int{}
-	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}.vaults()).Registry()
+	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}.vaults()).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

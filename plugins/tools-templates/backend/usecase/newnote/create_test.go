@@ -76,8 +76,16 @@ func getRequest(vault *hosttest.Vault, template, folder string, values map[strin
 }
 
 func getNamedRequest(vault *hosttest.Vault, template, folder, name string, values map[string]string) newnote.Request {
+<<<<<<< HEAD
 	content, _ := vault.ReadContent(template)
 	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
+||||||| a8fdfeeb1
+	content, _ := vault.Content(template)
+	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
+=======
+	content, _ := vault.Content(template)
+	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.ComputeEtag(content)}
+>>>>>>> origin/main
 }
 
 func getContent(t *testing.T, vault *hosttest.Vault, path string) string {
@@ -777,12 +785,12 @@ func TestRefuseATemplateThatChangedSinceItWasListed(t *testing.T) {
 
 		first, second := list(vault), list(vault)
 
-		if first.Etag == "" || first.Etag != second.Etag || first.Etag != newnote.Etag(asking) {
+		if first.Etag == "" || first.Etag != second.Etag || first.Etag != newnote.ComputeEtag(asking) {
 			t.Errorf("etags = %q and %q", first.Etag, second.Etag)
 		}
 	})
 	t.Run("lists another etag for another template", func(t *testing.T) {
-		if newnote.Etag(asking) == newnote.Etag(asking+" ") {
+		if newnote.ComputeEtag(asking) == newnote.ComputeEtag(asking+" ") {
 			t.Error("two templates have one etag")
 		}
 	})
@@ -795,7 +803,7 @@ func TestRefuseATemplateThatChangedSinceItWasListed(t *testing.T) {
 		}
 	})
 	for _, c := range []struct{ name, etag string }{
-		{"an etag of another text", newnote.Etag("# {{ .title }}\n")},
+		{"an etag of another text", newnote.ComputeEtag("# {{ .title }}\n")},
 		{"no etag", ""},
 	} {
 		t.Run("makes no note for "+c.name, func(t *testing.T) {

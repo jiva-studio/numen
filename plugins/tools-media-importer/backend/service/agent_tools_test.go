@@ -142,10 +142,10 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	sites := fakeSites{video: download.NewMock(webpage.New()), release: release}
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
-		Vaults: textVault{
+		GetVault: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
-		Store: foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
+		Store: foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}
@@ -153,7 +153,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 		func() ports.Fetcher { return sites },
 		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	registry, err := NewTools(links).Registry()
+	registry, err := NewTools(links).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

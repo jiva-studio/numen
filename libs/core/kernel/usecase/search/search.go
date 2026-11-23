@@ -175,7 +175,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if err != nil {
 		return nil, err
 	}
-	return u.readForQuery(ctx, v, query, foldScores(collapse(merge(rankings...), rankings, p.Each, p.Limit), rankings))
+	return u.readForQuery(ctx, v, query, mergeScores(collapse(merge(rankings...), rankings, p.Each, p.Limit), rankings))
 }
 
 // asked is one participant a search asks, with the number of search results it ranks and whether its failure

@@ -22,7 +22,7 @@ func (s *Reader) readPlacedBook(ctx context.Context, path string) (*epub.Book, e
 		return nil, newError(KindInvalidArgument, "path required")
 	}
 	vaultID := getVault(ctx)
-	files := s.vaults(getVault(ctx))
+	files := s.getVault(getVault(ctx))
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)

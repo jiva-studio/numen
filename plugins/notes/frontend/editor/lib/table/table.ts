@@ -111,7 +111,7 @@ export const writeCell = (text: string): string =>
     .trim()
 
 /** A row of empty cells, written under the table. */
-export const emptyRow = (width: number): string => `\n|${' |'.repeat(width)}`
+export const createEmptyRow = (width: number): string => `\n|${' |'.repeat(width)}`
 
 /**
  * The table with one more column.

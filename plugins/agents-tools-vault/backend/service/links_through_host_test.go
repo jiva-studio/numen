@@ -84,7 +84,7 @@ func newLinkHostVault(t *testing.T) (*hosttest.Vault, *linkCalls, *tools.Registr
 	t.Helper()
 	v, _ := newLinkedGeologyVault(t)
 	calls := &linkCalls{}
-	registry, err := service.New(linkHostVault{Vault: v, calls: calls}.vaults()).Registry()
+	registry, err := service.New(linkHostVault{Vault: v, calls: calls}.vaults()).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

@@ -111,7 +111,7 @@ func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 		t.Errorf("FindOffset on missing file: %v, want not found", err)
 	}
 	deniedBooks := NewReader(func(id domain.VaultID) host.FileReader {
-		return statFailingFiles{FileReader: books.vaults(id), err: os.ErrPermission}
+		return statFailingFiles{FileReader: books.getVault(id), err: os.ErrPermission}
 	})
 	t.Cleanup(deniedBooks.Close)
 	if _, err := deniedBooks.GetCfi(t.Context(), "guided.epub", 0); codeOf(err) != KindNotFound {

@@ -21,7 +21,7 @@ func stamp(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-func instant(nanos int64) time.Time {
+func parseInstant(nanos int64) time.Time {
 	if nanos == 0 {
 		return time.Time{}
 	}

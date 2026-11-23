@@ -25,9 +25,9 @@ describe('a text typed', () => {
     const run = vi.fn((_query: string) => Promise.resolve())
     const { search } = useDebouncedSearch()
 
-    started.push(search('q', { blank: vi.fn(), run }))
+    started.push(search('q', { handleBlank: vi.fn(), run }))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
-    started.push(search(' qu ', { blank: vi.fn(), run }))
+    started.push(search(' qu ', { handleBlank: vi.fn(), run }))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
     expect(run).not.toHaveBeenCalled()
 
@@ -40,7 +40,7 @@ describe('a text typed', () => {
     const blank = vi.fn()
     const pending = vi.fn()
     const run = vi.fn((_query: string) => Promise.resolve())
-    await useDebouncedSearch().search('  ', { blank, pending, run })
+    await useDebouncedSearch().search('  ', { handleBlank: blank, markPending: pending, run })
 
     expect(blank).toHaveBeenCalledTimes(1)
     expect(pending).not.toHaveBeenCalled()
@@ -51,7 +51,7 @@ describe('a text typed', () => {
     const run = vi.fn((_query: string) => Promise.resolve())
     const { search, cancel } = useDebouncedSearch()
 
-    started.push(search('q', { blank: vi.fn(), run }))
+    started.push(search('q', { handleBlank: vi.fn(), run }))
     cancel()
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
 
@@ -65,7 +65,7 @@ describe('a text typed', () => {
       wait: async (ms) => {
         waited.push(ms)
       },
-    }).search('q', { blank: vi.fn(), run })
+    }).search('q', { handleBlank: vi.fn(), run })
 
     expect(waited).toStrictEqual([SEARCH_DEBOUNCE_MS])
     expect(run).toHaveBeenCalledTimes(1)

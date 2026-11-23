@@ -426,7 +426,7 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 		copyBytes: []byte("data"),
 	}
 	copyMaxSize = new(int64)
-	l = New(Host{Vaults: func(id domain.VaultID) Vault {
+	l = New(Host{GetVault: func(id domain.VaultID) Vault {
 		// A link names the vault it was made in, so the hooks answer for that vault too.
 		if id == "" || id == v.Vault().ID {
 			return Vault{Files: hv, Writer: hv}
@@ -436,7 +436,7 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	}, Store: func(id domain.VaultID) Folder {
 		hs.withVault = id
 		return Folder{Files: hs, Writer: hs}
-	}, Texts: func(id domain.VaultID) Texts {
+	}, GetTexts: func(id domain.VaultID) Texts {
 		ht.withVault = id
 		return ht
 	}, Queue: hq, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},

@@ -5,7 +5,7 @@
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import { requests } from '../requests'
-import { getSettingInForce, keepSetting, mockVaultState, pendingStream } from '../answers'
+import { getSettingInForce, keepSetting, mockVaultState, createPendingStream } from '../answers'
 import { toWireSetting } from '../settingsWire'
 
 const MODE_CODES = {
@@ -49,7 +49,7 @@ export const settingsAnswers = {
       version += 1n
       return { settingsJson: getFileText(), version }
     },
-    watchSettings: pendingStream,
+    watchSettings: createPendingStream,
   },
   theme: {
     listThemes: () => ({
@@ -67,7 +67,7 @@ export const settingsAnswers = {
     readTheme: (request: { name: string }) => ({
       css: `:root { --numen-surface: ${request.name} }`,
     }),
-    watchThemes: pendingStream,
+    watchThemes: createPendingStream,
   },
   pluginCatalog: {
     listCatalog: () => ({ entries: [], sourceErrors: [] }),

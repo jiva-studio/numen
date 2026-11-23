@@ -57,7 +57,7 @@ func newSession(t *testing.T) *session {
 		Editor:    edit.New(vault, vault, tasks, lock),
 		Completer: complete.New(vault, vault, tasks, lock),
 	}
-	registry, err := tasktools.New(oneVault{scope: scope}, fixedClock{}).Registry()
+	registry, err := tasktools.New(oneVault{scope: scope}, fixedClock{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

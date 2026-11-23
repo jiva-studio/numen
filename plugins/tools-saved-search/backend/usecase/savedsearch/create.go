@@ -58,26 +58,26 @@ type Settings struct {
 // Dependencies are the notes of the vaults, the runner of the searches, the settings at the time of a call,
 // the clock that stamps the id of a new note and the entropy of its random bits.
 type Dependencies struct {
-	Open     func(id domain.VaultID) ports.Notes
-	Runner   Runner
-	Settings func() Settings
-	Clock    ports.Clock
-	Entropy  ports.Entropy
+	Open        func(id domain.VaultID) ports.Notes
+	Runner      Runner
+	GetSettings func() Settings
+	Clock       ports.Clock
+	Entropy     ports.Entropy
 }
 
 // UseCase writes saved search notes.
 type UseCase struct {
-	open     func(id domain.VaultID) ports.Notes
-	runner   Runner
-	settings func() Settings
-	clock    ports.Clock
-	entropy  ports.Entropy
+	open        func(id domain.VaultID) ports.Notes
+	runner      Runner
+	getSettings func() Settings
+	clock       ports.Clock
+	entropy     ports.Entropy
 }
 
 // New returns the use case over the dependencies.
 func New(dependencies Dependencies) *UseCase {
 	return &UseCase{
-		open: dependencies.Open, runner: dependencies.Runner, settings: dependencies.Settings, clock: dependencies.Clock,
+		open: dependencies.Open, runner: dependencies.Runner, getSettings: dependencies.GetSettings, clock: dependencies.Clock,
 		entropy: dependencies.Entropy,
 	}
 }
@@ -86,7 +86,7 @@ func New(dependencies Dependencies) *UseCase {
 // setting, scans it, and runs it at once; a note with no query is written and not run. A query the core reports problems of returns them in the output
 // and writes nothing.
 func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInput) (Saved, error) {
-	settings := u.settings()
+	settings := u.getSettings()
 	hasQuery := strings.TrimSpace(in.Query) != ""
 	if problems, err := u.checkQuery(ctx, vault, in.Query); err != nil || len(problems) > 0 {
 		return newProblemOutput(problems), err

@@ -15,13 +15,13 @@ type Deps struct {
 	Cancels     Cancels
 	Tasks       Tasks
 	Clock       machineport.Clock
-	After       func(d time.Duration) <-chan time.Time
+	CreateTimer func(d time.Duration) <-chan time.Time
 	Policy      searchrun.Policy
 	Slots       SearchSlots
 	Generations IndexGenerations
 	Run         RunQuery
 	Names       PluginNames
-	Catalog     func() searchquery.Catalog
+	GetCatalog  func() searchquery.Catalog
 	MaxResults  int
 }
 
@@ -35,7 +35,7 @@ type SearchRuns struct {
 
 // NewSearchRuns creates the use cases of the searches over deps.
 func NewSearchRuns(deps Deps) SearchRuns {
-	kept := NewSearches(deps.Store, deps.Cancels, deps.Tasks, deps.Clock, deps.After, deps.Policy)
+	kept := NewSearches(deps.Store, deps.Cancels, deps.Tasks, deps.Clock, deps.CreateTimer, deps.Policy)
 	return SearchRuns{
 		Start: &StartSearch{
 			kept: kept, generations: deps.Generations, run: deps.Run, names: deps.Names,
@@ -43,6 +43,6 @@ func NewSearchRuns(deps Deps) SearchRuns {
 		},
 		Get:       &GetSearch{kept: kept, generations: deps.Generations},
 		Remove:    &DeleteSearch{kept: kept},
-		Functions: &ListSearchFunctions{catalog: deps.Catalog},
+		Functions: &ListSearchFunctions{getCatalog: deps.GetCatalog},
 	}
 }

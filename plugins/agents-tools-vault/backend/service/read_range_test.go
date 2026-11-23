@@ -133,7 +133,7 @@ func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Regi
 	registry, err := service.New(vault.vaults()).WithLibrary(func(id domain.VaultID) service.Library {
 		on := l.texts.With(id)
 		return service.Library{Versions: on, Texts: countingTexts{TextReader: on, calls: counted}, Search: l.search.With(id)}
-	}, host.SearchFunctions{}).Registry()
+	}, host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.Tex
 func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing.T) {
 	l := newLibrary(t)
 	l.texts.SetPageSize(2)
-	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(l.texts, l.search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(l.texts, l.search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +340,7 @@ func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.
 	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(func(id domain.VaultID) service.Library {
 		on := l.texts.With(id)
 		return service.Library{Versions: on, Texts: repeatingTexts{TextReader: on}, Search: l.search.With(id)}
-	}, host.SearchFunctions{}).Registry()
+	}, host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -34,7 +34,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 	chemistry := texts.With("Chemistry")
 	chemistry.WriteFile("tiny.pdf", raw)
 	chemistry.SetStore(testsupport.PluginID, other.Store())
-	writer := testsupport.NewWriter(t, testsupport.FilesOf(current), current, texts, hosttest.NewQueue())
+	writer := testsupport.NewWriter(t, testsupport.NewFiles(current), current, texts, hosttest.NewQueue())
 	testsupport.CreateText(t, writer, extract.Request{Vault: "Chemistry", Path: "tiny.pdf"})
 	return twoVaults{current: current, other: other, texts: texts, writer: writer}
 }

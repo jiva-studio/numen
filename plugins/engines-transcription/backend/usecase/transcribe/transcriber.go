@@ -29,12 +29,12 @@ const batchSize = 16
 // Transcriber transcribes the recordings requested by the user, one at a time through the core's queue,
 // and reports each as a task and as a timed text version that grows as the transcript is written.
 type Transcriber struct {
-	files   Files
-	stores  func(domain.VaultID) Folder
-	texts   func(domain.VaultID) host.TextVersions
-	queue   host.Queue
-	engines Engines
-	report  func(what string, err error)
+	files     Files
+	getFolder func(domain.VaultID) Folder
+	getTexts  func(domain.VaultID) host.TextVersions
+	queue     host.Queue
+	engines   Engines
+	report    func(what string, err error)
 
 	closing   chan struct{}
 	closeOnce sync.Once
@@ -53,7 +53,7 @@ func NewTranscriber(
 	report func(what string, err error),
 ) *Transcriber {
 	return &Transcriber{
-		files: files, stores: stores, texts: texts, queue: queue, engines: engines, report: report,
+		files: files, getFolder: stores, getTexts: texts, queue: queue, engines: engines, report: report,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{}, background: map[string]bool{},
 	}
@@ -150,7 +150,7 @@ func (t *Transcriber) start(ctx context.Context, vault domain.VaultID, path stri
 
 func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.wg.Done()
-	release := sync.OnceFunc(func() { t.unclaim(key) })
+	release := sync.OnceFunc(func() { t.releaseClaim(key) })
 	defer release()
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
@@ -190,7 +190,7 @@ func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
 }
 
 func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
-	listing, err := t.texts(vault).ListVersions(ctx, path)
+	listing, err := t.getTexts(vault).ListVersions(ctx, path)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
@@ -225,7 +225,7 @@ func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (
 }
 
 func (t *Transcriber) clearRunning(key string) {
-	t.unclaim(key)
+	t.releaseClaim(key)
 	t.wg.Done()
 }
 
@@ -245,7 +245,7 @@ func (t *Transcriber) isBackground(taskID string) bool {
 	return t.background[taskID]
 }
 
-func (t *Transcriber) unclaim(key string) {
+func (t *Transcriber) releaseClaim(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.running, key)

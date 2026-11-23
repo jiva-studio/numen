@@ -1,5 +1,5 @@
 import { createArrowTransform, createPath, createReadingPath } from './arrange'
-import { edgeKey, type PlacedEdge } from './edge'
+import { buildEdgeKey, type PlacedEdge } from './edge'
 import type { EdgeArrow } from '../../types'
 
 /** Rendered edge line with its SVG path, arrowheads, and titles. */
@@ -32,7 +32,7 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
   edges.map((edge) => ({
     edge,
     key: `${edge.from}->${edge.to}`,
-    pair: edgeKey(edge),
+    pair: buildEdgeKey(edge),
     d: createPath(edge),
     arrows: (edge.arrowheads ?? []).map((head) => ({
       end: head.end,

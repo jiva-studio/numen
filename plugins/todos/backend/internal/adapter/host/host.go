@@ -14,8 +14,8 @@ type Vault struct {
 	client *sdkhost.Client
 }
 
-// FromEnv connects to the host the environment of the plugin process names.
-func FromEnv() (*Vault, error) {
+// NewFromEnv connects to the host the environment of the plugin process names.
+func NewFromEnv() (*Vault, error) {
 	client, err := sdkhost.NewClientFromEnv()
 	if err != nil {
 		return nil, err

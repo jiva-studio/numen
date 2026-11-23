@@ -7,7 +7,7 @@
  */
 import { createThreadPath, type Drop, type Size } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
-import { ghostNode, getHandle, type PlacedNode, type Position } from '../../lib/node'
+import { createGhostNode, getHandle, type PlacedNode, type Position } from '../../lib/node'
 import type { PlexRelation } from '../../../types'
 
 type Thread = ReturnType<typeof createThreadPath>
@@ -55,7 +55,7 @@ export function getPendingThread(frame: PlexFrame, target: PendingThreadTarget):
 }
 
 export interface ReachGhostOptions {
-  readonly relationName: (relation: PlexRelation) => string
+  readonly getRelationName: (relation: PlexRelation) => string
   readonly nodeSize: Size
 }
 
@@ -69,8 +69,8 @@ export function getReachGhost(
   options: ReachGhostOptions,
 ): PlacedNode | null {
   if (outcome?.kind !== 'create' || !to) return null
-  return ghostNode(
-    { id: 'ghost', title: options.relationName(outcome.relation), relation: outcome.relation },
+  return createGhostNode(
+    { id: 'ghost', title: options.getRelationName(outcome.relation), relation: outcome.relation },
     to,
     options.nodeSize,
   )
@@ -100,7 +100,7 @@ export function getDraggedShape(
 
   return {
     thread: createThreadPath(focus, to, options.curvature),
-    ghost: ghostNode(
+    ghost: createGhostNode(
       { id: 'dragged', title: options.dropName(relation), relation },
       to,
       options.nodeSize,

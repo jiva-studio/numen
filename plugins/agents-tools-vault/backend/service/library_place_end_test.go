@@ -43,7 +43,7 @@ func newRiverLibrary(t *testing.T) *tools.Registry {
 		{Path: riverGuidePath, Text: "The kingfisher dives for minnows.", PlaceLabel: "page 1", Start: 0, Length: 33, Selector: `{"page":1}`},
 	})
 
-	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

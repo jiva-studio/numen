@@ -74,7 +74,7 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 }
 
 func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (result Result, err error) {
-	store, texts := p.host.Store(req.Vault), p.host.Texts(req.Vault)
+	store, texts := p.host.Store(req.Vault), p.host.GetTexts(req.Vault)
 	source, err := p.findSource(ctx, texts, req.Path, req.Source)
 	if err != nil {
 		return Result{}, err

@@ -96,7 +96,7 @@ func newWire(t *testing.T) *wire {
 		func(context.Context) (ports.Recognizer, error) { return w.recognizer, nil }, func(string, error) {})
 	t.Cleanup(w.transcriber.Close)
 	requests := transcribe.NewRequests(w.transcriber, func(id domain.VaultID) transcribe.Vault { return vault.With(id) })
-	registry, err := newTools(requests).registry()
+	registry, err := newTools(requests).buildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

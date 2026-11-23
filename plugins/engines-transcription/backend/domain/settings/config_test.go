@@ -3,8 +3,8 @@ package settings
 import "testing"
 
 func TestDefaults(t *testing.T) {
-	cfg := Defaults()
-	if cfg.Runtime != "" || cfg.Dir != "" || cfg.Threads != 0 || cfg.Workers != 0 || cfg.Progress != nil || !cfg.ShouldDownload {
+	cfg := NewDefaultConfig()
+	if cfg.Runtime != "" || cfg.Dir != "" || cfg.Threads != 0 || cfg.Workers != 0 || cfg.ReportProgress != nil || !cfg.ShouldDownload {
 		t.Errorf("Defaults() = %+v", cfg)
 	}
 	if cfg.Model != GetModels()[0] {
@@ -17,10 +17,10 @@ func TestDefaults(t *testing.T) {
 }
 
 func TestUnsetThreadsTakeTheCoresGiven(t *testing.T) {
-	if got := Defaults().GetThreads(7); got != 7 {
+	if got := NewDefaultConfig().GetThreads(7); got != 7 {
 		t.Errorf("unset threads gave %d, want 7", got)
 	}
-	cfg := Defaults()
+	cfg := NewDefaultConfig()
 	cfg.Threads = 1
 	if got := cfg.GetThreads(7); got != 1 {
 		t.Errorf("1 thread gave %d", got)

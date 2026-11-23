@@ -116,16 +116,16 @@ func (l *Loopback) getHandler() http.Handler {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
 		}
-		l.files.File(w, r, id, path)
+		l.files.ServeFile(w, r, id, path)
 	})
 }
 
-// Address returns where the file at a path in a vault is read from, or nowhere
+// BuildAddress returns where the file at a path in a vault is read from, or nowhere
 // for a build that opened no socket or a socket that stopped answering.
 // The address names the bytes the file had when it was given out, so a player
 // never splices two recordings. A file rewritten under the same name is a
 // different address.
-func (l *Loopback) Address(vault domain.Vault, ref domain.FileStat) string {
+func (l *Loopback) BuildAddress(vault domain.Vault, ref domain.FileStat) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}
@@ -146,11 +146,11 @@ func (l *Loopback) Close(ctx context.Context) error {
 // hold is answered with.
 const errNoVaultNamed = "no vault of that name"
 
-// File serves one file of one vault, as it is read.
+// ServeFile serves one file of one vault, as it is read.
 //
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
-func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath string) {
+func (h *FileServer) ServeFile(w http.ResponseWriter, r *http.Request, id, targetPath string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -196,7 +196,7 @@ func parseFingerprint(query url.Values) (domain.FileStat, error) {
 	if err != nil {
 		return domain.FileStat{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return domain.FileStat{Size: size, ModTime: instant(mtime)}, nil
+	return domain.FileStat{Size: size, ModTime: parseInstant(mtime)}, nil
 }
 
 func stamp(t time.Time) int64 {
@@ -206,7 +206,7 @@ func stamp(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-func instant(nanos int64) time.Time {
+func parseInstant(nanos int64) time.Time {
 	if nanos == 0 {
 		return time.Time{}
 	}

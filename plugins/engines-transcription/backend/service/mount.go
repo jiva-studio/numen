@@ -52,10 +52,10 @@ func (a *App) Mount(s *server.Server) error {
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*feed.Automatic, error) {
 	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock, hosted.FetchModelFile))
 	report := process.Process{}.ReportError
-	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, report)
-	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
+	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.GetVault), hosted.Store, hosted.GetTexts, hosted.Queue, holder.GetRecognizer, report)
+	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.GetVault(id) })
 	feeds := func(id domain.VaultID) feed.Vault {
-		return feed.Vault{Feed: hosted.Vaults(id), Store: hosted.Store(id)}
+		return feed.Vault{Feed: hosted.GetVault(id), Store: hosted.Store(id)}
 	}
 	auto := feed.NewAutomatic(newFollower(requests, feeds, report), requests.GetShownVaultID, report)
 	s.SetUpdateConfig(func(values map[string]string) {
@@ -66,7 +66,7 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	if err != nil {
 		return nil, err
 	}
-	registry, err := newTools(requests).registry()
+	registry, err := newTools(requests).buildRegistry()
 	if err != nil {
 		return nil, err
 	}

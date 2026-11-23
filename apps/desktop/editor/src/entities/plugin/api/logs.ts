@@ -16,20 +16,20 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 export const createLogHost = (
   logService: WindowClients['logService'],
 ): ((pluginId: string) => LogHost) => {
-  const logs = createLogClient(logService)
+  const logClient = createLogClient(logService)
   return (pluginId: string) => ({
-    getLevel: () => logs.getLogLevel(),
-    setLevel: (level) => logs.setLogLevel(level),
+    getLevel: () => logClient.getLogLevel(),
+    setLevel: (level) => logClient.setLogLevel(level),
     watch: (handler) => {
       const listening = new AbortController()
-      const follows = createFollower({
+      const follower = createFollower({
         isOpen: () => !listening.signal.aborted,
         setLost: () => undefined,
         wait,
       })
       runInBackground(
-        follows(
-          () => logs.watchLogs(listening.signal),
+        follower(
+          () => logClient.watchLogs(listening.signal),
           (entries) => handler(entries),
         ),
         () => undefined,
@@ -37,7 +37,7 @@ export const createLogHost = (
       return { dispose: () => listening.abort() }
     },
     write: (entry) =>
-      logs.writeLog({
+      logClient.writeLog({
         level: entry.level,
         source: pluginId,
         message: entry.message,

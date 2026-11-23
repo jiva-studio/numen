@@ -164,15 +164,15 @@ func (t fixedTypes) GetType(typeID string) (connection.Type, bool) {
 
 // Keys is a key store in memory. OnGet runs before every read.
 type Keys struct {
-	mu     sync.Mutex
-	Values map[string]string
-	OnGet  func()
+	mu           sync.Mutex
+	Values       map[string]string
+	RunBeforeGet func()
 }
 
 // GetKey returns the key stored under the name.
 func (k *Keys) GetKey(_ context.Context, name string) (string, error) {
-	if k.OnGet != nil {
-		k.OnGet()
+	if k.RunBeforeGet != nil {
+		k.RunBeforeGet()
 	}
 	k.mu.Lock()
 	defer k.mu.Unlock()
@@ -316,8 +316,8 @@ func (w *World) ChangeRevision(t *testing.T, connectionID string) {
 	}
 }
 
-// Row is a row that names the connection with the model as its option.
-func Row(entry Entry, model string) connection.Row {
+// CreateRow is a row that names the connection with the model as its option.
+func CreateRow(entry Entry, model string) connection.Row {
 	return connection.Row{ConnectionID: entry.ID, Options: map[string]string{ModelOption: model}}
 }
 
