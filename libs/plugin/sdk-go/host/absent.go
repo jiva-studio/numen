@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 var (
@@ -15,8 +17,6 @@ var (
 	ErrHashMismatch = errors.New("the bytes do not have the hash of the entry")
 	// ErrChanged is what an eviction gets when the file does not have the hash it was asked to drop.
 	ErrChanged = errors.New("the file has changes that are not the content named")
-
-	errAbsentNotImplemented = errors.New("not implemented")
 )
 
 // AbsentFile is a file the vault lists whose bytes are not on this device. Hash is the SHA-256 of the
@@ -47,12 +47,45 @@ type AbsentFiles interface {
 
 var _ AbsentFiles = (*Client)(nil)
 
-func (c *Client) PutAbsentFiles(context.Context, []AbsentFile) error { return errAbsentNotImplemented }
-
-func (c *Client) ListAbsentFiles(context.Context) ([]AbsentFile, error) {
-	return nil, errAbsentNotImplemented
+func (c *Client) PutAbsentFiles(ctx context.Context, files []AbsentFile) error {
+	sent := make([]*v1.HostAbsentFile, len(files))
+	for i, file := range files {
+		sent[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedAtMs: file.ModTime.UnixMilli(), Hash: file.Hash}
+	}
+	res, err := c.vaults.PutAbsentFiles(ctx, request(c, &v1.PutAbsentFilesRequest{Files: sent}))
+	if err != nil {
+		return readError(err)
+	}
+	return fail(res.Msg.GetError())
 }
 
-func (c *Client) FillFile(context.Context, string, string) error { return errAbsentNotImplemented }
+func (c *Client) ListAbsentFiles(ctx context.Context) ([]AbsentFile, error) {
+	res, err := c.vaults.ListAbsentFiles(ctx, request(c, &v1.ListAbsentFilesRequest{}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	listed := make([]AbsentFile, len(res.Msg.GetFiles()))
+	for i, file := range res.Msg.GetFiles() {
+		listed[i] = AbsentFile{Path: file.GetPath(), Size: file.GetSize(), ModTime: time.UnixMilli(file.GetModifiedAtMs()), Hash: file.GetHash()}
+	}
+	return listed, nil
+}
 
-func (c *Client) EvictFile(context.Context, string, string) error { return errAbsentNotImplemented }
+func (c *Client) FillFile(ctx context.Context, path, storeName string) error {
+	res, err := c.vaults.FillFile(ctx, request(c, &v1.FillFileRequest{Path: path, StoreName: storeName}))
+	if err != nil {
+		return readError(err)
+	}
+	return fail(res.Msg.GetError())
+}
+
+func (c *Client) EvictFile(ctx context.Context, path, expectedHash string) error {
+	res, err := c.vaults.EvictFile(ctx, request(c, &v1.EvictFileRequest{Path: path, ExpectedHash: expectedHash}))
+	if err != nil {
+		return readError(err)
+	}
+	return fail(res.Msg.GetError())
+}

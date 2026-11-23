@@ -196,7 +196,7 @@ func (u Scan) indexChanged(
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		if ref.Kind != domain.KindNote {
+		if ref.Kind != domain.KindNote || ref.IsAbsent {
 			// Taking the text out of a source of another kind is its own step,
 			// on its own schedule.
 			res.Assets++
