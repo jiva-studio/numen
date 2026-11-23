@@ -52,7 +52,7 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
-	snapshot, err := readSettings(cfg.buildSettingsWiring())()
+	snapshot, err := createSettingsStore(cfg.buildSettingsWiring()).ReadJSON()
 	content, response := snapshot.Content, snapshot.Path
 	if err == nil {
 		t.Fatalf("settings that are not JSON were read out as %q", content)
@@ -65,7 +65,7 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if snapshot, err := readSettings(createSettingsWiring(Config{}, nil, nil, NewResources()))(); err == nil || snapshot.Path != "" {
+	if snapshot, err := createSettingsStore(createSettingsWiring(Config{}, nil, nil, NewResources())).ReadJSON(); err == nil || snapshot.Path != "" {
 		t.Errorf("settings were read from %q: %v", snapshot.Path, err)
 	}
 	err := getSettingsWriter(createSettingsWiring(Config{}, nil, nil, NewResources()))([]settings.Setting{
@@ -206,7 +206,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
-	got, err := (Config{Paths: Paths{RegistryPath: named}}).openRegistry()
+	got, err := openVaultRegistry(named)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
-	got, err = (Config{}).openRegistry()
+	got, err = openVaultRegistry("")
 	if err != nil {
 		t.Fatal(err)
 	}
