@@ -8,12 +8,11 @@ import { applyAnswer, createAccount, getMessage } from './subscriptionAccount'
 const REFRESH_MS = { noIdentity: 3000, ready: 10_000, unreachable: 30_000 } as const
 const SERVER_SETTING = 'server'
 
+/** refreshMs is the wait before the next read by the last status; settings hold the server address the card reads and follows. */
 export interface SubscriptionSessionOptions {
   readonly client?: SubscriptionClient | undefined
   readonly openExternal: (url: string) => Promise<Result<null>>
-  /** How long the card waits before it asks again, by what it saw last. */
   readonly refreshMs?: Readonly<Record<'noIdentity' | 'ready' | 'unreachable', number>> | undefined
-  /** Where the address of the sync server is read and followed. */
   readonly settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
 }
 

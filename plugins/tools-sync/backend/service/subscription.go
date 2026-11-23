@@ -14,7 +14,7 @@ import (
 // GetSubscription returns the subscription of the account. A device with no identity gets an empty answer and
 // the server is not asked.
 func (b *Backend) GetSubscription(ctx context.Context, _ api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
-	none := api.GetSubscriptionResponse{HasIdentity: false, Phase: "", PeriodEndAt: "", WritesEndAt: "", DeleteAt: "", Plan: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false}
+	none := getNoSubscriptionResponse()
 	_, err := b.deps.Identity.GetPublicIdentity(ctx)
 	if errors.Is(err, sessiondomain.ErrNoIdentity) {
 		return none, nil
@@ -27,6 +27,10 @@ func (b *Backend) GetSubscription(ctx context.Context, _ api.GetSubscriptionRequ
 		return none, err
 	}
 	return getSubscriptionResponse(state), nil
+}
+
+func getNoSubscriptionResponse() api.GetSubscriptionResponse {
+	return api.GetSubscriptionResponse{HasIdentity: false, Phase: "", PeriodEndAt: "", WritesEndAt: "", DeleteAt: "", Plan: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false}
 }
 
 func getSubscriptionResponse(state subscription.State) api.GetSubscriptionResponse {
@@ -67,12 +71,13 @@ func (b *Backend) CreateCheckout(ctx context.Context, request api.CreateCheckout
 // ChangePlan moves the active subscription to the plan and returns the subscription after the change. A device
 // with no identity gets ErrNoIdentity and the server is not asked.
 func (b *Backend) ChangePlan(ctx context.Context, request api.ChangePlanRequest) (api.ChangePlanResponse, error) {
+	none := api.ChangePlanResponse{Subscription: getNoSubscriptionResponse()}
 	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
-		return api.ChangePlanResponse{Subscription: getSubscriptionResponse(subscription.State{})}, err
+		return none, err
 	}
 	state, err := usecase.NewChangePlan(usecase.Deps{Subscriptions: b.deps.Subscriptions}).Execute(ctx, request.Plan)
 	if err != nil {
-		return api.ChangePlanResponse{Subscription: getSubscriptionResponse(subscription.State{})}, err
+		return none, err
 	}
 	return api.ChangePlanResponse{Subscription: getSubscriptionResponse(state)}, nil
 }

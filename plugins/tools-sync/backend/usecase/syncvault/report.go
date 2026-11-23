@@ -78,5 +78,5 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 			return text
 		}
 	}
-	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}})
+	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}, PlanID: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false})
 }

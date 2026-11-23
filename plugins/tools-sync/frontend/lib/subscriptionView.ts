@@ -26,14 +26,12 @@ export interface PlanOffer {
   readonly price: string
 }
 
-/** What the card shows. */
+/** What the card shows; the server address and the plan name are empty when the client does not know them. */
 export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
-  /** The address of the sync server in use; empty when it is not known. */
   readonly server?: string | undefined
-  /** The name of the plan of the account; empty when the client does not know the plan. */
   readonly planName?: string | undefined
 }
 
@@ -43,8 +41,7 @@ const LONG_DATE = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
-/** A time of the server as a date, such as "November 23, 2026"; empty when the time is empty or not a time. */
-export function formatDate(time: string): string {
+function formatDate(time: string): string {
   const at = Date.parse(time)
   return Number.isNaN(at) ? '' : LONG_DATE.format(at)
 }
@@ -106,7 +103,10 @@ export interface Validity {
   readonly date: string
 }
 
-/** The end of the paid period; it is the end of the trial while a trial runs that no payment has followed. */
+/**
+ * The end of the paid period, such as "November 23, 2026"; it is the end of the trial while a trial runs that
+ * no payment has followed, and the date is empty when the time is empty or unreadable.
+ */
 export function getValidity(dates: SubscriptionDates, isTrial: boolean): Validity {
   return {
     label: isTrial ? words.trialUntil : words.activeUntil,

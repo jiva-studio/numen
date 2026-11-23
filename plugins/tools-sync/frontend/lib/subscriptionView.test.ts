@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatDate,
   formatSize,
   getPlanLabel,
   getPlanPrice,
@@ -59,17 +58,6 @@ describe('getPlanPrice', () => {
   })
 })
 
-describe('formatDate', () => {
-  it('writes the month in full, then the day and the year', () => {
-    expect(formatDate('2026-11-23T12:00:00Z')).toBe('November 23, 2026')
-  })
-
-  it('is empty for an empty or an unreadable time', () => {
-    expect(formatDate('')).toBe('')
-    expect(formatDate('soon')).toBe('')
-  })
-})
-
 describe('getSubscriptionView', () => {
   const DATES = { periodEnd: '2026-12-23T12:00:00Z', writesEnd: '', deleteAt: '' }
   const ready = (phase: SubscriptionPhase, planName = '') =>
@@ -109,6 +97,17 @@ describe('getValidity', () => {
 
   it('says until when the trial lasts', () => {
     expect(getValidity(DATES, true).label).toBe('Trial until')
+  })
+
+  it('writes the month in full, then the day and the year', () => {
+    expect(getValidity({ ...DATES, periodEnd: '2026-11-23T12:00:00Z' }, false).date).toBe(
+      'November 23, 2026',
+    )
+  })
+
+  it('has no date for an empty or an unreadable end of the period', () => {
+    expect(getValidity({ ...DATES, periodEnd: '' }, false).date).toBe('')
+    expect(getValidity({ ...DATES, periodEnd: 'soon' }, false).date).toBe('')
   })
 })
 

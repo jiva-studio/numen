@@ -12,7 +12,7 @@ Feature: Numen Sync plans
     And the person creates an identity
     And the application "editor" starts
 
-  Rule: The page "Identity and licenses" offers the plans and shows the one that is bought
+  Rule: The page "Identity and licenses" offers plans and shows the one bought
 
     Scenario: A new account is offered every plan with its size
       When the person opens the page "Identity and licenses"

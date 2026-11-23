@@ -34,8 +34,8 @@ export const WORDS = {
     'Finish the payment in your browser. This card updates by itself when the payment goes through.',
   unreachableText: (server: string): string =>
     server === ''
-      ? 'Check that the sync server is running and that its address in the settings is right.'
-      : `Could not connect to ${server}. Check that it is running, or change the address in the settings.`,
+      ? 'Start the sync server, or correct its address in the settings.'
+      : `Could not connect to ${server}. Start the server, or change the address in the settings.`,
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',

@@ -240,7 +240,6 @@ export class IdentityDriver {
     await expect(card.getByRole('button', { name: CHOOSE })).toHaveCount(0)
   }
 
-  /** Opens the menu "Change plan" of the card and returns the item of the plan of a name. */
   private async openChangeItem(card: Locator, name: string): Promise<Locator> {
     await card.getByRole('button', { name: CHANGE_PLAN, exact: true }).click()
     return this.scenario.page.getByRole('menuitem', { name, exact: true })

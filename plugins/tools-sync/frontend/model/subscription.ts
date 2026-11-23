@@ -11,9 +11,7 @@ export interface UseSubscriptionOptions {
   readonly now?: (() => Date) | undefined
   readonly pollEveryMs?: number | undefined
   readonly pollLimitMs?: number | undefined
-  /** How long the card waits before it asks again, by what it saw last. */
   readonly refreshMs?: Readonly<Record<'noIdentity' | 'ready' | 'unreachable', number>> | undefined
-  /** Where the address of the sync server is read and followed. */
   readonly settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
 }
 

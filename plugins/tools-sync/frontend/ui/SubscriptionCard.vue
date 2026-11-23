@@ -30,7 +30,8 @@ const { session, payment, offers, summary } = useSubscription({
   settings: props.settings,
   refreshMs: props.refreshMs,
 })
-const { problem, status, load, change, manage } = session
+const { problem, load, change, manage } = session
+const { status } = session.account
 const { waiting, buy } = payment
 const { buyOffers, changeOffers, canManage } = offers
 const { view, planLine, usage, usedPercent, isFull, validity } = summary

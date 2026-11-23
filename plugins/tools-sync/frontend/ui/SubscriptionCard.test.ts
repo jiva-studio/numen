@@ -271,7 +271,7 @@ describe('SubscriptionCard', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('https://sync.numen.md')
-    expect(wrapper.text()).toContain('Check that it is running')
+    expect(wrapper.text()).toContain('Start the server, or change the address in the settings.')
     expect(wrapper.text()).not.toContain('30 seconds')
     await wrapper
       .findAll('button')
