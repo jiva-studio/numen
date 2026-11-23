@@ -15,8 +15,8 @@ Feature: Read a shared folder
     And the person buys the subscription
     And the person connects the vault "Test" as a new synced vault
     And the person writes the note "Home/Food/Shopping list" with the text "milk" in the vault "Test"
-    And a reader creates an identity
-    And a second reader creates an identity
+    And the reader creates an identity
+    And the second reader creates an identity
     And the person shares the folder "Home/Food" of the vault "Test" with the reader
 
   Rule: The reader needs no subscription
@@ -36,7 +36,7 @@ Feature: Read a shared folder
       Then the reader is told "A shared vault cannot be shared again"
 
     Scenario: A shared vault cannot be synced as a vault of the reader
-      When the reader connects the shared vault "Food" as a new synced vault
+      When the reader adds the shared vault "Food" to its synced vaults
       Then the reader is told "A shared vault cannot be synced again"
 
   Rule: A folder is shared once

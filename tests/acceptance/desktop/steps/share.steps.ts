@@ -1,12 +1,8 @@
 import { Given, Then, When } from '../support/bdd.js'
 import type { ReaderName } from '../drivers/shared-reader.js'
 
-Given('a reader creates an identity', async ({ person }) => {
-  await person.readers.createIdentity('reader')
-})
-
-Given('a second reader creates an identity', async ({ person }) => {
-  await person.readers.createIdentity('second reader')
+Given('{reader} creates an identity', async ({ person }, reader: ReaderName) => {
+  await person.readers.createIdentity(reader)
 })
 
 When(
@@ -80,7 +76,7 @@ When(
 )
 
 When(
-  '{reader} connects the shared vault {string} as a new synced vault',
+  '{reader} adds the shared vault {string} to its synced vaults',
   async ({ person }, reader: ReaderName, vault: string) => {
     await person.readers.connectVault(reader, vault)
   },
