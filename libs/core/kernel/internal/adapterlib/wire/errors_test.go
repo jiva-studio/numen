@@ -41,8 +41,8 @@ func TestNewListErrorNamesWhoseFaultAPathIs(t *testing.T) {
 	}
 }
 
-func TestEachOnceDropsRepeatsAndRefusesTooManyPaths(t *testing.T) {
-	got, err := wire.EachOnce([]string{"a", "b", "a"})
+func TestGetDistinctPathsDropsRepeatsAndRefusesTooManyPaths(t *testing.T) {
+	got, err := wire.GetDistinctPaths([]string{"a", "b", "a"})
 	if err != nil || len(got) != 2 || got[0] != "a" || got[1] != "b" {
 		t.Fatalf("paths = %v, err = %v", got, err)
 	}
@@ -50,7 +50,7 @@ func TestEachOnceDropsRepeatsAndRefusesTooManyPaths(t *testing.T) {
 	for i := range many {
 		many[i] = strconv.Itoa(i)
 	}
-	if _, err := wire.EachOnce(many); connect.CodeOf(err) != connect.CodeInvalidArgument || !errors.Is(err, wire.ErrTooManyPaths) {
+	if _, err := wire.GetDistinctPaths(many); connect.CodeOf(err) != connect.CodeInvalidArgument || !errors.Is(err, wire.ErrTooManyPaths) {
 		t.Errorf("err = %v", err)
 	}
 }

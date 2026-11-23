@@ -307,7 +307,7 @@ func (h *Outline) ListHeadings(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
-	paths, err := wire.EachOnce(r.Msg.GetPaths())
+	paths, err := wire.GetDistinctPaths(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}

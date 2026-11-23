@@ -23,9 +23,9 @@ func NewInternalError(err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-// EachOnce is the paths without the repeats, in the order they came, or the invalid argument of a filter
+// GetDistinctPaths is the paths without the repeats, in the order they came, or the invalid argument of a filter
 // naming more paths than are answered at once.
-func EachOnce(paths []string) ([]string, error) {
+func GetDistinctPaths(paths []string) ([]string, error) {
 	observed := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
 	for _, path := range paths {

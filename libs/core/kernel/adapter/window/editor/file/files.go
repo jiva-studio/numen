@@ -62,7 +62,7 @@ func (h *Folders) ListFileKinds(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	paths, err := wire.EachOnce(r.Msg.GetPaths())
+	paths, err := wire.GetDistinctPaths(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}

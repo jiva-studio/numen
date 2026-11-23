@@ -94,8 +94,6 @@ func (h *Handler) RunPluginCommand(
 	}), nil
 }
 
-// getMessage is what a user reads of a failed command: the message of one the plugin ran and failed, the text
-// of an error the core names, and no text of any other error.
 func getMessage(err error) string {
 	var failed *plugin.CommandFailedError
 	if getErrorCode(err) == v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED && !errors.As(err, &failed) {
