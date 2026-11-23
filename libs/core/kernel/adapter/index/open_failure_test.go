@@ -31,7 +31,9 @@ func TestGetOpenFailure(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			db, err := Open(t.Context(), test.path)
 			if err == nil {
-				_ = db.Close()
+				if closeErr := db.Close(); closeErr != nil {
+					t.Error(closeErr)
+				}
 				t.Fatalf("%s opened as an index", test.path)
 			}
 			got, ok := GetOpenFailure(test.path, err)

@@ -5,17 +5,14 @@ import (
 	"os"
 )
 
-// OpenFailure is the reason an index file could not be opened.
+// OpenFailure is the reason an index file could not be opened. CannotCreate is a file sqlite could
+// neither open nor make.
 type OpenFailure int
 
 const (
-	// NotAnIndex is a file that is not a database.
 	NotAnIndex OpenFailure = iota + 1
-	// PathIsFolder is an index path that names a folder.
 	PathIsFolder
-	// CannotCreate is a file the database could neither open nor make.
 	CannotCreate
-	// OtherOpenFailure is any other result code of the database.
 	OtherOpenFailure
 )
 
