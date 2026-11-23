@@ -131,7 +131,7 @@ func (u *ConnectVault) connectExisting(ctx context.Context, in ConnectInput, nam
 	if err != nil {
 		return err
 	}
-	vaults, err := u.reader.fold(ctx, entries)
+	vaults, err := u.reader.mergeEntries(ctx, entries)
 	if err != nil {
 		return err
 	}

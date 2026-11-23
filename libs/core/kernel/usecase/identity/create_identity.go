@@ -36,7 +36,7 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := u.deps.keys.SetKey(ctx, keyName, value); err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
 	}
-	return identityOf(record)
+	return toIdentity(record)
 }
 
 func checkAbsent(ctx context.Context, deps Deps) error {
@@ -72,7 +72,7 @@ func buildNewRecord(deps Deps, root identitylib.RecoveryKey, device identitylib.
 	if err != nil {
 		return identitylib.Record{}, err
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), entryName(deps.names.GetInstanceName()), now)
+	chain, err = chain.AppendDevice(root, device.Public(), normalizeEntryName(deps.names.GetInstanceName()), now)
 	if err != nil {
 		return identitylib.Record{}, err
 	}

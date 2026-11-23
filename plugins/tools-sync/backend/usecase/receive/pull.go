@@ -109,7 +109,7 @@ func (u *PullShare) prepare(ctx context.Context, id domain.VaultID, link vaultli
 		return nil, err
 	}
 	return &pullRun{
-		deps: u.deps, id: id, files: u.deps.Host.Files(id), shareID: shareID, reader: chain.Root().Sign, link: link, keys: keys,
+		deps: u.deps, id: id, files: u.deps.Host.GetFiles(id), shareID: shareID, reader: chain.Root().Sign, link: link, keys: keys,
 		authors: trust.Authors{}, records: records, result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
 	}, nil
 }

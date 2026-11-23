@@ -16,7 +16,7 @@ import (
 )
 
 // Random reads the entropy of the machine.
-func Random() io.Reader { return rand.Reader }
+func NewRandom() io.Reader { return rand.Reader }
 
 // Interval is the time between two passes, in whole seconds of at least one.
 type Interval struct {
@@ -58,7 +58,7 @@ func (w *Wakes) Wake(vault domain.VaultID) {
 }
 
 // Vaults returns the vaults named by Wake.
-func (w *Wakes) Vaults() <-chan domain.VaultID { return w.vaults }
+func (w *Wakes) WatchVaults() <-chan domain.VaultID { return w.vaults }
 
 // Start builds the session over address: the value its callers use, and the loops that run until ctx ends.
 type Start[T any] func(ctx context.Context, address string) (T, map[string]func(context.Context) error)

@@ -56,7 +56,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted}, p.shares)
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted}, p.shares)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func getBases(records []note.FileRecord) map[string]string {
 
 func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
 	var files []transfer.File
-	reader := p.use.deps.Host.Files(p.id)
+	reader := p.use.deps.Host.GetFiles(p.id)
 	for _, change := range changes {
 		if slices.Contains(p.conflicts, change.Path) {
 			continue

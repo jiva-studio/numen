@@ -78,7 +78,7 @@ function focusFirst(): void {
         <h2 :id="titleId" class="connection-dialog__title">{{ words.identitySetupTitle }}</h2>
         <p class="connection-dialog__text">{{ words.identityWriteDown }}</p>
         <RecoveryWords :recovery-words="recoveryWords" />
-        <p class="caution caution--card caution--alarm">{{ words.identityNobodyRecovers }}</p>
+        <p class="caution caution--card">{{ words.identityNobodyRecovers }}</p>
       </template>
 
       <template v-else>

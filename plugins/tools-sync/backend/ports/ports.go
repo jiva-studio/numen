@@ -85,8 +85,8 @@ type Remover interface {
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
-	Files(id domain.VaultID) Files
-	Indexer(id domain.VaultID) Indexer
+	GetFiles(id domain.VaultID) Files
+	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 	Remover(id domain.VaultID) Remover
 }

@@ -63,7 +63,7 @@ func TestOpenSealedBox_ReturnsErrCannotOpenForAnotherPluginContextAndChangedByte
 
 func TestOpenSealedBox_ReturnsErrNoIdentityWhenDeviceHasNoIdentity(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	client := newClient(t, fake)
 
 	if _, err := client.OpenSealedBox(t.Context(), []byte(boxContext), []byte("sealed")); !errors.Is(err, account.ErrNoIdentity) {
