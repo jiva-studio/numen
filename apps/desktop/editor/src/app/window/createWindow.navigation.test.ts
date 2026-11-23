@@ -36,7 +36,7 @@ const showNote = async (path: string): Promise<void> => {
 }
 
 const renameNote = async (from: string, to: string): Promise<void> => {
-  changed.report({ paths: [to], renamed: [{ from, to }] })
+  changed.report({ paths: [to], moves: [{ from, to }] })
   await settle()
   await settle()
 }

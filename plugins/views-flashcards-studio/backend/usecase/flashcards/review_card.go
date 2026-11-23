@@ -92,7 +92,7 @@ func (u ListReviewCards) GetDeckPaths(ctx context.Context, v domain.Vault) ([]st
 	if !target {
 		return nil, ErrNotCarried
 	}
-	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	return u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
 // GetReviewCards returns the review cards of the decks at paths, in the order of paths. A

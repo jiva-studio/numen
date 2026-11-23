@@ -415,7 +415,7 @@ type ConnectionCallServiceCallRequest struct {
 	Payload   []byte   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	Priority  Priority `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
 	// preferred is unset for the rows in their order.
-	Preferred *PreferredRow `protobuf:"bytes,5,opt,name=preferred,proto3" json:"preferred,omitempty"`
+	PreferredRow *PreferredRow `protobuf:"bytes,5,opt,name=preferred_row,json=preferredRow,proto3" json:"preferred_row,omitempty"`
 	// call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
 	// when the call cannot be cancelled.
 	CallId        string `protobuf:"bytes,6,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
@@ -481,9 +481,9 @@ func (x *ConnectionCallServiceCallRequest) GetPriority() Priority {
 	return Priority_PRIORITY_UNSPECIFIED
 }
 
-func (x *ConnectionCallServiceCallRequest) GetPreferred() *PreferredRow {
+func (x *ConnectionCallServiceCallRequest) GetPreferredRow() *PreferredRow {
 	if x != nil {
-		return x.Preferred
+		return x.PreferredRow
 	}
 	return nil
 }
@@ -495,7 +495,6 @@ func (x *ConnectionCallServiceCallRequest) GetCallId() string {
 	return ""
 }
 
-// ConnectionCallServiceCallResponse is one frame of a call.
 type ConnectionCallServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Frame:
@@ -936,13 +935,13 @@ const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\x06fields\x18\x04 \x03(\v2\x16.numen.v1.CallRowFieldR\x06fields\x1a:\n" +
 	"\fOptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfd\x01\n" +
 	" ConnectionCallServiceCallRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\x12\x18\n" +
 	"\apayload\x18\x03 \x01(\fR\apayload\x12.\n" +
-	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x124\n" +
-	"\tpreferred\x18\x05 \x01(\v2\x16.numen.v1.PreferredRowR\tpreferred\x12\x17\n" +
+	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x12;\n" +
+	"\rpreferred_row\x18\x05 \x01(\v2\x16.numen.v1.PreferredRowR\fpreferredRow\x12\x17\n" +
 	"\acall_id\x18\x06 \x01(\tR\x06callId\"\x8b\x01\n" +
 	"!ConnectionCallServiceCallResponse\x12\x14\n" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
@@ -1025,7 +1024,7 @@ var file_numen_v1_connectioncall_proto_depIdxs = []int32{
 	15, // 4: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
 	4,  // 5: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
 	18, // 6: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
-	3,  // 7: numen.v1.ConnectionCallServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
+	3,  // 7: numen.v1.ConnectionCallServiceCallRequest.preferred_row:type_name -> numen.v1.PreferredRow
 	2,  // 8: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
 	5,  // 9: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
 	16, // 10: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry

@@ -3,7 +3,16 @@
  * handed: the reads need `vault:read`, the writes need `vault:write`.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { isUnsavedBuffersError, UnsavedBuffersError, type BufferHost, type HostServices, type VaultFiles, type VaultNotes, type VaultRelations, type WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  isUnsavedBuffersError,
+  UnsavedBuffersError,
+  type BufferHost,
+  type HostServices,
+  type VaultFiles,
+  type VaultNotes,
+  type VaultRelations,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { asValue } from '@numen/result'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginParts } from './context'
@@ -42,8 +51,8 @@ const createServices = () => {
     roles: ['parent', 'child', 'jump'],
     getConnection: vi.fn(() => Promise.resolve(asValue({}))),
     saveConnection: vi.fn(() => Promise.resolve(asValue(undefined))),
-    removeSide: vi.fn(() => Promise.resolve(asValue(undefined))),
-    removeConnection: vi.fn(() => Promise.resolve(asValue(undefined))),
+    deleteConnectionSide: vi.fn(() => Promise.resolve(asValue(undefined))),
+    deleteConnection: vi.fn(() => Promise.resolve(asValue(undefined))),
     join: vi.fn(() => Promise.resolve(asValue(undefined))),
     createRelated: vi.fn(() => Promise.resolve(asValue('a.md'))),
     listBacklinks: vi.fn(() => Promise.resolve([])),
@@ -115,8 +124,8 @@ const RELATION_WRITES: Record<string, Call> = {
       firstSide: { label: '', marker: 'arrow', reason: '' },
       secondSide: null,
     }),
-  removeSide: (c) => c.vault.relations!.removeSide('a.md', 'b.md'),
-  removeConnection: (c) => c.vault.relations!.removeConnection('a.md', 'b.md'),
+  deleteConnectionSide: (c) => c.vault.relations!.deleteConnectionSide('a.md', 'b.md'),
+  deleteConnection: (c) => c.vault.relations!.deleteConnection('a.md', 'b.md'),
   join: (c) => c.vault.relations!.join('a.md', 'b.md', { role: 'child' }),
   createRelated: (c) => c.vault.relations!.createRelated({ from: 'a.md', role: 'child' }),
 }

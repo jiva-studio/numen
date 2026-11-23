@@ -387,7 +387,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	}
 
 	erased, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.first.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.first.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -448,7 +448,7 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 	erase, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: nobody, Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: nobody, IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -477,7 +477,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +500,7 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f.bin.refuse(machine.ErrNoTrash)
 
 	out, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -574,8 +574,8 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
-		Title:      "Where are your notes?",
-		StartingAt: f.first.Path,
+		Title:       "Where are your notes?",
+		StartFolder: f.first.Path,
 	}))
 	if err != nil {
 		t.Fatalf("a dialog that was closed answered %v", err)

@@ -46,13 +46,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected StoppedPastDay for both stop reasons, got %q, %q", overallStop, todayStop)
 	}
 
-	// Test List: GetPathsOfType error, empty paths, GetNotes error.
+	// Test List: ListPathsOfType error, empty paths, GetNotes error.
 	if _, err := NewList(Config{
 		Notes: stubNoteQueries{
 			pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
 		},
 	}).Execute(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetPathsOfType error in List, got %v", err)
+		t.Fatalf("expected ListPathsOfType error in List, got %v", err)
 	}
 	emptyList, err := NewList(Config{
 		Notes: stubNoteQueries{

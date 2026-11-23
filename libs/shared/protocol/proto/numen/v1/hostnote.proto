@@ -21,18 +21,17 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostNoteService {
-  // GetNoteRefs names the notes at the paths given, and leaves out a path with
+  // ListNoteRefs names the notes at the paths given, and leaves out a path with
   // no note.
-  rpc GetNoteRefs(GetNoteRefsRequest) returns (GetNoteRefsResponse);
+  rpc ListNoteRefs(ListNoteRefsRequest) returns (ListNoteRefsResponse);
 
-  // GetNoteTypes says what type each note at the paths given is.
-  rpc GetNoteTypes(GetNoteTypesRequest) returns (GetNoteTypesResponse);
+  // ListNoteTypes says what type each note at the paths given is.
+  rpc ListNoteTypes(ListNoteTypesRequest) returns (ListNoteTypesResponse);
 
-  // GetNamedPaths lists the notes filed under a name.
-  rpc GetNamedPaths(GetNamedPathsRequest) returns (GetNamedPathsResponse);
+  // ListNamedPaths lists the notes filed under a name.
+  rpc ListNamedPaths(ListNamedPathsRequest) returns (ListNamedPathsResponse);
 
-  // GetPathsOfType lists the notes of a type.
-  rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
+  rpc ListPathsOfType(ListPathsOfTypeRequest) returns (ListPathsOfTypeResponse);
 
   // ReadFrontmatter returns the frontmatter of notes as the index holds it, in
   // pages ordered by path. It needs vault:read.
@@ -56,39 +55,39 @@ service HostNoteService {
   rpc RemoveNotes(HostNoteServiceRemoveNotesRequest) returns (HostNoteServiceRemoveNotesResponse);
 }
 
-message GetNoteRefsRequest {
+message ListNoteRefsRequest {
   repeated string paths = 1;
 }
 
-message GetNoteRefsResponse {
+message ListNoteRefsResponse {
   ErrorCode error = 1;
   repeated Note notes = 2;
 }
 
-message GetNoteTypesRequest {
+message ListNoteTypesRequest {
   repeated string paths = 1;
 }
 
-message GetNoteTypesResponse {
+message ListNoteTypesResponse {
   ErrorCode error = 1;
   // The type of each note, by its path. A path with no note is left out.
   map<string, string> types = 2;
 }
 
-message GetNamedPathsRequest {
+message ListNamedPathsRequest {
   string name = 1;
 }
 
-message GetNamedPathsResponse {
+message ListNamedPathsResponse {
   ErrorCode error = 1;
   repeated string paths = 2;
 }
 
-message GetPathsOfTypeRequest {
+message ListPathsOfTypeRequest {
   string type = 1;
 }
 
-message GetPathsOfTypeResponse {
+message ListPathsOfTypeResponse {
   ErrorCode error = 1;
   repeated string paths = 2;
 }
@@ -142,7 +141,6 @@ message NoteFrontmatterWritten {
   string detail = 3;
 }
 
-// NoteFrontmatter is the frontmatter of one note.
 message NoteFrontmatter {
   string path = 1;
   // values is a JSON object of the requested keys the note has.
@@ -168,7 +166,7 @@ message HostNoteServiceRenameNoteResponse {
   // Which of the three names the note, and so which the rename brought into line.
   NameSource name_source = 4;
   // What the file did. Absent when it kept its position.
-  optional MoveResult moved = 5;
+  optional MoveResult move_result = 5;
   // The text of the error where it carries more than the code does.
   string detail = 6;
 }

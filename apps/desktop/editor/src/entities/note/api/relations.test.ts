@@ -11,9 +11,9 @@ import { createRelations } from './relations'
 const request = {
   getConnection: vi.fn(),
   saveConnection: vi.fn(),
-  removeSide: vi.fn(),
-  removeConnection: vi.fn(),
-  joinNotes: vi.fn(),
+  deleteConnectionSide: vi.fn(),
+  deleteConnection: vi.fn(),
+  createConnectionSide: vi.fn(),
   createRelatedNote: vi.fn(),
   listBacklinks: vi.fn(),
   resolveAddresses: vi.fn(),
@@ -117,24 +117,24 @@ describe('the connections between notes', () => {
 
   it('have one side, or both, removed under the type of the records', async () => {
     const relations = getRelations()
-    request.removeSide.mockResolvedValue({})
-    request.removeConnection.mockResolvedValue({})
+    request.deleteConnectionSide.mockResolvedValue({})
+    request.deleteConnection.mockResolvedValue({})
 
-    expect(await relations.removeSide('a.md', 'b.md', 'preset')).toEqual({
+    expect(await relations.deleteConnectionSide('a.md', 'b.md', 'preset')).toEqual({
       ok: true,
       value: undefined,
     })
-    expect(await relations.removeConnection('a.md', 'b.md')).toEqual({
+    expect(await relations.deleteConnection('a.md', 'b.md')).toEqual({
       ok: true,
       value: undefined,
     })
 
-    expect(request.removeSide.mock.calls.at(-1)?.[0]).toMatchObject({
+    expect(request.deleteConnectionSide.mock.calls.at(-1)?.[0]).toMatchObject({
       path: 'a.md',
       to: 'b.md',
       type: 'preset',
     })
-    expect(request.removeConnection.mock.calls.at(-1)?.[0]).toMatchObject({
+    expect(request.deleteConnection.mock.calls.at(-1)?.[0]).toMatchObject({
       first: 'a.md',
       second: 'b.md',
       type: '',
@@ -143,13 +143,13 @@ describe('the connections between notes', () => {
 
   it('have one record written under the wire role and marker', async () => {
     const relations = getRelations()
-    request.joinNotes.mockResolvedValue({})
+    request.createConnectionSide.mockResolvedValue({})
 
     expect(
       await relations.join('a.md', 'b.md', { role: 'jump', label: 'see', marker: 'arrow' }),
     ).toEqual({ ok: true, value: undefined })
 
-    expect(request.joinNotes.mock.calls.at(-1)?.[0]).toMatchObject({
+    expect(request.createConnectionSide.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',
       to: 'b.md',
       side: { role: NOTE_ROLE.JUMP, type: '', note: '', label: 'see', marker: NOTE_MARKER.ARROW },
@@ -161,7 +161,7 @@ describe('the connections between notes', () => {
       reason: 'because',
       label: 'part',
     })
-    expect(request.joinNotes.mock.calls.at(-1)?.[0]).toMatchObject({
+    expect(request.createConnectionSide.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',
       to: 'b.md',
       side: {
@@ -252,8 +252,8 @@ describe('the wikilinks of a text', () => {
   it('are resolved in the vault named, from no note', async () => {
     const relations = getRelations()
     request.resolveAddresses.mockResolvedValue({
-      found: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
-      resolved: [{ written: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
+      links: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
+      resolvedAddresses: [{ address: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
     })
 
     expect(await relations.resolveLinks('See [[Tides]].', 'v-sea')).toEqual([
@@ -262,7 +262,7 @@ describe('the wikilinks of a text', () => {
     expect(request.resolveAddresses.mock.lastCall?.[0]).toMatchObject({
       from: '',
       text: 'See [[Tides]].',
-      vault: 'v-sea',
+      vaultId: 'v-sea',
     })
   })
 })

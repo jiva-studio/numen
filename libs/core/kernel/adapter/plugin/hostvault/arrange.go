@@ -30,7 +30,7 @@ type Arranger struct {
 	Window      NoteChanges
 	WindowVault func() (domain.Vault, bool)
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
-	Problems    *vaults.GetParseProblems
+	Problems    *vaults.ListParseProblems
 	Frontmatter note.WriteFrontmatter
 
 	session sessionAccess
@@ -142,8 +142,8 @@ func (a Arranger) RemoveLinks(
 	return stat, err
 }
 
-// GetParseProblems returns the notes of the vault that could not be read.
-func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+// ListParseProblems returns the notes of the vault that could not be read.
+func (a Arranger) ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
 	v, err := a.session.open()
 	if err != nil || a.Problems == nil {
 		return nil, err

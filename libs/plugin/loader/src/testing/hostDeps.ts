@@ -6,19 +6,17 @@ import {
   createPluginHost,
   type HostCommands,
   type HostKinds,
-  type HostPlugins,
   type HostSlots,
   type HostTabs,
   type HostVault,
-  type HostWindow,
   type HostWork,
   type PluginHost,
   type PluginHostDeps,
 } from '../hosting'
 
 /** Every member of every group of the deps of a plugin host, in one object. */
-export type TestHostDeps = HostWindow &
-  HostPlugins &
+export type TestHostDeps = PluginHostDeps['window'] &
+  NonNullable<PluginHostDeps['plugins']> &
   HostCommands &
   HostSlots &
   HostKinds &

@@ -1,5 +1,5 @@
 import type { Transport } from '@connectrpc/connect'
-import { createNoteClient } from '@numen/core-client'
+import { createNoteRpc } from '@numen/core-client'
 import { formatErrorCode } from '@/shared/api/errors'
 import type { Core, NoteStamp } from '../lib/core'
 
@@ -12,7 +12,7 @@ const mapStamp = (stat: Stat | undefined): NoteStamp | null =>
 export function createNoteApi(
   transport: Transport,
 ): Pick<Core, 'getOpeningPath' | 'readNote' | 'writeNote'> {
-  const notes = createNoteClient(transport)
+  const notes = createNoteRpc(transport)
   return {
     async getOpeningPath() {
       return (await notes.getOpeningNote({})).note?.path ?? null
@@ -20,13 +20,13 @@ export function createNoteApi(
     async readNote(path) {
       const answer = await notes.readNote({ path })
       if (answer.error) return { ok: false, error: formatErrorCode(answer.error) }
-      return { ok: true, value: { prose: answer.body, stamp: mapStamp(answer.at) } }
+      return { ok: true, value: { prose: answer.body, stamp: mapStamp(answer.fileStat) } }
     },
     async writeNote(path, prose, baseline) {
       const answer = await notes.writeNote({
         path,
         body: prose,
-        baseline: baseline ? { prose: baseline.prose, at: baseline.stamp } : undefined,
+        baseline: baseline ? { prose: baseline.prose, fileStat: baseline.stamp } : undefined,
       })
       if (answer.error) return { ok: false, error: formatErrorCode(answer.error) }
       return { ok: true, value: null }

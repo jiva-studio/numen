@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (q *Queries) ListLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getLinks(ctx, from)
 	})
@@ -359,12 +359,12 @@ func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.Res
 	return rows.Err()
 }
 
-// GetBacklinks returns the notes that point at one note.
+// ListBacklinks returns the notes that point at one note.
 // A link is a backlink because it resolves here, not because its text looks
 // like this note: a path link is also filed under its last segment, and a bare
 // name may resolve to a nearer note of the same name. Every candidate goes
 // through the forward resolution and only those that land here are kept.
-func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (q *Queries) ListBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getBacklinks(ctx, to)
 	})

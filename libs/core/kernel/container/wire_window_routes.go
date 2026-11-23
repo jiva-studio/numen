@@ -56,7 +56,7 @@ import (
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
-		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.GetPlugins)
+		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.ListPlugins)
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served, handler))
 	}
@@ -174,7 +174,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file
 		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes.IsIndexOutdated,
 	)
 	connections := notewindow.NewConnections(
-		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.DeleteConnectionSide, &notes.Connect.DeleteConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	w.Installation.Mount(editor.NewNoteRoute(w.page.Gate, handler))

@@ -237,7 +237,7 @@ func (s *importFixture) importURL(t *testing.T, vault string, in importArguments
 func getLinkNotes(t *testing.T, vault *hosttest.Vault) []string {
 	t.Helper()
 	vault.Reindex()
-	paths, err := vault.GetPathsOfType(t.Context(), link.NoteType)
+	paths, err := vault.ListPathsOfType(t.Context(), link.NoteType)
 	if err != nil {
 		t.Fatal(err)
 	}

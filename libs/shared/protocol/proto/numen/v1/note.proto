@@ -57,16 +57,16 @@ service NoteService {
   // itself in the hierarchy is not saved.
   rpc SaveConnection(SaveConnectionRequest) returns (SaveConnectionResponse);
 
-  // RemoveSide removes the record one note writes about another. The other note
+  // DeleteConnectionSide removes the record one note writes about another. The other note
   // is left alone.
-  rpc RemoveSide(RemoveSideRequest) returns (RemoveSideResponse);
+  rpc DeleteConnectionSide(DeleteConnectionSideRequest) returns (DeleteConnectionSideResponse);
 
-  // RemoveConnection removes the records two notes write about each other.
-  rpc RemoveConnection(RemoveConnectionRequest) returns (RemoveConnectionResponse);
+  // DeleteConnection removes the records two notes write about each other.
+  rpc DeleteConnection(DeleteConnectionRequest) returns (DeleteConnectionResponse);
 
-  // JoinNotes makes one note write a record about another and keeps the record
+  // CreateConnectionSide makes one note write a record about another and keeps the record
   // the other note already writes.
-  rpc JoinNotes(JoinNotesRequest) returns (JoinNotesResponse);
+  rpc CreateConnectionSide(CreateConnectionSideRequest) returns (CreateConnectionSideResponse);
 
   // CreateRelatedNote makes a note joined to an existing one. The new note
   // writes the record about the existing note, with the inverse role, and is
@@ -129,7 +129,7 @@ message NoteGraph {
   // the focus and a reference is an item of that reference. The focus is never an item, and
   // a note is not an item of itself. One note can be an item of several notes, so `note.path`
   // is not unique here, `(related_to, note.path)` is.
-  repeated RelatedNote related = 2;
+  repeated RelatedNote related_notes = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
@@ -201,25 +201,25 @@ message ResolveAddressesRequest {
   // The addresses to answer about. A scheme written before `://` is read as
   // one — `name://Entropy`, `note://<identifier>` — and everything else is a
   // name, so what a file carries between its brackets is taken currently.
-  repeated string written = 2;
+  repeated string addresses = 2;
 
-  // A text whose wikilinks are answered about beside `written`. Each one is
-  // asked about by its address as `scheme://value`, the form `found` carries.
+  // A text whose wikilinks are answered about beside `addresses`. Each one is
+  // asked about by its address as `scheme://value`, the form `links` carries.
   string text = 3;
 
   // The id of the vault the addresses are written in. Empty is the vault the
   // window shows; a window that shows no vault needs it.
-  string vault = 4;
+  string vault_id = 4;
 }
 
 message ResolveAddressesResponse {
   // Where each address lands, in the order they were asked about. One that
   // reaches nothing is absent, and so is one asked about twice.
-  repeated ResolvedAddress resolved = 1;
+  repeated ResolvedAddress resolved_addresses = 1;
 
   // The wikilinks in `text`, in the order they are written, each raw form
   // once, whether they reach a note or not.
-  repeated TextLink found = 2;
+  repeated TextLink links = 2;
 }
 
 // TextLink is one wikilink of a text.
@@ -237,14 +237,14 @@ message TextLink {
 // ResolvedAddress is one address and the note it reaches now.
 message ResolvedAddress {
   // The address as it was asked about, which is how the caller finds its answer.
-  string written = 1;
+  string address = 1;
 
   // Where the note it reaches is filed.
   string path = 2;
 
   // The vault holding that note. An identifier names one note in the world, so
   // an address may land outside the vault it was written in.
-  string vault = 3;
+  string vault_id = 3;
 
   // Set where that vault is not the one this call was answered about.
   bool is_crossed = 4;
@@ -255,7 +255,7 @@ message ResolvedAddress {
 }
 
 message ListHeadingsRequest {
-  // Only the notes filed under these paths. A filter naming none passes none,
+  // The notes to list the headings of, by path. A path with no note is left out.
   repeated string paths = 1;
 }
 
@@ -289,13 +289,13 @@ message ReadNoteRequest {
 }
 
 message ReadNoteResponse {
-  // The prose below the frontmatter, with line endings as LF. Empty when the
+  // The prose below the frontmatter, with line endings as LF.
   string body = 1;
 
   // Set when the note was not read, and why.
   ErrorCode error = 2;
 
-  optional FileStat at = 3;
+  optional FileStat file_stat = 3;
 }
 
 // ReadBaseline is what a caller last saw of a note: the prose a read gave it, and
@@ -307,7 +307,7 @@ message ReadBaseline {
   string prose = 1;
 
   // The file the prose came out of.
-  FileStat at = 2;
+  FileStat file_stat = 2;
 }
 
 message WriteNoteRequest {
@@ -327,10 +327,10 @@ message WriteNoteResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional FileStat at = 2;
+  optional FileStat file_stat = 2;
 
   // Set when the prose is on disk and the index could not be updated for it.
-  // The write happened and `at` stands; search answers about this note as it
+  // The write happened and `file_stat` stands; search answers about this note as it
   // read it last, until a walk goes past.
   bool is_index_outdated = 3;
 }
@@ -456,7 +456,7 @@ message SaveConnectionResponse {
   bool is_cycle = 3;
 }
 
-message RemoveSideRequest {
+message DeleteConnectionSideRequest {
   // The note the record is written in.
   string path = 1;
   // The note the record is about.
@@ -465,21 +465,21 @@ message RemoveSideRequest {
   string type = 3;
 }
 
-message RemoveSideResponse {
+message DeleteConnectionSideResponse {
   ErrorCode error = 1;
 }
 
-message RemoveConnectionRequest {
+message DeleteConnectionRequest {
   string first = 1;
   string second = 2;
   string type = 3;
 }
 
-message RemoveConnectionResponse {
+message DeleteConnectionResponse {
   ErrorCode error = 1;
 }
 
-message JoinNotesRequest {
+message CreateConnectionSideRequest {
   // The note that writes the record.
   string from = 1;
   // The note the record is about.
@@ -487,7 +487,7 @@ message JoinNotesRequest {
   ConnectionSide side = 3;
 }
 
-message JoinNotesResponse {
+message CreateConnectionSideResponse {
   ErrorCode error = 1;
 
   // Set when the record was not written because the connection is not valid,
@@ -587,7 +587,7 @@ message RenameNoteResponse {
   NameSource name_source = 3;
 
   // What the file did. Absent when it kept its position.
-  optional MoveResult moved = 4;
+  optional MoveResult move_result = 4;
 
   // Set when the rename did not finish, and why. The note may already have been
   // written: `path`, `title` and `by` say what stands. A note holding prose the
@@ -616,6 +616,6 @@ message WatchEditsResponse {
   Range range = 3;
   // What is going in where that span stands.
   string text = 4;
-  // The last report of this change, which arrives whether the change landed or
+  // Set on the last report of this change.
   bool is_final = 5;
 }

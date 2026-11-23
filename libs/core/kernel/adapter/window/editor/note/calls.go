@@ -59,13 +59,13 @@ type connectionsCalls interface {
 	SaveConnection(
 		ctx context.Context, r *connect.Request[v1.SaveConnectionRequest],
 	) (*connect.Response[v1.SaveConnectionResponse], error)
-	RemoveSide(
-		ctx context.Context, r *connect.Request[v1.RemoveSideRequest],
-	) (*connect.Response[v1.RemoveSideResponse], error)
-	RemoveConnection(
-		ctx context.Context, r *connect.Request[v1.RemoveConnectionRequest],
-	) (*connect.Response[v1.RemoveConnectionResponse], error)
-	JoinNotes(
-		ctx context.Context, r *connect.Request[v1.JoinNotesRequest],
-	) (*connect.Response[v1.JoinNotesResponse], error)
+	DeleteConnectionSide(
+		ctx context.Context, r *connect.Request[v1.DeleteConnectionSideRequest],
+	) (*connect.Response[v1.DeleteConnectionSideResponse], error)
+	DeleteConnection(
+		ctx context.Context, r *connect.Request[v1.DeleteConnectionRequest],
+	) (*connect.Response[v1.DeleteConnectionResponse], error)
+	CreateConnectionSide(
+		ctx context.Context, r *connect.Request[v1.CreateConnectionSideRequest],
+	) (*connect.Response[v1.CreateConnectionSideResponse], error)
 }

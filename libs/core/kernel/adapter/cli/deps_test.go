@@ -214,11 +214,11 @@ func (o singleVaultList) GetLastVault() (domain.Vault, bool, error) { return o.t
 // test wrote down.
 type fixedLinkQueries struct{ links, backlinks []domain.ResolvedLink }
 
-func (j fixedLinkQueries) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.links, nil
 }
 
-func (j fixedLinkQueries) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.backlinks, nil
 }
 

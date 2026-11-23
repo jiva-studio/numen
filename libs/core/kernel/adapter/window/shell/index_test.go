@@ -118,7 +118,7 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	api.Window.Tasks = nil
 
 	stream, err := newWindowClient(t, api).WatchTasks(
-		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}),
+		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{WindowId: testWindow}),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 func TestAVaultReadWakesTheListeners(t *testing.T) {
 	api := newAPI(t)
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
-	moves, err := api.WatchMoves(t.Context())
+	moves, err := api.WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

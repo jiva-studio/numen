@@ -96,7 +96,6 @@ message DetectedConnection {
   string path = 3;
 }
 
-// ProviderServiceCallResponse is one frame of a call.
 message ProviderServiceCallResponse {
   oneof frame {
     bytes data = 1;

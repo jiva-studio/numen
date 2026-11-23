@@ -142,9 +142,13 @@ export interface VaultRelations {
   // Makes the records between two notes exactly the ones given, in both notes or in neither.
   saveConnection(connection: Connection): Promise<Result<void, RelationError>>
   // Removes the record one note writes about another and leaves the other note alone.
-  removeSide(from: string, to: string, type?: string): Promise<Result<void, RelationError>>
+  deleteConnectionSide(
+    from: string,
+    to: string,
+    type?: string,
+  ): Promise<Result<void, RelationError>>
   // Removes the records two notes write about each other.
-  removeConnection(
+  deleteConnection(
     first: string,
     second: string,
     type?: string,

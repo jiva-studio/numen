@@ -27,7 +27,7 @@ type ChooseFolderRequest struct {
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	// The folder the dialog opens in. Empty opens wherever this machine opens a
 	// dialog that received nothing.
-	StartingAt    string `protobuf:"bytes,2,opt,name=starting_at,json=startingAt,proto3" json:"starting_at,omitempty"`
+	StartFolder   string `protobuf:"bytes,2,opt,name=start_folder,json=startFolder,proto3" json:"start_folder,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,9 +69,9 @@ func (x *ChooseFolderRequest) GetTitle() string {
 	return ""
 }
 
-func (x *ChooseFolderRequest) GetStartingAt() string {
+func (x *ChooseFolderRequest) GetStartFolder() string {
 	if x != nil {
-		return x.StartingAt
+		return x.StartFolder
 	}
 	return ""
 }
@@ -135,11 +135,10 @@ var File_numen_v1_folderdialog_proto protoreflect.FileDescriptor
 
 const file_numen_v1_folderdialog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bnumen/v1/folderdialog.proto\x12\bnumen.v1\"L\n" +
+	"\x1bnumen/v1/folderdialog.proto\x12\bnumen.v1\"N\n" +
 	"\x13ChooseFolderRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
-	"\vstarting_at\x18\x02 \x01(\tR\n" +
-	"startingAt\"G\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12!\n" +
+	"\fstart_folder\x18\x02 \x01(\tR\vstartFolder\"G\n" +
 	"\x14ChooseFolderResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
 	"\tis_chosen\x18\x02 \x01(\bR\bisChosen2d\n" +

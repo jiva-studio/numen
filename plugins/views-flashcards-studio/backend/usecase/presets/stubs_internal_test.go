@@ -75,7 +75,7 @@ type stubLinkQueries struct {
 	backlinks    map[string][]domain.ResolvedLink
 }
 
-func (s stubLinkQueries) GetLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.linksErr != nil {
 		return nil, s.linksErr
 	}
@@ -86,7 +86,7 @@ func (s stubLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, [
 	return nil, nil
 }
 
-func (s stubLinkQueries) GetBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.backlinksErr != nil {
 		return nil, s.backlinksErr
 	}
@@ -110,7 +110,7 @@ func (s stubNoteQueries) Has(_ context.Context, _ domain.VaultID) (bool, error) 
 	return s.has, s.hasErr
 }
 
-func (s stubNoteQueries) GetPathsOfType(
+func (s stubNoteQueries) ListPathsOfType(
 	_ context.Context, _ domain.VaultID, kind domain.NoteType,
 ) ([]string, error) {
 	if err := s.pathsErr[kind]; err != nil {
@@ -137,7 +137,7 @@ func (s stubNoteQueries) GetTypes(
 	return s.types, nil
 }
 
-func (s stubNoteQueries) GetNamedPaths(
+func (s stubNoteQueries) ListNamedPaths(
 	_ context.Context, _ domain.VaultID, name string,
 ) ([]string, error) {
 	if s.namesErr != nil {
@@ -155,6 +155,6 @@ type stubProblemQueries struct {
 	problems []domain.VaultProblem
 }
 
-func (s stubProblemQueries) GetParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
+func (s stubProblemQueries) ListParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
 	return s.problems, s.err
 }

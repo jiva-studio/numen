@@ -16,8 +16,8 @@ beforeEach(() => {
 describe('the relationships the window offers', () => {
   it('resolves the wikilinks of a text in the vault named', async () => {
     core.resolveAddresses.mockResolvedValue({
-      found: [{ raw: '[[Peat]]', address: 'name://Peat', text: 'Peat' }],
-      resolved: [{ written: 'name://Peat', path: 'Peat.md', isCrossed: false }],
+      links: [{ raw: '[[Peat]]', address: 'name://Peat', text: 'Peat' }],
+      resolvedAddresses: [{ address: 'name://Peat', path: 'Peat.md', isCrossed: false }],
     })
 
     const found = await windowRelations.resolveLinks('Unlike [[Peat]].', 'garden')
@@ -28,7 +28,7 @@ describe('the relationships the window offers', () => {
     expect(core.resolveAddresses.mock.calls.at(-1)?.[0]).toMatchObject({
       from: '',
       text: 'Unlike [[Peat]].',
-      vault: 'garden',
+      vaultId: 'garden',
     })
   })
 

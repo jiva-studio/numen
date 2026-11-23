@@ -20,22 +20,25 @@ export const createQuitApi = (windowService: WindowClients['windowService']) => 
    * The window quitting, until the client aborts the signal. The stream opens with the token this
    * client replies under.
    */
-  async function* watchQuit(signal: AbortSignal): AsyncGenerator<QuitRequest> {
-    for await (const request of windowService.watchQuit({ window: WINDOW }, { signal })) {
-      yield { token: request.token, flush: request.flush }
+  async function* watchWindowClose(signal: AbortSignal): AsyncGenerator<QuitRequest> {
+    for await (const request of windowService.watchWindowClose({ windowId: WINDOW }, { signal })) {
+      yield { token: request.token, flush: request.isFlushRequired }
     }
   }
 
   /** Reports that this client has written all pending data. */
-  const reportFlush = async (token: string, outcome?: 'written' | 'unsaved'): Promise<void> => {
-    await windowService.reportFlush({
-      window: WINDOW,
+  const reportPendingWork = async (
+    token: string,
+    outcome?: 'written' | 'unsaved',
+  ): Promise<void> => {
+    await windowService.reportPendingWork({
+      windowId: WINDOW,
       token,
       result: flushResults[outcome ?? 'nothing'],
     })
   }
 
-  return { watchQuit, reportFlush }
+  return { watchWindowClose, reportPendingWork }
 }
 
 export type QuitApi = ReturnType<typeof createQuitApi>

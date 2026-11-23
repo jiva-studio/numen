@@ -1,5 +1,5 @@
 /** The part of the runtime of the desktop shell the pages use, under the names the shell gives it. */
-export interface FrameRuntime {
+interface FrameRuntime {
   readonly Window?: {
     readonly Focus?: () => Promise<void>
     readonly Minimise?: () => Promise<void>

@@ -99,7 +99,7 @@ func (v *Vault) findLinkProblems(
 	return out
 }
 
-func (v *Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+func (v *Vault) ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {

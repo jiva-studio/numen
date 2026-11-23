@@ -324,8 +324,6 @@ export const HostStoreErrorCodeSchema: GenEnum<HostStoreErrorCode> = /*@__PURE__
  */
 export const HostStoreService: GenService<{
   /**
-   * ReadStoreFile reads a whole file.
-   *
    * @generated from rpc numen.v1.HostStoreService.ReadStoreFile
    */
   readStoreFile: {
@@ -367,7 +365,7 @@ export const HostStoreService: GenService<{
     output: typeof WriteStoreFileResponseSchema;
   },
   /**
-   * DeleteStoreFile removes a file. A file that is not there is removed.
+   * DeleteStoreFile succeeds for a file that is not there.
    *
    * @generated from rpc numen.v1.HostStoreService.DeleteStoreFile
    */

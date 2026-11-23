@@ -34,8 +34,8 @@ export interface LicenseInfo {
   readonly keyHint: string
   readonly activeProvider: string
   readonly instanceName: string
-  readonly expiresAt: string
-  readonly verifiedAt: string
+  readonly expiresUnixMs: number
+  readonly verifiedUnixMs: number
 }
 
 /** Why an activation or deactivation call was refused. */

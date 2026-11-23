@@ -98,7 +98,7 @@ message ListThemesResponse {
   repeated Theme themes = 1;
 
   // The theme that is applied, by its name.
-  string applied = 2;
+  string applied_theme = 2;
 
   // Which half of a pair the tokens resolve to.
   Mode mode = 3;

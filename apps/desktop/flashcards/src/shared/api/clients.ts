@@ -6,26 +6,26 @@
 import {
   createCallerTransport,
   createConnectionCallClient,
-  createConnectionCallServiceClient,
-  createNoteClient,
-  createPluginClient,
-  createSettingsClient,
-  createThemeServiceClient,
-  createVaultsClient,
-  createWindowClient,
+  createConnectionCallRpc,
+  createNoteRpc,
+  createPluginRpc,
+  createSettingsRpc,
+  createThemeRpc,
+  createVaultsRpc,
+  createWindowRpc,
   type Transport,
 } from '@numen/core-client'
 
 export type { Transport }
 
 export const createWindowClients = (transport: Transport) => ({
-  notes: createNoteClient(transport),
-  connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),
-  pluginService: createPluginClient(createCallerTransport('plugins', transport)),
-  settingsService: createSettingsClient(createCallerTransport('settings', transport)),
-  theme: createThemeServiceClient(transport),
-  vaultsService: createVaultsClient(transport),
-  windowService: createWindowClient(transport),
+  notes: createNoteRpc(transport),
+  connectionCalls: createConnectionCallClient(createConnectionCallRpc(transport)),
+  pluginService: createPluginRpc(createCallerTransport('plugins', transport)),
+  settingsService: createSettingsRpc(createCallerTransport('settings', transport)),
+  theme: createThemeRpc(transport),
+  vaultsService: createVaultsRpc(transport),
+  windowService: createWindowRpc(transport),
 })
 
 export type WindowClients = ReturnType<typeof createWindowClients>

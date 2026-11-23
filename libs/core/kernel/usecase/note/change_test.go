@@ -213,7 +213,7 @@ func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
 		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
 	}
-	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 
 	// The note answers to the name it is filed under now, wherever a link
 	// naming it is written.
-	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}

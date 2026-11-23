@@ -16,15 +16,15 @@ export const noteAnswers = {
       graphs: request.paths.map((path) => ({
         focus: { path, title: path.replace(/\.md$/, '') },
         focusType: 'note',
-        related: [],
+        relatedNotes: [],
         connections: [],
       })),
     }),
     readNote: (request) => ({
       body: 'what is written',
-      at: { path: request.path, size: 1n, mtime: 1n },
+      fileStat: { path: request.path, size: 1n, mtime: 1n },
     }),
-    writeNote: (request) => ({ body: '', at: { path: request.path, size: 2n, mtime: 2n } }),
+    writeNote: (request) => ({ body: '', fileStat: { path: request.path, size: 2n, mtime: 2n } }),
     createNote: (request) => {
       requests.made.push(request.title)
       return { path: `${request.title}.md` }

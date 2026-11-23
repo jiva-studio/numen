@@ -133,14 +133,14 @@ type noteLookup struct {
 	getNotes func(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 }
 
-func (n noteLookup) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (n noteLookup) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	if n.pathsErr != nil {
 		return nil, n.pathsErr
 	}
 	if n.paths != nil {
 		return n.paths, nil
 	}
-	return n.NoteLookup.GetPathsOfType(ctx, noteType)
+	return n.NoteLookup.ListPathsOfType(ctx, noteType)
 }
 
 func (n noteLookup) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {

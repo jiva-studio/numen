@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createPluginPaneWrapper } from './host'
+import { createCustomTabKind, pickCustomTabParts } from './customTabKind'
 import { registerPluginStyle } from '../styles'
 import {
   CONVERSATION,
@@ -445,7 +445,10 @@ describe('createPluginHost', () => {
       },
     })
 
-    const Wrapper = createPluginPaneWrapper('crashing.plugin', CrashingComponent)
+    const Wrapper = createCustomTabKind(
+      'crashing.plugin',
+      pickCustomTabParts({ kind: 'test.kind', component: CrashingComponent }),
+    ).pane
     const wrapper = mount(Wrapper, {
       props: { state: { path: '/test/note.md' } },
     })
@@ -465,7 +468,10 @@ describe('createPluginHost', () => {
     })
 
     registerPluginStyle('sample.plugin', '/plugin/sample.plugin/styles.css')
-    const Wrapper = createPluginPaneWrapper('sample.plugin', SampleComponent)
+    const Wrapper = createCustomTabKind(
+      'sample.plugin',
+      pickCustomTabParts({ kind: 'test.kind', component: SampleComponent }),
+    ).pane
     const wrapper = mount(Wrapper, {
       props: { state: {} },
       attachTo: document.body,

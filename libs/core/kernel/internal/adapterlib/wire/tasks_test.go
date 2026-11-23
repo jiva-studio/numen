@@ -29,7 +29,7 @@ func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClie
 	t.Cleanup(stop)
 
 	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	stream, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: Editor}))
+	stream, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{WindowId: Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	stream, err := client.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: Editor}))
+	stream, err := client.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{WindowId: Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,10 +97,10 @@ func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 		t.Errorf("the answer was %v", stream.Err())
 	}
 
-	if _, err := client.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
-		Window: Editor,
-		Token:  "0",
-		Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
+	if _, err := client.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
+		WindowId: Editor,
+		Token:    "0",
+		Result:   v1.FlushResult_FLUSH_RESULT_WRITTEN,
 	})); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a flush for the editor was answered %v", err)
 	}
@@ -141,7 +141,7 @@ func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 	}
 
 	if _, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{
-		Window: Editor, Id: "indexing",
+		WindowId: Editor, Id: "indexing",
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -150,12 +150,12 @@ func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 	}
 
 	for _, id := range []string{"plugin:md.example.engine:one", "missing"} {
-		_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: Editor, Id: id}))
+		_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{WindowId: Editor, Id: id}))
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			t.Errorf("canceling %q answered %v, want not found", id, err)
 		}
 	}
-	_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: "another", Id: "indexing"}))
+	_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{WindowId: "another", Id: "indexing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a cancel naming another window answered %v", err)
 	}

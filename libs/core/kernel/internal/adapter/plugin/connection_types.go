@@ -7,7 +7,7 @@ import (
 
 // ConnectionPlugins provides the plugins and their manifests. GetPlugin answers only for an enabled plugin.
 type ConnectionPlugins interface {
-	GetPlugins() []manifest.Discovered
+	ListPlugins() []manifest.Discovered
 	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
@@ -26,7 +26,7 @@ func NewConnectionTypes(plugins ConnectionPlugins) *ConnectionTypes {
 // the manifest.
 func (r *ConnectionTypes) ListTypes() []connection.Type {
 	var types []connection.Type
-	for _, discovered := range r.host.GetPlugins() {
+	for _, discovered := range r.host.ListPlugins() {
 		plugin, isEnabled := r.host.GetPlugin(discovered.Manifest.ID)
 		if !isEnabled {
 			continue
@@ -46,7 +46,7 @@ func (r *ConnectionTypes) ListTypes() []connection.Type {
 func (r *ConnectionTypes) ListOperationTitles() []manifest.Operation {
 	var titles []manifest.Operation
 	named := map[string]bool{}
-	for _, discovered := range r.host.GetPlugins() {
+	for _, discovered := range r.host.ListPlugins() {
 		plugin, isEnabled := r.host.GetPlugin(discovered.Manifest.ID)
 		if !isEnabled {
 			continue

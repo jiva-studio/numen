@@ -947,11 +947,11 @@ type failOnceLinks struct {
 	calls atomic.Int32
 }
 
-func (f *failOnceLinks) GetLinks(ctx context.Context, v domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (f *failOnceLinks) ListLinks(ctx context.Context, v domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if f.calls.Add(1) == 1 {
 		return nil, errors.New("links boom")
 	}
-	return f.LinkQueries.GetLinks(ctx, v, path)
+	return f.LinkQueries.ListLinks(ctx, v, path)
 }
 
 type statCountReaders struct {

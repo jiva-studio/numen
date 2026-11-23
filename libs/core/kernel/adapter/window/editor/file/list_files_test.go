@@ -76,7 +76,7 @@ func TestAListingAnswersWhenEachEntryWasModifiedInMilliseconds(t *testing.T) {
 
 	got := map[string]int64{}
 	for _, one := range answer.Msg.GetEntries() {
-		got[one.GetPath()] = one.GetModifiedAtMs()
+		got[one.GetPath()] = one.GetModifiedUnixMs()
 	}
 	if want := at.UnixMilli(); got["links/tide.md"] != want {
 		t.Errorf("the note was modified at %d, want %d", got["links/tide.md"], want)
@@ -99,7 +99,7 @@ func TestAListingAnswersZeroForAnEntryWithNoModificationTime(t *testing.T) {
 		t.Fatal("the listing is empty")
 	}
 	for _, one := range answer.Msg.GetEntries() {
-		if got := one.GetModifiedAtMs(); got != 0 {
+		if got := one.GetModifiedUnixMs(); got != 0 {
 			t.Errorf("%s was modified at %d, want 0", one.GetPath(), got)
 		}
 	}

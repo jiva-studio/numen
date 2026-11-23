@@ -160,8 +160,8 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]string, 0, len(found.Msg.GetFound()))
-	for _, one := range found.Msg.GetFound() {
+	out := make([]string, 0, len(found.Msg.GetMatches()))
+	for _, one := range found.Msg.GetMatches() {
 		out = append(out, one.GetNote().GetPath())
 	}
 	return out
@@ -188,7 +188,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 
 	// The query targets this window, so another window's name matches nothing here.
 	_, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: "another"}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: "another"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
 	}
@@ -198,11 +198,11 @@ func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
 	out, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: window}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: window}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return out.Msg.GetVault()
+	return out.Msg.GetVaultId()
 }
 
 // TestAnotherVaultOpensInTheWindowThatIsOpen. Afterwards the window reports
@@ -216,7 +216,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	signalCh := make(chan bool, 1)
 	go func() {
 		for changes.Receive() {
-			if changes.Msg().GetReload() {
+			if changes.Msg().GetIsReloadRequired() {
 				signalCh <- true
 				return
 			}
@@ -388,12 +388,12 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 	}
 }
 
-func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
+func (f *showing) watchWindowClose(t *testing.T) (*connect.ServerStreamForClient[v1.WatchWindowCloseResponse], func()) {
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(t.Context())
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
-		Window: wire.Editor,
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{
+		WindowId: wire.Editor,
 	}))
 	if err != nil {
 		hangUp()
@@ -416,7 +416,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that subscribes and never answers.
-	_, isDone := f.watchQuit(t)
+	_, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	swapped := make(chan error, 1)
@@ -441,20 +441,20 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	request := make(chan struct{})
 	go func() {
 		defer close(request)
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_UNSAVED,
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_UNSAVED,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -486,7 +486,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	signalCh := make(chan struct{})
@@ -495,15 +495,15 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	go func() {
 		defer close(wrote)
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			close(signalCh)
 			<-release
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_NOTHING,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -578,7 +578,7 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	}
 	// Without it the next save has no token to present and is rejected as a
 	// conflicting external change.
-	if answer.Msg.GetAt() == nil {
+	if answer.Msg.GetFileStat() == nil {
 		t.Error("the save landed and the client was handed no fingerprint")
 	}
 	if !answer.Msg.GetIsIndexOutdated() {
@@ -629,7 +629,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	save()
 	pos := findUpdateIndexTask(t, f)
-	if pos == nil || pos.GetError() == "" {
+	if pos == nil || pos.GetFailureReason() == "" {
 		t.Fatalf("what the user is shown after a save search cannot see is %+v", pos)
 	}
 
@@ -649,7 +649,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 	listening, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
-		Window: wire.Editor,
+		WindowId: wire.Editor,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -708,14 +708,14 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the note is in the trash and the client received %v", err)
 	}
-	if answer.Msg.GetTrashed() == "" {
+	if answer.Msg.GetTrashPath() == "" {
 		t.Error("the note went to the trash and the client received nothing of where")
 	}
 	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the removal is answered as followed and search still holds the note")
 	}
-	if len(answer.Msg.GetDangling()) != 1 {
-		t.Errorf("the links now reaching nothing are %q", answer.Msg.GetDangling())
+	if len(answer.Msg.GetDanglingNotes()) != 1 {
+		t.Errorf("the links now reaching nothing are %q", answer.Msg.GetDanglingNotes())
 	}
 }
 
@@ -880,11 +880,11 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	}
 
 	displayed, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
 	}
-	if got := displayed.Msg.GetVault(); got != "" {
+	if got := displayed.Msg.GetVaultId(); got != "" {
 		t.Errorf("the window says it is showing %q", got)
 	}
 
@@ -924,7 +924,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
 
-	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1052,7 +1052,7 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the palette cannot be typed in: %v", err)
 	}
-	if found := named.Msg.GetFound(); len(found) != 0 {
+	if found := named.Msg.GetMatches(); len(found) != 0 {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
@@ -1062,7 +1062,7 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)
 	}
-	if results := found.Msg.GetFound(); len(results) != 0 {
+	if results := found.Msg.GetResults(); len(results) != 0 {
 		t.Errorf("a window standing on nothing holds the text %+v", results)
 	}
 }
@@ -1124,7 +1124,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(named.Msg.GetFound()) == 0 {
+	if len(named.Msg.GetMatches()) == 0 {
 		t.Error("the vault that arrived does not answer for the note it holds")
 	}
 

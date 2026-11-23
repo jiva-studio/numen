@@ -14,7 +14,7 @@ import {
   getNextDirection,
   getRows,
   isConnectionEmpty,
-  removeSide,
+  deleteConnectionSide,
   setSideLabel,
   type SideKey,
 } from '../model/connectionDraft'
@@ -80,7 +80,7 @@ function onAddReverse() {
 }
 
 function onRemoveRow(key: SideKey) {
-  draft.value = removeSide(draft.value, key)
+  draft.value = deleteConnectionSide(draft.value, key)
 }
 
 function onDone() {

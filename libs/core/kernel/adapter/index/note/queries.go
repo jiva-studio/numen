@@ -68,10 +68,10 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	return s, err
 }
 
-// GetNamedPaths is every note filed under one name. A name that answers for
+// ListNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and
 // is worth saying out loud before it surprises anyone.
-func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) (_ []string, err error) {
+func (q *Queries) ListNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) (_ []string, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

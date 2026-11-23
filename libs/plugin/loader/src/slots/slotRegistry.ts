@@ -49,7 +49,7 @@ export interface SlotCommandLook {
   readonly hasItems?: boolean | undefined
 }
 
-export interface SlotRegistryDeps {
+interface SlotRegistryDeps {
   readonly getKeyFor?: (
     command: string,
     values?: Readonly<Record<string, string>>,

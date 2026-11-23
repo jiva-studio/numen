@@ -94,11 +94,11 @@ func (c *countingSearch) GetSearch(ctx context.Context, id string, read host.Sea
 	return c.Searches.GetSearch(ctx, id, read)
 }
 
-func (c *countingSearch) RemoveSearch(ctx context.Context, id string) error {
+func (c *countingSearch) DeleteSearch(ctx context.Context, id string) error {
 	c.mu.Lock()
 	c.active--
 	c.mu.Unlock()
-	return c.Searches.RemoveSearch(ctx, id)
+	return c.Searches.DeleteSearch(ctx, id)
 }
 
 func (c *countingSearch) getMaxActive() int {

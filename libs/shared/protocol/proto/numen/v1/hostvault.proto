@@ -20,30 +20,30 @@ service HostVaultService {
   // with the vault unset.
   rpc GetHostVault(GetHostVaultRequest) returns (GetHostVaultResponse);
 
-  // EnsureVaultIndexed brings the vault into the index when it is not there yet,
-  // and says where that stands. The work goes on after the call returns, and the
-  // caller asks again once WatchMoves tells it something moved.
-  rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
+  // IndexVault starts indexing the vault when it is not indexed yet, and returns the
+  // indexing state. Indexing continues after the call returns; the caller calls
+  // again after WatchIndexChanges reports a change.
+  rpc IndexVault(IndexVaultRequest) returns (IndexVaultResponse);
 
   // LockVault holds the vault's writers to one caller until UnlockVault, or
   // until the plugin stops. A caller that finds it held waits for it.
   rpc LockVault(LockVaultRequest) returns (LockVaultResponse);
 
-  // UnlockVault lets the writers go.
+  // UnlockVault releases the lock taken by LockVault.
   rpc UnlockVault(UnlockVaultRequest) returns (UnlockVaultResponse);
 
-  // GetParseProblems lists what parsing each file of the vault turned up.
-  rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
+  // ListParseProblems lists what parsing each file of the vault turned up.
+  rpc ListParseProblems(ListParseProblemsRequest) returns (ListParseProblemsResponse);
 
-  // GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+  // ListVaultProblems runs the named checks of the vault (parse, frontmatter,
   // ambiguous, dangling), or every check that is not opt-in when none is named.
   // It needs vault:read.
-  rpc GetVaultProblems(GetVaultProblemsRequest) returns (GetVaultProblemsResponse);
+  rpc ListVaultProblems(ListVaultProblemsRequest) returns (ListVaultProblemsResponse);
 
-  // WatchMoves tells that something moved in some vault of the installation,
-  // until the caller disconnects. It says nothing of what moved. The first message is
-  // sent at once, so that the caller knows the watch is on.
-  rpc WatchMoves(WatchMovesRequest) returns (stream WatchMovesResponse);
+  // WatchIndexChanges streams a message when any vault of the installation changes,
+  // until the caller disconnects. A message does not say what changed. The first
+  // message is sent at once, to confirm the watch is active.
+  rpc WatchIndexChanges(WatchIndexChangesRequest) returns (stream WatchIndexChangesResponse);
 }
 
 enum HostIndexState {
@@ -56,17 +56,17 @@ enum HostIndexState {
   HOST_INDEX_STATE_FAILED = 3;
 }
 
-message EnsureVaultIndexedRequest {}
+message IndexVaultRequest {}
 
-message EnsureVaultIndexedResponse {
+message IndexVaultResponse {
   ErrorCode error = 1;
   HostIndexState state = 2;
   string reason = 3;
 }
 
-message WatchMovesRequest {}
+message WatchIndexChangesRequest {}
 
-message WatchMovesResponse {}
+message WatchIndexChangesResponse {}
 
 message GetHostVaultRequest {}
 
@@ -92,7 +92,7 @@ message UnlockVaultRequest {
 
 message UnlockVaultResponse {}
 
-message GetParseProblemsRequest {}
+message ListParseProblemsRequest {}
 
 // HostParseProblem is something parsing a file turned up.
 message HostParseProblem {
@@ -100,12 +100,12 @@ message HostParseProblem {
   string detail = 2;
 }
 
-message GetParseProblemsResponse {
+message ListParseProblemsResponse {
   ErrorCode error = 1;
   repeated HostParseProblem problems = 2;
 }
 
-message GetVaultProblemsRequest {
+message ListVaultProblemsRequest {
   // The checks to run. Empty runs every check that is not opt-in.
   repeated string checks = 1;
 }
@@ -124,7 +124,7 @@ message HostVaultProblem {
   repeated string candidates = 6;
 }
 
-message GetVaultProblemsResponse {
+message ListVaultProblemsResponse {
   ErrorCode error = 1;
   repeated HostVaultProblem problems = 2;
   // The checks this result covers.

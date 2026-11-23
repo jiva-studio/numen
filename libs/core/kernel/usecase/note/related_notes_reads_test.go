@@ -23,20 +23,20 @@ func newCountingLinks(g graph) *countingLinks {
 	return &countingLinks{graph: g, links: map[string]int{}, backlinks: map[string]int{}}
 }
 
-func (c *countingLinks) GetLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (c *countingLinks) ListLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	c.linkCalls++
 	for _, p := range paths {
 		c.links[p]++
 	}
-	return c.graph.GetLinksOf(ctx, v, paths)
+	return c.graph.ListLinksOf(ctx, v, paths)
 }
 
-func (c *countingLinks) GetBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (c *countingLinks) ListBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	c.backlinkCalls++
 	for _, p := range paths {
 		c.backlinks[p]++
 	}
-	return c.graph.GetBacklinksOf(ctx, v, paths)
+	return c.graph.ListBacklinksOf(ctx, v, paths)
 }
 
 func TestEachListOfLinksIsReadOnceAtDepthTwo(t *testing.T) {

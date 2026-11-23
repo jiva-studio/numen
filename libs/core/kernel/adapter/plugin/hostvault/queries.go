@@ -21,8 +21,8 @@ type Lookups struct {
 type Notes struct {
 	Notes      query.GetNotes
 	Types      *query.GetTypes
-	NamedPaths *query.GetNamedPaths
-	TypedPaths query.GetPathsOfType
+	NamedPaths *query.ListNamedPaths
+	TypedPaths query.ListPathsOfType
 
 	session sessionAccess
 }
@@ -51,7 +51,7 @@ func (n Notes) GetTypes(ctx context.Context, paths []string) (map[string]domain.
 	return n.Types.Execute(ctx, v, paths)
 }
 
-func (n Notes) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+func (n Notes) ListNamedPaths(ctx context.Context, name string) ([]string, error) {
 	v, err := n.session.open()
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (n Notes) GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	return n.NamedPaths.Execute(ctx, v, name)
 }
 
-func (n Notes) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (n Notes) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	v, err := n.session.open()
 	if err != nil {
 		return nil, err
@@ -69,15 +69,15 @@ func (n Notes) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]
 
 // Links reads the links between the notes of the vault.
 type Links struct {
-	Links     query.GetLinks
-	Backlinks query.GetBacklinks
+	Links     query.ListLinks
+	Backlinks query.ListBacklinks
 	Targets   *query.ResolveLinks
 
 	session sessionAccess
 }
 
-// GetLinks returns the links of the note at the path.
-func (l Links) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+// ListLinks returns the links of the note at the path.
+func (l Links) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
 	v, err := l.session.open()
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (l Links) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink
 	return l.Links.Execute(ctx, v, from)
 }
 
-// GetBacklinks returns the links to the note at the path.
-func (l Links) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+// ListBacklinks returns the links to the note at the path.
+func (l Links) ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	v, err := l.session.open()
 	if err != nil {
 		return nil, err

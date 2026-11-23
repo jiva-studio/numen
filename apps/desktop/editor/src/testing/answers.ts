@@ -134,13 +134,13 @@ export const outside = (() => {
 export const changed = (() => {
   interface Change {
     paths: string[]
-    renamed: { from: string; to: string }[]
+    moves: { from: string; to: string }[]
   }
   const queue: Change[] = []
   let wake: (() => void) | null = null
   async function* stream() {
     for (;;) {
-      while (queue.length > 0) yield { reload: false, versionPaths: [], ...queue.shift()! }
+      while (queue.length > 0) yield { isReloadRequired: false, versionPaths: [], ...queue.shift()! }
       await new Promise<void>((woken) => {
         wake = woken
       })

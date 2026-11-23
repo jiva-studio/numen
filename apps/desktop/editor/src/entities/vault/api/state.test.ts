@@ -60,8 +60,8 @@ describe('the changes to the vault a window follows', () => {
     request.watchVaultChanges.mockImplementation(async function* () {
       yield {
         paths: ['Llama.md'],
-        reload: true,
-        renamed: [{ from: 'A.md', to: 'B.md' }],
+        isReloadRequired: true,
+        moves: [{ from: 'A.md', to: 'B.md' }],
         versionPaths: ['talks/a.mp3'],
       }
     })
@@ -78,9 +78,9 @@ describe('the changes to the vault a window follows', () => {
 
   it('stops following vault changes when the signal aborts', async () => {
     request.watchVaultChanges.mockImplementation(async function* (_req, context) {
-      yield { paths: ['Llama.md'], reload: false, renamed: [], versionPaths: [] }
+      yield { paths: ['Llama.md'], isReloadRequired: false, moves: [], versionPaths: [] }
       if (!context.signal.aborted) {
-        yield { paths: ['Alpaca.md'], reload: false, renamed: [], versionPaths: [] }
+        yield { paths: ['Alpaca.md'], isReloadRequired: false, moves: [], versionPaths: [] }
       }
     })
     const controller = new AbortController()

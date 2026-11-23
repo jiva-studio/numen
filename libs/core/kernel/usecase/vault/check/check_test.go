@@ -187,7 +187,7 @@ type brokenQueries struct {
 	err error
 }
 
-func (b brokenQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (b brokenQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return nil, b.err
 }
 

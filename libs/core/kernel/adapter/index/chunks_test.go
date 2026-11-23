@@ -575,7 +575,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	}
 
 	// A name resolves to a note, and a book is not one.
-	if paths, err := db.NoteQueries().GetNamedPaths(ctx, getFirstVault().ID, "first"); err != nil {
+	if paths, err := db.NoteQueries().ListNamedPaths(ctx, getFirstVault().ID, "first"); err != nil {
 		t.Fatal(err)
 	} else if len(paths) != 0 {
 		t.Errorf("the name of a book resolves to %v", paths)

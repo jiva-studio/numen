@@ -45,7 +45,7 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	tasks, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: "editor"}))
+	tasks, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{WindowId: "editor"}))
 	if err != nil {
 		t.Fatal(err)
 	}

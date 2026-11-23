@@ -102,11 +102,11 @@ func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views no
 			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
 		},
 		Connect: noteConnecting{
-			SaveConnection:   note.NewSaveConnection(connecting),
-			RemoveSide:       note.NewRemoveSide(connecting),
-			RemoveConnection: note.NewRemoveConnection(connecting),
-			Join:             note.NewJoin(connecting),
-			CreateInRelation: note.NewCreateInRelation(create, names),
+			SaveConnection:       note.NewSaveConnection(connecting),
+			DeleteConnectionSide: note.NewDeleteConnectionSide(connecting),
+			DeleteConnection:     note.NewDeleteConnection(connecting),
+			Join:                 note.NewJoin(connecting),
+			CreateInRelation:     note.NewCreateInRelation(create, names),
 		},
 	}
 }
@@ -116,7 +116,7 @@ func vaultQueries(db *vaultIndex) query.UseCases {
 	return query.UseCases{
 		Refer: query.Referring{
 			Links:        query.NewShowLinks(links),
-			Backlinks:    query.NewGetBacklinks(links),
+			Backlinks:    query.NewListBacklinks(links),
 			ResolveLinks: query.NewResolveLinks(links),
 		},
 		Browse: query.Browsing{

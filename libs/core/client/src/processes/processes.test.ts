@@ -2,12 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { HealthSeverity, WatchPluginProcessesResponseSchema } from '@numen/protocol'
-import { createPluginProcessClient } from '../clients'
+import { createPluginProcessRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createProcessClient, type ProcessRpc } from './processes'
 
 const createProcesses = (answers: CoreAnswers) =>
-  createProcessClient(createPluginProcessClient(createCoreTransport(answers)))
+  createProcessClient(createPluginProcessRpc(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one
@@ -31,8 +31,8 @@ describe('the plugins that run', () => {
                 idleStopTimeUnixMs: 1_700_000_240_000n,
                 health: HealthSeverity.WARNING,
                 healthText: 'The tiles are old',
-                startedBy: { who: 'Indexing', why: 'embed notes' },
-                holders: [{ who: 'Search', why: 'find places' }],
+                startedBy: { requester: 'Indexing', reason: 'embed notes' },
+                holders: [{ requester: 'Search', reason: 'find places' }],
               },
               {
                 pluginId: 'org.example.maps',
@@ -45,8 +45,8 @@ describe('the plugins that run', () => {
                 health: HealthSeverity.OK,
                 healthText: '',
                 holders: [
-                  { who: 'Search', why: 'find places' },
-                  { who: 'Orchard', why: 'call tool' },
+                  { requester: 'Search', reason: 'find places' },
+                  { requester: 'Orchard', reason: 'call tool' },
                 ],
               },
             ],
@@ -70,8 +70,8 @@ describe('the plugins that run', () => {
         idleStopTime: 1_700_000_240_000,
         health: 'warning',
         healthText: 'The tiles are old',
-        startedBy: { who: 'Indexing', why: 'embed notes' },
-        holders: [{ who: 'Search', why: 'find places' }],
+        startedBy: { requester: 'Indexing', reason: 'embed notes' },
+        holders: [{ requester: 'Search', reason: 'find places' }],
       },
       {
         pluginId: 'org.example.maps',
@@ -82,10 +82,10 @@ describe('the plugins that run', () => {
         isInProcess: true,
         health: 'ok',
         healthText: '',
-        startedBy: { who: '', why: '' },
+        startedBy: { requester: '', reason: '' },
         holders: [
-          { who: 'Search', why: 'find places' },
-          { who: 'Orchard', why: 'call tool' },
+          { requester: 'Search', reason: 'find places' },
+          { requester: 'Orchard', reason: 'call tool' },
         ],
       },
     ])

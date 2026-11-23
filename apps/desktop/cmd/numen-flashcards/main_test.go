@@ -144,7 +144,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	moved, err := api.WatchMoves(t.Context())
+	moved, err := api.WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	}
 	install.services.Execution, install.services.Preferences, install.services.Endpoints = container.AdaptPluginHost(management, supervision)
 	api := openShell(t, install)
-	listed, err := api.Frontends.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	listed, err := api.Frontends.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -75,7 +75,7 @@ func (f filing) newMove(preserved naming.SyncTitleAndFilename) tree {
 
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.NoteQueries().GetLinks(t.Context(), f.vault.ID, in)
+	found, err := f.db.NoteQueries().ListLinks(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}

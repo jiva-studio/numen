@@ -322,7 +322,7 @@ func TestTheIndexStateOfAVaultIsAnswered(t *testing.T) {
 	for status, want := range cases {
 		disk.setState(plugin.IndexState{Status: status, Reason: "why"})
 
-		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
+		res, err := client.IndexVault(t.Context(), connect.NewRequest(&v1.IndexVaultRequest{}))
 
 		if err != nil || res.Msg.GetState() != want || res.Msg.GetReason() != "why" {
 			t.Errorf("status %v was answered %v (%v)", status, res.Msg, err)
@@ -332,7 +332,7 @@ func TestTheIndexStateOfAVaultIsAnswered(t *testing.T) {
 
 func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	disk, client := newDiskVaults(t, nil)
-	stream, err := client.WatchMoves(t.Context(), connect.NewRequest(&v1.WatchMovesRequest{}))
+	stream, err := client.WatchIndexChanges(t.Context(), connect.NewRequest(&v1.WatchIndexChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

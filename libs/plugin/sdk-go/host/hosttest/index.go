@@ -197,7 +197,7 @@ func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain
 	return out, nil
 }
 
-func (v *Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+func (v *Vault) ListNamedPaths(ctx context.Context, name string) ([]string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -213,7 +213,7 @@ func (v *Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error
 	return out, nil
 }
 
-func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (v *Vault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {

@@ -38,7 +38,7 @@ func (h *Prose) ReadNote(
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = convertFileStatToWire(found.FileStat)
+		out.FileStat = convertFileStatToWire(found.FileStat)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -65,7 +65,7 @@ func (h *Prose) WriteNote(
 	// but search does not include it.
 	if err == nil || indexOutdated {
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
+			FileStat: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -178,7 +178,7 @@ func convertRelatedNotesToWire(found query.RelatedNotesView) *v1.NoteGraph {
 		FocusTabKind: tabKinds[found.Focus.Path],
 	}
 	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.RelatedNote{
+		out.RelatedNotes = append(out.RelatedNotes, &v1.RelatedNote{
 			Note:      convertNoteToWire(related.NoteRef),
 			Relation:  convertRelationToWire(related.Relation),
 			Direction: convertDirectionToWire(related.Direction),
@@ -202,7 +202,7 @@ func (h *Links) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	if named := r.Msg.GetVault(); named != "" && named != string(showing.ID) {
+	if named := r.Msg.GetVaultId(); named != "" && named != string(showing.ID) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("vault %q is not the one this window shows", named))
 	}
 	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing.ID, r.Msg)
@@ -284,7 +284,7 @@ func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetFileStat())}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
@@ -395,7 +395,7 @@ func (h *Prose) RenameNote(
 		IsIndexOutdated: isIndexOutdated,
 	}
 	if renamed.Moved != nil {
-		out.Moved = newMoveResult(*renamed.Moved)
+		out.MoveResult = newMoveResult(*renamed.Moved)
 	}
 	if err != nil && !isIndexOutdated {
 		reason, ok := wire.GetErrorCode(err)
@@ -425,7 +425,7 @@ func newWireNameSource(delta naming.Source) v1.NameSource {
 func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
-		Repaired: moved.Repaired, Dangling: moved.Dangling,
+		RepairedNotes: moved.Repaired, DanglingNotes: moved.Dangling,
 	}
 }
 

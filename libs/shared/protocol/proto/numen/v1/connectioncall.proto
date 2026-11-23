@@ -99,13 +99,12 @@ message ConnectionCallServiceCallRequest {
   bytes payload = 3;
   Priority priority = 4;
   // preferred is unset for the rows in their order.
-  PreferredRow preferred = 5;
+  PreferredRow preferred_row = 5;
   // call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
   // when the call cannot be cancelled.
   string call_id = 6;
 }
 
-// ConnectionCallServiceCallResponse is one frame of a call.
 message ConnectionCallServiceCallResponse {
   oneof frame {
     bytes data = 1;

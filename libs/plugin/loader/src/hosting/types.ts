@@ -60,7 +60,7 @@ export interface HandlerDeclaration {
  * One run of a handler in its plugin's backend: over the target, with `itemId` the id of the item
  * picked and `values` the values of the arguments the shared command declares, by name.
  */
-export interface BackendHandlerRun {
+interface BackendHandlerRun {
   readonly pluginId: string
   readonly command: string
   readonly target: CommandTarget
@@ -85,12 +85,12 @@ export interface PluginPaletteCommand {
 }
 
 /** What a slot's command finder reads of the commands the plugins registered with the host. */
-export interface HostCommandReads {
+interface HostCommandReads {
   readonly getPluginCommands: () => readonly PluginPaletteCommand[]
   readonly hasPluginItems: (command: string) => boolean
 }
 
-export type SlotCommandFinder = (
+type SlotCommandFinder = (
   command: string,
   target: CommandTarget | undefined,
 ) => SlotCommandLook | undefined
@@ -106,7 +106,7 @@ export interface EditorPlacement {
  * application, how it opens web links and reports the failure of a plugin, and its workspace,
  * commands, frame, notices and picker.
  */
-export interface HostWindow {
+interface HostWindow {
   readonly target: string
   readonly app?: AppInfo
   readonly openExternal?: (url: string) => Promise<void>

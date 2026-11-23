@@ -388,8 +388,6 @@ export const CatalogService: GenService<{
     output: typeof ListCatalogResponseSchema;
   },
   /**
-   * GetCatalogEntry returns the entry of one plugin.
-   *
    * @generated from rpc numen.v1.CatalogService.GetCatalogEntry
    */
   getCatalogEntry: {
@@ -398,8 +396,6 @@ export const CatalogService: GenService<{
     output: typeof GetCatalogEntryResponseSchema;
   },
   /**
-   * FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
-   *
    * @generated from rpc numen.v1.CatalogService.FindCatalogEntryByTabKind
    */
   findCatalogEntryByTabKind: {

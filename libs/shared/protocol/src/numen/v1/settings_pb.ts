@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsQBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOQoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDwoHdmVyc2lvbhgCIAEoBCI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIjYKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkSEAoIaXNfZnJlc2gYAiABKAgiQAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uEhIKCmlzX3BhcnRpYWwYAiABKAgiNQoGT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWdyb3VwGAMgASgJMt4CCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIqCgdTZXR0aW5nEhAKCGtleV9wYXRoGAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjwKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIj8KFVdyaXRlU2V0dGluZ3NSZXNwb25zZRIVCg1zZXR0aW5nc19qc29uGAEgASgJEg8KB3ZlcnNpb24YAiABKAQiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSI2Cg5PcHRpb25zUmVxdWVzdBISCgpvcGVyYXRpb25zGAEgAygJEhAKCGlzX2ZyZXNoGAIgASgIIkAKB09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbhISCgppc19wYXJ0aWFsGAIgASgIIjUKBk9wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRINCgVncm91cBgDIAEoCTLeAgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -46,9 +46,9 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
    * installation without a configuration does under everything it does not. The first level is the
    * version `v`, the owner `app` and one object per plugin id.
    *
-   * @generated from field: string written = 1;
+   * @generated from field: string settings_json = 1;
    */
-  written: string;
+  settingsJson: string;
 
   /**
    * The file itself, absolute on this machine.
@@ -73,7 +73,7 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   app: PluginSetting[];
 
   /**
-   * The version of the state `written` is read from. It grows with every write the core takes, so
+   * The version of the state `settings_json` is read from. It grows with every write the core takes, so
    * an answer with a smaller version than one already taken is older than it and is dropped.
    *
    * @generated from field: uint64 version = 10;
@@ -105,12 +105,12 @@ export type Setting = Message<"numen.v1.Setting"> & {
    * The setting, as a path through the file. The first element is the owner, `app` or the id of a
    * plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
    *
-   * @generated from field: repeated string at = 1;
+   * @generated from field: repeated string key_path = 1;
    */
-  at: string[];
+  keyPath: string[];
 
   /**
-   * What to write there, as JSON. A value the settings cannot be read out of
+   * What to write there, as JSON.
    *
    * @generated from field: string value = 2;
    */
@@ -145,9 +145,9 @@ export type WatchSettingsResponse = Message<"numen.v1.WatchSettingsResponse"> & 
    * The settings that changed together, with the value each now holds. A write of several settings
    * arrives as one response.
    *
-   * @generated from field: repeated numen.v1.Setting changed = 1;
+   * @generated from field: repeated numen.v1.Setting settings = 1;
    */
-  changed: Setting[];
+  settings: Setting[];
 };
 
 /**
@@ -181,15 +181,15 @@ export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> = /*@_
  */
 export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & {
   /**
-   * Every setting after the write, in the shape of GetSettingsResponse.written.
+   * Every setting after the write, in the shape of GetSettingsResponse.settings_json.
    *
-   * @generated from field: string written = 1;
+   * @generated from field: string settings_json = 1;
    */
-  written: string;
+  settingsJson: string;
 
   /**
-   * The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
-   * than the version of any answer the core gave before the write.
+   * The version of the state `settings_json` describes, as in GetSettingsResponse.version. It is
+   * greater than the version of any answer the core gave before the write.
    *
    * @generated from field: uint64 version = 2;
    */
