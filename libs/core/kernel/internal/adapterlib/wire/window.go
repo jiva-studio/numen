@@ -62,32 +62,22 @@ func (w *Window) WatchTasks(
 		return out.Send(&v1.WatchTasksResponse{})
 	}
 
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-
-	watch := w.Tasks.Watch(watching)
-	repeat := time.NewTicker(ResendInterval)
-	defer repeat.Stop()
-
-	var last []work.Task
-	for {
-		select {
-		case list, ok := <-watch:
-			if !ok {
+	return RunWatch(ctx, out, ResendInterval, GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchTasksResponse) error) error {
+		watch := w.Tasks.Watch(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(list)}); err != nil {
-				return err
-			}
-			last = list
-			repeat.Reset(ResendInterval)
-
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(last)}); err != nil {
-				return err
+			case list, ok := <-watch:
+				if !ok {
+					return nil
+				}
+				if err := send(&v1.WatchTasksResponse{Tasks: describeTasks(list)}); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 // WatchWindowClose streams quit notifications until the client disconnects.
@@ -102,31 +92,32 @@ func (w *Window) WatchWindowClose(
 	token, notified, isDone := w.clients.registerClient()
 	defer isDone()
 
-	// The token is sent first: a client without one cannot respond to a flush
-	// request, and a stream silent until quit is indistinguishable from one
-	// that never opened.
-	if err := out.Send(&v1.WatchWindowCloseResponse{Token: token}); err != nil {
-		return err
+	// The token is resent as the keepalive, and a client without one cannot respond to a flush
+	// request, so it is sent first: a stream silent until quit is indistinguishable from one that never
+	// opened.
+	resendToken := func(*v1.WatchWindowCloseResponse) *v1.WatchWindowCloseResponse {
+		return &v1.WatchWindowCloseResponse{Token: token}
 	}
+	return RunWatch(ctx, out, ResendInterval, resendToken, func(ctx context.Context, send func(*v1.WatchWindowCloseResponse) error) error {
+		if err := send(&v1.WatchWindowCloseResponse{Token: token}); err != nil {
+			return err
+		}
+		return sendFlushRequests(ctx, notified, send)
+	})
+}
 
-	repeat := time.NewTicker(ResendInterval)
-	defer repeat.Stop()
-
+func sendFlushRequests(
+	ctx context.Context, notified <-chan string, send func(*v1.WatchWindowCloseResponse) error,
+) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-repeat.C:
-			// The same token is resent. A disconnected page fails the write, which ends
-			// this stream and releases the quit.
-			if err := out.Send(&v1.WatchWindowCloseResponse{Token: token}); err != nil {
-				return err
-			}
 		case request, isOpen := <-notified:
 			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
+			if err := send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
 				return err
 			}
 		}

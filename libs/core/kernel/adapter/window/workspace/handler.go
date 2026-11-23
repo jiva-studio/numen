@@ -7,7 +7,6 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -173,29 +172,31 @@ func (h *Handler) WatchFocus(
 	tabIDs, stopTabIDs := h.focus.SubscribeTabIDs()
 	defer stopTabIDs()
 
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchFocusResponse) error) error {
+		return sendFocus(ctx, places, tabIDs, send)
+	})
+}
 
+func sendFocus(
+	ctx context.Context, places <-chan domain.Place, tabIDs <-chan string, send func(*v1.WatchFocusResponse) error,
+) error {
 	for {
-		msg, isOpen := receiveFocus(ctx, repeat.C, places, tabIDs)
+		message, isOpen := receiveFocus(ctx, places, tabIDs)
 		if !isOpen {
 			return nil
 		}
-		if err := out.Send(msg); err != nil {
+		if err := send(message); err != nil {
 			return err
 		}
 	}
 }
 
 func receiveFocus(
-	ctx context.Context, tick <-chan time.Time, places <-chan domain.Place, tabIDs <-chan string,
+	ctx context.Context, places <-chan domain.Place, tabIDs <-chan string,
 ) (*v1.WatchFocusResponse, bool) {
 	select {
 	case <-ctx.Done():
 		return nil, false
-	case <-tick:
-		// An empty response is a keepalive that fails when the client has disconnected.
-		return &v1.WatchFocusResponse{}, true
 	case id, isOpen := <-tabIDs:
 		return &v1.WatchFocusResponse{TabId: id}, isOpen
 	case pos, isOpen := <-places:

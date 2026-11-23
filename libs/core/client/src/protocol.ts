@@ -1,16 +1,7 @@
-/**
- * The generated protocol messages and schemas that applications and the plugin host name, and
- * `create`, which makes a message from its schema. The enum codes are exported from `clients.ts`
- * under their window names.
- */
-export { create } from '@bufbuild/protobuf'
+/** The generated protocol messages that applications and the plugin host name. The enum codes are exported from `clients.ts` under their window names. */
 export {
-  FindCatalogEntryByTabKindResponseSchema,
-  GetCatalogEntryResponseSchema,
-  ListCatalogResponseSchema,
   NoteGraphSchema,
   type Entry,
-  type MoveResult,
   type PluginCommand,
   type PluginHandler,
   type PluginKeybinding,

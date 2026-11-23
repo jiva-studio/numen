@@ -24,8 +24,6 @@ export type CatalogStateValue = CatalogState
 export const CATALOG_INCOMPATIBILITY = CatalogIncompatibility
 export type CatalogIncompatibilityValue = CatalogIncompatibility
 
-export const CATALOG_ERROR_CODE = CatalogErrorCode
-
 /** The calls of CatalogService the catalog is read through. */
 export type CatalogClient = Pick<
   Client<typeof CatalogService>,

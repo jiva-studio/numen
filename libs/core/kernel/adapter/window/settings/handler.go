@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -244,24 +245,26 @@ func (h *Values) WatchSettings(
 	}
 	changes, stop := h.watch.Execute()
 	defer stop()
-	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+	return wire.RunWatch(ctx, out, keepalive, nil, func(ctx context.Context, send func(*v1.WatchSettingsResponse) error) error {
+		return sendSettingChanges(ctx, changes, send)
+	})
+}
+
+func sendSettingChanges(
+	ctx context.Context, changes <-chan []settingsdomain.Setting, send func(*v1.WatchSettingsResponse) error,
+) error {
+	if err := send(&v1.WatchSettingsResponse{}); err != nil {
 		return err
 	}
-	repeat := time.NewTicker(keepalive)
-	defer repeat.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
-				return err
-			}
 		case batch, open := <-changes:
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
+			if err := send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
 				return err
 			}
 		}
