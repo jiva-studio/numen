@@ -21,7 +21,7 @@ Feature: Connect a folder that holds notes
       Given the second computer writes the note "Shopping list" with the text "milk" in its vault "Copy"
       When the second computer connects its vault "Copy" to the synced vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-      And the second computer has no conflict note of "Shopping list" in its vault "Copy"
+      And the second computer has no conflict copy of the note "Shopping list" in its vault "Copy"
 
     Scenario: A note with the same text asks nothing
       Given the second computer writes the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -51,12 +51,14 @@ Feature: Connect a folder that holds notes
 
     Scenario: A confirmed note keeps both texts
       Given the second computer writes the note "Shopping list" with the text "bread" in its vault "Copy"
-      When the second computer connects its vault "Copy" to the synced vault "Test" and confirms
+      When the second computer connects its vault "Copy" to the synced vault "Test"
+      And the second computer confirms the connection
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-      And the second computer has a conflict note of "Shopping list" with the text "bread" in its vault "Copy"
+      And the second computer has a conflict copy of the note "Shopping list" with the text "bread" in its vault "Copy"
 
     Scenario: A refused connection changes nothing
       Given the second computer writes the note "Shopping list" with the text "bread" in its vault "Copy"
-      When the second computer connects its vault "Copy" to the synced vault "Test" and refuses
+      When the second computer connects its vault "Copy" to the synced vault "Test"
+      And the second computer cancels the connection
       Then the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
       And the sync settings of the second computer do not show the vault "Copy" as connected

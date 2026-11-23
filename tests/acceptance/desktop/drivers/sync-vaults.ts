@@ -54,9 +54,8 @@ export class SyncVaultsDriver {
     await (await this.show()).getByRole('button', { name: synced, exact: true }).click()
   }
 
-  /** Chooses the synced vault and gives the answer to the question that asks for a confirmation. */
-  async connectExistingAndAnswer(vault: string, synced: string, answer: string): Promise<void> {
-    await this.connectExisting(vault, synced)
+  /** Gives the answer to the question that asks for a confirmation. */
+  async answerConfirmation(answer: string): Promise<void> {
     const panel = await this.show()
     await panel.getByRole('button', { name: answer, exact: true }).click({ timeout: CONNECT_LIMIT_MS })
   }

@@ -205,28 +205,15 @@ export class ComputerDriver {
     await identity.expectSubscription(text)
   }
 
-  /** Expects the note to have a conflict note with the text, the copy of what the folder held. */
-  async expectConflictNote(computer: ComputerName, title: string, text: string, vault: string): Promise<void> {
-    const world = this.getScenario(computer).getWorld()
-    const name = this.resolveVault(computer, vault)
-    await expect.poll(() => findConflictCopies(world.listNoteFiles(name), title), { timeout: ARRIVAL_LIMIT_MS }).toContain(text)
-  }
 
-  /** The notes arrive within a few passes, so the check waits for the passes to end before it looks. */
-  async expectNoConflictNote(computer: ComputerName, title: string, vault: string): Promise<void> {
-    const world = this.getScenario(computer).getWorld()
-    const name = this.resolveVault(computer, vault)
-    await new Promise((resolve) => setTimeout(resolve, QUIET_MS))
-    expect(findConflictCopies(world.listNoteFiles(name), title)).toEqual([])
-  }
 
   removeNote(computer: ComputerName, title: string, vault: string): void {
     this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
   }
 
-  async expectNoNote(computer: ComputerName, title: string, vault: string): Promise<void> {
-    const world = this.getScenario(computer).getWorld()
-    const name = this.resolveVault(computer, vault)
+  async expectNoNote(holder: Holder, title: string, vault: string | undefined): Promise<void> {
+    const world = this.getScenario(holder.computer).getWorld()
+    const name = this.resolveVault(holder.computer, holder.vault ?? vault)
     await expect.poll(() => world.getEntryKind(name, getNotePath(title)), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
   }
 
@@ -235,8 +222,8 @@ export class ComputerDriver {
     this.sync.setReachable(this.getScenario(computer), isOnline)
   }
 
-  async answerConfirmation(computer: ComputerName, vault: string, synced: string, answer: 'Connect' | 'Cancel'): Promise<void> {
-    await this.getVaults(computer).connectExistingAndAnswer(vault, synced, answer)
+  async answerConfirmation(computer: ComputerName, answer: 'Connect' | 'Cancel'): Promise<void> {
+    await this.getVaults(computer).answerConfirmation(answer)
   }
 
   async expectAskedToConfirm(computer: ComputerName, text: string): Promise<void> {
