@@ -2,7 +2,6 @@ package host_test
 
 import (
 	"testing"
-
 )
 
 func (a *fakeArrangeHost) setManagedBy(managedBy string) {
