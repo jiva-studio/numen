@@ -7,7 +7,7 @@ import (
 
 const pluginSignPrefix = "numen/v1/plugin-sign/"
 
-func pluginSignMessage(pluginID string, message []byte) []byte {
+func buildPluginSignMessage(pluginID string, message []byte) []byte {
 	signed := make([]byte, 0, len(pluginSignPrefix)+len(pluginID)+1+len(message))
 	signed = append(signed, pluginSignPrefix...)
 	signed = append(signed, pluginID...)
@@ -17,7 +17,7 @@ func pluginSignMessage(pluginID string, message []byte) []byte {
 
 // SignForPlugin signs message under the plugin id, so a signature made for one plugin never verifies for another.
 func (d DeviceKey) SignForPlugin(pluginID string, message []byte) [64]byte {
-	return [64]byte(d.signEntry(pluginSignMessage(pluginID, message)))
+	return [64]byte(d.signEntry(buildPluginSignMessage(pluginID, message)))
 }
 
 // VerifyForPlugin checks a signature made by SignForPlugin; a plugin id with a zero byte never verifies, since the zero byte ends the id in the signed bytes.
@@ -26,5 +26,5 @@ func VerifyForPlugin(sign ed25519.PublicKey, pluginID string, message []byte, si
 	if len(sign) != ed25519.PublicKeySize || strings.IndexByte(pluginID, 0) >= 0 {
 		return false
 	}
-	return ed25519.Verify(sign, pluginSignMessage(pluginID, message), signature[:])
+	return ed25519.Verify(sign, buildPluginSignMessage(pluginID, message), signature[:])
 }

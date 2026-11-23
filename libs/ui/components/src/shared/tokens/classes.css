@@ -13,6 +13,12 @@
   overflow-wrap: break-word;
 }
 
+/* A caution standing alone in a dialog or a card, rounded like the card around it. */
+.caution--card {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--numen-radius);
+}
+
 .caution--conflict {
   display: flex;
   flex-wrap: wrap;
