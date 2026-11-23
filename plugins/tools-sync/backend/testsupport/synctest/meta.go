@@ -62,21 +62,14 @@ func (c *Computer) OpenBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Re
 func (c *Computer) FindBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) ([]byte, bool) {
 	t.Helper()
 	meta := OpenMeta(t, vaultKey, revision)
-	downloads, err := c.Cloud.GetBlobUrls(t.Context(), revision.GetVaultId(), [][]byte{revision.GetBlobId()})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(downloads) != 1 {
-		t.Fatalf("downloads = %v, want one", downloads)
-	}
-	if !downloads[0].GetFound() {
+	url, isFound := c.findBlobURL(t, revision)
+	if !isFound {
 		return nil, false
 	}
-	blob, err := c.Cloud.GetBlob(t.Context(), downloads[0].GetUrl())
+	blob, err := c.Cloud.GetBlob(t.Context(), url)
 	if err != nil {
-		// A pass running in the background replaces the head and the server drops the blob of the revision read above.
-		again, urlErr := c.Cloud.GetBlobUrls(t.Context(), revision.GetVaultId(), [][]byte{revision.GetBlobId()})
-		if urlErr == nil && len(again) == 1 && !again[0].GetFound() {
+		// A newer revision can replace the blob between the answer with its URL and the download.
+		if _, isFound := c.findBlobURL(t, revision); !isFound {
 			return nil, false
 		}
 		t.Fatal(err)
@@ -86,4 +79,16 @@ func (c *Computer) FindBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Re
 		t.Fatalf("the blob does not open with the key of its metadata: %v", err)
 	}
 	return plain, true
+}
+
+func (c *Computer) findBlobURL(t *testing.T, revision *syncv1.Revision) (string, bool) {
+	t.Helper()
+	downloads, err := c.Cloud.GetBlobUrls(t.Context(), revision.GetVaultId(), [][]byte{revision.GetBlobId()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(downloads) != 1 {
+		t.Fatalf("downloads = %v, want one", downloads)
+	}
+	return downloads[0].GetUrl(), downloads[0].GetFound()
 }
