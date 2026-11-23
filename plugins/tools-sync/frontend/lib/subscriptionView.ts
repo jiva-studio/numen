@@ -18,7 +18,7 @@ export interface SubscriptionDates {
   readonly deleteAt: string
 }
 
-export interface SubscriptionSnapshot {
+interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates

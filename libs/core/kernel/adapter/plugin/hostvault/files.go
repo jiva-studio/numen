@@ -2,14 +2,12 @@ package hostvault
 
 import (
 	"context"
-	"io"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 // Files reads the files of the vault.
@@ -22,19 +20,20 @@ type Files struct {
 	session sessionAccess
 }
 
-// fileStatter is the stat of a file with its hash, which the use case file.HashFile gives.
-type fileStatter interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
+// fileMover moves a file or a folder after the baseline of the caller is checked, which the use case note.MoveChecked does.
+type fileMover interface {
+	Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error)
 }
 
-// fileCounter counts the files at a path, which the use case file.CountFiles does.
-type fileCounter interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (int, error)
+// fileRemover removes a file or a folder after the baseline of the caller is checked, which the use case
+// note.RemoveChecked does.
+type fileRemover interface {
+	Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error)
 }
 
-// fileImporter writes a stream as the file at a path, which the use case file.ImportFile does.
-type fileImporter interface {
-	Execute(ctx context.Context, v domain.Vault, path string, content io.Reader, isReplacing bool) error
+// filePlacer puts a staged file in the vault, which the use case file.PlaceStaged does.
+type filePlacer interface {
+	Execute(ctx context.Context, v domain.Vault, in file.PlaceInput) (domain.FileStat, error)
 }
 
 // Writer writes the files of the vault and indexes them. Locks, where set, holds the writers of the vault
@@ -45,11 +44,9 @@ type Writer struct {
 	Index  file.ScanFiles
 	Locks  vault.Locks
 
-	Move         note.MoveFile
-	Remove       note.RemoveFile
-	Stat         fileStatter
-	Count        fileCounter
-	Import       fileImporter
+	Move         fileMover
+	Remove       fileRemover
+	Place        filePlacer
 	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
 	StoreWriters func(v domain.Vault, pluginID string) (vault.StoreWriter, error)
 

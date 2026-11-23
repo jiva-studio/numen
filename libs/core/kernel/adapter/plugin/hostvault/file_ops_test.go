@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -35,15 +36,17 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		indexed.Add(int32(len(paths)))
 		return nil
 	}
+	scan := file.NewScanFiles(index)
+	count := file.NewCountFiles(vaultreader.Readers{})
 	stores := derivedfile.PluginStores{}
 	return NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return v, true }},
 		Files{Stat: stat, Bytes: file.NewReadBytes(vaultreader.Readers{}, stat)},
 		Writer{
-			Index:  file.NewScanFiles(index),
-			Stat:   stat,
-			Count:  file.NewCountFiles(vaultreader.Readers{}),
-			Import: file.NewImportFile(writers),
+			Index:  scan,
+			Place:  file.NewPlaceStaged(stat, scan, writers),
+			Move:   note.NewMoveChecked(note.MoveFile{}, count, stat),
+			Remove: note.NewRemoveChecked(note.RemoveFile{}, count, stat),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},

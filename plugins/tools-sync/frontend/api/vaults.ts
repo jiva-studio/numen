@@ -9,7 +9,7 @@ export const SERVICE = 'md.numen.tools.sync'
 
 export type VaultState = 'notConnected' | 'connected' | 'copy'
 
-export type DeletionsDirection = 'send' | 'apply'
+type DeletionsDirection = 'send' | 'apply'
 
 export type DeletionsChoice = 'remove' | 'keep'
 
