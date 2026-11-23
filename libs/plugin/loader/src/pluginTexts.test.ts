@@ -128,7 +128,7 @@ describe('the text versions a plugin view reads', () => {
     ])
   })
 
-  it('reports missing and invalid errors from createTextEdit', async () => {
+  it('reports notFound and invalid errors from createTextEdit', async () => {
     const makeErrorClient = (error: number, hasVersion = false): TextClient => ({
       readLiveText: async () => ({}) as never,
       createTextEdit: async () =>
@@ -142,18 +142,27 @@ describe('the text versions a plugin view reads', () => {
       makeErrorClient(TEXT_ERROR_CODE.NOT_FOUND),
       'p',
     ).createEdit('a', 'v1', [])
-    expect(missing).toEqual({ ok: false, error: 'missing' })
+    expect(missing).toEqual({
+      ok: false,
+      error: { error: 'notFound', message: 'no live version v1 at a' },
+    })
 
     const invalidWithVersion = await createPluginTexts(
       makeErrorClient(TEXT_ERROR_CODE.INVALID, true),
       'p',
     ).createEdit('a', 'v1', [])
-    expect(invalidWithVersion).toEqual({ ok: false, error: 'invalid' })
+    expect(invalidWithVersion).toEqual({
+      ok: false,
+      error: { error: 'invalid', message: 'the segments of the edit of a are not valid' },
+    })
 
     const unspecifiedWithoutVersion = await createPluginTexts(
       makeErrorClient(TEXT_ERROR_CODE.UNSPECIFIED, false),
       'p',
     ).createEdit('a', 'v1', [])
-    expect(unspecifiedWithoutVersion).toEqual({ ok: false, error: 'invalid' })
+    expect(unspecifiedWithoutVersion).toEqual({
+      ok: false,
+      error: { error: 'invalid', message: 'the segments of the edit of a are not valid' },
+    })
   })
 })

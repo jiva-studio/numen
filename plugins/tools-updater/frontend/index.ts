@@ -54,7 +54,7 @@ function showFailure(
 ): void {
   opening.then(
     (result) => {
-      if (!result.ok) host.ui.notices.show(result.error, 'error')
+      if (!result.ok) host.ui.notices.show(result.error.message, 'error')
     },
     (error: unknown) => host.ui.notices.show(String(error), 'error'),
   )
