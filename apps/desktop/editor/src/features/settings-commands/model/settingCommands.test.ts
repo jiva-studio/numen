@@ -632,9 +632,9 @@ describe('windowConfig and windowPalette', () => {
   })
 
   it('previews appearance settings and reloads appearance only when an appearance setting is written', async () => {
-    const previewTheme = vi.fn()
-    const previewMode = vi.fn()
-    const previewSize = vi.fn()
+    const showThemePreview = vi.fn()
+    const showModePreview = vi.fn()
+    const showSizePreview = vi.fn()
     const restore = vi.fn()
     const reload = vi.fn(async () => undefined)
     const writeSettings = vi.fn(async () => undefined)
@@ -666,7 +666,7 @@ describe('windowConfig and windowPalette', () => {
       rest: rest as never,
       appearance: {
         preview: {
-          keyboard: { previewTheme, previewMode, previewSize },
+          keyboard: { showThemePreview, showModePreview, showSizePreview },
           restore,
         },
         reload,
@@ -677,11 +677,11 @@ describe('windowConfig and windowPalette', () => {
     expect(palette.getCommands().length).toBeGreaterThan(0)
 
     palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
-    expect(previewTheme).toHaveBeenCalledExactlyOnceWith('preset:dracula')
+    expect(showThemePreview).toHaveBeenCalledExactlyOnceWith('preset:dracula')
 
     palette.lists.previewItem('setting:app:appearance.mode', 'light')
     palette.lists.previewItem('setting:app:appearance.mode', 'invalid')
-    expect(previewMode).toHaveBeenCalledExactlyOnceWith('light')
+    expect(showModePreview).toHaveBeenCalledExactlyOnceWith('light')
 
     palette.lists.previewItem('setting:app:appearance.interfaceScale', '1.2')
     palette.lists.previewItem('setting:app:appearance.textScale', '1.2')
@@ -689,15 +689,15 @@ describe('windowConfig and windowPalette', () => {
     palette.lists.previewItem('setting:app:appearance.sub.theme', 'a')
     palette.lists.previewItem('setting:app:editor.tabSize', '4')
     palette.lists.previewItem('setting:md.example.scanner:autoScan', 'on')
-    expect(previewSize).toHaveBeenCalledTimes(2)
-    expect(previewSize).toHaveBeenNthCalledWith(1, 'interfaceScale', 1.2)
-    expect(previewSize).toHaveBeenNthCalledWith(2, 'textScale', 1.2)
+    expect(showSizePreview).toHaveBeenCalledTimes(2)
+    expect(showSizePreview).toHaveBeenNthCalledWith(1, 'interfaceScale', 1.2)
+    expect(showSizePreview).toHaveBeenNthCalledWith(2, 'textScale', 1.2)
 
     appSettings.value = [NON_STRING_THEME, NON_NUMBER_SCALE]
     palette.lists.previewItem('setting:app:appearance.theme', 'on')
     palette.lists.previewItem('setting:app:appearance.interfaceScale', 'normal')
-    expect(previewTheme).toHaveBeenCalledTimes(1)
-    expect(previewSize).toHaveBeenCalledTimes(2)
+    expect(showThemePreview).toHaveBeenCalledTimes(1)
+    expect(showSizePreview).toHaveBeenCalledTimes(2)
 
     appSettings.value = [THEME, PROFILE]
     await palette.choose('setting:app:performance.profile', 'eco')
@@ -731,7 +731,7 @@ describe('windowConfig and windowPalette', () => {
       rest: rest as never,
       appearance: {
         preview: {
-          keyboard: { previewTheme: vi.fn(), previewMode: vi.fn(), previewSize: vi.fn() },
+          keyboard: { showThemePreview: vi.fn(), showModePreview: vi.fn(), showSizePreview: vi.fn() },
           restore: vi.fn(),
         },
         reload: vi.fn(async () => undefined),

@@ -15,9 +15,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -39,10 +39,10 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
-		Ledger: vaults.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 	return filing{
 		db:      db,

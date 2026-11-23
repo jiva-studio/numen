@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // A vault is walked once however many counts ask for it at the same moment.
@@ -42,7 +42,7 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 
 	vaults.CloseAndWait()
 
-	if err := vaults.IndexVault(t.Context(), target[0]); !errors.Is(err, vault.ErrClosing) {
+	if err := vaults.IndexVault(t.Context(), target[0]); !errors.Is(err, indexing.ErrClosing) {
 		t.Errorf("a walk asked for while closing came back with %v", err)
 	}
 }
@@ -57,7 +57,7 @@ func getOpenVaultsSamples() map[string]string {
 	}
 }
 
-func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*Index], []domain.Vault, *atomic.Int32) {
+func makeOpenVaults(t *testing.T) (*indexing.OpenVaults[*Index], []domain.Vault, *atomic.Int32) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -78,8 +78,8 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*Index], []domain.Vault, *a
 		{ID: "two", Name: "Two", Path: makeSampleVault(t, cfg)},
 	}
 	var openings atomic.Int32
-	vaults := &vault.OpenVaults[*Index]{
-		Opener: func(i *Index) *vault.VaultOpener {
+	vaults := &indexing.OpenVaults[*Index]{
+		Opener: func(i *Index) *indexing.VaultOpener {
 			openings.Add(1)
 			return vaultOpener(cfg.buildVaultWiring(), i)
 		},

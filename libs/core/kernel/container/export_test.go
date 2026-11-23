@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -80,11 +79,11 @@ func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, fun
 	return c.Resources.pluginChanges.Subscribe()
 }
 
-func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vault.VaultWatcher) *vault.VaultOpener {
+func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher indexing.VaultWatcher) *indexing.VaultOpener {
 	return vaultOpenerWith(c.buildVaultWiring(), db, walking, watcher)
 }
 
-func (c TestInstallation) VaultWatcher() vault.VaultWatcher {
+func (c TestInstallation) VaultWatcher() indexing.VaultWatcher {
 	return c.buildVaultWiring().Watcher
 }
 
@@ -115,7 +114,7 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 	return settingsStore(c).ReadUncheckedAt(path)
 }
 
-func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(indexPlanOf(c), db) }
+func Scan(c TestInstallation, db *Index) indexing.Scan { return searchScan(indexPlanOf(c), db) }
 
 func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
 	return searchEmbed(indexPlanOf(c), db, source, v)
@@ -163,7 +162,7 @@ func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases 
 	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{})
 }
 
-func VaultOpener(c TestInstallation, db *Index) *vault.VaultOpener {
+func VaultOpener(c TestInstallation, db *Index) *indexing.VaultOpener {
 	return vaultOpener(c.buildVaultWiring(), db)
 }
 
@@ -225,7 +224,7 @@ func AdaptTestPlugins(management *PluginManagement, supervision *PluginSupervisi
 	return &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}
 }
 
-func GetRefresh(c TestInstallation, db *Index) vault.Refresh {
+func GetRefresh(c TestInstallation, db *Index) indexing.Refresh {
 	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
 }
 

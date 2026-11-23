@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -26,7 +26,7 @@ func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vaul
 	}
 	testsupport.CloseAfter(t, db)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

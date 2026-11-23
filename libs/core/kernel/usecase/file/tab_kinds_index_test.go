@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
@@ -128,7 +128,7 @@ func newTabKindWorld(t *testing.T, notes map[string]string) tabKindWorld {
 	}
 	testsupport.CloseAfter(t, db)
 	v := vaulttest.NewVault(t, notes)
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

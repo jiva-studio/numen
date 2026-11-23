@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -161,7 +160,7 @@ func buildWindow(
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing {
+	current := &indexing.CurrentRefresh{Fallback: func() indexing.Refreshing {
 		v := vaultDeps
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
@@ -204,8 +203,8 @@ func buildWindow(
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
-	update := vault.NewUpdateIndex(current.Get).Execute
+func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
+	update := indexing.NewUpdateIndex(current.Get).Execute
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state.Notices))
 	views.Moves = moves
 	notes := vaultNotes(vaultDeps, db, update, views)
