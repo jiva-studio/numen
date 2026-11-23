@@ -89,7 +89,7 @@ const searchFor = async (
   target: CommandTarget,
 ) => {
   const core: SearchDeps = {
-    names: async () => found.names ?? [],
+    searchNames: async () => found.names ?? [],
     search: async (_query, mode) => (mode === 'words' ? (found.searchResults ?? []) : []),
   }
   const search = useSearch(core, words, {
@@ -104,11 +104,11 @@ const searchFor = async (
 
 const listCommands = (target: CommandTarget) => {
   const commands = createCommandPalette({
-    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
     words,
-    at: () => target,
+    getTarget: () => target,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    lists: { getStepGroups: () => [], applyItemPreview: () => undefined },
     runs: runSupport(),
     getCommands: createAppCommands,
   })

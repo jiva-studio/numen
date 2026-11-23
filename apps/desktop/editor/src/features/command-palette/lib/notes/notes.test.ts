@@ -78,7 +78,7 @@ describe('opening a file', () => {
       getTabAt: (path: string) => (path === 'reef/A.md' ? 'tab-a' : null),
       getPath: () => 'reef/A.md',
       getTitle: () => 'A',
-      asking: () => false,
+      isAsking: () => false,
       flushPending: vi.fn().mockResolvedValue(undefined),
       close: vi.fn(),
     }
@@ -87,7 +87,7 @@ describe('opening a file', () => {
       getTabAt: (path: string) => (path === 'reef/B.md' ? 'tab-b' : null),
       getPath: () => 'reef/B.md',
       getTitle: () => 'B',
-      asking: () => true,
+      isAsking: () => true,
       flushPending: vi.fn().mockResolvedValue(undefined),
       close: vi.fn(),
     }
@@ -102,9 +102,9 @@ describe('opening a file', () => {
     expect(notes.getTabAt('reef/None.md')).toBeNull()
     expect(notes.getPath('tab-b')).toBe('reef/B.md')
     expect(notes.getPath('unheld')).toBe('unheld')
-    expect(notes.asking('tab-a')).toBe(false)
-    expect(notes.asking('tab-b')).toBe(true)
-    expect(notes.asking('unheld')).toBe(false)
+    expect(notes.isAsking('tab-a')).toBe(false)
+    expect(notes.isAsking('tab-b')).toBe(true)
+    expect(notes.isAsking('unheld')).toBe(false)
 
     await notes.flushPending('tab-b')
     expect(secondStore.flushPending).toHaveBeenCalledExactlyOnceWith('tab-b')

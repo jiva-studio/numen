@@ -44,25 +44,25 @@ export function createWindowApi(transports: WindowTransports) {
   const workspaceClients = createWorkspaceClients(transports)
   const settingsClients = createSettingsClients(transport)
   const pluginClients = createPluginHostClients(transport)
-  const links = createLinkApi(vaultClients.notes)
+  const linkApi = createLinkApi(vaultClients.notes)
   const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
-  const shownVault = createShownVaultApi(workspaceClients.windowService)
+  const windowVaultApi = createShownVaultApi(workspaceClients.windowService)
   return {
     vault: {
       note: createNoteApi(vaultClients.notes),
-      links,
-      relations: createRelations(vaultClients.notes, links.resolveLinks),
+      links: linkApi,
+      relations: createRelations(vaultClients.notes, linkApi.resolveLinks),
       file: createFileApi(vaultClients.files),
       vaults,
       vaultState: createVaultStateApi(vaultClients.vault),
       search: createSearchCore(vaultClients.search),
-      listVaults: createVaultListReader({ vaults, getShownVault: shownVault.getShownVault }),
+      listVaults: createVaultListReader({ vaults, getShownVault: windowVaultApi.getShownVault }),
     },
     window: {
       logs: createWindowLogClient(workspaceClients.logService),
       focus: createFocusApi(workspaceClients.workspace),
       quit: createQuitApi(workspaceClients.windowService),
-      shownVault,
+      shownVault: windowVaultApi,
       tasks: createTaskApi(workspaceClients.windowService),
       frameRuntime: createFrameRuntimeLoader(),
     },

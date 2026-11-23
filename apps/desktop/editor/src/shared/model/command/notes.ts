@@ -17,7 +17,7 @@ export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
   getTabAt(path: string): string | null
   getPath(id: string): string
-  asking(id: string): boolean
+  isAsking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   flushPending(id: string): Promise<void>
   /** The tab holding a note releases it. */
@@ -42,7 +42,7 @@ export interface FlushResult {
 export const flushTab = async (path: string, notes: Notes): Promise<FlushResult> => {
   const tabId = notes.getTabAt(path)
   if (tabId === null) return { tabId, isWaiting: false }
-  if (notes.asking(tabId)) return { tabId, isWaiting: true }
+  if (notes.isAsking(tabId)) return { tabId, isWaiting: true }
   await notes.flushPending(tabId)
   return { tabId, isWaiting: false }
 }

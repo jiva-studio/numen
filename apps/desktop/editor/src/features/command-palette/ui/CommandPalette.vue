@@ -37,7 +37,7 @@ const { field, type, choose, dismiss, goBack } = usePaletteInput({
 
 /* -------------------------------- Handlers -------------------------------- */
 function onType(text: string): void {
-  if (props.picker.question.value) props.picker.question.value.type(text)
+  if (props.picker.question.value) props.picker.question.value.enterText(text)
   else type(text)
 }
 

@@ -108,7 +108,7 @@ const createLists = (commandLists: Record<string, readonly StepGroup[]>) => {
   const displayedItems: string[] = []
   const paletteLists: PaletteLists = {
     getStepGroups: (command) => lists.value[command] ?? [],
-    previewItem: (command, item) => {
+    applyItemPreview: (command, item) => {
       displayedItems.push(`${command} ${item}`)
     },
   }
@@ -125,18 +125,18 @@ const createPalette = (
   const activeTarget = ref(front(override))
   const request: string[] = []
   const core = {
-    names: async (query: string) => {
+    searchNames: async (query: string) => {
       request.push(query)
       return found
     },
-    vaults: async () => items,
+    listVaults: async () => items,
   }
   const window = createLookup()
   const retainedItem = createLists(entries)
   const commands = createCommandPalette({
     core,
     words,
-    at: () => activeTarget.value,
+    getTarget: () => activeTarget.value,
     knows: window.knows,
     lists: retainedItem.paletteLists,
     runs,
@@ -614,13 +614,13 @@ describe('a command that asks for a note', () => {
     const activeTarget = ref(front())
     const commands = createCommandPalette({
       core: {
-        names: async () => Promise.reject(new Error('no model is set')),
-        vaults: async () => installation(),
+        searchNames: async () => Promise.reject(new Error('no model is set')),
+        listVaults: async () => installation(),
       },
       words,
-      at: () => activeTarget.value,
+      getTarget: () => activeTarget.value,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
       runs: runSupport(),
       wait: vi.fn(() => Promise.resolve()),
       getCommands: createAppCommands,
@@ -987,13 +987,13 @@ describe('a command that asks for a vault', () => {
     const activeTarget = ref(front())
     const commands = createCommandPalette({
       core: {
-        names: async () => [],
-        vaults: async () => Promise.reject(new Error('the list is not there')),
+        searchNames: async () => [],
+        listVaults: async () => Promise.reject(new Error('the list is not there')),
       },
       words,
-      at: () => activeTarget.value,
+      getTarget: () => activeTarget.value,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
       runs: runSupport(),
       wait: vi.fn(() => Promise.resolve()),
       getCommands: createAppCommands,
@@ -1129,14 +1129,14 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
   const request: string[] = []
   const signals: (AbortSignal | undefined)[] = []
   const core = {
-    names: (query: string, _limit: number, signal?: AbortSignal) => {
+    searchNames: (query: string, _limit: number, signal?: AbortSignal) => {
       request.push(query)
       signals.push(signal)
       const one = createDeferred<readonly NameMatch[]>()
       names.push(one)
       return one.promise
     },
-    vaults: () => {
+    listVaults: () => {
       const one = createDeferred<VaultList>()
       lists.push(one)
       return one.promise
@@ -1152,7 +1152,7 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
   const commands = createCommandPalette({
     core,
     words,
-    at: () => front(),
+    getTarget: () => front(),
     knows: createLookup().knows,
     lists: createLists(commandLists).paletteLists,
     runs: runSupport(),
@@ -1663,11 +1663,11 @@ describe('the icon of a command', () => {
     const icon = defineComponent({ name: 'GraphIcon', render: () => null })
     const commands = createCommandPalette({
       core: {
-        names: async () => [],
-        vaults: async () => installation(vault('physics', 'Physics')),
+        searchNames: async () => [],
+        listVaults: async () => installation(vault('physics', 'Physics')),
       },
       words,
-      at: () => front(),
+      getTarget: () => front(),
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
@@ -1693,11 +1693,11 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   it('starts a hidden command given values', () => {
     const commands = createCommandPalette({
       core: {
-        names: async () => [],
-        vaults: async () => installation(vault('physics', 'Physics')),
+        searchNames: async () => [],
+        listVaults: async () => installation(vault('physics', 'Physics')),
       },
       words,
-      at: () => front(),
+      getTarget: () => front(),
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
@@ -1716,7 +1716,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   it('tracks unsupported runs in runSupport', () => {
     const runs = runSupport()
     expect(runs.canRun('ocr')).toBe(true)
-    runs.cannotRun('ocr')
+    runs.reportCannotRun('ocr')
     expect(runs.canRun('ocr')).toBe(false)
     expect(runs.canRun('other')).toBe(true)
   })
@@ -1724,11 +1724,11 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   it('walks through multi-prompt arguments steps and handles commands without prompts', () => {
     const commands = createCommandPalette({
       core: {
-        names: async () => [],
-        vaults: async () => installation(vault('physics', 'Physics')),
+        searchNames: async () => [],
+        listVaults: async () => installation(vault('physics', 'Physics')),
       },
       words,
-      at: () => front(),
+      getTarget: () => front(),
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
@@ -1775,11 +1775,11 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   it('asks only for the arguments the caller did not supply and keeps the supplied ones', () => {
     const commands = createCommandPalette({
       core: {
-        names: async () => [],
-        vaults: async () => installation(vault('physics', 'Physics')),
+        searchNames: async () => [],
+        listVaults: async () => installation(vault('physics', 'Physics')),
       },
       words,
-      at: () => front(),
+      getTarget: () => front(),
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),

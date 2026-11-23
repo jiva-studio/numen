@@ -48,14 +48,14 @@ describe('the open tabs of a window whose files tab is in focus', () => {
       'note-1',
     )
     window.panes.show('files-1')
-    expect(window.handle.front()?.id).toBe('files-1')
+    expect(window.handle.getFrontTab()?.id).toBe('files-1')
 
     const { open } = createOpenTabs(window)
 
     expect(open.value.activeId).toBe('note-1')
     const restarted = createWindow()
     restarted.restored.restoreTabs(parseSavedTabs(open.value), open.value.activeId)
-    expect(restarted.handle.front()?.id).toBe('note-1')
+    expect(restarted.handle.getFrontTab()?.id).toBe('note-1')
   })
 
   it('keep the files tab as the active tab where no other tab shows', () => {
@@ -155,7 +155,7 @@ describe('saved pane layouts', () => {
     restored.restored.restoreTabs(parseSavedTabs(snapshot), snapshot.activeId, snapshot.layout)
 
     expect(restored.panes.layout.value).toStrictEqual(layout)
-    expect(restored.handle.front()?.id).toBe('files')
+    expect(restored.handle.getFrontTab()?.id).toBe('files')
     expect(restored.tabs.getTab('missing')?.kind.kind).toBe('missing.plugin')
   })
 
@@ -175,6 +175,6 @@ describe('saved pane layouts', () => {
       ['note'],
       ['files'],
     ])
-    expect(window.handle.front()?.id).toBe('note')
+    expect(window.handle.getFrontTab()?.id).toBe('note')
   })
 })

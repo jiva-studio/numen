@@ -48,7 +48,7 @@ export interface SettingPalette {
   getCommands(): readonly Command[]
   readonly lists: {
     getStepGroups(command: string, typed: string): readonly StepGroup[]
-    previewItem(command: string, item: string): void
+    applyItemPreview(command: string, item: string): void
   }
   /** Writes the row chosen in the step of a command. */
   choose(command: string, item: string): Promise<void>
@@ -191,7 +191,7 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
     return [{ id: command, title: found.setting.title, items }]
   }
 
-  const previewItem = (command: string, item: string): void => {
+  const applyItemPreview = (command: string, item: string): void => {
     const found = findSetting(command)
     if (!found?.setting.preview) return
     const path = getSettingPath(found.owner.id, found.setting.key)
@@ -215,5 +215,5 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
     await deps.write([{ at: path, value: JSON.stringify(choice.value) }])
   }
 
-  return { getCommands, lists: { getStepGroups, previewItem }, choose }
+  return { getCommands, lists: { getStepGroups, applyItemPreview }, choose }
 }

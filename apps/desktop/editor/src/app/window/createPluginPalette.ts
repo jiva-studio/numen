@@ -22,7 +22,7 @@ import { createCommandSources } from './createCommandSources'
 /** What the commands of the plugins add to the palettes. */
 interface PluginPaletteDeps {
   readonly pluginHost: PluginHost
-  readonly declaredCommands: DeclaredCommands
+  readonly commandDeclarations: DeclaredCommands
   readonly itemLists: Parameters<typeof createCommandNoteReader>[0]
   readonly commandDeps: ReturnType<typeof createCommandDeps>
   readonly registry: CommandRegistry
@@ -35,7 +35,7 @@ interface PluginPaletteDeps {
 }
 
 export function createPluginPalette(deps: PluginPaletteDeps) {
-  const { pluginHost, declaredCommands, commandDeps, getTarget, windowSettings } = deps
+  const { pluginHost, commandDeclarations: declaredCommands, commandDeps, getTarget, windowSettings } = deps
   const plugin = usePluginCommands(
     deps.registry,
     createCommandNoteReader(deps.itemLists),
@@ -48,13 +48,13 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
   const sources = createCommandSources({
     appCommands: deps.appCommands,
     settingPalette: windowSettings.settingPalette,
-    declaredCommands,
+    commandDeclarations: declaredCommands,
     pluginHost,
     plugin,
     getTarget,
     commandDeps,
   })
-  const lists: PluginPaletteLists = createItemLists(sources.items, {
+  const paletteLists: PluginPaletteLists = createItemLists(sources.items, {
     paletteLists: windowSettings.paletteLists,
     getTarget,
     runs: commandDeps.runSupport,
@@ -64,7 +64,7 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
     sources,
     pluginWays: plugin.pluginWays,
     plugin: {
-      lists,
+      lists: paletteLists,
       getCommands: () => sources.paletteCommands.listCommands(),
       pluginCommands: createPluginCommandPort(pluginHost, plugin.getCommandNote),
     },

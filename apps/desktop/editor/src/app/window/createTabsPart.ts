@@ -9,7 +9,7 @@ import {
   createTabPluginStarts,
   createTabSync,
   createWindowTabs,
-  fileOpeners,
+  createFileOpeners,
   RestoreFailedPane,
   UnavailablePane,
 } from '@/entities/tab'
@@ -58,8 +58,8 @@ export function createTabsPart(deps: TabsPartDeps) {
     isMain,
     writeMessage,
   })
-  const tabOpeners = fileOpeners({
-    fileKinds: api.vault.file.getFileKinds,
+  const tabOpeners = createFileOpeners({
+    readFileKinds: api.vault.file.getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,

@@ -39,7 +39,7 @@ export interface ConflictPrompt {
   readonly note: string
   readonly keep: () => Promise<void>
   readonly take: () => Promise<void>
-  readonly later: () => void
+  readonly defer: () => void
 }
 
 function createConflictRegistry(onChanged: () => void) {
@@ -51,7 +51,7 @@ function createConflictRegistry(onChanged: () => void) {
     note: one.note,
     keep: one.keep,
     take: one.take,
-    later: () => {
+    defer: () => {
       postponed.add(one.note)
       conflicts.value = conflicts.value.filter((each) => each.note !== one.note)
     },
@@ -113,7 +113,7 @@ function createFlushReporter(
   }
 
   /** Settles a conflict the handlers raised, and calls the handlers again to see what is left. */
-  const retrying = (one: Conflict): Conflict => ({
+  const markRetrying = (one: Conflict): Conflict => ({
     note: one.note,
     keep: async () => {
       await one.keep()
@@ -132,7 +132,7 @@ function createFlushReporter(
     failed = results.some((one) => one.status === 'rejected')
     for (const one of results) {
       if (one.status !== 'fulfilled' || one.value === undefined) continue
-      for (const conflict of one.value) dropHeld.push(registry.raise(retrying(conflict)))
+      for (const conflict of one.value) dropHeld.push(registry.raise(markRetrying(conflict)))
     }
   }
 
@@ -185,7 +185,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
     return () => handlers.delete(one)
   }
 
-  const follows = createFollower({
+  const follower = createFollower({
     isOpen: () => open,
     // The quit stream reports no connection status.
     setLost: () => undefined,
@@ -195,7 +195,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
 
   /** Listen for the quit, for as long as the window is drawn. */
   const start = () =>
-    follows(
+    follower(
       () => core.watchWindowClose(abortController.signal),
       async (message) => {
         if (message.flush) await reporter.answer(message.token)

@@ -7,7 +7,7 @@ import type { SettingsApi } from '../api/settings'
 
 /** Notice copy of a retry. */
 interface RetryWords {
-  readonly stopped: (name: string, reason: string) => string
+  readonly formatStopped: (name: string, reason: string) => string
   readonly retryFailed: (name: string, message: string) => string
 }
 
@@ -30,7 +30,7 @@ export function createPluginRetry(options: RetryOptions) {
     notify('')
     try {
       const answer = await askPluginRetry(pluginId)
-      if (!answer.ok) notify(words.stopped(getName(pluginId), answer.error), 'warning')
+      if (!answer.ok) notify(words.formatStopped(getName(pluginId), answer.error), 'warning')
     } catch (caughtError) {
       notify(words.retryFailed(getName(pluginId), formatError(caughtError)), 'error')
     }

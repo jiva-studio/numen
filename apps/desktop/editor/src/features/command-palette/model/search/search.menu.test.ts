@@ -77,7 +77,7 @@ const createCore = (
   names: readonly NameMatch[],
   texts: readonly SearchResult[] = [],
 ): SearchDeps => ({
-  names: async () => names,
+  searchNames: async () => names,
   search: async (_query, mode) => (mode === 'words' ? texts : []),
 })
 
@@ -327,7 +327,7 @@ describe('the actions that create a note, in a search', () => {
 
   it('is offered as soon as a row is there, while the other groups are still working', async () => {
     const searchDeps: SearchDeps = {
-      names: async () => [nameMatch],
+      searchNames: async () => [nameMatch],
       search: () => new Promise(() => undefined),
     }
     const palette = useSearch(searchDeps, WORDS, { wait: now, getTarget: () => front() })
