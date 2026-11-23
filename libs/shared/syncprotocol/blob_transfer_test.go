@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
-// machineClock reads the clock of the machine.
 type machineClock struct{}
 
 func (machineClock) Now() time.Time { return time.Now() }

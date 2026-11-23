@@ -42,7 +42,7 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 func (s *Server) hasServices() bool {
 	return s.callers.Lent.GetModelCalls() != nil || s.callers.Lent.GetPluginVault() != nil ||
 		s.callers.Lent.GetPluginWork() != nil ||
-		s.callers.Lent.GetPluginSearch() != nil || s.callers.Account != nil || s.callers.Restore != nil
+		s.callers.Lent.GetPluginSearch() != nil || s.callers.Account != nil
 }
 
 // GetPort returns the port the server serves on, or 0 while it is not open.
