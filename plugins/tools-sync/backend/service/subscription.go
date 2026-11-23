@@ -99,42 +99,6 @@ func formatTime(at time.Time) string {
 	return at.UTC().Format(time.RFC3339)
 }
 
-// ListProducts returns the products the server sells that are no plans. A device with no identity gets ErrNoIdentity
-// and the server is not asked.
-func (b *Backend) ListProducts(ctx context.Context, _ api.ListProductsRequest) (api.ListProductsResponse, error) {
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
-		return api.ListProductsResponse{Products: nil}, err
-	}
-	products, err := usecase.NewListProducts(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
-	if err != nil {
-		return api.ListProductsResponse{Products: nil}, err
-	}
-	response := api.ListProductsResponse{Products: make([]api.Product, 0, len(products))}
-	for _, product := range products {
-		response.Products = append(response.Products, api.Product{
-			ID: product.ID, Slug: product.Slug, Name: product.Name, PriceCents: product.PriceCents, Currency: product.Currency, OneTime: product.OneTime,
-		})
-	}
-	return response, nil
-}
-
-// GetEntitlements returns the products the account owns. A device with no identity gets ErrNoIdentity and the server is
-// not asked.
-func (b *Backend) GetEntitlements(ctx context.Context, _ api.GetEntitlementsRequest) (api.GetEntitlementsResponse, error) {
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
-		return api.GetEntitlementsResponse{Entitlements: nil}, err
-	}
-	products, err := usecase.NewGetEntitlements(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
-	if err != nil {
-		return api.GetEntitlementsResponse{Entitlements: nil}, err
-	}
-	response := api.GetEntitlementsResponse{Entitlements: make([]api.Entitlement, 0, len(products))}
-	for _, product := range products {
-		response.Entitlements = append(response.Entitlements, api.Entitlement{Product: product})
-	}
-	return response, nil
-}
-
 // CreatePortalSession returns the address of the page where the person manages the subscription. A device with no
 // identity gets ErrNoIdentity and the server is not asked.
 func (b *Backend) CreatePortalSession(ctx context.Context, _ api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {

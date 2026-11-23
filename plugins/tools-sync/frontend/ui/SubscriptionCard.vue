@@ -7,7 +7,6 @@ import { onMounted } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
 import { Button } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
-import type { ProductOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 
@@ -22,8 +21,6 @@ const props = defineProps<{
 const {
   buyOffers,
   changeOffers,
-  productOffers,
-  ownedProducts,
   canManage,
   planLine,
   usage,
@@ -33,7 +30,6 @@ const {
   view,
   load,
   buy,
-  buyProduct,
   change,
   manage,
 } = useSubscription({
@@ -50,10 +46,6 @@ onMounted(() => {
 /* -------------------------------- Handlers -------------------------------- */
 function onBuy(plan: string): void {
   buy(plan).catch(onFailure)
-}
-
-function onBuyProduct(offer: ProductOffer): void {
-  buyProduct(offer).catch(onFailure)
 }
 
 function onChange(plan: string): void {
@@ -85,16 +77,7 @@ function onFailure(failure: unknown): void {
     <p v-if="planLine !== ''" class="subscription__plan">{{ planLine }}</p>
     <p v-if="usage !== ''" class="subscription__usage">{{ usage }}</p>
     <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
-    <ul v-if="ownedProducts.length > 0" class="subscription__products" :aria-label="words.productsTitle">
-      <li v-for="name in ownedProducts" :key="name" class="subscription__product">
-        <span>{{ name }}</span>
-        <span class="subscription__badge subscription__badge--positive">{{ words.owned }}</span>
-      </li>
-    </ul>
-    <div
-      v-if="buyOffers.length > 0 || changeOffers.length > 0 || productOffers.length > 0 || canManage"
-      class="subscription__controls"
-    >
+    <div v-if="buyOffers.length > 0 || changeOffers.length > 0 || canManage" class="subscription__controls">
       <Button
         v-for="offer in buyOffers"
         :key="`buy-${offer.id}`"
@@ -102,16 +85,6 @@ function onFailure(failure: unknown): void {
         variant="solid"
         :disabled="waiting"
         @click="onBuy(offer.id)"
-      >
-        {{ waiting ? words.waitingForPayment : `${words.buy} ${offer.label}` }}
-      </Button>
-      <Button
-        v-for="offer in productOffers"
-        :key="`buy-product-${offer.id}`"
-        type="button"
-        variant="solid"
-        :disabled="waiting"
-        @click="onBuyProduct(offer)"
       >
         {{ waiting ? words.waitingForPayment : `${words.buy} ${offer.label}` }}
       </Button>

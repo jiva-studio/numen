@@ -26,9 +26,8 @@ const (
 var (
 	errNeedsSubscription = errors.New("the account has no subscription that allows writes")
 	errNeverPaid         = errors.New("the account never paid")
-	errUnknownPlan       = errors.New("no such plan or product")
+	errUnknownPlan       = errors.New("no such plan")
 	errSamePlan          = errors.New("the account has this plan")
-	errOwned             = errors.New("the account owns this product")
 )
 
 func (s *Server) getPhase(account string) (syncv1.SubscriptionPhase, time.Time) {
@@ -92,12 +91,6 @@ func (s *Server) CreateCheckout(_ context.Context, req *connect.Request[syncv1.C
 }
 
 func (s *Server) checkOffer(account, offer string) error {
-	if product, isProduct := s.findProduct(offer); isProduct {
-		if _, owned := s.shop.owned[account][product.Slug]; owned {
-			return connect.NewError(connect.CodeAlreadyExists, errOwned)
-		}
-		return nil
-	}
 	if _, isPlan := s.findPlan(offer); !isPlan {
 		return connect.NewError(connect.CodeInvalidArgument, errUnknownPlan)
 	}
@@ -125,10 +118,6 @@ func (s *Server) servePay(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) settle(paid checkout) {
-	if product, isProduct := s.findProduct(paid.offer); isProduct {
-		s.buy(paid.account, product)
-		return
-	}
 	s.subscriptions[paid.account] = s.now().Add(subscriptionPeriod)
 	s.planOf[paid.account] = paid.offer
 	delete(s.shop.trials, paid.account)

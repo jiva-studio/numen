@@ -47,13 +47,3 @@ type Plan struct {
 	PriceCents uint64
 	Currency   string
 }
-
-// Product is a product the server sells that is no plan. OneTime is true for a single payment.
-type Product struct {
-	ID         string
-	Slug       string
-	Name       string
-	PriceCents uint64
-	Currency   string
-	OneTime    bool
-}

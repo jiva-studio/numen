@@ -1,12 +1,10 @@
 package fakeserver
 
 import (
-	"cmp"
 	"context"
 	"net/http"
 	"slices"
 	"strconv"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -15,31 +13,19 @@ import (
 )
 
 const (
-	lifetimeYears = 100
-	trialPeriod   = 14 * day
-	portalFolder  = "/portal/"
-	portalPage    = "<!doctype html><title>Portal</title><p>Manage the subscription</p>"
-	storageSlug   = "sync"
+	trialPeriod  = 14 * day
+	portalFolder = "/portal/"
+	portalPage   = "<!doctype html><title>Portal</title><p>Manage the subscription</p>"
+	storageSlug  = "sync"
 )
 
-// shop is what the server sold besides the subscription of the storage: the products it offers, the ones each account owns
-// by the day of the purchase, and the accounts whose subscription is a trial.
+// shop is what the server keeps besides the subscription of the storage: the accounts whose subscription is a trial.
 type shop struct {
-	products []syncprotocol.Product
-	owned    map[string]map[string]time.Time
-	trials   map[string]bool
+	trials map[string]bool
 }
 
-func newShop(products []syncprotocol.Product) shop {
-	return shop{products: products, owned: map[string]map[string]time.Time{}, trials: map[string]bool{}}
-}
-
-func (s *Server) findProduct(id string) (syncprotocol.Product, bool) {
-	index := slices.IndexFunc(s.shop.products, func(one syncprotocol.Product) bool { return one.ID == id })
-	if index < 0 {
-		return syncprotocol.Product{}, false
-	}
-	return s.shop.products[index], true
+func newShop() shop {
+	return shop{trials: map[string]bool{}}
 }
 
 func (s *Server) findPlan(id string) (syncprotocol.Plan, bool) {
@@ -50,26 +36,11 @@ func (s *Server) findPlan(id string) (syncprotocol.Plan, bool) {
 	return s.plans[index], true
 }
 
-func (s *Server) buy(account string, product syncprotocol.Product) {
-	if s.shop.owned[account] == nil {
-		s.shop.owned[account] = map[string]time.Time{}
-	}
-	s.shop.owned[account][product.Slug] = s.now()
-}
-
 func (s *Server) ListProducts(_ context.Context, req *connect.Request[syncv1.ListProductsRequest]) (*connect.Response[syncv1.ListProductsResponse], error) {
 	if _, err := s.authenticate(req.Header()); err != nil {
 		return nil, err
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	products := make([]*syncv1.Product, 0, len(s.shop.products))
-	for _, one := range s.shop.products {
-		products = append(products, &syncv1.Product{
-			Id: one.ID, Slug: one.Slug, Name: one.Name, PriceCents: one.PriceCents, Currency: one.Currency, OneTime: one.OneTime,
-		})
-	}
-	return connect.NewResponse(&syncv1.ListProductsResponse{Products: products}), nil
+	return connect.NewResponse(&syncv1.ListProductsResponse{Products: nil}), nil
 }
 
 func (s *Server) GetEntitlements(_ context.Context, req *connect.Request[syncv1.GetEntitlementsRequest]) (*connect.Response[syncv1.GetEntitlementsResponse], error) {
@@ -79,16 +50,10 @@ func (s *Server) GetEntitlements(_ context.Context, req *connect.Request[syncv1.
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	entitlements := make([]*syncv1.Entitlement, 0, len(s.shop.owned[account])+1)
-	for slug, boughtAt := range s.shop.owned[account] {
-		entitlements = append(entitlements, &syncv1.Entitlement{
-			Product: slug, ValidUntil: boughtAt.AddDate(lifetimeYears, 0, 0).Unix(), Phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE,
-		})
-	}
+	entitlements := make([]*syncv1.Entitlement, 0, 1)
 	if entitlement := s.getStorageEntitlement(account); entitlement != nil {
 		entitlements = append(entitlements, entitlement)
 	}
-	slices.SortFunc(entitlements, func(a, b *syncv1.Entitlement) int { return cmp.Compare(a.GetProduct(), b.GetProduct()) })
 	return connect.NewResponse(&syncv1.GetEntitlementsResponse{Entitlements: entitlements}), nil
 }
 
@@ -123,20 +88,6 @@ func (s *Server) servePortal(w http.ResponseWriter, _ *http.Request) {
 	if _, err := w.Write([]byte(portalPage)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-// serveRefund takes a product back from an account (POST, product=slug and an optional account).
-func (s *Server) serveRefund(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, account := range s.listAccounts(r.URL.Query().Get("account")) {
-		delete(s.shop.owned[account], r.URL.Query().Get("product"))
-	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // serveTrial starts a trial of a plan (POST, plan=id and an optional account): the subscription runs to the end of the trial.

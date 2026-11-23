@@ -134,9 +134,7 @@ type Subscriptions interface {
 	ChangePlan(ctx context.Context, plan string) (syncprotocol.Subscription, error)
 }
 
-// Shop is what the server sells besides the plans and the page where the person manages the subscription.
+// Shop is the page where the person manages the subscription.
 type Shop interface {
-	ListProducts(ctx context.Context) ([]syncprotocol.Product, error)
-	GetEntitlements(ctx context.Context) ([]syncprotocol.Entitlement, error)
 	CreatePortalSession(ctx context.Context) (string, error)
 }

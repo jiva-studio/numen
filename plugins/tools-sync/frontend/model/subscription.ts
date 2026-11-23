@@ -4,13 +4,11 @@ import { runInBackground } from '@numen/ui'
 import {
   getFailureCode,
   type PlanResponse,
-  type ProductResponse,
   type SubscriptionClient,
   type SubscriptionResponse,
 } from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
 import {
-  formatPrice,
   formatSize,
   getOfferLabel,
   getPlanLabel,
@@ -19,14 +17,12 @@ import {
   type SubscriptionPhase,
   type SubscriptionDates,
   type PlanOffer,
-  type ProductOffer,
   type SubscriptionStatus,
 } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
 
 const DEFAULT_POLL_EVERY_MS = 3000
 const DEFAULT_POLL_LIMIT_MS = 600_000
-const NO_PRODUCTS: readonly string[] = []
 const NO_DATES: SubscriptionDates = { periodEnd: '', writesEnd: '', deleteAt: '' }
 
 export interface UseSubscriptionOptions {
@@ -55,8 +51,6 @@ export function useSubscription(options: UseSubscriptionOptions) {
   const usedBytes = ref(0)
   const isTrial = ref(false)
   const plans = ref<readonly PlanResponse[]>([])
-  const products = ref<readonly ProductResponse[]>([])
-  const owned = ref<readonly string[]>(NO_PRODUCTS)
   const waiting = ref(false)
   const problem = ref('')
   let isAwaited: () => boolean = () => false
@@ -85,26 +79,8 @@ export function useSubscription(options: UseSubscriptionOptions) {
     isTrial.value = answer.hasIdentity && answer.isTrial === true
   }
 
-  async function readOwned(): Promise<void> {
-    if (client.getOwnedProducts === undefined || status.value !== 'ready') return
-    try {
-      owned.value = await client.getOwnedProducts()
-    } catch {
-      owned.value = NO_PRODUCTS
-    }
-  }
-
   async function read(): Promise<void> {
     apply(await client.getSubscription())
-    await readOwned()
-  }
-
-  async function loadProducts(): Promise<void> {
-    try {
-      products.value = (await client.listProducts?.()) ?? []
-    } catch {
-      products.value = []
-    }
   }
 
   async function loadPlans(): Promise<void> {
@@ -124,7 +100,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
       if (getFailureCode(failure) !== 'unavailable') problem.value = getMessage(failure)
       return
     }
-    if (status.value === 'ready') await Promise.all([loadPlans(), loadProducts()])
+    if (status.value === 'ready') await loadPlans()
   }
 
   function reportProblem(failure: unknown): void {
@@ -182,8 +158,6 @@ export function useSubscription(options: UseSubscriptionOptions) {
   }
 
   const buy = (offer: string): Promise<void> => pay(offer, () => phase.value === 'active')
-  const buyProduct = (offer: ProductOffer): Promise<void> =>
-    pay(offer.id, () => owned.value.includes(offer.slug))
 
   async function change(offer: string): Promise<void> {
     problem.value = ''
@@ -223,20 +197,6 @@ export function useSubscription(options: UseSubscriptionOptions) {
       ? plans.value.filter((one) => one.id !== plan.value).map(toOffer)
       : [],
   )
-  const toProductOffer = (one: ProductResponse): ProductOffer => {
-    const price = formatPrice(one.priceCents, one.currency)
-    return { id: one.id, slug: one.slug, name: one.name, label: price === '' ? one.name : `${one.name}, ${price}` }
-  }
-  const productOffers = computed<readonly ProductOffer[]>(() =>
-    status.value === 'ready'
-      ? products.value.filter((one) => !owned.value.includes(one.slug)).map(toProductOffer)
-      : [],
-  )
-  const ownedProducts = computed<readonly string[]>(() =>
-    status.value === 'ready'
-      ? products.value.filter((one) => owned.value.includes(one.slug)).map((one) => one.name)
-      : [],
-  )
   const planLine = computed(() => {
     if (plan.value === '') return ''
     const known = plans.value.find((one) => one.id === plan.value)
@@ -268,14 +228,11 @@ export function useSubscription(options: UseSubscriptionOptions) {
     view,
     buyOffers,
     changeOffers,
-    productOffers,
-    ownedProducts,
     planLine,
     usage,
     isFull,
     load,
     buy,
-    buyProduct,
     change,
     manage,
   }

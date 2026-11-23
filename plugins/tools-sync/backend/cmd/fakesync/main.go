@@ -76,14 +76,9 @@ func main() {
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
 	plansFlag := flag.String("plans", "", "plans the server sells as id:GB pairs, such as basic:10,plus:100; empty sells basic, plus and pro")
-	productsFlag := flag.String("products", "", "products the server sells that are no plans, as slug:Name:cents:once|period, such as link:Link:2000:once")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
 	plans, err := readPlans(*plansFlag)
-	if err != nil {
-		log.Fatal(err)
-	}
-	products, err := readProducts(*productsFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +88,7 @@ func main() {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Plans: plans, Products: products})
+	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Plans: plans})
 	var handler http.Handler = fake
 	if *stateDir != "" {
 		path := filepath.Join(*stateDir, stateFile)

@@ -103,16 +103,6 @@ export const getPlansFlag = (plans: readonly PlanSpec[]): string =>
 /** The bytes the cloud holds when it holds some GB of the notes. */
 export const getCloudBytes = (gigabytes: number): number => gigabytes * BYTES_IN_GB
 
-/** A product a scenario names: the name a person reads and its price in cents. */
-export interface ProductSpec {
-  readonly name: string
-  readonly priceCents: number
-}
-
-/** The value of the `-products` flag of the fake sync server: the slug of each product (its name in lower case), its name and its price, paid once. */
-export const getProductsFlag = (products: readonly ProductSpec[]): string =>
-  products.map((one) => `${one.name.toLowerCase()}:${one.name}:${one.priceCents}:once`).join(',')
-
 /** The days a trial of a plan runs on the stand-in of the payment. */
 export const TRIAL_DAYS = 14
 
@@ -129,7 +119,6 @@ export class SyncDriver {
   private stateDir: string | undefined
   private listen: string | undefined
   private heldGigabytes = 0
-  private products: readonly ProductSpec[] = []
   private trial: { readonly plan: string; readonly endsAt: Date } | undefined
 
   constructor(
@@ -147,18 +136,6 @@ export class SyncDriver {
   async startSellingPlans(plans: readonly PlanSpec[]): Promise<void> {
     this.extraFlags = ['-subscriptions', '-plans', getPlansFlag(plans)]
     await this.start()
-  }
-
-  /** Makes the running sync server sell a product for a single payment, over the state it kept. */
-  async sellProduct(product: ProductSpec): Promise<void> {
-    this.products = [...this.products, product]
-    await this.pause()
-    await this.resume()
-  }
-
-  /** Takes the product back from the account: the payment is refunded. */
-  async refundProduct(name: string): Promise<void> {
-    await this.postAdmin(`refund?product=${name.toLowerCase()}`, 'the refund of the product')
   }
 
   /** Starts a trial of the plan on the account, as the stand-in of the payment does for an account that asked for one. */
@@ -250,8 +227,7 @@ export class SyncDriver {
 
   private getStateFlags(): string[] {
     const state = this.stateDir === undefined ? [] : ['-state-dir', this.stateDir]
-    const products = this.products.length === 0 ? [] : ['-products', getProductsFlag(this.products)]
-    return [...state, ...this.extraFlags, ...products]
+    return [...state, ...this.extraFlags]
   }
 
   /** Makes the sync server need a protocol no application implements, where it listened before. */

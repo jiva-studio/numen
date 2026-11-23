@@ -14,8 +14,6 @@ const (
 	MethodCreateCheckout      = "CreateCheckout"
 	MethodListPlans           = "ListPlans"
 	MethodChangePlan          = "ChangePlan"
-	MethodListProducts        = "ListProducts"
-	MethodGetEntitlements     = "GetEntitlements"
 	MethodCreatePortalSession = "CreatePortalSession"
 )
 
@@ -169,37 +167,6 @@ type ChangePlanRequest struct {
 // ChangePlanResponse is the subscription after the change.
 type ChangePlanResponse struct {
 	Subscription GetSubscriptionResponse `json:"subscription"`
-}
-
-// ListProductsRequest asks for the products the sync server sells that are no plans.
-type ListProductsRequest struct{}
-
-// Product is a product of the sync server that is no plan. OneTime is true for a single payment. The price is information.
-type Product struct {
-	ID         string `json:"id"`
-	Slug       string `json:"slug"`
-	Name       string `json:"name"`
-	PriceCents uint64 `json:"priceCents"`
-	Currency   string `json:"currency"`
-	OneTime    bool   `json:"oneTime"`
-}
-
-// ListProductsResponse holds the products in the order of the server.
-type ListProductsResponse struct {
-	Products []Product `json:"products"`
-}
-
-// GetEntitlementsRequest asks for the products the account owns.
-type GetEntitlementsRequest struct{}
-
-// Entitlement is a product the account owns right now: the slug of the product.
-type Entitlement struct {
-	Product string `json:"product"`
-}
-
-// GetEntitlementsResponse holds the products the account owns ordered by slug, the subscription of Numen Sync among them.
-type GetEntitlementsResponse struct {
-	Entitlements []Entitlement `json:"entitlements"`
 }
 
 // CreatePortalSessionRequest asks for the address of the page where the person manages the subscription.

@@ -2,8 +2,6 @@ import type { ComputerName, Holder } from '../drivers/computer.js'
 import { formatDay, getPlanLine } from '../drivers/identity.js'
 import { Given, Then, When } from '../support/bdd.js'
 
-const PRODUCT_PRICE_CENTS = 2000
-
 Given('a sync server runs', async ({ person }) => {
   await person.sync.start()
 })
@@ -206,34 +204,6 @@ Given(
     ])
   },
 )
-
-Given('the server sells the product {string} for a single payment', async ({ person }, name: string) => {
-  await person.sync.sellProduct({ name, priceCents: PRODUCT_PRICE_CENTS })
-})
-
-When('the person buys the product {string}', async ({ person }, name: string) => {
-  await person.identity.buyProduct(name)
-})
-
-Then('the page offers to buy the product {string}', async ({ person }, name: string) => {
-  await person.identity.expectProductOffer(name)
-})
-
-Then('the page does not offer to buy the product {string}', async ({ person }, name: string) => {
-  await person.identity.expectNoProductOffer(name)
-})
-
-Then('the page shows that the product {string} is owned', async ({ person }, name: string) => {
-  await person.identity.expectProductOwned(name)
-})
-
-Then('the second computer shows that the product {string} is owned', async ({ person }, name: string) => {
-  await person.computers.expectProductOwned('second', name)
-})
-
-When('the payment of the product {string} is refunded', async ({ person }, name: string) => {
-  await person.sync.refundProduct(name)
-})
 
 When('the person starts a trial of the plan {string}', async ({ person }, name: string) => {
   await person.sync.startTrial(name)

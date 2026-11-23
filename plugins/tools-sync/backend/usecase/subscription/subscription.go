@@ -107,49 +107,9 @@ func (u *ChangePlan) Execute(ctx context.Context, plan string) (domain.State, er
 	return getState(read)
 }
 
-// ShopDeps are what the use cases of the products and the portal need.
+// ShopDeps are what the use case of the portal needs.
 type ShopDeps struct {
 	Shop ports.Shop
-}
-
-// ListProducts asks the server for the products it sells that are no plans.
-type ListProducts struct{ deps ShopDeps }
-
-// NewListProducts returns the use case over the dependencies.
-func NewListProducts(deps ShopDeps) *ListProducts { return &ListProducts{deps: deps} }
-
-// Execute returns the products in the order of the server.
-func (u *ListProducts) Execute(ctx context.Context) ([]domain.Product, error) {
-	read, err := u.deps.Shop.ListProducts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	products := make([]domain.Product, 0, len(read))
-	for _, product := range read {
-		products = append(products, domain.Product{
-			ID: product.ID, Slug: product.Slug, Name: product.Name, PriceCents: product.PriceCents, Currency: product.Currency, OneTime: product.OneTime,
-		})
-	}
-	return products, nil
-}
-
-// GetEntitlements asks the server for the products the account owns.
-type GetEntitlements struct{ deps ShopDeps }
-
-// NewGetEntitlements returns the use case over the dependencies.
-func NewGetEntitlements(deps ShopDeps) *GetEntitlements { return &GetEntitlements{deps: deps} }
-
-// Execute returns the slugs of the products the account owns, in the order of the server.
-func (u *GetEntitlements) Execute(ctx context.Context) ([]string, error) {
-	read, err := u.deps.Shop.GetEntitlements(ctx)
-	if err != nil {
-		return nil, err
-	}
-	products := make([]string, 0, len(read))
-	for _, entitlement := range read {
-		products = append(products, entitlement.Product)
-	}
-	return products, nil
 }
 
 // CreatePortalSession asks the server for the page where the person manages the subscription.
