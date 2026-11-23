@@ -74,6 +74,8 @@ func (s *Session) GetOpenTabs() window.OpenTabs { return s.Tabs.GetOpenTabs() }
 
 // GetFrameDialog returns the native dialog of the frame, and nothing when the frame has none.
 func GetFrameDialog(frame Frame) PathDialog {
-	dialog, _ := frame.(PathDialog)
-	return dialog
+	if dialog, ok := frame.(PathDialog); ok {
+		return dialog
+	}
+	return nil
 }
