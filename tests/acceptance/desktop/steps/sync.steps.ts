@@ -143,7 +143,7 @@ Then('the subscription shows {string}{on}', async ({ person }, text: string, com
 })
 
 When('the person buys the subscription', async ({ person }) => {
-  await person.identity.buy()
+  await person.identity.startPurchase()
 })
 
 When('the person opens the payment page without paying', async ({ person }) => {

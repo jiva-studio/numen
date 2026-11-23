@@ -91,9 +91,9 @@ type Store interface {
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
-	Files(id domain.VaultID) Files
-	Transfers(id domain.VaultID) Transfers
-	Indexer(id domain.VaultID) Indexer
+	GetFiles(id domain.VaultID) Files
+	GetTransfers(id domain.VaultID) Transfers
+	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }
 

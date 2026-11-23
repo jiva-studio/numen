@@ -40,7 +40,7 @@ func (p *pair) pullWith(t *testing.T, resolver ports.ConflictResolver) transfer.
 	t.Helper()
 	deps := p.b.PullDeps()
 	deps.Conflicts = resolver
-	result, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
+	result, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
 	if err != nil {
 		t.Fatal(err)
 	}

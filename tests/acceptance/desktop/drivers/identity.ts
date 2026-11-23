@@ -6,7 +6,7 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
-const NO_IDENTITY = 'Not created'
+const NO_IDENTITY = 'An identity is a key kept only on your devices.'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const BUY = 'Buy'
 const PAYMENT_RECEIVED = 'Payment received'
@@ -213,7 +213,7 @@ export class IdentityDriver {
   }
 
   /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buy(): Promise<void> {
+  async startPurchase(): Promise<void> {
     const payment = await this.openPayment()
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()

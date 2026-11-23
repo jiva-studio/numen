@@ -16,7 +16,7 @@ type markdown struct{ host ports.Host }
 
 func (s markdown) Resolve(ctx context.Context, in ports.ConflictInput) (ports.ConflictOutcome, error) {
 	none := ports.ConflictOutcome{Applied: nil, Copy: ""}
-	files := s.host.Files(in.Vault)
+	files := s.host.GetFiles(in.Vault)
 	text, _, err := files.Read(ctx, in.Path)
 	if err != nil {
 		return none, fmt.Errorf("read the local note: %w", err)

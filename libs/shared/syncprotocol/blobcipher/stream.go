@@ -16,13 +16,13 @@ const (
 	maxPlainSize     = 256 * mebibyte
 )
 
-// PaddedLength returns the length of the plain stream for a payload of the given size: the 8-byte length prefix,
+// ComputePaddedLength returns the length of the plain stream for a payload of the given size: the 8-byte length prefix,
 // the payload and zero bytes up to the next step of the ladder.
-func PaddedLength(payloadLength int) int {
-	return int(paddedLength(int64(payloadLength)))
+func ComputePaddedLength(payloadLength int) int {
+	return int(computePaddedLength64(int64(payloadLength)))
 }
 
-func paddedLength(payloadLength int64) int64 {
+func computePaddedLength64(payloadLength int64) int64 {
 	m := lengthPrefixSize + payloadLength
 	if m <= mebibyte {
 		padded := int64(minPaddedLength)
@@ -35,13 +35,13 @@ func paddedLength(payloadLength int64) int64 {
 }
 
 func getStoredSize(payloadLength, chunkSize int) int {
-	padded := PaddedLength(payloadLength)
+	padded := ComputePaddedLength(payloadLength)
 	chunks := (padded + chunkSize - 1) / chunkSize
 	return headerSize + padded + chunks*tagSize
 }
 
 func createStream(payload []byte) []byte {
-	stream := make([]byte, PaddedLength(len(payload)))
+	stream := make([]byte, ComputePaddedLength(len(payload)))
 	binary.BigEndian.PutUint64(stream, uint64(len(payload)))
 	copy(stream[lengthPrefixSize:], payload)
 	return stream

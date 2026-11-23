@@ -28,7 +28,7 @@ func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Se
 	server.SetAudience(served.URL)
 	identity := accounttest.NewFake(t, syncprotocol.SignInPluginID)
 	if !hasIdentity {
-		identity.NoIdentity()
+		identity.RemoveIdentity()
 	}
 	healthHost := healthtest.NewHost(t)
 	identityEndpoint, err := hostcall.ReadVars(identity.BuildVars("token"))

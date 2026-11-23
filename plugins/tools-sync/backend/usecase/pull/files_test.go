@@ -150,7 +150,7 @@ func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenT
 func TestPullChanges_RaisesTheIntegrityItemForABlobThatIsNotTheOneOfItsRevision(t *testing.T) {
 	p := newPair(t)
 	p.push(t, pdf, pdfText, nil)
-	p.server.CorruptBlobs(true)
+	p.server.SetBlobCorruption(true)
 
 	result := p.pull(t, trustAll)
 
@@ -507,7 +507,7 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 		Entries: p.b.State, Host: p.b.Host, Digests: wired.Digests,
 	})
 
-	result, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
+	result, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
 
 	if err != nil {
 		t.Fatal(err)

@@ -289,7 +289,7 @@ func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateRecords(t 
 func TestDownloadFile_RefusesABigBlobThatDoesNotOpenAndDropsWhatItStaged(t *testing.T) {
 	w := newWorld(t)
 	stored, meta, _ := w.publishBig(t, "Videos/Trip.bin", 5)
-	w.p.Server.CorruptBlobs(true)
+	w.p.Server.SetBlobCorruption(true)
 
 	_, err := w.use.Execute(t.Context(), w.input(stored, meta))
 

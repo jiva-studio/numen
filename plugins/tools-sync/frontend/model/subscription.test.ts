@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
+import {
+  asFailure,
+  asValue,
+  type Failure,
+  type OpenExternalErrorCode,
+  type Result,
+} from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import { useSubscription } from './subscription'
 
@@ -44,7 +50,7 @@ const createClient = (answers: readonly SubscriptionResponse[]) => {
   }
 }
 
-type OpenExternal = (url: string) => Promise<Result<null>>
+type OpenExternal = (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
 
 const createOpen = () => vi.fn<OpenExternal>(() => Promise.resolve(asValue(null)))
 
@@ -136,12 +142,12 @@ describe('useSubscription on load', () => {
   })
 })
 
-describe('useSubscription buy', () => {
+describe('useSubscription startPurchase', () => {
   it('opens the payment page in the system browser and waits for the payment', async () => {
     const { subscription, openExternal } = mountSubscription(createClient([createResponse()]))
     await subscription.load()
 
-    await subscription.buy()
+    await subscription.startPurchase()
 
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
     expect(subscription.waiting.value).toBe(true)
@@ -151,7 +157,7 @@ describe('useSubscription buy', () => {
     const client = createClient([createResponse(), createResponse(), createResponse(), ACTIVE])
     const { subscription } = mountSubscription(client)
     await subscription.load()
-    await subscription.buy()
+    await subscription.startPurchase()
     expect(client.getSubscription).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(2999)
@@ -171,7 +177,7 @@ describe('useSubscription buy', () => {
     const client = createClient([createResponse()])
     const { subscription } = mountSubscription(client)
     await subscription.load()
-    await subscription.buy()
+    await subscription.startPurchase()
 
     await vi.advanceTimersByTimeAsync(600_000)
 
@@ -185,7 +191,7 @@ describe('useSubscription buy', () => {
   it('is still waiting just before the 10 minutes end', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
     await subscription.load()
-    await subscription.buy()
+    await subscription.startPurchase()
 
     await vi.advanceTimersByTimeAsync(599_000)
 
@@ -197,7 +203,7 @@ describe('useSubscription buy', () => {
     const client = createClient([createResponse()])
     const { subscription, wrapper } = mountSubscription(client)
     await subscription.load()
-    await subscription.buy()
+    await subscription.startPurchase()
     await vi.advanceTimersByTimeAsync(3000)
     const reads = client.getSubscription.mock.calls.length
 
@@ -209,14 +215,18 @@ describe('useSubscription buy', () => {
 
   it('shows the problem and asks no more when the browser cannot open the page', async () => {
     const client = createClient([createResponse()])
-    const openExternal = vi.fn<OpenExternal>(() => Promise.resolve(asFailure('not a web address')))
+    const openExternal = vi.fn<OpenExternal>(() =>
+      Promise.resolve(asFailure({ error: 'notWebAddress' as const, message: 'not a web address' })),
+    )
     const { subscription } = mountSubscription(client, openExternal)
     await subscription.load()
 
-    await subscription.buy()
+    await subscription.startPurchase()
     await vi.advanceTimersByTimeAsync(30_000)
 
-    expect(subscription.problem.value).not.toBe('')
+    expect(subscription.problem.value).toBe(
+      'The payment page has an address the browser cannot open.',
+    )
     expect(subscription.waiting.value).toBe(false)
     expect(client.getSubscription).toHaveBeenCalledTimes(1)
   })
@@ -229,7 +239,7 @@ describe('useSubscription buy', () => {
     const { subscription, openExternal } = mountSubscription(client)
     await subscription.load()
 
-    await subscription.buy()
+    await subscription.startPurchase()
 
     expect(subscription.problem.value).toContain('the sync server does not sell subscriptions')
     expect(openExternal).not.toHaveBeenCalled()
@@ -243,7 +253,7 @@ describe('useSubscription buy', () => {
     const { subscription, openExternal } = mountSubscription(client)
     await subscription.load()
 
-    await subscription.buy()
+    await subscription.startPurchase()
 
     expect(subscription.phase.value).toBe('active')
     expect(subscription.canBuy.value).toBe(false)

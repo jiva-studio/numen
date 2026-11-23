@@ -270,7 +270,7 @@ func TestConnectVault_FailsAfterThreeLostRaces(t *testing.T) {
 
 func TestConnectVault_NeedsAnIdentity(t *testing.T) {
 	w := newWorld(t)
-	w.first.Fake.NoIdentity()
+	w.first.Fake.RemoveIdentity()
 
 	err := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test", Mode: catalog.ModeNew})
 
