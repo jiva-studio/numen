@@ -72,11 +72,12 @@ func (s *Server) checkQuota(account string, sizes []uint64) error {
 	for _, size := range sizes {
 		total += size
 	}
-	if s.used[account]+total <= s.quota {
+	limit := s.getQuota(account)
+	if s.used[account]+total <= limit {
 		return nil
 	}
 	failure := connect.NewError(connect.CodeResourceExhausted, errQuotaExceeded)
-	if detail, err := connect.NewErrorDetail(&syncv1.QuotaExceeded{UsedBytes: s.used[account], LimitBytes: s.quota}); err == nil {
+	if detail, err := connect.NewErrorDetail(&syncv1.QuotaExceeded{UsedBytes: s.used[account], LimitBytes: limit}); err == nil {
 		failure.AddDetail(detail)
 	}
 	return failure

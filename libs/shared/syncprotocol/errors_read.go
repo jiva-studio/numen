@@ -69,6 +69,8 @@ func ReadSubscriptionError(err error) error {
 			return refusalError{sentinel: ErrAlreadySubscribed, cause: failure}
 		case connect.CodeUnimplemented:
 			return refusalError{sentinel: ErrBillingUnavailable, cause: failure}
+		case connect.CodeInvalidArgument:
+			return refusalError{sentinel: ErrUnknownPlan, cause: failure}
 		}
 	}
 	return ReadError(err)
@@ -76,6 +78,18 @@ func ReadSubscriptionError(err error) error {
 
 // ReadChangePlanError is ReadError for the call of ChangePlan: it maps FAILED_PRECONDITION to ErrNoActiveSubscription,
 // ALREADY_EXISTS to ErrSamePlan, INVALID_ARGUMENT to ErrUnknownPlan and a server that sells none to ErrBillingUnavailable.
-func ReadChangePlanError(_ error) error {
-	return errors.New("not implemented")
+func ReadChangePlanError(err error) error {
+	if failure, ok := errors.AsType[*connect.Error](err); ok {
+		switch failure.Code() {
+		case connect.CodeFailedPrecondition:
+			return refusalError{sentinel: ErrNoActiveSubscription, cause: failure}
+		case connect.CodeAlreadyExists:
+			return refusalError{sentinel: ErrSamePlan, cause: failure}
+		case connect.CodeInvalidArgument:
+			return refusalError{sentinel: ErrUnknownPlan, cause: failure}
+		case connect.CodeUnimplemented:
+			return refusalError{sentinel: ErrBillingUnavailable, cause: failure}
+		}
+	}
+	return ReadError(err)
 }

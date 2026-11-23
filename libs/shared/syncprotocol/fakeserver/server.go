@@ -49,6 +49,8 @@ type Config struct {
 	QuotaBytes uint64
 	// Plans are the plans the server sells, ascending by quota. Empty is Basic with 10 GiB for 5 USD, Plus with 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro).
 	Plans []syncprotocol.Plan
+	// Products are the products the server sells that are no plans; ids are what CreateCheckout takes. Empty sells none.
+	Products []syncprotocol.Product
 
 	NeedsSubscription bool
 }
@@ -96,7 +98,8 @@ type Server struct {
 	calls         map[string]int
 	subscriptions map[string]time.Time
 	planOf        map[string]string
-	checkouts     map[string]string
+	checkouts     map[string]checkout
+	shop          shop
 }
 
 // New returns the server for the config.
@@ -105,7 +108,7 @@ func New(cfg Config) *Server {
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, plans: cfg.Plans, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]string{},
+		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(cfg.Products),
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -119,6 +122,9 @@ func New(cfg Config) *Server {
 	}
 	if s.quota == 0 {
 		s.quota = defaultQuota
+	}
+	if len(s.plans) == 0 {
+		s.plans = defaultPlans()
 	}
 	s.handler = s.newMux()
 	return s
@@ -136,6 +142,9 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/admin/usage", s.serveUsage)
+	mux.HandleFunc(portalFolder, s.servePortal)
+	mux.HandleFunc("/admin/refund", s.serveRefund)
+	mux.HandleFunc("/admin/trial", s.serveTrial)
 	mux.HandleFunc("/blobs/", s.serveBlob)
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)

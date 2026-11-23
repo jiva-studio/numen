@@ -12,12 +12,15 @@ import (
 )
 
 type snapshot struct {
-	Chains        map[string][]byte        `json:"chains"`
-	Catalogs      map[string][][]byte      `json:"catalogs"`
-	Vaults        map[string]vaultSnapshot `json:"vaults"`
-	Blobs         map[string]blobSnapshot  `json:"blobs"`
-	Used          map[string]uint64        `json:"used"`
-	Subscriptions map[string]time.Time     `json:"subscriptions"`
+	Chains        map[string][]byte               `json:"chains"`
+	Catalogs      map[string][][]byte             `json:"catalogs"`
+	Vaults        map[string]vaultSnapshot        `json:"vaults"`
+	Blobs         map[string]blobSnapshot         `json:"blobs"`
+	Used          map[string]uint64               `json:"used"`
+	Subscriptions map[string]time.Time            `json:"subscriptions"`
+	Plans         map[string]string               `json:"plans"`
+	Owned         map[string]map[string]time.Time `json:"owned"`
+	Trials        map[string]bool                 `json:"trials"`
 }
 
 type vaultSnapshot struct {
@@ -45,6 +48,7 @@ func (s *Server) Snapshot() ([]byte, error) {
 	out := snapshot{
 		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]vaultSnapshot{},
 		Blobs: map[string]blobSnapshot{}, Used: s.used, Subscriptions: s.subscriptions,
+		Plans: s.planOf, Owned: s.shop.owned, Trials: s.shop.trials,
 	}
 	for account, chain := range s.chains {
 		out.Chains[account] = chain.Bytes()
@@ -114,7 +118,21 @@ func (s *Server) Restore(raw []byte) error {
 	if s.subscriptions == nil {
 		s.subscriptions = map[string]time.Time{}
 	}
+	s.restoreShop(in)
 	return nil
+}
+
+func (s *Server) restoreShop(in snapshot) {
+	s.planOf, s.shop.owned, s.shop.trials = in.Plans, in.Owned, in.Trials
+	if s.planOf == nil {
+		s.planOf = map[string]string{}
+	}
+	if s.shop.owned == nil {
+		s.shop.owned = map[string]map[string]time.Time{}
+	}
+	if s.shop.trials == nil {
+		s.shop.trials = map[string]bool{}
+	}
 }
 
 func restoreChains(in map[string][]byte) (map[string]identity.Chain, error) {

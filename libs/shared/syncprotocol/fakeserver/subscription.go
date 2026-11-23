@@ -23,7 +23,13 @@ const (
 	payPage            = "<!doctype html><title>Payment</title><p>Payment received</p>"
 )
 
-var errNeedsSubscription = errors.New("the account has no subscription that allows writes")
+var (
+	errNeedsSubscription = errors.New("the account has no subscription that allows writes")
+	errNeverPaid         = errors.New("the account never paid")
+	errUnknownPlan       = errors.New("no such plan or product")
+	errSamePlan          = errors.New("the account has this plan")
+	errOwned             = errors.New("the account owns this product")
+)
 
 func (s *Server) getPhase(account string) (syncv1.SubscriptionPhase, time.Time) {
 	if !s.needsSubscription {
@@ -62,14 +68,7 @@ func (s *Server) GetSubscription(_ context.Context, req *connect.Request[syncv1.
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	phase, periodEnd := s.getPhase(account)
-	response := &syncv1.GetSubscriptionResponse{Phase: phase}
-	if !periodEnd.IsZero() {
-		response.PeriodEndAt = periodEnd.Unix()
-		response.WritesEndAt = periodEnd.Add(writeGrace).Unix()
-		response.DeleteAt = periodEnd.Add(retention).Unix()
-	}
-	return connect.NewResponse(response), nil
+	return connect.NewResponse(s.getSubscriptionMessage(account)), nil
 }
 
 func (s *Server) CreateCheckout(_ context.Context, req *connect.Request[syncv1.CreateCheckoutRequest]) (*connect.Response[syncv1.CreateCheckoutResponse], error) {
@@ -79,23 +78,40 @@ func (s *Server) CreateCheckout(_ context.Context, req *connect.Request[syncv1.C
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if phase, _ := s.getPhase(account); phase == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE {
-		return nil, connect.NewError(connect.CodeAlreadyExists, errors.New("the subscription is active"))
+	offer := req.Msg.GetPlan()
+	if err := s.checkOffer(account, offer); err != nil {
+		return nil, err
 	}
 	raw := make([]byte, 16)
 	if _, err := rand.Read(raw); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	id := hex.EncodeToString(raw)
-	s.checkouts[id] = account
+	s.checkouts[id] = checkout{account: account, offer: offer}
 	return connect.NewResponse(&syncv1.CreateCheckoutResponse{CheckoutUrl: s.audience + payFolder + id}), nil
+}
+
+func (s *Server) checkOffer(account, offer string) error {
+	if product, isProduct := s.findProduct(offer); isProduct {
+		if _, owned := s.shop.owned[account][product.Slug]; owned {
+			return connect.NewError(connect.CodeAlreadyExists, errOwned)
+		}
+		return nil
+	}
+	if _, isPlan := s.findPlan(offer); !isPlan {
+		return connect.NewError(connect.CodeInvalidArgument, errUnknownPlan)
+	}
+	if phase, _ := s.getPhase(account); phase == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE {
+		return connect.NewError(connect.CodeAlreadyExists, errors.New("the subscription is active"))
+	}
+	return nil
 }
 
 func (s *Server) servePay(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
-	account, found := s.checkouts[strings.TrimPrefix(r.URL.Path, payFolder)]
+	paid, found := s.checkouts[strings.TrimPrefix(r.URL.Path, payFolder)]
 	if found {
-		s.subscriptions[account] = s.now().Add(subscriptionPeriod)
+		s.settle(paid)
 	}
 	s.mu.Unlock()
 	if !found {
@@ -106,6 +122,21 @@ func (s *Server) servePay(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte(payPage)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (s *Server) settle(paid checkout) {
+	if product, isProduct := s.findProduct(paid.offer); isProduct {
+		s.buy(paid.account, product)
+		return
+	}
+	s.subscriptions[paid.account] = s.now().Add(subscriptionPeriod)
+	s.planOf[paid.account] = paid.offer
+	delete(s.shop.trials, paid.account)
+}
+
+type checkout struct {
+	account string
+	offer   string
 }
 
 func getPhaseAge(phase string) (time.Duration, bool) {
@@ -156,14 +187,61 @@ func (s *Server) listAccounts(named string) []string {
 	return accounts
 }
 
-func (s *Server) ListPlans(_ context.Context, _ *connect.Request[syncv1.ListPlansRequest]) (*connect.Response[syncv1.ListPlansResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+func (s *Server) ListPlans(_ context.Context, req *connect.Request[syncv1.ListPlansRequest]) (*connect.Response[syncv1.ListPlansResponse], error) {
+	if _, err := s.authenticate(req.Header()); err != nil {
+		return nil, err
+	}
+	plans := make([]*syncv1.Plan, 0, len(s.plans))
+	for _, plan := range s.plans {
+		plans = append(plans, &syncv1.Plan{Id: plan.ID, Name: plan.Name, QuotaBytes: plan.QuotaBytes, PriceCents: plan.PriceCents, Currency: plan.Currency})
+	}
+	return connect.NewResponse(&syncv1.ListPlansResponse{Plans: plans}), nil
 }
 
-func (s *Server) ChangePlan(_ context.Context, _ *connect.Request[syncv1.ChangePlanRequest]) (*connect.Response[syncv1.ChangePlanResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+func (s *Server) ChangePlan(_ context.Context, req *connect.Request[syncv1.ChangePlanRequest]) (*connect.Response[syncv1.ChangePlanResponse], error) {
+	account, err := s.authenticate(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, found := s.findPlan(req.Msg.GetPlan()); !found {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errUnknownPlan)
+	}
+	if _, paid := s.subscriptions[account]; !paid {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNeverPaid)
+	}
+	if phase, _ := s.getPhase(account); phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNeedsSubscription)
+	}
+	if s.planOf[account] == req.Msg.GetPlan() {
+		return nil, connect.NewError(connect.CodeAlreadyExists, errSamePlan)
+	}
+	s.planOf[account] = req.Msg.GetPlan()
+	return connect.NewResponse(&syncv1.ChangePlanResponse{Subscription: s.getSubscriptionMessage(account)}), nil
 }
 
-func (s *Server) serveUsage(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "not implemented", http.StatusNotImplemented)
+// getQuota returns the bytes the account may store: the quota of its plan, or the quota of the server for an account without one.
+func (s *Server) getQuota(account string) uint64 {
+	if plan, found := s.findPlan(s.planOf[account]); found {
+		return plan.QuotaBytes
+	}
+	return s.quota
+}
+
+func (s *Server) getSubscriptionMessage(account string) *syncv1.GetSubscriptionResponse {
+	phase, periodEnd := s.getPhase(account)
+	response := &syncv1.GetSubscriptionResponse{Phase: phase, Plan: s.planOf[account], IsTrial: s.shop.trials[account]}
+	if !periodEnd.IsZero() {
+		response.PeriodEndAt = periodEnd.Unix()
+		response.WritesEndAt = periodEnd.Add(writeGrace).Unix()
+		response.DeleteAt = periodEnd.Add(retention).Unix()
+	}
+	if phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_NONE {
+		response.QuotaBytes = s.getQuota(account)
+	}
+	if phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_NONE && phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED {
+		response.UsedBytes = s.used[account]
+	}
+	return response
 }

@@ -33,14 +33,22 @@ func (c *SubscriptionClient) GetSubscription(ctx context.Context) (syncprotocol.
 	if err != nil {
 		return syncprotocol.Subscription{}, syncprotocol.ReadSubscriptionError(err)
 	}
-	if response.Msg.GetPhase() == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_UNSPECIFIED {
+	return readSubscription(response.Msg)
+}
+
+func readSubscription(message *syncv1.GetSubscriptionResponse) (syncprotocol.Subscription, error) {
+	if message.GetPhase() == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_UNSPECIFIED {
 		return syncprotocol.Subscription{}, errors.New("the sync server sent a subscription without a phase")
 	}
 	return syncprotocol.Subscription{
-		Phase:     response.Msg.GetPhase(),
-		PeriodEnd: readUnixTime(response.Msg.GetPeriodEndAt()),
-		WritesEnd: readUnixTime(response.Msg.GetWritesEndAt()),
-		DeleteAt:  readUnixTime(response.Msg.GetDeleteAt()),
+		Phase:      message.GetPhase(),
+		PeriodEnd:  readUnixTime(message.GetPeriodEndAt()),
+		WritesEnd:  readUnixTime(message.GetWritesEndAt()),
+		DeleteAt:   readUnixTime(message.GetDeleteAt()),
+		PlanID:     message.GetPlan(),
+		QuotaBytes: message.GetQuotaBytes(),
+		UsedBytes:  message.GetUsedBytes(),
+		IsTrial:    message.GetIsTrial(),
 	}, nil
 }
 
@@ -91,28 +99,72 @@ func isBrowserScheme(scheme, host string) bool {
 
 // ListPlans returns the plans the server sells, ascending by quota. A server that sells none is
 // ErrBillingUnavailable.
-func (c *SubscriptionClient) ListPlans(_ context.Context) ([]syncprotocol.Plan, error) {
-	return nil, errors.New("not implemented")
+func (c *SubscriptionClient) ListPlans(ctx context.Context) ([]syncprotocol.Plan, error) {
+	response, err := c.rpc.ListPlans(ctx, connect.NewRequest(&syncv1.ListPlansRequest{}))
+	if err != nil {
+		return nil, syncprotocol.ReadSubscriptionError(err)
+	}
+	plans := make([]syncprotocol.Plan, 0, len(response.Msg.GetPlans()))
+	for _, plan := range response.Msg.GetPlans() {
+		plans = append(plans, syncprotocol.Plan{
+			ID: plan.GetId(), Name: plan.GetName(), QuotaBytes: plan.GetQuotaBytes(), PriceCents: plan.GetPriceCents(), Currency: plan.GetCurrency(),
+		})
+	}
+	return plans, nil
 }
 
 // ChangePlan moves the active subscription of the account of the session to the plan and returns the subscription
 // after the change. The refusals are ErrNoActiveSubscription, ErrSamePlan, ErrUnknownPlan and ErrBillingUnavailable.
-func (c *SubscriptionClient) ChangePlan(_ context.Context, _ string) (syncprotocol.Subscription, error) {
-	return syncprotocol.Subscription{}, errors.New("not implemented")
+func (c *SubscriptionClient) ChangePlan(ctx context.Context, plan string) (syncprotocol.Subscription, error) {
+	response, err := c.rpc.ChangePlan(ctx, connect.NewRequest(&syncv1.ChangePlanRequest{Plan: plan}))
+	if err != nil {
+		return syncprotocol.Subscription{}, syncprotocol.ReadChangePlanError(err)
+	}
+	return readSubscription(response.Msg.GetSubscription())
 }
 
 // ListProducts returns the products the server sells that are no plans, in the order of the server. A server that sells none is ErrBillingUnavailable.
-func (c *SubscriptionClient) ListProducts(_ context.Context) ([]syncprotocol.Product, error) {
-	return nil, errors.New("not implemented")
+func (c *SubscriptionClient) ListProducts(ctx context.Context) ([]syncprotocol.Product, error) {
+	response, err := c.rpc.ListProducts(ctx, connect.NewRequest(&syncv1.ListProductsRequest{}))
+	if err != nil {
+		return nil, syncprotocol.ReadSubscriptionError(err)
+	}
+	products := make([]syncprotocol.Product, 0, len(response.Msg.GetProducts()))
+	for _, product := range response.Msg.GetProducts() {
+		products = append(products, syncprotocol.Product{
+			ID: product.GetId(), Slug: product.GetSlug(), Name: product.GetName(), PriceCents: product.GetPriceCents(),
+			Currency: product.GetCurrency(), OneTime: product.GetOneTime(),
+		})
+	}
+	return products, nil
 }
 
 // GetEntitlements returns every product the account of the session owns right now, ordered by product slug. A server without billing is ErrBillingUnavailable.
-func (c *SubscriptionClient) GetEntitlements(_ context.Context) ([]syncprotocol.Entitlement, error) {
-	return nil, errors.New("not implemented")
+func (c *SubscriptionClient) GetEntitlements(ctx context.Context) ([]syncprotocol.Entitlement, error) {
+	response, err := c.rpc.GetEntitlements(ctx, connect.NewRequest(&syncv1.GetEntitlementsRequest{}))
+	if err != nil {
+		return nil, syncprotocol.ReadSubscriptionError(err)
+	}
+	entitlements := make([]syncprotocol.Entitlement, 0, len(response.Msg.GetEntitlements()))
+	for _, one := range response.Msg.GetEntitlements() {
+		entitlements = append(entitlements, syncprotocol.Entitlement{
+			Product: one.GetProduct(), ValidUntil: readUnixTime(one.GetValidUntil()), Phase: one.GetPhase(),
+			QuotaBytes: one.GetQuotaBytes(), IsTrial: one.GetIsTrial(),
+		})
+	}
+	return entitlements, nil
 }
 
 // CreatePortalSession returns the address of the customer portal of the payment provider. The refusals are ErrNoActiveSubscription for an account that
 // never paid by payment, ErrBillingUnavailable and ErrUnreachable when the payment provider fails.
-func (c *SubscriptionClient) CreatePortalSession(_ context.Context) (string, error) {
-	return "", errors.New("not implemented")
+func (c *SubscriptionClient) CreatePortalSession(ctx context.Context) (string, error) {
+	response, err := c.rpc.CreatePortalSession(ctx, connect.NewRequest(&syncv1.CreatePortalSessionRequest{}))
+	if err != nil {
+		return "", syncprotocol.ReadChangePlanError(err)
+	}
+	address := response.Msg.GetPortalUrl()
+	if err := checkCheckoutAddress(address); err != nil {
+		return "", err
+	}
+	return address, nil
 }

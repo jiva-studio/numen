@@ -75,15 +75,25 @@ func main() {
 	protocol := flag.Uint("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
+	plansFlag := flag.String("plans", "", "plans the server sells as id:GB pairs, such as basic:10,plus:100; empty sells basic, plus and pro")
+	productsFlag := flag.String("products", "", "products the server sells that are no plans, as slug:Name:cents:once|period, such as link:Link:2000:once")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
+	plans, err := readPlans(*plansFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
+	products, err := readProducts(*productsFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *address)
 	if err != nil {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions})
+	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Plans: plans, Products: products})
 	var handler http.Handler = fake
 	if *stateDir != "" {
 		path := filepath.Join(*stateDir, stateFile)
