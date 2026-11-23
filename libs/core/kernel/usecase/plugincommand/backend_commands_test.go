@@ -2,11 +2,9 @@ package plugincommand_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -43,7 +41,7 @@ func (m *mixedCommands) RunCommand(_ context.Context, call plugin.CommandCall) (
 }
 
 func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) {
-	commands := newUseCases(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
+	commands := newUseCases(&mixedCommands{}, &mixedCommands{}, getTypes())
 
 	entries := commands.List.Execute()
 
@@ -53,35 +51,11 @@ func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) 
 }
 
 func TestTheWindowListsTheCommandsOfEveryRunningPluginWhateverPartRunsThem(t *testing.T) {
-	commands := newUseCases(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
+	commands := newUseCases(&mixedCommands{}, &mixedCommands{}, getTypes())
 
 	entries := commands.List.ExecuteAll()
 
 	if len(entries) != 2 || entries[0].Command.ID != "deck.create" || entries[1].Command.ID != "tree.open" {
 		t.Fatalf("the window lists %+v", entries)
-	}
-}
-
-func TestACommandOfAPluginWithoutABackendIsNotRunInABackend(t *testing.T) {
-	declared := &mixedCommands{}
-
-	_, err := newUseCases(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
-		PluginID: "md.numen.tree", Command: "tree.open",
-	})
-
-	if !errors.Is(err, plugincommand.ErrUnknownCommand) || len(declared.calls) != 0 {
-		t.Fatalf("the run answered %v and reached the plugin with %+v", err, declared.calls)
-	}
-}
-
-func TestACommandOfAPluginWithABackendIsRunInItsBackend(t *testing.T) {
-	declared := &mixedCommands{}
-
-	result, err := newUseCases(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
-		PluginID: "md.numen.cards", Command: "deck.create",
-	})
-
-	if err != nil || result.Message != "ran deck.create" {
-		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 }

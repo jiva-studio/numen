@@ -3,6 +3,7 @@ package plugincommand
 import (
 	"context"
 	"errors"
+
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
@@ -36,7 +37,7 @@ func (u RunByName) ExecuteByName(
 			err = errors.Join(err, closeRun())
 		}
 	}()
-	return run.Execute(ctx, v, call)
+	return run.Run(ctx, v, call)
 }
 
 // ExecuteSharedByName resolves the vault, opens the command runner over it, picks the handler of the shared
@@ -58,11 +59,11 @@ func (u RunByName) ExecuteSharedByName(
 			err = errors.Join(err, closeRun())
 		}
 	}()
-	handler, err := run.FindHandler(ctx, v, handlers, pluginID, call.Path)
+	handler, err := FindHandler(ctx, run, v, handlers, pluginID, call.Path)
 	if err != nil {
 		return plugin.CommandResult{}, err
 	}
 	call.PluginID = handler.PluginID
 	call.Command = handler.Command.ID
-	return run.Execute(ctx, v, call)
+	return run.Run(ctx, v, call)
 }

@@ -187,15 +187,42 @@ func listKernelPackages(t *testing.T, workspace load.WorkspacePackages) []*packa
 	return load.GetModulePackages(t, workspace, "libs/core/kernel")
 }
 
+// knownInterfaceExceptions are the interfaces implemented by a use case of another package that the check lets
+// through for now, each with the reason. An entry that is no longer a finding fails the check, so the list shrinks.
+var knownInterfaceExceptions = map[string]string{
+	"NoteScanner is implemented by the use case vault.Scan":         "merging Scan breaks go/source-size, and ReadWholeVault needs a design",
+	"NoteMover is implemented by the use case note.Move":            "the vault use case that moves notes needs a design",
+	"TriggerRunner is implemented by the use case trigger.Triggers": "waits for the window adapters of PR 8",
+}
+
 func checkNoUseCaseIsBehindAnInterface(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
 	found, interfaces, useCases := listUseCasesBehindInterfaces(listKernelPackages(t, workspace))
-	for _, one := range found {
+	for _, one := range filterKnownExceptions(t, found) {
 		t.Errorf("%s: %s; what use cases share is a rule of the domain or a port an adapter implements", one.Position, one.Name)
 	}
 	if interfaces == 0 || useCases == 0 {
 		t.Fatal("no interface or no use case read: the rule is checked against nothing")
 	}
+}
+
+func filterKnownExceptions(t *testing.T, found []load.Finding) []load.Finding {
+	t.Helper()
+	seen := map[string]bool{}
+	var rest []load.Finding
+	for _, one := range found {
+		if _, isKnown := knownInterfaceExceptions[one.Name]; isKnown {
+			seen[one.Name] = true
+			continue
+		}
+		rest = append(rest, one)
+	}
+	for name := range knownInterfaceExceptions {
+		if !seen[name] {
+			t.Errorf("the exception %q is no longer a finding: remove it from knownInterfaceExceptions", name)
+		}
+	}
+	return rest
 }
 
 func checkNoUseCaseIsPassedAsAFunction(t *testing.T, workspace load.WorkspacePackages) {

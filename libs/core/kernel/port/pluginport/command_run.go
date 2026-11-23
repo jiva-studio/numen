@@ -11,5 +11,5 @@ import (
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
 // and its arguments.
 type CommandRun interface {
-	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
+	Run(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
 }

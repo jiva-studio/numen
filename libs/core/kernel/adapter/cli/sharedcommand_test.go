@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -24,14 +25,14 @@ func createSharedCommandDeps() (stubSession, *pluginCommands) {
 			ID: "app:file.createText", Title: "Transcribe", When: "target.contentType.startsWith('audio/')",
 		}},
 	}}
-	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
+				Open: func(context.Context, domain.Vault) (commandrun.Runner, func() error, error) {
 					return commands.Run, nil, nil
 				},
 			}

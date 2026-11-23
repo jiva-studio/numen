@@ -93,9 +93,9 @@ func (h *Handler) RunPluginCommand(
 
 func getErrorCode(err error) v1.CommandErrorCode {
 	switch {
-	case errors.Is(err, plugincommand.ErrUnknownCommand):
+	case errors.Is(err, plugin.ErrUnknownCommand):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
-	case errors.Is(err, plugincommand.ErrBadArguments):
+	case errors.Is(err, plugin.ErrBadArguments):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
 	case errors.Is(err, domain.ErrUnavailable):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE

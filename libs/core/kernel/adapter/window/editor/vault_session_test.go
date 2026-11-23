@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"

@@ -36,7 +36,7 @@ func (keyBindingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListContributions_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {
-	handler := newHandler(newUseCases(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil))
 
 	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {

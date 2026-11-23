@@ -24,7 +24,7 @@ func (readingPlugins) ListHandlers() []plugin.CommandEntry {
 }
 
 func newReading() useCases {
-	return newUseCases(&readingPlugins{}, &readingPlugins{}, getTypes(), nil, nil)
+	return newUseCases(&readingPlugins{}, &readingPlugins{}, getTypes())
 }
 
 func TestListSharedHandlersListsTheHandlersABackendRunsWithoutItemsByPluginID(t *testing.T) {
@@ -42,7 +42,7 @@ func TestFindHandlerReturnsTheOneHandlerWhoseConditionIsTrue(t *testing.T) {
 	commands := newReading()
 	handlers := commands.List.ListSharedHandlers("app:file.createText")
 
-	got, err := commands.Run.FindHandler(t.Context(), getVault(), handlers, "", "talks/a.mp3")
+	got, err := plugincommand.FindHandler(t.Context(), commands.Run, getVault(), handlers, "", "talks/a.mp3")
 
 	if err != nil || got.PluginID != "org.example.ears" {
 		t.Errorf("got %+v, %v", got, err)
@@ -53,11 +53,11 @@ func TestFindHandlerReturnsTheHandlerOfThePluginGiven(t *testing.T) {
 	commands := newReading()
 	handlers := commands.List.ListSharedHandlers("app:file.createText")
 
-	got, err := commands.Run.FindHandler(t.Context(), getVault(), handlers, "org.example.scans", "scans/a.pdf")
+	got, err := plugincommand.FindHandler(t.Context(), commands.Run, getVault(), handlers, "org.example.scans", "scans/a.pdf")
 	if err != nil || got.PluginID != "org.example.scans" {
 		t.Errorf("got %+v, %v", got, err)
 	}
-	if _, err := commands.Run.FindHandler(t.Context(), getVault(), handlers, "org.example.gone", "scans/a.pdf"); !errors.Is(err, plugincommand.ErrUnknownCommand) {
+	if _, err := plugincommand.FindHandler(t.Context(), commands.Run, getVault(), handlers, "org.example.gone", "scans/a.pdf"); !errors.Is(err, plugin.ErrUnknownCommand) {
 		t.Errorf("a plugin that handles nothing: %v, want ErrUnknownCommand", err)
 	}
 }
@@ -66,29 +66,13 @@ func TestFindHandlerNamesThePluginsWhereSeveralHold(t *testing.T) {
 	commands := newReading()
 	handlers := commands.List.ListSharedHandlers("app:file.createText")
 
-	_, err := commands.Run.FindHandler(t.Context(), getVault(), handlers, "", "scans/a.pdf")
+	_, err := plugincommand.FindHandler(t.Context(), commands.Run, getVault(), handlers, "", "scans/a.pdf")
 
 	var several *plugincommand.SeveralHandlersError
 	if !errors.As(err, &several) || !slices.Equal(several.PluginIDs, []string{"org.example.layers", "org.example.scans"}) {
 		t.Errorf("got %v, want the two plugins over PDFs", err)
 	}
-	if _, err := commands.Run.FindHandler(t.Context(), getVault(), handlers, "", "notes/a.md"); !errors.Is(err, plugincommand.ErrBadArguments) {
+	if _, err := plugincommand.FindHandler(t.Context(), commands.Run, getVault(), handlers, "", "notes/a.md"); !errors.Is(err, plugin.ErrBadArguments) {
 		t.Errorf("no handler over the file: %v, want ErrBadArguments", err)
-	}
-}
-
-func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
-	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.proofs", Command: manifest.Command{
-		ID: "proofread", Title: "Proofread", When: "version.isLive",
-	}}}}
-	run := newUseCases(declared, declared, getTypes(), nil, nil).Run
-
-	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{
-		PluginID: "org.example.proofs", Command: "proofread", Path: "talks/a.mp3",
-		Arguments: map[string]string{manifest.CommandArgumentVersion: "org.example.ears/ears"},
-	})
-
-	if err != nil || len(declared.calls) != 1 || declared.calls[0].Arguments[manifest.CommandArgumentVersion] != "org.example.ears/ears" {
-		t.Errorf("got %v, ran %+v", err, declared.calls)
 	}
 }

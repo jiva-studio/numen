@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -197,7 +198,7 @@ func ViewOf(notices *Notices) windowsession.View {
 
 func newEmptyCommandHandler(state *testWindow) *command.Handler {
 	list := plugincommand.NewList(noCommands{}, nil, when.NewConditions())
-	run := plugincommand.NewRun(noCommands{}, noCommands{}, noContentTypes{}, nil, nil, when.NewConditions())
+	run := commandrun.New(noCommands{}, noCommands{}, noContentTypes{}, nil, nil, when.NewConditions())
 	return command.NewHandler(state, plugincommand.NewListCommands(list, noContentTypes{}), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
 }
 

@@ -43,7 +43,7 @@ func (menuPlugins) RunCommand(context.Context, plugin.CommandCall) (plugin.Comma
 }
 
 func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
-	commands := newUseCases(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
+	commands := newUseCases(menuPlugins{}, menuPlugins{}, getTypes())
 
 	entries := commands.List.ExecuteSlots()
 
@@ -62,7 +62,7 @@ func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 }
 
 func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
-	commands := newUseCases(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
+	commands := newUseCases(menuPlugins{}, menuPlugins{}, getTypes())
 
 	entries := commands.List.ExecuteSlots()
 

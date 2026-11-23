@@ -278,7 +278,7 @@ func (p *pass) runBatches(ctx context.Context) {
 }
 
 func (p *pass) runCall(ctx context.Context, one trigger, call plugin.CommandCall, target string) {
-	_, err := p.run.Execute(ctx, p.vault, call)
+	_, err := p.run.Run(ctx, p.vault, call)
 	if err == nil {
 		return
 	}

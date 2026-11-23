@@ -109,7 +109,7 @@ func (c *commands) GetParts(string) plugin.Parts {
 	return plugin.Parts{HasBackend: true}
 }
 
-func (c *commands) Execute(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
+func (c *commands) Run(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	c.ran = append(c.ran, call)
 	return plugin.CommandResult{}, nil
 }

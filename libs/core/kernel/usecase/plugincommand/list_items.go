@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
+
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -65,9 +67,9 @@ func (u ListItems) listOne(ctx context.Context, v domain.Vault, path string, id 
 	}
 	entry, found := findEntry(u.list, id.PluginID, id.Command)
 	if !found {
-		return ItemList{Err: fmt.Errorf("%w: %s of %s", ErrUnknownCommand, id.Command, id.PluginID)}
+		return ItemList{Err: fmt.Errorf("%w: %s of %s", plugin.ErrUnknownCommand, id.Command, id.PluginID)}
 	}
-	if !hasItems(u.list.conditions, entry.Command) {
+	if !commandrun.HasItems(u.list.conditions, entry.Command) {
 		return ItemList{}
 	}
 	return u.newList(u.versions.ListVersionItems(ctx, v, path, entry))

@@ -42,7 +42,7 @@ func (declaredByTwoPlugins) RunCommand(context.Context, plugin.CommandCall) (plu
 }
 
 func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
-	handler := newHandler(newUseCases(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -60,7 +60,7 @@ func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
 }
 
 func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *testing.T) {
-	handler := newHandler(newUseCases(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil))
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{PluginId: "md.numen.tree", Command: "tree.revealNote"}))
 	if err != nil {
@@ -80,7 +80,7 @@ func (suspendedPlugin) GetParts(string) plugin.Parts {
 }
 
 func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {
-	handler := newHandler(newUseCases(suspendedPlugin{}, suspendedPlugin{}, nil, nil, nil))
+	handler := newHandler(newUseCases(suspendedPlugin{}, suspendedPlugin{}, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
