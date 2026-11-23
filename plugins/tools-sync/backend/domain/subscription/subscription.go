@@ -34,11 +34,6 @@ type State struct {
 	IsTrial    bool
 }
 
-// CanWrite is whether the server takes changes.
-func (s State) CanWrite() bool {
-	return s.Phase == PhaseActive || s.Phase == PhaseGrace
-}
-
 // Plan is a plan the server sells.
 type Plan struct {
 	ID         string

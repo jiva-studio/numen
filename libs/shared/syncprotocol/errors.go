@@ -61,3 +61,29 @@ type refusalError struct {
 func (r refusalError) Error() string { return r.sentinel.Error() }
 
 func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }
+
+// ErrBlobMissing means the store of the server no longer holds the body of a blob.
+var ErrBlobMissing = errors.New("the sync server lost the body of a file")
+
+// BlobMissingError names the blobs the server lost the bodies of. It reads as ErrBlobMissing and unwraps to the Connect error of the refusal.
+type BlobMissingError struct {
+	IDs   [][]byte
+	cause error
+}
+
+func (e BlobMissingError) Error() string { return ErrBlobMissing.Error() }
+
+func (e BlobMissingError) Is(target error) bool { return target == ErrBlobMissing }
+
+func (e BlobMissingError) Unwrap() error { return e.cause }
+
+// MultipartIncompleteError means the parts the storage holds are not the parts the upload needs. Each list holds
+// the first 100 part numbers.
+type MultipartIncompleteError struct {
+	Missing   []uint32
+	WrongSize []uint32
+}
+
+func (e MultipartIncompleteError) Error() string {
+	return fmt.Sprintf("the multipart upload is incomplete: %d parts missing, %d of the wrong size", len(e.Missing), len(e.WrongSize))
+}

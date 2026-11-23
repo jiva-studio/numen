@@ -43,6 +43,7 @@ type Deps struct {
 	Identity ports.Identity
 	Host     ports.Host
 	State    ports.Links
+	Journals ports.Journals
 	Random   io.Reader
 }
 
@@ -71,7 +72,10 @@ func (r reader) read(ctx context.Context) ([]*syncv1.CatalogEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return entries, checkEntries(entries, authors)
+	if err := checkEntries(entries, authors); err != nil {
+		return nil, err
+	}
+	return entries, r.keep(ctx, entries)
 }
 
 func checkEntries(entries []*syncv1.CatalogEntry, authors trust.Authors) error {

@@ -16,6 +16,13 @@ const (
 	keyConflicts   = "conflicts"
 	keyUnverified  = "unverified-changes"
 	keyStorageFull = "storage-full"
+	keyWentBack    = "restore.wentBack"
+	keyKeyChanged  = "restore.keyChanged"
+	keyDiverged    = "restore.diverged"
+
+	textWentBack   = "The sync server went back to an earlier state"
+	textKeyChanged = "The restore key of the sync server changed"
+	textDiverged   = "The sync server holds another history than this computer"
 )
 
 type reporter struct {
@@ -79,4 +86,13 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 		}
 	}
 	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}, PlanID: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false})
+}
+
+func (r reporter) clearRestore(ctx context.Context) error {
+	for _, key := range []string{keyWentBack, keyKeyChanged, keyDiverged} {
+		if err := r.health.Clear(ctx, key); err != nil {
+			return err
+		}
+	}
+	return nil
 }

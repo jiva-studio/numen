@@ -5,16 +5,28 @@
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { IdentityDriver } from './identity.js'
+import { DEFAULT_VAULT } from './rules.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
 import type { SyncDriver } from './sync.js'
+import type { World } from './world.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 /** The vault of the second computer: a scenario names it, and the computer has no other. */
 const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
+/** The vault of the computer that only reads the synced vault, to see what the server holds. */
+const CHECK_VAULT = 'Check'
+/** The server holds no note when a computer that joined waits this long and has none. */
+const ABSENCE_WAIT_MS = 8_000
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
+
+/** The folders of a computer and the name of one vault in them. */
+export interface Place {
+  readonly world: World
+  readonly vault: string
+}
 
 export type ComputerName = 'first' | 'second'
 
@@ -67,6 +79,7 @@ interface ComputerParts {
 
 export class ComputerDriver {
   private second: SecondComputer | undefined
+  private checker: SecondComputer | undefined
 
   private readonly first: Scenario
   private readonly viewport: ViewportSize | null
@@ -87,7 +100,7 @@ export class ComputerDriver {
     return this.second
   }
 
-  private getScenario(computer: ComputerName): Scenario {
+  getScenario(computer: ComputerName): Scenario {
     return computer === 'first' ? this.first : this.requireSecond().scenario
   }
 
@@ -97,22 +110,64 @@ export class ComputerDriver {
 
   /** Starts a second application over a vault of its own and restores the identity of the person in it from the recovery words. */
   async restoreIdentity(): Promise<void> {
+    this.second = await this.startComputer(SECOND_VAULT)
+  }
+
+  private async startComputer(vault: string): Promise<SecondComputer> {
     const words = this.identity.getWords()
     const scenario = new Scenario(this.first.page, this.viewport)
-    scenario.createVault(SECOND_VAULT)
+    scenario.createVault(vault)
     this.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
-    this.second = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings) }
+    const started = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings) }
     await application.startApplication('editor')
     await identity.restoreFromWords(words.join(' '))
     await identity.expectIdentity(true)
+    return started
+  }
+
+  goOffline(computer: ComputerName): void {
+    this.sync.setPluginAway(this.getScenario(computer))
+  }
+
+  goOnline(computer: ComputerName): void {
+    this.sync.setPlugin(this.getScenario(computer))
+  }
+
+  removeNote(computer: ComputerName, title: string, vault: string): void {
+    this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
+  }
+
+  /** Reads the synced vault the way a person does: a computer that connects its own vault to it, and the note it receives. */
+  async expectHeld(synced: string, title: string, text: string | undefined): Promise<void> {
+    this.checker ??= await this.startChecker(synced)
+    const world = this.checker.scenario.getWorld()
+    const path = getNotePath(title)
+    if (text !== undefined) {
+      await expect.poll(() => world.readText(CHECK_VAULT, path)?.trimEnd(), { timeout: ARRIVAL_LIMIT_MS }).toBe(text)
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, ABSENCE_WAIT_MS))
+    expect(world.getEntryKind(CHECK_VAULT, path)).toBeUndefined()
+  }
+
+  private async startChecker(synced: string): Promise<SecondComputer> {
+    const started = await this.startComputer(CHECK_VAULT)
+    await started.vaults.connectExisting(CHECK_VAULT, synced)
+    return started
   }
 
   private resolveVault(computer: ComputerName, vault: string | undefined): string {
     const scenario = this.getScenario(computer)
     return scenario.getVault(vault ?? SECOND_VAULT)
+  }
+
+  /** The folders of a computer and the name of the vault a step names, or the only vault of the second computer. */
+  getPlace(computer: ComputerName, vault: string | undefined): Place {
+    const named = vault ?? (computer === 'first' ? DEFAULT_VAULT : undefined)
+    return { world: this.getScenario(computer).getWorld(), vault: this.resolveVault(computer, named) }
   }
 
   writeNote(computer: ComputerName, title: string, text: string, vault: string): void {
@@ -168,7 +223,10 @@ export class ComputerDriver {
   /** Ends the second computer: its window, its application and its folders. */
   async remove(): Promise<void> {
     const second = this.second
+    const checker = this.checker
     this.second = undefined
+    this.checker = undefined
     if (second !== undefined) await second.scenario.removeWorld()
+    if (checker !== undefined) await checker.scenario.removeWorld()
   }
 }

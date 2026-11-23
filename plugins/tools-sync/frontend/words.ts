@@ -54,4 +54,10 @@ export const WORDS = {
     `Synced ${count} ${count === 1 ? 'minute' : 'minutes'} ago`,
   conflicts: (count: number): string =>
     `${count} ${count === 1 ? 'note' : 'notes'} changed on two computers`,
+  deletionsPausedSend: (count: number, total: number): string =>
+    `Sync is paused: ${count} of ${total} files are removed`,
+  deletionsPausedApply: (count: number, total: number): string =>
+    `Sync is paused: ${count} of ${total} files were removed on another computer`,
+  removeFiles: 'Remove the files',
+  keepFiles: 'Keep the files',
 } as const

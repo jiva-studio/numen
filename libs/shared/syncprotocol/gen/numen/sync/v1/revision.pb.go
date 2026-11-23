@@ -80,7 +80,8 @@ type Revision struct {
 	FileId []byte `protobuf:"bytes,2,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
 	// parent_rev is the revision id, 32 bytes, that the author saw as head; empty for a new file.
 	ParentRev []byte `protobuf:"bytes,3,opt,name=parent_rev,json=parentRev,proto3" json:"parent_rev,omitempty"`
-	// blob_id is 16 bytes from ReserveBlobs; empty when deleted.
+	// blob_id is 16 bytes from ReserveBlobs or ReserveMultipartBlob; empty when deleted. It may name the blob of the head of the
+	// same file when parent_rev is that head and blob_hash and blob_size equal the head's (a revision that changes only metadata).
 	BlobId []byte `protobuf:"bytes,4,opt,name=blob_id,json=blobId,proto3" json:"blob_id,omitempty"`
 	// blob_hash is the SHA-256 of the stored object, 32 bytes; empty when deleted.
 	BlobHash []byte `protobuf:"bytes,5,opt,name=blob_hash,json=blobHash,proto3" json:"blob_hash,omitempty"`
@@ -92,7 +93,7 @@ type Revision struct {
 	PathHash []byte `protobuf:"bytes,8,opt,name=path_hash,json=pathHash,proto3" json:"path_hash,omitempty"`
 	// share_root_id is 16 bytes or empty. It is stored and signed; the server does not act on it yet.
 	ShareRootId []byte `protobuf:"bytes,9,opt,name=share_root_id,json=shareRootId,proto3" json:"share_root_id,omitempty"`
-	// deleted marks a tombstone.
+	// deleted marks a tombstone: no blob, enc_meta may be empty, path_hash and parent_rev are set.
 	Deleted bool `protobuf:"varint,10,opt,name=deleted,proto3" json:"deleted,omitempty"`
 	// epoch is the key epoch of the vault or the share root; stored and signed, not checked.
 	Epoch uint32 `protobuf:"varint,11,opt,name=epoch,proto3" json:"epoch,omitempty"`
@@ -290,7 +291,7 @@ func (x *StoredRevision) GetSeq() uint64 {
 type CommitRevisionsRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	VaultId []byte                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	// revisions holds 1 to 500 revisions.
+	// revisions holds 1 to 5000 revisions.
 	Revisions     []*Revision `protobuf:"bytes,2,rep,name=revisions,proto3" json:"revisions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -552,9 +553,14 @@ type GetChangesResponse struct {
 	NextSeq uint64 `protobuf:"varint,2,opt,name=next_seq,json=nextSeq,proto3" json:"next_seq,omitempty"`
 	HasMore bool   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	// head_seq is the vault seq when the page was read.
-	HeadSeq       uint64 `protobuf:"varint,4,opt,name=head_seq,json=headSeq,proto3" json:"head_seq,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	HeadSeq uint64 `protobuf:"varint,4,opt,name=head_seq,json=headSeq,proto3" json:"head_seq,omitempty"`
+	// reset is true when since_seq is older than the deletion records the server keeps; changes is empty and the client lists
+	// the vault again from since_seq 0.
+	Reset_ bool `protobuf:"varint,5,opt,name=reset,proto3" json:"reset,omitempty"`
+	// restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
+	RestoreEpochId []byte `protobuf:"bytes,6,opt,name=restore_epoch_id,json=restoreEpochId,proto3" json:"restore_epoch_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetChangesResponse) Reset() {
@@ -615,6 +621,20 @@ func (x *GetChangesResponse) GetHeadSeq() uint64 {
 	return 0
 }
 
+func (x *GetChangesResponse) GetReset_() bool {
+	if x != nil {
+		return x.Reset_
+	}
+	return false
+}
+
+func (x *GetChangesResponse) GetRestoreEpochId() []byte {
+	if x != nil {
+		return x.RestoreEpochId
+	}
+	return nil
+}
+
 var File_numen_sync_v1_revision_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_revision_proto_rawDesc = "" +
@@ -656,12 +676,14 @@ const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	"\x11GetChangesRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x1b\n" +
 	"\tsince_seq\x18\x02 \x01(\x04R\bsinceSeq\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\rR\x05limit\"\x9e\x01\n" +
+	"\x05limit\x18\x03 \x01(\rR\x05limit\"\xde\x01\n" +
 	"\x12GetChangesResponse\x127\n" +
 	"\achanges\x18\x01 \x03(\v2\x1d.numen.sync.v1.StoredRevisionR\achanges\x12\x19\n" +
 	"\bnext_seq\x18\x02 \x01(\x04R\anextSeq\x12\x19\n" +
 	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12\x19\n" +
-	"\bhead_seq\x18\x04 \x01(\x04R\aheadSeq*n\n" +
+	"\bhead_seq\x18\x04 \x01(\x04R\aheadSeq\x12\x14\n" +
+	"\x05reset\x18\x05 \x01(\bR\x05reset\x12(\n" +
+	"\x10restore_epoch_id\x18\x06 \x01(\fR\x0erestoreEpochId*n\n" +
 	"\fConflictKind\x12\x1d\n" +
 	"\x19CONFLICT_KIND_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dCONFLICT_KIND_PARENT_MISMATCH\x10\x01\x12\x1c\n" +

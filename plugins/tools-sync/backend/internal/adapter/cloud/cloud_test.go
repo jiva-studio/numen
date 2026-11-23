@@ -14,7 +14,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
 func newWorld(t *testing.T, cfg fakeserver.Config) (*synctest.Computer, *synctest.Server) {
@@ -225,5 +225,45 @@ func TestCloud_SignsInAgainOnceAndReportsAnAccountWithoutASubscriptionOnAPlanCha
 	}
 	if got := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
 		t.Errorf("sign-ins after the session ended = %d, want 1", got)
+	}
+}
+
+func TestCloud_ReadsTheRestoreEpochAndTheKeyThatSignsIt(t *testing.T) {
+	c, server := newWorld(t, fakeserver.Config{})
+	id, err := server.Fake.IssueRestoreEpoch()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	epoch, key, err := c.Cloud.GetRestoreEpoch(t.Context())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if epoch == nil || !bytes.Equal(epoch.GetId(), id) {
+		t.Fatalf("epoch = %v, want id %x", epoch, id)
+	}
+	if err := syncprotocol.CheckRestoreEpoch(key, epoch); err != nil {
+		t.Errorf("CheckRestoreEpoch = %v, want nil", err)
+	}
+}
+
+func TestCloud_AnswersABlobTheServerLostAsBlobMissing(t *testing.T) {
+	c, server := newWorld(t, fakeserver.Config{})
+	c.Connect(t, "Test")
+	c.WriteNote("Test", "Shopping list.md", "milk")
+	if err := c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+	remote := c.GetRemoteID(t, "Test")
+	head := c.ReadChanges(t, remote)[0].GetRevision()
+	if err := server.Fake.DropBlob(head.GetBlobId()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := c.Cloud.GetBlobUrls(t.Context(), remote, [][]byte{head.GetBlobId()})
+
+	if !errors.Is(err, syncprotocol.ErrBlobMissing) {
+		t.Errorf("GetBlobUrls = %v, want ErrBlobMissing", err)
 	}
 }

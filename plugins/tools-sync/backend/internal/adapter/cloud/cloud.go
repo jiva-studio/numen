@@ -1,4 +1,4 @@
-// Package cloud is the catalog, the revisions, the blobs, the chain and the subscription of the account on the sync server,
+// Package cloud is the catalog, the revisions, the blobs, the chain, the restore epoch and the subscription of the account on the sync server,
 // reached through the protocol library. A call the server refuses for want of a session signs in again once.
 package cloud
 
@@ -29,6 +29,7 @@ type Cloud struct {
 	blobs        *syncclient.BlobClient
 	account      *syncclient.AccountClient
 	subscription *syncclient.SubscriptionClient
+	restore      *syncclient.RestoreClient
 }
 
 // New returns the server of the config.
@@ -41,6 +42,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}
 }
 
@@ -124,3 +126,18 @@ func (c *Cloud) ChangePlan(ctx context.Context, plan string) (syncprotocol.Subsc
 func (c *Cloud) CreatePortalSession(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreatePortalSession(ctx) })
 }
+
+// GetRestoreEpoch returns the current restore epoch, nil before the first restore, and the key that signs epochs.
+func (c *Cloud) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []byte, error) {
+	var key []byte
+	epoch, err := call(ctx, c, func() (*syncv1.RestoreEpoch, error) {
+		found, signKey, err := c.restore.GetRestoreEpoch(ctx)
+		key = signKey
+		return found, err
+	})
+	return epoch, key, err
+}
+
+// SendAccountChain signs in again, which sends the chain of this device, so a server that lost devices of the chain
+// takes the longer one.
+func (c *Cloud) SendAccountChain(ctx context.Context) error { return c.refresh(ctx) }

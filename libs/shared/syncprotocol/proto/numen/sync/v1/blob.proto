@@ -11,6 +11,12 @@ service BlobService {
 
   // GetBlobUrls returns presigned GETs for the blobs of current heads.
   rpc GetBlobUrls(GetBlobUrlsRequest) returns (GetBlobUrlsResponse);
+
+  rpc ReserveMultipartBlob(ReserveMultipartBlobRequest) returns (ReserveMultipartBlobResponse);
+  rpc GetPartUrls(GetPartUrlsRequest) returns (GetPartUrlsResponse);
+  rpc ListParts(ListPartsRequest) returns (ListPartsResponse);
+  rpc CompleteMultipartBlob(CompleteMultipartBlobRequest) returns (CompleteMultipartBlobResponse);
+  rpc AbortMultipartBlob(AbortMultipartBlobRequest) returns (AbortMultipartBlobResponse);
 }
 
 message ReserveBlobsRequest {
@@ -63,4 +69,85 @@ message QuotaExceeded {
 // BlobNotReady is the detail of the FAILED_PRECONDITION of CommitRevisions.
 message BlobNotReady {
   uint32 revision_index = 1;
+}
+
+// BlobMissing is the detail of the NOT_FOUND of GetBlobUrls: the bodies of these blobs are gone from the store.
+message BlobMissing {
+  repeated bytes blob_ids = 1;
+}
+
+// ReserveMultipartBlobRequest reserves quota for a body above 64 MiB and starts a multipart upload.
+message ReserveMultipartBlobRequest {
+  bytes vault_id = 1;
+  // size is the padded stored size, 67108865 to 5497558138880 - 5242880 (4.995 TiB).
+  uint64 size = 2;
+  // part_size is 5242880 to 5368709120 and ceil(size / part_size) is at most 10000. Every part but the last has part_size bytes.
+  uint64 part_size = 3;
+}
+
+message ReserveMultipartBlobResponse {
+  bytes blob_id = 1;
+  uint64 part_size = 2;
+  uint32 part_count = 3;
+  // expires_at is in unix seconds; the reservation lasts seven days.
+  int64 expires_at = 4;
+}
+
+// GetPartUrlsRequest asks for presigned PUTs of parts: 1 to 100 numbers, each 1 to part_count.
+message GetPartUrlsRequest {
+  bytes vault_id = 1;
+  bytes blob_id = 2;
+  repeated uint32 part_numbers = 3;
+}
+
+// GetPartUrlsResponse lists the uploads in the order of part_numbers.
+message GetPartUrlsResponse {
+  repeated PartUpload uploads = 1;
+}
+
+message PartUpload {
+  uint32 part_number = 1;
+  // url takes one PUT with exactly size body bytes and a matching Content-Length; no other header is needed.
+  string url = 2;
+  // expires_at is in unix seconds; one hour.
+  int64 expires_at = 3;
+  uint64 size = 4;
+}
+
+// ListPartsRequest says which parts of an open upload the storage holds, so a client resumes from the state of the server.
+message ListPartsRequest {
+  bytes vault_id = 1;
+  bytes blob_id = 2;
+}
+
+// ListPartsResponse lists the parts sorted by part_number.
+message ListPartsResponse {
+  repeated PartInfo parts = 1;
+}
+
+message PartInfo {
+  uint32 part_number = 1;
+  uint64 size = 2;
+}
+
+// CompleteMultipartBlobRequest joins the parts into the object. It needs every part of the expected size.
+message CompleteMultipartBlobRequest {
+  bytes vault_id = 1;
+  bytes blob_id = 2;
+}
+
+message CompleteMultipartBlobResponse {}
+
+// AbortMultipartBlobRequest drops an open upload and frees its quota. A repeat is a success.
+message AbortMultipartBlobRequest {
+  bytes vault_id = 1;
+  bytes blob_id = 2;
+}
+
+message AbortMultipartBlobResponse {}
+
+// MultipartIncomplete is the detail of FAILED_PRECONDITION from CompleteMultipartBlob. Each list holds the first 100 numbers.
+message MultipartIncomplete {
+  repeated uint32 missing = 1;
+  repeated uint32 wrong_size = 2;
 }

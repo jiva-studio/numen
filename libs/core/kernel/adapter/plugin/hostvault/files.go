@@ -15,8 +15,25 @@ type Files struct {
 	Stat        *file.HashFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
+	Bytes       *file.ReadBytes
 
 	session sessionAccess
+}
+
+// fileMover moves a file or a folder after the baseline of the caller is checked, which the use case note.MoveChecked does.
+type fileMover interface {
+	Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error)
+}
+
+// fileRemover removes a file or a folder after the baseline of the caller is checked, which the use case
+// note.RemoveChecked does.
+type fileRemover interface {
+	Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error)
+}
+
+// filePlacer puts a staged file in the vault, which the use case file.PlaceStaged does.
+type filePlacer interface {
+	Execute(ctx context.Context, v domain.Vault, in file.PlaceInput) (domain.FileStat, error)
 }
 
 // Writer writes the files of the vault and indexes them. Locks, where set, holds the writers of the vault
@@ -26,6 +43,12 @@ type Writer struct {
 	Create file.CreateFile
 	Index  file.ScanFiles
 	Locks  vault.Locks
+
+	Move         fileMover
+	Remove       fileRemover
+	Place        filePlacer
+	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
+	StoreWriters func(v domain.Vault, pluginID string) (vault.StoreWriter, error)
 
 	session sessionAccess
 }
@@ -88,4 +111,13 @@ func (w Writer) ScanFiles(ctx context.Context, paths []string) error {
 	err = w.Index.Execute(ctx, v, paths)
 	w.session.ReportWrites(v.ID, err)
 	return err
+}
+
+// ReadFileRange reads bytes of any file as they are, with the file stat taken before them.
+func (f Files) ReadFileRange(ctx context.Context, path string, start, length int64) ([]byte, domain.FileStat, error) {
+	v, err := f.session.open()
+	if err != nil {
+		return nil, domain.FileStat{}, err
+	}
+	return f.Bytes.Execute(ctx, v, path, start, length)
 }

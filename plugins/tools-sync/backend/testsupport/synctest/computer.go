@@ -20,16 +20,21 @@ import (
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
 // Host is the host of a computer for the plugin: the vaults of the installation and the files and the store
@@ -40,14 +45,15 @@ type Host struct {
 
 func (h Host) GetVaults(ctx context.Context) ([]domain.Vault, error) { return h.Root.GetVaults(ctx) }
 
-// Files returns the files of the vault.
 func (h Host) Files(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
-// Indexer returns the index of the vault.
 func (h Host) Indexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
+
+// Transfers returns what the host does with the bytes of the files of the vault.
+func (h Host) Transfers(id domain.VaultID) ports.Transfers { return h.Root.With(id) }
 
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
@@ -58,12 +64,13 @@ type Computer struct {
 	Client   *account.Client
 	Health   *healthtest.Host
 	Vaults   *hosttest.Vault
-	Host     Host
+	Host     ports.Host
 	Cloud    *cloud.Cloud
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
 	State    *hoststore.State
 
+	network        *link
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
 }
@@ -122,16 +129,18 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	}
 	client := account.NewClient(accountEndpoint)
 	root := hosttest.New(vault)
+	network := &link{}
+	web := &http.Client{Transport: network}
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, token: atomic.Value{},
+		Cloud: nil, State: nil, token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
-		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: http.DefaultClient, Now: clock.Now}),
+		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
 	}
 	c.State = hoststore.New(c.Host)
 	c.token.Store("")
-	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: http.DefaultClient, Token: c.getToken, Refresh: c.SignIn})
+	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: web, Token: c.getToken, Refresh: c.SignIn})
 	return c
 }
 
@@ -174,13 +183,12 @@ func (c *Computer) AddVault(t *testing.T, name string) {
 	}
 }
 
-// NewHealth returns a client of the health host of this computer.
 func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.healthEndpoint) }
 
 // CatalogDeps are the dependencies of the catalog use cases.
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
-		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Random: rand.Reader,
+		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State, Random: rand.Reader,
 	}
 }
 
@@ -189,14 +197,32 @@ func (c *Computer) LocalChangesDeps() localchanges.Deps {
 	return localchanges.Deps{Host: c.Host, State: c.State, Clock: c.Clock}
 }
 
+// WireDeps are the dependencies of the pass and of the transfers of files of any size.
+func (c *Computer) WireDeps() syncwire.Deps {
+	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
+	return syncwire.Deps{
+		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
+		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
+	}
+}
+
 // CommitDeps are the dependencies of the commit of revisions.
 func (c *Computer) CommitDeps() commit.Deps {
-	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Random: rand.Reader}
+	wired := c.WireDeps()
+	uploads := upload.NewUploadFile(upload.Deps{
+		Uploads: wired.Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader, Digests: digest.Sha256{},
+	})
+	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Crypto: c.Account, Uploads: uploads, Random: rand.Reader}
 }
 
 // PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
-	return pull.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State}
+	wired := c.WireDeps()
+	downloads := syncwire.NewDownloads(wired)
+	return pull.Deps{
+		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
+		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
+	}
 }
 
 // JoinDeps are the dependencies of the join of an existing account.
@@ -209,18 +235,13 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
+		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
 	}
 }
 
 // NewSyncVault returns the pass over one vault with the use cases of its steps.
 func (c *Computer) NewSyncVault() *syncvault.SyncVault {
-	return syncvault.NewSyncVault(c.SyncDeps(), syncvault.Steps{
-		Rename:       catalog.NewRenameRemoteVault(c.CatalogDeps()),
-		Pull:         pull.NewPullChanges(c.PullDeps()),
-		Scan:         localchanges.NewScanLocalChanges(c.LocalChangesDeps()),
-		Commit:       commit.NewCommitRevisions(c.CommitDeps()),
-		Subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: c.Cloud}),
-	})
+	return syncwire.NewSyncVault(c.WireDeps())
 }
 
 // Sync runs one pass over the vault.
@@ -243,5 +264,37 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
+	}
+}
+
+// RemovalDelay is how long a removed file is watched before its removal is sent, in the passes of the tests.
+const RemovalDelay = time.Second
+
+// Spy makes the host of this computer a host that writes down the calls that move the bytes of files, and returns it.
+func (c *Computer) Spy() *SpyHost {
+	if spy, isSpy := c.Host.(*SpyHost); isSpy {
+		return spy
+	}
+	spy := NewSpyHost(c.Host)
+	c.Host = spy
+	return spy
+}
+
+// DetectDeps are the dependencies of the search for moved and removed files.
+func (c *Computer) DetectDeps() localchanges.DetectDeps {
+	return localchanges.DetectDeps{Host: c.Host, State: c.State, Clock: c.Clock, Delay: func() time.Duration { return RemovalDelay }}
+}
+
+// DeleteDeps are the dependencies of the guard of removals and of the answer to it.
+func (c *Computer) DeleteDeps() deletions.Deps {
+	return deletions.Deps{Pending: c.State, Approvals: c.State, Health: c.NewHealth(), Clock: c.Clock}
+}
+
+// RestoreDeps are the dependencies of the recovery after the server was restored.
+func (c *Computer) RestoreDeps() restore.Deps {
+	return restore.Deps{
+		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
+		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
+		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}
 }

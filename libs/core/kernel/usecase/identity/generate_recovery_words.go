@@ -9,7 +9,6 @@ import (
 // GenerateRecoveryWords makes 12 new recovery words.
 type GenerateRecoveryWords struct{ deps Deps }
 
-// NewGenerateRecoveryWords returns the use case that makes new recovery words.
 func NewGenerateRecoveryWords(d Deps) *GenerateRecoveryWords { return &GenerateRecoveryWords{deps: d} }
 
 // Execute returns 12 new words and keeps nothing.

@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// errUntrustedChain means the chain of the server is not one this device can trust.
 var errUntrustedChain = errors.New("the account chain of the server does not extend the chain of this device")
 
 // Authors are the devices of the account.
@@ -19,7 +18,8 @@ type Authors struct {
 }
 
 // NewAuthors returns the devices of the chain of the server, which must verify, have the root of the own chain
-// and extend it.
+// and extend it. A chain that is a strict prefix of the own one is a server that went back: the devices of the own
+// chain are returned.
 func NewAuthors(own, stored []byte) (Authors, error) {
 	ownChain, err := identity.ParseChain(own)
 	if err != nil {
@@ -29,7 +29,14 @@ func NewAuthors(own, stored []byte) (Authors, error) {
 	if err != nil {
 		return Authors{devices: nil}, fmt.Errorf("read the chain of the server: %w", err)
 	}
-	if !bytes.Equal(chain.Root().Sign, ownChain.Root().Sign) || !chain.IsExtensionOf(ownChain) {
+	if !bytes.Equal(chain.Root().Sign, ownChain.Root().Sign) {
+		return Authors{devices: nil}, errUntrustedChain
+	}
+	switch {
+	case chain.IsExtensionOf(ownChain):
+	case ownChain.IsExtensionOf(chain):
+		chain = ownChain
+	default:
 		return Authors{devices: nil}, errUntrustedChain
 	}
 	listed := chain.ListDevices()

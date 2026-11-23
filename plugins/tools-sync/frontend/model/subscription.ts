@@ -5,7 +5,7 @@ import { useSubscriptionPayment } from './subscriptionPayment'
 import { useSubscriptionSession } from './subscriptionSession'
 import { useSubscriptionSummary } from './subscriptionSummary'
 
-export interface UseSubscriptionOptions {
+interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
   readonly openExternal: (url: string) => Promise<Result<null>>
   readonly now?: (() => Date) | undefined

@@ -30,7 +30,7 @@ func (r reader) appendEntry(ctx context.Context, in entryInput) error {
 			return err
 		}
 		if response.GetCommitted() {
-			return nil
+			return r.keep(ctx, append(entries, entry))
 		}
 	}
 	return ErrCatalogBusy
