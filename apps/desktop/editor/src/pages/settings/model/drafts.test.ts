@@ -294,7 +294,7 @@ describe('usePluginsList, useSettingsTab, and useSettingsViews', () => {
       getSettings: () => installation.settings,
       getCatalog: () => [],
       getQuery: () => query.value,
-      getPlugins: () => [p1],
+      listPlugins: () => [p1],
       updateQuery,
     })
 

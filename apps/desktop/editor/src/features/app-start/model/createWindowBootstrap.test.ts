@@ -106,7 +106,7 @@ const setup = ({
     writeMessage,
     plugins: createPluginStart({
       pluginLoader,
-      getPlugins: () => [
+      listPlugins: () => [
         { id: 'md.example.notes', hasFrontend: true },
         { id: 'md.example.server', hasFrontend: false },
       ],

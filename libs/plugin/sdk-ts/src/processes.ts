@@ -20,11 +20,11 @@ export interface PluginProcess {
   readonly holders: readonly LeaseHolder[]
 }
 
-// LeaseHolder is who holds a lease on a plugin that runs and why: `who` is a part of Numen such as
+// LeaseHolder is who holds a lease on a plugin that runs and why: `requester` is a part of Numen such as
 // `Search` or `Indexing`, or the name of the plugin or of the connection that asked.
 export interface LeaseHolder {
-  readonly who: string
-  readonly why: string
+  readonly requester: string
+  readonly reason: string
 }
 
 // ProcessHost reports the plugins that run. It needs the permission plugins:read.

@@ -28,8 +28,8 @@ export interface PluginProcess {
 
 /** Who holds a lease on a plugin that runs and why. */
 export interface LeaseHolder {
-  readonly who: string
-  readonly why: string
+  readonly requester: string
+  readonly reason: string
 }
 
 /** The calls of PluginProcessService a window makes about the plugins that run. */
@@ -62,8 +62,8 @@ const readProcess = (one: PluginProcessMessage): PluginProcess => ({
   ...(one.idleStopTimeUnixMs > 0n && { idleStopTime: Number(one.idleStopTimeUnixMs) }),
   health: HEALTH[one.health] ?? 'ok',
   healthText: one.healthText,
-  startedBy: { who: one.startedBy?.who ?? '', why: one.startedBy?.why ?? '' },
-  holders: one.holders.map((holder) => ({ who: holder.who, why: holder.why })),
+  startedBy: { requester: one.startedBy?.requester ?? '', reason: one.startedBy?.reason ?? '' },
+  holders: one.holders.map((holder) => ({ requester: holder.requester, reason: holder.reason })),
 })
 
 /** The plugins that run over the plugin service. */

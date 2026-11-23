@@ -71,7 +71,7 @@ type Arranger interface {
 	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
 	// returns the names of the checks the result covers and the problems they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
-	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
 // LinkEditor edits the frontmatter of the notes of the vault: its links, and its other keys.
@@ -93,7 +93,7 @@ type LinkEditor interface {
 
 // Watch tells of the moves in the vaults of the installation.
 type Watch interface {
-	WatchMoves(ctx context.Context) (<-chan struct{}, error)
+	WatchIndexChanges(ctx context.Context) (<-chan struct{}, error)
 }
 
 // Switch names the vault a call works and the vaults the installation lists.

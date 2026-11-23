@@ -97,7 +97,7 @@ func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 		t.Errorf("the answer was %v", stream.Err())
 	}
 
-	if _, err := client.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+	if _, err := client.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
 		Window: Editor,
 		Token:  "0",
 		Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,

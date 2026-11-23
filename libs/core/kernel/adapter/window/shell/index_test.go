@@ -156,7 +156,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 func TestAVaultReadWakesTheListeners(t *testing.T) {
 	api := newAPI(t)
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
-	moves, err := api.WatchMoves(t.Context())
+	moves, err := api.WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

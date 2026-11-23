@@ -111,7 +111,7 @@ func newArranger(
 		Notes:       getNoteChanges(useCases),
 		Frontmatter: useCases.Properties.Frontmatter,
 		Checks:      getProblemChecks(getProblems(db.NoteProblems())),
-		Problems:    vault.NewGetParseProblems(db.NoteProblems()),
+		Problems:    vault.NewListParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
 		arranger.Window, arranger.WindowVault = *window, current

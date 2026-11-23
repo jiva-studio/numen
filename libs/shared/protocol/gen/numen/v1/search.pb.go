@@ -161,7 +161,7 @@ type SearchNamesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The names that matched, best first, with a note's own title before a
 	// heading inside one.
-	Found         []*NameMatch `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Matches       []*NameMatch `protobuf:"bytes,1,rep,name=matches,proto3" json:"matches,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,15 +196,15 @@ func (*SearchNamesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SearchNamesResponse) GetFound() []*NameMatch {
+func (x *SearchNamesResponse) GetMatches() []*NameMatch {
 	if x != nil {
-		return x.Found
+		return x.Matches
 	}
 	return nil
 }
 
-// NameMatch is one name that matched, and the note it stands for. A note's own
-// title matched when there is no heading here; otherwise the note is what the
+// NameMatch is one name that matched, and the note it stands for. When no
+// heading is set, the note's own title matched.
 type NameMatch struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
@@ -442,7 +442,7 @@ func (*CancelSearchResponse) Descriptor() ([]byte, []int) {
 type SearchTextResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The search results that answer, best first, one per source.
-	Found         []*SearchResult `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Results       []*SearchResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -477,9 +477,9 @@ func (*SearchTextResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SearchTextResponse) GetFound() []*SearchResult {
+func (x *SearchTextResponse) GetResults() []*SearchResult {
 	if x != nil {
-		return x.Found
+		return x.Results
 	}
 	return nil
 }
@@ -667,9 +667,9 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x12SearchNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1b\n" +
-	"\tsearch_id\x18\x03 \x01(\tR\bsearchId\"@\n" +
-	"\x13SearchNamesResponse\x12)\n" +
-	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xc5\x01\n" +
+	"\tsearch_id\x18\x03 \x01(\tR\bsearchId\"D\n" +
+	"\x13SearchNamesResponse\x12-\n" +
+	"\amatches\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\amatches\"\xc5\x01\n" +
 	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12'\n" +
@@ -685,9 +685,9 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\tsearch_id\x18\x04 \x01(\tR\bsearchId\"2\n" +
 	"\x13CancelSearchRequest\x12\x1b\n" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
-	"\x14CancelSearchResponse\"B\n" +
-	"\x12SearchTextResponse\x12,\n" +
-	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xca\x03\n" +
+	"\x14CancelSearchResponse\"F\n" +
+	"\x12SearchTextResponse\x120\n" +
+	"\aresults\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\aresults\"\xca\x03\n" +
 	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -751,12 +751,12 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(*Range)(nil),                // 11: numen.v1.Range
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
+	3,  // 0: numen.v1.SearchNamesResponse.matches:type_name -> numen.v1.NameMatch
 	9,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
 	10, // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
 	11, // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
 	0,  // 4: numen.v1.SearchTextRequest.mode:type_name -> numen.v1.SearchMode
-	8,  // 5: numen.v1.SearchTextResponse.found:type_name -> numen.v1.SearchResult
+	8,  // 5: numen.v1.SearchTextResponse.results:type_name -> numen.v1.SearchResult
 	9,  // 6: numen.v1.SearchResult.note:type_name -> numen.v1.Note
 	11, // 7: numen.v1.SearchResult.match_ranges:type_name -> numen.v1.Range
 	11, // 8: numen.v1.SearchResult.byte_range:type_name -> numen.v1.Range

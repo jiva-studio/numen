@@ -18,7 +18,7 @@ let notesApi = answerNotes({})
 const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
   flattenOpenNotes(useOpenNotes(notesApi, how))
 
-type FlushResult = NonNullable<Parameters<FlushDeps['reportFlush']>[1]>
+type FlushResult = NonNullable<Parameters<FlushDeps['reportPendingWork']>[1]>
 
 function rethrow(error: unknown): never {
   throw error
@@ -61,8 +61,8 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
   let pendingWriteResolve: (() => void) | null = null
 
   const core: FlushDeps = {
-    watchQuit: getQuits,
-    reportFlush: async (token: string, result: FlushResult = 'written') => {
+    watchWindowClose: getQuits,
+    reportPendingWork: async (token: string, result: FlushResult = 'written') => {
       reportedResults.push({ token, result })
     },
   }
@@ -554,11 +554,11 @@ describe('a page that is closed', () => {
     const mockStream = createMockStream()
     const signals: AbortSignal[] = []
     const core: FlushDeps = {
-      watchQuit: (signal) => {
+      watchWindowClose: (signal) => {
         signals.push(signal)
         return mockStream.read()
       },
-      reportFlush: vi.fn(() => Promise.resolve()),
+      reportPendingWork: vi.fn(() => Promise.resolve()),
     }
     return { mockStream, signals, core }
   }
@@ -601,11 +601,11 @@ describe('a quit stream that ended', () => {
     vi.useFakeTimers()
     let listens = 0
     const core: FlushDeps = {
-      watchQuit: async function* () {
+      watchWindowClose: async function* () {
         listens += 1
         yield* []
       },
-      reportFlush: vi.fn(() => Promise.resolve()),
+      reportPendingWork: vi.fn(() => Promise.resolve()),
     }
     const going = createFileFlush(core)
     going.start().catch(rethrow)

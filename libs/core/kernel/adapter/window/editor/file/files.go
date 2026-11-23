@@ -66,13 +66,13 @@ func (h *Folders) ListFiles(
 			modifiedAtMs = one.ModTime.UnixMilli()
 		}
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:         one.Path,
-			Name:         one.Name,
-			IsFolder:     one.IsFolder,
-			IsNote:       one.Kind == domain.KindNote,
-			Type:         convertNoteTypeToWire(listing.Types[one.Path]),
-			TabKind:      listing.TabKinds[one.Path],
-			ModifiedAtMs: modifiedAtMs,
+			Path:           one.Path,
+			Name:           one.Name,
+			IsFolder:       one.IsFolder,
+			IsNote:         one.Kind == domain.KindNote,
+			Type:           convertNoteTypeToWire(listing.Types[one.Path]),
+			TabKind:        listing.TabKinds[one.Path],
+			ModifiedUnixMs: modifiedAtMs,
 		})
 	}
 	return connect.NewResponse(out), nil

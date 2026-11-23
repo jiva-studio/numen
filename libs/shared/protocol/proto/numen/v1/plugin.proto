@@ -219,7 +219,7 @@ message PluginReader {
 
 // PluginService lists the plugins the application has.
 service PluginService {
-  rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
 }
 
 // PluginProcessService is the processes of the plugins, as a window shows and starts them.
@@ -234,9 +234,9 @@ service PluginProcessService {
   rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 }
 
-message GetPluginsRequest {}
+message ListPluginsRequest {}
 
-message GetPluginsResponse {
+message ListPluginsResponse {
   repeated PluginInfo plugins = 1;
 }
 
@@ -306,10 +306,10 @@ message PluginProcess {
 message PluginLeaseHolder {
   // Who took the lease: a part of Numen such as "Search" or "Indexing", or the
   // name of the plugin or of the connection that asked.
-  string who = 1;
+  string requester = 1;
 
   // What the lease is for, in a few plain words.
-  string why = 2;
+  string reason = 2;
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.

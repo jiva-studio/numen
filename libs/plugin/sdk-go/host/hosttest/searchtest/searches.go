@@ -146,7 +146,7 @@ func (s *Searches) cutPage(id, query string, read host.SearchRead) (host.SearchS
 	return state, nil
 }
 
-func (s *Searches) RemoveSearch(_ context.Context, id string) error {
+func (s *Searches) DeleteSearch(_ context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, isKnown := s.searches[id]; !isKnown {

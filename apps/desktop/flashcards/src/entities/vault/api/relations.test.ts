@@ -16,8 +16,8 @@ beforeEach(() => {
 describe('the relationships the window offers', () => {
   it('resolves the wikilinks of a text in the vault named', async () => {
     core.resolveAddresses.mockResolvedValue({
-      found: [{ raw: '[[Peat]]', address: 'name://Peat', text: 'Peat' }],
-      resolved: [{ written: 'name://Peat', path: 'Peat.md', isCrossed: false }],
+      links: [{ raw: '[[Peat]]', address: 'name://Peat', text: 'Peat' }],
+      resolved: [{ address: 'name://Peat', path: 'Peat.md', isCrossed: false }],
     })
 
     const found = await windowRelations.resolveLinks('Unlike [[Peat]].', 'garden')

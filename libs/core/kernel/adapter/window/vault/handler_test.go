@@ -86,11 +86,11 @@ func TestAChangeOfTheVaultReachesAWatchingClient(t *testing.T) {
 	if msg == nil {
 		t.Fatalf("the change never arrived: %v", stream.Err())
 	}
-	if !slices.Equal(msg.GetPaths(), []string{"notes/Heron.md"}) || !msg.GetReload() ||
+	if !slices.Equal(msg.GetPaths(), []string{"notes/Heron.md"}) || !msg.GetIsReloadRequired() ||
 		!slices.Equal(msg.GetVersionPaths(), []string{"scans/page.png"}) {
 		t.Errorf("the change is %v", msg)
 	}
-	if moves := msg.GetRenamed(); len(moves) != 1 || moves[0].GetFrom() != "notes/Egret.md" || moves[0].GetTo() != "notes/Heron.md" {
+	if moves := msg.GetMoves(); len(moves) != 1 || moves[0].GetFrom() != "notes/Egret.md" || moves[0].GetTo() != "notes/Heron.md" {
 		t.Errorf("the moves are %v", moves)
 	}
 }

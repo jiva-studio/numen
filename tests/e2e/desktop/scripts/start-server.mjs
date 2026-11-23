@@ -326,7 +326,7 @@ const readIdleState = async () => {
   return (
     state?.scan?.isReady === true &&
     window !== undefined &&
-    (window.tasks ?? []).every((task) => task.error)
+    (window.tasks ?? []).every((task) => task.failureReason)
   )
 }
 

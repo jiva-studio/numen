@@ -131,7 +131,7 @@ func oneName(t *testing.T, f *going, preserved bool) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "naming", "syncTitleAndFilename"}, Value: fmt.Sprint(preserved)},
+			{KeyPath: []string{"app", "naming", "syncTitleAndFilename"}, Value: fmt.Sprint(preserved)},
 		},
 	}))
 	return err
@@ -678,7 +678,7 @@ func getResolvedAddresses(t *testing.T, answer *v1.ResolveAddressesResponse) map
 	t.Helper()
 	delta := map[string]*v1.ResolvedAddress{}
 	for _, one := range answer.GetResolved() {
-		delta[one.GetWritten()] = one
+		delta[one.GetAddress()] = one
 	}
 	return delta
 }
@@ -690,8 +690,8 @@ func TestResolveAddresses_ReturnsTargetNote(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		From:    "Note.md",
-		Written: []string{"name://Entropy", "note://" + identified, "name://Nowhere"},
+		From:      "Note.md",
+		Addresses: []string{"name://Entropy", "note://" + identified, "name://Nowhere"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -729,7 +729,7 @@ func TestResolveAddressesFindsTheWikilinksOfAText(t *testing.T) {
 
 	type link struct{ raw, address, text string }
 	var got []link
-	for _, one := range answer.Msg.GetFound() {
+	for _, one := range answer.Msg.GetLinks() {
 		got = append(got, link{one.GetRaw(), one.GetAddress(), one.GetText()})
 	}
 	want := []link{
@@ -762,7 +762,7 @@ func TestANameReachesTheNoteAdjacentTheOneItIsSavedIn(t *testing.T) {
 		"order/Note.md": "order/Entropy.md",
 	} {
 		answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-			From: from, Written: []string{"name://Entropy"},
+			From: from, Addresses: []string{"name://Entropy"},
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -782,7 +782,7 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		From: "heat/steam/Note.md", Written: []string{"name://Entropy"},
+		From: "heat/steam/Note.md", Addresses: []string{"name://Entropy"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -804,7 +804,7 @@ func TestANameSavedInNoNoteReachesTheNoteItNames(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		From: "", Written: []string{"name://" + lecture},
+		From: "", Addresses: []string{"name://" + lecture},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -825,7 +825,7 @@ func TestResolveAddresses_DeduplicatesAddresses(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Written: []string{"name://Entropy", "name://Entropy"},
+		Addresses: []string{"name://Entropy", "name://Entropy"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -1574,8 +1574,8 @@ func TestImports_ExistingNameKeepsFileAndReportsTask(t *testing.T) {
 
 	var response string
 	for _, item := range answer.Msg().GetTasks() {
-		if item.GetError() != "" {
-			response = item.GetError()
+		if item.GetFailureReason() != "" {
+			response = item.GetFailureReason()
 		}
 	}
 	if response == "" {

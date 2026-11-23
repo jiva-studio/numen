@@ -565,7 +565,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
-				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+				WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, targetOffset string) error {

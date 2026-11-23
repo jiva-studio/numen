@@ -41,14 +41,14 @@ export const createRelations = (
         await notes.saveConnection({ connection: mapConnectionToWire(connection) }),
       ),
     ),
-  removeSide: async (from, to, type = '') =>
-    toResult(findErrorCode(await notes.removeSide({ path: from, to, type }))),
-  removeConnection: async (first, second, type = '') =>
-    toResult(findErrorCode(await notes.removeConnection({ first, second, type }))),
+  deleteConnectionSide: async (from, to, type = '') =>
+    toResult(findErrorCode(await notes.deleteConnectionSide({ path: from, to, type }))),
+  deleteConnection: async (first, second, type = '') =>
+    toResult(findErrorCode(await notes.deleteConnection({ first, second, type }))),
   join: async (from, to, side) =>
     toResult(
       findRelationError(
-        await notes.joinNotes({
+        await notes.createConnectionSide({
           from,
           to,
           side: {

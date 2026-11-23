@@ -47,13 +47,13 @@ func (a *answering) ListVaults(context.Context, *connect.Request[v1.ListVaultsRe
 	return connect.NewResponse(&v1.ListVaultsResponse{Vaults: []*v1.Vault{{Id: "a", Name: "A", Path: "/a"}, {Id: "b", Name: "B", Path: "/b"}}}), nil
 }
 
-func (a *answering) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	return connect.NewResponse(&v1.EnsureVaultIndexedResponse{State: v1.HostIndexState_HOST_INDEX_STATE_FAILED, Reason: "disk"}), nil
+func (a *answering) IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error) {
+	return connect.NewResponse(&v1.IndexVaultResponse{State: v1.HostIndexState_HOST_INDEX_STATE_FAILED, Reason: "disk"}), nil
 }
 
-func (a *answering) WatchMoves(ctx context.Context, _ *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse]) error {
+func (a *answering) WatchIndexChanges(ctx context.Context, _ *connect.Request[v1.WatchIndexChangesRequest], stream *connect.ServerStream[v1.WatchIndexChangesResponse]) error {
 	for range 2 {
-		if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+		if err := stream.Send(&v1.WatchIndexChangesResponse{}); err != nil {
 			return err
 		}
 		if a.watchFailure != nil {
@@ -222,7 +222,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	moves, err := clientTo(t, &answering{}).WatchMoves(ctx)
+	moves, err := clientTo(t, &answering{}).WatchIndexChanges(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +237,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 
 func TestAWatchOfMovesThatFailsSendsTheFailureLast(t *testing.T) {
 	failure := connect.NewError(connect.CodeUnavailable, errors.New("host gone"))
-	moves, err := clientTo(t, &answering{watchFailure: failure}).WatchMoves(t.Context())
+	moves, err := clientTo(t, &answering{watchFailure: failure}).WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

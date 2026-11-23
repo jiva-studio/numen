@@ -124,7 +124,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 }
 
 func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblems, error) {
-	res, err := c.vaults.GetVaultProblems(ctx, request(c, &v1.GetVaultProblemsRequest{Checks: checks}))
+	res, err := c.vaults.ListVaultProblems(ctx, request(c, &v1.ListVaultProblemsRequest{Checks: checks}))
 	if err != nil {
 		return VaultProblems{}, readError(err)
 	}

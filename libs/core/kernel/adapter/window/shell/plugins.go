@@ -20,10 +20,10 @@ func NewFrontendPlugins(getIDs func() []string, directory func(string) (string, 
 	return FrontendPlugins{getIDs: getIDs, directory: directory}
 }
 
-func (l FrontendPlugins) GetPlugins(
-	context.Context, *connect.Request[v1.GetPluginsRequest],
-) (*connect.Response[v1.GetPluginsResponse], error) {
-	out := &v1.GetPluginsResponse{}
+func (l FrontendPlugins) ListPlugins(
+	context.Context, *connect.Request[v1.ListPluginsRequest],
+) (*connect.Response[v1.ListPluginsResponse], error) {
+	out := &v1.ListPluginsResponse{}
 	if l.getIDs == nil {
 		return connect.NewResponse(out), nil
 	}

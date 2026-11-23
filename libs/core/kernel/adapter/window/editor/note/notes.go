@@ -38,7 +38,7 @@ func (h *Prose) ReadNote(
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = convertFileStatToWire(found.FileStat)
+		out.FileStat = convertFileStatToWire(found.FileStat)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -65,7 +65,7 @@ func (h *Prose) WriteNote(
 	// but search does not include it.
 	if err == nil || indexOutdated {
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
+			FileStat: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -284,7 +284,7 @@ func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetFileStat())}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {

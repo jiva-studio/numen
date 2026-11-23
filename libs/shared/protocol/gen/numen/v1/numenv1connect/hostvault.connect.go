@@ -36,24 +36,24 @@ const (
 	// HostVaultServiceGetHostVaultProcedure is the fully-qualified name of the HostVaultService's
 	// GetHostVault RPC.
 	HostVaultServiceGetHostVaultProcedure = "/numen.v1.HostVaultService/GetHostVault"
-	// HostVaultServiceEnsureVaultIndexedProcedure is the fully-qualified name of the HostVaultService's
-	// EnsureVaultIndexed RPC.
-	HostVaultServiceEnsureVaultIndexedProcedure = "/numen.v1.HostVaultService/EnsureVaultIndexed"
+	// HostVaultServiceIndexVaultProcedure is the fully-qualified name of the HostVaultService's
+	// IndexVault RPC.
+	HostVaultServiceIndexVaultProcedure = "/numen.v1.HostVaultService/IndexVault"
 	// HostVaultServiceLockVaultProcedure is the fully-qualified name of the HostVaultService's
 	// LockVault RPC.
 	HostVaultServiceLockVaultProcedure = "/numen.v1.HostVaultService/LockVault"
 	// HostVaultServiceUnlockVaultProcedure is the fully-qualified name of the HostVaultService's
 	// UnlockVault RPC.
 	HostVaultServiceUnlockVaultProcedure = "/numen.v1.HostVaultService/UnlockVault"
-	// HostVaultServiceGetParseProblemsProcedure is the fully-qualified name of the HostVaultService's
-	// GetParseProblems RPC.
-	HostVaultServiceGetParseProblemsProcedure = "/numen.v1.HostVaultService/GetParseProblems"
-	// HostVaultServiceGetVaultProblemsProcedure is the fully-qualified name of the HostVaultService's
-	// GetVaultProblems RPC.
-	HostVaultServiceGetVaultProblemsProcedure = "/numen.v1.HostVaultService/GetVaultProblems"
-	// HostVaultServiceWatchMovesProcedure is the fully-qualified name of the HostVaultService's
-	// WatchMoves RPC.
-	HostVaultServiceWatchMovesProcedure = "/numen.v1.HostVaultService/WatchMoves"
+	// HostVaultServiceListParseProblemsProcedure is the fully-qualified name of the HostVaultService's
+	// ListParseProblems RPC.
+	HostVaultServiceListParseProblemsProcedure = "/numen.v1.HostVaultService/ListParseProblems"
+	// HostVaultServiceListVaultProblemsProcedure is the fully-qualified name of the HostVaultService's
+	// ListVaultProblems RPC.
+	HostVaultServiceListVaultProblemsProcedure = "/numen.v1.HostVaultService/ListVaultProblems"
+	// HostVaultServiceWatchIndexChangesProcedure is the fully-qualified name of the HostVaultService's
+	// WatchIndexChanges RPC.
+	HostVaultServiceWatchIndexChangesProcedure = "/numen.v1.HostVaultService/WatchIndexChanges"
 )
 
 // HostVaultServiceClient is a client for the numen.v1.HostVaultService service.
@@ -61,25 +61,25 @@ type HostVaultServiceClient interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
-	// and says where that stands. The work goes on after the call returns, and the
-	// caller asks again once WatchMoves tells it something moved.
-	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
+	// IndexVault starts indexing the vault when it is not indexed yet, and returns the
+	// indexing state. Indexing continues after the call returns; the caller calls
+	// again after WatchIndexChanges reports a change.
+	IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault lets the writers go.
+	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
-	// GetParseProblems lists what parsing each file of the vault turned up.
-	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
-	// GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+	// ListParseProblems lists what parsing each file of the vault turned up.
+	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)
+	// ListVaultProblems runs the named checks of the vault (parse, frontmatter,
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
-	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// WatchMoves tells that something moved in some vault of the installation,
-	// until the caller disconnects. It says nothing of what moved. The first message is
-	// sent at once, so that the caller knows the watch is on.
-	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error)
+	ListVaultProblems(context.Context, *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error)
+	// WatchIndexChanges streams a message when any vault of the installation changes,
+	// until the caller disconnects. A message does not say what changed. The first
+	// message is sent at once, to confirm the watch is active.
+	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest]) (*connect.ServerStreamForClient[v1.WatchIndexChangesResponse], error)
 }
 
 // NewHostVaultServiceClient constructs a client for the numen.v1.HostVaultService service. By
@@ -99,10 +99,10 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
 			connect.WithClientOptions(opts...),
 		),
-		ensureVaultIndexed: connect.NewClient[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse](
+		indexVault: connect.NewClient[v1.IndexVaultRequest, v1.IndexVaultResponse](
 			httpClient,
-			baseURL+HostVaultServiceEnsureVaultIndexedProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
+			baseURL+HostVaultServiceIndexVaultProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("IndexVault")),
 			connect.WithClientOptions(opts...),
 		),
 		lockVault: connect.NewClient[v1.LockVaultRequest, v1.LockVaultResponse](
@@ -117,22 +117,22 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("UnlockVault")),
 			connect.WithClientOptions(opts...),
 		),
-		getParseProblems: connect.NewClient[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse](
+		listParseProblems: connect.NewClient[v1.ListParseProblemsRequest, v1.ListParseProblemsResponse](
 			httpClient,
-			baseURL+HostVaultServiceGetParseProblemsProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
+			baseURL+HostVaultServiceListParseProblemsProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ListParseProblems")),
 			connect.WithClientOptions(opts...),
 		),
-		getVaultProblems: connect.NewClient[v1.GetVaultProblemsRequest, v1.GetVaultProblemsResponse](
+		listVaultProblems: connect.NewClient[v1.ListVaultProblemsRequest, v1.ListVaultProblemsResponse](
 			httpClient,
-			baseURL+HostVaultServiceGetVaultProblemsProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
+			baseURL+HostVaultServiceListVaultProblemsProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ListVaultProblems")),
 			connect.WithClientOptions(opts...),
 		),
-		watchMoves: connect.NewClient[v1.WatchMovesRequest, v1.WatchMovesResponse](
+		watchIndexChanges: connect.NewClient[v1.WatchIndexChangesRequest, v1.WatchIndexChangesResponse](
 			httpClient,
-			baseURL+HostVaultServiceWatchMovesProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("WatchMoves")),
+			baseURL+HostVaultServiceWatchIndexChangesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("WatchIndexChanges")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -140,13 +140,13 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 
 // hostVaultServiceClient implements HostVaultServiceClient.
 type hostVaultServiceClient struct {
-	getHostVault       *connect.Client[v1.GetHostVaultRequest, v1.GetHostVaultResponse]
-	ensureVaultIndexed *connect.Client[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse]
-	lockVault          *connect.Client[v1.LockVaultRequest, v1.LockVaultResponse]
-	unlockVault        *connect.Client[v1.UnlockVaultRequest, v1.UnlockVaultResponse]
-	getParseProblems   *connect.Client[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse]
-	getVaultProblems   *connect.Client[v1.GetVaultProblemsRequest, v1.GetVaultProblemsResponse]
-	watchMoves         *connect.Client[v1.WatchMovesRequest, v1.WatchMovesResponse]
+	getHostVault      *connect.Client[v1.GetHostVaultRequest, v1.GetHostVaultResponse]
+	indexVault        *connect.Client[v1.IndexVaultRequest, v1.IndexVaultResponse]
+	lockVault         *connect.Client[v1.LockVaultRequest, v1.LockVaultResponse]
+	unlockVault       *connect.Client[v1.UnlockVaultRequest, v1.UnlockVaultResponse]
+	listParseProblems *connect.Client[v1.ListParseProblemsRequest, v1.ListParseProblemsResponse]
+	listVaultProblems *connect.Client[v1.ListVaultProblemsRequest, v1.ListVaultProblemsResponse]
+	watchIndexChanges *connect.Client[v1.WatchIndexChangesRequest, v1.WatchIndexChangesResponse]
 }
 
 // GetHostVault calls numen.v1.HostVaultService.GetHostVault.
@@ -154,9 +154,9 @@ func (c *hostVaultServiceClient) GetHostVault(ctx context.Context, req *connect.
 	return c.getHostVault.CallUnary(ctx, req)
 }
 
-// EnsureVaultIndexed calls numen.v1.HostVaultService.EnsureVaultIndexed.
-func (c *hostVaultServiceClient) EnsureVaultIndexed(ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	return c.ensureVaultIndexed.CallUnary(ctx, req)
+// IndexVault calls numen.v1.HostVaultService.IndexVault.
+func (c *hostVaultServiceClient) IndexVault(ctx context.Context, req *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error) {
+	return c.indexVault.CallUnary(ctx, req)
 }
 
 // LockVault calls numen.v1.HostVaultService.LockVault.
@@ -169,19 +169,19 @@ func (c *hostVaultServiceClient) UnlockVault(ctx context.Context, req *connect.R
 	return c.unlockVault.CallUnary(ctx, req)
 }
 
-// GetParseProblems calls numen.v1.HostVaultService.GetParseProblems.
-func (c *hostVaultServiceClient) GetParseProblems(ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	return c.getParseProblems.CallUnary(ctx, req)
+// ListParseProblems calls numen.v1.HostVaultService.ListParseProblems.
+func (c *hostVaultServiceClient) ListParseProblems(ctx context.Context, req *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error) {
+	return c.listParseProblems.CallUnary(ctx, req)
 }
 
-// GetVaultProblems calls numen.v1.HostVaultService.GetVaultProblems.
-func (c *hostVaultServiceClient) GetVaultProblems(ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	return c.getVaultProblems.CallUnary(ctx, req)
+// ListVaultProblems calls numen.v1.HostVaultService.ListVaultProblems.
+func (c *hostVaultServiceClient) ListVaultProblems(ctx context.Context, req *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error) {
+	return c.listVaultProblems.CallUnary(ctx, req)
 }
 
-// WatchMoves calls numen.v1.HostVaultService.WatchMoves.
-func (c *hostVaultServiceClient) WatchMoves(ctx context.Context, req *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error) {
-	return c.watchMoves.CallServerStream(ctx, req)
+// WatchIndexChanges calls numen.v1.HostVaultService.WatchIndexChanges.
+func (c *hostVaultServiceClient) WatchIndexChanges(ctx context.Context, req *connect.Request[v1.WatchIndexChangesRequest]) (*connect.ServerStreamForClient[v1.WatchIndexChangesResponse], error) {
+	return c.watchIndexChanges.CallServerStream(ctx, req)
 }
 
 // HostVaultServiceHandler is an implementation of the numen.v1.HostVaultService service.
@@ -189,25 +189,25 @@ type HostVaultServiceHandler interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
-	// and says where that stands. The work goes on after the call returns, and the
-	// caller asks again once WatchMoves tells it something moved.
-	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
+	// IndexVault starts indexing the vault when it is not indexed yet, and returns the
+	// indexing state. Indexing continues after the call returns; the caller calls
+	// again after WatchIndexChanges reports a change.
+	IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault lets the writers go.
+	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
-	// GetParseProblems lists what parsing each file of the vault turned up.
-	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
-	// GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+	// ListParseProblems lists what parsing each file of the vault turned up.
+	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)
+	// ListVaultProblems runs the named checks of the vault (parse, frontmatter,
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
-	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// WatchMoves tells that something moved in some vault of the installation,
-	// until the caller disconnects. It says nothing of what moved. The first message is
-	// sent at once, so that the caller knows the watch is on.
-	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error
+	ListVaultProblems(context.Context, *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error)
+	// WatchIndexChanges streams a message when any vault of the installation changes,
+	// until the caller disconnects. A message does not say what changed. The first
+	// message is sent at once, to confirm the watch is active.
+	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest], *connect.ServerStream[v1.WatchIndexChangesResponse]) error
 }
 
 // NewHostVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -223,10 +223,10 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceEnsureVaultIndexedHandler := connect.NewUnaryHandler(
-		HostVaultServiceEnsureVaultIndexedProcedure,
-		svc.EnsureVaultIndexed,
-		connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
+	hostVaultServiceIndexVaultHandler := connect.NewUnaryHandler(
+		HostVaultServiceIndexVaultProcedure,
+		svc.IndexVault,
+		connect.WithSchema(hostVaultServiceMethods.ByName("IndexVault")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostVaultServiceLockVaultHandler := connect.NewUnaryHandler(
@@ -241,40 +241,40 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("UnlockVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceGetParseProblemsHandler := connect.NewUnaryHandler(
-		HostVaultServiceGetParseProblemsProcedure,
-		svc.GetParseProblems,
-		connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
+	hostVaultServiceListParseProblemsHandler := connect.NewUnaryHandler(
+		HostVaultServiceListParseProblemsProcedure,
+		svc.ListParseProblems,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ListParseProblems")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceGetVaultProblemsHandler := connect.NewUnaryHandler(
-		HostVaultServiceGetVaultProblemsProcedure,
-		svc.GetVaultProblems,
-		connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
+	hostVaultServiceListVaultProblemsHandler := connect.NewUnaryHandler(
+		HostVaultServiceListVaultProblemsProcedure,
+		svc.ListVaultProblems,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ListVaultProblems")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceWatchMovesHandler := connect.NewServerStreamHandler(
-		HostVaultServiceWatchMovesProcedure,
-		svc.WatchMoves,
-		connect.WithSchema(hostVaultServiceMethods.ByName("WatchMoves")),
+	hostVaultServiceWatchIndexChangesHandler := connect.NewServerStreamHandler(
+		HostVaultServiceWatchIndexChangesProcedure,
+		svc.WatchIndexChanges,
+		connect.WithSchema(hostVaultServiceMethods.ByName("WatchIndexChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.HostVaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostVaultServiceGetHostVaultProcedure:
 			hostVaultServiceGetHostVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceEnsureVaultIndexedProcedure:
-			hostVaultServiceEnsureVaultIndexedHandler.ServeHTTP(w, r)
+		case HostVaultServiceIndexVaultProcedure:
+			hostVaultServiceIndexVaultHandler.ServeHTTP(w, r)
 		case HostVaultServiceLockVaultProcedure:
 			hostVaultServiceLockVaultHandler.ServeHTTP(w, r)
 		case HostVaultServiceUnlockVaultProcedure:
 			hostVaultServiceUnlockVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceGetParseProblemsProcedure:
-			hostVaultServiceGetParseProblemsHandler.ServeHTTP(w, r)
-		case HostVaultServiceGetVaultProblemsProcedure:
-			hostVaultServiceGetVaultProblemsHandler.ServeHTTP(w, r)
-		case HostVaultServiceWatchMovesProcedure:
-			hostVaultServiceWatchMovesHandler.ServeHTTP(w, r)
+		case HostVaultServiceListParseProblemsProcedure:
+			hostVaultServiceListParseProblemsHandler.ServeHTTP(w, r)
+		case HostVaultServiceListVaultProblemsProcedure:
+			hostVaultServiceListVaultProblemsHandler.ServeHTTP(w, r)
+		case HostVaultServiceWatchIndexChangesProcedure:
+			hostVaultServiceWatchIndexChangesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -288,8 +288,8 @@ func (UnimplementedHostVaultServiceHandler) GetHostVault(context.Context, *conne
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetHostVault is not implemented"))
 }
 
-func (UnimplementedHostVaultServiceHandler) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.EnsureVaultIndexed is not implemented"))
+func (UnimplementedHostVaultServiceHandler) IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.IndexVault is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error) {
@@ -300,14 +300,14 @@ func (UnimplementedHostVaultServiceHandler) UnlockVault(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.UnlockVault is not implemented"))
 }
 
-func (UnimplementedHostVaultServiceHandler) GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetParseProblems is not implemented"))
+func (UnimplementedHostVaultServiceHandler) ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListParseProblems is not implemented"))
 }
 
-func (UnimplementedHostVaultServiceHandler) GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetVaultProblems is not implemented"))
+func (UnimplementedHostVaultServiceHandler) ListVaultProblems(context.Context, *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListVaultProblems is not implemented"))
 }
 
-func (UnimplementedHostVaultServiceHandler) WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WatchMoves is not implemented"))
+func (UnimplementedHostVaultServiceHandler) WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest], *connect.ServerStream[v1.WatchIndexChangesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WatchIndexChanges is not implemented"))
 }

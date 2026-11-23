@@ -98,8 +98,8 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     getConnection: async (first, second, type = '') =>
       asValue({ first, second, role: null, type, firstSide: null, secondSide: null }),
     saveConnection: async () => asValue(undefined),
-    removeSide: async () => asValue(undefined),
-    removeConnection: async () => asValue(undefined),
+    deleteConnectionSide: async () => asValue(undefined),
+    deleteConnection: async () => asValue(undefined),
     listBacklinks: async () => [],
     resolveLinks: async () => [],
   }

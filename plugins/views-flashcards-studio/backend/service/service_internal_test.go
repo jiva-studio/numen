@@ -26,15 +26,15 @@ import (
 
 type faultyVault struct {
 	*hosttest.Vault
-	getVaultErr        error
-	scanErr            error
-	getPathsErr        error
-	getNotesErr        error
-	getLinksErr        error
-	ensureIndexedErr   error
-	watchMovesErr      error
-	watchMovesChan     <-chan host.Move
-	emptyGetNotesCalls int
+	getVaultErr           error
+	scanErr               error
+	getPathsErr           error
+	getNotesErr           error
+	getLinksErr           error
+	ensureIndexedErr      error
+	watchIndexChangesErr  error
+	watchIndexChangesChan <-chan host.Move
+	emptyGetNotesCalls    int
 }
 
 func (f *faultyVault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
@@ -88,14 +88,14 @@ func (f *faultyVault) EnsureIndexed(ctx context.Context) (host.IndexState, error
 	return f.Vault.EnsureIndexed(ctx)
 }
 
-func (f *faultyVault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
-	if f.watchMovesErr != nil {
-		return nil, f.watchMovesErr
+func (f *faultyVault) WatchIndexChanges(ctx context.Context) (<-chan host.Move, error) {
+	if f.watchIndexChangesErr != nil {
+		return nil, f.watchIndexChangesErr
 	}
-	if f.watchMovesChan != nil {
-		return f.watchMovesChan, nil
+	if f.watchIndexChangesChan != nil {
+		return f.watchIndexChangesChan, nil
 	}
-	return f.Vault.WatchMoves(ctx)
+	return f.Vault.WatchIndexChanges(ctx)
 }
 
 func TestBackendCoresAndVaultHelpers(t *testing.T) {
@@ -510,33 +510,33 @@ func TestReviewInternalPaths(t *testing.T) {
 	}
 
 	bWatchErr := New(Config{
-		Vaults: (&faultyVault{Vault: env.Host, watchMovesErr: errors.New("watch boom")}).vaults(),
+		Vaults: (&faultyVault{Vault: env.Host, watchIndexChangesErr: errors.New("watch boom")}).vaults(),
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if err := (bWatchErr.newReviewHandler()).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); codeOf(err) != server.CodeUnavailable {
-		t.Fatalf("expected CodeUnavailable when WatchMoves fails, got %v", err)
+		t.Fatalf("expected CodeUnavailable when WatchIndexChanges fails, got %v", err)
 	}
 
 	closedMoves := make(chan host.Move)
 	close(closedMoves)
 	bClosedMoves := New(Config{
-		Vaults: (&faultyVault{Vault: env.Host, watchMovesChan: closedMoves}).vaults(),
+		Vaults: (&faultyVault{Vault: env.Host, watchIndexChangesChan: closedMoves}).vaults(),
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if err := (bClosedMoves.newReviewHandler()).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); err != nil {
-		t.Fatalf("expected nil when WatchMoves channel closes cleanly, got %v", err)
+		t.Fatalf("expected nil when WatchIndexChanges channel closes cleanly, got %v", err)
 	}
 
 	errMoves := make(chan host.Move, 1)
 	errMoves <- host.Move{Err: errors.New("move boom")}
 	bErrMoves := New(Config{
-		Vaults: (&faultyVault{Vault: env.Host, watchMovesChan: errMoves}).vaults(),
+		Vaults: (&faultyVault{Vault: env.Host, watchIndexChangesChan: errMoves}).vaults(),
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})

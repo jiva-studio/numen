@@ -48,8 +48,8 @@ func NewRegistry(d RegistryDeps) *Registry {
 	return &Registry{set: d.Set, mode: d.Mode, sups: d.Supervisors, readers: d.Readers, tools: d.Tools}
 }
 
-// GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
-func (r *Registry) GetPlugins() []manifest.Discovered {
+// ListPlugins returns all discovered plugins registered with the host, in the order of their ids.
+func (r *Registry) ListPlugins() []manifest.Discovered {
 	v, release := r.set.view()
 	defer release()
 	if r.mode.IsSafeMode() {

@@ -14,7 +14,7 @@ import (
 // so the next plugin open succeeds.
 func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})

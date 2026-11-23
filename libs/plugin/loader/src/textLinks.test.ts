@@ -3,14 +3,14 @@ import { resolveTextLinks, type LinkClient } from './textLinks'
 
 const createClient = () => {
   const resolveAddresses = vi.fn<LinkClient['resolveAddresses']>(async () => ({
-    found: [
+    links: [
       { raw: '[[B]]', address: 'name://B', text: 'B' },
       { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
       { raw: '[[D]]', address: 'name://D', text: 'D' },
     ],
     resolved: [
-      { written: 'name://B', path: 'b.md', isCrossed: false },
-      { written: 'name://C', path: 'c.md', isCrossed: true },
+      { address: 'name://B', path: 'b.md', isCrossed: false },
+      { address: 'name://C', path: 'c.md', isCrossed: true },
     ],
   }))
   return { resolveAddresses }

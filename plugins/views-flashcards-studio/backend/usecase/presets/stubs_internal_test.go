@@ -155,6 +155,6 @@ type stubProblemQueries struct {
 	problems []domain.VaultProblem
 }
 
-func (s stubProblemQueries) GetParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
+func (s stubProblemQueries) ListParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
 	return s.problems, s.err
 }

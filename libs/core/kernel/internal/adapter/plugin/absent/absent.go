@@ -141,7 +141,7 @@ func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }
 // Listing lists the plugins of a plugin host that runs nothing: none are installed and none are enabled.
 type Listing struct{}
 
-func (Listing) GetPlugins() []manifest.Discovered { return nil }
+func (Listing) ListPlugins() []manifest.Discovered { return nil }
 
 func (Listing) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }
 

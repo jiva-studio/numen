@@ -16,9 +16,9 @@ type Problems struct{ db *sql.DB }
 // NewProblems creates the queries about problems over the read pool.
 func NewProblems(db *sql.DB) *Problems { return &Problems{db: db} }
 
-// GetParseProblems is what parsing each file turned up. The wording is the
+// ListParseProblems is what parsing each file turned up. The wording is the
 // parser's and is carried through as it was written.
-func (q *Problems) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+func (q *Problems) ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, problemsSQL)
 }
 

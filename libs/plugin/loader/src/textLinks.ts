@@ -16,13 +16,13 @@ interface LinkRequest {
 /** As much of the note service as link resolution requires. */
 export interface LinkClient {
   resolveAddresses(request: { from: string; text: string; vault: string }): Promise<{
-    readonly found: readonly {
+    readonly links: readonly {
       readonly raw: string
       readonly address: string
       readonly text: string
     }[]
     readonly resolved: readonly {
-      readonly written: string
+      readonly address: string
       readonly path: string
       readonly isCrossed: boolean
     }[]
@@ -39,9 +39,9 @@ export const resolveTextLinks = async (
 ): Promise<readonly TextLink[]> => {
   const answer = await client.resolveAddresses({ from, text, vault })
   const paths = new Map(
-    answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
+    answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.address, one.path]),
   )
-  return answer.found.map((one) => ({
+  return answer.links.map((one) => ({
     raw: one.raw,
     address: one.address,
     text: one.text,
