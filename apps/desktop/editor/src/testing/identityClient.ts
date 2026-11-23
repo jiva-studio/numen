@@ -4,7 +4,7 @@ import type { Result } from '@numen/result'
 import {
   createAccountApi,
   createDevicesApi,
-  createLinkApi,
+  createDeviceLinkApi,
   type IdentityApi,
 } from '@/entities/identity'
 
@@ -61,6 +61,6 @@ export const createDeviceInfo = (overrides: Partial<DeviceInfo> = {}): DeviceInf
 /** The calls of the identity over a client of the core. */
 export const wrapIdentityClient = (client: IdentityClient): IdentityApi => ({
   account: createAccountApi(client),
-  link: createLinkApi(client),
+  link: createDeviceLinkApi(client),
   devices: createDevicesApi(client),
 })

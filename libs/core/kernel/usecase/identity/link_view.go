@@ -34,7 +34,7 @@ func (l *pendingLink) view() identitydomain.Link {
 }
 
 func (s *LinkStore) getCurrentLocked() (*pendingLink, error) {
-	if s.current == nil || s.current.phase == identitydomain.LinkPhaseCancelled {
+	if s.current == nil || s.current.phase == identitydomain.LinkPhaseCanceled {
 		return nil, identitydomain.ErrNoLink
 	}
 	return s.current, nil

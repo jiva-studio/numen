@@ -52,7 +52,7 @@ func TestChain_RefusesAnEntryThatMakesItLongerThan192KiB(t *testing.T) {
 func TestParseChain_RefusesMoreThan192KiBBeforeReadingIt(t *testing.T) {
 	t.Parallel()
 	chain, err := growChain(t)
-	if err != nil {
+	if !errors.Is(err, identity.ErrChainTooLong) {
 		t.Fatal(err)
 	}
 	oversized := append(chain.Bytes(), make([]byte, 4096)...)

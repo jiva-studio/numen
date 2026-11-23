@@ -5,7 +5,7 @@
  */
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
-import { createAccountApi, createDevicesApi, createLinkApi } from '@/entities/identity'
+import { createAccountApi, createDevicesApi, createDeviceLinkApi } from '@/entities/identity'
 import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
@@ -92,7 +92,7 @@ export function createWindowApi(transports: WindowTransports) {
       license: createLicenseApi(settingsClients.licenses),
       identity: {
         account: createAccountApi(settingsClients.identity),
-        link: createLinkApi(settingsClients.identity),
+        link: createDeviceLinkApi(settingsClients.identity),
         devices: createDevicesApi(settingsClients.identity),
       },
       settings: createSettingsApi(

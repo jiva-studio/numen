@@ -69,7 +69,7 @@ func (u *RotateVaultKeys) Execute(ctx context.Context) (int, error) {
 }
 
 func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own session.Identity) (bool, error) {
-	target, err := u.readConnected(ctx, id)
+	target, err := u.readTarget(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return false, nil
 	}
@@ -85,7 +85,7 @@ func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own ses
 	return false, ErrCatalogBusy
 }
 
-func (u *RotateVaultKeys) readConnected(ctx context.Context, id domain.VaultID) (connected, error) {
+func (u *RotateVaultKeys) readTarget(ctx context.Context, id domain.VaultID) (connected, error) {
 	link, err := u.deps.State.ReadLink(ctx, id)
 	if err != nil {
 		return connected{}, err
@@ -97,7 +97,6 @@ func (u *RotateVaultKeys) readConnected(ctx context.Context, id domain.VaultID) 
 	return connected{id: id, remote: remote, link: link}, nil
 }
 
-// tryRotate makes one pass over the catalog. isDone is false only when another device won the race of the catalog and the pass has to start again.
 func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own session.Identity) (isRotated, isDone bool, err error) {
 	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
 	if err != nil {

@@ -94,7 +94,7 @@ func getReasonCode(reason identitydomain.LinkReason) byte {
 		identitydomain.LinkReasonWrongCode:         3,
 		identitydomain.LinkReasonTooManyWrongCodes: 4,
 		identitydomain.LinkReasonStaleChain:        5,
-		identitydomain.LinkReasonCancelled:         6,
+		identitydomain.LinkReasonCanceled:          6,
 	}
 	return codes[reason]
 }
@@ -106,7 +106,7 @@ func getReason(code byte) identitydomain.LinkReason {
 		3: identitydomain.LinkReasonWrongCode,
 		4: identitydomain.LinkReasonTooManyWrongCodes,
 		5: identitydomain.LinkReasonStaleChain,
-		6: identitydomain.LinkReasonCancelled,
+		6: identitydomain.LinkReasonCanceled,
 	}
 	if reason, ok := reasons[code]; ok {
 		return reason

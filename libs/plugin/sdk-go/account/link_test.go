@@ -2,6 +2,7 @@ package account_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -55,12 +56,13 @@ func TestGetLinkWork_ReturnsAtOnceWhenTheVersionDiffers(t *testing.T) {
 	if err := fake.ShowLink(); err != nil {
 		t.Fatal(err)
 	}
-	started := time.Now()
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
 
-	work, err := newClient(t, fake).GetLinkWork(t.Context(), 12345, 20*time.Second)
+	work, err := newClient(t, fake).GetLinkWork(ctx, 12345, 20*time.Second)
 
-	if err != nil || !work.IsActive || time.Since(started) > 5*time.Second {
-		t.Errorf("work = %+v, %v after %v, want an answer at once", work, err, time.Since(started))
+	if err != nil || !work.IsActive {
+		t.Errorf("work = %+v, %v, want an answer within 5 s", work, err)
 	}
 }
 

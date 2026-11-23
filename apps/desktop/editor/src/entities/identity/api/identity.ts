@@ -40,7 +40,7 @@ export const createAccountApi = (identity: AccountClient) => ({
 })
 
 /** The calls of a link of this device to an account. */
-export const createLinkApi = (identity: LinkClient) => ({
+export const createDeviceLinkApi = (identity: LinkClient) => ({
   /** Starts a link of this device: the host that has the account, or the joiner that has none. */
   startLink: (role: LinkRole, mode: LinkMode, scannedText: string) =>
     identity.startLink(role, mode, scannedText),
@@ -71,7 +71,7 @@ export const createDevicesApi = (identity: DevicesClient) => ({
 })
 
 type AccountApi = ReturnType<typeof createAccountApi>
-export type LinkApi = ReturnType<typeof createLinkApi>
+export type LinkApi = ReturnType<typeof createDeviceLinkApi>
 export type DevicesApi = ReturnType<typeof createDevicesApi>
 
 /** The calls of the identity of this device, in the three groups the store keeps apart. */

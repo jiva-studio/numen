@@ -101,7 +101,7 @@ func (s *LinkStore) bumpLocked() uint64 {
 
 func (l *pendingLink) isEnded() bool {
 	return slices.Contains([]identitydomain.LinkPhase{
-		identitydomain.LinkPhaseFailed, identitydomain.LinkPhaseLinked, identitydomain.LinkPhaseCancelled,
+		identitydomain.LinkPhaseFailed, identitydomain.LinkPhaseLinked, identitydomain.LinkPhaseCanceled,
 	}, l.phase)
 }
 

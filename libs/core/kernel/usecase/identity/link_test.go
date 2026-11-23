@@ -432,7 +432,7 @@ func TestCancelLink_EndsTheLinkOnBothDevices(t *testing.T) {
 	if _, err := s.host.view().Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoLink) {
 		t.Errorf("host GetLink() = %v, want ErrNoLink", err)
 	}
-	if got := s.joiner.getLink(t); got.Phase != identitydomain.LinkPhaseFailed || got.Reason != identitydomain.LinkReasonCancelled {
+	if got := s.joiner.getLink(t); got.Phase != identitydomain.LinkPhaseFailed || got.Reason != identitydomain.LinkReasonCanceled {
 		t.Errorf("joiner link = %+v, want FAILED, canceled", got)
 	}
 	if err := s.host.cancel().Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoLink) {
@@ -499,6 +499,6 @@ func TestGetLinkWork_ReturnsABlobUntilTheNextCallAcknowledgesIt(t *testing.T) {
 	}
 	acknowledged, err := joiner.work().Execute(t.Context(), first.Version, 0)
 	if err != nil || len(acknowledged.Outbound) != 0 {
-		t.Errorf("after the acknowledgement: %+v, %v, want no blobs", acknowledged, err)
+		t.Errorf("after the acknowledgment: %+v, %v, want no blobs", acknowledged, err)
 	}
 }

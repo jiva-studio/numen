@@ -48,19 +48,7 @@ func (u *StartLink) Execute(ctx context.Context, role identitydomain.LinkRole, m
 func (d Deps) newLink(ctx context.Context, role identitydomain.LinkRole, mode identitydomain.LinkMode, now time.Time) (*pendingLink, error) {
 	link := &pendingLink{role: role, mode: mode, startedAt: now}
 	if role == identitydomain.LinkRoleHost {
-		state, err := d.readState(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if state.Status == identitylib.StatusRevoked {
-			return nil, identitydomain.ErrDeviceRevoked
-		}
-		me, err := identityOf(state)
-		if err != nil {
-			return nil, err
-		}
-		link.own = newOwnIdentity(state, me.DeviceName)
-		return link, nil
+		return link, d.setHostIdentity(ctx, link)
 	}
 	if err := checkAbsent(ctx, d); err != nil {
 		return nil, err
@@ -72,6 +60,22 @@ func (d Deps) newLink(ctx context.Context, role identitydomain.LinkRole, mode id
 	link.joiner = joinerSide{device: device, triesLeft: maxCodeTries}
 	link.own = ownIdentity{name: entryName(d.names.GetInstanceName()), fingerprint: device.Public().Fingerprint().String()}
 	return link, nil
+}
+
+func (d Deps) setHostIdentity(ctx context.Context, link *pendingLink) error {
+	state, err := d.readState(ctx)
+	if err != nil {
+		return err
+	}
+	if state.Status == identitylib.StatusRevoked {
+		return identitydomain.ErrDeviceRevoked
+	}
+	me, err := identityOf(state)
+	if err != nil {
+		return err
+	}
+	link.own = newOwnIdentity(state, me.DeviceName)
+	return nil
 }
 
 func (d Deps) readQRText(store *LinkStore, link *pendingLink, scanned string) error {
