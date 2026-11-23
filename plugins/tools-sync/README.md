@@ -6,7 +6,7 @@ Synchronizes your vaults across devices when you have a subscription. The plugin
 
 ## What You Can Do
 
-- **Buy a subscription**: The page **Identity and licenses** has the card **Numen Sync**. A click on a plan row opens the payment page in your browser, and the card shows the subscription once you pay. There is no license key.
+- **Buy a subscription**: The page **Identity and licenses** has the card **Numen Sync**. A click on a plan row opens the payment page in your browser, and the card shows the subscription once you pay. While it waits, the card keeps its rows under a layer with **Cancel**, which stops waiting. There is no license key.
 - **See the state of your vault**: The status shows whether the vault is still synchronizing or already synchronized.
 - **Sign in with your identity**: Numen Sync signs in to the sync server with the identity of this device. There is no account name and no password. With no identity on this device it warns **No identity on this device**, and it signs in once the identity is created.
 

@@ -257,6 +257,19 @@ export const WaitingForPayment: Story = {
     await expect(await canvas.findByRole('status')).toHaveTextContent(
       'Finish the payment in your browser. This card updates by itself.',
     )
-    await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
+    await expect(await canvas.findByRole('button', { name: 'Cancel' })).toBeVisible()
+    const plus = canvas.getByText('100 GB of synced files')
+    await expect(plus).toBeVisible()
+    await expect(plus.closest('[inert]')).not.toBeNull()
+  },
+}
+
+export const CancelWaiting: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: CHOOSE_PLUS }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Cancel' }))
+    await expect(canvas.queryByRole('status')).toBeNull()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
   },
 }

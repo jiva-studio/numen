@@ -134,7 +134,6 @@
 }
 
 .subscription__text,
-.subscription__waiting,
 .subscription__full,
 .subscription__problem {
   margin: 0;
@@ -152,12 +151,31 @@
   color: var(--numen-alarm);
 }
 
+.subscription .island-card__body {
+  position: relative;
+}
+
 .subscription__waiting {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--numen-chrome-unit) / 2);
+  padding: var(--row-pad) var(--settings-card-pad);
+  background-color: color-mix(in oklab, var(--numen-raised), transparent 15%);
+  backdrop-filter: blur(calc(var(--numen-chrome-unit) / 8));
+  text-align: center;
+}
+
+.subscription__waiting-text {
   display: flex;
   align-items: center;
   gap: calc(0.625 * var(--numen-chrome-unit));
-  padding-block: calc(var(--numen-chrome-unit) / 2) var(--row-pad);
-  color: var(--numen-hushed);
+  margin: 0;
+  color: var(--numen-ink);
 }
 
 .subscription__spinner {
@@ -192,7 +210,7 @@
   transition: background-color var(--numen-motion-hover) ease;
 }
 
-.subscription__offer:hover:not(:disabled),
+.subscription__offer:hover,
 .subscription__offer:focus-visible {
   background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
 }
@@ -200,11 +218,6 @@
 .subscription__offer:focus-visible {
   outline: var(--numen-stroke) solid var(--numen-accent);
   outline-offset: calc(-1 * var(--numen-stroke));
-}
-
-.subscription__offer:disabled {
-  cursor: default;
-  opacity: 0.55;
 }
 
 .subscription__chevron {
