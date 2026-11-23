@@ -42,6 +42,8 @@ var (
 	ErrTooManyDevices = errors.New("identity: too many active devices")
 	ErrChainTooLong   = errors.New("identity: the chain is too long")
 	ErrNotExtension   = errors.New("identity: the chain does not extend the chain of the state")
+	ErrDeviceVoided   = errors.New("identity: the chain replaces the entries that added this device")
+	ErrWrapMismatch   = errors.New("identity: the keys wrapped for this device are not the keys of the chain")
 	ErrLinkPayload    = errors.New("identity: not a link text")
 	ErrLinkAuth       = errors.New("identity: link message not authentic")
 	ErrLinkReplay     = errors.New("identity: link message replayed or out of order")

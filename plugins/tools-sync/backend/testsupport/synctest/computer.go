@@ -346,7 +346,7 @@ func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 
 // ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
-	return chaincourier.Deps{Identity: c.Account, Core: c.Client, Chain: c.Cloud}
+	return chaincourier.Deps{Identity: c.Account, Core: c.Client, Chain: c.Cloud, Health: c.NewHealth(), Clock: c.Clock}
 }
 
 // LinkDeps are the dependencies of the courier of a link over the relay of the server.

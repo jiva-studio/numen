@@ -2,10 +2,13 @@
 package chaincourier
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -14,6 +17,7 @@ import (
 const (
 	publishInterval = time.Second
 	adoptEvery      = 5
+	noticeKey       = "device-revoked-others"
 )
 
 // Deps are what the courier needs.
@@ -21,6 +25,8 @@ type Deps struct {
 	Identity ports.Identity
 	Core     ports.ChainCore
 	Chain    ports.Chain
+	Health   ports.Health
+	Clock    ports.Clock
 }
 
 // Publish gives the server the chain the core wants it to hold and tells the core the answer.
@@ -46,15 +52,23 @@ func (u *Publish) Execute(ctx context.Context) (bool, error) {
 	return true, u.deps.Core.PutChainPublished(ctx, true, nil)
 }
 
-// Adopt gives the core the chain of the server when the server holds a longer one than the core.
-type Adopt struct{ deps Deps }
+// Adopt gives the core the chain of the server when the server holds a longer one than the core, or one that outranks it at a fork,
+// and tells the person when a device removed other devices lately.
+type Adopt struct {
+	deps     Deps
+	isRaised bool
+}
 
 // NewAdopt returns the use case over the dependencies.
-func NewAdopt(deps Deps) *Adopt { return &Adopt{deps: deps} }
+func NewAdopt(deps Deps) *Adopt { return &Adopt{deps: deps, isRaised: false} }
 
 // Execute returns whether the core took a chain.
 func (u *Adopt) Execute(ctx context.Context) (bool, error) {
 	own, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return false, err
+	}
+	ownChain, err := identity.ParseChain(own.Chain)
 	if err != nil {
 		return false, err
 	}
@@ -63,13 +77,36 @@ func (u *Adopt) Execute(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	parsed, err := identity.ParseChain(stored)
-	if err != nil || uint32(parsed.Len()) <= own.ChainLength {
+	if err != nil {
 		return false, err
+	}
+	if parsed.Len() <= ownChain.Len() && !parsed.Outranks(ownChain) {
+		u.notify(ctx, ownChain, own.DeviceSignKey)
+		return false, nil
 	}
 	if err := u.deps.Core.AdoptChain(ctx, stored); err != nil {
 		return false, err
 	}
+	u.notify(ctx, parsed, own.DeviceSignKey)
 	return true, nil
+}
+
+func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) {
+	now := u.deps.Clock.Now()
+	var text string
+	for _, revocation := range chain.ListDeviceRevocations() {
+		if !bytes.Equal(revocation.By, own) && now.Sub(revocation.At) < identity.CoolingOff {
+			text = fmt.Sprintf("A device removed another device from the account on %s. If it was not you, restore with the recovery words to override it", revocation.At.Format("2 Jan 2006"))
+		}
+	}
+	switch {
+	case text != "":
+		if u.deps.Health.Report(ctx, health.Item{Key: noticeKey, Severity: health.Warning, Text: text}) == nil {
+			u.isRaised = true
+		}
+	case u.isRaised && u.deps.Health.Clear(ctx, noticeKey) == nil:
+		u.isRaised = false
+	}
 }
 
 // Loop runs the two couriers for as long as the plugin runs: a pending chain goes to the server at once, and the chain of the server
