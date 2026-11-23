@@ -23,7 +23,7 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 		return false, err
 	}
 	if localAtNew != "" {
-		return true, r.resolveTaken(ctx, stored, meta, localAtNew, newStat, record, oldStat)
+		return true, r.resolveTaken(ctx, stored, meta, localAtNew, newStat, moveSource{record: record, stat: oldStat})
 	}
 	if _, err := r.moves.MoveFile(ctx, record.Path, meta.Path, &oldStat); err != nil {
 		if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
@@ -36,18 +36,23 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 	return true, r.adopt(ctx, stored, meta, record, true)
 }
 
-func (r *run) resolveTaken(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, stat domain.FileStat, from transfer.FileRecord, oldStat domain.FileStat) error {
+func (r *run) resolveTaken(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, stat domain.FileStat, from moveSource) error {
 	if err := r.resolve(ctx, stored, meta, local, stat); err != nil {
 		return err
 	}
-	if moved, isKnown := r.getRecord(from.FileID); !isKnown || moved.Path != meta.Path || oldStat.Hash != from.BaseHash {
+	if moved, isKnown := r.getRecord(from.record.FileID); !isKnown || moved.Path != meta.Path || from.stat.Hash != from.record.BaseHash {
 		return nil
 	}
-	_, err := r.moves.RemoveFile(ctx, from.Path, &oldStat)
+	_, err := r.moves.RemoveFile(ctx, from.record.Path, &from.stat)
 	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrStale) {
 		return nil
 	}
 	return err
+}
+
+type moveSource struct {
+	record transfer.FileRecord
+	stat   domain.FileStat
 }
 
 type folderMove struct{ from, to string }
