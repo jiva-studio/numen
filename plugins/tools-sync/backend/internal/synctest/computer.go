@@ -131,7 +131,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	}
 	c.State = hoststore.New(c.Host)
 	c.token.Store("")
-	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: http.DefaultClient, Token: c.getToken, Refresh: c.SignIn})
+	c.Cloud = c.NewCloud(server.URL, c.SignIn)
 	return c
 }
 
@@ -244,4 +244,10 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
 	}
+}
+
+// NewCloud returns the cloud adapter of this computer over the address, with the stream client that has no
+// timeout, and refresh as the way to sign in again.
+func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
+	return cloud.New(cloud.Config{Address: address, HTTP: http.DefaultClient, Stream: &http.Client{}, Token: c.getToken, Refresh: refresh})
 }

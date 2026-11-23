@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 // Config is where the server is, what reaches it, the session token of each call and how to sign in again.
@@ -18,6 +19,7 @@ type Config struct {
 	HTTP    *http.Client
 	Token   func() string
 	Refresh func(ctx context.Context) error
+	Stream  *http.Client
 }
 
 // Cloud is the sync server at an address.
@@ -29,6 +31,7 @@ type Cloud struct {
 	blobs        *syncclient.BlobClient
 	account      *syncclient.AccountClient
 	subscription *syncclient.SubscriptionClient
+	watch        *syncclient.WatchClient
 }
 
 // New returns the server of the config.
@@ -41,6 +44,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 	}
 }
 
@@ -108,4 +112,9 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 // CreateCheckout returns the address of a payment page.
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
+}
+
+// Watch opens the stream of change hints.
+func (c *Cloud) Watch(context.Context) (ports.Watch, error) {
+	return nil, errors.New("not implemented")
 }

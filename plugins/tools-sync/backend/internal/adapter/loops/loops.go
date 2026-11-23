@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"io"
 	"log/slog"
+	"net/http"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -141,3 +142,7 @@ func report(ctx context.Context, name string, err error) {
 		slog.Warn("a loop of Numen Sync ended", "loop", name, "error", err)
 	}
 }
+
+// NewStreamHTTP returns the client of a long response: it has no Timeout, which would end the read of the body,
+// and ends an open whose headers do not come within headerTimeout.
+func NewStreamHTTP(time.Duration) *http.Client { return &http.Client{} }
