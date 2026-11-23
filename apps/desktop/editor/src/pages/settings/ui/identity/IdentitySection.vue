@@ -5,10 +5,11 @@
  * one from its words.
  */
 import { KeyRound, Plus } from '@lucide/vue'
-import { Button, IslandCard } from '@numen/ui'
+import { IslandCard } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
+import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
 import IdentitySetup from './IdentitySetup.vue'
@@ -36,28 +37,14 @@ const { stage, recoveryWords } = setup
 
   <IslandCard v-else :title="words.identitySection">
     <template v-if="step !== 'restore'" #aside>
-      <Button
-        type="button"
-        variant="ghost"
-        size="small"
-        class="identity-section__action"
-        :disabled="call.isBusy.value"
-        @click="actions.startRestore"
-      >
+      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore">
         <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="small"
-        class="identity-section__action"
-        :disabled="call.isBusy.value"
-        @click="actions.startSetup"
-      >
+      </CardAction>
+      <CardAction is-primary :is-disabled="call.isBusy.value" @click="actions.startSetup">
         <Plus :size="14" aria-hidden="true" />
         {{ words.identityCreate }}
-      </Button>
+      </CardAction>
     </template>
     <div class="identity-section__body">
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
@@ -104,12 +91,6 @@ const { stage, recoveryWords } = setup
   flex-direction: column;
   gap: 0.75rem;
   padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
-}
-
-/* As tall as the card title's line, so the header keeps the height it has with a text aside. */
-.identity-section__action {
-  block-size: calc(var(--numen-text-2) * var(--numen-line-height));
-  padding-block: 0;
 }
 
 .identity-section__detail,
