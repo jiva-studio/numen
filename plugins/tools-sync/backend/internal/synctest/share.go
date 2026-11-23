@@ -120,5 +120,10 @@ func (c *Computer) ConnectVault(_ context.Context, _ domain.VaultID) error {
 	return errNotImplemented
 }
 
-// MoveNote moves a file of the vault the way the host reports a move.
-func (c *Computer) MoveNote(_ domain.VaultID, _, _ string) {}
+// MoveNote moves a file of the vault to a folder the way the host moves a note.
+func (c *Computer) MoveNote(t *testing.T, id domain.VaultID, from, folder string) {
+	t.Helper()
+	if _, err := c.Vaults.With(id).MoveNotes(t.Context(), []string{from}, folder); err != nil {
+		t.Fatal(err)
+	}
+}

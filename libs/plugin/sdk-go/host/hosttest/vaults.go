@@ -275,3 +275,6 @@ func (v *Vault) find(id domain.VaultID) *Vault {
 func (v *Vault) AddManagedVault(_ context.Context, _, _, _ string) (domain.Vault, error) {
 	return domain.Vault{}, errors.New("not implemented")
 }
+
+// GetManagedBy returns the id of the plugin that manages the vault, and an empty string for a vault nobody manages.
+func (v *Vault) GetManagedBy(_ domain.VaultID) string { return "" }

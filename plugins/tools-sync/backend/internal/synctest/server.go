@@ -109,3 +109,20 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		s.Fake.ServeHTTP(w, r)
 	}
 }
+
+// PostAdmin posts to an admin path of the fake server and returns the status.
+func (s *Server) PostAdmin(t *testing.T, path string) int {
+	t.Helper()
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, s.URL+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := response.Body.Close(); err != nil {
+		t.Error(err)
+	}
+	return response.StatusCode
+}
