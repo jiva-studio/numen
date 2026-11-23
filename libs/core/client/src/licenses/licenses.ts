@@ -9,7 +9,7 @@ import {
   type LicenseInfo as ProtoLicenseInfo,
   type LicenseService,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** The state of a license on this machine. */
 type LicenseStatus = 'inactive' | 'active' | 'expired' | 'unverified'
@@ -48,20 +48,17 @@ export interface LicenseInfo {
 
 /** Why an activation or deactivation call was refused. */
 export type LicenseErrorCode =
-  | 'not_found'
-  | 'invalid_key'
-  | 'activation_limit_reached'
+  | 'notFound'
+  | 'invalidKey'
+  | 'activationLimitReached'
   | 'expired'
   | 'disabled'
-  | 'product_mismatch'
-  | 'provider_unavailable'
-  | 'key_store_failed'
+  | 'productMismatch'
+  | 'providerUnavailable'
+  | 'keyStoreFailed'
 
 /** A served refusal with the reason the core gives. */
-export interface LicenseFailure {
-  readonly errorCode: LicenseErrorCode
-  readonly detail: string
-}
+export type LicenseFailure = Failure<LicenseErrorCode>
 
 /** The calls of LicenseService the licenses are managed through. */
 export type LicenseRpc = Pick<
@@ -121,21 +118,21 @@ const readErrorCode = (code: ProtoLicenseErrorCode): LicenseErrorCode | undefine
     case ProtoLicenseErrorCode.UNSPECIFIED:
       return undefined
     case ProtoLicenseErrorCode.NOT_FOUND:
-      return 'not_found'
+      return 'notFound'
     case ProtoLicenseErrorCode.INVALID_KEY:
-      return 'invalid_key'
+      return 'invalidKey'
     case ProtoLicenseErrorCode.ACTIVATION_LIMIT_REACHED:
-      return 'activation_limit_reached'
+      return 'activationLimitReached'
     case ProtoLicenseErrorCode.EXPIRED:
       return 'expired'
     case ProtoLicenseErrorCode.DISABLED:
       return 'disabled'
     case ProtoLicenseErrorCode.PRODUCT_MISMATCH:
-      return 'product_mismatch'
+      return 'productMismatch'
     case ProtoLicenseErrorCode.PROVIDER_UNAVAILABLE:
-      return 'provider_unavailable'
+      return 'providerUnavailable'
     case ProtoLicenseErrorCode.KEY_STORE_FAILED:
-      return 'key_store_failed'
+      return 'keyStoreFailed'
   }
 }
 
@@ -144,12 +141,12 @@ const readAnswer = (answer: {
   detail: string
   license?: ProtoLicenseInfo | undefined
 }): Result<LicenseInfo, LicenseFailure> => {
-  const errorCode = readErrorCode(answer.error)
-  if (errorCode !== undefined) {
-    return asFailure({ errorCode, detail: answer.detail })
+  const error = readErrorCode(answer.error)
+  if (error !== undefined) {
+    return asFailure({ error, message: answer.detail })
   }
   if (answer.license === undefined) {
-    return asFailure({ errorCode: 'not_found', detail: 'The core returned no license.' })
+    return asFailure({ error: 'notFound', message: 'The core returned no license.' })
   }
   return asValue(readLicense(answer.license))
 }

@@ -45,7 +45,10 @@ export function useAppearance(api: AppearanceApi, notices: NoticeQueue) {
     words: WORDS,
     getPluginName: (pluginId) => pluginNames.value.get(pluginId) ?? pluginId,
     writeChoice: (theme, mode) =>
-      themes.writeAppearance(theme, mode).catch((error: unknown) => formatError(error)),
+      themes
+        .writeAppearance(theme, mode)
+        .then((answer) => (answer.ok ? '' : answer.error.message))
+        .catch((error: unknown) => formatError(error)),
     onOpen: async () => {
       await Promise.all([refreshPluginNames(), appearance.reload()])
     },

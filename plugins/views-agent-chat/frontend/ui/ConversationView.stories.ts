@@ -13,7 +13,7 @@ const { host: connections } = createAgentConnections((request) => ({
 }))
 
 const { host: noAgent } = createAgentConnections({
-  end: failWith('no_connection', 'no connection serves acp.task'),
+  end: failWith('noConnection', 'no connection serves acp.task'),
 })
 
 const meta = {

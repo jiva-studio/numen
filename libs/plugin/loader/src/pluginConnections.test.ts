@@ -67,9 +67,9 @@ describe('the connections of a plugin', () => {
         return {
           ok: false,
           error: {
-            errorCode: 'all_failed',
-            detail: 'Ollama: unavailable',
-            failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rate_limited' }],
+            error: 'allFailed',
+            message: 'Ollama: unavailable',
+            failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rateLimited' }],
           },
         }
       },
@@ -82,9 +82,9 @@ describe('the connections of a plugin', () => {
     expect(end).toStrictEqual({
       ok: false,
       error: {
-        error: 'all_failed',
+        error: 'allFailed',
         message: 'Ollama: unavailable',
-        failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rate_limited' }],
+        failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rateLimited' }],
       },
     })
   })

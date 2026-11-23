@@ -97,7 +97,7 @@ describe('createLicenseStore', () => {
   it('translates activation refusals to user messages', async () => {
     const { store } = createStore(
       createClient({
-        activate: () => Promise.resolve(asFailure({ errorCode: 'invalid_key', detail: 'bad key' })),
+        activate: () => Promise.resolve(asFailure({ error: 'invalidKey', message: 'bad key' })),
       }),
     )
 

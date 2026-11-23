@@ -18,3 +18,9 @@ export const asValue = <T>(value: T): Result<T, never> => ({ ok: true, value })
 
 /** The answer of a call that did not. */
 export const asFailure = <E>(error: E): Result<never, E> => ({ ok: false, error })
+
+/** A failure a caller can act on: a camelCase code to switch on and the words the person reads. */
+export interface Failure<C extends string = string> {
+  readonly error: C
+  readonly message: string
+}

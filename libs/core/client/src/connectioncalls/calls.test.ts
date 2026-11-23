@@ -145,8 +145,8 @@ describe('createConnectionCallClient', () => {
 
   it('ends the call with the failure the core serves and keeps the frames before it', async () => {
     const codes: Array<[CallErrorCode, string]> = [
-      [CallErrorCode.NO_CONNECTION, 'no_connection'],
-      [CallErrorCode.ALL_FAILED, 'all_failed'],
+      [CallErrorCode.NO_CONNECTION, 'noConnection'],
+      [CallErrorCode.ALL_FAILED, 'allFailed'],
       [CallErrorCode.STOPPED, 'stopped'],
     ]
     for (const [code, expected] of codes) {
@@ -180,8 +180,8 @@ describe('createConnectionCallClient', () => {
       expect(end).toStrictEqual({
         ok: false,
         error: {
-          errorCode: expected,
-          detail: 'Ollama: unavailable',
+          error: expected,
+          message: 'Ollama: unavailable',
           failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'unavailable' }],
         },
       })
@@ -190,10 +190,10 @@ describe('createConnectionCallClient', () => {
 
   it('reads the reason of each failed row as its code, apart from its words', async () => {
     const codes: Array<[FailureReason, string]> = [
-      [FailureReason.REJECTED_KEY, 'rejected_key'],
-      [FailureReason.PAYMENT_REQUIRED, 'payment_required'],
-      [FailureReason.RATE_LIMITED, 'rate_limited'],
-      [FailureReason.INVALID_REQUEST, 'invalid_request'],
+      [FailureReason.REJECTED_KEY, 'rejectedKey'],
+      [FailureReason.PAYMENT_REQUIRED, 'paymentRequired'],
+      [FailureReason.RATE_LIMITED, 'rateLimited'],
+      [FailureReason.INVALID_REQUEST, 'invalidRequest'],
       [FailureReason.UNAVAILABLE, 'unavailable'],
     ]
     for (const [code, expected] of codes) {

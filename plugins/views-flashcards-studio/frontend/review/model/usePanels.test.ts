@@ -32,7 +32,7 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
 const connections: ConnectionHost = {
   call: async function* () {
     yield* []
-    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+    return { ok: false, error: { error: 'noConnection', message: 'no row', failures: [] } }
   },
 }
 

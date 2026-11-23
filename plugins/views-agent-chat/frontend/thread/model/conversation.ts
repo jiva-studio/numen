@@ -156,7 +156,7 @@ function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextI
       answer.settle()
       return
     }
-    if (end.error.error === 'no_connection') {
+    if (end.error.error === 'noConnection') {
       answer.settle()
       put({
         id: nextId(),

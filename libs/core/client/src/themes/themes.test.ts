@@ -112,9 +112,12 @@ describe('a choice written', () => {
   it('sends the mode as the schema carries it and answers why it was refused', async () => {
     request.writeAppearance.mockResolvedValue({ error: 'the file is read-only' })
 
-    const reason = await themes.writeAppearance('mine:sea', 'light')
+    const answer = await themes.writeAppearance('mine:sea', 'light')
 
-    expect(reason).toBe('the file is read-only')
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: { error: 'notWritten', message: 'the file is read-only' },
+    })
     expect(request.writeAppearance.mock.calls[0]?.[0]).toMatchObject({
       name: 'mine:sea',
       mode: THEME_MODE.LIGHT,

@@ -170,7 +170,7 @@ describe('createConnectionStore', () => {
   it('answers a refused create with the words of the failure and writes no message', async () => {
     const { notify, store } = createStore(
       createClient({
-        create: () => Promise.resolve(asFailure({ errorCode: 'name_taken', detail: 'Work' })),
+        create: () => Promise.resolve(asFailure({ error: 'nameTaken', message: 'Work' })),
       }),
     )
 
@@ -244,7 +244,7 @@ describe('createConnectionStore', () => {
 
   it('reads the list again after an update the core refuses as stale', async () => {
     const list = vi.fn(() => Promise.resolve([connection({ revision: 3 })]))
-    const update = () => Promise.resolve(asFailure({ errorCode: 'stale_revision', detail: '' }))
+    const update = () => Promise.resolve(asFailure({ error: 'staleRevision', message: '' }))
     const { store } = createStore(createClient({ list, update }))
     await store.load()
 

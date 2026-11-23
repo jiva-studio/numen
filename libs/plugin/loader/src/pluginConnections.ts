@@ -7,8 +7,8 @@ import type { ConnectionError, ConnectionHost, Disposable } from '@numen/plugin-
 import type { Result } from '@numen/result'
 
 const readError = (failure: ConnectionCallFailure): ConnectionError => ({
-  error: failure.errorCode,
-  message: failure.detail,
+  error: failure.error,
+  message: failure.message,
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,

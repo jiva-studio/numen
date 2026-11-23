@@ -25,7 +25,7 @@ export type ServeTask = (
 
 /**
  * Returns connections that serve acp.task with `serve`: the payload is decoded into the request, each frame
- * and the stop reason are encoded as the core passes them. Any other operation ends with `no_connection`.
+ * and the stop reason are encoded as the core passes them. Any other operation ends with `noConnection`.
  */
 export function createTaskHost(serve: ServeTask): ConnectionHost {
   return {
@@ -34,7 +34,7 @@ export function createTaskHost(serve: ServeTask): ConnectionHost {
         return {
           ok: false,
           error: {
-            error: 'no_connection',
+            error: 'noConnection',
             message: `no connection serves ${operation}`,
             failures: [],
           },
