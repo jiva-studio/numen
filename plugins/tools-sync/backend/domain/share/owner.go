@@ -149,23 +149,8 @@ type Root struct {
 	Phase    Phase
 }
 
-// Body returns the owner body of the root.
-func (r Root) Body() OwnerBody {
-	return OwnerBody{Folder: r.Folder, Keys: r.Keys, Readers: r.Readers}
-}
-
 // GetKey returns the key of the current epoch.
 func (r Root) GetKey() ([32]byte, bool) { return r.Keys.Get(r.Epoch) }
-
-// FindReader returns the reader with the root key.
-func (r Root) FindReader(root []byte) (Reader, bool) {
-	for _, one := range r.Readers {
-		if bytes.Equal(one.Root, root) {
-			return one, true
-		}
-	}
-	return Reader{}, false
-}
 
 // FindReaderByFingerprint returns the active reader with the account fingerprint.
 func (r Root) FindReaderByFingerprint(fingerprint string) (Reader, bool) {
@@ -175,17 +160,6 @@ func (r Root) FindReaderByFingerprint(fingerprint string) (Reader, bool) {
 		}
 	}
 	return Reader{}, false
-}
-
-// ListActiveReaders returns the readers that read the folder now.
-func (r Root) ListActiveReaders() []Reader {
-	var active []Reader
-	for _, one := range r.Readers {
-		if one.IsActive() {
-			active = append(active, one)
-		}
-	}
-	return active
 }
 
 // GetState returns the state of the sharing the root is.

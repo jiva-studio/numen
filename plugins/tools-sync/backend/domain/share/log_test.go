@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 )
 
-var logShareID = bytes.Repeat([]byte{7}, 16)
+func getLogShareID() []byte { return bytes.Repeat([]byte{7}, 16) }
 
 type person struct {
 	keys   identity.AccountKeys
@@ -70,7 +70,7 @@ func newWorld(t *testing.T) *world {
 		Seals: []*syncv1.ShareSeal{w.seal(t, 0)},
 	})
 	w.keys = append(w.keys, newKey(2))
-	previous, err := share.SealPreviousKey(rand.Reader, w.keys[1], w.keys[0], logShareID, 1)
+	previous, err := share.SealPreviousKey(rand.Reader, w.keys[1], w.keys[0], getLogShareID(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func newWorld(t *testing.T) *world {
 func (w *world) seal(t *testing.T, epoch uint32) *syncv1.ShareSeal {
 	t.Helper()
 	root := w.reader.chain.Root().Sign
-	sealed, err := share.SealToReader(rand.Reader, w.reader.chain.AccountBoxKey(), logShareID, root, epoch, w.keys[epoch])
+	sealed, err := share.SealToReader(rand.Reader, w.reader.chain.AccountBoxKey(), getLogShareID(), root, epoch, w.keys[epoch])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,13 +93,13 @@ func (w *world) seal(t *testing.T, epoch uint32) *syncv1.ShareSeal {
 // append completes the entry as the next of the log and signs it with the device of the owner.
 func (w *world) append(t *testing.T, entry *syncv1.ShareLogEntry) {
 	t.Helper()
-	entry.ShareRootId, entry.Version = logShareID, uint64(len(w.entries))+1
+	entry.ShareRootId, entry.Version = getLogShareID(), uint64(len(w.entries))+1
 	if len(w.entries) > 0 {
 		id := syncprotocol.GetShareLogEntryID(w.entries[len(w.entries)-1])
 		entry.PrevHash = id[:]
 	}
 	key := w.keys[entry.GetEpoch()]
-	body, err := share.SealBody(rand.Reader, key, logShareID, entry.GetEpoch(), share.Body{Name: "Food"})
+	body, err := share.SealBody(rand.Reader, key, getLogShareID(), entry.GetEpoch(), share.Body{Name: "Food"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func (w *world) rules(t *testing.T) share.Rules {
 	open := func(_ context.Context, boxContext, sealed []byte) ([]byte, error) {
 		return w.reader.keys.OpenSealedBox(syncprotocol.SignInPluginID, boxContext, sealed)
 	}
-	return share.Rules{ShareRootID: logShareID, Reader: w.reader.chain.Root().Sign, Authors: authors, Open: open}
+	return share.Rules{ShareRootID: getLogShareID(), Reader: w.reader.chain.Root().Sign, Authors: authors, Open: open}
 }
 
 func (w *world) follow(t *testing.T, entries []*syncv1.ShareLogEntry) (share.Position, error) {
@@ -169,7 +169,7 @@ func newLateWorld(t *testing.T) *world {
 	w := &world{owner: newPerson(t), reader: newPerson(t)}
 	w.keys = [][32]byte{newKey(1), newKey(2)}
 	w.append(t, &syncv1.ShareLogEntry{Kind: syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, VaultId: bytes.Repeat([]byte{5}, 16)})
-	previous, err := share.SealPreviousKey(rand.Reader, w.keys[1], w.keys[0], logShareID, 1)
+	previous, err := share.SealPreviousKey(rand.Reader, w.keys[1], w.keys[0], getLogShareID(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func mustPrev(entry *syncv1.ShareLogEntry) []byte {
 func TestFollower_StopsAfterTheEntryThatRemovedTheReader(t *testing.T) {
 	w := newWorld(t)
 	w.keys = append(w.keys, newKey(3))
-	previous, err := share.SealPreviousKey(rand.Reader, w.keys[2], w.keys[1], logShareID, 2)
+	previous, err := share.SealPreviousKey(rand.Reader, w.keys[2], w.keys[1], getLogShareID(), 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestFollower_RefusesALogTheOwnerDidNotSignAsItIs(t *testing.T) {
 		},
 		"an epoch that goes down": func(w *world, entries []*syncv1.ShareLogEntry) []*syncv1.ShareLogEntry {
 			down := &syncv1.ShareLogEntry{
-				ShareRootId: logShareID, Version: 4, PrevHash: mustPrev(entries[2]), Kind: syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, Epoch: 0,
+				ShareRootId: getLogShareID(), Version: 4, PrevHash: mustPrev(entries[2]), Kind: syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, Epoch: 0,
 				EncOwnerBody: []byte("owner body"), EncShareBody: entries[1].GetEncShareBody(),
 			}
 			w.sign(down, w.owner.device)
