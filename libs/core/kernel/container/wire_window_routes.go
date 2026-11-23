@@ -58,7 +58,7 @@ func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.ListPlugins)
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
-		w.Installation.Mount(editor.NewRoute(path, served, handler))
+		w.Installation.Mount(editor.NewRoute(path, served))
 	}
 }
 
@@ -67,7 +67,7 @@ func mountMedia(w *windowRoutes, vaultDeps vaultWiring) {
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
 	handler := mediawindow.NewHandler(&state.Runtime, &w.page.Media, resolve)
 	path, served := mediawindow.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
@@ -88,7 +88,7 @@ func mountText(w *windowRoutes, vaultDeps vaultWiring) {
 		handler = windowtext.NewHandler(&w.session.Runtime, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultReaders, change vaultChanging, open *windowsession.OpenVault, dialog editor.PathDialog) {
@@ -105,9 +105,9 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 		handler = handler.WithFolderChooser(picker.NewChooseFolder(dialog))
 	}
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 	path, served = vaults.NewDialogRoute(handler.Dialog, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler.Dialog))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchquery.SearchRuns) {
@@ -123,7 +123,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 	access := buildPluginSearch(searchDeps, session.index, session.source, status.ReportFloorError, clock).Access(runs)
 	lender.Update(func(l *hostendpoint.Lent) { l.Search = access })
 	path, served := windowsearch.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing) {
@@ -140,12 +140,12 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	path, served := filewindow.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountWindowState(w *windowRoutes) {
 	path, served := windowstate.NewRoute(w.page.Window, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, w.page.Window))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountWorkspace(w *windowRoutes, db *vaultIndex) {
@@ -156,7 +156,7 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
 	path, served := workspace.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
@@ -180,7 +180,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windo
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	path, served := notewindow.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
@@ -194,7 +194,7 @@ func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.P
 	}
 	handler := windowsettings.NewHandler(windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps)), choice)
 	path, served := windowsettings.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
@@ -203,7 +203,7 @@ func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
 		folders = windowsettings.NewPluginFolders(data, &w.session.Runtime)
 	}
 	path, served := windowsettings.NewPluginDataRoute(folders, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, folders))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
@@ -219,7 +219,7 @@ func mountHealth(w *windowRoutes, exec *PluginExecution) {
 		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.Resolver), pluginhealth.NewClear(host.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer installationClock) *logsusecase.Record {
@@ -251,7 +251,7 @@ func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInst
 	})
 	handler := windowlogs.NewHandler(watch, record, settingsDeps.SettingsFiles.GetLogLevel, writeLogLevel(settingsDeps))
 	path, served := windowlogs.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
@@ -275,7 +275,7 @@ func mountVault(w *windowRoutes) {
 	state := w.session
 	handler := windowvault.NewHandler(state, state.Notices)
 	path, served := windowvault.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultWiring, db *vaultIndex) indexing.OpenReading {
@@ -360,19 +360,19 @@ func startVault(vaultDeps vaultWiring, db *vaultIndex, current *indexing.Current
 func mountConnection(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	handler := windowconnection.NewService(openConnectionUseCases(install, exec, settingsDeps, vaultDeps))
 	path, served := windowconnection.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountConnectionCall(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, clock installationClock) {
 	handler := connectioncall.NewService(openModelCalls(install, settingsDeps), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(clock))
 	path, served := connectioncall.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func mountLicense(w *windowRoutes, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	handler := windowlicense.NewService(openLicenseUseCases(install, settingsDeps, vaultDeps))
 	path, served := windowlicense.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
 func getConnectionResolve(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectionport.ResolveConnection {
@@ -401,5 +401,5 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 
 func mountTheme(w *windowRoutes, themes *theme.Service) {
 	path, served := theme.NewRoute(themes, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, themes))
+	w.Installation.Mount(editor.NewRoute(path, served))
 }

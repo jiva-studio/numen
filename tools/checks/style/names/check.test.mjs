@@ -337,7 +337,7 @@ describe('function names that do not start with a verb or a predicate', () => {
     assertFlagged('n/a.go', 'package a\n\nfunc Recipe() string { return "" }\n', 'functionNames')
     assertFlagged('n/b.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis(root string) string { return root }\n', 'functionNames')
     assertFlagged('n/c.go', 'package a\n\ntype Source interface {\n\tVaults(root string) []string\n}\n', 'functionNames')
-    assertFlagged('n/d.go', 'package a\n\ntype Hooks struct {\n\tendpoint func() string\n}\n', 'functionNames')
+    assertFlagged('n/d.go', 'package a\n\ntype Hooks struct {\n\tendpoint func(root string) string\n}\n', 'functionNames')
   })
   it('accepts a Go accessor, a method with no parameters that answers one value', () => {
     assertClean('n/acc.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis() string { return "" }\n\nfunc (t) Bytes() []byte { return nil }\n\ntype Source interface {\n\tVaults() []string\n}\n')
@@ -353,7 +353,7 @@ describe('function names that do not start with a verb or a predicate', () => {
   it('flags a TypeScript function, method, interface member and memoized function named by a noun', () => {
     assertFlagged('n/a.ts', 'export function recipe() { return 1 }\n', 'functionNames')
     assertFlagged('n/b.ts', 'class A {\n  recipe(): number {\n    return 1\n  }\n}\n', 'functionNames')
-    assertFlagged('n/c.ts', 'export interface Rows {\n  readonly cannot: (operation: string) => string\n  vaults(): string[]\n}\n', 'functionNames')
+    assertFlagged('n/c.ts', 'export interface Rows {\n  readonly cannot: (operation: string) => string\n  vaults(root: string): string[]\n}\n', 'functionNames')
     assertFlagged('n/d.ts', 'const recipe = memoize(() => 1)\n', 'functionNames')
   })
   it('accepts a verb, a predicate, Go test names, option functions and framework names', () => {
@@ -367,6 +367,37 @@ describe('function names that do not start with a verb or a predicate', () => {
   })
   it('leaves a name inside a string alone', () => {
     assertClean('n/j.ts', "const text = 'export function recipe() {}'\n")
+  })
+})
+
+describe('function names that are named for their role or their place', () => {
+  it('accepts a Vue slot declared as a function that returns nodes and flags a function member that does not', () => {
+    assertClean('r/slots.vue', '<script setup lang="ts">\ndefineSlots<{\n  icon(props: { id: string }): VNode[]\n  waiting?(): VNode[]\n}>()\n</script>\n')
+    assertFlagged('r/slots.ts', 'export interface Slots {\n  icon(props: { id: string }): string[]\n}\n', 'functionNames')
+  })
+  it('accepts a callback named on… in Go and flags a function named on… that takes no callback', () => {
+    assertClean('r/on.go', 'package a\n\ntype t struct {\n\tonError func(error)\n\tOnExit func()\n}\n\nfunc (t) OnClose(fn func() error) {}\n')
+    assertFlagged('r/on.go', 'package a\n\nfunc OnCard(card int) string { return "" }\n', 'functionNames: preposition')
+  })
+  it('accepts a function-valued member named for the role it plays and flags one named for a noun', () => {
+    assertClean('r/role.go', 'package a\n\ntype t struct {\n\tErrorHandler func(error)\n\tobserver func(string)\n}\n')
+    assertClean('r/role.ts', 'export interface Hooks {\n  loader: () => Promise<number>\n  readonly errorHandler: (error: Error) => void\n}\n')
+    assertFlagged('r/role2.go', 'package a\n\ntype t struct {\n\tendpoint func(root string)\n}\n', 'functionNames')
+    assertFlagged('r/role2.ts', 'export function errorHandler() {}\n', 'functionNames')
+  })
+  it('accepts a function-valued member with no parameters that answers one value and flags a bool or a function with parameters', () => {
+    assertClean('r/provider.go', 'package a\n\ntype t struct {\n\tplugins func() []string\n}\n')
+    assertClean('r/provider.ts', 'export interface Context {\n  readonly today: () => string\n  widest(): number\n}\n')
+    assertFlagged('r/provider2.go', 'package a\n\ntype t struct {\n\tenabled func() bool\n\tVaults func() ([]string, error)\n}\n', 'functionNames')
+    assertFlagged('r/provider2.ts', 'export interface Context {\n  readonly today: () => boolean\n}\n', 'functionNames')
+    assertFlagged('r/provider3.ts', 'export const today = () => 1\n', 'functionNames')
+  })
+  it('accepts the verbs ping, chat and do and the fmt names Printf and Println', () => {
+    assertClean('r/verbs.go', 'package a\n\ntype t struct{}\n\nfunc (t) Ping(ctx int) error { return nil }\n\nfunc Chat(ctx int) error { return nil }\n\nfunc (t) Do(req int) error { return nil }\n\nfunc (t) Printf(format string, a ...any) {}\n')
+  })
+  it('accepts a conversion named to… or from… in Go and flags a noun', () => {
+    assertClean('r/conv.go', 'package a\n\nfunc toWrites(in []string) []int { return nil }\n\nfunc FromEnv() (int, error) { return 0, nil }\n')
+    assertFlagged('r/conv2.go', 'package a\n\nfunc writesOf(in []string) []int { return nil }\n', 'functionNames')
   })
 })
 
