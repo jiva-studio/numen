@@ -438,3 +438,15 @@ func firstDifference(a, b []byte) int {
 	}
 	return min(len(a), len(b))
 }
+
+func TestSeal_RefusesATextBodyOverTheDecoderLimitThatCompressesBelowTheStoredLimit(t *testing.T) {
+	t.Parallel()
+	l := newLayout()
+	over := bytes.Repeat([]byte("milk\n"), (256<<20)/5+1)
+
+	sealed, err := blobcipher.Seal(bytes.NewReader(l.salt[:]), l.revisionKey, l.fileID, over, true)
+
+	if !errors.Is(err, blobcipher.ErrTooLarge) || sealed != nil {
+		t.Errorf("a text body of %d bytes: sealed %d bytes, error = %v, want ErrTooLarge", len(over), len(sealed), err)
+	}
+}
