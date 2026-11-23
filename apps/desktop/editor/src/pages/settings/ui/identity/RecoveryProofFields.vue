@@ -6,7 +6,7 @@
 import { SegmentedControl } from '@numen/ui'
 import type { ProofKind } from '../../model/useRecoveryProof'
 import { WORDS as words } from '../../words'
-import RestoreWordInputs from './RestoreWordInputs.vue'
+import RecoveryWords from './RecoveryWords.vue'
 import SheetsInput from './SheetsInput.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -44,9 +44,10 @@ function onChoose(value: string): void {
     :aria-label="words.proofChoice"
     @update:model-value="onChoose"
   />
-  <RestoreWordInputs
+  <RecoveryWords
     v-if="kind === 'words'"
-    :entered="entered"
+    :recovery-words="entered"
+    is-editable
     :is-disabled="isDisabled"
     @change="(index, value) => emit('change-word', index, value)"
   />
