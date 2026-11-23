@@ -25,10 +25,8 @@ func (v *Vaults) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return v.client.GetVaults(ctx)
 }
 
-// Files returns the files of the vault.
 func (v *Vaults) GetFiles(id domain.VaultID) ports.Files { return v.client.With(id) }
 
-// Indexer returns the index of the vault.
 func (v *Vaults) GetIndexer(id domain.VaultID) ports.Indexer { return v.client.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
