@@ -147,6 +147,11 @@ export class Server {
           headers: { 'Content-Type': 'application/connect+json' },
         },
         (answer) => {
+          if (answer.statusCode !== 200) {
+            call.destroy()
+            reject(new Error(`${method} answered ${answer.statusCode}`))
+            return
+          }
           let received = Buffer.alloc(0)
           answer.on('data', (chunk: Buffer) => {
             received = Buffer.concat([received, chunk])
@@ -154,9 +159,11 @@ export class Server {
             call.destroy()
             resolve(JSON.parse(received.subarray(5, 5 + received.readUInt32BE(1)).toString()) as JsonObject)
           })
+          answer.on('end', () => reject(new Error(`${method} ended before its first message`)))
           answer.on('error', reject)
         },
       )
+      call.setTimeout(10_000, () => call.destroy(new Error(`${method} gave no first message in 10 s`)))
       call.on('error', reject)
       call.end(Buffer.concat([header, json]))
     })

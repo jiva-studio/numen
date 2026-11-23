@@ -22,11 +22,12 @@ type Keeper struct {
 	address string
 	cancel  context.CancelFunc
 	done    chan struct{}
+	last    *session.Keep
 }
 
 // New returns a keeper that runs no sign-in until Configure names an address.
 func New(deps session.Deps, newServer NewServer) *Keeper {
-	return &Keeper{deps: deps, newServer: newServer, mu: sync.Mutex{}, address: "", cancel: nil, done: nil}
+	return &Keeper{deps: deps, newServer: newServer, mu: sync.Mutex{}, address: "", cancel: nil, done: nil, last: nil}
 }
 
 // Configure signs in to the server at the address until ctx ends or the address changes. An empty address
@@ -46,10 +47,15 @@ func (k *Keeper) Configure(ctx context.Context, address string) {
 	deps := k.deps
 	deps.Server = k.newServer(address, deps.Clock.Now)
 	k.address, k.cancel, k.done = address, cancel, done
+	keep := session.NewKeep(deps)
+	if k.last != nil {
+		keep.Inherit(k.last)
+	}
+	k.last = keep
 	go func() {
 		defer close(done)
 		// Execute returns only when ctx ends, with its error.
-		err := session.NewKeep(deps).Execute(ctx)
+		err := keep.Execute(ctx)
 		if ctx.Err() == nil {
 			slog.Warn("the sign-in keeper ended", "error", err)
 		}

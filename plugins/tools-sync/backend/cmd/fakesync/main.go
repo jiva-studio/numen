@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -17,9 +18,12 @@ import (
 
 func main() {
 	address := flag.String("addr", "127.0.0.1:0", "address to listen on")
-	protocol := flag.Uint("protocol", 0, "protocol version the server needs; 0 is the version of this build")
+	protocol := flag.Uint64("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	flag.Parse()
+	if *protocol > math.MaxUint32 {
+		log.Fatalf("-protocol %d does not fit in 32 bits", *protocol)
+	}
 
 	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *address)
 	if err != nil {

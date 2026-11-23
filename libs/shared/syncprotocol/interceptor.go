@@ -28,8 +28,19 @@ func (versionClientInterceptor) WrapStreamingClient(next connect.StreamingClient
 	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
 		conn := next(ctx, spec)
 		conn.RequestHeader().Set(HeaderVersion, strconv.FormatUint(uint64(Version), 10))
-		return conn
+		return versionClientConn{StreamingClientConn: conn}
 	}
+}
+
+// versionClientConn turns the errors of a stream that name another version into ErrUpdateRequired.
+type versionClientConn struct{ connect.StreamingClientConn }
+
+func (c versionClientConn) Receive(message any) error {
+	return readUpdateRequired(c.StreamingClientConn.Receive(message))
+}
+
+func (c versionClientConn) CloseResponse() error {
+	return readUpdateRequired(c.StreamingClientConn.CloseResponse())
 }
 
 func (versionClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {

@@ -564,10 +564,10 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### sync server and session
 
-- Is: The sync server is the program plugin "Numen Sync" signs in to with the identity of this device; its address is the setting "Sync server" of the plugin. A session is what the server gives a device that signed in. Numen Sync keeps it in memory, signs in again before it ends, and signs in again at once when the server ends it.
+- Is: The sync server is the program plugin "Numen Sync" signs in to with the identity of this device; its address is the setting "Sync server" of the plugin. A session is what the server gives a device that signed in. Numen Sync keeps it in memory, signs in again before it ends, and and tries again at a fixed interval where it cannot sign in. It signs in again only when the renewal comes due, not at the moment the server ends the session.
 - States: signed in; not signed in, with the plugin warning about why.
 - Texts: "No identity on this device", "Could not reach the sync server", "Update Numen", "Could not sign in" (plugins/tools-sync/backend/usecase/session/keep.go).
-- Not: not a login and not a password. A session is not the identity, and the server never sees the recovery words or a key of the identity.
+- Not: not a login and not a password. A session is not the identity, and the server sees the public signing key of the device and its signed device chain, and never the recovery words or a private key of the identity.
 
 ### row
 
