@@ -5,6 +5,7 @@ package debugserve
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -38,4 +39,14 @@ func (d FolderFileDialog) ChooseFolder(_ context.Context, _, _ string) (string, 
 // ChooseFile answers that this machine shows no file dialog.
 func (d FolderFileDialog) ChooseFile(_ context.Context, _, _ string, _ []string) (string, bool, error) {
 	return "", false, machine.ErrNoFolderDialog
+}
+
+// ChooseSaveFile returns the name in the folder written in the file, and false when the file holds
+// no folder.
+func (d FolderFileDialog) ChooseSaveFile(ctx context.Context, title, name string, _ []string) (string, bool, error) {
+	folder, isChosen, err := d.ChooseFolder(ctx, title, "")
+	if err != nil || !isChosen {
+		return "", false, err
+	}
+	return filepath.Join(folder, name), true, nil
 }

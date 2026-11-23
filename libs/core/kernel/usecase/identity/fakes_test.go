@@ -6,6 +6,7 @@ import (
 	"maps"
 	"sync"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
@@ -68,3 +69,34 @@ type fakeNames struct{ name string }
 func (n fakeNames) GetInstanceName() string { return n.name }
 
 var errBroken = errors.New("the keychain refuses")
+
+// fakeKitSaver stands where the person chooses a file: it keeps every kit it is given, or answers
+// that no file was chosen, or fails.
+type fakeKitSaver struct {
+	mu        sync.Mutex
+	kits      []identitydomain.Kit
+	isRefused bool
+	fails     error
+}
+
+func (s *fakeKitSaver) SaveKit(_ context.Context, kit identitydomain.Kit) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.fails != nil {
+		return false, s.fails
+	}
+	if s.isRefused {
+		return false, nil
+	}
+	s.kits = append(s.kits, kit)
+	return true, nil
+}
+
+func (s *fakeKitSaver) getLast() (identitydomain.Kit, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.kits) == 0 {
+		return identitydomain.Kit{}, false
+	}
+	return s.kits[len(s.kits)-1], true
+}

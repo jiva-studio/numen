@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/identity.proto.
  */
 export const file_numen_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEidQoMSWRlbnRpdHlJbmZvEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSGgoSZGV2aWNlX2ZpbmdlcnByaW50GAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJEhcKD2RldmljZV9hZGRlZF9hdBgEIAEoCSIUChJHZXRJZGVudGl0eVJlcXVlc3QiPwoTR2V0SWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbyIeChxHZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0IjMKHUdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlEhIKBXdvcmRzGAEgAygJQgOAAQEiKwoVQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEifgoWQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIXChVEZWxldGVJZGVudGl0eVJlcXVlc3QiGAoWRGVsZXRlSWRlbnRpdHlSZXNwb25zZSIjCg1SZWNvdmVyeVNoZWV0EhIKBXdvcmRzGAEgAygJQgOAAQEiKAoSUmVjb3ZlcnlXb3Jkc1Byb29mEhIKBXdvcmRzGAEgAygJQgOAAQEiPgoTUmVjb3ZlcnlTaGVldHNQcm9vZhInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0ImMKC1JlY292ZXJ5S2l0Eg4KBmtpdF9pZBgBIAEoCRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAIgASgJEicKBnNoZWV0cxgDIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQigwEKGENyZWF0ZVJlY292ZXJ5S2l0UmVxdWVzdBItCgV3b3JkcxgBIAEoCzIcLm51bWVuLnYxLlJlY292ZXJ5V29yZHNQcm9vZkgAEi8KBnNoZWV0cxgCIAEoCzIdLm51bWVuLnYxLlJlY292ZXJ5U2hlZXRzUHJvb2ZIAEIHCgVwcm9vZiJ7ChlDcmVhdGVSZWNvdmVyeUtpdFJlc3BvbnNlEiIKA2tpdBgBIAEoCzIVLm51bWVuLnYxLlJlY292ZXJ5S2l0EioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIkIKF0NoZWNrUmVjb3ZlcnlLaXRSZXF1ZXN0EicKBnNoZWV0cxgBIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQicwoYQ2hlY2tSZWNvdmVyeUtpdFJlc3BvbnNlEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiSAodUmVzdG9yZUlkZW50aXR5RnJvbUtpdFJlcXVlc3QSJwoGc2hlZXRzGAEgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCKGAQoeUmVzdG9yZUlkZW50aXR5RnJvbUtpdFJlc3BvbnNlEigKCGlkZW50aXR5GAEgASgLMhYubnVtZW4udjEuSWRlbnRpdHlJbmZvEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJKtECChFJZGVudGl0eUVycm9yQ29kZRIjCh9JREVOVElUWV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJQohSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1dPUkRTEAESJwojSURFTlRJVFlfRVJST1JfQ09ERV9JREVOVElUWV9FWElTVFMQAhIoCiRJREVOVElUWV9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQAxImCiJJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfU0hFRVRTEAQSKQolSURFTlRJVFlfRVJST1JfQ09ERV9OT1RfRU5PVUdIX1NIRUVUUxAFEiUKIUlERU5USVRZX0VSUk9SX0NPREVfT1RIRVJfQUNDT1VOVBAGEiMKH0lERU5USVRZX0VSUk9SX0NPREVfTk9fSURFTlRJVFkQBzKXBQoPSWRlbnRpdHlTZXJ2aWNlEkoKC0dldElkZW50aXR5EhwubnVtZW4udjEuR2V0SWRlbnRpdHlSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0SWRlbnRpdHlSZXNwb25zZRJoChVHZW5lcmF0ZVJlY292ZXJ5V29yZHMSJi5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0GicubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVzcG9uc2USUwoOQ3JlYXRlSWRlbnRpdHkSHy5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVJZGVudGl0eVJlc3BvbnNlElMKDkRlbGV0ZUlkZW50aXR5Eh8ubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXNwb25zZRJcChFDcmVhdGVSZWNvdmVyeUtpdBIiLm51bWVuLnYxLkNyZWF0ZVJlY292ZXJ5S2l0UmVxdWVzdBojLm51bWVuLnYxLkNyZWF0ZVJlY292ZXJ5S2l0UmVzcG9uc2USWQoQQ2hlY2tSZWNvdmVyeUtpdBIhLm51bWVuLnYxLkNoZWNrUmVjb3ZlcnlLaXRSZXF1ZXN0GiIubnVtZW4udjEuQ2hlY2tSZWNvdmVyeUtpdFJlc3BvbnNlEmsKFlJlc3RvcmVJZGVudGl0eUZyb21LaXQSJy5udW1lbi52MS5SZXN0b3JlSWRlbnRpdHlGcm9tS2l0UmVxdWVzdBooLm51bWVuLnYxLlJlc3RvcmVJZGVudGl0eUZyb21LaXRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEidQoMSWRlbnRpdHlJbmZvEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSGgoSZGV2aWNlX2ZpbmdlcnByaW50GAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJEhcKD2RldmljZV9hZGRlZF9hdBgEIAEoCSIUChJHZXRJZGVudGl0eVJlcXVlc3QiPwoTR2V0SWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbyIeChxHZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0IjMKHUdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlEhIKBXdvcmRzGAEgAygJQgOAAQEiKwoVQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEifgoWQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIXChVEZWxldGVJZGVudGl0eVJlcXVlc3QiGAoWRGVsZXRlSWRlbnRpdHlSZXNwb25zZSIjCg1SZWNvdmVyeVNoZWV0EhIKBXdvcmRzGAEgAygJQgOAAQEiKAoSUmVjb3ZlcnlXb3Jkc1Byb29mEhIKBXdvcmRzGAEgAygJQgOAAQEiPgoTUmVjb3ZlcnlTaGVldHNQcm9vZhInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0IoEBChZTYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0Ei0KBXdvcmRzGAEgASgLMhwubnVtZW4udjEuUmVjb3ZlcnlXb3Jkc1Byb29mSAASLwoGc2hlZXRzGAIgASgLMh0ubnVtZW4udjEuUmVjb3ZlcnlTaGVldHNQcm9vZkgAQgcKBXByb29mImcKF1NhdmVSZWNvdmVyeUtpdFJlc3BvbnNlEhAKCGlzX3NhdmVkGAEgASgIEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIkgKHVJlc3RvcmVJZGVudGl0eUZyb21LaXRSZXF1ZXN0EicKBnNoZWV0cxgBIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQihgEKHlJlc3RvcmVJZGVudGl0eUZyb21LaXRSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSrRAgoRSWRlbnRpdHlFcnJvckNvZGUSIwofSURFTlRJVFlfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIUlERU5USVRZX0VSUk9SX0NPREVfSU5WQUxJRF9XT1JEUxABEicKI0lERU5USVRZX0VSUk9SX0NPREVfSURFTlRJVFlfRVhJU1RTEAISKAokSURFTlRJVFlfRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAMSJgoiSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1NIRUVUUxAEEikKJUlERU5USVRZX0VSUk9SX0NPREVfTk9UX0VOT1VHSF9TSEVFVFMQBRIlCiFJREVOVElUWV9FUlJPUl9DT0RFX09USEVSX0FDQ09VTlQQBhIjCh9JREVOVElUWV9FUlJPUl9DT0RFX05PX0lERU5USVRZEAcytgQKD0lkZW50aXR5U2VydmljZRJKCgtHZXRJZGVudGl0eRIcLm51bWVuLnYxLkdldElkZW50aXR5UmVxdWVzdBodLm51bWVuLnYxLkdldElkZW50aXR5UmVzcG9uc2USaAoVR2VuZXJhdGVSZWNvdmVyeVdvcmRzEiYubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdBonLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlElMKDkNyZWF0ZUlkZW50aXR5Eh8ubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRJTCg5EZWxldGVJZGVudGl0eRIfLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVzcG9uc2USVgoPU2F2ZVJlY292ZXJ5S2l0EiAubnVtZW4udjEuU2F2ZVJlY292ZXJ5S2l0UmVxdWVzdBohLm51bWVuLnYxLlNhdmVSZWNvdmVyeUtpdFJlc3BvbnNlEmsKFlJlc3RvcmVJZGVudGl0eUZyb21LaXQSJy5udW1lbi52MS5SZXN0b3JlSWRlbnRpdHlGcm9tS2l0UmVxdWVzdBooLm51bWVuLnYxLlJlc3RvcmVJZGVudGl0eUZyb21LaXRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * IdentityInfo is what a person can see of the identity of this device.
@@ -187,7 +187,7 @@ export const DeleteIdentityResponseSchema: GenMessage<DeleteIdentityResponse> = 
   messageDesc(file_numen_v1_identity, 8);
 
 /**
- * RecoverySheet is one printed sheet: 33 words of the SLIP-39 list in order.
+ * RecoverySheet is one sheet of a kit: 33 words of the SLIP-39 list in order.
  *
  * @generated from message numen.v1.RecoverySheet
  */
@@ -240,46 +240,13 @@ export const RecoverySheetsProofSchema: GenMessage<RecoverySheetsProof> = /*@__P
   messageDesc(file_numen_v1_identity, 11);
 
 /**
- * RecoveryKit is three sheets of one kit. Any two restore the account.
- *
- * @generated from message numen.v1.RecoveryKit
+ * @generated from message numen.v1.SaveRecoveryKitRequest
  */
-export type RecoveryKit = Message<"numen.v1.RecoveryKit"> & {
-  /**
-   * kit_id is 4 upper-case hex digits that every sheet of the kit shows.
-   *
-   * @generated from field: string kit_id = 1;
-   */
-  kitId: string;
-
-  /**
-   * @generated from field: string account_fingerprint = 2;
-   */
-  accountFingerprint: string;
-
-  /**
-   * sheets are in sheet order.
-   *
-   * @generated from field: repeated numen.v1.RecoverySheet sheets = 3;
-   */
-  sheets: RecoverySheet[];
-};
-
-/**
- * Describes the message numen.v1.RecoveryKit.
- * Use `create(RecoveryKitSchema)` to create a new message.
- */
-export const RecoveryKitSchema: GenMessage<RecoveryKit> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 12);
-
-/**
- * @generated from message numen.v1.CreateRecoveryKitRequest
- */
-export type CreateRecoveryKitRequest = Message<"numen.v1.CreateRecoveryKitRequest"> & {
+export type SaveRecoveryKitRequest = Message<"numen.v1.SaveRecoveryKitRequest"> & {
   /**
    * proof is the 12 words or two sheets of an earlier kit. A request without a proof is invalid.
    *
-   * @generated from oneof numen.v1.CreateRecoveryKitRequest.proof
+   * @generated from oneof numen.v1.SaveRecoveryKitRequest.proof
    */
   proof: {
     /**
@@ -297,88 +264,42 @@ export type CreateRecoveryKitRequest = Message<"numen.v1.CreateRecoveryKitReques
 };
 
 /**
- * Describes the message numen.v1.CreateRecoveryKitRequest.
- * Use `create(CreateRecoveryKitRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SaveRecoveryKitRequest.
+ * Use `create(SaveRecoveryKitRequestSchema)` to create a new message.
  */
-export const CreateRecoveryKitRequestSchema: GenMessage<CreateRecoveryKitRequest> = /*@__PURE__*/
+export const SaveRecoveryKitRequestSchema: GenMessage<SaveRecoveryKitRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 12);
+
+/**
+ * @generated from message numen.v1.SaveRecoveryKitResponse
+ */
+export type SaveRecoveryKitResponse = Message<"numen.v1.SaveRecoveryKitResponse"> & {
+  /**
+   * is_saved is false when the person closed the save dialog without choosing a file.
+   *
+   * @generated from field: bool is_saved = 1;
+   */
+  isSaved: boolean;
+
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * detail names a position and never holds a word.
+   *
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.SaveRecoveryKitResponse.
+ * Use `create(SaveRecoveryKitResponseSchema)` to create a new message.
+ */
+export const SaveRecoveryKitResponseSchema: GenMessage<SaveRecoveryKitResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_identity, 13);
-
-/**
- * @generated from message numen.v1.CreateRecoveryKitResponse
- */
-export type CreateRecoveryKitResponse = Message<"numen.v1.CreateRecoveryKitResponse"> & {
-  /**
-   * @generated from field: numen.v1.RecoveryKit kit = 1;
-   */
-  kit?: RecoveryKit | undefined;
-
-  /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
-   */
-  error: IdentityErrorCode;
-
-  /**
-   * detail names a position and never holds a word.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.CreateRecoveryKitResponse.
- * Use `create(CreateRecoveryKitResponseSchema)` to create a new message.
- */
-export const CreateRecoveryKitResponseSchema: GenMessage<CreateRecoveryKitResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 14);
-
-/**
- * @generated from message numen.v1.CheckRecoveryKitRequest
- */
-export type CheckRecoveryKitRequest = Message<"numen.v1.CheckRecoveryKitRequest"> & {
-  /**
-   * @generated from field: repeated numen.v1.RecoverySheet sheets = 1;
-   */
-  sheets: RecoverySheet[];
-};
-
-/**
- * Describes the message numen.v1.CheckRecoveryKitRequest.
- * Use `create(CheckRecoveryKitRequestSchema)` to create a new message.
- */
-export const CheckRecoveryKitRequestSchema: GenMessage<CheckRecoveryKitRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 15);
-
-/**
- * @generated from message numen.v1.CheckRecoveryKitResponse
- */
-export type CheckRecoveryKitResponse = Message<"numen.v1.CheckRecoveryKitResponse"> & {
-  /**
-   * account_fingerprint is set when the sheets fit the account of this device.
-   *
-   * @generated from field: string account_fingerprint = 1;
-   */
-  accountFingerprint: string;
-
-  /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
-   */
-  error: IdentityErrorCode;
-
-  /**
-   * detail names a position and never holds a word.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.CheckRecoveryKitResponse.
- * Use `create(CheckRecoveryKitResponseSchema)` to create a new message.
- */
-export const CheckRecoveryKitResponseSchema: GenMessage<CheckRecoveryKitResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 16);
 
 /**
  * @generated from message numen.v1.RestoreIdentityFromKitRequest
@@ -395,7 +316,7 @@ export type RestoreIdentityFromKitRequest = Message<"numen.v1.RestoreIdentityFro
  * Use `create(RestoreIdentityFromKitRequestSchema)` to create a new message.
  */
 export const RestoreIdentityFromKitRequestSchema: GenMessage<RestoreIdentityFromKitRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 17);
+  messageDesc(file_numen_v1_identity, 14);
 
 /**
  * @generated from message numen.v1.RestoreIdentityFromKitResponse
@@ -424,7 +345,7 @@ export type RestoreIdentityFromKitResponse = Message<"numen.v1.RestoreIdentityFr
  * Use `create(RestoreIdentityFromKitResponseSchema)` to create a new message.
  */
 export const RestoreIdentityFromKitResponseSchema: GenMessage<RestoreIdentityFromKitResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 18);
+  messageDesc(file_numen_v1_identity, 15);
 
 /**
  * IdentityErrorCode is why an identity call was refused. The zero value is a call that
@@ -498,7 +419,8 @@ export const IdentityErrorCodeSchema: GenEnum<IdentityErrorCode> = /*@__PURE__*/
 
 /**
  * IdentityService manages the account identity of this device. No secret key reaches the window; the
- * recovery words and sheets cross the wire only in the calls that make or take them.
+ * recovery words and sheets cross the wire only in the calls that take them, and the sheets of a new
+ * kit never do.
  *
  * @generated from service numen.v1.IdentityService
  */
@@ -545,25 +467,16 @@ export const IdentityService: GenService<{
     output: typeof DeleteIdentityResponseSchema;
   },
   /**
-   * CreateRecoveryKit makes a new kit of three sheets for the account of this device. The caller proves
-   * the account with the 12 words or with two sheets of an earlier kit. Nothing is kept.
+   * SaveRecoveryKit makes a new kit of three sheets for the account of this device and saves it as a PDF
+   * in the file the person chooses in the save dialog of this machine. The caller proves the account
+   * with the 12 words or with two sheets of an earlier kit. Nothing is kept, and no sheet is answered.
    *
-   * @generated from rpc numen.v1.IdentityService.CreateRecoveryKit
+   * @generated from rpc numen.v1.IdentityService.SaveRecoveryKit
    */
-  createRecoveryKit: {
+  saveRecoveryKit: {
     methodKind: "unary";
-    input: typeof CreateRecoveryKitRequestSchema;
-    output: typeof CreateRecoveryKitResponseSchema;
-  },
-  /**
-   * CheckRecoveryKit reports whether two sheets restore the account of this device.
-   *
-   * @generated from rpc numen.v1.IdentityService.CheckRecoveryKit
-   */
-  checkRecoveryKit: {
-    methodKind: "unary";
-    input: typeof CheckRecoveryKitRequestSchema;
-    output: typeof CheckRecoveryKitResponseSchema;
+    input: typeof SaveRecoveryKitRequestSchema;
+    output: typeof SaveRecoveryKitResponseSchema;
   },
   /**
    * RestoreIdentityFromKit keeps an identity on this device from two sheets of a kit.

@@ -31,13 +31,22 @@ func createdWith(t *testing.T, k kit, words []string) identitydomain.Identity {
 	return created
 }
 
-func kitOf(t *testing.T, k kit, words []string) identitydomain.Kit {
+func saveWith(t *testing.T, k kit, words []string, sheets [][]string) identitydomain.Kit {
 	t.Helper()
-	made, err := k.createKit.Execute(t.Context(), words, nil)
-	if err != nil {
-		t.Fatalf("create recovery kit: %v", err)
+	isSaved, err := k.saveKit.Execute(t.Context(), words, sheets)
+	if err != nil || !isSaved {
+		t.Fatalf("save recovery kit: %v, %v", isSaved, err)
+	}
+	made, ok := k.saver.getLast()
+	if !ok {
+		t.Fatal("no kit reached the saver")
 	}
 	return made
+}
+
+func kitOf(t *testing.T, k kit, words []string) identitydomain.Kit {
+	t.Helper()
+	return saveWith(t, k, words, nil)
 }
 
 func pick(t *testing.T, made identitydomain.Kit, numbers ...int) [][]string {
@@ -75,7 +84,14 @@ func accountOfWords(t *testing.T, words []string) string {
 	return key.Public().Fingerprint().String()
 }
 
-func TestCreateRecoveryKit_MakesThreeSheetsForTheAccountOfTheWords(t *testing.T) {
+// restoredOn is the account two sheets give on a fresh device.
+func restoredOn(t *testing.T, sheets [][]string) (string, error) {
+	t.Helper()
+	restored, err := newKit("Phone").restoreKit.Execute(t.Context(), sheets)
+	return restored.AccountFingerprint, err
+}
+
+func TestSaveRecoveryKit_SavesThreeSheetsForTheAccountOfTheWords(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())
@@ -85,6 +101,9 @@ func TestCreateRecoveryKit_MakesThreeSheetsForTheAccountOfTheWords(t *testing.T)
 	}
 	if made.AccountFingerprint != created.AccountFingerprint {
 		t.Errorf("kit account = %q, want %q", made.AccountFingerprint, created.AccountFingerprint)
+	}
+	if !made.CreatedAt.Equal(getNow()) {
+		t.Errorf("kit made at %v, want %v", made.CreatedAt, getNow())
 	}
 	if len(made.Sheets) != 3 {
 		t.Fatalf("kit has %d sheets, want 3", len(made.Sheets))
@@ -99,47 +118,63 @@ func TestCreateRecoveryKit_MakesThreeSheetsForTheAccountOfTheWords(t *testing.T)
 	}
 }
 
-func TestCreateRecoveryKit_MakesSheetsThatRestoreTheAccountFromAnyTwo(t *testing.T) {
+func TestSaveRecoveryKit_SavesSheetsThatRestoreTheAccountFromAnyTwo(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())
 	made := kitOf(t, k, getLegalWords())
 	for _, pair := range [][]int{{1, 2}, {1, 3}, {2, 3}, {3, 1}} {
-		got, err := k.checkKit.Execute(t.Context(), pick(t, made, pair...))
+		got, err := restoredOn(t, pick(t, made, pair...))
 		if err != nil {
-			t.Fatalf("check sheets %v: %v", pair, err)
+			t.Fatalf("restore from sheets %v: %v", pair, err)
 		}
 		if got != created.AccountFingerprint {
-			t.Errorf("sheets %v fit %q, want %q", pair, got, created.AccountFingerprint)
+			t.Errorf("sheets %v restore %q, want %q", pair, got, created.AccountFingerprint)
 		}
 	}
 }
 
-func TestCreateRecoveryKit_WritesNothingToTheKeyStore(t *testing.T) {
+func TestSaveRecoveryKit_AnswersFalseWhenNoFileIsChosen(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	createdWith(t, k, getLegalWords())
+	k.saver.isRefused = true
+	isSaved, err := k.saveKit.Execute(t.Context(), getLegalWords(), nil)
+	if err != nil || isSaved {
+		t.Errorf("Execute() = %v, %v; want false and no error", isSaved, err)
+	}
+}
+
+func TestSaveRecoveryKit_ReportsASaverThatFails(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	createdWith(t, k, getLegalWords())
+	k.saver.fails = errBroken
+	if _, err := k.saveKit.Execute(t.Context(), getLegalWords(), nil); !errors.Is(err, errBroken) {
+		t.Errorf("error = %v, want the failure of the saver", err)
+	}
+}
+
+func TestSaveRecoveryKit_WritesNothingToTheKeyStore(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
 	before := k.keys.snapshot()
 	writes := k.keys.setCalled
 	made := kitOf(t, k, getLegalWords())
-	if _, err := k.createKit.Execute(t.Context(), nil, pick(t, made, 1, 2)); err != nil {
-		t.Fatal(err)
-	}
+	saveWith(t, k, nil, pick(t, made, 1, 2))
 	after := k.keys.snapshot()
 	if len(after) != len(before) || after[keyName] != before[keyName] || k.keys.setCalled != writes {
 		t.Errorf("the key store changed: %d writes after %d", k.keys.setCalled, writes)
 	}
 }
 
-func TestCreateRecoveryKit_ProvesTheAccountWithTwoSheetsOfAnEarlierKit(t *testing.T) {
+func TestSaveRecoveryKit_ProvesTheAccountWithTwoSheetsOfAnEarlierKit(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())
 	first := kitOf(t, k, getLegalWords())
-	second, err := k.createKit.Execute(t.Context(), nil, pick(t, first, 2, 3))
-	if err != nil {
-		t.Fatalf("create from sheets: %v", err)
-	}
+	second := saveWith(t, k, nil, pick(t, first, 2, 3))
 	if second.AccountFingerprint != created.AccountFingerprint || len(second.Sheets) != 3 {
 		t.Errorf("second kit = account %q with %d sheets", second.AccountFingerprint, len(second.Sheets))
 	}
@@ -148,48 +183,47 @@ func TestCreateRecoveryKit_ProvesTheAccountWithTwoSheetsOfAnEarlierKit(t *testin
 	}
 }
 
-func TestCreateRecoveryKit_ANewKitDoesNotCancelAnOlderKit(t *testing.T) {
+func TestSaveRecoveryKit_ANewKitDoesNotCancelAnOlderKit(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())
 	older := kitOf(t, k, getLegalWords())
 	kitOf(t, k, getLegalWords())
-	got, err := k.checkKit.Execute(t.Context(), pick(t, older, 1, 3))
+	got, err := restoredOn(t, pick(t, older, 1, 3))
 	if err != nil || got != created.AccountFingerprint {
 		t.Errorf("the older kit: %q, %v; want %q", got, err, created.AccountFingerprint)
 	}
 }
 
-func TestCreateRecoveryKit_RefusesWordsOfAnotherAccountAndShowsNoSheet(t *testing.T) {
+func TestSaveRecoveryKit_RefusesWordsOfAnotherAccountAndSavesNothing(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
-	made, err := k.createKit.Execute(t.Context(), getOtherWords(), nil)
-	if !errors.Is(err, identitydomain.ErrOtherAccount) {
-		t.Fatalf("error = %v, want ErrOtherAccount", err)
+	isSaved, err := k.saveKit.Execute(t.Context(), getOtherWords(), nil)
+	if !errors.Is(err, identitydomain.ErrOtherAccount) || isSaved {
+		t.Fatalf("Execute() = %v, %v; want false and ErrOtherAccount", isSaved, err)
 	}
-	if len(made.Sheets) != 0 || made.ID != "" || made.AccountFingerprint != "" {
-		t.Errorf("a refusal returned a kit: %+v", made)
+	if _, ok := k.saver.getLast(); ok {
+		t.Error("a refusal reached the saver")
 	}
 }
 
-func TestCreateRecoveryKit_RefusesSheetsOfAnotherAccount(t *testing.T) {
+func TestSaveRecoveryKit_RefusesSheetsOfAnotherAccount(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
 	stranger := newKit("Phone")
 	createdWith(t, stranger, getOtherWords())
 	foreign := kitOf(t, stranger, getOtherWords())
-	made, err := k.createKit.Execute(t.Context(), nil, pick(t, foreign, 1, 2))
-	if !errors.Is(err, identitydomain.ErrOtherAccount) {
+	if _, err := k.saveKit.Execute(t.Context(), nil, pick(t, foreign, 1, 2)); !errors.Is(err, identitydomain.ErrOtherAccount) {
 		t.Fatalf("error = %v, want ErrOtherAccount", err)
 	}
-	if len(made.Sheets) != 0 {
-		t.Error("a refusal returned sheets")
+	if _, ok := k.saver.getLast(); ok {
+		t.Error("a refusal reached the saver")
 	}
 }
 
-func TestCreateRecoveryKit_RefusesAnInvalidProofAndShowsNoSheet(t *testing.T) {
+func TestSaveRecoveryKit_RefusesAnInvalidProof(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
@@ -197,97 +231,67 @@ func TestCreateRecoveryKit_RefusesAnInvalidProofAndShowsNoSheet(t *testing.T) {
 	unknown := slices.Clone(getLegalWords())
 	unknown[3] = "numen"
 
-	_, err := k.createKit.Execute(t.Context(), unknown, nil)
+	_, err := k.saveKit.Execute(t.Context(), unknown, nil)
 	if !errors.Is(err, identitydomain.ErrInvalidWords) {
 		t.Errorf("unknown word: error = %v, want ErrInvalidWords", err)
 	}
 	if err != nil && strings.Contains(err.Error(), "numen") {
 		t.Errorf("the error echoes a word: %v", err)
 	}
-	_, err = k.createKit.Execute(t.Context(), nil, [][]string{withWrongWord(pick(t, made, 1)[0]), pick(t, made, 2)[0]})
+	_, err = k.saveKit.Execute(t.Context(), nil, [][]string{withWrongWord(pick(t, made, 1)[0]), pick(t, made, 2)[0]})
 	if !errors.Is(err, identitydomain.ErrInvalidSheets) {
 		t.Errorf("wrong sheet: error = %v, want ErrInvalidSheets", err)
 	}
-	_, err = k.createKit.Execute(t.Context(), nil, pick(t, made, 1))
+	_, err = k.saveKit.Execute(t.Context(), nil, pick(t, made, 1))
 	if !errors.Is(err, identitydomain.ErrNotEnoughSheets) {
 		t.Errorf("one sheet: error = %v, want ErrNotEnoughSheets", err)
 	}
 }
 
-func TestCreateRecoveryKit_RefusesNoProofOrTwoProofs(t *testing.T) {
+func TestSaveRecoveryKit_RefusesNoProofOrTwoProofs(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
 	made := kitOf(t, k, getLegalWords())
-	if _, err := k.createKit.Execute(t.Context(), nil, nil); err == nil {
-		t.Error("no proof makes a kit")
+	if _, err := k.saveKit.Execute(t.Context(), nil, nil); err == nil {
+		t.Error("no proof saves a kit")
 	}
-	if _, err := k.createKit.Execute(t.Context(), getLegalWords(), pick(t, made, 1, 2)); err == nil {
-		t.Error("words and sheets together make a kit")
+	if _, err := k.saveKit.Execute(t.Context(), getLegalWords(), pick(t, made, 1, 2)); err == nil {
+		t.Error("words and sheets together save a kit")
 	}
 }
 
-func TestCreateRecoveryKit_RefusesWithoutAnIdentity(t *testing.T) {
+func TestSaveRecoveryKit_RefusesWithoutAnIdentity(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	if _, err := k.createKit.Execute(t.Context(), getLegalWords(), nil); !errors.Is(err, identitydomain.ErrNoIdentity) {
+	if _, err := k.saveKit.Execute(t.Context(), getLegalWords(), nil); !errors.Is(err, identitydomain.ErrNoIdentity) {
 		t.Errorf("error = %v, want ErrNoIdentity", err)
 	}
 }
 
-func TestCreateRecoveryKit_ReportsAKeyStoreFailure(t *testing.T) {
+func TestSaveRecoveryKit_ReportsAKeyStoreFailure(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
 	k.keys.getFails = errBroken
-	_, err := k.createKit.Execute(t.Context(), getLegalWords(), nil)
+	_, err := k.saveKit.Execute(t.Context(), getLegalWords(), nil)
 	if !errors.Is(err, identitydomain.ErrKeyStore) || !errors.Is(err, errBroken) {
 		t.Errorf("error = %v, want ErrKeyStore wrapping the failure", err)
 	}
 }
 
-func TestCheckRecoveryKit_RefusesOneSheet(t *testing.T) {
+func TestRestoreIdentityFromKit_RefusesNoSheet(t *testing.T) {
 	t.Parallel()
-	k := newKit("Laptop")
-	createdWith(t, k, getLegalWords())
-	made := kitOf(t, k, getLegalWords())
-	for _, sheets := range [][][]string{nil, pick(t, made, 2)} {
-		got, err := k.checkKit.Execute(t.Context(), sheets)
-		if !errors.Is(err, identitydomain.ErrNotEnoughSheets) {
-			t.Errorf("%d sheets: error = %v, want ErrNotEnoughSheets", len(sheets), err)
-		}
-		if errors.Is(err, identitydomain.ErrInvalidSheets) {
-			t.Errorf("%d sheets: a missing sheet is reported as an invalid sheet", len(sheets))
-		}
-		if got != "" {
-			t.Errorf("%d sheets: fingerprint %q returned with a refusal", len(sheets), got)
-		}
+	got, err := restoredOn(t, nil)
+	if !errors.Is(err, identitydomain.ErrNotEnoughSheets) || errors.Is(err, identitydomain.ErrInvalidSheets) {
+		t.Errorf("error = %v, want ErrNotEnoughSheets alone", err)
+	}
+	if got != "" {
+		t.Errorf("fingerprint %q returned with a refusal", got)
 	}
 }
 
-func TestCheckRecoveryKit_NamesTheSheetWithAMistakeAndEchoesNoWord(t *testing.T) {
-	t.Parallel()
-	k := newKit("Laptop")
-	createdWith(t, k, getLegalWords())
-	made := kitOf(t, k, getLegalWords())
-	sheets := pick(t, made, 1, 2)
-	sheets[1] = withWrongWord(sheets[1])
-	_, err := k.checkKit.Execute(t.Context(), sheets)
-	if !errors.Is(err, identitydomain.ErrInvalidSheets) {
-		t.Fatalf("error = %v, want ErrInvalidSheets", err)
-	}
-	var sheetErr *identitylib.SheetError
-	if !errors.As(err, &sheetErr) || sheetErr.Position != 2 {
-		t.Errorf("error %v does not name the position 2", err)
-	}
-	for _, word := range sheets[1] {
-		if strings.Contains(err.Error(), " "+word+" ") {
-			t.Errorf("the error echoes the word %q: %v", word, err)
-		}
-	}
-}
-
-func TestCheckRecoveryKit_RefusesTheSameSheetTwiceAndSheetsOfTwoKits(t *testing.T) {
+func TestRestoreIdentityFromKit_RefusesTheSameSheetTwiceAndSheetsOfTwoKits(t *testing.T) {
 	t.Parallel()
 	words := getLegalWords()
 	k := newKit("Laptop")
@@ -295,47 +299,30 @@ func TestCheckRecoveryKit_RefusesTheSameSheetTwiceAndSheetsOfTwoKits(t *testing.
 	first := kitOf(t, k, words)
 	second := kitOf(t, k, words)
 	twice := [][]string{pick(t, first, 2)[0], pick(t, first, 2)[0]}
-	if _, err := k.checkKit.Execute(t.Context(), twice); !errors.Is(err, identitydomain.ErrInvalidSheets) {
+	if _, err := restoredOn(t, twice); !errors.Is(err, identitydomain.ErrInvalidSheets) {
 		t.Errorf("the same sheet twice: error = %v, want ErrInvalidSheets", err)
 	}
 	mixed := [][]string{pick(t, first, 1)[0], pick(t, second, 2)[0]}
-	if _, err := k.checkKit.Execute(t.Context(), mixed); !errors.Is(err, identitydomain.ErrInvalidSheets) {
+	if _, err := restoredOn(t, mixed); !errors.Is(err, identitydomain.ErrInvalidSheets) {
 		t.Errorf("sheets of two kits: error = %v, want ErrInvalidSheets", err)
 	}
 }
 
-func TestCheckRecoveryKit_RefusesSheetsOfAnotherAccount(t *testing.T) {
-	t.Parallel()
-	k := newKit("Laptop")
-	createdWith(t, k, getLegalWords())
-	stranger := newKit("Phone")
-	createdWith(t, stranger, getOtherWords())
-	foreign := kitOf(t, stranger, getOtherWords())
-	got, err := k.checkKit.Execute(t.Context(), pick(t, foreign, 1, 3))
-	if !errors.Is(err, identitydomain.ErrOtherAccount) {
-		t.Errorf("error = %v, want ErrOtherAccount", err)
-	}
-	if got != "" {
-		t.Errorf("fingerprint %q returned with a refusal", got)
-	}
-}
-
-func TestCheckRecoveryKit_RefusesWithoutAnIdentityAndReportsAKeyStoreFailure(t *testing.T) {
+func TestRestoreIdentityFromKit_EchoesNoWordOfASheetWithAMistake(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	createdWith(t, k, getLegalWords())
 	made := kitOf(t, k, getLegalWords())
 	sheets := pick(t, made, 1, 2)
-	k.keys.getFails = errBroken
-	if _, err := k.checkKit.Execute(t.Context(), sheets); !errors.Is(err, identitydomain.ErrKeyStore) {
-		t.Errorf("a refused read: error = %v, want ErrKeyStore", err)
+	sheets[1] = withWrongWord(sheets[1])
+	_, err := restoredOn(t, sheets)
+	if !errors.Is(err, identitydomain.ErrInvalidSheets) {
+		t.Fatalf("error = %v, want ErrInvalidSheets", err)
 	}
-	k.keys.getFails = nil
-	if err := k.delete.Execute(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := k.checkKit.Execute(t.Context(), sheets); !errors.Is(err, identitydomain.ErrNoIdentity) {
-		t.Errorf("no record: error = %v, want ErrNoIdentity", err)
+	for _, word := range sheets[1] {
+		if strings.Contains(err.Error(), " "+word+" ") {
+			t.Errorf("the error echoes the word %q: %v", word, err)
+		}
 	}
 }
 

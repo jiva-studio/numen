@@ -1,12 +1,14 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/kitpdf"
 	licensingadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/licensing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
-func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowidentity.UseCases {
+func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, dialog editor.PathDialog) *windowidentity.UseCases {
 	if install.KeyStore == nil {
 		return nil
 	}
@@ -19,9 +21,15 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowi
 			Delete:        identity.NewDeleteIdentity(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Create:  identity.NewCreateRecoveryKit(deps),
-			Check:   identity.NewCheckRecoveryKit(deps),
+			Save:    identity.NewSaveRecoveryKit(deps, openKitSaver(dialog)),
 			Restore: identity.NewRestoreIdentityFromKit(deps),
 		},
 	}
+}
+
+func openKitSaver(dialog editor.PathDialog) identity.KitSaver {
+	if dialog == nil {
+		return kitpdf.Unavailable{}
+	}
+	return kitpdf.NewSaver(dialog)
 }

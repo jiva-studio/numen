@@ -60,7 +60,9 @@ type names struct{}
 
 func (names) GetInstanceName() string { return "Laptop" }
 
-func newHandler(keys *keyStore) *windowidentity.Handler {
+func newHandler(keys *keyStore) *windowidentity.Handler { return newHandlerWith(keys, &kitSaver{}) }
+
+func newHandlerWith(keys *keyStore, saver identity.KitSaver) *windowidentity.Handler {
 	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
 	return windowidentity.NewHandler(windowidentity.UseCases{
 		Identity: windowidentity.IdentityUseCases{
@@ -70,8 +72,7 @@ func newHandler(keys *keyStore) *windowidentity.Handler {
 			Delete:        identity.NewDeleteIdentity(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Create:  identity.NewCreateRecoveryKit(deps),
-			Check:   identity.NewCheckRecoveryKit(deps),
+			Save:    identity.NewSaveRecoveryKit(deps, saver),
 			Restore: identity.NewRestoreIdentityFromKit(deps),
 		},
 	})

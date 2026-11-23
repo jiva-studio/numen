@@ -314,6 +314,13 @@ func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, 
 	return f.dialog.ChooseFile(ctx, title, startingAt, accept)
 }
 
+func (f *windowFrame) ChooseSaveFile(ctx context.Context, title, name string, accept []string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseSaveFile(ctx, title, name, accept)
+}
+
 func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {
 	if f.detach == nil {
 		return errNoWindow
