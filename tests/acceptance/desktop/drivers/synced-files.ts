@@ -41,10 +41,11 @@ export class SyncedFilesDriver {
   }
 
   /** Moves a file or a folder as the person does in the application, so a note that moves has its links repaired. */
-  async moveEntry(computer: ComputerName, kind: 'file' | 'folder', from: string, to: string, vault: string): Promise<void> {
+  async moveEntry(computer: ComputerName, kind: 'file' | 'folder', move: { from: string; to: string }, vault: string): Promise<void> {
+    const { from, to } = move
     this.computers.getPlace(computer, vault)
     const answer = await callRPC(this.computers.getScenario(computer).page.request, 'FileService/MoveFile', { from, to })
-    if (answer['error'] !== undefined && answer['error'] !== 'ERROR_CODE_UNSPECIFIED') {
+    if (answer['error'] && answer['error'] !== 'ERROR_CODE_UNSPECIFIED') {
       throw new Error(`the ${kind} "${from}" was not moved to "${to}": ${JSON.stringify(answer)}`)
     }
   }
@@ -53,7 +54,7 @@ export class SyncedFilesDriver {
   async removeEntry(computer: ComputerName, kind: 'file' | 'folder', entryPath: string, vault: string): Promise<void> {
     this.computers.getPlace(computer, vault)
     const answer = await callRPC(this.computers.getScenario(computer).page.request, 'FileService/RemoveFile', { path: entryPath })
-    if (answer['error'] !== undefined && answer['error'] !== 'ERROR_CODE_UNSPECIFIED') {
+    if (answer['error'] && answer['error'] !== 'ERROR_CODE_UNSPECIFIED') {
       throw new Error(`the ${kind} "${entryPath}" was not removed: ${JSON.stringify(answer)}`)
     }
   }

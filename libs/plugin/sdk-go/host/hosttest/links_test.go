@@ -43,15 +43,6 @@ func findRockLink(links []domain.Link, to string, role domain.LinkRole) (domain.
 	return domain.Link{}, false
 }
 
-func statOf(t *testing.T, v *hosttest.Vault, notePath string) domain.FileStat {
-	t.Helper()
-	stat, err := v.StatFile(t.Context(), notePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return stat
-}
-
 func nameAddress(name string) domain.Address {
 	return domain.Address{Scheme: domain.SchemeName, Value: name}
 }

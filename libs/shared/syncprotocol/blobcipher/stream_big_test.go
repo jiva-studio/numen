@@ -268,24 +268,6 @@ func TestOpenStream_ReturnsThePayloadWithoutThePrefixAndThePadding(t *testing.T)
 	}
 }
 
-func TestOpenStream_KnowsTheSizeFromThePrefixAfterTheFirstChunk(t *testing.T) {
-	t.Parallel()
-	l := newLayout()
-	plain := newPlain(2*mebibyte + 17)
-	reader, err := blobcipher.OpenStream(l.revisionKey, l.fileID, bytes.NewReader(buildBlob(t, l, plain)))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := reader.Read(make([]byte, 10)); err != nil {
-		t.Fatal(err)
-	}
-
-	if reader.Size() != int64(len(plain)) {
-		t.Errorf("Size = %d, want %d", reader.Size(), len(plain))
-	}
-}
-
 func TestOpenStream_ReadsNothingOfAChunkThatDoesNotVerify(t *testing.T) {
 	t.Parallel()
 	l := newLayout()

@@ -145,7 +145,6 @@ type PlainReader struct {
 	opened      []byte
 	pending     []byte
 	index       uint64
-	size        int64
 	remaining   int64
 	hasSize     bool
 	isFinished  bool
@@ -188,7 +187,7 @@ func newPlainReader(revisionKey [32]byte, fileID [16]byte, header [headerSize]by
 	stride := 1<<chunkLog2 + tagSize
 	reader := &PlainReader{chunks: chunks, source: source, index: index, chunkStride: stride, header: header, sealed: make([]byte, stride), opened: make([]byte, 0, stride)}
 	if index > 0 {
-		reader.size, reader.remaining, reader.hasSize = plainSize, plainSize-(int64(index)<<chunkLog2-lengthPrefixSize), true
+		reader.remaining, reader.hasSize = plainSize-(int64(index)<<chunkLog2-lengthPrefixSize), true
 	}
 	return reader, nil
 }
@@ -205,11 +204,6 @@ func (r *PlainReader) IsAtChunkBoundary() bool { return len(r.pending) == 0 }
 // SetStoredSink passes the stored bytes of each chunk, as loaded and before it opens, to the writer, so a caller
 // can hash exactly the chunks it has taken.
 func (r *PlainReader) SetStoredSink(sink io.Writer) { r.sink = sink }
-
-// Size is the payload size, known after the first chunk.
-func (r *PlainReader) Size() int64 {
-	return r.size
-}
 
 // Read returns payload bytes.
 func (r *PlainReader) Read(p []byte) (int, error) {
@@ -268,7 +262,7 @@ func (r *PlainReader) loadChunk() error {
 		if length > maxMultipartSize {
 			return fmt.Errorf("%w: the length prefix is larger than the stream", ErrCannotOpen)
 		}
-		r.size, r.remaining, r.hasSize = int64(length), int64(length), true
+		r.remaining, r.hasSize = int64(length), true
 		opened = opened[lengthPrefixSize:]
 	}
 	take := min(int64(len(opened)), r.remaining)

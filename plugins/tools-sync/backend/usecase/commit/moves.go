@@ -119,7 +119,9 @@ func commitBatch(ctx context.Context, deps Deps, vault transfer.Vault, revisions
 	}
 	outcomes := make([]transfer.Outcome, len(revisions))
 	for i, revision := range revisions {
-		outcomes[i] = transfer.Outcome{FileID: revision.GetFileId(), Status: transfer.Committed}
+		outcomes[i] = transfer.Outcome{
+			Path: "", Status: transfer.Committed, FileID: revision.GetFileId(), RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.NoRecord(),
+		}
 		if response.GetCommitted() {
 			outcomes[i].RevID = response.GetRevisions()[i].GetRevId()
 			continue

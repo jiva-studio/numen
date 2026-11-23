@@ -94,6 +94,10 @@ func GetBlobRange(ctx context.Context, httpClient *http.Client, url string, from
 	if err != nil {
 		return nil, fmt.Errorf("download a range: %w", err)
 	}
+	return takeRangeBody(response, from)
+}
+
+func takeRangeBody(response *http.Response, from int64) (io.ReadCloser, error) {
 	if response.StatusCode == http.StatusPartialContent || (response.StatusCode == http.StatusOK && from == 0) {
 		return response.Body, nil
 	}

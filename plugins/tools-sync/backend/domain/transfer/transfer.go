@@ -121,6 +121,11 @@ type PullResult struct {
 	Resolved   []string
 }
 
+// NoRecord returns the record of a file that has none.
+func NoRecord() FileRecord {
+	return FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil, Size: 0, ModifiedAt: 0, Kind: "", BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil}
+}
+
 // UploadInput names the file to send in one body or in parts.
 type UploadInput struct {
 	Vault     domain.VaultID

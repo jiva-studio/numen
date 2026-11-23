@@ -121,6 +121,7 @@ func (s *Supervisor[T]) startWithLock(address string) {
 	}
 	go func() {
 		group.Wait()
+		cancel()
 		close(done)
 	}()
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"sync"
 	"time"
 
@@ -91,9 +92,13 @@ func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number in
 	if found, ok := u.urls[key]; ok && found.GetExpiresAt()-u.now().Unix() > int64(partURLMargin/time.Second) {
 		return found.GetUrl(), nil
 	}
+	last := min(up.PartCount, number+partURLBatch-1)
+	if number < 1 || last >= math.MaxUint32 {
+		return "", fmt.Errorf("part %d of %d is not a part number of a blob", number, up.PartCount)
+	}
 	numbers := make([]uint32, 0, partURLBatch)
-	for next := number; next <= up.PartCount && len(numbers) < partURLBatch; next++ {
-		numbers = append(numbers, uint32(next))
+	for next := uint32(number); next <= uint32(last); next++ {
+		numbers = append(numbers, next)
 	}
 	uploads, err := call(ctx, u.cloud, func() ([]*syncv1.PartUpload, error) {
 		return u.cloud.blobs.GetPartUrls(ctx, up.Vault, up.Blob, numbers)

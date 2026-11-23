@@ -1,6 +1,7 @@
 package fakeserver
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -86,8 +87,18 @@ func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, bod
 		return
 	}
 	if isEnd {
-		_ = http.NewResponseController(w).Flush()
+		controller := http.NewResponseController(w)
+		flushErr := controller.Flush()
 		s.requestStop()
-		panic(http.ErrAbortHandler)
+		if flushErr != nil {
+			return
+		}
+		conn, _, err := controller.Hijack()
+		if err != nil {
+			return
+		}
+		if err := conn.Close(); err != nil {
+			slog.Debug("closing the cut download connection", "error", err)
+		}
 	}
 }

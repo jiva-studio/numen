@@ -264,7 +264,7 @@ func TestSyncVault_ANoteRemovedOnBothComputersIsRemovedAndNothingIsRaised(t *tes
 
 	wantNoFile(t, p.a, source, list)
 	wantNoFile(t, p.b, target, list)
-	if got := len(p.getLive(t)); got != 0 {
+	if got := len(p.getLiveHeads(t)); got != 0 {
 		t.Errorf("live files on the server = %d, want none", got)
 	}
 	if len(p.b.Health.List()) != 0 {
@@ -287,8 +287,8 @@ func TestSyncVault_ANoteChangedOnOneComputerAndRemovedOnTheOtherStaysWithNoCopy(
 
 	wantNote(t, p.a, source, list, "bread")
 	wantNote(t, p.b, target, list, "bread")
-	if _, ok := p.a.ReadNote(source, listCopy); ok || len(p.getLive(t)) != 1 {
-		t.Errorf("copy there: %v with %d live files, want the note alone", ok, len(p.getLive(t)))
+	if _, ok := p.a.ReadNote(source, listCopy); ok || len(p.getLiveHeads(t)) != 1 {
+		t.Errorf("copy there: %v with %d live files, want the note alone", ok, len(p.getLiveHeads(t)))
 	}
 }
 

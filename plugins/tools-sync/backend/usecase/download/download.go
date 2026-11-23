@@ -73,7 +73,9 @@ func (u *DownloadFile) Forget(ctx context.Context, vault domain.VaultID, fileID 
 
 // Discard deletes the staged file of a download and its state.
 func (u *DownloadFile) Discard(ctx context.Context, vault domain.VaultID, fileID []byte) error {
-	r := &run{deps: u.deps, in: transfer.DownloadInput{Vault: vault, FileID: fileID}, name: note.StoredName(fileID), store: u.deps.Host.Store(vault)}
+	r := &run{deps: u.deps, in: transfer.DownloadInput{
+		Vault: vault, RemoteID: nil, FileID: fileID, Path: "", BlobID: nil, BlobHash: nil, BlobSize: 0, Key: [32]byte{}, Hash: "", Size: 0, HeadRev: nil, Baseline: nil,
+	}, name: note.StoredName(fileID), store: u.deps.Host.Store(vault)}
 	return r.discard(ctx)
 }
 

@@ -26,10 +26,8 @@ func IsSyncable(filePath string) bool {
 		return false
 	}
 	segments := strings.Split(filePath, "/")
-	for _, folder := range segments[:len(segments)-1] {
-		if isSkippedFolder(folder) {
-			return false
-		}
+	if slices.ContainsFunc(segments[:len(segments)-1], isSkippedFolder) {
+		return false
 	}
 	name := segments[len(segments)-1]
 	lower := strings.ToLower(name)

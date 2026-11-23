@@ -28,6 +28,10 @@ const (
 	payFolder    = "/pay/"
 )
 
+func newKeeper(fake *fakeserver.Server, path string, stopped *atomic.Bool, exit chan struct{}) *keeper {
+	return &keeper{next: fake, fake: fake, path: path, mu: sync.Mutex{}, stopped: stopped, exit: exit, once: sync.Once{}}
+}
+
 // keeper saves the data of the server after every request that may have changed it: any but a GET, and the
 // GET of a pay page.
 type keeper struct {
@@ -113,9 +117,9 @@ func main() {
 		if err := load(fake, path); err != nil {
 			log.Fatal(err)
 		}
-		handler = &keeper{next: fake, fake: fake, path: path, stopped: &stopped, exit: exit}
+		handler = newKeeper(fake, path, &stopped, exit)
 	} else {
-		handler = &keeper{next: fake, fake: fake, path: "", stopped: &stopped, exit: exit}
+		handler = newKeeper(fake, "", &stopped, exit)
 	}
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
 		log.Fatal(err)
