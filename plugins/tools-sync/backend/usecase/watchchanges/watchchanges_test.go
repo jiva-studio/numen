@@ -75,7 +75,7 @@ func (w *world) countOpenings() int {
 
 func (w *world) awaitStream(t *testing.T) {
 	t.Helper()
-	synctest.Eventually(t, "an open stream", func() bool { return w.streams() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return w.streams() == 1 })
 }
 
 func (w *world) commitOnA(t *testing.T, text string) {
@@ -102,7 +102,7 @@ func TestWatchChanges_ACommitOfTheFirstComputerWakesTheVaultOfTheSecond(t *testi
 
 	w.commitOnA(t, "milk")
 
-	synctest.Eventually(t, "the wake of the vault", func() bool { return w.wakes.Count(target) >= 1 })
+	synctest.WaitUntil(t, "the wake of the vault", func() bool { return w.wakes.Count(target) >= 1 })
 }
 
 func TestWatchChanges_WakesOnlyTheVaultsLinkedToTheRemoteVaultOfTheHint(t *testing.T) {
@@ -116,9 +116,9 @@ func TestWatchChanges_WakesOnlyTheVaultsLinkedToTheRemoteVaultOfTheHint(t *testi
 	w.awaitStream(t)
 
 	w.commitOnA(t, "milk")
-	synctest.Eventually(t, "the first wake", func() bool { return w.wakes.Count(target) >= 1 })
+	synctest.WaitUntil(t, "the first wake", func() bool { return w.wakes.Count(target) >= 1 })
 	w.commitOnA(t, "bread")
-	synctest.Eventually(t, "the second wake", func() bool { return w.wakes.Count(target) >= 2 })
+	synctest.WaitUntil(t, "the second wake", func() bool { return w.wakes.Count(target) >= 2 })
 
 	if got := w.wakes.Count("Plain") + w.wakes.Count("Mirror"); got != 0 {
 		t.Errorf("wakes of a vault without a link or with another remote vault = %d, want none", got)
@@ -136,7 +136,7 @@ func TestWatchChanges_DoesNotWakeAVaultThatIsAtTheSeqOfTheHint(t *testing.T) {
 
 	w.commitOnA(t, "bread")
 
-	synctest.Eventually(t, "the wake for the new seq", func() bool { return w.wakes.Count(target) >= 1 })
+	synctest.WaitUntil(t, "the wake for the new seq", func() bool { return w.wakes.Count(target) >= 1 })
 	if got := w.wakes.Count(target); got != 1 {
 		t.Errorf("wakes = %d, want one for the commit after the pass, none for the seq already pulled", got)
 	}
@@ -155,8 +155,8 @@ func TestWatchChanges_WakesAfterTheReopenForACommitMadeWhileTheStreamWasDown(t *
 
 	w.b.Clock.Advance(retryWait)
 
-	synctest.Eventually(t, "the second open", func() bool { return w.countOpenings() == 2 })
-	synctest.Eventually(t, "the wake of the catch-up", func() bool { return w.wakes.Count(target) >= 1 })
+	synctest.WaitUntil(t, "the second open", func() bool { return w.countOpenings() == 2 })
+	synctest.WaitUntil(t, "the wake of the catch-up", func() bool { return w.wakes.Count(target) >= 1 })
 }
 
 func TestWatchChanges_WaitsTheSameRetryWaitAfterEachFailureOfTheOpen(t *testing.T) {
@@ -195,7 +195,7 @@ func TestWatchChanges_ReopensTheStreamAfterAThreeHeartbeatsOfSilence(t *testing.
 	awaitWaitOf(t, w.b.Clock, silenceWait)
 	relay.Pause()
 
-	synctest.Eventually(t, "the second open", func() bool {
+	synctest.WaitUntil(t, "the second open", func() bool {
 		w.b.Clock.Advance(silenceWait)
 		return w.countOpenings() == 2
 	})
@@ -262,5 +262,5 @@ func TestWatchChanges_ReturnsAndClosesTheStreamWhenItsContextEnds(t *testing.T) 
 	if run.err != nil && !errors.Is(run.err, context.Canceled) {
 		t.Errorf("error = %v, want none or the error of the context", run.err)
 	}
-	synctest.Eventually(t, "no open stream", func() bool { return w.streams() == 0 })
+	synctest.WaitUntil(t, "no open stream", func() bool { return w.streams() == 0 })
 }

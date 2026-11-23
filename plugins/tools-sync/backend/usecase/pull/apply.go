@@ -85,7 +85,7 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	id := syncprotocol.GetRevisionID(rev)
 	if syncprotocol.CheckRevision(rev) != nil || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
 		!identity.VerifyForPlugin(rev.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(rev), [64]byte(rev.GetSignature())) ||
-		!r.in.Authors(rev.GetAuthorDeviceSignKey()) {
+		!r.in.IsAuthor(rev.GetAuthorDeviceSignKey()) {
 		return note.Meta{}, errUnverified
 	}
 	meta, err := note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())

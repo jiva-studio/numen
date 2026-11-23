@@ -39,7 +39,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	if err != nil {
 		return nil, err
 	}
-	files := u.deps.Host.Files(in.VaultID)
+	files := u.deps.Host.GetFiles(in.VaultID)
 	if seen, err = follow(ctx, files, u.deps.Host.Store(in.VaultID), seen); err != nil {
 		return nil, err
 	}

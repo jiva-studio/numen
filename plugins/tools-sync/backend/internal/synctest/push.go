@@ -23,7 +23,7 @@ func (c *Computer) StartPush(t *testing.T, interval time.Duration) {
 	t.Helper()
 	wakes := loops.NewWakes(16)
 	ctx, cancel := context.WithCancel(t.Context())
-	run := syncvault.NewRunSync(c.RunDeps(interval, wakes.Vaults()))
+	run := syncvault.NewRunSync(c.RunDeps(interval, wakes.WatchVaults()))
 	watch := watchchanges.NewWatchChanges(c.WatchDeps(wakes))
 	done := make(chan error, 2)
 	go func() { done <- run.Execute(ctx) }()

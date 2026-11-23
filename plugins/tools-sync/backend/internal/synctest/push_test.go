@@ -23,14 +23,14 @@ func TestPush_ANoteOfTheFirstComputerReachesTheSecondWithoutTheIntervalPassing(t
 	b := synctest.NewSecondComputer(t, server, clock, string(target), words)
 	b.ConnectExisting(t, target, a.Link(t, source).RemoteVaultID)
 	b.StartPush(t, time.Hour)
-	synctest.Eventually(t, "the open stream", func() bool { return server.Fake.CountStreams() == 1 })
+	synctest.WaitUntil(t, "the open stream", func() bool { return server.Fake.CountStreams() == 1 })
 	a.WriteNote(source, "Shopping list.md", "milk")
 
 	if err := a.Sync(t.Context(), source); err != nil {
 		t.Fatal(err)
 	}
 
-	synctest.Eventually(t, "the note on the second computer", func() bool {
+	synctest.WaitUntil(t, "the note on the second computer", func() bool {
 		text, isThere := b.ReadNote(target, "Shopping list.md")
 		return isThere && text == "milk"
 	})
