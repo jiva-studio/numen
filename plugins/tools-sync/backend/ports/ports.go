@@ -150,3 +150,8 @@ type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)
 	CreateCheckout(ctx context.Context) (string, error)
 }
+
+// Pauses says whether the removals of a vault wait for an answer.
+type Pauses interface {
+	HasPending(ctx context.Context, id domain.VaultID) (bool, error)
+}

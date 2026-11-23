@@ -3,6 +3,8 @@
 package transfer
 
 import (
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
@@ -108,13 +110,12 @@ type PullInput struct {
 
 // PullResult is the files written, the files left as they were because both computers changed them, the number
 // of revisions skipped because their author or their content could not be verified, whether the server asked for
-// a full comparison and the removals the pass is waiting for an answer on.
+// a full comparison.
 type PullResult struct {
 	Applied    []string
 	Conflicts  []string
 	Unverified int
 	IsReset    bool
-	Removals   []note.FileRecord
 }
 
 // UploadInput names the file to send in one body or in parts.
@@ -151,3 +152,49 @@ type DownloadInput struct {
 	HeadRev  []byte
 	Baseline *domain.FileStat
 }
+
+// Direction is which way removals go: sent to the server or applied in the vault.
+type Direction string
+
+const (
+	// DirectionSend is the removal of files the person removed.
+	DirectionSend Direction = "send"
+	// DirectionApply is the removal of files another computer removed.
+	DirectionApply Direction = "apply"
+)
+
+// Verdict is what the guard says of removals.
+type Verdict int
+
+const (
+	// Go means the removals may go on.
+	Go Verdict = iota + 1
+	// Pause means the pass leaves the removals until the person answers.
+	Pause
+	// Keep means the person answered to keep the files: the removals are dropped.
+	Keep
+)
+
+// Removal is a file a pass is about to remove on the server or in the vault. RevID is the revision of the
+// removal for Direction apply.
+type Removal struct {
+	FileID   []byte
+	Path     string
+	BaseHash string
+	RevID    []byte
+}
+
+// GuardInput is the removals a pass is about to make and the number of files it tracks.
+type GuardInput struct {
+	Vault      domain.VaultID
+	Direction  Direction
+	Candidates []Removal
+	Tracked    int
+}
+
+var (
+	// ErrIntegrity means the bytes the server sent are not the blob its revision names.
+	ErrIntegrity = errors.New("a file from the sync server is damaged")
+	// ErrBlobMissing means the server has no blob for a revision.
+	ErrBlobMissing = errors.New("the server has no blob for a revision")
+)

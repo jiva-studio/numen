@@ -1,6 +1,7 @@
 package syncvault
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -21,14 +22,18 @@ type pass struct {
 	authors    trust.Authors
 	conflicts  []string
 	unverified int
+	isReset    bool
 }
 
 func (p *pass) run(ctx context.Context) error {
+	if isPaused, err := p.use.deps.Pauses.HasPending(ctx, p.id); isPaused || err != nil {
+		return err
+	}
 	previous, err := p.use.deps.Progress.ReadStatus(ctx, p.id)
 	if err != nil {
 		return err
 	}
-	if err := p.pull(ctx); err != nil {
+	if err := p.pull(ctx); err != nil || p.isReset {
 		return err
 	}
 	isRetry, err := p.push(ctx)
@@ -53,6 +58,7 @@ func (p *pass) pull(ctx context.Context) error {
 	}
 	p.conflicts = result.Conflicts
 	p.unverified = result.Unverified
+	p.isReset = result.IsReset
 	return nil
 }
 
@@ -61,23 +67,128 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	changes, err := p.use.steps.Scan.Execute(ctx, transfer.ScanInput{VaultID: p.id, Bases: getBases(records)})
+	input := transfer.ScanInput{VaultID: p.id, Bases: getBases(records), Records: records}
+	changes, err := p.use.steps.Scan.Execute(ctx, input)
 	if err != nil {
 		return false, err
 	}
-	files, err := p.readFiles(ctx, records, changes)
-	if err != nil || len(files) == 0 {
+	scan, err := p.use.steps.Detect.Execute(ctx, input)
+	if err != nil {
 		return false, err
 	}
 	vault, err := p.openVault(ctx)
 	if err != nil {
 		return false, err
 	}
-	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files})
-	if err != nil {
+	removals, verdict, err := p.guard(ctx, scan.Removals, len(records))
+	if err != nil || verdict == transfer.Pause {
 		return false, err
 	}
-	return p.record(ctx, records, files, outcomes)
+	if verdict == transfer.Keep {
+		return true, p.rewind(ctx)
+	}
+	isRetry := false
+	for _, step := range []func(context.Context, transfer.Vault, []note.FileRecord) ([]note.FileRecord, bool, error){
+		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+			return p.sendMoves(ctx, v, r, scan.Moves)
+		},
+		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+			return p.sendRemovals(ctx, v, r, removals)
+		},
+		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+			return p.sendFiles(ctx, v, r, withoutMoved(changes, scan.Moves))
+		},
+	} {
+		var retry bool
+		if records, retry, err = step(ctx, vault, records); err != nil {
+			return false, err
+		}
+		isRetry = isRetry || retry
+	}
+	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)
+}
+
+func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.Change {
+	return slices.DeleteFunc(slices.Clone(changes), func(change transfer.Change) bool {
+		return slices.ContainsFunc(moves, func(move transfer.Move) bool { return move.To == change.Path })
+	})
+}
+
+// guard asks whether the removals may be sent. A pause leaves the whole pass of the vault where it is.
+func (p *pass) guard(ctx context.Context, removals []note.FileRecord, tracked int) ([]note.FileRecord, transfer.Verdict, error) {
+	if len(removals) == 0 {
+		return nil, transfer.Go, nil
+	}
+	candidates := make([]transfer.Removal, len(removals))
+	for i, record := range removals {
+		candidates[i] = transfer.Removal{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, RevID: nil}
+	}
+	verdict, err := p.use.steps.Guard.Execute(ctx, transfer.GuardInput{Vault: p.id, Direction: transfer.DirectionSend, Candidates: candidates, Tracked: tracked})
+	return removals, verdict, err
+}
+
+// rewind makes the next pull read the vault from the start, so the files the person chose to keep are downloaded again.
+func (p *pass) rewind(ctx context.Context) error {
+	link, err := p.use.deps.State.ReadLink(ctx, p.id)
+	if err != nil {
+		return err
+	}
+	link.ServerSeq = 0
+	return p.use.deps.State.WriteLink(ctx, p.id, link)
+}
+
+func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []note.FileRecord, moves []transfer.Move) ([]note.FileRecord, bool, error) {
+	if len(moves) == 0 {
+		return records, false, nil
+	}
+	outcomes, err := p.use.steps.Move.Execute(ctx, transfer.MoveInput{Vault: vault, Moves: moves})
+	if err != nil {
+		return records, false, err
+	}
+	return p.apply(records, outcomes), hasMismatch(outcomes), nil
+}
+
+func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, removals []note.FileRecord) ([]note.FileRecord, bool, error) {
+	if len(removals) == 0 {
+		return records, false, nil
+	}
+	outcomes, err := p.use.steps.Remove.Execute(ctx, transfer.RemoveInput{Vault: vault, Records: removals})
+	if err != nil {
+		return records, false, err
+	}
+	for _, outcome := range outcomes {
+		if outcome.Status == transfer.Committed {
+			records = slices.DeleteFunc(records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
+		}
+	}
+	return records, hasMismatch(outcomes), nil
+}
+
+func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []note.FileRecord, changes []transfer.Change) ([]note.FileRecord, bool, error) {
+	files, err := p.readFiles(ctx, records, changes)
+	if err != nil || len(files) == 0 {
+		return records, false, err
+	}
+	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files})
+	if err != nil {
+		return records, false, err
+	}
+	return p.apply(records, outcomes), hasMismatch(outcomes), nil
+}
+
+func hasMismatch(outcomes []transfer.Outcome) bool {
+	return slices.ContainsFunc(outcomes, func(o transfer.Outcome) bool {
+		return o.Status == transfer.ParentMismatch || o.Status == transfer.PathTaken
+	})
+}
+
+func (p *pass) apply(records []note.FileRecord, outcomes []transfer.Outcome) []note.FileRecord {
+	for _, outcome := range outcomes {
+		if outcome.Status == transfer.Committed {
+			records = setRecord(records, outcome.Record)
+		}
+	}
+	return records
 }
 
 func getBases(records []note.FileRecord) map[string]string {
@@ -90,19 +201,31 @@ func getBases(records []note.FileRecord) map[string]string {
 
 func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
 	var files []transfer.File
-	reader := p.use.deps.Host.Files(p.id)
+	reader := p.use.deps.Host.Transfers(p.id)
 	for _, change := range changes {
 		if slices.Contains(p.conflicts, change.Path) {
 			continue
 		}
-		content, _, err := reader.Read(ctx, change.Path)
-		if errors.Is(err, host.ErrNotExist) {
-			continue
+		file := transfer.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: nil, ModifiedAt: change.ModifiedAt, Stat: nil}
+		if change.Size > note.SmallFileLimit {
+			stat, err := p.use.deps.Host.Files(p.id).StatFile(ctx, change.Path)
+			if errors.Is(err, host.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			file.Stat = &stat
+		} else {
+			part, err := reader.ReadBytes(ctx, change.Path, 0, note.SmallFileLimit)
+			if errors.Is(err, host.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			file.Content = part.Content
 		}
-		if err != nil {
-			return nil, err
-		}
-		file := transfer.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: content, ModifiedAt: change.ModifiedAt}
 		if at := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
 			file.FileID, file.ParentRev = records[at].FileID, records[at].HeadRev
 		}
@@ -125,22 +248,6 @@ func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 		return transfer.Vault{}, err
 	}
 	return transfer.Vault{ID: remote, Key: [32]byte(key)}, nil
-}
-
-func (p *pass) record(ctx context.Context, records []note.FileRecord, files []transfer.File, outcomes []transfer.Outcome) (bool, error) {
-	isRetry := false
-	for i, outcome := range outcomes {
-		switch outcome.Status {
-		case transfer.Committed:
-			records = setRecord(records, note.FileRecord{
-				FileID: outcome.FileID, Path: outcome.Path, BaseHash: note.Hash(files[i].Content), HeadRev: outcome.RevID,
-			})
-		case transfer.ParentMismatch, transfer.PathTaken:
-			isRetry = true
-		case transfer.TooLarge:
-		}
-	}
-	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)
 }
 
 func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRecord {

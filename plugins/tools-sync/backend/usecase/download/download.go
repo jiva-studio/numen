@@ -19,9 +19,9 @@ import (
 
 var (
 	// ErrIntegrity means the bytes the server sent are not the blob its revision names.
-	ErrIntegrity = errors.New("a file from the sync server is damaged")
+	ErrIntegrity = transfer.ErrIntegrity
 	// ErrBlobMissing means the server has no blob for a revision.
-	ErrBlobMissing = errors.New("the server has no blob for a revision")
+	ErrBlobMissing = transfer.ErrBlobMissing
 )
 
 const (

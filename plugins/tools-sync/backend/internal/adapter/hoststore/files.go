@@ -119,3 +119,9 @@ func (s *State) delete(ctx context.Context, id domain.VaultID, name string) erro
 	}
 	return nil
 }
+
+// HasPending reports whether removals of the vault wait for an answer.
+func (s *State) HasPending(ctx context.Context, id domain.VaultID) (bool, error) {
+	pending, err := s.ReadPending(ctx, id)
+	return pending != nil, err
+}

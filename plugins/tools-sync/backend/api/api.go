@@ -38,12 +38,13 @@ const (
 
 // Vault is a vault of this installation.
 type Vault struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Path          string `json:"path"`
-	State         State  `json:"state"`
-	LastSyncedAt  string `json:"lastSyncedAt"`
-	ConflictCount int    `json:"conflictCount"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Path            string           `json:"path"`
+	State           State            `json:"state"`
+	LastSyncedAt    string           `json:"lastSyncedAt"`
+	ConflictCount   int              `json:"conflictCount"`
+	PausedDeletions *PausedDeletions `json:"pausedDeletions"`
 }
 
 // ListVaultsRequest asks for every vault of the installation.
@@ -130,3 +131,22 @@ type CreateCheckoutRequest struct{}
 type CreateCheckoutResponse struct {
 	CheckoutURL string `json:"checkoutUrl"`
 }
+
+// MethodResolveDeletions answers the pause before many removals.
+const MethodResolveDeletions = "ResolveDeletions"
+
+// PausedDeletions is the removals of a vault that wait for an answer. Direction is "send" or "apply".
+type PausedDeletions struct {
+	Count     int    `json:"count"`
+	Tracked   int    `json:"tracked"`
+	Direction string `json:"direction"`
+}
+
+// ResolveDeletionsRequest answers for a vault: Choice is "remove" or "keep".
+type ResolveDeletionsRequest struct {
+	VaultID string `json:"vaultId"`
+	Choice  string `json:"choice"`
+}
+
+// ResolveDeletionsResponse is the answer to a choice that was taken.
+type ResolveDeletionsResponse struct{}

@@ -50,6 +50,7 @@ type Deps struct {
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
+	Pauses        ports.Pauses
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.
@@ -67,7 +68,27 @@ type Scanner interface {
 	Execute(ctx context.Context, in transfer.ScanInput) ([]transfer.Change, error)
 }
 
-// Committer commits notes to the server.
+// Detector finds the files that moved and the ones that are gone.
+type Detector interface {
+	Execute(ctx context.Context, in transfer.ScanInput) (transfer.Scan, error)
+}
+
+// MoveCommitter commits moves to the server.
+type MoveCommitter interface {
+	Execute(ctx context.Context, in transfer.MoveInput) ([]transfer.Outcome, error)
+}
+
+// RemovalCommitter commits removals to the server.
+type RemovalCommitter interface {
+	Execute(ctx context.Context, in transfer.RemoveInput) ([]transfer.Outcome, error)
+}
+
+// Guard says whether a pass may send removals.
+type Guard interface {
+	Execute(ctx context.Context, in transfer.GuardInput) (transfer.Verdict, error)
+}
+
+// Committer commits files to the server.
 type Committer interface {
 	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
 }
@@ -83,6 +104,10 @@ type Steps struct {
 	Pull         Puller
 	Scan         Scanner
 	Commit       Committer
+	Detect       Detector
+	Move         MoveCommitter
+	Remove       RemovalCommitter
+	Guard        Guard
 	Subscription SubscriptionReader
 }
 

@@ -25,11 +25,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
 // Host is the host of a computer for the plugin: the vaults of the installation and the files and the store
@@ -192,14 +195,32 @@ func (c *Computer) LocalChangesDeps() localchanges.Deps {
 	return localchanges.Deps{Host: c.Host, State: c.State, Clock: c.Clock}
 }
 
+// WireDeps are the dependencies of the pass and of the transfers of files of any size.
+func (c *Computer) WireDeps() syncwire.Deps {
+	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
+	return syncwire.Deps{
+		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
+		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return time.Second },
+	}
+}
+
 // CommitDeps are the dependencies of the commit of revisions.
 func (c *Computer) CommitDeps() commit.Deps {
-	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Random: rand.Reader}
+	wired := c.WireDeps()
+	uploads := upload.NewUploadFile(upload.Deps{
+		Uploads: wired.Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader,
+	})
+	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Crypto: c.Account, Uploads: uploads, Random: rand.Reader}
 }
 
 // PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
-	return pull.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State}
+	wired := c.WireDeps()
+	downloads := download.NewDownloadFile(download.Deps{Blobs: wired.DownloadBlobs, Entries: c.State, Host: c.Host})
+	return pull.Deps{
+		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
+		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
+	}
 }
 
 // JoinDeps are the dependencies of the join of an existing account.
@@ -211,19 +232,13 @@ func (c *Computer) JoinDeps() join.Deps {
 func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
-		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud,
+		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Pauses: c.State,
 	}
 }
 
 // NewSyncVault returns the pass over one vault with the use cases of its steps.
 func (c *Computer) NewSyncVault() *syncvault.SyncVault {
-	return syncvault.NewSyncVault(c.SyncDeps(), syncvault.Steps{
-		Rename:       catalog.NewRenameRemoteVault(c.CatalogDeps()),
-		Pull:         pull.NewPullChanges(c.PullDeps()),
-		Scan:         localchanges.NewScanLocalChanges(c.LocalChangesDeps()),
-		Commit:       commit.NewCommitRevisions(c.CommitDeps()),
-		Subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: c.Cloud}),
-	})
+	return syncwire.NewSyncVault(c.WireDeps())
 }
 
 // Sync runs one pass over the vault.
