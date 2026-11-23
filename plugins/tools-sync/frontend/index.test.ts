@@ -180,7 +180,7 @@ describe('the sync plugin frontend', () => {
 
     await wrapper
       .findAll('button')
-      .find((one) => one.text() === 'Buy Plus, 100 GB, $15')
+      .find((one) => one.attributes('aria-label') === 'Choose Plus')
       ?.trigger('click')
     await flushPromises()
 

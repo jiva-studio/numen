@@ -1,5 +1,5 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asValue, type Result } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
@@ -46,31 +46,53 @@ const createClient = (answer: () => Promise<SubscriptionResponse>) => ({
   createCheckout: vi.fn<SubscriptionClient['createCheckout']>(() => Promise.resolve(CHECKOUT_URL)),
 })
 
+const mounted: VueWrapper[] = []
+
+afterEach(() => {
+  mounted.splice(0).forEach((one) => one.unmount())
+})
+
+const mountCard = (props: InstanceType<typeof SubscriptionCard>['$props']) => {
+  const wrapper = mount(SubscriptionCard, { props, attachTo: document.body })
+  mounted.push(wrapper)
+  return wrapper
+}
+
 const render = async (response: SubscriptionResponse) => {
   const client = createClient(() => Promise.resolve(response))
   const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
     Promise.resolve(asValue(null)),
   )
-  const wrapper = mount(SubscriptionCard, { props: { client, openExternal, now: () => NOW } })
+  const wrapper = mountCard({ client, openExternal, now: () => NOW })
   await flushPromises()
   return { wrapper, client, openExternal }
 }
 
-const findBuy = (wrapper: VueWrapper, label?: string) =>
-  wrapper
-    .findAll('button')
-    .find((one) =>
-      label === undefined ? one.text().startsWith('Buy ') : one.text() === `Buy ${label}`,
-    )
-
-const findChange = (wrapper: VueWrapper, name?: string) =>
+const findChoose = (wrapper: VueWrapper, name?: string) =>
   wrapper
     .findAll('button')
     .find((one) =>
       name === undefined
-        ? one.text().startsWith('Change plan to ')
-        : one.text() === `Change plan to ${name}`,
+        ? (one.attributes('aria-label') ?? '').startsWith('Choose ')
+        : one.attributes('aria-label') === `Choose ${name}`,
     )
+
+const findPlanSelect = (wrapper: VueWrapper) => wrapper.find('button[data-slot="select"]')
+
+const getPlanChoices = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).map(
+    (one) => one.querySelector('.menu__text')?.textContent?.trim() ?? '',
+  )
+
+const changePlanTo = async (wrapper: VueWrapper, name: string) => {
+  await findPlanSelect(wrapper).trigger('click')
+  await flushPromises()
+  const choice = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
+    (one) => one.querySelector('.menu__text')?.textContent?.trim() === name,
+  )
+  choice?.click()
+  await flushPromises()
+}
 
 describe('SubscriptionCard', () => {
   it('shows the title Numen Sync', async () => {
@@ -79,22 +101,33 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).toContain('Numen Sync')
   })
 
-  it('says there is no subscription and offers to buy it', async () => {
+  it('offers the plans to choose and shows no badge when there is no subscription', async () => {
     const { wrapper } = await render(createResponse({ phase: 'none' }))
 
-    expect(wrapper.text()).toContain('No subscription')
+    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('No subscription')
     expect(wrapper.text()).toContain('Buy a subscription to sync your vaults between your devices.')
-    expect(findBuy(wrapper)).toBeDefined()
+    expect(findChoose(wrapper)).toBeDefined()
   })
 
-  it('shows the end of the paid period of an active subscription and offers nothing', async () => {
-    const { wrapper } = await render(
-      createResponse({ phase: 'active', periodEndAt: '2026-12-23T12:00:00Z' }),
-    )
+  it('names the plan in the badge and says until when the active subscription is paid', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(wrapper.text()).toContain('Active')
-    expect(wrapper.text()).toContain('Active until 23 Dec 2026.')
-    expect(findBuy(wrapper)).toBeUndefined()
+    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+    expect(wrapper.get('.subscription__facts').text()).toContain('Active until')
+    expect(wrapper.get('.subscription__facts').text()).toContain('December 23, 2026')
+    expect(findChoose(wrapper)).toBeUndefined()
+  })
+
+  it('shows the plan, the space used as a bar and the end of the paid period as rows', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    const rows = wrapper.get('.subscription__facts').text()
+    expect(rows).toContain('Plan')
+    expect(rows).toContain('Plus, 100 GB')
+    expect(rows).toContain('Storage')
+    expect(rows).toContain('2 GB of 100 GB used')
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('2')
   })
 
   it('says when the changes stop in the grace phase and offers to buy', async () => {
@@ -108,9 +141,9 @@ describe('SubscriptionCard', () => {
 
     expect(wrapper.text()).toContain('Ended')
     expect(wrapper.text()).toContain(
-      'The subscription ended on 20 Nov 2026. Changes are sent until 27 Nov 2026, then the vaults in the cloud can only be read.',
+      'The subscription ended on November 20, 2026. Changes are sent until November 27, 2026, then the vaults in the cloud can only be read.',
     )
-    expect(findBuy(wrapper)).toBeDefined()
+    expect(findChoose(wrapper)).toBeDefined()
   })
 
   it('says the vaults can only be read and when the cloud deletes them, and offers to buy', async () => {
@@ -125,9 +158,9 @@ describe('SubscriptionCard', () => {
 
     expect(wrapper.text()).toContain('Read only')
     expect(wrapper.text()).toContain(
-      'The subscription ended on 13 Nov 2026. The vaults in the cloud can only be read and changes stay on this device. The cloud deletes them on 19 Jan 2027.',
+      'The subscription ended on November 13, 2026. The vaults in the cloud can only be read and changes stay on this device. The cloud deletes them on January 19, 2027.',
     )
-    expect(findBuy(wrapper)).toBeDefined()
+    expect(findChoose(wrapper)).toBeDefined()
   })
 
   it('says the cloud deleted the vaults and offers to buy', async () => {
@@ -137,15 +170,15 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).toContain(
       'The cloud deleted your vaults. Buy a subscription to sync again.',
     )
-    expect(findBuy(wrapper)).toBeDefined()
+    expect(findChoose(wrapper)).toBeDefined()
   })
 
   it('asks for an identity and offers nothing when the device has none', async () => {
     const { wrapper } = await render(createResponse({ hasIdentity: false, phase: '' }))
 
-    expect(wrapper.text()).toContain('No identity')
     expect(wrapper.text()).toContain('Create an identity to buy a subscription.')
-    expect(findBuy(wrapper)).toBeUndefined()
+    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
+    expect(findChoose(wrapper)).toBeUndefined()
   })
 
   it('says the server cannot be reached and offers nothing', async () => {
@@ -154,26 +187,28 @@ describe('SubscriptionCard', () => {
         Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
       ),
     )
-    const wrapper = mount(SubscriptionCard, {
-      props: { client, openExternal: vi.fn(() => Promise.resolve(asValue(null))), now: () => NOW },
+    const wrapper = mountCard({
+      client,
+      openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+      now: () => NOW,
     })
     await flushPromises()
 
     expect(wrapper.text()).toContain('Could not reach the sync server')
-    expect(findBuy(wrapper)).toBeUndefined()
+    expect(findChoose(wrapper)).toBeUndefined()
   })
 
   it('opens the payment page in the browser and waits when the person buys', async () => {
     const { wrapper, client, openExternal } = await render(createResponse({ phase: 'none' }))
 
-    await findBuy(wrapper, 'Plus, 100 GB, $15')?.trigger('click')
+    await findChoose(wrapper, 'Plus')?.trigger('click')
     await flushPromises()
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('plus')
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
     expect(wrapper.get('[role="status"]').text()).toContain('Waiting for the payment…')
     expect(wrapper.text()).not.toContain('Choose a plan')
-    expect(findBuy(wrapper)).toBeUndefined()
+    expect(findChoose(wrapper)).toBeUndefined()
   })
 
   it('asks to choose a plan above the plans when there is no subscription', async () => {
@@ -182,25 +217,37 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).toContain('Choose a plan')
   })
 
+  it('lays the plans out as tiles with the name, the size, the price and the button Choose', async () => {
+    const { wrapper } = await render(createResponse({ phase: 'none' }))
+
+    const tiles = wrapper.findAll('.subscription__tile')
+    const expected = [
+      ['Basic', '10 GB', '$5 / month'],
+      ['Plus', '100 GB', '$15 / month'],
+      ['Pro', '250 GB', '$30 / month'],
+    ]
+    expect(tiles).toHaveLength(expected.length)
+    tiles.forEach((tile, at) => {
+      ;[...(expected[at] ?? []), 'Choose'].forEach((part) => expect(tile.text()).toContain(part))
+    })
+  })
+
   it('shows the plans by itself when the identity is created while the card is open', async () => {
     let answer = createResponse({ hasIdentity: false, phase: '' })
     const client = createClient(() => Promise.resolve(answer))
-    const wrapper = mount(SubscriptionCard, {
-      props: {
-        client,
-        openExternal: vi.fn(() => Promise.resolve(asValue(null))),
-        now: () => NOW,
-        refreshMs: { noIdentity: 50, ready: 60_000, unreachable: 60_000 },
-      },
+    const wrapper = mountCard({
+      client,
+      openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+      now: () => NOW,
+      refreshMs: { noIdentity: 50, ready: 60_000, unreachable: 60_000 },
     })
     await flushPromises()
     expect(wrapper.text()).toContain('Create an identity to buy a subscription.')
 
     answer = createResponse({ phase: 'none' })
-    await vi.waitFor(() => expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined())
+    await vi.waitFor(() => expect(findChoose(wrapper, 'Plus')).toBeDefined())
 
-    expect(wrapper.text()).not.toContain('No identity')
-    wrapper.unmount()
+    expect(wrapper.text()).not.toContain('Create an identity')
   })
 
   it('says which server it could not reach and opens the settings from the card', async () => {
@@ -210,18 +257,16 @@ describe('SubscriptionCard', () => {
       ),
     )
     const openSettings = vi.fn<() => void>()
-    const wrapper = mount(SubscriptionCard, {
-      props: {
-        client,
-        openExternal: vi.fn(() => Promise.resolve(asValue(null))),
-        now: () => NOW,
-        settings: {
-          get: <T>() => 'https://sync.numen.md' as T,
-          onChange: () => ({ dispose: () => undefined }),
-        },
-        openSettings,
-        refreshMs: { noIdentity: 60_000, ready: 60_000, unreachable: 60_000 },
+    const wrapper = mountCard({
+      client,
+      openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+      now: () => NOW,
+      settings: {
+        get: <T>() => 'https://sync.numen.md' as T,
+        onChange: () => ({ dispose: () => undefined }),
       },
+      openSettings,
+      refreshMs: { noIdentity: 60_000, ready: 60_000, unreachable: 60_000 },
     })
     await flushPromises()
 
@@ -233,45 +278,44 @@ describe('SubscriptionCard', () => {
       .find((one) => one.text() === 'Open the settings')
       ?.trigger('click')
     expect(openSettings).toHaveBeenCalledOnce()
-    wrapper.unmount()
   })
 
-  it('offers to buy every plan with its name and size when there is no subscription', async () => {
+  it('offers every plan to choose with its name when there is no subscription', async () => {
     const { wrapper } = await render(createResponse({ phase: 'none' }))
 
-    expect(findBuy(wrapper, 'Basic, 10 GB, $5')).toBeDefined()
-    expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined()
-    expect(findBuy(wrapper, 'Pro, 250 GB, $30')).toBeDefined()
-    expect(findChange(wrapper)).toBeUndefined()
+    expect(findChoose(wrapper, 'Basic')).toBeDefined()
+    expect(findChoose(wrapper, 'Plus')).toBeDefined()
+    expect(findChoose(wrapper, 'Pro')).toBeDefined()
+    expect(findPlanSelect(wrapper).exists()).toBe(false)
   })
 
-  it('shows the plan with its size and the space used while the subscription is active', async () => {
+  it('offers one menu Change plan with every other plan and not the plan the account has', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(wrapper.text()).toContain('Plus, 100 GB')
-    expect(wrapper.text()).toContain('2 GB of 100 GB used')
-    expect(findBuy(wrapper)).toBeUndefined()
+    expect(findPlanSelect(wrapper).text()).toBe('Change plan')
+    await findPlanSelect(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(getPlanChoices()).toStrictEqual(['Basic', 'Pro'])
   })
 
-  it('offers to change to every other plan and not to the plan the account has', async () => {
+  it('offers one Manage subscription and no row of plan buttons while the subscription is active', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(findChange(wrapper, 'Basic')).toBeDefined()
-    expect(findChange(wrapper, 'Pro')).toBeDefined()
-    expect(findChange(wrapper, 'Plus')).toBeUndefined()
+    expect(wrapper.findAll('.subscription__actions button')).toHaveLength(2)
+    expect(wrapper.findAll('.subscription__tile')).toHaveLength(0)
   })
 
   it('changes the plan without opening a browser and shows the new plan', async () => {
     const { wrapper, client, openExternal } = await render(ACTIVE_ON_PLUS)
 
-    await findChange(wrapper, 'Pro')?.trigger('click')
-    await flushPromises()
+    await changePlanTo(wrapper, 'Pro')
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(openExternal).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Pro, 250 GB')
-    expect(findChange(wrapper, 'Pro')).toBeUndefined()
-    expect(findChange(wrapper, 'Plus')).toBeDefined()
+    expect(wrapper.get('.subscription__badge').text()).toBe('Pro')
+    expect(wrapper.get('.subscription__facts').text()).toContain('Pro, 250 GB')
+    expect(findPlanSelect(wrapper).text()).toBe('Change plan')
   })
 
   it('shows the problem of a refused change and keeps the plan', async () => {
@@ -280,8 +324,7 @@ describe('SubscriptionCard', () => {
       Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
     )
 
-    await findChange(wrapper, 'Pro')?.trigger('click')
-    await flushPromises()
+    await changePlanTo(wrapper, 'Pro')
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Could not reach the sync server')
     expect(wrapper.text()).toContain('Plus, 100 GB')
@@ -298,6 +341,7 @@ describe('SubscriptionCard', () => {
     )
 
     expect(wrapper.text()).toContain('20 GB of 10 GB used')
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('100')
     expect(wrapper.text()).toContain('Cloud storage is full: changes stay on this device')
   })
 
@@ -307,7 +351,7 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).not.toContain('Cloud storage is full')
   })
 
-  it('shows the plan of an ended subscription with the offers to buy and none to change', async () => {
+  it('shows the plan of an ended subscription with the plans to choose and none to change', async () => {
     const { wrapper } = await render(
       createResponse({
         phase: 'grace',
@@ -319,8 +363,8 @@ describe('SubscriptionCard', () => {
     )
 
     expect(wrapper.text()).toContain('Plus, 100 GB')
-    expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined()
-    expect(findChange(wrapper)).toBeUndefined()
+    expect(findChoose(wrapper, 'Plus')).toBeDefined()
+    expect(findPlanSelect(wrapper).exists()).toBe(false)
   })
 
   it('shows only the size of a plan the client does not know', async () => {
@@ -341,7 +385,8 @@ describe('SubscriptionCard trial and portal', () => {
       createResponse({ ...ACTIVE_ON_PLUS, isTrial: true, periodEndAt: '2026-12-07T12:00:00Z' }),
     )
 
-    expect(wrapper.text()).toContain('Trial until 7 Dec 2026.')
+    expect(wrapper.get('.subscription__facts').text()).toContain('Trial until')
+    expect(wrapper.get('.subscription__facts').text()).toContain('December 7, 2026')
     expect(wrapper.text()).not.toContain('Active until')
   })
 
@@ -353,7 +398,7 @@ describe('SubscriptionCard trial and portal', () => {
     const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
       Promise.resolve(asValue(null)),
     )
-    const wrapper = mount(SubscriptionCard, { props: { client, openExternal, now: () => NOW } })
+    const wrapper = mountCard({ client, openExternal, now: () => NOW })
     await flushPromises()
 
     const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBuyName, getBuyPattern, getChangeName, getPlanLine, planAnswers, readPosition } from './identity.js'
+import { formatDay, getChooseName, getPlanLine, planAnswers, readPosition } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -34,16 +34,12 @@ describe('planAnswers', () => {
 })
 
 describe('the names of the buttons of the card', () => {
-  it('names the button that buys a plan with its name and size', () => {
-    expect(getBuyName('Plus', 100).test('Buy Plus, 100 GB')).toBe(true)
-    expect(getBuyName('Plus', 100).test('Buy Plus, 100 GB, $15')).toBe(true)
-    expect(getBuyName('Plus', 100).test('Buy Plus, 1000 GB')).toBe(false)
-    expect(getBuyPattern('Plus').test('Buy Plus, 100 GB')).toBe(true)
-    expect(getBuyPattern('Plus').test('Buy Pro, 250 GB')).toBe(false)
+  it('names the button that chooses a plan with the name of the plan', () => {
+    expect(getChooseName('Plus')).toBe('Choose Plus')
   })
 
-  it('names the button that changes the plan with the name of the plan', () => {
-    expect(getChangeName('Pro')).toBe('Change plan to Pro')
+  it('writes a day with the month in full', () => {
+    expect(formatDay(new Date(2026, 11, 7))).toBe('December 7, 2026')
   })
 
   it('writes the plan line with the name and the size', () => {

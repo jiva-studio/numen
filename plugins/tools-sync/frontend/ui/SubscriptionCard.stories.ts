@@ -52,9 +52,9 @@ type Story = StoryObj<typeof meta>
 export const None: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('No subscription')).toBeVisible()
     await expect(await canvas.findByText('Choose a plan')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(canvas.queryByText('No subscription')).toBeNull()
   },
 }
 
@@ -72,8 +72,10 @@ export const Active: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Active until 23 Dec 2026.')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: /^Buy / })).toBeNull()
+    await expect(await canvas.findByText('December 23, 2026')).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
 
@@ -90,7 +92,7 @@ export const Grace: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Ended')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
   },
 }
 
@@ -108,7 +110,7 @@ export const ReadOnly: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Read only')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
   },
 }
 
@@ -117,7 +119,7 @@ export const Deleted: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Deleted')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
   },
 }
 
@@ -126,7 +128,7 @@ export const NoIdentity: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Create an identity to buy a subscription.')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: /^Buy / })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
 
@@ -148,16 +150,17 @@ export const Unreachable: Story = {
     await expect(await canvas.findByText('Could not reach the sync server')).toBeVisible()
     await expect(await canvas.findByText(/https:\/\/sync\.numen\.md/)).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Open the settings' })).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: /^Buy / })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
 
 export const OffersEveryPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('button', { name: 'Buy Basic, 10 GB, $5' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Pro, 250 GB, $30' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Basic' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Choose Pro' })).toBeVisible()
+    await expect(await canvas.findByText('$5 / month')).toBeVisible()
   },
 }
 
@@ -177,9 +180,8 @@ export const ActiveWithPlanAndUsage: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Plus, 100 GB')).toBeVisible()
     await expect(await canvas.findByText('2 GB of 100 GB used')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Change plan to Basic' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Change plan to Pro' })).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'Change plan to Plus' })).toBeNull()
+    await expect(await canvas.findByRole('progressbar', { name: 'Space used' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
   },
 }
 
@@ -219,7 +221,7 @@ export const EndedWithPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Plus, 100 GB')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: /^Change plan to / })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Change plan' })).toBeNull()
   },
 }
 
@@ -237,7 +239,8 @@ export const Trial: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Trial until 7 Dec 2026.')).toBeVisible()
+    await expect(await canvas.findByText('Trial until')).toBeVisible()
+    await expect(await canvas.findByText('December 7, 2026')).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
   },
 }

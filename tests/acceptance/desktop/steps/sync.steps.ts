@@ -1,5 +1,5 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
-import { formatDay, getPlanLine } from '../drivers/identity.js'
+import { getPlanLine } from '../drivers/identity.js'
 import type { PlanSpec } from '../drivers/sync.js'
 import { Given, Then, When } from '../support/bdd.js'
 
@@ -129,6 +129,10 @@ Then('the subscription shows {string}{on}', async ({ person }, text: string, com
   await person.computers.expectSubscription(computer, text)
 })
 
+Then('the subscription is active{on}', async ({ person }, computer: ComputerName) => {
+  await person.computers.expectActive(computer)
+})
+
 When('the person buys the subscription', async ({ person }) => {
   await person.identity.buy()
 })
@@ -197,6 +201,6 @@ When('the person cancels the trial', async ({ person }) => {
   await person.sync.cancelTrial()
 })
 
-Then('the subscription shows {string} the day the trial ends', async ({ person }, text: string) => {
-  await person.identity.expectSubscription(`${text} ${formatDay(person.sync.getTrialEnd())}.`)
+Then('the subscription shows the day the trial ends', async ({ person }) => {
+  await person.identity.expectTrialUntil(person.sync.getTrialEnd())
 })

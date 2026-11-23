@@ -23,7 +23,7 @@ Feature: Numen Sync plans
     Scenario: The bought plan is shown with its size
       Given the person opens the page "Identity and licenses"
       When the person buys the plan "Plus"
-      Then the subscription shows "Active"
+      Then the subscription is active
       And the subscription shows the plan "Plus" with 100 GB
 
     Scenario: A plan bought on one computer is shown on the other

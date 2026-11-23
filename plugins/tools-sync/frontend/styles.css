@@ -157,27 +157,17 @@
 .subscription__text,
 .subscription__choose,
 .subscription__waiting,
-.subscription__plan,
-.subscription__usage,
 .subscription__full,
 .subscription__problem {
   margin: 0;
 }
 
 .subscription__text,
-.subscription__usage {
-  color: var(--numen-hushed);
-}
-
-.subscription__choose {
-  font-weight: 500;
-}
-
 .subscription__waiting {
   color: var(--numen-hushed);
 }
 
-.subscription__plan {
+.subscription__choose {
   font-weight: 500;
 }
 
@@ -186,9 +176,89 @@
   color: var(--numen-alarm);
 }
 
-.subscription__controls {
+.subscription__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: calc(var(--numen-chrome-unit) * 0.75) calc(var(--numen-chrome-unit) * 2);
+  margin: 0;
+}
+
+.subscription__facts dt {
+  color: var(--numen-hushed);
+}
+
+.subscription__facts dd {
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.subscription__storage {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--numen-chrome-unit) / 4);
+}
+
+.subscription__meter {
+  overflow: hidden;
+  block-size: calc(var(--numen-chrome-unit) / 2);
+  border-radius: var(--numen-radius-pill);
+  background-color: var(--numen-bubble-bg);
+}
+
+.subscription__meter-fill {
+  block-size: 100%;
+  border-radius: var(--numen-radius-pill);
+  background-color: var(--numen-accent);
+}
+
+.subscription__meter-fill--full {
+  background-color: var(--numen-alarm);
+}
+
+.subscription__usage {
+  color: var(--numen-hushed);
+}
+
+.subscription__plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(9 * var(--numen-chrome-unit)), 1fr));
+  gap: var(--numen-chrome-inset);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subscription__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--numen-chrome-unit) / 4);
+  padding: var(--numen-chrome-inset);
+  background: var(--numen-surface);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-chrome-radius);
+}
+
+.subscription__tile-name {
+  font-weight: 600;
+}
+
+.subscription__tile-price {
+  margin-block-end: calc(var(--numen-chrome-unit) / 2);
+  color: var(--numen-hushed);
+}
+
+.subscription__tile > button {
+  margin-block-start: auto;
+}
+
+.subscription__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--numen-chrome-unit) / 2);
+}
+
+.subscription__change {
+  inline-size: calc(12 * var(--numen-chrome-unit));
 }

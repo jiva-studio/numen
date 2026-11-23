@@ -18,53 +18,48 @@ export interface SubscriptionDates {
   readonly deleteAt: string
 }
 
-/** A plan the person can buy or move to: its id and the label of the button, such as "Plus, 100 GB". */
+/** A plan the person can buy or move to: its name, its size such as "100 GB" and its price such as "$15 / month", empty for a plan with no price. */
 export interface PlanOffer {
   readonly id: string
   readonly name: string
-  readonly label: string
+  readonly size: string
+  readonly price: string
 }
 
-/** What the card shows. isTrial is true while a trial runs that no payment has followed; the end of the period is then the end of the trial. */
+/** What the card shows. */
 export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
-  readonly isTrial?: boolean | undefined
   /** The address of the sync server in use; empty when it is not known. */
   readonly server?: string | undefined
+  /** The name of the plan of the account; empty when the client does not know the plan. */
+  readonly planName?: string | undefined
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const NUMERIC_DATE = new Intl.DateTimeFormat('en-GB', {
+const LONG_DATE = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
-  month: 'numeric',
+  month: 'long',
   year: 'numeric',
 })
 
-function formatDate(time: string): string {
+/** A time of the server as a date, such as "November 23, 2026"; empty when the time is empty or not a time. */
+export function formatDate(time: string): string {
   const at = Date.parse(time)
-  if (Number.isNaN(at)) return ''
-  const parts = new Map(NUMERIC_DATE.formatToParts(at).map((one) => [one.type, one.value]))
-  const month = MONTHS.at(Number(parts.get('month')) - 1) ?? ''
-  return `${Number(parts.get('day'))} ${month} ${parts.get('year') ?? ''}`
+  return Number.isNaN(at) ? '' : LONG_DATE.format(at)
 }
 
 const getPhaseView = (
   phase: SubscriptionPhase,
   dates: SubscriptionDates,
-  isTrial: boolean,
+  planName: string,
 ): SubscriptionView => {
   const periodEnd = formatDate(dates.periodEnd)
   switch (phase) {
     case 'none':
-      return { badge: words.noSubscription, text: words.noSubscriptionText, tone: 'neutral' }
+      return { badge: '', text: words.noSubscriptionText, tone: 'neutral' }
     case 'active':
-      return {
-        badge: words.active,
-        text: isTrial ? words.trialText(periodEnd) : words.activeText(periodEnd),
-        tone: 'positive',
-      }
+      return { badge: planName, text: '', tone: 'positive' }
     case 'grace':
       return {
         badge: words.ended,
@@ -82,7 +77,10 @@ const getPhaseView = (
   }
 }
 
-/** The badge and the text of the card for what the server told. */
+/**
+ * The badge and the text of the card for what the server told. A badge appears only where it adds to the
+ * text and to the plans: the plan of an active subscription, and the state of an ended one.
+ */
 export function getSubscriptionView(snapshot: SubscriptionSnapshot): SubscriptionView {
   switch (snapshot.status) {
     case 'loading':
@@ -94,11 +92,25 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
         tone: 'warning',
       }
     case 'noIdentity':
-      return { badge: words.noIdentityBadge, text: words.noIdentityText, tone: 'neutral' }
+      return { badge: '', text: words.noIdentityText, tone: 'neutral' }
     case 'ready':
       return snapshot.phase === ''
         ? { badge: '', text: '', tone: 'neutral' }
-        : getPhaseView(snapshot.phase, snapshot.dates, snapshot.isTrial === true)
+        : getPhaseView(snapshot.phase, snapshot.dates, snapshot.planName ?? '')
+  }
+}
+
+/** The line of an active subscription that says how long it is paid for, such as "Active until" and "November 23, 2026". */
+export interface Validity {
+  readonly label: string
+  readonly date: string
+}
+
+/** The end of the paid period; it is the end of the trial while a trial runs that no payment has followed. */
+export function getValidity(dates: SubscriptionDates, isTrial: boolean): Validity {
+  return {
+    label: isTrial ? words.trialUntil : words.activeUntil,
+    date: formatDate(dates.periodEnd),
   }
 }
 
@@ -134,13 +146,19 @@ export function getPlanLabel(plan: PlanSize): string {
   return plan.name === '' ? size : `${plan.name}, ${size}`
 }
 
-/** The label of an offer: the name, the size and the price, such as "Plus, 100 GB, $15". */
-export function getOfferLabel(plan: PlanSize): string {
+/** The price of a plan for a month, such as "$15 / month"; empty for a plan with no price. */
+export function getPlanPrice(plan: PlanSize): string {
   const price = formatPrice(plan.priceCents, plan.currency)
-  return price === '' ? getPlanLabel(plan) : `${getPlanLabel(plan)}, ${price}`
+  return price === '' ? '' : words.pricePerMonth(price)
 }
 
 /** The space in use against the quota, such as "2 GB of 100 GB used". It may be above the quota. */
 export function getUsageText(usedBytes: number, quotaBytes: number): string {
   return `${formatSize(usedBytes)} of ${formatSize(quotaBytes)} used`
+}
+
+/** The share of the quota in use as a whole percent from 0 to 100; 100 where the space in use is above the quota. */
+export function getUsagePercent(usedBytes: number, quotaBytes: number): number {
+  if (quotaBytes <= 0) return 0
+  return Math.min(100, Math.round((usedBytes / quotaBytes) * 100))
 }

@@ -8,29 +8,23 @@ const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
 const NO_IDENTITY = 'No identity on this device'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
-const BUY = 'Buy'
+const CHOOSE = /^Choose /
+const CHANGE_PLAN = 'Change plan'
+const ACTIVE_UNTIL = 'Active until'
 const PAYMENT_RECEIVED = 'Payment received'
 const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
 
-/** Matches the button that buys the plan of a name with its size in GB; the card may add the price after the size. */
-export const getBuyName = (name: string, gigabytes: number): RegExp => new RegExp(`^Buy ${name}, ${gigabytes} GB(?:,|$)`)
-
-/** Matches the button that buys the plan of a name, whatever its size. */
-export const getBuyPattern = (name: string): RegExp => new RegExp(`^Buy ${name}, `)
-
-/** The name of the button that changes the plan to the plan of a name. */
-export const getChangeName = (name: string): string => `Change plan to ${name}`
+/** The name of the button that chooses the plan of a name on a tile of the card. */
+export const getChooseName = (name: string): string => `Choose ${name}`
 
 /** The text of the plan line of the card: the name and the size in GB. */
 export const getPlanLine = (name: string, gigabytes: number): string => `${name}, ${gigabytes} GB`
 
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-/** The day as the card of the subscription writes it, such as "7 Dec 2026". */
-export const formatDay = (day: Date): string => `${day.getDate()} ${MONTHS[day.getMonth()] ?? ''} ${day.getFullYear()}`
+/** The day as the card of the subscription writes it, such as "December 7, 2026". */
+export const formatDay = (day: Date): string => day.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 
 /** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
@@ -187,8 +181,8 @@ export class IdentityDriver {
 
   async expectOffer(isOffered: boolean): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const buy = card.getByRole('button', { name: BUY, exact: true })
-    if (isOffered) await expect(buy).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    const buy = card.getByRole('button', { name: CHOOSE })
+    if (isOffered) await expect(buy.first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
     else {
       await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
       await expect(buy).toHaveCount(0)
@@ -198,7 +192,7 @@ export class IdentityDriver {
   private async openPayment(): Promise<Page> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
-    await card.getByRole('button', { name: BUY, exact: true }).click()
+    await card.getByRole('button', { name: CHOOSE }).first().click()
     return opened
   }
 
@@ -207,51 +201,67 @@ export class IdentityDriver {
     const payment = await this.openPayment()
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
-    await this.expectSubscription('Active')
+    await this.expectActive()
+  }
+
+  /** Expects the card to show an active subscription: the row of the end of the paid period. */
+  async expectActive(): Promise<void> {
+    await this.expectSubscription(ACTIVE_UNTIL)
+  }
+
+  /** Expects the card to say until which day the trial runs. */
+  async expectTrialUntil(day: Date): Promise<void> {
+    await this.expectSubscription('Trial until')
+    await this.expectSubscription(formatDay(day))
   }
 
   /** Buys the plan of a name on the page of the stand-in and waits until the card shows the subscription as active. */
   async buyPlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
-    await card.getByRole('button', { name: getBuyPattern(name) }).click()
+    await card.getByRole('button', { name: getChooseName(name), exact: true }).click()
     const payment = await opened
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
-    await this.expectSubscription('Active')
+    await this.expectActive()
   }
 
-  /** Expects the card to offer to buy the plan of a name with its size in GB. */
+  /** Expects the card to offer to choose the plan of a name on a tile with its size in GB. */
   async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
-    await expect(card.getByRole('button', { name: getBuyName(name, gigabytes) })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    const tile = card.locator('.subscription__tile').filter({ hasText: `${gigabytes} GB` }).filter({ has: this.scenario.page.getByRole('button', { name: getChooseName(name), exact: true }) })
+    await expect(tile).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Expects the card to offer to buy no plan, after it showed the subscription. */
   async expectNoBuyOffer(): Promise<void> {
     const card = this.getCard(await this.showPage())
     await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-    await expect(card.getByRole('button', { name: /^Buy / })).toHaveCount(0)
+    await expect(card.getByRole('button', { name: CHOOSE })).toHaveCount(0)
   }
 
-  /** Expects the card to offer, or not to offer, to change the plan to the plan of a name. */
+  /** Opens the menu "Change plan" of the card and returns the item of the plan of a name. */
+  private async openChangeItem(card: Locator, name: string): Promise<Locator> {
+    await card.getByRole('button', { name: CHANGE_PLAN, exact: true }).click()
+    return this.scenario.page.getByRole('menuitem', { name, exact: true })
+  }
+
+  /** Expects the menu "Change plan" of the card to offer, or not to offer, the plan of a name. */
   async expectChangeOffer(name: string, isOffered: boolean): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const change = card.getByRole('button', { name: getChangeName(name), exact: true })
-    if (isOffered) await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-    else {
-      await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-      await expect(change).toHaveCount(0)
-    }
+    await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByRole('button', { name: CHANGE_PLAN, exact: true })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    const item = await this.openChangeItem(card, name)
+    await expect(item).toHaveCount(isOffered ? 1 : 0)
+    await this.scenario.page.keyboard.press('Escape')
   }
 
-  /** Changes the plan on the card and waits until the card shows the plan of the name. */
+  /** Changes the plan from the menu of the card and waits until the card shows the plan of the name. */
   async changePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
-    await card.getByRole('button', { name: getChangeName(name), exact: true }).click()
+    await (await this.openChangeItem(card, name)).click()
     await expect(card.getByText(new RegExp(`^${name}, `)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
-
 
   /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */
   async openPaymentWithoutPaying(): Promise<void> {

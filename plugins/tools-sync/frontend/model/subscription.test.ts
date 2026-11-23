@@ -111,36 +111,36 @@ describe('useSubscription on load', () => {
   it('is loading until the server answers', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
 
-    expect(subscription.status.value).toBe('loading')
-    await subscription.load()
+    expect(subscription.session.account.status.value).toBe('loading')
+    await subscription.session.load()
   })
 
   it('is ready with the phase none and offers to buy for an account without a subscription', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.status.value).toBe('ready')
-    expect(subscription.phase.value).toBe('none')
-    expect(subscription.canBuy.value).toBe(true)
+    expect(subscription.session.account.status.value).toBe('ready')
+    expect(subscription.session.account.phase.value).toBe('none')
+    expect(subscription.offers.canBuy.value).toBe(true)
   })
 
   it('is ready with the phase active and does not offer to buy', async () => {
     const { subscription } = mountSubscription(createClient([ACTIVE]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.phase.value).toBe('active')
-    expect(subscription.canBuy.value).toBe(false)
+    expect(subscription.session.account.phase.value).toBe('active')
+    expect(subscription.offers.canBuy.value).toBe(false)
   })
 
   it('offers to buy in each phase that is not active', async () => {
     for (const phase of ['none', 'grace', 'readOnly', 'deleted'] as const) {
       const { subscription } = mountSubscription(createClient([createResponse({ phase })]))
 
-      await subscription.load()
+      await subscription.session.load()
 
-      expect(subscription.canBuy.value, phase).toBe(true)
+      expect(subscription.offers.canBuy.value, phase).toBe(true)
     }
   })
 
@@ -149,10 +149,10 @@ describe('useSubscription on load', () => {
       createClient([createResponse({ hasIdentity: false, phase: '' })]),
     )
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.status.value).toBe('noIdentity')
-    expect(subscription.canBuy.value).toBe(false)
+    expect(subscription.session.account.status.value).toBe('noIdentity')
+    expect(subscription.offers.canBuy.value).toBe(false)
   })
 
   it('is unreachable and offers nothing when the server does not answer', async () => {
@@ -162,10 +162,10 @@ describe('useSubscription on load', () => {
     )
     const { subscription } = mountSubscription(client)
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.status.value).toBe('unreachable')
-    expect(subscription.canBuy.value).toBe(false)
+    expect(subscription.session.account.status.value).toBe('unreachable')
+    expect(subscription.offers.canBuy.value).toBe(false)
   })
 })
 
@@ -178,13 +178,13 @@ describe('useSubscription following the account and the server', () => {
     const { subscription } = mountSubscription(client, createOpen(), {
       refreshMs: { ...NEVER, noIdentity: 3000 },
     })
-    await subscription.load()
-    expect(subscription.status.value).toBe('noIdentity')
+    await subscription.session.load()
+    expect(subscription.session.account.status.value).toBe('noIdentity')
 
     await vi.advanceTimersByTimeAsync(6000)
 
-    expect(subscription.status.value).toBe('ready')
-    expect(subscription.buyOffers.value.map((one) => one.id)).toStrictEqual([
+    expect(subscription.session.account.status.value).toBe('ready')
+    expect(subscription.offers.buyOffers.value.map((one) => one.id)).toStrictEqual([
       'basic',
       'plus',
       'pro',
@@ -196,12 +196,12 @@ describe('useSubscription following the account and the server', () => {
     const { subscription } = mountSubscription(client, createOpen(), {
       refreshMs: { ...NEVER, ready: 10_000 },
     })
-    await subscription.load()
+    await subscription.session.load()
 
     await vi.advanceTimersByTimeAsync(10_000)
 
-    expect(subscription.status.value).toBe('noIdentity')
-    expect(subscription.buyOffers.value).toStrictEqual([])
+    expect(subscription.session.account.status.value).toBe('noIdentity')
+    expect(subscription.offers.buyOffers.value).toStrictEqual([])
   })
 
   it('tries the unreachable server again every 30 seconds and recovers when it answers', async () => {
@@ -213,17 +213,17 @@ describe('useSubscription following the account and the server', () => {
     const { subscription } = mountSubscription(client, createOpen(), {
       refreshMs: { ...NEVER, unreachable: 30_000 },
     })
-    await subscription.load()
-    expect(subscription.status.value).toBe('unreachable')
+    await subscription.session.load()
+    expect(subscription.session.account.status.value).toBe('unreachable')
 
     await vi.advanceTimersByTimeAsync(29_999)
     expect(client.getSubscription).toHaveBeenCalledTimes(1)
     await vi.advanceTimersByTimeAsync(1)
-    expect(subscription.status.value).toBe('unreachable')
+    expect(subscription.session.account.status.value).toBe('unreachable')
     await vi.advanceTimersByTimeAsync(30_000)
 
-    expect(subscription.status.value).toBe('ready')
-    expect(subscription.buyOffers.value).toHaveLength(3)
+    expect(subscription.session.account.status.value).toBe('ready')
+    expect(subscription.offers.buyOffers.value).toHaveLength(3)
   })
 
   it('says which server it could not reach and follows the setting', async () => {
@@ -238,14 +238,14 @@ describe('useSubscription following the account and the server', () => {
       },
     }
     const { subscription } = mountSubscription(client, createOpen(), { settings })
-    await subscription.load()
-    expect(subscription.view.value.text).toContain('https://sync.numen.md')
+    await subscription.session.load()
+    expect(subscription.summary.view.value.text).toContain('https://sync.numen.md')
 
     notify('http://127.0.0.1:8787')
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(subscription.server.value).toBe('http://127.0.0.1:8787')
-    expect(subscription.view.value.text).toContain('http://127.0.0.1:8787')
+    expect(subscription.session.server.value).toBe('http://127.0.0.1:8787')
+    expect(subscription.summary.view.value.text).toContain('http://127.0.0.1:8787')
   })
 
   it('reads again at once when the server setting changes', async () => {
@@ -260,31 +260,31 @@ describe('useSubscription following the account and the server', () => {
       },
     }
     const { subscription } = mountSubscription(client, createOpen(), { settings })
-    await subscription.load()
+    await subscription.session.load()
 
     notify('http://127.0.0.1:8787')
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(subscription.status.value).toBe('ready')
+    expect(subscription.session.account.status.value).toBe('ready')
   })
 })
 
 describe('useSubscription buy', () => {
   it('opens the payment page in the system browser and waits for the payment', async () => {
     const { subscription, openExternal } = mountSubscription(createClient([createResponse()]))
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.buy('plus')
+    await subscription.payment.buy('plus')
 
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
-    expect(subscription.waiting.value).toBe(true)
+    expect(subscription.payment.waiting.value).toBe(true)
   })
 
   it('asks the server again every 3 seconds and ends when the phase is active', async () => {
     const client = createClient([createResponse(), createResponse(), createResponse(), ACTIVE])
     const { subscription } = mountSubscription(client)
-    await subscription.load()
-    await subscription.buy('plus')
+    await subscription.session.load()
+    await subscription.payment.buy('plus')
     expect(client.getSubscription).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(2999)
@@ -293,8 +293,8 @@ describe('useSubscription buy', () => {
     expect(client.getSubscription).toHaveBeenCalledTimes(2)
     await vi.advanceTimersByTimeAsync(6000)
 
-    expect(subscription.phase.value).toBe('active')
-    expect(subscription.waiting.value).toBe(false)
+    expect(subscription.session.account.phase.value).toBe('active')
+    expect(subscription.payment.waiting.value).toBe(false)
     const reads = client.getSubscription.mock.calls.length
     await vi.advanceTimersByTimeAsync(30_000)
     expect(client.getSubscription).toHaveBeenCalledTimes(reads)
@@ -303,13 +303,13 @@ describe('useSubscription buy', () => {
   it('gives up after 10 minutes and says the payment is not seen yet', async () => {
     const client = createClient([createResponse()])
     const { subscription } = mountSubscription(client)
-    await subscription.load()
-    await subscription.buy('plus')
+    await subscription.session.load()
+    await subscription.payment.buy('plus')
 
     await vi.advanceTimersByTimeAsync(600_000)
 
-    expect(subscription.waiting.value).toBe(false)
-    expect(subscription.problem.value).toBe(NOT_SEEN)
+    expect(subscription.payment.waiting.value).toBe(false)
+    expect(subscription.session.problem.value).toBe(NOT_SEEN)
     const reads = client.getSubscription.mock.calls.length
     await vi.advanceTimersByTimeAsync(30_000)
     expect(client.getSubscription).toHaveBeenCalledTimes(reads)
@@ -317,20 +317,20 @@ describe('useSubscription buy', () => {
 
   it('is still waiting just before the 10 minutes end', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
-    await subscription.load()
-    await subscription.buy('plus')
+    await subscription.session.load()
+    await subscription.payment.buy('plus')
 
     await vi.advanceTimersByTimeAsync(599_000)
 
-    expect(subscription.waiting.value).toBe(true)
-    expect(subscription.problem.value).toBe('')
+    expect(subscription.payment.waiting.value).toBe(true)
+    expect(subscription.session.problem.value).toBe('')
   })
 
   it('stops asking the server when the view is removed', async () => {
     const client = createClient([createResponse()])
     const { subscription, wrapper } = mountSubscription(client)
-    await subscription.load()
-    await subscription.buy('plus')
+    await subscription.session.load()
+    await subscription.payment.buy('plus')
     await vi.advanceTimersByTimeAsync(3000)
     const reads = client.getSubscription.mock.calls.length
 
@@ -344,13 +344,13 @@ describe('useSubscription buy', () => {
     const client = createClient([createResponse()])
     const openExternal = vi.fn<OpenExternal>(() => Promise.resolve(asFailure('not a web address')))
     const { subscription } = mountSubscription(client, openExternal)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.buy('plus')
+    await subscription.payment.buy('plus')
     await vi.advanceTimersByTimeAsync(30_000)
 
-    expect(subscription.problem.value).not.toBe('')
-    expect(subscription.waiting.value).toBe(false)
+    expect(subscription.session.problem.value).not.toBe('')
+    expect(subscription.payment.waiting.value).toBe(false)
     expect(client.getSubscription).toHaveBeenCalledTimes(1)
   })
 
@@ -360,11 +360,13 @@ describe('useSubscription buy', () => {
       createFailure('failed_precondition', 'the sync server does not sell subscriptions'),
     )
     const { subscription, openExternal } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.buy('plus')
+    await subscription.payment.buy('plus')
 
-    expect(subscription.problem.value).toContain('the sync server does not sell subscriptions')
+    expect(subscription.session.problem.value).toContain(
+      'the sync server does not sell subscriptions',
+    )
     expect(openExternal).not.toHaveBeenCalled()
   })
 
@@ -374,12 +376,12 @@ describe('useSubscription buy', () => {
       createFailure('already_exists', 'the account has an active subscription'),
     )
     const { subscription, openExternal } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.buy('plus')
+    await subscription.payment.buy('plus')
 
-    expect(subscription.phase.value).toBe('active')
-    expect(subscription.canBuy.value).toBe(false)
+    expect(subscription.session.account.phase.value).toBe('active')
+    expect(subscription.offers.canBuy.value).toBe(false)
     expect(openExternal).not.toHaveBeenCalled()
   })
 })
@@ -388,14 +390,14 @@ describe('useSubscription plans', () => {
   it('offers to buy every plan with its name and size when the account has no subscription', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.buyOffers.value).toStrictEqual([
-      { id: 'basic', name: 'Basic', label: 'Basic, 10 GB, $5' },
-      { id: 'plus', name: 'Plus', label: 'Plus, 100 GB, $15' },
-      { id: 'pro', name: 'Pro', label: 'Pro, 250 GB, $30' },
+    expect(subscription.offers.buyOffers.value).toStrictEqual([
+      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5 / month' },
+      { id: 'plus', name: 'Plus', size: '100 GB', price: '$15 / month' },
+      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30 / month' },
     ])
-    expect(subscription.changeOffers.value).toStrictEqual([])
+    expect(subscription.offers.changeOffers.value).toStrictEqual([])
   })
 
   it('offers to buy every plan in each phase that is not active', async () => {
@@ -404,25 +406,25 @@ describe('useSubscription plans', () => {
         createClient([createResponse({ phase, plan: 'plus', quotaBytes: 100 * GIB })]),
       )
 
-      await subscription.load()
+      await subscription.session.load()
 
       expect(
-        subscription.buyOffers.value.map((one) => one.id),
+        subscription.offers.buyOffers.value.map((one) => one.id),
         phase,
       ).toStrictEqual(['basic', 'plus', 'pro'])
-      expect(subscription.changeOffers.value, phase).toStrictEqual([])
+      expect(subscription.offers.changeOffers.value, phase).toStrictEqual([])
     }
   })
 
   it('offers to change to every other plan and to buy none while the subscription is active', async () => {
     const { subscription } = mountSubscription(createClient([ACTIVE_ON_PLUS]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.buyOffers.value).toStrictEqual([])
-    expect(subscription.changeOffers.value).toStrictEqual([
-      { id: 'basic', name: 'Basic', label: 'Basic, 10 GB, $5' },
-      { id: 'pro', name: 'Pro', label: 'Pro, 250 GB, $30' },
+    expect(subscription.offers.buyOffers.value).toStrictEqual([])
+    expect(subscription.offers.changeOffers.value).toStrictEqual([
+      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5 / month' },
+      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30 / month' },
     ])
   })
 
@@ -431,46 +433,46 @@ describe('useSubscription plans', () => {
       createClient([createResponse({ hasIdentity: false, phase: '' })]),
     )
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.buyOffers.value).toStrictEqual([])
-    expect(subscription.changeOffers.value).toStrictEqual([])
+    expect(subscription.offers.buyOffers.value).toStrictEqual([])
+    expect(subscription.offers.changeOffers.value).toStrictEqual([])
   })
 
   it('names the plan with its size, also after the subscription ended', async () => {
     const ended = createResponse({ phase: 'readOnly', plan: 'plus', quotaBytes: 100 * GIB })
     const { subscription } = mountSubscription(createClient([ended]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.planLine.value).toBe('Plus, 100 GB')
+    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB')
   })
 
   it('names only the size of a plan the client does not know', async () => {
     const unknown = createResponse({ ...ACTIVE_ON_PLUS, plan: 'gold', quotaBytes: 50 * GIB })
     const { subscription } = mountSubscription(createClient([unknown]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.planLine.value).toBe('50 GB')
+    expect(subscription.summary.planLine.value).toBe('50 GB')
   })
 
   it('has no plan line without a subscription', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.planLine.value).toBe('')
-    expect(subscription.usage.value).toBe('')
+    expect(subscription.summary.planLine.value).toBe('')
+    expect(subscription.summary.usage.value).toBe('')
   })
 
   it('shows the space used against the plan while the subscription is active', async () => {
     const { subscription } = mountSubscription(createClient([ACTIVE_ON_PLUS]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.usage.value).toBe('2 GB of 100 GB used')
-    expect(subscription.isFull.value).toBe(false)
+    expect(subscription.summary.usage.value).toBe('2 GB of 100 GB used')
+    expect(subscription.summary.isFull.value).toBe(false)
   })
 
   it('shows the used space above the plan and says the cloud is full', async () => {
@@ -482,10 +484,10 @@ describe('useSubscription plans', () => {
     })
     const { subscription } = mountSubscription(createClient([over]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.usage.value).toBe('20 GB of 10 GB used')
-    expect(subscription.isFull.value).toBe(true)
+    expect(subscription.summary.usage.value).toBe('20 GB of 10 GB used')
+    expect(subscription.summary.isFull.value).toBe(true)
   })
 
   it('says the cloud is full when the used space equals the plan', async () => {
@@ -497,9 +499,9 @@ describe('useSubscription plans', () => {
     })
     const { subscription } = mountSubscription(createClient([full]))
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.isFull.value).toBe(true)
+    expect(subscription.summary.isFull.value).toBe(true)
   })
 
   it('has no offers when the server cannot list the plans, and shows the problem', async () => {
@@ -509,10 +511,12 @@ describe('useSubscription plans', () => {
     )
     const { subscription } = mountSubscription(client)
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.buyOffers.value).toStrictEqual([])
-    expect(subscription.problem.value).toContain('the sync server does not sell subscriptions')
+    expect(subscription.offers.buyOffers.value).toStrictEqual([])
+    expect(subscription.session.problem.value).toContain(
+      'the sync server does not sell subscriptions',
+    )
   })
 })
 
@@ -520,9 +524,9 @@ describe('useSubscription buy of a plan', () => {
   it('asks the payment page of the plan the person chose', async () => {
     const client = createClient([createResponse()])
     const { subscription } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.buy('pro')
+    await subscription.payment.buy('pro')
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('pro')
   })
@@ -532,15 +536,18 @@ describe('useSubscription change of the plan', () => {
   it('asks the server to change the plan and shows the new plan at once', async () => {
     const client = createClient([ACTIVE_ON_PLUS])
     const { subscription, openExternal } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.change('pro')
+    await subscription.session.change('pro')
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
-    expect(subscription.planLine.value).toBe('Pro, 250 GB')
-    expect(subscription.changeOffers.value.map((one) => one.id)).toStrictEqual(['basic', 'plus'])
+    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB')
+    expect(subscription.offers.changeOffers.value.map((one) => one.id)).toStrictEqual([
+      'basic',
+      'plus',
+    ])
     expect(openExternal).not.toHaveBeenCalled()
-    expect(subscription.waiting.value).toBe(false)
+    expect(subscription.payment.waiting.value).toBe(false)
   })
 
   it('shows the problem and keeps the plan when the server refuses the change', async () => {
@@ -549,12 +556,12 @@ describe('useSubscription change of the plan', () => {
       createFailure('unavailable', 'Could not reach the sync server'),
     )
     const { subscription } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.change('pro')
+    await subscription.session.change('pro')
 
-    expect(subscription.problem.value).toContain('Could not reach the sync server')
-    expect(subscription.planLine.value).toBe('Plus, 100 GB')
+    expect(subscription.session.problem.value).toContain('Could not reach the sync server')
+    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB')
   })
 
   it('reads the subscription again when the server says the plan is the plan of the account', async () => {
@@ -566,11 +573,11 @@ describe('useSubscription change of the plan', () => {
       createFailure('already_exists', 'the account has this plan already'),
     )
     const { subscription } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.change('pro')
+    await subscription.session.change('pro')
 
-    expect(subscription.planLine.value).toBe('Pro, 250 GB')
+    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB')
   })
 
   it('reads the subscription again when the server says there is no active subscription', async () => {
@@ -582,12 +589,12 @@ describe('useSubscription change of the plan', () => {
       createFailure('failed_precondition', 'the account has no active subscription to change'),
     )
     const { subscription } = mountSubscription(client)
-    await subscription.load()
+    await subscription.session.load()
 
-    await subscription.change('pro')
+    await subscription.session.change('pro')
 
-    expect(subscription.phase.value).toBe('grace')
-    expect(subscription.changeOffers.value).toStrictEqual([])
+    expect(subscription.session.account.phase.value).toBe('grace')
+    expect(subscription.offers.changeOffers.value).toStrictEqual([])
   })
 })
 
@@ -599,22 +606,81 @@ describe('useSubscription plan names from the server', () => {
     ])
     const { subscription } = mountSubscription(client)
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.planLine.value).toBe('Standard, 100 GB')
+    expect(subscription.summary.planLine.value).toBe('Standard, 100 GB')
   })
 
-  it('labels an offer with the price of the plan in its currency', async () => {
+  it('prices an offer for a month in the currency of the plan', async () => {
     const client = createClient([createResponse()])
     client.listPlans.mockResolvedValue([
       { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 999, currency: 'EUR' },
     ])
     const { subscription } = mountSubscription(client)
 
-    await subscription.load()
+    await subscription.session.load()
 
-    expect(subscription.buyOffers.value.map((one) => one.label)).toStrictEqual([
-      'Basic, 10 GB, €9.99',
+    expect(subscription.offers.buyOffers.value.map((one) => one.price)).toStrictEqual([
+      '€9.99 / month',
     ])
+  })
+})
+
+describe('useSubscription summary', () => {
+  it('badges an active subscription with the name of its plan and no text', async () => {
+    const { subscription } = mountSubscription(createClient([ACTIVE_ON_PLUS]))
+
+    await subscription.session.load()
+
+    expect(subscription.summary.view.value).toStrictEqual({
+      badge: 'Plus',
+      text: '',
+      tone: 'positive',
+    })
+  })
+
+  it('has no badge without a subscription and no badge for a plan the client does not know', async () => {
+    const none = mountSubscription(createClient([createResponse()]))
+    const unknown = mountSubscription(
+      createClient([createResponse({ ...ACTIVE_ON_PLUS, plan: 'gold', quotaBytes: 50 * GIB })]),
+    )
+
+    await none.subscription.session.load()
+    await unknown.subscription.session.load()
+
+    expect(none.subscription.summary.view.value.badge).toBe('')
+    expect(unknown.subscription.summary.view.value.badge).toBe('')
+  })
+
+  it('says until when an active subscription is paid, and until when a trial runs', async () => {
+    const active = mountSubscription(createClient([ACTIVE_ON_PLUS]))
+    const trial = mountSubscription(
+      createClient([createResponse({ ...ACTIVE_ON_PLUS, isTrial: true })]),
+    )
+    const none = mountSubscription(createClient([createResponse()]))
+
+    await active.subscription.session.load()
+    await trial.subscription.session.load()
+    await none.subscription.session.load()
+
+    expect(active.subscription.summary.validity.value).toStrictEqual({
+      label: 'Active until',
+      date: 'December 23, 2026',
+    })
+    expect(trial.subscription.summary.validity.value?.label).toBe('Trial until')
+    expect(none.subscription.summary.validity.value).toBeUndefined()
+  })
+
+  it('gives the share of the space used, up to the whole when the space is over the quota', async () => {
+    const some = mountSubscription(createClient([ACTIVE_ON_PLUS]))
+    const over = mountSubscription(
+      createClient([createResponse({ ...ACTIVE_ON_PLUS, usedBytes: 150 * GIB })]),
+    )
+
+    await some.subscription.session.load()
+    await over.subscription.session.load()
+
+    expect(some.subscription.summary.usedPercent.value).toBe(2)
+    expect(over.subscription.summary.usedPercent.value).toBe(100)
   })
 })

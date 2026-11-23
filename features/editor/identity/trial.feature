@@ -15,7 +15,7 @@ Feature: A trial of a plan of Numen Sync
 
   Scenario: A subscription that starts with a trial shows the day it ends
     When the person starts a trial of the plan "Plus"
-    Then the subscription shows "Trial until" the day the trial ends
+    Then the subscription shows the day the trial ends
 
   Scenario: A trial that is canceled keeps the access until it ends
     Given the person starts a trial of the plan "Plus"

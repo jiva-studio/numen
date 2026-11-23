@@ -16,19 +16,18 @@ Feature: Numen Sync subscription
 
     Scenario: A new account has no subscription
       When the person opens the page "Identity and licenses"
-      Then the subscription shows "No subscription"
-      And the page offers to buy the subscription
+      Then the page offers to buy the subscription
 
     Scenario: A paid subscription is active
       Given the person opens the page "Identity and licenses"
       When the person buys the subscription
-      Then the subscription shows "Active"
+      Then the subscription is active
 
     Scenario: A subscription bought on one computer is active on the other
       Given a second computer restores the identity from the recovery words
       And the person opens the page "Identity and licenses"
       When the person buys the subscription
-      Then the subscription shows "Active" on the second computer
+      Then the subscription is active on the second computer
 
     Scenario: An active subscription is not bought twice
       Given the person opens the page "Identity and licenses"
@@ -38,7 +37,7 @@ Feature: Numen Sync subscription
     Scenario: A payment that is not made leaves the account without a subscription
       Given the person opens the page "Identity and licenses"
       When the person opens the payment page without paying
-      Then the subscription shows "No subscription"
+      Then the page offers to buy the subscription
 
   Rule: The subscription needs an identity and a server that answers
 
