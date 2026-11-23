@@ -18,6 +18,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** Tags drawn before the chevron. */
   trail?(): VNode[]
+  /** A mark drawn right after the name. */
+  'name-suffix'?(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
