@@ -140,8 +140,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map(
-      (error) => IDENTITY_WORDS.describeFailure({ error, message: '' }),
+    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map((error) =>
+      IDENTITY_WORDS.describeFailure({ error, message: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
@@ -250,7 +250,7 @@ describe('the identity store restoring from words', () => {
       createClient({
         get,
         startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: 'word 4 is wrong' })),
+          Promise.resolve(asFailure({ error: 'invalidWords', message: 'word 4 is wrong' })),
       }),
     )
 
@@ -265,8 +265,7 @@ describe('the identity store restoring from words', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+        startRestore: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
