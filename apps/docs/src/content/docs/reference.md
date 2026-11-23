@@ -231,6 +231,7 @@ The settings of the plugin Numen Sync.
 | | | |
 | --- | --- | --- |
 | `server` | text | address of the server this device signs in to. |
+| `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
 
 ### `md.numen.tools.templates`
 
