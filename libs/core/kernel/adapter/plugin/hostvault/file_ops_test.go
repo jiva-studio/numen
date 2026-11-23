@@ -42,10 +42,10 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		Session{Current: func() (domain.Vault, bool) { return v, true }},
 		Files{Stat: stat, Bytes: file.NewReadBytes(vaultreader.Readers{}, stat)},
 		Writer{
-			Index:   file.NewScanFiles(index),
-			Stat:    stat,
-			Readers: vaultreader.Readers{},
-			Folders: writers,
+			Index:  file.NewScanFiles(index),
+			Stat:   stat,
+			Count:  file.NewCountFiles(vaultreader.Readers{}),
+			Import: file.NewImportFile(writers),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},

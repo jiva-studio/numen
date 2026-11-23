@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -57,27 +56,12 @@ func (w Writer) RemoveFile(ctx context.Context, path string, baseline *domain.Fi
 
 // checkEntry counts the files at the path and refuses a baseline the file no longer matches. A folder has no baseline.
 func (w Writer) checkEntry(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
-	reader, err := w.Readers.Open(v)
+	count, err := w.Count.Execute(ctx, v, path)
 	if err != nil {
 		return 0, err
 	}
-	if _, err := reader.StatFile(ctx, path); err == nil {
+	if count == 1 {
 		return 1, w.checkBaseline(ctx, v, path, baseline)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return 0, err
-	}
-	count := 0
-	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
-		if strings.HasPrefix(stat.Path, path+"/") {
-			count++
-		}
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-	if count == 0 {
-		return 0, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 	}
 	return count, nil
 }
@@ -137,14 +121,7 @@ func (w Writer) copyStaged(
 	if err := w.checkTarget(ctx, v, path, baseline); err != nil {
 		return err
 	}
-	folders, err := w.Folders.OpenFolderWriter(v)
-	if err != nil {
-		return err
-	}
-	if baseline != nil {
-		return folders.Replace(ctx, path, staged)
-	}
-	return folders.Import(ctx, path, staged)
+	return w.Import.Execute(ctx, v, path, staged, baseline != nil)
 }
 
 func checkStaged(staged io.ReadSeeker, expectedHash string) error {

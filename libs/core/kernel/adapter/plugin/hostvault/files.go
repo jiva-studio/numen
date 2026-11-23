@@ -2,12 +2,12 @@ package hostvault
 
 import (
 	"context"
+	"io"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
@@ -27,6 +27,16 @@ type fileStatter interface {
 	Execute(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
 }
 
+// fileCounter counts the files at a path, which the use case file.CountFiles does.
+type fileCounter interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (int, error)
+}
+
+// fileImporter writes a stream as the file at a path, which the use case file.ImportFile does.
+type fileImporter interface {
+	Execute(ctx context.Context, v domain.Vault, path string, content io.Reader, isReplacing bool) error
+}
+
 // Writer writes the files of the vault and indexes them. Locks, where set, holds the writers of the vault
 // apart while a call writes.
 type Writer struct {
@@ -39,8 +49,8 @@ type Writer struct {
 	Move         note.MoveFile
 	Remove       note.RemoveFile
 	Stat         fileStatter
-	Readers      vaultport.VaultReaders
-	Folders      vaultport.FolderWriters
+	Count        fileCounter
+	Import       fileImporter
 	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
 	StoreWriters func(v domain.Vault, pluginID string) (vault.StoreWriter, error)
 
