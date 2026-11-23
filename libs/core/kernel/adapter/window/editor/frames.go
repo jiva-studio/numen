@@ -56,10 +56,6 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		http.Error(w, "not a file of a plugin", http.StatusBadRequest)
 		return
 	}
-	if l.files.open == nil {
-		refuse(w, errNoVault)
-		return
-	}
 	opened, err := l.files.open.ExecutePluginFile(r.Context(), l.files.vaults.GetCurrentVault(), vaultID, pluginID, path)
 	if errors.Is(err, file.ErrNoVaultNamed) {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)

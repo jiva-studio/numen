@@ -30,9 +30,6 @@ func (l noteLinks) ResolveAddresses(
 	if named == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoVault)
 	}
-	if l.resolve == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("this window resolves no links"))
-	}
 	out, err := wire.ResolveAddresses(ctx, l.resolve, domain.VaultID(named), r.Msg)
 	if errors.Is(err, query.ErrUnknownVault) {
 		return nil, connect.NewError(connect.CodeNotFound, err)

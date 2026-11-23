@@ -10,7 +10,7 @@
  */
 import { useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
-import { listId, optionId } from '../../lib/place'
+import { listId, getOptionId } from '../../lib/place'
 import type { PaletteFieldProps } from './PaletteField.types'
 
 defineProps<PaletteFieldProps>()
@@ -58,7 +58,7 @@ function select(): void {
       :aria-expanded="isExpanded"
       :aria-busy="isBusy || undefined"
       :aria-controls="listId(uid)"
-      :aria-activedescendant="here >= 0 ? optionId(uid, here) : undefined"
+      :aria-activedescendant="here >= 0 ? getOptionId(uid, here) : undefined"
     />
     <!-- Over the end of the field, so the text and the row do not move. -->
     <Spinner v-if="isBusy" class="palette__busy" data-palette="busy" />

@@ -51,12 +51,12 @@ export interface Workspace {
   readonly focus: NodeId
 }
 
-export const orthogonal = (orientation: Orientation): Orientation =>
+export const getCrossOrientation = (orientation: Orientation): Orientation =>
   orientation === 'horizontal' ? 'vertical' : 'horizontal'
 
 /** How a branch at this depth divides its length. */
 export const getOrientation = (axis: Orientation, depth: number): Orientation =>
-  depth % 2 === 0 ? axis : orthogonal(axis)
+  depth % 2 === 0 ? axis : getCrossOrientation(axis)
 
 /** The orientation a split towards a side needs. Center splits nothing. */
 export const findSideOrientation = (side: Side): Orientation | null => {

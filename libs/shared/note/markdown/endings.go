@@ -19,7 +19,7 @@ func Normalize(text string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
 }
 
-func lineEnding(raw []byte) string {
+func detectLineEnding(raw []byte) string {
 	crlf := false
 	for pos := range raw {
 		switch raw[pos] {
@@ -43,39 +43,39 @@ func lineEnding(raw []byte) string {
 func breakWidth(block []byte, offset int) int {
 	switch block[offset] {
 	case '\r':
-		return carriageReturnWidth(block, offset)
+		return getCarriageReturnWidth(block, offset)
 	case '\n':
 		return 1
 	case 0xC2:
-		return nextLineWidth(block, offset)
+		return getNextLineWidth(block, offset)
 	case 0xE2:
-		return separatorWidth(block, offset)
+		return getSeparatorWidth(block, offset)
 	}
 	return 0
 }
 
-func carriageReturnWidth(block []byte, offset int) int {
+func getCarriageReturnWidth(block []byte, offset int) int {
 	if offset+1 < len(block) && block[offset+1] == '\n' {
 		return 2
 	}
 	return 1
 }
 
-func nextLineWidth(block []byte, offset int) int {
+func getNextLineWidth(block []byte, offset int) int {
 	if offset+1 < len(block) && block[offset+1] == 0x85 {
 		return 2
 	}
 	return 0
 }
 
-func separatorWidth(block []byte, offset int) int {
+func getSeparatorWidth(block []byte, offset int) int {
 	if offset+2 < len(block) && block[offset+1] == 0x80 && (block[offset+2] == 0xA8 || block[offset+2] == 0xA9) {
 		return 3
 	}
 	return 0
 }
 
-func endsWithBreak(block []byte) bool {
+func hasTrailingBreak(block []byte) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INTEGER_INCREMENT reason="breakWidth returns at most 3 so widths above 3 never equal breakWidth"
 	for width := 1; width <= 3 && width <= len(block); width++ {
 		if breakWidth(block, len(block)-width) == width {
@@ -85,7 +85,7 @@ func endsWithBreak(block []byte) bool {
 	return false
 }
 
-func lineOffsets(block []byte) []int {
+func getLineOffsets(block []byte) []int {
 	offsets := []int{0}
 	for pos := 0; pos < len(block); {
 		width := breakWidth(block, pos)
@@ -102,7 +102,7 @@ func lineOffsets(block []byte) []int {
 	return offsets
 }
 
-func columnOffset(block []byte, lines []int, line, column int) int {
+func getColumnOffset(block []byte, lines []int, line, column int) int {
 	offset, end := lines[line-1], lines[line]
 	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY reason="utf8.DecodeRune on an empty slice at offset == end returns width 0"
 	for count := 1; count < column && offset < end; count++ {
@@ -116,7 +116,7 @@ func getIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 
-func offsetLine(lines []int, offset int) int {
+func findLine(lines []int, offset int) int {
 	for i, lineStart := range lines {
 		if lineStart >= offset {
 			return i + 1

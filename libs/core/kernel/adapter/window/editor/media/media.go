@@ -28,10 +28,7 @@ type Addresses interface {
 	GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string
 }
 
-var (
-	errNoVault  = errors.New("the window has no vault")
-	errComingUp = errors.New("the vault is still coming up")
-)
+var errNoVault = errors.New("the window has no vault")
 
 // Handler serves MediaService.
 type Handler struct {
@@ -53,9 +50,6 @@ func (h *Handler) ResolveAddress(
 	showing := h.vault.GetCurrentVault()
 	if showing.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
-	}
-	if h.resolveAddress == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	resolved, err := h.resolveAddress.Execute(ctx, showing, r.Msg.GetAddress())
 	switch {

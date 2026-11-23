@@ -57,11 +57,11 @@ func TestProseInsideAFenceIsNotPointedAnywhere(t *testing.T) {
 // text of the example.
 func TestBackticksInsideATildeFenceAreNotAFence(t *testing.T) {
 	body := []byte("~~~\n```\n[[Inside]]\n~~~\n\n[[Outside]]\n")
-	links := bodyLinks(body)
+	links := getBodyLinks(body)
 	if len(links) != 1 || links[0].Target.Value != "Outside" {
 		t.Errorf("links = %v", links)
 	}
-	if got := headings([]byte("~~~\n```\n# Inside\n~~~\n\n# Outside\n")); len(got) != 1 || got[0].Text != "Outside" {
+	if got := findHeadings([]byte("~~~\n```\n# Inside\n~~~\n\n# Outside\n")); len(got) != 1 || got[0].Text != "Outside" {
 		t.Errorf("headings = %v", got)
 	}
 }
@@ -107,7 +107,7 @@ func TestRedirectProseAndParseHelpers(t *testing.T) {
 	}
 
 	// Direct tests for headings, parseHeading, trimClosingMarks, and Fence.
-	hs := headings([]byte("# One\n# Two"))
+	hs := findHeadings([]byte("# One\n# Two"))
 	if len(hs) != 2 || hs[0].Line != 0 || hs[1].Line != 1 || hs[1].Offset != 6 {
 		t.Errorf("headings(# One\\n# Two) = %+v", hs)
 	}

@@ -12,15 +12,15 @@ import {
 } from './edit'
 import { arrangeWorkspace } from '../fixtures/arrange'
 import type { Side, Workspace } from './node'
-import { isBranch, isPane, paneWithTab, getPanes } from './tree'
+import { isBranch, isPane, findPaneWithTab, getPanes } from './tree'
 import {
-  deep,
-  empty,
+  createDeepWorkspace,
+  createEmptyWorkspace,
   createIdFactory,
-  oneStack,
-  sideBySide,
+  createOneStack,
+  createSideBySide,
   split,
-  stack,
+  createStack,
   withSpare,
   createWorkspace,
 } from '../fixtures/build'
@@ -36,31 +36,31 @@ const getTabs = (workspace: Workspace, pane: string) =>
 
 describe('focusing', () => {
   it('moves the focus to a pane of the tree', () => {
-    expect(focusPane(sideBySide(), 'aside').focus).toBe('aside')
+    expect(focusPane(createSideBySide(), 'aside').focus).toBe('aside')
   })
 
   it('leaves the focus where it is for a pane the tree does not hold', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(focusPane(before, 'nothing')).toStrictEqual(before)
   })
 })
 
 describe('opening and showing', () => {
   it('puts a new tab in the focused pane', () => {
-    const after = openTab(sideBySide(), 'notes', 'aside')
+    const after = openTab(createSideBySide(), 'notes', 'aside')
     expect(getTabs(after, 'aside')).toStrictEqual(['chat', 'notes'])
     expect(after.focus).toBe('aside')
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('shows a tab that is already open where it is', () => {
-    const after = openTab(sideBySide(), 'chat', 'main')
+    const after = openTab(createSideBySide(), 'chat', 'main')
     expect(getTabs(after, 'main')).toStrictEqual(['plex'])
     expect(after.focus).toBe('aside')
   })
 
   it('moves the focus to whatever is shown', () => {
-    const after = activateTab(oneStack(), 'chat')
+    const after = activateTab(createOneStack(), 'chat')
     expect(getPanes(after.root)[0]?.active).toBe('chat')
     expect(after.focus).toBe('main')
   })
@@ -70,7 +70,7 @@ describe('a gesture asking for what the tree does not hold', () => {
   const nowhere = () => createWorkspace(split('root', []))
 
   it('shows no tab that is not open', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(activateTab(before, 'nothing')).toStrictEqual(before)
   })
 
@@ -87,31 +87,31 @@ describe('a gesture asking for what the tree does not hold', () => {
   })
 
   it('moves no tab that is not open', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(moveTabWithin(before, 'nothing', 0)).toStrictEqual(before)
   })
 
   it('drops no tab that is not open', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     const drop = { tab: 'nothing', onto: 'main', side: 'left' } as const
     expect(dropTab(before, drop, createIdFactory())).toStrictEqual(before)
   })
 
   it('drops a tab onto no pane that exists', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     const drop = { tab: 'chat', onto: 'nothing', side: 'left' } as const
     expect(dropTab(before, drop, createIdFactory())).toStrictEqual(before)
   })
 
   it('resizes no branch that does not exist', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(resizeBranch(before, 'nothing', [0.5, 0.5])).toStrictEqual(before)
   })
 })
 
 describe('opening a tab in a pane of its own', () => {
   it('opens one that was nowhere in the tree', () => {
-    const after = openTabAdjacent(sideBySide(), 'notes', {
+    const after = openTabAdjacent(createSideBySide(), 'notes', {
       side: 'right',
       createId: createIdFactory(),
     })
@@ -123,19 +123,19 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('takes one that is already open away from where it was', () => {
-    const after = openTabAdjacent(sideBySide(), 'chat', {
+    const after = openTabAdjacent(createSideBySide(), 'chat', {
       side: 'right',
       createId: createIdFactory(),
     })
 
-    expect(paneWithTab(after.root, 'chat')?.id).toBe('made-1')
+    expect(findPaneWithTab(after.root, 'chat')?.id).toBe('made-1')
     expect(getPanes(after.root).map((each) => each.id)).toStrictEqual(['main', 'made-1'])
     expect(after.focus).toBe('made-1')
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves one that is alone in the pane it would open alongside where it is', () => {
-    const before = createWorkspace(stack('main', 'plex'))
+    const before = createWorkspace(createStack('main', 'plex'))
     const ids = createIdFactory()
 
     const after = openTabAdjacent(before, 'plex', { side: 'left', createId: ids })
@@ -151,7 +151,7 @@ describe('opening a tab in a pane of its own', () => {
     ['top' as Side, 'vertical', ['made-1', 'main']],
     ['bottom' as Side, 'vertical', ['main', 'made-1']],
   ])('puts it on the %s', (side, axis, order) => {
-    const after = openTabAdjacent(oneStack(), 'notes', { side, createId: createIdFactory() })
+    const after = openTabAdjacent(createOneStack(), 'notes', { side, createId: createIdFactory() })
 
     expect(ids(after)).toStrictEqual(order)
     expect(after.axis).toBe(axis)
@@ -185,7 +185,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('takes half of what it opened alongside', () => {
-    const after = openTabAdjacent(sideBySide(), 'notes', {
+    const after = openTabAdjacent(createSideBySide(), 'notes', {
       side: 'right',
       createId: createIdFactory(),
     })
@@ -210,7 +210,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('opens alongside the pane a tab opens into when told no other', () => {
-    const focused = createWorkspace(sideBySide().root, 'horizontal', 'aside')
+    const focused = createWorkspace(createSideBySide().root, 'horizontal', 'aside')
     const after = openTabAdjacent(focused, 'notes', { side: 'right', createId: createIdFactory() })
 
     expect(ids(after)).toStrictEqual(['main', 'aside', 'made-1'])
@@ -218,7 +218,10 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('divides a workspace holding nothing, and clears the empty pane away', () => {
-    const after = openTabAdjacent(empty(), 'notes', { side: 'bottom', createId: createIdFactory() })
+    const after = openTabAdjacent(createEmptyWorkspace(), 'notes', {
+      side: 'bottom',
+      createId: createIdFactory(),
+    })
 
     expect(isPane(after.root) && after.root.id).toBe('made-1')
     expect(getTabs(after, 'made-1')).toStrictEqual(['notes'])
@@ -226,21 +229,21 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('does nothing for the middle, which divides nothing', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(
       openTabAdjacent(before, 'notes', { side: 'center', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
   it('leaves a tab that is open where it is when requested for the middle', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(
       openTabAdjacent(before, 'chat', { side: 'center', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
   it('leaves the tree canonical when the pane it opened alongside empties', () => {
-    const after = openTabAdjacent(oneStack(), 'plex', {
+    const after = openTabAdjacent(createOneStack(), 'plex', {
       side: 'left',
       createId: createIdFactory(),
       onto: 'main',
@@ -255,7 +258,7 @@ describe('opening a tab in a pane of its own', () => {
 describe('a tab dropped alongside a pane', () => {
   it('joins the parent when the parent already divides that way', () => {
     const after = dropTab(
-      sideBySide(),
+      createSideBySide(),
       { tab: 'chat', onto: 'main', side: 'left' },
       createIdFactory(),
     )
@@ -283,7 +286,7 @@ describe('a tab dropped alongside a pane', () => {
 
   it('takes half of what it landed alongside', () => {
     const after = dropTab(
-      oneStack(),
+      createOneStack(),
       { tab: 'chat', onto: 'main', side: 'right' },
       createIdFactory(),
     )
@@ -294,7 +297,11 @@ describe('a tab dropped alongside a pane', () => {
   })
 
   it('turns the axis when the whole workspace is one pane', () => {
-    const after = dropTab(oneStack(), { tab: 'chat', onto: 'main', side: 'top' }, createIdFactory())
+    const after = dropTab(
+      createOneStack(),
+      { tab: 'chat', onto: 'main', side: 'top' },
+      createIdFactory(),
+    )
 
     expect(after.axis).toBe('vertical')
     expect(ids(after)).toStrictEqual(['made-1', 'main'])
@@ -313,7 +320,7 @@ describe('a tab dropped alongside a pane', () => {
 describe('a tab dropped in the middle of a pane', () => {
   it('joins the stack and is shown', () => {
     const after = dropTab(
-      sideBySide(),
+      createSideBySide(),
       { tab: 'chat', onto: 'main', side: 'center' },
       createIdFactory(),
     )
@@ -326,7 +333,7 @@ describe('a tab dropped in the middle of a pane', () => {
 
   it('clears away the pane it came from', () => {
     const after = dropTab(
-      sideBySide(),
+      createSideBySide(),
       { tab: 'plex', onto: 'aside', side: 'center' },
       createIdFactory(),
     )
@@ -336,7 +343,7 @@ describe('a tab dropped in the middle of a pane', () => {
 
 describe('a tab dropped where it started', () => {
   it('is only shown when it is the only one there', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     const after = dropTab(before, { tab: 'chat', onto: 'aside', side: 'left' }, createIdFactory())
 
     expect(after.root).toStrictEqual(before.root)
@@ -345,7 +352,7 @@ describe('a tab dropped where it started', () => {
 
   it('only shows a tab dropped in the middle of its own pane, where it was', () => {
     const after = dropTab(
-      oneStack(),
+      createOneStack(),
       { tab: 'plex', onto: 'main', side: 'center' },
       createIdFactory(),
     )
@@ -356,7 +363,7 @@ describe('a tab dropped where it started', () => {
 
   it('splits its own pane when there are others with it', () => {
     const after = dropTab(
-      oneStack(),
+      createOneStack(),
       { tab: 'chat', onto: 'main', side: 'right' },
       createIdFactory(),
     )
@@ -377,7 +384,7 @@ describe('a tab dropped on the outer edge', () => {
   })
 
   it('does nothing for the middle, which is not an edge', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(dropOnEdge(before, { tab: 'chat', side: 'center' }, createIdFactory())).toStrictEqual(
       before,
     )
@@ -386,24 +393,24 @@ describe('a tab dropped on the outer edge', () => {
 
 describe('closing', () => {
   it('shows the next tab along', () => {
-    const after = closeTab(oneStack(), 'plex')
+    const after = closeTab(createOneStack(), 'plex')
     expect(getPanes(after.root)[0]?.active).toBe('chat')
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('clears the pane away and leaves the rest where they were', () => {
-    const before = deep()
+    const before = createDeepWorkspace()
     const boxes = arrangeWorkspace(before, SCREEN)
     const after = closeTab(before, 'four')
 
-    expect(paneWithTab(after.root, 'four')).toBeNull()
+    expect(findPaneWithTab(after.root, 'four')).toBeNull()
     expect(arrangeWorkspace(after, SCREEN).get('e')).toStrictEqual(boxes.get('again'))
     expect(arrangeWorkspace(after, SCREEN).get('a')).toStrictEqual(boxes.get('a'))
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves an empty workspace when the last tab is removed', () => {
-    const after = closeTab(closeTab(oneStack(), 'plex'), 'chat')
+    const after = closeTab(closeTab(createOneStack(), 'plex'), 'chat')
 
     expect(isPane(after.root) && after.root.tabs).toStrictEqual([])
     expect(isPane(after.root) && after.root.active).toBeNull()
@@ -411,13 +418,13 @@ describe('closing', () => {
   })
 
   it('ignores a tab that is not open', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(closeTab(before, 'nothing')).toStrictEqual(before)
   })
 })
 
 describe('moving a tab along its own strip', () => {
-  const three = createWorkspace(stack('main', 'one', 'two', 'three'))
+  const three = createWorkspace(createStack('main', 'one', 'two', 'three'))
 
   it.each([
     [0, ['three', 'one', 'two']],
@@ -438,7 +445,7 @@ describe('moving a tab along its own strip', () => {
 
 describe('resizing', () => {
   it('takes the shares a handle reports', () => {
-    const after = resizeBranch(sideBySide(), 'root', [0.4, 0.6])
+    const after = resizeBranch(createSideBySide(), 'root', [0.4, 0.6])
     const boxes = arrangeWorkspace(after, SCREEN)
 
     expect(boxes.get('main')?.width).toBeCloseTo(400)
@@ -446,15 +453,15 @@ describe('resizing', () => {
   })
 
   it('ignores a node that does not divide anything', () => {
-    const before = sideBySide()
+    const before = createSideBySide()
     expect(resizeBranch(before, 'main', [0.5, 0.5])).toStrictEqual(before)
   })
 })
 
 describe('every gesture keeps the tree canonical', () => {
   const start = split('root', [
-    stack('a', 'one', 'two'),
-    split('down', [stack('b', 'three'), stack('c', 'four')]),
+    createStack('a', 'one', 'two'),
+    split('down', [createStack('b', 'three'), createStack('c', 'four')]),
   ])
 
   it('through a run of them', () => {

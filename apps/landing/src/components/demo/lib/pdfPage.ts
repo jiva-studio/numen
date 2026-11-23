@@ -41,7 +41,7 @@ export interface Highlight {
   readonly maxY: number
 }
 
-function overLines(from: number, to: number, ends: number): Highlight {
+function createLineHighlight(from: number, to: number, ends: number): Highlight {
   return {
     minX: (MARGIN - 4) / PAPER.width,
     maxX: (MARGIN + ends) / PAPER.width,
@@ -50,7 +50,7 @@ function overLines(from: number, to: number, ends: number): Highlight {
   }
 }
 
-const HIGHLIGHTS: readonly Highlight[] = [overLines(8, 9, 420), overLines(10, 11, 360)]
+const HIGHLIGHTS: readonly Highlight[] = [createLineHighlight(8, 9, 420), createLineHighlight(10, 11, 360)]
 
 /** The passages marked on a page: only the page the paper opens on has any. */
 export function getHighlights(path: string, pageIndex: number): readonly Highlight[] {

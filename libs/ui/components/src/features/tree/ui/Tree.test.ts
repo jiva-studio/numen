@@ -516,7 +516,7 @@ describe('what follows the pointer', () => {
   it('says it in the words the caller gave for how many', async () => {
     const wrapper = mountTree({
       selected: ['pages', 'loose'],
-      counted: (rows: number) => `${rows} files`,
+      getCountText: (rows: number) => `${rows} files`,
     })
     pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
     pointer('pointermove', 60)

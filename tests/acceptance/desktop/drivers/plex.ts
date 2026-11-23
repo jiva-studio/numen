@@ -74,7 +74,7 @@ export class PlexDriver {
     await this.scenario.page.mouse.move(at.x, at.y)
   }
 
-  async restPointerOn(title: string): Promise<void> {
+  async placePointerOn(title: string): Promise<void> {
     await this.hoverNote(title)
   }
 

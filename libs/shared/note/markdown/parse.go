@@ -26,10 +26,10 @@ func Parse(ref domain.FileStat, raw []byte) domain.Note {
 	n.FrontmatterErr = fmErr
 
 	n.Body = string(body)
-	n.Headings = headings(body)
-	n.Title = title(n, ref.Path)
-	annotated, problems := frontmatterLinks(n.Frontmatter)
-	n.Links = mergeLinks(annotated, bodyLinks(body))
+	n.Headings = findHeadings(body)
+	n.Title = getTitle(n, ref.Path)
+	annotated, problems := getFrontmatterLinks(n.Frontmatter)
+	n.Links = mergeLinks(annotated, getBodyLinks(body))
 
 	if id, problem := parseNoteID(n.Frontmatter); problem != "" {
 		problems = append(problems, problem)
@@ -141,7 +141,7 @@ func isFrontmatterDelimiter(line []byte) bool {
 	return len(line) == 3 && line[0] == '-' && line[1] == '-' && line[2] == '-'
 }
 
-func headings(body []byte) []domain.Heading {
+func findHeadings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(body) the slice is empty and skipped by len(text) == 0"
@@ -194,7 +194,7 @@ func trimClosingMarks(content string) string {
 	return text
 }
 
-func title(n domain.Note, notePath string) string {
+func getTitle(n domain.Note, notePath string) string {
 	if t, ok := n.Frontmatter["title"].(string); ok && strings.TrimSpace(t) != "" {
 		return strings.TrimSpace(t)
 	}

@@ -15,7 +15,7 @@ import {
   parseNumber,
   stepForKey,
 } from './numberText'
-import { snapToBounds } from './snapToBounds'
+import { fitToBounds } from './fitToBounds'
 import { stepBy } from './stepBy'
 import type { Bounds } from '@/shared/lib/math/bounds'
 
@@ -102,14 +102,14 @@ describe('the bounds', () => {
 
 describe('the places a step lays', () => {
   it('is where a number off them is brought', () => {
-    expect(snapToBounds(13, BOUNDS)).toBe(15)
-    expect(snapToBounds(0.873, FINE)).toBe(0.87)
-    expect(snapToBounds(20, BOUNDS)).toBe(20)
+    expect(fitToBounds(13, BOUNDS)).toBe(15)
+    expect(fitToBounds(0.873, FINE)).toBe(0.87)
+    expect(fitToBounds(20, BOUNDS)).toBe(20)
   })
 
   it('holds a number brought to them inside the bounds', () => {
-    expect(snapToBounds(900, BOUNDS)).toBe(240)
-    expect(snapToBounds(-4, BOUNDS)).toBe(0)
+    expect(fitToBounds(900, BOUNDS)).toBe(240)
+    expect(fitToBounds(-4, BOUNDS)).toBe(0)
   })
 
   it('is what the bounds allow, and a number between two of them is not', () => {
@@ -183,16 +183,16 @@ describe('text with spaces around it', () => {
 
 describe('the places a number is kept to', () => {
   it('keeps to the decimals the step is written with', () => {
-    expect(snapToBounds(0.7, { min: 0.25, max: 5, step: 0.5 })).toBe(0.8)
+    expect(fitToBounds(0.7, { min: 0.25, max: 5, step: 0.5 })).toBe(0.8)
   })
 
   it('keeps to whole numbers for a whole step', () => {
-    expect(snapToBounds(1.2, { min: 0.5, max: 5, step: 1 })).toBe(2)
+    expect(fitToBounds(1.2, { min: 0.5, max: 5, step: 1 })).toBe(2)
   })
 
   it('leaves a number alone where the step is nothing or less', () => {
-    expect(snapToBounds(5, { min: 0, max: 10, step: 0 })).toBe(5)
-    expect(snapToBounds(5, { min: 0, max: 10, step: -1 })).toBe(5)
+    expect(fitToBounds(5, { min: 0, max: 10, step: 0 })).toBe(5)
+    expect(fitToBounds(5, { min: 0, max: 10, step: -1 })).toBe(5)
   })
 })
 

@@ -205,7 +205,9 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 }
 
 func TestAWindowWithNoPluginsListsNone(t *testing.T) {
-	server := httptest.NewServer(newAPI(t, nil).NewHandler(http.NotFoundHandler()))
+	api := newAPI(t, nil)
+	api.Frontends = NewFrontendPlugins(func() []string { return nil }, func(string) (string, bool) { return "", false })
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)

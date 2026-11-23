@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { commit, detach, mapPane, putAdjacent } from './splice'
 import { pane, type Pane, type WorkspaceNode } from './node'
 import { isBranch, isPane, findNode, paneById } from './tree'
-import { createIdFactory, split, stack, createWorkspace } from '../fixtures/build'
+import { createIdFactory, split, createStack, createWorkspace } from '../fixtures/build'
 
 describe('putAdjacent', () => {
-  const two = split('root', [stack('a', 'one'), stack('b', 'two')])
+  const two = split('root', [createStack('a', 'one'), createStack('b', 'two')])
 
   it('leaves the tree alone for the middle, which is not a side', () => {
     const divided = putAdjacent(
@@ -28,7 +28,7 @@ describe('putAdjacent', () => {
 
   it('divides a root that is one pane into two halves, turning the axis', () => {
     const divided = putAdjacent(
-      stack('a', 'one'),
+      createStack('a', 'one'),
       { onto: 'a', tab: 't', side: 'bottom', axis: 'horizontal' },
       createIdFactory(),
     )
@@ -59,36 +59,36 @@ describe('putAdjacent', () => {
 })
 
 describe('detach', () => {
-  const createStack = (active: string) =>
-    split('root', [pane('main', ['a', 'b', 'c'], active), stack('other', 'x')])
+  const createMainTree = (active: string) =>
+    split('root', [pane('main', ['a', 'b', 'c'], active), createStack('other', 'x')])
   const getActiveTab = (root: WorkspaceNode) => paneById(root, 'main')?.active
 
   it('leaves the shown tab alone when another one goes', () => {
-    expect(getActiveTab(detach(createStack('a'), 'c'))).toBe('a')
+    expect(getActiveTab(detach(createMainTree('a'), 'c'))).toBe('a')
   })
 
   it('shows the next tab along when the shown one is removed', () => {
-    expect(getActiveTab(detach(createStack('b'), 'b'))).toBe('c')
+    expect(getActiveTab(detach(createMainTree('b'), 'b'))).toBe('c')
   })
 
   it('shows the previous tab when the shown one was last', () => {
-    expect(getActiveTab(detach(createStack('c'), 'c'))).toBe('b')
+    expect(getActiveTab(detach(createMainTree('c'), 'c'))).toBe('b')
   })
 
   it('shows nothing when the last tab is removed', () => {
-    const lone = split('root', [pane('main', ['a']), stack('other', 'x')])
+    const lone = split('root', [pane('main', ['a']), createStack('other', 'x')])
     expect(paneById(detach(lone, 'a'), 'main')?.active).toBeNull()
   })
 
   it('leaves the tree alone for a tab that is not open', () => {
-    const root = createStack('a')
+    const root = createMainTree('a')
     expect(detach(root, 'missing')).toBe(root)
   })
 })
 
 describe('commit', () => {
   const three = createWorkspace(
-    split('root', [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')]),
+    split('root', [createStack('a', 'one'), createStack('b', 'two'), createStack('c', 'three')]),
     'horizontal',
     'c',
   )
@@ -107,7 +107,7 @@ describe('commit', () => {
 })
 
 describe('mapPane', () => {
-  const root = split('root', [stack('a', 'one'), stack('b', 'two')])
+  const root = split('root', [createStack('a', 'one'), createStack('b', 'two')])
 
   it('changes the pane with that id', () => {
     const after = mapPane(root, 'b', (tab: Pane) => ({ ...tab, tabs: [...tab.tabs, 'new'] }))

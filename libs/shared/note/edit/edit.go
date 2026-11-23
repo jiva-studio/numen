@@ -68,7 +68,7 @@ type Edit struct {
 
 // Apply makes one change to the note at path and puts it back.
 func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.FileStat, error) {
-	content, err := e.splice(ctx, v, path, change)
+	content, err := e.applyChange(ctx, v, path, change)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
@@ -81,7 +81,7 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	return content, WrapIndexOutdated(e.Index(context.WithoutCancel(ctx), v, []string{path}), path)
 }
 
-func (e Edit) splice(
+func (e Edit) applyChange(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.FileStat, error) {
 	files, err := e.Open(v)

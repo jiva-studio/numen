@@ -59,7 +59,7 @@ export { Skeleton } from './shared/ui/skeleton'
 /** A link that leads out of the application, and the window held against it. */
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
+export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
 export type { LinkPiece } from './shared/lib/text/marks'
