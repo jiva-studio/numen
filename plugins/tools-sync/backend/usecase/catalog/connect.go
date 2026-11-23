@@ -129,6 +129,6 @@ func (u *ConnectVault) writeLink(ctx context.Context, id domain.VaultID, remoteI
 	if err != nil {
 		return fmt.Errorf("seal the vault key: %w", err)
 	}
-	link := vaultlink.Link{RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: sealed, CatalogName: name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0}}
+	link := vaultlink.Link{RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: sealed, CatalogName: name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0}, RestoreEpochID: nil, Recovery: nil}
 	return u.reader.deps.State.WriteLink(ctx, id, link)
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -34,23 +35,27 @@ func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byt
 		} else if !bytes.Equal(found.epochID, page.GetRestoreEpochId()) {
 			return heads{}, errEpochMoved
 		}
-		for _, stored := range page.GetChanges() {
-			rev := stored.GetRevision()
-			head := domain.Head{
-				FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Hash: "", Path: "",
-				IsDeleted: rev.GetDeleted(), IsBlobMissing: false,
-			}
-			if meta, err := note.OpenMeta(key, remote, rev.GetFileId(), rev.GetEncMeta()); err == nil && !rev.GetDeleted() {
-				head.Hash, head.Path = meta.Hash, meta.Path
-			}
-			found.byFile[string(rev.GetFileId())] = head
-			if !rev.GetDeleted() {
-				found.blobs[string(rev.GetFileId())] = rev.GetBlobId()
-			}
-		}
+		found.add(key, remote, page.GetChanges())
 		since = page.GetNextSeq()
 		if !page.GetHasMore() {
 			return found, nil
+		}
+	}
+}
+
+func (h heads) add(key [32]byte, remote []byte, changes []*syncv1.StoredRevision) {
+	for _, stored := range changes {
+		rev := stored.GetRevision()
+		head := domain.Head{
+			FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Hash: "", Path: "",
+			IsDeleted: rev.GetDeleted(), IsBlobMissing: false,
+		}
+		if meta, err := note.OpenMeta(key, remote, rev.GetFileId(), rev.GetEncMeta()); err == nil && !rev.GetDeleted() {
+			head.Hash, head.Path = meta.Hash, meta.Path
+		}
+		h.byFile[string(rev.GetFileId())] = head
+		if !rev.GetDeleted() {
+			h.blobs[string(rev.GetFileId())] = rev.GetBlobId()
 		}
 	}
 }
