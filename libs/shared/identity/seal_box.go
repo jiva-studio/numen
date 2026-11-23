@@ -93,14 +93,14 @@ func getHPKESuite(kem bool) []byte {
 	return binary.BigEndian.AppendUint16(suite, hpkeAEADChaCha)
 }
 
-func labelHPKE(suite []byte, label string, data []byte) []byte {
+func buildHPKELabel(suite []byte, label string, data []byte) []byte {
 	labeled := append([]byte("HPKE-v1"), suite...)
 	labeled = append(labeled, label...)
 	return append(labeled, data...)
 }
 
 func extractHPKE(suite, salt []byte, label string, ikm []byte) ([]byte, error) {
-	prk, err := hkdf.Extract(sha256.New, labelHPKE(suite, label, ikm), salt)
+	prk, err := hkdf.Extract(sha256.New, buildHPKELabel(suite, label, ikm), salt)
 	if err != nil {
 		return nil, fmt.Errorf("identity: box extract: %w", err)
 	}
@@ -109,7 +109,7 @@ func extractHPKE(suite, salt []byte, label string, ikm []byte) ([]byte, error) {
 
 func expandHPKE(suite, prk []byte, label string, info []byte, size int) ([]byte, error) {
 	labeled := binary.BigEndian.AppendUint16(nil, uint16(size))
-	labeled = append(labeled, labelHPKE(suite, label, info)...)
+	labeled = append(labeled, buildHPKELabel(suite, label, info)...)
 	out, err := hkdf.Expand(sha256.New, prk, string(labeled), size)
 	if err != nil {
 		return nil, fmt.Errorf("identity: box expand: %w", err)

@@ -33,7 +33,7 @@ var (
 	errBadHead     = errors.New("the head of the share log kept in the link is not an entry id")
 )
 
-func statusOf(result transfer.PullResult, now time.Time) ports.Status {
+func getStatus(result transfer.PullResult, now time.Time) ports.Status {
 	return ports.Status{LastSyncedAt: now, ConflictCount: len(result.Conflicts)}
 }
 
@@ -161,7 +161,7 @@ func (r *pullRun) followLog(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if entries, err = domainshare.ContinueFrom(entries, received.ServerVersion, headID); err != nil {
+	if entries, err = domainshare.ListEntriesAfter(entries, received.ServerVersion, headID); err != nil {
 		return err
 	}
 	if r.authors, err = trust.NewAuthors(received.OwnerChain, chain); err != nil {
@@ -258,7 +258,7 @@ func (r *pullRun) apply(ctx context.Context, change *syncv1.ShareChange) error {
 	if r.link.Received.IsRegressed(rev.GetFileId(), stored.GetRevId()) {
 		return fmt.Errorf("%w: a file is served at a revision older than the one this reader has seen", domainshare.ErrRolledBack)
 	}
-	r.link.Received.NoteRevision(rev.GetFileId(), stored.GetRevId())
+	r.link.Received.RecordRevision(rev.GetFileId(), stored.GetRevId())
 	if change.GetLeft() || rev.GetDeleted() {
 		return r.remove(ctx, rev.GetFileId(), stored.GetSeq())
 	}
@@ -362,7 +362,7 @@ func (r *pullRun) retire(ctx context.Context, previous note.FileRecord, isKnown 
 		r.addConflict(previous.Path, seq)
 		return nil
 	}
-	return r.trash(ctx, previous.Path)
+	return r.moveToTrash(ctx, previous.Path)
 }
 
 func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
@@ -379,7 +379,7 @@ func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
 		return nil
 	}
 	if local != "" {
-		if err := r.trash(ctx, record.Path); err != nil {
+		if err := r.moveToTrash(ctx, record.Path); err != nil {
 			return err
 		}
 	}
@@ -387,8 +387,8 @@ func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
 	return nil
 }
 
-func (r *pullRun) trash(ctx context.Context, path string) error {
-	removals, err := r.deps.Host.Remover(r.id).RemoveNotes(ctx, []string{path})
+func (r *pullRun) moveToTrash(ctx context.Context, path string) error {
+	removals, err := r.deps.Host.GetRemover(r.id).RemoveNotes(ctx, []string{path})
 	if err != nil {
 		return err
 	}

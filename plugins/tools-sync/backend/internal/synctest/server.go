@@ -110,8 +110,8 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// PostAdmin posts to an admin path of the fake server and returns the status.
-func (s *Server) PostAdmin(t *testing.T, path string) int {
+// CallAdmin sends a POST to an admin path of the fake server and returns the status.
+func (s *Server) CallAdmin(t *testing.T, path string) int {
 	t.Helper()
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, s.URL+path, nil)
 	if err != nil {

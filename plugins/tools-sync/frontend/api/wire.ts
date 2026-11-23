@@ -9,4 +9,4 @@ import { createVaultsClient, SERVICE } from './vaults'
 export const vaultsClient = createVaultsClient(createApi(SERVICE))
 export const subscriptionClient = createSubscriptionClient(createApi(SERVICE))
 export const folderSharesClient = createFolderSharesClient(createApi(SERVICE))
-export const receivedSharesClient = createReceivedSharesClient(createApi(SERVICE))
+export const readerSharesClient = createReceivedSharesClient(createApi(SERVICE))

@@ -32,8 +32,7 @@ func (v *Vaults) GetIndexer(id domain.VaultID) ports.Indexer { return v.client.W
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
 
-// Remover returns the removal of notes of the vault.
-func (v *Vaults) Remover(id domain.VaultID) ports.Remover { return v.client.With(id) }
+func (v *Vaults) GetRemover(id domain.VaultID) ports.Remover { return v.client.With(id) }
 
 // AddManagedVault adds the folder as a vault that only the plugin with the id managedBy writes.
 func (v *Vaults) AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error) {

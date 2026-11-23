@@ -53,7 +53,7 @@ func (u *AddReader) Execute(ctx context.Context, in AddReaderInput) (Invited, er
 		return Invited{}, domainshare.ErrOwnIdentity
 	}
 	at := ref{vault: in.VaultID, folder: in.Folder, missing: domainshare.ErrNotReady}
-	root, err := u.change(ctx, at, func(root domainshare.Root) (draft, error) { return u.draftAdd(root, chain, in) })
+	root, err := u.change(ctx, at, func(root domainshare.Root) (draft, error) { return u.prepareAdd(root, chain, in) })
 	if err != nil {
 		return Invited{}, err
 	}
@@ -65,7 +65,7 @@ func (u *AddReader) Execute(ctx context.Context, in AddReaderInput) (Invited, er
 	return Invited{Text: text, Fingerprint: fingerprint.String()}, nil
 }
 
-func (u *AddReader) draftAdd(root domainshare.Root, chain identity.Chain, in AddReaderInput) (draft, error) {
+func (u *AddReader) prepareAdd(root domainshare.Root, chain identity.Chain, in AddReaderInput) (draft, error) {
 	if root.Phase == domainshare.PhaseCreated {
 		return draft{}, domainshare.ErrNotReady
 	}

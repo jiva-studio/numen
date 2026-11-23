@@ -239,10 +239,10 @@ var (
 	errBadSignature  = errors.New("the signature is not valid")
 )
 
-// ContinueFrom returns the entries after the one a reader verified last. The entries start at that one: the server
+// ListEntriesAfter returns the entries after the one a reader verified last. The entries start at that one: the server
 // must serve it again, with the id the reader stored, or it has taken the log back to an older state or made another
 // one (ErrRolledBack).
-func ContinueFrom(entries []*syncv1.ShareLogEntry, version uint64, headID [32]byte) ([]*syncv1.ShareLogEntry, error) {
+func ListEntriesAfter(entries []*syncv1.ShareLogEntry, version uint64, headID [32]byte) ([]*syncv1.ShareLogEntry, error) {
 	if len(entries) == 0 || entries[0].GetVersion() != version || syncprotocol.GetShareLogEntryID(entries[0]) != headID {
 		return nil, fmt.Errorf("%w: the entry %d the reader holds is not at the head of what the server serves", ErrRolledBack, version)
 	}

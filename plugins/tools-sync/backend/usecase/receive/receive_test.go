@@ -46,7 +46,7 @@ func newWorld(t *testing.T) *world {
 
 func setPhase(t *testing.T, server *synctest.Server, phase string) {
 	t.Helper()
-	if status := server.PostAdmin(t, "/admin/subscription?phase="+phase); status >= 300 {
+	if status := server.CallAdmin(t, "/admin/subscription?phase="+phase); status >= 300 {
 		t.Fatalf("the admin path answered %d", status)
 	}
 }

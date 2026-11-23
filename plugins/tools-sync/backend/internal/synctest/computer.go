@@ -50,8 +50,7 @@ func (h Host) GetIndexer(id domain.VaultID) ports.Indexer { return h.Root.With(i
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
-// Remover returns the removal of notes of the vault.
-func (h Host) Remover(id domain.VaultID) ports.Remover { return h.Root.With(id) }
+func (h Host) GetRemover(id domain.VaultID) ports.Remover { return h.Root.With(id) }
 
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.

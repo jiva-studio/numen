@@ -88,7 +88,7 @@ type Host interface {
 	GetFiles(id domain.VaultID) Files
 	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
-	Remover(id domain.VaultID) Remover
+	GetRemover(id domain.VaultID) Remover
 }
 
 // Links keeps the link of each vault.

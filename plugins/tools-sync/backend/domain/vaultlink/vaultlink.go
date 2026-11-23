@@ -122,8 +122,8 @@ func (r *Received) IsRegressed(fileID, revID []byte) bool {
 	return false
 }
 
-// NoteRevision remembers that the share served the revision as the newest of the file.
-func (r *Received) NoteRevision(fileID, revID []byte) {
+// RecordRevision remembers that the share served the revision as the newest of the file.
+func (r *Received) RecordRevision(fileID, revID []byte) {
 	if r.Seen == nil {
 		r.Seen = map[string][][]byte{}
 	}

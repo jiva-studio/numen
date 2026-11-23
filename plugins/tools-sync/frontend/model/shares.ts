@@ -7,7 +7,7 @@ import type {
   ReceivedSharesClient,
   ShareReader,
 } from '../api/shares'
-import { folderSharesClient, receivedSharesClient } from '../api/wire'
+import { folderSharesClient, readerSharesClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import { getErrorMessage } from './vaults'
 
@@ -49,14 +49,14 @@ function createRepeater(delayMs: number, onFail: (failure: unknown) => void) {
     if (timer !== undefined) clearTimeout(timer)
     timer = undefined
   }
-  const again = (task: () => Promise<void>): void => {
+  const runAgain = (task: () => Promise<void>): void => {
     stop()
     timer = setTimeout(() => {
       task().catch(onFail)
     }, delayMs)
   }
   if (getCurrentScope() !== undefined) onScopeDispose(stop)
-  return { stop, again }
+  return { stop, runAgain }
 }
 
 function createReadField<Info>(read: (text: string) => Promise<Info>) {
@@ -119,7 +119,7 @@ export function createShareView(options: ShareViewOptions) {
     } catch (failure) {
       error.value = getErrorMessage(failure)
     }
-    if (share.value.state === 'creating') repeater.again(load)
+    if (share.value.state === 'creating') repeater.runAgain(load)
   }
 
   async function setCode(text: string): Promise<void> {
@@ -203,7 +203,7 @@ export interface ReceivedViewOptions {
 
 /** What the page "Shares" holds: the code of this account, the invitation being received and the shares received. */
 export function createReceivedView(options: ReceivedViewOptions = {}) {
-  const { client = receivedSharesClient, refreshMs = REFRESH_MS } = options
+  const { client = readerSharesClient, refreshMs = REFRESH_MS } = options
   const code = ref('')
   const fingerprint = ref('')
   const error = ref('')
@@ -219,7 +219,7 @@ export function createReceivedView(options: ReceivedViewOptions = {}) {
     try {
       const shares = await client.listReceived()
       rows.value = shares.map(getReceivedRow)
-      if (shares.some((one) => one.state === 'receiving')) repeater.again(refresh)
+      if (shares.some((one) => one.state === 'receiving')) repeater.runAgain(refresh)
     } catch (failure) {
       error.value = getErrorMessage(failure)
     }

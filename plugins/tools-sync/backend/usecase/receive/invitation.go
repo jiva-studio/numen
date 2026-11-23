@@ -179,7 +179,7 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 		return Accepted{}, err
 	}
 	if isReceived {
-		return u.rejoin(ctx, vaultID, link, o, read)
+		return u.joinAgain(ctx, vaultID, link, o, read)
 	}
 	return u.receive(ctx, o, read)
 }
@@ -215,7 +215,7 @@ func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed)
 	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
 }
 
-func (u *AcceptInvitation) rejoin(ctx context.Context, id domain.VaultID, link vaultlink.Link, o opened, read followed) (Accepted, error) {
+func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, link vaultlink.Link, o opened, read followed) (Accepted, error) {
 	if err := u.writeLink(ctx, id, o, read, link.Received.Seen); err != nil {
 		return Accepted{}, err
 	}
@@ -230,7 +230,7 @@ func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) 
 	if err != nil {
 		return err
 	}
-	return u.deps.Statuses.WriteStatus(ctx, id, statusOf(result, u.deps.Clock.Now()))
+	return u.deps.Statuses.WriteStatus(ctx, id, getStatus(result, u.deps.Clock.Now()))
 }
 
 func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed, seen map[string][][]byte) error {

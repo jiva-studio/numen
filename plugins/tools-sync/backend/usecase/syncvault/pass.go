@@ -176,7 +176,7 @@ func (p *pass) pushAgain(ctx context.Context) (retry, error) {
 	return next, err
 }
 
-func (p *pass) rewrap(ctx context.Context) error {
+func (p *pass) wrapKeysForShares(ctx context.Context) error {
 	for _, root := range p.shares {
 		if root.IsClosed || root.Phase != share.PhaseCreated {
 			continue

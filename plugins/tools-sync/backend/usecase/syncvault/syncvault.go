@@ -147,7 +147,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 		return err
 	}
 	p := &pass{use: u, id: id, authors: authors, shares: shares, conflicts: nil, unverified: 0}
-	if err := p.rewrap(ctx); err != nil {
+	if err := p.wrapKeysForShares(ctx); err != nil {
 		return err
 	}
 	return p.run(ctx)
