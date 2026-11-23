@@ -1,7 +1,7 @@
 Feature: Numen Sync after the subscription ends
 
   Changes are sent for 7 days after the end of the subscription. Then the vaults in the cloud can only be read.
-  The cloud deletes them 60 days after the writes end.
+  The cloud deletes them 60 days after the subscription ends.
 
   As a person who uses Numen Sync
   I want to know when my notes stop leaving this computer, and why
