@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { ContributionMatch } from '../loading'
-import type { PluginHost } from './host'
+import type { PluginHost } from './hostApi'
 import type { CommandDeclaration } from './types'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 

@@ -69,6 +69,9 @@ const RE_GO_FUNC = /^func\s+(?:\([^)]*\)\s*)?([A-Za-z0-9_]+)\s*[[(]/
 const RE_GO_INTERFACE_START = /^type\s+[A-Za-z0-9_]+(?:\[[^\]]*\])?\s+interface\s*\{\s*$/
 const RE_GO_INTERFACE_METHOD = /^\t([A-Za-z0-9_]+)\s*\(/
 const RE_GO_FUNC_FIELD_LINE = /^\t([A-Za-z0-9_]+)\s+func\(/
+// A Go method with no parameters that answers one value is an accessor: Go names it for what it returns, with no
+// `Get` prefix. A method that answers a bool is a predicate and an error is no value, so neither is one.
+const RE_GO_ACCESSOR = /^(?:func\s+\([^)]*\)\s*)?[A-Za-z0-9_]+\(\)\s+(?!bool\b|error\b|\()[A-Za-z0-9_.*[\]]+\s*(?:\{.*)?$/
 
 const RE_TS_FUNCTION = /\bfunction\*?\s+([A-Za-z0-9_$]+)\s*[(<]/
 const RE_TS_CONST_FUNCTION = /\b(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:\([^)]*\)\s*(?::[^=]+)?=>|[A-Za-z0-9_$]+\s*=>|function\b|[A-Za-z0-9_$.]+\.bind\b)/
@@ -81,6 +84,11 @@ const RE_TS_MEMBER_ARROW = /^\s+(?:readonly\s+)?([a-z][A-Za-z0-9_$]*)\??\s*:\s*(
  * The names a line declares that are functions: functions, methods, function-valued fields and members.
  * state.inInterface carries the Go interface block from one line to the next.
  */
+/** Whether the line declares a Go accessor: a method with no parameters that answers one value. */
+export function isGoAccessor(line) {
+  return RE_GO_ACCESSOR.test(line.trim())
+}
+
 export function findFunctionNames(line, isGo, state) {
   const names = []
   if (isGo) {
@@ -94,11 +102,11 @@ export function findFunctionNames(line, isGo, state) {
         return names
       }
       const method = RE_GO_INTERFACE_METHOD.exec(line)
-      if (method) names.push(method[1])
+      if (method && !RE_GO_ACCESSOR.test(line.trim())) names.push(method[1])
       return names
     }
     const declared = RE_GO_FUNC.exec(line)
-    if (declared) names.push(declared[1])
+    if (declared && !(declared[0].startsWith('func (') && RE_GO_ACCESSOR.test(line))) names.push(declared[1])
     const field = RE_GO_FUNC_FIELD_LINE.exec(line)
     if (field) names.push(field[1])
     return names.filter((name) => !CALLBACK_PARAMETER_NAMES.has(name))
