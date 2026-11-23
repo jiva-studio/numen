@@ -315,8 +315,22 @@ describe('SubscriptionCard trial and portal', () => {
 
 describe('SubscriptionCard products', () => {
   const PRODUCTS = [
-    { id: 'price-extra', slug: 'extra', name: 'Extra', priceCents: 499, currency: 'EUR', oneTime: true },
-    { id: 'price-theme', slug: 'theme', name: 'Theme', priceCents: 199, currency: 'EUR', oneTime: true },
+    {
+      id: 'price-extra',
+      slug: 'extra',
+      name: 'Extra',
+      priceCents: 499,
+      currency: 'EUR',
+      oneTime: true,
+    },
+    {
+      id: 'price-theme',
+      slug: 'theme',
+      name: 'Theme',
+      priceCents: 199,
+      currency: 'EUR',
+      oneTime: true,
+    },
   ] as const
 
   const renderProducts = async (owned: readonly string[]) => {
