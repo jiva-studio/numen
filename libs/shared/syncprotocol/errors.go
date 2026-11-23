@@ -24,6 +24,12 @@ var (
 	ErrAlreadySubscribed = errors.New("the account has an active subscription")
 	// ErrBillingUnavailable means the sync server does not sell subscriptions.
 	ErrBillingUnavailable = errors.New("the sync server does not sell subscriptions")
+	// ErrNoActiveSubscription means a plan change was asked for an account without an active subscription bought by payment.
+	ErrNoActiveSubscription = errors.New("the account has no active subscription to change")
+	// ErrSamePlan means the account has the plan asked for already.
+	ErrSamePlan = errors.New("the account has this plan already")
+	// ErrUnknownPlan means the server sells no plan with this id.
+	ErrUnknownPlan = errors.New("the sync server sells no such plan")
 )
 
 // QuotaExceededError means the account has no room for the bytes asked for.

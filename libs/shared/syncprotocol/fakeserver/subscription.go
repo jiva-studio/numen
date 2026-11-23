@@ -155,3 +155,15 @@ func (s *Server) listAccounts(named string) []string {
 	}
 	return accounts
 }
+
+func (s *Server) ListPlans(_ context.Context, _ *connect.Request[syncv1.ListPlansRequest]) (*connect.Response[syncv1.ListPlansResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+}
+
+func (s *Server) ChangePlan(_ context.Context, _ *connect.Request[syncv1.ChangePlanRequest]) (*connect.Response[syncv1.ChangePlanResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+}
+
+func (s *Server) serveUsage(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "not implemented", http.StatusNotImplemented)
+}

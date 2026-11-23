@@ -83,7 +83,7 @@ func (b *billing) phase() syncv1.SubscriptionPhase {
 
 func (b *billing) pay() {
 	b.tb.Helper()
-	url, err := b.subscription.CreateCheckout(b.tb.Context())
+	url, err := b.subscription.CreateCheckout(b.tb.Context(), "plus")
 	if err != nil {
 		b.tb.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestCreateCheckout_ReturnsAPayPageOfTheServer(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, true)
 
-	url, err := b.subscription.CreateCheckout(t.Context())
+	url, err := b.subscription.CreateCheckout(t.Context(), "plus")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestCreateCheckout_ReturnsAPayPageOfTheServer(t *testing.T) {
 func TestPayPage_ActivatesTheSubscriptionForThirtyDays(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, true)
-	url, err := b.subscription.CreateCheckout(t.Context())
+	url, err := b.subscription.CreateCheckout(t.Context(), "plus")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestPayPage_OfAnotherAccountDoesNotActivateThisAccount(t *testing.T) {
 	b := createBillingEnv(t, true)
 	other := newSecondAccountOn(t, b.address)
 	otherClient := syncclient.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return other.token })
-	url, err := otherClient.CreateCheckout(t.Context())
+	url, err := otherClient.CreateCheckout(t.Context(), "plus")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func TestCreateCheckout_IsAlreadySubscribedWhileTheSubscriptionIsActive(t *testi
 	b := createBillingEnv(t, true)
 	b.pay()
 
-	_, err := b.subscription.CreateCheckout(t.Context())
+	_, err := b.subscription.CreateCheckout(t.Context(), "plus")
 
 	if !isAlreadySubscribed(err) {
 		t.Errorf("error = %v, want ErrAlreadySubscribed", err)
@@ -279,7 +279,7 @@ func TestCreateCheckout_IsOfferedAgainInEveryPhaseThatIsNotActive(t *testing.T) 
 			t.Fatalf("admin phase %s answered %d", phase, status)
 		}
 
-		if _, err := b.subscription.CreateCheckout(t.Context()); err != nil {
+		if _, err := b.subscription.CreateCheckout(t.Context(), "plus"); err != nil {
 			t.Errorf("CreateCheckout in phase %s: %v, want a url", phase, err)
 		}
 	}

@@ -47,6 +47,8 @@ type Config struct {
 	Now        func() time.Time
 	SessionTTL time.Duration
 	QuotaBytes uint64
+	// Plans are the plans the server sells, ascending by quota. Empty is basic with 10 GiB, plus with 100 GiB and pro with 250 GiB.
+	Plans []syncprotocol.Plan
 
 	NeedsSubscription bool
 }
@@ -78,6 +80,7 @@ type Server struct {
 	now               func() time.Time
 	ttl               time.Duration
 	quota             uint64
+	plans             []syncprotocol.Plan
 	needsSubscription bool
 	handler           http.Handler
 
@@ -92,16 +95,17 @@ type Server struct {
 	used          map[string]uint64
 	calls         map[string]int
 	subscriptions map[string]time.Time
+	planOf        map[string]string
 	checkouts     map[string]string
 }
 
 // New returns the server for the config.
 func New(cfg Config) *Server {
 	s := &Server{
-		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
+		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, plans: cfg.Plans, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, checkouts: map[string]string{},
+		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]string{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -131,6 +135,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
+	mux.HandleFunc("/admin/usage", s.serveUsage)
 	mux.HandleFunc("/blobs/", s.serveBlob)
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)

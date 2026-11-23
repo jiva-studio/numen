@@ -36,18 +36,30 @@ const (
 	// SubscriptionServiceGetSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionService's GetSubscription RPC.
 	SubscriptionServiceGetSubscriptionProcedure = "/numen.sync.v1.SubscriptionService/GetSubscription"
+	// SubscriptionServiceListPlansProcedure is the fully-qualified name of the SubscriptionService's
+	// ListPlans RPC.
+	SubscriptionServiceListPlansProcedure = "/numen.sync.v1.SubscriptionService/ListPlans"
 	// SubscriptionServiceCreateCheckoutProcedure is the fully-qualified name of the
 	// SubscriptionService's CreateCheckout RPC.
 	SubscriptionServiceCreateCheckoutProcedure = "/numen.sync.v1.SubscriptionService/CreateCheckout"
+	// SubscriptionServiceChangePlanProcedure is the fully-qualified name of the SubscriptionService's
+	// ChangePlan RPC.
+	SubscriptionServiceChangePlanProcedure = "/numen.sync.v1.SubscriptionService/ChangePlan"
 )
 
 // SubscriptionServiceClient is a client for the numen.sync.v1.SubscriptionService service.
 type SubscriptionServiceClient interface {
-	// GetSubscription returns the phase of the subscription of the account of the session and its times.
+	// GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
-	// CreateCheckout returns the address of a payment page for the account of the session. It is ALREADY_EXISTS
-	// while the subscription is ACTIVE.
+	// ListPlans returns the plans the server sells, ascending by quota.
+	ListPlans(context.Context, *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error)
+	// CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
+	// ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.
 	CreateCheckout(context.Context, *connect.Request[v1.CreateCheckoutRequest]) (*connect.Response[v1.CreateCheckoutResponse], error)
+	// ChangePlan moves the ACTIVE subscription of the account to another plan and returns the subscription after the
+	// change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
+	// the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
+	ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error)
 }
 
 // NewSubscriptionServiceClient constructs a client for the numen.sync.v1.SubscriptionService
@@ -67,10 +79,22 @@ func NewSubscriptionServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(subscriptionServiceMethods.ByName("GetSubscription")),
 			connect.WithClientOptions(opts...),
 		),
+		listPlans: connect.NewClient[v1.ListPlansRequest, v1.ListPlansResponse](
+			httpClient,
+			baseURL+SubscriptionServiceListPlansProcedure,
+			connect.WithSchema(subscriptionServiceMethods.ByName("ListPlans")),
+			connect.WithClientOptions(opts...),
+		),
 		createCheckout: connect.NewClient[v1.CreateCheckoutRequest, v1.CreateCheckoutResponse](
 			httpClient,
 			baseURL+SubscriptionServiceCreateCheckoutProcedure,
 			connect.WithSchema(subscriptionServiceMethods.ByName("CreateCheckout")),
+			connect.WithClientOptions(opts...),
+		),
+		changePlan: connect.NewClient[v1.ChangePlanRequest, v1.ChangePlanResponse](
+			httpClient,
+			baseURL+SubscriptionServiceChangePlanProcedure,
+			connect.WithSchema(subscriptionServiceMethods.ByName("ChangePlan")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -79,7 +103,9 @@ func NewSubscriptionServiceClient(httpClient connect.HTTPClient, baseURL string,
 // subscriptionServiceClient implements SubscriptionServiceClient.
 type subscriptionServiceClient struct {
 	getSubscription *connect.Client[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse]
+	listPlans       *connect.Client[v1.ListPlansRequest, v1.ListPlansResponse]
 	createCheckout  *connect.Client[v1.CreateCheckoutRequest, v1.CreateCheckoutResponse]
+	changePlan      *connect.Client[v1.ChangePlanRequest, v1.ChangePlanResponse]
 }
 
 // GetSubscription calls numen.sync.v1.SubscriptionService.GetSubscription.
@@ -87,18 +113,34 @@ func (c *subscriptionServiceClient) GetSubscription(ctx context.Context, req *co
 	return c.getSubscription.CallUnary(ctx, req)
 }
 
+// ListPlans calls numen.sync.v1.SubscriptionService.ListPlans.
+func (c *subscriptionServiceClient) ListPlans(ctx context.Context, req *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error) {
+	return c.listPlans.CallUnary(ctx, req)
+}
+
 // CreateCheckout calls numen.sync.v1.SubscriptionService.CreateCheckout.
 func (c *subscriptionServiceClient) CreateCheckout(ctx context.Context, req *connect.Request[v1.CreateCheckoutRequest]) (*connect.Response[v1.CreateCheckoutResponse], error) {
 	return c.createCheckout.CallUnary(ctx, req)
 }
 
+// ChangePlan calls numen.sync.v1.SubscriptionService.ChangePlan.
+func (c *subscriptionServiceClient) ChangePlan(ctx context.Context, req *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error) {
+	return c.changePlan.CallUnary(ctx, req)
+}
+
 // SubscriptionServiceHandler is an implementation of the numen.sync.v1.SubscriptionService service.
 type SubscriptionServiceHandler interface {
-	// GetSubscription returns the phase of the subscription of the account of the session and its times.
+	// GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
-	// CreateCheckout returns the address of a payment page for the account of the session. It is ALREADY_EXISTS
-	// while the subscription is ACTIVE.
+	// ListPlans returns the plans the server sells, ascending by quota.
+	ListPlans(context.Context, *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error)
+	// CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
+	// ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.
 	CreateCheckout(context.Context, *connect.Request[v1.CreateCheckoutRequest]) (*connect.Response[v1.CreateCheckoutResponse], error)
+	// ChangePlan moves the ACTIVE subscription of the account to another plan and returns the subscription after the
+	// change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
+	// the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
+	ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error)
 }
 
 // NewSubscriptionServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -114,18 +156,34 @@ func NewSubscriptionServiceHandler(svc SubscriptionServiceHandler, opts ...conne
 		connect.WithSchema(subscriptionServiceMethods.ByName("GetSubscription")),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionServiceListPlansHandler := connect.NewUnaryHandler(
+		SubscriptionServiceListPlansProcedure,
+		svc.ListPlans,
+		connect.WithSchema(subscriptionServiceMethods.ByName("ListPlans")),
+		connect.WithHandlerOptions(opts...),
+	)
 	subscriptionServiceCreateCheckoutHandler := connect.NewUnaryHandler(
 		SubscriptionServiceCreateCheckoutProcedure,
 		svc.CreateCheckout,
 		connect.WithSchema(subscriptionServiceMethods.ByName("CreateCheckout")),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionServiceChangePlanHandler := connect.NewUnaryHandler(
+		SubscriptionServiceChangePlanProcedure,
+		svc.ChangePlan,
+		connect.WithSchema(subscriptionServiceMethods.ByName("ChangePlan")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.SubscriptionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SubscriptionServiceGetSubscriptionProcedure:
 			subscriptionServiceGetSubscriptionHandler.ServeHTTP(w, r)
+		case SubscriptionServiceListPlansProcedure:
+			subscriptionServiceListPlansHandler.ServeHTTP(w, r)
 		case SubscriptionServiceCreateCheckoutProcedure:
 			subscriptionServiceCreateCheckoutHandler.ServeHTTP(w, r)
+		case SubscriptionServiceChangePlanProcedure:
+			subscriptionServiceChangePlanHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -139,6 +197,14 @@ func (UnimplementedSubscriptionServiceHandler) GetSubscription(context.Context, 
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.GetSubscription is not implemented"))
 }
 
+func (UnimplementedSubscriptionServiceHandler) ListPlans(context.Context, *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.ListPlans is not implemented"))
+}
+
 func (UnimplementedSubscriptionServiceHandler) CreateCheckout(context.Context, *connect.Request[v1.CreateCheckoutRequest]) (*connect.Response[v1.CreateCheckoutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.CreateCheckout is not implemented"))
+}
+
+func (UnimplementedSubscriptionServiceHandler) ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.ChangePlan is not implemented"))
 }

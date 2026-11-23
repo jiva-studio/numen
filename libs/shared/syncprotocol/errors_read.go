@@ -73,3 +73,9 @@ func ReadSubscriptionError(err error) error {
 	}
 	return ReadError(err)
 }
+
+// ReadChangePlanError is ReadError for the call of ChangePlan: it maps FAILED_PRECONDITION to ErrNoActiveSubscription,
+// ALREADY_EXISTS to ErrSamePlan, INVALID_ARGUMENT to ErrUnknownPlan and a server that sells none to ErrBillingUnavailable.
+func ReadChangePlanError(_ error) error {
+	return errors.New("not implemented")
+}

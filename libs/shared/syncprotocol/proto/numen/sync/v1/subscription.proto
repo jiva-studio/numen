@@ -4,14 +4,22 @@ package numen.sync.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
 
-// SubscriptionService tells the subscription of the account of the session and starts a payment.
+// SubscriptionService tells the subscription of the account of the session, lists the plans and starts a payment.
 service SubscriptionService {
-  // GetSubscription returns the phase of the subscription of the account of the session and its times.
+  // GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
   rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
 
-  // CreateCheckout returns the address of a payment page for the account of the session. It is ALREADY_EXISTS
-  // while the subscription is ACTIVE.
+  // ListPlans returns the plans the server sells, ascending by quota.
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+
+  // CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
+  // ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.
   rpc CreateCheckout(CreateCheckoutRequest) returns (CreateCheckoutResponse);
+
+  // ChangePlan moves the ACTIVE subscription of the account to another plan and returns the subscription after the
+  // change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
+  // the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
+  rpc ChangePlan(ChangePlanRequest) returns (ChangePlanResponse);
 }
 
 enum SubscriptionPhase {
@@ -36,11 +44,39 @@ message GetSubscriptionResponse {
   int64 period_end_at = 2;
   int64 writes_end_at = 3;
   int64 delete_at = 4;
+  // plan is the id of the plan, empty while the phase is NONE.
+  string plan = 5;
+  // quota_bytes is what the plan holds, 0 while the phase is NONE.
+  uint64 quota_bytes = 6;
+  // used_bytes is the space the account uses against the quota, 0 while the phase is NONE or DELETED. It may be
+  // above quota_bytes after a change to a smaller plan.
+  uint64 used_bytes = 7;
 }
 
-message CreateCheckoutRequest {}
+message Plan {
+  string id = 1;
+  uint64 quota_bytes = 2;
+}
+
+message ListPlansRequest {}
+
+message ListPlansResponse {
+  repeated Plan plans = 1;
+}
+
+message CreateCheckoutRequest {
+  string plan = 1;
+}
 
 message CreateCheckoutResponse {
   // checkout_url is an https address, or http for a server on a loopback host.
   string checkout_url = 1;
+}
+
+message ChangePlanRequest {
+  string plan = 1;
+}
+
+message ChangePlanResponse {
+  GetSubscriptionResponse subscription = 1;
 }

@@ -44,11 +44,11 @@ func (c *SubscriptionClient) GetSubscription(ctx context.Context) (syncprotocol.
 	}, nil
 }
 
-// CreateCheckout returns the address of a payment page for the account of the session. An account with an
+// CreateCheckout returns the address of a payment page for the plan and the account of the session. An account with an
 // active subscription gets ErrAlreadySubscribed. An address that is not https, or http on a loopback host, is
 // an error: the caller opens it in a browser.
-func (c *SubscriptionClient) CreateCheckout(ctx context.Context) (string, error) {
-	response, err := c.rpc.CreateCheckout(ctx, connect.NewRequest(&syncv1.CreateCheckoutRequest{}))
+func (c *SubscriptionClient) CreateCheckout(ctx context.Context, plan string) (string, error) {
+	response, err := c.rpc.CreateCheckout(ctx, connect.NewRequest(&syncv1.CreateCheckoutRequest{Plan: plan}))
 	if err != nil {
 		return "", syncprotocol.ReadSubscriptionError(err)
 	}
@@ -87,4 +87,16 @@ func isBrowserScheme(scheme, host string) bool {
 	}
 	ip, err := netip.ParseAddr(host)
 	return host == "localhost" || (err == nil && ip.IsLoopback())
+}
+
+// ListPlans returns the plans the server sells, ascending by quota. A server that sells none is
+// ErrBillingUnavailable.
+func (c *SubscriptionClient) ListPlans(_ context.Context) ([]syncprotocol.Plan, error) {
+	return nil, errors.New("not implemented")
+}
+
+// ChangePlan moves the active subscription of the account of the session to the plan and returns the subscription
+// after the change. The refusals are ErrNoActiveSubscription, ErrSamePlan, ErrUnknownPlan and ErrBillingUnavailable.
+func (c *SubscriptionClient) ChangePlan(_ context.Context, _ string) (syncprotocol.Subscription, error) {
+	return syncprotocol.Subscription{}, errors.New("not implemented")
 }

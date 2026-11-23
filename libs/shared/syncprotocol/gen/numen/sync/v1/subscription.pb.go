@@ -122,11 +122,18 @@ func (*GetSubscriptionRequest) Descriptor() ([]byte, []int) {
 
 // The times are unix seconds, and 0 is none.
 type GetSubscriptionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Phase         SubscriptionPhase      `protobuf:"varint,1,opt,name=phase,proto3,enum=numen.sync.v1.SubscriptionPhase" json:"phase,omitempty"`
-	PeriodEndAt   int64                  `protobuf:"varint,2,opt,name=period_end_at,json=periodEndAt,proto3" json:"period_end_at,omitempty"`
-	WritesEndAt   int64                  `protobuf:"varint,3,opt,name=writes_end_at,json=writesEndAt,proto3" json:"writes_end_at,omitempty"`
-	DeleteAt      int64                  `protobuf:"varint,4,opt,name=delete_at,json=deleteAt,proto3" json:"delete_at,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Phase       SubscriptionPhase      `protobuf:"varint,1,opt,name=phase,proto3,enum=numen.sync.v1.SubscriptionPhase" json:"phase,omitempty"`
+	PeriodEndAt int64                  `protobuf:"varint,2,opt,name=period_end_at,json=periodEndAt,proto3" json:"period_end_at,omitempty"`
+	WritesEndAt int64                  `protobuf:"varint,3,opt,name=writes_end_at,json=writesEndAt,proto3" json:"writes_end_at,omitempty"`
+	DeleteAt    int64                  `protobuf:"varint,4,opt,name=delete_at,json=deleteAt,proto3" json:"delete_at,omitempty"`
+	// plan is the id of the plan, empty while the phase is NONE.
+	Plan string `protobuf:"bytes,5,opt,name=plan,proto3" json:"plan,omitempty"`
+	// quota_bytes is what the plan holds, 0 while the phase is NONE.
+	QuotaBytes uint64 `protobuf:"varint,6,opt,name=quota_bytes,json=quotaBytes,proto3" json:"quota_bytes,omitempty"`
+	// used_bytes is the space the account uses against the quota, 0 while the phase is NONE or DELETED. It may be
+	// above quota_bytes after a change to a smaller plan.
+	UsedBytes     uint64 `protobuf:"varint,7,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,15 +196,169 @@ func (x *GetSubscriptionResponse) GetDeleteAt() int64 {
 	return 0
 }
 
+func (x *GetSubscriptionResponse) GetPlan() string {
+	if x != nil {
+		return x.Plan
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetQuotaBytes() uint64 {
+	if x != nil {
+		return x.QuotaBytes
+	}
+	return 0
+}
+
+func (x *GetSubscriptionResponse) GetUsedBytes() uint64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+type Plan struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuotaBytes    uint64                 `protobuf:"varint,2,opt,name=quota_bytes,json=quotaBytes,proto3" json:"quota_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Plan) Reset() {
+	*x = Plan{}
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Plan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Plan) ProtoMessage() {}
+
+func (x *Plan) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Plan.ProtoReflect.Descriptor instead.
+func (*Plan) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Plan) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Plan) GetQuotaBytes() uint64 {
+	if x != nil {
+		return x.QuotaBytes
+	}
+	return 0
+}
+
+type ListPlansRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPlansRequest) Reset() {
+	*x = ListPlansRequest{}
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPlansRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPlansRequest) ProtoMessage() {}
+
+func (x *ListPlansRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPlansRequest.ProtoReflect.Descriptor instead.
+func (*ListPlansRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{3}
+}
+
+type ListPlansResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plans         []*Plan                `protobuf:"bytes,1,rep,name=plans,proto3" json:"plans,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPlansResponse) Reset() {
+	*x = ListPlansResponse{}
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPlansResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPlansResponse) ProtoMessage() {}
+
+func (x *ListPlansResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPlansResponse.ProtoReflect.Descriptor instead.
+func (*ListPlansResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListPlansResponse) GetPlans() []*Plan {
+	if x != nil {
+		return x.Plans
+	}
+	return nil
+}
+
 type CreateCheckoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plan          string                 `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCheckoutRequest) Reset() {
 	*x = CreateCheckoutRequest{}
-	mi := &file_numen_sync_v1_subscription_proto_msgTypes[2]
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +370,7 @@ func (x *CreateCheckoutRequest) String() string {
 func (*CreateCheckoutRequest) ProtoMessage() {}
 
 func (x *CreateCheckoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_subscription_proto_msgTypes[2]
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +383,14 @@ func (x *CreateCheckoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCheckoutRequest.ProtoReflect.Descriptor instead.
 func (*CreateCheckoutRequest) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{2}
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateCheckoutRequest) GetPlan() string {
+	if x != nil {
+		return x.Plan
+	}
+	return ""
 }
 
 type CreateCheckoutResponse struct {
@@ -235,7 +403,7 @@ type CreateCheckoutResponse struct {
 
 func (x *CreateCheckoutResponse) Reset() {
 	*x = CreateCheckoutResponse{}
-	mi := &file_numen_sync_v1_subscription_proto_msgTypes[3]
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -247,7 +415,7 @@ func (x *CreateCheckoutResponse) String() string {
 func (*CreateCheckoutResponse) ProtoMessage() {}
 
 func (x *CreateCheckoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_subscription_proto_msgTypes[3]
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +428,7 @@ func (x *CreateCheckoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCheckoutResponse.ProtoReflect.Descriptor instead.
 func (*CreateCheckoutResponse) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{3}
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateCheckoutResponse) GetCheckoutUrl() string {
@@ -270,30 +438,138 @@ func (x *CreateCheckoutResponse) GetCheckoutUrl() string {
 	return ""
 }
 
+type ChangePlanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plan          string                 `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChangePlanRequest) Reset() {
+	*x = ChangePlanRequest{}
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangePlanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangePlanRequest) ProtoMessage() {}
+
+func (x *ChangePlanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangePlanRequest.ProtoReflect.Descriptor instead.
+func (*ChangePlanRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ChangePlanRequest) GetPlan() string {
+	if x != nil {
+		return x.Plan
+	}
+	return ""
+}
+
+type ChangePlanResponse struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Subscription  *GetSubscriptionResponse `protobuf:"bytes,1,opt,name=subscription,proto3" json:"subscription,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChangePlanResponse) Reset() {
+	*x = ChangePlanResponse{}
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangePlanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangePlanResponse) ProtoMessage() {}
+
+func (x *ChangePlanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_subscription_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangePlanResponse.ProtoReflect.Descriptor instead.
+func (*ChangePlanResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_subscription_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ChangePlanResponse) GetSubscription() *GetSubscriptionResponse {
+	if x != nil {
+		return x.Subscription
+	}
+	return nil
+}
+
 var File_numen_sync_v1_subscription_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_subscription_proto_rawDesc = "" +
 	"\n" +
 	" numen/sync/v1/subscription.proto\x12\rnumen.sync.v1\"\x18\n" +
-	"\x16GetSubscriptionRequest\"\xb6\x01\n" +
+	"\x16GetSubscriptionRequest\"\x8a\x02\n" +
 	"\x17GetSubscriptionResponse\x126\n" +
 	"\x05phase\x18\x01 \x01(\x0e2 .numen.sync.v1.SubscriptionPhaseR\x05phase\x12\"\n" +
 	"\rperiod_end_at\x18\x02 \x01(\x03R\vperiodEndAt\x12\"\n" +
 	"\rwrites_end_at\x18\x03 \x01(\x03R\vwritesEndAt\x12\x1b\n" +
-	"\tdelete_at\x18\x04 \x01(\x03R\bdeleteAt\"\x17\n" +
-	"\x15CreateCheckoutRequest\";\n" +
+	"\tdelete_at\x18\x04 \x01(\x03R\bdeleteAt\x12\x12\n" +
+	"\x04plan\x18\x05 \x01(\tR\x04plan\x12\x1f\n" +
+	"\vquota_bytes\x18\x06 \x01(\x04R\n" +
+	"quotaBytes\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\a \x01(\x04R\tusedBytes\"7\n" +
+	"\x04Plan\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vquota_bytes\x18\x02 \x01(\x04R\n" +
+	"quotaBytes\"\x12\n" +
+	"\x10ListPlansRequest\">\n" +
+	"\x11ListPlansResponse\x12)\n" +
+	"\x05plans\x18\x01 \x03(\v2\x13.numen.sync.v1.PlanR\x05plans\"+\n" +
+	"\x15CreateCheckoutRequest\x12\x12\n" +
+	"\x04plan\x18\x01 \x01(\tR\x04plan\";\n" +
 	"\x16CreateCheckoutResponse\x12!\n" +
-	"\fcheckout_url\x18\x01 \x01(\tR\vcheckoutUrl*\xd3\x01\n" +
+	"\fcheckout_url\x18\x01 \x01(\tR\vcheckoutUrl\"'\n" +
+	"\x11ChangePlanRequest\x12\x12\n" +
+	"\x04plan\x18\x01 \x01(\tR\x04plan\"`\n" +
+	"\x12ChangePlanResponse\x12J\n" +
+	"\fsubscription\x18\x01 \x01(\v2&.numen.sync.v1.GetSubscriptionResponseR\fsubscription*\xd3\x01\n" +
 	"\x11SubscriptionPhase\x12\"\n" +
 	"\x1eSUBSCRIPTION_PHASE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17SUBSCRIPTION_PHASE_NONE\x10\x01\x12\x1d\n" +
 	"\x19SUBSCRIPTION_PHASE_ACTIVE\x10\x02\x12\x1c\n" +
 	"\x18SUBSCRIPTION_PHASE_GRACE\x10\x03\x12 \n" +
 	"\x1cSUBSCRIPTION_PHASE_READ_ONLY\x10\x04\x12\x1e\n" +
-	"\x1aSUBSCRIPTION_PHASE_DELETED\x10\x052\xd6\x01\n" +
+	"\x1aSUBSCRIPTION_PHASE_DELETED\x10\x052\xf9\x02\n" +
 	"\x13SubscriptionService\x12`\n" +
-	"\x0fGetSubscription\x12%.numen.sync.v1.GetSubscriptionRequest\x1a&.numen.sync.v1.GetSubscriptionResponse\x12]\n" +
-	"\x0eCreateCheckout\x12$.numen.sync.v1.CreateCheckoutRequest\x1a%.numen.sync.v1.CreateCheckoutResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
+	"\x0fGetSubscription\x12%.numen.sync.v1.GetSubscriptionRequest\x1a&.numen.sync.v1.GetSubscriptionResponse\x12N\n" +
+	"\tListPlans\x12\x1f.numen.sync.v1.ListPlansRequest\x1a .numen.sync.v1.ListPlansResponse\x12]\n" +
+	"\x0eCreateCheckout\x12$.numen.sync.v1.CreateCheckoutRequest\x1a%.numen.sync.v1.CreateCheckoutResponse\x12Q\n" +
+	"\n" +
+	"ChangePlan\x12 .numen.sync.v1.ChangePlanRequest\x1a!.numen.sync.v1.ChangePlanResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
 var (
 	file_numen_sync_v1_subscription_proto_rawDescOnce sync.Once
@@ -308,25 +584,36 @@ func file_numen_sync_v1_subscription_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_sync_v1_subscription_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_sync_v1_subscription_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_numen_sync_v1_subscription_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_sync_v1_subscription_proto_goTypes = []any{
 	(SubscriptionPhase)(0),          // 0: numen.sync.v1.SubscriptionPhase
 	(*GetSubscriptionRequest)(nil),  // 1: numen.sync.v1.GetSubscriptionRequest
 	(*GetSubscriptionResponse)(nil), // 2: numen.sync.v1.GetSubscriptionResponse
-	(*CreateCheckoutRequest)(nil),   // 3: numen.sync.v1.CreateCheckoutRequest
-	(*CreateCheckoutResponse)(nil),  // 4: numen.sync.v1.CreateCheckoutResponse
+	(*Plan)(nil),                    // 3: numen.sync.v1.Plan
+	(*ListPlansRequest)(nil),        // 4: numen.sync.v1.ListPlansRequest
+	(*ListPlansResponse)(nil),       // 5: numen.sync.v1.ListPlansResponse
+	(*CreateCheckoutRequest)(nil),   // 6: numen.sync.v1.CreateCheckoutRequest
+	(*CreateCheckoutResponse)(nil),  // 7: numen.sync.v1.CreateCheckoutResponse
+	(*ChangePlanRequest)(nil),       // 8: numen.sync.v1.ChangePlanRequest
+	(*ChangePlanResponse)(nil),      // 9: numen.sync.v1.ChangePlanResponse
 }
 var file_numen_sync_v1_subscription_proto_depIdxs = []int32{
 	0, // 0: numen.sync.v1.GetSubscriptionResponse.phase:type_name -> numen.sync.v1.SubscriptionPhase
-	1, // 1: numen.sync.v1.SubscriptionService.GetSubscription:input_type -> numen.sync.v1.GetSubscriptionRequest
-	3, // 2: numen.sync.v1.SubscriptionService.CreateCheckout:input_type -> numen.sync.v1.CreateCheckoutRequest
-	2, // 3: numen.sync.v1.SubscriptionService.GetSubscription:output_type -> numen.sync.v1.GetSubscriptionResponse
-	4, // 4: numen.sync.v1.SubscriptionService.CreateCheckout:output_type -> numen.sync.v1.CreateCheckoutResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: numen.sync.v1.ListPlansResponse.plans:type_name -> numen.sync.v1.Plan
+	2, // 2: numen.sync.v1.ChangePlanResponse.subscription:type_name -> numen.sync.v1.GetSubscriptionResponse
+	1, // 3: numen.sync.v1.SubscriptionService.GetSubscription:input_type -> numen.sync.v1.GetSubscriptionRequest
+	4, // 4: numen.sync.v1.SubscriptionService.ListPlans:input_type -> numen.sync.v1.ListPlansRequest
+	6, // 5: numen.sync.v1.SubscriptionService.CreateCheckout:input_type -> numen.sync.v1.CreateCheckoutRequest
+	8, // 6: numen.sync.v1.SubscriptionService.ChangePlan:input_type -> numen.sync.v1.ChangePlanRequest
+	2, // 7: numen.sync.v1.SubscriptionService.GetSubscription:output_type -> numen.sync.v1.GetSubscriptionResponse
+	5, // 8: numen.sync.v1.SubscriptionService.ListPlans:output_type -> numen.sync.v1.ListPlansResponse
+	7, // 9: numen.sync.v1.SubscriptionService.CreateCheckout:output_type -> numen.sync.v1.CreateCheckoutResponse
+	9, // 10: numen.sync.v1.SubscriptionService.ChangePlan:output_type -> numen.sync.v1.ChangePlanResponse
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_numen_sync_v1_subscription_proto_init() }
@@ -340,7 +627,7 @@ func file_numen_sync_v1_subscription_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_subscription_proto_rawDesc), len(file_numen_sync_v1_subscription_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -25,6 +26,8 @@ type subscriptionStub struct {
 	fail     error
 	state    *syncv1.GetSubscriptionResponse
 	checkout string
+	plans    []*syncv1.Plan
+	asked    []string
 }
 
 func (s *subscriptionStub) record(header http.Header) error {
@@ -45,6 +48,9 @@ func (s *subscriptionStub) CreateCheckout(_ context.Context, req *connect.Reques
 	if err := s.record(req.Header()); err != nil {
 		return nil, err
 	}
+	s.mu.Lock()
+	s.asked = append(s.asked, req.Msg.GetPlan())
+	s.mu.Unlock()
 	return connect.NewResponse(&syncv1.CreateCheckoutResponse{CheckoutUrl: s.checkout}), nil
 }
 
@@ -71,7 +77,7 @@ func TestSubscriptionClient_SendsTheVersionAndTheBearerOfTheTokenInEachRequest(t
 	if _, err := client.GetSubscription(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.CreateCheckout(t.Context()); err != nil {
+	if _, err := client.CreateCheckout(t.Context(), "plus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -145,7 +151,7 @@ func TestCreateCheckout_ReturnsTheUrlOfTheServer(t *testing.T) {
 	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
 	stub.checkout = "https://pay.example/checkout/abc"
 
-	got, err := newSubscriptionClient(address).CreateCheckout(t.Context())
+	got, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "plus")
 
 	if err != nil || got != "https://pay.example/checkout/abc" {
 		t.Errorf("url = %q, error = %v, want the url of the server", got, err)
@@ -158,7 +164,7 @@ func TestCreateCheckout_AcceptsHttpOnALoopbackHost(t *testing.T) {
 		stub, address := serveSubscriptionStub(t, syncprotocol.Version)
 		stub.checkout = url
 
-		got, err := newSubscriptionClient(address).CreateCheckout(t.Context())
+		got, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "plus")
 
 		if err != nil || got != url {
 			t.Errorf("url %q: got %q, error = %v, want the url accepted", url, got, err)
@@ -181,7 +187,7 @@ func TestCreateCheckout_RefusesAnAddressThatABrowserMustNotOpen(t *testing.T) {
 		stub, address := serveSubscriptionStub(t, syncprotocol.Version)
 		stub.checkout = url
 
-		got, err := newSubscriptionClient(address).CreateCheckout(t.Context())
+		got, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "plus")
 
 		if err == nil {
 			t.Errorf("%s: CreateCheckout returned %q, want an error", name, got)
@@ -207,7 +213,7 @@ func TestSubscriptionClient_MapsServerFailuresToTheErrorsOfThePackage(t *testing
 		client := newSubscriptionClient(address)
 
 		_, getErr := client.GetSubscription(t.Context())
-		_, checkoutErr := client.CreateCheckout(t.Context())
+		_, checkoutErr := client.CreateCheckout(t.Context(), "plus")
 
 		if !errors.Is(getErr, one.want) {
 			t.Errorf("GetSubscription of %s: error = %v, want %v", name, getErr, one.want)
@@ -223,7 +229,7 @@ func TestCreateCheckout_ReportsAnActiveSubscriptionNotAsAnExistingVault(t *testi
 	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
 	stub.fail = connect.NewError(connect.CodeAlreadyExists, errors.New("active"))
 
-	_, err := newSubscriptionClient(address).CreateCheckout(t.Context())
+	_, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "plus")
 
 	if errors.Is(err, syncprotocol.ErrVaultExists) {
 		t.Errorf("error = %v, want ErrAlreadySubscribed and not ErrVaultExists", err)
@@ -236,10 +242,209 @@ func TestSubscriptionClient_ReportsAServerOfAnotherVersionAsUpdateRequired(t *te
 	client := newSubscriptionClient(address)
 
 	_, getErr := client.GetSubscription(t.Context())
-	_, checkoutErr := client.CreateCheckout(t.Context())
+	_, checkoutErr := client.CreateCheckout(t.Context(), "plus")
 
 	if !errors.Is(getErr, syncprotocol.ErrUpdateRequired) || !errors.Is(checkoutErr, syncprotocol.ErrUpdateRequired) {
 		t.Errorf("errors = %v and %v, want ErrUpdateRequired", getErr, checkoutErr)
+	}
+	stub.mu.Lock()
+	defer stub.mu.Unlock()
+	if len(stub.headers) != 0 {
+		t.Errorf("the server ran %d calls, want none", len(stub.headers))
+	}
+}
+
+func (s *subscriptionStub) ListPlans(_ context.Context, req *connect.Request[syncv1.ListPlansRequest]) (*connect.Response[syncv1.ListPlansResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&syncv1.ListPlansResponse{Plans: s.plans}), nil
+}
+
+func (s *subscriptionStub) ChangePlan(_ context.Context, req *connect.Request[syncv1.ChangePlanRequest]) (*connect.Response[syncv1.ChangePlanResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	s.asked = append(s.asked, req.Msg.GetPlan())
+	s.mu.Unlock()
+	return connect.NewResponse(&syncv1.ChangePlanResponse{Subscription: s.state}), nil
+}
+
+func TestGetSubscription_ReadsThePlanTheQuotaAndTheUsedBytes(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.state = &syncv1.GetSubscriptionResponse{
+		Phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE, Plan: "plus", QuotaBytes: 100 << 30, UsedBytes: 2 << 30,
+	}
+
+	got, err := newSubscriptionClient(address).GetSubscription(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.PlanID != "plus" || got.QuotaBytes != 100<<30 || got.UsedBytes != 2<<30 {
+		t.Errorf("subscription = %+v, want the plan plus, the quota of 100 GiB and 2 GiB used", got)
+	}
+}
+
+func TestGetSubscription_ReadsUsedBytesAboveTheQuota(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.state = &syncv1.GetSubscriptionResponse{
+		Phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE, Plan: "basic", QuotaBytes: 10 << 30, UsedBytes: 20 << 30,
+	}
+
+	got, err := newSubscriptionClient(address).GetSubscription(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.UsedBytes != 20<<30 || got.QuotaBytes != 10<<30 {
+		t.Errorf("subscription = %+v, want 20 GiB used of 10 GiB without a clamp", got)
+	}
+}
+
+func TestListPlans_ReturnsThePlansInTheOrderOfTheServer(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.plans = []*syncv1.Plan{{Id: "basic", QuotaBytes: 10 << 30}, {Id: "plus", QuotaBytes: 100 << 30}, {Id: "pro", QuotaBytes: 250 << 30}}
+
+	got, err := newSubscriptionClient(address).ListPlans(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []syncprotocol.Plan{{ID: "basic", QuotaBytes: 10 << 30}, {ID: "plus", QuotaBytes: 100 << 30}, {ID: "pro", QuotaBytes: 250 << 30}}
+	if !slices.Equal(got, want) {
+		t.Errorf("plans = %+v, want %+v", got, want)
+	}
+}
+
+func TestListPlans_SendsTheVersionAndTheBearerOfTheToken(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+
+	if _, err := newSubscriptionClient(address).ListPlans(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	stub.mu.Lock()
+	defer stub.mu.Unlock()
+	if len(stub.headers) != 1 || stub.headers[0].Get("Authorization") != "Bearer token-of-the-session" {
+		t.Errorf("headers = %v, want one request with the bearer of the token", stub.headers)
+	}
+}
+
+func TestListPlans_ReportsAServerThatSellsNoSubscriptionsAsBillingUnavailable(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.fail = connect.NewError(connect.CodeUnimplemented, errors.New("no billing"))
+
+	_, err := newSubscriptionClient(address).ListPlans(t.Context())
+
+	if !errors.Is(err, syncprotocol.ErrBillingUnavailable) {
+		t.Errorf("error = %v, want ErrBillingUnavailable", err)
+	}
+}
+
+func TestCreateCheckout_SendsThePlanToTheServer(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.checkout = "https://pay.example/checkout/abc"
+
+	if _, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "plus"); err != nil {
+		t.Fatal(err)
+	}
+
+	stub.mu.Lock()
+	defer stub.mu.Unlock()
+	if !slices.Equal(stub.asked, []string{"plus"}) {
+		t.Errorf("plans asked = %v, want [plus]", stub.asked)
+	}
+}
+
+func TestCreateCheckout_ReportsAnUnknownPlan(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.fail = connect.NewError(connect.CodeInvalidArgument, errors.New("no such plan"))
+
+	_, err := newSubscriptionClient(address).CreateCheckout(t.Context(), "gold")
+
+	if !errors.Is(err, syncprotocol.ErrUnknownPlan) {
+		t.Errorf("error = %v, want ErrUnknownPlan", err)
+	}
+}
+
+func TestChangePlan_SendsThePlanAndReturnsTheSubscriptionAfterTheChange(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.state = &syncv1.GetSubscriptionResponse{
+		Phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE, PeriodEndAt: 1_700_000_000, Plan: "pro", QuotaBytes: 250 << 30, UsedBytes: 1 << 30,
+	}
+
+	got, err := newSubscriptionClient(address).ChangePlan(t.Context(), "pro")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stub.mu.Lock()
+	defer stub.mu.Unlock()
+	if !slices.Equal(stub.asked, []string{"pro"}) {
+		t.Errorf("plans asked = %v, want [pro]", stub.asked)
+	}
+	if got.Phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE || got.PlanID != "pro" || got.QuotaBytes != 250<<30 || got.UsedBytes != 1<<30 {
+		t.Errorf("subscription = %+v, want active on the plan pro with 250 GiB", got)
+	}
+	if want := time.Unix(1_700_000_000, 0); !got.PeriodEnd.Equal(want) {
+		t.Errorf("PeriodEnd = %v, want %v", got.PeriodEnd, want)
+	}
+}
+
+func TestChangePlan_MapsServerFailuresToTheErrorsOfThePackage(t *testing.T) {
+	t.Parallel()
+	for name, one := range map[string]struct {
+		err  error
+		want error
+	}{
+		"no active subscription": {err: connect.NewError(connect.CodeFailedPrecondition, errors.New("none")), want: syncprotocol.ErrNoActiveSubscription},
+		"same plan":              {err: connect.NewError(connect.CodeAlreadyExists, errors.New("same")), want: syncprotocol.ErrSamePlan},
+		"unknown plan":           {err: connect.NewError(connect.CodeInvalidArgument, errors.New("no")), want: syncprotocol.ErrUnknownPlan},
+		"unimplemented":          {err: connect.NewError(connect.CodeUnimplemented, errors.New("no billing")), want: syncprotocol.ErrBillingUnavailable},
+		"unauthenticated":        {err: connect.NewError(connect.CodeUnauthenticated, errors.New("no")), want: syncprotocol.ErrUnauthenticated},
+		"unavailable":            {err: connect.NewError(connect.CodeUnavailable, errors.New("down")), want: syncprotocol.ErrUnreachable},
+	} {
+		stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+		stub.fail = one.err
+
+		_, err := newSubscriptionClient(address).ChangePlan(t.Context(), "plus")
+
+		if !errors.Is(err, one.want) {
+			t.Errorf("ChangePlan of %s: error = %v, want %v", name, err, one.want)
+		}
+	}
+}
+
+func TestChangePlan_ReportsASamePlanNotAsAnActiveSubscription(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
+	stub.fail = connect.NewError(connect.CodeAlreadyExists, errors.New("same"))
+
+	_, err := newSubscriptionClient(address).ChangePlan(t.Context(), "plus")
+
+	if errors.Is(err, syncprotocol.ErrAlreadySubscribed) {
+		t.Errorf("error = %v, want ErrSamePlan and not ErrAlreadySubscribed", err)
+	}
+}
+
+func TestChangePlan_ReportsAServerOfAnotherVersionAsUpdateRequired(t *testing.T) {
+	t.Parallel()
+	stub, address := serveSubscriptionStub(t, syncprotocol.Version+1)
+
+	_, err := newSubscriptionClient(address).ChangePlan(t.Context(), "plus")
+
+	if !errors.Is(err, syncprotocol.ErrUpdateRequired) || errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
+		t.Errorf("error = %v, want ErrUpdateRequired and not ErrNoActiveSubscription", err)
 	}
 	stub.mu.Lock()
 	defer stub.mu.Unlock()
