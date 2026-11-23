@@ -185,7 +185,8 @@ type Locks interface {
 // plugins that have vault:manage. The window provides it; a host with no window has none.
 type List interface {
 	// AddVault adds the folder at the absolute root. An empty name means the folder's name.
-	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
+	// A managedBy that is not empty makes the vault one that only the plugin with that id writes.
+	AddVault(ctx context.Context, root, name, managedBy string) (domain.Vault, error)
 	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
 	// RemoveVault removes the vault from the list and from the index. The folder stays.
 	RemoveVault(ctx context.Context, id domain.VaultID) error

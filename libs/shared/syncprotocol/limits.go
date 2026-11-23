@@ -33,3 +33,8 @@ const (
 	MaxChainBytes    = 192 << 10
 	MaxActiveDevices = 32
 )
+
+const (
+	MaxShareSeals   = 1000
+	MaxEncShareBody = 1 << 10
+)

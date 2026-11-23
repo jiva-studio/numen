@@ -1,5 +1,6 @@
 import { defineParameterType } from 'playwright-bdd'
 import { parsePlans } from '../drivers/sync.js'
+import { parseReader } from '../drivers/shared-reader.js'
 import {
   type ComputerName,
   parseComputer,
@@ -173,4 +174,16 @@ defineParameterType({
   name: 'inside',
   regexp: / in (?:the|its) vault "[^"]+"|/,
   transformer: (inside: string) => parseInside(inside),
+})
+
+defineParameterType({
+  name: 'reader',
+  regexp: /the reader|the second reader/,
+  transformer: (reader: string) => parseReader(reader),
+})
+
+defineParameterType({
+  name: 'teller',
+  regexp: /the person|the reader|the second reader/,
+  transformer: (teller: string) => teller,
 })

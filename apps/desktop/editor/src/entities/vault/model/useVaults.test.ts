@@ -11,8 +11,8 @@ import { VAULT_WORDS } from '../words'
 
 const TWO = {
   vaults: [
-    { id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false },
-    { id: 'leaves', name: 'Leaves', path: '/vaults/Leaves', isMissing: false },
+    { id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false, isReadOnly: false },
+    { id: 'leaves', name: 'Leaves', path: '/vaults/Leaves', isMissing: false, isReadOnly: false },
   ],
   showing: 'roots',
 }

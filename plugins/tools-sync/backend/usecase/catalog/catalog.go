@@ -120,6 +120,9 @@ func (r reader) readLinks(ctx context.Context) (map[domain.VaultID]vaultlink.Lin
 		if err != nil {
 			return nil, err
 		}
+		if link.Kind == vaultlink.KindReceived {
+			continue
+		}
 		links[vault.ID] = link
 	}
 	return links, nil

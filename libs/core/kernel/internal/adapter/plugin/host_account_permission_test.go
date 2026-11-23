@@ -82,3 +82,7 @@ func TestAnAccountCallWithoutTheIdentityPermissionIsRefusedByTheCore(t *testing.
 		}
 	}
 }
+
+func (signingAccount) OpenSealedBox(_ context.Context, _ string, _, sealed []byte) ([]byte, error) {
+	return sealed, nil
+}

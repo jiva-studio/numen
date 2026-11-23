@@ -55,11 +55,7 @@ func NewAddVault(add Add, readers vaultport.VaultReaders) *AddVault {
 
 // Execute adds the folder at the path. A name another vault has gets a number appended.
 func (u *AddVault) Execute(path, name string) (Listed, error) {
-	added, err := u.add.Execute(path, name)
-	if err != nil {
-		return Listed{}, err
-	}
-	return Listed{Vault: added, IsMissing: isFolderMissing(u.readers, added)}, nil
+	return u.ExecuteManaged(path, name, "")
 }
 
 // RenameVault sets the display name of the vault with an id.
@@ -85,4 +81,13 @@ func (u *RenameVault) Execute(ctx context.Context, id, name string) (Listed, err
 		return Listed{}, err
 	}
 	return Listed{Vault: renamed, IsMissing: isFolderMissing(u.readers, renamed)}, nil
+}
+
+// ExecuteManaged adds the folder as a vault that only the plugin with the id managedBy writes.
+func (u *AddVault) ExecuteManaged(path, name, managedBy string) (Listed, error) {
+	added, err := u.add.ExecuteManaged(path, name, managedBy)
+	if err != nil {
+		return Listed{}, err
+	}
+	return Listed{Vault: added, IsMissing: isFolderMissing(u.readers, added)}, nil
 }

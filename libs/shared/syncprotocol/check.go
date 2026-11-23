@@ -40,6 +40,10 @@ func checkSizes(failure error, fields []sizedField) error {
 // CheckRevision checks the shape and the sizes of a revision, not its signature or its place in the history.
 // A tombstone has no blob and no size, and may have no meta.
 func CheckRevision(revision *syncv1.Revision) error {
+	return checkRevision(revision, false)
+}
+
+func checkRevision(revision *syncv1.Revision, mayLackMeta bool) error {
 	if revision == nil {
 		return fmt.Errorf("%w: it is missing", ErrInvalidRevision)
 	}
@@ -61,7 +65,7 @@ func CheckRevision(revision *syncv1.Revision) error {
 	if revision.GetDeleted() {
 		return checkTombstone(revision)
 	}
-	return checkBlobRevision(revision)
+	return checkBlobRevision(revision, mayLackMeta)
 }
 
 func checkTombstone(revision *syncv1.Revision) error {
@@ -71,7 +75,7 @@ func checkTombstone(revision *syncv1.Revision) error {
 	return nil
 }
 
-func checkBlobRevision(revision *syncv1.Revision) error {
+func checkBlobRevision(revision *syncv1.Revision, mayLackMeta bool) error {
 	err := checkSizes(ErrInvalidRevision, []sizedField{
 		{"blob_id", revision.GetBlobId(), []int{idSize}},
 		{"blob_hash", revision.GetBlobHash(), []int{hashSize}},
@@ -82,7 +86,7 @@ func checkBlobRevision(revision *syncv1.Revision) error {
 	if revision.GetBlobSize() == 0 || revision.GetBlobSize() > MaxMultipartSize {
 		return fmt.Errorf("%w: blob_size is %d", ErrInvalidRevision, revision.GetBlobSize())
 	}
-	if len(revision.GetEncMeta()) == 0 {
+	if len(revision.GetEncMeta()) == 0 && !mayLackMeta {
 		return fmt.Errorf("%w: enc_meta is empty", ErrInvalidRevision)
 	}
 	return nil

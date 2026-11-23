@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -22,6 +23,7 @@ const (
 	recordsFile   = "files.json"
 	statusFile    = "status.json"
 	sightingsFile = "notes.json"
+	sharesFile    = "shares.json"
 )
 
 // State is the state of each vault in its store folder.
@@ -43,6 +45,10 @@ type statusDocument struct {
 
 type sightingsDocument struct {
 	Notes map[string]note.Seen `json:"notes"`
+}
+
+type sharesDocument struct {
+	Shares []share.Progress `json:"shares"`
 }
 
 func (s *State) read(ctx context.Context, id domain.VaultID, name string, into any) (bool, error) {
@@ -128,4 +134,16 @@ func (s *State) ReadSightings(ctx context.Context, id domain.VaultID) (map[strin
 // WriteSightings replaces the notes of the vault as the last look found them.
 func (s *State) WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error {
 	return s.write(ctx, id, sightingsFile, sightingsDocument{Notes: seen})
+}
+
+// ReadShareStates returns where this device stands with the shares it made in the vault.
+func (s *State) ReadShareStates(ctx context.Context, id domain.VaultID) ([]share.Progress, error) {
+	var document sharesDocument
+	_, err := s.read(ctx, id, sharesFile, &document)
+	return document.Shares, err
+}
+
+// WriteShareStates replaces where this device stands with the shares it made in the vault.
+func (s *State) WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error {
+	return s.write(ctx, id, sharesFile, sharesDocument{Shares: states})
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"path"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -15,6 +16,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -112,6 +114,9 @@ func (r *run) addConflict(path string, seq uint64) {
 
 func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 	meta, err := r.check(stored)
+	if errors.Is(err, errUnknownShare) {
+		r.hold(stored.GetSeq())
+	}
 	if err != nil {
 		r.result.Unverified++
 		return note.Meta{}, false
@@ -119,8 +124,40 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 	return meta, true
 }
 
+var errUnknownShare = errors.New("the revision belongs to a share this device does not know")
+
+func (r *run) checkShared(stored *syncv1.StoredRevision) (note.Meta, error) {
+	rev := stored.GetRevision()
+	root, isFound := share.FindRootByID(r.in.Shares, rev.GetShareRootId())
+	if !isFound {
+		return note.Meta{}, errUnknownShare
+	}
+	if err := note.CheckRevision(stored, r.in.IsAuthor); err != nil || rev.GetDeleted() {
+		return note.Meta{}, err
+	}
+	key, isKnown := root.Keys.Get(rev.GetEpoch())
+	if !isKnown {
+		return note.Meta{}, note.ErrUnverified
+	}
+	meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	if err != nil || len(meta.Key) != 32 {
+		return note.Meta{}, note.ErrUnverified
+	}
+	meta.Path = path.Join(root.Folder, meta.Path)
+	if _, isUnder := share.GetRelativePath(root.Folder, meta.Path); !isUnder {
+		return note.Meta{}, note.ErrUnverified
+	}
+	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
+		return note.Meta{}, note.ErrUnverified
+	}
+	return meta, nil
+}
+
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
+	if len(rev.GetShareRootId()) > 0 {
+		return r.checkShared(stored)
+	}
 	key, isKnown := r.getKey(rev.GetEpoch())
 	if !isKnown && !rev.GetDeleted() {
 		return note.Meta{}, note.ErrUnverified

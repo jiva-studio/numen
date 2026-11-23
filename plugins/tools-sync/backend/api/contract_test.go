@@ -34,6 +34,29 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodCreateCheckout: {
 			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
+		api.MethodGetReaderCode: {
+			CreateRequest: func() any { return &api.GetReaderCodeRequest{} }, CreateResponse: func() any { return &api.GetReaderCodeResponse{} },
+		},
+		api.MethodReadReaderCode: {
+			CreateRequest: func() any { return &api.ReadReaderCodeRequest{} }, CreateResponse: func() any { return &api.ReadReaderCodeResponse{} },
+		},
+		api.MethodGetShare: {CreateRequest: func() any { return &api.GetShareRequest{} }, CreateResponse: func() any { return &api.GetShareResponse{} }},
+		api.MethodAddReader: {
+			CreateRequest: func() any { return &api.AddReaderRequest{} }, CreateResponse: func() any { return &api.AddReaderResponse{} },
+		},
+		api.MethodRemoveReader: {
+			CreateRequest: func() any { return &api.RemoveReaderRequest{} }, CreateResponse: func() any { return &api.RemoveReaderResponse{} },
+		},
+		api.MethodStopShare: {CreateRequest: func() any { return &api.StopShareRequest{} }, CreateResponse: func() any { return &api.StopShareResponse{} }},
+		api.MethodReadInvitation: {
+			CreateRequest: func() any { return &api.ReadInvitationRequest{} }, CreateResponse: func() any { return &api.ReadInvitationResponse{} },
+		},
+		api.MethodAcceptInvitation: {
+			CreateRequest: func() any { return &api.AcceptInvitationRequest{} }, CreateResponse: func() any { return &api.AcceptInvitationResponse{} },
+		},
+		api.MethodListReceived: {
+			CreateRequest: func() any { return &api.ListReceivedRequest{} }, CreateResponse: func() any { return &api.ListReceivedResponse{} },
+		},
 	}
 }
 
@@ -71,5 +94,23 @@ func TestTheNamesOfTheSubscriptionMethodsAndPhases(t *testing.T) {
 func TestTheNameOfTheMethodThatAnswersPausedRemovalsAndTheirDirections(t *testing.T) {
 	if api.MethodResolveDeletions != "ResolveDeletions" {
 		t.Errorf("method %q, want ResolveDeletions", api.MethodResolveDeletions)
+	}
+}
+
+func TestTheNamesOfTheSharingMethodsAndTheirStates(t *testing.T) {
+	methods := map[string]string{
+		api.MethodGetReaderCode: "GetReaderCode", api.MethodReadReaderCode: "ReadReaderCode", api.MethodGetShare: "GetShare",
+		api.MethodAddReader: "AddReader", api.MethodRemoveReader: "RemoveReader", api.MethodStopShare: "StopShare",
+		api.MethodReadInvitation: "ReadInvitation", api.MethodAcceptInvitation: "AcceptInvitation", api.MethodListReceived: "ListReceived",
+	}
+	for got, want := range methods {
+		if got != want {
+			t.Errorf("method %q, want %q", got, want)
+		}
+	}
+	if api.StateReceived != "received" || api.ShareNotShared != "notShared" || api.ShareCreating != "creating" || api.ShareActive != "active" ||
+		api.ReaderActive != "active" || api.ReaderRemoved != "removed" ||
+		api.ReceivedReceiving != "receiving" || api.ReceivedReady != "ready" || api.ReceivedEnded != "ended" {
+		t.Error("a state of sharing has another word than the frontend reads")
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
@@ -53,12 +54,14 @@ type runtime struct {
 	wakes    *loops.Wakes
 	interval *loops.Interval
 	removal  *loops.Interval
+	received *loops.Text
 	session  *loops.Supervisor[*Backend]
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
-		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay), session: nil,
+		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
+		received: loops.NewText(), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -79,6 +82,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
+	r.received.Set(values[settingReceivedFolder])
 	r.session.Configure(values[settingServer])
 }
 
@@ -92,7 +96,8 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.NewRandom(),
-		Subscriptions: cloudSide, Shop: cloudSide, Pauses: p.state,
+		Subscriptions: cloudSide, Shop: cloudSide, Pauses: p.state, Shares: cloudSide, ShareStates: p.state, Box: p.identity, Vaults: p.vaults,
+		Folders: folders.NewReceived(r.received.Get),
 		Restore: syncvault.RestoreDeps{Address: address, Epochs: cloudSide, Mirror: p.state},
 	}
 	wired := syncwire.Deps{

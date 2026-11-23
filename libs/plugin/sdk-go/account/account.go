@@ -21,6 +21,7 @@ const (
 	maxMessageSize         = 4096
 	maxSealedData          = 32 << 10
 	maxSealedOverhead      = 256
+	maxSealedBox           = 1 << 10
 	noIdentityReason       = "NO_IDENTITY"
 	cannotOpenReason       = "CANNOT_OPEN"
 	noPendingRestoreReason = "NO_PENDING_RESTORE"
@@ -41,6 +42,7 @@ var (
 	ErrNoLink      = errors.New("no link is in progress on this device")
 	errMessageSize = errors.New("the message to sign has 1 to 4096 bytes")
 	errDataSize    = errors.New("the data to seal has at most 32 KiB")
+	errBoxSize     = errors.New("the box to open has at most 1 KiB")
 )
 
 // PublicIdentity is what is public of the identity of this device.
@@ -216,4 +218,18 @@ func readReason(failure *connect.Error) string {
 		}
 	}
 	return ""
+}
+
+// OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for this
+// plugin and the same context. The box has at most 1 KiB. It returns ErrCannotOpen for bytes that do not open, and
+// ErrNoIdentity where the device holds no identity.
+func (c *Client) OpenSealedBox(ctx context.Context, boxContext, sealed []byte) ([]byte, error) {
+	if len(sealed) > maxSealedBox {
+		return nil, errBoxSize
+	}
+	response, err := c.rpc.OpenSealedBox(ctx, connect.NewRequest(&v1.OpenSealedBoxRequest{Context: boxContext, Sealed: sealed}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	return response.Msg.GetPlain(), nil
 }

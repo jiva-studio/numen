@@ -357,3 +357,105 @@
     text-align: start;
   }
 }
+
+.share,
+.shares {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-chrome-inset);
+  padding: var(--settings-card-pad);
+  color: var(--numen-ink);
+  font-size: var(--numen-chrome-text-2);
+}
+
+.share__title,
+.shares__title {
+  margin: 0;
+  font-size: calc(1.25 * var(--numen-chrome-unit));
+  font-weight: 600;
+}
+
+.share__form,
+.shares__block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}
+
+.share__field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--numen-chrome-unit) / 4);
+  inline-size: 100%;
+}
+
+.share__input,
+.shares__input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding: calc(var(--numen-chrome-unit) / 2);
+  background: var(--numen-surface);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-chrome-radius);
+  color: var(--numen-ink);
+  font: inherit;
+}
+
+.share__input--invitation,
+.shares__input--invitation {
+  min-block-size: calc(6 * var(--numen-chrome-unit));
+  font-family: var(--numen-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.share__note,
+.shares__note {
+  margin: 0;
+  color: var(--numen-hushed);
+}
+
+.share__note--alarm,
+.shares__note--alarm {
+  color: var(--numen-alarm);
+}
+
+.share__fingerprint {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.share__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}
+
+.share__readers,
+.shares__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-chrome-inset);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share__reader,
+.shares__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--numen-chrome-unit) / 2) var(--numen-chrome-unit);
+  padding: var(--numen-chrome-inset);
+  background: var(--numen-surface);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-chrome-radius);
+}
+
+.share__name,
+.shares__name {
+  font-weight: 600;
+}

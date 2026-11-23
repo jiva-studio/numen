@@ -611,3 +611,25 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 		t.Errorf("a second dialog answered %v, want %v", got, connect.CodeUnavailable)
 	}
 }
+
+func TestAWindowRequestIgnoresTheManagerAndTheVaultStaysOrdinary(t *testing.T) {
+	f := onAList(t)
+
+	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
+		Path: folderNamed(t, "claimed"), ManagedBy: "md.numen.tools.sync",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Msg.Error != nil || out.Msg.GetVault().GetManagedBy() != "" {
+		t.Errorf("the added vault is %v, want one with no manager", out.Msg)
+	}
+	list, err := f.client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := onList(t, list.Msg, out.Msg.GetVault().GetId()).GetManagedBy(); got != "" {
+		t.Errorf("the vault on the list has the manager %q, want none", got)
+	}
+}

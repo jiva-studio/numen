@@ -96,6 +96,9 @@ func (h *SpyHost) GetIndexer(id domain.VaultID) ports.Indexer { return h.inner.G
 // Store returns the store folder of the plugin in the vault.
 func (h *SpyHost) Store(id domain.VaultID) ports.Store { return h.inner.Store(id) }
 
+// GetRemover returns the remover of the inner host.
+func (h *SpyHost) GetRemover(id domain.VaultID) ports.Remover { return h.inner.GetRemover(id) }
+
 // Transfers returns what the host does with the bytes of the files of the vault, written down.
 func (h *SpyHost) GetTransfers(id domain.VaultID) ports.Transfers {
 	return &spyTransfers{spy: h, inner: h.inner.GetTransfers(id)}

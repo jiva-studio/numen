@@ -607,6 +607,36 @@ describe('a save that failed', () => {
   })
 })
 
+
+describe('a note of a vault that is read only', () => {
+  it('opens as read only and as one that is not, by what the window reports of its vault', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    let isReadOnly = true
+    const notes = openNotes(core, { isReadOnly: () => isReadOnly })
+    notes.open('Heat.md')
+    await settle()
+
+    expect(notes.getOpenNote('Heat.md').isReadOnly).toBe(true)
+    isReadOnly = false
+    expect(notes.getOpenNote('Heat.md').isReadOnly).toBe(false)
+  })
+
+  it('says the vault is read only where the core refuses a write', async () => {
+    const { core, files } = fake({
+      write: async () => asFailure('readOnly' as const),
+    })
+    files.set('Heat.md', 'one')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+
+    notes.setBody('Heat.md', 'one two')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
+
+    expect(notes.getErrorMessage('Heat.md')).toBe('This vault is read only')
+  })
+})
 describe('closing a note that could not be written', () => {
   it('holds it once and says why, and releases it when it is requested again', async () => {
     const { core, files } = fake({
@@ -806,6 +836,7 @@ describe('an id the store does not hold', () => {
       body: '',
       state: 'loading',
       error: null,
+      isReadOnly: false,
     })
     expect(notes.getRevision('ghost.md')).toBe('')
     expect(notes.getErrorMessage('ghost.md')).toBe('')

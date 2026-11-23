@@ -8,9 +8,19 @@
   "activationEvents": ["onFilesChanged"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
+    "tabKinds": [{ "kind": "share", "title": "Share", "icon": "share-2" }],
+    "commands": [{ "id": "share.open", "title": "Share...", "icon": "share-2" }],
+    "slots": [
+      { "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 },
+      {
+        "slot": "fileTree.context",
+        "command": "share.open",
+        "group": "6-sync",
+        "when": "target.isFolder"
+      }
+    ]
   },
-  "permissions": ["identity", "link:open", "vault:read", "vault:write"],
+  "permissions": ["identity", "link:open", "vault:manage", "vault:read", "vault:write"],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
@@ -39,10 +49,19 @@
       "description": "How long a removed file is watched before the removal is sent",
       "default": 60,
       "min": 1
+    },
+    {
+      "key": "receivedFolder",
+      "type": "string",
+      "title": "Folder for shared vaults",
+      "description": "Where the folders shared with you are kept",
+      "details": "Where the folders shared with you are kept. Empty means Numen Shared in your home folder.",
+      "default": ""
     }
   ],
   "settingsViews": [
     { "id": "vaults", "title": "Vaults" },
+    { "id": "shares", "title": "Shares" },
     { "id": "subscription", "title": "Subscription", "page": "identity" }
   ],
   "frontend": {}

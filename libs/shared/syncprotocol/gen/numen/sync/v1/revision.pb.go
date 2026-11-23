@@ -29,6 +29,8 @@ const (
 	ConflictKind_CONFLICT_KIND_PARENT_MISMATCH ConflictKind = 1
 	// CONFLICT_KIND_PATH_TAKEN means another live file has the same path_hash.
 	ConflictKind_CONFLICT_KIND_PATH_TAKEN ConflictKind = 2
+	// CONFLICT_KIND_SHARE_EPOCH means the revision has a share_root_id whose epoch is not the current epoch of the share.
+	ConflictKind_CONFLICT_KIND_SHARE_EPOCH ConflictKind = 3
 )
 
 // Enum value maps for ConflictKind.
@@ -37,11 +39,13 @@ var (
 		0: "CONFLICT_KIND_UNSPECIFIED",
 		1: "CONFLICT_KIND_PARENT_MISMATCH",
 		2: "CONFLICT_KIND_PATH_TAKEN",
+		3: "CONFLICT_KIND_SHARE_EPOCH",
 	}
 	ConflictKind_value = map[string]int32{
 		"CONFLICT_KIND_UNSPECIFIED":     0,
 		"CONFLICT_KIND_PARENT_MISMATCH": 1,
 		"CONFLICT_KIND_PATH_TAKEN":      2,
+		"CONFLICT_KIND_SHARE_EPOCH":     3,
 	}
 )
 
@@ -421,8 +425,10 @@ type Conflict struct {
 	Head *StoredRevision `protobuf:"bytes,3,opt,name=head,proto3" json:"head,omitempty"`
 	// existing_file_id is set for PATH_TAKEN only.
 	ExistingFileId []byte `protobuf:"bytes,4,opt,name=existing_file_id,json=existingFileId,proto3" json:"existing_file_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// share_epoch is the current epoch of the share; set for SHARE_EPOCH only.
+	ShareEpoch    uint32 `protobuf:"varint,5,opt,name=share_epoch,json=shareEpoch,proto3" json:"share_epoch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Conflict) Reset() {
@@ -481,6 +487,13 @@ func (x *Conflict) GetExistingFileId() []byte {
 		return x.ExistingFileId
 	}
 	return nil
+}
+
+func (x *Conflict) GetShareEpoch() uint32 {
+	if x != nil {
+		return x.ShareEpoch
+	}
+	return 0
 }
 
 type GetChangesRequest struct {
@@ -667,12 +680,14 @@ const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	"\tcommitted\x18\x01 \x01(\bR\tcommitted\x12\x10\n" +
 	"\x03seq\x18\x02 \x01(\x04R\x03seq\x12;\n" +
 	"\trevisions\x18\x03 \x03(\v2\x1d.numen.sync.v1.StoredRevisionR\trevisions\x125\n" +
-	"\tconflicts\x18\x04 \x03(\v2\x17.numen.sync.v1.ConflictR\tconflicts\"\xb1\x01\n" +
+	"\tconflicts\x18\x04 \x03(\v2\x17.numen.sync.v1.ConflictR\tconflicts\"\xd2\x01\n" +
 	"\bConflict\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\fR\x06fileId\x12/\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1b.numen.sync.v1.ConflictKindR\x04kind\x121\n" +
 	"\x04head\x18\x03 \x01(\v2\x1d.numen.sync.v1.StoredRevisionR\x04head\x12(\n" +
-	"\x10existing_file_id\x18\x04 \x01(\fR\x0eexistingFileId\"a\n" +
+	"\x10existing_file_id\x18\x04 \x01(\fR\x0eexistingFileId\x12\x1f\n" +
+	"\vshare_epoch\x18\x05 \x01(\rR\n" +
+	"shareEpoch\"a\n" +
 	"\x11GetChangesRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x1b\n" +
 	"\tsince_seq\x18\x02 \x01(\x04R\bsinceSeq\x12\x14\n" +
@@ -683,11 +698,12 @@ const file_numen_sync_v1_revision_proto_rawDesc = "" +
 	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12\x19\n" +
 	"\bhead_seq\x18\x04 \x01(\x04R\aheadSeq\x12\x14\n" +
 	"\x05reset\x18\x05 \x01(\bR\x05reset\x12(\n" +
-	"\x10restore_epoch_id\x18\x06 \x01(\fR\x0erestoreEpochId*n\n" +
+	"\x10restore_epoch_id\x18\x06 \x01(\fR\x0erestoreEpochId*\x8d\x01\n" +
 	"\fConflictKind\x12\x1d\n" +
 	"\x19CONFLICT_KIND_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dCONFLICT_KIND_PARENT_MISMATCH\x10\x01\x12\x1c\n" +
-	"\x18CONFLICT_KIND_PATH_TAKEN\x10\x022\xc6\x01\n" +
+	"\x18CONFLICT_KIND_PATH_TAKEN\x10\x02\x12\x1d\n" +
+	"\x19CONFLICT_KIND_SHARE_EPOCH\x10\x032\xc6\x01\n" +
 	"\x0fRevisionService\x12`\n" +
 	"\x0fCommitRevisions\x12%.numen.sync.v1.CommitRevisionsRequest\x1a&.numen.sync.v1.CommitRevisionsResponse\x12Q\n" +
 	"\n" +

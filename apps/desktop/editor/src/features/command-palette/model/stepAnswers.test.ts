@@ -39,8 +39,8 @@ const createPalette = () => {
       searchNames: async () => [{ path: 'physics/Heat.md', title: 'Heat' }] as never,
       listVaults: async () => ({
         vaults: [
-          { id: 'physics', name: 'Physics', path: '/physics', isMissing: false },
-          { id: 'heat', name: 'Heat', path: '/heat', isMissing: false },
+          { id: 'physics', name: 'Physics', path: '/physics', isMissing: false, isReadOnly: false },
+          { id: 'heat', name: 'Heat', path: '/heat', isMissing: false, isReadOnly: false },
         ],
         showing: showing.value,
       }),

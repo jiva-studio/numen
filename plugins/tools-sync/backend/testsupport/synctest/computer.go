@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/heads"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
@@ -36,8 +37,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
@@ -62,6 +65,8 @@ func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(
 // Transfers returns what the host does with the bytes of the files of the vault.
 func (h Host) GetTransfers(id domain.VaultID) ports.Transfers { return h.Root.With(id) }
 
+func (h Host) GetRemover(id domain.VaultID) ports.Remover { return h.Root.With(id) }
+
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
 type Computer struct {
@@ -76,6 +81,7 @@ type Computer struct {
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
 	State    *hoststore.State
+	Folders  *folders.Received
 
 	network        *link
 	healthEndpoint hostcall.Endpoint
@@ -138,9 +144,10 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	root := hosttest.New(vault)
 	network := &link{}
 	web := &http.Client{Transport: network}
+	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, token: atomic.Value{}, network: network,
+		Cloud: nil, State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -245,12 +252,18 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
 		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
+		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders,
 	}
 }
 
 // NewSyncVault returns the pass over one vault with the use cases of its steps.
 func (c *Computer) NewSyncVault() *syncvault.SyncVault {
 	return syncwire.NewSyncVault(c.WireDeps())
+}
+
+// NewSyncVaultReading is NewSyncVault with another way to read the shares of a vault at the start of a pass.
+func (c *Computer) NewSyncVaultReading(shares syncvault.SharesReader) *syncvault.SyncVault {
+	return syncwire.NewSyncVaultReading(c.WireDeps(), shares)
 }
 
 // Sync runs one pass over the vault.
@@ -340,5 +353,21 @@ func (c *Computer) ChainDeps() chaincourier.Deps {
 func (c *Computer) LinkDeps() linkcourier.Deps {
 	return linkcourier.Deps{
 		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock,
+	}
+}
+
+// ShareDeps are the dependencies of the use cases of sharing a folder.
+func (c *Computer) ShareDeps() share.Deps {
+	return share.Deps{
+		Shares: c.Cloud, Revisions: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Links: c.State, States: c.State,
+		Clock: c.Clock, Random: rand.Reader,
+	}
+}
+
+// ReceiveDeps are the dependencies of the use cases of receiving a folder.
+func (c *Computer) ReceiveDeps() receive.Deps {
+	return receive.Deps{
+		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Links: c.State,
+		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock,
 	}
 }

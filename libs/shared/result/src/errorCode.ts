@@ -9,3 +9,4 @@ export type ErrorCode =
   | 'alreadyExists'
   | 'invalidName'
   | 'unreachable'
+  | 'readOnly'

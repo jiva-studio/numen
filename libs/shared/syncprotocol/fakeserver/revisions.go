@@ -23,6 +23,7 @@ type batch struct {
 	revs    []*syncv1.Revision
 	ids     [][32]byte
 	heads   []*syncv1.StoredRevision
+	shares  map[string]*shareState
 }
 
 func (b *batch) isApplied(i int) bool {
@@ -66,7 +67,10 @@ func (s *Server) newBatch(account string, req *syncv1.CommitRevisionsRequest) (*
 	if err := checkEpochs(vault, req.GetRevisions()); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	b := &batch{account: account, vaultID: string(req.GetVaultId()), vault: vault, revs: req.GetRevisions()}
+	b := &batch{account: account, vaultID: string(req.GetVaultId()), vault: vault, revs: req.GetRevisions(), shares: s.shares}
+	if err := s.checkShares(b); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	for _, rev := range b.revs {
 		b.ids = append(b.ids, syncprotocol.GetRevisionID(rev))
 		b.heads = append(b.heads, vault.files[string(rev.GetFileId())])
@@ -126,7 +130,7 @@ func (s *Server) checkAuthors(account string, revs []*syncv1.Revision) error {
 func (s *Server) checkBlobs(b *batch) error {
 	claimed := map[string]bool{}
 	for i, rev := range b.revs {
-		if rev.GetDeleted() || b.isApplied(i) || b.isMetadataOnly(i) || b.isStale(i) {
+		if rev.GetDeleted() || b.isApplied(i) || b.isMetadataOnly(i) || b.isStale(i) || isBlobKept(b.heads[i], rev) {
 			continue
 		}
 		if !s.isBlobReady(b, rev) || !addOnce(claimed, rev.GetBlobId()) {
@@ -190,11 +194,11 @@ func (b *batch) getConflict(i int, inBatch map[string]bool) *syncv1.Conflict {
 		return &syncv1.Conflict{FileId: rev.GetFileId(), Kind: syncv1.ConflictKind_CONFLICT_KIND_PARENT_MISMATCH, Head: head}
 	}
 	if rev.GetDeleted() {
-		return nil
+		return b.getShareConflict(rev)
 	}
 	holder, taken := b.vault.paths[string(rev.GetPathHash())]
 	if !taken || holder == string(rev.GetFileId()) || inBatch[holder] {
-		return nil
+		return b.getShareConflict(rev)
 	}
 	return &syncv1.Conflict{
 		FileId: rev.GetFileId(), Kind: syncv1.ConflictKind_CONFLICT_KIND_PATH_TAKEN, Head: b.vault.files[holder], ExistingFileId: []byte(holder),
@@ -245,7 +249,7 @@ func (s *Server) releaseHead(b *batch, i int) {
 	if b.isMetadataOnly(i) {
 		return
 	}
-	if row, found := s.blobs[string(old.GetRevision().GetBlobId())]; found && row.state == blobCommitted {
+	if row, found := s.blobs[string(old.GetRevision().GetBlobId())]; found && row.state == blobCommitted && !isBlobKept(old, b.revs[i]) {
 		row.state = blobReplaced
 		s.used[b.account] -= min(row.size, s.used[b.account])
 	}
@@ -254,6 +258,10 @@ func (s *Server) releaseHead(b *batch, i int) {
 func (s *Server) storeRevision(b *batch, i int) *syncv1.StoredRevision {
 	rev := b.revs[i]
 	stored := &syncv1.StoredRevision{Revision: rev, RevId: b.ids[i][:], Seq: b.vault.seq}
+	if b.heads[i] != nil {
+		s.recordShareExit(b, i)
+	}
+	s.clearShareExit(rev)
 	b.vault.files[string(rev.GetFileId())] = stored
 	if !rev.GetDeleted() {
 		b.vault.paths[string(rev.GetPathHash())] = string(rev.GetFileId())
@@ -336,13 +344,17 @@ func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// checkEpochs refuses a revision of the vault whose key epoch is below the newest one; a revision of a share carries the
+// epoch of the share and is checked against the share instead.
 func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 	var highest uint32
 	for _, stored := range vault.files {
-		highest = max(highest, stored.GetRevision().GetEpoch())
+		if len(stored.GetRevision().GetShareRootId()) == 0 {
+			highest = max(highest, stored.GetRevision().GetEpoch())
+		}
 	}
 	for _, rev := range revs {
-		if rev.GetEpoch() < highest {
+		if len(rev.GetShareRootId()) == 0 && rev.GetEpoch() < highest {
 			return fmt.Errorf("%w: epoch %d is below the epoch %d of the vault", errInvalidRevision, rev.GetEpoch(), highest)
 		}
 	}
@@ -354,4 +366,52 @@ func asInvalid(err error) error {
 		return refused
 	}
 	return connect.NewError(connect.CodeInvalidArgument, err)
+}
+
+func (s *Server) checkShares(b *batch) error {
+	for _, rev := range b.revs {
+		if len(rev.GetShareRootId()) == 0 {
+			continue
+		}
+		share, found := s.shares[string(rev.GetShareRootId())]
+		if !found || share.vault != b.vaultID || share.account != b.account || share.isClosed {
+			return fmt.Errorf("%w: the share of a revision is not an open share of the vault", errInvalidRevision)
+		}
+	}
+	return nil
+}
+
+func (b *batch) getShareConflict(rev *syncv1.Revision) *syncv1.Conflict {
+	if len(rev.GetShareRootId()) == 0 {
+		return nil
+	}
+	share := b.shares[string(rev.GetShareRootId())]
+	if rev.GetEpoch() == share.epoch {
+		return nil
+	}
+	return &syncv1.Conflict{
+		FileId: rev.GetFileId(), Kind: syncv1.ConflictKind_CONFLICT_KIND_SHARE_EPOCH, Head: b.vault.files[string(rev.GetFileId())], ShareEpoch: share.epoch,
+	}
+}
+
+func isBlobKept(head *syncv1.StoredRevision, rev *syncv1.Revision) bool {
+	kept := head.GetRevision()
+	return head != nil && !kept.GetDeleted() && bytes.Equal(kept.GetBlobId(), rev.GetBlobId()) &&
+		bytes.Equal(kept.GetBlobHash(), rev.GetBlobHash()) && kept.GetBlobSize() == rev.GetBlobSize()
+}
+
+func (s *Server) recordShareExit(b *batch, i int) {
+	old := b.heads[i].GetRevision()
+	if len(old.GetShareRootId()) == 0 || bytes.Equal(old.GetShareRootId(), b.revs[i].GetShareRootId()) {
+		return
+	}
+	if share, found := s.shares[string(old.GetShareRootId())]; found {
+		share.exits[string(old.GetFileId())] = b.vault.seq
+	}
+}
+
+func (s *Server) clearShareExit(rev *syncv1.Revision) {
+	if share, found := s.shares[string(rev.GetShareRootId())]; found {
+		delete(share.exits, string(rev.GetFileId()))
+	}
 }

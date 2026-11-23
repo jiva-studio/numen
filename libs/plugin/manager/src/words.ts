@@ -7,7 +7,7 @@ const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files
 const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
   'vault:read': 'Read your notes, files and tabs.',
   'vault:write': 'Change your notes and files, and act for you.',
-  'vault:manage': 'Add, rename, remove and open vaults.',
+  'vault:manage': 'Add, rename, remove and open vaults, and add a vault only it writes to.',
   'link:open': 'Open links in your browser.',
   'index:read': 'Read the titles and the search index of your notes.',
   'search:policy': 'Read and change how strict semantic search is.',

@@ -89,6 +89,15 @@ export class World {
     return fs.existsSync(root) ? count(root) : 0
   }
 
+  /** Moves a file of the vault to another path, with the folders above it, as a program that is not Numen does. */
+  moveFile(vault: string, from: string, to: string): void {
+    assertVaultPath(from)
+    assertVaultPath(to)
+    const target = path.join(this.getFolder(vault), to)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.renameSync(path.join(this.getFolder(vault), from), target)
+  }
+
   removeFile(vault: string, filePath: string): void {
     assertVaultPath(filePath)
     fs.rmSync(path.join(this.getFolder(vault), filePath))

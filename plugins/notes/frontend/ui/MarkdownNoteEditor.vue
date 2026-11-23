@@ -130,7 +130,7 @@ function onOpen(url: string) {
       :model-value="docContent"
       :language="editorLanguage"
       is-live
-      :is-readonly="isReadOnly || isLoading"
+      :is-readonly="isReadOnly || state?.isReadOnly?.value === true || isLoading"
       :soft-wrap="editorPreferences.softWrap"
       :line-numbers="editorPreferences.lineNumbers"
       :tab-size="tabSize"

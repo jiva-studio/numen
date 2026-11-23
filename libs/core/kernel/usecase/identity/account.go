@@ -98,3 +98,13 @@ func (a *Account) CompleteRestore(ctx context.Context, pluginID string, chain []
 	}
 	return NewCompleteRestore(deps).Execute(ctx, pluginID, chain)
 }
+
+// OpenSealedBox opens a box sealed to the account box key for the plugin and the context. It fails with
+// ErrCannotOpen for a box sealed for another plugin, context or account.
+func (a *Account) OpenSealedBox(ctx context.Context, pluginID string, boxContext, sealed []byte) ([]byte, error) {
+	deps, err := a.open()
+	if err != nil {
+		return nil, err
+	}
+	return NewOpenSealedBox(deps).Execute(ctx, pluginID, boxContext, sealed)
+}

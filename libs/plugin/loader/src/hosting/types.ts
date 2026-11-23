@@ -274,6 +274,7 @@ export interface NoteBuffer {
     readonly path: string
     readonly body: string
     readonly state: string
+    readonly isReadOnly?: boolean
   }
   getErrorMessage(id: string): string
 }

@@ -11,10 +11,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 )
 
 // Deps are the dependencies of a pass and what the transfers of files of any size need besides.
@@ -53,6 +56,11 @@ func newDeletionsDeps(deps Deps) deletions.Deps {
 
 // NewSyncVault returns the pass over one vault with the use cases of its steps over the dependencies.
 func NewSyncVault(deps Deps) *syncvault.SyncVault {
+	return NewSyncVaultReading(deps, share.NewReadShares(sharewire.NewShareDeps(deps.Deps)))
+}
+
+// NewSyncVaultReading is NewSyncVault with shares as the way to read the shares of a vault at the start of a pass.
+func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.SyncVault {
 	downloads := NewDownloads(deps)
 	uploads := upload.NewUploadFile(upload.Deps{
 		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random, Digests: deps.Digests,
@@ -67,6 +75,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		State: deps.State, Commit: commit.NewCommitRevisions(commitDeps), Remove: commit.NewCommitRemovals(commitDeps),
 	}
 	recoverAccount := restore.NewRecoverAccount(recovery)
+	sharing := sharewire.NewShareDeps(deps.Deps)
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
@@ -87,5 +96,8 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		Subscription:   subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions}),
 		RecoverAccount: recoverAccount,
 		RecoverVault:   restore.NewRecoverVault(recovery),
+		Shares:         shares,
+		Rewrap:         share.NewRewrapFolder(sharing),
+		Receive:        receive.NewPullShare(sharewire.NewReceiveDeps(deps.Deps)),
 	})
 }

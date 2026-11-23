@@ -194,7 +194,7 @@ func (s *Handler) OpenVault(
 func convertVaultToWire(v vaults.Listed) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		IsMissing: v.IsMissing,
+		IsMissing: v.IsMissing, ManagedBy: v.ManagedBy,
 	}
 }
 

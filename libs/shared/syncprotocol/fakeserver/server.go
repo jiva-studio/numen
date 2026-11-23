@@ -74,7 +74,7 @@ type challenge struct {
 	expiresAt     int64
 }
 
-// Server serves the sign-in, account, catalog, revision and blob services from memory, the presigned blob
+// Server serves the sign-in, account, catalog, revision, blob and share services from memory, the presigned blob
 // URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
 // the id and the body of every stored blob, raw). The watch service streams change hints; /admin/streams (GET) returns the count of open streams as text and
@@ -118,6 +118,7 @@ type Server struct {
 	stopDownload  stopAfter
 	stop          func()
 	links         map[string]*linkChannel
+	shares        map[string]*shareState
 }
 
 // New returns the server for the config.
@@ -128,7 +129,7 @@ func New(cfg Config) *Server {
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
 		store: newBodyStore(cfg.BodyDir), stop: cfg.Stop, streams: streamSet{heartbeat: cfg.Heartbeat, watchers: map[*watcher]struct{}{}},
-		links: map[string]*linkChannel{},
+		links: map[string]*linkChannel{}, shares: map[string]*shareState{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -167,6 +168,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewWatchServiceHandler(s, options))
 	mux.HandleFunc("/admin/streams", s.serveStreams)
 	mux.HandleFunc("/admin/streams/end", s.serveStreamsEnd)
+	mux.Handle(syncv1connect.NewShareServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/admin/usage", s.serveUsage)

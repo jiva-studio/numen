@@ -111,6 +111,7 @@ export function createBufferedNoteState(
     wikilinks: createWikilinks(options.deps, (): string => state.path),
     followLink: createLinkFollower(options.deps, (): string => state.path),
     fileConflict: computed(() => getFileConflict(note.value.state)),
+    isReadOnly: computed(() => note.value.isReadOnly === true),
     keepMine: () => buffer.keep(id),
     takeFile: () => buffer.take(id),
     attachEditor: (attached: EditorHandle | null): void => {

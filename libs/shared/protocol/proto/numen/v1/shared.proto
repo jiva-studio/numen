@@ -74,6 +74,9 @@ enum ErrorCode {
 
   // A byte range is not one the file can give: a length outside 1 to 4194304 or a negative start.
   ERROR_CODE_INVALID_RANGE = 16;
+
+  // The vault is read only for this caller: another plugin manages it. Nothing is written.
+  ERROR_CODE_READ_ONLY = 17;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

@@ -57,6 +57,7 @@ export interface Words extends EmptyWords {
   readonly vaults: string
   readonly typeVault: string
   readonly gone: string
+  readonly readOnly: string
   readonly current: string
   readonly asking: string
   readonly several: (files: number) => string

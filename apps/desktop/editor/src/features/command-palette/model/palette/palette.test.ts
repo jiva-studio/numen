@@ -62,6 +62,7 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   name,
   path: `/vaults/${name}`,
   isMissing: isMissing,
+  isReadOnly: false,
 })
 
 const installation = (...vaults: readonly Vault[]): VaultList => ({
@@ -923,6 +924,17 @@ describe('a command that asks for a vault', () => {
       'heat',
     ])
     expect(commands.view.groups.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
+  })
+
+  it('marks the vault another plugin manages as read only', async () => {
+    const shared = { ...vault('food', 'Food'), isReadOnly: true }
+    const { commands } = createPalette({}, [], {}, installation(shared))
+    commands.palette.startCommand('app:vault.open', front())
+    await settle()
+
+    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(
+      `${words.readOnly} · /vaults/Food`,
+    )
   })
 
   /** The folder may be on an unmounted volume, and the vault stays listed. */

@@ -59,6 +59,8 @@ type Account interface {
 	SealData(ctx context.Context, pluginID string, dataContext, plain []byte) ([]byte, error)
 	// OpenData opens what SealData sealed for the plugin and the context; failure is identity.ErrCannotOpen.
 	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
+	// OpenSealedBox opens a box sealed to the account box key for the plugin and the context; failure is identity.ErrCannotOpen.
+	OpenSealedBox(ctx context.Context, pluginID string, boxContext, sealed []byte) ([]byte, error)
 }
 
 // AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits

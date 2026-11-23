@@ -17,6 +17,15 @@
       "lastSyncedAt": "",
       "conflictCount": 0,
       "pausedDeletions": null
+    },
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0R",
+      "name": "Food",
+      "path": "/home/person/Numen Shared/Food",
+      "state": "received",
+      "lastSyncedAt": "2026-11-23T12:00:00Z",
+      "conflictCount": 0,
+      "pausedDeletions": null
     }
   ]
 }

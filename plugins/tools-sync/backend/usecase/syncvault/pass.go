@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -21,12 +22,15 @@ type pass struct {
 	use        *SyncVault
 	id         domain.VaultID
 	authors    trust.Authors
+	shares     []share.Root
 	conflicts  []string
 	resolved   int
 	clashes    []string
 	unverified int
 	verdict    restore.Verdict
 	isSent     bool
+	// isStaleEpoch is a push the server refused because the epoch of a share moved: the shares are read again.
+	isStaleEpoch bool
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -43,7 +47,7 @@ func (p *pass) run(ctx context.Context) error {
 	if isReady, err := p.pullOrRecover(ctx); err != nil || !isReady {
 		return err
 	}
-	isRetry, err := p.push(ctx)
+	isRetry, err := p.pushAgain(ctx)
 	if err != nil {
 		return p.use.reports.settle(ctx, err)
 	}
@@ -61,7 +65,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted})
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted, Shares: p.shares})
 	if err != nil {
 		return err
 	}
@@ -208,7 +212,7 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 	if err != nil || len(files) == 0 {
 		return records, false, err
 	}
-	input := transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files}
+	input := transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files, Shares: p.shares}
 	outcomes, err := p.use.steps.Commit.Execute(ctx, input)
 	if err != nil {
 		return records, false, err
@@ -227,6 +231,7 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 		}
 	}
 	p.noteClashes(outcomes)
+	p.isStaleEpoch = p.isStaleEpoch || slices.ContainsFunc(outcomes, func(o transfer.Outcome) bool { return o.Status == transfer.StaleEpoch })
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
 }
 
@@ -365,4 +370,30 @@ func ignoreMissing(err error) error {
 		return nil
 	}
 	return err
+}
+
+func (p *pass) pushAgain(ctx context.Context) (bool, error) {
+	isRetry, err := p.push(ctx)
+	if err != nil || !p.isStaleEpoch {
+		return isRetry, err
+	}
+	p.isStaleEpoch = false
+	if p.shares, err = p.use.steps.Shares.Execute(ctx, p.id); err != nil {
+		return false, err
+	}
+	again, err := p.push(ctx)
+	p.isSent = true
+	return isRetry || again, err
+}
+
+func (p *pass) wrapKeysForShares(ctx context.Context) error {
+	for _, root := range p.shares {
+		if root.IsClosed || root.Phase != share.PhaseCreated {
+			continue
+		}
+		if err := p.use.steps.Rewrap.Execute(ctx, p.id, root); err != nil {
+			return err
+		}
+	}
+	return nil
 }

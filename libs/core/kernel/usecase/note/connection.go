@@ -58,8 +58,8 @@ func newConnectionEditor(d ConnectionDeps) connectionEditor {
 	}
 }
 
-func (e connectionEditor) run(ctx context.Context, write func(ctx context.Context) error) error {
-	_, err := writeUnder(e.admission, func() (struct{}, error) { return struct{}{}, write(ctx) })
+func (e connectionEditor) run(ctx context.Context, v domain.Vault, write func(ctx context.Context) error) error {
+	_, err := writeUnder(ctx, v, e.admission, func() (struct{}, error) { return struct{}{}, write(ctx) })
 	if e.follow != nil && e.follow.IsIndexOutdated(err) {
 		return nil
 	}
@@ -255,7 +255,7 @@ func NewSaveConnection(d ConnectionDeps) SaveConnection {
 // Execute replaces the records of both notes. A side that is nil is removed from
 // its note. A connection with no side is refused: DeleteConnection removes one.
 func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Connection) error {
-	return u.editor.run(ctx, func(ctx context.Context) error {
+	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		if c.IsEmpty() {
 			return fmt.Errorf("%w: a connection with no record is removed, not saved", domain.ErrInvalidConnection)
 		}
@@ -284,7 +284,7 @@ func NewDeleteConnection(d ConnectionDeps) DeleteConnection {
 // Execute removes the records of the type from both notes. The empty type names the
 // records that carry none.
 func (u DeleteConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
-	return u.editor.run(ctx, func(ctx context.Context) error {
+	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		c := domain.Connection{A: a, B: b}
 		if err := c.Validate(); err != nil {
 			return err
@@ -310,7 +310,7 @@ func NewDeleteConnectionSide(d ConnectionDeps) DeleteConnectionSide {
 
 // Execute removes the records of the type that `from` writes about `to`.
 func (u DeleteConnectionSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
-	return u.editor.run(ctx, func(ctx context.Context) error {
+	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		if err := (domain.Connection{A: from, B: to}).Validate(); err != nil {
 			return err
 		}
@@ -336,7 +336,7 @@ func NewJoin(d ConnectionDeps) Join {
 // Execute makes `from` write `side` about `to`. The record of `to` about `from` is
 // kept, and must be the inverse of the new one.
 func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side domain.Side) error {
-	return u.editor.run(ctx, func(ctx context.Context) error {
+	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		c := domain.Connection{A: from, B: to, AB: &side}
 		if err := c.Validate(); err != nil {
 			return err

@@ -66,6 +66,14 @@ func (s *Server) StopAfterDownloadBytes(t *testing.T, n int64) {
 
 func (s *Server) callAdmin(t *testing.T, path string) {
 	t.Helper()
+	if status := s.CallAdmin(t, path); status != http.StatusNoContent {
+		t.Fatalf("%s answered %d, want 204", path, status)
+	}
+}
+
+// CallAdmin sends a POST to an admin path of the fake server and returns the status.
+func (s *Server) CallAdmin(t *testing.T, path string) int {
+	t.Helper()
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, s.URL+path, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -77,9 +85,7 @@ func (s *Server) callAdmin(t *testing.T, path string) {
 	if err := response.Body.Close(); err != nil {
 		t.Error(err)
 	}
-	if response.StatusCode != http.StatusNoContent {
-		t.Fatalf("%s answered %s, want 204", path, response.Status)
-	}
+	return response.StatusCode
 }
 
 // SetUsedBytes sets the bytes the fake counts against the quota of every account, as the admin path of the fake does.

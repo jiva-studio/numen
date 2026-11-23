@@ -34,3 +34,10 @@ func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) 
 
 // Transfers returns what the host does with the bytes of the files of the vault.
 func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.client.With(id) }
+
+func (v *Vaults) GetRemover(id domain.VaultID) ports.Remover { return v.client.With(id) }
+
+// AddManagedVault adds the folder as a vault that only the plugin with the id managedBy writes.
+func (v *Vaults) AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error) {
+	return v.client.AddManagedVault(ctx, path, name, managedBy)
+}

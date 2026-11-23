@@ -53,7 +53,7 @@ func newFakeNoteVault() *fakeNoteVault {
 func (a *fakeNoteVault) GetVaults() ([]domain.Vault, error) {
 	return []domain.Vault{
 		{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
-		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes"},
+		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes", ManagedBy: "md.numen.a"},
 	}, nil
 }
 
@@ -158,8 +158,12 @@ func (l *recordingList) getCalls() []string {
 	return slices.Clone(l.calls)
 }
 
-func (l *recordingList) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
-	if err := l.record("add " + root + " " + name); err != nil {
+func (l *recordingList) AddVault(_ context.Context, root, name, managedBy string) (domain.Vault, error) {
+	call := "add " + root + " " + name
+	if managedBy != "" {
+		call += " managed-by " + managedBy
+	}
+	if err := l.record(call); err != nil {
 		return domain.Vault{}, err
 	}
 	return domain.Vault{ID: "v3", Name: "Seas", Path: root}, nil

@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 )
 
 func mountMethods(service *server.API, r *runtime) {
@@ -44,6 +46,7 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodCreatePortalSession, func(ctx context.Context, request api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
 		return handle(r, func(b *Backend) (api.CreatePortalSessionResponse, error) { return b.CreatePortalSession(ctx, request) })
 	})
+	mountShareMethods(service, r)
 }
 
 func handle[T any](r *runtime, call func(b *Backend) (T, error)) (T, error) {
@@ -54,7 +57,7 @@ func handle[T any](r *runtime, call func(b *Backend) (T, error)) (T, error) {
 	}
 	result, err := call(backend)
 	if err != nil {
-		return result, server.NewAPIError(getCode(err), err.Error())
+		return result, server.NewAPIError(getCode(err), getText(err))
 	}
 	return result, nil
 }
@@ -65,10 +68,43 @@ func getCode(err error) server.ErrorCode {
 		return server.CodeUnavailable
 	case errors.Is(err, syncprotocol.ErrAlreadySubscribed), errors.Is(err, syncprotocol.ErrSamePlan):
 		return server.CodeAlreadyExists
-	case errors.Is(err, syncprotocol.ErrUnknownPlan):
+	case errors.Is(err, syncprotocol.ErrUnknownPlan), errors.Is(err, share.ErrBadCode):
 		return server.CodeInvalidArgument
+	case errors.Is(err, share.ErrUnknownShare):
+		return server.CodeNotFound
+	case isRefusal(err):
+		return server.CodeFailedPrecondition
 	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable), errors.Is(err, syncprotocol.ErrNoActiveSubscription):
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal
+}
+
+func getRefusals() []error {
+	return []error{
+		share.ErrWholeVault, share.ErrInsideShare, share.ErrHoldsShare, share.ErrNotConnected, share.ErrReceivedVault,
+		share.ErrReceivedNotSynced, share.ErrOwnIdentity, share.ErrAlreadyReader, share.ErrChangedIdentity, share.ErrReaderNotAdded,
+		share.ErrNotForThisAccount, share.ErrAlreadyReceived, share.ErrOwnerChanged, share.ErrEnded, share.ErrDamagedLog, share.ErrNotReady,
+		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack,
+	}
+}
+
+func isRefusal(err error) bool { return findRefusal(err) != nil }
+
+func findRefusal(err error) error {
+	for _, refusal := range getRefusals() {
+		if errors.Is(err, refusal) {
+			return refusal
+		}
+	}
+	return nil
+}
+
+func getText(err error) string {
+	refusal := findRefusal(err)
+	if refusal == nil {
+		return err.Error()
+	}
+	text := refusal.Error()
+	return strings.ToUpper(text[:1]) + text[1:]
 }

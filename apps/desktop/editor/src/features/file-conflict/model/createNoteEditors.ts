@@ -28,6 +28,7 @@ export interface NoteEditorsDeps {
   readonly api: NoteEditorsApi
   readonly log: MessageLog
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
+  readonly isReadOnly?: (() => boolean) | undefined
 }
 
 /** What the store of the notes of the window reads and releases of the notes it opens. */
@@ -53,8 +54,8 @@ function createNoteStore(
   }
 }
 
-export function createNoteEditors({ api, log, windowTabs }: NoteEditorsDeps) {
-  const notes = flattenOpenNotes(useOpenNotes(api.notes))
+export function createNoteEditors({ api, log, windowTabs, isReadOnly }: NoteEditorsDeps) {
+  const notes = flattenOpenNotes(useOpenNotes(api.notes, isReadOnly ? { isReadOnly } : {}))
   const noteMaking = createNoteWriter(api.noteMaking, log.getWriter('made'))
   const fileFlush = createFileFlush(api.quit)
   fileFlush.addHandler(createNoteFlushHandler(notes))

@@ -439,6 +439,103 @@ func (x *OpenDataResponse) GetPlain() []byte {
 	return nil
 }
 
+type OpenSealedBoxRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Context []byte                 `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
+	// sealed is 0 to 1024 bytes.
+	Sealed        []byte `protobuf:"bytes,2,opt,name=sealed,proto3" json:"sealed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenSealedBoxRequest) Reset() {
+	*x = OpenSealedBoxRequest{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenSealedBoxRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenSealedBoxRequest) ProtoMessage() {}
+
+func (x *OpenSealedBoxRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenSealedBoxRequest.ProtoReflect.Descriptor instead.
+func (*OpenSealedBoxRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *OpenSealedBoxRequest) GetContext() []byte {
+	if x != nil {
+		return x.Context
+	}
+	return nil
+}
+
+func (x *OpenSealedBoxRequest) GetSealed() []byte {
+	if x != nil {
+		return x.Sealed
+	}
+	return nil
+}
+
+type OpenSealedBoxResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plain         []byte                 `protobuf:"bytes,1,opt,name=plain,proto3" json:"plain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenSealedBoxResponse) Reset() {
+	*x = OpenSealedBoxResponse{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenSealedBoxResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenSealedBoxResponse) ProtoMessage() {}
+
+func (x *OpenSealedBoxResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenSealedBoxResponse.ProtoReflect.Descriptor instead.
+func (*OpenSealedBoxResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *OpenSealedBoxResponse) GetPlain() []byte {
+	if x != nil {
+		return x.Plain
+	}
+	return nil
+}
+
 type GetPendingRestoreRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -447,7 +544,7 @@ type GetPendingRestoreRequest struct {
 
 func (x *GetPendingRestoreRequest) Reset() {
 	*x = GetPendingRestoreRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -459,7 +556,7 @@ func (x *GetPendingRestoreRequest) String() string {
 func (*GetPendingRestoreRequest) ProtoMessage() {}
 
 func (x *GetPendingRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[8]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -472,7 +569,7 @@ func (x *GetPendingRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingRestoreRequest.ProtoReflect.Descriptor instead.
 func (*GetPendingRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{10}
 }
 
 type GetPendingRestoreResponse struct {
@@ -488,7 +585,7 @@ type GetPendingRestoreResponse struct {
 
 func (x *GetPendingRestoreResponse) Reset() {
 	*x = GetPendingRestoreResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -500,7 +597,7 @@ func (x *GetPendingRestoreResponse) String() string {
 func (*GetPendingRestoreResponse) ProtoMessage() {}
 
 func (x *GetPendingRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[9]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +610,7 @@ func (x *GetPendingRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPendingRestoreResponse.ProtoReflect.Descriptor instead.
 func (*GetPendingRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetPendingRestoreResponse) GetIsPending() bool {
@@ -547,7 +644,7 @@ type SignAsRecoveryRequest struct {
 
 func (x *SignAsRecoveryRequest) Reset() {
 	*x = SignAsRecoveryRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +656,7 @@ func (x *SignAsRecoveryRequest) String() string {
 func (*SignAsRecoveryRequest) ProtoMessage() {}
 
 func (x *SignAsRecoveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[10]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +669,7 @@ func (x *SignAsRecoveryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignAsRecoveryRequest.ProtoReflect.Descriptor instead.
 func (*SignAsRecoveryRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SignAsRecoveryRequest) GetMessage() []byte {
@@ -592,7 +689,7 @@ type SignAsRecoveryResponse struct {
 
 func (x *SignAsRecoveryResponse) Reset() {
 	*x = SignAsRecoveryResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +701,7 @@ func (x *SignAsRecoveryResponse) String() string {
 func (*SignAsRecoveryResponse) ProtoMessage() {}
 
 func (x *SignAsRecoveryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[11]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +714,7 @@ func (x *SignAsRecoveryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignAsRecoveryResponse.ProtoReflect.Descriptor instead.
 func (*SignAsRecoveryResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SignAsRecoveryResponse) GetSignature() []byte {
@@ -637,7 +734,7 @@ type CompleteRestoreRequest struct {
 
 func (x *CompleteRestoreRequest) Reset() {
 	*x = CompleteRestoreRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -649,7 +746,7 @@ func (x *CompleteRestoreRequest) String() string {
 func (*CompleteRestoreRequest) ProtoMessage() {}
 
 func (x *CompleteRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[12]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -662,7 +759,7 @@ func (x *CompleteRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteRestoreRequest.ProtoReflect.Descriptor instead.
 func (*CompleteRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CompleteRestoreRequest) GetChain() []byte {
@@ -680,7 +777,7 @@ type CompleteRestoreResponse struct {
 
 func (x *CompleteRestoreResponse) Reset() {
 	*x = CompleteRestoreResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -692,7 +789,7 @@ func (x *CompleteRestoreResponse) String() string {
 func (*CompleteRestoreResponse) ProtoMessage() {}
 
 func (x *CompleteRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[13]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -705,7 +802,7 @@ func (x *CompleteRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteRestoreResponse.ProtoReflect.Descriptor instead.
 func (*CompleteRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{15}
 }
 
 type GetLinkWorkRequest struct {
@@ -719,7 +816,7 @@ type GetLinkWorkRequest struct {
 
 func (x *GetLinkWorkRequest) Reset() {
 	*x = GetLinkWorkRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -731,7 +828,7 @@ func (x *GetLinkWorkRequest) String() string {
 func (*GetLinkWorkRequest) ProtoMessage() {}
 
 func (x *GetLinkWorkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -744,7 +841,7 @@ func (x *GetLinkWorkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLinkWorkRequest.ProtoReflect.Descriptor instead.
 func (*GetLinkWorkRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetLinkWorkRequest) GetSinceVersion() uint64 {
@@ -781,7 +878,7 @@ type GetLinkWorkResponse struct {
 
 func (x *GetLinkWorkResponse) Reset() {
 	*x = GetLinkWorkResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +890,7 @@ func (x *GetLinkWorkResponse) String() string {
 func (*GetLinkWorkResponse) ProtoMessage() {}
 
 func (x *GetLinkWorkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +903,7 @@ func (x *GetLinkWorkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLinkWorkResponse.ProtoReflect.Descriptor instead.
 func (*GetLinkWorkResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetLinkWorkResponse) GetVersion() uint64 {
@@ -867,7 +964,7 @@ type SetLinkChannelRequest struct {
 
 func (x *SetLinkChannelRequest) Reset() {
 	*x = SetLinkChannelRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +976,7 @@ func (x *SetLinkChannelRequest) String() string {
 func (*SetLinkChannelRequest) ProtoMessage() {}
 
 func (x *SetLinkChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +989,7 @@ func (x *SetLinkChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetLinkChannelRequest.ProtoReflect.Descriptor instead.
 func (*SetLinkChannelRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SetLinkChannelRequest) GetChannelId() []byte {
@@ -910,7 +1007,7 @@ type SetLinkChannelResponse struct {
 
 func (x *SetLinkChannelResponse) Reset() {
 	*x = SetLinkChannelResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[17]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -922,7 +1019,7 @@ func (x *SetLinkChannelResponse) String() string {
 func (*SetLinkChannelResponse) ProtoMessage() {}
 
 func (x *SetLinkChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[17]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +1032,7 @@ func (x *SetLinkChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetLinkChannelResponse.ProtoReflect.Descriptor instead.
 func (*SetLinkChannelResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{19}
 }
 
 type PutLinkInboundRequest struct {
@@ -947,7 +1044,7 @@ type PutLinkInboundRequest struct {
 
 func (x *PutLinkInboundRequest) Reset() {
 	*x = PutLinkInboundRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[18]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -959,7 +1056,7 @@ func (x *PutLinkInboundRequest) String() string {
 func (*PutLinkInboundRequest) ProtoMessage() {}
 
 func (x *PutLinkInboundRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[18]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -972,7 +1069,7 @@ func (x *PutLinkInboundRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutLinkInboundRequest.ProtoReflect.Descriptor instead.
 func (*PutLinkInboundRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PutLinkInboundRequest) GetBlob() []byte {
@@ -990,7 +1087,7 @@ type PutLinkInboundResponse struct {
 
 func (x *PutLinkInboundResponse) Reset() {
 	*x = PutLinkInboundResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[19]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1002,7 +1099,7 @@ func (x *PutLinkInboundResponse) String() string {
 func (*PutLinkInboundResponse) ProtoMessage() {}
 
 func (x *PutLinkInboundResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[19]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1015,7 +1112,7 @@ func (x *PutLinkInboundResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutLinkInboundResponse.ProtoReflect.Descriptor instead.
 func (*PutLinkInboundResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{21}
 }
 
 type GetChainPublishRequest struct {
@@ -1026,7 +1123,7 @@ type GetChainPublishRequest struct {
 
 func (x *GetChainPublishRequest) Reset() {
 	*x = GetChainPublishRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[20]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1038,7 +1135,7 @@ func (x *GetChainPublishRequest) String() string {
 func (*GetChainPublishRequest) ProtoMessage() {}
 
 func (x *GetChainPublishRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[20]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1051,7 +1148,7 @@ func (x *GetChainPublishRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainPublishRequest.ProtoReflect.Descriptor instead.
 func (*GetChainPublishRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{22}
 }
 
 type GetChainPublishResponse struct {
@@ -1064,7 +1161,7 @@ type GetChainPublishResponse struct {
 
 func (x *GetChainPublishResponse) Reset() {
 	*x = GetChainPublishResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[21]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1076,7 +1173,7 @@ func (x *GetChainPublishResponse) String() string {
 func (*GetChainPublishResponse) ProtoMessage() {}
 
 func (x *GetChainPublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[21]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1089,7 +1186,7 @@ func (x *GetChainPublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainPublishResponse.ProtoReflect.Descriptor instead.
 func (*GetChainPublishResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetChainPublishResponse) GetIsPending() bool {
@@ -1117,7 +1214,7 @@ type PutChainPublishedRequest struct {
 
 func (x *PutChainPublishedRequest) Reset() {
 	*x = PutChainPublishedRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[22]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1129,7 +1226,7 @@ func (x *PutChainPublishedRequest) String() string {
 func (*PutChainPublishedRequest) ProtoMessage() {}
 
 func (x *PutChainPublishedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[22]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1142,7 +1239,7 @@ func (x *PutChainPublishedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutChainPublishedRequest.ProtoReflect.Descriptor instead.
 func (*PutChainPublishedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *PutChainPublishedRequest) GetAccepted() bool {
@@ -1167,7 +1264,7 @@ type PutChainPublishedResponse struct {
 
 func (x *PutChainPublishedResponse) Reset() {
 	*x = PutChainPublishedResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[23]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1179,7 +1276,7 @@ func (x *PutChainPublishedResponse) String() string {
 func (*PutChainPublishedResponse) ProtoMessage() {}
 
 func (x *PutChainPublishedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[23]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1192,7 +1289,7 @@ func (x *PutChainPublishedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutChainPublishedResponse.ProtoReflect.Descriptor instead.
 func (*PutChainPublishedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{25}
 }
 
 type AdoptChainRequest struct {
@@ -1204,7 +1301,7 @@ type AdoptChainRequest struct {
 
 func (x *AdoptChainRequest) Reset() {
 	*x = AdoptChainRequest{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[24]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1216,7 +1313,7 @@ func (x *AdoptChainRequest) String() string {
 func (*AdoptChainRequest) ProtoMessage() {}
 
 func (x *AdoptChainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[24]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1229,7 +1326,7 @@ func (x *AdoptChainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdoptChainRequest.ProtoReflect.Descriptor instead.
 func (*AdoptChainRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{24}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *AdoptChainRequest) GetChain() []byte {
@@ -1247,7 +1344,7 @@ type AdoptChainResponse struct {
 
 func (x *AdoptChainResponse) Reset() {
 	*x = AdoptChainResponse{}
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[25]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1259,7 +1356,7 @@ func (x *AdoptChainResponse) String() string {
 func (*AdoptChainResponse) ProtoMessage() {}
 
 func (x *AdoptChainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostaccount_proto_msgTypes[25]
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1272,7 +1369,7 @@ func (x *AdoptChainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdoptChainResponse.ProtoReflect.Descriptor instead.
 func (*AdoptChainResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{25}
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{27}
 }
 
 var File_numen_v1_hostaccount_proto protoreflect.FileDescriptor
@@ -1303,6 +1400,11 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\acontext\x18\x01 \x01(\fR\acontext\x12\x16\n" +
 	"\x06sealed\x18\x02 \x01(\fR\x06sealed\"(\n" +
 	"\x10OpenDataResponse\x12\x14\n" +
+	"\x05plain\x18\x01 \x01(\fR\x05plain\"H\n" +
+	"\x14OpenSealedBoxRequest\x12\x18\n" +
+	"\acontext\x18\x01 \x01(\fR\acontext\x12\x16\n" +
+	"\x06sealed\x18\x02 \x01(\fR\x06sealed\"-\n" +
+	"\x15OpenSealedBoxResponse\x12\x14\n" +
 	"\x05plain\x18\x01 \x01(\fR\x05plain\"\x1a\n" +
 	"\x18GetPendingRestoreRequest\"\x86\x01\n" +
 	"\x19GetPendingRestoreResponse\x12\x1d\n" +
@@ -1347,12 +1449,13 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\x19PutChainPublishedResponse\")\n" +
 	"\x11AdoptChainRequest\x12\x14\n" +
 	"\x05chain\x18\x01 \x01(\fR\x05chain\"\x14\n" +
-	"\x12AdoptChainResponse2\xc7\b\n" +
+	"\x12AdoptChainResponse2\x99\t\n" +
 	"\x12HostAccountService\x12M\n" +
 	"\fSignAsDevice\x12\x1d.numen.v1.SignAsDeviceRequest\x1a\x1e.numen.v1.SignAsDeviceResponse\x12\\\n" +
 	"\x11GetPublicIdentity\x12\".numen.v1.GetPublicIdentityRequest\x1a#.numen.v1.GetPublicIdentityResponse\x12A\n" +
 	"\bSealData\x12\x19.numen.v1.SealDataRequest\x1a\x1a.numen.v1.SealDataResponse\x12A\n" +
-	"\bOpenData\x12\x19.numen.v1.OpenDataRequest\x1a\x1a.numen.v1.OpenDataResponse\x12\\\n" +
+	"\bOpenData\x12\x19.numen.v1.OpenDataRequest\x1a\x1a.numen.v1.OpenDataResponse\x12P\n" +
+	"\rOpenSealedBox\x12\x1e.numen.v1.OpenSealedBoxRequest\x1a\x1f.numen.v1.OpenSealedBoxResponse\x12\\\n" +
 	"\x11GetPendingRestore\x12\".numen.v1.GetPendingRestoreRequest\x1a#.numen.v1.GetPendingRestoreResponse\x12S\n" +
 	"\x0eSignAsRecovery\x12\x1f.numen.v1.SignAsRecoveryRequest\x1a .numen.v1.SignAsRecoveryResponse\x12V\n" +
 	"\x0fCompleteRestore\x12 .numen.v1.CompleteRestoreRequest\x1a!.numen.v1.CompleteRestoreResponse\x12J\n" +
@@ -1376,7 +1479,7 @@ func file_numen_v1_hostaccount_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostaccount_proto_rawDescData
 }
 
-var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SignAsDeviceRequest)(nil),       // 0: numen.v1.SignAsDeviceRequest
 	(*SignAsDeviceResponse)(nil),      // 1: numen.v1.SignAsDeviceResponse
@@ -1386,54 +1489,58 @@ var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SealDataResponse)(nil),          // 5: numen.v1.SealDataResponse
 	(*OpenDataRequest)(nil),           // 6: numen.v1.OpenDataRequest
 	(*OpenDataResponse)(nil),          // 7: numen.v1.OpenDataResponse
-	(*GetPendingRestoreRequest)(nil),  // 8: numen.v1.GetPendingRestoreRequest
-	(*GetPendingRestoreResponse)(nil), // 9: numen.v1.GetPendingRestoreResponse
-	(*SignAsRecoveryRequest)(nil),     // 10: numen.v1.SignAsRecoveryRequest
-	(*SignAsRecoveryResponse)(nil),    // 11: numen.v1.SignAsRecoveryResponse
-	(*CompleteRestoreRequest)(nil),    // 12: numen.v1.CompleteRestoreRequest
-	(*CompleteRestoreResponse)(nil),   // 13: numen.v1.CompleteRestoreResponse
-	(*GetLinkWorkRequest)(nil),        // 14: numen.v1.GetLinkWorkRequest
-	(*GetLinkWorkResponse)(nil),       // 15: numen.v1.GetLinkWorkResponse
-	(*SetLinkChannelRequest)(nil),     // 16: numen.v1.SetLinkChannelRequest
-	(*SetLinkChannelResponse)(nil),    // 17: numen.v1.SetLinkChannelResponse
-	(*PutLinkInboundRequest)(nil),     // 18: numen.v1.PutLinkInboundRequest
-	(*PutLinkInboundResponse)(nil),    // 19: numen.v1.PutLinkInboundResponse
-	(*GetChainPublishRequest)(nil),    // 20: numen.v1.GetChainPublishRequest
-	(*GetChainPublishResponse)(nil),   // 21: numen.v1.GetChainPublishResponse
-	(*PutChainPublishedRequest)(nil),  // 22: numen.v1.PutChainPublishedRequest
-	(*PutChainPublishedResponse)(nil), // 23: numen.v1.PutChainPublishedResponse
-	(*AdoptChainRequest)(nil),         // 24: numen.v1.AdoptChainRequest
-	(*AdoptChainResponse)(nil),        // 25: numen.v1.AdoptChainResponse
+	(*OpenSealedBoxRequest)(nil),      // 8: numen.v1.OpenSealedBoxRequest
+	(*OpenSealedBoxResponse)(nil),     // 9: numen.v1.OpenSealedBoxResponse
+	(*GetPendingRestoreRequest)(nil),  // 10: numen.v1.GetPendingRestoreRequest
+	(*GetPendingRestoreResponse)(nil), // 11: numen.v1.GetPendingRestoreResponse
+	(*SignAsRecoveryRequest)(nil),     // 12: numen.v1.SignAsRecoveryRequest
+	(*SignAsRecoveryResponse)(nil),    // 13: numen.v1.SignAsRecoveryResponse
+	(*CompleteRestoreRequest)(nil),    // 14: numen.v1.CompleteRestoreRequest
+	(*CompleteRestoreResponse)(nil),   // 15: numen.v1.CompleteRestoreResponse
+	(*GetLinkWorkRequest)(nil),        // 16: numen.v1.GetLinkWorkRequest
+	(*GetLinkWorkResponse)(nil),       // 17: numen.v1.GetLinkWorkResponse
+	(*SetLinkChannelRequest)(nil),     // 18: numen.v1.SetLinkChannelRequest
+	(*SetLinkChannelResponse)(nil),    // 19: numen.v1.SetLinkChannelResponse
+	(*PutLinkInboundRequest)(nil),     // 20: numen.v1.PutLinkInboundRequest
+	(*PutLinkInboundResponse)(nil),    // 21: numen.v1.PutLinkInboundResponse
+	(*GetChainPublishRequest)(nil),    // 22: numen.v1.GetChainPublishRequest
+	(*GetChainPublishResponse)(nil),   // 23: numen.v1.GetChainPublishResponse
+	(*PutChainPublishedRequest)(nil),  // 24: numen.v1.PutChainPublishedRequest
+	(*PutChainPublishedResponse)(nil), // 25: numen.v1.PutChainPublishedResponse
+	(*AdoptChainRequest)(nil),         // 26: numen.v1.AdoptChainRequest
+	(*AdoptChainResponse)(nil),        // 27: numen.v1.AdoptChainResponse
 }
 var file_numen_v1_hostaccount_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.HostAccountService.SignAsDevice:input_type -> numen.v1.SignAsDeviceRequest
 	2,  // 1: numen.v1.HostAccountService.GetPublicIdentity:input_type -> numen.v1.GetPublicIdentityRequest
 	4,  // 2: numen.v1.HostAccountService.SealData:input_type -> numen.v1.SealDataRequest
 	6,  // 3: numen.v1.HostAccountService.OpenData:input_type -> numen.v1.OpenDataRequest
-	8,  // 4: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
-	10, // 5: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
-	12, // 6: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
-	14, // 7: numen.v1.HostAccountService.GetLinkWork:input_type -> numen.v1.GetLinkWorkRequest
-	16, // 8: numen.v1.HostAccountService.SetLinkChannel:input_type -> numen.v1.SetLinkChannelRequest
-	18, // 9: numen.v1.HostAccountService.PutLinkInbound:input_type -> numen.v1.PutLinkInboundRequest
-	20, // 10: numen.v1.HostAccountService.GetChainPublish:input_type -> numen.v1.GetChainPublishRequest
-	22, // 11: numen.v1.HostAccountService.PutChainPublished:input_type -> numen.v1.PutChainPublishedRequest
-	24, // 12: numen.v1.HostAccountService.AdoptChain:input_type -> numen.v1.AdoptChainRequest
-	1,  // 13: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
-	3,  // 14: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
-	5,  // 15: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
-	7,  // 16: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
-	9,  // 17: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
-	11, // 18: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
-	13, // 19: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
-	15, // 20: numen.v1.HostAccountService.GetLinkWork:output_type -> numen.v1.GetLinkWorkResponse
-	17, // 21: numen.v1.HostAccountService.SetLinkChannel:output_type -> numen.v1.SetLinkChannelResponse
-	19, // 22: numen.v1.HostAccountService.PutLinkInbound:output_type -> numen.v1.PutLinkInboundResponse
-	21, // 23: numen.v1.HostAccountService.GetChainPublish:output_type -> numen.v1.GetChainPublishResponse
-	23, // 24: numen.v1.HostAccountService.PutChainPublished:output_type -> numen.v1.PutChainPublishedResponse
-	25, // 25: numen.v1.HostAccountService.AdoptChain:output_type -> numen.v1.AdoptChainResponse
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	8,  // 4: numen.v1.HostAccountService.OpenSealedBox:input_type -> numen.v1.OpenSealedBoxRequest
+	10, // 5: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
+	12, // 6: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
+	14, // 7: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
+	16, // 8: numen.v1.HostAccountService.GetLinkWork:input_type -> numen.v1.GetLinkWorkRequest
+	18, // 9: numen.v1.HostAccountService.SetLinkChannel:input_type -> numen.v1.SetLinkChannelRequest
+	20, // 10: numen.v1.HostAccountService.PutLinkInbound:input_type -> numen.v1.PutLinkInboundRequest
+	22, // 11: numen.v1.HostAccountService.GetChainPublish:input_type -> numen.v1.GetChainPublishRequest
+	24, // 12: numen.v1.HostAccountService.PutChainPublished:input_type -> numen.v1.PutChainPublishedRequest
+	26, // 13: numen.v1.HostAccountService.AdoptChain:input_type -> numen.v1.AdoptChainRequest
+	1,  // 14: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
+	3,  // 15: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
+	5,  // 16: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
+	7,  // 17: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
+	9,  // 18: numen.v1.HostAccountService.OpenSealedBox:output_type -> numen.v1.OpenSealedBoxResponse
+	11, // 19: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
+	13, // 20: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
+	15, // 21: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
+	17, // 22: numen.v1.HostAccountService.GetLinkWork:output_type -> numen.v1.GetLinkWorkResponse
+	19, // 23: numen.v1.HostAccountService.SetLinkChannel:output_type -> numen.v1.SetLinkChannelResponse
+	21, // 24: numen.v1.HostAccountService.PutLinkInbound:output_type -> numen.v1.PutLinkInboundResponse
+	23, // 25: numen.v1.HostAccountService.GetChainPublish:output_type -> numen.v1.GetChainPublishResponse
+	25, // 26: numen.v1.HostAccountService.PutChainPublished:output_type -> numen.v1.PutChainPublishedResponse
+	27, // 27: numen.v1.HostAccountService.AdoptChain:output_type -> numen.v1.AdoptChainResponse
+	14, // [14:28] is the sub-list for method output_type
+	0,  // [0:14] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -1450,7 +1557,7 @@ func file_numen_v1_hostaccount_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostaccount_proto_rawDesc), len(file_numen_v1_hostaccount_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -59,6 +59,7 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.NOT_ATTEMPTED]: 'unreadable',
   [ProtoErrorCode.HASH_MISMATCH]: 'unreadable',
   [ProtoErrorCode.INVALID_RANGE]: 'unreadable',
+  [ProtoErrorCode.READ_ONLY]: 'readOnly',
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */

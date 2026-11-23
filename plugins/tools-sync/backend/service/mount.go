@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	settingServer       = "server"
-	settingInterval     = "syncIntervalSeconds"
-	settingRemovalDelay = "removalDelaySeconds"
-	requestTimeout      = 30 * time.Second
-	streamHeaderTimeout = 30 * time.Second
+	settingServer         = "server"
+	settingInterval       = "syncIntervalSeconds"
+	settingRemovalDelay   = "removalDelaySeconds"
+	settingReceivedFolder = "receivedFolder"
+	requestTimeout        = 30 * time.Second
+	streamHeaderTimeout   = 30 * time.Second
 )
 
 // App is the backend of Numen Sync: Mount registers its methods and keeps the sync running, and HandleEvent wakes

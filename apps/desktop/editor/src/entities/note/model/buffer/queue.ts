@@ -13,6 +13,7 @@ const TAB_CODES: ReadonlySet<string> = new Set<NoteErrorCode>([
   'notText',
   'unreadable',
   'unreachable',
+  'readOnly',
 ])
 
 const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {

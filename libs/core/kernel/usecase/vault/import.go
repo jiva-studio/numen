@@ -35,6 +35,9 @@ func (u Import) Execute(
 	into string,
 	handles []string,
 ) (vaultdomain.ImportResult, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return vaultdomain.ImportResult{}, err
+	}
 	if len(handles) == 0 {
 		return vaultdomain.ImportResult{}, nil
 	}

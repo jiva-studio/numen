@@ -63,6 +63,7 @@ func getErrorEntries() []errorEntry {
 		{edit.ErrStale, v1.ErrorCode_ERROR_CODE_CONFLICT},
 		{vaultdomain.ErrAlreadyExists, v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
 		{vaultdomain.ErrLockedByAnother, v1.ErrorCode_ERROR_CODE_LOCKED},
+		{vaultdomain.ErrReadOnly, v1.ErrorCode_ERROR_CODE_READ_ONLY},
 		{edit.ErrNotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},

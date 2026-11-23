@@ -378,6 +378,7 @@ export interface NoteTabState {
   readonly isLoading: Readonly<Ref<boolean>>
   readonly errorMessage: Readonly<Ref<string>>
   readonly fileConflict?: Readonly<Ref<FileConflict>>
+  readonly isReadOnly?: Readonly<Ref<boolean>>
   readonly wikilinks?: {
     search(query: string): Promise<readonly WikilinkChoice[]>
     headings(noteTitle: string): Promise<readonly string[]>

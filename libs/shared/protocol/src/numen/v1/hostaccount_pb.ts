@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostaccount.proto.
  */
 export const file_numen_v1_hostaccount: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QiuQEKGUdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USGwoTYWNjb3VudF9maW5nZXJwcmludBgBIAEoCRIaChJkZXZpY2VfZmluZ2VycHJpbnQYAiABKAkSFwoPZGV2aWNlX3NpZ25fa2V5GAMgASgMEg0KBWNoYWluGAQgASgMEhEKCWtleV9lcG9jaBgFIAEoDRIUCgxjaGFpbl9sZW5ndGgYBiABKA0SEgoKaXNfcmV2b2tlZBgHIAEoCCIxCg9TZWFsRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBINCgVwbGFpbhgCIAEoDCIiChBTZWFsRGF0YVJlc3BvbnNlEg4KBnNlYWxlZBgBIAEoDCIyCg9PcGVuRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBIOCgZzZWFsZWQYAiABKAwiIQoQT3BlbkRhdGFSZXNwb25zZRINCgVwbGFpbhgBIAEoDCIaChhHZXRQZW5kaW5nUmVzdG9yZVJlcXVlc3QiXwoZR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRISCgppc19wZW5kaW5nGAEgASgIEhUKDXJvb3Rfc2lnbl9rZXkYAiABKAwSFwoPZGV2aWNlX3NpZ25fa2V5GAMgASgMIigKFVNpZ25Bc1JlY292ZXJ5UmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIisKFlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USEQoJc2lnbmF0dXJlGAEgASgMIicKFkNvbXBsZXRlUmVzdG9yZVJlcXVlc3QSDQoFY2hhaW4YASABKAwiGQoXQ29tcGxldGVSZXN0b3JlUmVzcG9uc2UiQQoSR2V0TGlua1dvcmtSZXF1ZXN0EhUKDXNpbmNlX3ZlcnNpb24YASABKAQSFAoMd2FpdF9zZWNvbmRzGAIgASgNIpkBChNHZXRMaW5rV29ya1Jlc3BvbnNlEg8KB3ZlcnNpb24YASABKAQSEQoJaXNfYWN0aXZlGAIgASgIEhUKDXdhbnRzX2NoYW5uZWwYAyABKAgSEgoKY2hhbm5lbF9pZBgEIAEoDBIOCgZzZXJ2ZXIYBSABKAkSEAoIb3V0Ym91bmQYBiADKAwSEQoJaXNfY2xvc2VkGAcgASgIIisKFVNldExpbmtDaGFubmVsUmVxdWVzdBISCgpjaGFubmVsX2lkGAEgASgMIhgKFlNldExpbmtDaGFubmVsUmVzcG9uc2UiJQoVUHV0TGlua0luYm91bmRSZXF1ZXN0EgwKBGJsb2IYASABKAwiGAoWUHV0TGlua0luYm91bmRSZXNwb25zZSIYChZHZXRDaGFpblB1Ymxpc2hSZXF1ZXN0IjwKF0dldENoYWluUHVibGlzaFJlc3BvbnNlEhIKCmlzX3BlbmRpbmcYASABKAgSDQoFY2hhaW4YAiABKAwiPAoYUHV0Q2hhaW5QdWJsaXNoZWRSZXF1ZXN0EhAKCGFjY2VwdGVkGAEgASgIEg4KBmxhdGVzdBgCIAEoDCIbChlQdXRDaGFpblB1Ymxpc2hlZFJlc3BvbnNlIiIKEUFkb3B0Q2hhaW5SZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhQKEkFkb3B0Q2hhaW5SZXNwb25zZTLHCAoSSG9zdEFjY291bnRTZXJ2aWNlEk0KDFNpZ25Bc0RldmljZRIdLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlcXVlc3QaHi5udW1lbi52MS5TaWduQXNEZXZpY2VSZXNwb25zZRJcChFHZXRQdWJsaWNJZGVudGl0eRIiLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVxdWVzdBojLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USQQoIU2VhbERhdGESGS5udW1lbi52MS5TZWFsRGF0YVJlcXVlc3QaGi5udW1lbi52MS5TZWFsRGF0YVJlc3BvbnNlEkEKCE9wZW5EYXRhEhkubnVtZW4udjEuT3BlbkRhdGFSZXF1ZXN0GhoubnVtZW4udjEuT3BlbkRhdGFSZXNwb25zZRJcChFHZXRQZW5kaW5nUmVzdG9yZRIiLm51bWVuLnYxLkdldFBlbmRpbmdSZXN0b3JlUmVxdWVzdBojLm51bWVuLnYxLkdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USUwoOU2lnbkFzUmVjb3ZlcnkSHy5udW1lbi52MS5TaWduQXNSZWNvdmVyeVJlcXVlc3QaIC5udW1lbi52MS5TaWduQXNSZWNvdmVyeVJlc3BvbnNlElYKD0NvbXBsZXRlUmVzdG9yZRIgLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlcXVlc3QaIS5udW1lbi52MS5Db21wbGV0ZVJlc3RvcmVSZXNwb25zZRJKCgtHZXRMaW5rV29yaxIcLm51bWVuLnYxLkdldExpbmtXb3JrUmVxdWVzdBodLm51bWVuLnYxLkdldExpbmtXb3JrUmVzcG9uc2USUwoOU2V0TGlua0NoYW5uZWwSHy5udW1lbi52MS5TZXRMaW5rQ2hhbm5lbFJlcXVlc3QaIC5udW1lbi52MS5TZXRMaW5rQ2hhbm5lbFJlc3BvbnNlElMKDlB1dExpbmtJbmJvdW5kEh8ubnVtZW4udjEuUHV0TGlua0luYm91bmRSZXF1ZXN0GiAubnVtZW4udjEuUHV0TGlua0luYm91bmRSZXNwb25zZRJWCg9HZXRDaGFpblB1Ymxpc2gSIC5udW1lbi52MS5HZXRDaGFpblB1Ymxpc2hSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q2hhaW5QdWJsaXNoUmVzcG9uc2USXAoRUHV0Q2hhaW5QdWJsaXNoZWQSIi5udW1lbi52MS5QdXRDaGFpblB1Ymxpc2hlZFJlcXVlc3QaIy5udW1lbi52MS5QdXRDaGFpblB1Ymxpc2hlZFJlc3BvbnNlEkcKCkFkb3B0Q2hhaW4SGy5udW1lbi52MS5BZG9wdENoYWluUmVxdWVzdBocLm51bWVuLnYxLkFkb3B0Q2hhaW5SZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QiuQEKGUdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USGwoTYWNjb3VudF9maW5nZXJwcmludBgBIAEoCRIaChJkZXZpY2VfZmluZ2VycHJpbnQYAiABKAkSFwoPZGV2aWNlX3NpZ25fa2V5GAMgASgMEg0KBWNoYWluGAQgASgMEhEKCWtleV9lcG9jaBgFIAEoDRIUCgxjaGFpbl9sZW5ndGgYBiABKA0SEgoKaXNfcmV2b2tlZBgHIAEoCCIxCg9TZWFsRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBINCgVwbGFpbhgCIAEoDCIiChBTZWFsRGF0YVJlc3BvbnNlEg4KBnNlYWxlZBgBIAEoDCIyCg9PcGVuRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBIOCgZzZWFsZWQYAiABKAwiIQoQT3BlbkRhdGFSZXNwb25zZRINCgVwbGFpbhgBIAEoDCI3ChRPcGVuU2VhbGVkQm94UmVxdWVzdBIPCgdjb250ZXh0GAEgASgMEg4KBnNlYWxlZBgCIAEoDCImChVPcGVuU2VhbGVkQm94UmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlIkEKEkdldExpbmtXb3JrUmVxdWVzdBIVCg1zaW5jZV92ZXJzaW9uGAEgASgEEhQKDHdhaXRfc2Vjb25kcxgCIAEoDSKZAQoTR2V0TGlua1dvcmtSZXNwb25zZRIPCgd2ZXJzaW9uGAEgASgEEhEKCWlzX2FjdGl2ZRgCIAEoCBIVCg13YW50c19jaGFubmVsGAMgASgIEhIKCmNoYW5uZWxfaWQYBCABKAwSDgoGc2VydmVyGAUgASgJEhAKCG91dGJvdW5kGAYgAygMEhEKCWlzX2Nsb3NlZBgHIAEoCCIrChVTZXRMaW5rQ2hhbm5lbFJlcXVlc3QSEgoKY2hhbm5lbF9pZBgBIAEoDCIYChZTZXRMaW5rQ2hhbm5lbFJlc3BvbnNlIiUKFVB1dExpbmtJbmJvdW5kUmVxdWVzdBIMCgRibG9iGAEgASgMIhgKFlB1dExpbmtJbmJvdW5kUmVzcG9uc2UiGAoWR2V0Q2hhaW5QdWJsaXNoUmVxdWVzdCI8ChdHZXRDaGFpblB1Ymxpc2hSZXNwb25zZRISCgppc19wZW5kaW5nGAEgASgIEg0KBWNoYWluGAIgASgMIjwKGFB1dENoYWluUHVibGlzaGVkUmVxdWVzdBIQCghhY2NlcHRlZBgBIAEoCBIOCgZsYXRlc3QYAiABKAwiGwoZUHV0Q2hhaW5QdWJsaXNoZWRSZXNwb25zZSIiChFBZG9wdENoYWluUmVxdWVzdBINCgVjaGFpbhgBIAEoDCIUChJBZG9wdENoYWluUmVzcG9uc2UymQkKEkhvc3RBY2NvdW50U2VydmljZRJNCgxTaWduQXNEZXZpY2USHS5udW1lbi52MS5TaWduQXNEZXZpY2VSZXF1ZXN0Gh4ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVzcG9uc2USXAoRR2V0UHVibGljSWRlbnRpdHkSIi5udW1lbi52MS5HZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QaIy5udW1lbi52MS5HZXRQdWJsaWNJZGVudGl0eVJlc3BvbnNlEkEKCFNlYWxEYXRhEhkubnVtZW4udjEuU2VhbERhdGFSZXF1ZXN0GhoubnVtZW4udjEuU2VhbERhdGFSZXNwb25zZRJBCghPcGVuRGF0YRIZLm51bWVuLnYxLk9wZW5EYXRhUmVxdWVzdBoaLm51bWVuLnYxLk9wZW5EYXRhUmVzcG9uc2USUAoNT3BlblNlYWxlZEJveBIeLm51bWVuLnYxLk9wZW5TZWFsZWRCb3hSZXF1ZXN0Gh8ubnVtZW4udjEuT3BlblNlYWxlZEJveFJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlEkoKC0dldExpbmtXb3JrEhwubnVtZW4udjEuR2V0TGlua1dvcmtSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0TGlua1dvcmtSZXNwb25zZRJTCg5TZXRMaW5rQ2hhbm5lbBIfLm51bWVuLnYxLlNldExpbmtDaGFubmVsUmVxdWVzdBogLm51bWVuLnYxLlNldExpbmtDaGFubmVsUmVzcG9uc2USUwoOUHV0TGlua0luYm91bmQSHy5udW1lbi52MS5QdXRMaW5rSW5ib3VuZFJlcXVlc3QaIC5udW1lbi52MS5QdXRMaW5rSW5ib3VuZFJlc3BvbnNlElYKD0dldENoYWluUHVibGlzaBIgLm51bWVuLnYxLkdldENoYWluUHVibGlzaFJlcXVlc3QaIS5udW1lbi52MS5HZXRDaGFpblB1Ymxpc2hSZXNwb25zZRJcChFQdXRDaGFpblB1Ymxpc2hlZBIiLm51bWVuLnYxLlB1dENoYWluUHVibGlzaGVkUmVxdWVzdBojLm51bWVuLnYxLlB1dENoYWluUHVibGlzaGVkUmVzcG9uc2USRwoKQWRvcHRDaGFpbhIbLm51bWVuLnYxLkFkb3B0Q2hhaW5SZXF1ZXN0GhwubnVtZW4udjEuQWRvcHRDaGFpblJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.SignAsDeviceRequest
@@ -205,6 +205,47 @@ export const OpenDataResponseSchema: GenMessage<OpenDataResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_hostaccount, 7);
 
 /**
+ * @generated from message numen.v1.OpenSealedBoxRequest
+ */
+export type OpenSealedBoxRequest = Message<"numen.v1.OpenSealedBoxRequest"> & {
+  /**
+   * @generated from field: bytes context = 1;
+   */
+  context: Uint8Array;
+
+  /**
+   * sealed is 0 to 1024 bytes.
+   *
+   * @generated from field: bytes sealed = 2;
+   */
+  sealed: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenSealedBoxRequest.
+ * Use `create(OpenSealedBoxRequestSchema)` to create a new message.
+ */
+export const OpenSealedBoxRequestSchema: GenMessage<OpenSealedBoxRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 8);
+
+/**
+ * @generated from message numen.v1.OpenSealedBoxResponse
+ */
+export type OpenSealedBoxResponse = Message<"numen.v1.OpenSealedBoxResponse"> & {
+  /**
+   * @generated from field: bytes plain = 1;
+   */
+  plain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenSealedBoxResponse.
+ * Use `create(OpenSealedBoxResponseSchema)` to create a new message.
+ */
+export const OpenSealedBoxResponseSchema: GenMessage<OpenSealedBoxResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 9);
+
+/**
  * @generated from message numen.v1.GetPendingRestoreRequest
  */
 export type GetPendingRestoreRequest = Message<"numen.v1.GetPendingRestoreRequest"> & {
@@ -215,7 +256,7 @@ export type GetPendingRestoreRequest = Message<"numen.v1.GetPendingRestoreReques
  * Use `create(GetPendingRestoreRequestSchema)` to create a new message.
  */
 export const GetPendingRestoreRequestSchema: GenMessage<GetPendingRestoreRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 8);
+  messageDesc(file_numen_v1_hostaccount, 10);
 
 /**
  * @generated from message numen.v1.GetPendingRestoreResponse
@@ -246,7 +287,7 @@ export type GetPendingRestoreResponse = Message<"numen.v1.GetPendingRestoreRespo
  * Use `create(GetPendingRestoreResponseSchema)` to create a new message.
  */
 export const GetPendingRestoreResponseSchema: GenMessage<GetPendingRestoreResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 9);
+  messageDesc(file_numen_v1_hostaccount, 11);
 
 /**
  * @generated from message numen.v1.SignAsRecoveryRequest
@@ -265,7 +306,7 @@ export type SignAsRecoveryRequest = Message<"numen.v1.SignAsRecoveryRequest"> & 
  * Use `create(SignAsRecoveryRequestSchema)` to create a new message.
  */
 export const SignAsRecoveryRequestSchema: GenMessage<SignAsRecoveryRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 10);
+  messageDesc(file_numen_v1_hostaccount, 12);
 
 /**
  * @generated from message numen.v1.SignAsRecoveryResponse
@@ -284,7 +325,7 @@ export type SignAsRecoveryResponse = Message<"numen.v1.SignAsRecoveryResponse"> 
  * Use `create(SignAsRecoveryResponseSchema)` to create a new message.
  */
 export const SignAsRecoveryResponseSchema: GenMessage<SignAsRecoveryResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 11);
+  messageDesc(file_numen_v1_hostaccount, 13);
 
 /**
  * @generated from message numen.v1.CompleteRestoreRequest
@@ -303,7 +344,7 @@ export type CompleteRestoreRequest = Message<"numen.v1.CompleteRestoreRequest"> 
  * Use `create(CompleteRestoreRequestSchema)` to create a new message.
  */
 export const CompleteRestoreRequestSchema: GenMessage<CompleteRestoreRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 12);
+  messageDesc(file_numen_v1_hostaccount, 14);
 
 /**
  * @generated from message numen.v1.CompleteRestoreResponse
@@ -316,7 +357,7 @@ export type CompleteRestoreResponse = Message<"numen.v1.CompleteRestoreResponse"
  * Use `create(CompleteRestoreResponseSchema)` to create a new message.
  */
 export const CompleteRestoreResponseSchema: GenMessage<CompleteRestoreResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 13);
+  messageDesc(file_numen_v1_hostaccount, 15);
 
 /**
  * @generated from message numen.v1.GetLinkWorkRequest
@@ -340,7 +381,7 @@ export type GetLinkWorkRequest = Message<"numen.v1.GetLinkWorkRequest"> & {
  * Use `create(GetLinkWorkRequestSchema)` to create a new message.
  */
 export const GetLinkWorkRequestSchema: GenMessage<GetLinkWorkRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 14);
+  messageDesc(file_numen_v1_hostaccount, 16);
 
 /**
  * @generated from message numen.v1.GetLinkWorkResponse
@@ -397,7 +438,7 @@ export type GetLinkWorkResponse = Message<"numen.v1.GetLinkWorkResponse"> & {
  * Use `create(GetLinkWorkResponseSchema)` to create a new message.
  */
 export const GetLinkWorkResponseSchema: GenMessage<GetLinkWorkResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 15);
+  messageDesc(file_numen_v1_hostaccount, 17);
 
 /**
  * @generated from message numen.v1.SetLinkChannelRequest
@@ -414,7 +455,7 @@ export type SetLinkChannelRequest = Message<"numen.v1.SetLinkChannelRequest"> & 
  * Use `create(SetLinkChannelRequestSchema)` to create a new message.
  */
 export const SetLinkChannelRequestSchema: GenMessage<SetLinkChannelRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 16);
+  messageDesc(file_numen_v1_hostaccount, 18);
 
 /**
  * @generated from message numen.v1.SetLinkChannelResponse
@@ -427,7 +468,7 @@ export type SetLinkChannelResponse = Message<"numen.v1.SetLinkChannelResponse"> 
  * Use `create(SetLinkChannelResponseSchema)` to create a new message.
  */
 export const SetLinkChannelResponseSchema: GenMessage<SetLinkChannelResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 17);
+  messageDesc(file_numen_v1_hostaccount, 19);
 
 /**
  * @generated from message numen.v1.PutLinkInboundRequest
@@ -444,7 +485,7 @@ export type PutLinkInboundRequest = Message<"numen.v1.PutLinkInboundRequest"> & 
  * Use `create(PutLinkInboundRequestSchema)` to create a new message.
  */
 export const PutLinkInboundRequestSchema: GenMessage<PutLinkInboundRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 18);
+  messageDesc(file_numen_v1_hostaccount, 20);
 
 /**
  * @generated from message numen.v1.PutLinkInboundResponse
@@ -457,7 +498,7 @@ export type PutLinkInboundResponse = Message<"numen.v1.PutLinkInboundResponse"> 
  * Use `create(PutLinkInboundResponseSchema)` to create a new message.
  */
 export const PutLinkInboundResponseSchema: GenMessage<PutLinkInboundResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 19);
+  messageDesc(file_numen_v1_hostaccount, 21);
 
 /**
  * @generated from message numen.v1.GetChainPublishRequest
@@ -470,7 +511,7 @@ export type GetChainPublishRequest = Message<"numen.v1.GetChainPublishRequest"> 
  * Use `create(GetChainPublishRequestSchema)` to create a new message.
  */
 export const GetChainPublishRequestSchema: GenMessage<GetChainPublishRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 20);
+  messageDesc(file_numen_v1_hostaccount, 22);
 
 /**
  * @generated from message numen.v1.GetChainPublishResponse
@@ -492,7 +533,7 @@ export type GetChainPublishResponse = Message<"numen.v1.GetChainPublishResponse"
  * Use `create(GetChainPublishResponseSchema)` to create a new message.
  */
 export const GetChainPublishResponseSchema: GenMessage<GetChainPublishResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 21);
+  messageDesc(file_numen_v1_hostaccount, 23);
 
 /**
  * @generated from message numen.v1.PutChainPublishedRequest
@@ -516,7 +557,7 @@ export type PutChainPublishedRequest = Message<"numen.v1.PutChainPublishedReques
  * Use `create(PutChainPublishedRequestSchema)` to create a new message.
  */
 export const PutChainPublishedRequestSchema: GenMessage<PutChainPublishedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 22);
+  messageDesc(file_numen_v1_hostaccount, 24);
 
 /**
  * @generated from message numen.v1.PutChainPublishedResponse
@@ -529,7 +570,7 @@ export type PutChainPublishedResponse = Message<"numen.v1.PutChainPublishedRespo
  * Use `create(PutChainPublishedResponseSchema)` to create a new message.
  */
 export const PutChainPublishedResponseSchema: GenMessage<PutChainPublishedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 23);
+  messageDesc(file_numen_v1_hostaccount, 25);
 
 /**
  * @generated from message numen.v1.AdoptChainRequest
@@ -546,7 +587,7 @@ export type AdoptChainRequest = Message<"numen.v1.AdoptChainRequest"> & {
  * Use `create(AdoptChainRequestSchema)` to create a new message.
  */
 export const AdoptChainRequestSchema: GenMessage<AdoptChainRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 24);
+  messageDesc(file_numen_v1_hostaccount, 26);
 
 /**
  * @generated from message numen.v1.AdoptChainResponse
@@ -559,7 +600,7 @@ export type AdoptChainResponse = Message<"numen.v1.AdoptChainResponse"> & {
  * Use `create(AdoptChainResponseSchema)` to create a new message.
  */
 export const AdoptChainResponseSchema: GenMessage<AdoptChainResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 25);
+  messageDesc(file_numen_v1_hostaccount, 27);
 
 /**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
@@ -613,6 +654,18 @@ export const HostAccountService: GenService<{
     methodKind: "unary";
     input: typeof OpenDataRequestSchema;
     output: typeof OpenDataResponseSchema;
+  },
+  /**
+   * OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for the
+   * plugin of the token and the same context. The secret key stays in the host. Bytes that do not open answer
+   * FAILED_PRECONDITION with the reason CANNOT_OPEN.
+   *
+   * @generated from rpc numen.v1.HostAccountService.OpenSealedBox
+   */
+  openSealedBox: {
+    methodKind: "unary";
+    input: typeof OpenSealedBoxRequestSchema;
+    output: typeof OpenSealedBoxResponseSchema;
   },
   /**
    * GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.

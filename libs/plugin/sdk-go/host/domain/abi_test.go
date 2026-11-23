@@ -37,7 +37,7 @@ func getPinnedShapes() map[string]string {
 		"TextVersion": "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; " +
 			"Kind domain.TextKind; File string; InputHash string; TextHash string; CreateTime time.Time}",
 		"TextVersionID": "string",
-		"Vault":         "struct{ID domain.VaultID; Name string; Path string}",
+		"Vault":         "struct{ID domain.VaultID; Name string; Path string; ManagedBy string}",
 		"VaultID":       "string",
 		"VaultProblem":  "struct{Path string; Kind domain.Check; Detail string; Target domain.Address; Candidates []string}",
 		"VersionText":   "struct{version domain.TextVersion; Text string; segments []domain.TextSegment; offsets []int}",

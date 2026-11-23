@@ -233,6 +233,7 @@ The settings of the plugin Numen Sync.
 | `server` | text | address of the server this device signs in to. |
 | `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
 | `removalDelaySeconds` | a number | how long a removed file is watched before the removal is sent. |
+| `receivedFolder` | text | where the folders shared with you are kept. Empty means Numen Shared in your home folder. |
 
 ### `md.numen.tools.templates`
 

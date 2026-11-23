@@ -68,7 +68,7 @@ const stubServer = (server: Server) => {
 const setup = (server: Server = { hasIdentity: true }) => {
   stubServer(server)
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.sync' })
-  activate(context)
+  activate(context, createMockHostServices())
   const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
   return { context, wrapper }
 }

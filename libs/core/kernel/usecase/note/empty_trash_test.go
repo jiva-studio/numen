@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -92,4 +93,34 @@ type noTrashedVersions struct{}
 
 func (noTrashedVersions) DeleteUnder(context.Context, domain.Vault, string, []string) error {
 	return nil
+}
+
+func TestEmptyTrashRefusesAVaultAnotherPluginManagesAndDeletesNothing(t *testing.T) {
+	t.Parallel()
+	managed := domain.Vault{ID: "01JTESTVAULT", ManagedBy: managingPlugin}
+	other := vaultdomain.WithCaller(t.Context(), "md.numen.tools.link")
+
+	for name, ctx := range map[string]context.Context{"window": t.Context(), "other plugin": other} {
+		calls := 0
+		writers := trashWriterProviderStub{writer: trashWriterStub{calls: &calls}}
+
+		_, err := note.NewEmptyTrash(writers, noTrashedVersions{}, nil).Execute(ctx, managed)
+
+		if !errors.Is(err, vaultdomain.ErrReadOnly) || calls != 0 {
+			t.Errorf("%s: error = %v, trash emptied %d times, want ErrReadOnly and none", name, err, calls)
+		}
+	}
+}
+
+func TestEmptyTrashAllowsThePluginThatManagesTheVault(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	writers := trashWriterProviderStub{writer: trashWriterStub{calls: &calls}}
+	managed := domain.Vault{ID: "01JTESTVAULT", ManagedBy: managingPlugin}
+
+	_, err := note.NewEmptyTrash(writers, noTrashedVersions{}, nil).Execute(vaultdomain.WithCaller(t.Context(), managingPlugin), managed)
+
+	if err != nil || calls != 1 {
+		t.Errorf("error = %v, trash emptied %d times, want none and one", err, calls)
+	}
 }

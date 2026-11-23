@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
@@ -94,6 +95,11 @@ type Store interface {
 	Delete(ctx context.Context, name string) error
 }
 
+// Remover moves notes of one vault to the trash.
+type Remover interface {
+	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
+}
+
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
@@ -101,6 +107,7 @@ type Host interface {
 	GetTransfers(id domain.VaultID) Transfers
 	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
+	GetRemover(id domain.VaultID) Remover
 }
 
 // Links keeps the link of each vault.
@@ -297,4 +304,46 @@ type Relay interface {
 	PostMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
 	WaitMessages(ctx context.Context, channelID []byte, reader syncclient.LinkSide, afterSeq uint32, wait time.Duration) (syncclient.LinkMessages, error)
 	CloseChannel(ctx context.Context, channelID []byte) error
+}
+
+// Shares is the share service of the server: the signed log of the members of a share and the files it holds for
+// its readers.
+type Shares interface {
+	AppendShareLogEntry(ctx context.Context, entry *syncv1.ShareLogEntry) (*syncv1.AppendShareLogEntryResponse, error)
+	ListShares(ctx context.Context) ([]*syncv1.ShareSummary, error)
+	GetShareLog(ctx context.Context, shareRootID []byte, sinceVersion uint64) ([]*syncv1.ShareLogEntry, []byte, error)
+	GetShareChanges(ctx context.Context, shareRootID []byte, sinceSeq uint64, limit uint32) (*syncv1.GetShareChangesResponse, error)
+	GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error)
+}
+
+// BlobURLReader downloads a blob from the address of a download.
+type BlobURLReader interface {
+	GetBlob(ctx context.Context, url string) ([]byte, error)
+}
+
+// Box opens what was sealed to the account box key of this device.
+type Box interface {
+	OpenBox(ctx context.Context, boxContext, sealed []byte) ([]byte, error)
+}
+
+// VaultList adds a vault to the vaults of the installation.
+type VaultList interface {
+	AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error)
+}
+
+// ReceivedFolder is the folder made for a received share and the name of its vault.
+type ReceivedFolder struct {
+	Path string
+	Name string
+}
+
+// Folders makes the folders of received shares.
+type Folders interface {
+	MakeReceivedFolder(ctx context.Context, name string) (ReceivedFolder, error)
+}
+
+// ShareStates keeps where this device stands with the shares it made in each vault.
+type ShareStates interface {
+	ReadShareStates(ctx context.Context, id domain.VaultID) ([]share.Progress, error)
+	WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 )
 
 // CommitStatus is how the server took a file.
@@ -24,6 +25,8 @@ const (
 	CaseClash
 	// TooLarge means the sealed file is larger than the server stores.
 	TooLarge
+	// StaleEpoch means the share the note belongs to moved to another epoch, so the device must read the share log.
+	StaleEpoch
 )
 
 // EpochKey is a key of the synced vault made under the account keys of an epoch.
@@ -71,11 +74,13 @@ type File struct {
 	Stat       *domain.FileStat
 }
 
-// CommitInput is the files to commit to a vault. VaultID names the vault on this device.
+// CommitInput is the files to commit to a vault. VaultID names the vault on this device; a note under the folder of
+// one of Shares is sealed under the key of that share.
 type CommitInput struct {
 	VaultID domain.VaultID
 	Vault   Vault
 	Files   []File
+	Shares  []share.Root
 }
 
 // Move is a file that has another path now: its record and the path it moved to.
@@ -132,10 +137,12 @@ type Scan struct {
 	Removals []FileRecord
 }
 
-// PullInput is the vault and the check of the author of a revision.
+// PullInput is the vault, the check of the author of a revision and the shares of the vault, whose revisions open with
+// the keys of the share.
 type PullInput struct {
 	VaultID  domain.VaultID
 	IsAuthor func(deviceSignKey []byte) bool
+	Shares   []share.Root
 }
 
 // NewEmptyRecord returns the record of a file that has none.

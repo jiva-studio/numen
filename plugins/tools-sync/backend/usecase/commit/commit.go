@@ -35,14 +35,15 @@ type CommitRevisions struct{ deps Deps }
 // NewCommitRevisions returns the use case over the dependencies.
 func NewCommitRevisions(deps Deps) *CommitRevisions { return &CommitRevisions{deps: deps} }
 
-// Execute returns one outcome for each file, in the order of the input.
+// Execute returns one outcome for each file, in the order of the input. A note under a folder of shares is sealed under
+// the key of that share.
 func (u *CommitRevisions) Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error) {
 	author, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
 		return nil, err
 	}
 	queue := &commitQueue{
-		run: &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey}, vaultID: in.VaultID,
+		run: &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey, shares: in.Shares}, vaultID: in.VaultID,
 		outcomes: make([]transfer.Outcome, 0, len(in.Files)), small: nil,
 	}
 	for _, file := range in.Files {
@@ -88,4 +89,7 @@ func (q *commitQueue) flush(ctx context.Context) error {
 	return err
 }
 
-var errUnexpectedAnswer = errors.New("the server answered a batch it did not commit with no conflict")
+var (
+	errUnexpectedAnswer = errors.New("the server answered a batch it did not commit with no conflict")
+	errNoShareKey       = errors.New("the share has no key for its epoch")
+)

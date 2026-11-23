@@ -73,6 +73,8 @@ enum ConflictKind {
   CONFLICT_KIND_PARENT_MISMATCH = 1;
   // CONFLICT_KIND_PATH_TAKEN means another live file has the same path_hash.
   CONFLICT_KIND_PATH_TAKEN = 2;
+  // CONFLICT_KIND_SHARE_EPOCH means the revision has a share_root_id whose epoch is not the current epoch of the share.
+  CONFLICT_KIND_SHARE_EPOCH = 3;
 }
 
 message Conflict {
@@ -83,6 +85,8 @@ message Conflict {
   StoredRevision head = 3;
   // existing_file_id is set for PATH_TAKEN only.
   bytes existing_file_id = 4;
+  // share_epoch is the current epoch of the share; set for SHARE_EPOCH only.
+  uint32 share_epoch = 5;
 }
 
 message GetChangesRequest {

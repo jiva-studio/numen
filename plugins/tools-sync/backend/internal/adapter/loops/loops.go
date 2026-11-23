@@ -159,3 +159,20 @@ func NewStreamHTTP(headerTimeout time.Duration) *http.Client {
 		ResponseHeaderTimeout: headerTimeout,
 	}}
 }
+
+// Text is a text setting that the loops read while the host may set it again.
+type Text struct{ value atomic.Pointer[string] }
+
+// NewText returns an empty text.
+func NewText() *Text { return &Text{value: atomic.Pointer[string]{}} }
+
+// Set replaces the text.
+func (t *Text) Set(text string) { t.value.Store(&text) }
+
+// Get returns the text, empty until it is set.
+func (t *Text) Get() string {
+	if text := t.value.Load(); text != nil {
+		return *text
+	}
+	return ""
+}

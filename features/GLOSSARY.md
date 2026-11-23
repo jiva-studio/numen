@@ -20,7 +20,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### vault
 
 - Is: A folder of files that you add to Numen. A window shows one vault. The installation keeps one list of vaults for all windows.
-- States: `isMissing` (shown as "Missing"): nothing is at the path now; the vault stays on the list.
+- States: `isMissing` (shown as "Missing"): nothing is at the path now; the vault stays on the list. `isReadOnly` (shown as "Read only"): another plugin manages the vault, so it can be read and not written; see "shared vault".
 - Actions: `app:vault.open` "Open vault", `vault.create` "Create vault", `vault.rename` "Rename vault", `vault.remove` "Remove vault from list", `vault.erase` "Erase vault".
 - Texts: "The folder is not deleted"; "The folder moves to the trash"; "Type the vault name to confirm"; "a vault with this name exists"; "the only vault cannot be removed"; "No vault open" (apps/desktop/editor/src/shared/words.ts, entities/vault/words.ts).
 - Not: not a "window" and not a "workspace". A folder cannot be added if it is inside a vault of the list or holds one.
@@ -586,6 +586,33 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: signed in; not signed in, with the plugin warning about why.
 - Texts: "No identity on this device", "Could not reach the sync server", "Update Numen", "Could not sign in" (plugins/tools-sync/backend/usecase/session/keep.go).
 - Not: not a login and not a password. A session is not the identity, and the server never sees the recovery words or a key of the identity.
+
+### share
+
+- Is: A folder of a synced vault that its owner lets other people read. The folder is chosen with "Share..." on a folder of the file tree; the readers get changes of the folder only, never the rest of the vault.
+- States: shared with its readers; ended (the owner stopped sharing, or removed the reader).
+- Actions: "Share...", "Share", "Remove", "Stop sharing".
+- Texts: "A folder inside a shared folder cannot be shared", "A folder containing a shared folder cannot be shared" (plugins/tools-sync/frontend/words.ts).
+- Not: not a synced vault and not a copy. A person removed from a share keeps what they already have.
+
+### reader
+
+- Is: A person who reads a share, with an identity of their own. A reader needs no subscription. The owner adds a reader with the reader code the person gives, and compares the account fingerprint with the person before sharing.
+- Texts: "Reader code", "Readers", "Reader account fingerprint" (plugins/tools-sync/frontend/words.ts).
+- Not: not a collaborator: a reader never writes.
+
+### invitation
+
+- Is: A text the owner sends to a reader after "Share". It is not secret, and only the reader it was made for can use it. The reader pastes it into "Receive" of the plugin Numen Sync, and the shared folder arrives as a shared vault.
+- Texts: "Invitation", "Paste the invitation here", "Receive", "This invitation is for another person" (plugins/tools-sync/frontend/words.ts).
+
+### shared vault
+
+- Is: The folder a reader received, on the list of vaults with the mark "Read only". The plugin Numen Sync alone writes it; every other write, in the window or by another plugin, answers "This vault is read only". It is a vault with `managed_by` set to the plugin id.
+- States: Read only; up to date; ended ("The owner ended this share").
+- Actions: it can be opened and read like a vault, and removed from the list (the folder stays on the computer).
+- Texts: "Read only" (editor/src/shared/ui/words.ts), "This vault is read only" (libs/shared/result/src/error.ts), "A shared vault cannot be shared again", "A shared vault cannot be synced again".
+- Not: not a synced vault of the reader and never inside another vault.
 
 ### row
 

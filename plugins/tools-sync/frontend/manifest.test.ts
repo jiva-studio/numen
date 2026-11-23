@@ -72,8 +72,31 @@ describe('the manifest of the sync plugin', () => {
   it('declares the vaults view and the subscription view that the page of the identity draws', () => {
     expect(manifest.settingsViews).toStrictEqual([
       { id: 'vaults', title: 'Vaults' },
+      { id: 'shares', title: 'Shares' },
       { id: 'subscription', title: 'Subscription', page: 'identity' },
     ])
+  })
+
+  it('offers "Share..." on a folder of the file tree and keeps the folder for shared vaults a setting', () => {
+    const contributes = manifest.contributes as {
+      slots: readonly Record<string, string>[]
+      commands: readonly Record<string, string>[]
+    }
+
+    expect(contributes.commands).toContainEqual(
+      expect.objectContaining({ id: 'share.open', title: 'Share...' }),
+    )
+    expect(contributes.slots).toContainEqual(
+      expect.objectContaining({
+        slot: 'fileTree.context',
+        command: 'share.open',
+        when: 'target.isFolder',
+      }),
+    )
+    expect(manifest.settings.find((one) => one.key === 'receivedFolder')).toMatchObject({
+      type: 'string',
+      default: '',
+    })
   })
 
   it('asks to open links of the system browser', () => {

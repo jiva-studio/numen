@@ -41,6 +41,7 @@ const STATE_LABELS: Record<VaultState, string> = {
   notConnected: words.stateNotConnected,
   connected: words.stateConnected,
   copy: words.stateCopy,
+  received: words.stateReceived,
 }
 
 const isServerAway = (failure: unknown): boolean => getFailureCode(failure) === 'unavailable'

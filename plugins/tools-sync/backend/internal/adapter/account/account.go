@@ -80,3 +80,10 @@ func (a *Account) SignAsRecovery(ctx context.Context, message []byte) ([]byte, e
 func (a *Account) CompleteRestore(ctx context.Context, chain []byte) error {
 	return readError(a.client.CompleteRestore(ctx, chain))
 }
+
+// OpenBox opens what was sealed to the account box key of this device for this plugin and the context, or fails with
+// session.ErrCannotOpen.
+func (a *Account) OpenBox(ctx context.Context, boxContext, sealed []byte) ([]byte, error) {
+	plain, err := a.client.OpenSealedBox(ctx, boxContext, sealed)
+	return plain, readError(err)
+}

@@ -45,6 +45,9 @@ const (
 	// HostAccountServiceOpenDataProcedure is the fully-qualified name of the HostAccountService's
 	// OpenData RPC.
 	HostAccountServiceOpenDataProcedure = "/numen.v1.HostAccountService/OpenData"
+	// HostAccountServiceOpenSealedBoxProcedure is the fully-qualified name of the HostAccountService's
+	// OpenSealedBox RPC.
+	HostAccountServiceOpenSealedBoxProcedure = "/numen.v1.HostAccountService/OpenSealedBox"
 	// HostAccountServiceGetPendingRestoreProcedure is the fully-qualified name of the
 	// HostAccountService's GetPendingRestore RPC.
 	HostAccountServiceGetPendingRestoreProcedure = "/numen.v1.HostAccountService/GetPendingRestore"
@@ -87,6 +90,10 @@ type HostAccountServiceClient interface {
 	// OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
 	// device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
 	OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error)
+	// OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for the
+	// plugin of the token and the same context. The secret key stays in the host. Bytes that do not open answer
+	// FAILED_PRECONDITION with the reason CANNOT_OPEN.
+	OpenSealedBox(context.Context, *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error)
 	// GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
 	GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error)
 	// SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
@@ -148,6 +155,12 @@ func NewHostAccountServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			httpClient,
 			baseURL+HostAccountServiceOpenDataProcedure,
 			connect.WithSchema(hostAccountServiceMethods.ByName("OpenData")),
+			connect.WithClientOptions(opts...),
+		),
+		openSealedBox: connect.NewClient[v1.OpenSealedBoxRequest, v1.OpenSealedBoxResponse](
+			httpClient,
+			baseURL+HostAccountServiceOpenSealedBoxProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("OpenSealedBox")),
 			connect.WithClientOptions(opts...),
 		),
 		getPendingRestore: connect.NewClient[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse](
@@ -213,6 +226,7 @@ type hostAccountServiceClient struct {
 	getPublicIdentity *connect.Client[v1.GetPublicIdentityRequest, v1.GetPublicIdentityResponse]
 	sealData          *connect.Client[v1.SealDataRequest, v1.SealDataResponse]
 	openData          *connect.Client[v1.OpenDataRequest, v1.OpenDataResponse]
+	openSealedBox     *connect.Client[v1.OpenSealedBoxRequest, v1.OpenSealedBoxResponse]
 	getPendingRestore *connect.Client[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse]
 	signAsRecovery    *connect.Client[v1.SignAsRecoveryRequest, v1.SignAsRecoveryResponse]
 	completeRestore   *connect.Client[v1.CompleteRestoreRequest, v1.CompleteRestoreResponse]
@@ -242,6 +256,11 @@ func (c *hostAccountServiceClient) SealData(ctx context.Context, req *connect.Re
 // OpenData calls numen.v1.HostAccountService.OpenData.
 func (c *hostAccountServiceClient) OpenData(ctx context.Context, req *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error) {
 	return c.openData.CallUnary(ctx, req)
+}
+
+// OpenSealedBox calls numen.v1.HostAccountService.OpenSealedBox.
+func (c *hostAccountServiceClient) OpenSealedBox(ctx context.Context, req *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {
+	return c.openSealedBox.CallUnary(ctx, req)
 }
 
 // GetPendingRestore calls numen.v1.HostAccountService.GetPendingRestore.
@@ -302,6 +321,10 @@ type HostAccountServiceHandler interface {
 	// OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
 	// device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
 	OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error)
+	// OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for the
+	// plugin of the token and the same context. The secret key stays in the host. Bytes that do not open answer
+	// FAILED_PRECONDITION with the reason CANNOT_OPEN.
+	OpenSealedBox(context.Context, *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error)
 	// GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
 	GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error)
 	// SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
@@ -359,6 +382,12 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 		HostAccountServiceOpenDataProcedure,
 		svc.OpenData,
 		connect.WithSchema(hostAccountServiceMethods.ByName("OpenData")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceOpenSealedBoxHandler := connect.NewUnaryHandler(
+		HostAccountServiceOpenSealedBoxProcedure,
+		svc.OpenSealedBox,
+		connect.WithSchema(hostAccountServiceMethods.ByName("OpenSealedBox")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostAccountServiceGetPendingRestoreHandler := connect.NewUnaryHandler(
@@ -425,6 +454,8 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 			hostAccountServiceSealDataHandler.ServeHTTP(w, r)
 		case HostAccountServiceOpenDataProcedure:
 			hostAccountServiceOpenDataHandler.ServeHTTP(w, r)
+		case HostAccountServiceOpenSealedBoxProcedure:
+			hostAccountServiceOpenSealedBoxHandler.ServeHTTP(w, r)
 		case HostAccountServiceGetPendingRestoreProcedure:
 			hostAccountServiceGetPendingRestoreHandler.ServeHTTP(w, r)
 		case HostAccountServiceSignAsRecoveryProcedure:
@@ -466,6 +497,10 @@ func (UnimplementedHostAccountServiceHandler) SealData(context.Context, *connect
 
 func (UnimplementedHostAccountServiceHandler) OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.OpenData is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) OpenSealedBox(context.Context, *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.OpenSealedBox is not implemented"))
 }
 
 func (UnimplementedHostAccountServiceHandler) GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error) {

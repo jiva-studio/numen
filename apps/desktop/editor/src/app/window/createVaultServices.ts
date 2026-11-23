@@ -30,6 +30,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const { api, log, windowTabs, tabOpeners, navigation } = deps
   const { vault } = api
   const writeMessage = log.getWriter('command')
+  const vaults = useVaults({ listVaults: vault.listVaults, log })
   const noteEditors = createNoteEditors({
     api: {
       notes: vault.note,
@@ -38,6 +39,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     },
     log,
     windowTabs,
+    isReadOnly: () => vaults.isReadOnly.value,
   })
   const editing = {
     ...noteEditors,
@@ -69,10 +71,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     editing,
     notes: createCommandNotes(editing.reached, windowTabs),
     window,
-    vaults: useVaults({
-      listVaults: vault.listVaults,
-      log,
-    }),
+    vaults,
     renames: renameEmitter,
     vaultChanges,
     itemLists: createCommandItemLists({

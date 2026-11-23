@@ -54,6 +54,10 @@ export function useVaults({ listVaults, log }: VaultsDeps) {
   return {
     reload,
     activeVault: displayedItems,
+    /** Whether the vault the window shows is one no plugin or window here writes to. */
+    isReadOnly: computed(
+      () => items.value.vaults.find((v) => v.id === items.value.showing)?.isReadOnly === true,
+    ),
     setVaultName,
     vaultList: items,
     loadVaults,

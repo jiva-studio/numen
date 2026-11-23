@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 )
 
 const (
@@ -27,10 +28,12 @@ const (
 
 // Backend answers the methods of the settings view.
 type Backend struct {
-	deps    syncvault.Deps
-	catalog catalog.Deps
-	pending ports.PausedStore
-	resolve *deletions.ResolveDeletions
+	deps     syncvault.Deps
+	catalog  catalog.Deps
+	pending  ports.PausedStore
+	resolve  *deletions.ResolveDeletions
+	shares   *sharewire.Shares
+	received *sharewire.Received
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -43,6 +46,8 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Random:   deps.Random,
 		},
 		pending: nil, resolve: nil,
+		shares:   sharewire.New(deps),
+		received: sharewire.NewReceived(deps),
 	}
 }
 
@@ -76,12 +81,16 @@ func (b *Backend) getVault(ctx context.Context, vault domain.Vault, holders map[
 	if err != nil {
 		return one, err
 	}
-	if holders[link.RemoteVaultID] {
+	switch {
+	case link.Kind == vaultlink.KindReceived:
+		one.State = api.StateReceived
+	case holders[link.RemoteVaultID]:
 		one.State = api.StateCopy
 		return one, nil
+	default:
+		holders[link.RemoteVaultID] = true
+		one.State = api.StateConnected
 	}
-	holders[link.RemoteVaultID] = true
-	one.State = api.StateConnected
 	status, err := b.deps.Progress.ReadStatus(ctx, vault.ID)
 	if err != nil {
 		return one, err

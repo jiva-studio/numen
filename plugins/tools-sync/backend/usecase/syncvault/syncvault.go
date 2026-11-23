@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	subscriptiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
@@ -54,6 +55,11 @@ type Deps struct {
 	Shop          ports.Shop
 	Pauses        ports.Pauses
 	Restore       RestoreDeps
+	Shares        ports.Shares
+	ShareStates   ports.ShareStates
+	Box           ports.Box
+	Vaults        ports.VaultList
+	Folders       ports.Folders
 }
 
 // RestoreDeps are where the recovery after a restored server reads the epoch and keeps the pinned key and the copies of
@@ -122,6 +128,21 @@ type VaultRecoverer interface {
 	Execute(ctx context.Context, id domain.VaultID) error
 }
 
+// SharesReader reads the shares of a vault.
+type SharesReader interface {
+	Execute(ctx context.Context, id domain.VaultID) ([]share.Root, error)
+}
+
+// Rewrapper rewraps the files of a share.
+type Rewrapper interface {
+	Execute(ctx context.Context, id domain.VaultID, root share.Root) error
+}
+
+// Receiver brings the files of a received share into its vault.
+type Receiver interface {
+	Execute(ctx context.Context, id domain.VaultID) (restore.PullResult, error)
+}
+
 // Steps are the use cases a pass runs.
 type Steps struct {
 	Rename         Renamer
@@ -136,6 +157,9 @@ type Steps struct {
 	Subscription   SubscriptionReader
 	RecoverAccount AccountRecoverer
 	RecoverVault   VaultRecoverer
+	Shares         SharesReader
+	Rewrap         Rewrapper
+	Receive        Receiver
 }
 
 // SyncVault runs one pass over one vault.
@@ -153,8 +177,12 @@ func NewSyncVault(deps Deps, steps Steps) *SyncVault {
 // Execute pulls, then pushes, and keeps the warnings of the vault. It returns ErrNotConnected for a vault that is
 // not connected.
 func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
-	if _, err := u.deps.State.ReadLink(ctx, id); err != nil {
+	link, err := u.deps.State.ReadLink(ctx, id)
+	if err != nil {
 		return err
+	}
+	if link.Kind == vaultlink.KindReceived {
+		return u.executeReceived(ctx, id)
 	}
 	if _, err := u.steps.Rename.Execute(ctx, id); err != nil {
 		return err
@@ -166,7 +194,17 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.GetIndexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, resolved: 0, clashes: nil, unverified: 0, verdict: restore.Same, isSent: false}
+	shares, err := u.steps.Shares.Execute(ctx, id)
+	if err != nil {
+		return err
+	}
+	p := &pass{
+		use: u, id: id, authors: authors, shares: shares, conflicts: nil, resolved: 0, clashes: nil, unverified: 0, verdict: restore.Same,
+		isSent: false, isStaleEpoch: false,
+	}
+	if err := p.wrapKeysForShares(ctx); err != nil {
+		return err
+	}
 	return p.run(ctx)
 }
 
