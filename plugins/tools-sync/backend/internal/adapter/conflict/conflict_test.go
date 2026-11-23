@@ -128,7 +128,7 @@ func TestResolve_ReplacesTheNoteWithTheBaselineOfTheLocalStat(t *testing.T) {
 	}
 }
 
-func TestResolve_AbortsWhenTheCopyCannotBeWritten(t *testing.T) {
+func TestResolve_FailsWhenTheCopyCannotBeCreated(t *testing.T) {
 	s := newSetup(t)
 	s.root.File(list, "eggs")
 	s.root.RefuseWriting(listCopy, host.ErrStale)
