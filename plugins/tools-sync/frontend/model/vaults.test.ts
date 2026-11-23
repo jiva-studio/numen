@@ -264,7 +264,7 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
     await model.actions.load()
-    client.listVaults.mockResolvedValue({ vaults: [createVault()] } satisfies ListVaultsResponse)
+    client.listVaults.mockResolvedValue({ vaults: [createVault()] })
 
     await model.actions.resolveDeletions('Test', 'keep')
 
