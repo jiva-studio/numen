@@ -153,6 +153,8 @@ type PlainReader struct {
 	isFinished  bool
 	failure     error
 	chunkStride int
+	header      [headerSize]byte
+	sink        io.Writer
 }
 
 // OpenStream reads the header of a stored stream and returns its payload, never the prefix or the padding. A
@@ -186,12 +188,25 @@ func newPlainReader(revisionKey [32]byte, fileID [16]byte, header [headerSize]by
 		return nil, err
 	}
 	stride := 1<<chunkLog2 + tagSize
-	reader := &PlainReader{chunks: chunks, source: source, index: index, chunkStride: stride, sealed: make([]byte, stride), opened: make([]byte, 0, stride)}
+	reader := &PlainReader{chunks: chunks, source: source, index: index, chunkStride: stride, header: header, sealed: make([]byte, stride), opened: make([]byte, 0, stride)}
 	if index > 0 {
 		reader.size, reader.remaining, reader.hasSize = plainSize, plainSize-(int64(index)<<chunkLog2-lengthPrefixSize), true
 	}
 	return reader, nil
 }
+
+// Header returns the header the stream began with, which a resume of a download keeps.
+func (r *PlainReader) Header() [headerSize]byte { return r.header }
+
+// ChunkIndex is the number of the next chunk to load, so the number of chunks loaded since the start of the stream.
+func (r *PlainReader) ChunkIndex() uint64 { return r.index }
+
+// IsAtChunkBoundary reports whether Read returned every byte of the chunks loaded so far.
+func (r *PlainReader) IsAtChunkBoundary() bool { return len(r.pending) == 0 }
+
+// SetStoredSink passes the stored bytes of each chunk, as loaded and before it opens, to the writer, so a caller
+// can hash exactly the chunks it has taken.
+func (r *PlainReader) SetStoredSink(sink io.Writer) { r.sink = sink }
 
 // Size is the payload size, known after the first chunk.
 func (r *PlainReader) Size() int64 {
@@ -236,6 +251,11 @@ func (r *PlainReader) loadChunk() error {
 	}
 	if n < tagSize {
 		return fmt.Errorf("%w: a chunk is shorter than its tag", ErrCannotOpen)
+	}
+	if r.sink != nil {
+		if _, err := r.sink.Write(r.sealed[:n]); err != nil {
+			return fmt.Errorf("pass on the stored chunk: %w", err)
+		}
 	}
 	opened, err := r.chunks.open(r.opened[:0], r.index, r.isFinished, r.sealed[:n])
 	if err != nil {

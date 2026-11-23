@@ -65,6 +65,14 @@ type Files interface {
 	host.FileChangeLister
 }
 
+// Transfers is what the host does with the bytes of files of any kind.
+type Transfers interface {
+	ReadBytes(ctx context.Context, path string, start, length int64) (host.ByteRange, error)
+	MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (host.MoveFileResult, error)
+	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (host.RemoveFileResult, error)
+	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
+}
+
 // Indexer asks the host to read a vault into its index.
 type Indexer interface {
 	EnsureIndexed(ctx context.Context) (host.IndexState, error)
@@ -74,12 +82,16 @@ type Indexer interface {
 type Store interface {
 	Read(ctx context.Context, name string) ([]byte, error)
 	Write(ctx context.Context, name string, content []byte) error
+	Append(ctx context.Context, name string, content []byte) error
+	List(ctx context.Context) ([]host.StoreFile, error)
+	Delete(ctx context.Context, name string) error
 }
 
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	Files(id domain.VaultID) Files
+	Transfers(id domain.VaultID) Transfers
 	Indexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }
@@ -112,6 +124,13 @@ type Statuses interface {
 type Sightings interface {
 	ReadSightings(ctx context.Context, id domain.VaultID) (map[string]note.Seen, error)
 	WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error
+}
+
+// Absences keeps when each synced file of a vault that is gone from it was first missed, by path, in nanoseconds since
+// the Unix epoch.
+type Absences interface {
+	ReadAbsences(ctx context.Context, id domain.VaultID) (map[string]int64, error)
+	WriteAbsences(ctx context.Context, id domain.VaultID, absent map[string]int64) error
 }
 
 // Health is where the plugin says what does not work.

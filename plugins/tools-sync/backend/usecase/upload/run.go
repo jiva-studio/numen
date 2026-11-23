@@ -12,25 +12,26 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 const keyContext = "numen-sync/upload-key/v1"
 
 type run struct {
 	deps  Deps
-	in    Input
+	in    transfer.UploadInput
 	plain *plainReader
 }
 
-func (r *run) execute(ctx context.Context) (Result, error) {
-	r.plain = &plainReader{ctx: ctx, source: r.deps.Source, path: r.in.Path, stat: r.in.Stat, size: r.in.Stat.Size}
+func (r *run) execute(ctx context.Context) (transfer.UploadResult, error) {
+	r.plain = &plainReader{ctx: ctx, source: r.deps.Host.Transfers(r.in.Vault), path: r.in.Path, stat: r.in.Stat, size: r.in.Stat.Size}
 	key, salt, err := r.newSecrets()
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	sealer, err := blobcipher.NewSealer(key, [16]byte(r.in.FileID), salt, r.in.Stat.Size)
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	if !isBig(sealer.StoredSize()) {
 		return r.sendWhole(ctx, key)
@@ -46,26 +47,26 @@ func (r *run) newSecrets() (key [32]byte, salt [16]byte, err error) {
 	return key, salt, err
 }
 
-func (r *run) sendWhole(ctx context.Context, key [32]byte) (Result, error) {
+func (r *run) sendWhole(ctx context.Context, key [32]byte) (transfer.UploadResult, error) {
 	whole, err := readAll(r.plain, r.in.Stat.Size)
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	blob, err := blobcipher.Seal(r.deps.Random, key, [16]byte(r.in.FileID), whole, isText(r.in.Path))
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	up, err := r.deps.Uploads.Start(ctx, r.in.RemoteID, int64(len(blob)))
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	if err := r.deps.Uploads.PutPart(ctx, up, 1, blob); err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	if err := r.deps.Uploads.Finish(ctx, up); err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
-	return Result{BlobID: up.Blob, BlobHash: sha256.Sum256(blob), BlobSize: uint64(len(blob)), Key: key}, nil
+	return transfer.UploadResult{BlobID: up.Blob, BlobHash: sha256.Sum256(blob), BlobSize: uint64(len(blob)), Key: key}, nil
 }
 
 // session is the upload of a big file in progress: its reservation, its key and what is sent of it.
@@ -77,14 +78,14 @@ type session struct {
 	hasher hash.Hash
 }
 
-func (r *run) sendParts(ctx context.Context, key [32]byte, salt [16]byte) (Result, error) {
+func (r *run) sendParts(ctx context.Context, key [32]byte, salt [16]byte) (transfer.UploadResult, error) {
 	s, err := r.open(ctx, key, salt)
 	if err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
 	result, err := r.sendRest(ctx, s)
 	if errors.Is(err, ErrFileChanged) {
-		return Result{}, errors.Join(err, r.drop(ctx, s))
+		return transfer.UploadResult{}, errors.Join(err, r.drop(ctx, s))
 	}
 	return result, err
 }
@@ -117,6 +118,7 @@ func (r *run) resume(ctx context.Context, e Entry) (*session, error) {
 	if err != nil {
 		return nil, err
 	}
+	up.PartSize, up.PartCount = e.PartSize, e.PartCount
 	if !r.isSame(e) {
 		return nil, errors.Join(ErrUploadGone, r.deps.Uploads.Abort(ctx, up), r.removeEntry(ctx, e))
 	}
@@ -218,24 +220,24 @@ func (r *run) readPart(s *session, number int, buffer []byte) ([]byte, error) {
 	return buffer, nil
 }
 
-func (r *run) sendRest(ctx context.Context, s *session) (Result, error) {
+func (r *run) sendRest(ctx context.Context, s *session) (transfer.UploadResult, error) {
 	buffer := make([]byte, s.up.PartSize)
 	for number := s.entry.PartsDone + 1; number <= s.up.PartCount; number++ {
 		part, err := r.readPart(s, number, buffer[:r.getPartLength(s, number)])
 		if err != nil {
-			return Result{}, err
+			return transfer.UploadResult{}, err
 		}
 		if err := r.deps.Uploads.PutPart(ctx, s.up, number, part); err != nil {
-			return Result{}, err
+			return transfer.UploadResult{}, err
 		}
 		if err := r.keep(ctx, s, number); err != nil {
-			return Result{}, err
+			return transfer.UploadResult{}, err
 		}
 	}
 	if err := r.deps.Uploads.Finish(ctx, s.up); err != nil {
-		return Result{}, err
+		return transfer.UploadResult{}, err
 	}
-	return Result{BlobID: s.up.Blob, BlobHash: [32]byte(s.hasher.Sum(nil)), BlobSize: uint64(s.sealer.StoredSize()), Key: s.key}, nil
+	return transfer.UploadResult{BlobID: s.up.Blob, BlobHash: [32]byte(s.hasher.Sum(nil)), BlobSize: uint64(s.sealer.StoredSize()), Key: s.key}, nil
 }
 
 // keep writes the state of the upload after a part, with the hash of what was sent.

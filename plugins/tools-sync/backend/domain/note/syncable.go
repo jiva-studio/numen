@@ -1,6 +1,7 @@
 package note
 
 import (
+	"encoding/hex"
 	"path"
 	"slices"
 	"strings"
@@ -56,3 +57,17 @@ func Kind(filePath string) string {
 	}
 	return KindBinary
 }
+
+// SmallFileLimit is the size up to which a file is read whole into memory and sent or placed in one call.
+const SmallFileLimit = 4 << 20
+
+// RecordKeyContext is the context the revision key of a record is sealed under.
+const RecordKeyContext = "numen-sync/record-key/v1"
+
+// GetRecordKeyContext returns the context the revision key of the file is sealed under in files.json.
+func GetRecordKeyContext(remoteID, fileID []byte) []byte {
+	return slices.Concat([]byte(RecordKeyContext), remoteID, fileID)
+}
+
+// StoredName returns the name of the staged file of a download in the store folder.
+func StoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }

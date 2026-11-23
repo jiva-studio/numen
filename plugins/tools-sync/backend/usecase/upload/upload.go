@@ -10,6 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 var (
@@ -21,6 +23,8 @@ var (
 
 // Upload is one reservation on the server: its blob, the size of its parts and the parts the server holds.
 type Upload struct {
+	Vault     []byte
+	URL       string
 	Blob      []byte
 	PartSize  int64
 	PartCount int
@@ -72,26 +76,8 @@ type Deps struct {
 	Uploads Uploads
 	Entries Entries
 	Crypto  Crypto
-	Source  host.FileRangeReader
+	Host    ports.Host
 	Random  io.Reader
-}
-
-// Input names the file to send.
-type Input struct {
-	Vault     domain.VaultID
-	RemoteID  []byte
-	Path      string
-	Stat      domain.FileStat
-	FileID    []byte
-	ParentRev []byte
-}
-
-// Result is what the revision of the file needs.
-type Result struct {
-	BlobID   []byte
-	BlobHash [32]byte
-	BlobSize uint64
-	Key      [32]byte
 }
 
 // UploadFile sends one file.
@@ -100,7 +86,7 @@ type UploadFile struct{ deps Deps }
 func NewUploadFile(deps Deps) *UploadFile { return &UploadFile{deps: deps} }
 
 // Execute sends the file whole or in parts and returns what its revision names.
-func (u *UploadFile) Execute(ctx context.Context, in Input) (Result, error) {
+func (u *UploadFile) Execute(ctx context.Context, in transfer.UploadInput) (transfer.UploadResult, error) {
 	return (&run{deps: u.deps, in: in}).execute(ctx)
 }
 
@@ -116,7 +102,7 @@ func (u *UploadFile) Forget(ctx context.Context, vault domain.VaultID, fileID []
 // plainReader reads a file by ranges and ends with ErrFileChanged when its stat is not the one it began with.
 type plainReader struct {
 	ctx    context.Context
-	source host.FileRangeReader
+	source rangeReader
 	path   string
 	stat   domain.FileStat
 	size   int64
@@ -155,4 +141,9 @@ func readAll(r io.ReaderAt, size int64) ([]byte, error) {
 		return nil, err
 	}
 	return whole, nil
+}
+
+// rangeReader reads bytes of any file as they are.
+type rangeReader interface {
+	ReadBytes(ctx context.Context, path string, start, length int64) (host.ByteRange, error)
 }
