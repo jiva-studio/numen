@@ -8,7 +8,7 @@ type vaultUseCases struct {
 	Tree   vault.Tree
 }
 
-// vaultListUseCases changes the list of vaults and the vaults on it.
+// vaultListUseCases groups the use cases that add, rename, remove, unregister and erase a vault.
 type vaultListUseCases struct {
 	Add        vault.Add
 	Rename     vault.Rename

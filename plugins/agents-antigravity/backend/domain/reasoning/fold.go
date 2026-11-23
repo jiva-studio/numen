@@ -2,7 +2,7 @@ package reasoning
 
 import "strings"
 
-// ListedModel is a model as a program lists it.
+// ListedModel carries the name and the title the program prints for a model.
 type ListedModel struct {
 	Name  string
 	Title string
