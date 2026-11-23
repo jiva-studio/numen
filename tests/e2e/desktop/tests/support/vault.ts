@@ -244,13 +244,13 @@ export const writeSetting = async (
   value: JsonValue | undefined,
 ): Promise<void> => {
   await callRPC(request, 'SettingsService/WriteSettings', {
-    settings: [{ at: keyPath, value: JSON.stringify(value) }],
+    settings: [{ keyPath, value: JSON.stringify(value) }],
   })
 }
 
 const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
-    String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
+    String((await callRPC(request, 'SettingsService/GetSettings', {}))['settingsJson'] ?? '{}'),
   ) as JsonObject
 
 /** The values stored under an owner of numen.json: `app` or a plugin id. */
