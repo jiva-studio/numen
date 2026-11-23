@@ -22,7 +22,7 @@ import {
 } from '@numen/protocol'
 import { createIdentityServiceClient } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
-import { createIdentityClient, type IdentityInfo } from './identity'
+import { buildIdentityClient, type IdentityInfo } from './identity'
 
 const WORDS = [
   'legal',
@@ -49,9 +49,9 @@ const INFO = {
 const EXPECTED: IdentityInfo = { ...INFO, isRevoked: false, keyEpoch: 0 }
 
 const createClient = (answers: CoreAnswers['identity'] = {}) =>
-  createIdentityClient(createIdentityServiceClient(createCoreTransport({ identity: answers })))
+  buildIdentityClient(createIdentityServiceClient(createCoreTransport({ identity: answers })))
 
-describe('createIdentityClient', () => {
+describe('buildIdentityClient', () => {
   it('reads the identity of this device', async () => {
     const client = createClient({
       getIdentity: () => create(GetIdentityResponseSchema, { identity: INFO }),
@@ -167,7 +167,7 @@ const LINK = {
   isApproved: false,
 }
 
-describe('createIdentityClient link', () => {
+describe('buildIdentityClient link', () => {
   it('sends the role, the mode and the scanned text to start a link and reads the link', async () => {
     let sent: { role: LinkRole; mode: LinkMode; scannedText: string } | undefined
     const client = createClient({

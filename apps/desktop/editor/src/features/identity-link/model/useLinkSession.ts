@@ -61,5 +61,11 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
     runInBackground(cancel(), () => undefined)
   })
 
-  return { link, problem, isBusy, isChoosing: computed(() => link.value === undefined), start, ask, cancel }
+  const answers = {
+    decide: (isApproved: boolean) => ask(() => getCalls().decide(isApproved)),
+    sendCode: (code: string) => ask(() => getCalls().enterCode(code)),
+    confirmJoin: (isApproved: boolean) => ask(() => getCalls().confirmJoin(isApproved)),
+  }
+
+  return { link, problem, isBusy, isChoosing: computed(() => link.value === undefined), start, cancel, answers }
 }

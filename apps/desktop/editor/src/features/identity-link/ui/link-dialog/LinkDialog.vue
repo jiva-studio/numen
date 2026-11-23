@@ -9,7 +9,6 @@ import { onMounted, ref, useId, useTemplateRef } from 'vue'
 import { Button } from '@numen/ui'
 import type { LinkRole } from '@/entities/identity'
 import type { LinkCalls } from '../../lib/types'
-import { createLinkAnswers } from '../../model/createLinkAnswers'
 import { useLinkSession } from '../../model/useLinkSession'
 import { WORDS as words } from '../../words'
 import LinkChoices from './LinkChoices.vue'
@@ -25,8 +24,7 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const isScanning = ref(false)
-const { link, problem, isBusy, isChoosing, start, ask } = useLinkSession(() => props.calls, props.role)
-const answers = createLinkAnswers(() => props.calls, ask)
+const { link, problem, isBusy, isChoosing, start, answers } = useLinkSession(() => props.calls, props.role)
 
 /* ---------------------------------- Hooks --------------------------------- */
 onMounted(() => dialog.value?.focus())

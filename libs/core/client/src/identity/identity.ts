@@ -104,26 +104,22 @@ export interface DeviceInfo {
   readonly isRevoked: boolean
 }
 
+type Rpc<Name extends keyof Client<typeof IdentityService>> = Pick<Client<typeof IdentityService>, Name>
+
+/** The calls of IdentityService that keep the identity of this device. */
+type AccountRpc = Rpc<'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'startRestore' | 'deleteIdentity'>
+
+/** The calls of IdentityService that link a device to an account. */
+type LinkRpc = Rpc<'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'>
+
+/** The calls of IdentityService that list the devices of the account and revoke one. */
+type DevicesRpc = Rpc<'listDevices' | 'revokeDevice'>
+
 /** The calls of IdentityService the identity is managed through. */
-export type IdentityRpc = Pick<
-  Client<typeof IdentityService>,
-  | 'getIdentity'
-  | 'generateRecoveryWords'
-  | 'createIdentity'
-  | 'startRestore'
-  | 'deleteIdentity'
-  | 'startLink'
-  | 'getLink'
-  | 'decideLink'
-  | 'enterLinkCode'
-  | 'confirmJoin'
-  | 'cancelLink'
-  | 'listDevices'
-  | 'revokeDevice'
->
+export type IdentityRpc = AccountRpc & LinkRpc & DevicesRpc
 
 /** The identity of this device. */
-export interface IdentityClient {
+export interface AccountClient {
   /** The identity of this device, or undefined when it has none. */
   get(): Promise<IdentityInfo | undefined>
   generateWords(): Promise<readonly string[]>
@@ -131,6 +127,10 @@ export interface IdentityClient {
   /** Starts to restore the account of the words; the identity exists once the core has completed it. */
   startRestore(words: readonly string[]): Promise<Result<undefined, IdentityFailure>>
   delete(): Promise<void>
+}
+
+/** The link of this device to an account. */
+export interface LinkClient {
   /** Starts a link; scannedText is the text of the QR code in mode scan. */
   startLink(
     role: LinkRole,
@@ -145,10 +145,17 @@ export interface IdentityClient {
   /** The answer of the person on the new device to the account it is offered. */
   confirmJoin(approve: boolean): Promise<Result<undefined, IdentityFailure>>
   cancelLink(): Promise<Result<undefined, IdentityFailure>>
+}
+
+/** The devices of the account. */
+export interface DevicesClient {
   /** The devices of the account: the active ones, then the revoked ones. */
   listDevices(): Promise<Result<readonly DeviceInfo[], IdentityFailure>>
   revokeDevice(fingerprint: string): Promise<Result<undefined, IdentityFailure>>
 }
+
+/** The identity of this device, its link and the devices of its account. */
+export type IdentityClient = AccountClient & LinkClient & DevicesClient
 
 const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
   accountFingerprint: info.accountFingerprint,
@@ -159,62 +166,36 @@ const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
   keyEpoch: info.keyEpoch,
 })
 
-const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined => {
-  switch (code) {
-    case ProtoIdentityErrorCode.UNSPECIFIED:
-      return undefined
-    case ProtoIdentityErrorCode.INVALID_WORDS:
-      return 'invalid_words'
-    case ProtoIdentityErrorCode.IDENTITY_EXISTS:
-      return 'identity_exists'
-    case ProtoIdentityErrorCode.KEY_STORE_FAILED:
-      return 'key_store_failed'
-    case ProtoIdentityErrorCode.LINK_ACTIVE:
-      return 'link_active'
-    case ProtoIdentityErrorCode.NO_LINK:
-      return 'no_link'
-    case ProtoIdentityErrorCode.LINK_TEXT_INVALID:
-      return 'link_text_invalid'
-    case ProtoIdentityErrorCode.LAST_DEVICE:
-      return 'last_device'
-    case ProtoIdentityErrorCode.REVOKE_RACED:
-      return 'revoke_raced'
-    case ProtoIdentityErrorCode.NOT_ALLOWED_THIS_DEVICE:
-      return 'not_allowed_this_device'
-    case ProtoIdentityErrorCode.NO_IDENTITY:
-      return 'no_identity'
-    case ProtoIdentityErrorCode.DEVICE_REVOKED:
-      return 'device_revoked'
-    case ProtoIdentityErrorCode.UNKNOWN_DEVICE:
-      return 'unknown_device'
-    case ProtoIdentityErrorCode.CODE_INVALID:
-      return 'code_invalid'
-  }
+const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = {
+  [ProtoIdentityErrorCode.INVALID_WORDS]: 'invalid_words',
+  [ProtoIdentityErrorCode.IDENTITY_EXISTS]: 'identity_exists',
+  [ProtoIdentityErrorCode.KEY_STORE_FAILED]: 'key_store_failed',
+  [ProtoIdentityErrorCode.LINK_ACTIVE]: 'link_active',
+  [ProtoIdentityErrorCode.NO_LINK]: 'no_link',
+  [ProtoIdentityErrorCode.LINK_TEXT_INVALID]: 'link_text_invalid',
+  [ProtoIdentityErrorCode.LAST_DEVICE]: 'last_device',
+  [ProtoIdentityErrorCode.REVOKE_RACED]: 'revoke_raced',
+  [ProtoIdentityErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'not_allowed_this_device',
+  [ProtoIdentityErrorCode.NO_IDENTITY]: 'no_identity',
+  [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'device_revoked',
+  [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknown_device',
+  [ProtoIdentityErrorCode.CODE_INVALID]: 'code_invalid',
 }
 
-const readPhase = (phase: ProtoLinkPhase): LinkPhase => {
-  switch (phase) {
-    case ProtoLinkPhase.WAITING_FOR_CHANNEL:
-      return 'waiting_for_channel'
-    case ProtoLinkPhase.WAITING_FOR_PEER:
-      return 'waiting_for_peer'
-    case ProtoLinkPhase.CONFIRM_PEER:
-      return 'confirm_peer'
-    case ProtoLinkPhase.WAITING_FOR_ACCEPT:
-      return 'waiting_for_accept'
-    case ProtoLinkPhase.ENTER_CODE:
-      return 'enter_code'
-    case ProtoLinkPhase.PUBLISHING:
-      return 'publishing'
-    case ProtoLinkPhase.CONFIRM_ACCOUNT:
-      return 'confirm_account'
-    case ProtoLinkPhase.LINKED:
-      return 'linked'
-    case ProtoLinkPhase.UNSPECIFIED:
-    case ProtoLinkPhase.FAILED:
-      return 'failed'
-  }
+const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined => ERROR_CODES[code]
+
+const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
+  [ProtoLinkPhase.WAITING_FOR_CHANNEL]: 'waiting_for_channel',
+  [ProtoLinkPhase.WAITING_FOR_PEER]: 'waiting_for_peer',
+  [ProtoLinkPhase.CONFIRM_PEER]: 'confirm_peer',
+  [ProtoLinkPhase.WAITING_FOR_ACCEPT]: 'waiting_for_accept',
+  [ProtoLinkPhase.ENTER_CODE]: 'enter_code',
+  [ProtoLinkPhase.PUBLISHING]: 'publishing',
+  [ProtoLinkPhase.CONFIRM_ACCOUNT]: 'confirm_account',
+  [ProtoLinkPhase.LINKED]: 'linked',
 }
+
+const readPhase = (phase: ProtoLinkPhase): LinkPhase => PHASES[phase] ?? 'failed'
 
 const readReason = (reason: ProtoLinkReason): LinkReason | undefined => {
   switch (reason) {
@@ -302,8 +283,8 @@ const readLinkAnswer = (
   return asValue(readLink(answer.link))
 }
 
-/** The identity managed through an IdentityService client. */
-export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
+/** The calls that keep the identity of this device, over an IdentityService client. */
+export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
     const { identity } = await rpc.getIdentity({})
     return identity === undefined ? undefined : readInfo(identity)
@@ -314,6 +295,10 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   delete: async () => {
     await rpc.deleteIdentity({})
   },
+})
+
+/** The calls of the link of this device to an account, over an IdentityService client. */
+export const createLinkClient = (rpc: LinkRpc): LinkClient => ({
   startLink: async (role, mode, scannedText) =>
     readLinkAnswer(
       await rpc.startLink({
@@ -327,6 +312,10 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   enterLinkCode: async (code) => readStartAnswer(await rpc.enterLinkCode({ code })),
   confirmJoin: async (approve) => readStartAnswer(await rpc.confirmJoin({ approve })),
   cancelLink: async () => readStartAnswer(await rpc.cancelLink({})),
+})
+
+/** The calls of the devices of the account, over an IdentityService client. */
+export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
   listDevices: async () => {
     const answer = await rpc.listDevices({})
     const errorCode = readErrorCode(answer.error)
@@ -335,4 +324,11 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
       : asFailure({ errorCode, detail: answer.detail })
   },
   revokeDevice: async (fingerprint) => readStartAnswer(await rpc.revokeDevice({ fingerprint })),
+})
+
+/** The identity managed through an IdentityService client. */
+export const buildIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
+  ...createAccountClient(rpc),
+  ...createLinkClient(rpc),
+  ...createDevicesClient(rpc),
 })

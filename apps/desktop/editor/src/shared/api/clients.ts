@@ -13,7 +13,7 @@ import {
   createContributionClient,
   createFileClient,
   createFolderDialogClient,
-  createIdentityClient,
+  buildIdentityClient,
   createIdentityServiceClient,
   createLogClient,
   createLogServiceClient,
@@ -75,7 +75,7 @@ export const createSettingsClients = (transport: Transport) => {
     settingsService: createSettingsClient(settings),
     connections: createConnectionClient(createProviderConnectionClient(settings)),
     licenses: createLicenseClient(createLicenseServiceClient(settings)),
-    identity: createIdentityClient(createIdentityServiceClient(settings)),
+    identity: buildIdentityClient(createIdentityServiceClient(settings)),
     pluginData: createPluginDataClient(settings),
     theme: createThemeServiceClient(transport),
   }

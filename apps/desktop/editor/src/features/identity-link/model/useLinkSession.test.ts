@@ -5,23 +5,20 @@ import { mount } from '@vue/test-utils'
 import type { IdentityClient } from '@numen/core-client'
 import { createIdentityStore } from '@/entities/identity'
 import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
-import { createLinkAnswers } from './createLinkAnswers'
 import { useLinkSession } from './useLinkSession'
 
 const mountSession = (overrides: Partial<IdentityClient>) => {
   const store = createIdentityStore(wrapIdentityClient(createIdentityClient(overrides)), vi.fn())
   let session!: ReturnType<typeof useLinkSession>
-  let answers!: ReturnType<typeof createLinkAnswers>
   const wrapper = mount(
     defineComponent({
       setup() {
         session = useLinkSession(() => store.devices.link, 'host')
-        answers = createLinkAnswers(() => store.devices.link, session.ask)
         return () => h('div')
       },
     }),
   )
-  return { session, answers, wrapper }
+  return { session, answers: session.answers, wrapper }
 }
 
 const ok = <T>(value: T) => Promise.resolve({ ok: true as const, value })
