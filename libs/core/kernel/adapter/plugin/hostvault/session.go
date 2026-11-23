@@ -15,11 +15,11 @@ import (
 // Session chooses the vault a call works, follows it, and tells the window that a call changed a file.
 // Each other group of the vault reads the vault of a call through it.
 type Session struct {
-	GetCurrent    func() (domain.Vault, bool)
-	ListVaults     func() ([]domain.Vault, error)
+	GetCurrent func() (domain.Vault, bool)
+	ListVaults func() ([]domain.Vault, error)
 	Find       func(id domain.VaultID) (domain.Vault, error)
 	IndexState func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
-	WatchMoves      func(ctx context.Context) (<-chan struct{}, error)
+	WatchMoves func(ctx context.Context) (<-chan struct{}, error)
 	indexing.WriteWake
 
 	rebuild func(found domain.Vault) *vault.Access

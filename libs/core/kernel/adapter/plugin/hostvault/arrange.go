@@ -26,12 +26,12 @@ type NoteChanges struct {
 
 // Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
 type Arranger struct {
-	Notes       NoteChanges
-	Window      NoteChanges
+	Notes          NoteChanges
+	Window         NoteChanges
 	GetWindowVault func() (domain.Vault, bool)
 	RunChecks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
-	Problems    *vaults.ListParseProblems
-	Frontmatter note.WriteFrontmatter
+	Problems       *vaults.ListParseProblems
+	Frontmatter    note.WriteFrontmatter
 
 	session sessionAccess
 }

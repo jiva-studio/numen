@@ -11,11 +11,11 @@ import (
 
 // Source is where the events come from.
 type Source struct {
-	Read    func() (settings.Values, error)
+	Read       func() (settings.Values, error)
 	GetInitial func() settings.Values
-	Report  func(error)
-	Hub     *watchhub.Hub
-	Path    string
+	Report     func(error)
+	Hub        *watchhub.Hub
+	Path       string
 }
 
 // Events delivers the settings that change to the readers subscribed. The file is watched while

@@ -33,7 +33,7 @@ import (
 type pluginVaultHooks struct {
 	WriteWake  indexing.WriteWake
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
-	WatchMoves      func(ctx context.Context) (<-chan struct{}, error)
+	WatchMoves func(ctx context.Context) (<-chan struct{}, error)
 	Notes      *hostvault.NoteChanges
 }
 
@@ -72,11 +72,11 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: install.ServiceDir}}
 	return hostvault.NewAccess(
 		hostvault.Session{
-			GetCurrent:    current,
-			ListVaults:     registry.Vaults.List,
+			GetCurrent: current,
+			ListVaults: registry.Vaults.List,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
-			WatchMoves:      hooks.WatchMoves,
+			WatchMoves: hooks.WatchMoves,
 			WriteWake:  hooks.WriteWake,
 		},
 		hostvault.Files{
@@ -110,7 +110,7 @@ func newArranger(
 	arranger := hostvault.Arranger{
 		Notes:       getNoteChanges(useCases),
 		Frontmatter: useCases.Properties.Frontmatter,
-		RunChecks:      getProblemChecks(getProblems(db.NoteProblems())),
+		RunChecks:   getProblemChecks(getProblems(db.NoteProblems())),
 		Problems:    vault.NewListParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
@@ -124,7 +124,9 @@ func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) plugin
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.WatchMoves == nil {
-		hooks.WatchMoves = func(ctx context.Context) (<-chan struct{}, error) { return watchVaultMoves(ctx, v.IndexPath, v.Watcher) }
+		hooks.WatchMoves = func(ctx context.Context) (<-chan struct{}, error) {
+			return watchVaultMoves(ctx, v.IndexPath, v.Watcher)
+		}
 	}
 	return hooks
 }
@@ -156,8 +158,8 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 
 func getWhenConfig(settingsDeps settingsWiring, plugins pluginmanifest.PluginLister) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
-		ListAppSettings:     func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
-		ListPlugins: plugins.GetPluginInfos,
+		ListAppSettings: func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
+		ListPlugins:     plugins.GetPluginInfos,
 	}
 }
 

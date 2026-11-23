@@ -28,7 +28,7 @@ func getSystemDirs() []string {
 
 // discovery looks for a dependency the machine already holds.
 type discovery struct {
-	dirs     []string
+	dirs        []string
 	runLdconfig func() []byte
 }
 

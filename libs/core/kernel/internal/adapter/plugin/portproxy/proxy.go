@@ -27,10 +27,10 @@ type Target func(ctx context.Context) (addr string, release func(), err error)
 
 // Proxy is a bound listening port that forwards each accepted TCP connection to Target.
 type Proxy struct {
-	listener net.Listener
-	target   Target
-	handleError  func(error)
-	cancel   context.CancelFunc
+	listener    net.Listener
+	target      Target
+	handleError func(error)
+	cancel      context.CancelFunc
 
 	mu       sync.Mutex
 	conns    map[net.Conn]struct{}
@@ -51,14 +51,14 @@ func Open(ctx context.Context, addr string, target Target, handleError func(erro
 func newProxy(ctx context.Context, listener net.Listener, target Target, handleError func(error)) *Proxy {
 	proxyCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p := &Proxy{
-		listener: listener,
-		target:   target,
-		handleError:  handleError,
-		cancel:   cancel,
-		mu:       sync.Mutex{},
-		conns:    make(map[net.Conn]struct{}),
-		isClosed: false,
-		wg:       sync.WaitGroup{},
+		listener:    listener,
+		target:      target,
+		handleError: handleError,
+		cancel:      cancel,
+		mu:          sync.Mutex{},
+		conns:       make(map[net.Conn]struct{}),
+		isClosed:    false,
+		wg:          sync.WaitGroup{},
 	}
 	p.wg.Add(1)
 	go p.acceptConnections(proxyCtx)

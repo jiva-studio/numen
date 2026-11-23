@@ -29,12 +29,12 @@ const (
 
 // transfer is one file fetched from an address.
 type transfer struct {
-	client     *http.Client
-	address    string
-	dest       string
-	sum        string
-	backoff    backoff
-	clock      machineport.Clock
+	client         *http.Client
+	address        string
+	dest           string
+	sum            string
+	backoff        backoff
+	clock          machineport.Clock
 	handleDigest   func(string)
 	handleProgress func(count, total int64)
 }

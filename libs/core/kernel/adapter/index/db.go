@@ -79,7 +79,7 @@ type Option func(*settings)
 type settings struct {
 	synchronous string
 	clock       QueryClock
-	handleQuery     func(logs.Entry)
+	handleQuery func(logs.Entry)
 }
 
 // DisableSync opens an index that does not wait for the disk on a commit. WAL, the single

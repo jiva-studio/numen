@@ -7,7 +7,7 @@ import (
 )
 
 type Events struct {
-	mu        sync.RWMutex
+	mu            sync.RWMutex
 	handleCleared func(string)
 	handleFailure func(plugin.Failure)
 }
@@ -17,7 +17,11 @@ func (e *Events) SetOnFailure(fn func(plugin.Failure)) {
 	defer e.mu.Unlock()
 	e.handleFailure = fn
 }
-func (e *Events) SetOnCleared(fn func(string)) { e.mu.Lock(); defer e.mu.Unlock(); e.handleCleared = fn }
+func (e *Events) SetOnCleared(fn func(string)) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.handleCleared = fn
+}
 func (e *Events) ReportFailure(failure plugin.Failure) {
 	e.mu.RLock()
 	fn := e.handleFailure

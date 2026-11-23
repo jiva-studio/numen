@@ -12,11 +12,11 @@ import (
 // ListAccess is the List a window gives the plugins that have vault:manage, made of the use cases the window itself
 // changes the list with, so a plugin and the user see the same errors.
 type ListAccess struct {
-	add     *vaults.AddVault
-	rename  *vaults.RenameVault
-	remove  vaults.Remove
-	open    windowsession.OpenPluginVault
-	missing registry.FolderCheck
+	add             *vaults.AddVault
+	rename          *vaults.RenameVault
+	remove          vaults.Remove
+	open            windowsession.OpenPluginVault
+	missing         registry.FolderCheck
 	getCurrentVault func() domain.VaultID
 }
 

@@ -38,19 +38,19 @@ func openSQLitePool(dsn, pool string, pos settings) (*sql.DB, error) {
 		return sql.Open("sqlite", dsn)
 	}
 	return sql.OpenDB(&tracedConnector{
-		base:    &sqlite.Driver{},
-		dsn:     dsn,
-		pool:    pool,
-		clock:   pos.clock,
+		base:        &sqlite.Driver{},
+		dsn:         dsn,
+		pool:        pool,
+		clock:       pos.clock,
 		handleQuery: pos.handleQuery,
 	}), nil
 }
 
 type tracedConnector struct {
-	base    driver.Driver
-	dsn     string
-	pool    string
-	clock   QueryClock
+	base        driver.Driver
+	dsn         string
+	pool        string
+	clock       QueryClock
 	handleQuery func(logs.Entry)
 }
 
@@ -60,9 +60,9 @@ func (c *tracedConnector) Connect(_ context.Context) (driver.Conn, error) {
 		return nil, err
 	}
 	return &tracedConn{
-		conn:    conn,
-		pool:    c.pool,
-		clock:   c.clock,
+		conn:        conn,
+		pool:        c.pool,
+		clock:       c.clock,
 		handleQuery: c.handleQuery,
 	}, nil
 }
@@ -70,9 +70,9 @@ func (c *tracedConnector) Connect(_ context.Context) (driver.Conn, error) {
 func (c *tracedConnector) Driver() driver.Driver { return c.base }
 
 type tracedConn struct {
-	conn    driver.Conn
-	pool    string
-	clock   QueryClock
+	conn        driver.Conn
+	pool        string
+	clock       QueryClock
 	handleQuery func(logs.Entry)
 }
 

@@ -62,12 +62,12 @@ type Dependencies interface {
 // through and the provisioner of the dependencies they declare. Both are read from the functions
 // the services are made with, at each use.
 type Services struct {
-	closing      Closing
+	closing         Closing
 	getEndpoint     func() HostEndpoint
 	getDependencies func() Dependencies
 
 	mu          sync.Mutex
-	observe    func(manifest.DependencyRequirement, plugindomain.DependencyStatus)
+	observe     func(manifest.DependencyRequirement, plugindomain.DependencyStatus)
 	downloading map[string]manifest.DependencyRequirement
 }
 

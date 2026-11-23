@@ -23,10 +23,10 @@ type storageRoots struct {
 // Storage grants the plugins folders to keep files in: one cache folder and one data folder each,
 // and a cache folder and a data folder every plugin shares.
 type Storage struct {
-	report    func(error)
+	report     func(error)
 	getVersion func(pluginID string) string
-	mu        sync.RWMutex
-	roots     storageRoots
+	mu         sync.RWMutex
+	roots      storageRoots
 }
 
 // New creates a storage that reports the errors it meets outside a call to report and reads the version

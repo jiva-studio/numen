@@ -30,7 +30,7 @@ func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDe
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
 		Detected:    openDetection(install, exec, settingsDeps, vaultDeps),
-		ListPlugins:     s.Infos.GetPluginInfos,
+		ListPlugins: s.Infos.GetPluginInfos,
 		Declared:    getDeclarations(s),
 		ReadStored:  createSettingsStore(s).ReadUncheckedFile,
 		Write:       getSettingsWriter(s),

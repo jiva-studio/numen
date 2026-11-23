@@ -131,9 +131,9 @@ func (f *File) WriteConnectionsJSON() (string, error) {
 
 // ConnectionRepository is the list of connections in the settings file.
 type ConnectionRepository struct {
-	files   *Files
-	getPath    func() (string, error)
-	read    func() (File, error)
+	files        *Files
+	getPath      func() (string, error)
+	read         func() (File, error)
 	handleChange func()
 }
 

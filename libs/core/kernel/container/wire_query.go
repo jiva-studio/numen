@@ -69,7 +69,7 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 type queryPorts struct {
 	functions    searchqueryusecase.SearchFunctions
 	contentTypes contenttypeport.ContentTypeTable
-	getCatalog      func() searchquerydomain.Catalog
+	getCatalog   func() searchquerydomain.Catalog
 	clock        machineport.Clock
 	resolve      connectionport.ResolveConnection
 	rows         searchqueryusecase.RerankRows

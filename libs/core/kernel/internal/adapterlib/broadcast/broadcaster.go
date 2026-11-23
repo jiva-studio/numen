@@ -12,12 +12,12 @@ import (
 // by Fallback; Capacity sets how many messages may be pending before a
 // subscriber counts as lagging.
 type Broadcaster[T any] struct {
-	GetFallback   func(latest T) T
-	IsLatest   bool
-	IsOrdered  bool
-	GetTopic   func(T) string
-	IsRequired func(T) bool
-	Capacity   int
+	GetFallback func(latest T) T
+	IsLatest    bool
+	IsOrdered   bool
+	GetTopic    func(T) string
+	IsRequired  func(T) bool
+	Capacity    int
 
 	mu          sync.Mutex
 	next        int

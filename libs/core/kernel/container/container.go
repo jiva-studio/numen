@@ -168,7 +168,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		PluginInfos:     prefs.Views.Infos,
 		Checks:          prefs.Views.Checks,
 		Detection:       prefs.Detection,
-		HandleError:    getErrorHandler(c.IndexPath, res),
+		HandleError:     getErrorHandler(c.IndexPath, res),
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 // CallReportingSource opens the providers of source and reports each call through a connection that a
 // provider answered.
 type CallReportingSource struct {
-	source   connectionport.ProviderSource
+	source       connectionport.ProviderSource
 	handleAnswer func(connectionID string)
 }
 

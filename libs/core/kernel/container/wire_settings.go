@@ -60,7 +60,7 @@ type settingsWiring struct {
 	PluginInfos     settingsusecase.PluginInfos
 	Checks          settingsusecase.PluginSettings
 	Detection       connectionport.Detected
-	HandleError    func(error)
+	HandleError     func(error)
 }
 
 func settingsSettings(c settingsWiring) (settingsadapter.File, error) {

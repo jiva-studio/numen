@@ -14,10 +14,10 @@ import (
 func newSource(t *testing.T, read func() (settings.Values, error)) settingevents.Source {
 	t.Helper()
 	return settingevents.Source{
-		Read:    read,
+		Read:       read,
 		GetInitial: func() settings.Values { return settings.Values{} },
-		Report:  func(error) {},
-		Path:    filepath.Join(t.TempDir(), "numen.json"),
+		Report:     func(error) {},
+		Path:       filepath.Join(t.TempDir(), "numen.json"),
 	}
 }
 

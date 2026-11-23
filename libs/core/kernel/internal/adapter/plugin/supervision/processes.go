@@ -260,7 +260,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 		PluginID: plug.Manifest.ID, Supervisor: sup, Process: proc, Endpoint: endpoint,
 		Listeners: handshake.Listeners, Now: p.clock.Now(),
 		HandleExit: func() { p.CloseStdin(plug.Manifest.ID, proc.Pid) },
-		Lease:  launch.Lease,
+		Lease:      launch.Lease,
 	})
 	if err != nil {
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)

@@ -22,7 +22,7 @@ import (
 type ConnectionRowsSource struct {
 	Connections connectionport.Repository
 	Detected    connectionport.Detected
-	ListPlugins     func() []plugin.Info
+	ListPlugins func() []plugin.Info
 	Declared    settingsdomain.Declarations
 	ReadStored  func() (File, error)
 	Write       func(entries []settingsdomain.Setting) error

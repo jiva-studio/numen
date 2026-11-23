@@ -32,10 +32,10 @@ const (
 type Adapter struct {
 	providers map[string]provider
 
-	mu          sync.Mutex
-	subscribers map[int]chan struct{}
-	nextSubID   int
-	handleChange    func(ctx context.Context)
+	mu           sync.Mutex
+	subscribers  map[int]chan struct{}
+	nextSubID    int
+	handleChange func(ctx context.Context)
 }
 
 // NewAdapter creates a licensing adapter configured from the environment.
@@ -51,8 +51,8 @@ func NewAdapter(handleChange func(ctx context.Context)) *Adapter {
 			sharedlicensing.ProviderIDCreem: creem,
 			sharedlicensing.ProviderIDDodo:  dodo,
 		},
-		subscribers: make(map[int]chan struct{}),
-		handleChange:    handleChange,
+		subscribers:  make(map[int]chan struct{}),
+		handleChange: handleChange,
 	}
 }
 

@@ -60,7 +60,7 @@ type Activation struct {
 	config     configPusher
 	clock      machineport.Clock
 
-	startMu sync.Mutex
+	startMu     sync.Mutex
 	handleStart func(pluginID string)
 }
 

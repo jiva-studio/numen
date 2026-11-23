@@ -54,7 +54,7 @@ func newChangeBroadcaster() broadcaster[window.Change] {
 	return broadcaster[window.Change]{
 		inner: broadcast.Broadcaster[window.Change]{
 			GetFallback: func(window.Change) window.Change { return window.Change{ShouldReload: true} },
-			Capacity: 8,
+			Capacity:    8,
 		},
 	}
 }

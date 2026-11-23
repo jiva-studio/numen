@@ -160,7 +160,7 @@ func (p *FileProvisioner) fetch(
 	for _, address := range source.GetURLs() {
 		err = transfer{
 			handleDigest: func(sum string) { actual = sum },
-			client:   p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
+			client:       p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 			handleProgress: func(done, total int64) {
 				onProgress(plugin.DependencyStatus{
 					ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,

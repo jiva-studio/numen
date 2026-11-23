@@ -25,7 +25,7 @@ type PluginCommands struct {
 // declaredCommand is a command a plugin manifest declares, run by that plugin's backend.
 type declaredCommand struct {
 	getPlugins func() PluginCommands
-	entry   plugin.CommandEntry
+	entry      plugin.CommandEntry
 }
 
 func (c declaredCommand) Name() string { return c.entry.Command.ID }

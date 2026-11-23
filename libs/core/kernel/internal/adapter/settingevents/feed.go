@@ -8,12 +8,12 @@ import (
 // Feed delivers the changes of the settings file at GetPath. A Feed without Events delivers
 // nothing, and neither does one whose path cannot be found: the error goes to Report.
 type Feed struct {
-	Events  *Events
-	GetPath func() (string, error)
-	Read    func() (settings.Values, error)
+	Events     *Events
+	GetPath    func() (string, error)
+	Read       func() (settings.Values, error)
 	GetInitial func() settings.Values
-	Report  func(error)
-	Hub     *watchhub.Hub
+	Report     func(error)
+	Hub        *watchhub.Hub
 }
 
 // Subscribe starts delivering to a new reader.
@@ -27,11 +27,11 @@ func (f Feed) Subscribe() (<-chan []settings.Setting, func()) {
 		return createClosedFeed()
 	}
 	return f.Events.Subscribe(Source{
-		Read:    f.Read,
+		Read:       f.Read,
 		GetInitial: f.GetInitial,
-		Report:  f.Report,
-		Hub:     f.Hub,
-		Path:    path,
+		Report:     f.Report,
+		Hub:        f.Hub,
+		Path:       path,
 	})
 }
 

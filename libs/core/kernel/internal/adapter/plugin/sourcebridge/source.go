@@ -41,12 +41,12 @@ type Source struct {
 	mu      sync.Mutex
 	current description
 
-	announceMu  sync.Mutex
-	changeMu    sync.Mutex
-	announced   searchsource.Description
-	listeners   []func()
+	announceMu      sync.Mutex
+	changeMu        sync.Mutex
+	announced       searchsource.Description
+	listeners       []func()
 	handleReadError func(error)
-	stopWatch   func()
+	stopWatch       func()
 }
 
 // Open finds the plugin that declares the search source capability and takes its description from kept, or

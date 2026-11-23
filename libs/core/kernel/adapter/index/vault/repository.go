@@ -22,7 +22,7 @@ func getStatement(name string) string { return sqlfile.Read(files, "sql", name) 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
 // is why a vault is registered before anything is stored for it.
 type Repository struct {
-	db       *sql.DB
+	db           *sql.DB
 	handleChange func()
 }
 

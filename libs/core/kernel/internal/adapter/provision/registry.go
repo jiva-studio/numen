@@ -20,7 +20,7 @@ type Registry struct {
 	mu           sync.Mutex
 	provisioners []DependencyProvisioner
 	flights      flightGroup
-	observe     func(manifest.DependencyRequirement, plugin.DependencyStatus)
+	observe      func(manifest.DependencyRequirement, plugin.DependencyStatus)
 }
 
 // NewObservedRegistry returns a Registry that sends every status reached by any provisioning to observer.

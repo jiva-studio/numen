@@ -43,8 +43,8 @@ type Identify func(ctx context.Context, header http.Header, requested string) (c
 // Handler serves ConnectionCallService over the calls and the rows the sources return at each request, for
 // the plugin that identify names.
 type Handler struct {
-	getCalls    func() Calls
-	getRows     func() Rows
+	getCalls func() Calls
+	getRows  func() Rows
 	identify Identify
 	cancels  Cancels
 }

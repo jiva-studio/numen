@@ -26,7 +26,7 @@ type Supervisors struct {
 	runs       map[string]*processRun
 	clients    *transport.Clients
 	report     func(error)
-	handleDrop     func(pluginID string)
+	handleDrop func(pluginID string)
 	idleLimits map[string]time.Duration
 	stopIdle   func(pluginID string)
 	watchers   []chan struct{}
@@ -50,7 +50,7 @@ func NewSupervisors(report func(error), handleDrop func(pluginID string)) *Super
 		clients:    transport.NewClients(),
 		idleLimits: make(map[string]time.Duration),
 		report:     report,
-		handleDrop:     handleDrop,
+		handleDrop: handleDrop,
 	}
 }
 
@@ -293,7 +293,7 @@ type ProcessAttachment struct {
 	Endpoint   transport.Endpoint
 	Listeners  map[string]int
 	Now        time.Time
-	HandleExit     func()
+	HandleExit func()
 	Lease      lifecycle.Lease
 }
 

@@ -42,14 +42,14 @@ type Detection struct {
 	source connectionport.ProviderSource
 	clock  machineport.Clock
 
-	mu       sync.Mutex
-	answers  map[string]answer
-	askedAt  map[string]time.Time
-	running  map[string]chan struct{}
-	files    DetectionFiles
-	loaded   map[string]bool
+	mu           sync.Mutex
+	answers      map[string]answer
+	askedAt      map[string]time.Time
+	running      map[string]chan struct{}
+	files        DetectionFiles
+	loaded       map[string]bool
 	handleChange func()
-	report   func(error)
+	report       func(error)
 
 	writeMu sync.Mutex
 }

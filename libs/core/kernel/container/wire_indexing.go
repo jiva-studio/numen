@@ -34,7 +34,7 @@ type vaultIndexPlan struct {
 	ShouldRebuildIndex bool
 	VaultReaders       vaultport.VaultReaders
 	TextReaders        textport.Readers
-	HandleError       func(error)
+	HandleError        func(error)
 }
 
 func newTextSearch(plan vaultIndexPlan, workers int) textSearch {

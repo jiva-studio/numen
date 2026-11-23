@@ -71,7 +71,7 @@ func (w *rowsWorld) rows() *settings.ConnectionRows {
 	return settings.NewConnectionRows(settings.ConnectionRowsSource{
 		Connections: fixedConnections{{ID: workID, Name: "Work"}, {ID: homeID, Name: "Ollama"}},
 		Detected:    fixedDetection{},
-		ListPlugins:     func() []plugin.Info { return w.plugins },
+		ListPlugins: func() []plugin.Info { return w.plugins },
 		Declared:    declaredWithRows,
 		ReadStored:  func() (settings.File, error) { return w.stored, nil },
 		Write: func(entries []settingsdomain.Setting) error {

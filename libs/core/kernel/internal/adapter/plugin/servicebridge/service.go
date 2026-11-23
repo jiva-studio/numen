@@ -34,10 +34,10 @@ type Plugins interface {
 // token by which the plugin identifies the host. It holds a reference on the plugin from the first byte of a
 // call to the last, so a stream cannot outlive its plugin.
 type Proxy struct {
-	activator bridge.Activator
-	plugins   Plugins
-	services  ServiceResolver
-	handleError   func(error)
+	activator   bridge.Activator
+	plugins     Plugins
+	services    ServiceResolver
+	handleError func(error)
 }
 
 // SetErrorHandler sets the callback that receives errors the proxy meets after a response has begun.

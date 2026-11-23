@@ -72,11 +72,11 @@ type Supervisor struct {
 	teardownBegun bool
 	leases        plugin.Leases
 	exitCh        chan struct{}
-	handleExit        func()
+	handleExit    func()
 	activatingCh  chan struct{}
 	activationErr error
-	callShutdown   func(ctx context.Context) error
-	handleError       func(error)
+	callShutdown  func(ctx context.Context) error
+	handleError   func(error)
 }
 
 // New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside

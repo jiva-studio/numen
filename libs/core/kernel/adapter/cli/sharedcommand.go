@@ -30,8 +30,8 @@ func getSharedCommandSynopsis(list plugincommand.List, handlers []plugin.Command
 
 // sharedCommand is a command that several plugins may handle; the --plugin flag picks the handler.
 type sharedCommand struct {
-	getPlugins  func() PluginCommands
-	handlers []plugin.CommandEntry
+	getPlugins func() PluginCommands
+	handlers   []plugin.CommandEntry
 }
 
 func (c sharedCommand) Name() string { return c.handlers[0].Command.ID }

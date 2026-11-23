@@ -22,11 +22,11 @@ var (
 // Registry answers which plugins the host knows and which of them are enabled. In safe mode it
 // knows none.
 type Registry struct {
-	set     *PluginSet
-	mode    safeModeReader
-	sups    *supervision.Supervisors
-	readers *contenttypes.Lookup
-	getTools   func(pluginID string) []plugindomain.ContributionItem
+	set      *PluginSet
+	mode     safeModeReader
+	sups     *supervision.Supervisors
+	readers  *contenttypes.Lookup
+	getTools func(pluginID string) []plugindomain.ContributionItem
 }
 
 // safeModeReader reports whether the host runs in safe mode.
@@ -40,7 +40,7 @@ type RegistryDeps struct {
 	Mode        safeModeReader
 	Supervisors *supervision.Supervisors
 	Readers     *contenttypes.Lookup
-	GetTools       func(pluginID string) []plugindomain.ContributionItem
+	GetTools    func(pluginID string) []plugindomain.ContributionItem
 }
 
 // NewRegistry creates the registry over the set of plugins.
