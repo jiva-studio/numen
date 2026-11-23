@@ -6,7 +6,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { Check, ChevronDown } from '@lucide/vue'
 import { Button, Menu, measureRect, type Position } from '@numen/ui'
-import { getPlanItems } from '../lib/planItems'
+import { getPlanItems } from './planItems'
 import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
 

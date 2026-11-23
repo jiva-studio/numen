@@ -105,7 +105,7 @@ const getPlanItems = () =>
 
 const getPlanName = (item: Element): string => {
   const name = Array.from(item.querySelector('.menu__text')?.childNodes ?? []).find(
-    (node) => node.nodeType !== Node.COMMENT_NODE,
+    (node) => node.textContent?.trim() !== '',
   )
   return name?.textContent?.trim() ?? ''
 }

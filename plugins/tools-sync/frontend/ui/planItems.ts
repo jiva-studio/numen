@@ -1,7 +1,7 @@
 import { defineComponent, h, markRaw } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import { WORDS as words } from '../words'
-import { getOfferDetail, type PlanOffer } from './subscriptionView'
+import { getOfferDetail, type PlanOffer } from '../lib/subscriptionView'
 
 const getCurrentName = (name: string) =>
   markRaw(
