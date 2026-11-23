@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"io"
 	"log/slog"
+	"math"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -33,7 +34,7 @@ func NewInterval(fallback int64) *Interval {
 
 // Set reads seconds from text, and takes the fallback for a text that is not a number of at least one.
 func (i *Interval) Set(text string) {
-	if secs, err := strconv.ParseInt(text, 10, 64); err == nil && secs >= 1 {
+	if secs, err := strconv.ParseInt(text, 10, 64); err == nil && secs >= 1 && secs <= int64(math.MaxInt64/int64(time.Second)) {
 		i.secs.Store(secs)
 		return
 	}
