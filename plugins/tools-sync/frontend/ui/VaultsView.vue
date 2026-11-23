@@ -3,11 +3,13 @@
  * The vaults section of the plugin's settings: every vault of this device, whether it syncs, and the
  * two ways to connect one that does not.
  */
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { Button, getCurrentDate } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
+
+const REFRESH_MS = 15_000
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -24,8 +26,17 @@ const { status, error, warning, rows, openFor, remote } = model.state
 const { load, openRemote, closeRemote, connectNew, connectExisting } = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
+let timer: ReturnType<typeof setInterval> | undefined
+
 onMounted(() => {
   load().catch(report)
+  timer = setInterval(() => {
+    load().catch(report)
+  }, REFRESH_MS)
+})
+
+onUnmounted(() => {
+  clearInterval(timer)
 })
 
 /* -------------------------------- Handlers -------------------------------- */

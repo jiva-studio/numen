@@ -47,6 +47,26 @@ const findButton = (wrapper: VueWrapper, text: string) =>
   wrapper.findAll('button').find((one) => one.text() === text)
 
 describe('VaultsView', () => {
+  it('reads the vaults again while it stays open and stops when it closes', async () => {
+    vi.useFakeTimers()
+    try {
+      const { wrapper, client } = await render({ hasIdentity: false })
+      expect(wrapper.text()).toContain('No identity on this device')
+      client.getStatus.mockResolvedValue({ hasIdentity: true, isReachable: true, items: [] })
+
+      await vi.advanceTimersByTimeAsync(15_000)
+      await flushPromises()
+
+      expect(wrapper.text()).not.toContain('No identity on this device')
+      wrapper.unmount()
+      const calls = client.getStatus.mock.calls.length
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(client.getStatus.mock.calls.length).toBe(calls)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('lists every vault with its path and state', async () => {
     const { wrapper } = await render({
       vaults: [
