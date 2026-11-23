@@ -78,7 +78,10 @@ describe('the fixtures of the vaults service', () => {
   })
 
   it('reads the ResolveDeletions fixture as ResolveDeletionsRequest', () => {
-    expect(read('ResolveDeletions.request')).toStrictEqual({ vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0P', choice: 'keep' })
+    expect(read('ResolveDeletions.request')).toStrictEqual({
+      vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0P',
+      choice: 'keep',
+    })
     expect(read('ResolveDeletions.response')).toStrictEqual({})
   })
 
