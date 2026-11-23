@@ -76,9 +76,12 @@ func ReadSubscriptionError(err error) error {
 	return ReadError(err)
 }
 
-// ReadChangePlanError is ReadError for the call of ChangePlan: it maps FAILED_PRECONDITION to ErrNoActiveSubscription,
+// ReadChangePlanError is ReadError for the call of ChangePlan: a server of another version stays ErrUpdateRequired, and it maps FAILED_PRECONDITION to ErrNoActiveSubscription,
 // ALREADY_EXISTS to ErrSamePlan, INVALID_ARGUMENT to ErrUnknownPlan and a server that sells none to ErrBillingUnavailable.
 func ReadChangePlanError(err error) error {
+	if errors.Is(err, ErrUpdateRequired) {
+		return ErrUpdateRequired
+	}
 	if failure, ok := errors.AsType[*connect.Error](err); ok {
 		switch failure.Code() {
 		case connect.CodeFailedPrecondition:
