@@ -1,22 +1,22 @@
 <script setup lang="ts">
 /**
- * A question over the window that is answered with one of two buttons, with a title and a text. Focus starts on the
- * cancel button; Escape, a press on the backdrop and the cancel button all emit `cancel`, and
- * Tab stays between the two buttons.
+ * A question over the window that is answered with one of two buttons, with a title and a text, or with what the
+ * default slot draws in place of the text. Focus starts on the cancel button; Escape, a press on the backdrop and
+ * the cancel button all emit `cancel`, and Tab stays between the two buttons.
  */
 import { onMounted, useId, useTemplateRef } from 'vue'
-import { Button } from '@numen/ui'
+import { Button } from '../button'
 
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
-    text: string
+    text?: string
     label: string
     confirmText: string
     cancelText: string
     tone?: 'danger' | 'default'
   }>(),
-  { tone: 'default' },
+  { text: '', tone: 'default' },
 )
 
 const emit = defineEmits<{
@@ -71,7 +71,9 @@ function onKeepFocus(event: KeyboardEvent): void {
       class="confirm-dialog"
     >
       <h2 :id="titleId" class="confirm-dialog__title">{{ label }}</h2>
-      <p :id="textId" class="confirm-dialog__text">{{ text }}</p>
+      <div :id="textId" class="confirm-dialog__text">
+        <slot>{{ text }}</slot>
+      </div>
       <div class="confirm-dialog__actions">
         <Button :variant="tone === 'danger' ? 'danger' : 'solid'" @click="emit('confirm')">
           {{ confirmText }}

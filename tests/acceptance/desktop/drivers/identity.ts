@@ -10,6 +10,9 @@ const NO_IDENTITY = 'An identity is a key kept only on your devices.'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const CHOOSE = /^Choose /
 const CHANGE_PLAN = 'Change plan'
+const CURRENT_PLAN = 'Current plan'
+const SWITCH_QUESTION = /^Switch to .+\?$/
+const CANCEL = 'Cancel'
 const RENEWS = 'Renews'
 const PAYMENT_RECEIVED = 'Payment received'
 const PAYMENT_ROUTE = /\/pay\//
@@ -21,6 +24,9 @@ export const getChoosePattern = (name: string, gigabytes?: number): RegExp => ne
 
 /** The plan row of the card: the size in GB and the price, with the name in front once the subscription ended. */
 export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^(${name}, )?${gigabytes} GB(,|$)`)
+
+/** The name of the item of the menu "Change plan" of a plan: the name of the plan, then its size and price or nothing. */
+export const getPlanItemPattern = (name: string): RegExp => new RegExp(`^${name}(?![A-Za-z])`)
 
 /** The day as the card of the subscription writes it, such as "December 7, 2026". */
 export const formatDay = (day: Date): string => day.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -279,26 +285,63 @@ export class IdentityDriver {
     await expect(card.getByRole('button', { name: CHOOSE })).toHaveCount(0)
   }
 
+  /** Opens the menu "Change plan" of the card and gives its item of the plan of a name; the item names the plan, then its size and price. */
   private async openChangeItem(card: Locator, name: string): Promise<Locator> {
-    await card.getByRole('button', { name: CHANGE_PLAN, exact: true }).click()
-    return this.scenario.page.getByRole('menuitem', { name, exact: true })
+    const change = card.getByRole('button', { name: CHANGE_PLAN, exact: true })
+    await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await change.click()
+    return this.scenario.page.getByRole('menuitemradio', { name: getPlanItemPattern(name) })
   }
 
-  /** Expects the menu "Change plan" of the card to offer, or not to offer, the plan of a name. */
+  /** Expects the menu "Change plan" of the card to offer, or not to offer, the plan of a name: the current plan is listed and cannot be chosen. */
   async expectChangeOffer(name: string, isOffered: boolean): Promise<void> {
     const card = this.getCard(await this.showPage())
-    await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-    await expect(card.getByRole('button', { name: CHANGE_PLAN, exact: true })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
     const item = await this.openChangeItem(card, name)
-    await expect(item).toHaveCount(isOffered ? 1 : 0)
+    if (isOffered) await expect(item).toBeEnabled()
+    else await expect(item.and(this.scenario.page.locator(':enabled'))).toHaveCount(0)
     await this.scenario.page.keyboard.press('Escape')
   }
 
-  /** Changes the plan from the menu of the card and waits until the card shows the plan of the name. */
-  async changePlan(name: string): Promise<void> {
+  /** Expects the menu "Change plan" of the card to check the plan of a name as the current plan. */
+  async expectCurrentPlan(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const item = await this.openChangeItem(card, name)
+    await expect(item).toHaveAttribute('aria-checked', 'true')
+    await expect(item).toContainText(CURRENT_PLAN)
+    await this.scenario.page.keyboard.press('Escape')
+  }
+
+  /** Chooses the plan of a name in the menu "Change plan" of the card, which asks to confirm the switch. */
+  async chooseChange(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     await (await this.openChangeItem(card, name)).click()
+    await expect(this.getSwitchQuestion(name)).toBeVisible()
+  }
+
+  private getSwitchQuestion(name: string): Locator {
+    return this.scenario.page.getByRole('alertdialog', { name: `Switch to ${name}?`, exact: true })
+  }
+
+  /** Confirms the switch to the plan of a name and waits until the card shows that plan. */
+  async confirmChange(name: string): Promise<void> {
+    const question = this.getSwitchQuestion(name)
+    await question.getByRole('button', { name: `Switch to ${name}`, exact: true }).click()
+    await expect(question).toHaveCount(0)
+    const card = this.getCard(await this.showPage())
     await expect(this.getBadge(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  /** Cancels the switch the card asks about. */
+  async cancelChange(): Promise<void> {
+    const question = this.scenario.page.getByRole('alertdialog', { name: SWITCH_QUESTION })
+    await question.getByRole('button', { name: CANCEL, exact: true }).click()
+    await expect(question).toHaveCount(0)
+  }
+
+  /** Changes the plan from the menu of the card, confirms the switch and waits until the card shows the plan of the name. */
+  async changePlan(name: string): Promise<void> {
+    await this.chooseChange(name)
+    await this.confirmChange(name)
   }
 
   /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */

@@ -4,11 +4,10 @@
  * after a confirmation, and the list of devices it is linked to.
  */
 import { computed } from 'vue'
-import { Button, IslandCard } from '@numen/ui'
+import { Button, ConfirmDialog, IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { IdentityInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
 import SettingRow from '../setting-row/SettingRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
