@@ -8,9 +8,11 @@ Feature: Read a shared folder
 
   Background:
     Given the empty vault "Test"
-    And a sync server runs
+    And a sync server that sells subscriptions runs
     And the person creates an identity
     And the application "editor" starts
+    And the person opens the page "Identity and licenses"
+    And the person buys the subscription
     And the person connects the vault "Test" as a new synced vault
     And the person writes the note "Home/Food/Shopping list" with the text "milk" in the vault "Test"
     And a reader creates an identity
