@@ -61,19 +61,19 @@ type concern struct {
 	retry     time.Duration
 }
 
-func noIdentity() concern {
+func newNoIdentityConcern() concern {
 	return concern{"no-identity", "No identity on this device", retryWithoutIdentity}
 }
 
-func serverUnreachable() concern {
+func newServerUnreachableConcern() concern {
 	return concern{"server-unreachable", "Could not reach the sync server", retryAfterFailure}
 }
 
-func updateRequired() concern {
+func newUpdateRequiredConcern() concern {
 	return concern{"update-required", "Update Numen", retryAfterFailure}
 }
 
-func signInFailed() concern {
+func newSignInFailedConcern() concern {
 	return concern{"sign-in-failed", "Could not sign in", retryAfterFailure}
 }
 
@@ -127,14 +127,14 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	if ctx.Err() != nil {
 		return 0
 	}
-	what := signInFailed()
+	what := newSignInFailedConcern()
 	switch {
 	case errors.Is(cause, domain.ErrNoIdentity):
-		what = noIdentity()
+		what = newNoIdentityConcern()
 	case errors.Is(cause, domain.ErrUpdateRequired):
-		what = updateRequired()
+		what = newUpdateRequiredConcern()
 	case errors.Is(cause, domain.ErrUnreachable):
-		what = serverUnreachable()
+		what = newServerUnreachableConcern()
 	}
 	if u.raised == what.key {
 		return what.retry

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 
@@ -38,8 +37,9 @@ func (k *keeper) configure(ctx context.Context, values map[string]string) {
 	k.address, k.cancel, k.done = address, cancel, done
 	go func() {
 		defer close(done)
-		// Execute returns only the error of its context, which ends with the keeper.
-		if err := session.NewKeep(deps).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+		// Execute returns only when ctx ends, with its error.
+		err := session.NewKeep(deps).Execute(ctx)
+		if ctx.Err() == nil {
 			slog.Warn("the sign-in keeper ended", "error", err)
 		}
 	}()

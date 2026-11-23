@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"log/slog"
 	"slices"
 	"sync"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
-// persistentHolder returns the holder of the lease the keeper takes on the process of a plugin it keeps.
 func persistentHolder() plugindomain.Holder {
 	return plugindomain.Holder{Who: plugindomain.WhoPersistent, Why: "stay running"}
 }
@@ -123,9 +121,10 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 		return
 	}
 	lease := lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: persistentHolder()}
-	// A start that failed is not repeated until the next exit, use or enabling.
 	if _, err := k.starter.ensureActiveDuringDiscovery(withoutProvisioning(ctx), pluginID, lease); err != nil {
-		slog.Warn("the keeper could not start a plugin", "plugin", pluginID, "error", err)
+		// The activation has recorded the failure in the state of the plugin. The keeper does not repeat the start
+		// until the next exit, use or enabling.
+		return
 	}
 }
 

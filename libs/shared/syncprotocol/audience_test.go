@@ -72,7 +72,7 @@ func challengeExpiringIn(audience string, in time.Duration) *syncv1.GetChallenge
 	return challenge
 }
 
-func TestCheckChallenge_AcceptsTheAddressItDialledAndAnExpiryNearItsClock(t *testing.T) {
+func TestCheckChallenge_AcceptsTheAddressItDialedAndAnExpiryNearItsClock(t *testing.T) {
 	t.Parallel()
 	for _, in := range []time.Duration{60 * time.Second, 0, -120 * time.Second, 120 * time.Second} {
 		if err := syncprotocol.CheckChallenge(challengeExpiringIn("https://sync.numen.md", in), "https://sync.numen.md:443", clockNow()); err != nil {
@@ -81,7 +81,7 @@ func TestCheckChallenge_AcceptsTheAddressItDialledAndAnExpiryNearItsClock(t *tes
 	}
 }
 
-func TestCheckChallenge_RefusesAnAudienceThatIsNotTheAddressItDialled(t *testing.T) {
+func TestCheckChallenge_RefusesAnAudienceThatIsNotTheAddressItDialed(t *testing.T) {
 	t.Parallel()
 	for _, audience := range []string{"https://evil.example", "http://sync.numen.md", "https://sync.numen.md:8443", ""} {
 		err := syncprotocol.CheckChallenge(challengeExpiringIn(audience, 60*time.Second), "https://sync.numen.md", clockNow())
