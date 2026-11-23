@@ -80,7 +80,7 @@ linters:
 
     exhaustruct:
       include:
-        - github\.com/jiva-studio/numen/libs/core/kernel/domain/vector\.Stored$
+        - github\.com/jiva-studio/numen/libs/core/kernel/domain/vector\.StoredVector$
         - github\.com/jiva-studio/numen/libs/shared/note/domain\.Address$
         - github\.com/jiva-studio/numen/plugins/.*
       allow-empty-returns: true
