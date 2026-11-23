@@ -115,8 +115,7 @@ export const WORDS = {
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
   identityRestoreTitle: 'Restore identity',
-  identityRestoreHint:
-    'Type your 12 recovery words in order. You can paste all 12 into the first field.',
+  identityRestoreHint: 'Type the 12 words in order.',
   identityRestoreWord: (position: number) => `Recovery word ${position}`,
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
@@ -137,16 +136,15 @@ export const WORDS = {
     'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
-  kitSaved: 'The recovery kit is saved.',
+  kitSaved: 'Recovery kit saved',
   kitDialogTitle: 'Download recovery kit',
   kitProofHint:
     'A new kit needs your 12 recovery words or two sheets of an earlier kit. An earlier kit keeps working.',
   kitOneMoreSheet: 'One more sheet is needed.',
-  proofChoice: 'Recovery words or kit sheets',
-  proofWords: '12 recovery words',
-  proofSheets: 'Recovery kit sheets',
-  restoreSheetsHint:
-    'Type the words of any two sheets of your recovery kit, one sheet in each field.',
+  proofChoice: 'Recovery words or recovery kit',
+  proofWords: 'Recovery words',
+  proofSheets: 'Recovery kit',
+  restoreSheetsHint: 'Paste the words of any two sheets.',
   kitSheetField: (number: number) => `Sheet ${number}`,
   kitSheetPlaceholder: 'Type the 33 words of the sheet, separated by spaces',
   /** The page of licenses. */

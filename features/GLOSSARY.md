@@ -213,6 +213,12 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: "Vault changes not watched", "Vault unreadable", "Themes unavailable", "Theme unreadable".
 - Not: not a toast, not a banner, not a "notification". The e2e spec says "the window shows no corner notices".
 
+### toast
+
+- Is: A short message at the bottom of the window that says something the person did is done, and goes away by itself after a few seconds (`Toast` of `@numen/ui`, a live status region).
+- Texts: "Recovery kit saved".
+- Not: not a notice and not a task; it shows no error.
+
 ### fatal start report
 
 - Is: The message shown when Numen cannot start.
@@ -558,15 +564,15 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 - Is: The Numen account of a person, kept on their own computers and not on any server: no email and no password. Their devices use it to recognize each other, and their subscription belongs to it. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
 - States: not created (the card explains in two paragraphs what an identity is ("An identity is your Numen account. ...") and what the 12 recovery words are for, and offers "Create identity" and "Restore" in its header); an identity with its account fingerprint and this device.
-- Actions: "Create identity", "Restore", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore" opens the dialog "Restore identity" with a numbered field for each of the 12 words ("Recovery word 1" to "Recovery word 12"); the 12 words pasted into the first field fill the rest. The dialog offers "12 recovery words" or "Recovery kit sheets"; the sheets are typed into two fields, "Sheet 1" and "Sheet 2".
+- Actions: "Create identity", "Restore", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore" opens the dialog "Restore identity". A segmented control chooses "Recovery words" ("Type the 12 words in order.") or "Recovery kit" ("Paste the words of any two sheets."); the dialog keeps its size when the choice changes. The words are typed into the 12 numbered boxes of the setup, three to a row, named "Recovery word 1" to "Recovery word 12"; the 12 words pasted into the first box fill the rest. The sheets are typed into two fields, "Sheet 1" and "Sheet 2".
 - Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "Some words are not valid." (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
 ### recovery kit
 
 - Is: Three sheets that restore an identity: any two of them give back the account, one alone reveals nothing. The core makes them from the 12 words and saves them as one PDF, one A4 sheet to a page; no sheet is shown in the window.
-- Actions: "Download PDF" in the row "Recovery kit" of the Identity card. Right after the identity is created it saves the kit at once; later it asks in the dialog "Download recovery kit" for the 12 words or two sheets of an earlier kit. The file is saved where the person chooses, as "Numen recovery kit.pdf" by default. A new kit does not cancel an earlier one.
-- Texts: "Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places."; "The recovery kit is saved."; each sheet: "Numen recovery kit", "Sheet N of 3", the account fingerprint, the 33 numbered words, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.", the date, "Kept at:" and the way to restore ("Settings › Identity and licenses › Restore", then "Recovery kit sheets").
+- Actions: "Download PDF" in the row "Recovery kit" of the Identity card. Right after the identity is created it saves the kit at once; later it asks in the dialog "Download recovery kit" for the 12 words or two sheets of an earlier kit. The file is saved where the person chooses, as "Numen recovery kit.pdf" by default. A new kit does not cancel an earlier one. A saved kit is announced by the toast "Recovery kit saved"; a cancelled save dialog shows nothing; a refusal shows under the row.
+- Texts: "Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places."; "Recovery kit saved" (toast); each sheet: "Numen recovery kit", "Sheet N of 3", the account fingerprint, the 33 numbered words, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.", the date, "Kept at:" and the way to restore ("Settings › Identity and licenses › Restore", then "Recovery kit").
 - Not: not printed from the window and not checked in the window.
 
 ### subscription
