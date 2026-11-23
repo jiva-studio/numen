@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/keeper"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 )
@@ -29,14 +30,15 @@ func Mount(s *server.Server) error {
 	deps := session.Deps{
 		Identity: accountadapter.New(account.NewClient(endpoint)),
 		Health:   health.NewClient(endpoint),
+		Server:   nil,
 		Clock:    clock.System{},
 	}
 	root, cancelRoot := context.WithCancel(context.Background())
-	keeper := &keeper{deps: deps}
-	s.SetUpdateConfig(func(values map[string]string) { keeper.configure(root, values) })
+	signIn := keeper.New(deps, newServer)
+	s.SetUpdateConfig(func(values map[string]string) { signIn.Configure(root, values[settingServer]) })
 	s.OnClose(func() error {
 		cancelRoot()
-		keeper.stop()
+		signIn.Stop()
 		return nil
 	})
 	return nil

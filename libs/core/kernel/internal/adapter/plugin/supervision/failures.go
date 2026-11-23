@@ -2,7 +2,6 @@ package supervision
 
 import (
 	"context"
-	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -26,10 +25,7 @@ type Failures struct {
 	clock  machineport.Clock
 	errs   *errsink.Sink
 	health HealthItems
-
-	mu              sync.Mutex
-	events          *failureevents.Events
-	reportedTargets map[string]struct{}
+	events *failureevents.Events
 }
 
 // SetOnFailure registers a callback for recorded plugin failures.
@@ -40,7 +36,7 @@ func (f *Failures) SetOnFailure(fn func(plugindomain.Failure)) {
 // NewFailures returns the failures of the plugins the supervisors track, listed in health. Problems the
 // host meets go to errs.
 func NewFailures(sups *Supervisors, clock machineport.Clock, errs *errsink.Sink, health HealthItems) *Failures {
-	return &Failures{sups: sups, clock: clock, errs: errs, health: health, events: &failureevents.Events{}, reportedTargets: make(map[string]struct{})}
+	return &Failures{sups: sups, clock: clock, errs: errs, health: health, events: &failureevents.Events{}}
 }
 
 // SetErrorHandler registers a callback for problems the host meets outside a call, such as a failed shutdown.
@@ -146,20 +142,10 @@ func (f *Failures) Clear(pluginID string, sup *lifecycle.Supervisor) {
 
 // ForgetTargetReport forgets that the failure of a plugin was reported through a listener.
 func (f *Failures) ForgetTargetReport(pluginID string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	delete(f.reportedTargets, pluginID)
+	f.events.ForgetTargetReport(pluginID)
 }
 
 // MarkTargetResult records the result of starting a plugin for a listener and returns whether a failure was reported before.
 func (f *Failures) MarkTargetResult(pluginID string, err error) (wasReported bool) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	_, wasReported = f.reportedTargets[pluginID]
-	if err == nil {
-		delete(f.reportedTargets, pluginID)
-	} else {
-		f.reportedTargets[pluginID] = struct{}{}
-	}
-	return wasReported
+	return f.events.MarkTargetResult(pluginID, err)
 }

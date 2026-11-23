@@ -41,7 +41,7 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup, access windowPluginAccess) (*editor.Installation, error) {
+func connectWindow(ctx context.Context, install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup, access windowPluginAccess) (*editor.Installation, error) {
 	if !startup.isEditor {
 		return opened.Installation, nil
 	}
@@ -54,6 +54,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = access.vaults })
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
+	exec.Watch.KeepAll(ctx)
 	return opened.Installation, nil
 }
 

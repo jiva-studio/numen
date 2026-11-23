@@ -103,9 +103,23 @@ type HealthClear interface {
 
 // HealthCalls is what a plugin says about whether it works. A host without them answers that it keeps
 // no health items.
-type HealthCalls struct {
+type HealthCalls interface {
+	ReportHealth(pluginID string, item plugin.HealthItem) error
+	ClearHealth(pluginID, key string) error
+}
+
+// HealthUseCases serves HealthCalls with the use cases that report and clear a health item.
+type HealthUseCases struct {
 	Report HealthReport
 	Clear  HealthClear
+}
+
+func (h HealthUseCases) ReportHealth(pluginID string, item plugin.HealthItem) error {
+	return h.Report.Execute(pluginID, item)
+}
+
+func (h HealthUseCases) ClearHealth(pluginID, key string) error {
+	return h.Clear.Execute(pluginID, key)
 }
 
 // TextVersions is the text versions of the vaults, as the plugins that call the host work them.

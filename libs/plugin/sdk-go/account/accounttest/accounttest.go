@@ -10,12 +10,12 @@ import (
 	"net/url"
 	"sync"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
@@ -172,7 +172,7 @@ func newRecord(t *testing.T) identity.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := time.Now()
+	now := clock.System{}.Now()
 	chain, err := identity.NewChain(root, keys, now)
 	if err != nil {
 		t.Fatal(err)

@@ -11,14 +11,11 @@ import (
 
 func newClient(t *testing.T, fake *accounttest.Fake) *account.Client {
 	t.Helper()
-	for name, value := range fake.Vars("token") {
-		t.Setenv(name, value)
-	}
-	client, err := account.NewClientFromEnv()
+	endpoint, err := hostcall.FromVars(fake.Vars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return client
+	return account.NewClient(endpoint)
 }
 
 func TestTwoFakesHoldTwoIdentities(t *testing.T) {

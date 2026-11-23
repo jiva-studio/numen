@@ -1,8 +1,6 @@
 package container
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -77,9 +75,9 @@ type pluginConfiguration struct {
 	settingsusecase.PluginSettings
 }
 
-// PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
+// PluginWatch is what ends and keeps the plugins, reports their dependencies and names the content types they give.
 type PluginWatch struct {
-	pluginShutdown
+	pluginLifecycle
 	dependencyReporter
 	contenttypeport.ContentTypeTable
 }
@@ -102,11 +100,7 @@ type PluginExecution struct {
 	Watch     PluginWatch
 	Health    *pluginhealth.Items
 	Processes pluginprocess.Processes
-	Keeper    pluginKeeper
 }
-
-// pluginKeeper starts the plugins that stay running.
-type pluginKeeper interface{ KeepAll(ctx context.Context) }
 
 // PluginPreferences applies settings and storage locations to the installation's plugins.
 type PluginPreferences struct {
@@ -155,13 +149,12 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
-			pluginShutdown:     management.Teardown,
+			pluginLifecycle:    pluginLifecycleParts{Teardown: management.Teardown, Keeper: management.Keeper},
 			dependencyReporter: roles.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
 		Health:    roles.Health,
 		Processes: roles.RunningProcesses,
-		Keeper:    management.Keeper,
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
@@ -216,7 +209,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 		Tools: func() hostendpoint.PluginTools {
 			return tools
 		},
-		Health: hostendpoint.HealthCalls{
+		Health: hostendpoint.HealthUseCases{
 			Report: pluginhealth.NewReport(processes.Health, management.Registry),
 			Clear:  pluginhealth.NewClear(processes.Health),
 		},
