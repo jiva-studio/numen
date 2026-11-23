@@ -99,7 +99,7 @@ func (r *roster) listClaimers() []string {
 	return claimers
 }
 
-func (r *roster) tabIDsOf(windowID string) []string {
+func (r *roster) listTabIDs(windowID string) []string {
 	if entry := r.windows[windowID]; entry != nil {
 		return entry.tabIDs
 	}
@@ -112,11 +112,11 @@ func (r *roster) setTabIDs(windowID string, ids []string) {
 }
 
 func (r *roster) removeFromWindow(windowID, tabID string) {
-	r.setTabIDs(windowID, slices.DeleteFunc(r.tabIDsOf(windowID), func(id string) bool { return id == tabID }))
+	r.setTabIDs(windowID, slices.DeleteFunc(r.listTabIDs(windowID), func(id string) bool { return id == tabID }))
 }
 
 func (r *roster) addToWindow(windowID, tabID string) {
-	r.setTabIDs(windowID, appendMissing(r.tabIDsOf(windowID), tabID))
+	r.setTabIDs(windowID, appendMissing(r.listTabIDs(windowID), tabID))
 }
 
 func appendMissing(to []string, ids ...string) []string {

@@ -107,7 +107,7 @@ func (r *Runner) runIfDue(ctx context.Context, vault domain.VaultID, notePath st
 	}
 	defer unlock()
 	one := r.newInteractiveJob(vault, notePath)
-	check := r.checkDueSearch(ctx, vault, one.vault, search{path: notePath, name: r.findFileName(ctx, one)}, r.settings(), r.now())
+	check := r.checkDueSearch(ctx, vault, one.vault, search{path: notePath, name: r.findFileName(ctx, one)}, r.getSettings(), r.now())
 	if !check.isDue {
 		return nil
 	}
@@ -143,7 +143,7 @@ func (r *Runner) listDueSearches(ctx context.Context, vault domain.VaultID, v Va
 	if err := deleteOtherFiles(ctx, v, searches); err != nil {
 		return nil, err
 	}
-	settings, now := r.settings(), r.now()
+	settings, now := r.getSettings(), r.now()
 	var due, watched []dueSearch
 	var wakeAt time.Time
 	for _, one := range searches {
@@ -222,7 +222,7 @@ func (r *Runner) runBatch(ctx context.Context, vault domain.VaultID, v Vault, du
 	defer func() {
 		for _, one := range due[next:] {
 			if one.isNew {
-				r.watchers.unqueue(watchKey{vault: vault, path: one.path})
+				r.watchers.dequeue(watchKey{vault: vault, path: one.path})
 			}
 		}
 	}()
@@ -252,12 +252,12 @@ func (r *Runner) runQueuedSearch(ctx context.Context, vault domain.VaultID, v Va
 	key := watchKey{vault: vault, path: one.path}
 	runCtx, unlock, err := r.vaults.lockBackground(ctx, vault)
 	if err != nil {
-		r.watchers.unqueue(key)
+		r.watchers.dequeue(key)
 		return false, err
 	}
 	defer unlock()
-	if !r.checkDueSearch(runCtx, vault, v, one.search, r.settings(), r.now()).isDue {
-		r.watchers.unqueue(key)
+	if !r.checkDueSearch(runCtx, vault, v, one.search, r.getSettings(), r.now()).isDue {
+		r.watchers.dequeue(key)
 		return false, nil
 	}
 	batch := job{vaultID: vault, vault: v, path: one.path, priority: host.SearchPriorityBackground, isBackground: true}
@@ -265,7 +265,7 @@ func (r *Runner) runQueuedSearch(ctx context.Context, vault domain.VaultID, v Va
 	if ctx.Err() == nil && errors.Is(context.Cause(runCtx), errYielded) {
 		return true, nil
 	}
-	r.watchers.unqueue(key)
+	r.watchers.dequeue(key)
 	return false, err
 }
 

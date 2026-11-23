@@ -5,12 +5,12 @@ import (
 	"unsafe"
 )
 
-// Bits keeps one bit per dimension: the sign, which is the coarse pass's whole
+// QuantizeBits keeps one bit per dimension: the sign, which is the coarse pass's whole
 // question. Dimension i is bit 7-i%8 of byte i/8, so the first dimension is the
 // most significant bit of the first byte and a bit string reads left to right.
 //
 // A dimension that is exactly zero is stored as a zero bit.
-func Bits(v []float32) []byte {
+func QuantizeBits(v []float32) []byte {
 	out := make([]byte, (len(v)+7)/8)
 	for i, x := range v {
 		if x > 0 {
@@ -20,12 +20,12 @@ func Bits(v []float32) []byte {
 	return out
 }
 
-// Coarse is the one bit per dimension of a vector that has been quantized. It
+// QuantizeCoarse is the one bit per dimension of a vector that has been quantized. It
 // is read out of the bytes that are stored, so a vector bought and a vector
 // reclaimed from the index carry the same bits.
 //
 // A dimension that quantized to zero is stored as a zero bit.
-func Coarse(q []int8) []byte {
+func QuantizeCoarse(q []int8) []byte {
 	out := make([]byte, (len(q)+7)/8)
 	for i, x := range q {
 		if x > 0 {
@@ -35,11 +35,11 @@ func Coarse(q []int8) []byte {
 	return out
 }
 
-// Bytes keeps one byte per dimension, for the rerank, on the grid
+// QuantizeBytes keeps one byte per dimension, for the rerank, on the grid
 // port.Int8Scale sets. Values beyond what that scale covers are clamped, and a
 // clamped dimension is the one loss quantization here can do that rounding
 // cannot undo.
-func Bytes(v []float32) []int8 {
+func QuantizeBytes(v []float32) []int8 {
 	out := make([]int8, len(v))
 	for i, x := range v {
 		q := math.Round(float64(x) / Int8Scale * 127)
@@ -58,9 +58,9 @@ func Bytes(v []float32) []int8 {
 	return out
 }
 
-// Dimensions reads a stored vector back as the dimensions it holds, one per
+// ReadDimensions reads a stored vector back as the dimensions it holds, one per
 // byte. It is what Bytes wrote, arriving from storage as unsigned.
-func Dimensions(stored []byte) []int8 {
+func ReadDimensions(stored []byte) []int8 {
 	if len(stored) == 0 {
 		return nil
 	}
@@ -84,11 +84,11 @@ func Normalize(v []float32) []float32 {
 	return v
 }
 
-// SimilarityBytes is the cosine of the angle between a query vector and a raw
+// ComputeSimilarityBytes is the cosine of the angle between a query vector and a raw
 // byte vector from storage. Each product is converted to float32 before it is
 // added, because the conversion keeps arm64 from fusing the multiply and the add
 // into one rounding, so a ranking is the same on every architecture.
-func SimilarityBytes(query []float32, stored []byte) float64 {
+func ComputeSimilarityBytes(query []float32, stored []byte) float64 {
 	if len(query) != len(stored) || len(query) == 0 {
 		return 0
 	}

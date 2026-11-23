@@ -21,7 +21,7 @@ const isMode = (value: unknown): value is Mode =>
 const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeof TEXT_SCALE =>
   key === INTERFACE_SCALE || key === TEXT_SCALE
 
-function previewAppearance(
+function applyAppearancePreview(
   keyboard: WindowAppearance['preview']['keyboard'],
   key: string | undefined,
   value: JsonValue,
@@ -35,7 +35,7 @@ function createWindowPreview(appearance: WindowAppearance): SettingPreview {
   return {
     apply: (path, value) => {
       if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
-      previewAppearance(appearance.preview.keyboard, path[2], value)
+      applyAppearancePreview(appearance.preview.keyboard, path[2], value)
     },
     restore: () => appearance.preview.restore(),
   }

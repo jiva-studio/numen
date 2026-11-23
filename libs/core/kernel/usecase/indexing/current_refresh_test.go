@@ -25,7 +25,7 @@ func getRefreshedBy(t *testing.T, refresh indexing.Refreshing) string {
 }
 
 func TestCurrentRefreshAnswersWithThePublishedRefreshUntilItIsRetired(t *testing.T) {
-	current := &indexing.CurrentRefresh{Fallback: func() indexing.Refreshing { return namedRefresh("fallback") }}
+	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refreshing { return namedRefresh("fallback") }}
 
 	if got := getRefreshedBy(t, current.Get()); got != "fallback" {
 		t.Fatalf("before a publish the refresh is %q, want the fallback", got)

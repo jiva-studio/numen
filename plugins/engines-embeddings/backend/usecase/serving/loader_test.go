@@ -39,9 +39,9 @@ func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (
 	t.Helper()
 	h := &harness{openModel: openModel}
 	h.loader = newModelLoader(&h.lock, loaderPorts[string]{
-		Open:   func(ctx context.Context, name string) (ports.Embedder, error) { return h.openModel(ctx, name) },
-		Report: func(what string, err error) { h.reports = append(h.reports, what+": "+err.Error()) },
-		Opened: func(emb ports.Embedder) { h.opened = append(h.opened, emb) },
+		Open:         func(ctx context.Context, name string) (ports.Embedder, error) { return h.openModel(ctx, name) },
+		Report:       func(what string, err error) { h.reports = append(h.reports, what+": "+err.Error()) },
+		NotifyOpened: func(emb ports.Embedder) { h.opened = append(h.opened, emb) },
 	})
 	t.Cleanup(func() {
 		if err := h.loader.Close(); err != nil {

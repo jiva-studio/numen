@@ -152,7 +152,7 @@ func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error)
 func embedTitles(ctx context.Context, index host.SearchIndex, recipe string, titles []noteTitle) ([]host.SimilarityQuery, error) {
 	texts := make([]string, len(titles))
 	for i, title := range titles {
-		texts[i] = clipText(title.text, host.MaxEmbeddedBytes)
+		texts[i] = truncateText(title.text, host.MaxEmbeddedBytes)
 	}
 	embedded, err := index.EmbedTexts(ctx, texts)
 	switch {
@@ -172,7 +172,7 @@ func embedTitles(ctx context.Context, index host.SearchIndex, recipe string, tit
 	return queries, nil
 }
 
-func clipText(text string, limit int) string {
+func truncateText(text string, limit int) string {
 	if len(text) <= limit {
 		return text
 	}

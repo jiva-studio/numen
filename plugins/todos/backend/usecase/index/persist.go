@@ -34,8 +34,8 @@ type Persistence struct {
 	Log       ports.Log
 }
 
-// SystemAfter is the After of the plugin.
-func SystemAfter(delay time.Duration, fn func()) func() {
+// StartSystemTimer is the After of the plugin.
+func StartSystemTimer(delay time.Duration, fn func()) func() {
 	timer := time.AfterFunc(delay, fn)
 	return func() { timer.Stop() }
 }
@@ -161,7 +161,7 @@ func (i *Index) restore(snapshot ports.Snapshot) {
 		if isUnder(i.ignored, path) {
 			continue
 		}
-		next := entry{stat: fromSavedStat(saved.Stat), isUnreadable: saved.IsUnreadable, tasks: saved.Tasks, tags: saved.Tags, hash: [sha256.Size]byte{}}
+		next := entry{stat: buildFileStat(saved.Stat), isUnreadable: saved.IsUnreadable, tasks: saved.Tasks, tags: saved.Tags, hash: [sha256.Size]byte{}}
 		copy(next.hash[:], saved.Hash)
 		i.putEntry(path, next)
 	}
@@ -175,7 +175,7 @@ func (i *Index) takeSnapshot() (ports.Snapshot, bool) {
 	}
 	notes := make(map[string]ports.SavedNote, len(i.entries))
 	for path, one := range i.entries {
-		notes[path] = ports.SavedNote{Stat: toSavedStat(one.stat), Hash: slices.Clone(one.hash[:]), Tasks: slices.Clone(one.tasks), Tags: slices.Clone(one.tags), IsUnreadable: one.isUnreadable}
+		notes[path] = ports.SavedNote{Stat: buildSavedStat(one.stat), Hash: slices.Clone(one.hash[:]), Tasks: slices.Clone(one.tasks), Tags: slices.Clone(one.tags), IsUnreadable: one.isUnreadable}
 	}
 	i.saver.mu.Lock()
 	defer i.saver.mu.Unlock()
@@ -241,14 +241,14 @@ func (s *saver) setCursor(cursor host.FileChangeCursor) {
 	s.cursor = cursor
 }
 
-func toSavedStat(stat domain.FileStat) ports.SavedStat {
+func buildSavedStat(stat domain.FileStat) ports.SavedStat {
 	return ports.SavedStat{
 		Path: stat.Path, Kind: string(stat.Kind), Size: stat.Size, ModTime: stat.ModTime,
 		FileID: uint64(stat.FileID), Hash: stat.Hash, Version: stat.Version,
 	}
 }
 
-func fromSavedStat(stat ports.SavedStat) domain.FileStat {
+func buildFileStat(stat ports.SavedStat) domain.FileStat {
 	return domain.FileStat{
 		Path: stat.Path, Kind: domain.SourceKind(stat.Kind), Size: stat.Size, ModTime: stat.ModTime,
 		FileID: domain.FileID(stat.FileID), Hash: stat.Hash, Version: stat.Version,

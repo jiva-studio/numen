@@ -22,7 +22,7 @@ func setupTestVault() (*hosttest.Vault, *service.Tools) {
 func TestNoteRead(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestNoteRead(t *testing.T) {
 func TestNoteWrite(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestNoteWrite(t *testing.T) {
 func TestNoteHeadingListReturnsHeadings(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -223,7 +223,7 @@ func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 
 func TestNoteSearch(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -261,7 +261,7 @@ func testNeighborhoodQuery(t *testing.T, registry *tools.Registry, toolName stri
 
 func TestNoteGraph(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -299,7 +299,7 @@ func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string)
 
 func TestVaultInfo(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -310,7 +310,7 @@ func TestVaultInfo(t *testing.T) {
 func TestFileReadAndCreate(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -366,7 +366,7 @@ func TestFileReadAndCreate(t *testing.T) {
 func TestListTools(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -410,7 +410,7 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 	garden := hosttest.New("garden-vault")
 	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
 	shown.Beside(garden)
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

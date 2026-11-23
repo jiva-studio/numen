@@ -160,7 +160,7 @@ func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
 // forwarding is plugins serving the services it names.
 type forwarding struct{ serves map[string]bool }
 
-func (f *forwarding) Serves(path string) bool { return f.serves[path] }
+func (f *forwarding) CanServe(path string) bool { return f.serves[path] }
 
 func (f *forwarding) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	if _, err := w.Write([]byte("a plugin")); err != nil {

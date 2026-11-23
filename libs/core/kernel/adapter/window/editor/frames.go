@@ -31,10 +31,10 @@ const pluginPageReferrer = "strict-origin-when-cross-origin"
 // vault.
 const pluginFileSegment = "plugin"
 
-// PluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
+// BuildPluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
 // socket, and nowhere where the socket is not answering. The address names the size of the file, so a
 // file written again with another size is a different address.
-func (l *Loopback) PluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
+func (l *Loopback) BuildPluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}

@@ -133,7 +133,7 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"
-      :called="getTitle"
+      :get-note-title="getTitle"
       :words="unsaved"
     />
 

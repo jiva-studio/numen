@@ -121,7 +121,7 @@ func TestARestartReadsOnlyTheChangesSinceTheCursor(t *testing.T) {
 	}
 	w.addLinkNote(t, "links/video.md", "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 
-	restarted := link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(w.vault), Store: foldersOf(w.vault), Texts: textsOf(w.texts), Queue: w.queue,
+	restarted := link.New(link.Host{PluginID: pluginID, GetVault: vaultsOf(w.vault), Store: foldersOf(w.vault), GetTexts: textsOf(w.texts), Queue: w.queue,
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
 		func() ports.Fetcher { return w.sites },
 		func() fetch.Settings { return fetch.Settings{IsTextDownloadAutomatic: true} })

@@ -32,7 +32,7 @@ describe('the open files a command can access', () => {
         openFile,
         getTabAt: (p: string) => (p === 'Reached.md' ? 'reached:1' : null),
         getPath: (id: string) => (id === 'reached:1' ? 'Reached.md' : id),
-        asking: (id: string) => id === 'asking:1',
+        isAsking: (id: string) => id === 'asking:1',
         flushPending: vi.fn(() => Promise.resolve()),
         close: onCloseCalled,
       } as never,
@@ -63,11 +63,11 @@ describe('the open files a command can access', () => {
     expect(notes.getPath('tab:missing')).toBe('tab:missing')
     expect(notes.getPath('tab:bare')).toBe('tab:bare')
     expect(notes.getPath('tab:target')).toBe('tab:target')
-    expect(notes.asking('asking:1')).toBe(true)
-    expect(notes.asking('tab:1')).toBe(true)
-    expect(notes.asking('tab:missing')).toBe(false)
-    expect(notes.asking('tab:bare')).toBe(false)
-    expect(notes.asking('tab:target')).toBe(false)
+    expect(notes.isAsking('asking:1')).toBe(true)
+    expect(notes.isAsking('tab:1')).toBe(true)
+    expect(notes.isAsking('tab:missing')).toBe(false)
+    expect(notes.isAsking('tab:bare')).toBe(false)
+    expect(notes.isAsking('tab:target')).toBe(false)
     await notes.flushPending('tab:missing')
     await notes.flushPending('tab:bare')
     await notes.flushPending('tab:target')
@@ -103,7 +103,7 @@ describe('the tab to close when a file is removed', () => {
   const reached = {
     getTabAt: () => null,
     getPath: (id: string) => id,
-    asking: () => false,
+    isAsking: () => false,
     flushPending: () => Promise.resolve(),
     close: () => undefined,
     openFile: () => undefined,

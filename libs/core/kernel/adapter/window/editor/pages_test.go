@@ -34,7 +34,7 @@ const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 func newPageHandler(t *testing.T, cfg themeConfig) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
-	files, err := Pages()
+	files, err := CreatePagesHandler()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 // A build that cannot report its theme serves the page as built, and the
 // build's tokens apply.
 func TestPages_ServesUnthemedPageUnchanged(t *testing.T) {
-	files, err := Pages()
+	files, err := CreatePagesHandler()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}

@@ -169,7 +169,7 @@ interface ComposeOptions {
   }
   readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
   readonly itemLists: {
-    fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+    readFileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   }
   readonly emitEvent?: ((event: string) => void) | undefined
 }
@@ -190,7 +190,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
-    declaredCommands,
+    commandDeclarations: declaredCommands,
     itemLists: options.itemLists,
     commandDeps,
     registry,
@@ -213,7 +213,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   })
   watchCommandLists(
     {
-      declaredCommands,
+      commandDeclarations: declaredCommands,
       writeMessage,
       plugins: settings.state.plugins,
       getCommittedSetting: settings.read.getCommittedSetting,
@@ -271,13 +271,13 @@ export function createRealWindow(parts: RealWindowParts) {
     },
     getTarget: () => NOTE,
     knows: { getTitle: () => '', getTabAt: () => null },
-    paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
+    paletteLists: { getStepGroups: () => [], applyItemPreview: () => undefined },
     runs: runSupport(),
     registry,
     reached: {
       getTabAt: () => null,
       getPath: (id: string) => id,
-      asking: () => false,
+      isAsking: () => false,
       flushPending: () => Promise.resolve(),
       close: () => undefined,
       openFile: () => undefined,
@@ -287,7 +287,7 @@ export function createRealWindow(parts: RealWindowParts) {
     pluginHost,
     settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
     declaredCommands,
-    itemLists: { fileKinds: () => Promise.resolve(new Map()) },
+    itemLists: { readFileKinds: () => Promise.resolve(new Map()) },
   }
   const noLinks = {
     tabs: [],
@@ -317,7 +317,7 @@ export function createRealWindow(parts: RealWindowParts) {
       files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
       vaults: {
         vaults: api.vault.vaults,
-        emptyTrash: api.vault.file.emptyTrash,
+        clearTrash: api.vault.file.emptyTrash,
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,

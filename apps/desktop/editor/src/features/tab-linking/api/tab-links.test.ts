@@ -106,7 +106,7 @@ describe('watchTabLinks', () => {
         },
       },
       { sync: { groupId: 'group-1', sourceTabId: 'plex:1', path: 'Orbits.md', title: 'Orbits' } },
-      { movedTab: { tab: ORBITS, moveId: 'move-1' } },
+      { tabMove: { tab: ORBITS, moveId: 'move-1' } },
       { isHighlighted: true },
       {},
     ])

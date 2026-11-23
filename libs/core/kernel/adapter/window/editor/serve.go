@@ -76,7 +76,7 @@ func WithThemes(themes numenv1connect.ThemeServiceHandler) Option {
 // WithPlugins sets where the calls for the services plugins serve are forwarded, and where the files
 // of a plugin are read from.
 func WithPlugins(services PluginServices, dir func(id string) (string, bool)) Option {
-	return func(o *Installation) { o.pages.plugins, o.pages.pluginDir = services, dir }
+	return func(o *Installation) { o.pages.plugins, o.pages.getPluginDir = services, dir }
 }
 
 // NewInstallation makes the installation of a window over its state, the lifecycle of what it shows,
@@ -163,12 +163,12 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// Imports copies files dropped onto the window into a folder of the vault; the
+// ImportFiles copies files dropped onto the window into a folder of the vault; the
 // root is the empty path.
 // It runs where the drop reached the application, off the page's thread, and
 // returns no value: results go to all listeners.
-// The watcher does not report images or archives, so Imports names what arrived itself.
-func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
+// The watcher does not report images or archives, so ImportFiles names what arrived itself.
+func (o *Installation) ImportFiles(ctx context.Context, into string, paths []string) {
 	o.imports.Execute(ctx, o.GetCurrentVault(), into, paths)
 }
 

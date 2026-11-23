@@ -83,7 +83,7 @@ func TestNoteEditPreviewInARunOnAnotherVaultDiffsAgainstTheNoteOfThatVault(t *te
 	shown.Beside(other)
 	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
 	other.File("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
+	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: string(other.Vault().ID), Name: "note_edit_preview",
@@ -110,7 +110,7 @@ func TestNoteEditPreviewWithNoVaultOnTheCallDiffsAgainstTheNoteOfTheShownVault(t
 	shown.Beside(other)
 	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
 	other.File("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
+	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
@@ -131,7 +131,7 @@ func TestNoteEditPreviewWithNoVaultOnTheCallDiffsAgainstTheNoteOfTheShownVault(t
 
 func TestNoteEditPreviewOfANoteThatDoesNotExistYetShowsItAllAdded(t *testing.T) {
 	shown := hosttest.New("marsh")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
+	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: "marsh", Name: "note_edit_preview",
@@ -153,7 +153,7 @@ func TestNoteEditPreviewOfANoteThatDoesNotExistYetShowsItAllAdded(t *testing.T) 
 func TestNoteEditPreviewInAnUnknownVaultIsRefused(t *testing.T) {
 	shown := hosttest.New("marsh")
 	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
+	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: "removed", Name: "note_edit_preview",

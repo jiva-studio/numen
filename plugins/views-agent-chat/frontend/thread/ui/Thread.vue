@@ -8,7 +8,7 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { ThreadTurn } from './thread-turn'
-import { atFoot, getFoot } from '../lib/foot'
+import { isAtFoot, getFoot } from '../lib/foot'
 import { placeTurns, type PlacedTurn } from '../lib/turn'
 import type { Turn } from '../../types'
 
@@ -58,7 +58,7 @@ onMounted(() => toFoot())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onScroll() {
-  if (area.value) follows.value = atFoot(area.value)
+  if (area.value) follows.value = isAtFoot(area.value)
 }
 
 /* -------------------------------- Helpers --------------------------------- */

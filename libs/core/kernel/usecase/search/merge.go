@@ -102,7 +102,7 @@ type placeScores struct {
 	wordScore  *float64
 }
 
-func foldScores(kept []domain.SearchResult, rankings []Ranking) []domain.SearchResult {
+func mergeScores(kept []domain.SearchResult, rankings []Ranking) []domain.SearchResult {
 	best := map[resultPlace]placeScores{}
 	for _, ranking := range rankings {
 		for _, p := range ranking.Results {

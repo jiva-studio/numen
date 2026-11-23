@@ -20,7 +20,7 @@ export interface PlacedNode extends PlexNode {
  * gesture would place it. It is a box like any other, except that it has no
  * title of its own and shows the relation it would take.
  */
-export const ghostNode = (node: PlexNode, point: Position, size: Size): PlacedNode => ({
+export const createGhostNode = (node: PlexNode, point: Position, size: Size): PlacedNode => ({
   id: node.id,
   title: node.title,
   relation: node.relation,

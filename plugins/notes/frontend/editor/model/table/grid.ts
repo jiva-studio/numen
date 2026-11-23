@@ -53,7 +53,7 @@ class Grid extends WidgetType {
       return true
     }
 
-    span(frame, this.table)
+    measureSpan(frame, this.table)
 
     viewElement.forEach((element, index) => {
       const cell = cells[index]
@@ -95,11 +95,11 @@ class Grid extends WidgetType {
       ? [createAddButton('cm-add-column'), createAddButton('cm-add-row')]
       : []
     frame.replaceChildren(table, ...expanded)
-    span(frame, this.table)
+    measureSpan(frame, this.table)
   }
 }
 
-const span = (frame: HTMLElement, table: Table) => {
+const measureSpan = (frame: HTMLElement, table: Table) => {
   frame.dataset['from'] = String(table.from)
   frame.dataset['to'] = String(table.to)
 }

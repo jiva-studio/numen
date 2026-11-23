@@ -1,3 +1,78 @@
+function createFocusRequests() {
+  const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield queue.shift()!
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    ask: (target: { path: string; start: number; length: number }) => {
+      queue.push({
+        path: target.path,
+        ranges: [{ start: target.start, end: target.start + target.length }],
+        tabId: '',
+      })
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+}
+
+function createVaultChanges() {
+  interface Change {
+    paths: string[]
+    moves: { from: string; to: string }[]
+  }
+  const queue: Change[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield { isReloadRequired: false, versionPaths: [], ...queue.shift()! }
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    report: (change: Change) => {
+      queue.push(change)
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+}
+
+function createPluginNoteMaker() {
+  const filed = new Set<string>()
+  /** Whether the vault is reachable. */
+  let reached = true
+  return {
+    forget: () => {
+      filed.clear()
+      reached = true
+    },
+    /** Makes the vault unreachable, so file creation fails. */
+    fail: () => {
+      reached = false
+    },
+    createFile: (title: string, folder: string) => {
+      if (!reached) throw new Error('the vault could not be reached')
+      const path = `${folder ? `${folder}/` : ''}${title}.note`
+      if (filed.has(path)) return { ok: false as const, error: 'alreadyExists' as const }
+      filed.add(path)
+      return { ok: true as const, value: { path } }
+    },
+  }
+}
+
 /**
  * What the mocked application answers, and what a test sets before the window
  * draws.
@@ -14,8 +89,8 @@ interface MockVaultState {
   error: string
   detachError: string
   opening: string | null
-  names: ReturnType<typeof nameAnswer>[]
-  searchResults: (ReturnType<typeof searchResultAnswer> | ReturnType<typeof sourceAnswer>)[]
+  names: ReturnType<typeof createNameAnswer>[]
+  searchResults: (ReturnType<typeof searchResultAnswer> | ReturnType<typeof createSourceAnswer>)[]
   savedTabs: { readonly tabs: readonly Tab[]; readonly activeId: string }
   detachedTab: Tab | null
   types: Record<string, string>
@@ -96,7 +171,7 @@ export const getFileKind = (path: string) => {
 }
 
 /** A stream that stays open, so nothing the window follows ever ends. */
-export async function* pendingStream(): AsyncGenerator<never> {
+export async function* createPendingStream(): AsyncGenerator<never> {
   yield await new Promise<never>(() => undefined)
 }
 
@@ -104,89 +179,20 @@ export async function* pendingStream(): AsyncGenerator<never> {
  * Place focus requests that originate outside the window, and the stream the
  * window receives them on.
  */
-export const outside = (() => {
-  const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
-  let wake: (() => void) | null = null
-  async function* stream() {
-    for (;;) {
-      while (queue.length > 0) yield queue.shift()!
-      await new Promise<void>((woken) => {
-        wake = woken
-      })
-    }
-  }
-  return {
-    ask: (target: { path: string; start: number; length: number }) => {
-      queue.push({
-        path: target.path,
-        ranges: [{ start: target.start, end: target.start + target.length }],
-        tabId: '',
-      })
-      wake?.()
-      wake = null
-    },
-    forget: () => queue.splice(0),
-    stream,
-  }
-})()
+export const focusRequests = createFocusRequests()
 
 /** The changes to the files of the vault that the core reports, and the stream the window receives them on. */
-export const changed = (() => {
-  interface Change {
-    paths: string[]
-    moves: { from: string; to: string }[]
-  }
-  const queue: Change[] = []
-  let wake: (() => void) | null = null
-  async function* stream() {
-    for (;;) {
-      while (queue.length > 0) yield { isReloadRequired: false, versionPaths: [], ...queue.shift()! }
-      await new Promise<void>((woken) => {
-        wake = woken
-      })
-    }
-  }
-  return {
-    report: (change: Change) => {
-      queue.push(change)
-      wake?.()
-      wake = null
-    },
-    forget: () => queue.splice(0),
-    stream,
-  }
-})()
+export const vaultChanges = createVaultChanges()
 
 /**
  * The vault's creation of a note of a plugin type: the file is named after the
  * title, and the vault chooses the extension, not the caller. The extension is
  * not markdown, so a window that builds the path itself does not match it.
  */
-const maker = (() => {
-  const filed = new Set<string>()
-  /** Whether the vault is reachable. */
-  let reached = true
-  return {
-    forget: () => {
-      filed.clear()
-      reached = true
-    },
-    /** Makes the vault unreachable, so file creation fails. */
-    fail: () => {
-      reached = false
-    },
-    createFile: (title: string, folder: string) => {
-      if (!reached) throw new Error('the vault could not be reached')
-      const path = `${folder ? `${folder}/` : ''}${title}.note`
-      if (filed.has(path)) return { ok: false as const, error: 'alreadyExists' as const }
-      filed.add(path)
-      return { ok: true as const, value: { path } }
-    },
-  }
-})()
+const pluginNoteMaker = createPluginNoteMaker()
 
 /** One name the vault answers a search with, of a note of some kind, as the core sends it. */
-export const nameAnswer = (path: string, title: string, type: string = 'note') => ({
+export const createNameAnswer = (path: string, title: string, type: string = 'note') => ({
   note: { path, title },
   ranges: [] as [],
   type,
@@ -207,7 +213,7 @@ export const searchResultAnswer = (path: string, title: string, type: string = '
 })
 
 /** One passage read out of a file that is no note, at a place its selector names. */
-export const sourceAnswer = (path: string, selector: JsonObject) => ({
+export const createSourceAnswer = (path: string, selector: JsonObject) => ({
   path,
   text: 'what it says',
   byteRange: { start: 0, end: 4 },
@@ -235,9 +241,9 @@ export const forgetAnswers = () => {
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
-  maker.forget()
-  outside.forget()
-  changed.forget()
+  pluginNoteMaker.forget()
+  focusRequests.forget()
+  vaultChanges.forget()
   mockVaultList.vaults = [
     { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
   ]

@@ -164,7 +164,7 @@ func (q *Search) findNearestWithPrefix(ctx context.Context, vault int64, query [
 		return nil, err
 	}
 	composed, decomposed := norm.NFC.String(pathPrefix), norm.NFD.String(pathPrefix)
-	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, composed, k, getUpperBound(composed),
+	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.QuantizeBits(query), vault, composed, k, getUpperBound(composed),
 		decomposed, getUpperBound(decomposed))
 	if err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ func (q *Search) findNearestByBits(ctx context.Context, vault int64, query []flo
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, coarseSQL, vector.Bits(query), vault, k)
+	rows, err := q.db.QueryContext(ctx, coarseSQL, vector.QuantizeBits(query), vault, k)
 	if err != nil {
 		return nil, err
 	}

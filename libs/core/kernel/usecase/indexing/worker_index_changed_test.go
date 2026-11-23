@@ -169,9 +169,9 @@ func newSession(withSource bool) *session {
 			defer s.mu.Unlock()
 			s.heard = append(s.heard, at)
 		},
-		Events: s.events,
-		Quiet:  QuietPeriod,
-		After:  s.steps.startTimer,
+		Events:      s.events,
+		Quiet:       QuietPeriod,
+		CreateTimer: s.steps.startTimer,
 	})
 	s.run = s.worker.NewSession(s.v)
 	return s

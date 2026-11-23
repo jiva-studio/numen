@@ -139,7 +139,7 @@ func newLibrary(t *testing.T) library {
 	})
 
 	svc := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{})
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,7 +325,7 @@ func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	search := hosttest.NewSearch(testVault, "garden-vault")
 	search.SetIndexedResults([]host.SearchResult{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
 	search.With("garden-vault").SetIndexedResults([]host.SearchResult{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
-	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	putText(t, cyrillic, readerID, "ru.pdf", "page-text", []byte(pdfBytes), []domain.TextSegment{{Text: "Ачарьи говорят", Selector: `{"page":1}`}})
 	l.vault.File("ru.pdf", pdfBytes)
 	svc := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(cyrillic, l.search), host.SearchFunctions{})
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

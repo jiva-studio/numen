@@ -187,7 +187,7 @@ func (u producer) read(
 			isFirst = false
 			track.publishNext(p.Path)
 		}
-		prose, ok, err := source.textOf(ctx, p.Path, p.VersionID)
+		prose, ok, err := source.readText(ctx, p.Path, p.VersionID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -265,7 +265,7 @@ func (u producer) prepareBatch(
 			Recipe:  recipe,
 			Kind:    vector.QuantizedInt8,
 			Value:   value,
-			Coarse:  vector.Coarse(vector.Dimensions(value)),
+			Coarse:  vector.QuantizeCoarse(vector.ReadDimensions(value)),
 		}
 		prep.reusedCount++
 	}

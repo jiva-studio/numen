@@ -58,9 +58,9 @@ func (e *Embedding) CountProgress(ctx context.Context, vaultID domain.VaultID, r
 // HasProgress reports whether the indexed chunks can be counted.
 func (e *Embedding) HasProgress() bool { return e != nil && e.progress != nil }
 
-// OnModelChange calls fn each time the description of the source changes, with whether the change moved
+// SubscribeModelChange calls fn each time the description of the source changes, with whether the change moved
 // the size of a chunk. A source whose description never changes calls nothing.
-func (e *Embedding) OnModelChange(fn func(isChunkSizeChanged bool)) {
+func (e *Embedding) SubscribeModelChange(fn func(isChunkSizeChanged bool)) {
 	if e == nil || e.source == nil || e.watcher == nil {
 		return
 	}

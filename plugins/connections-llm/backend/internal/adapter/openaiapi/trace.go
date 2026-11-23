@@ -30,13 +30,13 @@ type traceCall struct {
 	limit   time.Duration
 }
 
-func (c traceCall) elapsedAndLimit(properties map[string]any, now time.Time) map[string]any {
+func (c traceCall) addElapsedAndLimit(properties map[string]any, now time.Time) map[string]any {
 	properties["elapsed_ms"] = now.Sub(c.started).Milliseconds()
 	properties["limit_ms"] = c.limit.Milliseconds()
 	return properties
 }
 
-func keptHeaders() []string {
+func listLoggedHeaders() []string {
 	return []string{"Content-Type", "X-Request-Id", "Cf-Ray", "Retry-After", "X-Ratelimit-Limit-Requests",
 		"X-Ratelimit-Remaining-Requests", "X-Ratelimit-Reset-Requests", "X-Ratelimit-Limit-Tokens",
 		"X-Ratelimit-Remaining-Tokens", "X-Ratelimit-Reset-Tokens"}
@@ -63,27 +63,27 @@ func (g *Gateway) traceRequest(ctx context.Context, call traceCall, method, mode
 		"method": method, fieldPath: call.path, "model": model, "request_bytes": len(body),
 	})
 	if len(body) > 0 {
-		g.trace(ctx, logs.Debug, "Connection request body", map[string]any{fieldPath: call.path, "body": loggedBody(body, call.key)})
+		g.trace(ctx, logs.Debug, "Connection request body", map[string]any{fieldPath: call.path, "body": truncateBody(body, call.key)})
 	}
 }
 
 func (g *Gateway) traceResponse(ctx context.Context, call traceCall, response *http.Response, body []byte) {
-	properties := call.elapsedAndLimit(map[string]any{
+	properties := call.addElapsedAndLimit(map[string]any{
 		fieldPath: call.path, "status": response.StatusCode, "response_bytes": len(body),
 	}, g.clock.Now())
-	for _, name := range keptHeaders() {
+	for _, name := range listLoggedHeaders() {
 		if value := response.Header.Get(name); value != "" {
 			properties[strings.ToLower(name)] = redact(value, call.key)
 		}
 	}
 	g.trace(ctx, logs.Info, "Connection response received", properties)
 	if len(body) > 0 {
-		g.trace(ctx, logs.Debug, "Connection response body", map[string]any{fieldPath: call.path, "body": loggedBody(body, call.key)})
+		g.trace(ctx, logs.Debug, "Connection response body", map[string]any{fieldPath: call.path, "body": truncateBody(body, call.key)})
 	}
 }
 
 func (g *Gateway) traceFailure(ctx context.Context, call traceCall, stage string, err error, status int) {
-	g.trace(ctx, logs.Warning, "Connection request failed to complete", call.elapsedAndLimit(map[string]any{
+	g.trace(ctx, logs.Warning, "Connection request failed to complete", call.addElapsedAndLimit(map[string]any{
 		fieldPath: call.path, "stage": stage, "failure": classifyFailure(err), "status": status,
 	}, g.clock.Now()))
 }
@@ -105,7 +105,7 @@ func classifyFailure(err error) string {
 	return "other"
 }
 
-func loggedBody(body []byte, key string) string {
+func truncateBody(body []byte, key string) string {
 	truncated := len(body) > maxLoggedBodyBytes
 	if truncated {
 		body = body[:maxLoggedBodyBytes]
@@ -124,7 +124,7 @@ func redact(text, key string) string {
 	return bearerPattern.ReplaceAllString(text, "${1}"+redacted)
 }
 
-func sentBody(request *http.Request) []byte {
+func readRequestBody(request *http.Request) []byte {
 	if request.GetBody == nil {
 		return nil
 	}

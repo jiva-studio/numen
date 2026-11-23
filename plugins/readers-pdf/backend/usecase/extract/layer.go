@@ -19,6 +19,6 @@ func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 
 func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	return textlayer.GetSegments(l.book, func(pages []int) ([]pdf.HighlightBox, error) {
-		return l.book.Highlights(workers, l.raw, pages)
+		return l.book.FindHighlights(workers, l.raw, pages)
 	})
 }

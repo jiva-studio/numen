@@ -16,8 +16,8 @@ export interface DebouncedSearchOptions {
 }
 
 interface DebouncedSearchSteps {
-  blank(): void
-  pending?(): void
+  showBlank(): void
+  showPending?(): void
   run(query: string, mine: InFlightRequest): Promise<void>
 }
 
@@ -30,8 +30,8 @@ function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const search = async (text: string, steps: DebouncedSearchSteps): Promise<void> => {
     const mine = guard.acquireRequest()
     const query = text.trim()
-    if (!query) return steps.blank()
-    steps.pending?.()
+    if (!query) return steps.showBlank()
+    steps.showPending?.()
     await wait(SEARCH_DEBOUNCE_MS)
     if (!mine.isCurrent) return
     await steps.run(query, mine)
@@ -50,11 +50,11 @@ export function useSearchResults<T>(
 
   const setQuery = (text: string): Promise<void> =>
     debounced.search(text, {
-      blank: () => {
+      showBlank: () => {
         results.value = []
         isLoading.value = false
       },
-      pending: () => {
+      showPending: () => {
         isLoading.value = true
       },
       run: async (query, mine) => {

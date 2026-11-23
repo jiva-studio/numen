@@ -87,20 +87,20 @@ func describeSources(r vaultreading.IndexResult) string {
 
 func getProgressReporting(r *reporter) indexing.Reporting {
 	return indexing.Reporting{
-		OnVaultFound: func(v domain.Vault, unembedded error) {
+		NotifyVaultFound: func(v domain.Vault, unembedded error) {
 			if unembedded != nil {
 				r.Printf("not embedding %s: %v\n", v.Name, unembedded)
 			}
 		},
-		OnNotesProgress: func(res vaultreading.ScanResult) {
+		NotifyNotesProgress: func(res vaultreading.ScanResult) {
 			r.Printf("  %d indexed\r", res.Indexed)
 		},
-		OnTextsProgress: func(res vaultreading.IndexResult) {
+		NotifyTextsProgress: func(res vaultreading.IndexResult) {
 			if res.CurrentSource != "" {
 				r.Printf("  cutting %s\r", res.CurrentSource)
 			}
 		},
-		OnVectorsProgress: func(res vaultreading.EmbedResult) {
+		NotifyVectorsProgress: func(res vaultreading.EmbedResult) {
 			r.Printf("  %d embedded\r", res.Embedded)
 		},
 	}

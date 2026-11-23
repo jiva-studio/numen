@@ -50,7 +50,7 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
   }
 
   return {
-    names: async (query, limit, signal) => {
+    searchNames: async (query, limit, signal) => {
       const answer = await askCancellable(signal, (searchId, options) =>
         search.searchNames({ query, limit, searchId }, options),
       )

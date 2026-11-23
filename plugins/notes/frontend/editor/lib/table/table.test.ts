@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
-import { emptyRow, readCell, readTable, getRows, withColumn, writeCell } from './table'
+import { createEmptyRow, readCell, readTable, getRows, withColumn, writeCell } from './table'
 import { getWidth } from './width'
 import { createState } from '../../fixtures/state'
 
@@ -125,11 +125,11 @@ describe('a column made at the right', () => {
 
 describe('a row made at the end', () => {
   it('has a cell for every column', () => {
-    expect(emptyRow(3)).toBe('\n| | | |')
+    expect(createEmptyRow(3)).toBe('\n| | | |')
   })
 
   it('parses as a row of that table', () => {
-    const table = readItem(`${TABLE.trimEnd()}${emptyRow(2)}\n`)
+    const table = readItem(`${TABLE.trimEnd()}${createEmptyRow(2)}\n`)
     expect(table.body).toHaveLength(3)
   })
 })

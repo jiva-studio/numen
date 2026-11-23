@@ -29,7 +29,7 @@ type Rename struct {
 	index     edit.IndexUpdater
 	now       machineport.Clock
 	sync      naming.SyncSetting
-	moving    func(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error)
+	moveNote  func(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error)
 	admission vaultport.WriteAdmission
 }
 
@@ -37,7 +37,7 @@ type Rename struct {
 // renamed and one that traveled because it was filed elsewhere settle the same way, so both go through
 // the one Move.
 func NewRename(d MoveDeps, moving Move, admission vaultport.WriteAdmission) Rename {
-	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving.Execute, admission: admission}
+	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moveNote: moving.Execute, admission: admission}
 }
 
 // RenameResult reports the note's current name and what happened to the file.
@@ -92,7 +92,7 @@ func (u Rename) rename(ctx context.Context, v domain.Vault, path, title string) 
 	if moves, _ := u.sync.GetSetting().GetRenameEffects(source); !moves {
 		return res, nil
 	}
-	moved, err := u.moving(ctx, v, path, to)
+	moved, err := u.moveNote(ctx, v, path, to)
 	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}

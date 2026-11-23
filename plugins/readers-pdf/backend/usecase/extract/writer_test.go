@@ -96,7 +96,7 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 			texts.File(name, raw)
 			texts.SetStore(pluginID, files.Store())
 			queue := hosttest.NewQueue()
-			writer := testsupport.NewWriter(t, testsupport.FilesOf(files), files, texts, queue)
+			writer := testsupport.NewWriter(t, testsupport.NewFiles(files), files, texts, queue)
 
 			testsupport.CreateText(t, writer, extract.Request{Path: name})
 
@@ -124,7 +124,7 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	other := texts.With("Chemistry")
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	writer := testsupport.NewWriter(t, testsupport.FilesOf(physics), physics, texts, hosttest.NewQueue())
+	writer := testsupport.NewWriter(t, testsupport.NewFiles(physics), physics, texts, hosttest.NewQueue())
 
 	testsupport.CreateText(t, writer, extract.Request{Vault: "Chemistry", Path: "tiny.pdf"})
 
@@ -151,7 +151,7 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	writer := testsupport.NewWriter(t, testsupport.FilesOf(files), files, texts, queue)
+	writer := testsupport.NewWriter(t, testsupport.NewFiles(files), files, texts, queue)
 
 	if err := writer.CreateText(t.Context(), extract.Request{Path: "tiny.pdf"}); err != nil {
 		t.Fatalf("CreateText: %v", err)
@@ -191,7 +191,7 @@ func TestTheWriterIgnoresARepeatedAndALateRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	writer := testsupport.NewWriter(t, testsupport.FilesOf(files), files, texts, queue)
+	writer := testsupport.NewWriter(t, testsupport.NewFiles(files), files, texts, queue)
 
 	if err := writer.CreateText(t.Context(), extract.Request{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)

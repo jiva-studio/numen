@@ -51,10 +51,10 @@ type RemoveResult struct {
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
-	return writeUnder(u.admission, func() (RemoveResult, error) { return u.trash(ctx, v, path) })
+	return writeUnder(u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path) })
 }
 
-func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	went, err := u.queries.GetSourcesUnder(ctx, v.ID, path)

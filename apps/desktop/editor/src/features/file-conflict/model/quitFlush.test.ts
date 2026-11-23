@@ -356,7 +356,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '8', flush: true })
     await settle()
 
-    going.conflicts.value[0]?.later()
+    going.conflicts.value[0]?.defer()
     await settle()
 
     expect(going.conflicts.value).toEqual([])
@@ -442,7 +442,7 @@ describe('the conflicts a person put off', () => {
     going.start().catch(rethrow)
     mockStream.send({ token: '1', flush: true })
     await settle()
-    going.conflicts.value[0]?.later()
+    going.conflicts.value[0]?.defer()
 
     mockStream.send({ token: '2', flush: true })
     await settle()
@@ -464,7 +464,7 @@ describe('the conflicts a person put off', () => {
     mockStream.send({ token: '1', flush: true })
     await settle()
 
-    going.conflicts.value.find((one) => one.note === 'A.md')?.later()
+    going.conflicts.value.find((one) => one.note === 'A.md')?.defer()
 
     expect(getNotes(going)).toEqual(['B.md'])
 
@@ -488,7 +488,7 @@ describe('a conflict put off and settled', () => {
     going.start().catch(rethrow)
     mockStream.send({ token: '1', flush: true })
     await settle()
-    going.conflicts.value[0]?.later()
+    going.conflicts.value[0]?.defer()
     first.dismiss()
 
     createConflict('Again.md').raise(going.raise)

@@ -65,7 +65,7 @@ func proofreadSpeech(
 
 	about := numbered.DescribeSpeech(cues)
 
-	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
+	main := setContext(numbered.BuildSpeechBatches(window, size, overlap), about)
 	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0)
 	if err != nil {
 		return textResult{}, err
