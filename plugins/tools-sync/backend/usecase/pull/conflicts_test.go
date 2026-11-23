@@ -406,3 +406,18 @@ func TestPullChanges_BringsBackANoteRemovedHereAndChangedThereWithNoResolveAndNo
 		t.Errorf("copy there: %v with %d resolver calls, want none", ok, resolver.calls)
 	}
 }
+
+func TestPullChanges_MakesNoSecondCopyWhenARunBrokeAfterTheCopyWasWritten(t *testing.T) {
+	p := newPair(t)
+	p.conflictOn(t, list, "bread", "eggs")
+	p.b.WriteNote(target, listCopy, "eggs")
+
+	p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, list); text != "bread" {
+		t.Errorf("note = %q, want the head bread", text)
+	}
+	if _, ok := p.b.ReadNote(target, "Shopping list (conflict 2026-11-23 2).md"); ok {
+		t.Error("a second copy of the same text was made")
+	}
+}
