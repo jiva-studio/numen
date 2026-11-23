@@ -20,17 +20,19 @@ func getOtherWords() []string {
 }
 
 type restoreKit struct {
-	keys     *fakeKeyStore
-	clock    *testsupport.ManualClock
-	get      *identity.GetIdentity
-	create   *identity.CreateIdentity
-	public   *identity.GetPublicIdentity
-	start    *identity.StartRestore
-	pending  *identity.GetPendingRestore
-	sign     *identity.SignAsRecovery
-	complete *identity.CompleteRestore
-	seal     *identity.SealData
-	open     *identity.OpenData
+	keys      *fakeKeyStore
+	clock     *testsupport.ManualClock
+	get       *identity.GetIdentity
+	create    *identity.CreateIdentity
+	public    *identity.GetPublicIdentity
+	start     *identity.StartRestore
+	pending   *identity.GetPendingRestore
+	sign      *identity.SignAsRecovery
+	complete  *identity.CompleteRestore
+	createKit *identity.CreateRecoveryKit
+	startKit  *identity.StartRestoreFromKit
+	seal      *identity.SealData
+	open      *identity.OpenData
 }
 
 func newRestoreKit(tb testing.TB, name string) restoreKit {
@@ -40,15 +42,17 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	deps := identity.NewDeps(keys, fakeNames{name: name}, clock)
 	return restoreKit{
 		keys: keys, clock: clock,
-		get:      identity.NewGetIdentity(deps),
-		create:   identity.NewCreateIdentity(deps),
-		public:   identity.NewGetPublicIdentity(deps),
-		start:    identity.NewStartRestore(deps),
-		pending:  identity.NewGetPendingRestore(deps),
-		sign:     identity.NewSignAsRecovery(deps),
-		complete: identity.NewCompleteRestore(deps),
-		seal:     identity.NewSealData(deps),
-		open:     identity.NewOpenData(deps),
+		get:       identity.NewGetIdentity(deps),
+		create:    identity.NewCreateIdentity(deps),
+		public:    identity.NewGetPublicIdentity(deps),
+		start:     identity.NewStartRestore(deps),
+		pending:   identity.NewGetPendingRestore(deps),
+		sign:      identity.NewSignAsRecovery(deps),
+		complete:  identity.NewCompleteRestore(deps),
+		createKit: identity.NewCreateRecoveryKit(deps),
+		startKit:  identity.NewStartRestoreFromKit(deps),
+		seal:      identity.NewSealData(deps),
+		open:      identity.NewOpenData(deps),
 	}
 }
 

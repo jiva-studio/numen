@@ -3,26 +3,12 @@ package identity_test
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
-
-func newRestoreHandler(keys *keyStore) *windowidentity.Handler {
-	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
-	return windowidentity.NewHandler(windowidentity.UseCases{
-		Get:           identity.NewGetIdentity(deps),
-		GenerateWords: identity.NewGenerateRecoveryWords(deps),
-		Create:        identity.NewCreateIdentity(deps),
-		Delete:        identity.NewDeleteIdentity(deps),
-		StartRestore:  identity.NewStartRestore(deps),
-	})
-}
 
 func startRestore(t *testing.T, h *windowidentity.Handler, words []string) *v1.StartRestoreResponse {
 	t.Helper()
@@ -36,7 +22,7 @@ func startRestore(t *testing.T, h *windowidentity.Handler, words []string) *v1.S
 func TestStartRestore_AnswersWithoutAnErrorAndKeepsNoIdentityYet(t *testing.T) {
 	t.Parallel()
 	keys := newKeys()
-	h := newRestoreHandler(keys)
+	h := newHandler(keys)
 
 	answer := startRestore(t, h, getLegalWords())
 
@@ -54,7 +40,7 @@ func TestStartRestore_AnswersWithoutAnErrorAndKeepsNoIdentityYet(t *testing.T) {
 
 func TestStartRestore_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.T) {
 	t.Parallel()
-	h := newRestoreHandler(newKeys())
+	h := newHandler(newKeys())
 	words := getLegalWords()
 	words[3] = "numen"
 
@@ -76,7 +62,7 @@ func TestStartRestore_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.
 
 func TestStartRestore_RefusesADeviceThatHasAnIdentity(t *testing.T) {
 	t.Parallel()
-	h := newRestoreHandler(newKeys())
+	h := newHandler(newKeys())
 	create(t, h, getLegalWords())
 
 	answer := startRestore(t, h, getLegalWords())

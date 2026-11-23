@@ -1,48 +1,76 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints and devices when it has one, and otherwise the way
- * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
- * one from its words.
+ * The identity of this device: its fingerprints, devices and recovery kit when it has one, and
+ * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of
+ * them) or to restore one from its words or from two sheets of a kit.
  */
+import { computed } from 'vue'
 import { Button, IslandCard } from '@numen/ui'
+import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity } from '../../types'
+import { useIdentityCall } from '../../model/useIdentityCall'
 import { useIdentitySection } from '../../model/useIdentitySection'
+import { useRecoveryKit } from '../../model/useRecoveryKit'
+import { useSheetFields } from '../../model/useSheetFields'
 import { WORDS as words } from '../../words'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
+import IdentityRestoreSheets from './IdentityRestoreSheets.vue'
 import IdentitySetup from './IdentitySetup.vue'
+import RecoveryKitSection from './RecoveryKitSection.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ identity: InstallationIdentity }>()
+const props = defineProps<{ identity: InstallationIdentity; printer: Printer }>()
 
 /* --------------------------------- State ---------------------------------- */
-const section = useIdentitySection(() => props.identity)
-const { identity: current, step, setup, call, confirmation, typing, deletion, actions } = section
+const call = useIdentityCall()
+const fields = useSheetFields()
+const kit = useRecoveryKit(
+  () => props.identity,
+  () => props.printer,
+  call,
+  fields,
+)
+const section = useIdentitySection(() => props.identity, call, fields, kit.actions.showAfterSetup)
+const { identity: current, step, setup, confirmation, restoring, deletion, actions } = section
 const { stage, recoveryWords } = setup
+const isRestoring = computed(() => step.value === 'restore' || step.value === 'restoreSheets')
 </script>
 
 <template>
-  <IdentityDetails
-    v-if="current"
-    :info="current"
-    :problem="call.problem.value"
-    :is-busy="call.isBusy.value"
-    :is-asking-delete="deletion.isAskingDelete.value"
-    @ask="deletion.askDelete"
-    @confirm="deletion.confirmDelete"
-    @cancel="deletion.cancelDelete"
-  />
+  <template v-if="current">
+    <IdentityDetails
+      :info="current"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      :is-asking-delete="deletion.isAskingDelete.value"
+      @ask="deletion.askDelete"
+      @confirm="deletion.confirmDelete"
+      @cancel="deletion.cancelDelete"
+    />
+
+    <RecoveryKitSection :model="kit" :texts="fields.texts.value" :is-busy="call.isBusy.value" />
+  </template>
 
   <IslandCard v-else :title="words.identitySection">
-    <template v-if="step !== 'restore'" #aside>
+    <template v-if="!isRestoring" #aside>
       <Button
         type="button"
         variant="ghost"
         size="small"
         :disabled="call.isBusy.value"
-        @click="actions.startRestore"
+        @click="actions.startRestore('restore')"
       >
         {{ words.identityRestore }}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="small"
+        :disabled="call.isBusy.value"
+        @click="actions.startRestore('restoreSheets')"
+      >
+        {{ words.identityRestoreSheets }}
       </Button>
       <Button
         type="button"
@@ -59,10 +87,19 @@ const { stage, recoveryWords } = setup
 
       <IdentityRestore
         v-if="step === 'restore'"
-        :text="typing.restoreText.value"
+        :text="restoring.typing.restoreText.value"
         :is-busy="call.isBusy.value"
-        @change="typing.setRestoreText"
-        @restore="actions.restore"
+        @change="restoring.typing.setRestoreText"
+        @restore="restoring.restoreWords"
+        @cancel="actions.cancel"
+      />
+
+      <IdentityRestoreSheets
+        v-else-if="step === 'restoreSheets'"
+        :texts="fields.texts.value"
+        :is-busy="call.isBusy.value"
+        @change="restoring.setSheetText"
+        @restore="restoring.restoreSheets"
         @cancel="actions.cancel"
       />
 

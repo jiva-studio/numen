@@ -5,7 +5,7 @@ package numen.v1;
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // IdentityService manages the account identity of this device. No secret key reaches the window; the
-// recovery words cross the wire only in GenerateRecoveryWords, CreateIdentity and StartRestore.
+// recovery words and sheets cross the wire only in the calls that make or take them.
 service IdentityService {
   // GetIdentity returns the identity of this device, or none when the device holds no identity.
   rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
@@ -25,9 +25,20 @@ service IdentityService {
 
   // DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
   rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
+
+  // CreateRecoveryKit makes a new kit of three sheets for the account of this device. The caller proves
+  // the account with the 12 words or with two sheets of an earlier kit. Nothing is kept.
+  rpc CreateRecoveryKit(CreateRecoveryKitRequest) returns (CreateRecoveryKitResponse);
+
+  // CheckRecoveryKit reports whether two sheets restore the account of this device.
+  rpc CheckRecoveryKit(CheckRecoveryKitRequest) returns (CheckRecoveryKitResponse);
+
+  // StartRestoreFromKit starts to restore the account of two sheets of a kit on this device the way
+  // StartRestore does for the 12 words. Poll GetIdentity until it returns an identity.
+  rpc StartRestoreFromKit(StartRestoreFromKitRequest) returns (StartRestoreFromKitResponse);
 }
 
-// IdentityErrorCode is why a CreateIdentity call was refused. The zero value is a call that
+// IdentityErrorCode is why an identity call was refused. The zero value is a call that
 // succeeded.
 enum IdentityErrorCode {
   IDENTITY_ERROR_CODE_UNSPECIFIED = 0;
@@ -38,6 +49,15 @@ enum IdentityErrorCode {
   IDENTITY_ERROR_CODE_IDENTITY_EXISTS = 2;
   // IDENTITY_ERROR_CODE_KEY_STORE_FAILED is a key store that failed to read or keep the identity.
   IDENTITY_ERROR_CODE_KEY_STORE_FAILED = 3;
+  // IDENTITY_ERROR_CODE_INVALID_SHEETS is a sheet with a wrong or unknown word, sheets of two kits, or
+  // one sheet entered twice.
+  IDENTITY_ERROR_CODE_INVALID_SHEETS = 4;
+  // IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS is fewer than two sheets.
+  IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS = 5;
+  // IDENTITY_ERROR_CODE_OTHER_ACCOUNT is a proof that belongs to another account than this device.
+  IDENTITY_ERROR_CODE_OTHER_ACCOUNT = 6;
+  // IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity.
+  IDENTITY_ERROR_CODE_NO_IDENTITY = 7;
 }
 
 // IdentityInfo is what a person can see of the identity of this device.
@@ -88,3 +108,62 @@ message StartRestoreResponse {
 message DeleteIdentityRequest {}
 
 message DeleteIdentityResponse {}
+
+// RecoverySheet is one printed sheet: 33 words of the SLIP-39 list in order.
+message RecoverySheet {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message RecoveryWordsProof {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message RecoverySheetsProof {
+  repeated RecoverySheet sheets = 1;
+}
+
+// RecoveryKit is three sheets of one kit. Any two restore the account.
+message RecoveryKit {
+  // kit_id is 4 upper-case hex digits that every sheet of the kit shows.
+  string kit_id = 1;
+  string account_fingerprint = 2;
+  // sheets are in sheet order.
+  repeated RecoverySheet sheets = 3;
+}
+
+message CreateRecoveryKitRequest {
+  // proof is the 12 words or two sheets of an earlier kit. A request without a proof is invalid.
+  oneof proof {
+    RecoveryWordsProof words = 1;
+    RecoverySheetsProof sheets = 2;
+  }
+}
+
+message CreateRecoveryKitResponse {
+  RecoveryKit kit = 1;
+  IdentityErrorCode error = 2;
+  // detail names a position and never holds a word.
+  string detail = 3;
+}
+
+message CheckRecoveryKitRequest {
+  repeated RecoverySheet sheets = 1;
+}
+
+message CheckRecoveryKitResponse {
+  // account_fingerprint is set when the sheets fit the account of this device.
+  string account_fingerprint = 1;
+  IdentityErrorCode error = 2;
+  // detail names a position and never holds a word.
+  string detail = 3;
+}
+
+message StartRestoreFromKitRequest {
+  repeated RecoverySheet sheets = 1;
+}
+
+message StartRestoreFromKitResponse {
+  IdentityErrorCode error = 1;
+  // detail names a position and never holds a word.
+  string detail = 2;
+}

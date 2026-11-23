@@ -15,7 +15,8 @@ import type {
   OperationTitles,
   RowOption,
 } from '@/entities/connection'
-import type { IdentityInfo } from '@/entities/identity'
+import type { IdentityInfo, KitProof, RecoveryKit } from '@/entities/identity'
+import type { Printer } from '@/pages/settings/api/print'
 import type { LicenseInfo } from '@/entities/license'
 import type {
   PluginInfo,
@@ -33,6 +34,7 @@ export interface Installation {
   readonly plugin: InstallationPlugin
   readonly connections: InstallationConnections
   readonly identity: InstallationIdentity
+  readonly printer: Printer
   readonly licenses: InstallationLicenses
 }
 
@@ -162,8 +164,8 @@ export interface ConnectionEdits {
 }
 
 /**
- * The identity of this device. The recovery words pass through `generateWords` and `create` and
- * are not held here.
+ * The identity of this device. The recovery words and the sheets of a kit pass through the calls that
+ * make or take them and are not held here.
  */
 export interface InstallationIdentity {
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
@@ -172,6 +174,9 @@ export interface InstallationIdentity {
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
   restore(words: readonly string[]): Promise<Result<IdentityInfo, string>>
   delete(): Promise<Result<void, string>>
+  createKit(proof: KitProof): Promise<Result<RecoveryKit, string>>
+  checkKit(sheets: readonly (readonly string[])[]): Promise<Result<string, string>>
+  restoreFromKit(sheets: readonly (readonly string[])[]): Promise<Result<IdentityInfo, string>>
 }
 
 /**

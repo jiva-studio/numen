@@ -61,12 +61,24 @@ type names struct{}
 func (names) GetInstanceName() string { return "Laptop" }
 
 func newHandler(keys *keyStore) *windowidentity.Handler {
-	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
+	return newHandlerAt(keys, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
+}
+
+func newHandlerAt(keys *keyStore, clock *testsupport.ManualClock) *windowidentity.Handler {
+	deps := identity.NewDeps(keys, names{}, clock)
 	return windowidentity.NewHandler(windowidentity.UseCases{
-		Get:           identity.NewGetIdentity(deps),
-		GenerateWords: identity.NewGenerateRecoveryWords(deps),
-		Create:        identity.NewCreateIdentity(deps),
-		Delete:        identity.NewDeleteIdentity(deps),
+		Identity: windowidentity.IdentityUseCases{
+			Get:           identity.NewGetIdentity(deps),
+			GenerateWords: identity.NewGenerateRecoveryWords(deps),
+			Create:        identity.NewCreateIdentity(deps),
+			Delete:        identity.NewDeleteIdentity(deps),
+			StartRestore:  identity.NewStartRestore(deps),
+		},
+		Kit: windowidentity.KitUseCases{
+			Create:  identity.NewCreateRecoveryKit(deps),
+			Check:   identity.NewCheckRecoveryKit(deps),
+			Restore: identity.NewStartRestoreFromKit(deps),
+		},
 	})
 }
 

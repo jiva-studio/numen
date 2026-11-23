@@ -65,3 +65,45 @@ Then('the account fingerprint is the same as before', async ({ person }) => {
 Then('the identity warns about {string}', async ({ person }, text: string) => {
   await person.identity.expectWarning(text)
 })
+
+When('the person prints a recovery kit', async ({ person }) => {
+  await person.identity.print()
+})
+
+When('the person prints a recovery kit with other recovery words', async ({ person }) => {
+  await person.identity.printWithOtherWords()
+})
+
+Then('the kit has {int} sheets', async ({ person }, count: number) => {
+  await person.identity.expectSheetCount(count)
+})
+
+Then('the kit is sent to the printer', async ({ person }) => {
+  await person.identity.expectPrinted()
+})
+
+When('the person checks the sheets {string}', async ({ person }, numbers: string) => {
+  await person.identity.checkSheets(numbers)
+})
+
+When(
+  'the person checks the sheets {string} with a wrong word in the sheet {int}',
+  async ({ person }, numbers: string, sheet: number) => {
+    await person.identity.checkSheets(numbers, sheet)
+  },
+)
+
+When('the person restores the identity from the sheets {string}', async ({ person }, numbers: string) => {
+  await person.identity.restoreFromSheets(numbers)
+})
+
+When(
+  'the person restores the identity from the sheets {string} with a wrong word in the sheet {int}',
+  async ({ person }, numbers: string, sheet: number) => {
+    await person.identity.restoreFromSheets(numbers, sheet)
+  },
+)
+
+Then('the identity says {string}', async ({ person }, text: string) => {
+  await person.identity.expectSays(text)
+})

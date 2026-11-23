@@ -1,4 +1,7 @@
-/** The person at the page "Identity and licenses": sets up an identity in two steps (the words, then the check of three), restores it from its words and deletes it. */
+/**
+ * The person at the page "Identity and licenses": sets up an identity, prints and checks its recovery kit,
+ * restores it from its words or from two sheets and deletes it.
+ */
 import { expect, type Locator, type Page } from 'playwright/test'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
@@ -24,6 +27,66 @@ export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => n
 
 /** The day as the card of the subscription writes it, such as "December 7, 2026". */
 export const formatDay = (day: Date): string => day.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+const SHEETS_IN_KIT = 3
+const WORDS_ON_SHEET = 33
+const KIT_BUTTON = /^(Skip for now|Done)$/
+const MISTAKE_AT = 5
+const OTHER_ACCOUNTS: readonly (readonly string[])[] = [
+  'letter advice cage absurd amount doctor acoustic avoid letter advice cage above'.split(' '),
+  'legal winner thank year wave sausage worth useful legal winner thank yellow'.split(' '),
+]
+
+/** The numbers of the sheets a step names: "2" is the sheet 2, "1 and 3" are the sheets 1 and 3 in that order. */
+export const readSheetNumbers = (text: string): number[] => {
+  const parts = text.split(/\s+and\s+/)
+  const numbers = parts.map((part) => (/^\d+$/.test(part.trim()) ? Number(part) : NaN))
+  if (numbers.some((one) => !Number.isInteger(one) || one < 1 || one > SHEETS_IN_KIT)) {
+    throw new Error(`"${text}" does not name sheets of a kit of ${SHEETS_IN_KIT}`)
+  }
+  return numbers
+}
+
+const changeWord = (word: string): string => (word === 'academic' ? 'acid' : 'academic')
+
+/** The text to type for each named sheet. The sheet with a mistake has one word replaced by another word of the list. */
+export const planSheetTexts = (
+  sheets: readonly (readonly string[])[],
+  numbers: readonly number[],
+  mistakeSheet?: number,
+): string[] => {
+  if (mistakeSheet !== undefined && !numbers.includes(mistakeSheet)) {
+    throw new Error(`the sheet ${mistakeSheet} is not among the sheets ${numbers.join(' and ')}`)
+  }
+  return numbers.map((number) => {
+    const words = sheets.at(number - 1)
+    if (words === undefined) throw new Error(`the kit has no sheet ${number}`)
+    if (number !== mistakeSheet) return words.join(' ')
+    return words.map((word, at) => (at === MISTAKE_AT ? changeWord(word) : word)).join(' ')
+  })
+}
+
+/** Valid recovery words of an account other than the one of `own`. */
+export const pickOtherWords = (own: readonly string[]): readonly string[] => {
+  const other = OTHER_ACCOUNTS.find((words) => words.join(' ') !== own.join(' '))
+  if (other === undefined) throw new Error('no other account is left to pick')
+  return other
+}
+
+declare global {
+  interface Window {
+    __numenPrintCalls?: number
+  }
+}
+
+const readPrintCount = (): number => window.__numenPrintCalls ?? 0
+
+const spyOnPrint = (): void => {
+  if (typeof window.__numenPrintCalls === 'number') return
+  window.__numenPrintCalls = 0
+  window.print = () => {
+    window.__numenPrintCalls = (window.__numenPrintCalls ?? 0) + 1
+  }
+}
 
 /** The place a field of the confirmation asks for: "Word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
@@ -57,6 +120,8 @@ export const planAnswers = (
 export class IdentityDriver {
   private words: readonly string[] = []
   private account = ''
+  private sheets: readonly (readonly string[])[] = []
+  private printed = 0
 
   constructor(
     private readonly scenario: Scenario,
@@ -135,7 +200,96 @@ export class IdentityDriver {
     await this.start()
     await this.writeWordsDown()
     await this.confirm()
-    this.account = await this.readAccount(await this.showPage())
+    const panel = await this.showPage()
+    const leave = panel.getByRole('button', { name: KIT_BUTTON })
+    await expect(leave).toBeVisible()
+    await leave.click()
+    this.account = await this.readAccount(panel)
+  }
+
+  private async closeKit(panel: Locator): Promise<void> {
+    const leave = panel.getByRole('button', { name: KIT_BUTTON })
+    if ((await leave.count()) > 0) await leave.click()
+  }
+
+  private async installPrintSpy(): Promise<void> {
+    await this.scenario.page.addInitScript(spyOnPrint)
+    await this.scenario.page.evaluate(spyOnPrint)
+  }
+
+  private async makeKit(words: readonly string[]): Promise<Locator> {
+    const panel = await this.showPage()
+    await this.closeKit(panel)
+    await panel.getByRole('button', { name: 'Print recovery kit', exact: true }).click()
+    await panel.getByRole('textbox', { name: 'Recovery words', exact: true }).fill(words.join(' '))
+    await panel.getByRole('button', { name: 'Make kit', exact: true }).click()
+    return panel
+  }
+
+  private getSheet(panel: Locator, number: number): Locator {
+    return panel.getByLabel(`Sheet ${number} of ${SHEETS_IN_KIT}`, { exact: true })
+  }
+
+  async print(): Promise<void> {
+    await this.installPrintSpy()
+    const panel = await this.makeKit(this.words)
+    const sheets: string[][] = []
+    for (let number = 1; number <= SHEETS_IN_KIT; number += 1) {
+      const items = this.getSheet(panel, number).getByRole('listitem')
+      await expect(items.first()).toBeVisible()
+      sheets.push((await items.allInnerTexts()).map((word) => word.trim()))
+    }
+    this.sheets = sheets
+    await panel.getByRole('button', { name: 'Print', exact: true }).click()
+    this.printed += 1
+  }
+
+  async printWithOtherWords(): Promise<void> {
+    await this.makeKit(pickOtherWords(this.words))
+  }
+
+  async expectSheetCount(count: number): Promise<void> {
+    const panel = await this.showPage()
+    await expect(panel.getByRole('article')).toHaveCount(count)
+    for (let number = 1; number <= count; number += 1) {
+      await expect(this.getSheet(panel, number).getByRole('listitem')).toHaveCount(WORDS_ON_SHEET)
+    }
+  }
+
+  async expectPrinted(): Promise<void> {
+    expect(this.printed, 'no kit was sent to the printer by the person').toBeGreaterThan(0)
+    await expect.poll(() => this.scenario.page.evaluate(readPrintCount)).toBe(this.printed)
+  }
+
+  private async typeSheets(
+    panel: Locator,
+    numbers: readonly number[],
+    mistakeSheet?: number,
+  ): Promise<void> {
+    const texts = planSheetTexts(this.sheets, numbers, mistakeSheet)
+    for (const [index, text] of texts.entries()) {
+      await panel.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
+    }
+  }
+
+  async checkSheets(numbers: string, mistakeSheet?: number): Promise<void> {
+    const panel = await this.showPage()
+    await panel.getByRole('button', { name: 'Check two sheets', exact: true }).first().click()
+    await this.typeSheets(panel, readSheetNumbers(numbers), mistakeSheet)
+    await panel.getByRole('button', { name: 'Check', exact: true }).click()
+  }
+
+  async restoreFromSheets(numbers: string, mistakeSheet?: number): Promise<void> {
+    const panel = await this.showPage()
+    await panel.getByRole('button', { name: 'Restore from sheets', exact: true }).click()
+    await this.typeSheets(panel, readSheetNumbers(numbers), mistakeSheet)
+    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
+  }
+
+  async expectSays(text: string): Promise<void> {
+    await expect((await this.showPage()).getByRole('status')).toContainText(text, {
+      ignoreCase: true,
+    })
   }
 
   async expectIdentity(has: boolean): Promise<void> {
@@ -147,6 +301,7 @@ export class IdentityDriver {
 
   async delete(): Promise<void> {
     const panel = await this.showPage()
+    await this.closeKit(panel)
     await panel.getByRole('button', { name: 'Delete identity', exact: true }).click()
     await this.scenario.page
       .getByRole('alertdialog')
@@ -171,7 +326,9 @@ export class IdentityDriver {
   }
 
   async expectWarning(text: string): Promise<void> {
-    await expect((await this.showPage()).getByRole('alert')).toContainText(text)
+    await expect((await this.showPage()).getByRole('alert')).toContainText(text, {
+      ignoreCase: true,
+    })
   }
 
   /** The recovery words of the last identity this person started. */

@@ -56,8 +56,11 @@ func (d Deps) WithPending(pending *PendingStore) Deps {
 
 func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
 	value, err := d.keys.GetKey(ctx, keyName)
-	if err != nil {
+	if isNoKey(err) {
 		return identitylib.Record{}, err
+	}
+	if err != nil {
+		return identitylib.Record{}, fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(value)
 	if err != nil {

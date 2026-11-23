@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, getChoosePattern, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
+import { formatDay, getChoosePattern, getPlanLinePattern, pickOtherWords, planAnswers, planSheetTexts, readPosition, readSheetNumbers } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -56,5 +56,63 @@ describe('getPlanLinePattern', () => {
   it('does not match another size or the detail of a plan to choose', () => {
     expect(getPlanLinePattern('Plus', 100).test('10 GB, $5 / month')).toBe(false)
     expect(getPlanLinePattern('Plus', 100).test('100 GB of synced files')).toBe(false)
+  })
+})
+
+const SHEETS = [
+  Array.from({ length: 33 }, (_, index) => `a${index + 1}`),
+  Array.from({ length: 33 }, (_, index) => `b${index + 1}`),
+  Array.from({ length: 33 }, (_, index) => `c${index + 1}`),
+]
+
+describe('readSheetNumbers', () => {
+  it('reads one sheet and two sheets in the order given', () => {
+    expect(readSheetNumbers('2')).toStrictEqual([2])
+    expect(readSheetNumbers('1 and 3')).toStrictEqual([1, 3])
+    expect(readSheetNumbers('3 and 1')).toStrictEqual([3, 1])
+  })
+
+  it('refuses a text that does not name sheets of a kit of three', () => {
+    expect(() => readSheetNumbers('four')).toThrow('does not name sheets')
+    expect(() => readSheetNumbers('0')).toThrow('does not name sheets')
+    expect(() => readSheetNumbers('1 and 4')).toThrow('does not name sheets')
+    expect(() => readSheetNumbers('')).toThrow('does not name sheets')
+  })
+})
+
+describe('planSheetTexts', () => {
+  it('writes the words of each named sheet with one space between them', () => {
+    expect(planSheetTexts(SHEETS, [3, 1])).toStrictEqual([SHEETS[2]?.join(' '), SHEETS[0]?.join(' ')])
+  })
+
+  it('replaces exactly one word of the sheet with the mistake and no other sheet', () => {
+    const [first, second] = planSheetTexts(SHEETS, [1, 2], 2)
+    expect(first).toBe(SHEETS[0]?.join(' '))
+    const changed = (second ?? '').split(' ')
+    expect(changed).toHaveLength(33)
+    const differences = changed.filter((word, at) => word !== SHEETS[1]?.[at])
+    expect(differences).toHaveLength(1)
+  })
+
+  it('replaces the word with another word of the list that is not the word itself', () => {
+    const sheets = [Array.from({ length: 33 }, () => 'academic'), ...SHEETS.slice(1)]
+    const [text] = planSheetTexts(sheets, [1], 1)
+    expect(text).not.toBe(sheets[0]?.join(' '))
+    expect((text ?? '').split(' ')).toHaveLength(33)
+  })
+
+  it('refuses a mistake in a sheet that is not typed and a sheet the kit does not have', () => {
+    expect(() => planSheetTexts(SHEETS, [1, 2], 3)).toThrow('not among the sheets')
+    expect(() => planSheetTexts(SHEETS.slice(0, 1), [2])).toThrow('no sheet 2')
+  })
+})
+
+describe('pickOtherWords', () => {
+  it('gives twelve words that are not the words given', () => {
+    const own = 'legal winner thank year wave sausage worth useful legal winner thank yellow'.split(' ')
+    const other = pickOtherWords(own)
+    expect(other).toHaveLength(12)
+    expect(other.join(' ')).not.toBe(own.join(' '))
+    expect(pickOtherWords(other).join(' ')).not.toBe(other.join(' '))
   })
 })

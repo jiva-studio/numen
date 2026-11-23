@@ -22,11 +22,11 @@ func TestTheAccountOfThePluginsSeesTheRestoreTheWindowStarted(t *testing.T) {
 	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res.restore)
 	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
-	if use == nil || use.StartRestore == nil {
+	if use == nil || use.Identity.StartRestore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want a use case that starts a restore", use)
 	}
 
-	if err := use.StartRestore.Execute(t.Context(), words); err != nil {
+	if err := use.Identity.StartRestore.Execute(t.Context(), words); err != nil {
 		t.Fatal(err)
 	}
 
@@ -51,7 +51,7 @@ func TestACompleteRestoreOfThePluginsMakesTheIdentityOfTheWindowAndTheKeysOfTheP
 	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res.restore)
 	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
-	if err := use.StartRestore.Execute(t.Context(), words); err != nil {
+	if err := use.Identity.StartRestore.Execute(t.Context(), words); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,7 +59,7 @@ func TestACompleteRestoreOfThePluginsMakesTheIdentityOfTheWindowAndTheKeysOfTheP
 		t.Fatal(err)
 	}
 
-	if shown, err := use.Get.Execute(t.Context()); err != nil || shown.AccountFingerprint == "" {
+	if shown, err := use.Identity.Get.Execute(t.Context()); err != nil || shown.AccountFingerprint == "" {
 		t.Fatalf("identity = %+v, error = %v, want the identity the plugin completed", shown, err)
 	}
 	sealed, err := account.SealData(t.Context(), syncPluginID, []byte("context"), []byte("milk"))

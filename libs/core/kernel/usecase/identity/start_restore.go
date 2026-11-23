@@ -32,22 +32,26 @@ func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	if err != nil {
 		return err
 	}
-	device, err := identitylib.NewDeviceKey(u.deps.random)
+	return startPending(ctx, u.deps, recovery)
+}
+
+func startPending(ctx context.Context, deps Deps, recovery identitylib.RecoveryKey) error {
+	device, err := identitylib.NewDeviceKey(deps.random)
 	if err != nil {
 		return err
 	}
-	restore := &pendingRestore{recovery: recovery, device: device, startedAt: u.deps.clock.Now(), replaced: make(chan struct{})}
-	u.deps.pending.replace(restore)
-	go u.completeAfterFallback(context.WithoutCancel(ctx), restore, u.deps.clock.After(restoreFallback))
+	restore := &pendingRestore{recovery: recovery, device: device, startedAt: deps.clock.Now(), replaced: make(chan struct{})}
+	deps.pending.replace(restore)
+	go completeAfterFallback(context.WithoutCancel(ctx), deps, restore, deps.clock.After(restoreFallback))
 	return nil
 }
 
-func (u *StartRestore) completeAfterFallback(ctx context.Context, restore *pendingRestore, fired <-chan time.Time) {
+func completeAfterFallback(ctx context.Context, deps Deps, restore *pendingRestore, fired <-chan time.Time) {
 	select {
 	case <-restore.replaced:
 	case <-fired:
-		if u.deps.pending.isCurrent(restore) {
-			if err := completeRestore(ctx, u.deps, restore, nil); err != nil {
+		if deps.pending.isCurrent(restore) {
+			if err := completeRestore(ctx, deps, restore, nil); err != nil {
 				return // the restore stays pending, so a window or a plugin can complete it
 			}
 		}

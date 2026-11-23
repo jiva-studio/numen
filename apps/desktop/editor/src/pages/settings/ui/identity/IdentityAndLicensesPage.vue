@@ -5,6 +5,7 @@
  * deactivate this machine.
  */
 import { SettingsPage } from '@numen/plugin-manager'
+import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity, InstallationLicenses, InstallationPlugin } from '../../types'
 import { useIdentityPage } from '../../model/useIdentityPage'
 import { WORDS as words } from '../../words'
@@ -16,6 +17,7 @@ const props = defineProps<{
   identity: InstallationIdentity
   licenses: InstallationLicenses
   plugin: Pick<InstallationPlugin, 'getIdentityViews'>
+  printer: Printer
 }>()
 
 const emit = defineEmits<{
@@ -37,7 +39,7 @@ function onBack(): void {
 <template>
   <SettingsPage :path="[words.settings, words.identityAndLicenses]" @back="onBack" @open="onBack">
     <div class="identity-page">
-      <IdentitySection :identity="props.identity" />
+      <IdentitySection :identity="props.identity" :printer="props.printer" />
 
       <component
         :is="view.component"

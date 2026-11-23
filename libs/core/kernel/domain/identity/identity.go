@@ -22,6 +22,12 @@ var (
 	ErrNoPendingRestore = errors.New("no restore is pending")
 	// ErrInvalidChain means a chain does not verify or does not belong to the recovery words.
 	ErrInvalidChain = errors.New("the device chain is not valid for these recovery words")
+	// ErrInvalidSheets means the sheets entered are not sheets of one valid kit.
+	ErrInvalidSheets = errors.New("the sheets are not valid")
+	// ErrNotEnoughSheets means fewer than two sheets were entered.
+	ErrNotEnoughSheets = errors.New("two sheets are needed")
+	// ErrOtherAccount means the proof belongs to another account than the one of this device.
+	ErrOtherAccount = errors.New("the proof belongs to another account")
 )
 
 // Identity is what a person can see of the identity of this device.
@@ -46,4 +52,17 @@ type PendingRestore struct {
 	IsPending     bool
 	RootSignKey   []byte
 	DeviceSignKey []byte
+}
+
+// Kit is three sheets of one recovery kit for the account of this device.
+type Kit struct {
+	ID                 string
+	AccountFingerprint string
+	Sheets             []Sheet
+}
+
+// Sheet is one printed sheet of a kit.
+type Sheet struct {
+	Number int
+	Words  []string
 }
