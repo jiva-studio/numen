@@ -7,7 +7,7 @@ import { ApplicationDriver } from './application.js'
 import { IdentityDriver } from './identity.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
-import { SyncDriver } from './sync.js'
+import type { SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 /** The vault of the second computer: a scenario names it, and the computer has no other. */
@@ -57,16 +57,30 @@ interface SecondComputer {
   readonly vaults: SyncVaultsDriver
 }
 
+interface ComputerParts {
+  readonly first: Scenario
+  readonly viewport: ViewportSize | null
+  readonly identity: IdentityDriver
+  readonly sync: SyncDriver
+  readonly firstVaults: SyncVaultsDriver
+}
+
 export class ComputerDriver {
   private second: SecondComputer | undefined
 
-  constructor(
-    private readonly first: Scenario,
-    private readonly viewport: ViewportSize | null,
-    private readonly identity: IdentityDriver,
-    private readonly sync: SyncDriver,
-    private readonly firstVaults: SyncVaultsDriver,
-  ) {}
+  private readonly first: Scenario
+  private readonly viewport: ViewportSize | null
+  private readonly identity: IdentityDriver
+  private readonly sync: SyncDriver
+  private readonly firstVaults: SyncVaultsDriver
+
+  constructor(parts: ComputerParts) {
+    this.first = parts.first
+    this.viewport = parts.viewport
+    this.identity = parts.identity
+    this.sync = parts.sync
+    this.firstVaults = parts.firstVaults
+  }
 
   private requireSecond(): SecondComputer {
     if (this.second === undefined) throw new Error('there is no second computer: begin with a second computer restores the identity from the recovery words')

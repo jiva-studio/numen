@@ -1,5 +1,6 @@
 import { defineParameterType } from 'playwright-bdd'
 import {
+  type ComputerName,
   parseComputer,
   parseHolder,
   parseInside,
@@ -141,6 +142,12 @@ defineParameterType({
   name: 'computer',
   regexp: /the person|the second computer/,
   transformer: (computer: string) => parseComputer(computer),
+})
+
+defineParameterType({
+  name: 'on',
+  regexp: / on the second computer|/,
+  transformer: (on: string): ComputerName => (on === '' ? 'first' : 'second'),
 })
 
 defineParameterType({

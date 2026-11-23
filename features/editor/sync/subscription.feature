@@ -28,7 +28,7 @@ Feature: Numen Sync subscription
       Given a second computer restores the identity from the recovery words
       And the person opens the page "Identity and licenses"
       When the person buys the subscription
-      Then the second computer shows the subscription "Active"
+      Then the subscription shows "Active" on the second computer
 
     Scenario: An active subscription is not bought twice
       Given the person opens the page "Identity and licenses"

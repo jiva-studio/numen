@@ -30,8 +30,11 @@ const stubServer = (server: Server) => {
         )
       case 'CreateCheckout':
         return Promise.resolve(Response.json({ checkoutUrl: CHECKOUT_URL }))
+      default:
+        return Promise.resolve(
+          Response.json({ code: 'internal', message: 'unknown' }, { status: 500 }),
+        )
     }
-    return Promise.resolve(Response.json({ code: 'internal', message: 'unknown' }, { status: 500 }))
   })
   vi.stubGlobal('fetch', fetchStub)
   return fetchStub

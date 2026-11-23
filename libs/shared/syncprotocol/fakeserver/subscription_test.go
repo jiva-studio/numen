@@ -102,7 +102,11 @@ func (b *billing) get(url string) (int, string) {
 	if err != nil {
 		b.tb.Fatal(err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			b.tb.Error(err)
+		}
+	}()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		b.tb.Fatal(err)
@@ -120,7 +124,11 @@ func (b *billing) setPhase(query string) int {
 	if err != nil {
 		b.tb.Fatal(err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			b.tb.Error(err)
+		}
+	}()
 	return response.StatusCode
 }
 

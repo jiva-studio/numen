@@ -9,7 +9,7 @@ export function useIdentityPage(
   getLicenses: () => InstallationLicenses,
   getPlugin: () => Pick<InstallationPlugin, 'getIdentityViews'>,
 ) {
-  const licenses = useLicensesPage(getLicenses)
+  const { licenses, activate, deactivate } = useLicensesPage(getLicenses)
   const views = computed(() => getPlugin().getIdentityViews())
-  return { ...licenses, views }
+  return { licenses, activate, deactivate, views }
 }

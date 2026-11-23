@@ -65,10 +65,6 @@ Then('the sync settings list the synced vault {string}', async ({ person }, vaul
   await person.computers.expectConnected('first', vault)
 })
 
-Then('the vault {string} is connected', async ({ person }, vault: string) => {
-  await person.computers.expectConnected('first', vault)
-})
-
 Then('the sync settings warn about {string}', async ({ person }, text: string) => {
   await person.syncVaults.expectWarning(text)
 })
@@ -127,11 +123,7 @@ When('the subscription ended {int} days ago', async ({ person }, days: number) =
   await person.sync.endSubscription(days)
 })
 
-Then('the subscription shows {string}', async ({ person }, text: string) => {
-  await person.computers.expectSubscription('first', text)
-})
-
-Then('{computer} shows the subscription {string}', async ({ person }, computer: ComputerName, text: string) => {
+Then('the subscription shows {string}{on}', async ({ person }, text: string, computer: ComputerName) => {
   await person.computers.expectSubscription(computer, text)
 })
 
