@@ -31,7 +31,11 @@ func hasHeadOf(t *testing.T, c *synctest.Computer, text string) func() bool {
 	t.Helper()
 	return func() bool {
 		heads := c.ReadChanges(t, c.GetRemoteID(t, source))
-		return len(heads) == 1 && string(c.OpenBlob(t, c.GetVaultKey(t, source), heads[0].GetRevision())) == text
+		if len(heads) != 1 {
+			return false
+		}
+		plain, isFound := c.FindBlob(t, c.GetVaultKey(t, source), heads[0].GetRevision())
+		return isFound && string(plain) == text
 	}
 }
 

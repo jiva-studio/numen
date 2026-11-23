@@ -51,13 +51,26 @@ func OpenMeta(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) Meta {
 // OpenBlob downloads the blob of the revision and opens it with the key of its metadata.
 func (c *Computer) OpenBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) []byte {
 	t.Helper()
+	plain, isFound := c.FindBlob(t, vaultKey, revision)
+	if !isFound {
+		t.Fatal("the blob of the revision is not on the server")
+	}
+	return plain
+}
+
+// FindBlob is OpenBlob that reports a blob the server no longer holds, as a newer revision replaced it, instead of failing.
+func (c *Computer) FindBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) ([]byte, bool) {
+	t.Helper()
 	meta := OpenMeta(t, vaultKey, revision)
 	downloads, err := c.Cloud.GetBlobUrls(t.Context(), revision.GetVaultId(), [][]byte{revision.GetBlobId()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(downloads) != 1 || !downloads[0].GetFound() {
-		t.Fatalf("downloads = %v, want the blob found", downloads)
+	if len(downloads) != 1 {
+		t.Fatalf("downloads = %v, want one", downloads)
+	}
+	if !downloads[0].GetFound() {
+		return nil, false
 	}
 	blob, err := c.Cloud.GetBlob(t.Context(), downloads[0].GetUrl())
 	if err != nil {
@@ -67,5 +80,5 @@ func (c *Computer) OpenBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Re
 	if err != nil {
 		t.Fatalf("the blob does not open with the key of its metadata: %v", err)
 	}
-	return plain
+	return plain, true
 }
