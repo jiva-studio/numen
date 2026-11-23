@@ -10,9 +10,9 @@ import {
   isBranch,
   findNode,
   paneById,
-  paneWithTab,
+  findPaneWithTab,
   getPanes,
-  pathTo,
+  findPath,
   replaceAt,
   withChildren,
 } from './tree'
@@ -31,7 +31,7 @@ export function focusPane(workspace: Workspace, id: NodeId): Workspace {
 }
 
 export function activateTab(workspace: Workspace, tab: TabId): Workspace {
-  const holder = paneWithTab(workspace.root, tab)
+  const holder = findPaneWithTab(workspace.root, tab)
   if (!holder) return workspace
 
   return {
@@ -47,7 +47,7 @@ export function openTab(
   tab: TabId,
   into: NodeId = workspace.focus,
 ): Workspace {
-  if (paneWithTab(workspace.root, tab)) return activateTab(workspace, tab)
+  if (findPaneWithTab(workspace.root, tab)) return activateTab(workspace, tab)
 
   const target = paneById(workspace.root, into) ?? getPanes(workspace.root)[0]
   if (!target) return workspace
@@ -92,7 +92,7 @@ export function openTabAdjacent(
   const target = paneById(workspace.root, onto) ?? getPanes(workspace.root)[0]
   if (!target || side === 'center') return workspace
 
-  const source = paneWithTab(workspace.root, tab)
+  const source = findPaneWithTab(workspace.root, tab)
   if (source && source.id === target.id && source.tabs.length === 1) {
     return activateTab(workspace, tab)
   }
@@ -103,7 +103,7 @@ export function openTabAdjacent(
 }
 
 export function closeTab(workspace: Workspace, tab: TabId): Workspace {
-  const holder = paneWithTab(workspace.root, tab)
+  const holder = findPaneWithTab(workspace.root, tab)
   if (!holder) return workspace
   return commit({ ...workspace, root: detach(workspace.root, tab) }, holder.id)
 }
@@ -113,7 +113,7 @@ export function closeTab(workspace: Workspace, tab: TabId): Workspace {
  * `getSlot` reports them.
  */
 export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): Workspace {
-  const holder = paneWithTab(workspace.root, tab)
+  const holder = findPaneWithTab(workspace.root, tab)
   if (!holder) return workspace
 
   const from = holder.tabs.indexOf(tab)
@@ -136,7 +136,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
  */
 export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFactory): Workspace {
   const target = paneById(workspace.root, drop.onto)
-  const source = paneWithTab(workspace.root, drop.tab)
+  const source = findPaneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
 
   if (source.id === target.id && (drop.side === 'center' || source.tabs.length === 1)) {
@@ -174,7 +174,7 @@ export function dropOnEdge(
   createId: NodeIdFactory,
 ): Workspace {
   const { tab, side } = drop
-  if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
+  if (!findPaneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
   const landed = putAdjacent(root, { onto: root.id, tab, side, axis: workspace.axis }, createId)
@@ -186,7 +186,7 @@ export function resizeBranch(
   id: NodeId,
   sizes: readonly number[],
 ): Workspace {
-  const path = pathTo(workspace.root, id)
+  const path = findPath(workspace.root, id)
   if (!path) return workspace
 
   const node = findNode(workspace.root, path)

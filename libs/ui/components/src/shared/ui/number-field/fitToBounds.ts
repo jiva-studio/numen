@@ -7,5 +7,5 @@ const onStep = (value: number, bounds: Bounds): number => {
 }
 
 /** Where the bounds leave a number: on a place the step lays, inside the ends. */
-export const snapToBounds = (value: number, bounds: Bounds): number =>
+export const fitToBounds = (value: number, bounds: Bounds): number =>
   clamp(onStep(value, bounds), bounds)

@@ -103,7 +103,7 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
 const multiPick = useMultiPick(props, searchQuery, emit)
 
-const places = usePalettePlaces({ groups: () => multiPick.groups.value })
+const places = usePalettePlaces({ getGroups: () => multiPick.groups.value })
 const { placed, announcement } = places
 
 const active = useActiveItem({
@@ -155,7 +155,7 @@ const onActionKey = (event: KeyboardEvent): void => {
 }
 
 const onOver = (pos: number, event: PointerEvent) => {
-  if (!isPanelOpen.value) active.lightAt(pos, event)
+  if (!isPanelOpen.value) active.highlightAt(pos, event)
 }
 
 /* --------------------------------- Helpers -------------------------------- */

@@ -9,11 +9,11 @@ import (
 func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIByte(t *testing.T) {
 	for c := range utf8.RuneSelf {
 		name := string([]byte{byte(c)})
-		if got, want := FoldName(name), foldGeneral(name); got != want {
+		if got, want := FoldName(name), getGeneralFold(name); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
 		}
 		wrapped := "a" + name + "Z" + name
-		if got, want := FoldName(wrapped), foldGeneral(wrapped); got != want {
+		if got, want := FoldName(wrapped), getGeneralFold(wrapped); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", wrapped, got, want)
 		}
 	}
@@ -23,7 +23,7 @@ func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIPair(t *testing.T) {
 	for a := range utf8.RuneSelf {
 		for b := range utf8.RuneSelf {
 			name := string([]byte{byte(a), byte(b)})
-			if got, want := FoldName(name), foldGeneral(name); got != want {
+			if got, want := FoldName(name), getGeneralFold(name); got != want {
 				t.Fatalf("FoldName(%q) = %q, want %q", name, got, want)
 			}
 		}
@@ -56,7 +56,7 @@ func TestTheFoldIsTheGeneralFoldForNamesBeyondASCII(t *testing.T) {
 		strings.Repeat("Ab", 100) + "ß",
 	}
 	for _, name := range names {
-		if got, want := FoldName(name), foldGeneral(name); got != want {
+		if got, want := FoldName(name), getGeneralFold(name); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
 		}
 	}
@@ -71,7 +71,7 @@ func TestAnASCIINameAlreadyFoldedIsReturnedWithoutAllocating(t *testing.T) {
 	if got := FoldName(name); got != name {
 		t.Errorf("FoldName(%q) = %q", name, got)
 	}
-	if folded, ok := foldASCII("AbC"); !ok || folded != "abc" {
+	if folded, ok := getASCIIFold("AbC"); !ok || folded != "abc" {
 		t.Errorf("foldASCII(\"AbC\") = %q, %v; want \"abc\", true", folded, ok)
 	}
 }

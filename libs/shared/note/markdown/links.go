@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func bodyLinks(body []byte) []domain.Link {
+func getBodyLinks(body []byte) []domain.Link {
 	var out []domain.Link
 	observed := map[string]bool{}
 
@@ -46,7 +46,7 @@ func bodyLinks(body []byte) []domain.Link {
 // at all.
 const NoRole = " has no role"
 
-func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
+func getFrontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 	raw, ok := frontmatter["links"].([]any)
 	// gomutants:disable-next-line BRANCH_IF reason="ranging over a nil slice after a failed type assertion also returns nil, nil"
 	if !ok {
@@ -66,7 +66,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: an entry has no target")
 			continue
 		}
-		role := domain.LinkRole(str(fields["role"]))
+		role := domain.LinkRole(readTrimmedText(fields["role"]))
 		if role == "" {
 			problems = append(problems, "links: "+to+NoRole)
 			continue
@@ -77,7 +77,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue
 		}
-		marker := domain.LinkMarker(str(fields["marker"]))
+		marker := domain.LinkMarker(readTrimmedText(fields["marker"]))
 		if !domain.IsWritableMarker(marker) {
 			// The list of markers is closed, so an unknown one has nothing to draw.
 			// It is reported as a problem.
@@ -87,16 +87,16 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 		out = append(out, domain.Link{
 			Target: domain.ParseAddress(to),
 			Role:   role,
-			Type:   str(fields["type"]),
-			Why:    str(fields["note"]),
-			Label:  str(fields["label"]),
+			Type:   readTrimmedText(fields["type"]),
+			Why:    readTrimmedText(fields["note"]),
+			Label:  readTrimmedText(fields["label"]),
 			Marker: marker,
 		})
 	}
 	return out, problems
 }
 
-func str(v any) string {
+func readTrimmedText(v any) string {
 	return strings.TrimSpace(readText(v))
 }
 

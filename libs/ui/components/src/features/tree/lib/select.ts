@@ -22,8 +22,10 @@ export interface RowSelection {
   readonly anchor: RowId | null
 }
 
-const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): readonly RowId[] =>
-  visibleRows.filter((row) => ids.has(row.id)).map((row) => row.id)
+const getRowsInOrder = (
+  visibleRows: readonly ShownRow[],
+  ids: ReadonlySet<RowId>,
+): readonly RowId[] => visibleRows.filter((row) => ids.has(row.id)).map((row) => row.id)
 
 export interface SelectionTarget {
   readonly row: RowId
@@ -52,14 +54,17 @@ export function resolveSelection(
     const selectionSet = new Set(current.rows)
     if (selectionSet.has(row)) selectionSet.delete(row)
     else selectionSet.add(row)
-    return { rows: inOrder(visibleRows, selectionSet), anchor: row }
+    return { rows: getRowsInOrder(visibleRows, selectionSet), anchor: row }
   }
 
   return { rows: [row], anchor: row }
 }
 
 /** Every row that is drawn, with the anchor left at its current position. */
-export const everyRow = (visibleRows: readonly ShownRow[], anchor: RowId | null): RowSelection => ({
+export const getAllRows = (
+  visibleRows: readonly ShownRow[],
+  anchor: RowId | null,
+): RowSelection => ({
   rows: visibleRows.map((row) => row.id),
   anchor: anchor ?? visibleRows[0]?.id ?? null,
 })
