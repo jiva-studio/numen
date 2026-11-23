@@ -5,15 +5,18 @@ package deletions
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
 const HealthKey = "deletions-paused"
 
-var errNotImplemented = errors.New("not implemented")
+// ErrNothingPending is what an answer gets for a vault whose removals are not paused.
+var ErrNothingPending = errors.New("no removals are paused")
 
 type Direction string
 
@@ -90,7 +93,33 @@ func NewGuardDeletions(deps Deps) *GuardDeletions { return &GuardDeletions{deps:
 // Execute returns Pause, and keeps the state until it is answered, when the candidates are at least
 // note.MassDeleteMinFiles and more than note.MassDeleteRatio percent of the tracked files.
 func (u *GuardDeletions) Execute(ctx context.Context, in Input) (Verdict, error) {
-	return 0, errNotImplemented
+	pending, err := u.deps.Pending.ReadPending(ctx, in.Vault)
+	if err != nil {
+		return 0, fmt.Errorf("read the pending removals: %w", err)
+	}
+	if pending != nil {
+		return Pause, nil
+	}
+	count := len(in.Candidates)
+	if count < note.MassDeleteMinFiles || count*100 <= note.MassDeleteRatio*in.Tracked {
+		return Go, nil
+	}
+	state := State{Direction: in.Direction, Files: in.Candidates, Tracked: in.Tracked, CreatedAt: u.deps.Clock.Now()}
+	if err := u.deps.Pending.WritePending(ctx, in.Vault, state); err != nil {
+		return 0, fmt.Errorf("keep the pending removals: %w", err)
+	}
+	item := health.Item{Key: HealthKey, Severity: health.Error, Text: getPauseText(state), Detail: "", Action: nil}
+	if err := u.deps.Health.Report(ctx, item); err != nil {
+		return 0, fmt.Errorf("report the paused removals: %w", err)
+	}
+	return Pause, nil
+}
+
+func getPauseText(state State) string {
+	if state.Direction == DirectionApply {
+		return fmt.Sprintf("Sync is paused: %d of %d files were removed on another computer", len(state.Files), state.Tracked)
+	}
+	return fmt.Sprintf("Sync is paused: %d of %d files are removed", len(state.Files), state.Tracked)
 }
 
 // ResolveDeletions carries out the answer of the person for one vault.
@@ -100,5 +129,21 @@ func NewResolveDeletions(deps Deps) *ResolveDeletions { return &ResolveDeletions
 
 // Execute removes the pending state and the health item and returns the state the answer was for.
 func (u *ResolveDeletions) Execute(ctx context.Context, id domain.VaultID, choice Choice) (State, error) {
-	return State{}, errNotImplemented
+	if choice != ChoiceRemove && choice != ChoiceKeep {
+		return State{}, fmt.Errorf("the choice %q is not known", choice)
+	}
+	pending, err := u.deps.Pending.ReadPending(ctx, id)
+	if err != nil {
+		return State{}, fmt.Errorf("read the pending removals: %w", err)
+	}
+	if pending == nil {
+		return State{}, ErrNothingPending
+	}
+	if err := u.deps.Pending.DeletePending(ctx, id); err != nil {
+		return State{}, fmt.Errorf("clear the pending removals: %w", err)
+	}
+	if err := u.deps.Health.Clear(ctx, HealthKey); err != nil {
+		return State{}, fmt.Errorf("clear the health item: %w", err)
+	}
+	return *pending, nil
 }
