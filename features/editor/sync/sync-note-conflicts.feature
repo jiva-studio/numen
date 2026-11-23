@@ -15,7 +15,7 @@ Feature: Sync a note changed on two computers
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
 
-  Rule: The latest version stays and the other version is kept in a conflict copy
+  Rule: The latest version stays and the other is kept in a conflict copy
 
     Scenario: A note changed on two computers keeps the latest version
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
