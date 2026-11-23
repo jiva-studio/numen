@@ -3,12 +3,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { createSearchClient, createThemeServiceClient } from '../clients'
+import { createSearchRpc, createThemeRpc } from '../clients'
 import { createCoreHandlerTransport, createCoreTransport, type CoreAnswers } from './router'
 
 const createClients = (answers: CoreAnswers) => {
   const transport = createCoreTransport(answers)
-  return { search: createSearchClient(transport), theme: createThemeServiceClient(transport) }
+  return { search: createSearchRpc(transport), theme: createThemeRpc(transport) }
 }
 
 describe('a call answered by the test', () => {
@@ -77,8 +77,8 @@ describe('handlers named by their method', () => {
         yield { names: ['own/Dusk.css'] }
       },
     })
-    const search = createSearchClient(transport)
-    const theme = createThemeServiceClient(transport)
+    const search = createSearchRpc(transport)
+    const theme = createThemeRpc(transport)
 
     const answer = await search.searchNames({ query: 'lla', limit: 8 })
     const changes: string[][] = []

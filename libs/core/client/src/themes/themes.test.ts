@@ -3,7 +3,7 @@
  * rest passes a message through unchanged, and the schema defines its shape.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { THEME_MODE, THEME_ORIGIN, createThemeServiceClient } from '../clients'
+import { THEME_MODE, THEME_ORIGIN, createThemeRpc } from '../clients'
 import { createCoreTransport } from '../testing'
 import { createThemeClient } from './themes'
 
@@ -14,7 +14,7 @@ const request = {
   watchThemes: vi.fn(),
 }
 
-const themes = createThemeClient(createThemeServiceClient(createCoreTransport({ theme: request })))
+const themes = createThemeClient(createThemeRpc(createCoreTransport({ theme: request })))
 
 beforeEach(() => {
   vi.resetAllMocks()

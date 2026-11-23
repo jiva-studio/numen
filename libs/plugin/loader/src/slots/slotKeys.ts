@@ -89,7 +89,7 @@ export function orderSlotEntries<T>(
 }
 
 /** What a slot in its default arrangement is made of: a row for each entry, a separator where the group changes. */
-export interface GroupedRows<T, R> {
+interface GroupedRows<T, R> {
   readonly group: (one: T) => string | undefined
   readonly row: (one: T) => R
   readonly separator: (group: string) => R

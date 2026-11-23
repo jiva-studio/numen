@@ -7,7 +7,7 @@ import type { AppInfo } from '@numen/plugin-sdk'
 const APP_NAME = 'numen'
 
 /** The version a build made without an injected version calls itself. */
-export const DEV_VERSION = '0.0.0-dev'
+const DEV_VERSION = '0.0.0-dev'
 
 export interface AppInfoSource {
   readonly version?: string | undefined

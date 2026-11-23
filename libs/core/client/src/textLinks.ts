@@ -4,39 +4,35 @@
  * Every window queries the core the same way, so the meaning of
  * `ResolveAddresses` in the port is written down once.
  */
-import type { TextLink } from '@numen/plugin-sdk'
+import type { Client } from '@connectrpc/connect'
+import type { NoteService } from '@numen/protocol'
 
 /** What the core resolves for one text. Empty fields refer to the window's own. */
-interface LinkRequest {
+export interface TextLinkRequest {
   readonly text: string
   readonly from?: string | undefined
   readonly vault?: string | undefined
 }
 
-/** As much of the note service as link resolution requires. */
-export interface LinkClient {
-  resolveAddresses(request: { from: string; text: string; vaultId: string }): Promise<{
-    readonly links: readonly {
-      readonly raw: string
-      readonly address: string
-      readonly text: string
-    }[]
-    readonly resolvedAddresses: readonly {
-      readonly address: string
-      readonly path: string
-      readonly isCrossed: boolean
-    }[]
-  }>
+/** One wikilink of a text with the path it resolves to, empty where it resolves to none. */
+export interface ResolvedTextLink {
+  readonly raw: string
+  readonly address: string
+  readonly text: string
+  readonly path: string
 }
+
+/** The call of NoteService the links are resolved through. */
+export type TextLinkRpc = Pick<Client<typeof NoteService>, 'resolveAddresses'>
 
 /**
  * The wikilinks of a text, each with the path it resolves to: empty where it
  * resolves to none, or to one in another vault.
  */
 export const resolveTextLinks = async (
-  client: LinkClient,
-  { text, from = '', vault = '' }: LinkRequest,
-): Promise<readonly TextLink[]> => {
+  client: TextLinkRpc,
+  { text, from = '', vault = '' }: TextLinkRequest,
+): Promise<readonly ResolvedTextLink[]> => {
   const answer = await client.resolveAddresses({ from, text, vaultId: vault })
   const paths = new Map(
     answer.resolvedAddresses.filter((one) => !one.isCrossed).map((one) => [one.address, one.path]),

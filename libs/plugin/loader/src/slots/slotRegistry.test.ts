@@ -2,7 +2,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
 import type { CommandTarget, SlotItem } from '@numen/plugin-sdk'
-import { createSlotRegistry, type DeclaredSlotEntry, type SlotRegistryDeps } from './slotRegistry'
+import { createSlotRegistry, type DeclaredSlotEntry } from './slotRegistry'
+
+type SlotRegistryDeps = Parameters<typeof createSlotRegistry>[0]
 
 const LEDGER = 'org.example.ledger'
 const HARBOR = 'org.example.harbor'

@@ -18,7 +18,6 @@ import { createWhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
 import { createKeybindingRegistry, type KeybindingSource } from '../keybindings'
-import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   addEntry,
@@ -47,8 +46,6 @@ import type {
   PluginContextHost,
   PluginHostDeps,
 } from './types'
-
-export { createPluginPaneWrapper }
 
 function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
