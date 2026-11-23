@@ -52,7 +52,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
@@ -84,7 +83,7 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 }
 
 func mountText(w *windowRoutes, vaultDeps vaultWiring) {
-	var handler numenv1connect.TextServiceHandler = numenv1connect.UnimplementedTextServiceHandler{}
+	handler := windowtext.NewUnavailable()
 	if text := openFileText(vaultDeps.TextVersions); text != nil {
 		handler = windowtext.NewHandler(&w.session.Runtime, text)
 	}
@@ -189,7 +188,7 @@ func openGetSettings(s settingsWiring) *settings.Get {
 }
 
 func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.PathDialog) {
-	var choice windowsettings.PathChoice = numenv1connect.UnimplementedSettingsServiceHandler{}
+	choice := windowsettings.NewUnavailablePathChoice()
 	if dialog != nil {
 		choice = windowsettings.NewPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	}
@@ -199,7 +198,7 @@ func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.P
 }
 
 func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
-	var folders numenv1connect.PluginDataServiceHandler = numenv1connect.UnimplementedPluginDataServiceHandler{}
+	folders := windowsettings.NewUnavailablePluginData()
 	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
 		folders = windowsettings.NewPluginFolders(data, &w.session.Runtime)
 	}
