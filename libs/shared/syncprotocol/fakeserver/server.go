@@ -249,8 +249,7 @@ func newFailedSignIn() error {
 func newDeviceRevoked(head identity.Chain) error {
 	failure := newFailedSignIn()
 	if detail, err := connect.NewErrorDetail(&syncv1.DeviceRevoked{Chain: head.Bytes()}); err == nil {
-		var refusal *connect.Error
-		if errors.As(failure, &refusal) {
+		if refusal, ok := errors.AsType[*connect.Error](failure); ok {
 			refusal.AddDetail(detail)
 		}
 	}

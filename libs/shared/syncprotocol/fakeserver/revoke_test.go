@@ -61,9 +61,8 @@ func TestSignIn_ADeviceThatWasNeverInTheChainGetsNoDetail(t *testing.T) {
 	account.addDevice(t, "Laptop")
 	stranger, _ := account.extend(t, account.root, "Stranger")
 	_, err := trySignIn(t, address, stranger, account.chain)
-	var revoked syncprotocol.DeviceRevokedError
-	if errors.As(err, &revoked) {
-		t.Error("a stranger received the stored chain")
+	if revoked, ok := errors.AsType[syncprotocol.DeviceRevokedError](err); ok {
+		t.Errorf("a stranger received the stored chain: %v", revoked)
 	}
 	if err == nil {
 		t.Error("a stranger signed in")

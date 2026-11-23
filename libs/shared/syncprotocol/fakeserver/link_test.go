@@ -131,27 +131,27 @@ func TestWaitMessages_RefusesASecondWaitOnTheSameSide(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	id := newChannel(t, relay)
-	first := make(chan error, 1)
-	go func() {
-		_, err := relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 0, 5*time.Second)
-		first <- err
-	}()
-	var refused error
-	for range 50 {
-		_, refused = relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 0, 1*time.Second)
-		if errors.Is(refused, syncprotocol.ErrLinkBusy) {
-			break
-		}
-		<-time.After(50 * time.Millisecond)
+	type answer struct {
+		messages syncclient.LinkMessages
+		err      error
 	}
-	if !errors.Is(refused, syncprotocol.ErrLinkBusy) {
-		t.Errorf("second wait: error = %v, want ErrLinkBusy", refused)
+	answers := make(chan answer, 2)
+	for range 2 {
+		go func() {
+			messages, err := relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 0, 5*time.Second)
+			answers <- answer{messages: messages, err: err}
+		}()
+	}
+	refused := <-answers
+	if !errors.Is(refused.err, syncprotocol.ErrLinkBusy) {
+		t.Errorf("second wait: error = %v, want ErrLinkBusy", refused.err)
 	}
 	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("end")); err != nil {
 		t.Fatal(err)
 	}
-	if err := <-first; err != nil {
-		t.Errorf("the first wait = %v, want it kept", err)
+	kept := <-answers
+	if kept.err != nil || len(kept.messages.Messages) != 1 || string(kept.messages.Messages[0].Body) != "end" {
+		t.Errorf("the first wait = %+v, %v, want it kept until end", kept.messages, kept.err)
 	}
 }
 

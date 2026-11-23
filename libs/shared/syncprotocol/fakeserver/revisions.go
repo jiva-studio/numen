@@ -294,9 +294,8 @@ func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 }
 
 func asInvalid(err error) error {
-	var refused *connect.Error
-	if errors.As(err, &refused) {
-		return err
+	if refused, ok := errors.AsType[*connect.Error](err); ok {
+		return refused
 	}
 	return connect.NewError(connect.CodeInvalidArgument, err)
 }
