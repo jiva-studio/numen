@@ -16,6 +16,8 @@ The sync server tells where the subscription of your account stands, and the car
 
 When the server refuses a change, or the grace period of an ended subscription runs, the plugin warns on its page: **Sync needs a subscription**, **Subscription ended: changes are sent until a date** or **Subscription ended: changes stay on this device**. The warning goes away when a pass goes well with an active subscription.
 
+How to cancel, change the card or get an invoice, with the app or without it (by the email you paid with), and what happens to the vaults when the paid time ends, is in the guide [Numen Sync subscription](../../apps/docs/src/content/docs/sync.md).
+
 ## Title Bar Status
 
 Numen Sync renders its status in the `titleBar.status` slot at the top-right of the editor window:
