@@ -190,7 +190,7 @@ describe('useVaults', () => {
     await model.actions.load()
     client.listVaults.mockResolvedValue({
       vaults: [createVault({ state: 'connected' })],
-    } satisfies ListVaultsResponse)
+    } satisfies Awaited<ReturnType<VaultsClient['listVaults']>>)
 
     await model.actions.connectNew('Test')
 
