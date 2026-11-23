@@ -54,6 +54,18 @@ export const parseInside = (text: string): string | undefined => {
   return trimmed === '' ? undefined : parseOwnedVault(trimmed.replace(/^in /, ''))
 }
 
+/** How long a step waits for a note, and the vault it names after the wait, if any. */
+export interface Wait {
+  readonly seconds: number
+  readonly vault: string | undefined
+}
+
+export const parseWait = (text: string): Wait => {
+  const match = /^ within "(\d+)" seconds(.*)$/.exec(text)
+  if (!match) throw new Error(`"${text}" does not name a wait in seconds`)
+  return { seconds: Number(match[1]), vault: parseInside(match[2] ?? '') }
+}
+
 /** The path of a note a scenario names by its title. */
 export const getNotePath = (title: string): string => `${title}.md`
 

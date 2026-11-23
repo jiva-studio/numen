@@ -1,4 +1,4 @@
-import type { ComputerName, Holder } from '../drivers/computer.js'
+import type { ComputerName, Holder, Wait } from '../drivers/computer.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('a sync server runs', async ({ person }) => {
@@ -156,9 +156,8 @@ Given('the second computer goes offline for a moment', async ({ person }) => {
 })
 
 Then(
-  '{holder} has the note {string} with the text {string} within {string} seconds{inside}',
-  async ({ person }, holder: Holder, title: string, text: string, ...rest: [seconds: string, vault: string | undefined]) => {
-    const [seconds, vault] = rest
-    await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) }, vault)
+  '{holder} has the note {string} with the text {string}{wait}',
+  async ({ person }, holder: Holder, title: string, text: string, wait: Wait) => {
+    await person.computers.expectNoteWithin(holder, { title, text, seconds: wait.seconds }, wait.vault)
   },
 )
