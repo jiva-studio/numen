@@ -36,7 +36,7 @@ type span struct {
 	start, end int
 }
 
-func (s span) contains(offset int) bool {
+func (s span) hasOffset(offset int) bool {
 	return offset >= s.start && offset <= s.end
 }
 
@@ -90,7 +90,7 @@ func (d *syntaxDiagnosis) add(start, end int, message string) {
 }
 
 func (d *syntaxDiagnosis) isExplained(offset int) bool {
-	isInside := func(s span) bool { return s.contains(offset) }
+	isInside := func(s span) bool { return s.hasOffset(offset) }
 	return slices.ContainsFunc(d.quoted, isInside) || slices.ContainsFunc(d.lexical, isInside)
 }
 

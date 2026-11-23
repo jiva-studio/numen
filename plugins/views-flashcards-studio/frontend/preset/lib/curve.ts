@@ -5,7 +5,7 @@
  * The application works a curve out over the whole range in one pass, so moving
  * the control computes nothing.
  */
-import { dayAfter, daysBetween } from '../../lib/day'
+import { addDays, countDays } from '../../lib/day'
 import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../../lib/presets'
 
 /**
@@ -77,7 +77,7 @@ const hasNoReviews = (curve: Curve): boolean =>
 /** The goal's own value in the preset, in the units of its grid. */
 export const getGoalValue = (settings: Settings, today: string): number => {
   if (settings.goal === 'retention') return settings.retention
-  if (settings.goal === 'date') return daysBetween(today, settings.byDate)
+  if (settings.goal === 'date') return countDays(today, settings.byDate)
   return settings.minutesADay
 }
 
@@ -102,7 +102,7 @@ export const produceSchedule = (
     return { ...was, retention: clamp(round(value, 2), within.retention) }
   }
   if (curve.goal === 'date') {
-    return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
+    return { ...was, byDate: curve.days[place] ?? addDays(today, value) }
   }
   return { ...was, minutesADay: clamp(Math.round(value), within.minutesADay) }
 }

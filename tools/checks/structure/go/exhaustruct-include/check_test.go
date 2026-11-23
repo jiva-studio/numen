@@ -20,9 +20,9 @@ func TestEveryExhaustructIncludeMatchesAType(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkExhaustructIncludesMatchTypes(t, load.Workspace(t))
+	checkExhaustructIncludesMatchTypes(t, load.LoadWorkspace(t))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

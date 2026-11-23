@@ -25,7 +25,7 @@ type session struct {
 func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	registry, err := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()}).Tools()
+	registry, err := service.New(service.Config{GetVault: vaulttest.NewVaults(env.Host), Store: vaulttest.NewFolders(env.Host), Now: vaulttest.NewClock()}).BuildTools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	installation := vaulttest.NewInstallation()
 	installation.Add(t, map[string]string{"Animals.md": "# Empty\n"})
 	garden := installation.Add(t, vault())
-	registry, err := service.New(service.Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()}).Tools()
+	registry, err := service.New(service.Config{GetVault: vaulttest.NewVaults(installation.Host), Store: vaulttest.NewFolders(installation.Host), Now: vaulttest.NewClock()}).BuildTools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 
 	// Transport errors from GetVault and VaultNotes/FileAccess propagate through tools.
 	fv := &errHostVault{Vault: installation.Host, getVaultErr: errors.New("transport down")}
-	errReg, err := service.New(service.Config{Vaults: fv.vaults(), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()}).Tools()
+	errReg, err := service.New(service.Config{GetVault: fv.vaults(), Store: vaulttest.NewFolders(installation.Host), Now: vaulttest.NewClock()}).BuildTools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,11 +165,11 @@ func (e *errHostVault) GetVault(ctx context.Context) (domain.Vault, error) {
 	return e.Vault.GetVault(ctx)
 }
 
-func (e *errHostVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (e *errHostVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	if e.opErr != nil {
 		return nil, e.opErr
 	}
-	return e.Vault.GetPathsOfType(ctx, noteType)
+	return e.Vault.ListPathsOfType(ctx, noteType)
 }
 
 func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {

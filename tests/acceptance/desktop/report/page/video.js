@@ -158,7 +158,7 @@ const showTooltip = (video, segment) => {
   video.tooltip.style.left = `${Math.min(Math.max(center, half), wrap.width - half)}px`
 }
 
-const playVideo = (video) => {
+const startVideo = (video) => {
   video.player.play().catch(() => writePosition(video))
 }
 
@@ -176,13 +176,13 @@ const seekTo = (video, time) => {
 }
 
 const togglePlay = (video) => {
-  if (video.player.paused) playVideo(video)
+  if (video.player.paused) startVideo(video)
   else video.player.pause()
 }
 
 const goToNextStep = (video) => {
   if (video.isPausingAtSteps && video.player.paused) {
-    playVideo(video)
+    startVideo(video)
     return
   }
   const next = playback.findNextStart(getStarts(video), video.player.currentTime)

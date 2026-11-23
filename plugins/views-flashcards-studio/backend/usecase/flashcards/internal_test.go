@@ -247,7 +247,7 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 		}
 	}
 
-	took := day.spend(dueCards, newCards)
+	took := day.recordSpend(dueCards, newCards)
 	out := make(map[review.CardID]bool)
 	for entry, one := range dueCards {
 		if took.dueCards[entry] {

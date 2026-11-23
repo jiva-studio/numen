@@ -47,7 +47,7 @@ export function useMenuDismissal(
     dismissOutside(event)
   }
 
-  const noteInput = (): void => gate.noteInput()
+  const recordInput = (): void => gate.recordInput()
 
   const onWindowKey = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') return
@@ -58,7 +58,7 @@ export function useMenuDismissal(
   const listen = (): void => {
     window.addEventListener('pointerdown', dismissOutside, true)
     MENU_INPUT_EVENTS.forEach((name) =>
-      window.addEventListener(name, noteInput, { capture: true, passive: true }),
+      window.addEventListener(name, recordInput, { capture: true, passive: true }),
     )
     window.addEventListener('scroll', dismissOutsideScroll, true)
     window.addEventListener('resize', dismissOutside)
@@ -69,7 +69,7 @@ export function useMenuDismissal(
     gate.reset()
     window.removeEventListener('pointerdown', dismissOutside, true)
     MENU_INPUT_EVENTS.forEach((name) =>
-      window.removeEventListener(name, noteInput, { capture: true }),
+      window.removeEventListener(name, recordInput, { capture: true }),
     )
     window.removeEventListener('scroll', dismissOutsideScroll, true)
     window.removeEventListener('resize', dismissOutside)

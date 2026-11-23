@@ -334,7 +334,7 @@ describe('createConnectionClient', () => {
     expect(answer.ok && answer.value.revision).toBe(4)
   })
 
-  it('reports not_found when the core returns no connection without an error code', async () => {
+  it('reports notFound when the core returns no connection without an error code', async () => {
     const client = createConnectionClient(
       createRpc({
         createProviderConnection: () =>
@@ -351,19 +351,19 @@ describe('createConnectionClient', () => {
 
     expect(answer).toStrictEqual({
       ok: false,
-      error: { errorCode: 'not_found', detail: 'The core returned no connection.' },
+      error: { error: 'notFound', message: 'The core returned no connection.' },
     })
   })
 
   it('reads each served error code as a failure with its detail', async () => {
     const codes: Array<[ProviderConnectionErrorCode, string]> = [
-      [ProviderConnectionErrorCode.NOT_FOUND, 'not_found'],
-      [ProviderConnectionErrorCode.NAME_TAKEN, 'name_taken'],
-      [ProviderConnectionErrorCode.INVALID_FIELD, 'invalid_field'],
-      [ProviderConnectionErrorCode.TYPE_UNAVAILABLE, 'type_unavailable'],
-      [ProviderConnectionErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
-      [ProviderConnectionErrorCode.STALE_REVISION, 'stale_revision'],
-      [ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE, 'provider_unavailable'],
+      [ProviderConnectionErrorCode.NOT_FOUND, 'notFound'],
+      [ProviderConnectionErrorCode.NAME_TAKEN, 'nameTaken'],
+      [ProviderConnectionErrorCode.INVALID_FIELD, 'invalidField'],
+      [ProviderConnectionErrorCode.TYPE_UNAVAILABLE, 'typeUnavailable'],
+      [ProviderConnectionErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
+      [ProviderConnectionErrorCode.STALE_REVISION, 'staleRevision'],
+      [ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE, 'providerUnavailable'],
     ]
     for (const [code, expected] of codes) {
       const client = createConnectionClient(
@@ -382,7 +382,7 @@ describe('createConnectionClient', () => {
         secrets: {},
       })
 
-      expect(answer).toStrictEqual({ ok: false, error: { errorCode: expected, detail: 'why' } })
+      expect(answer).toStrictEqual({ ok: false, error: { error: expected, message: 'why' } })
     }
   })
 
@@ -404,7 +404,7 @@ describe('createConnectionClient', () => {
 
     expect(await client.delete('c00000009')).toStrictEqual({
       ok: false,
-      error: { errorCode: 'not_found', detail: 'gone' },
+      error: { error: 'notFound', message: 'gone' },
     })
     expect(deletedIds).toStrictEqual(['c00000009'])
     expect(await createConnectionClient(createRpc()).delete('c00000001')).toStrictEqual({
@@ -477,7 +477,7 @@ describe('createConnectionClient', () => {
       }),
     ).toStrictEqual({
       ok: false,
-      error: { errorCode: 'provider_unavailable', detail: 'key rejected' },
+      error: { error: 'providerUnavailable', message: 'key rejected' },
     })
   })
 })

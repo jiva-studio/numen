@@ -20,7 +20,7 @@ type Assignment func(CardID) SchedulingPolicy
 // ScheduleBy is one scheduler for every review card, on the preset a deck naming
 // none is scheduled by.
 func ScheduleBy(s Scheduler) Assignment {
-	return func(CardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
+	return func(CardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: NewDefaultPreset()} }
 }
 
 // History is a vault's answers in the order they were given: no revoked lines, one line per
@@ -29,8 +29,8 @@ func ScheduleBy(s Scheduler) Assignment {
 // shared.
 type History []Answer
 
-// OrderAnswers puts a vault's answers in the order they were given.
-func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
+// SortAnswers puts a vault's answers in the order they were given.
+func SortAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 
 // Replay computes the schedule of every review card in this history, each under
 // the scheduler its own preset requests and on the day its own preset assigns.
@@ -82,7 +82,7 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 func walkAnswers(
 	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardID]Schedule {
-	return OrderAnswers(answers).walkAnswers(delta, each)
+	return SortAnswers(answers).walkAnswers(delta, each)
 }
 
 func (h History) walkAnswers(

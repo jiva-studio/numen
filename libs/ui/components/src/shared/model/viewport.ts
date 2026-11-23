@@ -10,7 +10,7 @@ import type { Size } from '../lib/math/geometry'
  * with each element before observation of it begins.
  */
 interface FollowOptions {
-  readonly took: (size: Size) => void
+  readonly onSize: (size: Size) => void
   readonly onFound?: () => void
 }
 
@@ -19,7 +19,7 @@ const useFollowedViewport = (
   watchWith: Viewport['watch'],
   options: FollowOptions,
 ): void => {
-  const { took, onFound } = options
+  const { onSize, onFound } = options
   let followed: HTMLElement | null = null
   let stop: (() => void) | undefined
 
@@ -30,7 +30,7 @@ const useFollowedViewport = (
     followed = element
     if (!element) return
     onFound?.()
-    stop = watchWith(element, took)
+    stop = watchWith(element, onSize)
   }
 
   onMounted(() => follow(area.value))
@@ -60,7 +60,7 @@ export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
   }
 
   useFollowedViewport(area, browserViewport.watch, {
-    took: (size) => {
+    onSize: (size) => {
       viewport.value = size
     },
     onFound: measure,
@@ -79,7 +79,7 @@ export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
   const viewport = ref<Size>({ width: 0, height: 0 })
 
   useFollowedViewport(area, browserViewport.watchWhole, {
-    took: (size) => {
+    onSize: (size) => {
       viewport.value = size
     },
   })

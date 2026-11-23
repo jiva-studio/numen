@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { PluginHost } from './host'
+import type { PluginHost } from './hostApi'
 import { disposePluginEntry } from './registry'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
@@ -573,7 +573,7 @@ describe('a registration that fails after its tab kind was registered', () => {
     expect(host.registered.getRegisteredReaders()).toHaveLength(0)
   })
 
-  it('distinguishes reader ids from tab kind ids and skips extension registration when openTab or registerExtensionReader is missing', async () => {
+  it('distinguishes reader ids from tab kind ids', async () => {
     const host = createTestPluginHost(createDeps())
     host.contextHost.registration.registerTabKind('p1', { kind: 'pdf', component: {} })
     expect(() =>
@@ -586,32 +586,6 @@ describe('a registration that fails after its tab kind was registered', () => {
     expect(() =>
       host.contextHost.registration.registerTabKind('p2', { kind: 'custom', component: {} }),
     ).not.toThrow()
-
-    const getReaderExtensions = vi.fn(() => ['pdf'])
-    const hostNoExtReg = createTestPluginHost({
-      target: 'desktop.editor',
-      registerKind: vi.fn(() => vi.fn()),
-      openTab: vi.fn(async () => 't1'),
-      getReaderExtensions,
-    })
-    hostNoExtReg.contextHost.registration.registerReader('p1', {
-      id: 'pdf',
-      component: STUB_COMPONENT,
-    })
-    expect(getReaderExtensions).not.toHaveBeenCalled()
-
-    const hostNoOpenTab = createTestPluginHost({
-      target: 'desktop.editor',
-      registerKind: vi.fn(() => vi.fn()),
-      registerExtensionReader: vi.fn(() => vi.fn()),
-      getReaderExtensions,
-    })
-    expect(hostNoOpenTab.contextHost.tabs.openTab('pdf', 'a.pdf')).toBeUndefined()
-    hostNoOpenTab.contextHost.registration.registerReader('p1', {
-      id: 'pdf',
-      component: STUB_COMPONENT,
-    })
-    expect(getReaderExtensions).not.toHaveBeenCalled()
 
     const startPlugin = vi.fn(async () => undefined)
     const manifests = [

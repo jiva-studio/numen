@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -42,18 +43,46 @@ type Gate struct {
 	closed    atomic.Bool
 	questions inflight
 	trace     atomic.Pointer[callTrace]
+
+	mu      sync.Mutex
+	streams map[*context.CancelFunc]struct{}
 }
 
 func (g *Gate) SetCallTrace(clock CallClock, record func(logs.Entry)) {
 	g.trace.Store(&callTrace{clock: clock, record: record})
 }
 
-// Close rejects all new requests permanently. It returns after the requests
-// already accepted have completed, so the index and embedder stay available
-// for their whole duration.
+// Close rejects all new requests permanently and cancels the streams that are open. It returns after the
+// requests already accepted have completed, so the index and embedder stay available for their whole
+// duration.
 func (g *Gate) Close() {
+	g.mu.Lock()
 	g.closed.Store(true)
+	for cancel := range g.streams {
+		(*cancel)()
+	}
+	g.mu.Unlock()
 	<-g.questions.seal()
+}
+
+func (g *Gate) openStream(ctx context.Context) (context.Context, func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.closed.Load() {
+		cancel()
+		return ctx, func() {}
+	}
+	if g.streams == nil {
+		g.streams = make(map[*context.CancelFunc]struct{})
+	}
+	g.streams[&cancel] = struct{}{}
+	return ctx, func() {
+		g.mu.Lock()
+		delete(g.streams, &cancel)
+		g.mu.Unlock()
+		cancel()
+	}
 }
 
 // IsClosed reports whether the window is shut.
@@ -67,27 +96,55 @@ func (g *Gate) FinishQuestion() { g.questions.finish() }
 
 // CountQuestions counts each call to a service among the questions the window
 // is answering, refuses it once the window is shut, and records a structured log entry when a
-// call tracing is enabled.
+// call tracing is enabled. A stream is counted until it ends, and Close cancels it.
 func (g *Gate) CountQuestions() connect.HandlerOption {
-	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
-		func(next connect.UnaryFunc) connect.UnaryFunc {
-			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
-				if !g.questions.begin() {
-					return nil, connect.NewError(connect.CodeUnavailable, ErrShut)
-				}
-				defer g.questions.finish()
+	return connect.WithInterceptors(counter{gate: g})
+}
 
-				trace := g.trace.Load()
-				if trace == nil || trace.clock == nil || trace.record == nil || isLogProcedure(r.Spec().Procedure) {
-					return next(ctx, r)
-				}
-				start := trace.clock.Now()
-				resp, err := next(ctx, r)
-				trace.recordCall(ctx, start, r, err)
-				return resp, err
-			}
-		},
-	))
+type counter struct {
+	gate *Gate
+}
+
+func (c counter) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
+		var resp connect.AnyResponse
+		err := c.gate.answer(ctx, r.Spec().Procedure, func(ctx context.Context) error {
+			var err error
+			resp, err = next(ctx, r)
+			return err
+		})
+		return resp, err
+	}
+}
+
+func (c counter) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return next
+}
+
+func (c counter) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
+		return c.gate.answer(ctx, conn.Spec().Procedure, func(ctx context.Context) error {
+			ctx, release := c.gate.openStream(ctx)
+			defer release()
+			return next(ctx, conn)
+		})
+	}
+}
+
+func (g *Gate) answer(ctx context.Context, procedure string, serve func(context.Context) error) error {
+	if !g.questions.begin() {
+		return connect.NewError(connect.CodeUnavailable, ErrShut)
+	}
+	defer g.questions.finish()
+
+	trace := g.trace.Load()
+	if trace == nil || trace.clock == nil || trace.record == nil || isLogProcedure(procedure) {
+		return serve(ctx)
+	}
+	start := trace.clock.Now()
+	err := serve(ctx)
+	trace.recordCall(ctx, start, procedure, err)
+	return err
 }
 
 func isLogProcedure(procedure string) bool {
@@ -95,10 +152,10 @@ func isLogProcedure(procedure string) bool {
 }
 
 func (t *callTrace) recordCall(
-	ctx context.Context, start time.Time, req connect.AnyRequest, err error,
+	ctx context.Context, start time.Time, procedure string, err error,
 ) {
 	duration := t.clock.Now().Sub(start)
-	service, method := splitProcedure(req.Spec().Procedure)
+	service, method := splitProcedure(procedure)
 	level := getProcedureLevel(method, err)
 	durationMs := strconv.FormatFloat(float64(duration.Microseconds())/1000.0, 'f', -1, 64)
 	props := map[string]string{

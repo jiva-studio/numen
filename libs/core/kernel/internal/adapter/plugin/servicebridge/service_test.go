@@ -192,7 +192,7 @@ func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
 	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
 	proxy := Open(host, host, host)
 
-	if !proxy.Serves("/numen.v1.SampleService/ReadSample") || proxy.Serves("/numen.v1.NoteService/Read") || proxy.Serves("/") {
+	if !proxy.CanServe("/numen.v1.SampleService/ReadSample") || proxy.CanServe("/numen.v1.NoteService/Read") || proxy.CanServe("/") {
 		t.Error("the proxy claimed a service it does not forward, or rejected one it does")
 	}
 	recorded := httptest.NewRecorder()

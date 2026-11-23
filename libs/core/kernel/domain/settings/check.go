@@ -169,7 +169,7 @@ func checkList(value any) error {
 }
 
 func checkNumber(declared manifest.Setting, value any) error {
-	number, isNumber := toNumber(value)
+	number, isNumber := readNumber(value)
 	if !isNumber || math.IsNaN(number) || math.IsInf(number, 0) {
 		return fmt.Errorf("%w: expected a number", ErrWrongType)
 	}
@@ -186,7 +186,7 @@ func formatLimit(limit *float64, unbounded string) string {
 	return fmt.Sprint(*limit)
 }
 
-func toNumber(value any) (float64, bool) {
+func readNumber(value any) (float64, bool) {
 	switch number := value.(type) {
 	case float64:
 		return number, true

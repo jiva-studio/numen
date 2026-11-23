@@ -14,7 +14,7 @@ import {
 import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './aimTiming'
 
 export interface SubmenuAimOptions {
-  readonly clock: () => number
+  readonly getTime: () => number
   readonly getActiveId: () => string | null
   readonly getSubmenuBox: () => MenuBox | null
   readonly isInsideSubmenu: (event: Event) => boolean
@@ -110,7 +110,7 @@ function handleRowHover(ctx: AimContext, item: MenuItem, event?: MouseEvent): vo
     applyRowTarget(item, options)
     return
   }
-  if (ctx.pending?.item?.id === item.id && options.clock() >= ctx.pending.dueAt) {
+  if (ctx.pending?.item?.id === item.id && options.getTime() >= ctx.pending.dueAt) {
     ctx.stepTriangle(event)
     ctx.runPendingAction(ctx.pending)
     return
@@ -138,7 +138,7 @@ function handleMenuLeave(ctx: AimContext, event?: MouseEvent): void {
   const { options } = ctx
   if (options.getActiveId() === null || isReachingSubmenu(event, readEventPoint(event), options)) {
     ctx.clearPending()
-  } else if (ctx.pending?.kind === 'close' && options.clock() >= ctx.pending.dueAt) {
+  } else if (ctx.pending?.kind === 'close' && options.getTime() >= ctx.pending.dueAt) {
     ctx.runPendingAction(ctx.pending)
   } else if (ctx.stepTriangle(event) || ctx.pending?.kind !== 'close') {
     ctx.schedule('close', SUBMENU_CLOSE_GRACE_MS)
@@ -148,7 +148,7 @@ function handleMenuLeave(ctx: AimContext, event?: MouseEvent): void {
 function handlePointerMove(ctx: AimContext, event: MouseEvent): void {
   const { options } = ctx
   if (isReachingSubmenu(event, readEventPoint(event), options)) ctx.clearPending()
-  else if (ctx.pending && options.clock() >= ctx.pending.dueAt) ctx.runPendingAction(ctx.pending)
+  else if (ctx.pending && options.getTime() >= ctx.pending.dueAt) ctx.runPendingAction(ctx.pending)
   else if (!options.isInsideMenu(event) && options.getActiveId() !== null) {
     if (ctx.stepTriangle(event) || ctx.pending?.kind !== 'close') {
       ctx.schedule('close', SUBMENU_CLOSE_GRACE_MS)
@@ -181,7 +181,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
 
   const schedule = (kind: PendingAimAction['kind'], delayMs: number, item?: MenuItem): void => {
     clearPending()
-    const action: PendingAimAction = { kind, item, dueAt: options.clock() + delayMs }
+    const action: PendingAimAction = { kind, item, dueAt: options.getTime() + delayMs }
     ctx.pending = action
     syncWindow(true)
     ctx.timerHandle = setTimeout(() => {

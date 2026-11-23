@@ -74,7 +74,7 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		rendered, err := book.Markup(pos)
+		rendered, err := book.ParseMarkup(pos)
 		if err != nil {
 			b.Fatal(err)
 		}

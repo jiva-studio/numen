@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
-import { optionsForType } from '../model/sizing/plexScale'
+import { getOptionsForType } from '../model/sizing/plexScale'
 import type { Viewport } from '@numen/ui'
 import { build } from '../fixtures/build'
 import { fixedViewport } from '../fixtures/viewport'
@@ -350,7 +350,7 @@ describe('how much room the plex has', () => {
   it('draws the focus at the middle of a tall window at a larger interface size and hides nothing that fits', async () => {
     const plex = await mountPlex({
       graph: build('Thermodynamics', { parent: 2, child: 8, jump: 5, sibling: 4 }),
-      options: optionsForType(15.6),
+      options: getOptionsForType(15.6),
       viewport: createViewport({ width: 1570, height: 1440 }),
     })
     await nextTick()

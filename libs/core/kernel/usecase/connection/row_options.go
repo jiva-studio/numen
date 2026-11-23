@@ -235,7 +235,7 @@ func (o *Options) readOptions(
 ) ([]modelcall.Option, error) {
 	provider, release, err := o.deps.Source.OpenProvider(plugin.WithPurpose(ctx, o.describeOperation(declared.OptionsFrom)+" of "+resolved.Name), resolved.PluginID)
 	if err != nil {
-		return nil, failed(ctx, connection.FailureReasonUnavailable)
+		return nil, getFailure(ctx, connection.FailureReasonUnavailable)
 	}
 	defer release()
 	secrets, err := o.deps.ReadSecrets(ctx, resolved)
@@ -247,7 +247,7 @@ func (o *Options) readOptions(
 	}
 	listed, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked)
 	if err != nil {
-		return nil, failed(ctx, readReason(err))
+		return nil, getFailure(ctx, readReason(err))
 	}
 	return listed, nil
 }
@@ -271,7 +271,7 @@ func (o *Options) askProvider(
 	return listed.Options, nil
 }
 
-func failed(ctx context.Context, reason connection.FailureReason) error {
+func getFailure(ctx context.Context, reason connection.FailureReason) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}

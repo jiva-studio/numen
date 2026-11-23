@@ -90,7 +90,7 @@ func getBestSimilarity(query []float32, chunks []domain.ChunkID, vectors map[dom
 		if !found || len(stored) != len(query) {
 			continue
 		}
-		if similarity := vector.SimilarityBytes(query, stored); best == nil || similarity > *best {
+		if similarity := vector.ComputeSimilarityBytes(query, stored); best == nil || similarity > *best {
 			best = &similarity
 		}
 	}

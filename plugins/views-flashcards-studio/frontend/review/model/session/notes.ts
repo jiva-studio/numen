@@ -20,8 +20,8 @@ import type { DeckNeighborhood, Neighbor } from '../../api/session/notes'
 export interface NotesPanelDeps {
   readonly open: () => boolean
   readonly showPanel: (open: boolean) => void
-  readonly vault: () => string
-  readonly deck: () => string
+  readonly getVault: () => string
+  readonly getDeck: () => string
   readonly getDeckNeighborhood: (vault: string, deck: string) => Promise<DeckNeighborhood>
   readonly showNotice: (message: string) => void
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
@@ -109,11 +109,11 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   const content = useDeckNotes(deps.getDeckNeighborhood, deps.showNotice, deps.resolveLinks)
 
   const openPanel = async (note = '') => {
-    const deck = deps.deck()
+    const deck = deps.getDeck()
     if (!deck) return
     activePath.value = note
     deps.showPanel(true)
-    await content.fetchNotes(deps.vault(), deck)
+    await content.fetchNotes(deps.getVault(), deck)
   }
 
   const closePanel = () => {

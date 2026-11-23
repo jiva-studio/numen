@@ -1,6 +1,6 @@
 import { isNotePath, type CommandItem, type VaultEntry } from '@numen/plugin-sdk'
 import { createTemplateItems, type FoundTemplate } from '../lib/groupTemplates'
-import { couldHold, findGroup, type Mask } from '../lib/masks'
+import { canHold, findGroup, type Mask } from '../lib/masks'
 
 /** What the list reads of the vault. */
 export interface TemplateFiles {
@@ -53,7 +53,7 @@ export function createTemplateList(deps: {
       const pending = ['']
       for (let folder = pending.pop(); folder !== undefined; folder = pending.pop()) {
         for (const entry of await listFolder(folder)) {
-          if (entry.isFolder && couldHold(masks, entry.path)) pending.push(entry.path)
+          if (entry.isFolder && canHold(masks, entry.path)) pending.push(entry.path)
           const template = entry.isFolder ? undefined : findTemplate(masks, entry)
           if (template) found.push(template)
         }

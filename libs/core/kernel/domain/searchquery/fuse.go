@@ -8,10 +8,10 @@ import (
 // FusionK is the constant of reciprocal rank fusion.
 const FusionK = 60
 
-// Fuse sets the score of every result from its meaning and word scores. ScoreMeaning takes the meaning
+// SetScores sets the score of every result from its meaning and word scores. ScoreMeaning takes the meaning
 // score and ScoreWords the word score. ScoreFused ranks the results by each family, best first, nil last,
 // ties by path then start, and takes (1/(k+rM) + 1/(k+rW)) / (2/(k+1)), where a nil family adds 0.
-func Fuse(results []SearchResult, kind ScoreKind) {
+func SetScores(results []SearchResult, kind ScoreKind) {
 	switch kind {
 	case ScoreMeaning:
 		for i := range results {
@@ -22,7 +22,7 @@ func Fuse(results []SearchResult, kind ScoreKind) {
 			results[i].Score = results[i].WordScore
 		}
 	case ScoreFused:
-		fuseRanks(results)
+		setFusedScores(results)
 	case ScoreNone:
 		for i := range results {
 			results[i].Score = nil
@@ -31,7 +31,7 @@ func Fuse(results []SearchResult, kind ScoreKind) {
 	}
 }
 
-func fuseRanks(results []SearchResult) {
+func setFusedScores(results []SearchResult) {
 	sums := make([]float64, len(results))
 	addRanks(results, sums, func(r SearchResult) *float64 { return r.MeaningScore })
 	addRanks(results, sums, func(r SearchResult) *float64 { return r.WordScore })

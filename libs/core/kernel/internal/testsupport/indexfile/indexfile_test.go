@@ -17,7 +17,7 @@ import (
 func TestACopyIsAMigratedIndex(t *testing.T) {
 	t.Parallel()
 
-	copied := indexfile.Path(t)
+	copied := indexfile.GetPath(t)
 
 	scratch := filepath.Join(t.TempDir(), "index.db")
 	opened, err := index.Open(t.Context(), scratch)
@@ -44,13 +44,13 @@ func TestACopyIsAMigratedIndex(t *testing.T) {
 func TestCopiesAreIndependent(t *testing.T) {
 	t.Parallel()
 
-	one, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	one, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, one)
 
-	other := indexfile.Path(t)
+	other := indexfile.GetPath(t)
 	two, err := index.Open(t.Context(), other)
 	if err != nil {
 		t.Fatal(err)

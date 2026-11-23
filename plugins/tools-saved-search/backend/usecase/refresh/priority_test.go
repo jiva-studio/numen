@@ -32,7 +32,7 @@ func newBatchWorld(t *testing.T) *world {
 	} {
 		w.searches.SetAnswer(note.query, host.SearchState{Results: []host.SearchResult{passage("Harbor/"+note.text+".md", note.text, 1)}, ScoreKind: "words"})
 		if note.path != wrecksPath {
-			w.vault.File(note.path, formatSearchNote("", note.query))
+			w.vault.WriteFile(note.path, formatSearchNote("", note.query))
 		}
 	}
 	return w
@@ -72,7 +72,7 @@ func TestAnInteractiveRunGoesBeforeTheRestOfTheBatch(t *testing.T) {
 	defer release()
 	done := startBatch(t, w)
 
-	w.vault.File(wrecksPath, formatSearchNote("", wrecksQuery))
+	w.vault.WriteFile(wrecksPath, formatSearchNote("", wrecksQuery))
 	record := w.runNow(t, wrecksPath)
 
 	if len(record.Results) != 1 {
@@ -122,7 +122,7 @@ func TestANeverComputedSearchIsRunningWhileQueuedInTheBatch(t *testing.T) {
 
 func TestABatchThatEndsWhileWaitingForTheVaultUnqueuesItsSearches(t *testing.T) {
 	w := newBatchWorld(t)
-	w.vault.File(wrecksPath, formatSearchNote("", wrecksQuery))
+	w.vault.WriteFile(wrecksPath, formatSearchNote("", wrecksQuery))
 	releaseTides := w.searches.HoldSearch(tidesQuery)
 	defer releaseTides()
 	releaseWrecks := w.searches.HoldSearch(wrecksQuery)

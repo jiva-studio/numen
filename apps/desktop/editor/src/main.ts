@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createKeepaliveTransport, createOriginTransport } from '@numen/core-client'
 import { reportFailure, runInBackground } from '@numen/ui'
-import { openExternalUrl } from '@numen/plugin-loader'
+import { createFrameRuntimeLoader, openExternalUrl } from '@numen/plugin-loader'
 import { interceptExternalLinks } from './features/external-links'
 import { createRoot } from './app/createRoot'
 
@@ -10,11 +10,13 @@ import { createRoot } from './app/createRoot'
 // everywhere leaves the right button to the application.
 document.addEventListener('contextmenu', (event) => event.preventDefault())
 
+const loadFrameRuntime = createFrameRuntimeLoader()
+
 // A note can contain any link, and this window has no address bar to show the
 // current location. Links stay inside the served pages, and an external
 // address opens in the system browser.
 interceptExternalLinks((href) => {
-  runInBackground(openExternalUrl(href), reportFailure)
+  runInBackground(openExternalUrl(href, loadFrameRuntime), reportFailure)
 })
 
 createApp(

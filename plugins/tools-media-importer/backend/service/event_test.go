@@ -20,15 +20,15 @@ func TestAFilesChangedEventDownloadsTheMissingCaptionsOfALinkNote(t *testing.T) 
 	texts.SetStore(PluginID, vault.Store())
 	tasks := queuetest.NewLog()
 	links := link.New(link.Host{
-		PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts),
+		PluginID: PluginID, GetVault: vaultsOf(vault), Store: foldersOf(vault), GetTexts: textsOf(texts),
 		Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
 	},
 		func() ports.Fetcher { return download.NewMock(webpage.New()) },
 		func() fetch.Settings { return fetch.Settings{IsTextDownloadAutomatic: true} })
 	t.Cleanup(links.Close)
 	note := "---\ntype: link\nurl: " + videoAddress + "\n---\n"
-	vault.File("links/mill.md", note)
-	texts.File("links/mill.md", []byte(note))
+	vault.WriteFile("links/mill.md", note)
+	texts.WriteFile("links/mill.md", []byte(note))
 	app := &App{links: links}
 
 	if err := app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent(string(vault.Vault().ID))); err != nil {

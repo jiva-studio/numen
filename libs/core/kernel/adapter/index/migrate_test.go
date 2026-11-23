@@ -152,7 +152,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	raw, err := sql.Open("sqlite", buildDSN(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	t.Logf("failed with: %v", err)
 
 	// What it held, it still holds.
-	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	back, err := sql.Open("sqlite", buildDSN(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}

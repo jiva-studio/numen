@@ -21,14 +21,14 @@ type output struct {
 	err error
 }
 
-func (o *output) printf(format string, args ...any) {
+func (o *output) writeFormat(format string, args ...any) {
 	if o.err != nil {
 		return
 	}
 	_, o.err = fmt.Fprintf(o.w, format, args...)
 }
 
-func (o *output) println(args ...any) {
+func (o *output) writeLine(args ...any) {
 	if o.err != nil {
 		return
 	}
@@ -62,14 +62,14 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return finish(0, printUsage(stdout))
 	default:
 		out := &output{w: stderr}
-		out.printf("unknown plugin command: %q\n\n%s", args[0], usage)
+		out.writeFormat("unknown plugin command: %q\n\n%s", args[0], usage)
 		return 1
 	}
 }
 
 func printUsage(w io.Writer) *output {
 	out := &output{w: w}
-	out.printf("%s", usage)
+	out.writeFormat("%s", usage)
 	return out
 }
 
@@ -84,27 +84,27 @@ func runValidate(args []string, stdoutWriter, stderrWriter io.Writer) int {
 	}
 
 	if len(positional) == 0 {
-		stderr.println("error: plugin path is required")
-		stderr.println("usage: numen plugin validate <path>")
+		stderr.writeLine("error: plugin path is required")
+		stderr.writeLine("usage: numen plugin validate <path>")
 		return finish(1, stderr)
 	}
 
 	targetPath := positional[0]
 	issues, err := Validate(targetPath)
 	if err != nil {
-		stderr.printf("validation failed: %v\n", err)
+		stderr.writeFormat("validation failed: %v\n", err)
 		return 1
 	}
 
 	if len(issues) > 0 {
-		stderr.println("validation errors:")
+		stderr.writeLine("validation errors:")
 		for _, issue := range issues {
-			stderr.printf("  - %s\n", issue)
+			stderr.writeFormat("  - %s\n", issue)
 		}
 		return 1
 	}
 
-	stdout.printf("plugin at %s is valid\n", targetPath)
+	stdout.writeFormat("plugin at %s is valid\n", targetPath)
 	return finish(0, stdout)
 }
 
@@ -122,19 +122,19 @@ func runPackage(args []string, stdoutWriter, stderrWriter io.Writer) int {
 	}
 
 	if len(positional) == 0 {
-		stderr.println("error: plugin path is required")
-		stderr.println("usage: numen plugin package <path> [--out=<archive>]")
+		stderr.writeLine("error: plugin path is required")
+		stderr.writeLine("usage: numen plugin package <path> [--out=<archive>]")
 		return 1
 	}
 
 	targetPath := positional[0]
-	archivePath, err := Package(targetPath, outArchive, stdoutWriter)
+	archivePath, err := BuildPackage(targetPath, outArchive, stdoutWriter)
 	if err != nil {
-		stderr.printf("package error: %v\n", err)
+		stderr.writeFormat("package error: %v\n", err)
 		return 1
 	}
 
-	stdout.printf("packaged plugin: %s\n", archivePath)
+	stdout.writeFormat("packaged plugin: %s\n", archivePath)
 	return finish(0, stdout)
 }
 

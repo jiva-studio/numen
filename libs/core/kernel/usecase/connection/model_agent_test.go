@@ -65,7 +65,7 @@ func TestAnAgentConnectionRunsOneCallAtATime(t *testing.T) {
 	s.world.Provider.Block("")
 	first := s.complete(t.Context(), "first")
 	select {
-	case <-s.world.Provider.Entered():
+	case <-s.world.Provider.GetEntered():
 	case <-t.Context().Done():
 	}
 
@@ -75,7 +75,7 @@ func TestAnAgentConnectionRunsOneCallAtATime(t *testing.T) {
 	if got := len(s.world.Provider.Calls()); got != 1 {
 		t.Errorf("the provider received %d calls while the first ran, want 1", got)
 	}
-	s.world.Provider.Unblock("")
+	s.world.Provider.ReleaseCalls("")
 	if err := errors.Join(awaitDone(t, first), awaitDone(t, second)); err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestAnAgentConnectionRunsOneCallAtATime(t *testing.T) {
 func TestAnAgentConnectionDoesNotServeEmbed(t *testing.T) {
 	s := newAgentSetup(t)
 	entry := s.world.AddAgent(t, "Codex")
-	s.world.Rows.Set(consumerID, modelcalltest.EmbedOperation, modelcalltest.Row(entry, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.EmbedOperation, modelcalltest.CreateRow(entry, "m"))
 
 	_, err := s.calls.Call(t.Context(), consumerID, modelcalldomain.Request{Operation: modelcalltest.EmbedOperation}, func([]byte) error { return nil })
 

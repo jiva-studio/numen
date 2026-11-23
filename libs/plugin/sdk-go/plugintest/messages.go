@@ -12,8 +12,8 @@ import (
 
 // MessageContract creates an empty request message and an empty response message of one method.
 type MessageContract struct {
-	Request  func() any
-	Response func() any
+	CreateRequest  func() any
+	CreateResponse func() any
 }
 
 // CheckMessageFixtures fails where, for a method of contracts, the file <method>.request.json or
@@ -25,7 +25,7 @@ func CheckMessageFixtures(t *testing.T, dir string, contracts map[string]Message
 		for _, kind := range []struct {
 			suffix string
 			create func() any
-		}{{"request", contract.Request}, {"response", contract.Response}} {
+		}{{"request", contract.CreateRequest}, {"response", contract.CreateResponse}} {
 			t.Run(method+"."+kind.suffix, func(t *testing.T) {
 				raw, err := os.ReadFile(filepath.Join(dir, method+"."+kind.suffix+".json"))
 				if err != nil {

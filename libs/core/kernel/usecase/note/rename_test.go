@@ -224,7 +224,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the rename failed: %v", err)
 			}
-			if !domain.IsNameable(domain.Basename(renamed.Path)) {
+			if !domain.IsNameable(domain.GetBasename(renamed.Path)) {
 				t.Fatalf("no link can be written by the name of %q", renamed.Path)
 			}
 
@@ -518,7 +518,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}

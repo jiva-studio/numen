@@ -3,7 +3,7 @@
  * a tab closes.
  */
 import { computed } from 'vue'
-import { getPanes, paneById } from '@numen/workbench'
+import { getPanes, findPane } from '@numen/workbench'
 import { createTabClosers } from './tabOperations'
 import type { TabStore } from './tabStore'
 
@@ -11,7 +11,7 @@ export function useTabPanes(store: TabStore) {
   const { layout, open } = store
   const closers = createTabClosers(store)
   /** The tab in front in the focused pane. */
-  const frontId = computed(() => paneById(layout.value.root, layout.value.focus)?.active)
+  const frontId = computed(() => findPane(layout.value.root, layout.value.focus)?.active)
 
   /** Offers the keystroke to the tab in front first, then to the other tabs that show, last shown first. */
   const onKeyPress = (event: KeyboardEvent): boolean => {

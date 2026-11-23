@@ -11,7 +11,7 @@ export interface TreeProps {
   selected?: readonly RowId[]
   threshold?: number
   name?: string
-  counted?: (rows: number) => string
+  getCountText?: (rows: number) => string
   marking?: RowMarker | undefined
   clock?: Clock
 }

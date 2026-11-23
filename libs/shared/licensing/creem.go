@@ -89,7 +89,7 @@ func (p *CreemProvider) Activate(ctx context.Context, req ActivationRequest) (Ac
 	if key == "" || instanceName == "" {
 		return ActivationResult{}, fmt.Errorf("%w: key and instance name are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/v1/licenses/activate",
@@ -126,7 +126,7 @@ func (p *CreemProvider) evaluateCreemActivation(
 		return ActivationResult{}, mismatchErr
 	}
 	status := resolveCreemStatus(parsed)
-	if err := statusToError(status); err != nil {
+	if err := getStatusError(status); err != nil {
 		return ActivationResult{}, err
 	}
 	if instanceID == "" {
@@ -157,7 +157,7 @@ func (p *CreemProvider) Validate(ctx context.Context, key, instanceID string) (V
 	if cleanKey == "" || cleanInstance == "" {
 		return ValidationResult{}, fmt.Errorf("%w: key and instance id are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/v1/licenses/validate",
@@ -191,7 +191,7 @@ func (p *CreemProvider) Deactivate(ctx context.Context, key, instanceID string) 
 	if cleanKey == "" || cleanInstance == "" {
 		return fmt.Errorf("%w: key and instance id are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/v1/licenses/deactivate",

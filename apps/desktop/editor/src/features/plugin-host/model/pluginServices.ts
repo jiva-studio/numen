@@ -94,7 +94,7 @@ export interface WorkspaceHostDeps {
   readonly icons: WorkspaceIcons
   readonly messages: WorkspaceHost['messages']
   readonly getNoteInFocus: () => NoteRef
-  readonly today: () => string
+  readonly getToday: () => string
 }
 
 export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
@@ -104,7 +104,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
       isReady: computed(() => !window.health.failure.value),
       openingPath: window.opening.path,
       readOpeningPath: () => window.opening.read(),
-      getToday: () => deps.today(),
+      getToday: () => deps.getToday(),
     },
     dragged: {
       paths: dragged,
@@ -124,7 +124,7 @@ export interface VaultNotesDeps {
   readonly notes: Pick<NoteApi, 'listRelatedNotes' | 'listHeadings'>
   readonly getFileKinds: FileApi['getFileKinds']
   readonly search: {
-    readonly names: (
+    readonly searchNames: (
       query: string,
       limit: number,
     ) => Promise<readonly { path: string; title: string }[]>
@@ -194,7 +194,7 @@ export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
     },
     getHeadings: (paths) => notes.listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
-      (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
+      (await search.searchNames(query, limit)).map(({ path, title }) => ({ path, title })),
     createUntitledNote: () => making.createUntitledNote(''),
     read: (path) => pluginNotes.readNote(path),
     write: pluginNotes.write,

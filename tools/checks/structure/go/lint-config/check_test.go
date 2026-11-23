@@ -63,7 +63,7 @@ func TestEveryExhaustructPatternMatchesAType(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkEveryExhaustructPatternMatchesAType(t, load.Workspace(t))
+	checkEveryExhaustructPatternMatchesAType(t, load.LoadWorkspace(t))
 }
 
 // TestLintConfigWalk_FindsThePlantedConfigs verifies that the walk lists the golangci files of a
@@ -86,5 +86,5 @@ func TestLintConfigWalk_FindsThePlantedConfigs(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

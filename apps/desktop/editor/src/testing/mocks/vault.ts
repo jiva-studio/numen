@@ -6,7 +6,7 @@
 import { VAULTS_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
-import { changed, mockVaultList, mockVaultState } from '../answers'
+import { vaultChanges, mockVaultList, mockVaultState } from '../answers'
 
 export const vaultAnswers = {
   vault: {
@@ -16,7 +16,7 @@ export const vaultAnswers = {
       path: '/vaults/Physics',
       scan: { isReady: mockVaultState.isReady, error: mockVaultState.error, watchError: '' },
     }),
-    watchVaultChanges: changed.stream,
+    watchVaultChanges: vaultChanges.stream,
   },
   folderDialog: {
     chooseFolder: () => {

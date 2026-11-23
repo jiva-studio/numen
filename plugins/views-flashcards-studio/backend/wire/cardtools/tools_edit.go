@@ -69,7 +69,7 @@ func (t *Tools) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome
 	var added deckedit.AddedCard
 	content, err := t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 		var err error
-		added, err = t.deckCards.AddCard.Execute(ctx, v, pos, in.CardModel, values(in.Values), in.SectionIndex)
+		added, err = t.deckCards.AddCard.Execute(ctx, v, pos, in.CardModel, convertValues(in.Values), in.SectionIndex)
 		return added.EditResult, err
 	})
 	if err != nil {
@@ -108,7 +108,7 @@ func (t *Tools) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-		return t.deckCards.EditCard.Execute(ctx, v, pos, in.CardID, in.CardModel, values(in.Values))
+		return t.deckCards.EditCard.Execute(ctx, v, pos, in.CardID, in.CardModel, convertValues(in.Values))
 	})
 }
 
@@ -258,7 +258,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	current, err := t.cards.Read.CardModel(ctx, v, in.Path)
+	current, err := t.cards.Read.ReadCardModel(ctx, v, in.Path)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
@@ -272,18 +272,18 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 	if current.Type != format.TypeCardModel {
 		return WriteOutcome{}, errors.New(describeCode(api.ErrorCodeNotACardModel))
 	}
-	body, err := format.CardModelBody(current.Body.Preamble, newCardTemplates(in.Templates), current.Body.Tail)
+	body, err := format.BuildCardModelBody(current.Body.Preamble, newCardTemplates(in.Templates), current.Body.Tail)
 	// gomutants:disable-next-line BRANCH_IF reason="CardModelBody on in-memory strings does not fail."
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	newFp, err := t.cards.Write.CardModel(ctx, v, in.Path, body, in.Fields, fp)
+	newFp, err := t.cards.Write.WriteCardModel(ctx, v, in.Path, body, in.Fields, fp)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
 	return WriteOutcome{
 		Path:        in.Path,
-		Fingerprint: fingerprintOf(newFp),
+		Fingerprint: buildFingerprint(newFp),
 		Total:       0,
 		CardID:      "",
 	}, nil

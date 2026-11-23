@@ -73,7 +73,7 @@ func (c *Cooldowns) Start(id string, revision int, reason FailureReason, retryAf
 	}
 	entry := cooldownEntry{reason: reason}
 	switch {
-	case lastsUntilEdited(reason) && !IsDetected(id):
+	case isClearedByEdit(reason) && !IsDetected(id):
 		entry.isForever = true
 	case retryAfter > 0:
 		entry.until = now.Add(min(retryAfter, MaxCooldown))
@@ -101,6 +101,6 @@ func (c *Cooldowns) Claim(id string, revision int, reason FailureReason) bool {
 	return true
 }
 
-func lastsUntilEdited(reason FailureReason) bool {
+func isClearedByEdit(reason FailureReason) bool {
 	return reason == FailureReasonRejectedKey || reason == FailureReasonPaymentRequired
 }

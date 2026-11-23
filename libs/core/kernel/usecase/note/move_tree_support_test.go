@@ -8,19 +8,19 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 type scanIndex struct {
 	*index.DB
-	walks vaults.Walks
+	walks indexing.Walks
 }
 
 func openIndex(t *testing.T) *scanIndex {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,8 +28,8 @@ func openIndex(t *testing.T) *scanIndex {
 	return &scanIndex{DB: db}
 }
 
-func scanner(readers vaultport.VaultReaders, db *scanIndex) vaults.Scan {
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+func scanner(readers vaultport.VaultReaders, db *scanIndex) indexing.Scan {
+	scan := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	scan.Walks = &db.walks
 	return scan
 }

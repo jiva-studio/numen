@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -20,17 +20,17 @@ import (
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := index.Open(t.Context(), indexfile.Path(t))
+	db, err := index.Open(t.Context(), indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return check.Standard(db.NoteProblems()), v
+	return check.CreateStandard(db.NoteProblems()), v
 }
 
 func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []domain.VaultProblem {
@@ -187,7 +187,7 @@ type brokenQueries struct {
 	err error
 }
 
-func (b brokenQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (b brokenQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return nil, b.err
 }
 
@@ -199,7 +199,7 @@ func (b brokenQueries) GetUnreadable(context.Context, domain.VaultID) ([]domain.
 // reported as though the vault were clean.
 func TestAStoreThatCannotAnswerIsAFailedCheck(t *testing.T) {
 	broken := errors.New("the store is gone")
-	l := check.Standard(brokenQueries{err: broken})
+	l := check.CreateStandard(brokenQueries{err: broken})
 
 	for _, name := range []domain.Check{domain.CheckParse, domain.CheckFrontmatter} {
 		found, err := l.Run(t.Context(), domain.Vault{ID: "v"}, name)

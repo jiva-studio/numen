@@ -29,7 +29,7 @@ var (
 
 // listenedPlugins is what the listeners read of the set of plugins.
 type listenedPlugins interface {
-	view() (setView, func())
+	getView() (setView, func())
 	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 	getName(pluginID string) string
 	listIDs() []string
@@ -76,13 +76,13 @@ type listenerBinding struct {
 }
 
 func (l *Listeners) getBindablePlugin(pluginID string) (manifest.Discovered, map[string]any, bool) {
-	v, release := l.set.view()
+	v, release := l.set.getView()
 	defer release()
 	p, ok := v.get(pluginID)
 	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
 		return manifest.Discovered{}, nil, false
 	}
-	return p, v.settings(pluginID), true
+	return p, v.getSettings(pluginID), true
 }
 
 func (l *Listeners) getWantedPorts(pluginID string) (map[string]int, error) {

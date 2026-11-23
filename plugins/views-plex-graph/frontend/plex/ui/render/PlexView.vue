@@ -59,7 +59,7 @@ const viewBox = computed(() => {
 
 const uid = useId()
 
-const { attention, attend } = useAttention(() => props.frame)
+const { attention, setAttention } = useAttention(() => props.frame)
 
 const { lines, isRaised, setOver, getLabel } = useEdgeLines(props, uid, attention)
 
@@ -69,8 +69,8 @@ const getNodeHandlers = useNodeHandlers(
     show: (id, showing) => emit('show', id, showing),
     reach: (id, pointer) => emit('reach', id, pointer),
     ask: (id) => emit('ask', id),
-    menu: (id, at, trigger) => emit('menu', id, at, trigger),
-    attend,
+    openMenu: (id, at, trigger) => emit('menu', id, at, trigger),
+    setAttention,
   },
   () => props.frame.nodes.map((node) => node.id),
 )

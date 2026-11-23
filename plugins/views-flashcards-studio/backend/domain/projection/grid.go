@@ -36,7 +36,7 @@ func setNearestStep(steps []int, pos int) []int {
 	return steps
 }
 
-func snap(grid []float64, value float64, first, last int) {
+func setNearestCell(grid []float64, value float64, first, last int) {
 	if first < 0 || last >= len(grid) || first > last {
 		return
 	}

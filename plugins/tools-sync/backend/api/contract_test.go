@@ -11,22 +11,22 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		api.MethodListVaults: {Request: func() any { return &api.ListVaultsRequest{} }, Response: func() any { return &api.ListVaultsResponse{} }},
+		api.MethodListVaults: {CreateRequest: func() any { return &api.ListVaultsRequest{} }, CreateResponse: func() any { return &api.ListVaultsResponse{} }},
 		api.MethodListRemoteVaults: {
-			Request: func() any { return &api.ListRemoteVaultsRequest{} }, Response: func() any { return &api.ListRemoteVaultsResponse{} },
+			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
-		api.MethodConnectVault: {Request: func() any { return &api.ConnectVaultRequest{} }, Response: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodGetStatus:    {Request: func() any { return &api.GetStatusRequest{} }, Response: func() any { return &api.GetStatusResponse{} }},
+		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
+		api.MethodGetStatus:    {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
 		api.MethodGetSubscription: {
-			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
+			CreateRequest: func() any { return &api.GetSubscriptionRequest{} }, CreateResponse: func() any { return &api.GetSubscriptionResponse{} },
 		},
-		api.MethodListPlans:  {Request: func() any { return &api.ListPlansRequest{} }, Response: func() any { return &api.ListPlansResponse{} }},
-		api.MethodChangePlan: {Request: func() any { return &api.ChangePlanRequest{} }, Response: func() any { return &api.ChangePlanResponse{} }},
+		api.MethodListPlans:  {CreateRequest: func() any { return &api.ListPlansRequest{} }, CreateResponse: func() any { return &api.ListPlansResponse{} }},
+		api.MethodChangePlan: {CreateRequest: func() any { return &api.ChangePlanRequest{} }, CreateResponse: func() any { return &api.ChangePlanResponse{} }},
 		api.MethodCreatePortalSession: {
-			Request: func() any { return &api.CreatePortalSessionRequest{} }, Response: func() any { return &api.CreatePortalSessionResponse{} },
+			CreateRequest: func() any { return &api.CreatePortalSessionRequest{} }, CreateResponse: func() any { return &api.CreatePortalSessionResponse{} },
 		},
 		api.MethodCreateCheckout: {
-			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
+			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
 	}
 }

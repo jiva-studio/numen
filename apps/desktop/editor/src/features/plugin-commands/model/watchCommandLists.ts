@@ -9,14 +9,14 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { JsonValue } from '@/shared/api/json'
 
 interface CommandListSources {
-  readonly declaredCommands: DeclaredCommands
+  readonly commandDeclarations: DeclaredCommands
   readonly writeMessage: MessageWriter
   readonly plugins: Ref<readonly { readonly id: string; readonly isActive: boolean }[]>
   readonly getCommittedSetting: (path: readonly string[]) => JsonValue | undefined
 }
 
 export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boolean>): void {
-  const { declaredCommands, writeMessage, plugins, getCommittedSetting } = sources
+  const { commandDeclarations: declaredCommands, writeMessage, plugins, getCommittedSetting } = sources
   const loadDeclaredCommands = () => {
     declaredCommands.load().catch((error: unknown) => writeMessage(formatError(error), 'error'))
   }

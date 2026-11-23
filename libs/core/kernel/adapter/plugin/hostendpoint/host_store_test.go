@@ -62,7 +62,7 @@ func newStoreHost(t *testing.T) storeHost {
 }
 
 func (h storeHost) newClient(token string) numenv1connect.HostStoreServiceClient {
-	return numenv1connect.NewHostStoreServiceClient(h.client, h.url, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewHostStoreServiceClient(h.client, h.url, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func TestAPluginsFilesAreAppendedReadAndListedInItsOwnFolder(t *testing.T) {

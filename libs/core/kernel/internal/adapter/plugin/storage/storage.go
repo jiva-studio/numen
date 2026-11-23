@@ -23,16 +23,16 @@ type storageRoots struct {
 // Storage grants the plugins folders to keep files in: one cache folder and one data folder each,
 // and a cache folder and a data folder every plugin shares.
 type Storage struct {
-	report    func(error)
-	versionOf func(pluginID string) string
-	mu        sync.RWMutex
-	roots     storageRoots
+	report     func(error)
+	getVersion func(pluginID string) string
+	mu         sync.RWMutex
+	roots      storageRoots
 }
 
 // New creates a storage that reports the errors it meets outside a call to report and reads the version
 // of a plugin from versionOf.
-func New(report func(error), versionOf func(pluginID string) string) *Storage {
-	return &Storage{report: report, versionOf: versionOf}
+func New(report func(error), getVersion func(pluginID string) string) *Storage {
+	return &Storage{report: report, getVersion: getVersion}
 }
 
 // SetStorageRoots sets the folders the plugin cache directories and plugin data directories are
@@ -49,7 +49,7 @@ func (s *Storage) GetVars(pluginID string) ([]string, error) {
 	s.mu.RLock()
 	roots := s.roots
 	s.mu.RUnlock()
-	version := s.versionOf(pluginID)
+	version := s.getVersion(pluginID)
 	if err := checkStorageID(pluginID); err != nil {
 		return nil, err
 	}

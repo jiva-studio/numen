@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // BenchmarkTabKinds compares the tab kinds of a batch of notes taken from the index with the same
@@ -18,18 +19,18 @@ import (
 //
 //	go test ./usecase/file/ -run XXX -bench BenchmarkTabKinds -benchtime 200x
 func BenchmarkTabKinds(b *testing.B) {
-	db, err := index.Open(b.Context(), indexfile.Path(b), index.Unsynchronized())
+	db, err := index.Open(b.Context(), indexfile.GetPath(b), index.DisableSync())
 	if err != nil {
 		b.Fatal(err)
 	}
 	testsupport.CloseAfter(b, db)
 	v := vaulttest.GenerateVault(b, 3431)
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}
 	choose := newShippedChoice()
-	fromIndex := file.NewListTabKinds(db.NoteQueries(), choose)
+	fromIndex := indexnote.NewTabKinds(db.NoteQueries(), choose)
 	fromFiles := file.NewListFileKinds(file.NewGetFileKinds(vaultreader.Readers{}, db.NoteQueries()), choose)
 
 	for _, size := range []int{13, 50} {
@@ -40,7 +41,7 @@ func BenchmarkTabKinds(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("index/%d", size), func(b *testing.B) {
 			for range b.N {
-				if _, err := fromIndex.Execute(b.Context(), v, paths); err != nil {
+				if _, err := fromIndex.ListTabKinds(b.Context(), v, paths); err != nil {
 					b.Fatal(err)
 				}
 			}

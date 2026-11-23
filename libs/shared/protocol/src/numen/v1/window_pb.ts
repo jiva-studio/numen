@@ -6,8 +6,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it closes, are its
-// own. Every question here names the window it is about.
+// each runs, and what has to be saved before it closes, are its own. Every question here names the window it is about.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -17,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIvUBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIigKFkdldEN1cnJlbnRWYXVsdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIigKF0dldEN1cnJlbnRWYXVsdFJlc3BvbnNlEg0KBXZhdWx0GAEgASgJIi8KEUNhbmNlbFRhc2tSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRIKCgJpZBgCIAEoCSIUChJDYW5jZWxUYXNrUmVzcG9uc2UqOwoIVGFza0tpbmQSGQoVVEFTS19LSU5EX1VOU1BFQ0lGSUVEEAASFAoQVEFTS19LSU5EX05PVElDRRABKk8KBFVuaXQSFAoQVU5JVF9VTlNQRUNJRklFRBAAEg8KC1VOSVRfVEhJTkdTEAESDgoKVU5JVF9CWVRFUxACEhAKDFVOSVRfU0VDT05EUxADKnkKC0ZsdXNoUmVzdWx0EhwKGEZMVVNIX1JFU1VMVF9VTlNQRUNJRklFRBAAEhgKFEZMVVNIX1JFU1VMVF9OT1RISU5HEAESGAoURkxVU0hfUkVTVUxUX1dSSVRURU4QAhIYChRGTFVTSF9SRVNVTFRfVU5TQVZFRBADMo8DCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJWCg9HZXRDdXJyZW50VmF1bHQSIC5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USRwoKQ2FuY2VsVGFzaxIbLm51bWVuLnYxLkNhbmNlbFRhc2tSZXF1ZXN0GhwubnVtZW4udjEuQ2FuY2VsVGFza1Jlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiYKEVdhdGNoVGFza3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpACCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIXCg9jb21wbGV0ZWRfY291bnQYBCABKAMSEwoLdG90YWxfY291bnQYBSABKAMSFgoOZmFpbHVyZV9yZWFzb24YBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiLAoXV2F0Y2hXaW5kb3dDbG9zZVJlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJIkQKGFdhdGNoV2luZG93Q2xvc2VSZXNwb25zZRINCgV0b2tlbhgBIAEoCRIZChFpc19mbHVzaF9yZXF1aXJlZBgCIAEoCCJjChhSZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhsKGVJlcG9ydFBlbmRpbmdXb3JrUmVzcG9uc2UiKwoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkiKwoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USEAoIdmF1bHRfaWQYASABKAkiMgoRQ2FuY2VsVGFza1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSo7CghUYXNrS2luZBIZChVUQVNLX0tJTkRfVU5TUEVDSUZJRUQQABIUChBUQVNLX0tJTkRfTk9USUNFEAEqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeQoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhgKFEZMVVNIX1JFU1VMVF9VTlNBVkVEEAMytgMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESWwoQV2F0Y2hXaW5kb3dDbG9zZRIhLm51bWVuLnYxLldhdGNoV2luZG93Q2xvc2VSZXF1ZXN0GiIubnVtZW4udjEuV2F0Y2hXaW5kb3dDbG9zZVJlc3BvbnNlMAESXAoRUmVwb3J0UGVuZGluZ1dvcmsSIi5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QaIy5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1Jlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -27,9 +26,9 @@ export type WatchTasksRequest = Message<"numen.v1.WatchTasksRequest"> & {
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
@@ -61,59 +60,55 @@ export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PUR
   messageDesc(file_numen_v1_window, 1);
 
 /**
- * A Task is one piece of work the application is doing behind the window.
- *
- * Every kind of work is one of these. That is the point: the next kind is an
- * entry in a list and not another field on the state, another thing for the
- * window to poll, and another branch in what draws it.
+ * A Task is one piece of work the application runs for the window. Every kind of
+ * work is a Task, so a new kind adds an entry to the list and no new field.
  *
  * @generated from message numen.v1.Task
  */
 export type Task = Message<"numen.v1.Task"> & {
   /**
-   * Id is what this work is called, so that the same work reported again
-   * replaces itself and not appearing twice.
+   * Id identifies the work. A task reported again with the same id replaces the
+   * earlier one.
    *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
-   * Title is the work, in the words to show. About is what it is on, and is
-   * empty for work that is on nothing in particular.
+   * Title names the work. Detail names what it is on, and is empty for work with
+   * no particular subject.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * @generated from field: string about = 3;
+   * @generated from field: string detail = 3;
    */
-  about: string;
+  detail: string;
 
   /**
-   * Done and total are how far it has got, when there is a total to count
-   * against. Both zero is work running with nothing to count, which is an
-   * ordinary state and not an unknown one.
+   * Progress of the work: completed_count out of total_count. Both zero means the
+   * work runs with nothing to count.
    *
-   * @generated from field: int64 done = 4;
+   * @generated from field: int64 completed_count = 4;
    */
-  done: bigint;
+  completedCount: bigint;
 
   /**
-   * @generated from field: int64 total = 5;
+   * @generated from field: int64 total_count = 5;
    */
-  total: bigint;
+  totalCount: bigint;
 
   /**
-   * Error is why the work stopped, when it stopped badly.
+   * The reason the work failed. Empty when it did not fail.
    *
-   * @generated from field: string error = 6;
+   * @generated from field: string failure_reason = 6;
    */
-  error: string;
+  failureReason: string;
 
   /**
-   * Set for work a person started and is waiting to be notified about.
+   * Set for work a person started and is waiting on.
    *
    * @generated from field: bool is_user_started = 7;
    */
@@ -162,31 +157,31 @@ export const TaskSchema: GenMessage<Task> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 2);
 
 /**
- * @generated from message numen.v1.WatchQuitRequest
+ * @generated from message numen.v1.WatchWindowCloseRequest
  */
-export type WatchQuitRequest = Message<"numen.v1.WatchQuitRequest"> & {
+export type WatchWindowCloseRequest = Message<"numen.v1.WatchWindowCloseRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
- * Describes the message numen.v1.WatchQuitRequest.
- * Use `create(WatchQuitRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchWindowCloseRequest.
+ * Use `create(WatchWindowCloseRequestSchema)` to create a new message.
  */
-export const WatchQuitRequestSchema: GenMessage<WatchQuitRequest> = /*@__PURE__*/
+export const WatchWindowCloseRequestSchema: GenMessage<WatchWindowCloseRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 3);
 
 /**
- * @generated from message numen.v1.WatchQuitResponse
+ * @generated from message numen.v1.WatchWindowCloseResponse
  */
-export type WatchQuitResponse = Message<"numen.v1.WatchQuitResponse"> & {
+export type WatchWindowCloseResponse = Message<"numen.v1.WatchWindowCloseResponse"> & {
   /**
-   * What this caller answers ReportFlush with. The stream opens by saying it, so
+   * What this caller answers ReportPendingWork with. The stream opens by saying it, so
    * a caller knows it is listening before anything is asked of it.
    *
    * @generated from field: string token = 1;
@@ -194,31 +189,31 @@ export type WatchQuitResponse = Message<"numen.v1.WatchQuitResponse"> & {
   token: string;
 
   /**
-   * Set when the window is going and this caller's unwritten work has to land.
+   * Set when this caller has unsaved work that has to be saved before the window closes.
    *
-   * @generated from field: bool flush = 2;
+   * @generated from field: bool is_flush_required = 2;
    */
-  flush: boolean;
+  isFlushRequired: boolean;
 };
 
 /**
- * Describes the message numen.v1.WatchQuitResponse.
- * Use `create(WatchQuitResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchWindowCloseResponse.
+ * Use `create(WatchWindowCloseResponseSchema)` to create a new message.
  */
-export const WatchQuitResponseSchema: GenMessage<WatchQuitResponse> = /*@__PURE__*/
+export const WatchWindowCloseResponseSchema: GenMessage<WatchWindowCloseResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 4);
 
 /**
- * @generated from message numen.v1.ReportFlushRequest
+ * @generated from message numen.v1.ReportPendingWorkRequest
  */
-export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
+export type ReportPendingWorkRequest = Message<"numen.v1.ReportPendingWorkRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 
   /**
    * The token this caller was given when it began listening.
@@ -237,23 +232,23 @@ export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ReportFlushRequest.
- * Use `create(ReportFlushRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReportPendingWorkRequest.
+ * Use `create(ReportPendingWorkRequestSchema)` to create a new message.
  */
-export const ReportFlushRequestSchema: GenMessage<ReportFlushRequest> = /*@__PURE__*/
+export const ReportPendingWorkRequestSchema: GenMessage<ReportPendingWorkRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 5);
 
 /**
- * @generated from message numen.v1.ReportFlushResponse
+ * @generated from message numen.v1.ReportPendingWorkResponse
  */
-export type ReportFlushResponse = Message<"numen.v1.ReportFlushResponse"> & {
+export type ReportPendingWorkResponse = Message<"numen.v1.ReportPendingWorkResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ReportFlushResponse.
- * Use `create(ReportFlushResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReportPendingWorkResponse.
+ * Use `create(ReportPendingWorkResponseSchema)` to create a new message.
  */
-export const ReportFlushResponseSchema: GenMessage<ReportFlushResponse> = /*@__PURE__*/
+export const ReportPendingWorkResponseSchema: GenMessage<ReportPendingWorkResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 6);
 
 /**
@@ -264,9 +259,9 @@ export type GetCurrentVaultRequest = Message<"numen.v1.GetCurrentVaultRequest"> 
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
@@ -285,9 +280,9 @@ export type GetCurrentVaultResponse = Message<"numen.v1.GetCurrentVaultResponse"
    * showing none, and in one that is open on the installation and not on
    * any one vault.
    *
-   * @generated from field: string vault = 1;
+   * @generated from field: string vault_id = 1;
    */
-  vault: string;
+  vaultId: string;
 };
 
 /**
@@ -305,9 +300,9 @@ export type CancelTaskRequest = Message<"numen.v1.CancelTaskRequest"> & {
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 
   /**
    * The id that WatchTasks lists the task under.
@@ -352,7 +347,7 @@ export enum TaskKind {
 
   /**
    * A message of the core, such as a notice of the read of the settings. It is
-   * neither running nor failed, and About holds the message.
+   * neither running nor failed, and detail holds the message.
    *
    * @generated from enum value: TASK_KIND_NOTICE = 1;
    */
@@ -444,21 +439,17 @@ export const FlushResultSchema: GenEnum<FlushResult> = /*@__PURE__*/
 
 /**
  * WindowService answers about one window: what it has in front of the person,
- * what is being done behind it, and what a caller has left when it closes.
+ * what tasks it runs, and what unsaved work a caller has when it closes.
  *
  * @generated from service numen.v1.WindowService
  */
 export const WindowService: GenService<{
   /**
-   * WatchTasks reports everything being done behind the window, for as long as
-   * the caller listens: what it is, what it is on, and how far it has got.
+   * WatchTasks streams the tasks the window runs, for as long as the caller listens:
+   * the title, subject and progress of each.
    *
-   * The whole list arrives every time any of it changes, and the first arrives
-   * at once, so a window that opened while work was running is notified of it.
-   * It is a stream and not a question asked over and over, because what is
-   * being done is known here the moment it changes and work can begin without
-   * the window asking for it — an agent is instructed to read a document, and this is
-   * where the person watching sees it happen.
+   * The whole list is sent on every change, and the first list is sent at once.
+   * It is a stream because tasks can start without a request from the window.
    *
    * @generated from rpc numen.v1.WindowService.WatchTasks
    */
@@ -468,27 +459,27 @@ export const WindowService: GenService<{
     output: typeof WatchTasksResponseSchema;
   },
   /**
-   * WatchQuit says the window is going, for as long as the caller listens. A
-   * caller holding work that is only in its own memory writes it now and
-   * answers with ReportFlush.
+   * WatchWindowClose streams a message when the window is about to close. A caller
+   * holding unsaved work in memory saves it, then calls ReportPendingWork.
    *
-   * @generated from rpc numen.v1.WindowService.WatchQuit
+   * @generated from rpc numen.v1.WindowService.WatchWindowClose
    */
-  watchQuit: {
+  watchWindowClose: {
     methodKind: "server_streaming";
-    input: typeof WatchQuitRequestSchema;
-    output: typeof WatchQuitResponseSchema;
+    input: typeof WatchWindowCloseRequestSchema;
+    output: typeof WatchWindowCloseResponseSchema;
   },
   /**
-   * ReportFlush says what a caller has left. Nothing left lets the window go;
-   * work a person is being asked about keeps it open. A caller that never says
+   * ReportPendingWork reports whether a caller still has unsaved work. The window
+   * closes when no caller has any, and stays open while a person is being asked
+   * about the work.
    *
-   * @generated from rpc numen.v1.WindowService.ReportFlush
+   * @generated from rpc numen.v1.WindowService.ReportPendingWork
    */
-  reportFlush: {
+  reportPendingWork: {
     methodKind: "unary";
-    input: typeof ReportFlushRequestSchema;
-    output: typeof ReportFlushResponseSchema;
+    input: typeof ReportPendingWorkRequestSchema;
+    output: typeof ReportPendingWorkResponseSchema;
   },
   /**
    * GetCurrentVault is which vault this window has in front of the person. Two

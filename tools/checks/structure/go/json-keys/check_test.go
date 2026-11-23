@@ -74,9 +74,9 @@ func TestProjectJSONKeysAreCamelCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkProjectJSONKeysAreCamelCase(t, load.Workspace(t))
+	checkProjectJSONKeysAreCamelCase(t, load.LoadWorkspace(t))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

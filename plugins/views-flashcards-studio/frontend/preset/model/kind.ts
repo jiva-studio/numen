@@ -44,7 +44,7 @@ export interface PresetTabDeps {
   buffers: BufferHost
   closeTab: (id: string) => void
   writeMessage: MessageWriter
-  today: () => string
+  getToday: () => string
   component: Component
 }
 
@@ -76,7 +76,7 @@ interface KindDeps {
 
 function createPresetKind(deps: KindDeps): { kind: TabKindRegistration<PresetTabState> } {
   const { context, open, states, flush, component } = deps
-  const { titles, bounds, core, today } = context
+  const { titles, bounds, core, getToday: today } = context
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
@@ -114,7 +114,7 @@ function createPresetKind(deps: KindDeps): { kind: TabKindRegistration<PresetTab
  * The presets one window has open.
  */
 export function usePresetTab(deps: PresetTabDeps) {
-  const { core, buffers, closeTab, writeMessage, today, component } = deps
+  const { core, buffers, closeTab, writeMessage, getToday: today, component } = deps
   const titles = new Map<string, string>()
   const bounds = shallowRef<SettingsBounds>(NO_BOUNDS)
   const open = new Map<string, OpenPreset>()
@@ -129,7 +129,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     core,
     bounds,
     writeMessage,
-    today,
+    getToday: today,
     titles,
   }
 

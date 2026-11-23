@@ -55,7 +55,7 @@ func (u ImportFiles) Execute(ctx context.Context, v domain.Vault, into string, p
 	u.tasks.AddTask(task)
 
 	imported, err := u.imports.Execute(ctx, v, into, paths)
-	if direct := imported.DirectChildren(into); len(direct) > 0 {
+	if direct := imported.ListDirectChildren(into); len(direct) > 0 {
 		u.changes.Publish(window.Change{Paths: direct})
 	}
 	if err != nil {

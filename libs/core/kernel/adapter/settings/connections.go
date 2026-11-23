@@ -131,16 +131,16 @@ func (f *File) WriteConnectionsJSON() (string, error) {
 
 // ConnectionRepository is the list of connections in the settings file.
 type ConnectionRepository struct {
-	files   *Files
-	path    func() (string, error)
-	read    func() (File, error)
-	changed func()
+	files        *Files
+	getPath      func() (string, error)
+	read         func() (File, error)
+	handleChange func()
 }
 
 // NewConnectionRepository returns the list of connections in the file at path. read answers the
 // settings as they are in force, and changed is called after each write.
-func NewConnectionRepository(files *Files, path func() (string, error), read func() (File, error), changed func()) *ConnectionRepository {
-	return &ConnectionRepository{files: files, path: path, read: read, changed: changed}
+func NewConnectionRepository(files *Files, getPath func() (string, error), read func() (File, error), handleChange func()) *ConnectionRepository {
+	return &ConnectionRepository{files: files, getPath: getPath, read: read, handleChange: handleChange}
 }
 
 // ListConnections returns the valid connections of the file in list order.
@@ -155,14 +155,14 @@ func (r *ConnectionRepository) ListConnections() ([]connection.Connection, error
 // ChangeConnections reads the connections section, applies change and writes it back under the lock
 // of the settings file, and delivers the change to the readers of the setting-changed event.
 func (r *ConnectionRepository) ChangeConnections(change func([]connection.Connection) ([]connection.Connection, error)) error {
-	path, err := r.path()
+	path, err := r.getPath()
 	if err != nil {
 		return err
 	}
 	if err := r.files.ChangeConnections(path, change); err != nil {
 		return err
 	}
-	r.changed()
+	r.handleChange()
 	return nil
 }
 

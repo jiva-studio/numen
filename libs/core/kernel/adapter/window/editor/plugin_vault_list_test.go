@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -26,13 +27,13 @@ import (
 const immediateBound = windowsession.FlushTimeout / 2
 
 func (f *showing) respondToFlushes(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], flushRequest chan<- struct{}, release <-chan struct{},
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchWindowCloseResponse], flushRequest chan<- struct{}, release <-chan struct{},
 ) {
 	t.Helper()
 	go func() {
 		isFirst := true
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			if isFirst {
@@ -40,7 +41,7 @@ func (f *showing) respondToFlushes(
 				flushRequest <- struct{}{}
 				<-release
 			}
-			if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
+			if f.reportPendingWork(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 				// The test may have ended, so the error is not logged; the calls report what it caused.
 				return
 			}
@@ -66,13 +67,13 @@ func (p *promptingPage) getFlushCount() int {
 }
 
 func (f *showing) startPromptingPage(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchWindowCloseResponse], userResponded <-chan struct{},
 ) *promptingPage {
 	t.Helper()
 	page := &promptingPage{}
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			page.mu.Lock()
@@ -85,7 +86,7 @@ func (f *showing) startPromptingPage(
 				result = v1.FlushResult_FLUSH_RESULT_WRITTEN
 			default:
 			}
-			if f.reportFlush(t, stream.Msg().GetToken(), result) != nil {
+			if f.reportPendingWork(t, stream.Msg().GetToken(), result) != nil {
 				return
 			}
 		}
@@ -95,7 +96,7 @@ func (f *showing) startPromptingPage(
 		page.mu.Lock()
 		token := page.lastToken
 		page.mu.Unlock()
-		if f.reportFlush(t, token, v1.FlushResult_FLUSH_RESULT_WRITTEN) != nil {
+		if f.reportPendingWork(t, token, v1.FlushResult_FLUSH_RESULT_WRITTEN) != nil {
 			return
 		}
 	}()
@@ -124,7 +125,7 @@ func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string)
 
 func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	userResponded := make(chan struct{})
 	respondAsUser := sync.OnceFunc(func() { close(userResponded) })
@@ -172,7 +173,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 
 func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
 	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
@@ -201,7 +202,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 // plugin's open that starts in that wait returns ErrUnsavedChanges and does not end the user's flush.
 func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	userResponded := make(chan struct{})
 	f.respondPromptUntil(t, stream, userResponded)
@@ -251,7 +252,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 
 func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -298,7 +299,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 
 func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -351,11 +352,11 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	}
 }
 
-func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) <-chan struct{} {
+func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchWindowCloseResponse]) <-chan struct{} {
 	flushRequest := make(chan struct{}, 1)
 	go func() {
 		for stream.Receive() {
-			if stream.Msg().GetFlush() {
+			if stream.Msg().GetIsFlushRequired() {
 				select {
 				case flushRequest <- struct{}{}:
 				default:
@@ -405,7 +406,7 @@ func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
 
 func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	openResult := startPluginOpen(t, f, watchFlushRequests(stream), nil)
 
@@ -419,7 +420,7 @@ func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 
 func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -449,7 +450,7 @@ func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 
 func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -478,7 +479,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 
 func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -506,25 +507,25 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	}
 }
 
-func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult) error {
+func (f *showing) reportPendingWork(t *testing.T, token string, result v1.FlushResult) error {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 5*time.Second)
 	defer cancel()
-	_, err := f.canvas.ReportFlush(ctx, connect.NewRequest(&v1.ReportFlushRequest{
-		Window: wire.Editor, Token: token, Result: result,
+	_, err := f.canvas.ReportPendingWork(ctx, connect.NewRequest(&v1.ReportPendingWorkRequest{
+		WindowId: wire.Editor, Token: token, Result: result,
 	}))
 	return err
 }
 
 func (f *showing) respondPromptUntil(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchWindowCloseResponse], userResponded <-chan struct{},
 ) {
 	t.Helper()
 	var mu sync.Mutex
 	last := ""
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			mu.Lock()
@@ -532,11 +533,11 @@ func (f *showing) respondPromptUntil(
 			mu.Unlock()
 			select {
 			case <-userResponded:
-				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
+				if f.reportPendingWork(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 					return
 				}
 			default:
-				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_UNSAVED) != nil {
+				if f.reportPendingWork(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_UNSAVED) != nil {
 					return
 				}
 			}
@@ -547,20 +548,20 @@ func (f *showing) respondPromptUntil(
 		mu.Lock()
 		token := last
 		mu.Unlock()
-		if f.reportFlush(t, token, v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
+		if f.reportPendingWork(t, token, v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 			return
 		}
 	}()
 }
 
-func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
+func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchWindowCloseResponse]) {
 	t.Helper()
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
-			if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
+			if f.reportPendingWork(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 				return
 			}
 		}
@@ -571,7 +572,7 @@ func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStream
 // completes within its bound and no plugin open blocks the window.
 func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
 	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
@@ -632,7 +633,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 // one succeeds and the plugin open is canceled.
 func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
@@ -675,7 +676,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 // unavailable and does not change the vault of the window.
 func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	f := openTwoVaultsWith(t, container.Config.OpenEditor)
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)
 	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
@@ -703,12 +704,12 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 
 func (f *showing) isFlushRequestedOfANewPage(t *testing.T, wait time.Duration) bool {
 	t.Helper()
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 	tokens := make(chan string, 1)
 	go func() {
 		for stream.Receive() {
-			if stream.Msg().GetFlush() {
+			if stream.Msg().GetIsFlushRequired() {
 				tokens <- stream.Msg().GetToken()
 				return
 			}
@@ -716,7 +717,7 @@ func (f *showing) isFlushRequestedOfANewPage(t *testing.T, wait time.Duration) b
 	}()
 	select {
 	case token := <-tokens:
-		if err := f.reportFlush(t, token, v1.FlushResult_FLUSH_RESULT_NOTHING); err != nil {
+		if err := f.reportPendingWork(t, token, v1.FlushResult_FLUSH_RESULT_NOTHING); err != nil {
 			t.Fatalf("report the flush of the new page: %v", err)
 		}
 		return true

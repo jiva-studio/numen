@@ -38,13 +38,13 @@ type twoVaults struct {
 func newTwoVaults(t *testing.T) *twoVaults {
 	t.Helper()
 	w := &twoVaults{a: hosttest.New("a")}
-	w.a.File("n.md", "- [ ] in a due:2026-11-01\n")
+	w.a.WriteFile("n.md", "- [ ] in a due:2026-11-01\n")
 	added, err := w.a.AddVault(t.Context(), "/vaults/b", "b")
 	if err != nil {
 		t.Fatal(err)
 	}
 	w.b = w.a.With(added.ID)
-	w.b.File("n.md", "- [ ] in b\n- [ ] more in b\n")
+	w.b.WriteFile("n.md", "- [ ] in b\n- [ ] more in b\n")
 	tasks := testsupport.NewIndex(w.a, w.a, w.a)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func newTwoVaults(t *testing.T) *twoVaults {
 
 func (w *twoVaults) invoke(t *testing.T, vaultID, name string, args any) (string, bool) {
 	t.Helper()
-	registry, err := tasktools.New(w.vaults, testClock{}).Registry()
+	registry, err := tasktools.New(w.vaults, testClock{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func (w *twoVaults) invoke(t *testing.T, vaultID, name string, args any) (string
 
 func content(t *testing.T, v *hosttest.Vault, path string) string {
 	t.Helper()
-	text, _ := v.Content(path)
+	text, _ := v.ReadContent(path)
 	return text
 }
 

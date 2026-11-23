@@ -11,9 +11,9 @@ import (
 // computed across the whole vault when queried, because their results depend on
 // every other note and become invalid when any note moves.
 type ProblemQueries interface {
-	// GetParseProblems returns the problems found while parsing each file, as
+	// ListParseProblems returns the problems found while parsing each file, as
 	// reported by the parser.
-	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 	// GetUnreadable returns the notes whose frontmatter is not YAML, with the
 	// parser's error message.
 	GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)

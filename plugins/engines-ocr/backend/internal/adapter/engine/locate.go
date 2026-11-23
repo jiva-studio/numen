@@ -78,15 +78,15 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
 	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "pp-doclayout.onnx")
 	if err != nil {
-		return nil, "", paths{}, modelError("layout", cfg.Layout.Name, cfg.Layout.Path, err)
+		return nil, "", paths{}, newModelError("layout", cfg.Layout.Name, cfg.Layout.Path, err)
 	}
 	detect, err := files.resolve(ctx, cfg.Detect.Path, cfg.Detect.Name, "pp-ocr-det.onnx")
 	if err != nil {
-		return nil, "", paths{}, modelError("detect", cfg.Detect.Name, cfg.Detect.Path, err)
+		return nil, "", paths{}, newModelError("detect", cfg.Detect.Name, cfg.Detect.Path, err)
 	}
 	recognize, err := files.resolve(ctx, cfg.Recognize.Path, cfg.Recognize.Name, "pp-ocr-rec.onnx")
 	if err != nil {
-		return nil, "", paths{}, modelError("recognize", cfg.Recognize.Name, cfg.Recognize.Path, err)
+		return nil, "", paths{}, newModelError("recognize", cfg.Recognize.Name, cfg.Recognize.Path, err)
 	}
 
 	found := paths{
@@ -101,7 +101,7 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 	return engine, pos, found, nil
 }
 
-func name(path string) string {
+func getModelName(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
@@ -113,7 +113,7 @@ func getCacheRoot() string {
 	return root
 }
 
-func modelError(role, address, path string, err error) error {
+func newModelError(role, address, path string, err error) error {
 	where := address
 	if path != "" {
 		where = path

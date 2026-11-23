@@ -23,7 +23,7 @@ const card: ReviewCard = {
 const connections: ConnectionHost = {
   call: async function* () {
     yield* []
-    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+    return { ok: false, error: { error: 'noConnection', message: 'no row', failures: [] } }
   },
 }
 
@@ -31,8 +31,8 @@ const createPanel = (): AgentPanelState => {
   const open = ref(false)
   return useAgentPanel({
     connections,
-    card: () => card,
-    vault: () => 'garden',
+    getCard: () => card,
+    getVault: () => 'garden',
     open: () => open.value,
     showPanel: (isOpen) => {
       open.value = isOpen

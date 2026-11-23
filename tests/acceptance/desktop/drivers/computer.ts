@@ -51,36 +51,27 @@ export const parseInside = (text: string): string | undefined => {
 /** The path of a note a scenario names by its title. */
 export const getNotePath = (title: string): string => `${title}.md`
 
+/** What the first computer keeps of the person's account and vaults. */
+interface FirstComputer {
+  readonly identity: IdentityDriver
+  readonly sync: SyncDriver
+  readonly vaults: SyncVaultsDriver
+}
+
 interface SecondComputer {
   readonly scenario: Scenario
   readonly identity: IdentityDriver
   readonly vaults: SyncVaultsDriver
 }
 
-interface ComputerParts {
-  readonly first: Scenario
-  readonly viewport: ViewportSize | null
-  readonly identity: IdentityDriver
-  readonly sync: SyncDriver
-  readonly firstVaults: SyncVaultsDriver
-}
-
 export class ComputerDriver {
   private second: SecondComputer | undefined
 
-  private readonly first: Scenario
-  private readonly viewport: ViewportSize | null
-  private readonly identity: IdentityDriver
-  private readonly sync: SyncDriver
-  private readonly firstVaults: SyncVaultsDriver
-
-  constructor(parts: ComputerParts) {
-    this.first = parts.first
-    this.viewport = parts.viewport
-    this.identity = parts.identity
-    this.sync = parts.sync
-    this.firstVaults = parts.firstVaults
-  }
+  constructor(
+    private readonly first: Scenario,
+    private readonly viewport: ViewportSize | null,
+    private readonly owner: FirstComputer,
+  ) {}
 
   private requireSecond(): SecondComputer {
     if (this.second === undefined) throw new Error('there is no second computer: begin with a second computer restores the identity from the recovery words')
@@ -92,15 +83,15 @@ export class ComputerDriver {
   }
 
   private getVaults(computer: ComputerName): SyncVaultsDriver {
-    return computer === 'first' ? this.firstVaults : this.requireSecond().vaults
+    return computer === 'first' ? this.owner.vaults : this.requireSecond().vaults
   }
 
   /** Starts a second application over a vault of its own and restores the identity of the person in it from the recovery words. */
   async restoreIdentity(): Promise<void> {
-    const words = this.identity.getWords()
+    const words = this.owner.identity.getWords()
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(SECOND_VAULT)
-    this.sync.setPlugin(scenario)
+    this.owner.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
@@ -156,7 +147,7 @@ export class ComputerDriver {
   }
 
   async expectSubscription(computer: ComputerName, text: string): Promise<void> {
-    const identity = computer === 'first' ? this.identity : this.requireSecond().identity
+    const identity = computer === 'first' ? this.owner.identity : this.requireSecond().identity
     await identity.expectSubscription(text)
   }
 

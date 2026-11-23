@@ -21,7 +21,7 @@ func getDefaultHTTPClient() HTTPDoer {
 	return &http.Client{Timeout: defaultHTTPTimeout}
 }
 
-func postJSON(ctx context.Context, client HTTPDoer, endpoint string, headers map[string]string, payload any) (int, []byte, error) {
+func sendJSON(ctx context.Context, client HTTPDoer, endpoint string, headers map[string]string, payload any) (int, []byte, error) {
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
 		return 0, nil, fmt.Errorf("encode request: %w", err)
@@ -81,7 +81,7 @@ func mapStatus(raw string) Status {
 	}
 }
 
-func statusToError(status Status) error {
+func getStatusError(status Status) error {
 	switch status {
 	case StatusActive:
 		return nil

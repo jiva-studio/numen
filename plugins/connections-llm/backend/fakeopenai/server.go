@@ -121,8 +121,8 @@ func (s *Server) Requests() []Request {
 	return slices.Clone(s.requests)
 }
 
-// Aborted receives one value for every delayed request whose client went away before the delay ended.
-func (s *Server) Aborted() <-chan struct{} { return s.aborted }
+// GetAbortSignal receives one value for every delayed request whose client went away before the delay ended.
+func (s *Server) GetAbortSignal() <-chan struct{} { return s.aborted }
 
 // ServeHTTP answers the paths under /v1 or at the root.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +253,7 @@ func (s *Server) takeScript(echo string) Stream {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.streams) == 0 {
-		return Stream{Chunks: echoChunks(echo), IsBroken: false, Pause: 0}
+		return Stream{Chunks: splitEcho(echo), IsBroken: false, Pause: 0}
 	}
 	script := s.streams[0]
 	s.streams = s.streams[1:]
@@ -292,7 +292,7 @@ func (s *Server) writeChunks(w http.ResponseWriter, r *http.Request, controller 
 	return true
 }
 
-func echoChunks(echo string) []string {
+func splitEcho(echo string) []string {
 	runes := []rune(echo)
 	return []string{
 		encodeDelta(map[string]any{"role": "assistant", contentKey: string(runes[:len(runes)/2])}, ""),
@@ -327,13 +327,13 @@ func (s *Server) serveEmbeddings(w http.ResponseWriter, body []byte) {
 	}
 	data := make([]any, len(request.Input))
 	for i, text := range request.Input {
-		data[i] = map[string]any{objectKey: "embedding", indexKey: i, "embedding": s.Vector(text)}
+		data[i] = map[string]any{objectKey: "embedding", indexKey: i, "embedding": s.BuildVector(text)}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{objectKey: "list", modelKey: request.Model, "data": data})
 }
 
-// Vector returns the vector the server answers for a text: unit length and the same for the same text.
-func (s *Server) Vector(text string) []float32 {
+// BuildVector returns the vector the server answers for a text: unit length and the same for the same text.
+func (s *Server) BuildVector(text string) []float32 {
 	vector := make([]float32, s.config.Dimensions)
 	var sum float64
 	for i := range vector {

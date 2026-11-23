@@ -12,7 +12,7 @@ import { dragPage } from '../lib/pageStep'
 export interface BookPointerOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
-  readonly turn: (way: PageNavigationAction) => void
+  readonly navigatePage: (way: PageNavigationAction) => void
   readonly getEdge: (of: HTMLElement) => number
 }
 
@@ -54,7 +54,7 @@ export function useBookPointer(options: BookPointerOptions) {
       wide: box.clientWidth,
       hasSelection: isSelecting(),
     })
-    if (way) options.turn(way)
+    if (way) options.navigatePage(way)
   }
 
   return { handlePointerDown, letGo }

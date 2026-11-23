@@ -53,12 +53,12 @@ var (
 
 // New is a vault of the name, shown by the host, whose files are held in memory.
 func New(name string) *Vault {
-	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, inMemory())
+	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, createMemoryFiles())
 }
 
-// OnDisk is a vault of the notes given, written into a folder of the test's own. The notes are
+// CreateOnDisk returns a vault of the notes given, written into a folder of the test's own. The notes are
 // files there, and a test that changes them changes the vault.
-func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
+func CreateOnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 	tb.Helper()
 	root := tb.TempDir()
 	for filePath, body := range notes {
@@ -70,7 +70,7 @@ func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 			tb.Fatal(err)
 		}
 	}
-	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, onDisk(root))
+	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, createDiskFiles(root))
 	v.tb = tb
 	v.Reindex()
 	return v
@@ -151,7 +151,7 @@ func (v *Vault) reach() error {
 	return nil
 }
 
-func (v *Vault) gate(ctx context.Context) error {
+func (v *Vault) checkContext(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -171,9 +171,9 @@ func (v *Vault) Hide() {
 	v.isShown = false
 }
 
-// File creates or replaces a file, as another window would, and notifies the index
+// WriteFile creates or replaces a file, as another window would, and notifies the index
 // as the watcher would..
-func (v *Vault) File(filePath string, content string) {
+func (v *Vault) WriteFile(filePath string, content string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if _, err := v.put(filePath, []byte(content)); err != nil {
@@ -192,8 +192,8 @@ func (v *Vault) Remove(filePath string) {
 	v.rescan(filePath)
 }
 
-// Content is what a file holds now.
-func (v *Vault) Content(filePath string) (string, bool) {
+// ReadContent returns what a file holds now.
+func (v *Vault) ReadContent(filePath string) (string, bool) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	content, err := v.files.read(filePath)
@@ -201,7 +201,7 @@ func (v *Vault) Content(filePath string) (string, bool) {
 }
 
 func (v *Vault) check(ctx context.Context, filePath string) error {
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return err
 	}
 	if err := v.reach(); err != nil {
@@ -229,7 +229,7 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return v.hashed(at)
+	return v.hashStat(at)
 }
 
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
@@ -302,7 +302,7 @@ func (v *Vault) Lock(ctx context.Context) (func() error, error) {
 func (v *Vault) ReadCache(ctx context.Context, name string) ([]byte, bool, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, false, err
 	}
 	if err := v.reach(); err != nil {
@@ -315,7 +315,7 @@ func (v *Vault) ReadCache(ctx context.Context, name string) ([]byte, bool, error
 func (v *Vault) WriteCache(ctx context.Context, name string, content []byte) error {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return err
 	}
 	if err := v.reach(); err != nil {
@@ -325,7 +325,7 @@ func (v *Vault) WriteCache(ctx context.Context, name string, content []byte) err
 	return nil
 }
 
-func (v *Vault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
+func (v *Vault) WatchIndexChanges(ctx context.Context) (<-chan host.Move, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if v.unknown {
@@ -363,7 +363,7 @@ func (v *Vault) report(err error) {
 	}
 }
 
-func (v *Vault) hashed(at domain.FileStat) (domain.FileStat, error) {
+func (v *Vault) hashStat(at domain.FileStat) (domain.FileStat, error) {
 	version := v.writes
 	content, err := v.files.read(at.Path)
 	if err != nil {

@@ -75,7 +75,7 @@ type WriteOutcome struct {
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
-	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Total: edited.Cards, CardID: ""}
+	return WriteOutcome{Path: path, Fingerprint: buildFingerprint(edited.FileStat), Total: edited.Cards, CardID: ""}
 }
 
 func newCard(card format.Card) Card {
@@ -86,7 +86,7 @@ func newCard(card format.Card) Card {
 	return out
 }
 
-func values(vs []FieldValue) []format.Value {
+func convertValues(vs []FieldValue) []format.Value {
 	out := make([]format.Value, 0, len(vs))
 	for _, v := range vs {
 		out = append(out, format.Value{Field: v.Field, Text: v.Text})
@@ -130,7 +130,7 @@ func countBytes(vs []FieldValue) int {
 	return size
 }
 
-func fingerprintOf(ref domain.FileStat) string {
+func buildFingerprint(ref domain.FileStat) string {
 	return ref.Hash
 }
 

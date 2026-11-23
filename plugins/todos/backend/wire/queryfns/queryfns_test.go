@@ -53,7 +53,7 @@ func newClient(t *testing.T) *searchfunctiontest.Client {
 	t.Helper()
 	vault := hosttest.New("notes")
 	for path, content := range getNotes() {
-		vault.File(path, content)
+		vault.WriteFile(path, content)
 	}
 	tasks := testsupport.NewIndex(vault, vault, vault)
 	if err := tasks.Scan(t.Context()); err != nil {

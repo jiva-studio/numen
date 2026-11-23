@@ -19,15 +19,15 @@ func TestASpanIsEmptyWhenItEndsWhereItBeginsOrBefore(t *testing.T) {
 		{0, 0, true, 0},
 	} {
 		bytes := domain.ByteRange{Start: one.from, End: one.to}
-		if bytes.Empty() != one.isEmpty {
-			t.Errorf("bytes %d..%d: Empty is %v, want %v", one.from, one.to, bytes.Empty(), one.isEmpty)
+		if bytes.IsEmpty() != one.isEmpty {
+			t.Errorf("bytes %d..%d: Empty is %v, want %v", one.from, one.to, bytes.IsEmpty(), one.isEmpty)
 		}
 		if bytes.Len() != one.length {
 			t.Errorf("bytes %d..%d: Len is %d, want %d", one.from, one.to, bytes.Len(), one.length)
 		}
 		units := domain.UnitRange{Start: one.from, End: one.to}
-		if units.Empty() != one.isEmpty {
-			t.Errorf("units %d..%d: Empty is %v, want %v", one.from, one.to, units.Empty(), one.isEmpty)
+		if units.IsEmpty() != one.isEmpty {
+			t.Errorf("units %d..%d: Empty is %v, want %v", one.from, one.to, units.IsEmpty(), one.isEmpty)
 		}
 		if units.Len() != one.length {
 			t.Errorf("units %d..%d: Len is %d, want %d", one.from, one.to, units.Len(), one.length)

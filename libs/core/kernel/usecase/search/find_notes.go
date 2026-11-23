@@ -49,7 +49,7 @@ func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, l
 	for _, m := range found {
 		paths = append(paths, m.Path)
 	}
-	kinds, err := u.tabKinds.Execute(ctx, v, paths)
+	kinds, err := u.tabKinds.ListTabKinds(ctx, v, paths)
 	if err != nil {
 		return NameResults{}, err
 	}
@@ -60,6 +60,7 @@ func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, l
 // and the kind of tab it opens in, by path. A source that is not a note is absent from the maps.
 type FindTextOutput struct {
 	Results  []domain.SearchResult
+	Snippets []Snippet
 	Notes    map[string]domain.NoteRef
 	Types    map[string]domain.NoteType
 	TabKinds map[string]string
@@ -93,11 +94,11 @@ func (u *FindText) Execute(ctx context.Context, v domain.Vault, query string, mo
 	if err != nil {
 		return FindTextOutput{}, err
 	}
-	kinds, err := u.tabKinds.Execute(ctx, v, sources)
+	kinds, err := u.tabKinds.ListTabKinds(ctx, v, sources)
 	if err != nil {
 		return FindTextOutput{}, err
 	}
-	return FindTextOutput{Results: found, Notes: notes, Types: types, TabKinds: kinds}, nil
+	return FindTextOutput{Results: found, Snippets: cutSnippets(found, query), Notes: notes, Types: types, TabKinds: kinds}, nil
 }
 
 func getResultPaths(found []domain.SearchResult) []string {
