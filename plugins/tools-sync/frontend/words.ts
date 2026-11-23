@@ -36,6 +36,11 @@ export const WORDS = {
   cloudFull:
     'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
   waitingForPayment: 'Finish the payment in your browser. This card updates by itself.',
+  pageNotOpened: {
+    notWebAddress: 'The page has an address the browser cannot open.',
+    openFailed: 'The browser did not open the page.',
+    permissionDenied: 'Numen Sync may not open the browser.',
+  },
   stopWaiting: 'Cancel',
   unreachableText: (server: string): string =>
     server === ''

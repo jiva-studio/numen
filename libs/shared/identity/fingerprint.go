@@ -23,14 +23,14 @@ func (f Fingerprint) String() string {
 }
 
 func (p RecoveryPublicKey) Fingerprint() Fingerprint {
-	return fingerprint(labelFingerprintAccount, p.Sign)
+	return computeFingerprint(labelFingerprintAccount, p.Sign)
 }
 
 func (p DevicePublicKey) Fingerprint() Fingerprint {
-	return fingerprint(labelFingerprintDevice, p.Sign)
+	return computeFingerprint(labelFingerprintDevice, p.Sign)
 }
 
-func fingerprint(label string, sign ed25519.PublicKey) Fingerprint {
+func computeFingerprint(label string, sign ed25519.PublicKey) Fingerprint {
 	sum := sha256.Sum256(append(append([]byte(label), 0), sign...))
 	return Fingerprint(sum[:16])
 }

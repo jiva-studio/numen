@@ -8,7 +8,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { ChevronRight } from '@lucide/vue'
-import type { PluginSettings, Result } from '@numen/plugin-sdk'
+import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
 import { Button, IslandCard, Select, Spinner } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
 import type { PlanOffer } from '../lib/subscriptionView'
@@ -18,7 +18,7 @@ import { WORDS as words } from '../words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   client?: SubscriptionClient | undefined
-  openExternal: (url: string) => Promise<Result<null>>
+  openExternal: PluginContext['identity']['openExternal']
   now?: (() => Date) | undefined
   settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
   openSettings?: (() => void) | undefined
@@ -35,7 +35,7 @@ const { session, payment, offers, summary } = useSubscription({
 })
 const { problem, load, change, manage } = session
 const { status } = session.account
-const { waiting, starting, buy, cancel } = payment
+const { waiting, starting, startPurchase, cancel } = payment
 const { buyOffers, changeOffers, canManage } = offers
 const { view, planLine, usage, usedPercent, isFull, validity } = summary
 
@@ -63,7 +63,7 @@ onMounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBuy(plan: string): void {
-  buy(plan).catch(onFailure)
+  startPurchase(plan).catch(onFailure)
 }
 
 function onChange(plan: string): void {

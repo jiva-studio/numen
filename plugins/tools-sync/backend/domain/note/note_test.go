@@ -74,22 +74,22 @@ func TestNormalizePath_RejectsAPathOutsideTheVault(t *testing.T) {
 func TestPathHash_IsAKeyedHashOfTheFoldedPath(t *testing.T) {
 	key := getVaultKey()
 
-	got := note.PathHash(key, "food/shopping list.md")
+	got := note.HashPath(key, "food/shopping list.md")
 
 	want := getReferencePathHash(t, key, "food/shopping list.md")
 	if !bytes.Equal(got, want) {
-		t.Errorf("PathHash = %x, want HMAC-SHA256 of the folded path under HKDF(vault key) = %x", got, want)
+		t.Errorf("HashPath = %x, want HMAC-SHA256 of the folded path under HKDF(vault key) = %x", got, want)
 	}
 }
 
 func TestPathHash_IgnoresCaseAndCompositionOfThePath(t *testing.T) {
 	key := getVaultKey()
 
-	lower := note.PathHash(key, "café/menu.md")
+	lower := note.HashPath(key, "café/menu.md")
 
 	for _, path := range []string{"Café/Menu.md", "Café/MENU.md"} {
-		if got := note.PathHash(key, path); !bytes.Equal(got, lower) {
-			t.Errorf("PathHash(%q) = %x, want %x of the same path in lower case", path, got, lower)
+		if got := note.HashPath(key, path); !bytes.Equal(got, lower) {
+			t.Errorf("HashPath(%q) = %x, want %x of the same path in lower case", path, got, lower)
 		}
 	}
 }
@@ -99,10 +99,10 @@ func TestPathHash_DiffersPerVaultKeyAndPerPath(t *testing.T) {
 	other := getVaultKey()
 	other[0] ^= 1
 
-	if bytes.Equal(note.PathHash(key, "a.md"), note.PathHash(other, "a.md")) {
+	if bytes.Equal(note.HashPath(key, "a.md"), note.HashPath(other, "a.md")) {
 		t.Error("two vault keys give one path hash for a path, want different hashes")
 	}
-	if bytes.Equal(note.PathHash(key, "a.md"), note.PathHash(key, "b.md")) {
+	if bytes.Equal(note.HashPath(key, "a.md"), note.HashPath(key, "b.md")) {
 		t.Error("two paths give one path hash, want different hashes")
 	}
 }

@@ -1,5 +1,5 @@
 import { onScopeDispose, ref } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { PluginContext } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { getFailureCode, type SubscriptionClient } from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
@@ -12,7 +12,7 @@ const DEFAULT_POLL_LIMIT_MS = 600_000
 
 export interface SubscriptionPaymentOptions {
   readonly client?: SubscriptionClient | undefined
-  readonly openExternal: (url: string) => Promise<Result<null>>
+  readonly openExternal: PluginContext['identity']['openExternal']
   readonly pollEveryMs?: number | undefined
   readonly pollLimitMs?: number | undefined
 }
@@ -76,10 +76,10 @@ export function useSubscriptionPayment(
     const opened = await openExternal(url)
     if (!isCurrent()) return
     if (opened.ok) beginPaymentPoll()
-    else problem.value = opened.error
+    else problem.value = words.pageNotOpened[opened.error.error]
   }
 
-  async function buy(offer: string): Promise<void> {
+  async function startPurchase(offer: string): Promise<void> {
     if (waiting.value || starting.value) return
     problem.value = ''
     starting.value = true
@@ -106,5 +106,5 @@ export function useSubscriptionPayment(
 
   onScopeDispose(endPaymentPoll)
 
-  return { waiting, starting, buy, cancel }
+  return { waiting, starting, startPurchase, cancel }
 }

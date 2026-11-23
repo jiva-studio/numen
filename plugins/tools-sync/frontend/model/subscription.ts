@@ -1,4 +1,4 @@
-import type { PluginSettings, Result } from '@numen/plugin-sdk'
+import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import { useSubscriptionOffers } from './subscriptionOffers'
 import { useSubscriptionPayment } from './subscriptionPayment'
@@ -7,7 +7,7 @@ import { useSubscriptionSummary } from './subscriptionSummary'
 
 export interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
-  readonly openExternal: (url: string) => Promise<Result<null>>
+  readonly openExternal: PluginContext['identity']['openExternal']
   readonly now?: (() => Date) | undefined
   readonly pollEveryMs?: number | undefined
   readonly pollLimitMs?: number | undefined
