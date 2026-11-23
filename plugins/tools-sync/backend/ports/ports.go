@@ -166,6 +166,12 @@ type Pins interface {
 	WritePin(ctx context.Context, address string, key []byte) error
 }
 
+// Mirror keeps the pinned keys and the copies of the logs of the account in one place.
+type Mirror interface {
+	Pins
+	Journals
+}
+
 // Journals keeps the last verified entries of the logs of the account.
 type Journals interface {
 	ReadJournal(ctx context.Context, kind restore.Kind) (restore.Journal, error)

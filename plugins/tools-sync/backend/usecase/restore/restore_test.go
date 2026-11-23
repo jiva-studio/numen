@@ -5,8 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
@@ -52,16 +51,16 @@ func readCache(t *testing.T, c *synctest.Computer) []*syncv1.CatalogEntry {
 	}
 	var entries []*syncv1.CatalogEntry
 	for _, raw := range journal.Entries {
-		entry := &syncv1.CatalogEntry{}
-		if err := proto.Unmarshal(raw, entry); err != nil {
-			t.Fatal(err)
+		entry, decodeErr := syncprotocol.DecodeCatalogEntry(raw)
+		if decodeErr != nil {
+			t.Fatal(decodeErr)
 		}
 		entries = append(entries, entry)
 	}
 	return entries
 }
 
-func TestCatalogCache_HoldsTheVerifiedEntriesInOrderAfterAConnectAndARename(t *testing.T) {
+func TestCatalogCache_ContainsTheVerifiedEntriesInOrderAfterAConnectAndARename(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	p.a.Connect(t, source)
@@ -79,7 +78,7 @@ func TestCatalogCache_HoldsTheVerifiedEntriesInOrderAfterAConnectAndARename(t *t
 		t.Fatalf("cache holds %d entries, server %d, want 2 each", len(cached), len(server))
 	}
 	for i := range cached {
-		if !proto.Equal(cached[i], server[i]) {
+		if !isSameEntry(t, cached[i], server[i]) {
 			t.Errorf("cached entry %d differs from the entry on the server", i)
 		}
 	}
@@ -101,7 +100,7 @@ func TestRecoverAccount_SendsTheCachedCatalogEntriesTheServerLost(t *testing.T) 
 		t.Fatal(err)
 	}
 	cached, server := readCache(t, p.a), p.a.ReadCatalog(t)
-	if len(server) != 1 || len(cached) != 1 || !proto.Equal(cached[0], server[0]) {
+	if len(server) != 1 || len(cached) != 1 || !isSameEntry(t, cached[0], server[0]) {
 		t.Errorf("server holds %d entries, want the one entry of the cache again", len(server))
 	}
 }
@@ -173,7 +172,7 @@ func TestRecoverAccount_StopsWhenTheLogOfTheServerDiffersFromTheCache(t *testing
 	}
 }
 
-func TestRecoverVault_SendsNothingForAServerThatHoldsTheHeadsThisDeviceRecorded(t *testing.T) {
+func TestRecoverVault_SendsNothingForAServerThatHasTheHeadsThisDeviceRecorded(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	p.a.Connect(t, source)
@@ -188,7 +187,7 @@ func TestRecoverVault_SendsNothingForAServerThatHoldsTheHeadsThisDeviceRecorded(
 	}
 
 	after := p.a.ReadChanges(t, p.a.GetRemoteID(t, source))
-	if len(after) != 1 || !proto.Equal(after[0], heads[0]) {
+	if len(after) != 1 || !bytes.Equal(after[0].GetRevId(), heads[0].GetRevId()) {
 		t.Errorf("heads after the recovery = %v, want %v unchanged", after, heads)
 	}
 }
@@ -217,4 +216,17 @@ func TestRecoverVault_WritesTheEpochIDToTheLinkOnlyAfterTheLastNote(t *testing.T
 	if len(link.RestoreEpochID) != 0 || link.Recovery == nil {
 		t.Errorf("link = epoch %x recovery %+v, want no epoch id and the progress kept", link.RestoreEpochID, link.Recovery)
 	}
+}
+
+func isSameEntry(t *testing.T, a, b *syncv1.CatalogEntry) bool {
+	t.Helper()
+	left, err := syncprotocol.EncodeCatalogEntry(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	right, err := syncprotocol.EncodeCatalogEntry(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes.Equal(left, right)
 }

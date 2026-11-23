@@ -25,7 +25,7 @@ func postAdmin(tb testing.TB, address, path string) {
 	}
 }
 
-func TestAdminBackupAndRestore_PutTheServerBackToTheBackupWithoutAnnouncingIt(t *testing.T) {
+func TestAdminBackupAndRestore_RestoresTheServerToTheBackupWithoutAnnouncingIt(t *testing.T) {
 	t.Parallel()
 	_, e, _ := newRestoreEnv(t)
 	vault := e.newVault()

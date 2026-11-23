@@ -46,7 +46,6 @@ func announce(t *testing.T, p *pair) []byte {
 	return id
 }
 
-// readServerNotes returns the text of every live head of the vault of the first computer as the server holds it.
 func readServerNotes(t *testing.T, p *pair) map[string]string {
 	t.Helper()
 	key := p.a.GetVaultKey(t, source)
@@ -72,7 +71,7 @@ func countCommits(p *pair) int {
 	return p.server.Fake.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
 }
 
-func TestSyncVault_SendsANoteWrittenAfterTheBackupToTheRestoredServerUnderItsOldFileID(t *testing.T) {
+func TestSyncVault_SendsANoteCreatedAfterTheBackupToTheRestoredServerWithItsOldFileID(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	kept := backup(t, p)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
@@ -111,7 +110,7 @@ func TestSyncVault_SendsEachNoteOnlyOnceAfterTheRestore(t *testing.T) {
 	}
 }
 
-func TestSyncVault_KeepsTheNewestTextOnBothComputersWhenTheRestoredServerHoldsAnOlderOne(t *testing.T) {
+func TestSyncVault_KeepsTheNewestTextOnBothComputersWhenTheRestoredServerHasAnOlderOne(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)

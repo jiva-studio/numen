@@ -235,7 +235,7 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Pauses: c.State,
-		Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Pins: c.State, Journals: c.State},
+		Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
 	}
 }
 
@@ -293,7 +293,7 @@ func (c *Computer) DeleteDeps() deletions.Deps {
 // RestoreDeps are the dependencies of the recovery after the server was restored.
 func (c *Computer) RestoreDeps() restore.Deps {
 	return restore.Deps{
-		Address: c.Server.URL, Epochs: c.Cloud, Pins: c.State, Journals: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
+		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
 		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
 		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}

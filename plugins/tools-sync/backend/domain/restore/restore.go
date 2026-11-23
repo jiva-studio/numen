@@ -135,11 +135,9 @@ const (
 
 // Head is the head of a file as the server holds it. IsBlobMissing is true when the server lost the body.
 type Head struct {
-	FileID []byte
-	Rev    []byte
-	// ParentRev is the revision the head was committed on top of.
-	ParentRev []byte
-	// Hash is the hash of the content of the head, empty when the head has none or does not open.
+	FileID        []byte
+	Rev           []byte
+	ParentRev     []byte
 	Hash          string
 	Path          string
 	IsDeleted     bool
@@ -184,8 +182,6 @@ func PlanRecovery(records []Known, heads map[string]Head, local map[string]strin
 	return actions
 }
 
-// planRecord decides for a note this device knows. A head that is the one recorded, or was committed on top of it, is
-// left to the normal pull: nothing was lost and the other computer's text is not to be overwritten.
 func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool) Action {
 	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil}
 	isUsable := isFound && !head.IsBlobMissing

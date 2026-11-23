@@ -31,7 +31,6 @@ type restoreState struct {
 // signs with the key a device pinned.
 const epochKeySeed = "numen sync stand-in restore epoch key"
 
-// getKey returns the key of the epochs.
 func (r *restoreState) getKey() ed25519.PrivateKey {
 	if r.key == nil {
 		seed := sha256.Sum256([]byte(epochKeySeed))
@@ -40,7 +39,6 @@ func (r *restoreState) getKey() ed25519.PrivateKey {
 	return r.key
 }
 
-// getEpochID returns the id of the current epoch, nil before the first one. The caller holds the lock.
 func (s *Server) getEpochID() []byte {
 	if s.restore.epoch == nil {
 		return nil
@@ -104,7 +102,7 @@ func (s *Server) GetRestoreEpoch(_ context.Context, req *connect.Request[syncv1.
 }
 
 func newMissingBlobFailure(ids [][]byte) error {
-	failure := connect.NewError(connect.CodeNotFound, errors.New("the body of a blob is gone"))
+	failure := connect.NewError(connect.CodeNotFound, errors.New("the body of a blob is missing"))
 	if detail, err := connect.NewErrorDetail(&syncv1.BlobMissing{BlobIds: ids}); err == nil {
 		failure.AddDetail(detail)
 	}
@@ -161,4 +159,21 @@ func (s *Server) serveAdminPost(w http.ResponseWriter, r *http.Request, run func
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) serveBlobLoss(w http.ResponseWriter, r *http.Request) {
+	s.serveAdminPost(w, r, func() error {
+		s.mu.Lock()
+		ids := make([][]byte, 0, len(s.blobs))
+		for id := range s.blobs {
+			ids = append(ids, []byte(id))
+		}
+		s.mu.Unlock()
+		for _, id := range ids {
+			if err := s.DropBlob(id); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

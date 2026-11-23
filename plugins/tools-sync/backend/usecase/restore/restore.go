@@ -34,8 +34,7 @@ type Remover interface {
 type Deps struct {
 	Address   string
 	Epochs    ports.Epochs
-	Pins      ports.Pins
-	Journals  ports.Journals
+	Mirror    ports.Mirror
 	Catalog   ports.Catalog
 	Chain     ports.Chain
 	Revisions ports.Revisions
@@ -77,13 +76,13 @@ func (u *RecoverAccount) Execute(ctx context.Context) error {
 }
 
 func (u *RecoverAccount) pin(ctx context.Context, key []byte) error {
-	pinned, err := u.deps.Pins.ReadPin(ctx, u.deps.Address)
+	pinned, err := u.deps.Mirror.ReadPin(ctx, u.deps.Address)
 	if err != nil {
 		return err
 	}
 	switch {
 	case len(pinned) == 0:
-		return u.deps.Pins.WritePin(ctx, u.deps.Address, key)
+		return u.deps.Mirror.WritePin(ctx, u.deps.Address, key)
 	case !bytes.Equal(pinned, key):
 		return ErrKeyChanged
 	}
@@ -91,7 +90,7 @@ func (u *RecoverAccount) pin(ctx context.Context, key []byte) error {
 }
 
 func (u *RecoverAccount) replayCatalog(ctx context.Context) error {
-	cache, err := u.deps.Journals.ReadJournal(ctx, domain.KindCatalog)
+	cache, err := u.deps.Mirror.ReadJournal(ctx, domain.KindCatalog)
 	if err != nil || len(cache.Entries) == 0 {
 		return err
 	}

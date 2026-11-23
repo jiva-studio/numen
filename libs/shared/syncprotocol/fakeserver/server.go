@@ -76,8 +76,8 @@ type challenge struct {
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
 // may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The restore
 // service has the admin paths /admin/backup (POST keeps the state), /admin/restore (POST puts the kept state back and
-// announces nothing), /admin/announce (POST issues a restore epoch) and /admin/retention (POST deletes the vaults of every
-// account).
+// announces nothing), /admin/announce (POST issues a restore epoch), /admin/retention (POST deletes the vaults of every
+// account) and /admin/blob-loss (POST drops the body of every blob).
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 
@@ -153,6 +153,7 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/restore", s.serveRestore)
 	mux.HandleFunc("/admin/announce", s.serveAnnounce)
 	mux.HandleFunc("/admin/retention", s.serveRetention)
+	mux.HandleFunc("/admin/blob-loss", s.serveBlobLoss)
 	mux.HandleFunc("/admin/part-log", s.servePartLog)
 	mux.HandleFunc("/admin/stop-after-bytes", s.serveStopAfter(&s.stopUpload))
 	mux.HandleFunc("/admin/stop-after-download-bytes", s.serveStopAfter(&s.stopDownload))

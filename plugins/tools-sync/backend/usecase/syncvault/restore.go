@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
-// pullOrRecover pulls the changes, and runs the recovery first when the server announced a restore or lost the vault.
-// It reports false when the pass must not go on: the server went back to an earlier state, or the recovery stopped.
 func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	err := p.pull(ctx)
 	switch {

@@ -33,7 +33,7 @@ func TestDecodeCatalogEntry_ReturnsTheEntryEncodeCatalogEntryMade(t *testing.T) 
 	}
 }
 
-func TestEncodeCatalogEntry_GivesTheSameBytesForTheSameEntry(t *testing.T) {
+func TestEncodeCatalogEntry_ReturnsTheSameBytesForTheSameEntry(t *testing.T) {
 	t.Parallel()
 
 	one, errOne := syncprotocol.EncodeCatalogEntry(newCodecEntry())

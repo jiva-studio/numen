@@ -140,7 +140,7 @@ export class SyncDriver {
     scenario.setPluginSetting(SYNC_PLUGIN, 'removalDelaySeconds', REMOVAL_DELAY_SECONDS)
   }
 
-  /** Tells the plugin of a scenario that the sync server is away: its address answers nobody. */
+  /** Points the plugin of a scenario at an address where no sync server answers. */
   setPluginAway(scenario: Scenario): void {
     scenario.setPluginSetting(SYNC_PLUGIN, 'server', AWAY_ADDRESS)
   }

@@ -61,7 +61,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Crypto: deps.Crypto, Uploads: uploads, Random: deps.Random,
 	}
 	recovery := restore.Deps{
-		Address: deps.Restore.Address, Epochs: deps.Restore.Epochs, Pins: deps.Restore.Pins, Journals: deps.Restore.Journals,
+		Address: deps.Restore.Address, Epochs: deps.Restore.Epochs, Mirror: deps.Restore.Mirror,
 		Catalog: deps.Catalog, Chain: deps.Chain, Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host,
 		State: deps.State, Commit: commit.NewCommitRevisions(commitDeps), Remove: commit.NewCommitRemovals(commitDeps),
 	}
@@ -69,7 +69,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Journals: deps.Restore.Journals, Random: deps.Random,
+			Journals: deps.Restore.Mirror, Random: deps.Random,
 		}),
 		Sweep: downloads,
 		Pull: pull.NewPullChanges(pull.Deps{

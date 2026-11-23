@@ -113,9 +113,7 @@ type PullInput struct {
 // of revisions skipped because their author or their content could not be verified, whether the server asked for
 // a full comparison.
 type PullResult struct {
-	// Verdict is what the look at the server said about its history. A pull applies nothing unless it is Same.
-	Verdict restore.Verdict
-	// EpochID is the restore epoch id the server answered with.
+	Verdict    restore.Verdict
 	EpochID    []byte
 	Applied    []string
 	Conflicts  []string

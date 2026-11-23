@@ -20,8 +20,6 @@ type journalDocument struct {
 
 func getJournalFile(kind restore.Kind) string { return "journal-" + string(kind) + ".json" }
 
-// listVaults returns the ids of the vaults of the installation. The state of the account is kept in the store
-// folder of every one of them, so a vault that joins later reads it from the others.
 func (s *State) listVaults(ctx context.Context) ([]domain.VaultID, error) {
 	vaults, err := s.host.GetVaults(ctx)
 	if err != nil {
@@ -52,7 +50,6 @@ func (s *State) ReadPin(ctx context.Context, address string) ([]byte, error) {
 	return nil, nil
 }
 
-// WritePin pins the key for the server at the address.
 func (s *State) WritePin(ctx context.Context, address string, key []byte) error {
 	ids, err := s.listVaults(ctx)
 	if err != nil {

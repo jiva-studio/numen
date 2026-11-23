@@ -88,7 +88,6 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}})
 }
 
-// clearRestore removes the warnings about a restored server.
 func (r reporter) clearRestore(ctx context.Context) error {
 	for _, key := range []string{keyWentBack, keyKeyChanged, keyDiverged} {
 		if err := r.health.Clear(ctx, key); err != nil {

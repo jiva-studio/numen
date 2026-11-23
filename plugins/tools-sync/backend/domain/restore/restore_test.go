@@ -89,7 +89,7 @@ func TestGetReplay_ReturnsTheEntriesTheServerLacksInOrder(t *testing.T) {
 	}
 }
 
-func TestGetReplay_ReturnsNothingWhenTheServerHoldsTheWholeCopy(t *testing.T) {
+func TestGetReplay_ReturnsNothingWhenTheServerHasTheWholeCopy(t *testing.T) {
 	t.Parallel()
 	for _, server := range []restore.Journal{journal("a", "b"), journal("a", "b", "c")} {
 		got, err := restore.GetReplay(journal("a", "b"), server)

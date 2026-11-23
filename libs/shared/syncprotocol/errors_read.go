@@ -51,7 +51,6 @@ func ReadCallError(err error) error {
 	return err
 }
 
-// readDetail maps the typed detail of a refusal to its error and returns nil when no detail is known.
 func readDetail(failure *connect.Error) error {
 	for _, detail := range failure.Details() {
 		value, valueErr := detail.Value()
@@ -64,7 +63,7 @@ func readDetail(failure *connect.Error) error {
 		case *syncv1.BlobNotReady:
 			return BlobNotReadyError{Index: refusal.GetRevisionIndex()}
 		case *syncv1.BlobMissing:
-			return BlobMissingError{IDs: refusal.GetBlobIds()}
+			return BlobMissingError{IDs: refusal.GetBlobIds(), cause: failure}
 		case *syncv1.MultipartIncomplete:
 			return MultipartIncompleteError{Missing: refusal.GetMissing(), WrongSize: refusal.GetWrongSize()}
 		}

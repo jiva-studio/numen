@@ -22,15 +22,13 @@ var ErrNotConnected = errors.New("the vault is not connected to a synced vault")
 
 // Link is link.json of a connected vault.
 type Link struct {
-	RemoteVaultID string                `json:"remoteVaultId"`
-	SealedKey     []byte                `json:"sealedKey"`
-	CatalogName   string                `json:"catalogName"`
-	ServerSeq     uint64                `json:"serverSeq"`
-	FeedCursor    host.FileChangeCursor `json:"feedCursor"`
-	// RestoreEpochID is the restore epoch this device ran last, empty when the server announced none.
-	RestoreEpochID []byte `json:"restoreEpochId,omitempty"`
-	// Recovery is set while a recovery of the vault runs and holds what is left of it.
-	Recovery *RecoveryProgress `json:"recovery,omitempty"`
+	RemoteVaultID  string                `json:"remoteVaultId"`
+	SealedKey      []byte                `json:"sealedKey"`
+	CatalogName    string                `json:"catalogName"`
+	ServerSeq      uint64                `json:"serverSeq"`
+	FeedCursor     host.FileChangeCursor `json:"feedCursor"`
+	RestoreEpochID []byte                `json:"restoreEpochId,omitempty"`
+	Recovery       *RecoveryProgress     `json:"recovery,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.

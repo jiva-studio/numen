@@ -58,10 +58,9 @@ type Deps struct {
 // RestoreDeps are where the recovery after a restored server reads the epoch and keeps the pinned key and the copies of
 // the logs. Address is the address of the server, the name its key is pinned under.
 type RestoreDeps struct {
-	Address  string
-	Epochs   ports.Epochs
-	Pins     ports.Pins
-	Journals ports.Journals
+	Address string
+	Epochs  ports.Epochs
+	Mirror  ports.Mirror
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.

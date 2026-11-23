@@ -65,7 +65,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}
-	work := run.getWork(domainrestore.PlanRecovery(getKnown(records), found.byFile, run.hashes))
+	work := run.getWork(domainrestore.PlanRecovery(getKnownFiles(records), found.byFile, run.hashes))
 	if err := run.execute(ctx, work); err != nil {
 		return err
 	}
@@ -73,7 +73,6 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	return u.deps.State.WriteLink(ctx, id, run.link)
 }
 
-// readHashes returns the hash of each note this device holds at a path a record or a head names.
 func (r *recovery) readHashes(ctx context.Context, found heads) (map[string]string, error) {
 	paths := map[string]bool{}
 	for _, record := range r.records {
@@ -99,7 +98,6 @@ func (r *recovery) readHashes(ctx context.Context, found heads) (map[string]stri
 	return hashes, nil
 }
 
-// getWork returns the actions that change something, limited to the files an earlier run left.
 func (r *recovery) getWork(plan []domainrestore.Action) []domainrestore.Action {
 	var work []domainrestore.Action
 	for _, action := range plan {
@@ -136,7 +134,6 @@ func (r *recovery) execute(ctx context.Context, work []domainrestore.Action) err
 	return nil
 }
 
-// finish writes the records and drops the files of the batch from the progress.
 func (r *recovery) finish(ctx context.Context, batch []domainrestore.Action) error {
 	if err := r.deps.State.WriteRecords(ctx, r.id, r.records); err != nil {
 		return err
@@ -153,7 +150,7 @@ func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Actio
 	for _, action := range batch {
 		switch action.Kind {
 		case domainrestore.Adopt:
-			r.setRecord(r.getAdopted(action))
+			r.setRecord(r.getAdoptedRecord(action))
 		case domainrestore.Send, domainrestore.Recreate:
 			file, isThere, err := r.readFile(ctx, action)
 			if err != nil {
@@ -206,7 +203,7 @@ func (r *recovery) send(ctx context.Context, files []transfer.File) error {
 	if err != nil {
 		return err
 	}
-	for i, outcome := range outcomes {
+	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			r.setRecord(outcome.Record)
 		}
@@ -239,7 +236,7 @@ func (r *recovery) setRecord(record transfer.FileRecord) {
 	r.records[at] = record
 }
 
-func getKnown(records []transfer.FileRecord) []domainrestore.Known {
+func getKnownFiles(records []transfer.FileRecord) []domainrestore.Known {
 	known := make([]domainrestore.Known, len(records))
 	for i, record := range records {
 		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev}
@@ -247,9 +244,7 @@ func getKnown(records []transfer.FileRecord) []domainrestore.Known {
 	return known
 }
 
-// getAdopted returns the record of a file whose head on the server is the content of this device. It keeps the
-// fields of the record this device had, which the body of the head still matches.
-func (r *recovery) getAdopted(action domainrestore.Action) transfer.FileRecord {
+func (r *recovery) getAdoptedRecord(action domainrestore.Action) transfer.FileRecord {
 	record := r.getRecord(action.FileID)
 	record.FileID, record.Path, record.BaseHash, record.HeadRev = action.FileID, action.Path, r.hashes[action.Path], action.ParentRev
 	return record

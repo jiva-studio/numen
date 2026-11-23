@@ -55,8 +55,6 @@ func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byt
 	}
 }
 
-// markMissingBlobs sets IsBlobMissing on the heads of the records whose body the server no longer holds. Only a head
-// this device recorded needs the check: any other head is sent over or left to the pull.
 func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, found heads, records []transfer.FileRecord) error {
 	var files []string
 	var ids [][]byte
@@ -69,7 +67,7 @@ func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, foun
 	}
 	for start := 0; start < len(ids); start += syncprotocol.MaxBlobURLs {
 		end := min(start+syncprotocol.MaxBlobURLs, len(ids))
-		missing, err := u.readMissing(ctx, remote, ids[start:end])
+		missing, err := u.readMissingBlobs(ctx, remote, ids[start:end])
 		if err != nil {
 			return err
 		}
@@ -84,7 +82,7 @@ func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, foun
 	return nil
 }
 
-func (u *RecoverVault) readMissing(ctx context.Context, remote []byte, ids [][]byte) (map[string]bool, error) {
+func (u *RecoverVault) readMissingBlobs(ctx context.Context, remote []byte, ids [][]byte) (map[string]bool, error) {
 	missing := map[string]bool{}
 	downloads, err := u.deps.Blobs.GetBlobUrls(ctx, remote, ids)
 	if gone, isGone := errors.AsType[syncprotocol.BlobMissingError](err); isGone {

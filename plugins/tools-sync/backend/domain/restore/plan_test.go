@@ -23,7 +23,7 @@ func TestPlanRecovery_AdoptsAHeadWhoseContentIsTheLocalNoteInsteadOfSendingItAga
 	}
 }
 
-func TestPlanRecovery_LeavesAHeadAnotherComputerCommittedOnTopOfTheRecordedOneToThePull(t *testing.T) {
+func TestPlanRecovery_PullsAHeadAnotherComputerCommittedOnTopOfTheRecordedOne(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
 	records := []restore.Known{record(1, "a.md", milk, 7)}
@@ -36,7 +36,7 @@ func TestPlanRecovery_LeavesAHeadAnotherComputerCommittedOnTopOfTheRecordedOneTo
 	wantAction(t, got, restore.Keep, 1)
 }
 
-func TestPlanRecovery_SendsOverAHeadOnTopOfTheRecordedOneWhenItsBodyIsGone(t *testing.T) {
+func TestPlanRecovery_SendsAHeadOnTopOfTheRecordedOneWhenItsBodyIsMissing(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
 	records := []restore.Known{record(1, "a.md", milk, 7)}

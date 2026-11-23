@@ -54,7 +54,12 @@ func TestCheckRestoreEpoch_AcceptsAnEpochSignedByTheKey(t *testing.T) {
 	t.Parallel()
 	key := newEpochKey(t, 1)
 
-	err := syncprotocol.CheckRestoreEpoch(key.Public().(ed25519.PublicKey), newSignedEpoch(key))
+	public, ok := key.Public().(ed25519.PublicKey)
+	if !ok {
+		t.Fatal("not an Ed25519 key")
+	}
+
+	err := syncprotocol.CheckRestoreEpoch(public, newSignedEpoch(key))
 
 	if err != nil {
 		t.Errorf("CheckRestoreEpoch = %v, want nil", err)
@@ -69,15 +74,15 @@ func TestCheckRestoreEpoch_RefusesWhatDoesNotVerify(t *testing.T) {
 		t.Fatal("not an Ed25519 key")
 	}
 	tamperedID := newSignedEpoch(key)
-	tamperedID.Id[0] ^= 1
+	tamperedID.GetId()[0] ^= 1
 	tamperedTime := newSignedEpoch(key)
 	tamperedTime.IssuedAt++
 	tamperedSignature := newSignedEpoch(key)
-	tamperedSignature.Signature[0] ^= 1
+	tamperedSignature.GetSignature()[0] ^= 1
 	shortID := newSignedEpoch(key)
-	shortID.Id = shortID.Id[:15]
+	shortID.Id = shortID.GetId()[:15]
 	shortSignature := newSignedEpoch(key)
-	shortSignature.Signature = shortSignature.Signature[:63]
+	shortSignature.Signature = shortSignature.GetSignature()[:63]
 	otherKey, ok := newEpochKey(t, 2).Public().(ed25519.PublicKey)
 	if !ok {
 		t.Fatal("not an Ed25519 key")
