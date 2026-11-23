@@ -352,7 +352,7 @@ func (c *Computer) ChainDeps() chaincourier.Deps {
 // LinkDeps are the dependencies of the courier of a link over the relay of the server.
 func (c *Computer) LinkDeps() linkcourier.Deps {
 	return linkcourier.Deps{
-		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock,
+		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock, Server: c.Server.URL,
 	}
 }
 

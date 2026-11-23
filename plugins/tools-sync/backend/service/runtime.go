@@ -115,7 +115,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
 	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
-		"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
+		"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Server: address}).Execute,
 		"chain":  chaincourier.NewLoop(chaincourier.Deps{Identity: p.identity, Core: p.client, Chain: cloudSide}, p.clock).Execute,
 		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
 	}
