@@ -4,7 +4,9 @@
  */
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
+import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
+import { makeWrongCode } from './link.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
 import type { SyncDriver } from './sync.js'
@@ -55,6 +57,7 @@ interface SecondComputer {
   readonly scenario: Scenario
   readonly identity: IdentityDriver
   readonly vaults: SyncVaultsDriver
+  readonly devices: DevicesDriver
 }
 
 interface ComputerParts {
@@ -63,6 +66,7 @@ interface ComputerParts {
   readonly identity: IdentityDriver
   readonly sync: SyncDriver
   readonly firstVaults: SyncVaultsDriver
+  readonly firstDevices: DevicesDriver
 }
 
 export class ComputerDriver {
@@ -73,6 +77,9 @@ export class ComputerDriver {
   private readonly identity: IdentityDriver
   private readonly sync: SyncDriver
   private readonly firstVaults: SyncVaultsDriver
+  private readonly firstDevices: DevicesDriver
+  private shownQr: { readonly from: ComputerName; readonly text: string } | undefined
+  private secondFingerprint: string | undefined
 
   constructor(parts: ComputerParts) {
     this.first = parts.first
@@ -80,6 +87,7 @@ export class ComputerDriver {
     this.identity = parts.identity
     this.sync = parts.sync
     this.firstVaults = parts.firstVaults
+    this.firstDevices = parts.firstDevices
   }
 
   private requireSecond(): SecondComputer {
@@ -95,19 +103,145 @@ export class ComputerDriver {
     return computer === 'first' ? this.firstVaults : this.requireSecond().vaults
   }
 
-  /** Starts a second application over a vault of its own and restores the identity of the person in it from the recovery words. */
-  async restoreIdentity(): Promise<void> {
-    const words = this.identity.getWords()
+  /** Starts the second application over a vault of its own, once, with no identity. */
+  private async ensureSecond(): Promise<SecondComputer> {
+    if (this.second !== undefined) return this.second
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(SECOND_VAULT)
     this.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
-    const identity = new IdentityDriver(scenario, settings)
-    this.second = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings) }
+    this.second = {
+      scenario,
+      identity: new IdentityDriver(scenario, settings),
+      vaults: new SyncVaultsDriver(scenario, settings),
+      devices: new DevicesDriver(scenario, settings),
+    }
     await application.startApplication('editor')
-    await identity.restoreFromWords(words.join(' '))
-    await identity.expectIdentity(true)
+    return this.second
+  }
+
+  /** Starts a second application over a vault of its own and restores the identity of the person in it from the recovery words. */
+  async restoreIdentity(): Promise<void> {
+    const words = this.identity.getWords()
+    const second = await this.ensureSecond()
+    await second.identity.restoreFromWords(words.join(' '))
+    await second.identity.expectIdentity(true)
+  }
+
+  private getDevices(computer: ComputerName): DevicesDriver {
+    return computer === 'first' ? this.firstDevices : this.requireSecond().devices
+  }
+
+  private requireQr(): string {
+    if (this.shownQr === undefined) throw new Error('no QR code was shown: begin with a step that shows one')
+    return this.shownQr.text
+  }
+
+  /** The device of the person that has the account shows a QR code. */
+  async showQrToLink(): Promise<void> {
+    this.shownQr = { from: 'first', text: await this.firstDevices.showQrToLink() }
+  }
+
+  /** A new second computer shows a QR code to join the account. */
+  async showQrToJoin(): Promise<void> {
+    const second = await this.ensureSecond()
+    this.shownQr = { from: 'second', text: await second.devices.showQrToJoin() }
+  }
+
+  /** A computer reads the QR code that the other one shows. */
+  async scan(computer: ComputerName): Promise<void> {
+    const text = this.requireQr()
+    if (this.shownQr?.from === computer) throw new Error('a computer cannot scan the QR code it shows itself')
+    if (computer === 'first') await this.firstDevices.scanToLink(text)
+    else await (await this.ensureSecond()).devices.scanToJoin(text)
+  }
+
+  async approve(): Promise<void> {
+    await this.firstDevices.approve()
+  }
+
+  async decline(): Promise<void> {
+    await this.firstDevices.decline()
+  }
+
+  /** The dialog of the person shows the name and the fingerprint the new computer shows for itself. */
+  async expectPeerIsSecond(): Promise<void> {
+    const own = await this.requireSecond().devices.readOwnDevice()
+    const seen = await this.firstDevices.readPeer()
+    expect(seen).toStrictEqual(own)
+  }
+
+  async expectAsksToJoin(): Promise<void> {
+    await this.requireSecond().devices.expectAskedToJoin(this.identity.getAccountFingerprint(), false)
+  }
+
+  /** The second computer holds the account of the person: it joins where it asks to, and has a session of its own. */
+  async expectSecondHasAccount(): Promise<void> {
+    const second = this.requireSecond()
+    await second.devices.expectAccount(this.identity.getAccountFingerprint())
+    this.secondFingerprint = await second.devices.readThisFingerprint()
+    await this.sync.expectSessionOfDevice(this.secondFingerprint)
+  }
+
+  async expectSecondHasNoIdentity(): Promise<void> {
+    const second = this.requireSecond()
+    await second.devices.closeDialog()
+    await second.identity.expectIdentity(false)
+  }
+
+  async deleteSecondIdentity(): Promise<void> {
+    const second = this.requireSecond()
+    await second.devices.closeDialog()
+    await second.identity.delete()
+    this.secondFingerprint = undefined
+  }
+
+  async createSecondIdentity(): Promise<void> {
+    await (await this.ensureSecond()).identity.create()
+  }
+
+  /** The second computer types the code that the device of the person shows, or a code it is given. */
+  async enterCode(code?: string): Promise<void> {
+    const second = this.requireSecond()
+    await second.devices.enterCode(code ?? (await this.firstDevices.readConfirmationCode()))
+  }
+
+  async enterWrongCodes(times: number): Promise<void> {
+    const wrong = makeWrongCode(await this.firstDevices.readConfirmationCode())
+    for (let attempt = 0; attempt < times; attempt += 1) await this.requireSecond().devices.enterCode(wrong)
+  }
+
+  async expectActiveDevices(count: number): Promise<void> {
+    await this.firstDevices.expectActiveDevices(count)
+  }
+
+  /** The second computer joins the account of the person by the QR code of the person; a revoked identity of it is deleted first. */
+  async linkSecond(): Promise<void> {
+    const second = await this.ensureSecond()
+    if (await second.devices.isRevoked()) await this.deleteSecondIdentity()
+    await this.showQrToLink()
+    await this.scan('second')
+    await this.approve()
+    await this.expectSecondHasAccount()
+  }
+
+  async revokeSecond(): Promise<void> {
+    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the account: begin with a step that links it')
+    await this.firstDevices.revoke(this.secondFingerprint)
+  }
+
+  async expectCannotRevokeThisDevice(): Promise<void> {
+    await this.firstDevices.expectNoRevokeOnThisDevice()
+  }
+
+  async expectNoSessionOfSecond(): Promise<void> {
+    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the account: begin with a step that links it')
+    await this.sync.expectNoSessionOfDevice(this.secondFingerprint)
+  }
+
+  async expectWarning(computer: ComputerName, text: string): Promise<void> {
+    await this.getDevices(computer).expectWarning(text)
   }
 
   private resolveVault(computer: ComputerName, vault: string | undefined): string {

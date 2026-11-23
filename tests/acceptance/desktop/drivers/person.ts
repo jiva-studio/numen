@@ -12,6 +12,7 @@ import { ConnectionsDriver } from './connections.js'
 import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
+import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
 import { ComputerDriver } from './computer.js'
 import { SyncDriver } from './sync.js'
@@ -89,7 +90,14 @@ export class Person {
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
-    this.computers = new ComputerDriver({ first: this.scenario, viewport, identity: this.identity, sync: this.sync, firstVaults: this.syncVaults })
+    this.computers = new ComputerDriver({
+      first: this.scenario,
+      viewport,
+      identity: this.identity,
+      sync: this.sync,
+      firstVaults: this.syncVaults,
+      firstDevices: new DevicesDriver(this.scenario, this.settings),
+    })
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */
