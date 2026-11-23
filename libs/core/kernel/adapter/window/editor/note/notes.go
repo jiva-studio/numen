@@ -150,12 +150,10 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	paths := r.Msg.GetPaths()
-	if len(paths) > domain.MaxRelatedNotePaths {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("at most %d notes at once, not %d", domain.MaxRelatedNotePaths, len(paths)))
+	views, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPaths(), depth)
+	if errors.Is(err, domain.ErrTooManyRelatedPaths) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	views, err := h.getRelatedNotes.Execute(ctx, showing, paths, depth)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
