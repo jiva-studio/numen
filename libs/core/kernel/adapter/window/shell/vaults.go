@@ -30,4 +30,3 @@ func (l vaultList) ListVaults(
 	}
 	return connect.NewResponse(out), nil
 }
-
