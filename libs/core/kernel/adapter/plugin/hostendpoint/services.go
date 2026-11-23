@@ -59,14 +59,6 @@ type Account interface {
 	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
 }
 
-// AccountEntitlements is what a plugin with the identity permission may ask of the products the account of this device owns. The host asks the sync
-// server of the account with the identity of this device; a plugin sends no account, no session and no address.
-type AccountEntitlements interface {
-	// GetEntitlements returns the products the account owns now, ordered by product. identity.ErrNoIdentity means no identity on this device and
-	// identity.ErrSyncUnavailable that the server cannot be reached.
-	GetEntitlements(ctx context.Context) ([]identitydomain.Entitlement, error)
-}
-
 // AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits
 // for the chain of the server. Its calls return identity.ErrNoPendingRestore when none is pending.
 type AccountRestore interface {
@@ -95,7 +87,6 @@ type Callers struct {
 	Activation   Activation
 	Account      Account
 	Restore      AccountRestore
-	Entitlements AccountEntitlements
 	Lent         *Services
 	Tools        func() PluginTools
 	Health       HealthCalls

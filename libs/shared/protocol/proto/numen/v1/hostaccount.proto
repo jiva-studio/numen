@@ -37,11 +37,6 @@ service HostAccountService {
   // with no chain when the server has no such account. A chain that does not verify or does not belong to
   // the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
   rpc CompleteRestore(CompleteRestoreRequest) returns (CompleteRestoreResponse);
-
-  // GetEntitlements returns the products the account of this device owns right now, as the sync server of the account tells it:
-  // the slug, the end of validity, the phase and the quota (0 for a product without one). A device with no identity answers
-  // FAILED_PRECONDITION with the reason NO_IDENTITY, and a host that cannot reach the server answers UNAVAILABLE.
-  rpc GetEntitlements(GetEntitlementsRequest) returns (GetEntitlementsResponse);
 }
 
 message SignAsDeviceRequest {
@@ -112,21 +107,3 @@ message CompleteRestoreRequest {
 }
 
 message CompleteRestoreResponse {}
-
-message GetEntitlementsRequest {}
-
-message HostEntitlement {
-  // product is the slug of the product, such as link.
-  string product = 1;
-  // valid_until is unix seconds.
-  int64 valid_until = 2;
-  // phase is "active" or "grace".
-  string phase = 3;
-  // quota_bytes is 0 for a product without a quota.
-  uint64 quota_bytes = 4;
-  bool is_trial = 5;
-}
-
-message GetEntitlementsResponse {
-  repeated HostEntitlement entitlements = 1;
-}

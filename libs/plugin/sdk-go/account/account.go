@@ -7,7 +7,6 @@ package account
 import (
 	"context"
 	"errors"
-	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -26,7 +25,6 @@ const (
 	cannotOpenReason       = "CANNOT_OPEN"
 	noPendingRestoreReason = "NO_PENDING_RESTORE"
 	invalidChainReason     = "INVALID_CHAIN"
-	syncUnavailableReason  = "SYNC_UNAVAILABLE"
 )
 
 var (
@@ -36,8 +34,6 @@ var (
 	ErrCannotOpen = errors.New("the sealed data cannot be opened")
 	// ErrNoPendingRestore means this device has no restore that waits for an account chain.
 	ErrNoPendingRestore = errors.New("no restore is pending on this device")
-	// ErrSyncUnavailable means the host cannot reach the sync server of the account, or the server sells nothing.
-	ErrSyncUnavailable = errors.New("the sync server is unavailable")
 	// ErrInvalidChain means the chain does not verify or does not belong to the recovery words.
 	ErrInvalidChain = errors.New("the account chain is not valid for the recovery words")
 	errMessageSize  = errors.New("the message to sign has 1 to 4096 bytes")
@@ -191,8 +187,6 @@ func readError(err error) error {
 		return ErrNoPendingRestore
 	case invalidChainReason:
 		return ErrInvalidChain
-	case syncUnavailableReason:
-		return ErrSyncUnavailable
 	}
 	return err
 }
@@ -208,35 +202,4 @@ func readReason(failure *connect.Error) string {
 		}
 	}
 	return ""
-}
-
-// Entitlement is one product the account of this device owns right now. Phase is "active" or "grace". QuotaBytes is 0 for a product without a quota.
-// ValidUntil is the end of the paid period or of the trial, and about 100 years after the purchase for a one-time product.
-//
-//numen:api
-type Entitlement struct {
-	// Product is the slug of the product, such as link.
-	Product    string
-	ValidUntil time.Time
-	Phase      string
-	QuotaBytes uint64
-	IsTrial    bool
-}
-
-// GetEntitlements returns the products the account of this device owns right now, ordered by product, as the sync server of the account tells it.
-// The host asks the server with the identity of this device; the plugin names no server and holds no session. It returns ErrNoIdentity where the device
-// holds no identity and ErrSyncUnavailable where the server cannot be reached.
-func (c *Client) GetEntitlements(ctx context.Context) ([]Entitlement, error) {
-	response, err := c.rpc.GetEntitlements(ctx, connect.NewRequest(&v1.GetEntitlementsRequest{}))
-	if err != nil {
-		return nil, readError(err)
-	}
-	entitlements := make([]Entitlement, 0, len(response.Msg.GetEntitlements()))
-	for _, one := range response.Msg.GetEntitlements() {
-		entitlements = append(entitlements, Entitlement{
-			Product: one.GetProduct(), ValidUntil: time.Unix(one.GetValidUntil(), 0), Phase: one.GetPhase(),
-			QuotaBytes: one.GetQuotaBytes(), IsTrial: one.GetIsTrial(),
-		})
-	}
-	return entitlements, nil
 }

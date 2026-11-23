@@ -87,18 +87,3 @@ func TestAFakeThatStartedARestoreHasNoIdentityUntilTheRestoreCompletes(t *testin
 		t.Errorf("the chain of the fake has another root than the words, error = %v", err)
 	}
 }
-
-func TestTheFakeServesTheEntitlementsItWasGivenInOrderAndAnEmptyListBeforeThat(t *testing.T) {
-	fake := accounttest.NewFake(t, "md.numen.tools.link")
-	client := newClient(t, fake)
-	if got, err := client.GetEntitlements(t.Context()); err != nil || len(got) != 0 {
-		t.Fatalf("entitlements = %+v, %v, want none", got, err)
-	}
-
-	fake.SetEntitlements([]account.Entitlement{{Product: "link", Phase: "active"}, {Product: "sync", Phase: "active"}})
-
-	got, err := client.GetEntitlements(t.Context())
-	if err != nil || len(got) != 2 || got[0].Product != "link" || got[1].Product != "sync" {
-		t.Errorf("entitlements = %+v, %v, want link and sync", got, err)
-	}
-}

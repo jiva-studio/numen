@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostaccount.proto.
  */
 export const file_numen_v1_hostaccount: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlIhgKFkdldEVudGl0bGVtZW50c1JlcXVlc3QibQoPSG9zdEVudGl0bGVtZW50Eg8KB3Byb2R1Y3QYASABKAkSEwoLdmFsaWRfdW50aWwYAiABKAMSDQoFcGhhc2UYAyABKAkSEwoLcXVvdGFfYnl0ZXMYBCABKAQSEAoIaXNfdHJpYWwYBSABKAgiSgoXR2V0RW50aXRsZW1lbnRzUmVzcG9uc2USLwoMZW50aXRsZW1lbnRzGAEgAygLMhkubnVtZW4udjEuSG9zdEVudGl0bGVtZW50MqoFChJIb3N0QWNjb3VudFNlcnZpY2USTQoMU2lnbkFzRGV2aWNlEh0ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlc3BvbnNlElwKEUdldFB1YmxpY0lkZW50aXR5EiIubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRJBCghTZWFsRGF0YRIZLm51bWVuLnYxLlNlYWxEYXRhUmVxdWVzdBoaLm51bWVuLnYxLlNlYWxEYXRhUmVzcG9uc2USQQoIT3BlbkRhdGESGS5udW1lbi52MS5PcGVuRGF0YVJlcXVlc3QaGi5udW1lbi52MS5PcGVuRGF0YVJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlElYKD0dldEVudGl0bGVtZW50cxIgLm51bWVuLnYxLkdldEVudGl0bGVtZW50c1JlcXVlc3QaIS5udW1lbi52MS5HZXRFbnRpdGxlbWVudHNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlMtIEChJIb3N0QWNjb3VudFNlcnZpY2USTQoMU2lnbkFzRGV2aWNlEh0ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlc3BvbnNlElwKEUdldFB1YmxpY0lkZW50aXR5EiIubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRJBCghTZWFsRGF0YRIZLm51bWVuLnYxLlNlYWxEYXRhUmVxdWVzdBoaLm51bWVuLnYxLlNlYWxEYXRhUmVzcG9uc2USQQoIT3BlbkRhdGESGS5udW1lbi52MS5PcGVuRGF0YVJlcXVlc3QaGi5udW1lbi52MS5PcGVuRGF0YVJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.SignAsDeviceRequest
@@ -298,81 +298,6 @@ export const CompleteRestoreResponseSchema: GenMessage<CompleteRestoreResponse> 
   messageDesc(file_numen_v1_hostaccount, 13);
 
 /**
- * @generated from message numen.v1.GetEntitlementsRequest
- */
-export type GetEntitlementsRequest = Message<"numen.v1.GetEntitlementsRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.GetEntitlementsRequest.
- * Use `create(GetEntitlementsRequestSchema)` to create a new message.
- */
-export const GetEntitlementsRequestSchema: GenMessage<GetEntitlementsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 14);
-
-/**
- * @generated from message numen.v1.HostEntitlement
- */
-export type HostEntitlement = Message<"numen.v1.HostEntitlement"> & {
-  /**
-   * product is the slug of the product, such as link.
-   *
-   * @generated from field: string product = 1;
-   */
-  product: string;
-
-  /**
-   * valid_until is unix seconds.
-   *
-   * @generated from field: int64 valid_until = 2;
-   */
-  validUntil: bigint;
-
-  /**
-   * phase is "active" or "grace".
-   *
-   * @generated from field: string phase = 3;
-   */
-  phase: string;
-
-  /**
-   * quota_bytes is 0 for a product without a quota.
-   *
-   * @generated from field: uint64 quota_bytes = 4;
-   */
-  quotaBytes: bigint;
-
-  /**
-   * @generated from field: bool is_trial = 5;
-   */
-  isTrial: boolean;
-};
-
-/**
- * Describes the message numen.v1.HostEntitlement.
- * Use `create(HostEntitlementSchema)` to create a new message.
- */
-export const HostEntitlementSchema: GenMessage<HostEntitlement> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 15);
-
-/**
- * @generated from message numen.v1.GetEntitlementsResponse
- */
-export type GetEntitlementsResponse = Message<"numen.v1.GetEntitlementsResponse"> & {
-  /**
-   * @generated from field: repeated numen.v1.HostEntitlement entitlements = 1;
-   */
-  entitlements: HostEntitlement[];
-};
-
-/**
- * Describes the message numen.v1.GetEntitlementsResponse.
- * Use `create(GetEntitlementsResponseSchema)` to create a new message.
- */
-export const GetEntitlementsResponseSchema: GenMessage<GetEntitlementsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostaccount, 16);
-
-/**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
  * by its token, and every call needs the permission identity. No call returns or accepts a secret key.
  *
@@ -458,18 +383,6 @@ export const HostAccountService: GenService<{
     methodKind: "unary";
     input: typeof CompleteRestoreRequestSchema;
     output: typeof CompleteRestoreResponseSchema;
-  },
-  /**
-   * GetEntitlements returns the products the account of this device owns right now, as the sync server of the account tells it:
-   * the slug, the end of validity, the phase and the quota (0 for a product without one). A device with no identity answers
-   * FAILED_PRECONDITION with the reason NO_IDENTITY, and a host that cannot reach the server answers UNAVAILABLE.
-   *
-   * @generated from rpc numen.v1.HostAccountService.GetEntitlements
-   */
-  getEntitlements: {
-    methodKind: "unary";
-    input: typeof GetEntitlementsRequestSchema;
-    output: typeof GetEntitlementsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostaccount, 0);

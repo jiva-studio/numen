@@ -8,7 +8,6 @@ import (
 	"crypto/rand"
 	"net/http/httptest"
 	"net/url"
-	"slices"
 	"sync"
 	"testing"
 
@@ -35,9 +34,6 @@ type Fake struct {
 	failure error
 	signed  int
 	pending *pendingRestore
-
-	entitlements      []account.Entitlement
-	isSyncUnavailable bool
 }
 
 // NewFake starts a host with an identity, serving a plugin of the id, and stops it when the test ends.
@@ -206,41 +202,4 @@ func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, ke
 		t.Fatal(err)
 	}
 	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}
-}
-
-// SetEntitlements sets the products the host answers to GetEntitlements, in this order. Nothing set is an empty list.
-func (f *Fake) SetEntitlements(entitlements []account.Entitlement) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.entitlements = slices.Clone(entitlements)
-}
-
-// FailEntitlements makes GetEntitlements answer account.ErrSyncUnavailable while on is true; the other calls keep working.
-func (f *Fake) FailEntitlements(on bool) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.isSyncUnavailable = on
-}
-
-func (s *service) GetEntitlements(_ context.Context, _ *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error) {
-	f := s.fake
-	if _, err := f.read(); err != nil {
-		return nil, err
-	}
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.isSyncUnavailable {
-		failure := connect.NewError(connect.CodeUnavailable, account.ErrSyncUnavailable)
-		if detail, err := connect.NewErrorDetail(&errdetails.ErrorInfo{Reason: "SYNC_UNAVAILABLE"}); err == nil {
-			failure.AddDetail(detail)
-		}
-		return nil, failure
-	}
-	entitlements := make([]*v1.HostEntitlement, 0, len(f.entitlements))
-	for _, one := range f.entitlements {
-		entitlements = append(entitlements, &v1.HostEntitlement{
-			Product: one.Product, ValidUntil: one.ValidUntil.Unix(), Phase: one.Phase, QuotaBytes: one.QuotaBytes, IsTrial: one.IsTrial,
-		})
-	}
-	return connect.NewResponse(&v1.GetEntitlementsResponse{Entitlements: entitlements}), nil
 }

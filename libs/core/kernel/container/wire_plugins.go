@@ -217,7 +217,6 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	if processes.Account != nil {
 		callers.Account = processes.Account
 		callers.Restore = processes.Account
-		callers.Entitlements = noSyncEntitlements{account: processes.Account}
 	}
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers))
 	return services
