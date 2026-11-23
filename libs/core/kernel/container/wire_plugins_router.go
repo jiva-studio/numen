@@ -5,11 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
@@ -106,7 +101,7 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, commands, conditions)
-	run := commandrun.New(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, openNoteReader(vaultDeps.Readers), config, conditions)
+	run := plugincommand.NewRunner(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
 	return pluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch.ContentTypeTable),
@@ -154,19 +149,5 @@ func getDependencyProvisioner(services *supervision.Services) func() pluginport.
 			return dependencies
 		}
 		return nil
-	}
-}
-
-// openNoteReader opens the readers of the vault for the notes a condition reads; no readers open none.
-func openNoteReader(readers vaultport.VaultReaders) commandrun.OpenReader {
-	if readers == nil {
-		return nil
-	}
-	return func(v domain.Vault) (edit.Reader, error) {
-		reader, err := readers.Open(v)
-		if err != nil {
-			return nil, err
-		}
-		return reader, nil
 	}
 }

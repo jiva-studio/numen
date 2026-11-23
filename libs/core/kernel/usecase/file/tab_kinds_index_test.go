@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/tabkinds"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -164,7 +164,7 @@ func (w tabKindWorld) fromFiles(t *testing.T, paths []string) map[string]string 
 
 func (w tabKindWorld) listTabKinds(t *testing.T, paths []string) map[string]string {
 	t.Helper()
-	kinds, err := tabkinds.New(w.heads, w.choose).ListTabKinds(t.Context(), w.vault, paths)
+	kinds, err := indexnote.NewTabKinds(w.heads, w.choose).ListTabKinds(t.Context(), w.vault, paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestTheTabKindsOfIndexedNotesAreTheOnesTheirFilesGive(t *testing.T) {
 func TestTheTabKindsOfAFolderAreChosenWithoutReadingAFile(t *testing.T) {
 	w := newTabKindWorld(t, getTabKindNotes())
 	readers := countingReaders{VaultReaders: vaultreader.Readers{}, reads: w.reads, stats: w.stats}
-	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), tabkinds.New(w.heads, w.choose))
+	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), indexnote.NewTabKinds(w.heads, w.choose))
 
 	listing, err := folder.Execute(t.Context(), w.vault, "")
 	if err != nil {
@@ -225,7 +225,7 @@ func TestANoteTheIndexDoesNotHoldYetHasNoTabKindAndIsNotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	readers := countingReaders{VaultReaders: vaultreader.Readers{}, reads: w.reads, stats: w.stats}
-	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), tabkinds.New(w.heads, w.choose))
+	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), indexnote.NewTabKinds(w.heads, w.choose))
 
 	listing, err := folder.Execute(t.Context(), w.vault, "")
 	if err != nil {

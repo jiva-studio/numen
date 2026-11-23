@@ -16,13 +16,13 @@ import (
 // items over the version its item names, and any other command in its plugin.
 type RunCommand struct {
 	list     List
-	run      commandrun.Runner
+	run      Runner
 	versions VersionItems
 }
 
 // NewRunCommand makes the scenario that runs a command of the list through run. versions are the text
 // versions that a command with items runs over; without them such a command runs nothing.
-func NewRunCommand(list List, run commandrun.Runner, versions VersionItems) RunCommand {
+func NewRunCommand(list List, run Runner, versions VersionItems) RunCommand {
 	if versions == nil {
 		versions = noVersions{}
 	}

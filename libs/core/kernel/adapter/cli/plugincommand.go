@@ -8,8 +8,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -21,7 +19,7 @@ import (
 type PluginCommands struct {
 	List   plugincommand.List
 	ByName plugincommand.RunByName
-	Open   func(ctx context.Context, v domain.Vault) (commandrun.Runner, func() error, error)
+	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Runner, func() error, error)
 }
 
 // declaredCommand is a command a plugin manifest declares, run by that plugin's backend.

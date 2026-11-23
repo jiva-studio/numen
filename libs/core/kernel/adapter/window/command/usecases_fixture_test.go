@@ -14,7 +14,7 @@ import (
 type useCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
-	Run        commandrun.Runner
+	Run        plugincommand.Runner
 	RunCommand plugincommand.RunCommand
 	ListItems  plugincommand.ListItems
 }
@@ -28,7 +28,7 @@ func newUseCases(
 	}
 	conditions := when.NewConditions()
 	list := plugincommand.NewList(commands, nil, conditions)
-	run := commandrun.New(commands, runs, types, nil, config, conditions)
+	run := plugincommand.NewRunner(commands, runs, types, nil, config, conditions)
 	return useCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, types),

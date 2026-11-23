@@ -187,12 +187,11 @@ func listKernelPackages(t *testing.T, workspace load.WorkspacePackages) []*packa
 	return load.GetModulePackages(t, workspace, "libs/core/kernel")
 }
 
-// knownInterfaceExceptions are the interfaces implemented by a use case of another package that the check lets
-// through for now, each with the reason. An entry that is no longer a finding fails the check, so the list shrinks.
-var knownInterfaceExceptions = map[string]string{
-	"NoteScanner is implemented by the use case vault.Scan":         "merging Scan breaks go/source-size, and ReadWholeVault needs a design",
-	"NoteMover is implemented by the use case note.Move":            "the vault use case that moves notes needs a design",
-	"TriggerRunner is implemented by the use case trigger.Triggers": "waits for the window adapters of PR 8",
+func getKnownInterfaceExceptions() map[string]string {
+	return map[string]string{
+		"NoteScanner is implemented by the use case vault.Scan":         "merging Scan breaks go/source-size, and ReadWholeVault needs a design",
+		"TriggerRunner is implemented by the use case trigger.Triggers": "waits for the window adapters of PR 8",
+	}
 }
 
 func checkNoUseCaseIsBehindAnInterface(t *testing.T, workspace load.WorkspacePackages) {
@@ -208,18 +207,19 @@ func checkNoUseCaseIsBehindAnInterface(t *testing.T, workspace load.WorkspacePac
 
 func filterKnownExceptions(t *testing.T, found []load.Finding) []load.Finding {
 	t.Helper()
+	exceptions := getKnownInterfaceExceptions()
 	seen := map[string]bool{}
 	var rest []load.Finding
 	for _, one := range found {
-		if _, isKnown := knownInterfaceExceptions[one.Name]; isKnown {
+		if _, isKnown := exceptions[one.Name]; isKnown {
 			seen[one.Name] = true
 			continue
 		}
 		rest = append(rest, one)
 	}
-	for name := range knownInterfaceExceptions {
+	for name := range exceptions {
 		if !seen[name] {
-			t.Errorf("the exception %q is no longer a finding: remove it from knownInterfaceExceptions", name)
+			t.Errorf("the exception %q is no longer a finding: remove it from getKnownInterfaceExceptions", name)
 		}
 	}
 	return rest

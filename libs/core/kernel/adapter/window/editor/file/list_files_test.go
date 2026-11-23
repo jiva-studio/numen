@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/tabkinds"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -27,7 +27,7 @@ func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Han
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
 			open,
-			file.NewListFolder(file.NewGetFolderEntries(readers, nil), tabkinds.New(nil, choose)),
+			file.NewListFolder(file.NewGetFolderEntries(readers, nil), indexnote.NewTabKinds(nil, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
 		filewindow.NewChanges(open, open, nil, nil, nil),

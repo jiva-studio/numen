@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/tabkinds"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -220,7 +220,7 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	choice := plugin.NewTabKindChoice(
 		exec.Runtime.Manifests.ListTabKinds, exec.Watch.ContentTypeTable.GetContentType, getWhenConfig(settingsDeps, exec.Runtime.Listing).GetWhenConfig,
 	)
-	return tabKinds{files: files, choice: choice, list: tabkinds.New(db.NoteQueries(), choice)}
+	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
 func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find vaultport.VaultLookup) *editor.FileServer {

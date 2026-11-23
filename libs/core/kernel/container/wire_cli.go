@@ -5,8 +5,6 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
@@ -224,10 +222,10 @@ func getCLIPluginCommands(_ Config, commands pluginCommandUseCases, openWork cli
 	return cli.PluginCommands{
 		List:   commands.List,
 		ByName: plugincommand.NewRunByName(find),
-		Open: func(ctx context.Context, v domain.Vault) (commandrun.Runner, func() error, error) {
+		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Runner, func() error, error) {
 			closeWork, err := openCLIPluginWork(openWork, ctx, v, plugins, chunks, vaultDeps)
 			if err != nil {
-				return commandrun.Runner{}, nil, err
+				return plugincommand.Runner{}, nil, err
 			}
 			return commands.Run, closeWork, nil
 		},

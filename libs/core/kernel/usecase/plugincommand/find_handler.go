@@ -49,7 +49,7 @@ func (u List) ListSharedHandlers(id string) []plugin.CommandEntry {
 // FindHandler picks the handler of the plugin of the id among the handlers, or, with no id, the one
 // handler whose condition holds over the path. A plugin among none is plugin.ErrUnknownCommand, no handler
 // that holds plugin.ErrBadArguments, and several a *SeveralHandlersError.
-func FindHandler(ctx context.Context, run commandrun.Runner, v domain.Vault, handlers []plugin.CommandEntry, pluginID, path string) (plugin.CommandEntry, error) {
+func FindHandler(ctx context.Context, run Runner, v domain.Vault, handlers []plugin.CommandEntry, pluginID, path string) (plugin.CommandEntry, error) {
 	if len(handlers) == 0 {
 		return plugin.CommandEntry{}, plugin.ErrUnknownCommand
 	}

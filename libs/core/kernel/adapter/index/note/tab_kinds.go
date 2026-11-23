@@ -1,5 +1,4 @@
-// Package tabkinds answers which kind of tab notes open in, from what the index holds of them.
-package tabkinds
+package note
 
 import (
 	"context"
@@ -10,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// Heads reads the type and the frontmatter of notes from the index, never from their files.
-type Heads interface {
+// TabKindHeads reads the type and the frontmatter of notes from the index, never from their files.
+type TabKindHeads interface {
 	// GetHeads returns the heads of the notes at the paths that the index holds; a path with no
 	// indexed note is absent from the result.
 	GetHeads(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]frontmatter.Head, error)
@@ -20,12 +19,12 @@ type Heads interface {
 // TabKinds finds the kind of tab each of the notes at some paths opens in, from the type and the
 // frontmatter the index holds, in one question and without touching a file.
 type TabKinds struct {
-	heads  Heads
+	heads  TabKindHeads
 	choice *plugin.TabKindChoice
 }
 
-// New makes the tab kinds over the heads of the index, chosen by choice. Without heads no note has a kind.
-func New(heads Heads, choice *plugin.TabKindChoice) *TabKinds {
+// NewTabKinds makes the tab kinds over the heads of the index, chosen by choice. Without heads no note has a kind.
+func NewTabKinds(heads TabKindHeads, choice *plugin.TabKindChoice) *TabKinds {
 	return &TabKinds{heads: heads, choice: choice}
 }
 

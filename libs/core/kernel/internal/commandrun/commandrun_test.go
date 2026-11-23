@@ -12,10 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // fileTypes gives a file the type of its lowercase extension.
@@ -170,12 +171,12 @@ func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
 // noteFiles opens a vault whose files are the map.
 type noteFiles map[string]string
 
-func (n noteFiles) Open(domain.Vault) (edit.Reader, error) {
+func (n noteFiles) Open(domain.Vault) (vaultport.VaultReader, error) {
 	return noteReader{files: n}, nil
 }
 
 type noteReader struct {
-	edit.Reader
+	vaultport.VaultReader
 	files noteFiles
 }
 
@@ -386,10 +387,10 @@ func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
 // useCases is the runner built the way the container builds it.
 type useCases struct{ Runner commandrun.Runner }
 
-func newUseCases(commands commandrun.Commands, runs commandrun.Runs, types commandrun.ContentTypes, files noteFiles, config commandrun.Config) useCases {
-	var open commandrun.OpenReader
+func newUseCases(commands commandrun.Commands, runs commandrun.Runs, types commandrun.ContentTypes, files noteFiles, config pluginport.WhenConfig) useCases {
+	var readers vaultport.VaultReaders
 	if files != nil {
-		open = files.Open
+		readers = files
 	}
-	return useCases{Runner: commandrun.New(commands, runs, types, open, config, when.NewConditions())}
+	return useCases{Runner: commandrun.New(commands, runs, types, readers, config, when.NewConditions())}
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -61,7 +60,7 @@ func createPluginCommandDeps() (stubSession, *pluginCommands, *[]domain.Vault) {
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(_ context.Context, v domain.Vault) (commandrun.Runner, func() error, error) {
+				Open: func(_ context.Context, v domain.Vault) (plugincommand.Runner, func() error, error) {
 					vaults = append(vaults, v)
 					return commands.Run, nil, nil
 				},
@@ -198,7 +197,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(context.Context, domain.Vault) (commandrun.Runner, func() error, error) {
+				Open: func(context.Context, domain.Vault) (plugincommand.Runner, func() error, error) {
 					return commands.Run, nil, nil
 				},
 			}
@@ -269,7 +268,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(context.Context, domain.Vault) (commandrun.Runner, func() error, error) {
+				Open: func(context.Context, domain.Vault) (plugincommand.Runner, func() error, error) {
 					return commands.Run, func() error { return nil }, nil
 				},
 			}

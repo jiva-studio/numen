@@ -1,7 +1,6 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -10,7 +9,7 @@ import (
 type pluginCommandUseCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
-	Run        commandrun.Runner
+	Run        plugincommand.Runner
 	RunCommand plugincommand.RunCommand
 	ListItems  plugincommand.ListItems
 }

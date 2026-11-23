@@ -13,10 +13,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
+// Runner is the helper that runs a command of a plugin, checked against its declaration, as the container
+// builds and hands it on: the container may import nothing under internal/.
+type Runner struct{ commandrun.Runner }
+
+func NewRunner(commands commandrun.Commands, runs commandrun.Runs, types commandrun.ContentTypes, readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions) Runner {
+	return Runner{commandrun.New(commands, runs, types, readers, config, conditions)}
+}
+
 // RunnerOpener opens the command runner over a vault.
-type RunnerOpener = func(ctx context.Context, v domain.Vault) (commandrun.Runner, func() error, error)
+type RunnerOpener = func(ctx context.Context, v domain.Vault) (Runner, func() error, error)
 
 // NewList makes the scenario that lists the commands the plugins declare and, over points, the slots they
 // draw; points may be nil, which lists none. conditions parses the condition of a command; it is shared
