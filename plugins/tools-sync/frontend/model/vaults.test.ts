@@ -25,6 +25,7 @@ const createClient = (vaults: Vault[] = [createVault()]) => {
         ],
       }),
     ),
+    resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
     connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
     getStatus: vi.fn<VaultsClient['getStatus']>(() =>
       Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
@@ -249,5 +250,49 @@ describe('useVaults', () => {
     await model.actions.connectNew('Test')
 
     expect(model.state.error.value).toBe('')
+  })
+
+  it('names the removals that wait for an answer, by the way they go', async () => {
+    const client = createClient([
+      createVault({ id: 'a', pausedDeletions: { count: 5, tracked: 10, direction: 'send' } }),
+      createVault({ id: 'b', pausedDeletions: { count: 6, tracked: 12, direction: 'apply' } }),
+      createVault({ id: 'c', pausedDeletions: null }),
+      createVault({ id: 'd' }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.map((row) => row.pausedLabel)).toStrictEqual([
+      'Sync is paused: 5 of 10 files are removed',
+      'Sync is paused: 6 of 12 files were removed on another computer',
+      '',
+      '',
+    ])
+  })
+
+  it('sends the answer for the removals and reads the vaults again', async () => {
+    const client = createClient([
+      createVault({ pausedDeletions: { count: 5, tracked: 10, direction: 'send' } }),
+    ])
+    const model = createModel(client)
+    await model.actions.load()
+    client.listVaults.mockResolvedValue({ vaults: [createVault()] })
+
+    await model.actions.resolveDeletions('Test', 'keep')
+
+    expect(client.resolveDeletions).toHaveBeenCalledWith({ vaultId: 'Test', choice: 'keep' })
+    expect(model.state.rows.value.at(0)?.pausedLabel).toBe('')
+  })
+
+  it('keeps the message of an answer the backend refuses', async () => {
+    const client = createClient()
+    client.resolveDeletions.mockRejectedValue(new Error('no removals are paused'))
+    const model = createModel(client)
+    await model.actions.load()
+
+    await model.actions.resolveDeletions('Test', 'remove')
+
+    expect(model.state.error.value).toBe('no removals are paused')
   })
 })

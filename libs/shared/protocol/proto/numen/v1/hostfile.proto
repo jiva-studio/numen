@@ -42,6 +42,21 @@ service HostFileService {
   // the latest event of each kind of each file, in the order the index stored
   // them. It needs vault:read.
   rpc ListFileChanges(ListFileChangesRequest) returns (ListFileChangesResponse);
+
+  // MoveFile files a file of any kind, or a folder with everything under it,
+  // somewhere else in the vault. It needs vault:write.
+  rpc MoveFile(HostFileServiceMoveFileRequest) returns (HostFileServiceMoveFileResponse);
+
+  // RemoveFile moves a file, or a folder with everything under it, to the
+  // trash of the vault. Nothing is destroyed. It needs vault:write.
+  rpc RemoveFile(HostFileServiceRemoveFileRequest) returns (HostFileServiceRemoveFileResponse);
+
+  // ReadFileRange reads bytes of any file as they are. It needs vault:read.
+  rpc ReadFileRange(ReadFileRangeRequest) returns (ReadFileRangeResponse);
+
+  // PlaceFile moves a file of the plugin's own store folder to a path of the
+  // vault in one atomic rename. It needs vault:write.
+  rpc PlaceFile(PlaceFileRequest) returns (PlaceFileResponse);
 }
 
 message StatFileRequest {
@@ -151,4 +166,71 @@ message FileChange {
   // mtime is the modification time of the file as the index has it now, in nanoseconds
   // since the Unix epoch, 0 for file.removed.
   int64 mtime = 7;
+}
+
+// HostFileServiceMoveFileRequest names a file or folder and where it goes. The links to a
+// note that moved are repaired as for a move in the window.
+message HostFileServiceMoveFileRequest {
+  string from = 1;
+  string to = 2;
+  // baseline is what the file was when the caller last saw it. Set, from names
+  // a file and the file changed since: CONFLICT. Not allowed for a folder.
+  optional FileStat baseline = 3;
+}
+
+message HostFileServiceMoveFileResponse {
+  // NOT_FOUND (from), ALREADY_EXISTS (to), OUTSIDE_VAULT, CONFLICT, LOCKED.
+  ErrorCode error = 1;
+  // The number of files under to now: 1 for a file.
+  int32 moved_count = 2;
+}
+
+message HostFileServiceRemoveFileRequest {
+  string path = 1;
+  // baseline is as for MoveFile; not allowed for a folder.
+  optional FileStat baseline = 2;
+}
+
+message HostFileServiceRemoveFileResponse {
+  // NOT_FOUND, OUTSIDE_VAULT, CONFLICT, LOCKED.
+  ErrorCode error = 1;
+  int32 removed_count = 2;
+}
+
+// ReadFileRangeRequest asks for start, then at most length bytes, 1 to
+// 4194304. A range past the end returns the bytes that are there; start at or
+// past the end returns none.
+message ReadFileRangeRequest {
+  string path = 1;
+  int64 start = 2;
+  int64 length = 3;
+}
+
+message ReadFileRangeResponse {
+  // NOT_FOUND (also a folder), OUTSIDE_VAULT, INVALID_RANGE.
+  ErrorCode error = 1;
+  bytes content = 2;
+  // What the file was when it was read, with its hash.
+  FileStat stat = 3;
+}
+
+message PlaceFileRequest {
+  // A store file name as in HostStoreService.
+  string name = 1;
+  string path = 2;
+  // The SHA-256 of the staged content, lowercase hex. The host hashes the
+  // file and refuses another content.
+  string expected_hash = 3;
+  // baseline is the file at path as the caller last saw it. Unset: the path
+  // must be free (ALREADY_EXISTS otherwise). Set: the file must be unchanged
+  // (CONFLICT otherwise) and is replaced.
+  optional FileStat baseline = 4;
+}
+
+message PlaceFileResponse {
+  // NOT_FOUND (staged file), ALREADY_EXISTS, CONFLICT, HASH_MISMATCH,
+  // OUTSIDE_VAULT, LOCKED.
+  ErrorCode error = 1;
+  // The placed file, with its hash.
+  FileStat stat = 2;
 }

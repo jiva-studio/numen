@@ -61,3 +61,14 @@ type refusalError struct {
 func (r refusalError) Error() string { return r.sentinel.Error() }
 
 func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }
+
+// MultipartIncompleteError means the parts the storage holds are not the parts the upload needs. Each list holds
+// the first 100 part numbers.
+type MultipartIncompleteError struct {
+	Missing   []uint32
+	WrongSize []uint32
+}
+
+func (e MultipartIncompleteError) Error() string {
+	return fmt.Sprintf("the multipart upload is incomplete: %d parts missing, %d of the wrong size", len(e.Missing), len(e.WrongSize))
+}

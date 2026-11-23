@@ -102,7 +102,7 @@ When(
 )
 
 When('{computer} writes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.computers.writeFile(computer, filePath, vault)
+  person.files.writeFile(computer, filePath, undefined, vault)
 })
 
 Then(
@@ -202,4 +202,59 @@ When('the person cancels the trial', async ({ person }) => {
 
 Then('the subscription shows the day the trial ends', async ({ person }) => {
   await person.identity.expectTrialUntil(person.sync.getTrialEnd())
+})
+
+Then('{holder} has the same file {string}{inside}', async ({ person }, holder: Holder, filePath: string, vault: string | undefined) => {
+  await person.files.expectSameFile(holder, filePath, vault)
+})
+
+Then('the vault {string} has the same file {string} as the second computer', async ({ person }, vault: string, filePath: string) => {
+  await person.files.expectSameFileAsSecond(vault, filePath)
+})
+
+When('{computer} writes the file {string} of {int} MB in {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
+  person.files.writeFile(computer, filePath, megabytes, vault)
+})
+
+When('{computer} writes {int} files in the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
+  person.files.writeFiles(computer, count, folder, vault)
+})
+
+When('{computer} changes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  person.files.changeFile(computer, filePath, vault)
+})
+
+When('{computer} moves the file {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  await person.files.moveEntry(computer, 'file', { from, to }, vault)
+})
+
+When('{computer} moves the folder {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  await person.files.moveEntry(computer, 'folder', { from, to }, vault)
+})
+
+When('{computer} removes the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.removeEntry(computer, 'file', filePath, vault)
+})
+
+When('{computer} removes the folder {string} in {owned}', async ({ person }, computer: ComputerName, folder: string, vault: string) => {
+  await person.files.removeEntry(computer, 'folder', folder, vault)
+})
+
+Then(
+  '{holder} has {int} files in its folder {string}{inside}',
+  async ({ person }, holder: Holder, count: number, folder: string, vault: string | undefined) => {
+    await person.files.expectFileCount(holder, count, folder, vault)
+  },
+)
+
+Given('the connection breaks while the file {string} is sent', async ({ person }, filePath: string) => {
+  await person.files.breakConnectionWhileSending(filePath)
+})
+
+Given('the connection breaks while the second computer receives the file {string}', async ({ person }, filePath: string) => {
+  await person.files.breakConnectionWhileReceiving(filePath)
+})
+
+When('the person chooses {string}', async ({ person }, action: string) => {
+  await person.files.choose(action)
 })

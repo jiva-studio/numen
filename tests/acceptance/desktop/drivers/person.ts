@@ -16,6 +16,7 @@ import { IdentityDriver } from './identity.js'
 import { ComputerDriver } from './computer.js'
 import { SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
+import { SyncedFilesDriver } from './synced-files.js'
 import { NoteDriver } from './notes.js'
 import { PaletteDriver } from './palette.js'
 import { PlexDriver } from './plex.js'
@@ -57,6 +58,7 @@ export class Person {
   readonly sync: SyncDriver
   readonly syncVaults: SyncVaultsDriver
   readonly computers: ComputerDriver
+  readonly files: SyncedFilesDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -90,6 +92,7 @@ export class Person {
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
     this.computers = new ComputerDriver(this.scenario, viewport, { identity: this.identity, sync: this.sync, vaults: this.syncVaults })
+    this.files = new SyncedFilesDriver(this.computers, this.sync, this.syncVaults)
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */

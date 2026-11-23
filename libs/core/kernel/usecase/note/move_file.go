@@ -45,7 +45,7 @@ func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) 
 	}
 	defer release()
 	moved, err := u.move(ctx, v, from, to)
-	if u.follow.IsIndexOutdated(err) {
+	if isIndexOutdated(u.follow, err) {
 		return moved, true, nil
 	}
 	return moved, false, err

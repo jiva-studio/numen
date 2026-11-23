@@ -27,7 +27,7 @@ export interface PlanOffer {
 }
 
 /** What the card shows; the server address and the plan name are empty when the client does not know them. */
-export interface SubscriptionSnapshot {
+interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates

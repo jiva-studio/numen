@@ -73,7 +73,6 @@ func NewChain(root RecoveryKey, account AccountKeys, at time.Time) (Chain, error
 	return Chain{entries: []Entry{entry}}, nil
 }
 
-// Len returns the number of entries in the chain.
 func (c Chain) Len() int { return len(c.entries) }
 
 // IsExtensionOf reports whether the first prefix.Len() entries of c equal the entries of prefix.

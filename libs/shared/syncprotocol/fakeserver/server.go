@@ -41,7 +41,9 @@ func (systemClock) Now() time.Time { return time.Now() }
 // tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
 // session lives (zero is an hour), the bytes an account may store (zero is 10 GiB) and whether an account needs a
 // subscription to write. Plans are the plans the server sells, ascending by quota; empty is Basic with 10 GiB for 5 USD, Plus with
-// 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro).
+// 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro). BodyDir is the folder that keeps the parts and the
+// objects of multipart uploads in files (empty keeps them in memory); Stop is called when an admin stop-after budget ends, so the
+// host program can exit once it saved the data.
 type Config struct {
 	Protocol   uint32
 	Audience   string
@@ -51,6 +53,9 @@ type Config struct {
 	Plans      []syncprotocol.Plan
 
 	NeedsSubscription bool
+
+	BodyDir string
+	Stop    func()
 }
 
 // Session is a session the server issued and has not ended.
@@ -100,6 +105,11 @@ type Server struct {
 	planOf        map[string]string
 	checkouts     map[string]checkout
 	shop          shop
+	store         *bodyStore
+	partLog       []partLogEntry
+	stopUpload    stopAfter
+	stopDownload  stopAfter
+	stop          func()
 }
 
 // New returns the server for the config.
@@ -109,6 +119,7 @@ func New(cfg Config) *Server {
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
+		store: newBodyStore(cfg.BodyDir), stop: cfg.Stop,
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -149,6 +160,10 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	mux.HandleFunc("/admin/part-log", s.servePartLog)
+	mux.HandleFunc("/admin/stop-after-bytes", s.serveStopAfter(&s.stopUpload))
+	mux.HandleFunc("/admin/stop-after-download-bytes", s.serveStopAfter(&s.stopDownload))
+	mux.HandleFunc("/admin/prune-tombstones", s.servePrune)
 	return mux
 }
 

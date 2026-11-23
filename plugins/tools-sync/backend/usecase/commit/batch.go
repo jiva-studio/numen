@@ -25,15 +25,16 @@ type prepared struct {
 	index    int
 	blob     []byte
 	revision *syncv1.Revision
+	record   transfer.FileRecord
 }
 
 func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transfer.Outcome, error) {
 	outcomes := make([]transfer.Outcome, len(files))
 	var items []*prepared
 	for i, file := range files {
-		item, err := r.seal(file, i)
+		item, err := r.seal(ctx, file, i)
 		if errors.Is(err, blobcipher.ErrTooLarge) {
-			outcomes[i] = transfer.Outcome{Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil}
+			outcomes[i] = transfer.Outcome{Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.NewEmptyRecord()}
 			continue
 		}
 		if err != nil {
@@ -53,7 +54,7 @@ func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transf
 	return outcomes, nil
 }
 
-func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
+func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*prepared, error) {
 	path, err := note.NormalizePath(file.Path)
 	if err != nil {
 		return nil, fmt.Errorf("commit %s: %w", file.Path, err)
@@ -68,11 +69,12 @@ func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
 	if err != nil {
 		return nil, err
 	}
-	blob, err := blobcipher.Seal(r.deps.Random, [32]byte(key), [16]byte(fileID), file.Content, true)
+	kind := note.GetKind(path)
+	blob, err := blobcipher.Seal(r.deps.Random, [32]byte(key), [16]byte(fileID), file.Content, kind != note.KindBinary)
 	if err != nil {
 		return nil, err
 	}
-	meta := note.Meta{Path: path, Size: int64(len(file.Content)), MTime: file.ModifiedAt, Hash: note.Hash(file.Content), Key: key, Kind: note.KindMarkdown}
+	meta := note.Meta{Path: path, Size: int64(len(file.Content)), MTime: file.ModifiedAt, Hash: note.Hash(file.Content), Key: key, Kind: kind}
 	sealed, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
 	if err != nil {
 		return nil, err
@@ -82,7 +84,15 @@ func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
 		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author,
 	}
-	return &prepared{index: index, blob: blob, revision: revision}, nil
+	sealedKey, err := r.deps.Crypto.SealData(ctx, note.GetRecordKeyContext(r.vault.ID, fileID), key)
+	if err != nil {
+		return nil, err
+	}
+	record := transfer.FileRecord{
+		FileID: fileID, Path: path, BaseHash: meta.Hash, HeadRev: nil, Size: meta.Size, ModifiedAt: meta.MTime, Kind: kind,
+		BlobID: nil, BlobHash: hash[:], BlobSize: uint64(len(blob)), SealedKey: sealedKey,
+	}
+	return &prepared{index: index, blob: blob, revision: revision, record: record}, nil
 }
 
 func (r *batchRun) upload(ctx context.Context, items []*prepared) error {
@@ -137,9 +147,10 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transf
 
 func (r *batchRun) recordCommitted(items []*prepared, files []transfer.File, outcomes []transfer.Outcome, stored []*syncv1.StoredRevision) {
 	for i, item := range items {
+		item.record.HeadRev, item.record.BlobID = stored[i].GetRevId(), item.revision.GetBlobId()
 		outcomes[item.index] = transfer.Outcome{
 			Path: files[item.index].Path, Status: transfer.Committed, FileID: item.revision.GetFileId(), RevID: stored[i].GetRevId(),
-			Head: nil, ExistingFileID: nil,
+			Head: nil, ExistingFileID: nil, Record: item.record,
 		}
 	}
 }
@@ -161,7 +172,7 @@ func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, out
 		}
 		outcomes[item.index] = transfer.Outcome{
 			Path: files[item.index].Path, Status: status, FileID: item.revision.GetFileId(), RevID: nil,
-			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(),
+			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(), Record: transfer.NewEmptyRecord(),
 		}
 	}
 	return rest, nil

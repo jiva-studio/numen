@@ -21,7 +21,8 @@ const model = useVaults({
   now: props.now ?? getCurrentDate,
 })
 const { status, error, isReachable, warning, rows, openFor, remote } = model.state
-const { load, openRemote, closeRemote, connectNew, connectExisting } = model.actions
+const { load, openRemote, closeRemote, connectNew, connectExisting, resolveDeletions } =
+  model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -39,6 +40,10 @@ function onOpenRemote(vaultId: string): void {
 
 function onChooseRemote(vaultId: string, remoteId: string): void {
   connectExisting(vaultId, remoteId).catch(report)
+}
+
+function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
+  resolveDeletions(vaultId, choice).catch(report)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
@@ -80,6 +85,17 @@ function report(failure: unknown): void {
             @click="onOpenRemote(row.id)"
           >
             {{ words.connectExisting }}
+          </Button>
+        </li>
+        <li v-if="row.pausedLabel !== ''" class="vaults__row vaults__row--paused">
+          <span class="vaults__detail vaults__detail--alarm" role="status">
+            {{ row.pausedLabel }}
+          </span>
+          <Button variant="outline" @click="onResolve(row.id, 'remove')">
+            {{ words.removeFiles }}
+          </Button>
+          <Button variant="outline" @click="onResolve(row.id, 'keep')">
+            {{ words.keepFiles }}
           </Button>
         </li>
         <li v-if="openFor === row.id" class="vaults__row vaults__row--remote">

@@ -29,6 +29,9 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodListPlans, func(ctx context.Context, request api.ListPlansRequest) (api.ListPlansResponse, error) {
 		return handle(r, func(b *Backend) (api.ListPlansResponse, error) { return b.ListPlans(ctx, request) })
 	})
+	server.Handle(service, api.MethodResolveDeletions, func(ctx context.Context, request api.ResolveDeletionsRequest) (api.ResolveDeletionsResponse, error) {
+		return handle(r, func(b *Backend) (api.ResolveDeletionsResponse, error) { return b.ResolveDeletions(ctx, request) })
+	})
 	server.Handle(service, api.MethodCreateCheckout, func(ctx context.Context, request api.CreateCheckoutRequest) (api.CreateCheckoutResponse, error) {
 		return handle(r, func(b *Backend) (api.CreateCheckoutResponse, error) { return b.CreateCheckout(ctx, request) })
 	})

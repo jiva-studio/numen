@@ -31,3 +31,6 @@ func (v *Vaults) GetIndexer(id domain.VaultID) ports.Indexer { return v.client.W
 
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
+
+// Transfers returns what the host does with the bytes of the files of the vault.
+func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.client.With(id) }
