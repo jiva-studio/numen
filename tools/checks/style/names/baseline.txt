@@ -500,6 +500,7 @@ libs/shared/note/markdown/keys.go	Title
 libs/shared/note/markdown/wikilink.go	WikilinksIn
 libs/shared/note/markdown/wikilink.go	WikilinksInText
 libs/shared/note/ulid/ulid.go	Valid
+libs/ui/components/.storybook/browser.ts	pointer
 libs/ui/components/src/features/tree/ui/Tree.types.ts	icon
 libs/ui/components/src/shared/lib/dom/classes.ts	cn
 libs/ui/components/src/shared/ui/key-cap/keys.ts	keyChord

@@ -24,7 +24,7 @@ const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, f
 
 type PointerStep = 'down' | 'up' | 'move'
 
-const movePointer: BrowserCommand<[step: PointerStep, at?: Position]> = async (
+const pointer: BrowserCommand<[step: PointerStep, at?: Position]> = async (
   { page },
   step,
   at,
@@ -36,7 +36,7 @@ const movePointer: BrowserCommand<[step: PointerStep, at?: Position]> = async (
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
-    movePointer: (step: PointerStep, at?: Position) => Promise<void>
+    pointer: (step: PointerStep, at?: Position) => Promise<void>
     sweep: (from: Position, to: Position) => Promise<void>
   }
 }
@@ -75,7 +75,7 @@ export const getPointerBrowser = () => {
     provider: playwright(chrome ? { launchOptions: { executablePath: chrome } } : {}),
     viewport: { width: 1200, height: 900 },
     instances: [{ browser: 'chromium' as const }],
-    commands: { movePointer },
+    commands: { pointer },
   }
 }
 
