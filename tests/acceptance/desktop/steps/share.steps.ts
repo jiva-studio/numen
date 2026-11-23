@@ -1,7 +1,7 @@
 import { Given, Then, When } from '../support/bdd.js'
 import type { ReaderName } from '../drivers/shared-reader.js'
 
-Given('{reader} creates an identity', async ({ person }, reader: ReaderName) => {
+Given('{reader} sets up an identity', async ({ person }, reader: ReaderName) => {
   await person.readers.createIdentity(reader)
 })
 

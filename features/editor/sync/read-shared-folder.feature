@@ -15,8 +15,8 @@ Feature: Read a shared folder
     And the person buys the subscription
     And the person connects the vault "Test" as a new synced vault
     And the person writes the note "Home/Food/Shopping list" with the text "milk" in the vault "Test"
-    And the reader creates an identity
-    And the second reader creates an identity
+    And the reader sets up an identity
+    And the second reader sets up an identity
     And the person shares the folder "Home/Food" of the vault "Test" with the reader
 
   Rule: The reader needs no subscription
