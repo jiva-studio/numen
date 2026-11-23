@@ -100,7 +100,10 @@ type rewrap struct {
 }
 
 func newRewrap(b base) *rewrap {
-	return &rewrap{base: b, remote: nil, vaultKey: [32]byte{}, shareKey: [32]byte{}, root: domainshare.Root{ID: nil, VaultID: nil, Folder: "", Epoch: 0, Keys: nil, Readers: nil, Version: 0, HeadID: [32]byte{}, IsClosed: false, Phase: ""}, authors: trust.Authors{}, author: nil}
+	empty := domainshare.Root{
+		ID: nil, VaultID: nil, Folder: "", Epoch: 0, Keys: nil, Readers: nil, Version: 0, HeadID: [32]byte{}, IsClosed: false, Phase: "",
+	}
+	return &rewrap{base: b, remote: nil, vaultKey: [32]byte{}, shareKey: [32]byte{}, root: empty, authors: trust.Authors{}, author: nil}
 }
 
 func (r *rewrap) run(ctx context.Context, id domain.VaultID, root domainshare.Root) error {

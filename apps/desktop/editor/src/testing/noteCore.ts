@@ -33,6 +33,7 @@ const CODES: Record<string, NoteErrorCodeValue> = {
   alreadyExists: NOTE_ERROR_CODE.ALREADY_EXISTS,
   invalidName: NOTE_ERROR_CODE.INVALID_NAME,
   changed: NOTE_ERROR_CODE.CONFLICT,
+  readOnly: NOTE_ERROR_CODE.READ_ONLY,
 }
 
 const toWire = (answer: NoteAnswer) => {

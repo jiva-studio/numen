@@ -87,40 +87,36 @@ type Empty = Record<string, never>
 
 const createFailure = (error: ApiError): Error => new Error(error.message)
 
-type Call = <Req, Res>(method: string, request: Req) => Promise<Res>
-
-const createCall =
-  (api: Api): Call =>
-  async <Req, Res>(method: string, request: Req): Promise<Res> => {
-    const result = await api.call<Req, Res>(method, request)
-    if (!result.ok) throw createFailure(result.error)
-    return result.value
-  }
+async function call<Req, Res>(api: Api, method: string, request: Req): Promise<Res> {
+  const result = await api.call<Req, Res>(method, request)
+  if (!result.ok) throw createFailure(result.error)
+  return result.value
+}
 
 export function createFolderSharesClient(api: Api): FolderSharesClient {
-  const call = createCall(api)
   return {
-    readReaderCode: (code) => call<{ code: string }, ReaderCodeInfo>('ReadReaderCode', { code }),
-    getShare: (request) => call<FolderRequest, Share>('GetShare', request),
-    addReader: (request) => call<AddReaderRequest, AddedReader>('AddReader', request),
+    readReaderCode: (code) =>
+      call<{ code: string }, ReaderCodeInfo>(api, 'ReadReaderCode', { code }),
+    getShare: (request) => call<FolderRequest, Share>(api, 'GetShare', request),
+    addReader: (request) => call<AddReaderRequest, AddedReader>(api, 'AddReader', request),
     removeReader: async (request) => {
-      await call<RemoveReaderRequest, Empty>('RemoveReader', request)
+      await call<RemoveReaderRequest, Empty>(api, 'RemoveReader', request)
     },
     stopShare: async (request) => {
-      await call<FolderRequest, Empty>('StopShare', request)
+      await call<FolderRequest, Empty>(api, 'StopShare', request)
     },
   }
 }
 
 export function createReceivedSharesClient(api: Api): ReceivedSharesClient {
-  const call = createCall(api)
   return {
-    getReaderCode: () => call<Empty, ReaderCode>('GetReaderCode', {}),
-    readInvitation: (text) => call<{ text: string }, InvitationInfo>('ReadInvitation', { text }),
+    getReaderCode: () => call<Empty, ReaderCode>(api, 'GetReaderCode', {}),
+    readInvitation: (text) =>
+      call<{ text: string }, InvitationInfo>(api, 'ReadInvitation', { text }),
     acceptInvitation: async (text) => {
-      await call<{ text: string }, Empty>('AcceptInvitation', { text })
+      await call<{ text: string }, Empty>(api, 'AcceptInvitation', { text })
     },
     listReceived: async () =>
-      (await call<Empty, { shares: readonly ReceivedShare[] }>('ListReceived', {})).shares,
+      (await call<Empty, { shares: readonly ReceivedShare[] }>(api, 'ListReceived', {})).shares,
   }
 }
