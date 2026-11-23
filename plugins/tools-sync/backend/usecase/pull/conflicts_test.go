@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 

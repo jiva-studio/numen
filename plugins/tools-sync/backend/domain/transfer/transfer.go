@@ -20,6 +20,8 @@ const (
 	ParentMismatch
 	// PathTaken means another file of the vault has the path.
 	PathTaken
+	// CaseClash means another file of the vault has a name that differs from the path in letter case only.
+	CaseClash
 	// TooLarge means the sealed file is larger than the server stores.
 	TooLarge
 )

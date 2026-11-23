@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
 const (

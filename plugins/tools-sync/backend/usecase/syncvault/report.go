@@ -15,6 +15,7 @@ import (
 const (
 	keyConflicts   = "conflicts"
 	keyUnverified  = "unverified-changes"
+	keyCaseClash   = "case-clash"
 	keyStorageFull = "storage-full"
 )
 
@@ -41,16 +42,27 @@ func (r reporter) settle(ctx context.Context, err error) error {
 	return err
 }
 
-func (r reporter) report(ctx context.Context, conflicts, previousConflicts, unverified int) error {
+// tally is what a pass found to warn of.
+type tally struct {
+	conflicts         int
+	previousConflicts int
+	unverified        int
+	clashes           int
+}
+
+func (r reporter) report(ctx context.Context, found tally) error {
 	for _, key := range []string{keyStorageFull, domain.WarningKey} {
 		if err := r.health.Clear(ctx, key); err != nil {
 			return err
 		}
 	}
-	if err := r.toggle(ctx, keyConflicts, conflicts > 0 || previousConflicts > 0, conflicts, GetConflictText(conflicts)); err != nil {
+	if err := r.toggle(ctx, keyConflicts, found.conflicts > 0 || found.previousConflicts > 0, found.conflicts, GetConflictText(found.conflicts)); err != nil {
 		return err
 	}
-	return r.toggle(ctx, keyUnverified, unverified > 0, unverified, "Some changes of your other computers could not be verified")
+	if err := r.toggle(ctx, keyCaseClash, true, found.clashes, GetCaseClashText(found.clashes)); err != nil {
+		return err
+	}
+	return r.toggle(ctx, keyUnverified, found.unverified > 0, found.unverified, "Some changes of your other computers could not be verified")
 }
 
 func (r reporter) toggle(ctx context.Context, key string, isOn bool, count int, text string) error {
@@ -72,7 +84,12 @@ func GetConflictText(count int) string {
 }
 
 // GetCaseClashText is what the warning of files whose names match other names says.
-func GetCaseClashText(_ int) string { return "" }
+func GetCaseClashText(count int) string {
+	if count == 1 {
+		return "1 file is not synced: its name matches another name"
+	}
+	return fmt.Sprintf("%d files are not synced: their names match other names", count)
+}
 
 func (r reporter) getRefusedText(ctx context.Context) string {
 	state, err := r.subscription.Execute(ctx)

@@ -45,6 +45,7 @@ Feature: Sync a note changed on two computers
       And the sync server stops
       And the person writes the note "Shopping list" with the text "bread" in the vault "Test"
       And the second computer writes the note "Shopping list" with the text "eggs" in its vault "Copy"
+      And the second computer is the first to reach the sync server
       When the sync server runs again
       Then the plugin "Numen Sync" warns about "1 note changed on two computers"
 
