@@ -22,7 +22,7 @@ func signWith(seed [32]byte, message []byte) []byte {
 	return ed25519.Sign(ed25519.NewKeyFromSeed(seed[:]), message)
 }
 
-func boxPublicKey(private [32]byte) ([32]byte, error) {
+func deriveBoxPublicKey(private [32]byte) ([32]byte, error) {
 	key, err := ecdh.X25519().NewPrivateKey(private[:])
 	if err != nil {
 		return [32]byte{}, fmt.Errorf("identity: X25519 private key: %w", err)
@@ -43,7 +43,7 @@ type RecoveryPublicKey struct {
 }
 
 func newRecoveryKey(signSeed, boxKey [32]byte) (RecoveryKey, error) {
-	box, err := boxPublicKey(boxKey)
+	box, err := deriveBoxPublicKey(boxKey)
 	if err != nil {
 		return RecoveryKey{}, err
 	}
@@ -81,7 +81,7 @@ func NewDeviceKey(random io.Reader) (DeviceKey, error) {
 
 func newDeviceKey(seed [32]byte) (DeviceKey, error) {
 	key := DeviceKey{seed: seed}
-	box, err := boxPublicKey(key.boxKey())
+	box, err := deriveBoxPublicKey(key.boxKey())
 	if err != nil {
 		return DeviceKey{}, err
 	}
@@ -120,7 +120,7 @@ func NewAccountKeys(random io.Reader) (AccountKeys, error) {
 	if _, err := io.ReadFull(random, keys.kek[:]); err != nil {
 		return AccountKeys{}, fmt.Errorf("identity: read account KEK: %w", err)
 	}
-	public, err := boxPublicKey(keys.box)
+	public, err := deriveBoxPublicKey(keys.box)
 	if err != nil {
 		return AccountKeys{}, err
 	}
@@ -190,7 +190,7 @@ func unwrapAccountKeys(boxKey [32]byte, w WrappedAccountKeys) (AccountKeys, erro
 	var keys AccountKeys
 	copy(keys.box[:], plain[:32])
 	copy(keys.kek[:], plain[32:])
-	public, err := boxPublicKey(keys.box)
+	public, err := deriveBoxPublicKey(keys.box)
 	if err != nil {
 		return AccountKeys{}, fmt.Errorf("%w: %w", ErrUnwrap, err)
 	}

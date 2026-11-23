@@ -131,7 +131,7 @@ func (r records) adoptLatest(ctx context.Context, state identitylib.State, lates
 	return adopted, err == nil
 }
 
-func identityOf(state identitylib.State) (identitydomain.Identity, error) {
+func toIdentity(state identitylib.State) (identitydomain.Identity, error) {
 	own := state.Record.Device.Public()
 	devices := append(state.Chain.ListDevices(), state.Chain.ListRevokedDevices()...)
 	for _, device := range devices {

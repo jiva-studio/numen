@@ -50,8 +50,8 @@ func (s *Server) LoseNextResponse(suffix string) {
 	s.lostPath = suffix
 }
 
-// CorruptBlobs makes the server flip the first byte of every blob it sends while isOn is true.
-func (s *Server) CorruptBlobs(isOn bool) {
+// SetBlobCorruption makes the server flip the first byte of every blob it sends while isOn is true.
+func (s *Server) SetBlobCorruption(isOn bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.isCorrupted = isOn

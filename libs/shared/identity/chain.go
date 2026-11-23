@@ -166,7 +166,7 @@ func verifyGenesis(entry Entry) (ed25519.PublicKey, error) {
 }
 
 func hasValidSignature(entry Entry) bool {
-	return len(entry.Signer) == ed25519.PublicKeySize && ed25519.Verify(entry.Signer, signedMessage(entry), entry.Signature[:])
+	return len(entry.Signer) == ed25519.PublicKeySize && ed25519.Verify(entry.Signer, encodeSignedMessage(entry), entry.Signature[:])
 }
 
 func checkLink(entries []Entry, i int) error {
@@ -222,10 +222,10 @@ func (c Chain) latestRevoke() *Revoke {
 func (c Chain) ListDevices() []Device { return c.replay().active }
 
 func sign(entry *Entry, by Signer) {
-	copy(entry.Signature[:], by.signEntry(signedMessage(*entry)))
+	copy(entry.Signature[:], by.signEntry(encodeSignedMessage(*entry)))
 }
 
-func signedMessage(entry Entry) []byte {
+func encodeSignedMessage(entry Entry) []byte {
 	message := append([]byte(labelChainEntry), 0)
 	return append(message, encodeEntryBody(entry)...)
 }

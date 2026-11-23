@@ -60,8 +60,8 @@ func (f *Fake) BuildVars(token string) map[string]string {
 	return map[string]string{hostcall.HostPortEnv: f.port, hostcall.PluginTokenEnv: token}
 }
 
-// NoIdentity removes the identity: both calls answer account.ErrNoIdentity until CreateIdentity.
-func (f *Fake) NoIdentity() {
+// RemoveIdentity removes the identity: both calls answer account.ErrNoIdentity until CreateIdentity.
+func (f *Fake) RemoveIdentity() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.record = nil
@@ -108,7 +108,7 @@ func (f *Fake) Public() account.PublicIdentity {
 	if f.record == nil {
 		return account.PublicIdentity{}
 	}
-	return publicOf(*f.record)
+	return toPublicIdentity(*f.record)
 }
 
 // service serves the account service from the identity of the fake.
@@ -136,7 +136,7 @@ func (s *service) GetPublicIdentity(_ context.Context, _ *connect.Request[v1.Get
 	if err != nil {
 		return nil, err
 	}
-	public := publicOf(record)
+	public := toPublicIdentity(record)
 	return connect.NewResponse(&v1.GetPublicIdentityResponse{
 		AccountFingerprint: public.AccountFingerprint, DeviceFingerprint: public.DeviceFingerprint,
 		DeviceSignKey: public.DeviceSignKey, Chain: public.Chain,
@@ -160,7 +160,7 @@ func (f *Fake) read() (held, error) {
 	return *f.record, nil
 }
 
-func publicOf(record held) account.PublicIdentity {
+func toPublicIdentity(record held) account.PublicIdentity {
 	device := record.Device.Public()
 	return account.PublicIdentity{
 		AccountFingerprint: record.Chain.Root().Fingerprint().String(),

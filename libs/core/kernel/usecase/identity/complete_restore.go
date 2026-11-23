@@ -74,7 +74,7 @@ func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainByte
 	if err != nil {
 		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
-	name := entryName(c.builder.names.GetInstanceName())
+	name := normalizeEntryName(c.builder.names.GetInstanceName())
 	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), name, c.builder.clock.Now())
 	if err != nil {
 		return identitylib.State{}, err

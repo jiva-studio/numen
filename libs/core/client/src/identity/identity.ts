@@ -28,7 +28,7 @@ export interface IdentityInfo {
 }
 
 /** Why a call of the identity was refused. */
-export type IdentityErrorCode =
+type IdentityErrorCode =
   | 'invalidWords'
   | 'identityExists'
   | 'keyStoreFailed'

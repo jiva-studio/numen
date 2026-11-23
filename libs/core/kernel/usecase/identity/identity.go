@@ -70,7 +70,7 @@ func (d Deps) getRevocation() revocation {
 	return revocation{records: d.records, clock: d.clock, random: d.random}
 }
 
-func entryName(name string) string {
+func normalizeEntryName(name string) string {
 	name = strings.ToValidUTF8(name, "")
 	name = strings.TrimSpace(strings.Map(func(r rune) rune {
 		if unicode.IsControl(r) {

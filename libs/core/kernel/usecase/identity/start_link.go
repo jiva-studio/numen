@@ -67,7 +67,7 @@ func (u *StartLink) newLink(ctx context.Context, role identitydomain.LinkRole, m
 	}
 	link.record = identitylib.Record{Device: device}
 	link.progress.TriesLeft = maxCodeTries
-	link.progress.DeviceName = entryName(u.names.GetInstanceName())
+	link.progress.DeviceName = normalizeEntryName(u.names.GetInstanceName())
 	link.progress.DeviceFingerprint = device.Public().Fingerprint().String()
 	return link, nil
 }
@@ -80,7 +80,7 @@ func (u *StartLink) setHostIdentity(ctx context.Context, link *pendingLink) erro
 	if state.Status == identitylib.StatusRevoked {
 		return identitydomain.ErrDeviceRevoked
 	}
-	me, err := identityOf(state)
+	me, err := toIdentity(state)
 	if err != nil {
 		return err
 	}

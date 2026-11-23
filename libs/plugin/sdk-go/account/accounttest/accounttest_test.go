@@ -56,7 +56,7 @@ func TestTheFakeIsAHostAPluginReachesByTheEnvironment(t *testing.T) {
 
 func TestAFakeThatStartedARestoreHasNoIdentityUntilTheRestoreCompletes(t *testing.T) {
 	fake := accounttest.NewFake(t, "md.numen.a")
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	words, err := identity.NewRecoveryWords(rand.Reader)
 	if err != nil {
 		t.Fatal(err)

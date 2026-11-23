@@ -56,7 +56,7 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (trans
 		return transfer.PullResult{}, err
 	}
 	r := &run{
-		deps: u.deps, in: in, files: u.deps.Host.Files(in.VaultID), remote: remote, keys: keys, link: link, records: records,
+		deps: u.deps, in: in, files: u.deps.Host.GetFiles(in.VaultID), remote: remote, keys: keys, link: link, records: records,
 		result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
 	}
 	err = r.execute(ctx)

@@ -112,7 +112,7 @@ func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, a
 	return nil
 }
 
-func (r reader) fold(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {
+func (r reader) mergeEntries(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {
 	var vaults []remote
 	positions := map[string]int{}
 	for _, entry := range entries {
@@ -177,7 +177,7 @@ func (u *ListRemoteVaults) Execute(ctx context.Context) ([]vaultlink.RemoteVault
 	if err != nil {
 		return nil, err
 	}
-	vaults, err := u.reader.fold(ctx, entries)
+	vaults, err := u.reader.mergeEntries(ctx, entries)
 	if err != nil {
 		return nil, err
 	}

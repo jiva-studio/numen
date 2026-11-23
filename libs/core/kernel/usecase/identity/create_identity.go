@@ -40,7 +40,7 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := u.records.writeNewState(ctx, state.Record, state.Chain); err != nil {
 		return identitydomain.Identity{}, err
 	}
-	return identityOf(state)
+	return toIdentity(state)
 }
 
 func (u *CreateIdentity) buildState(recovery identitylib.RecoveryWords) (identitylib.State, error) {
@@ -72,7 +72,7 @@ func (b stateBuilder) buildNew(root identitylib.RecoveryKey, device identitylib.
 	if err != nil {
 		return identitylib.State{}, err
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), entryName(b.names.GetInstanceName()), now)
+	chain, err = chain.AppendDevice(root, device.Public(), normalizeEntryName(b.names.GetInstanceName()), now)
 	if err != nil {
 		return identitylib.State{}, err
 	}

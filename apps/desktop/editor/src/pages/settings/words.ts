@@ -90,9 +90,8 @@ export const WORDS = {
   pathClear: 'Clear',
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
-  identityNone: 'Not created',
   identityNoneDetail:
-    'An identity is the key your devices recognize each other by and your subscription belongs to. The key is kept only on your devices; Numen does not have it.',
+    'An identity is a key kept only on your devices. Your devices use it to recognize each other, and your subscription is tied to it. Numen never sees it.',
   identityCreate: 'Create identity',
   identityRestore: 'Restore',
   identitySetupTitle: 'Recovery words',

@@ -46,7 +46,7 @@ func decodeJoin(body []byte) (joinRequest, error) {
 	if n <= 0 || size != uint64(len(rest)-n) || size > maxDeviceName || !utf8.Valid(rest[n:]) {
 		return joinRequest{}, errBadMessage
 	}
-	join.name = entryName(string(rest[n:]))
+	join.name = normalizeEntryName(string(rest[n:]))
 	return join, nil
 }
 

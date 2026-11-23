@@ -90,7 +90,7 @@ func decodeEntry(b []byte) (Entry, error) {
 	entry.Kind = EntryKind(r.byte())
 	entry.Seq = r.uvarint()
 	copy(entry.Prev[:], r.take(32))
-	entry.Time = time.Unix(int64(binary.BigEndian.Uint64(r.fixed(8))), 0).UTC()
+	entry.Time = time.Unix(int64(binary.BigEndian.Uint64(r.takeOrZeros(8))), 0).UTC()
 	entry.Signer = ed25519.PublicKey(r.take(ed25519.PublicKeySize))
 	switch entry.Kind {
 	case KindGenesis:
@@ -147,7 +147,7 @@ func (r *reader) take(n int) []byte {
 	return out
 }
 
-func (r *reader) fixed(n int) []byte {
+func (r *reader) takeOrZeros(n int) []byte {
 	if out := r.take(n); out != nil {
 		return out
 	}

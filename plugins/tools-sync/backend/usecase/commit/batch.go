@@ -81,7 +81,7 @@ func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
 	hash := sha256.Sum256(blob)
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
-		EncMeta: sealed, PathHash: note.PathHash(r.vault.Key, path), AuthorDeviceSignKey: r.author, Epoch: newest.Epoch,
+		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author, Epoch: newest.Epoch,
 	}
 	return &prepared{index: index, blob: blob, revision: revision}, nil
 }
