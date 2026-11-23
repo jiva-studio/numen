@@ -41,7 +41,8 @@ export class SyncedFilesDriver {
   }
 
   /** Moves a file or a folder as the person does in the application, so a note that moves has its links repaired. */
-  async moveEntry(computer: ComputerName, kind: 'file' | 'folder', from: string, to: string, vault: string): Promise<void> {
+  async moveEntry(computer: ComputerName, kind: 'file' | 'folder', move: { from: string; to: string }, vault: string): Promise<void> {
+    const { from, to } = move
     this.computers.getPlace(computer, vault)
     const answer = await callRPC(this.computers.getScenario(computer).page.request, 'FileService/MoveFile', { from, to })
     if (answer['error'] && answer['error'] !== 'ERROR_CODE_UNSPECIFIED') {

@@ -143,7 +143,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.Indexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0}
+	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0, isReset: false}
 	return p.run(ctx)
 }
 

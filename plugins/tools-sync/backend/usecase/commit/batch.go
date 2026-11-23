@@ -34,7 +34,7 @@ func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transf
 	for i, file := range files {
 		item, err := r.seal(ctx, file, i)
 		if errors.Is(err, blobcipher.ErrTooLarge) {
-			outcomes[i] = transfer.Outcome{Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil}
+			outcomes[i] = transfer.Outcome{Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.FileRecord{}}
 			continue
 		}
 		if err != nil {
@@ -172,7 +172,7 @@ func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, out
 		}
 		outcomes[item.index] = transfer.Outcome{
 			Path: files[item.index].Path, Status: status, FileID: item.revision.GetFileId(), RevID: nil,
-			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(),
+			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(), Record: transfer.FileRecord{},
 		}
 	}
 	return rest, nil

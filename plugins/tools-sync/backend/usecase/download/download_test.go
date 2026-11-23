@@ -90,7 +90,7 @@ func (w *world) readEntries(t *testing.T) []transfer.DownloadEntry {
 	return kept.Downloads
 }
 
-func (w *world) startInterrupted(t *testing.T, input transfer.DownloadInput) string {
+func (w *world) interruptDownload(t *testing.T, input transfer.DownloadInput) string {
 	t.Helper()
 	name, err := w.use.Execute(t.Context(), input)
 	if err != nil {
@@ -268,7 +268,7 @@ func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateRecords(t 
 	stored, meta, source := w.publishBig(t, "Videos/Trip.bin", 4)
 	input := w.input(stored, meta)
 	w.p.Server.StopAfterDownloadBytes(t, 20<<20)
-	name := w.startInterrupted(t, input)
+	name := w.interruptDownload(t, input)
 	if err := w.p.B.Host.Store(synctest.SecondVault).Append(t.Context(), name, []byte("x")); err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestDownloadFile_SweepDeletesTheStagedFilesNoDownloadNamesAndNothingElse(t 
 	w := newWorld(t)
 	stored, meta, _ := w.publishBig(t, "Videos/Trip.bin", 7)
 	w.p.Server.StopAfterDownloadBytes(t, 20<<20)
-	named := w.startInterrupted(t, w.input(stored, meta))
+	named := w.interruptDownload(t, w.input(stored, meta))
 	store := w.p.B.Host.Store(synctest.SecondVault)
 	if err := store.Write(t.Context(), "0badc0de.part", []byte("left behind")); err != nil {
 		t.Fatal(err)
@@ -350,7 +350,7 @@ func TestDownloadFile_DiscardDeletesTheStagedFileAndItsState(t *testing.T) {
 	w := newWorld(t)
 	stored, meta, _ := w.publishBig(t, "Videos/Trip.bin", 8)
 	w.p.Server.StopAfterDownloadBytes(t, 20<<20)
-	name := w.startInterrupted(t, w.input(stored, meta))
+	name := w.interruptDownload(t, w.input(stored, meta))
 
 	if err := w.use.Discard(t.Context(), synctest.SecondVault, stored.GetRevision().GetFileId()); err != nil {
 		t.Fatal(err)
