@@ -1,7 +1,9 @@
 package localchanges_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"slices"
 	"testing"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 )
 
@@ -205,5 +208,69 @@ func TestScanLocalChanges_KeepsItsPositionInFeedJSON(t *testing.T) {
 	}
 	if len(kept) == 0 {
 		t.Error("feed.json is empty after a scan")
+	}
+}
+
+type brokenStatHost struct {
+	synctest.Host
+	path string
+}
+
+func (h brokenStatHost) GetFiles(id domain.VaultID) ports.Files {
+	return brokenStatFiles{Files: h.Host.GetFiles(id), path: h.path}
+}
+
+type brokenStatFiles struct {
+	ports.Files
+	path string
+}
+
+func (f brokenStatFiles) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	if path == f.path {
+		return domain.FileStat{}, errors.New("permission denied")
+	}
+	return f.Files.StatFile(ctx, path)
+}
+
+type failingSightings struct{ ports.Sightings }
+
+func (failingSightings) WriteSightings(context.Context, domain.VaultID, map[string]note.Seen) error {
+	return errors.New("disk full")
+}
+
+func TestScanLocalChanges_ListsTheOtherNotesWhenOneNoteCannotBeRead(t *testing.T) {
+	c := newComputer(t)
+	c.WriteNote(vault, "Locked.md", "secret")
+	c.WriteNote(vault, "Shopping list.md", "milk")
+	deps := c.LocalChangesDeps()
+	deps.Host = brokenStatHost{Host: c.Host, path: "Locked.md"}
+
+	changes, err := localchanges.NewScanLocalChanges(deps).Execute(t.Context(), transfer.ScanInput{VaultID: vault})
+	if err != nil {
+		t.Fatal(err)
+	}
+	later := scan(t, c, nil)
+
+	if paths := getPaths(changes); !slices.Equal(paths, []string{"Shopping list.md"}) {
+		t.Errorf("paths = %v, want the readable note", paths)
+	}
+	if paths := getPaths(later); !slices.Equal(paths, []string{"Locked.md", "Shopping list.md"}) {
+		t.Errorf("paths once the note can be read = %v, want both notes", paths)
+	}
+}
+
+func TestScanLocalChanges_ListsANoteAgainWhenTheSightingsCouldNotBeStored(t *testing.T) {
+	c := newComputer(t)
+	c.WriteNote(vault, "Shopping list.md", "milk")
+	deps := c.LocalChangesDeps()
+	deps.State = failingSightings{Sightings: c.State}
+	if _, err := localchanges.NewScanLocalChanges(deps).Execute(t.Context(), transfer.ScanInput{VaultID: vault}); err == nil {
+		t.Fatal("scan succeeded although the sightings could not be stored")
+	}
+
+	changes := scan(t, c, nil)
+
+	if paths := getPaths(changes); !slices.Equal(paths, []string{"Shopping list.md"}) {
+		t.Errorf("paths = %v, want the note again", paths)
 	}
 }

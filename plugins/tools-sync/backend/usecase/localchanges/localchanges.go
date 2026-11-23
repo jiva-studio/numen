@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -40,7 +41,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 		return nil, err
 	}
 	files := u.deps.Host.GetFiles(in.VaultID)
-	if seen, err = follow(ctx, files, u.deps.Host.Store(in.VaultID), seen); err != nil {
+	if seen, err = u.follow(ctx, in.VaultID, files, seen); err != nil {
 		return nil, err
 	}
 	found, err := u.list(ctx, files, seen, in.Bases)
@@ -50,16 +51,19 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	return found, u.deps.State.WriteSightings(ctx, in.VaultID, seen)
 }
 
-func follow(ctx context.Context, files ports.Files, store ports.Store, seen map[string]note.Seen) (map[string]note.Seen, error) {
+func (u *ScanLocalChanges) follow(ctx context.Context, id domain.VaultID, files ports.Files, seen map[string]note.Seen) (map[string]note.Seen, error) {
 	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileRemoved}
-	from := changes.Source{Feed: files, Store: store, CursorFile: cursorFile}
-	apply := func(_ context.Context, batch []host.FileChange) error {
+	from := changes.Source{Feed: files, Store: u.deps.Host.Store(id), CursorFile: cursorFile}
+	apply := func(ctx context.Context, batch []host.FileChange) error {
 		applyChanges(seen, batch)
-		return nil
+		return u.deps.State.WriteSightings(ctx, id, seen)
 	}
 	review := func(ctx context.Context) error {
 		clear(seen)
-		return readAddedFiles(ctx, files, seen)
+		if err := readAddedFiles(ctx, files, seen); err != nil {
+			return err
+		}
+		return u.deps.State.WriteSightings(ctx, id, seen)
 	}
 	return seen, changes.Follow(ctx, from, events, apply, review)
 }
@@ -104,7 +108,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 			continue
 		}
 		if err != nil {
-			return nil, err
+			continue
 		}
 		seen[path] = note.Seen{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}
 		if stat.Hash != bases[path] && u.deps.Clock.Now().Sub(stat.ModTime) >= settleTime {
