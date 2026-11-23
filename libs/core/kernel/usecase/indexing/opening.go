@@ -30,7 +30,7 @@ type VaultOpener struct {
 
 // Rebuildable is the walk of a vault, which can be set to rebuild the index instead of trusting it.
 type Rebuildable interface {
-	Rebuilding(rebuild bool) Scan
+	SetRebuild(rebuild bool) Scan
 }
 
 // ConfigureVaultOpener constructs a VaultOpener with the given watcher, scan, buffered repository, and refresh.
@@ -47,7 +47,7 @@ func ConfigureVaultOpener(watcher VaultWatcher, scan Rebuildable, buffered Write
 func (o *VaultOpener) GetRefresh() Refreshing { return o.Refresh }
 
 // GetScan returns the walk this opener makes, for a caller that re-reads the vault.
-func (o *VaultOpener) GetScan() Scan { return o.scan.Rebuilding(o.ShouldRebuild) }
+func (o *VaultOpener) GetScan() Scan { return o.scan.SetRebuild(o.ShouldRebuild) }
 
 // Begin opens the vault: the watch is started, and Read is the walk beside it. changed receives what the
 // watch collects and errorHandler the errors it meets; a nil one receives nothing.

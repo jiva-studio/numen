@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"path"
 	"slices"
@@ -131,6 +132,10 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 		"a plugin that cannot start": {
 			pluginCommands{err: &plugin.UnavailableError{PluginID: "org.example.sample", Reason: plugin.Failed}}, valid,
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
+		},
+		"a failure the core does not name": {
+			pluginCommands{err: errors.New("open /home/user/key: denied")}, valid,
+			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the command failed",
 		},
 	}
 	for name, one := range cases {

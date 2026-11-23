@@ -440,7 +440,7 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
+	pos, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
 		To: domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, Role: domain.RoleRef})
 	if err != nil {
 		t.Fatal(err)

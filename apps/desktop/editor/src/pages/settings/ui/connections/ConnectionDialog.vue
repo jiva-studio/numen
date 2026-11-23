@@ -39,8 +39,8 @@ const emit = defineEmits<{
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const form = useConnectionForm({
-  types: () => props.types,
-  connection: () => props.connection,
+  listTypes: () => props.types,
+  getConnection: () => props.connection,
   create: props.create,
   update: props.update,
   onSaved: (saved) => {

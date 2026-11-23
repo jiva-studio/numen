@@ -95,7 +95,7 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 	defer target.Run()
 	themes.Report(started.Themes, os.Stderr)
 
-	pages, err := shell.Pages()
+	pages, err := shell.CreatePagesHandler()
 	if err != nil {
 		return err
 	}

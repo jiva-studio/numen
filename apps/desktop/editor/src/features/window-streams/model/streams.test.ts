@@ -118,12 +118,12 @@ const createWindowStreams = (deps: WindowStreamsDeps) => {
   return {
     follow: createVaultStream({
       ...deps,
-      follows,
+      follower: follows,
       opening: { path: deps.opening, read: deps.readInitialNote },
     }),
-    draw: createEditStream({ ...deps, follows }),
-    watch: createFocusStream({ ...deps, follows }),
-    followTasks: createTaskStream({ ...deps, follows }),
+    draw: createEditStream({ ...deps, follower: follows }),
+    watch: createFocusStream({ ...deps, follower: follows }),
+    followTasks: createTaskStream({ ...deps, follower: follows }),
   }
 }
 
@@ -429,7 +429,7 @@ describe('following the tasks', () => {
     }
     const followHealth = createHealthStream({
       watchPluginHealth: () => yielding([healthItem]),
-      follows: createFollower({
+      follower: createFollower({
         isOpen: () => open,
         setLost: vi.fn(),
         wait: async () => {

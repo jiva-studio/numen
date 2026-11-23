@@ -36,10 +36,10 @@ const (
 	wordGap  = 0.25
 )
 
-// Highlights returns the locations of the words of some pages of the document: one box per word, at the offset in Text where that word begins.
+// FindHighlights returns the locations of the words of some pages of the document: one box per word, at the offset in Text where that word begins.
 // Pages are given by index and only those are read. The boxes are returned in ascending offset order.
 // A page whose text layer is empty yields no boxes, and a scan yields none at all.
-func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []HighlightBox, err error) {
+func (b *Book) FindHighlights(workers *Workers, raw []byte, pages []int) (boxes []HighlightBox, err error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="empty page selection returns immediately without opening a worker"
 	if len(wanted) == 0 {
@@ -54,7 +54,7 @@ func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []Hi
 	defer func() { err = errors.Join(err, doc.Close()) }()
 
 	for _, page := range wanted {
-		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
+		boxes = append(boxes, doc.findWordBoxes(page, b.Pages[page].Offset)...)
 	}
 	return boxes, nil
 }
@@ -73,7 +73,7 @@ func getOrderedPages(pages []int, most int) []int {
 	return out
 }
 
-func (d *document) words(index, offset int) []HighlightBox {
+func (d *document) findWordBoxes(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil}
 	sheet, ok := getSheet(pdfiumMeasurer{worker: d.worker}, page)
 	// gomutants:disable-next-line BRANCH_IF reason="words aborts when page sheet cannot be retrieved"

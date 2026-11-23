@@ -93,8 +93,8 @@ export function createNameItem(
   words: Words,
   entries: readonly SlotItem[] = [],
 ): SearchRow {
-  const atHeading = createNoteActions(words.readAt, entries)
-  const byName = createNoteActions(words.read, entries)
+  const noteHeadingActions = createNoteActions(words.readAt, entries)
+  const nameActions = createNoteActions(words.read, entries)
   return one.heading
     ? {
         item: {
@@ -102,11 +102,11 @@ export function createNameItem(
           title: one.heading,
           at: one.at,
           detail: one.title,
-          actions: atHeading.actions,
+          actions: noteHeadingActions.actions,
         },
         hit: getNoteHit(
           { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
-          atHeading,
+          noteHeadingActions,
           one,
         ),
       }
@@ -115,11 +115,11 @@ export function createNameItem(
           id: one.path,
           title: one.title,
           at: one.at,
-          actions: byName.actions,
+          actions: nameActions.actions,
         },
         hit: getNoteHit(
           { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
-          byName,
+          nameActions,
           one,
         ),
       }

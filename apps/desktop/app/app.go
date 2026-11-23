@@ -194,7 +194,7 @@ type shownInstallation struct {
 func openInstallation(
 	ctx context.Context, cfg container.Config, services platform.Installation, vault string, frame editor.Frame,
 ) (shownInstallation, error) {
-	pages, err := editor.Pages()
+	pages, err := editor.CreatePagesHandler()
 	if err != nil {
 		return shownInstallation{}, err
 	}
@@ -366,7 +366,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 	if !marked {
 		return
 	}
-	opened.Imports(ctx, into, event.Context().DroppedFiles())
+	opened.ImportFiles(ctx, into, event.Context().DroppedFiles())
 }
 
 const droppedInto = "data-file-drop-target"

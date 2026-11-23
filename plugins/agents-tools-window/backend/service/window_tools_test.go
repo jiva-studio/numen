@@ -41,7 +41,7 @@ func newWindowTools(t *testing.T) windowTools {
 	vault.File(talkPath, "ID3\x00\x03audio")
 
 	window := hosttest.NewWindow(vault)
-	return windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: window})}
+	return windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: window})}
 }
 
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
@@ -396,7 +396,7 @@ func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, 
 func TestWindowTabListReportsAHostErrorAsAToolError(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
-	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: failingListWindow{Window: window}})}
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: failingListWindow{Window: window}})}
 	if failure := w.call(t, "window_tab_list", `{}`, nil, nil); !strings.Contains(failure, "window bus failed") {
 		t.Errorf("failure = %q, want window bus failed", failure)
 	}

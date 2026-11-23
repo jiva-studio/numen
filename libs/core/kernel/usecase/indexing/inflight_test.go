@@ -111,10 +111,10 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 				Reading: func(context.Context, searchsourceport.Source, domain.Vault, bool) (ReadWholeVault, error) {
 					return NewReadWholeVault(nil, nil, script), nil
 				},
-				Source: sourcefake.Wrap(&fakeEmbedder{dims: 8}),
-				Events: events,
-				Quiet:  time.Hour,
-				After:  time.After,
+				Source:      sourcefake.Wrap(&fakeEmbedder{dims: 8}),
+				Events:      events,
+				Quiet:       time.Hour,
+				CreateTimer: time.After,
 			})
 			p := worker.newPass(worker.NewSession(domain.Vault{ID: "v1"}), false)
 

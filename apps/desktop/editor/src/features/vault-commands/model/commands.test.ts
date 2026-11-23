@@ -61,7 +61,7 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
   const set = createVaultCommands(
     {
       vaults: api.vault.vaults,
-      emptyTrash: api.vault.file.emptyTrash,
+      clearTrash: api.vault.file.emptyTrash,
       ...(withHold ? { tabsHold: hold } : {}),
       setVaultName,
       reload,

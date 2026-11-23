@@ -16,8 +16,8 @@ import {
   findButton,
   findText,
   maskedInputs,
-  nameOf,
-  root,
+  getAccessibleName,
+  getRoot,
   textInputs,
 } from '@/testing/dom'
 
@@ -108,7 +108,7 @@ const mountPage = (
 }
 
 const rows = (): HTMLElement[] =>
-  Array.from(root().querySelectorAll<HTMLElement>('[role="list"] button[aria-label]'))
+  Array.from(getRoot().querySelectorAll<HTMLElement>('[role="list"] button[aria-label]'))
 
 const rowOf = (name: string): HTMLElement => {
   const found = rows().find((one) => one.getAttribute('aria-label') === name)
@@ -117,13 +117,13 @@ const rowOf = (name: string): HTMLElement => {
 }
 
 const entryOf = (name: string): HTMLElement => {
-  const found = root().querySelector<HTMLElement>(`[role="list"] [aria-label="${name}"]`)
+  const found = getRoot().querySelector<HTMLElement>(`[role="list"] [aria-label="${name}"]`)
   if (!found) throw new Error(`no entry ${name}`)
   return found
 }
 
 const dialog = (): HTMLElement => {
-  const found = root().querySelector<HTMLElement>('[role="dialog"]')
+  const found = getRoot().querySelector<HTMLElement>('[role="dialog"]')
   if (!found) throw new Error('no dialog is open')
   return found
 }
@@ -204,7 +204,7 @@ describe('the page of connections', () => {
     expect(rowOf('Work').textContent).not.toContain('Discovered')
     await click(sample)
 
-    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="dialog"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -251,7 +251,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/add connection/i))
 
-    const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
+    const labels = Array.from(dialog().querySelectorAll('label')).map(getAccessibleName)
     expect(labels).toStrictEqual(['Name', 'API key', 'Parallel requests'])
     expect(dialog().textContent).not.toContain('Address')
     expect(dialog().textContent).not.toContain('Choose the model on the page')
@@ -265,7 +265,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/add connection/i))
 
-    const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
+    const labels = Array.from(dialog().querySelectorAll('label')).map(getAccessibleName)
     expect(labels).toStrictEqual(['Name', 'Address', 'API key'])
     dispose(wrapper)
   })
@@ -276,7 +276,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/add connection/i))
 
-    expect(Array.from(dialog().querySelectorAll('label')).map(nameOf)).toStrictEqual(['Name'])
+    expect(Array.from(dialog().querySelectorAll('label')).map(getAccessibleName)).toStrictEqual(['Name'])
     expect(dialog().textContent).toContain('No other field is needed.')
     dispose(wrapper)
   })
@@ -310,7 +310,7 @@ describe('the Add dialog', () => {
       fields: { parallelRequests: 4 },
       secrets: { apiKey: 'sk-secret-1' },
     })
-    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="dialog"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -338,7 +338,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/^cancel$/i, dialog()))
 
-    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="dialog"]')).toBeNull()
     expect(installation.connections.edits.create).not.toHaveBeenCalled()
     dispose(wrapper)
   })
@@ -422,7 +422,7 @@ describe('editing and deleting', () => {
     await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
 
-    const confirmation = root().querySelector('[role="alertdialog"]')
+    const confirmation = getRoot().querySelector('[role="alertdialog"]')
     expect(confirmation?.textContent).toContain(
       'Delete "Work"? Its key is removed from this machine.',
     )
@@ -430,7 +430,7 @@ describe('editing and deleting', () => {
     await click(findButton(/^delete$/i, confirmation!))
 
     expect(deleteConnection).toHaveBeenCalledWith('c00000001')
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -457,7 +457,7 @@ describe('editing and deleting', () => {
     expect(rowOf('Spare').textContent).not.toContain('Used by')
     await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
-    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+    expect(getRoot().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'Used by Proofreading and Embeddings. Their rows for it are removed.',
     )
     dispose(wrapper)
@@ -477,12 +477,12 @@ describe('editing and deleting', () => {
 
     await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
-    await click(findButton(/^delete$/i, root().querySelector('[role="alertdialog"]')!))
+    await click(findButton(/^delete$/i, getRoot().querySelector('[role="alertdialog"]')!))
     expect(document.activeElement).toBe(rowOf('Spare'))
 
     await click(rowOf('Spare'))
     await click(findButton(/^delete$/i, dialog()))
-    await click(findButton(/^delete$/i, root().querySelector('[role="alertdialog"]')!))
+    await click(findButton(/^delete$/i, getRoot().querySelector('[role="alertdialog"]')!))
     expect(document.activeElement).toBe(findButton(/add connection/i))
     dispose(wrapper)
   })
@@ -496,7 +496,7 @@ describe('editing and deleting', () => {
     await click(findButton(/^cancel$/i))
 
     expect(installation.connections.edits.delete).not.toHaveBeenCalled()
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })
 })

@@ -17,7 +17,7 @@ const create = () => {
     })
   }
   return {
-    answer: createAnswer({ put: sendTurn, drop, nextId }, paint),
+    answer: createAnswer({ put: sendTurn, drop, createId: nextId }, paint),
     put: sendTurn,
     drop,
     frames,

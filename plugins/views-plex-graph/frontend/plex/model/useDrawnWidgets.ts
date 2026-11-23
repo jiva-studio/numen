@@ -11,7 +11,7 @@ const hasSize = (row: Element): boolean =>
 
 const isFilled = (row: Element): boolean => hasSize(row) && [...row.childNodes].some(isDrawn)
 
-const filledRows = (rows: Element): Set<string> =>
+const findFilledRows = (rows: Element): Set<string> =>
   new Set(
     [...rows.children]
       .filter(isFilled)
@@ -41,7 +41,7 @@ export function useDrawnWidgets(
 
   const update = () => {
     const element = rows.value
-    const keys = element ? filledRows(element) : new Set<string>()
+    const keys = element ? findFilledRows(element) : new Set<string>()
     if (keys.size !== known.size || [...keys].some((key) => !known.has(key))) {
       known = keys
       filled.value = keys

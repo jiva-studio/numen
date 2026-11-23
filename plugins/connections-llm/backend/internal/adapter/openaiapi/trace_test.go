@@ -38,7 +38,7 @@ func TestAFailureIsClassifiedByItsCause(t *testing.T) {
 }
 
 func TestLoggedBodyIsTruncatedAndKeyFree(t *testing.T) {
-	got := loggedBody([]byte(`{"k":"sk-secret","h":"Bearer abc.def"}`+strings.Repeat("x", 5000)), "sk-secret")
+	got := truncateBody([]byte(`{"k":"sk-secret","h":"Bearer abc.def"}`+strings.Repeat("x", 5000)), "sk-secret")
 
 	if strings.Contains(got, "sk-secret") || strings.Contains(got, "abc.def") || !strings.HasSuffix(got, "…") ||
 		len(got) > maxLoggedBodyBytes+len("…")+2*len(redacted) {

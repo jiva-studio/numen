@@ -38,7 +38,7 @@ func newQueryRegistry(t *testing.T) (*searchtest.Searches, *tools.Registry) {
 	})
 	registry, err := service.New(vaultsOf(hosttest.New(testVault))).WithLibrary(func(domain.VaultID) service.Library {
 		return service.Library{Versions: nil, Texts: nil, Search: nil, Queries: searches}
-	}, getTideFunctions()).Registry()
+	}, getTideFunctions()).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestTheDescriptionOfLibraryQueryNamesTheFunctionsOfEachListing(t *testing.T
 	searches.SetFunctions(getTideFunctions(), nil)
 	registry, err := service.New(vaultsOf(hosttest.New(testVault))).WithLibrary(func(domain.VaultID) service.Library {
 		return service.Library{Versions: nil, Texts: nil, Search: nil, Queries: searches}
-	}, getTideFunctions()).WithFunctionLister(searches.ListSearchFunctions).Registry()
+	}, getTideFunctions()).WithFunctionLister(searches.ListSearchFunctions).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

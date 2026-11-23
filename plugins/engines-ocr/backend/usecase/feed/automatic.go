@@ -16,12 +16,12 @@ const SettingAutomatic = "recognizeAutomatically"
 // onFilesChanged event of the vault, and over the shown vault when the setting is first read on and
 // when it is turned on.
 type Automatic struct {
-	follower *Follower
-	shown    func(ctx context.Context) (domain.VaultID, error)
-	report   func(what string, err error)
-	isOn     atomic.Bool
-	closing  chan struct{}
-	wg       sync.WaitGroup
+	follower      *Follower
+	getShownVault func(ctx context.Context) (domain.VaultID, error)
+	report        func(what string, err error)
+	isOn          atomic.Bool
+	closing       chan struct{}
+	wg            sync.WaitGroup
 }
 
 // NewAutomatic returns the automatic runs of the follower, over the vault shown reads when the setting
@@ -29,7 +29,7 @@ type Automatic struct {
 func NewAutomatic(
 	follower *Follower, shown func(ctx context.Context) (domain.VaultID, error), report func(what string, err error),
 ) *Automatic {
-	return &Automatic{follower: follower, shown: shown, report: report, isOn: atomic.Bool{}, closing: make(chan struct{}), wg: sync.WaitGroup{}}
+	return &Automatic{follower: follower, getShownVault: shown, report: report, isOn: atomic.Bool{}, closing: make(chan struct{}), wg: sync.WaitGroup{}}
 }
 
 // UpdateSettings reads SettingAutomatic from values, and follows the feed of the shown vault in the
@@ -42,7 +42,7 @@ func (a *Automatic) UpdateSettings(values map[string]string) {
 	a.wg.Go(func() {
 		ctx, cancel := a.withClosing()
 		defer cancel()
-		vault, err := a.shown(ctx)
+		vault, err := a.getShownVault(ctx)
 		if err != nil {
 			return
 		}

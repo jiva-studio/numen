@@ -22,7 +22,7 @@ export interface PlexTransition {
  * `hasWidgets` holds when the nodes carry widgets, which are measured before any node is shown.
  */
 export interface PlexTransitionOptions {
-  readonly duration: () => number
+  readonly getDuration: () => number
   readonly clock?: Clock | undefined
   readonly isReady?: ((ids: readonly string[]) => boolean) | undefined
   readonly isActive?: (() => boolean) | undefined
@@ -52,7 +52,7 @@ export function usePlexTransition(
   options: PlexTransitionOptions,
 ): PlexTransition {
   const {
-    duration,
+    getDuration: duration,
     clock = browserClock,
     isReady = () => true,
     isActive = () => true,

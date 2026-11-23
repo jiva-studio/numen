@@ -15,7 +15,7 @@ export async function closeWindow(load: FrameRuntimeLoader): Promise<void> {
 
 export interface EmptyWindowCloseDeps {
   readonly isLayoutReady: Readonly<Ref<boolean>>
-  readonly tabCount: () => number
+  readonly countTabs: () => number
   readonly closeWindow: () => Promise<void>
   readonly onError: (error: unknown) => void
 }
@@ -23,7 +23,7 @@ export interface EmptyWindowCloseDeps {
 /** Closes the window when the layout is ready and the tab count drops to zero. */
 export function closeWindowWhenEmpty(deps: EmptyWindowCloseDeps): void {
   watch(
-    () => deps.isLayoutReady.value && deps.tabCount() === 0,
+    () => deps.isLayoutReady.value && deps.countTabs() === 0,
     (isEmpty) => {
       if (isEmpty) deps.closeWindow().catch(deps.onError)
     },

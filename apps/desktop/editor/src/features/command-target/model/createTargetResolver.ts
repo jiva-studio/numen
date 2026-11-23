@@ -10,7 +10,7 @@ export function createTargetResolver(
   health: { readonly failure: Readonly<Ref<string>> },
 ) {
   const getFront = () => {
-    const front = windowTabs.handle.front()
+    const front = windowTabs.handle.getFrontTab()
     const tab = front?.id ?? ''
     const on = front?.state && windowTabs.tabs.getTab(tab)?.kind.address?.getTarget?.(front.state)
     return { tab, kind: front?.kind ?? null, on }

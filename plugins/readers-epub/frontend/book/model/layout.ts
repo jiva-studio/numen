@@ -15,7 +15,7 @@ import type { PageNavigationAction } from '@numen/ui'
 import type { useBookColumns } from './columns'
 import { getTurnTarget, type useBookTurns } from './turns'
 import { copyPaper, type LeavingSpread } from './leaving'
-import { findPendingImages, whenArrived } from './pictures'
+import { findPendingImages, waitForPictures } from './pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
@@ -221,7 +221,7 @@ function createBookSettling(options: BookSettlingOptions) {
       const text = paper.value
       const pending = text ? findPendingImages(text) : []
       if (pending.length === 0) lay(getKeep, led)
-      else whenArrived(pending, () => lay(getKeep, led))
+      else waitForPictures(pending, () => lay(getKeep, led))
     })
   }
 
@@ -291,7 +291,7 @@ export function useBookLayout(options: BookLayoutOptions) {
   } = options.turns
 
   let borderTurn: BorderTurn | undefined
-  const turn = (way: PageNavigationAction) => {
+  const navigatePage = (way: PageNavigationAction) => {
     const offset = turnPage(way)
     const isAcross = offset !== undefined && (way === 'next' || way === 'back')
     borderTurn = isAcross ? { way, offset } : undefined
@@ -311,13 +311,13 @@ export function useBookLayout(options: BookLayoutOptions) {
     stoodFor.value.start === options.props.span.start
 
   const queuedTurns: PageNavigationAction[] = []
-  const turnWhenStood = (way: PageNavigationAction) => {
-    if (isStoodForMarkup() || !isMeasured.value) turn(way)
+  const navigatePageWhenReady = (way: PageNavigationAction) => {
+    if (isStoodForMarkup() || !isMeasured.value) navigatePage(way)
     else if (queuedTurns.length < MAX_WAITING_TURNS) queuedTurns.push(way)
   }
   watch(isStoodForMarkup, (stood) => {
     if (!stood) return
-    for (const way of queuedTurns.splice(0)) turn(way)
+    for (const way of queuedTurns.splice(0)) navigatePage(way)
   })
 
   const settling = createBookSettling({
@@ -349,6 +349,6 @@ export function useBookLayout(options: BookLayoutOptions) {
       leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
     },
     settling,
-    turn: turnWhenStood,
+    turn: navigatePageWhenReady,
   }
 }

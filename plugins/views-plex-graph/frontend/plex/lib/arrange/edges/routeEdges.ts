@@ -5,7 +5,7 @@ import { routeEdge, type Routing } from './routing'
 
 export interface RouteEdgesOptions {
   readonly routing: Routing
-  readonly opacity?: (edge: PlexEdge) => number
+  readonly getOpacity?: (edge: PlexEdge) => number
 }
 
 export function routeEdges(
@@ -15,7 +15,7 @@ export function routeEdges(
 ): PlacedEdge[] {
   const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
-    'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
+    'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.getOpacity ?? (() => 1))
 
   return edges
     .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))

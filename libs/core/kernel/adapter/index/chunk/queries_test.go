@@ -59,7 +59,7 @@ func seedVector(seed byte) []float32 {
 }
 
 func seedBytes(seed byte) []byte {
-	q := vector.Bytes(vector.Normalize(seedVector(seed)))
+	q := vector.QuantizeBytes(vector.Normalize(seedVector(seed)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -939,7 +939,7 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	}
 }
 
-func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
+func TestAWalkOfUnembeddedChunksInPagesVisitsGetDistinctPaths(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century + 1, large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)

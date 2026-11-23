@@ -43,10 +43,10 @@ func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.D
 	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/rerank"}, body, &answer); err != nil {
 		return nil, err
 	}
-	return orderScores(answer, len(documents))
+	return parseScores(answer, len(documents))
 }
 
-func orderScores(answer rerankAnswer, count int) ([]float32, error) {
+func parseScores(answer rerankAnswer, count int) ([]float32, error) {
 	if len(answer.Results) != count {
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}

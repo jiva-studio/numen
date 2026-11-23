@@ -75,7 +75,7 @@ func (w wiring) startSession(
 		IndexChanged: state.Events.EmitIndexChanged,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
 		Quiet:        opts.idle,
-		After:        time.After,
+		CreateTimer:  time.After,
 	})
 	state.writeReport.WriteWake = worker.WakeWrittenVault
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
@@ -126,8 +126,8 @@ func (p testPasses) StartVault(
 	opening := p.reading.OpenVaultWith(p.db, p.readers, p.watcher)
 	opening.ShouldRebuild = rebuild
 	var changed func(indexing.VaultChanges)
-	if report.Changed != nil {
-		changed = func(m indexing.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+	if report.NotifyChanged != nil {
+		changed = func(m indexing.VaultChanges) { report.NotifyChanged(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v, changed, report.Failed)

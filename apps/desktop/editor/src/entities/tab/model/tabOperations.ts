@@ -75,7 +75,7 @@ export function createTabQueries(store: TabStore) {
     return one && one.kind.kind === kind ? (one.state as T) : null
   }
 
-  const front = (): ActiveTab | null => {
+  const getFrontTab = (): ActiveTab | null => {
     const id = paneById(layout.value.root, layout.value.focus)?.active
     if (!id) return null
     const one = open.value.get(id)
@@ -87,7 +87,7 @@ export function createTabQueries(store: TabStore) {
       .filter(([, one]) => one.kind.kind === kind)
       .map(([id, one]) => ({ id, state: one.state as T }))
 
-  return { getTab, getTabStateIn, front, each }
+  return { getTab, getTabStateIn, front: getFrontTab, each }
 }
 
 const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
@@ -99,7 +99,7 @@ const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
       openInScope(scope, () => one.open(saved.path, saved.id, saved.saved)),
     ] as const
   } catch (error) {
-    const failed = createRestoreFailedKind(
+    const restoreFailedKind = createRestoreFailedKind(
       store.panes.restoreFailed,
       saved.kind,
       saved.title,
@@ -108,9 +108,9 @@ const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
     // Stryker disable next-line BooleanLiteral: detached scope flag prevents parent scope collection
     const placeholderScope = effectScope(true)
     return [
-      failed,
+      restoreFailedKind,
       placeholderScope,
-      openInScope(placeholderScope, () => failed.open(saved.path, saved.id, saved.saved)),
+      openInScope(placeholderScope, () => restoreFailedKind.open(saved.path, saved.id, saved.saved)),
     ] as const
   }
 }
@@ -297,18 +297,18 @@ export function createTabNavigation(
 
 export function createWindowHandle(store: TabStore): WindowHandle {
   const openers = createTabOpeners(store)
-  const queries = createTabQueries(store)
+  const tabQueries = createTabQueries(store)
   const closers = createTabClosers(store)
   return {
     openTab: (kind, target) => openers.openTabOfKind(kind, target),
     openTabAdjacent: (kind, target) => openers.openTabAdjacentOfKind(kind, target),
     show: (id) => {
-      if (queries.getTab(id)) closers.show(id)
+      if (tabQueries.getTab(id)) closers.show(id)
     },
     closeTab: (id) => closers.finishClose(id),
-    each: <T>(kind: string) => queries.each<T>(kind),
-    last: <T>(kind: string) => queries.each<T>(kind).at(-1) ?? null,
-    front: () => queries.front(),
-    getTabState: <T>(kind: string, id: string) => queries.getTabStateIn<T>(id, kind),
+    listTabs: <T>(kind: string) => tabQueries.each<T>(kind),
+    findLastTab: <T>(kind: string) => tabQueries.each<T>(kind).at(-1) ?? null,
+    getFrontTab: () => tabQueries.front(),
+    getTabState: <T>(kind: string, id: string) => tabQueries.getTabStateIn<T>(id, kind),
   }
 }

@@ -91,7 +91,7 @@ func TestFitIndexOnRebuildDeletesOtherRecipesAndReportsCompaction(t *testing.T) 
 	model := &embedder{dims: 8}
 	var reported error
 	fit := New(index, nil, true)
-	fit.errorHandler = func(err error) { reported = err }
+	fit.handleError = func(err error) { reported = err }
 
 	if err := fit.Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
 		t.Fatal(err)

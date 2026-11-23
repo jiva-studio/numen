@@ -63,7 +63,7 @@ const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
   show: (showing) => emit('show', showing),
   reach: (pointer) => emit('reach', pointer),
-  menu: (pos, trigger) => emit('menu', pos, trigger),
+  openMenu: (pos, trigger) => emit('menu', pos, trigger),
 })
 
 const { isGhost, canStop, isAnnounced } = press.role
@@ -78,8 +78,8 @@ const { isHandleVisible, role, openPosition, hue } = useNodeState(state, {
 })
 
 const { open, box, handle } = useOpenBox({
-  node: () => props.node,
-  expanded: () => expanded.value,
+  getNode: () => props.node,
+  getExpanded: () => expanded.value,
   on: () => openPosition.value,
   delay: () => props.behavior.expansionDelay,
   hasPill: () => props.showPills,
@@ -88,10 +88,10 @@ const { open, box, handle } = useOpenBox({
 })
 
 const { isLifted, liftTarget, onLiftKeyDown } = useLift({
-  layer: () => layer?.value ?? null,
+  getLayer: () => layer?.value ?? null,
   open: () => open.value,
   group: () => group.value,
-  lifted: () => lifted.value,
+  getLifted: () => lifted.value,
   focus: hoverFocus,
 })
 

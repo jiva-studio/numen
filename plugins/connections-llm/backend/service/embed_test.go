@@ -23,7 +23,7 @@ func TestEmbedSendsTheTextsAndReturnsOneVectorForEach(t *testing.T) {
 		t.Fatalf("got %d vectors, want 3", len(vectors))
 	}
 	for i, text := range texts {
-		if !slices.Equal(vectors[i], fake.Vector(text)) {
+		if !slices.Equal(vectors[i], fake.BuildVector(text)) {
 			t.Errorf("vector %d is not the vector of %q", i, text)
 		}
 	}

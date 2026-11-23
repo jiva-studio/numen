@@ -18,8 +18,8 @@ type Follow struct {
 	refresh Refreshing
 	scan    Scanning
 
-	changed      func(VaultChanges)
-	errorHandler window.ErrorHandler
+	handleChanges func(VaultChanges)
+	errorHandler  window.ErrorHandler
 }
 
 // NewFollow creates a Follow from the watcher that reports file changes, the refresh that updates the named
@@ -28,7 +28,7 @@ type Follow struct {
 func NewFollow(
 	watcher VaultWatcher, refresh Refreshing, scan Scanning, changed func(VaultChanges), errorHandler window.ErrorHandler,
 ) Follow {
-	return Follow{watcher: watcher, refresh: refresh, scan: scan, changed: changed, errorHandler: errorHandler}
+	return Follow{watcher: watcher, refresh: refresh, scan: scan, handleChanges: changed, errorHandler: errorHandler}
 }
 
 // VaultChanges is the notification passed to a caller: the notes that changed,
@@ -100,8 +100,8 @@ func (f *Watch) Run(ctx context.Context) {
 }
 
 func (f *Watch) reportChanges(m VaultChanges) {
-	if f.follow.changed != nil {
-		f.follow.changed(m)
+	if f.follow.handleChanges != nil {
+		f.follow.handleChanges(m)
 	}
 }
 

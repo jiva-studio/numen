@@ -31,7 +31,7 @@ func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 		if text == "" {
 			continue
 		}
-		selector, err := timeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.encode()
+		selector, err := timeSelector{T: []float64{convertToSeconds(cue.From), convertToSeconds(cue.To)}}.encode()
 		// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of finite float64 slice cannot fail"
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 	return out, nil
 }
 
-func toSeconds(ms int) float64 { return float64(ms) / 1000 }
+func convertToSeconds(ms int) float64 { return float64(ms) / 1000 }
 
 // FormatTimestamp is a millisecond as hours, minutes, seconds and thousandths.
 func FormatTimestamp(ms int) string {

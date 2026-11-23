@@ -54,12 +54,12 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 	files := &switchableVault{Vault: s.vault, active: "Physics"}
 	documents := document.NewReader()
 	run, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files {
+		recognition.Host{GetVault: func(id domain.VaultID) recognition.Files {
 			if id == "" {
 				return files
 			}
 			return s.vault.With(id)
-		}, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents},
+		}, Store: foldersOf(s.store), GetTexts: s.textsOf, Queue: s.queue, Documents: documents},
 		func(context.Context) (ports.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {

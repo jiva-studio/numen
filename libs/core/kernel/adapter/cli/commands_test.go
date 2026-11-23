@@ -220,7 +220,7 @@ func problemsDeps(queries check.ProblemQueries) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.Standard(queries)))}, nil
+			return cli.Indexed{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.CreateStandard(queries)))}, nil
 		},
 	}
 }
@@ -287,7 +287,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}{
 		"the list of vaults cannot be opened": {
 			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				problems := vaults.NewGetProblems(check.Standard(fixedProblemQueries{}))
+				problems := vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{}))
 				return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, problems)}, nil
 			}},
 			[]string{"problems", "notebook"},
@@ -313,7 +313,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		}
 	}
 	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-		return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+		return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{})))}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)

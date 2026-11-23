@@ -50,8 +50,8 @@ func newFixtureWithSites(t *testing.T, fetcher ports.Fetcher) *importFixture {
 	texts.SetStore(PluginID, store)
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
-		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
+		GetVault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
+		Store:    foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}
@@ -59,7 +59,7 @@ func newFixtureWithSites(t *testing.T, fetcher ports.Fetcher) *importFixture {
 		func() ports.Fetcher { return fetcher },
 		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	registry, err := NewTools(links).Registry()
+	registry, err := NewTools(links).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

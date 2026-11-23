@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { clock } from '../lib/duration'
+import { formatClock } from '../lib/duration'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -66,7 +66,7 @@ function onSeekChange() {
       <Play v-else />
     </button>
 
-    <span class="player__at">{{ clock(position) }}</span>
+    <span class="player__at">{{ formatClock(position) }}</span>
 
     <input
       type="range"
@@ -77,12 +77,12 @@ function onSeekChange() {
       step="1000"
       :value="position"
       :aria-label="props.label"
-      :aria-valuetext="clock(position)"
+      :aria-valuetext="formatClock(position)"
       @input="onSeekInput"
       @change="onSeekChange"
     />
 
-    <span class="player__at">{{ clock(runs) }}</span>
+    <span class="player__at">{{ formatClock(runs) }}</span>
   </div>
 </template>
 

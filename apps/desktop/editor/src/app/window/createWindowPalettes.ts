@@ -80,7 +80,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
-    declaredCommands,
+    commandDeclarations: declaredCommands,
     itemLists: vault.itemLists,
     commandDeps,
     registry: foundation.registry,
@@ -100,7 +100,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   })
   watchCommandLists(
     {
-      declaredCommands,
+      commandDeclarations: declaredCommands,
       writeMessage,
       plugins: rest.state.plugins,
       getCommittedSetting: rest.read.getCommittedSetting,

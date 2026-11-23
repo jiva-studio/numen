@@ -169,7 +169,7 @@ describe('the facts of the window the conditions read', () => {
 describe('the kind of the note at a path', () => {
   it('is its type and properties, and no type where the vault files none', async () => {
     const read = createNoteKindReader({
-      fileKinds: (paths: readonly string[]) =>
+      readFileKinds: (paths: readonly string[]) =>
         Promise.resolve(
           new Map(
             paths.includes('talk.md')

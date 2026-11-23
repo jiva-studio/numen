@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -30,10 +31,10 @@ const pluginPageReferrer = "strict-origin-when-cross-origin"
 // vault.
 const pluginFileSegment = "plugin"
 
-// PluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
+// BuildPluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
 // socket, and nowhere where the socket is not answering. The address names the size of the file, so a
 // file written again with another size is a different address.
-func (l *Loopback) PluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
+func (l *Loopback) BuildPluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}
@@ -66,7 +67,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		return
 	}
 	if errors.Is(err, file.ErrNoPluginFiles) {
-		refuse(w, errNoVault)
+		refuse(w, wire.ErrNoVault)
 		return
 	}
 	if err != nil {

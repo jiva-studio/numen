@@ -34,7 +34,7 @@ type buildFilter func(call searchfunction.Call, today string) (filter.Filter, er
 // New returns the registry of the query functions over the tasks of the vault each call names and the day of the clock.
 func New(vaults Vaults, clock ports.Clock) (*searchfunction.Registry, error) {
 	registry := searchfunction.New()
-	for name, build := range builders() {
+	for name, build := range createBuilders() {
 		if err := registry.Add(name, newFunction(build, vaults, clock)); err != nil {
 			return nil, err
 		}
@@ -42,13 +42,13 @@ func New(vaults Vaults, clock ports.Clock) (*searchfunction.Registry, error) {
 	return registry, nil
 }
 
-func builders() map[string]buildFilter {
+func createBuilders() map[string]buildFilter {
 	return map[string]buildFilter{
-		"hasOpenTask":       fixed(todo.StatusOpen, filter.DueAny),
-		"hasDoneTask":       fixed(todo.StatusDone, filter.DueAny),
-		"hasTaskOverdue":    fixed(todo.StatusOpen, filter.DueOverdue),
-		"hasTaskDueToday":   fixed(todo.StatusOpen, filter.DueToday),
-		"hasTaskWithoutDue": fixed(todo.StatusOpen, filter.DueNone),
+		"hasOpenTask":       createFixedBuilder(todo.StatusOpen, filter.DueAny),
+		"hasDoneTask":       createFixedBuilder(todo.StatusDone, filter.DueAny),
+		"hasTaskOverdue":    createFixedBuilder(todo.StatusOpen, filter.DueOverdue),
+		"hasTaskDueToday":   createFixedBuilder(todo.StatusOpen, filter.DueToday),
+		"hasTaskWithoutDue": createFixedBuilder(todo.StatusOpen, filter.DueNone),
 		"hasTaskDueWithin":  buildDueWithin,
 		"hasTaskDueBefore":  buildDueBefore,
 		"hasTaskProject":    buildField("hasTaskProject", "name", func(f *filter.Filter, name string) { f.Projects = []string{name} }),
@@ -58,7 +58,7 @@ func builders() map[string]buildFilter {
 	}
 }
 
-func fixed(status todo.Status, due filter.DueFilter) buildFilter {
+func createFixedBuilder(status todo.Status, due filter.DueFilter) buildFilter {
 	return func(_ searchfunction.Call, _ string) (filter.Filter, error) {
 		var f filter.Filter
 		f.Status = []todo.Status{status}
@@ -70,7 +70,7 @@ func fixed(status todo.Status, due filter.DueFilter) buildFilter {
 func buildDueWithin(call searchfunction.Call, today string) (filter.Filter, error) {
 	days, isGiven := call.Arguments.GetInt("days")
 	if !isGiven || days < 0 {
-		return filter.Filter{}, invalid("hasTaskDueWithin needs days, a number of days from 0")
+		return filter.Filter{}, newInvalidError("hasTaskDueWithin needs days, a number of days from 0")
 	}
 	var f filter.Filter
 	f.Status = []todo.Status{todo.StatusOpen}
@@ -87,7 +87,7 @@ func buildDueBefore(call searchfunction.Call, _ string) (filter.Filter, error) {
 	date, _ := call.Arguments.GetString("date")
 	date = strings.TrimSpace(date)
 	if !todo.IsDate(date) {
-		return filter.Filter{}, invalid("hasTaskDueBefore needs date as YYYY-MM-DD, got %q", date)
+		return filter.Filter{}, newInvalidError("hasTaskDueBefore needs date as YYYY-MM-DD, got %q", date)
 	}
 	var f filter.Filter
 	f.Status = []todo.Status{todo.StatusOpen, todo.StatusDone}
@@ -101,7 +101,7 @@ func buildField(function, argument string, set func(*filter.Filter, string)) bui
 		value, _ := call.Arguments.GetString(argument)
 		value = strings.TrimLeft(strings.TrimSpace(value), "+@")
 		if value == "" {
-			return filter.Filter{}, invalid("%s needs a %s", function, argument)
+			return filter.Filter{}, newInvalidError("%s needs a %s", function, argument)
 		}
 		var f filter.Filter
 		set(&f, value)
@@ -113,7 +113,7 @@ func buildPriority(call searchfunction.Call, _ string) (filter.Filter, error) {
 	letter, _ := call.Arguments.GetString("letter")
 	normal, isLetter := filter.NormalizePriority(letter)
 	if !isLetter {
-		return filter.Filter{}, invalid("hasTaskPriority needs letter, one letter from A to Z, got %q", strings.TrimSpace(letter))
+		return filter.Filter{}, newInvalidError("hasTaskPriority needs letter, one letter from A to Z, got %q", strings.TrimSpace(letter))
 	}
 	var f filter.Filter
 	f.Priorities = []string{normal}
@@ -123,14 +123,14 @@ func buildPriority(call searchfunction.Call, _ string) (filter.Filter, error) {
 func buildText(call searchfunction.Call, _ string) (filter.Filter, error) {
 	text, _ := call.Arguments.GetString("text")
 	if strings.TrimSpace(text) == "" {
-		return filter.Filter{}, invalid("hasTaskText needs text")
+		return filter.Filter{}, newInvalidError("hasTaskText needs text")
 	}
 	var f filter.Filter
 	f.Text = strings.TrimSpace(text)
 	return f, nil
 }
 
-func invalid(format string, args ...any) error {
+func newInvalidError(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", searchfunction.ErrInvalidArguments, fmt.Sprintf(format, args...))
 }
 
