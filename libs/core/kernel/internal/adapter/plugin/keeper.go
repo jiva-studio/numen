@@ -47,7 +47,7 @@ func NewKeeper(d KeeperDeps) *Keeper {
 		set: d.Set, mode: d.Mode, sups: d.Supervisors, starter: d.Activation,
 		kept: make(map[string]struct{}), starting: make(map[string]struct{}),
 	}
-	d.Supervisors.SetOnProcessExit(k.restartAfterExit)
+	d.Supervisors.Exits.Set(k.restartAfterExit)
 	return k
 }
 

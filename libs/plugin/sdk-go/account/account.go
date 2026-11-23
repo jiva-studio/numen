@@ -68,16 +68,6 @@ func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *C
 	return &Client{rpc: numenv1connect.NewHostAccountServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
-// NewClientFromEnv returns the client of the host the process was started for. It returns
-// hostcall.ErrNoHost where the environment names none.
-func NewClientFromEnv() (*Client, error) {
-	endpoint, err := hostcall.FromEnv()
-	if err != nil {
-		return nil, err
-	}
-	return NewClient(endpoint), nil
-}
-
 // SignAsDevice returns the signature of the key of this device over the message, 64 bytes, made under the
 // id of this plugin. The message has 1 to 4096 bytes. It returns ErrNoIdentity where the device holds none.
 func (c *Client) SignAsDevice(ctx context.Context, message []byte) ([]byte, error) {

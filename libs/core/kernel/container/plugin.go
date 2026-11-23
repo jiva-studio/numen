@@ -41,7 +41,8 @@ type pluginSettingDeclarer interface {
 	GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool)
 }
 
-// pluginShutdown stops the plugins when the host shuts down.
-type pluginShutdown interface {
+// pluginLifecycle stops the plugins when the host shuts down and starts the ones that stay running.
+type pluginLifecycle interface {
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
+	KeepAll(ctx context.Context)
 }

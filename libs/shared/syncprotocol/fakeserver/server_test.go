@@ -47,7 +47,7 @@ func newRecord(t *testing.T) identity.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := time.Now()
+	now := time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
 	chain, err := identity.NewChain(root, keys, now)
 	if err != nil {
 		t.Fatal(err)
