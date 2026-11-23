@@ -16,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -31,7 +30,7 @@ func (n notRemoving) Remove(context.Context, domain.VaultID, []string) error { r
 // uncuttable is an index of sources that cannot report which are still to be
 // cut, and runs a function when queried for what was cut by another recipe.
 type uncuttable struct {
-	sourceport.SourceBacklog
+	indexing.SourceBacklog
 	err         error
 	onUnchunked func()
 	onRecipe    func()

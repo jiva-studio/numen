@@ -119,8 +119,8 @@ type testIndex struct {
 	Source struct {
 		Sources       sourceport.SourceRepository
 		SourceRecords indexing.SourceRecords
-		SourceBacklog sourceport.SourceBacklog
-		RemovalLookup sourceport.RemovalLookup
+		SourceBacklog indexing.SourceBacklog
+		RemovalLookup indexing.RemovalLookup
 	}
 }
 

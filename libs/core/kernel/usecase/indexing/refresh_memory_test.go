@@ -178,7 +178,7 @@ func (n memNotes) Remove(_ context.Context, _ domain.VaultID, paths []string) er
 }
 
 type memQueries struct {
-	sourceport.RemovalLookup
+	indexing.RemovalLookup
 	w *memWorld
 }
 

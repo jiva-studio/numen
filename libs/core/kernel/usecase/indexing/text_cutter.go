@@ -19,8 +19,8 @@ import (
 // cutter is the second pass: it cuts the live text of the files that need it into chunks.
 type cutter struct {
 	sources      sourceport.SourceRepository
-	backlog      sourceport.SourceBacklog
-	lookup       sourceport.RemovalLookup
+	backlog      SourceBacklog
+	lookup       RemovalLookup
 	sizes        chunking.Sizes
 	legibility   chunking.Legibility
 	isSkipped    func(path string) bool

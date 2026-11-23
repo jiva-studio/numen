@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -27,7 +26,7 @@ type Scan struct {
 	notes       noteport.NoteRepository
 	indexedVal  FileStats
 	maintenance IndexMaintenance
-	backlog     sourceport.SourceBacklog
+	backlog     SourceBacklog
 
 	Cut chunking.CutNotes
 
@@ -49,7 +48,7 @@ func NewScan(
 	notes noteport.NoteRepository,
 	queries FileStats,
 	maintenance IndexMaintenance,
-	backlog sourceport.SourceBacklog,
+	backlog SourceBacklog,
 ) Scan {
 	return Scan{
 		readers: readers, vaults: vaults, notes: notes,

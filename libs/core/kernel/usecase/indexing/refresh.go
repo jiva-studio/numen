@@ -31,7 +31,7 @@ type Refresh struct {
 	readers vaultport.VaultReaders
 	vaults  indexport.VaultRepository
 	notes   noteport.NoteRepository
-	queries sourceport.RemovalLookup
+	queries RemovalLookup
 	sources sourceport.SourceRepository
 	now     machineport.Clock
 
@@ -129,7 +129,7 @@ type RefreshDeps struct {
 	Readers vaultport.VaultReaders
 	Vaults  indexport.VaultRepository
 	Notes   noteport.NoteRepository
-	Queries sourceport.RemovalLookup
+	Queries RemovalLookup
 	Sources sourceport.SourceRepository
 	Now     machineport.Clock
 	Cut     chunking.CutNotes

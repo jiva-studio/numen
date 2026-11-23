@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // A scan cuts the notes at the chunk size the embedding plugin reports. These tests are about when it
@@ -37,7 +36,7 @@ func scanAt(db *scanIndex, tokens int) indexing.Scan {
 	return scanAtBacklog(db, tokens, db.Sources())
 }
 
-func scanAtBacklog(db *scanIndex, tokens int, backlog sourceport.SourceBacklog) indexing.Scan {
+func scanAtBacklog(db *scanIndex, tokens int, backlog indexing.SourceBacklog) indexing.Scan {
 	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), backlog)
 	scan.Walks = &db.walks
 	scan.Cut = chunking.NewCutNotes(tokens)
@@ -47,7 +46,7 @@ func scanAtBacklog(db *scanIndex, tokens int, backlog sourceport.SourceBacklog) 
 
 // forbiddenBacklog fails the test when it is asked which sources were cut by another recipe.
 type forbiddenBacklog struct {
-	sourceport.SourceBacklog
+	indexing.SourceBacklog
 	t *testing.T
 }
 
