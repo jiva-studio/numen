@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account/accounttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -94,9 +95,10 @@ func newKit(t *testing.T, s setup) *kit {
 
 func eventually(t *testing.T, what string, condition func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	wall := clock.System{}
+	deadline := wall.Now().Add(5 * time.Second)
 	for !condition() {
-		if time.Now().After(deadline) {
+		if wall.Now().After(deadline) {
 			t.Fatalf("timed out waiting for %s", what)
 		}
 		time.Sleep(5 * time.Millisecond)

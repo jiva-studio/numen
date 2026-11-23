@@ -85,7 +85,7 @@ type Keep struct {
 }
 
 // NewKeep returns the use case over the dependencies.
-func NewKeep(deps Deps) *Keep { return &Keep{deps: deps} }
+func NewKeep(deps Deps) *Keep { return &Keep{deps: deps, raised: ""} }
 
 // Execute runs until ctx ends and returns its error.
 func (u *Keep) Execute(ctx context.Context) error {

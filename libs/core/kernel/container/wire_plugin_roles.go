@@ -105,3 +105,9 @@ func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newR
 		roles.Dependencies.Replace(newRegistry(models))
 	}
 }
+
+// pluginLifecycleParts is the teardown and the keeper of the plugins as one lifecycle.
+type pluginLifecycleParts struct {
+	*plugin.Teardown
+	*plugin.Keeper
+}
