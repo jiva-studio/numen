@@ -1,6 +1,6 @@
 /**
  * The state of the identity section: showing the recovery words of a new identity and checking
- * three of them in two steps, restoring from typed words, and deleting the identity from this device. The words
+ * three of them in two steps, restoring from the twelve words in a dialog, and deleting the identity from this device. The words
  * live in this state only while a setup is open; leaving the page or cancelling drops them.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -10,7 +10,7 @@ import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
 import { useIdentityCall } from './useIdentityCall'
-import { useRestoreText } from './useRestoreText'
+import { useRestoreWords } from './useRestoreWords'
 import { useWordsConfirmation } from './useWordsConfirmation'
 import { useSetupStage } from './useSetupStage'
 
@@ -24,7 +24,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const setup = useSetupStage(problem)
   const { stage, recoveryWords } = setup
   const confirmation = useWordsConfirmation(recoveryWords)
-  const typing = useRestoreText(problem)
+  const restoring = useRestoreWords(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
 
   onMounted(() => {
@@ -41,7 +41,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     step.value = 'idle'
     setup.clear()
     confirmation.clear()
-    typing.restoreText.value = ''
+    restoring.clear()
     problem.value = ''
     deletion.cancelDelete()
   }
@@ -79,8 +79,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
 
   const restore = async (): Promise<void> => {
     if (isBusy.value) return
-    const typed = typing.restoreText.value.split(/\s+/).filter((word) => word !== '')
-    const answer = await run(() => getIdentity().create(typed))
+    const answer = await run(() => getIdentity().create(restoring.readWords()))
     if (answer.ok) reset()
   }
 
@@ -90,7 +89,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     setup,
     call,
     confirmation,
-    typing,
+    restoring,
     deletion,
     actions: {
       startSetup,

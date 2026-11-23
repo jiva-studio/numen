@@ -128,6 +128,16 @@ const getShownWords = (tab: Page): string[] =>
 
 const getConfirmInputs = (tab: Page) => tab.findAll('label.word-check input')
 
+const getDialog = (tab: Page) => tab.get('[role="dialog"]')
+
+const getRestoreInputs = (tab: Page) =>
+  getDialog(tab).findAll('input[aria-label^="Recovery word "]')
+
+const submitRestore = async (tab: Page) => {
+  await getDialog(tab).get('button[type="submit"]').trigger('click')
+  await flushPromises()
+}
+
 const getPosition = (input: { element: Element }): number =>
   Number(
     /^Word (\d+)$/.exec(
@@ -301,27 +311,74 @@ describe('the page "Identity and licenses"', () => {
     expect(generateWords).toHaveBeenCalledTimes(2)
   })
 
-  it('sends the words that are typed to create when the person restores', async () => {
-    const { tab, create } = await createPage()
+  it('restores in a dialog with a field for each of the 12 words', async () => {
+    const { tab } = await createPage()
     await press(tab, 'Restore')
-    await tab
-      .get('textarea[aria-label="Your 12 recovery words"]')
-      .setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
-    await press(tab, 'Restore')
-    expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
-    expect(tab.text()).toContain(IDENTITY.accountFingerprint)
+    expect(getDialog(tab).get('h2').text()).toBe('Restore identity')
+    expect(getRestoreInputs(tab).map((input) => input.attributes('aria-label'))).toStrictEqual(
+      Array.from({ length: 12 }, (_, index) => `Recovery word ${index + 1}`),
+    )
   })
 
-  it('says the words are not valid and holds no identity when the core refuses the words', async () => {
+  it('sends the words typed one to a field to create when the person restores', async () => {
+    const { tab, create } = await createPage()
+    await press(tab, 'Restore')
+    for (const [index, input] of getRestoreInputs(tab).entries())
+      await input.setValue(` ${(RECOVERY_WORDS[index] ?? '').toUpperCase()} `)
+    await submitRestore(tab)
+    expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
+    expect(tab.text()).toContain(IDENTITY.accountFingerprint)
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  it('fills the fields after the first when the 12 words are pasted into it', async () => {
+    const { tab, create } = await createPage()
+    await press(tab, 'Restore')
+    await getRestoreInputs(tab)[0]?.setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
+    expect(
+      getRestoreInputs(tab).map((input) => (input.element as HTMLInputElement).value),
+    ).toStrictEqual(RECOVERY_WORDS)
+    await submitRestore(tab)
+    expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
+  })
+
+  it('says under the fields that the words are not valid and holds no identity when the core refuses them', async () => {
     const { tab, identity } = await createPage(undefined, () =>
       Promise.resolve(asFailure('Some words are not valid.')),
     )
     await press(tab, 'Restore')
-    await tab.get('textarea[aria-label="Your 12 recovery words"]').setValue('abandon '.repeat(12))
-    await press(tab, 'Restore')
-    expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
+    await getRestoreInputs(tab)[0]?.setValue('abandon '.repeat(12))
+    await submitRestore(tab)
+    const alert = getDialog(tab).get('[role="alert"]')
+    expect(alert.text()).toBe('Some words are not valid.')
+    const last = getRestoreInputs(tab).at(-1)?.element
+    const submit = getDialog(tab).get('button[type="submit"]').element
+    if (!last) throw new Error('the dialog has no fields')
+    expect(
+      last.compareDocumentPosition(alert.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      alert.element.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
     expect(identity.value).toBeUndefined()
     expect(tab.text()).toContain(NO_IDENTITY)
+  })
+
+  it('closes the restore dialog on Cancel and drops the words typed', async () => {
+    const { tab, create } = await createPage()
+    await press(tab, 'Restore')
+    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await getDialog(tab)
+      .findAll('button')
+      .find((one) => one.text() === 'Cancel')
+      ?.trigger('click')
+    await flushPromises()
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(create).not.toHaveBeenCalled()
+    await press(tab, 'Restore')
+    expect(
+      getRestoreInputs(tab).every((input) => (input.element as HTMLInputElement).value === ''),
+    ).toBe(true)
   })
 
   it('warns that the identity cannot be restored without the words before it deletes', async () => {

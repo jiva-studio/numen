@@ -2,7 +2,7 @@
 /**
  * The identity of this device: its fingerprints and devices when it has one, and otherwise the way
  * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
- * one from its words.
+ * one from its words in a dialog.
  */
 import { KeyRound, Plus } from '@lucide/vue'
 import { IslandCard } from '@numen/ui'
@@ -11,7 +11,7 @@ import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
-import IdentityRestore from './IdentityRestore.vue'
+import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
 import IdentitySetup from './IdentitySetup.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -19,7 +19,7 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
 const section = useIdentitySection(() => props.identity)
-const { identity: current, step, setup, call, confirmation, typing, deletion, actions } = section
+const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
 const { stage, recoveryWords } = setup
 </script>
 
@@ -36,7 +36,7 @@ const { stage, recoveryWords } = setup
   />
 
   <IslandCard v-else :title="words.identitySection">
-    <template v-if="step !== 'restore'" #aside>
+    <template #aside>
       <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore">
         <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
@@ -50,17 +50,8 @@ const { stage, recoveryWords } = setup
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
       <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
-      <IdentityRestore
-        v-if="step === 'restore'"
-        :text="typing.restoreText.value"
-        :is-busy="call.isBusy.value"
-        @change="typing.setRestoreText"
-        @restore="actions.restore"
-        @cancel="actions.cancel"
-      />
-
       <p
-        v-if="call.problem.value !== '' && step !== 'setup'"
+        v-if="call.problem.value !== '' && step === 'idle'"
         role="alert"
         class="identity-section__problem"
       >
@@ -82,6 +73,16 @@ const { stage, recoveryWords } = setup
       @check="actions.showCheck"
       @back="actions.showWords"
       @keep="actions.keep"
+      @cancel="actions.cancel"
+    />
+
+    <IdentityRestoreDialog
+      v-if="step === 'restore'"
+      :entered="restoring.entered.value"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      @change="restoring.setWord"
+      @restore="actions.restore"
       @cancel="actions.cancel"
     />
   </IslandCard>

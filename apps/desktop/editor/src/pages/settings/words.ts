@@ -114,8 +114,10 @@ export const WORDS = {
   identityContinue: 'Continue',
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
-  identityRestoreLabel: 'Your 12 recovery words',
-  identityRestorePlaceholder: 'Type the 12 words, separated by spaces',
+  identityRestoreTitle: 'Restore identity',
+  identityRestoreHint:
+    'Type your 12 recovery words in order. You can paste all 12 into the first field.',
+  identityRestoreWord: (position: number) => `Recovery word ${position}`,
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
   identityAccount: 'Account fingerprint',
