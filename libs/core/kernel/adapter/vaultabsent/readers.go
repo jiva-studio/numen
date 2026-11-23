@@ -2,8 +2,6 @@
 package vaultabsent
 
 import (
-	"errors"
-
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -21,6 +19,10 @@ func NewReaders(inner vaultport.VaultReaders, absent vaultport.AbsentFiles) Read
 }
 
 // Open returns the reader of the vault with its absent files.
-func (r Readers) Open(domain.Vault) (vaultport.VaultReader, error) {
-	return nil, errors.New("not implemented")
+func (r Readers) Open(v domain.Vault) (vaultport.VaultReader, error) {
+	inner, err := r.inner.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return reader{inner: inner, absent: r.absent, vault: v}, nil
 }

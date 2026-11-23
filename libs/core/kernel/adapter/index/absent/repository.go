@@ -5,13 +5,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
-
-var errNotImplemented = errors.New("not implemented")
 
 // Repository is the registry over the two pools of the index database.
 type Repository struct {
@@ -25,21 +26,77 @@ func NewRepository(read, write *sql.DB) *Repository {
 }
 
 // PutAbsentFiles replaces the entry of each path.
-func (r *Repository) PutAbsentFiles(context.Context, domain.Vault, []vault.AbsentFile) error {
-	return errNotImplemented
+func (r *Repository) PutAbsentFiles(ctx context.Context, v domain.Vault, files []vault.AbsentFile) error {
+	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+		for _, f := range files {
+			if _, err := tx.ExecContext(ctx, putSQL, string(v.ID), f.Path, f.Size, f.Mtime.UnixNano(), f.Hash, f.Provider); err != nil {
+				return fmt.Errorf("put %s: %w", f.Path, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("put absent files of %s: %w", v.ID, err)
+	}
+	return nil
 }
 
 // ListAbsentFiles returns every entry of the vault, by path.
-func (r *Repository) ListAbsentFiles(context.Context, domain.Vault) ([]vault.AbsentFile, error) {
-	return nil, errNotImplemented
+func (r *Repository) ListAbsentFiles(ctx context.Context, v domain.Vault) (files []vault.AbsentFile, err error) {
+	rows, err := r.read.QueryContext(ctx, listSQL, string(v.ID))
+	if err != nil {
+		return nil, fmt.Errorf("list absent files of %s: %w", v.ID, err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+	for rows.Next() {
+		f, err := scan(rows)
+		if err != nil {
+			return nil, fmt.Errorf("list absent files of %s: %w", v.ID, err)
+		}
+		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list absent files of %s: %w", v.ID, err)
+	}
+	return files, nil
 }
 
 // GetAbsentFile returns the entry of the path, and false where there is none.
-func (r *Repository) GetAbsentFile(context.Context, domain.Vault, string) (vault.AbsentFile, bool, error) {
-	return vault.AbsentFile{}, false, errNotImplemented
+func (r *Repository) GetAbsentFile(ctx context.Context, v domain.Vault, path string) (vault.AbsentFile, bool, error) {
+	f, err := scan(r.read.QueryRowContext(ctx, getSQL, string(v.ID), path))
+	if errors.Is(err, sql.ErrNoRows) {
+		return vault.AbsentFile{}, false, nil
+	}
+	if err != nil {
+		return vault.AbsentFile{}, false, fmt.Errorf("get absent file %s of %s: %w", path, v.ID, err)
+	}
+	return f, true, nil
 }
 
 // RemoveAbsentFiles deletes the entries of the paths.
-func (r *Repository) RemoveAbsentFiles(context.Context, domain.Vault, []string) error {
-	return errNotImplemented
+func (r *Repository) RemoveAbsentFiles(ctx context.Context, v domain.Vault, paths []string) error {
+	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+		for _, p := range paths {
+			if _, err := tx.ExecContext(ctx, removeSQL, string(v.ID), p); err != nil {
+				return fmt.Errorf("remove %s: %w", p, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("remove absent files of %s: %w", v.ID, err)
+	}
+	return nil
+}
+
+type scanner interface{ Scan(dest ...any) error }
+
+func scan(s scanner) (vault.AbsentFile, error) {
+	var f vault.AbsentFile
+	var mtime int64
+	if err := s.Scan(&f.Path, &f.Size, &mtime, &f.Hash, &f.Provider); err != nil {
+		return vault.AbsentFile{}, err
+	}
+	f.Mtime = time.Unix(0, mtime).UTC()
+	return f, nil
 }
