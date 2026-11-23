@@ -167,7 +167,9 @@ describe('the sync plugin frontend', () => {
     await vi.advanceTimersByTimeAsync(30_000)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Choose Plus')
+    expect(wrapper.find('button[aria-label="Choose Plus, 100 GB, $15 / month"]').exists()).toBe(
+      true,
+    )
     wrapper.unmount()
   })
 
@@ -178,10 +180,7 @@ describe('the sync plugin frontend', () => {
     await vi.advanceTimersByTimeAsync(0)
     await flushPromises()
 
-    await wrapper
-      .findAll('button')
-      .find((one) => one.text() === 'Choose Plus')
-      ?.trigger('click')
+    await wrapper.get('button[aria-label="Choose Plus, 100 GB, $15 / month"]').trigger('click')
     await flushPromises()
 
     expect(context.getOpenedAddresses()).toStrictEqual([CHECKOUT_URL])

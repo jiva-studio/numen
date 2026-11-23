@@ -16,8 +16,8 @@ const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
 
-/** The name of the button to choose the plan of a name on a row of the card. */
-export const getChooseName = (name: string): string => `Choose ${name}`
+/** The name of the row of the card that chooses the plan of a name, such as "Choose Plus, 100 GB, $15 / month"; with the size in GB when it is given. */
+export const getChoosePattern = (name: string, gigabytes?: number): RegExp => new RegExp(`^Choose ${name}, ${gigabytes === undefined ? '' : `${gigabytes} GB(,|$)`}`)
 
 /** The plan row of the card: the size in GB and the price, with the name in front once the subscription ended. */
 export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^(${name}, )?${gigabytes} GB(,|$)`)
@@ -231,7 +231,7 @@ export class IdentityDriver {
   async buyPlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
-    await card.getByRole('button', { name: getChooseName(name), exact: true }).click()
+    await card.getByRole('button', { name: getChoosePattern(name) }).click()
     const payment = await opened
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
@@ -241,7 +241,7 @@ export class IdentityDriver {
   /** Expects the card to offer to choose the plan of a name on a row with its size in GB. */
   async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const row = card.locator('.subscription__row').filter({ hasText: `${gigabytes} GB of synced files` }).filter({ has: this.scenario.page.getByRole('button', { name: getChooseName(name), exact: true }) })
+    const row = card.getByRole('button', { name: getChoosePattern(name, gigabytes) }).filter({ hasText: `${gigabytes} GB of synced files` })
     await expect(row).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 

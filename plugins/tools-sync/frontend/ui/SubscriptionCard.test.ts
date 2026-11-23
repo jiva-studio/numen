@@ -71,9 +71,16 @@ const render = async (response: SubscriptionResponse) => {
 const findChoose = (wrapper: VueWrapper, name?: string) =>
   wrapper
     .findAll('button')
-    .find((one) =>
-      name === undefined ? one.text().startsWith('Choose ') : one.text() === `Choose ${name}`,
-    )
+    .find((one) => one.attributes('aria-label')?.startsWith(`Choose ${name ?? ''}`) === true)
+
+const getChooseNames = (wrapper: VueWrapper): string[] =>
+  wrapper
+    .findAll('button')
+    .map((one) => one.attributes('aria-label') ?? '')
+    .filter((name) => name.startsWith('Choose '))
+
+const getRowNames = (wrapper: VueWrapper): string[] =>
+  wrapper.findAll('.subscription__row .subscription__name').map((one) => one.text())
 
 const getRow = (wrapper: VueWrapper, name: string): string =>
   wrapper
@@ -218,18 +225,44 @@ describe('SubscriptionCard', () => {
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
-  it('shows a row for each plan with the name, the size, the price and the button Choose', async () => {
+  it('shows each plan as a row to click with the name, the size and the price', async () => {
     const { wrapper } = await render(createResponse({ phase: 'none' }))
 
     const expected = [
-      ['Basic', '10 GB of synced files', '$5', '/ month', 'Choose Basic'],
-      ['Plus', '100 GB of synced files', '$15', '/ month', 'Choose Plus'],
-      ['Pro', '250 GB of synced files', '$30', '/ month', 'Choose Pro'],
+      ['Basic', '10 GB of synced files', '$5', '/ month'],
+      ['Plus', '100 GB of synced files', '$15', '/ month'],
+      ['Pro', '250 GB of synced files', '$30', '/ month'],
     ] as const
     expect(wrapper.findAll('.subscription__row')).toHaveLength(expected.length)
     expected.forEach(([name, ...parts]) => {
       parts.forEach((part) => expect(getRow(wrapper, name)).toContain(part))
     })
+    expect(getChooseNames(wrapper)).toStrictEqual([
+      'Choose Basic, 10 GB, $5 / month',
+      'Choose Plus, 100 GB, $15 / month',
+      'Choose Pro, 250 GB, $30 / month',
+    ])
+    expect(wrapper.text()).not.toContain('Choose')
+  })
+
+  it('disables the plan rows while the payment page is being opened', async () => {
+    const { wrapper, client } = await render(createResponse({ phase: 'none' }))
+    client.createCheckout.mockReturnValue(new Promise<string>(() => undefined))
+
+    await findChoose(wrapper, 'Plus')?.trigger('click')
+    await flushPromises()
+
+    expect(getChooseNames(wrapper)).toHaveLength(3)
+    wrapper
+      .findAll('button')
+      .filter((one) => one.attributes('aria-label')?.startsWith('Choose ') === true)
+      .forEach((one) => expect(one.attributes('disabled')).toBeDefined())
+  })
+
+  it('shows the rows of an active subscription in the order plan, renewal, storage', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    expect(getRowNames(wrapper)).toStrictEqual(['Plan', 'Renews', 'Storage'])
   })
 
   it('shows the plans by itself when the identity is created while the card is open', async () => {

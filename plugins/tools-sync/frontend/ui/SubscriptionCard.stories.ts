@@ -7,6 +7,7 @@ import '../styles.css'
 
 type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
 
+const CHOOSE_PLUS = 'Choose Plus, 100 GB, $15 / month'
 const NOW = new Date('2026-11-23T12:00:00Z')
 
 const GIB = 2 ** 30
@@ -53,7 +54,7 @@ export const None: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText(/^Sync your vaults between your devices/)).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
     await expect(canvas.queryByText('No subscription')).toBeNull()
   },
 }
@@ -92,7 +93,7 @@ export const Grace: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Ended')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
   },
 }
 
@@ -110,7 +111,7 @@ export const ReadOnly: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Read only')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
   },
 }
 
@@ -119,7 +120,7 @@ export const Deleted: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Deleted')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
   },
 }
 
@@ -157,9 +158,13 @@ export const Unreachable: Story = {
 export const OffersEveryPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('button', { name: 'Choose Basic' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Choose Pro' })).toBeVisible()
+    await expect(
+      await canvas.findByRole('button', { name: 'Choose Basic, 10 GB, $5 / month' }),
+    ).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: CHOOSE_PLUS })).toBeVisible()
+    await expect(
+      await canvas.findByRole('button', { name: 'Choose Pro, 250 GB, $30 / month' }),
+    ).toBeVisible()
     await expect(await canvas.findByText('10 GB of synced files')).toBeVisible()
   },
 }
@@ -248,7 +253,7 @@ export const Trial: Story = {
 export const WaitingForPayment: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Choose Plus' }))
+    await userEvent.click(await canvas.findByRole('button', { name: CHOOSE_PLUS }))
     await expect(await canvas.findByRole('status')).toHaveTextContent(
       'Finish the payment in your browser. This card updates by itself.',
     )

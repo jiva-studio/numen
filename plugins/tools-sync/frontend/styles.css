@@ -179,6 +179,39 @@
   border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
+.subscription__offer {
+  inline-size: calc(100% + 2 * var(--settings-card-pad));
+  margin-inline: calc(-1 * var(--settings-card-pad));
+  padding-inline: var(--settings-card-pad);
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--numen-motion-hover) ease;
+}
+
+.subscription__offer:hover:not(:disabled),
+.subscription__offer:focus-visible {
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
+}
+
+.subscription__offer:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline-offset: calc(-1 * var(--numen-stroke));
+}
+
+.subscription__offer:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.subscription__chevron {
+  flex: none;
+  color: var(--numen-hushed);
+}
+
 .subscription__label {
   display: flex;
   flex-direction: column;
@@ -213,6 +246,18 @@
 
 .subscription .subscription__change {
   inline-size: auto;
+  padding-inline: calc(0.75 * var(--numen-chrome-unit));
+  font-weight: 500;
+  transition: background-color var(--numen-motion-hover) ease;
+}
+
+.subscription .subscription__change:hover {
+  border-color: var(--numen-field-border);
+  background-color: color-mix(in oklab, var(--numen-field-bg), var(--numen-ink) 8%);
+}
+
+.subscription .subscription__change .select__reading {
+  color: var(--numen-ink);
 }
 
 .subscription .subscription__change--solid {
@@ -231,6 +276,10 @@
 }
 
 .subscription__meter {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  justify-content: center;
   inline-size: min(calc(15 * var(--numen-chrome-unit)), 100%);
 }
 
@@ -238,7 +287,7 @@
   overflow: hidden;
   block-size: calc(0.375 * var(--numen-chrome-unit));
   border-radius: var(--numen-radius-pill);
-  background-color: var(--numen-bubble-bg);
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 12%);
 }
 
 .subscription__meter-fill {

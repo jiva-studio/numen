@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, getChooseName, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
+import { formatDay, getChoosePattern, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -34,8 +34,11 @@ describe('planAnswers', () => {
 })
 
 describe('the names of the buttons of the card', () => {
-  it('names the button that chooses a plan with the name of the plan', () => {
-    expect(getChooseName('Plus')).toBe('Choose Plus')
+  it('names the row that chooses a plan with the name, the size and the price of the plan', () => {
+    expect(getChoosePattern('Plus').test('Choose Plus, 100 GB, $15 / month')).toBe(true)
+    expect(getChoosePattern('Plus', 100).test('Choose Plus, 100 GB, $15 / month')).toBe(true)
+    expect(getChoosePattern('Plus', 10).test('Choose Plus, 100 GB, $15 / month')).toBe(false)
+    expect(getChoosePattern('Plus').test('Choose Plus Pro, 100 GB')).toBe(false)
   })
 
   it('writes a day with the month in full', () => {
