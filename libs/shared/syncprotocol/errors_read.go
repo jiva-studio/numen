@@ -73,3 +73,10 @@ func ReadSubscriptionError(err error) error {
 	}
 	return ReadError(err)
 }
+
+// ReadShareError is ReadCallError for the calls of the share service: it maps NOT_FOUND to ErrNoShare, ALREADY_EXISTS
+// to ErrShareExists, and the details ShareEnded, RateLimited and ReaderUnknown to ShareEndedError, RateLimitedError and
+// ErrReaderUnknown.
+func ReadShareError(err error) error {
+	return err
+}

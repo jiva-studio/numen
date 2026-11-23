@@ -9,3 +9,8 @@ const (
 	DefaultPageSize   = 200
 	MaxPageSize       = 1000
 )
+
+const (
+	MaxShareSeals   = 1000
+	MaxEncShareBody = 1 << 10
+)

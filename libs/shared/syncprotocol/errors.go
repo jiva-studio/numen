@@ -3,6 +3,7 @@ package syncprotocol
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 var (
@@ -55,3 +56,31 @@ type refusalError struct {
 func (r refusalError) Error() string { return r.sentinel.Error() }
 
 func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }
+
+var (
+	// ErrNoShare means the server has no such share root, or the caller was never a member of it.
+	ErrNoShare = errors.New("the sync server has no such share")
+	// ErrShareExists means a share root with this id exists already.
+	ErrShareExists = errors.New("the share exists on the sync server")
+	// ErrReaderUnknown means no account has the root key of the reader.
+	ErrReaderUnknown = errors.New("no account on the sync server has this reader")
+)
+
+// ShareEndedError means the owner removed the caller from a share, or closed it. Version is the version of the
+// entry that did.
+type ShareEndedError struct {
+	Version uint64
+}
+
+func (e ShareEndedError) Error() string {
+	return fmt.Sprintf("the share ended at version %d", e.Version)
+}
+
+// RateLimitedError means the server refused download URLs of a share for now. RetryAfter is how long to wait.
+type RateLimitedError struct {
+	RetryAfter time.Duration
+}
+
+func (e RateLimitedError) Error() string {
+	return fmt.Sprintf("the share is rate limited for %s", e.RetryAfter)
+}
