@@ -86,6 +86,46 @@ export function getNameFault(name, isGo) {
   return 'bare-noun'
 }
 
+// A Go type is a thing or a role, so its last word is a noun. A gerund (`Refreshing`) and a participle (`Listed`) name
+// an action or a state. These words end in `ing` or `ed` and are nouns or adjectives. A name that starts with a verb
+// is a command and may end in a participle (`EnsureRegistered`, `SetTaskDone`).
+const TYPE_NOUNS = new Set([
+  'setting', 'heading', 'binding', 'keybinding', 'encoding', 'padding', 'warning', 'rating', 'recording', 'string',
+  'thing', 'ring', 'finding', 'reading', 'reasoning', 'pending', 'spring', 'ceiling', 'king', 'wing', 'bed', 'seed', 'feed', 'speed', 'need', 'embed', 'shed', 'sled',
+])
+const IRREGULAR_PARTICIPLES = new Set(['known', 'shown', 'seen', 'done', 'gone', 'given', 'taken', 'kept', 'chosen', 'hidden', 'written', 'drawn', 'spoken', 'lost', 'left', 'held', 'built', 'sent'])
+
+/** The reason a Go type name breaks the rule, or '' when the last word of the name is a noun. */
+export function getTypeNameFault(name) {
+  const words = getNameWords(name)
+  if (words.length === 0) return ''
+  const last = words[words.length - 1].toLowerCase()
+  if (TYPE_NOUNS.has(last)) return ''
+  if (last.length > 4 && last.endsWith('ing')) return 'gerund'
+  const isParticiple = (last.length > 3 && last.endsWith('ed') && !last.endsWith('eed')) || IRREGULAR_PARTICIPLES.has(last)
+  if (isParticiple) return words.length > 1 && VERBS.has(words[0].toLowerCase()) ? '' : 'participle'
+  return ''
+}
+
+const RE_GO_TYPE = /^type\s+([A-Za-z0-9_]+)\b/
+const RE_GO_TYPE_BLOCK_START = /^type\s*\(\s*$/
+const RE_GO_TYPE_BLOCK_MEMBER = /^\t([A-Za-z0-9_]+)(?:\[[^\]]*\])?\s+\S/
+
+/** The Go type names a line declares. state.inTypeBlock carries a `type (` block from one line to the next. */
+export function findTypeNames(line, state) {
+  if (RE_GO_TYPE_BLOCK_START.test(line)) {
+    state.inTypeBlock = true
+    return []
+  }
+  if (state.inTypeBlock) {
+    if (/^\)/.test(line)) state.inTypeBlock = false
+    const member = RE_GO_TYPE_BLOCK_MEMBER.exec(line)
+    return member ? [member[1]] : []
+  }
+  const declared = RE_GO_TYPE.exec(line)
+  return declared ? [declared[1]] : []
+}
+
 const RE_GO_FUNC = /^func\s+(?:\([^)]*\)\s*)?([A-Za-z0-9_]+)\s*[[(]/
 const RE_GO_INTERFACE_START = /^type\s+[A-Za-z0-9_]+(?:\[[^\]]*\])?\s+interface\s*\{\s*$/
 const RE_GO_INTERFACE_METHOD = /^\t([A-Za-z0-9_]+)\s*\(/

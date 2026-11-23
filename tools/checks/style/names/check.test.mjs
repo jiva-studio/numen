@@ -410,3 +410,20 @@ describe('function names of constants made by a create call and of members typed
     assertClean('p/c.ts', 'const vault = createVaultServices({})\n')
   })
 })
+
+describe('Go type names of a gerund or a participle', () => {
+  it('flags a type named by a gerund or a participle', () => {
+    assertFlagged('t/a.go', 'package a\n\ntype Refreshing interface{}\n', 'functionNames: gerund')
+    assertFlagged('t/b.go', 'package a\n\ntype NoteWriting struct{}\n', 'functionNames: gerund')
+    assertFlagged('t/c.go', 'package a\n\ntype Listed struct{}\n', 'functionNames: participle')
+    assertFlagged('t/d.go', 'package a\n\ntype (\n\tName string\n\tvaultOpened struct{}\n)\n', 'functionNames: participle')
+    assertFlagged('t/e.go', 'package a\n\ntype Known = map[string]int\n', 'functionNames: participle')
+  })
+  it('accepts a noun, a role and a command that ends in a participle', () => {
+    assertClean('t/f.go', 'package a\n\ntype Refresher interface{}\n\ntype Setting struct{}\n\ntype Finding struct{}\n')
+    assertClean('t/g.go', 'package a\n\ntype EnsureRegistered struct{}\n\ntype Feed struct{}\n\ntype (\n\tName string\n\tVault struct{}\n)\n')
+  })
+  it('reads Go only', () => {
+    assertClean('t/h.ts', 'export type Listing = string\n')
+  })
+})
