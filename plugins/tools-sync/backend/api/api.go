@@ -39,12 +39,13 @@ const (
 
 // Vault is a vault of this installation.
 type Vault struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Path          string `json:"path"`
-	State         State  `json:"state"`
-	LastSyncedAt  string `json:"lastSyncedAt"`
-	ConflictCount int    `json:"conflictCount"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Path            string           `json:"path"`
+	State           State            `json:"state"`
+	LastSyncedAt    string           `json:"lastSyncedAt"`
+	ConflictCount   int              `json:"conflictCount"`
+	PausedDeletions *PausedDeletions `json:"pausedDeletions"`
 }
 
 // ListVaultsRequest asks for every vault of the installation.
@@ -142,3 +143,42 @@ type CreateCheckoutRequest struct{}
 type CreateCheckoutResponse struct {
 	CheckoutURL string `json:"checkoutUrl"`
 }
+
+// MethodResolveDeletions answers the pause before many removals.
+const MethodResolveDeletions = "ResolveDeletions"
+
+// Direction is which way the removals that wait for an answer go.
+type Direction string
+
+const (
+	// DirectionSend is removals of this device that wait to be sent.
+	DirectionSend Direction = "send"
+	// DirectionApply is removals of another device that wait to be applied here.
+	DirectionApply Direction = "apply"
+)
+
+// Choice is the answer to the removals that wait.
+type Choice string
+
+const (
+	// ChoiceRemove goes on with the removals.
+	ChoiceRemove Choice = "remove"
+	// ChoiceKeep restores the files.
+	ChoiceKeep Choice = "keep"
+)
+
+// PausedDeletions is the removals of a vault that wait for an answer. Direction says which way they go.
+type PausedDeletions struct {
+	Count     int       `json:"count"`
+	Tracked   int       `json:"tracked"`
+	Direction Direction `json:"direction"`
+}
+
+// ResolveDeletionsRequest answers for a vault.
+type ResolveDeletionsRequest struct {
+	VaultID string `json:"vaultId"`
+	Choice  Choice `json:"choice"`
+}
+
+// ResolveDeletionsResponse is the answer to a choice that was taken.
+type ResolveDeletionsResponse struct{}

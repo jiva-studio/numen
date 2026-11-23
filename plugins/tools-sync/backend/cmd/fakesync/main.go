@@ -16,26 +16,32 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
 const (
-	stateFile = "server.json"
-	payFolder = "/pay/"
+	stateFile    = "server.json"
+	bodiesFolder = "bodies"
+	payFolder    = "/pay/"
 )
 
 // keeper saves the data of the server after every request that may have changed it: any but a GET, and the
 // GET of a pay page.
 type keeper struct {
-	next http.Handler
-	fake *fakeserver.Server
-	path string
-	mu   sync.Mutex
+	next    http.Handler
+	fake    *fakeserver.Server
+	path    string
+	mu      sync.Mutex
+	stopped *atomic.Bool
+	exit    chan struct{}
+	once    sync.Once
 }
 
 func (k *keeper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer k.exitWhenStopped()
 	k.next.ServeHTTP(w, r)
 	if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, payFolder) {
 		return
@@ -47,7 +53,16 @@ func (k *keeper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (k *keeper) exitWhenStopped() {
+	if k.stopped.Load() {
+		k.once.Do(func() { close(k.exit) })
+	}
+}
+
 func (k *keeper) save() error {
+	if k.path == "" {
+		return nil
+	}
 	raw, err := k.fake.Snapshot()
 	if err != nil {
 		return err
@@ -83,18 +98,36 @@ func main() {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions})
-	var handler http.Handler = fake
+	var stopped atomic.Bool
+	config := fakeserver.Config{
+		Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Stop: func() { stopped.Store(true) },
+	}
+	if *stateDir != "" {
+		config.BodyDir = filepath.Join(*stateDir, bodiesFolder)
+	}
+	fake := fakeserver.New(config)
+	exit := make(chan struct{})
+	var handler http.Handler
 	if *stateDir != "" {
 		path := filepath.Join(*stateDir, stateFile)
 		if err := load(fake, path); err != nil {
 			log.Fatal(err)
 		}
-		handler = &keeper{next: fake, fake: fake, path: path, mu: sync.Mutex{}}
+		handler = &keeper{next: fake, fake: fake, path: path, stopped: &stopped, exit: exit}
+	} else {
+		handler = &keeper{next: fake, fake: fake, path: "", stopped: &stopped, exit: exit}
 	}
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
 		log.Fatal(err)
 	}
 	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
-	log.Fatal(server.Serve(listener))
+	go func() {
+		if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+	<-exit
+	if err := server.Close(); err != nil {
+		log.Print(err)
+	}
 }

@@ -57,6 +57,8 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.LOCKED]: 'unreadable',
   [ProtoErrorCode.INTERNAL]: 'unreadable',
   [ProtoErrorCode.NOT_ATTEMPTED]: 'unreadable',
+  [ProtoErrorCode.HASH_MISMATCH]: 'unreadable',
+  [ProtoErrorCode.INVALID_RANGE]: 'unreadable',
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */

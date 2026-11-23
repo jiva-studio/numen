@@ -5,7 +5,7 @@
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged:text/markdown"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "category": "tools",
     "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
@@ -30,6 +30,14 @@
       "title": "Sync interval",
       "description": "How often this device asks the server for changes",
       "default": 30,
+      "min": 1
+    },
+    {
+      "key": "removalDelaySeconds",
+      "type": "number",
+      "title": "Removal delay",
+      "description": "How long a removed file is watched before the removal is sent",
+      "default": 60,
       "min": 1
     }
   ],

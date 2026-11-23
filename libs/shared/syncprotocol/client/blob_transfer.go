@@ -63,3 +63,43 @@ func closeBody(response *http.Response, err *error) {
 		*err = errors.Join(*err, closeErr)
 	}
 }
+
+// PutPart uploads one part of a multipart upload to a presigned URL with one PUT. It sends no bearer and no
+// protocol version.
+func PutPart(ctx context.Context, httpClient *http.Client, url string, body []byte) (err error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("prepare the upload of a part: %w", err)
+	}
+	response, err := httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("upload a part: %w", err)
+	}
+	defer closeBody(response, &err)
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("upload a part: the storage answered %s", response.Status)
+	}
+	return nil
+}
+
+// GetBlobRange starts a presigned GET at the byte from and returns the streamed body; the caller closes it. It
+// accepts 206, or 200 when from is 0.
+func GetBlobRange(ctx context.Context, httpClient *http.Client, url string, from int64) (io.ReadCloser, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("prepare the download of a range: %w", err)
+	}
+	request.Header.Set("Range", fmt.Sprintf("bytes=%d-", from))
+	response, err := httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("download a range: %w", err)
+	}
+	if response.StatusCode == http.StatusPartialContent || (response.StatusCode == http.StatusOK && from == 0) {
+		return response.Body, nil
+	}
+	status := response.Status
+	if closeErr := response.Body.Close(); closeErr != nil {
+		return nil, fmt.Errorf("download a range: the storage answered %s: %w", status, closeErr)
+	}
+	return nil, fmt.Errorf("download a range: the storage answered %s", status)
+}

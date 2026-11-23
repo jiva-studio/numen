@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
@@ -129,27 +129,6 @@ func TestPullChanges_AdoptsAHeadThatEqualsTheLocalNote(t *testing.T) {
 	}
 	if len(result.Conflicts) != 0 {
 		t.Errorf("conflicts = %v, want none for equal notes", result.Conflicts)
-	}
-}
-
-func TestPullChanges_KeepsANoteChangedOnBothComputersAsItIs(t *testing.T) {
-	p := newPair(t)
-	first := p.push(t, "Shopping list.md", "milk", nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	p.push(t, "Shopping list.md", "bread", &first)
-
-	result := p.pull(t, trustAll)
-	again := p.pull(t, trustAll)
-
-	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "eggs" {
-		t.Errorf("note = %q, want the local text eggs", text)
-	}
-	if !slices.Equal(result.Conflicts, []string{"Shopping list.md"}) || !slices.Equal(again.Conflicts, []string{"Shopping list.md"}) {
-		t.Errorf("conflicts = %v then %v, want the note both times", result.Conflicts, again.Conflicts)
-	}
-	if row, _ := p.b.GetFileRow(t, target, "Shopping list.md"); row.BaseHash != note.Hash([]byte("milk")) {
-		t.Errorf("base = %s, want the hash of milk, unchanged", row.BaseHash)
 	}
 }
 

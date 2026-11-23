@@ -1,11 +1,11 @@
 import { computed, ref, shallowRef } from 'vue'
-import type { RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
+import type { DeletionsChoice, PausedDeletions, RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
 import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
 
-export interface VaultRow {
+interface VaultRow {
   readonly id: string
   readonly name: string
   readonly path: string
@@ -13,9 +13,10 @@ export interface VaultRow {
   readonly syncedLabel: string
   readonly conflictLabel: string
   readonly canConnect: boolean
+  readonly pausedLabel: string
 }
 
-export interface UseVaultsOptions {
+interface UseVaultsOptions {
   readonly client?: VaultsClient | undefined
   readonly now: () => Date
 }
@@ -26,7 +27,7 @@ export interface PendingConfirm {
   readonly text: string
 }
 
-export type VaultsStatus = 'loading' | 'ready' | 'error'
+type VaultsStatus = 'loading' | 'ready' | 'error'
 
 const STATE_LABELS: Record<VaultState, string> = {
   notConnected: words.stateNotConnected,
@@ -43,6 +44,13 @@ const getSyncedLabel = (vault: Vault, now: Date): string => {
   return minutes < 1 ? words.syncedJustNow : words.syncedMinutesAgo(minutes)
 }
 
+const getPausedLabel = (paused: PausedDeletions | null | undefined): string => {
+  if (paused === null || paused === undefined) return ''
+  return paused.direction === 'apply'
+    ? words.deletionsPausedApply(paused.count, paused.tracked)
+    : words.deletionsPausedSend(paused.count, paused.tracked)
+}
+
 const getRow = (vault: Vault, now: Date): VaultRow => ({
   id: vault.id,
   name: vault.name,
@@ -51,6 +59,7 @@ const getRow = (vault: Vault, now: Date): VaultRow => ({
   syncedLabel: getSyncedLabel(vault, now),
   conflictLabel: vault.conflictCount > 0 ? words.conflicts(vault.conflictCount) : '',
   canConnect: vault.state === 'notConnected',
+  pausedLabel: getPausedLabel(vault.pausedDeletions),
 })
 
 export function useVaults(options: UseVaultsOptions) {
@@ -107,17 +116,40 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
-  function confirmConnect(): Promise<void> {
-    return Promise.reject(new Error('not implemented'))
+  async function resolveDeletions(vaultId: string, choice: DeletionsChoice): Promise<void> {
+    try {
+      await client.resolveDeletions({ vaultId, choice })
+      error.value = ''
+      await read()
+    } catch (failure) {
+      error.value = getErrorMessage(failure)
+    }
+  }
+
+  async function confirmConnect(): Promise<void> {
+    const pending = pendingConfirm.value
+    if (pending === null) return
+    pendingConfirm.value = null
+    await connect({ vaultId: pending.vaultId, mode: 'existing', remoteId: pending.remoteId })
   }
 
   function cancelConnect(): void {
-    throw new Error('not implemented')
+    pendingConfirm.value = null
+  }
+
+  async function connectExisting(vaultId: string, remoteId: string): Promise<void> {
+    try {
+      const { differCount } = await client.previewConnect({ vaultId, remoteId })
+      error.value = ''
+      if (differCount === 0) return await connect({ vaultId, mode: 'existing', remoteId })
+      pendingConfirm.value = { vaultId, remoteId, text: words.notesDiffer(differCount) }
+      closeRemote()
+    } catch (failure) {
+      error.value = getErrorMessage(failure)
+    }
   }
 
   const connectNew = (vaultId: string): Promise<void> => connect({ vaultId, mode: 'new' })
-  const connectExisting = (vaultId: string, remoteId: string): Promise<void> =>
-    connect({ vaultId, mode: 'existing', remoteId })
 
   return {
     state: { status, error, hasIdentity, warning, rows, openFor, remote, pendingConfirm },
@@ -127,6 +159,7 @@ export function useVaults(options: UseVaultsOptions) {
       closeRemote,
       connectNew,
       connectExisting,
+      resolveDeletions,
       confirmConnect,
       cancelConnect,
     },

@@ -6,7 +6,8 @@
       "path": "/home/person/Test",
       "state": "connected",
       "lastSyncedAt": "2026-11-23T12:00:00Z",
-      "conflictCount": 1
+      "conflictCount": 1,
+      "pausedDeletions": { "count": 5, "tracked": 10, "direction": "send" }
     },
     {
       "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0Q",
@@ -14,7 +15,8 @@
       "path": "/home/person/Copy",
       "state": "notConnected",
       "lastSyncedAt": "",
-      "conflictCount": 0
+      "conflictCount": 0,
+      "pausedDeletions": null
     }
   ]
 }

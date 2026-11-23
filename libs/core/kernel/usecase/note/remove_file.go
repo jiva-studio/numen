@@ -20,5 +20,5 @@ func NewRemoveFile(remove *Remove, follow IndexFollow) RemoveFile {
 // Execute puts the file or folder at path in the trash and reports whether the index did not follow.
 func (u RemoveFile) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, bool, error) {
 	removed, err := u.remove.Execute(ctx, v, path)
-	return removed, u.follow.IsIndexOutdated(err), err
+	return removed, isIndexOutdated(u.follow, err), err
 }

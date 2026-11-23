@@ -41,6 +41,7 @@ const createClient = (setup: Setup): VaultsClient => ({
   listVaults: () => Promise.resolve({ vaults: setup.vaults }),
   listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
   previewConnect: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
+  resolveDeletions: () => Promise.resolve(),
   connectVault: () =>
     setup.refusal === undefined ? Promise.resolve() : Promise.reject(new Error(setup.refusal)),
   getStatus: () =>
@@ -130,5 +131,22 @@ export const ConfirmationAsked: Story = {
     await expect(await canvas.findByText('2 notes differ from the synced vault')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Connect' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toBeVisible()
+  },
+}
+
+export const DeletionsPaused: Story = {
+  args: {
+    client: createClient({
+      vaults: [
+        { ...connectedVault, pausedDeletions: { count: 5, tracked: 10, direction: 'send' } },
+      ],
+    }),
+    now: () => NOW,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Sync is paused: 5 of 10 files are removed')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Remove the files' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Keep the files' })).toBeVisible()
   },
 }

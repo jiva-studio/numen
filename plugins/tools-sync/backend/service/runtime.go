@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	defaultInterval = 30
-	wakeBuffer      = 16
+	defaultInterval     = 30
+	defaultRemovalDelay = 60
+	wakeBuffer          = 16
 )
 
 var errNotConfigured = errors.New("no sync server is set")
@@ -42,12 +43,13 @@ type runtime struct {
 	parts    parts
 	wakes    *loops.Wakes
 	interval *loops.Interval
+	removal  *loops.Interval
 	session  *loops.Supervisor[*Backend]
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
-		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), session: nil,
+		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -67,6 +69,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 
 func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
+	r.removal.Set(values[settingRemovalDelay])
 	r.session.Configure(values[settingServer])
 }
 
@@ -78,13 +81,17 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.Random(),
-		Subscriptions: cloudSide,
+		Subscriptions: cloudSide, Pauses: p.state,
+	}
+	wired := syncwire.Deps{
+		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
+		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
 	}
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: syncwire.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
+		Pass: syncwire.NewSyncVault(wired), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
 		Interval: r.interval.Get, Changed: r.wakes.Vaults(),
 	})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	return NewBackend(deps), map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute}
+	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 )
 
@@ -95,17 +95,48 @@ func TestScanLocalChanges_ListsTheLatestContentOfANoteChangedTwice(t *testing.T)
 	}
 }
 
-func TestScanLocalChanges_IgnoresAFileThatIsNotMarkdown(t *testing.T) {
+func TestScanLocalChanges_ListsAFileOfAnyKind(t *testing.T) {
 	c := newComputer(t)
 	scan(t, c, nil)
+	c.WriteNote(vault, "Papers/Report.pdf", "pdf bytes")
+	c.WriteNote(vault, "Pictures/Tree.png", "pixels")
 	c.WriteNote(vault, "data.bin", "bytes")
-	c.WriteNote(vault, "image.png", "pixels")
+
+	changes := scan(t, c, nil)
+
+	if paths := getPaths(changes); !slices.Equal(paths, []string{"Papers/Report.pdf", "Pictures/Tree.png", "data.bin"}) {
+		t.Errorf("paths = %v, want every file that was written, in the order of their paths", paths)
+	}
+}
+
+func TestScanLocalChanges_IgnoresFilesThatAreNotThePersons(t *testing.T) {
+	c := newComputer(t)
+	scan(t, c, nil)
+	for _, path := range []string{"Papers/Report.pdf.part", "Papers/Report.tmp", "Papers/~$Report.docx", "Notes/Milk.md~", "Pictures/Thumbs.db", "Pictures/desktop.ini"} {
+		c.WriteNote(vault, path, "x")
+	}
 	c.WriteNote(vault, "Shopping list.md", "milk")
 
 	changes := scan(t, c, nil)
 
 	if paths := getPaths(changes); !slices.Equal(paths, []string{"Shopping list.md"}) {
-		t.Errorf("paths = %v, want only the markdown note", paths)
+		t.Errorf("paths = %v, want only the note: temporary files and system files are left alone", paths)
+	}
+}
+
+func TestScanLocalChanges_ListsAFileMovedToAnotherPathAtItsNewPath(t *testing.T) {
+	c := newComputer(t)
+	c.WriteNote(vault, "Papers/Report.pdf", "pdf bytes")
+	hash := note.Hash([]byte("pdf bytes"))
+	scan(t, c, map[string]string{"Papers/Report.pdf": hash})
+	if _, err := c.Vaults.With(vault).MoveFile(t.Context(), "Papers/Report.pdf", "Papers/Old report.pdf", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	changes := scan(t, c, map[string]string{"Papers/Report.pdf": hash})
+
+	if paths := getPaths(changes); !slices.Equal(paths, []string{"Papers/Old report.pdf"}) {
+		t.Errorf("paths = %v, want the file at its new path, and nothing at the old path", paths)
 	}
 }
 

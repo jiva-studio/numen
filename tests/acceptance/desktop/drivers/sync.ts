@@ -12,6 +12,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { expect } from 'playwright/test'
+import { Gate } from './gate.js'
 import type { IdentityDriver } from './identity.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import type { Scenario } from './scenario.js'
@@ -23,6 +24,8 @@ const SYNC_PLUGIN = 'md.numen.tools.sync'
 const SESSION_SECONDS = 62
 /** How often the plugin asks the server for changes, so a scenario waits seconds and not half a minute. */
 const SYNC_INTERVAL_SECONDS = '1'
+/** How long the plugin watches a removed file before it sends the removal, so a scenario waits a second and not a minute. */
+const REMOVAL_DELAY_SECONDS = '1'
 /** A subscription that ended fewer days ago than this is in the grace period; the server allows writes then. */
 const GRACE_DAYS = 7
 /** A subscription that ended this many days ago or more is deleted. */
@@ -31,6 +34,8 @@ const RETENTION_DAYS = 60
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
 const SETTLE_MS = 3_000
+/** The computer that reaches the server first commits its changes within a few passes, which come every second. */
+const LEAD_MS = 5_000
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */
 const PLUGINS: Readonly<Partial<Record<string, { readonly id: string; readonly backend: string }>>> = {
@@ -100,6 +105,8 @@ export class SyncDriver {
   private extraFlags: readonly string[] = []
   private stateDir: string | undefined
   private listen: string | undefined
+  private readonly gates = new Map<Scenario, Gate>()
+  private held: readonly Gate[] = []
 
   constructor(
     private readonly scenario: Scenario,
@@ -125,13 +132,28 @@ export class SyncDriver {
     holdForRemoval('dir', this.stateDir)
     this.running = await startProgram('127.0.0.1:0', this.getStateFlags())
     this.listen = new URL(this.running.address).host
-    this.setPlugin(this.scenario)
+    await this.setPlugin(this.scenario)
   }
 
-  /** Tells the plugin of a scenario where the sync server is and how often to ask it. */
-  setPlugin(scenario: Scenario): void {
-    scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.requireRunning().address)
+  /** Tells the plugin of a scenario where the sync server is and how often to ask it. The plugin reaches the server through a gate of its computer. */
+  async setPlugin(scenario: Scenario): Promise<void> {
+    const gate = await Gate.listen(() => this.getTarget())
+    this.gates.set(scenario, gate)
+    scenario.setPluginSetting(SYNC_PLUGIN, 'server', gate.getAddress())
     scenario.setPluginSetting(SYNC_PLUGIN, 'syncIntervalSeconds', SYNC_INTERVAL_SECONDS)
+    scenario.setPluginSetting(SYNC_PLUGIN, 'removalDelaySeconds', REMOVAL_DELAY_SECONDS)
+  }
+
+  /** Makes the other computers unable to reach the sync server until it runs again and this computer had time to send its changes. */
+  holdOthers(lead: Scenario): void {
+    this.held = [...this.gates].filter(([scenario]) => scenario !== lead).map(([, gate]) => gate)
+    for (const gate of this.held) gate.close()
+  }
+
+  private getTarget(): { readonly host: string; readonly port: number } {
+    if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    const url = new URL(`http://${this.listen}`)
+    return { host: url.hostname, port: Number(url.port) }
   }
 
   /** Ends the sync server and keeps its state and its address, as a server that goes away does. */
@@ -141,10 +163,26 @@ export class SyncDriver {
     await once(running.child, 'exit')
   }
 
-  /** Runs the sync server again at the address it had, over the state it kept. */
+  /** Makes the sync server end itself once it received (the parts of a file going up) or sent (the body of a blob going down) this many bytes after this call. */
+  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
+    const call = direction === 'received' ? 'stop-after-bytes' : 'stop-after-download-bytes'
+    const answer = await fetch(`${this.requireRunning().address}/admin/${call}?n=${bytes}`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the break of the connection`)
+  }
+
+  /** Runs the sync server again at the address it had, over the state it kept; a server that is still to break is waited for first. */
   async resume(): Promise<void> {
     if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    const previous = this.running
+    if (previous !== undefined && previous.child.exitCode === null && previous.child.signalCode === null) {
+      await once(previous.child, 'exit')
+    }
     this.running = await startProgram(this.listen, this.getStateFlags())
+    if (this.held.length > 0) {
+      await new Promise((resolve) => setTimeout(resolve, LEAD_MS))
+      for (const gate of this.held) gate.reopen()
+      this.held = []
+    }
   }
 
   /** Makes the server drop the removals it keeps, as it does for removals older than its retention. */
@@ -186,6 +224,8 @@ export class SyncDriver {
 
   /** Ends the server for good and removes the folder of its state. */
   remove(): void {
+    for (const gate of this.gates.values()) gate.stop()
+    this.gates.clear()
     this.stop()
     if (this.stateDir === undefined) return
     fs.rmSync(this.stateDir, { recursive: true, force: true })

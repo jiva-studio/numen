@@ -68,6 +68,12 @@ enum ErrorCode {
 
   // The call was cancelled before this note was changed: the note is as it was.
   ERROR_CODE_NOT_ATTEMPTED = 14;
+
+  // The staged file does not have the hash the caller expected.
+  ERROR_CODE_HASH_MISMATCH = 15;
+
+  // A byte range is not one the file can give: a length outside 1 to 4194304 or a negative start.
+  ERROR_CODE_INVALID_RANGE = 16;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

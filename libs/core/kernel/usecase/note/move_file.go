@@ -45,7 +45,7 @@ func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) 
 	}
 	defer release()
 	moved, err := u.move(ctx, v, from, to)
-	return moved, u.follow.IsIndexOutdated(err), err
+	return moved, isIndexOutdated(u.follow, err), err
 }
 
 func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {

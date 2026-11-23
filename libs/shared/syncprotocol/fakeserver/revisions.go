@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 
 	"connectrpc.com/connect"
@@ -118,7 +119,7 @@ func (s *Server) checkAuthors(account string, revs []*syncv1.Revision) error {
 func (s *Server) checkBlobs(b *batch) error {
 	claimed := map[string]bool{}
 	for i, rev := range b.revs {
-		if rev.GetDeleted() || b.isApplied(i) {
+		if rev.GetDeleted() || b.isApplied(i) || b.isMetadataOnly(i) || b.isStale(i) {
 			continue
 		}
 		if !s.isBlobReady(b, rev) || !addOnce(claimed, rev.GetBlobId()) {
@@ -128,10 +129,28 @@ func (s *Server) checkBlobs(b *batch) error {
 	return nil
 }
 
+func (b *batch) isStale(i int) bool {
+	rev, head := b.revs[i], b.heads[i]
+	return head != nil && !bytes.Equal(rev.GetParentRev(), head.GetRevId())
+}
+
+func (b *batch) isMetadataOnly(i int) bool {
+	rev, head := b.revs[i], b.heads[i]
+	if head == nil || head.GetRevision().GetDeleted() || rev.GetDeleted() {
+		return false
+	}
+	old := head.GetRevision()
+	return bytes.Equal(rev.GetParentRev(), head.GetRevId()) && bytes.Equal(rev.GetBlobId(), old.GetBlobId()) &&
+		bytes.Equal(rev.GetBlobHash(), old.GetBlobHash()) && rev.GetBlobSize() == old.GetBlobSize()
+}
+
 func (s *Server) isBlobReady(b *batch, rev *syncv1.Revision) bool {
 	row, found := s.blobs[string(rev.GetBlobId())]
 	if !found || row.account != b.account || row.vault != b.vaultID || row.state != blobReserved {
 		return false
+	}
+	if row.multipart != nil {
+		return row.multipart.isCompleted && row.size == rev.GetBlobSize()
 	}
 	return row.expiresAt.After(s.now()) && row.isUploaded && row.size == rev.GetBlobSize() && uint64(len(row.body)) == row.size
 }
@@ -215,6 +234,9 @@ func (s *Server) releaseHead(b *batch, i int) {
 	if b.vault.paths[string(old.GetRevision().GetPathHash())] == file {
 		delete(b.vault.paths, string(old.GetRevision().GetPathHash()))
 	}
+	if b.isMetadataOnly(i) {
+		return
+	}
 	if row, found := s.blobs[string(old.GetRevision().GetBlobId())]; found && row.state == blobCommitted {
 		row.state = blobReplaced
 		s.used[b.account] -= min(row.size, s.used[b.account])
@@ -244,6 +266,9 @@ func (s *Server) GetChanges(_ context.Context, req *connect.Request[syncv1.GetCh
 		return nil, err
 	}
 	since := req.Msg.GetSinceSeq()
+	if since > 0 && since < vault.prunedSeq {
+		return connect.NewResponse(&syncv1.GetChangesResponse{HeadSeq: vault.seq, Reset_: true}), nil
+	}
 	page := listChanges(vault, since, getPageLimit(req.Msg.GetLimit()))
 	next := since
 	if len(page) > 0 {
@@ -273,6 +298,30 @@ func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRev
 	return rows[:end]
 }
 
-// ForgetRemovals drops every removal the server keeps. A GetChanges after it, from a position before the drop,
-// answers with is_reset and the head of every live file.
-func (s *Server) ForgetRemovals() {}
+// PruneTombstones drops the deletion records of every vault and keeps the highest seq dropped, so a cursor older
+// than it gets reset. The real server does this for records older than 90 days.
+func (s *Server) PruneTombstones() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	pruned := 0
+	for _, vault := range s.vaults {
+		for file, head := range vault.files {
+			if head.GetRevision().GetDeleted() {
+				vault.prunedSeq = max(vault.prunedSeq, head.GetSeq())
+				delete(vault.files, file)
+				pruned++
+			}
+		}
+	}
+	return pruned
+}
+
+func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if _, err := fmt.Fprintln(w, s.PruneTombstones()); err != nil {
+		return
+	}
+}
