@@ -1,12 +1,17 @@
 package service_test
 
 import (
+	"context"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 )
 
@@ -180,5 +185,52 @@ func TestGetStatus_ReportsAServerThatIsAway(t *testing.T) {
 
 	if !status.HasIdentity || status.IsReachable {
 		t.Errorf("status = %+v, want an identity and an unreachable server", status)
+	}
+}
+
+type meetingHost struct {
+	ports.Host
+	arrived atomic.Int32
+}
+
+func (h *meetingHost) GetVaults(ctx context.Context) ([]domain.Vault, error) {
+	h.arrived.Add(1)
+	deadline := time.Now().Add(300 * time.Millisecond)
+	for h.arrived.Load() < 2 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	return h.Host.GetVaults(ctx)
+}
+
+func TestConnectVault_ConnectsOnlyOneFolderToAVaultWhenTwoRequestsRace(t *testing.T) {
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	second := synctest.NewSecondComputer(t, w.server, w.clock, "Copy", w.words)
+	second.AddVault(t, "Copy two")
+	deps := second.SyncDeps()
+	meeting := &meetingHost{Host: deps.Host}
+	deps.Host = meeting
+	backend := service.NewBackend(deps)
+	remote, err := backend.ListRemoteVaults(t.Context(), api.ListRemoteVaultsRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	meeting.arrived.Store(0)
+	errs := make(chan error, 2)
+	for _, vault := range []string{"Copy", "Copy two"} {
+		go func() {
+			errs <- connect(t, backend, api.ConnectVaultRequest{VaultID: vault, Mode: api.ModeExisting, RemoteID: remote.Vaults[0].RemoteID})
+		}()
+	}
+
+	failed := 0
+	for range 2 {
+		if err := <-errs; err != nil {
+			failed++
+		}
+	}
+
+	if failed != 1 {
+		t.Errorf("%d of 2 racing requests failed, want exactly 1", failed)
 	}
 }

@@ -27,17 +27,16 @@ const (
 type Backend struct {
 	deps    syncvault.Deps
 	catalog catalog.Deps
+	connect *catalog.ConnectVault
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
 func NewBackend(deps syncvault.Deps) *Backend {
-	return &Backend{
-		deps: deps,
-		catalog: catalog.Deps{
-			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Random: deps.Random,
-		},
+	catalogDeps := catalog.Deps{
+		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
+		Random: deps.Random,
 	}
+	return &Backend{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps)}
 }
 
 // ListVaults lists every vault of the installation with its state.
@@ -111,7 +110,7 @@ func (b *Backend) ConnectVault(ctx context.Context, request api.ConnectVaultRequ
 	if !vaultlink.IsRemoteID(request.RemoteID) {
 		return api.ConnectVaultResponse{}, catalog.ErrUnknownRemoteVault
 	}
-	return api.ConnectVaultResponse{}, catalog.NewConnectVault(b.catalog).Execute(ctx, input)
+	return api.ConnectVaultResponse{}, b.connect.Execute(ctx, input)
 }
 
 // GetStatus returns whether this device has an identity, whether the server answers and what warns.
