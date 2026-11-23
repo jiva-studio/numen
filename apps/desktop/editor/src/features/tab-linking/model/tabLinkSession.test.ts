@@ -210,7 +210,7 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).tabs).toStrictEqual([
@@ -415,7 +415,7 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      handle: { front: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
+      handle: { getFrontTab: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
@@ -427,7 +427,7 @@ describe('getWindowReport', () => {
   it('returns an empty active tab when no tab is active', () => {
     const windowTabs = {
       tabs: { tabs: computed(() => []), getTab: () => null },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).window).toStrictEqual({
