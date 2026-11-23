@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execTool } from '../../../shared/tools.mjs'
-import { findFunctionNames, getNameFault } from './function-names.mjs'
+import { findFunctionNames, findPossibleFunctionNames, getNameFault } from './function-names.mjs'
 
 const args = process.argv.slice(2)
 
@@ -579,9 +579,10 @@ function scanFile(filePath) {
     // 6b. Function names that do not start with a verb or a predicate
     if (isCode && !isNameExempt && !isCommentLine && shouldCheckCategory('function-names')) {
       const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
-      for (const funcName of findFunctionNames(lineWithoutStrings, isGo, nameState)) {
+      const possible = new Set(findPossibleFunctionNames(lineWithoutStrings, isGo))
+      for (const funcName of [...findFunctionNames(lineWithoutStrings, isGo, nameState), ...possible]) {
         const fault = getNameFault(funcName, isGo)
-        if (!fault || (filterWord && filterWord !== funcName)) continue
+        if (!fault || (possible.has(funcName) && fault === 'bare-noun') || (filterWord && filterWord !== funcName)) continue
         const item = { file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', func: funcName, word: fault, text: trimmed }
         allFunctionNameFaults.push(item)
         if (!baselineKeys.has(getBaselineKey(item))) {

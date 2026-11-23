@@ -363,3 +363,13 @@ describe('function names that do not start with a verb or a predicate', () => {
     assertClean('n/j.ts', "const text = 'export function recipe() {}'\n")
   })
 })
+
+describe('function names of constants made by a create call and of members typed by a type of the same name', () => {
+  it('flags a third-person name there', () => {
+    assertFlagged('p/a.ts', 'const follows = createFollower({})\n', 'functionNames: third-person')
+    assertFlagged('p/b.ts', 'export interface Deps {\n  readonly follows: Follows\n}\n', 'functionNames: third-person')
+  })
+  it('accepts a value named by a noun', () => {
+    assertClean('p/c.ts', 'const vault = createVaultServices({})\n')
+  })
+})

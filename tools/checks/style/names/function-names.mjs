@@ -112,3 +112,19 @@ export function findFunctionNames(line, isGo, state) {
   }
   return names.filter((name) => !CALLBACK_PARAMETER_NAMES.has(name) && /^[a-z_$]/.test(name))
 }
+
+const RE_TS_CONST_CREATED = /\b(?:const|let|var)\s+([a-z][A-Za-z0-9_$]*)\s*(?::[^=]+)?=\s*(?:await\s+)?create[A-Z][A-Za-z0-9_$]*\s*(?:<[^>]*>)?\(/
+const RE_TS_MEMBER_NAMED_TYPE = /^\s+(?:readonly\s+)?([a-z][A-Za-z0-9_$]*)\??\s*:\s*([A-Z][A-Za-z0-9_$]*)\s*[;,]?\s*$/
+
+/**
+ * Names that may hold a function: a constant made by a `create…` call, and a member typed by a type of the same name
+ * (`follows: Follows`). The caller reports one only when its fault is not a bare noun, since a value named by a noun is fine.
+ */
+export function findPossibleFunctionNames(line, isGo) {
+  if (isGo) return []
+  const created = RE_TS_CONST_CREATED.exec(line)
+  if (created) return [created[1]]
+  const member = RE_TS_MEMBER_NAMED_TYPE.exec(line)
+  if (member && member[2].toLowerCase() === member[1].toLowerCase()) return [member[1]]
+  return []
+}
