@@ -191,7 +191,7 @@ func (u cutter) source(
 		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
-	chunks := chunking.ChunksOfVersion(doc, sizes, u.legibility)
+	chunks := chunking.CutVersion(doc, sizes, u.legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    ref,

@@ -142,9 +142,9 @@ func isIDWord(word string, pattern *regexp.Regexp) bool {
 	})
 }
 
-// ChunksOfVersion cuts a version of a note into the chunks the index stores. A large chunk carries the name of the
+// CutVersion cuts a version of a note into the chunks the index stores. A large chunk carries the name of the
 // section it begins, and no other chunk does.
-func ChunksOfVersion(doc domain.VersionText, sizes Sizes, reads Legibility) []domain.Chunk {
+func CutVersion(doc domain.VersionText, sizes Sizes, reads Legibility) []domain.Chunk {
 	return Chunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c Chunk, isLarge bool) domain.Chunk {
 		out := domain.Chunk{
 			Start:    c.Start,
