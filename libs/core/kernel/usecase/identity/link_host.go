@@ -100,8 +100,8 @@ func (h linkHost) publishLocked(ctx context.Context, store *linkStore, link *pen
 }
 
 func (h linkHost) extendLocked(store *linkStore, link *pendingLink, state identitylib.State) error {
-	extended, err := state.Chain.AppendDevice(state.Record.Device, link.peer, link.progress.PeerName, h.clock.Now())
-	if err != nil {
+	extended, isAppended := h.appendPeer(state, link)
+	if !isAppended {
 		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonStaleChain)
 		return nil
@@ -109,6 +109,11 @@ func (h linkHost) extendLocked(store *linkStore, link *pendingLink, state identi
 	link.chain = extended
 	store.setPhaseLocked(link, identitydomain.LinkPhasePublishing)
 	return nil
+}
+
+func (h linkHost) appendPeer(state identitylib.State, link *pendingLink) (identitylib.Chain, bool) {
+	extended, err := state.Chain.AppendDevice(state.Record.Device, link.peer, link.progress.PeerName, h.clock.Now())
+	return extended, err == nil
 }
 
 func (h linkHost) answerLocked(ctx context.Context, store *linkStore, link *pendingLink, accepted bool, latest []byte) error {

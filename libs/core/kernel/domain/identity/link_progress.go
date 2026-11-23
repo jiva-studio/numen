@@ -7,8 +7,8 @@ import (
 
 const linkLifetime = 10 * time.Minute
 
-// LinkProgress is what a link in progress holds besides its keys: where it stands, what this device and the other
-// device show of themselves, and the confirmation code. TriesLeft counts the codes the host still takes, or on the
+// LinkProgress is what a link in progress holds besides its keys: the phase, the names and fingerprints of this
+// device and of the other device, and the confirmation code. TriesLeft counts the codes the host still takes, or on the
 // new device the codes it may still enter.
 type LinkProgress struct {
 	Role               LinkRole
@@ -88,7 +88,7 @@ func (o *LinkOutbox) Acknowledge(version uint64) {
 
 // GetWork returns the work of the version: the channel to make or use and copies of the blobs to post. The link is
 // active while it runs or has blobs left.
-func (o LinkOutbox) GetWork(version uint64) LinkWork {
+func (o *LinkOutbox) GetWork(version uint64) LinkWork {
 	work := LinkWork{
 		Version:      version,
 		IsActive:     !o.IsClosed || len(o.Items) > 0,
