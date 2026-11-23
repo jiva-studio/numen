@@ -100,7 +100,7 @@ func (x *fitRecorder) ApplyMinChunkLength(_ context.Context, length int) (int64,
 	return 0, nil
 }
 
-func (x *fitRecorder) Compact(context.Context) error {
+func (x *fitRecorder) Shrink(context.Context) error {
 	x.calls = append(x.calls, "compact")
 	return nil
 }

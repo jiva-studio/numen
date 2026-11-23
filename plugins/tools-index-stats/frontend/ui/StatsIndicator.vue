@@ -85,6 +85,6 @@ function onClose() {
       </Tooltip>
     </Teleport>
 
-    <StatsPopover v-if="isOpen && stats" :stats="stats" :locale="locale" @close="onClose" />
+    <StatsPopover v-if="isOpen && stats" :index-stats="stats" :locale="locale" @close="onClose" />
   </div>
 </template>

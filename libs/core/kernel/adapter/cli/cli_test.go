@@ -93,7 +93,7 @@ type fakeTrash struct {
 	took   []string
 }
 
-func (b *fakeTrash) Trash(path string) error {
+func (b *fakeTrash) MoveToTrash(path string) error {
 	if b.refuse != nil {
 		return fmt.Errorf("%s: %w", path, b.refuse)
 	}

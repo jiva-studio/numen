@@ -47,7 +47,7 @@ func (u Fit) Execute(ctx context.Context, source searchsourceport.Source) error 
 	if _, err := u.index.DeleteVectorsOfOtherRecipes(ctx, described.Recipe()); err != nil {
 		return err
 	}
-	if err := u.index.Compact(ctx); err != nil {
+	if err := u.index.Shrink(ctx); err != nil {
 		u.handleError(err)
 	}
 	return nil

@@ -1,7 +1,7 @@
 /** How a window starts: the layout it opens with, and the plugins it loads before that. */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
-import { pane } from '@numen/workbench'
+import { createPane } from '@numen/workbench'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
@@ -173,7 +173,7 @@ describe('a window starting', () => {
   it.each([true, false])('restores the saved pane when it contains a tab: %s', async (saved) => {
     const workspace = {
       axis: 'vertical',
-      root: pane('restored', saved ? [SAVED.id] : []),
+      root: createPane('restored', saved ? [SAVED.id] : []),
       focus: 'restored',
     }
     const { layout, windowTabs } = setup({ saved, savedLayout: JSON.stringify(workspace) })

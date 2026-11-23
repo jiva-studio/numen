@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { normalize } from './normalize'
-import { pane } from './node'
+import { createPane } from './node'
 import { isBranch, isPane } from './tree'
 import { arrangeWorkspace } from '../fixtures/arrange'
 import { split, createStack, createWorkspace } from '../fixtures/build'
@@ -15,7 +15,7 @@ const SCREEN = { x: 0, y: 0, width: 1280, height: 800 }
 describe('what does not draw is cleared away', () => {
   it('takes out a pane holding nothing', () => {
     const before = createWorkspace(
-      split('root', [createStack('a', 'one'), pane('gone', []), createStack('b', 'two')]),
+      split('root', [createStack('a', 'one'), createPane('gone', []), createStack('b', 'two')]),
       'horizontal',
       'a',
     )
@@ -39,7 +39,7 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('keeps a root that holds nothing, so there is always one', () => {
-    const before = createWorkspace(pane('main', []))
+    const before = createWorkspace(createPane('main', []))
     const after = normalize(before)
 
     expect(after.root).toSatisfy(isPane)
@@ -47,22 +47,24 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('keeps the first pane of a branch that holds nothing at all, so there is a root', () => {
-    const after = normalize(createWorkspace(split('root', [pane('x', []), pane('y', [])])))
+    const after = normalize(
+      createWorkspace(split('root', [createPane('x', []), createPane('y', [])])),
+    )
 
-    expect(after.root).toStrictEqual(pane('x', []))
+    expect(after.root).toStrictEqual(createPane('x', []))
   })
 
   it('keeps a branch without children as a pane under its own id', () => {
     const after = normalize(createWorkspace(split('root', [])))
 
-    expect(after.root).toStrictEqual(pane('root', []))
+    expect(after.root).toStrictEqual(createPane('root', []))
   })
 
   it('keeps the shares of a child that is reduced to one pane', () => {
     const before = createWorkspace(
       split(
         'root',
-        [split('lone', [createStack('a', 'one'), pane('gone', [])]), createStack('b', 'two')],
+        [split('lone', [createStack('a', 'one'), createPane('gone', [])]), createStack('b', 'two')],
         [0.3, 0.7],
       ),
     )
@@ -90,7 +92,7 @@ describe('what does not draw is cleared away', () => {
   it('is idempotent', () => {
     const once = normalize(
       createWorkspace(
-        split('root', [createStack('a', 'one'), pane('gone', [])]),
+        split('root', [createStack('a', 'one'), createPane('gone', [])]),
         'horizontal',
         'a',
       ),
@@ -107,7 +109,7 @@ describe('a branch that keeps one child passes its grandchildren up', () => {
       [
         createStack('a', 'one'),
         split('down', [
-          pane('gone', []),
+          createPane('gone', []),
           split('across', [createStack('c', 'three'), createStack('d', 'four')]),
         ]),
       ],

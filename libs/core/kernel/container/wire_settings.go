@@ -30,7 +30,7 @@ import (
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
 func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, res *Resources) (Config, []string, error) {
-	selected, err := settingsSettings(createSettingsWiring(c, exec, prefs, res))
+	selected, err := createSettings(createSettingsWiring(c, exec, prefs, res))
 	if err != nil {
 		return c, nil, err
 	}
@@ -63,7 +63,7 @@ type settingsWiring struct {
 	HandleError     func(error)
 }
 
-func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
+func createSettings(c settingsWiring) (settingsadapter.File, error) {
 	path, err := getSettingsFile(c)
 	if err != nil {
 		return settingsadapter.File{}, err
@@ -139,7 +139,7 @@ func refreshSettingEvents(c settingsWiring) {
 
 func syncSetting(c settingsWiring) naming.SyncSetting {
 	return func() naming.SyncTitleAndFilename {
-		target, err := settingsSettings(c)
+		target, err := createSettings(c)
 		if err != nil {
 			c.HandleError(fmt.Errorf("read settings: %w", err))
 		}

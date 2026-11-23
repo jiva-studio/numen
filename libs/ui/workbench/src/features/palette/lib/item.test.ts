@@ -19,7 +19,7 @@ import {
   type PaletteItem,
   type PaletteGroup,
 } from './item'
-import { getActionId, commandKeyChord, getShortcuts, isActionsChord } from './keys'
+import { getActionId, getCommandKeyChord, getShortcuts, isActionsChord } from './keys'
 import { getParts } from './parts'
 import { listId, getOptionId, placePalette } from './place'
 import { MANY } from '../fixtures/actions'
@@ -227,12 +227,12 @@ describe('the keystroke that opens the action panel', () => {
   })
 
   it('is retained with the key the keyboard in hand puts alongside the space bar', () => {
-    expect(commandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
-    expect(commandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
+    expect(getCommandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
+    expect(getCommandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
       icons: ['command'],
       letter: 'K',
     })
-    expect(commandKeyChord('Linux x86_64')).toEqual({ icons: ['control'], letter: 'K' })
+    expect(getCommandKeyChord('Linux x86_64')).toEqual({ icons: ['control'], letter: 'K' })
   })
 })
 

@@ -117,9 +117,9 @@ func TestInterfaceSizeCountsTheWholeMethodSet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkInterfaceSizeCountsTheWholeMethodSet(t, load.Workspace(t))
+	checkInterfaceSizeCountsTheWholeMethodSet(t, load.LoadWorkspace(t))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

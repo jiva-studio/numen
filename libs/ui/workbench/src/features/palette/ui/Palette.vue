@@ -29,7 +29,7 @@ import { PaletteFrame } from './palette-frame'
 import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
-import { commandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
+import { getCommandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
 import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
 import { useMultiPick } from '../model/multiPick'
@@ -50,7 +50,7 @@ const props = withDefaults(defineProps<PaletteProps>(), {
   to: 'body',
   name: 'Palette',
   actionWords: () => ACTION_WORDS,
-  actionKey: () => commandKeyChord(getUserAgent()),
+  actionKey: () => getCommandKeyChord(getUserAgent()),
 })
 
 const searchQuery = defineModel<string>({ default: '' })

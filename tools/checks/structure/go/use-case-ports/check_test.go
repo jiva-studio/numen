@@ -129,16 +129,16 @@ func TestNoUseCaseImplementsAnInterfaceOfAnotherPackage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the kernel")
 	}
-	checkNoUseCaseIsBehindAnInterface(t, load.Workspace(t, "libs/core/kernel"))
+	checkNoUseCaseIsBehindAnInterface(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 func TestNoUseCaseIsPassedAsAFunction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the kernel")
 	}
-	checkNoUseCaseIsPassedAsAFunction(t, load.Workspace(t, "libs/core/kernel"))
+	checkNoUseCaseIsPassedAsAFunction(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

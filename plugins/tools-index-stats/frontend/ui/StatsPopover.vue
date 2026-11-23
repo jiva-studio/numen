@@ -10,7 +10,7 @@ import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  stats: Stats
+  indexStats: Stats
   locale?: string | undefined
 }>()
 
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const tip = useTooltip()
-const rows = computed(() => getRows(props.stats, props.locale))
+const rows = computed(() => getRows(props.indexStats, props.locale))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {

@@ -9,7 +9,7 @@ import type { NodeId, Side, TabId, Workspace } from './node'
 import {
   isBranch,
   findNode,
-  paneById,
+  findPane,
   findPaneWithTab,
   getPanes,
   findPath,
@@ -27,7 +27,7 @@ export interface TabDrop {
 }
 
 export function focusPane(workspace: Workspace, id: NodeId): Workspace {
-  return paneById(workspace.root, id) ? { ...workspace, focus: id } : workspace
+  return findPane(workspace.root, id) ? { ...workspace, focus: id } : workspace
 }
 
 export function activateTab(workspace: Workspace, tab: TabId): Workspace {
@@ -49,7 +49,7 @@ export function openTab(
 ): Workspace {
   if (findPaneWithTab(workspace.root, tab)) return activateTab(workspace, tab)
 
-  const target = paneById(workspace.root, into) ?? getPanes(workspace.root)[0]
+  const target = findPane(workspace.root, into) ?? getPanes(workspace.root)[0]
   if (!target) return workspace
 
   return {
@@ -89,7 +89,7 @@ export function openTabAdjacent(
   placement: OpenAdjacentPlacement,
 ): Workspace {
   const { side, createId, onto = workspace.focus } = placement
-  const target = paneById(workspace.root, onto) ?? getPanes(workspace.root)[0]
+  const target = findPane(workspace.root, onto) ?? getPanes(workspace.root)[0]
   if (!target || side === 'center') return workspace
 
   const source = findPaneWithTab(workspace.root, tab)
@@ -135,7 +135,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
  * A tab dropped where it started, with nowhere else to go, is only shown.
  */
 export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFactory): Workspace {
-  const target = paneById(workspace.root, drop.onto)
+  const target = findPane(workspace.root, drop.onto)
   const source = findPaneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
 

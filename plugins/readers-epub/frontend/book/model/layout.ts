@@ -320,7 +320,7 @@ export function useBookLayout(options: BookLayoutOptions) {
     for (const way of queuedTurns.splice(0)) navigatePage(way)
   })
 
-  const settling = createBookSettling({
+  const bookSettling = createBookSettling({
     elements: { area: options.area, paper: options.paper, leaving: options.leaving },
     stoodFor,
     props: options.props,
@@ -348,7 +348,7 @@ export function useBookLayout(options: BookLayoutOptions) {
       front: holdUntilStood(isStoodForMarkup, () => front.value),
       leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
     },
-    settling,
+    settling: bookSettling,
     turn: navigatePageWhenReady,
   }
 }

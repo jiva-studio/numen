@@ -65,7 +65,7 @@ func (e *Embedding) SubscribeModelChange(fn func(isChunkSizeChanged bool)) {
 		return
 	}
 	chunkTokens := e.source.Describe().ChunkTokens
-	e.watcher.OnDescriptionChange(func() {
+	e.watcher.WatchDescription(func() {
 		tokens := e.source.Describe().ChunkTokens
 		changed := tokens != chunkTokens
 		chunkTokens = tokens

@@ -67,7 +67,7 @@ func isDrivingFile(pkg, path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return isImportingUseCase(file) || NamesHandler(file), nil
+	return isImportingUseCase(file) || HasHandlerName(file), nil
 }
 
 func isImportingUseCase(file *ast.File) bool {
@@ -114,7 +114,7 @@ func GetTypeName(pos ast.Expr) string {
 // adapter. An adapter that only builds its messages or clients calls out and is driven.
 const Schema = Wire + "/gen/numen/v1/numenv1connect"
 
-func NamesHandler(file *ast.File) bool {
+func HasHandlerName(file *ast.File) bool {
 	name := ""
 	for _, one := range file.Imports {
 		if to, err := strconv.Unquote(one.Path.Value); err == nil && to == Schema {

@@ -24,7 +24,7 @@ import (
 
 // Settings reads the settings file; an unconfigured installation returns the default settings.
 func (c TestInstallation) Settings() (settingsadapter.File, error) {
-	return settingsSettings(c.buildSettingsWiring())
+	return createSettings(c.buildSettingsWiring())
 }
 
 // SetSettings returns the configuration with the values of a settings file applied.

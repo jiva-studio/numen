@@ -8,7 +8,7 @@
 import { defineComponent, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { keyChord } from '@numen/ui'
+import { getKeyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
 import { ReportedError } from '@numen/result'
 import {
@@ -36,9 +36,9 @@ const LINUX = 'Linux x86_64'
 /** The screen's strings. Each word is its own value. */
 const words: Words = {
   find: 'find',
-  findKeys: keyChord('k', APPLE),
+  findKeys: getKeyChord('k', APPLE),
   commands: 'commands',
-  commandsKeys: keyChord('p', APPLE),
+  commandsKeys: getKeyChord('p', APPLE),
   newNote: 'new note',
   vaults: 'vaults',
   current: 'current',
@@ -68,7 +68,7 @@ const createVaultList = (vaults: readonly Vault[], current: string): VaultList =
 
 /** The commands the plugins declare over the window, as the screen is handed them. */
 const CONTRIBUTED = [
-  { id: 'org.example.sample:graph.run', text: 'new graph', keys: keyChord('x', APPLE, true) },
+  { id: 'org.example.sample:graph.run', text: 'new graph', keys: getKeyChord('x', APPLE, true) },
   { id: 'org.example.sample:chat.run', text: 'new chat' },
 ]
 

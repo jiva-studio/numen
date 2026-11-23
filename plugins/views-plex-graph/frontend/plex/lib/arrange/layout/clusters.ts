@@ -104,9 +104,9 @@ function buildAcrossBlockShape(block: Block, columns: number, grid: Grid): Block
 }
 
 /** The position of a side block of one block: centered on the row of the focus, ending over the children block, or starting under the parents block. */
-type Standing = 'center' | 'up' | 'down'
+type Facing = 'center' | 'up' | 'down'
 
-const STANDINGS: readonly Standing[] = ['center', 'up', 'down']
+const STANDINGS: readonly Facing[] = ['center', 'up', 'down']
 
 interface Span {
   readonly width: number
@@ -114,7 +114,7 @@ interface Span {
   readonly maxY: number
 }
 
-function getSideSpan(block: Block, columns: number, standing: Standing, grid: Grid): Span {
+function getSideSpan(block: Block, columns: number, standing: Facing, grid: Grid): Span {
   const { width, height } = getBlockSize(block, columns, grid)
   const edgeBelow = grid.reach.bottom - grid.lineGap
   const edgeAbove = grid.reach.top - grid.lineGap
@@ -191,7 +191,7 @@ interface SideOption {
 function createPart(
   block: Block,
   columns: number,
-  standing: Standing,
+  standing: Facing,
   { grid, cache }: { readonly grid: Grid; readonly cache: ScoreCache },
 ): SidePart {
   const { side, half, members, cell } = block
@@ -341,8 +341,8 @@ function placeGrid(
       { width: context.width(node), height: context.options.nodeSize.height },
       room(node),
     )
-  const blocks = createBlocks(nodesByRelation, context.options, getSize)
-  if (blocks.length === 0) return []
+  const sideBlocks = createBlocks(nodesByRelation, context.options, getSize)
+  if (sideBlocks.length === 0) return []
   const grid = createGrid(focus, context.room(focus), context.options)
   const orders = new Map(
     RELATION_NAMES.flatMap((relation) =>
@@ -354,7 +354,7 @@ function placeGrid(
     cache = new Map()
     scoreCaches.set(context.options, cache)
   }
-  const plans = planBlocks(blocks, { grid, cache, isFitFirst: context.isFitFirst === true })
+  const plans = planBlocks(sideBlocks, { grid, cache, isFitFirst: context.isFitFirst === true })
   const placed = new Map<string, PlacedNode>()
   for (const { block, cells } of plans) {
     block.members.forEach((node, index) => {

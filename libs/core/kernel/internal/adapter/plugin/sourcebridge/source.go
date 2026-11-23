@@ -251,10 +251,10 @@ func (b *Source) Close() error {
 	return nil
 }
 
-// OnDescriptionChange registers fn to run when the plugin reports a description unlike the last one
+// WatchDescription registers fn to run when the plugin reports a description unlike the last one
 // announced: another recipe, width, shortest text, chunk size or concurrency. The plugin is read after a change of
 // its own configuration, so a setting of another plugin never runs fn.
-func (b *Source) OnDescriptionChange(fn func()) {
+func (b *Source) WatchDescription(fn func()) {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
 	b.listeners = append(b.listeners, fn)

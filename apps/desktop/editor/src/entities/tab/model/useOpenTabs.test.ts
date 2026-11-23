@@ -3,7 +3,7 @@
  */
 import { nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { branch, pane } from '@numen/workbench'
+import { branch, createPane } from '@numen/workbench'
 import { createWorkspace } from '../lib/workspace'
 import { findTabKindIcon } from '../lib/icons'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -216,7 +216,7 @@ describe('the open tabs', () => {
     await nextTick()
     target.writeOpenTabs.mockClear()
     target.layout.value = {
-      root: branch('split', [pane('first', ['a']), pane('second', ['b'])], [0.4, 0.6]),
+      root: branch('split', [createPane('first', ['a']), createPane('second', ['b'])], [0.4, 0.6]),
       axis: 'vertical',
       focus: 'first',
     }
