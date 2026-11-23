@@ -34,16 +34,15 @@ export interface KeybindingApi {
   readonly getKeyFor: KeybindingRegistry['getKeyFor']
 }
 
-/** What the plugins registered, for the windows that list it. */
+/**
+ * What the plugins registered, for the windows that list it; the views are reactive. A plugin that
+ * declares settings views and has registered none starts when its views are asked for, and they
+ * follow once it has.
+ */
 export interface RegisteredApi {
-  /** The settings views a plugin registered, by view id; reactive. */
   readonly getRegisteredSettingsViews: (
     pluginId: string,
   ) => ReadonlyMap<string, SettingsViewRegistration>
-  /**
-   * The settings views of a plugin for its settings page, by view id; reactive. A plugin that
-   * declares settings views and has registered none starts, and its views follow once it has.
-   */
   readonly getSettingsViews: (pluginId: string) => ReadonlyMap<string, SettingsViewRegistration>
   readonly getRegisteredReaders: () => ReaderRegistration[]
   readonly getRegisteredTabKinds: () => TabKindRegistration[]
@@ -58,6 +57,5 @@ export interface PluginHost {
   readonly slots: SlotHost
   readonly slotViews: SlotViewRegistry
   readonly contextHost: PluginContextHost
-  /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
   readonly notifyVaultChange: (event: VaultChangeEvent) => void
 }
