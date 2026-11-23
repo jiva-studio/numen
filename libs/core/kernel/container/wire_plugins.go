@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -173,9 +172,7 @@ func CreatePluginHost(management *PluginManagement, roles *PluginSupervision) (*
 			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(roles, cacheRoot, dataRoot, func(modelsDir string) supervision.Dependencies {
-				return newDependencyRegistry(roles.Clock, roles.Services.Observe, modelsDir)
-			})
+			setPluginStorage(roles, cacheRoot, dataRoot)
 			detection.SetFiles(roles.Storage)
 		},
 		RefreshDependencies: func() {

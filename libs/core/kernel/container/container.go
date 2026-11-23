@@ -175,8 +175,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, chunks)
-	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
-	base.RecordLog = windowlogs.NewRecordFunc(record, res.ErrorHandler)
+	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
 	return base
 }
 

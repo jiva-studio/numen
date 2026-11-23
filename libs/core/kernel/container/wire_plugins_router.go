@@ -114,18 +114,18 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 }
 
 func openPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks) *run.PluginWork {
-	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, func(pluginID string) string {
-		return getPluginName(exec.Runtime.Resolver, pluginID)
-	})
+	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, getPluginNames(exec.Runtime.Resolver))
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work
 }
 
-func getPluginName(resolver pluginResolver, pluginID string) string {
-	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
-		return found.Manifest.Name
+func getPluginNames(resolver pluginResolver) func(pluginID string) string {
+	return func(pluginID string) string {
+		if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
+			return found.Manifest.Name
+		}
+		return pluginID
 	}
-	return pluginID
 }
 
 func newDependencyRegistry(clock machineport.Clock, observe func(manifest.DependencyRequirement, plugindomain.DependencyStatus), defaultDir string) supervision.Dependencies {
