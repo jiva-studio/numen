@@ -130,8 +130,8 @@ func TestRunSync_WarnsThatChangesAreSentUntilTheEndOfTheGraceAndStillSendsTheNot
 	startRun(t, p.a, nil)
 
 	writesEnd := synctest.GetStart().Add(6 * 24 * time.Hour).Format("2 Jan 2006")
-	synctest.Eventually(t, "the grace warning", func() bool { return p.a.HasItem(graceTextHead + writesEnd) })
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the grace warning", func() bool { return p.a.HasItem(graceTextHead + writesEnd) })
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
 	if !p.a.HasItemKey(keyNeeded) {
 		t.Errorf("health items = %+v, want the warning under %s", p.a.Health.List(), keyNeeded)
 	}
@@ -141,13 +141,13 @@ func TestRunSync_ClearsTheGraceWarningWhenTheSubscriptionIsActiveAgain(t *testin
 	p := newSubscribedPair(t)
 	setPhase(t, p.server, "grace")
 	startRun(t, p.a, nil)
-	synctest.Eventually(t, "the grace warning", func() bool { return p.a.HasItemKey(keyNeeded) })
+	synctest.WaitUntil(t, "the grace warning", func() bool { return p.a.HasItemKey(keyNeeded) })
 	p.a.Clock.AwaitWait(t)
 
 	setPhase(t, p.server, "active")
 	p.a.Clock.Advance(interval)
 
-	synctest.Eventually(t, "the warning cleared", func() bool { return !p.a.HasItemKey(keyNeeded) })
+	synctest.WaitUntil(t, "the warning cleared", func() bool { return !p.a.HasItemKey(keyNeeded) })
 }
 
 func TestRunSync_RaisesNoWarningForAnActiveSubscription(t *testing.T) {
@@ -156,7 +156,7 @@ func TestRunSync_RaisesNoWarningForAnActiveSubscription(t *testing.T) {
 
 	startRun(t, p.a, nil)
 
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
 	p.a.Clock.AwaitWait(t)
 	if p.a.HasItemKey(keyNeeded) {
 		t.Errorf("health items = %+v, want no subscription warning", p.a.Health.List())

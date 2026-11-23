@@ -20,7 +20,7 @@ export interface IdentityInfo {
 }
 
 /** Why creating the identity was refused. */
-export type IdentityErrorCode = 'invalidWords' | 'identityExists' | 'keyStoreFailed'
+type IdentityErrorCode = 'invalidWords' | 'identityExists' | 'keyStoreFailed'
 
 /** A served refusal with the reason the core gives. */
 export type IdentityFailure = Failure<IdentityErrorCode>
