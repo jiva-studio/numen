@@ -34,7 +34,7 @@ const manifest = JSON.parse(
 describe('the manifest of the sync plugin', () => {
   it('asks to read and write the vault besides the identity', () => {
     expect(manifest.permissions).toStrictEqual(
-      expect.arrayContaining(['identity', 'vault:read', 'vault:write']),
+      expect.arrayContaining(['identity', 'identity:link', 'vault:read', 'vault:write']),
     )
   })
 

@@ -53,6 +53,11 @@ const (
 	// and reading what is public of the identity of this device. The plugin never holds a secret key.
 	PermissionIdentity = "identity"
 
+	// PermissionIdentityLink allows carrying the link of a new device and the revoke of a device between the core and the
+	// sync server: the relay channel, the sealed messages of a link, the chain to publish and the chain to adopt. The
+	// plugin never sees the QR text or the confirmation code.
+	PermissionIdentityLink = "identity:link"
+
 	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
 	// calling the operation through every connection that serves it, and listing those connections and the
 	// values of their row fields. No setting of rows of the plugin lists the operation.
@@ -69,7 +74,7 @@ func ListPluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
-		PermissionLogsRead, PermissionIdentity,
+		PermissionLogsRead, PermissionIdentity, PermissionIdentityLink,
 	}
 }
 

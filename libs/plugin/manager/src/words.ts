@@ -15,6 +15,7 @@ const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
   'plugins:read': 'List the running plugins and their health.',
   'logs:read': 'Read the application log.',
   identity: 'Use the identity of this device to sign in to Numen services.',
+  'identity:link': 'Carry the link of a new device and the removal of a device between this device and the sync server.',
 }
 
 const CONNECTION_PERMISSION = 'connections:use:'
