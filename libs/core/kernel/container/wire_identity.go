@@ -1,13 +1,17 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/kitpdf"
 	licensingadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/licensing"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
-func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, pending *identity.PendingStore) *windowidentity.UseCases {
+func openIdentityUseCases(
+	install pluginInstall, vaultDeps vaultWiring, pending *identity.PendingStore, dialog editor.PathDialog,
+) *windowidentity.UseCases {
 	if install.KeyStore == nil {
 		return nil
 	}
@@ -21,8 +25,7 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, pending 
 			StartRestore:  identity.NewStartRestore(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Create:  identity.NewCreateRecoveryKit(deps),
-			Check:   identity.NewCheckRecoveryKit(deps),
+			Save:    identity.NewSaveRecoveryKit(deps, openKitSaver(dialog)),
 			Restore: identity.NewStartRestoreFromKit(deps),
 		},
 	}
@@ -30,4 +33,11 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, pending 
 
 func openAccount(res *Resources) *identity.Account {
 	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res), res.restore)
+}
+
+func openKitSaver(dialog editor.PathDialog) identity.KitSaver {
+	if dialog == nil {
+		return kitpdf.Unavailable{}
+	}
+	return kitpdf.NewSaver(dialog)
 }

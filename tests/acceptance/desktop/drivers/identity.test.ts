@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, getChoosePattern, getPlanLinePattern, pickOtherWords, planAnswers, planSheetTexts, readPosition, readSheetNumbers } from './identity.js'
+import zlib from 'node:zlib'
+import {
+  formatDay,
+  getChoosePattern,
+  getPlanLinePattern,
+  pickOtherWords,
+  planAnswers,
+  planSheetTexts,
+  readKitSheets,
+  readPdfPages,
+  readPosition,
+  readSheetNumbers,
+} from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -82,7 +94,10 @@ describe('readSheetNumbers', () => {
 
 describe('planSheetTexts', () => {
   it('writes the words of each named sheet with one space between them', () => {
-    expect(planSheetTexts(SHEETS, [3, 1])).toStrictEqual([SHEETS[2]?.join(' '), SHEETS[0]?.join(' ')])
+    expect(planSheetTexts(SHEETS, [3, 1])).toStrictEqual([
+      SHEETS[2]?.join(' '),
+      SHEETS[0]?.join(' '),
+    ])
   })
 
   it('replaces exactly one word of the sheet with the mistake and no other sheet', () => {
@@ -109,10 +124,47 @@ describe('planSheetTexts', () => {
 
 describe('pickOtherWords', () => {
   it('gives twelve words that are not the words given', () => {
-    const own = 'legal winner thank year wave sausage worth useful legal winner thank yellow'.split(' ')
+    const own = 'legal winner thank year wave sausage worth useful legal winner thank yellow'.split(
+      ' ',
+    )
     const other = pickOtherWords(own)
     expect(other).toHaveLength(12)
     expect(other.join(' ')).not.toBe(own.join(' '))
     expect(pickOtherWords(other).join(' ')).not.toBe(other.join(' '))
+  })
+})
+
+const writeStream = (content: Buffer): Buffer =>
+  Buffer.concat([
+    Buffer.from(`<</Length ${content.length}>>\nstream\n`, 'latin1'),
+    content,
+    Buffer.from('\nendstream\n', 'latin1'),
+  ])
+
+describe('readPdfPages', () => {
+  it('reads the shown strings of each page, inflated or plain, in the order they are drawn', () => {
+    const first = Buffer.from('BT 1 0 0 1 10 10 Tm (Sheet 1 of 3) Tj ET BT (acid) Tj ET', 'latin1')
+    const second = Buffer.from('BT (Kit \\(A1\\)) Tj ET BT (acne) Tj ET', 'latin1')
+    const pdf = Buffer.concat([
+      Buffer.from('%PDF-1.3\n', 'latin1'),
+      writeStream(zlib.deflateSync(first)),
+      writeStream(second),
+      writeStream(Buffer.from('no text here', 'latin1')),
+    ])
+    expect(readPdfPages(pdf)).toStrictEqual([
+      ['Sheet 1 of 3', 'acid'],
+      ['Kit \\(A1\\)', 'acne'],
+    ])
+  })
+})
+
+describe('readKitSheets', () => {
+  it('keeps the strings of a page that are one lower-case word', () => {
+    expect(
+      readKitSheets([
+        ['Numen recovery kit', '1', 'academic', '2', 'acid', 'C0DE', 'Kept at:'],
+        ['acne', 'ACID', 'a b'],
+      ]),
+    ).toStrictEqual([['academic', 'acid'], ['acne']])
   })
 })

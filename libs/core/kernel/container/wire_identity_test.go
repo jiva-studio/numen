@@ -1,10 +1,16 @@
 package container
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
@@ -29,9 +35,28 @@ func (m memoryKeys) DeleteKey(_ context.Context, name string) error {
 	return nil
 }
 
+// saveDialog answers every save dialog with one path.
+type saveDialog struct{ path string }
+
+func (saveDialog) ChooseFolder(context.Context, string, string) (string, bool, error) {
+	return "", false, nil
+}
+
+func (saveDialog) ChooseFile(context.Context, string, string, []string) (string, bool, error) {
+	return "", false, nil
+}
+
+func (d saveDialog) ChooseSaveFile(context.Context, string, string, []string) (string, bool, error) {
+	return d.path, true, nil
+}
+
+func getWiring() vaultWiring {
+	return vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}
+}
+
 func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *testing.T) {
 	t.Parallel()
-	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil); got != nil {
+	if got := openIdentityUseCases(pluginInstall{}, getWiring(), nil, nil); got != nil {
 		t.Errorf("openIdentityUseCases() = %+v, want nil", got)
 	}
 }
@@ -39,10 +64,10 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil)
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, getWiring(), nil, nil)
 	if use == nil || use.Identity.Get == nil || use.Identity.GenerateWords == nil || use.Identity.Create == nil || use.Identity.Delete == nil ||
-		use.Identity.StartRestore == nil || use.Kit.Create == nil || use.Kit.Check == nil || use.Kit.Restore == nil {
-		t.Fatalf("openIdentityUseCases() = %+v, want all eight use cases", use)
+		use.Identity.StartRestore == nil || use.Kit.Save == nil || use.Kit.Restore == nil {
+		t.Fatalf("openIdentityUseCases() = %+v, want all seven use cases", use)
 	}
 	words, err := use.Identity.GenerateWords.Execute(t.Context())
 	if err != nil {
@@ -60,12 +85,62 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	}
 }
 
+func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "kit.pdf")
+	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), nil, saveDialog{path: path})
+	if use == nil {
+		t.Fatal("openIdentityUseCases() = nil")
+	}
+	words, err := use.Identity.GenerateWords.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := use.Identity.Create.Execute(t.Context(), words); err != nil {
+		t.Fatal(err)
+	}
+	isSaved, err := use.Kit.Save.Execute(t.Context(), words, nil)
+	if err != nil || !isSaved {
+		t.Fatalf("SaveRecoveryKit = %v, %v", isSaved, err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil || !bytes.HasPrefix(content, []byte("%PDF-")) {
+		t.Errorf("the file of the dialog holds no PDF: %v", err)
+	}
+}
+
+func TestOpenIdentityUseCases_SavesNoKitWithoutADialog(t *testing.T) {
+	t.Parallel()
+	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), nil, nil)
+	if use == nil {
+		t.Fatal("openIdentityUseCases() = nil")
+	}
+	words, err := use.Identity.GenerateWords.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := use.Identity.Create.Execute(t.Context(), words); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := use.Kit.Save.Execute(t.Context(), words, nil); !errors.Is(err, machine.ErrNoFolderDialog) {
+		t.Errorf("error = %v, want ErrNoFolderDialog", err)
+	}
+}
+
+// kitSaver keeps the kit it is given, as the person who saves the PDF would.
+type kitSaver struct{ kit identitydomain.Kit }
+
+func (s *kitSaver) SaveKit(_ context.Context, kit identitydomain.Kit) (bool, error) {
+	s.kit = kit
+	return true, nil
+}
+
 func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
 	res := &Resources{KeyStore: keys, Now: clock, restore: identity.NewPendingStore()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res.restore)
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res.restore, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -77,18 +152,15 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	if err != nil {
 		t.Fatal(err)
 	}
-	made, err := use.Kit.Create.Execute(t.Context(), words, nil)
-	if err != nil {
+	saver := &kitSaver{}
+	save := identity.NewSaveRecoveryKit(identity.NewDeps(keys, names{}, clock), saver)
+	if _, err := save.Execute(t.Context(), words, nil); err != nil {
 		t.Fatal(err)
 	}
-	if len(made.Sheets) != 3 {
-		t.Fatalf("kit has %d sheets, want 3", len(made.Sheets))
+	if len(saver.kit.Sheets) != 3 {
+		t.Fatalf("kit has %d sheets, want 3", len(saver.kit.Sheets))
 	}
-	sheets := [][]string{made.Sheets[2].Words, made.Sheets[0].Words}
-	fits, err := use.Kit.Check.Execute(t.Context(), sheets)
-	if err != nil || fits != created.AccountFingerprint {
-		t.Fatalf("CheckKit() = %q, %v; want %q", fits, err, created.AccountFingerprint)
-	}
+	sheets := [][]string{saver.kit.Sheets[2].Words, saver.kit.Sheets[0].Words}
 	if err := use.Identity.Delete.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -103,3 +175,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 		t.Errorf("restored = %+v, error = %v, want the account %q", restored, err, created.AccountFingerprint)
 	}
 }
+
+type names struct{}
+
+func (names) GetInstanceName() string { return "Laptop" }

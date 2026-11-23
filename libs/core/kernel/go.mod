@@ -6,6 +6,7 @@ require (
 	cel.dev/cel-go v0.33.2
 	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.3
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/rjeczalik/notify v0.9.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	golang.org/x/sync v0.25.0

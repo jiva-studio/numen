@@ -8,7 +8,7 @@ import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { IdentityApi } from '../api/identity'
-import type { IdentityFailure, IdentityInfo, KitProof, RecoveryKit } from '../lib/types'
+import type { IdentityFailure, IdentityInfo, KitProof } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 
 const RESTORE_POLL_MS = 1000
@@ -101,11 +101,8 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  const createKit = (proof: KitProof): Promise<Result<RecoveryKit, string>> =>
-    settle(() => api.createKit(proof), 'words' in proof ? 'words' : 'sheets')
-
-  const checkKit = (sheets: readonly (readonly string[])[]): Promise<Result<string, string>> =>
-    settle(() => api.checkKit(sheets), 'sheets')
+  const saveKit = (proof: KitProof): Promise<Result<boolean, string>> =>
+    settle(() => api.saveKit(proof), 'words' in proof ? 'words' : 'sheets')
 
   const restoreFromKit = async (
     sheets: readonly (readonly string[])[],
@@ -128,8 +125,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     create,
     restore,
     delete: remove,
-    createKit,
-    checkKit,
+    saveKit,
     restoreFromKit,
   }
 }

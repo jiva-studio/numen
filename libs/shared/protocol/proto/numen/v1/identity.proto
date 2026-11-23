@@ -5,7 +5,8 @@ package numen.v1;
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // IdentityService manages the account identity of this device. No secret key reaches the window; the
-// recovery words and sheets cross the wire only in the calls that make or take them.
+// recovery words and sheets cross the wire only in the calls that take them, and the sheets of a new
+// kit never do.
 service IdentityService {
   // GetIdentity returns the identity of this device, or none when the device holds no identity.
   rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
@@ -26,12 +27,10 @@ service IdentityService {
   // DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
   rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
 
-  // CreateRecoveryKit makes a new kit of three sheets for the account of this device. The caller proves
-  // the account with the 12 words or with two sheets of an earlier kit. Nothing is kept.
-  rpc CreateRecoveryKit(CreateRecoveryKitRequest) returns (CreateRecoveryKitResponse);
-
-  // CheckRecoveryKit reports whether two sheets restore the account of this device.
-  rpc CheckRecoveryKit(CheckRecoveryKitRequest) returns (CheckRecoveryKitResponse);
+  // SaveRecoveryKit makes a new kit of three sheets for the account of this device and saves it as a PDF
+  // in the file the person chooses in the save dialog of this machine. The caller proves the account
+  // with the 12 words or with two sheets of an earlier kit. Nothing is kept, and no sheet is answered.
+  rpc SaveRecoveryKit(SaveRecoveryKitRequest) returns (SaveRecoveryKitResponse);
 
   // StartRestoreFromKit starts to restore the account of two sheets of a kit on this device the way
   // StartRestore does for the 12 words. Poll GetIdentity until it returns an identity.
@@ -109,7 +108,7 @@ message DeleteIdentityRequest {}
 
 message DeleteIdentityResponse {}
 
-// RecoverySheet is one printed sheet: 33 words of the SLIP-39 list in order.
+// RecoverySheet is one sheet of a kit: 33 words of the SLIP-39 list in order.
 message RecoverySheet {
   repeated string words = 1 [debug_redact = true];
 }
@@ -122,16 +121,7 @@ message RecoverySheetsProof {
   repeated RecoverySheet sheets = 1;
 }
 
-// RecoveryKit is three sheets of one kit. Any two restore the account.
-message RecoveryKit {
-  // kit_id is 4 upper-case hex digits that every sheet of the kit shows.
-  string kit_id = 1;
-  string account_fingerprint = 2;
-  // sheets are in sheet order.
-  repeated RecoverySheet sheets = 3;
-}
-
-message CreateRecoveryKitRequest {
+message SaveRecoveryKitRequest {
   // proof is the 12 words or two sheets of an earlier kit. A request without a proof is invalid.
   oneof proof {
     RecoveryWordsProof words = 1;
@@ -139,20 +129,9 @@ message CreateRecoveryKitRequest {
   }
 }
 
-message CreateRecoveryKitResponse {
-  RecoveryKit kit = 1;
-  IdentityErrorCode error = 2;
-  // detail names a position and never holds a word.
-  string detail = 3;
-}
-
-message CheckRecoveryKitRequest {
-  repeated RecoverySheet sheets = 1;
-}
-
-message CheckRecoveryKitResponse {
-  // account_fingerprint is set when the sheets fit the account of this device.
-  string account_fingerprint = 1;
+message SaveRecoveryKitResponse {
+  // is_saved is false when the person closed the save dialog without choosing a file.
+  bool is_saved = 1;
   IdentityErrorCode error = 2;
   // detail names a position and never holds a word.
   string detail = 3;

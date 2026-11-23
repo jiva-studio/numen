@@ -603,7 +603,7 @@ func (*DeleteIdentityResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{10}
 }
 
-// RecoverySheet is one printed sheet: 33 words of the SLIP-39 list in order.
+// RecoverySheet is one sheet of a kit: 33 words of the SLIP-39 list in order.
 type RecoverySheet struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Words         []string               `protobuf:"bytes,1,rep,name=words,proto3" json:"words,omitempty"`
@@ -736,97 +736,34 @@ func (x *RecoverySheetsProof) GetSheets() []*RecoverySheet {
 	return nil
 }
 
-// RecoveryKit is three sheets of one kit. Any two restore the account.
-type RecoveryKit struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// kit_id is 4 upper-case hex digits that every sheet of the kit shows.
-	KitId              string `protobuf:"bytes,1,opt,name=kit_id,json=kitId,proto3" json:"kit_id,omitempty"`
-	AccountFingerprint string `protobuf:"bytes,2,opt,name=account_fingerprint,json=accountFingerprint,proto3" json:"account_fingerprint,omitempty"`
-	// sheets are in sheet order.
-	Sheets        []*RecoverySheet `protobuf:"bytes,3,rep,name=sheets,proto3" json:"sheets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RecoveryKit) Reset() {
-	*x = RecoveryKit{}
-	mi := &file_numen_v1_identity_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RecoveryKit) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RecoveryKit) ProtoMessage() {}
-
-func (x *RecoveryKit) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecoveryKit.ProtoReflect.Descriptor instead.
-func (*RecoveryKit) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *RecoveryKit) GetKitId() string {
-	if x != nil {
-		return x.KitId
-	}
-	return ""
-}
-
-func (x *RecoveryKit) GetAccountFingerprint() string {
-	if x != nil {
-		return x.AccountFingerprint
-	}
-	return ""
-}
-
-func (x *RecoveryKit) GetSheets() []*RecoverySheet {
-	if x != nil {
-		return x.Sheets
-	}
-	return nil
-}
-
-type CreateRecoveryKitRequest struct {
+type SaveRecoveryKitRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// proof is the 12 words or two sheets of an earlier kit. A request without a proof is invalid.
 	//
 	// Types that are valid to be assigned to Proof:
 	//
-	//	*CreateRecoveryKitRequest_Words
-	//	*CreateRecoveryKitRequest_Sheets
-	Proof         isCreateRecoveryKitRequest_Proof `protobuf_oneof:"proof"`
+	//	*SaveRecoveryKitRequest_Words
+	//	*SaveRecoveryKitRequest_Sheets
+	Proof         isSaveRecoveryKitRequest_Proof `protobuf_oneof:"proof"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateRecoveryKitRequest) Reset() {
-	*x = CreateRecoveryKitRequest{}
-	mi := &file_numen_v1_identity_proto_msgTypes[15]
+func (x *SaveRecoveryKitRequest) Reset() {
+	*x = SaveRecoveryKitRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateRecoveryKitRequest) String() string {
+func (x *SaveRecoveryKitRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateRecoveryKitRequest) ProtoMessage() {}
+func (*SaveRecoveryKitRequest) ProtoMessage() {}
 
-func (x *CreateRecoveryKitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[15]
+func (x *SaveRecoveryKitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,77 +774,78 @@ func (x *CreateRecoveryKitRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRecoveryKitRequest.ProtoReflect.Descriptor instead.
-func (*CreateRecoveryKitRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{15}
+// Deprecated: Use SaveRecoveryKitRequest.ProtoReflect.Descriptor instead.
+func (*SaveRecoveryKitRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *CreateRecoveryKitRequest) GetProof() isCreateRecoveryKitRequest_Proof {
+func (x *SaveRecoveryKitRequest) GetProof() isSaveRecoveryKitRequest_Proof {
 	if x != nil {
 		return x.Proof
 	}
 	return nil
 }
 
-func (x *CreateRecoveryKitRequest) GetWords() *RecoveryWordsProof {
+func (x *SaveRecoveryKitRequest) GetWords() *RecoveryWordsProof {
 	if x != nil {
-		if x, ok := x.Proof.(*CreateRecoveryKitRequest_Words); ok {
+		if x, ok := x.Proof.(*SaveRecoveryKitRequest_Words); ok {
 			return x.Words
 		}
 	}
 	return nil
 }
 
-func (x *CreateRecoveryKitRequest) GetSheets() *RecoverySheetsProof {
+func (x *SaveRecoveryKitRequest) GetSheets() *RecoverySheetsProof {
 	if x != nil {
-		if x, ok := x.Proof.(*CreateRecoveryKitRequest_Sheets); ok {
+		if x, ok := x.Proof.(*SaveRecoveryKitRequest_Sheets); ok {
 			return x.Sheets
 		}
 	}
 	return nil
 }
 
-type isCreateRecoveryKitRequest_Proof interface {
-	isCreateRecoveryKitRequest_Proof()
+type isSaveRecoveryKitRequest_Proof interface {
+	isSaveRecoveryKitRequest_Proof()
 }
 
-type CreateRecoveryKitRequest_Words struct {
+type SaveRecoveryKitRequest_Words struct {
 	Words *RecoveryWordsProof `protobuf:"bytes,1,opt,name=words,proto3,oneof"`
 }
 
-type CreateRecoveryKitRequest_Sheets struct {
+type SaveRecoveryKitRequest_Sheets struct {
 	Sheets *RecoverySheetsProof `protobuf:"bytes,2,opt,name=sheets,proto3,oneof"`
 }
 
-func (*CreateRecoveryKitRequest_Words) isCreateRecoveryKitRequest_Proof() {}
+func (*SaveRecoveryKitRequest_Words) isSaveRecoveryKitRequest_Proof() {}
 
-func (*CreateRecoveryKitRequest_Sheets) isCreateRecoveryKitRequest_Proof() {}
+func (*SaveRecoveryKitRequest_Sheets) isSaveRecoveryKitRequest_Proof() {}
 
-type CreateRecoveryKitResponse struct {
+type SaveRecoveryKitResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Kit   *RecoveryKit           `protobuf:"bytes,1,opt,name=kit,proto3" json:"kit,omitempty"`
-	Error IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	// is_saved is false when the person closed the save dialog without choosing a file.
+	IsSaved bool              `protobuf:"varint,1,opt,name=is_saved,json=isSaved,proto3" json:"is_saved,omitempty"`
+	Error   IdentityErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
 	// detail names a position and never holds a word.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateRecoveryKitResponse) Reset() {
-	*x = CreateRecoveryKitResponse{}
-	mi := &file_numen_v1_identity_proto_msgTypes[16]
+func (x *SaveRecoveryKitResponse) Reset() {
+	*x = SaveRecoveryKitResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateRecoveryKitResponse) String() string {
+func (x *SaveRecoveryKitResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateRecoveryKitResponse) ProtoMessage() {}
+func (*SaveRecoveryKitResponse) ProtoMessage() {}
 
-func (x *CreateRecoveryKitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[16]
+func (x *SaveRecoveryKitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -918,132 +856,26 @@ func (x *CreateRecoveryKitResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRecoveryKitResponse.ProtoReflect.Descriptor instead.
-func (*CreateRecoveryKitResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{16}
+// Deprecated: Use SaveRecoveryKitResponse.ProtoReflect.Descriptor instead.
+func (*SaveRecoveryKitResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *CreateRecoveryKitResponse) GetKit() *RecoveryKit {
+func (x *SaveRecoveryKitResponse) GetIsSaved() bool {
 	if x != nil {
-		return x.Kit
+		return x.IsSaved
 	}
-	return nil
+	return false
 }
 
-func (x *CreateRecoveryKitResponse) GetError() IdentityErrorCode {
+func (x *SaveRecoveryKitResponse) GetError() IdentityErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateRecoveryKitResponse) GetDetail() string {
-	if x != nil {
-		return x.Detail
-	}
-	return ""
-}
-
-type CheckRecoveryKitRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sheets        []*RecoverySheet       `protobuf:"bytes,1,rep,name=sheets,proto3" json:"sheets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CheckRecoveryKitRequest) Reset() {
-	*x = CheckRecoveryKitRequest{}
-	mi := &file_numen_v1_identity_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CheckRecoveryKitRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CheckRecoveryKitRequest) ProtoMessage() {}
-
-func (x *CheckRecoveryKitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CheckRecoveryKitRequest.ProtoReflect.Descriptor instead.
-func (*CheckRecoveryKitRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *CheckRecoveryKitRequest) GetSheets() []*RecoverySheet {
-	if x != nil {
-		return x.Sheets
-	}
-	return nil
-}
-
-type CheckRecoveryKitResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// account_fingerprint is set when the sheets fit the account of this device.
-	AccountFingerprint string            `protobuf:"bytes,1,opt,name=account_fingerprint,json=accountFingerprint,proto3" json:"account_fingerprint,omitempty"`
-	Error              IdentityErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
-	// detail names a position and never holds a word.
-	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CheckRecoveryKitResponse) Reset() {
-	*x = CheckRecoveryKitResponse{}
-	mi := &file_numen_v1_identity_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CheckRecoveryKitResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CheckRecoveryKitResponse) ProtoMessage() {}
-
-func (x *CheckRecoveryKitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CheckRecoveryKitResponse.ProtoReflect.Descriptor instead.
-func (*CheckRecoveryKitResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *CheckRecoveryKitResponse) GetAccountFingerprint() string {
-	if x != nil {
-		return x.AccountFingerprint
-	}
-	return ""
-}
-
-func (x *CheckRecoveryKitResponse) GetError() IdentityErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
-}
-
-func (x *CheckRecoveryKitResponse) GetDetail() string {
+func (x *SaveRecoveryKitResponse) GetDetail() string {
 	if x != nil {
 		return x.Detail
 	}
@@ -1059,7 +891,7 @@ type StartRestoreFromKitRequest struct {
 
 func (x *StartRestoreFromKitRequest) Reset() {
 	*x = StartRestoreFromKitRequest{}
-	mi := &file_numen_v1_identity_proto_msgTypes[19]
+	mi := &file_numen_v1_identity_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1071,7 +903,7 @@ func (x *StartRestoreFromKitRequest) String() string {
 func (*StartRestoreFromKitRequest) ProtoMessage() {}
 
 func (x *StartRestoreFromKitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[19]
+	mi := &file_numen_v1_identity_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1084,7 +916,7 @@ func (x *StartRestoreFromKitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartRestoreFromKitRequest.ProtoReflect.Descriptor instead.
 func (*StartRestoreFromKitRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *StartRestoreFromKitRequest) GetSheets() []*RecoverySheet {
@@ -1105,7 +937,7 @@ type StartRestoreFromKitResponse struct {
 
 func (x *StartRestoreFromKitResponse) Reset() {
 	*x = StartRestoreFromKitResponse{}
-	mi := &file_numen_v1_identity_proto_msgTypes[20]
+	mi := &file_numen_v1_identity_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1117,7 +949,7 @@ func (x *StartRestoreFromKitResponse) String() string {
 func (*StartRestoreFromKitResponse) ProtoMessage() {}
 
 func (x *StartRestoreFromKitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[20]
+	mi := &file_numen_v1_identity_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1130,7 +962,7 @@ func (x *StartRestoreFromKitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartRestoreFromKitResponse.ProtoReflect.Descriptor instead.
 func (*StartRestoreFromKitResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *StartRestoreFromKitResponse) GetError() IdentityErrorCode {
@@ -1182,23 +1014,13 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x12RecoveryWordsProof\x12\x19\n" +
 	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"F\n" +
 	"\x13RecoverySheetsProof\x12/\n" +
-	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"\x86\x01\n" +
-	"\vRecoveryKit\x12\x15\n" +
-	"\x06kit_id\x18\x01 \x01(\tR\x05kitId\x12/\n" +
-	"\x13account_fingerprint\x18\x02 \x01(\tR\x12accountFingerprint\x12/\n" +
-	"\x06sheets\x18\x03 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"\x92\x01\n" +
-	"\x18CreateRecoveryKitRequest\x124\n" +
+	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"\x90\x01\n" +
+	"\x16SaveRecoveryKitRequest\x124\n" +
 	"\x05words\x18\x01 \x01(\v2\x1c.numen.v1.RecoveryWordsProofH\x00R\x05words\x127\n" +
 	"\x06sheets\x18\x02 \x01(\v2\x1d.numen.v1.RecoverySheetsProofH\x00R\x06sheetsB\a\n" +
-	"\x05proof\"\x8f\x01\n" +
-	"\x19CreateRecoveryKitResponse\x12'\n" +
-	"\x03kit\x18\x01 \x01(\v2\x15.numen.v1.RecoveryKitR\x03kit\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"J\n" +
-	"\x17CheckRecoveryKitRequest\x12/\n" +
-	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"\x96\x01\n" +
-	"\x18CheckRecoveryKitResponse\x12/\n" +
-	"\x13account_fingerprint\x18\x01 \x01(\tR\x12accountFingerprint\x121\n" +
+	"\x05proof\"\x7f\n" +
+	"\x17SaveRecoveryKitResponse\x12\x19\n" +
+	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"M\n" +
 	"\x1aStartRestoreFromKitRequest\x12/\n" +
@@ -1214,15 +1036,14 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\"IDENTITY_ERROR_CODE_INVALID_SHEETS\x10\x04\x12)\n" +
 	"%IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS\x10\x05\x12%\n" +
 	"!IDENTITY_ERROR_CODE_OTHER_ACCOUNT\x10\x06\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_NO_IDENTITY\x10\a2\xdd\x05\n" +
+	"\x1fIDENTITY_ERROR_CODE_NO_IDENTITY\x10\a2\xfc\x04\n" +
 	"\x0fIdentityService\x12J\n" +
 	"\vGetIdentity\x12\x1c.numen.v1.GetIdentityRequest\x1a\x1d.numen.v1.GetIdentityResponse\x12h\n" +
 	"\x15GenerateRecoveryWords\x12&.numen.v1.GenerateRecoveryWordsRequest\x1a'.numen.v1.GenerateRecoveryWordsResponse\x12S\n" +
 	"\x0eCreateIdentity\x12\x1f.numen.v1.CreateIdentityRequest\x1a .numen.v1.CreateIdentityResponse\x12M\n" +
 	"\fStartRestore\x12\x1d.numen.v1.StartRestoreRequest\x1a\x1e.numen.v1.StartRestoreResponse\x12S\n" +
-	"\x0eDeleteIdentity\x12\x1f.numen.v1.DeleteIdentityRequest\x1a .numen.v1.DeleteIdentityResponse\x12\\\n" +
-	"\x11CreateRecoveryKit\x12\".numen.v1.CreateRecoveryKitRequest\x1a#.numen.v1.CreateRecoveryKitResponse\x12Y\n" +
-	"\x10CheckRecoveryKit\x12!.numen.v1.CheckRecoveryKitRequest\x1a\".numen.v1.CheckRecoveryKitResponse\x12b\n" +
+	"\x0eDeleteIdentity\x12\x1f.numen.v1.DeleteIdentityRequest\x1a .numen.v1.DeleteIdentityResponse\x12V\n" +
+	"\x0fSaveRecoveryKit\x12 .numen.v1.SaveRecoveryKitRequest\x1a!.numen.v1.SaveRecoveryKitResponse\x12b\n" +
 	"\x13StartRestoreFromKit\x12$.numen.v1.StartRestoreFromKitRequest\x1a%.numen.v1.StartRestoreFromKitResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -1238,7 +1059,7 @@ func file_numen_v1_identity_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_numen_v1_identity_proto_goTypes = []any{
 	(IdentityErrorCode)(0),                // 0: numen.v1.IdentityErrorCode
 	(*IdentityInfo)(nil),                  // 1: numen.v1.IdentityInfo
@@ -1255,13 +1076,10 @@ var file_numen_v1_identity_proto_goTypes = []any{
 	(*RecoverySheet)(nil),                 // 12: numen.v1.RecoverySheet
 	(*RecoveryWordsProof)(nil),            // 13: numen.v1.RecoveryWordsProof
 	(*RecoverySheetsProof)(nil),           // 14: numen.v1.RecoverySheetsProof
-	(*RecoveryKit)(nil),                   // 15: numen.v1.RecoveryKit
-	(*CreateRecoveryKitRequest)(nil),      // 16: numen.v1.CreateRecoveryKitRequest
-	(*CreateRecoveryKitResponse)(nil),     // 17: numen.v1.CreateRecoveryKitResponse
-	(*CheckRecoveryKitRequest)(nil),       // 18: numen.v1.CheckRecoveryKitRequest
-	(*CheckRecoveryKitResponse)(nil),      // 19: numen.v1.CheckRecoveryKitResponse
-	(*StartRestoreFromKitRequest)(nil),    // 20: numen.v1.StartRestoreFromKitRequest
-	(*StartRestoreFromKitResponse)(nil),   // 21: numen.v1.StartRestoreFromKitResponse
+	(*SaveRecoveryKitRequest)(nil),        // 15: numen.v1.SaveRecoveryKitRequest
+	(*SaveRecoveryKitResponse)(nil),       // 16: numen.v1.SaveRecoveryKitResponse
+	(*StartRestoreFromKitRequest)(nil),    // 17: numen.v1.StartRestoreFromKitRequest
+	(*StartRestoreFromKitResponse)(nil),   // 18: numen.v1.StartRestoreFromKitResponse
 }
 var file_numen_v1_identity_proto_depIdxs = []int32{
 	1,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
@@ -1269,36 +1087,30 @@ var file_numen_v1_identity_proto_depIdxs = []int32{
 	0,  // 2: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
 	0,  // 3: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
 	12, // 4: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
-	12, // 5: numen.v1.RecoveryKit.sheets:type_name -> numen.v1.RecoverySheet
-	13, // 6: numen.v1.CreateRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
-	14, // 7: numen.v1.CreateRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
-	15, // 8: numen.v1.CreateRecoveryKitResponse.kit:type_name -> numen.v1.RecoveryKit
-	0,  // 9: numen.v1.CreateRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	12, // 10: numen.v1.CheckRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheet
-	0,  // 11: numen.v1.CheckRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	12, // 12: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
-	0,  // 13: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	2,  // 14: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
-	4,  // 15: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
-	6,  // 16: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
-	8,  // 17: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
-	10, // 18: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
-	16, // 19: numen.v1.IdentityService.CreateRecoveryKit:input_type -> numen.v1.CreateRecoveryKitRequest
-	18, // 20: numen.v1.IdentityService.CheckRecoveryKit:input_type -> numen.v1.CheckRecoveryKitRequest
-	20, // 21: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
-	3,  // 22: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
-	5,  // 23: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
-	7,  // 24: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
-	9,  // 25: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
-	11, // 26: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
-	17, // 27: numen.v1.IdentityService.CreateRecoveryKit:output_type -> numen.v1.CreateRecoveryKitResponse
-	19, // 28: numen.v1.IdentityService.CheckRecoveryKit:output_type -> numen.v1.CheckRecoveryKitResponse
-	21, // 29: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
-	22, // [22:30] is the sub-list for method output_type
-	14, // [14:22] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	13, // 5: numen.v1.SaveRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
+	14, // 6: numen.v1.SaveRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
+	0,  // 7: numen.v1.SaveRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
+	12, // 8: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
+	0,  // 9: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
+	2,  // 10: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
+	4,  // 11: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
+	6,  // 12: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
+	8,  // 13: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
+	10, // 14: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
+	15, // 15: numen.v1.IdentityService.SaveRecoveryKit:input_type -> numen.v1.SaveRecoveryKitRequest
+	17, // 16: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
+	3,  // 17: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
+	5,  // 18: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
+	7,  // 19: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
+	9,  // 20: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
+	11, // 21: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
+	16, // 22: numen.v1.IdentityService.SaveRecoveryKit:output_type -> numen.v1.SaveRecoveryKitResponse
+	18, // 23: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
+	17, // [17:24] is the sub-list for method output_type
+	10, // [10:17] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_identity_proto_init() }
@@ -1306,9 +1118,9 @@ func file_numen_v1_identity_proto_init() {
 	if File_numen_v1_identity_proto != nil {
 		return
 	}
-	file_numen_v1_identity_proto_msgTypes[15].OneofWrappers = []any{
-		(*CreateRecoveryKitRequest_Words)(nil),
-		(*CreateRecoveryKitRequest_Sheets)(nil),
+	file_numen_v1_identity_proto_msgTypes[14].OneofWrappers = []any{
+		(*SaveRecoveryKitRequest_Words)(nil),
+		(*SaveRecoveryKitRequest_Sheets)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1316,7 +1128,7 @@ func file_numen_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_identity_proto_rawDesc), len(file_numen_v1_identity_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   21,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
