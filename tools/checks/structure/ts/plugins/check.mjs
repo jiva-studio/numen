@@ -263,15 +263,16 @@ export const USECASE_SDK_PACKAGES = [
 /**
  * The libraries of `libs/shared` a use case may import: they are value and crypto code that reach no file, process or
  * network. `identity` is the keys and the device chain, `syncprotocol` the messages, limits and errors of the sync
- * protocol, `syncprotocol/blobcipher` the sealing of a blob and `syncprotocol/gen` the generated messages. The clients
- * of the protocol live in `syncprotocol/client`, which is not on the list: a use case reaches the server through a port.
+ * protocol, `syncprotocol/blobcipher` the sealing of a blob and `syncprotocol/gen/numen/sync/v1` the generated
+ * messages. The clients of the protocol live in `syncprotocol/client` and `syncv1connect`, which are not on the list: a
+ * use case reaches the server through a port.
  */
 export const USECASE_SHARED_PACKAGES = [
   `${GO_MODULE_ROOT}libs/shared/identity`,
   `${GO_MODULE_ROOT}libs/shared/syncprotocol`,
   `${GO_MODULE_ROOT}libs/shared/syncprotocol/blobcipher`,
+  `${GO_MODULE_ROOT}libs/shared/syncprotocol/gen/numen/sync/v1`,
 ]
-const USECASE_SHARED_PREFIXES = [`${GO_MODULE_ROOT}libs/shared/syncprotocol/gen/`]
 
 /** Whether `value` is a standard library import: its first element names no host. */
 const isStandardImport = (value) => !value.split('/')[0].includes('.')
@@ -300,7 +301,6 @@ function isAllowedUseCaseImport(value, plugin) {
   if (value.startsWith(sdk))
     return USECASE_SDK_PACKAGES.includes(value.slice(sdk.length).split('/')[0])
   if (USECASE_SHARED_PACKAGES.includes(value)) return true
-  if (USECASE_SHARED_PREFIXES.some((prefix) => value.startsWith(prefix))) return true
   const inner = getOwnBackendPath(value, plugin)
   if (inner === undefined) return false
   return inner === 'ports' || inner.startsWith('ports/') || isDomainPath(inner)
