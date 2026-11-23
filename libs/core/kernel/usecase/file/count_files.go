@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -21,7 +21,7 @@ func NewCountFiles(readers vaultport.VaultReaders) *CountFiles {
 	return &CountFiles{readers: readers}
 }
 
-// Execute returns fs.ErrNotExist for a path with no file and no folder holding one.
+// Execute returns edit.ErrNotExist for a path with no file and no folder holding one.
 func (u *CountFiles) Execute(ctx context.Context, v domain.Vault, path string) (int, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -29,7 +29,7 @@ func (u *CountFiles) Execute(ctx context.Context, v domain.Vault, path string) (
 	}
 	if _, err := reader.StatFile(ctx, path); err == nil {
 		return 1, nil
-	} else if !errors.Is(err, fs.ErrNotExist) {
+	} else if !errors.Is(err, edit.ErrNotExist) {
 		return 0, err
 	}
 	count := 0
@@ -43,7 +43,7 @@ func (u *CountFiles) Execute(ctx context.Context, v domain.Vault, path string) (
 		return 0, err
 	}
 	if count == 0 {
-		return 0, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
+		return 0, fmt.Errorf("%s: %w", path, edit.ErrNotExist)
 	}
 	return count, nil
 }

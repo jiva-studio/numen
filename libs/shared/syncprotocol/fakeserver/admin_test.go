@@ -35,7 +35,7 @@ func newStoppingEnv(tb testing.TB) (*env, *atomic.Int32) {
 	return newEnvOn(tb, served.URL, &account, device), &stops
 }
 
-func (e *env) post(path string) *http.Response {
+func (e *env) post(path string) int {
 	e.tb.Helper()
 	request, err := http.NewRequestWithContext(e.tb.Context(), http.MethodPost, e.address+path, http.NoBody)
 	if err != nil {
@@ -45,8 +45,10 @@ func (e *env) post(path string) *http.Response {
 	if err != nil {
 		e.tb.Fatal(err)
 	}
-	e.tb.Cleanup(func() { _ = response.Body.Close() })
-	return response
+	if err := response.Body.Close(); err != nil {
+		e.tb.Fatal(err)
+	}
+	return response.StatusCode
 }
 
 func (e *env) getAdmin(path string) []byte {
@@ -121,7 +123,7 @@ func TestAdmin_StopAfterBytesAsksTheHostToStopOnceTheBudgetIsReceived(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status := e.post("/admin/stop-after-bytes?n=7000000").StatusCode; status != http.StatusNoContent {
+	if status := e.post("/admin/stop-after-bytes?n=7000000"); status != http.StatusNoContent {
 		t.Fatalf("arm status = %d, want 204", status)
 	}
 
@@ -141,10 +143,10 @@ func TestAdmin_StopAfterBytesRefusesWhatIsNotACount(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
 
-	if status := e.post("/admin/stop-after-bytes?n=many").StatusCode; status != http.StatusBadRequest {
+	if status := e.post("/admin/stop-after-bytes?n=many"); status != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", status)
 	}
-	if status := e.post("/admin/stop-after-download-bytes?n=-1").StatusCode; status != http.StatusBadRequest {
+	if status := e.post("/admin/stop-after-download-bytes?n=-1"); status != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", status)
 	}
 }

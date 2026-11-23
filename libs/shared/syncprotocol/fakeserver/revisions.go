@@ -269,15 +269,15 @@ func (s *Server) GetChanges(_ context.Context, req *connect.Request[syncv1.GetCh
 	if since > 0 && since < vault.prunedSeq {
 		return connect.NewResponse(&syncv1.GetChangesResponse{HeadSeq: vault.seq, Reset_: true}), nil
 	}
-	page := listChanges(vault, since, getPageLimit(req.Msg.GetLimit()))
+	page, hasMore := listChanges(vault, since, getPageLimit(req.Msg.GetLimit()))
 	next := since
 	if len(page) > 0 {
 		next = page[len(page)-1].GetSeq()
 	}
-	return connect.NewResponse(&syncv1.GetChangesResponse{Changes: page, NextSeq: next, HasMore: next < vault.seq, HeadSeq: vault.seq}), nil
+	return connect.NewResponse(&syncv1.GetChangesResponse{Changes: page, NextSeq: next, HasMore: hasMore, HeadSeq: vault.seq}), nil
 }
 
-func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRevision {
+func listChanges(vault *vaultState, since uint64, limit int) (page []*syncv1.StoredRevision, hasMore bool) {
 	var rows []*syncv1.StoredRevision
 	for _, head := range vault.files {
 		if head.GetSeq() > since {
@@ -288,14 +288,14 @@ func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRev
 		return cmp.Or(cmp.Compare(a.GetSeq(), b.GetSeq()), bytes.Compare(a.GetRevision().GetFileId(), b.GetRevision().GetFileId()))
 	})
 	if len(rows) <= limit {
-		return rows
+		return rows, false
 	}
 	edge := rows[limit-1].GetSeq()
 	end := slices.IndexFunc(rows, func(row *syncv1.StoredRevision) bool { return row.GetSeq() > edge })
 	if end < 0 {
-		return rows
+		return rows, false
 	}
-	return rows[:end]
+	return rows[:end], true
 }
 
 // PruneTombstones drops the deletion records of every vault and keeps the highest seq dropped, so a cursor older

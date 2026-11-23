@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -39,7 +38,7 @@ type PlaceInput struct {
 // Execute returns plugin.ErrHashMismatch for a content that does not have the expected hash, edit.ErrStale for a
 // file that changed since the baseline, and vault.ErrAlreadyExists for a path that is not free.
 func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput) (domain.FileStat, error) {
-	if err := checkStaged(in.Staged, in.ExpectedHash); err != nil {
+	if err := verifyStagedHash(in.Staged, in.ExpectedHash); err != nil {
 		return domain.FileStat{}, err
 	}
 	if err := u.checkTarget(ctx, v, in.Path, in.Baseline); err != nil {
@@ -63,7 +62,7 @@ func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput
 	return u.stat.Execute(ctx, v, in.Path)
 }
 
-func checkStaged(staged io.ReadSeeker, expectedHash string) error {
+func verifyStagedHash(staged io.ReadSeeker, expectedHash string) error {
 	hash, err := domain.HashReader(staged)
 	if err != nil {
 		return err
@@ -80,9 +79,9 @@ func (u *PlaceStaged) checkTarget(ctx context.Context, v domain.Vault, path stri
 	switch {
 	case baseline == nil && err == nil:
 		return fmt.Errorf("%s: %w", path, vaultdomain.ErrAlreadyExists)
-	case baseline == nil && errors.Is(err, fs.ErrNotExist):
+	case baseline == nil && errors.Is(err, edit.ErrNotExist):
 		return nil
-	case err != nil && errors.Is(err, fs.ErrNotExist):
+	case err != nil && errors.Is(err, edit.ErrNotExist):
 		return fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
 	case err != nil:
 		return err
