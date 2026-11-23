@@ -32,16 +32,8 @@ func suggestName(ctx context.Context, vault Vault, folder, template string) (str
 	return "", nil
 }
 
-<<<<<<< HEAD
-func checkedName(name string) string {
-	reduced, _, err := domain.CreateFilename(name)
-||||||| a8fdfeeb1
-func checkedName(name string) string {
-	reduced, _, err := domain.Filename(name)
-=======
 func validateName(name string) string {
-	reduced, _, err := domain.Filename(name)
->>>>>>> origin/main
+	reduced, _, err := domain.CreateFilename(name)
 	if err != nil {
 		return ""
 	}

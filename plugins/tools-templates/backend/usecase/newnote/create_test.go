@@ -76,16 +76,8 @@ func getRequest(vault *hosttest.Vault, template, folder string, values map[strin
 }
 
 func getNamedRequest(vault *hosttest.Vault, template, folder, name string, values map[string]string) newnote.Request {
-<<<<<<< HEAD
 	content, _ := vault.ReadContent(template)
-	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
-||||||| a8fdfeeb1
-	content, _ := vault.Content(template)
-	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
-=======
-	content, _ := vault.Content(template)
 	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.ComputeEtag(content)}
->>>>>>> origin/main
 }
 
 func getContent(t *testing.T, vault *hosttest.Vault, path string) string {

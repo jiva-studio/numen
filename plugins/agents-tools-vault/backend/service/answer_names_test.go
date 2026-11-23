@@ -667,16 +667,8 @@ func TestNoteSearchReturnsTheLineCountedInTheBody(t *testing.T) {
 
 func TestNoteSearchReturnsLineOneForAMatchOnTheFirstBodyLine(t *testing.T) {
 	v, svc := setupTestVault()
-<<<<<<< HEAD
 	v.WriteFile("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
-	registry, err := svc.Registry()
-||||||| a8fdfeeb1
-	v.File("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
-	registry, err := svc.Registry()
-=======
-	v.File("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
 	registry, err := svc.BuildRegistry()
->>>>>>> origin/main
 	if err != nil {
 		t.Fatal(err)
 	}

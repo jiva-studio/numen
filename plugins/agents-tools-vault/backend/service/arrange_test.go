@@ -73,31 +73,13 @@ type vaultProblemsOutput struct {
 func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(skyVault)
-<<<<<<< HEAD
 	v.WriteFile("Sky/Orion.md", "---\ntitle: The Hunter Orion\n---\nOrion rises in winter.")
 	v.WriteFile("Sky/Comets.md", "---\ntitle: Comets and Their Tails\n---\nA tail points away from the sun.")
 	v.WriteFile("Sky/Deep/Nebula.md", "---\ntitle: The Crab Nebula\n---\nRemnant of a supernova.")
 	v.WriteFile("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
 	v.WriteFile("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
 	v.WriteFile("Sky/chart.txt", "RA 05h 35m\n")
-	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
-||||||| a8fdfeeb1
-	v.File("Sky/Orion.md", "---\ntitle: The Hunter Orion\n---\nOrion rises in winter.")
-	v.File("Sky/Comets.md", "---\ntitle: Comets and Their Tails\n---\nA tail points away from the sun.")
-	v.File("Sky/Deep/Nebula.md", "---\ntitle: The Crab Nebula\n---\nRemnant of a supernova.")
-	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
-	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
-	v.File("Sky/chart.txt", "RA 05h 35m\n")
-	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
-=======
-	v.File("Sky/Orion.md", "---\ntitle: The Hunter Orion\n---\nOrion rises in winter.")
-	v.File("Sky/Comets.md", "---\ntitle: Comets and Their Tails\n---\nA tail points away from the sun.")
-	v.File("Sky/Deep/Nebula.md", "---\ntitle: The Crab Nebula\n---\nRemnant of a supernova.")
-	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
-	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
-	v.File("Sky/chart.txt", "RA 05h 35m\n")
 	registry, err := service.New(vaultsOf(v)).WithVaultList(v).BuildRegistry()
->>>>>>> origin/main
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

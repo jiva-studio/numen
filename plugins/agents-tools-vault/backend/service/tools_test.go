@@ -408,19 +408,9 @@ const testVault = "physics-vault"
 func TestACallWorksTheVaultItNames(t *testing.T) {
 	shown, svc := setupTestVault()
 	garden := hosttest.New("garden-vault")
-<<<<<<< HEAD
 	garden.WriteFile("Beds.md", "# Beds\nRaised beds of oak.")
 	shown.LinkBeside(garden)
-	registry, err := svc.Registry()
-||||||| a8fdfeeb1
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	shown.Beside(garden)
-	registry, err := svc.Registry()
-=======
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	shown.Beside(garden)
 	registry, err := svc.BuildRegistry()
->>>>>>> origin/main
 	if err != nil {
 		t.Fatal(err)
 	}

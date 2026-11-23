@@ -245,7 +245,6 @@ libs/ui/workbench/src/features/workspace/ui/pane/WorkspacePane.vue	tab
 libs/ui/workbench/src/features/workspace/ui/pane/body/PaneBody.vue	tab
 libs/ui/workbench/src/features/workspace/ui/pane/strip/PaneStrip.vue	icon
 libs/ui/workbench/src/features/workspace/ui/tab/WorkspaceTab.vue	icon
-plugins/agents-numen/backend/internal/adapter/hosttools/hosttools.go	FromEnvironment
 plugins/connections-llm/backend/fakeopenai/server.go	Aborted
 plugins/connections-llm/backend/internal/adapter/openaiapi/chat.go	Chat
 plugins/connections-llm/backend/ports/ports.go	Chat
@@ -256,7 +255,6 @@ plugins/readers-pdf/frontend/reader/ui/Reader.types.ts	highlights
 plugins/readers-pdf/frontend/reader/ui/Reader.types.ts	otherHighlights
 plugins/readers-pdf/frontend/reader/ui/Reader.types.ts	picture
 plugins/tools-index-stats/frontend/ui/StatsPopover.vue	stats
-plugins/tools-templates/backend/usecase/newnote/name.go	checkedName
 plugins/tools-updater/frontend/index.ts	updates
 plugins/views-agent-chat/frontend/thread/ui/Thread.vue	failure
 plugins/views-agent-chat/frontend/thread/ui/Thread.vue	turn

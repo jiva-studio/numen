@@ -80,22 +80,10 @@ func encodeJSONString(t *testing.T, text string) string {
 
 func TestNoteEditPreviewInARunOnAnotherVaultDiffsAgainstTheNoteOfThatVault(t *testing.T) {
 	shown, other := hosttest.New("marsh"), hosttest.New("dune")
-<<<<<<< HEAD
 	shown.LinkBeside(other)
 	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
 	other.WriteFile("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-||||||| a8fdfeeb1
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-=======
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
 	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
->>>>>>> origin/main
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: string(other.Vault().ID), Name: "note_edit_preview",
@@ -119,22 +107,10 @@ func TestNoteEditPreviewInARunOnAnotherVaultDiffsAgainstTheNoteOfThatVault(t *te
 
 func TestNoteEditPreviewWithNoVaultOnTheCallDiffsAgainstTheNoteOfTheShownVault(t *testing.T) {
 	shown, other := hosttest.New("marsh"), hosttest.New("dune")
-<<<<<<< HEAD
 	shown.LinkBeside(other)
 	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
 	other.WriteFile("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-||||||| a8fdfeeb1
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-=======
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
 	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
->>>>>>> origin/main
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
@@ -176,16 +152,8 @@ func TestNoteEditPreviewOfANoteThatDoesNotExistYetShowsItAllAdded(t *testing.T) 
 
 func TestNoteEditPreviewInAnUnknownVaultIsRefused(t *testing.T) {
 	shown := hosttest.New("marsh")
-<<<<<<< HEAD
 	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-||||||| a8fdfeeb1
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
-=======
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
 	registry := newRegistry(t, service.Host{GetFiles: filesOf(shown)})
->>>>>>> origin/main
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: "removed", Name: "note_edit_preview",

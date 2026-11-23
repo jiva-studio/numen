@@ -29,19 +29,9 @@ func New(client tools.Client) *Tools {
 	return &Tools{client: client}
 }
 
-<<<<<<< HEAD
-// FromEnvironment returns Tools of the host the process environment names.
-func FromEnvironment() (*Tools, error) {
-	endpoint, err := hostcall.ReadEnv()
-||||||| a8fdfeeb1
-// FromEnvironment returns Tools of the host the process environment names.
-func FromEnvironment() (*Tools, error) {
-	endpoint, err := hostcall.FromEnv()
-=======
 // NewFromEnvironment returns Tools of the host the process environment names.
 func NewFromEnvironment() (*Tools, error) {
-	endpoint, err := hostcall.FromEnv()
->>>>>>> origin/main
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}

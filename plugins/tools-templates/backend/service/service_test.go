@@ -79,16 +79,8 @@ func createNote(t *testing.T, web *testWeb, template, folder string) (int, []byt
 
 func createNoteAs(t *testing.T, web *testWeb, template, folder, name string) (int, []byte) {
 	t.Helper()
-<<<<<<< HEAD
 	content, _ := web.vault.ReadContent(template)
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.Etag(content)})
-||||||| a8fdfeeb1
-	content, _ := web.vault.Content(template)
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.Etag(content)})
-=======
-	content, _ := web.vault.Content(template)
 	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.ComputeEtag(content)})
->>>>>>> origin/main
 	if err != nil {
 		t.Fatal(err)
 	}
