@@ -331,3 +331,35 @@ describe('function names', () => {
     assertClean('f/b.ts', 'export function openVault() {}\n')
   })
 })
+
+describe('function names that do not start with a verb or a predicate', () => {
+  it('flags an exported Go function, method and interface method named by a noun', () => {
+    assertFlagged('n/a.go', 'package a\n\nfunc Recipe() string { return "" }\n', 'functionNames')
+    assertFlagged('n/b.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis() string { return "" }\n', 'functionNames')
+    assertFlagged('n/c.go', 'package a\n\ntype Source interface {\n\tVaults() []string\n}\n', 'functionNames')
+    assertFlagged('n/d.go', 'package a\n\ntype Hooks struct {\n\tendpoint func() string\n}\n', 'functionNames')
+  })
+  it('flags a participle, a third-person verb and a preposition as the first word', () => {
+    assertFlagged('n/e.go', 'package a\n\nfunc Opened() bool { return true }\n', 'functionNames: participle')
+    assertFlagged('n/f.go', 'package a\n\nfunc Allows() bool { return true }\n', 'functionNames: third-person')
+    assertFlagged('n/g.go', 'package a\n\nfunc After() int { return 1 }\n', 'functionNames: preposition')
+  })
+  it('flags a TypeScript function, method, interface member and memoized function named by a noun', () => {
+    assertFlagged('n/a.ts', 'export function recipe() { return 1 }\n', 'functionNames')
+    assertFlagged('n/b.ts', 'class A {\n  recipe(): number {\n    return 1\n  }\n}\n', 'functionNames')
+    assertFlagged('n/c.ts', 'export interface Rows {\n  readonly cannot: (operation: string) => string\n  vaults(): string[]\n}\n', 'functionNames')
+    assertFlagged('n/d.ts', 'const recipe = memoize(() => 1)\n', 'functionNames')
+  })
+  it('accepts a verb, a predicate, Go test names, option functions and framework names', () => {
+    assertClean('n/h.go', 'package a\n\nfunc StatFile() {}\n\nfunc IsOpen() bool { return true }\n\nfunc TestRecipe(t *testing.T) {}\n\nfunc WithCache() {}\n\nfunc (t) String() string { return "" }\n')
+    assertClean('n/i.ts', 'export function openVault() {}\nexport const isOpen = () => true\nexport const useVault = () => 1\nexport const onClose = () => 1\nexport const toList = () => []\n')
+  })
+  it('leaves test files and words files alone', () => {
+    assertClean('n/recipe.test.ts', 'const vault = () => 1\n')
+    assertClean('n/recipe_test.go', 'package a\n\nfunc vault() {}\n')
+    assertClean('n/ui/words.ts', 'export const words = {\n  cannot: (operation: string) => `Cannot ${operation}`,\n}\n')
+  })
+  it('leaves a name inside a string alone', () => {
+    assertClean('n/j.ts', "const text = 'export function recipe() {}'\n")
+  })
+})
