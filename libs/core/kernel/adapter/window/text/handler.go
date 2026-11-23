@@ -27,8 +27,7 @@ type VaultProvider interface {
 	GetCurrentVault() domain.Vault
 }
 
-// Handler serves TextService over the shown vault. A handler with no text
-// returns no live version and rejects edits.
+// Handler serves TextService over the shown vault.
 type Handler struct {
 	vaults VaultProvider
 	text   FileText
@@ -47,7 +46,7 @@ func (h *Handler) ReadLiveText(
 	ctx context.Context, r *connect.Request[v1.ReadLiveTextRequest],
 ) (*connect.Response[v1.ReadLiveTextResponse], error) {
 	v := h.vaults.GetCurrentVault()
-	if h.text == nil || v.ID == "" {
+	if v.ID == "" {
 		return connect.NewResponse(&v1.ReadLiveTextResponse{}), nil
 	}
 	text, ok, err := h.text.ReadLiveText(ctx, v, r.Msg.GetPath())
@@ -71,7 +70,7 @@ func (h *Handler) CreateTextEdit(
 	ctx context.Context, r *connect.Request[v1.CreateTextEditRequest],
 ) (*connect.Response[v1.CreateTextEditResponse], error) {
 	v := h.vaults.GetCurrentVault()
-	if h.text == nil || v.ID == "" {
+	if v.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
 	version, err := h.text.CreateEdit(ctx, v, textdomain.Edit{

@@ -39,9 +39,6 @@ func (h *Handler) ListLicenses(
 	ctx context.Context,
 	_ *connect.Request[v1.ListLicensesRequest],
 ) (*connect.Response[v1.ListLicensesResponse], error) {
-	if h.licenses.List == nil {
-		return connect.NewResponse(&v1.ListLicensesResponse{}), nil
-	}
 	entries, err := h.licenses.List.Execute(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -56,9 +53,6 @@ func (h *Handler) ActivateLicense(
 	ctx context.Context,
 	r *connect.Request[v1.ActivateLicenseRequest],
 ) (*connect.Response[v1.ActivateLicenseResponse], error) {
-	if h.licenses.Activate == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("licenses not configured"))
-	}
 	info, err := h.licenses.Activate.Execute(ctx, licenses.ActivateRequest{
 		LicenseID: r.Msg.GetLicenseId(),
 		Key:       r.Msg.GetKey(),
@@ -84,9 +78,6 @@ func (h *Handler) DeactivateLicense(
 	ctx context.Context,
 	r *connect.Request[v1.DeactivateLicenseRequest],
 ) (*connect.Response[v1.DeactivateLicenseResponse], error) {
-	if h.licenses.Deactivate == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("licenses not configured"))
-	}
 	info, err := h.licenses.Deactivate.Execute(ctx, r.Msg.GetLicenseId())
 	if err != nil {
 		code, served := getErrorCode(err)
@@ -110,9 +101,6 @@ func (h *Handler) WatchLicenses(
 	_ *connect.Request[v1.WatchLicensesRequest],
 	out *connect.ServerStream[v1.WatchLicensesResponse],
 ) error {
-	if h.licenses.Watch == nil {
-		return out.Send(&v1.WatchLicensesResponse{})
-	}
 	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
 		return h.licenses.Watch.Execute(ctx, func(entries []license.Info) error {
 			return send(&v1.WatchLicensesResponse{Licenses: writeLicenses(entries)})

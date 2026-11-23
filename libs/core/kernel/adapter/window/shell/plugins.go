@@ -24,9 +24,6 @@ func (l FrontendPlugins) ListPlugins(
 	context.Context, *connect.Request[v1.ListPluginsRequest],
 ) (*connect.Response[v1.ListPluginsResponse], error) {
 	out := &v1.ListPluginsResponse{}
-	if l.getIDs == nil {
-		return connect.NewResponse(out), nil
-	}
 	for _, id := range l.getIDs() {
 		out.Plugins = append(out.Plugins, &v1.PluginInfo{Id: id})
 	}
