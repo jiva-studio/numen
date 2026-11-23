@@ -6,17 +6,17 @@ import { ref, type Ref } from 'vue'
 
 const WORD_COUNT = 12
 
-const createEmpty = (): readonly string[] => Array.from({ length: WORD_COUNT }, () => '')
+const createEmptyWords = (): readonly string[] => Array.from({ length: WORD_COUNT }, () => '')
 
 /** The words of a text: whole words, lower-cased. */
-export const splitWords = (text: string): string[] =>
+const splitWords = (text: string): string[] =>
   text
     .split(/\s+/)
     .filter((word) => word !== '')
     .map((word) => word.toLowerCase())
 
 export function useRestoreWords(problem: Ref<string>) {
-  const entered = ref<readonly string[]>(createEmpty())
+  const entered = ref<readonly string[]>(createEmptyWords())
 
   const setWord = (index: number, value: string): void => {
     const typed = splitWords(value)
@@ -31,7 +31,7 @@ export function useRestoreWords(problem: Ref<string>) {
   }
 
   const clear = (): void => {
-    entered.value = createEmpty()
+    entered.value = createEmptyWords()
   }
 
   /** The words typed, in order, without the empty fields. */
