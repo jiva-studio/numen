@@ -102,7 +102,7 @@ func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o
 
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
-func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer, starter Starter, out io.Writer) error {
+func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer, starter Starter, out io.Writer) {
 	starter.Execute(ctx, first)
 
 	// Recordings are served over a dedicated socket, opened after every
@@ -117,7 +117,6 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 		playing.setPluginServices(o.pages.plugins)
 		o.pages.window.Media.playing.Store(playing)
 	}
-	return nil
 }
 
 // Close shuts the door on every question, stops the passes behind the vault,
