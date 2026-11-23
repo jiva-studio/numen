@@ -123,7 +123,7 @@ type LinkRpc = Rpc<
 type DevicesRpc = Rpc<'listDevices' | 'revokeDevice'>
 
 /** The calls of IdentityService the identity is managed through. */
-export type IdentityRpc = AccountRpc & LinkRpc & DevicesRpc
+type IdentityRpc = AccountRpc & LinkRpc & DevicesRpc
 
 /** The identity of this device. */
 export interface AccountClient {

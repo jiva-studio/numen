@@ -90,13 +90,11 @@ export class Person {
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
-    this.computers = new ComputerDriver({
-      first: this.scenario,
-      viewport,
+    this.computers = new ComputerDriver(this.scenario, viewport, {
       identity: this.identity,
       sync: this.sync,
-      firstVaults: this.syncVaults,
-      firstDevices: new DevicesDriver(this.scenario, this.settings),
+      vaults: this.syncVaults,
+      devices: new DevicesDriver(this.scenario, this.settings),
     })
   }
 
