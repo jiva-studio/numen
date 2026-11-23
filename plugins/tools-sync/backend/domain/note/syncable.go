@@ -65,7 +65,9 @@ func GetRecordKeyContext(remoteID, fileID []byte) []byte {
 // StoredName returns the name of the staged file of a download in the store folder.
 func StoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }
 
-func isSkippedFolder(name string) bool { return slices.Contains([]string{".numen", ".git", ".trash"}, name) }
+func isSkippedFolder(name string) bool {
+	return slices.Contains([]string{".numen", ".git", ".trash"}, name)
+}
 
 func isSkippedName(lower string) bool {
 	return slices.Contains([]string{".ds_store", "thumbs.db", "desktop.ini"}, lower)

@@ -221,4 +221,6 @@ func (r *run) keep(ctx context.Context, at *position) error {
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
 }
 
-func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool { return hasher.UnmarshalBinary(state) == nil }
+func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool {
+	return hasher.UnmarshalBinary(state) == nil
+}
