@@ -98,7 +98,7 @@ func (u EditLinks) PointAt(
 ) (domain.FileStat, error) {
 	e := u.newEdit()
 	e.FileStat = p.Stat
-	return e.shared().PointAt(ctx, v, from, p.Of, p.To, p.Role)
+	return e.shared().SetLink(ctx, v, from, p.Of, p.To, p.Role)
 }
 
 // Remove takes a relationship out. The note at the other end is untouched: only

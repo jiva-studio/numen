@@ -30,9 +30,9 @@ func (l *Links) getPageTitle(ctx context.Context, parsed address.URL) string {
 }
 
 func (l *Links) createTitledNote(ctx context.Context, vault domain.VaultID, folder string, parsed address.URL, title string) (Link, error) {
-	base, isExact, err := domain.Filename(title)
+	base, isExact, err := domain.CreateFilename(title)
 	if title == "" || err != nil {
-		base, isExact, err = domain.Filename(string(parsed))
+		base, isExact, err = domain.CreateFilename(string(parsed))
 		title = ""
 	}
 	if err != nil {

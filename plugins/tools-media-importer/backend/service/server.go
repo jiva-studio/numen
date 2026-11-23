@@ -93,7 +93,7 @@ func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		links.Close()
 		return nil
 	})
@@ -102,7 +102,7 @@ func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 
 // MountFromEnv mounts the plugin over the host the process was started for.
 func (a *App) MountFromEnv(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}

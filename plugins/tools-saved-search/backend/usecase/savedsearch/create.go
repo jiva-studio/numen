@@ -95,7 +95,7 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInp
 	if title == "" {
 		return Saved{}, errEmptyTitle
 	}
-	name, exact, err := domain.Filename(title)
+	name, exact, err := domain.CreateFilename(title)
 	if err != nil {
 		return Saved{}, err
 	}

@@ -58,7 +58,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 
 func (u Rename) rename(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)
-	name, exact, err := domain.Filename(title)
+	name, exact, err := domain.CreateFilename(title)
 	if err != nil {
 		return RenameResult{}, err
 	}
@@ -67,7 +67,7 @@ func (u Rename) rename(ctx context.Context, v domain.Vault, path, title string) 
 	var source naming.Source
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		if _, titled := doc.Title(); titled || !exact {
+		if _, titled := doc.GetTitle(); titled || !exact {
 			// A title key keeps the name, and so does a title that cannot be stored in a filename.
 			source = naming.ByFrontmatter
 			if err := u.checkTarget(ctx, v, path, to, source); err != nil {
@@ -123,10 +123,10 @@ func (u Move) WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path str
 		return nil
 	}
 
-	name := domain.Basename(path)
+	name := domain.GetBasename(path)
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		if _, titled := doc.Title(); titled {
+		if _, titled := doc.GetTitle(); titled {
 			return doc.SetTitle(name)
 		}
 		return errFilenameNamesIt

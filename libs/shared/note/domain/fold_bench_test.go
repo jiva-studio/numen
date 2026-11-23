@@ -12,7 +12,7 @@ func BenchmarkFoldName(b *testing.B) {
 		b.Run(label, func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				_ = FoldName(name)
+				_ = NormalizeName(name)
 			}
 		})
 	}

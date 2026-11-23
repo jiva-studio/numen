@@ -74,7 +74,7 @@ type vaulted struct {
 func newVaults(t *testing.T) vaulted {
 	t.Helper()
 	first, second := vaulttest.New(t, getAnimals()), vaulttest.New(t, getMinerals())
-	first.Host.Beside(second.Host)
+	first.Host.LinkBeside(second.Host)
 	return vaulted{
 		first: first.Vault, second: second.Vault, ports: first.Ports, queries: first.Queries,
 		hosts: map[domain.VaultID]*hosttest.Vault{first.Vault.ID: first.Host, second.Vault.ID: second.Host},

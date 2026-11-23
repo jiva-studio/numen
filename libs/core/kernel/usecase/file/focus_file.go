@@ -64,7 +64,7 @@ func checkRanges(in FocusFileInput) error {
 		return plugin.InvalidFocus(fmt.Errorf("too many passages: at most %d: %w", maxRanges, ErrInvalidRange))
 	}
 	for _, r := range in.Ranges {
-		if r.Start < 0 || r.Empty() {
+		if r.Start < 0 || r.IsEmpty() {
 			return plugin.InvalidFocus(fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidRange))
 		}
 	}

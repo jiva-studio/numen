@@ -154,7 +154,7 @@ func (t Table) ListExtensions(mask domain.ContentType) []string {
 		if extension == "" || strings.Contains(extension, ".") || slices.Contains(out, extension) {
 			continue
 		}
-		if mask.Matches(t.GetContentType("file." + extension)) {
+		if mask.IsMatch(t.GetContentType("file." + extension)) {
 			out = append(out, extension)
 		}
 	}

@@ -134,7 +134,7 @@ func (l *linkFinder) findLinksTo(ctx context.Context, t target, role domain.Link
 	if t.address != "" {
 		value = domain.ParseAddress(t.address).Value
 	}
-	links, err := l.links.ListLinksByName(ctx, l.req.Vault.ID, domain.FoldName(domain.LinkName(value)))
+	links, err := l.links.ListLinksByName(ctx, l.req.Vault.ID, domain.NormalizeName(domain.LinkName(value)))
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (l *linkFinder) findLinksFrom(ctx context.Context, from string, role domain
 		switch {
 		case !searchquery.IsLinkMatch(link, role, linkType):
 		case link.To != "":
-			if _, isCrossed := link.InVault(l.req.Vault.ID); !isCrossed {
+			if _, isCrossed := link.ResolveVault(l.req.Vault.ID); !isCrossed {
 				set[link.To] = true
 			}
 		default:

@@ -408,14 +408,14 @@ func runRecognitionNow(ctx context.Context, r *Recognition, req Request) (Result
 func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	v := hosttest.New("Physics")
 	pngRaw := encodeTestPNG(t)
-	v.File("scan.png", pngRaw)
+	v.WriteFile("scan.png", pngRaw)
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	texts.SetStore("md.numen.engines.ocr", v.Store())
-	texts.File("scan.png", []byte(pngRaw))
+	texts.WriteFile("scan.png", []byte(pngRaw))
 
 	// 1. A file that cannot be read reports a task with 0/0 counts; joined error when ReportTask also fails.
 	readSentinel := errors.New("permission denied")
-	v.File("refused.png", pngRaw)
+	v.WriteFile("refused.png", pngRaw)
 	v.Refuse("refused.png", readSentinel)
 	reportSentinel := errors.New("report task failed")
 	qReportFail := &stubQueue{reportErr: reportSentinel}
@@ -495,7 +495,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	}
 
 	// 7. Corrupt document open error in Recognize.
-	v.File("corrupt.png", "not-a-png")
+	v.WriteFile("corrupt.png", "not-a-png")
 	if _, err := runRecognitionNow(t.Context(), rOK, Request{Path: "corrupt.png"}); err == nil {
 		t.Fatal("corrupt image succeeded")
 	}
@@ -591,10 +591,10 @@ func (f failingVaultFiles) GetVault(context.Context) (domain.Vault, error) {
 func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
 	v := hosttest.New("Physics")
 	pngRaw := encodeTestPNG(t)
-	v.File("scan.png", pngRaw)
+	v.WriteFile("scan.png", pngRaw)
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	texts.SetStore("md.numen.engines.ocr", v.Store())
-	texts.File("scan.png", []byte(pngRaw))
+	texts.WriteFile("scan.png", []byte(pngRaw))
 
 	vaultErr := errors.New("vault lookup failed")
 	rVaultErr, err := New(
@@ -732,10 +732,10 @@ func (q *turnQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn,
 func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
 	v := hosttest.New("Physics")
 	pngRaw := encodeTestPNG(t)
-	v.File("scan.png", pngRaw)
+	v.WriteFile("scan.png", pngRaw)
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	texts.SetStore("md.numen.engines.ocr", v.Store())
-	texts.File("scan.png", []byte(pngRaw))
+	texts.WriteFile("scan.png", []byte(pngRaw))
 	prepares := 0
 	queue := &turnQueue{prepares: &prepares}
 	r, err := New(Host{

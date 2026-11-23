@@ -72,7 +72,7 @@ func TestPluginStore_RejectsWhatHostRejects(t *testing.T) {
 func TestEachVaultHasAStoreOfItsOwn(t *testing.T) {
 	ctx := t.Context()
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
-	physics.Beside(chemistry)
+	physics.LinkBeside(chemistry)
 	if err := physics.Store().Append(ctx, "a", []byte("p")); err != nil {
 		t.Fatal(err)
 	}
@@ -92,8 +92,8 @@ func TestStoreReadsAndListsExternalFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s.File("log", []byte("   "))
-	s.File("copy", []byte("x"))
+	s.WriteFile("log", []byte("   "))
+	s.WriteFile("copy", []byte("x"))
 	got, err := s.Read(ctx, "log")
 	if err != nil {
 		t.Fatal(err)

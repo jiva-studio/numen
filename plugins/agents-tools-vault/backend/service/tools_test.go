@@ -13,9 +13,9 @@ import (
 
 func setupTestVault() (*hosttest.Vault, *service.Tools) {
 	v := hosttest.New("physics-vault")
-	v.File("Entropy.md", "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Entropy Concept\n---\n# Entropy\nEntropy is thermodynamic disorder.\n## Second Law\nEntropy increases.\nSee also [[Heat]].")
-	v.File("Heat.md", "# Heat\nHeat flows from hot to cold.\nReferences [[Entropy]].")
-	v.File("data.txt", "line 1\nline 2\nline 3\n")
+	v.WriteFile("Entropy.md", "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Entropy Concept\n---\n# Entropy\nEntropy is thermodynamic disorder.\n## Second Law\nEntropy increases.\nSee also [[Heat]].")
+	v.WriteFile("Heat.md", "# Heat\nHeat flows from hot to cold.\nReferences [[Entropy]].")
+	v.WriteFile("data.txt", "line 1\nline 2\nline 3\n")
 	return v, service.New(vaultsOf(v))
 }
 
@@ -408,8 +408,8 @@ const testVault = "physics-vault"
 func TestACallWorksTheVaultItNames(t *testing.T) {
 	shown, svc := setupTestVault()
 	garden := hosttest.New("garden-vault")
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	shown.Beside(garden)
+	garden.WriteFile("Beds.md", "# Beds\nRaised beds of oak.")
+	shown.LinkBeside(garden)
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)

@@ -14,8 +14,8 @@ const linkNote = "---\ntype: link\nurl: " + articleAddress + "\n---\n"
 
 func (w *world) addLinkNote(t *testing.T, path, content string) {
 	t.Helper()
-	w.vault.File(path, content)
-	w.texts.File(path, []byte(content))
+	w.vault.WriteFile(path, content)
+	w.texts.WriteFile(path, []byte(content))
 }
 
 func (w *world) fetchMissingTexts(t *testing.T) {
@@ -45,7 +45,7 @@ func TestALinkNoteAddedToTheVaultGetsItsTextOnce(t *testing.T) {
 	w := newAutomaticWorld(t)
 	w.fetchMissingTexts(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.vault.File("notes/plain.md", "---\ntype: deck\nurl: "+videoAddress+"\n---\n")
+	w.vault.WriteFile("notes/plain.md", "---\ntype: deck\nurl: "+videoAddress+"\n---\n")
 
 	w.fetchMissingTexts(t)
 	w.fetchMissingTexts(t)

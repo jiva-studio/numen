@@ -455,7 +455,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
 	s := New(withPort(0), withToken("closer-token"), withStdout(io.Discard), withStdin(nil))
 	closed := 0
-	s.OnClose(func() error { closed++; return nil })
+	s.AddCloser(func() error { closed++; return nil })
 	if _, err := s.Listen(); err != nil {
 		t.Fatalf("Listen failed: %v", err)
 	}
@@ -797,7 +797,7 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 
 	// ServeContext with OnClose returning error
 	sCloserErr := New(withPort(0), withToken("tok"), withStdout(nil), withStdin(nil), withSignals())
-	sCloserErr.OnClose(func() error { return errors.New("closer boom") })
+	sCloserErr.AddCloser(func() error { return errors.New("closer boom") })
 	if err := sCloserErr.ServeContext(ctx); err == nil || !strings.Contains(err.Error(), "closer boom") {
 		t.Fatalf("expected closer boom from ServeContext, got %v", err)
 	}

@@ -61,7 +61,7 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 </package>`),
 		"EPUB/cover.png": []byte("\x89PNG\r\n\x1a\nanother picture, longer than the first one was"),
 	})
-	files.File(name, string(changed))
+	files.WriteFile(name, string(changed))
 	body, err := readEntryFrom(books, name, "EPUB/cover.png")
 	if err != nil {
 		t.Fatal(err)
@@ -79,7 +79,7 @@ func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 	books, opens := newCountingReader(t, files)
 	for i := range maxCachedBooks {
 		name := "copy" + string(rune('a'+i)) + ".epub"
-		files.File(name, string(testsupport.CreateImageEpub(t)))
+		files.WriteFile(name, string(testsupport.CreateImageEpub(t)))
 		if _, err := readEntryFrom(books, name, "EPUB/cover.png"); err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 	first := books.books.books[0]
 	second := books.books.books[1]
 	extra := "copy" + string(rune('a'+maxCachedBooks)) + ".epub"
-	files.File(extra, string(testsupport.CreateImageEpub(t)))
+	files.WriteFile(extra, string(testsupport.CreateImageEpub(t)))
 	if _, err := readEntryFrom(books, extra, "EPUB/cover.png"); err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 
 func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 	files, name, _, _ := writeBook(t)
-	files.File("second.epub", string(testsupport.CreateImageEpub(t)))
+	files.WriteFile("second.epub", string(testsupport.CreateImageEpub(t)))
 	books, opens := newCountingReader(t, files)
 
 	// Open name, then second.epub, then name again to exercise LRU loop skipping non-matching key
@@ -205,7 +205,7 @@ func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Modify file size to force eviction while held
-	files.File("second.epub", string(testsupport.CreateGuidedEpub(t)))
+	files.WriteFile("second.epub", string(testsupport.CreateGuidedEpub(t)))
 	if _, err := readEntryFrom(books, "second.epub", "EPUB/c1.xhtml"); err != nil {
 		t.Fatal(err)
 	}

@@ -143,7 +143,7 @@ func (v *Vault) editLinks(
 func (v *Vault) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
@@ -163,7 +163,7 @@ func (v *Vault) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 func (v *Vault) ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	return v.getBacklinks(v.parsed(), to), nil
@@ -174,12 +174,12 @@ func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.R
 	if !ok {
 		return nil
 	}
-	base := notesdomain.FoldName(domain.Basename(to))
+	base := notesdomain.NormalizeName(domain.GetBasename(to))
 	var out []domain.ResolvedLink
-	for _, from := range sortedPaths(notes) {
+	for _, from := range listSortedPaths(notes) {
 		for _, l := range notes[from].Links {
 			mayReach := (l.Target.Scheme == domain.SchemeNote && target.ID != "" && l.Target.Value == target.ID) ||
-				(l.Target.Scheme == domain.SchemeName && notesdomain.FoldName(notesdomain.LinkName(l.Target.Value)) == base)
+				(l.Target.Scheme == domain.SchemeName && notesdomain.NormalizeName(notesdomain.LinkName(l.Target.Value)) == base)
 			if !mayReach {
 				continue
 			}
@@ -197,7 +197,7 @@ func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.R
 func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (map[string]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()

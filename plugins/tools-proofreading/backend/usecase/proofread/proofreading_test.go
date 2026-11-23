@@ -50,8 +50,8 @@ func newScene(t *testing.T) *scene {
 		model:  newReplyModel(""),
 		config: settings.DefaultConfig(),
 	}
-	s.texts.File(scanPath, []byte("the scan"))
-	s.texts.File(talkPath, []byte("the recording"))
+	s.texts.WriteFile(scanPath, []byte("the scan"))
+	s.texts.WriteFile(talkPath, []byte("the recording"))
 	s.texts.SetStore(pluginID, s.store)
 	s.run = New(Host{
 		Store: func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
@@ -66,7 +66,7 @@ func (s *scene) hold(t *testing.T, owner, path, key string, kind domain.TextKind
 	if err := host.WriteText(t.Context(), s.texts.GetStore(owner), key+".jsonl", parts); err != nil {
 		t.Fatal(err)
 	}
-	version, err := s.texts.As(owner).PutVersion(t.Context(), host.TextPut{
+	version, err := s.texts.UsePlugin(owner).PutVersion(t.Context(), host.TextPut{
 		Path: path, Key: key, Kind: kind, InputHash: domain.HashContent([]byte(raw)), File: key + ".jsonl",
 	})
 	if err != nil {
@@ -281,14 +281,14 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
+	s.vault.LinkBeside(chemistry)
 	other := s.texts.With("Chemistry")
-	other.File(scanPath, []byte("the scan"))
+	other.WriteFile(scanPath, []byte("the scan"))
 	other.SetStore(pluginID, chemistry.Store())
 	if err := host.WriteText(t.Context(), other.GetStore(ocrID), "recognition.jsonl", []domain.TextSegment{{Text: "A rotor spinnig.\n\n"}}); err != nil {
 		t.Fatal(err)
 	}
-	scan, err := other.As(ocrID).PutVersion(t.Context(), host.TextPut{
+	scan, err := other.UsePlugin(ocrID).PutVersion(t.Context(), host.TextPut{
 		Path: scanPath, Key: "recognition", Kind: kindRecognition, InputHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
 	})
 	if err != nil {

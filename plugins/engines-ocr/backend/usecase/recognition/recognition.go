@@ -279,7 +279,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 		return Result{}, err
 	}
 	r.host.Documents.Prepare(func(err error) { r.reportError("prepare the documents", err) })
-	turn, err := host.InferenceQueue(r.host.Queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: func() {
+	turn, err := host.InferenceQueue(r.host.Queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: req.IsUserStarted, NotifyWaiting: func() {
 		queuedTask := *task
 		if rec != nil {
 			queuedTask.CompletedCount, queuedTask.TotalCount = int64(len(rec.Pages)), int64(rec.PageCount)

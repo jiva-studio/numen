@@ -134,7 +134,7 @@ func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if content, ok := vault.Content("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
+	if content, ok := vault.ReadContent("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
 		t.Errorf("the text of the argument body was stored: %q", content)
 	}
 	if !res.GetResult().GetIsError() {

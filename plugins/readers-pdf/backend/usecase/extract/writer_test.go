@@ -91,9 +91,9 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 			if raw == nil {
 				raw = testsupport.ReadFixture(t, name)
 			}
-			files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
+			files := hosttest.CreateOnDisk(t, "vault", map[string]string{name: string(raw)})
 			texts := hosttest.NewTexts("vault", pluginID)
-			texts.File(name, raw)
+			texts.WriteFile(name, raw)
 			texts.SetStore(pluginID, files.Store())
 			queue := hosttest.NewQueue()
 			writer := testsupport.NewWriter(t, testsupport.FilesOf(files), files, texts, queue)
@@ -118,11 +118,11 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	raw := testsupport.ReadFixture(t, "tiny.pdf")
 	physics := hosttest.New("Physics")
 	chemistry := hosttest.New("Chemistry")
-	physics.Beside(chemistry)
-	chemistry.File("tiny.pdf", string(raw))
+	physics.LinkBeside(chemistry)
+	chemistry.WriteFile("tiny.pdf", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
 	other := texts.With("Chemistry")
-	other.File("tiny.pdf", raw)
+	other.WriteFile("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
 	writer := testsupport.NewWriter(t, testsupport.FilesOf(physics), physics, texts, hosttest.NewQueue())
 
@@ -142,9 +142,9 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 
 func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	raw := testsupport.ReadFixture(t, "tiny.pdf")
-	files := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
+	files := hosttest.CreateOnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
-	texts.File("tiny.pdf", raw)
+	texts.WriteFile("tiny.pdf", raw)
 	queue := hosttest.NewQueue()
 	held, err := queue.EnqueueWork(t.Context(), host.Work{})
 	if err != nil {
@@ -182,9 +182,9 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 
 func TestTheWriterIgnoresARepeatedAndALateRequest(t *testing.T) {
 	raw := testsupport.ReadFixture(t, "tiny.pdf")
-	files := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
+	files := hosttest.CreateOnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
-	texts.File("tiny.pdf", raw)
+	texts.WriteFile("tiny.pdf", raw)
 	queue := hosttest.NewQueue()
 	held, err := queue.EnqueueWork(t.Context(), host.Work{})
 	if err != nil {

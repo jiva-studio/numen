@@ -97,7 +97,7 @@ func mount(
 		return err
 	}
 	command.Mount(s, commands)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		follower.Close()
 		writer.Close()
 		return nil
@@ -114,7 +114,7 @@ func followShownVault(s *server.Server, shown ShownVault, follower *extract.Foll
 			follower.Wake(ctx, v.ID)
 		}
 	}()
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		cancel()
 		<-done
 		return nil

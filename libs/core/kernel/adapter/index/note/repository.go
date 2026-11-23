@@ -178,7 +178,7 @@ func saveSourceAndNote(
 	).Scan(&row, &updated); err != nil {
 		return 0, stored, fmt.Errorf("record the source this note is: %w", err)
 	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.FileStat.Path)),
+	if err := exec(ctx, tx, "save_note", row, vault, domain.NormalizeName(domain.GetBasename(n.FileStat.Path)),
 		n.Title, string(noteType(n)), newNullableValue(n.ID), frontmatter, newNullableValue(problem)); err != nil {
 		return 0, stored, err
 	}
@@ -210,7 +210,7 @@ func readStoredFrontmatter(ctx context.Context, tx *sqlwrite.Transaction, vault 
 func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links []domain.Link) error {
 	for i, l := range links {
 		if _, err := tx.ExecContext(ctx, getStatement("insert_link"), row, i,
-			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
+			l.Target.Scheme, l.Target.Value, domain.NormalizeName(domain.LinkName(l.Target.Value)),
 			string(l.Role), newNullableValue(l.Type), newNullableValue(l.Why), newNullableValue(l.Label),
 			newNullableValue(string(l.Marker)),
 		); err != nil {

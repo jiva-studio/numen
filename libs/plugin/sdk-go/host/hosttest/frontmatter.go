@@ -23,7 +23,7 @@ const (
 func (v *Vault) ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (host.FrontmatterPage, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return host.FrontmatterPage{}, err
 	}
 	switch {
@@ -35,7 +35,7 @@ func (v *Vault) ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (h
 		limit = frontmatterPageSize
 	}
 	notes := v.parsed()
-	paths := sortedPaths(notes)
+	paths := listSortedPaths(notes)
 	if len(q.Paths) > 0 {
 		paths = slices.Compact(slices.Sorted(slices.Values(q.Paths)))
 	}
@@ -97,7 +97,7 @@ func setKeys(doc *notesmarkdown.Document, values map[string]any) error {
 		case []string:
 			err = doc.SetList(key, value)
 		case []any:
-			if names, isText := asNames(value); isText {
+			if names, isText := convertNames(value); isText {
 				err = doc.SetList(key, names)
 			} else {
 				err = doc.SetValue(key, value)
@@ -112,7 +112,7 @@ func setKeys(doc *notesmarkdown.Document, values map[string]any) error {
 	return nil
 }
 
-func asNames(items []any) ([]string, bool) {
+func convertNames(items []any) ([]string, bool) {
 	names := make([]string, len(items))
 	for i, item := range items {
 		name, isText := item.(string)

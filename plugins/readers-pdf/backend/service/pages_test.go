@@ -68,7 +68,7 @@ func getPage(t *testing.T, web *httptest.Server, path string) page {
 
 func newTestdataVault(t *testing.T) *hosttest.Vault {
 	t.Helper()
-	return hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
+	return hosttest.CreateOnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
 }
 
 func TestPageRouteServesAPageAsJPEG(t *testing.T) {

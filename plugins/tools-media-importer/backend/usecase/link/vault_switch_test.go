@@ -80,7 +80,7 @@ func (s currentStore) Rename(ctx context.Context, from, to string) error {
 
 func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	mills, harbor := hosttest.New("Mills"), hosttest.New("Harbor")
-	mills.Beside(harbor)
+	mills.LinkBeside(harbor)
 	current := &atomic.Pointer[hosttest.Vault]{}
 	current.Store(mills)
 	texts := hosttest.NewTexts(mills.Vault().ID, pluginID)
@@ -119,20 +119,20 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	<-fetched.started
 
 	current.Store(harbor)
-	harbor.File(made.Path, "---\ntype: link\nurl: "+videoAddress+"\n---\n")
+	harbor.WriteFile(made.Path, "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 	close(fetched.gate)
 	tasks.WaitForEnd(t, link.GetCopyTaskID(found.Vault, found.Path))
 
 	if files, err := harbor.Store().List(t.Context()); err != nil || len(files) != 0 {
 		t.Errorf("the vault current after the switch holds %+v in the store (%v)", files, err)
 	}
-	if content, _ := harbor.Content(made.Path); bytes.Contains([]byte(content), []byte("media:")) {
+	if content, _ := harbor.ReadContent(made.Path); bytes.Contains([]byte(content), []byte("media:")) {
 		t.Errorf("the note of the vault current after the switch reads %q", content)
 	}
 	if _, err := mills.Store().Read(t.Context(), found.Key+".video.mp4"); err != nil {
 		t.Errorf("the vault the download started in holds no copy: %v", err)
 	}
-	content, _ := mills.Content(made.Path)
+	content, _ := mills.ReadContent(made.Path)
 	if !bytes.Contains([]byte(content), []byte("media: plugin://"+pluginID+"/"+found.Key+".video.mp4")) {
 		t.Errorf("the note of the vault the download started in reads %q", content)
 	}

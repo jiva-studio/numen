@@ -470,29 +470,29 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	}
 
 	// Read edge cases.
-	v.File("notes/note.txt", "---\ntype: link\nurl: https://example.com/\n---\n")
+	v.WriteFile("notes/note.txt", "---\ntype: link\nurl: https://example.com/\n---\n")
 	if _, err := l.Read(ctx, "notes/note.txt"); !errors.Is(err, ErrNotALink) {
 		t.Errorf("Read(.txt) = %v, want ErrNotALink", err)
 	}
 	if _, err := l.Read(ctx, "notes/missing.md"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("Read(missing.md) = %v, want ErrNotExist", err)
 	}
-	v.File("notes/empty-url.md", "---\ntype: link\nurl: \"\"\n---\n")
+	v.WriteFile("notes/empty-url.md", "---\ntype: link\nurl: \"\"\n---\n")
 	if _, err := l.Read(ctx, "notes/empty-url.md"); !errors.Is(err, ErrNotALink) {
 		t.Errorf("Read(empty url) = %v, want ErrNotALink", err)
 	}
-	v.File("notes/num-url.md", "---\ntype: link\nurl: 42\n---\n")
+	v.WriteFile("notes/num-url.md", "---\ntype: link\nurl: 42\n---\n")
 	if _, err := l.Read(ctx, "notes/num-url.md"); !errors.Is(err, ErrNotALink) {
 		t.Errorf("Read(numeric url) = %v, want ErrNotALink", err)
 	}
-	v.File("notes/bad-url.md", "---\ntype: link\nurl: ftp://example.com/file\n---\n")
+	v.WriteFile("notes/bad-url.md", "---\ntype: link\nurl: ftp://example.com/file\n---\n")
 	if _, err := l.Read(ctx, "notes/bad-url.md"); !errors.Is(err, ErrNotALink) || !errors.Is(err, address.ErrNotAURL) {
 		t.Errorf("Read(ftp url) = %v, want ErrNotALink and ErrNotAURL", err)
 	}
 
 	boom := errors.New("vault error")
 	hv.getVaultErr = boom
-	v.File("notes/good.md", "---\ntype: link\nurl: https://example.com/\n---\n")
+	v.WriteFile("notes/good.md", "---\ntype: link\nurl: https://example.com/\n---\n")
 	if _, err := l.Read(ctx, "notes/good.md"); !errors.Is(err, boom) {
 		t.Errorf("Read(getVault error) = %v, want %v", err, boom)
 	}
@@ -533,8 +533,8 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rawNote, _ := v.Content(made.Path)
-	ht.fake.File(made.Path, []byte(rawNote))
+	rawNote, _ := v.ReadContent(made.Path)
+	ht.fake.WriteFile(made.Path, []byte(rawNote))
 
 	boom := errors.New("store failure")
 	hs.writeErr = func(string) error { return boom }
@@ -706,7 +706,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	if err := l.setAddress(ctx, Link{Path: "links/missing.md"}, mediaKey, "x"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("setAddress(missing) = %v, want ErrNotExist", err)
 	}
-	v.File("links/unterminated.md", "---\ntype: link\n")
+	v.WriteFile("links/unterminated.md", "---\ntype: link\n")
 	if err := l.setAddress(ctx, Link{Path: "links/unterminated.md"}, mediaKey, "x"); err == nil {
 		t.Error("setAddress(unterminated frontmatter) succeeded")
 	}

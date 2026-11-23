@@ -105,7 +105,7 @@ type textsOfVault struct {
 }
 
 func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
-	if _, isThere := t.vault.Content(params.Path); !isThere {
+	if _, isThere := t.vault.ReadContent(params.Path); !isThere {
 		return domain.TextVersion{}, fmt.Errorf("%s: %w", params.Path, host.ErrNotExist)
 	}
 	return t.TextVersions.PutVersion(ctx, params)
@@ -176,8 +176,8 @@ func newScene(t *testing.T) *scene {
 	s.texts.SetStore(pluginID, s.store)
 	for path, name := range map[string]string{"books/scan.pdf": "scan.pdf", "books/layer.pdf": "tiny.pdf"} {
 		raw := readFixture(t, name)
-		s.vault.File(path, raw)
-		s.texts.File(path, []byte(raw))
+		s.vault.WriteFile(path, raw)
+		s.texts.WriteFile(path, []byte(raw))
 	}
 	documents := document.NewReader()
 	run, err := recognition.New(
@@ -434,12 +434,12 @@ func TestNewRequiresHostAndRecognizer(t *testing.T) {
 func TestRecognizeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
+	s.vault.LinkBeside(chemistry)
 	raw := readFixture(t, "scan.pdf")
-	chemistry.File("books/scan.pdf", raw)
+	chemistry.WriteFile("books/scan.pdf", raw)
 	other := s.texts.With("Chemistry")
 	other.SetStore(pluginID, chemistry.Store())
-	other.File("books/scan.pdf", []byte(raw))
+	other.WriteFile("books/scan.pdf", []byte(raw))
 
 	if err := s.recognize(t, recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
@@ -468,12 +468,12 @@ func TestRecognizeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 func TestRecognizeInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
+	s.vault.LinkBeside(chemistry)
 	raw := readFixture(t, "scan.pdf")
-	chemistry.File("books/scan.pdf", raw)
+	chemistry.WriteFile("books/scan.pdf", raw)
 	other := s.texts.With("Chemistry")
 	other.SetStore(pluginID, chemistry.Store())
-	other.File("books/scan.pdf", []byte(raw))
+	other.WriteFile("books/scan.pdf", []byte(raw))
 
 	sum := sha256.Sum256([]byte("books/scan.pdf"))
 	progress := `{"path":"books/scan.pdf","inputHash":"` + domain.HashContent([]byte(raw)) +

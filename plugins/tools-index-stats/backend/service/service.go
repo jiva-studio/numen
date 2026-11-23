@@ -59,7 +59,7 @@ func mount(s *server.Server, stats *indexstats.Stats) error {
 
 // Mount registers the service on s. The index is the one the host the process was launched for shows.
 func Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}

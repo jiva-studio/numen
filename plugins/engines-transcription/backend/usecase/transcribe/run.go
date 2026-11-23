@@ -135,7 +135,7 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 }
 
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
-	turn, err := host.InferenceQueue(t.queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: !t.isBackground(getTaskID(j.vault, j.path)), OnWaiting: func() {
+	turn, err := host.InferenceQueue(t.queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: !t.isBackground(getTaskID(j.vault, j.path)), NotifyWaiting: func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
 		t.reportTask(ctx, host.Task{
 			ID: getTaskID(j.vault, j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,

@@ -35,10 +35,10 @@ type windowTools struct {
 func newWindowTools(t *testing.T) windowTools {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
-	vault.File(guidePath, pdfBytes)
-	vault.File(bookPath, "PK\x03\x04epub body")
-	vault.File(talkPath, "ID3\x00\x03audio")
+	vault.WriteFile(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
+	vault.WriteFile(guidePath, pdfBytes)
+	vault.WriteFile(bookPath, "PK\x03\x04epub body")
+	vault.WriteFile(talkPath, "ID3\x00\x03audio")
 
 	window := hosttest.NewWindow(vault)
 	return windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: window})}

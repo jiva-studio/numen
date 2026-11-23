@@ -80,7 +80,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	v := domain.Vault{ID: id, Name: name, Path: root}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
-		v.Name = domain.BasePath(root)
+		v.Name = domain.GetBasePath(root)
 	}
 	v.Name = recognized.FreeName(v.Name, v.ID)
 	if err := u.saver.Save(v); err != nil {

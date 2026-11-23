@@ -7,8 +7,8 @@ import (
 	"fmt"
 	pathpkg "path"
 	"regexp"
-	"strconv"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -41,7 +41,7 @@ func newClock(at time.Time) *clocktest.Fake {
 func newVault(templates map[string]string) *hosttest.Vault {
 	vault := hosttest.New("notes")
 	for path, content := range templates {
-		vault.File(path, content)
+		vault.WriteFile(path, content)
 	}
 	return vault
 }
@@ -76,13 +76,13 @@ func getRequest(vault *hosttest.Vault, template, folder string, values map[strin
 }
 
 func getNamedRequest(vault *hosttest.Vault, template, folder, name string, values map[string]string) newnote.Request {
-	content, _ := vault.Content(template)
+	content, _ := vault.ReadContent(template)
 	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
 }
 
 func getContent(t *testing.T, vault *hosttest.Vault, path string) string {
 	t.Helper()
-	content, isThere := vault.Content(path)
+	content, isThere := vault.ReadContent(path)
 	if !isThere {
 		t.Fatalf("no file at %q", path)
 	}
@@ -200,7 +200,7 @@ func TestAssignTheNoteItsOwnID(t *testing.T) {
 
 		path := createNote(t, vault, "Templates/Meeting.md", "work")
 
-		id, hasID := openNote(t, getContent(t, vault, path)).Identifier()
+		id, hasID := openNote(t, getContent(t, vault, path)).GetIdentifier()
 		if !hasID || id == "" || id == templateID || len(id) != 26 {
 			t.Errorf("id = %q (%v), the template's is %q", id, hasID, templateID)
 		}
@@ -211,7 +211,7 @@ func TestAssignTheNoteItsOwnID(t *testing.T) {
 		path := createNote(t, vault, "Templates/Book.md", "reading")
 
 		doc := openNote(t, getContent(t, vault, path))
-		if id, hasID := doc.Identifier(); !hasID || len(id) != 26 {
+		if id, hasID := doc.GetIdentifier(); !hasID || len(id) != 26 {
 			t.Errorf("id = %q (%v)", id, hasID)
 		}
 		if doc.Body() != "# Book\n\nAuthor\n" {
@@ -224,8 +224,8 @@ func TestAssignTheNoteItsOwnID(t *testing.T) {
 		first := createNote(t, vault, "Templates/Meeting.md", "work")
 		second := createNote(t, vault, "Templates/Meeting.md", "work")
 
-		firstID, _ := openNote(t, getContent(t, vault, first)).Identifier()
-		secondID, _ := openNote(t, getContent(t, vault, second)).Identifier()
+		firstID, _ := openNote(t, getContent(t, vault, first)).GetIdentifier()
+		secondID, _ := openNote(t, getContent(t, vault, second)).GetIdentifier()
 		if firstID == secondID {
 			t.Errorf("both notes have the id %q", firstID)
 		}
@@ -357,7 +357,7 @@ func TestNameTheNote(t *testing.T) {
 		if !errors.Is(err, newnote.ErrNameTaken) || !strings.Contains(err.Error(), "Meeting") {
 			t.Errorf("error = %v", err)
 		}
-		if content, _ := vault.Content("work/Meeting.md"); content != "taken" {
+		if content, _ := vault.ReadContent("work/Meeting.md"); content != "taken" {
 			t.Errorf("a taken note changed: %q", content)
 		}
 		if len(vault.Scans()) != 0 {
@@ -373,7 +373,7 @@ func TestNameTheNote(t *testing.T) {
 		if !errors.Is(err, newnote.ErrNameTaken) {
 			t.Errorf("error = %v", err)
 		}
-		if content, _ := vault.Content("work/Meeting.md"); content != "written by another window" {
+		if content, _ := vault.ReadContent("work/Meeting.md"); content != "written by another window" {
 			t.Errorf("the note of the other writer changed: %q", content)
 		}
 	})
@@ -394,9 +394,9 @@ func TestNameTheNote(t *testing.T) {
 }
 
 func takeNames(vault *hosttest.Vault, folder, stem string, count int) {
-	vault.File(folder+"/"+stem+".md", "taken")
+	vault.WriteFile(folder+"/"+stem+".md", "taken")
 	for number := 2; number <= count; number++ {
-		vault.File(fmt.Sprintf("%s/%s %d.md", folder, stem, number), "taken")
+		vault.WriteFile(fmt.Sprintf("%s/%s %d.md", folder, stem, number), "taken")
 	}
 }
 
@@ -408,7 +408,7 @@ type racingVault struct {
 func (v *racingVault) Create(ctx context.Context, path string, content []byte) error {
 	if i := slices.Index(v.pending, path); i >= 0 {
 		v.pending = slices.Delete(v.pending, i, i+1)
-		v.Vault.File(path, "written by another window")
+		v.Vault.WriteFile(path, "written by another window")
 	}
 	return v.Vault.Create(ctx, path, content)
 }
@@ -448,7 +448,7 @@ func TestLeaveTheTemplateAsItWas(t *testing.T) {
 
 		createNote(t, vault, "Templates/Meeting.md", "work")
 
-		if content, _ := vault.Content("Templates/Meeting.md"); content != meeting {
+		if content, _ := vault.ReadContent("Templates/Meeting.md"); content != meeting {
 			t.Errorf("the template changed:\n%s", content)
 		}
 		if after, err := vault.StatFile(t.Context(), "Templates/Meeting.md"); err != nil || !after.IsUnchanged(before) {
@@ -512,7 +512,7 @@ func TestMakeNoNoteFromATemplateThatIsNotText(t *testing.T) {
 		if !errors.Is(err, newnote.ErrInvalidNote) {
 			t.Errorf("error = %v", err)
 		}
-		if content, isThere := vault.Content("work/@draft.md"); isThere {
+		if content, isThere := vault.ReadContent("work/@draft.md"); isThere {
 			t.Errorf("a note was made: %q", content)
 		}
 		if len(vault.Scans()) != 0 {
@@ -527,7 +527,7 @@ func TestMakeNoNoteFromATemplateThatIsNotText(t *testing.T) {
 		if !errors.Is(err, newnote.ErrInvalidNote) {
 			t.Errorf("error = %v", err)
 		}
-		if _, isThere := vault.Content("work/Binary.md"); isThere {
+		if _, isThere := vault.ReadContent("work/Binary.md"); isThere {
 			t.Error("a note was made")
 		}
 	})
@@ -619,7 +619,7 @@ func TestKeepAnAnswerInsideItsFrontmatterValue(t *testing.T) {
 			}
 			content := getContent(t, vault, made.Path)
 			doc := openNote(t, content)
-			if id, _ := doc.Identifier(); id == "evil" || len(id) != 26 {
+			if id, _ := doc.GetIdentifier(); id == "evil" || len(id) != 26 {
 				t.Errorf("id = %q", id)
 			}
 			if !strings.Contains(content, c.line+"\n") || !slices.Equal(getKeys(t, content), []string{"title", "tags", "id"}) {
@@ -636,7 +636,7 @@ func TestKeepAnAnswerInsideItsFrontmatterValue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if id, _ := openNote(t, getContent(t, vault, made.Path)).Identifier(); id == "fixed" || id == "other" || len(id) != 26 {
+		if id, _ := openNote(t, getContent(t, vault, made.Path)).GetIdentifier(); id == "fixed" || id == "other" || len(id) != 26 {
 			t.Errorf("id = %q", id)
 		}
 	})
@@ -679,7 +679,7 @@ func TestMakeNoNoteFromATemplateThatIsTooLarge(t *testing.T) {
 		if !errors.Is(err, newnote.ErrInvalidNote) || !strings.Contains(err.Error(), "256 KiB") {
 			t.Errorf("error = %v", err)
 		}
-		if _, isThere := vault.Content("work/Big.md"); isThere {
+		if _, isThere := vault.ReadContent("work/Big.md"); isThere {
 			t.Error("a note was made")
 		}
 	})
@@ -715,7 +715,7 @@ func TestMakeNoNoteFromATemplateThatDoesNotRun(t *testing.T) {
 			if !errors.Is(err, newnote.ErrInvalidNote) || !strings.Contains(err.Error(), c.want) {
 				t.Errorf("error = %v, want one with %q", err, c.want)
 			}
-			if _, isThere := vault.Content("work/Broken.md"); isThere || len(vault.Scans()) != 0 {
+			if _, isThere := vault.ReadContent("work/Broken.md"); isThere || len(vault.Scans()) != 0 {
 				t.Error("a note was made")
 			}
 		})
@@ -807,7 +807,7 @@ func TestRefuseATemplateThatChangedSinceItWasListed(t *testing.T) {
 			if !errors.Is(err, newnote.ErrTemplateChanged) || len(vault.Scans()) != 0 {
 				t.Errorf("error = %v, scans = %v", err, vault.Scans())
 			}
-			if _, isThere := vault.Content("work/Visit.md"); isThere {
+			if _, isThere := vault.ReadContent("work/Visit.md"); isThere {
 				t.Error("a note was made")
 			}
 		})
@@ -820,7 +820,7 @@ func TestWriteTheIDOfTheNewNote(t *testing.T) {
 	path := createNote(t, vault, "Templates/Ref.md", "work")
 
 	doc := openNote(t, getContent(t, vault, path))
-	if id, _ := doc.Identifier(); id == "" || doc.Body() != "id is "+id+"\n" {
+	if id, _ := doc.GetIdentifier(); id == "" || doc.Body() != "id is "+id+"\n" {
 		t.Errorf("id = %q, body = %q", id, doc.Body())
 	}
 }
@@ -837,7 +837,7 @@ func TestKeepTheNoteWhenItCannotBeIndexed(t *testing.T) {
 	if !errors.Is(err, newnote.ErrNotIndexed) || made.Path != "work/Meeting.md" {
 		t.Errorf("Execute = %q, %v", made.Path, err)
 	}
-	if _, isThere := vault.Content("work/Meeting.md"); !isThere {
+	if _, isThere := vault.ReadContent("work/Meeting.md"); !isThere {
 		t.Error("the note is not made")
 	}
 }

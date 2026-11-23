@@ -80,9 +80,9 @@ func encodeJSONString(t *testing.T, text string) string {
 
 func TestNoteEditPreviewInARunOnAnotherVaultDiffsAgainstTheNoteOfThatVault(t *testing.T) {
 	shown, other := hosttest.New("marsh"), hosttest.New("dune")
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
+	shown.LinkBeside(other)
+	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
+	other.WriteFile("notes/Plover.md", "Plovers nest on the dune.")
 	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
@@ -107,9 +107,9 @@ func TestNoteEditPreviewInARunOnAnotherVaultDiffsAgainstTheNoteOfThatVault(t *te
 
 func TestNoteEditPreviewWithNoVaultOnTheCallDiffsAgainstTheNoteOfTheShownVault(t *testing.T) {
 	shown, other := hosttest.New("marsh"), hosttest.New("dune")
-	shown.Beside(other)
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
-	other.File("notes/Plover.md", "Plovers nest on the dune.")
+	shown.LinkBeside(other)
+	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
+	other.WriteFile("notes/Plover.md", "Plovers nest on the dune.")
 	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{
@@ -152,7 +152,7 @@ func TestNoteEditPreviewOfANoteThatDoesNotExistYetShowsItAllAdded(t *testing.T) 
 
 func TestNoteEditPreviewInAnUnknownVaultIsRefused(t *testing.T) {
 	shown := hosttest.New("marsh")
-	shown.File("notes/Plover.md", "Plovers nest on the marsh.")
+	shown.WriteFile("notes/Plover.md", "Plovers nest on the marsh.")
 	registry := newRegistry(t, service.Host{Files: filesOf(shown)})
 
 	res, err := registry.InvokeTool(t.Context(), tools.Call{

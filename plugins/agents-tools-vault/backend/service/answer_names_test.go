@@ -179,8 +179,8 @@ func getNarrativeMarkers() []*regexp.Regexp {
 func TestVaultListReturnsIsCurrentAndPathKeys(t *testing.T) {
 	sky, registry := newSkyVault(t)
 	garden := hosttest.New("garden-vault")
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	sky.Beside(garden)
+	garden.WriteFile("Beds.md", "# Beds\nRaised beds of oak.")
+	sky.LinkBeside(garden)
 
 	var answer struct {
 		Vaults []map[string]any `json:"vaults"`
@@ -461,8 +461,8 @@ func TestLibraryReadReturnsThePageAndTheCFIOfARange(t *testing.T) {
 	l := newLibrary(t)
 	const bookPath = "library/Marsh Book.epub"
 	file := []byte("PK\x03\x04epub body")
-	l.vault.File(bookPath, string(file))
-	l.texts.File(bookPath, file)
+	l.vault.WriteFile(bookPath, string(file))
+	l.texts.WriteFile(bookPath, file)
 	putText(t, l.texts, readerID, bookPath, "book-text", file, []domain.TextSegment{
 		{Text: "The reed beds at dawn. ", Selector: `{"cfi":"epubcfi(/6/4!/4/2/1:0)"}`},
 		{Text: "No place here. "},
@@ -667,7 +667,7 @@ func TestNoteSearchReturnsTheLineCountedInTheBody(t *testing.T) {
 
 func TestNoteSearchReturnsLineOneForAMatchOnTheFirstBodyLine(t *testing.T) {
 	v, svc := setupTestVault()
-	v.File("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
+	v.WriteFile("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)

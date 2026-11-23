@@ -96,7 +96,7 @@ func convertError(action string, err error) error {
 
 func getClosedContext(s *server.Server) context.Context {
 	ctx, stop := context.WithCancel(context.Background())
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		stop()
 		return nil
 	})
@@ -188,7 +188,7 @@ func Mount(s *server.Server) error {
 	if err := mountAgentSurface(s, vaults, clock.System{}); err != nil {
 		return err
 	}
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		flushCtx, stop := context.WithTimeout(context.Background(), flushTimeout)
 		defer stop()
 		return tasks.Flush(flushCtx)

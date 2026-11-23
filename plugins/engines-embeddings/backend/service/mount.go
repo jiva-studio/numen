@@ -77,7 +77,7 @@ func mount(s *server.Server, queue host.InferenceQueue, open ports.OpenModels, p
 	})
 	searchsource.Mount(s, newHandler(embedSrv, places, sourcehealth.New(reports, console.Report)))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
-	s.OnClose(embedSrv.Close)
+	s.AddCloser(embedSrv.Close)
 	return nil
 }
 

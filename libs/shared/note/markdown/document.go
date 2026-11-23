@@ -142,10 +142,10 @@ func (d *Document) SetBody(body string) error {
 	return nil
 }
 
-// SpliceBody replaces one run of the prose, addressed by byte offsets into the
+// ReplaceBody replaces one run of the prose, addressed by byte offsets into the
 // body as returned by Body. Every byte outside the run is unchanged, and the
 // replacement text uses the file's own line ending.
-func (d *Document) SpliceBody(start, end int, text string) error {
+func (d *Document) ReplaceBody(start, end int, text string) error {
 	if d.isUnterminated {
 		return ErrUnterminated
 	}

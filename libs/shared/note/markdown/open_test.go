@@ -19,7 +19,7 @@ func TestANoteWithNoFrontmatterIsSavedTo(t *testing.T) {
 	if d.Body() != raw {
 		t.Fatalf("the body opened as %q", d.Body())
 	}
-	if err := d.SpliceBody(0, len("# Title"), "# Another"); err != nil {
+	if err := d.ReplaceBody(0, len("# Title"), "# Another"); err != nil {
 		t.Fatalf("splice: %v", err)
 	}
 	if got, want := string(d.Bytes()), "# Another\n\n---\n\nnot frontmatter\n"; got != want {
@@ -43,7 +43,7 @@ func TestASpliceOutsideTheBodyIsRefused(t *testing.T) {
 		{"ending before it begins", 3, 1},
 		{"reaching past the end", 0, 999},
 	} {
-		if err := d.SpliceBody(one.start, one.end, "x"); err == nil {
+		if err := d.ReplaceBody(one.start, one.end, "x"); err == nil {
 			t.Errorf("%s: %d:%d was allowed", one.name, one.start, one.end)
 		}
 	}

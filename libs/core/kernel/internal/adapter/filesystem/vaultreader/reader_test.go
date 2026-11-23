@@ -412,7 +412,7 @@ func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !ulid.Valid(first.ID) {
+	if !ulid.IsValid(first.ID) {
 		t.Fatalf("identity %q is not a ULID", first.ID)
 	}
 	if first.Version != 1 {

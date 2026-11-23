@@ -22,13 +22,13 @@ const (
 func newRiverLibrary(t *testing.T) *tools.Registry {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(riverTalkPath, talkBytes)
-	vault.File(riverGuidePath, pdfBytes)
+	vault.WriteFile(riverTalkPath, talkBytes)
+	vault.WriteFile(riverGuidePath, pdfBytes)
 
 	texts := hosttest.NewTexts(testVault, readerID)
-	texts.File(riverTalkPath, []byte(talkBytes))
-	texts.File(riverGuidePath, []byte(pdfBytes))
-	putText(t, texts.As(scribeID), scribeID, riverTalkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
+	texts.WriteFile(riverTalkPath, []byte(talkBytes))
+	texts.WriteFile(riverGuidePath, []byte(pdfBytes))
+	putText(t, texts.UsePlugin(scribeID), scribeID, riverTalkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
 		{Text: riverFirst, Selector: `{"t":[12.5,20]}`},
 		{Text: riverSecond, Selector: `{"t":[20]}`},
 	})

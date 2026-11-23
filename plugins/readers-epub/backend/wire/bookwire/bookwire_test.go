@@ -17,10 +17,10 @@ import (
 func newMethods(t *testing.T) (*Methods, *books.Reader) {
 	t.Helper()
 	files := hosttest.New("vault")
-	files.File("guided.epub", string(testsupport.CreateGuidedEpub(t)))
-	files.File("pictured.epub", string(testsupport.CreateImageEpub(t)))
-	files.File("enc.epub", string(testsupport.CreateEncryptedEpub(t)))
-	files.File("bad.epub", "not an epub")
+	files.WriteFile("guided.epub", string(testsupport.CreateGuidedEpub(t)))
+	files.WriteFile("pictured.epub", string(testsupport.CreateImageEpub(t)))
+	files.WriteFile("enc.epub", string(testsupport.CreateEncryptedEpub(t)))
+	files.WriteFile("bad.epub", "not an epub")
 	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(reader.Close)
 	return NewMethods(reader), reader
