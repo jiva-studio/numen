@@ -280,3 +280,12 @@ func TestPlaceFileRefusesAMissingStagedFileAndAPathOutsideTheVault(t *testing.T)
 		t.Errorf("a name outside the store folder: error = %v, want ErrOutside", err)
 	}
 }
+
+func statOf(tb testing.TB, v *hosttest.Vault, name string) domain.FileStat {
+	tb.Helper()
+	stat, err := v.StatFile(tb.Context(), name)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return stat
+}

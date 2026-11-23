@@ -38,6 +38,7 @@ type Vault struct {
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
+	trashed    []string
 	tb         testing.TB
 }
 
