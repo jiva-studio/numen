@@ -189,7 +189,7 @@ function resolveDropTarget(
   if (strip && id) return getStripDropTarget({ x: point.x, strip, pane: id }, getLocalBox)
 
   const side = findEdgeSide(point, outer, getEdge())
-  if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
+  if (side) return { kind: 'edge', side, box: getLocalBox(getOverlay(side, outer)) }
 
   if (!pane || !id) return null
 
