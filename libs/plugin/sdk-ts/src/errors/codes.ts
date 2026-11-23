@@ -13,6 +13,7 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
   unreadable: ProtoErrorCode.UNREADABLE,
   alreadyExists: ProtoErrorCode.ALREADY_EXISTS,
   invalidName: ProtoErrorCode.INVALID_NAME,
+  readOnly: ProtoErrorCode.READ_ONLY,
 }
 
 /** The message shown when the vault did not respond at all. */

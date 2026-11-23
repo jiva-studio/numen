@@ -31,8 +31,8 @@ describe('the vault list', () => {
 
     expect(await getVaultList()).toStrictEqual({
       vaults: [
-        { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
-        { id: 'heat', name: 'Heat', path: '/vaults/Heat', isMissing: true },
+        { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false, isReadOnly: false },
+        { id: 'heat', name: 'Heat', path: '/vaults/Heat', isMissing: true, isReadOnly: false },
       ],
       showing: 'heat',
     })

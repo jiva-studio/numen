@@ -70,9 +70,14 @@ function getRowItem(
 }
 
 function getVaultAside(one: Vault, showingId: string, words: Words): string {
-  if (one.isMissing) return words.gone
-  if (one.id === showingId) return words.current
-  return ''
+  const marks: string[] = []
+  if (one.isMissing) {
+    marks.push(words.gone)
+  } else if (one.id === showingId) {
+    marks.push(words.current)
+  }
+  if (one.isReadOnly) marks.push(words.readOnly)
+  return marks.join(', ')
 }
 
 function getConfirmGroup(

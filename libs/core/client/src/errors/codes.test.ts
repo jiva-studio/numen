@@ -13,6 +13,7 @@ describe('the words of an error code', () => {
     expect(ERRORS.unreadable).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.UNREADABLE))
     expect(ERRORS.alreadyExists).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.ALREADY_EXISTS))
     expect(ERRORS.invalidName).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.INVALID_NAME))
+    expect(ERRORS.readOnly).toBe('This vault is read only')
   })
 
   it('are returned for every code the window has', () => {

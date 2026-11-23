@@ -43,6 +43,7 @@ const words: Words = {
   vaults: 'vaults',
   current: 'current',
   gone: 'gone',
+  readOnly: 'read only',
   settings: 'settings',
   newVault: 'new vault',
   newVaultDetail: 'choose a folder',
@@ -59,6 +60,7 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   name,
   path: `/vaults/${name}`,
   isMissing: isMissing,
+  isReadOnly: false,
 })
 
 const createVaultList = (vaults: readonly Vault[], current: string): VaultList => ({
@@ -202,6 +204,15 @@ describe('the vaults the screen lists', () => {
       path: '/vaults/Physics',
       detail: words.gone,
     })
+  })
+
+  it('marks a vault another plugin manages as read only, besides the mark of the vault it is showing', () => {
+    const managed = { ...vault('a', 'Food'), isReadOnly: true }
+    const target = createVaultRows(createVaultList([managed, { ...managed, id: 'b' }], 'a'), words)
+    expect(target.map((one) => one.detail)).toStrictEqual([
+      `${words.current}, ${words.readOnly}`,
+      words.readOnly,
+    ])
   })
 
   it('says nothing alongside a vault that is neither', () => {

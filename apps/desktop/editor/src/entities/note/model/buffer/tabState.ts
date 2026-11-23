@@ -16,6 +16,8 @@ export type NoteErrorCode =
   | 'unreadable'
   /** The vault could not be reached. */
   | 'unreachable'
+  /** The vault is managed by another plugin and is not written here. */
+  | 'readOnly'
 
 /**
  * The errors a keystroke is worth trying again after.

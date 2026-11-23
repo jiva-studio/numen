@@ -61,6 +61,7 @@ export const WORDS = {
   /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',
   gone: 'Missing',
+  readOnly: 'Read only',
   folder: 'Choose vault folder',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',

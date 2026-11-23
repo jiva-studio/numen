@@ -26,6 +26,7 @@ export interface Words {
   readonly vaults: string
   readonly current: string
   readonly gone: string
+  readonly readOnly: string
   readonly newVault: string
   readonly newVaultDetail: string
 }
@@ -65,20 +66,21 @@ export const createWelcomeActions = (
 
 /**
  * The vaults the installation holds. The current vault is marked, as is one
- * whose folder is missing; the rest carry no mark.
+ * whose folder is missing and one that is read only; the rest carry no mark.
  */
 export const createVaultRows = (list: VaultList, words: Words): readonly VaultRow[] =>
   list.vaults.map((one) => {
-    let aside = ''
+    const marks: string[] = []
     if (one.isMissing) {
-      aside = words.gone
+      marks.push(words.gone)
     } else if (one.id === list.showing) {
-      aside = words.current
+      marks.push(words.current)
     }
+    if (one.isReadOnly) marks.push(words.readOnly)
     return {
       id: one.id,
       name: one.name,
       path: one.path,
-      ...(aside ? { detail: aside } : {}),
+      ...(marks.length > 0 ? { detail: marks.join(', ') } : {}),
     }
   })

@@ -14,6 +14,7 @@ const vault = (id: string, name: string) => ({
   name,
   path: `/vaults/${name}`,
   isMissing: false,
+  isReadOnly: false,
 })
 
 const LIST: VaultList = {
