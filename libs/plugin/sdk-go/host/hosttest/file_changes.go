@@ -171,8 +171,6 @@ func (v *Vault) ListFileChanges(ctx context.Context, q host.FileChangeQuery) (ho
 	return host.FileChangePage{Changes: changes, Next: host.FileChangeCursor{FeedID: head.FeedID, Seq: changes[limit-1].Seq}, HasMore: true}, nil
 }
 
-// fillContent sets the hash, size and modification time of the file as it is now; a removal keeps
-// them empty.
 func (v *Vault) fillContent(change *host.FileChange) {
 	if change.Event == host.EventFileRemoved {
 		return

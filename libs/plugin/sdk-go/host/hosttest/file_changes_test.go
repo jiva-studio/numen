@@ -66,7 +66,11 @@ func TestAMovedNoteKeepsItsSourceAndARemovalDropsTheOtherEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	changes := readFeed(t, v, cursor).Changes
-	if len(changes) != 2 || changes[0] != (host.FileChange{SourceID: id, Path: "lakes/a.md", Event: host.EventFileMoved, Seq: cursor.Seq + 1, Hash: moved.Hash, Size: moved.Size, ModifiedAt: moved.ModTime.UnixNano()}) ||
+	wantMoved := host.FileChange{
+		SourceID: id, Path: "lakes/a.md", Event: host.EventFileMoved, Seq: cursor.Seq + 1,
+		Hash: moved.Hash, Size: moved.Size, ModifiedAt: moved.ModTime.UnixNano(),
+	}
+	if len(changes) != 2 || changes[0] != wantMoved ||
 		changes[1].Event != host.EventFileRemoved || changes[1].Path != "b.md" {
 		t.Errorf("after the move and the removal the feed holds %+v", changes)
 	}
