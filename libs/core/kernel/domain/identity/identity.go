@@ -16,6 +16,12 @@ var (
 	ErrInvalidWords = errors.New("the recovery words are not valid")
 	// ErrKeyStore means the key store of the machine refused to read or keep the identity.
 	ErrKeyStore = errors.New("the key store failed")
+	// ErrCannotOpen means sealed data does not open for this plugin, context and account.
+	ErrCannotOpen = errors.New("the sealed data cannot be opened")
+	// ErrNoPendingRestore means no restore waits for a plugin.
+	ErrNoPendingRestore = errors.New("no restore is pending")
+	// ErrInvalidChain means a chain does not verify or does not belong to the recovery words.
+	ErrInvalidChain = errors.New("the device chain is not valid for these recovery words")
 )
 
 // Identity is what a person can see of the identity of this device.
@@ -33,4 +39,11 @@ type Public struct {
 	DeviceFingerprint  string
 	DeviceSignKey      []byte
 	Chain              []byte
+}
+
+// PendingRestore is what a restore that waits for the account chain shows to a plugin: public keys only.
+type PendingRestore struct {
+	IsPending     bool
+	RootSignKey   []byte
+	DeviceSignKey []byte
 }

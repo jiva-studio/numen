@@ -25,7 +25,7 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
-	if err := u.checkAbsent(ctx); err != nil {
+	if err := checkAbsent(ctx, u.deps); err != nil {
 		return identitydomain.Identity{}, err
 	}
 	record, err := u.buildRecord(recovery)
@@ -39,8 +39,8 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	return identityOf(record)
 }
 
-func (u *CreateIdentity) checkAbsent(ctx context.Context) error {
-	_, err := u.deps.keys.GetKey(ctx, keyName)
+func checkAbsent(ctx context.Context, deps Deps) error {
+	_, err := deps.keys.GetKey(ctx, keyName)
 	switch {
 	case err == nil:
 		return identitydomain.ErrIdentityExists
@@ -55,20 +55,24 @@ func (u *CreateIdentity) buildRecord(recovery identitylib.RecoveryWords) (identi
 	if err != nil {
 		return identitylib.Record{}, err
 	}
-	account, err := identitylib.NewAccountKeys(u.deps.random)
-	if err != nil {
-		return identitylib.Record{}, err
-	}
 	device, err := identitylib.NewDeviceKey(u.deps.random)
 	if err != nil {
 		return identitylib.Record{}, err
 	}
-	now := u.deps.clock.Now()
+	return buildNewRecord(u.deps, root, device)
+}
+
+func buildNewRecord(deps Deps, root identitylib.RecoveryKey, device identitylib.DeviceKey) (identitylib.Record, error) {
+	account, err := identitylib.NewAccountKeys(deps.random)
+	if err != nil {
+		return identitylib.Record{}, err
+	}
+	now := deps.clock.Now()
 	chain, err := identitylib.NewChain(root, account, now)
 	if err != nil {
 		return identitylib.Record{}, err
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), entryName(u.deps.names.GetInstanceName()), now)
+	chain, err = chain.AppendDevice(root, device.Public(), entryName(deps.names.GetInstanceName()), now)
 	if err != nil {
 		return identitylib.Record{}, err
 	}

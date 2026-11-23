@@ -10,6 +10,7 @@ import (
 
 const (
 	signInLabel         = "numen-sync/sign-in/v1"
+	chainReadLabel      = "numen-sync/chain-read/v1"
 	challengeIDSize     = 16
 	challengeNonceSize  = 32
 	maxChallengeSkewSec = 120
@@ -18,9 +19,19 @@ const (
 // GetSignInMessage returns the bytes a device signs to sign in: the label of the protocol, the audience,
 // the nonce, the expiry, the device key and the protocol version. The id of the challenge is not signed.
 func GetSignInMessage(challenge *syncv1.GetChallengeResponse, deviceSignKey []byte, version uint32) []byte {
+	return getChallengeMessage(signInLabel, challenge, deviceSignKey, version)
+}
+
+// GetChainReadMessage returns the bytes the recovery key signs to read the chain of its account: the layout of
+// GetSignInMessage under the label numen-sync/chain-read/v1, with the root key in place of the device key.
+func GetChainReadMessage(challenge *syncv1.GetChallengeResponse, rootSignKey []byte, version uint32) []byte {
+	return getChallengeMessage(chainReadLabel, challenge, rootSignKey, version)
+}
+
+func getChallengeMessage(label string, challenge *syncv1.GetChallengeResponse, deviceSignKey []byte, version uint32) []byte {
 	audience := challenge.GetAudience()
-	message := make([]byte, 0, len(signInLabel)+1+binary.MaxVarintLen64+len(audience)+len(challenge.GetNonce())+8+len(deviceSignKey)+4)
-	message = append(message, signInLabel...)
+	message := make([]byte, 0, len(label)+1+binary.MaxVarintLen64+len(audience)+len(challenge.GetNonce())+8+len(deviceSignKey)+4)
+	message = append(message, label...)
 	message = append(message, 0)
 	message = binary.AppendUvarint(message, uint64(len(audience)))
 	message = append(message, audience...)

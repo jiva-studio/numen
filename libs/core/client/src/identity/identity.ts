@@ -31,7 +31,7 @@ export interface IdentityFailure {
 /** The calls of IdentityService the identity is managed through. */
 export type IdentityRpc = Pick<
   Client<typeof IdentityService>,
-  'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'deleteIdentity'
+  'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'startRestore' | 'deleteIdentity'
 >
 
 /** The identity of this device. */
@@ -40,6 +40,8 @@ export interface IdentityClient {
   get(): Promise<IdentityInfo | undefined>
   generateWords(): Promise<readonly string[]>
   create(words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>>
+  /** Starts to restore the account of the words; the identity exists once the core has completed it. */
+  startRestore(words: readonly string[]): Promise<Result<undefined, IdentityFailure>>
   delete(): Promise<void>
 }
 
@@ -78,6 +80,16 @@ const readAnswer = (answer: {
   return asValue(readInfo(answer.identity))
 }
 
+const readStarted = (answer: {
+  error: ProtoIdentityErrorCode
+  detail: string
+}): Result<undefined, IdentityFailure> => {
+  const errorCode = readErrorCode(answer.error)
+  return errorCode === undefined
+    ? asValue(undefined)
+    : asFailure({ errorCode, detail: answer.detail })
+}
+
 /** The identity managed through an IdentityService client. */
 export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   get: async () => {
@@ -86,6 +98,7 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],
   create: async (words) => readAnswer(await rpc.createIdentity({ words: [...words] })),
+  startRestore: async (words) => readStarted(await rpc.startRestore({ words: [...words] })),
   delete: async () => {
     await rpc.deleteIdentity({})
   },

@@ -46,13 +46,23 @@ type WorkQueue interface {
 	ClearPlugin(pluginID string)
 }
 
-// Account is what a plugin with the identity permission may ask of the identity of this device. Both
-// calls return identity.ErrNoIdentity when the device holds none.
+// Account is what a plugin with the identity permission may ask of the identity of this device. The
+// seal and sign calls return identity.ErrNoIdentity when the device holds none.
 type Account interface {
 	// SignAsDevice signs message with the device key under the plugin id.
 	SignAsDevice(ctx context.Context, pluginID string, message []byte) ([]byte, error)
 	// GetPublicIdentity returns what is public of the identity of this device.
 	GetPublicIdentity(ctx context.Context) (identitydomain.Public, error)
+	// SealData seals plain for the plugin under the context with the account keys of this device.
+	SealData(ctx context.Context, pluginID string, dataContext, plain []byte) ([]byte, error)
+	// OpenData opens what SealData sealed for the plugin and the context; failure is identity.ErrCannotOpen.
+	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
+	// GetPendingRestore returns the public keys of the restore that waits for a chain.
+	GetPendingRestore(ctx context.Context) (identitydomain.PendingRestore, error)
+	// SignAsRecovery signs with the recovery key of the pending restore; none pending is identity.ErrNoPendingRestore.
+	SignAsRecovery(ctx context.Context, pluginID string, message []byte) ([]byte, error)
+	// CompleteRestore finishes the pending restore with the chain of the server, or with none.
+	CompleteRestore(ctx context.Context, pluginID string, chain []byte) error
 }
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that

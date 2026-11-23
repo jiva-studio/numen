@@ -26,17 +26,32 @@ const (
 	maxDeviceName = 64
 )
 
-// Deps groups the collaborators the identity use cases share.
+// Clock is the time source of the identity use cases: the time now and a signal after a delay.
+type Clock interface {
+	machineport.Clock
+	After(d time.Duration) <-chan time.Time
+}
+
+// Deps groups the collaborators the identity use cases share. Copies of one Deps share one pending restore.
 type Deps struct {
-	keys   pluginport.KeyStore
-	names  DeviceName
-	clock  machineport.Clock
-	random io.Reader
+	keys    pluginport.KeyStore
+	names   DeviceName
+	clock   Clock
+	random  io.Reader
+	pending *PendingStore
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
-func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.Clock) Deps {
-	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader}
+func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
+	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, pending: NewPendingStore()}
+}
+
+// WithPending returns the deps over another pending restore, so the use cases of a window and of the plugins share one.
+func (d Deps) WithPending(pending *PendingStore) Deps {
+	if pending != nil {
+		d.pending = pending
+	}
+	return d
 }
 
 func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
@@ -89,3 +104,11 @@ func entryName(name string) string {
 }
 
 func isNoKey(err error) bool { return errors.Is(err, plugindomain.ErrNoKey) }
+
+func readExistingRecord(ctx context.Context, deps Deps) (identitylib.Record, error) {
+	record, err := deps.readRecord(ctx)
+	if isNoKey(err) {
+		return identitylib.Record{}, identitydomain.ErrNoIdentity
+	}
+	return record, err
+}

@@ -16,6 +16,27 @@ service HostAccountService {
 
   // GetPublicIdentity returns what is public of the identity of this device.
   rpc GetPublicIdentity(GetPublicIdentityRequest) returns (GetPublicIdentityResponse);
+
+  // SealData encrypts the data under a key only the plugin of the token can derive from the account keys
+  // of this device. The context is bound into the sealed bytes. Plain is at most 32 KiB.
+  rpc SealData(SealDataRequest) returns (SealDataResponse);
+
+  // OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
+  // device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
+  rpc OpenData(OpenDataRequest) returns (OpenDataResponse);
+
+  // GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
+  rpc GetPendingRestore(GetPendingRestoreRequest) returns (GetPendingRestoreResponse);
+
+  // SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
+  // "numen/v1/recovery-sign/", the id of the plugin of the token, a zero byte and the message. Nothing
+  // pending answers FAILED_PRECONDITION with the reason NO_PENDING_RESTORE.
+  rpc SignAsRecovery(SignAsRecoveryRequest) returns (SignAsRecoveryResponse);
+
+  // CompleteRestore finishes the pending restore with the chain the server stores for the account, or
+  // with no chain when the server has no such account. A chain that does not verify or does not belong to
+  // the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+  rpc CompleteRestore(CompleteRestoreRequest) returns (CompleteRestoreResponse);
 }
 
 message SignAsDeviceRequest {
@@ -39,3 +60,50 @@ message GetPublicIdentityResponse {
   // chain is the signed device chain of the account.
   bytes chain = 4;
 }
+
+message SealDataRequest {
+  // context is bound into the sealed bytes; the same context opens them. The plugin chooses it.
+  bytes context = 1;
+  // plain is 0 to 32768 bytes.
+  bytes plain = 2;
+}
+
+message SealDataResponse {
+  bytes sealed = 1;
+}
+
+message OpenDataRequest {
+  bytes context = 1;
+  bytes sealed = 2;
+}
+
+message OpenDataResponse {
+  bytes plain = 1;
+}
+
+message GetPendingRestoreRequest {}
+
+message GetPendingRestoreResponse {
+  bool is_pending = 1;
+  // root_sign_key is the Ed25519 public key of the recovery signing key, 32 bytes.
+  bytes root_sign_key = 2;
+  // device_sign_key is the Ed25519 public key of the device that joins, 32 bytes.
+  bytes device_sign_key = 3;
+}
+
+message SignAsRecoveryRequest {
+  // message is 1 to 4096 bytes.
+  bytes message = 1;
+}
+
+message SignAsRecoveryResponse {
+  // signature is an Ed25519 signature of 64 bytes.
+  bytes signature = 1;
+}
+
+message CompleteRestoreRequest {
+  // chain is the signed device chain of the server; empty when the server has no such account.
+  bytes chain = 1;
+}
+
+message CompleteRestoreResponse {}

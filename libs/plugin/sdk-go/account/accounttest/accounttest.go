@@ -33,6 +33,7 @@ type Fake struct {
 	record  *identity.Record
 	failure error
 	signed  int
+	pending *pendingRestore
 }
 
 // NewFake starts a host with an identity, serving a plugin of the id, and stops it when the test ends.
@@ -72,7 +73,17 @@ func (f *Fake) CreateIdentity() {
 	f.record = &record
 }
 
-// Fail makes both calls fail with err, which is not account.ErrNoIdentity. A nil err ends the failure.
+// StartRestore makes the host keep a restore of the recovery words, as the window of a host does. The host has no
+// identity until a call of CompleteRestore finishes the restore. It fails the test for words that are not valid.
+func (f *Fake) StartRestore(words []string) {
+	f.t.Helper()
+	restore := newPendingRestore(f.t, words)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.pending = restore
+}
+
+// Fail makes every call fail with err, which is not account.ErrNoIdentity. A nil err ends the failure.
 func (f *Fake) Fail(err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -172,12 +183,16 @@ func newRecord(t *testing.T) identity.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := time.Now()
-	chain, err := identity.NewChain(root, keys, now)
+	chain, err := identity.NewChain(root, keys, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), "Test device", now)
+	return joinChain(t, chain, root, keys, device)
+}
+
+func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey) identity.Record {
+	t.Helper()
+	chain, err := chain.AppendDevice(root, device.Public(), "Test device", time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

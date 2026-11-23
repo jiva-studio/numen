@@ -61,6 +61,16 @@ func NewSignInClient(address string, httpClient *http.Client, now func() time.Ti
 // client, expires near the clock and has the sizes of the protocol; any other is an error. A server of
 // another version gives ErrUpdateRequired, one that is not there ErrUnreachable.
 func (c *SignInClient) GetChallenge(ctx context.Context, deviceSignKey []byte) (Challenge, error) {
+	return c.getChallenge(ctx, deviceSignKey, GetSignInMessage)
+}
+
+// GetChainReadChallenge asks for a challenge of the root key, with the checks of GetChallenge. The message
+// of the challenge is the one the recovery key signs to read the chain of its account.
+func (c *SignInClient) GetChainReadChallenge(ctx context.Context, rootSignKey []byte) (Challenge, error) {
+	return c.getChallenge(ctx, rootSignKey, GetChainReadMessage)
+}
+
+func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, getMessage func(*syncv1.GetChallengeResponse, []byte, uint32) []byte) (Challenge, error) {
 	response, err := c.rpc.GetChallenge(ctx, connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: deviceSignKey}))
 	if err != nil {
 		return Challenge{}, readError(err)
@@ -68,7 +78,7 @@ func (c *SignInClient) GetChallenge(ctx context.Context, deviceSignKey []byte) (
 	if err := CheckChallenge(response.Msg, c.address, c.now()); err != nil {
 		return Challenge{}, err
 	}
-	return Challenge{ID: response.Msg.GetChallengeId(), Message: GetSignInMessage(response.Msg, deviceSignKey, Version)}, nil
+	return Challenge{ID: response.Msg.GetChallengeId(), Message: getMessage(response.Msg, deviceSignKey, Version)}, nil
 }
 
 // SignIn sends the proof and returns the session the server opens. A refusal is ErrUnauthenticated.

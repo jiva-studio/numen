@@ -254,6 +254,7 @@ function createInstallationIdentity(identity: IdentityStore) {
     load: () => identity.load(),
     generateWords: () => identity.generateWords(),
     create: (words: readonly string[]) => identity.create(words),
+    restore: (words: readonly string[]) => identity.restore(words),
     delete: () => identity.delete(),
   }
 }

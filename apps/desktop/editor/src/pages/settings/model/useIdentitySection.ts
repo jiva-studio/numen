@@ -76,7 +76,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const restore = async (): Promise<void> => {
     if (isBusy.value) return
     const typed = typing.restoreText.value.split(/\s+/).filter((word) => word !== '')
-    const answer = await run(() => getIdentity().create(typed))
+    const answer = await run(() => getIdentity().restore(typed))
     if (answer.ok) reset()
   }
 

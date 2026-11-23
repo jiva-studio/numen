@@ -11,15 +11,16 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowi
 	if install.KeyStore == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock)
+	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithPending(install.Restore)
 	return &windowidentity.UseCases{
 		Get:           identity.NewGetIdentity(deps),
 		GenerateWords: identity.NewGenerateRecoveryWords(deps),
 		Create:        identity.NewCreateIdentity(deps),
 		Delete:        identity.NewDeleteIdentity(deps),
+		StartRestore:  identity.NewStartRestore(deps),
 	}
 }
 
 func openAccount(res *Resources) *identity.Account {
-	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res))
+	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res), res.restore)
 }

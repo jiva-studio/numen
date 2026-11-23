@@ -162,6 +162,7 @@ export interface InstallationIdentity {
   load(): Promise<void>
   generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
+  restore(words: readonly string[]): Promise<Result<IdentityInfo, string>>
   delete(): Promise<Result<void, string>>
 }
 

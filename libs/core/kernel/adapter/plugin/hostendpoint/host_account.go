@@ -17,6 +17,11 @@ const (
 	maxSignedMessage = 4096
 	noIdentityReason = "NO_IDENTITY"
 	noIdentityDomain = "numen.v1.HostAccountService"
+
+	cannotOpenReason       = "CANNOT_OPEN"
+	noPendingRestoreReason = "NO_PENDING_RESTORE"
+	invalidChainReason     = "INVALID_CHAIN"
+	identityExistsReason   = "IDENTITY_EXISTS"
 )
 
 var (
@@ -26,7 +31,7 @@ var (
 )
 
 // accountEndpoint answers the calls of HostAccountService. The plugin is the one the token names; the
-// request names none. Both calls need the permission identity.
+// request names none. Every call needs the permission identity.
 type accountEndpoint struct {
 	numenv1connect.UnimplementedHostAccountServiceHandler
 
@@ -77,13 +82,31 @@ func (e *accountEndpoint) GetPublicIdentity(
 	}), nil
 }
 
+type accountRefusal struct {
+	target error
+	code   connect.Code
+	reason string
+}
+
+func getAccountRefusals() []accountRefusal {
+	return []accountRefusal{
+		{identitydomain.ErrNoIdentity, connect.CodeFailedPrecondition, noIdentityReason},
+		{identitydomain.ErrCannotOpen, connect.CodeFailedPrecondition, cannotOpenReason},
+		{identitydomain.ErrNoPendingRestore, connect.CodeFailedPrecondition, noPendingRestoreReason},
+		{identitydomain.ErrInvalidChain, connect.CodeInvalidArgument, invalidChainReason},
+		{identitydomain.ErrIdentityExists, connect.CodeFailedPrecondition, identityExistsReason},
+	}
+}
+
 func getAccountError(err error) error {
-	if errors.Is(err, identitydomain.ErrNoIdentity) {
-		failure := connect.NewError(connect.CodeFailedPrecondition, identitydomain.ErrNoIdentity)
-		if detail, detailErr := connect.NewErrorDetail(&errdetails.ErrorInfo{Reason: noIdentityReason, Domain: noIdentityDomain}); detailErr == nil {
-			failure.AddDetail(detail)
+	for _, refusal := range getAccountRefusals() {
+		if errors.Is(err, refusal.target) {
+			failure := connect.NewError(refusal.code, refusal.target)
+			if detail, detailErr := connect.NewErrorDetail(&errdetails.ErrorInfo{Reason: refusal.reason, Domain: noIdentityDomain}); detailErr == nil {
+				failure.AddDetail(detail)
+			}
+			return failure
 		}
-		return failure
 	}
 	return connect.NewError(connect.CodeInternal, errAccountFailure)
 }

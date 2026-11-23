@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// CatalogService keeps the signed, append-only catalog of the vaults of an account. Every call needs the
+// session bearer and the protocol version.
+service CatalogService {
+  // AppendCatalogEntry adds one entry to the catalog.
+  rpc AppendCatalogEntry(AppendCatalogEntryRequest) returns (AppendCatalogEntryResponse);
+
+  // GetCatalog returns the entries after a version, page by page.
+  rpc GetCatalog(GetCatalogRequest) returns (GetCatalogResponse);
+}
+
+message CatalogEntry {
+  // version is 1 for the first entry of the account, then the head version plus one.
+  uint64 version = 1;
+  // prev_hash is the entry id of the previous entry, 32 bytes; empty for version 1.
+  bytes prev_hash = 2;
+  // vault_id is 16 random bytes, the remote id of the vault.
+  bytes vault_id = 3;
+  // creates_vault is true for the entry that makes the vault, false for a rename or a re-wrap.
+  bool creates_vault = 4;
+  // enc_body is ciphertext the server never reads, at most 16 KiB.
+  bytes enc_body = 5;
+  // author_device_sign_key is a device of the chain of the account, 32 bytes.
+  bytes author_device_sign_key = 6;
+  // signature is 64 bytes over syncprotocol.GetCatalogEntryMessage, under the plugin domain.
+  bytes signature = 7;
+}
+
+message AppendCatalogEntryRequest {
+  CatalogEntry entry = 1;
+}
+
+message AppendCatalogEntryResponse {
+  bool committed = 1;
+  // head is the entry at the top of the log after the call: the new entry when committed, the other entry when not.
+  CatalogEntry head = 2;
+}
+
+message GetCatalogRequest {
+  uint64 since_version = 1;
+  // limit 0 means 200; at most 1000.
+  uint32 limit = 2;
+}
+
+message GetCatalogResponse {
+  repeated CatalogEntry entries = 1;
+  bool has_more = 2;
+}

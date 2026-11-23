@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// AccountService returns the stored device chain of an account.
+service AccountService {
+  // GetAccountChain returns the stored chain of the account of the session. It needs the session bearer.
+  rpc GetAccountChain(GetAccountChainRequest) returns (GetAccountChainResponse);
+
+  // GetAccountChainByRoot returns the stored chain of the account with a root key, to a caller that proves it
+  // holds the recovery key. It needs no session.
+  rpc GetAccountChainByRoot(GetAccountChainByRootRequest) returns (GetAccountChainByRootResponse);
+}
+
+message GetAccountChainRequest {}
+
+message GetAccountChainResponse {
+  // chain is the signed device chain, the longest the server stores.
+  bytes chain = 1;
+}
+
+message GetAccountChainByRootRequest {
+  // challenge_id is the id of a challenge asked with the root key as device_sign_key.
+  bytes challenge_id = 1;
+  // root_sign_key is the Ed25519 public key of the recovery signing key, 32 bytes.
+  bytes root_sign_key = 2;
+  // signature is 64 bytes over syncprotocol.GetChainReadMessage, plain Ed25519 by the recovery key.
+  bytes signature = 3;
+}
+
+message GetAccountChainByRootResponse {
+  // found is false when no account has this root.
+  bool found = 1;
+  // chain is set when found.
+  bytes chain = 2;
+}

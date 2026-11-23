@@ -1,6 +1,9 @@
 package syncprotocol
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrUpdateRequired means the server needs another protocol version than the client has.
@@ -11,4 +14,30 @@ var (
 	ErrChallengeOutOfRange = errors.New("the challenge expires too far from the clock of this device")
 	// ErrMalformedChallenge means the id or the nonce of the challenge has the wrong size.
 	ErrMalformedChallenge = errors.New("the challenge is malformed")
+	// ErrWriteNotAllowed means the server refused a write, for example because the plan of the account has none.
+	ErrWriteNotAllowed = errors.New("the sync server does not allow this write")
+	// ErrNoVault means the server has no such vault in the account.
+	ErrNoVault = errors.New("the sync server has no such vault")
+	// ErrVaultExists means the account has a vault with this id already.
+	ErrVaultExists = errors.New("the vault exists on the sync server")
 )
+
+// ErrQuotaExceeded means the account has no room for the bytes asked for.
+type ErrQuotaExceeded struct {
+	Used  uint64
+	Limit uint64
+}
+
+func (e ErrQuotaExceeded) Error() string {
+	return fmt.Sprintf("the sync quota is exceeded: %d of %d bytes used", e.Used, e.Limit)
+}
+
+// ErrBlobNotReady means the blob of a revision of a batch was not uploaded. Index is the position of the
+// revision in the batch.
+type ErrBlobNotReady struct {
+	Index uint32
+}
+
+func (e ErrBlobNotReady) Error() string {
+	return fmt.Sprintf("the blob of revision %d is not uploaded", e.Index)
+}

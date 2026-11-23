@@ -1,6 +1,7 @@
 package fakeserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -23,17 +24,19 @@ import (
 const (
 	challengeLife     = 60 * time.Second
 	defaultSessionTTL = time.Hour
+	defaultQuota      = 10 << 30
 	failedSignIn      = "sign-in failed"
 )
 
 // Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
-// tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine) and how
-// long a session lives (zero is an hour).
+// tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
+// session lives (zero is an hour) and the bytes an account may store (zero is 10 GiB).
 type Config struct {
 	Protocol   uint32
 	Audience   string
 	Now        func() time.Time
 	SessionTTL time.Duration
+	QuotaBytes uint64
 }
 
 // Session is a session the server issued and has not ended.
@@ -50,28 +53,37 @@ type challenge struct {
 	expiresAt     int64
 }
 
-// Server serves SignInService and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends
-// every session, or the ones of the device in the query deviceSignKey, a hex string).
+// Server serves the sign-in, account, catalog, revision and blob services from memory, the presigned blob
+// URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
+// session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
+// the id and the body of every stored blob, raw). Every account may write.
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 
 	protocol uint32
 	now      func() time.Time
 	ttl      time.Duration
+	quota    uint64
 	handler  http.Handler
 
 	mu         sync.Mutex
 	audience   string
 	challenges map[string]challenge
-	accounts   map[string]string
+	chains     map[string]identity.Chain
 	sessions   []Session
+	catalogs   map[string][]*syncv1.CatalogEntry
+	vaults     map[string]*vaultState
+	blobs      map[string]*blobRow
+	used       map[string]uint64
+	calls      map[string]int
 }
 
 // New returns the server for the config.
 func New(cfg Config) *Server {
 	s := &Server{
-		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, audience: cfg.Audience,
-		challenges: map[string]challenge{}, accounts: map[string]string{},
+		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience,
+		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
+		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -82,17 +94,32 @@ func New(cfg Config) *Server {
 	if s.ttl == 0 {
 		s.ttl = defaultSessionTTL
 	}
+	if s.quota == 0 {
+		s.quota = defaultQuota
+	}
+	s.handler = s.newMux()
+	return s
+}
+
+func (s *Server) newMux() http.Handler {
+	options := connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(s.protocol), s.newCallCounter())
 	mux := http.NewServeMux()
-	mux.Handle(syncv1connect.NewSignInServiceHandler(s, connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(s.protocol))))
+	mux.Handle(syncv1connect.NewSignInServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewAccountServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewCatalogServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
+	mux.HandleFunc("/blobs/", s.serveBlob)
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
-	s.handler = mux
-	return s
+	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	return mux
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.handler.ServeHTTP(w, r) }
 
-// SetAudience sets the address the server tells itself by, once the address it listens on is known.
+// SetAudience sets the address the server tells itself by, once the address it listens on is known. The
+// presigned blob URLs are made from it.
 func (s *Server) SetAudience(audience string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -111,7 +138,26 @@ func (s *Server) EndSessions(deviceSignKey []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sessions = slices.DeleteFunc(s.sessions, func(one Session) bool {
-		return deviceSignKey == nil || string(one.DeviceSignKey) == string(deviceSignKey)
+		return deviceSignKey == nil || bytes.Equal(one.DeviceSignKey, deviceSignKey)
+	})
+}
+
+// CountCalls returns how many calls of the procedure the server has run, for example
+// syncv1connect.BlobServiceReserveBlobsProcedure. A call of another protocol version is not counted.
+func (s *Server) CountCalls(procedure string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.calls[procedure]
+}
+
+func (s *Server) newCallCounter() connect.Interceptor {
+	return connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			s.mu.Lock()
+			s.calls[req.Spec().Procedure]++
+			s.mu.Unlock()
+			return next(ctx, req)
+		}
 	})
 }
 
@@ -146,31 +192,64 @@ func (s *Server) SignIn(_ context.Context, req *connect.Request[syncv1.SignInReq
 func (s *Server) openSession(req *syncv1.SignInRequest) (Session, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	pending, found := s.challenges[string(req.GetChallengeId())]
-	delete(s.challenges, string(req.GetChallengeId()))
-	key := req.GetDeviceSignKey()
-	if !found || pending.expiresAt < s.now().Unix() || string(pending.deviceSignKey) != string(key) || len(req.GetSignature()) != 64 {
+	pending, found := s.popChallenge(req.GetChallengeId())
+	if !found {
 		return Session{}, false
 	}
-	message := syncprotocol.GetSignInMessage(&syncv1.GetChallengeResponse{Nonce: pending.nonce, ExpiresAt: pending.expiresAt, Audience: s.audience}, key, s.protocol)
-	if !identity.VerifyForPlugin(key, syncprotocol.SignInPluginID, message, [64]byte(req.GetSignature())) {
+	chain, ok := s.checkProof(pending, req)
+	if !ok || !s.storeChain(chain) {
 		return Session{}, false
+	}
+	return s.addSession(req.GetDeviceSignKey(), chain.Root().Fingerprint().String())
+}
+
+func (s *Server) popChallenge(id []byte) (challenge, bool) {
+	pending, found := s.challenges[string(id)]
+	delete(s.challenges, string(id))
+	return pending, found && pending.expiresAt >= s.now().Unix()
+}
+
+func (s *Server) checkProof(pending challenge, req *syncv1.SignInRequest) (identity.Chain, bool) {
+	key := req.GetDeviceSignKey()
+	if !bytes.Equal(pending.deviceSignKey, key) || len(req.GetSignature()) != 64 {
+		return identity.Chain{}, false
+	}
+	message := syncprotocol.GetSignInMessage(s.getChallengeResponse(pending), key, s.protocol)
+	if !identity.VerifyForPlugin(key, syncprotocol.SignInPluginID, message, [64]byte(req.GetSignature())) {
+		return identity.Chain{}, false
 	}
 	chain, err := identity.ParseChain(req.GetChain())
-	if err != nil || !slices.ContainsFunc(chain.ListDevices(), func(d identity.Device) bool { return string(d.Public.Sign) == string(key) }) {
-		return Session{}, false
+	if err != nil || !isDeviceOf(chain, key) {
+		return identity.Chain{}, false
 	}
+	return chain, true
+}
+
+func (s *Server) getChallengeResponse(pending challenge) *syncv1.GetChallengeResponse {
+	return &syncv1.GetChallengeResponse{Nonce: pending.nonce, ExpiresAt: pending.expiresAt, Audience: s.audience}
+}
+
+func isDeviceOf(chain identity.Chain, deviceSignKey []byte) bool {
+	return slices.ContainsFunc(chain.ListDevices(), func(d identity.Device) bool { return bytes.Equal(d.Public.Sign, deviceSignKey) })
+}
+
+func (s *Server) storeChain(chain identity.Chain) bool {
 	account := chain.Root().Fingerprint().String()
-	if known, isKnown := s.accounts[account]; isKnown && known != account {
-		return Session{}, false
+	stored, known := s.chains[account]
+	if !known || chain.IsExtensionOf(stored) {
+		s.chains[account] = chain
+		return true
 	}
-	s.accounts[account] = account
+	return stored.IsExtensionOf(chain)
+}
+
+func (s *Server) addSession(deviceSignKey []byte, account string) (Session, bool) {
 	token := make([]byte, 32)
 	if _, err := rand.Read(token); err != nil {
 		return Session{}, false
 	}
 	session := Session{
-		Token: base64.RawURLEncoding.EncodeToString(token), DeviceSignKey: slices.Clone(key), AccountFingerprint: account, ExpiresAt: s.now().Add(s.ttl),
+		Token: base64.RawURLEncoding.EncodeToString(token), DeviceSignKey: slices.Clone(deviceSignKey), AccountFingerprint: account, ExpiresAt: s.now().Add(s.ttl),
 	}
 	s.sessions = append(s.sessions, session)
 	return session, true

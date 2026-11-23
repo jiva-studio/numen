@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
@@ -79,6 +80,7 @@ type Resources struct {
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
+	restore         *identity.PendingStore
 }
 
 func NewResources() *Resources {
@@ -90,6 +92,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
+		restore:       identity.NewPendingStore(),
 	}
 }
 
@@ -230,5 +233,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,
+		Restore:         res.restore,
 	}
 }

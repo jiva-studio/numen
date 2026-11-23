@@ -5,7 +5,7 @@ package numen.v1;
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // IdentityService manages the account identity of this device. No secret key reaches the window; the
-// recovery words cross the wire only in GenerateRecoveryWords and CreateIdentity.
+// recovery words cross the wire only in GenerateRecoveryWords, CreateIdentity and StartRestore.
 service IdentityService {
   // GetIdentity returns the identity of this device, or none when the device holds no identity.
   rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
@@ -16,6 +16,12 @@ service IdentityService {
   // CreateIdentity keeps an identity on this device for the 12 recovery words. The same words give
   // the same account fingerprint on every device.
   rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse);
+
+  // StartRestore starts to restore the account of 12 recovery words on this device. It keeps the words
+  // and a new device key in memory and writes nothing: the sync plugin joins the existing account of the
+  // words, or the core makes the identity of the words alone after 30 seconds. Poll GetIdentity until it
+  // returns an identity.
+  rpc StartRestore(StartRestoreRequest) returns (StartRestoreResponse);
 
   // DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
   rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
@@ -67,6 +73,16 @@ message CreateIdentityResponse {
   IdentityErrorCode error = 2;
   // detail names the first wrong position and never holds a word.
   string detail = 3;
+}
+
+message StartRestoreRequest {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message StartRestoreResponse {
+  IdentityErrorCode error = 1;
+  // detail names the first wrong position and never holds a word.
+  string detail = 2;
 }
 
 message DeleteIdentityRequest {}

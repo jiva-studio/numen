@@ -21,6 +21,10 @@ export const createIdentityApi = (identity: IdentityClient) => ({
   createIdentity: (words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>> =>
     identity.create(words),
 
+  /** Starts to restore the account of the twelve `words`; the core completes it in the background. */
+  startRestore: (words: readonly string[]): Promise<Result<undefined, IdentityFailure>> =>
+    identity.startRestore(words),
+
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),
 })

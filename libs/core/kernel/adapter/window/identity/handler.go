@@ -21,6 +21,7 @@ type UseCases struct {
 	GenerateWords *identity.GenerateRecoveryWords
 	Create        *identity.CreateIdentity
 	Delete        *identity.DeleteIdentity
+	StartRestore  *identity.StartRestore
 }
 
 // Handler serves IdentityService over the identity use cases.
@@ -77,6 +78,21 @@ func (h *Handler) CreateIdentity(
 		}), nil
 	}
 	return connect.NewResponse(&v1.CreateIdentityResponse{Identity: writeIdentity(created)}), nil
+}
+
+// StartRestore starts to restore the account of the recovery words on this device.
+func (h *Handler) StartRestore(
+	ctx context.Context,
+	r *connect.Request[v1.StartRestoreRequest],
+) (*connect.Response[v1.StartRestoreResponse], error) {
+	if err := h.identity.StartRestore.Execute(ctx, r.Msg.GetWords()); err != nil {
+		code, served := getErrorCode(err)
+		if !served {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.StartRestoreResponse{Error: code, Detail: getDetail(err)}), nil
+	}
+	return connect.NewResponse(&v1.StartRestoreResponse{}), nil
 }
 
 func (h *Handler) DeleteIdentity(

@@ -11,6 +11,8 @@ import type { IdentityApi } from '../api/identity'
 import type { IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 
+const RESTORE_POLL_MS = 1000
+
 export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const identity = shallowRef<IdentityInfo | undefined>(undefined)
   const guard = createRequestGuard()
@@ -53,6 +55,28 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
+  const waitForIdentity = async (): Promise<IdentityInfo> => {
+    for (;;) {
+      await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
+      const found = await api.getIdentity().catch(() => undefined)
+      if (found !== undefined) return found
+    }
+  }
+
+  const restore = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
+    try {
+      const started = await api.startRestore(words)
+      if (!started.ok) {
+        return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
+      }
+      const found = await waitForIdentity()
+      identity.value = found
+      return { ok: true, value: found }
+    } catch (caughtError) {
+      return { ok: false, error: formatError(caughtError) }
+    }
+  }
+
   const remove = async (): Promise<Result<void, string>> => {
     try {
       await api.deleteIdentity()
@@ -63,7 +87,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  return { identity, load, generateWords, create, delete: remove }
+  return { identity, load, generateWords, create, restore, delete: remove }
 }
 
 export type IdentityStore = ReturnType<typeof createIdentityStore>
