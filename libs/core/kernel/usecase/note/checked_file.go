@@ -4,42 +4,61 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
-// FileCounter counts the files at a path: one for a file, and the files under it for a folder.
-type FileCounter interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (int, error)
-}
-
-// FileHasher returns the stat of a file with the hash of its content.
-type FileHasher interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
-}
-
 func countMatchingFiles(
-	ctx context.Context, files FileCounter, hashes FileHasher, v domain.Vault, path string, baseline *domain.FileStat,
+	ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string, baseline *domain.FileStat,
 ) (int, error) {
-	count, err := files.Execute(ctx, v, path)
+	reader, err := readers.Open(v)
 	if err != nil {
 		return 0, err
 	}
-	if count != 1 || baseline == nil {
-		return count, nil
+	if _, err := reader.StatFile(ctx, path); err == nil {
+		if baseline == nil {
+			return 1, nil
+		}
+		return 1, checkBaseline(ctx, reader, path, *baseline)
+	} else if !errors.Is(err, edit.ErrNotExist) {
+		return 0, err
 	}
-	now, err := hashes.Execute(ctx, v, path)
-	if errors.Is(err, edit.ErrNotExist) {
-		return 0, fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
-	}
+	count := 0
+	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
+		if strings.HasPrefix(stat.Path, path+"/") {
+			count++
+		}
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
-	if now.Hash != baseline.Hash {
-		return 0, fmt.Errorf("%s changed since it was read: %w", path, edit.ErrStale)
+	if count == 0 {
+		return 0, fmt.Errorf("%s: %w", path, edit.ErrNotExist)
 	}
 	return count, nil
+}
+
+func checkBaseline(ctx context.Context, reader vaultport.VaultReader, path string, baseline domain.FileStat) (err error) {
+	file, err := reader.Open(ctx, path)
+	if errors.Is(err, edit.ErrNotExist) {
+		return fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
+	}
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	hash, err := domain.HashReader(file)
+	if err != nil {
+		return err
+	}
+	if hash != baseline.Hash {
+		return fmt.Errorf("%s changed since it was read: %w", path, edit.ErrStale)
+	}
+	return nil
 }
 
 // FileMove moves a file or a folder inside the vault.
@@ -50,19 +69,18 @@ type FileMove interface {
 // MoveChecked moves a file, or a folder with everything under it, once the file matches the baseline the caller
 // read, and counts the files that moved.
 type MoveChecked struct {
-	move   FileMove
-	files  FileCounter
-	hashes FileHasher
+	move    FileMove
+	readers vaultport.VaultReaders
 }
 
-func NewMoveChecked(move FileMove, files FileCounter, hashes FileHasher) MoveChecked {
-	return MoveChecked{move: move, files: files, hashes: hashes}
+func NewMoveChecked(move FileMove, readers vaultport.VaultReaders) MoveChecked {
+	return MoveChecked{move: move, readers: readers}
 }
 
 // Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
 func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error) {
-	count, err := countMatchingFiles(ctx, u.files, u.hashes, v, from, baseline)
+	count, err := countMatchingFiles(ctx, u.readers, v, from, baseline)
 	if err != nil {
 		return 0, err
 	}
@@ -79,19 +97,18 @@ func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to strin
 // RemoveChecked moves a file, or a folder with everything under it, to the trash once the file matches the
 // baseline the caller read, and counts the files that went.
 type RemoveChecked struct {
-	remove RemoveFile
-	files  FileCounter
-	hashes FileHasher
+	remove  RemoveFile
+	readers vaultport.VaultReaders
 }
 
-func NewRemoveChecked(remove RemoveFile, files FileCounter, hashes FileHasher) RemoveChecked {
-	return RemoveChecked{remove: remove, files: files, hashes: hashes}
+func NewRemoveChecked(remove RemoveFile, readers vaultport.VaultReaders) RemoveChecked {
+	return RemoveChecked{remove: remove, readers: readers}
 }
 
 // Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
 func (u RemoveChecked) Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
-	count, err := countMatchingFiles(ctx, u.files, u.hashes, v, path, baseline)
+	count, err := countMatchingFiles(ctx, u.readers, v, path, baseline)
 	if err != nil {
 		return 0, err
 	}

@@ -91,7 +91,9 @@ export const WORDS = {
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
   identityNoneDetail:
-    'An identity is a key kept only on your devices. Your devices use it to recognize each other, and your subscription is tied to it. Numen never sees it.',
+    'An identity is your Numen account. Unlike a usual account, it lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
+  identityNoneWords:
+    'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
   identityRestore: 'Restore',
   identitySetupTitle: 'Recovery words',
@@ -112,8 +114,9 @@ export const WORDS = {
   identityContinue: 'Continue',
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
-  identityRestoreLabel: 'Your 12 recovery words',
-  identityRestorePlaceholder: 'Type the 12 words, separated by spaces',
+  identityRestoreTitle: 'Restore identity',
+  identityRestoreHint: 'Type the 12 words in order.',
+  identityRestoreWord: (position: number) => `Recovery word ${position}`,
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
   identityAccount: 'Account fingerprint',
@@ -122,8 +125,6 @@ export const WORDS = {
   identityDevices: 'Devices',
   identityDeviceCount: (count: number) => (count === 1 ? '1 device' : `${count} devices`),
   identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
-  identityRemoveName: 'Identity on this device',
-  identityRemoveDetail: 'Remove the key from this device',
   identityDelete: 'Delete identity',
   identityDeleteTitle: 'Delete the identity from this device?',
   identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',
