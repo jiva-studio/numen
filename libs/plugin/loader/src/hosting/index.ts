@@ -1,4 +1,5 @@
-export { createPluginHost, type PluginHost } from './host'
+export { createPluginHost } from './host'
+export type { PluginHost } from './hostApi'
 export { requireMountAccess } from './guards/viewPermissions'
 export { createCustomTabKind, pickCustomTabParts } from './customTabKind'
 export type {
@@ -15,7 +16,7 @@ export type {
   CommandDeclaration,
   HandlerDeclaration,
 } from './types'
-export type { AnyTabKind, OpenTab, SourceReader, TabKind } from './tabKinds'
+export type { AnyTabKind, SourceReader, TabKind } from './tabKinds'
 export { createWindowHost, type WindowControls } from './windowHost'
 export {
   NO_COMMANDS,

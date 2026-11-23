@@ -14,7 +14,7 @@ export interface PluginStatusDeps {
   readonly isEnabled: (id: string) => boolean
 }
 
-export interface PluginStatusState {
+interface PluginStatusState {
   readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
   readonly failures: ShallowRef<ReadonlyMap<string, string>>
   readonly starting: ShallowRef<ReadonlySet<string>>

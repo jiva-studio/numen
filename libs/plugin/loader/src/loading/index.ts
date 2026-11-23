@@ -1,7 +1,7 @@
 export { activateEntry, type ActivateContext, type ActivePluginEntry } from './activation'
 export { INTERFACE_WAIT_MS } from './limits'
 export { waitWithinInterfaceLimit } from './interfaceWait'
-export { createPluginStatus, type PluginStatus, type PluginStatusState } from './pluginStatus'
+export { createPluginStatus, type PluginStatus } from './pluginStatus'
 export type { ContributionMatch } from './pluginStarts'
 export { createSignal } from './signal'
 export type { StartLimit } from './startLimit'

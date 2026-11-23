@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { PluginHost } from './host'
+import type { PluginHost } from './hostApi'
 import { createShortcutHandler } from './shortcuts'
 import { createWhenReader, getTargetValues } from '../when'
 import { NO_COMMANDS } from './nullDeps'
