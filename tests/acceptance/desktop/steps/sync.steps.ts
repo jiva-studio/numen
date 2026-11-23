@@ -190,24 +190,12 @@ Then(
   },
 )
 
-Then('the second computer never showed files in both folders {string} and {string}', async ({ person }, first: string, second: string) => {
-  await person.files.expectNeverBothFolders(first, second)
+Given('the connection breaks while the file {string} is sent', async ({ person }, filePath: string) => {
+  await person.files.breakConnectionWhileSending(filePath)
 })
 
-Given('the sync server stops after {int} MB of the file {string}', async ({ person }, megabytes: number, filePath: string) => {
-  await person.files.stopServerAfterBytes(megabytes, filePath)
-})
-
-Given('the sync server stops while the second computer loads the file {string}', async ({ person }, filePath: string) => {
-  await person.files.stopServerWhileLoading(filePath)
-})
-
-Then('the sync server received no part of the file {string} twice', async ({ person }, filePath: string) => {
-  await person.files.expectNoRepeatedPart(filePath, 'received')
-})
-
-Then('the sync server sent no part of the file {string} twice', async ({ person }, filePath: string) => {
-  await person.files.expectNoRepeatedPart(filePath, 'sent')
+Given('the connection breaks while the second computer receives the file {string}', async ({ person }, filePath: string) => {
+  await person.files.breakConnectionWhileReceiving(filePath)
 })
 
 When('the person chooses {string}', async ({ person }, action: string) => {

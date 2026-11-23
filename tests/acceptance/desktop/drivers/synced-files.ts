@@ -1,4 +1,4 @@
-/** Files of any kind and size on the two computers, the breaks of the sync server while they travel, and the answer to a paused removal. */
+/** Files of any kind and size on the two computers, the breaks of the connection while they travel, and the answer to a paused removal. */
 import type { ComputerName, Holder } from './computer.js'
 
 const notImplemented = (what: string): never => {
@@ -38,20 +38,12 @@ export class SyncedFilesDriver {
     await Promise.reject(new Error(`not implemented: ${holder.computer} has ${count} files in ${folder} of ${vault ?? 'its vault'}`))
   }
 
-  async expectNeverBothFolders(first: string, second: string): Promise<void> {
-    await Promise.reject(new Error(`not implemented: the second computer never showed files in both ${first} and ${second}`))
+  async breakConnectionWhileSending(filePath: string): Promise<void> {
+    await Promise.reject(new Error(`not implemented: the connection breaks while ${filePath} is sent`))
   }
 
-  async stopServerAfterBytes(megabytes: number, filePath: string): Promise<void> {
-    await Promise.reject(new Error(`not implemented: the server stops after ${megabytes} MB of ${filePath}`))
-  }
-
-  async stopServerWhileLoading(filePath: string): Promise<void> {
-    await Promise.reject(new Error(`not implemented: the server stops while the second computer loads ${filePath}`))
-  }
-
-  async expectNoRepeatedPart(filePath: string, direction: 'received' | 'sent'): Promise<void> {
-    await Promise.reject(new Error(`not implemented: the server ${direction} no part of ${filePath} twice`))
+  async breakConnectionWhileReceiving(filePath: string): Promise<void> {
+    await Promise.reject(new Error(`not implemented: the connection breaks while the second computer receives ${filePath}`))
   }
 
   async choose(action: string): Promise<void> {

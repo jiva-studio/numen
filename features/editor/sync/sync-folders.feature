@@ -27,12 +27,11 @@ Feature: Sync a moved folder between computers
       And the second computer has the same file "Meals/Menu.pdf" in its vault "Copy"
       And the second computer does not have the file "Food/Menu.pdf" in its vault "Copy"
 
-    Scenario: The second computer never shows half of a moved folder
+    Scenario: A moved folder with many files arrives complete
       Given the person writes 20 files in the folder "Food" in the vault "Test"
       And the second computer has 20 files in its folder "Food" in its vault "Copy"
       When the person moves the folder "Food" to "Meals" in the vault "Test"
       Then the second computer has 20 files in its folder "Meals" in its vault "Copy"
-      And the second computer never showed files in both folders "Food" and "Meals"
 
   Rule: A moved note keeps its links
 

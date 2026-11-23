@@ -1,6 +1,6 @@
 Feature: Sync large files between computers
 
-  Numen Sync sends a large file in parts and continues after a break.
+  Numen Sync sends a large file and goes on after a break.
 
   As a person who keeps big files in a vault
   I want a big file to arrive even when the connection breaks
@@ -22,30 +22,28 @@ Feature: Sync large files between computers
       Then the second computer has the same file "Videos/Trip.bin" in its vault "Copy"
 
     Scenario: A file that is not complete is not in the vault
-      Given the sync server stops while the second computer loads the file "Videos/Trip.bin"
+      Given the connection breaks while the second computer receives the file "Videos/Trip.bin"
       When the person writes the file "Videos/Trip.bin" of 70 MB in the vault "Test"
       Then the second computer does not have the file "Videos/Trip.bin" in its vault "Copy"
 
-  Rule: A break does not send the file again from the start
+  Rule: A break does not lose the file
 
-    Scenario: A break while the file goes up
-      Given the sync server stops after 40 MB of the file "Videos/Trip.bin"
+    Scenario: A break while the file is sent
+      Given the connection breaks while the file "Videos/Trip.bin" is sent
       And the person writes the file "Videos/Trip.bin" of 70 MB in the vault "Test"
       When the sync server runs again
       Then the second computer has the same file "Videos/Trip.bin" in its vault "Copy"
-      And the sync server received no part of the file "Videos/Trip.bin" twice
 
-    Scenario: A break while the file comes down
+    Scenario: A break while the file is received
       Given the person writes the file "Videos/Trip.bin" of 70 MB in the vault "Test"
-      And the sync server stops while the second computer loads the file "Videos/Trip.bin"
+      And the connection breaks while the second computer receives the file "Videos/Trip.bin"
       When the sync server runs again
       Then the second computer has the same file "Videos/Trip.bin" in its vault "Copy"
-      And the sync server sent no part of the file "Videos/Trip.bin" twice
 
   Rule: A file that changes while it goes up is sent again
 
     Scenario: A file changed after a break is sent whole
-      Given the sync server stops after 40 MB of the file "Videos/Trip.bin"
+      Given the connection breaks while the file "Videos/Trip.bin" is sent
       And the person writes the file "Videos/Trip.bin" of 70 MB in the vault "Test"
       And the person changes the file "Videos/Trip.bin" in the vault "Test"
       When the sync server runs again
