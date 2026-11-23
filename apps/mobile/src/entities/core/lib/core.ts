@@ -26,6 +26,14 @@ interface VaultState {
   readonly path: string
 }
 
+/** A file or folder of a listing. An absent file is listed and its bytes are not on the phone. */
+export interface FileRow {
+  readonly path: string
+  readonly name: string
+  readonly isFolder: boolean
+  readonly isAbsent: boolean
+}
+
 /** Where the core is, and what it answers. */
 export interface Core {
   readonly port: number
@@ -35,5 +43,11 @@ export interface Core {
   getOpeningPath(): Promise<string | null>
   readNote(path: string): Promise<Result<NoteRead>>
   /** Writes against `baseline`; a null baseline writes over whatever the note now holds. */
-  writeNote(path: string, prose: string, baseline: NoteBaseline | null): Promise<Result<null>>
+  writeNote(path: string, prose: string, baseline: NoteBaseline   /** The files and folders of a folder; the empty path is the root of the vault. */
+  listFiles(folder: string): Promise<readonly FileRow[]>
+  /** Downloads an absent file; the failure says why in the words the person reads. */
+  fetchFile(path: string): Promise<Result<null>>
+  /** Turns a downloaded file back to an absent one; a file with changes that are not sent stays. */
+  dropDownload(path: string): Promise<Result<null>>
+| null): Promise<Result<null>>
 }

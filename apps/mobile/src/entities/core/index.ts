@@ -1,2 +1,2 @@
 export { startCore } from './api/start'
-export type { Core, NoteBaseline } from './lib/core'
+export type { Core, FileRow, NoteBaseline } from './lib/core'

@@ -7,6 +7,7 @@
 import { registerPlugin } from '@capacitor/core'
 import { createBearerTransport } from '@numen/core-client'
 import type { Core } from '../lib/core'
+import { createFileApi } from './files'
 import { createNoteApi } from './notes'
 import { createVaultApi } from './vault'
 
@@ -20,5 +21,5 @@ const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 export async function startCore(): Promise<Core> {
   const { port, dir, token } = await NumenCore.start()
   const transport = createBearerTransport(`http://127.0.0.1:${port}`, token)
-  return { port, dir, ...createVaultApi(transport), ...createNoteApi(transport) }
+  return { port, dir, ...createVaultApi(transport), ...createNoteApi(transport), ...createFileApi(transport) }
 }
