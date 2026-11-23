@@ -508,3 +508,120 @@ describe('useSubscription plan names from the server', () => {
     ])
   })
 })
+
+describe('useSubscription products', () => {
+  const EXTRA = {
+    id: 'price-extra',
+    slug: 'extra',
+    name: 'Extra',
+    priceCents: 499,
+    currency: 'EUR',
+    oneTime: true,
+  } as const
+  const THEME = { ...EXTRA, id: 'price-theme', slug: 'theme', name: 'Theme', priceCents: 0 }
+
+  const createProductClient = (owned: readonly string[][]) => {
+    let read = 0
+    return {
+      ...createClient([createResponse()]),
+      listProducts: vi.fn<NonNullable<SubscriptionClient['listProducts']>>(() =>
+        Promise.resolve([EXTRA, THEME]),
+      ),
+      getOwnedProducts: vi.fn<NonNullable<SubscriptionClient['getOwnedProducts']>>(() => {
+        const answer = owned.at(Math.min(read, owned.length - 1)) ?? []
+        read += 1
+        return Promise.resolve(answer)
+      }),
+    }
+  }
+
+  it('offers every product that is not owned, with its name and price', async () => {
+    const { subscription } = mountSubscription(createProductClient([[]]))
+
+    await subscription.load()
+
+    expect(subscription.productOffers.value).toStrictEqual([
+      { id: 'price-extra', slug: 'extra', name: 'Extra', label: 'Extra, €4.99' },
+      { id: 'price-theme', slug: 'theme', name: 'Theme', label: 'Theme' },
+    ])
+    expect(subscription.ownedProducts.value).toStrictEqual([])
+  })
+
+  it('lists an owned product by name and no longer offers it', async () => {
+    const { subscription } = mountSubscription(createProductClient([['extra']]))
+
+    await subscription.load()
+
+    expect(subscription.ownedProducts.value).toStrictEqual(['Extra'])
+    expect(subscription.productOffers.value.map((one) => one.slug)).toStrictEqual(['theme'])
+  })
+
+  it('offers and lists nothing when the device has no identity', async () => {
+    const client = createProductClient([['extra']])
+    client.getSubscription.mockResolvedValue(createResponse({ hasIdentity: false }))
+    const { subscription } = mountSubscription(client)
+
+    await subscription.load()
+
+    expect(subscription.productOffers.value).toStrictEqual([])
+    expect(subscription.ownedProducts.value).toStrictEqual([])
+  })
+
+  it('offers every product and lists none when the owned products cannot be read', async () => {
+    const client = createProductClient([[]])
+    client.getOwnedProducts.mockRejectedValue(new Error('down'))
+    const { subscription } = mountSubscription(client)
+
+    await subscription.load()
+
+    expect(subscription.productOffers.value).toHaveLength(2)
+    expect(subscription.ownedProducts.value).toStrictEqual([])
+  })
+
+  it('asks the payment page of the price of the product and waits for the payment', async () => {
+    const client = createProductClient([[]])
+    const { subscription, openExternal } = mountSubscription(client)
+    await subscription.load()
+    const offer = subscription.productOffers.value[0]
+    if (!offer) throw new Error('no offer')
+
+    await subscription.buyProduct(offer)
+
+    expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('price-extra')
+    expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
+    expect(subscription.waiting.value).toBe(true)
+  })
+
+  it('ends the wait when the product is owned, not when the subscription is active', async () => {
+    const client = createProductClient([[], [], ['extra']])
+    client.getSubscription.mockResolvedValue(ACTIVE)
+    const { subscription } = mountSubscription(client)
+    await subscription.load()
+    const offer = subscription.productOffers.value[0]
+    if (!offer) throw new Error('no offer')
+    await subscription.buyProduct(offer)
+
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(subscription.waiting.value).toBe(true)
+    await vi.advanceTimersByTimeAsync(3000)
+
+    expect(subscription.waiting.value).toBe(false)
+    expect(subscription.ownedProducts.value).toStrictEqual(['Extra'])
+    const reads = client.getOwnedProducts.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(client.getOwnedProducts).toHaveBeenCalledTimes(reads)
+  })
+
+  it('gives up after 10 minutes when the product is not seen', async () => {
+    const { subscription } = mountSubscription(createProductClient([[]]))
+    await subscription.load()
+    const offer = subscription.productOffers.value[0]
+    if (!offer) throw new Error('no offer')
+    await subscription.buyProduct(offer)
+
+    await vi.advanceTimersByTimeAsync(600_000)
+
+    expect(subscription.waiting.value).toBe(false)
+    expect(subscription.problem.value).toBe(NOT_SEEN)
+  })
+})
