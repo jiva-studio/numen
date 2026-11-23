@@ -28,6 +28,7 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
+import type { KeybindingApi, PluginHost, PluginLifecycle, RegisteredApi } from './hostApi'
 import { createUiServiceBridge, createWorkServiceBridge } from './bridge/services'
 import { createSettingBridge, createViewBridge, type SharedRegistries } from './bridge/contextHosts'
 import type {
@@ -136,7 +137,7 @@ const hasDeclaredSettingsViews = (
 function createRegisteredApi(
   deps: Pick<PluginHostDeps, 'plugins' | 'window'>,
   registry: HostRegistry,
-) {
+): RegisteredApi {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
     getRegisteredSettingsViews: (pluginId: string) => readSettingsViews(registry, pluginId),
@@ -160,7 +161,7 @@ function createKeybindingApi({
   window,
   commands,
   slots,
-}: Pick<HostDeps, 'window' | 'commands' | 'slots'>) {
+}: Pick<HostDeps, 'window' | 'commands' | 'slots'>): KeybindingApi {
   const keybindings = createKeybindingRegistry({
     isMac: () => window.app.platform === 'darwin',
     whenReader: commands.whenReader,
@@ -186,8 +187,6 @@ function createKeybindingApi({
   }
 }
 
-type KeybindingApi = ReturnType<typeof createKeybindingApi>
-
 type EntryParts = Parameters<typeof disposeAllEntries>[0]
 
 interface LifecycleParts {
@@ -197,7 +196,12 @@ interface LifecycleParts {
   readonly entries: EntryParts
 }
 
-function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
+function createLifecycleApi({
+  registry,
+  contextHost,
+  keybindings,
+  entries,
+}: LifecycleParts): PluginLifecycle {
   return {
     createContext: (pluginId: string, manifest?: Manifest): PluginParts => {
       let parts = registry.plugins.contexts.get(pluginId)
@@ -239,7 +243,7 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
   }
 }
 
-export function createPluginHost(windowDeps: PluginHostDeps) {
+export function createPluginHost(windowDeps: PluginHostDeps): PluginHost {
   const whenReader = windowDeps.commands.whenReader ?? createWhenReader()
   const styles = createPluginStyles()
   const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
@@ -298,5 +302,3 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
       notifyListeners(registry.listeners.vault, event, deps),
   }
 }
-
-export type PluginHost = ReturnType<typeof createPluginHost>
