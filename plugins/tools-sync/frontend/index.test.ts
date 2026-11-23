@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate, SYNC_VIEW } from './index'
 import { WORDS } from './words'
 
@@ -43,7 +43,7 @@ const stubServer = (server: Server) => {
 const setup = (server: Server = { hasIdentity: true }) => {
   stubServer(server)
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.sync' })
-  activate(context)
+  activate(context, createMockHostServices())
   const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
   return { context, wrapper }
 }
