@@ -67,6 +67,9 @@ func (h *Handler) GetIdentity(
 	if errors.Is(err, identitydomain.ErrNoIdentity) {
 		return connect.NewResponse(&v1.GetIdentityResponse{}), nil
 	}
+	if errors.Is(err, identitydomain.ErrChainOutdated) {
+		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED, Detail: getDetail(err)}), nil
+	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -109,7 +112,7 @@ func (h *Handler) StartRestore(
 	ctx context.Context,
 	r *connect.Request[v1.StartRestoreRequest],
 ) (*connect.Response[v1.StartRestoreResponse], error) {
-	if err := h.identity.Identity.StartRestore.Execute(ctx, r.Msg.GetWords()); err != nil {
+	if err := h.identity.Identity.StartRestore.Execute(ctx, r.Msg.GetWords(), r.Msg.GetChainMark()); err != nil {
 		code, served := getErrorCode(err)
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -175,7 +178,7 @@ func (h *Handler) StartRestoreFromKit(
 	if len(sheets) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
 	}
-	if err := h.identity.Kit.Restore.Execute(ctx, sheets); err != nil {
+	if err := h.identity.Kit.Restore.Execute(ctx, sheets, r.Msg.GetChainMark()); err != nil {
 		code, served := getErrorCode(err)
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -230,6 +233,9 @@ func getRefusals() []refusal {
 		{identitydomain.ErrNotEnoughSheets, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS},
 		{identitydomain.ErrOtherAccount, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT},
 		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
+		{identitydomain.ErrInvalidChainMark, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK},
+		{identitydomain.ErrChainOutdated, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED},
+		{identitydomain.ErrInvalidRevokeReason, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_REVOKE_REASON},
 	}
 }
 

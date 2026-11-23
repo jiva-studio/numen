@@ -329,7 +329,7 @@ func isDeviceOf(chain identity.Chain, deviceSignKey []byte) bool {
 func (s *Server) mergeChain(chain identity.Chain) (identity.Chain, bool) {
 	account := chain.Root().Fingerprint().String()
 	stored, known := s.chains[account]
-	if !known || chain.IsExtensionOf(stored) {
+	if !known || chain.IsExtensionOf(stored) || chain.Outranks(stored) {
 		s.applyChain(account, chain)
 		return chain, true
 	}

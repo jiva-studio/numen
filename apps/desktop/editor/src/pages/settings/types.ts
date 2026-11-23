@@ -172,10 +172,13 @@ export interface InstallationIdentity {
   load(): Promise<void>
   generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
-  restore(words: readonly string[]): Promise<Result<IdentityInfo, string>>
+  restore(words: readonly string[], chainMark: string): Promise<Result<IdentityInfo, string>>
   delete(): Promise<Result<void, string>>
   saveKit(proof: KitProof): Promise<Result<boolean, string>>
-  restoreFromKit(sheets: readonly (readonly string[])[]): Promise<Result<IdentityInfo, string>>
+  restoreFromKit(
+    sheets: readonly (readonly string[])[],
+    chainMark: string,
+  ): Promise<Result<IdentityInfo, string>>
 }
 
 /**

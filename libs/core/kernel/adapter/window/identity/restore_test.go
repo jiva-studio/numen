@@ -82,3 +82,14 @@ func TestNewService_AnswersUnimplementedForStartRestoreWhereTheInstallationHasNo
 		t.Errorf("error = %v, want Unimplemented", err)
 	}
 }
+
+func TestStartRestore_RefusesATextThatIsNotAChainMark(t *testing.T) {
+	t.Parallel()
+	h := newHandler(newKeys())
+
+	answer, err := h.StartRestore(t.Context(), connect.NewRequest(&v1.StartRestoreRequest{Words: getLegalWords(), ChainMark: "seven"}))
+
+	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK {
+		t.Errorf("StartRestore() = %v, %v, want INVALID_CHAIN_MARK", answer, err)
+	}
+}

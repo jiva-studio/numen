@@ -151,7 +151,7 @@ func TestAdopt_IsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	chain, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, m.second.Public().Sign, rand.Reader, epoch().Add(time.Hour))
+	chain, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, m.second.Public().Sign, identity.Lost, rand.Reader, epoch().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}

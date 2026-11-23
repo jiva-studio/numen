@@ -38,7 +38,7 @@ func TestRevokeDevice_TheNewKeysReplaceTheRecordOnlyAfterTheServerAcceptedTheCha
 	t.Parallel()
 	l := newLinkPair(t)
 	before := l.host.readRecord(t).Wrapped.Bytes()
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatalf("RevokeDevice() = %v", err)
 	}
 	pending, err := l.host.publish().Execute(t.Context())
@@ -63,7 +63,7 @@ func TestRevokeDevice_TheNewKeysReplaceTheRecordOnlyAfterTheServerAcceptedTheCha
 func TestRevokeDevice_RemovesDeviceFromListAndNextSealUsesNewEpoch(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	l.relay.settle(t, l.host, l.joiner)
@@ -96,10 +96,10 @@ func TestRevokeDevice_RemovesDeviceFromListAndNextSealUsesNewEpoch(t *testing.T)
 func TestRevokeDevice_RefusesThisDeviceAndAnUnknownDevice(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.host)); !errors.Is(err, identitylib.ErrSelfRevoke) {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.host), identitydomain.RevokeLost, time.Time{}); !errors.Is(err, identitylib.ErrSelfRevoke) {
 		t.Errorf("this device: error = %v, want ErrSelfRevoke", err)
 	}
-	if err := l.host.revoke().Execute(t.Context(), "0000 0000 0000 0000 0000 0000 0000 0000"); !errors.Is(err, identitylib.ErrUnknownDevice) {
+	if err := l.host.revoke().Execute(t.Context(), "0000 0000 0000 0000 0000 0000 0000 0000", identitydomain.RevokeLost, time.Time{}); !errors.Is(err, identitylib.ErrUnknownDevice) {
 		t.Errorf("an unknown device: error = %v, want ErrUnknownDevice", err)
 	}
 	if pending, err := l.host.publish().Execute(t.Context()); err != nil || pending.IsPending {
@@ -115,7 +115,7 @@ func TestRevokeDevice_RefusesToLeaveTheAccountWithoutADevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := device.revoke().Execute(t.Context(), shown.DeviceFingerprint); !errors.Is(err, identitydomain.ErrLastDevice) {
+	if err := device.revoke().Execute(t.Context(), shown.DeviceFingerprint, identitydomain.RevokeLost, time.Time{}); !errors.Is(err, identitydomain.ErrLastDevice) {
 		t.Errorf("error = %v, want ErrLastDevice", err)
 	}
 }
@@ -130,7 +130,7 @@ func TestChainPublished_RevokeAbortsWhenRevokedDeviceAddedDeviceMeanwhile(t *tes
 		}
 		return next
 	}
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	l.relay.settle(t, l.host, l.joiner)
@@ -162,7 +162,7 @@ func TestChainPublished_RevokeRebuildsOnNewHeadWhenAnotherDeviceAppended(t *test
 		}
 		return next
 	}
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	l.relay.settle(t, l.host, l.joiner)
@@ -175,7 +175,7 @@ func TestChainPublished_RevokeRebuildsOnNewHeadWhenAnotherDeviceAppended(t *test
 func TestAdoptChain_ARevokedDeviceLearnsItWasRevokedAndKeepsItsRecord(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	l.relay.settle(t, l.host, l.joiner)
@@ -203,7 +203,7 @@ func TestAdoptChain_ARevokedDeviceLearnsItWasRevokedAndKeepsItsRecord(t *testing
 func TestAdoptChain_RemainingDeviceAdoptsNewKeysOfEpoch(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
 		t.Fatal(err)
 	}
 	l.relay.settle(t, l.host, l.joiner)
@@ -226,5 +226,70 @@ func TestAdoptChain_RefusesBytesThatAreNotAChain(t *testing.T) {
 	l := newLinkPair(t)
 	if err := l.host.adopt().Execute(t.Context(), []byte("not a chain")); !errors.Is(err, identitylib.ErrMalformed) {
 		t.Errorf("error = %v, want ErrMalformed", err)
+	}
+}
+
+func TestRevokeDevice_RefusesAnUnknownReasonAndAStolenDeviceWithoutAUsableDate(t *testing.T) {
+	t.Parallel()
+	l := newLinkPair(t)
+	fingerprint := l.fingerprintOf(t, l.joiner)
+	cases := map[string]struct {
+		reason identitydomain.RevokeReason
+		since  time.Time
+	}{
+		"no reason":            {"", time.Time{}},
+		"another reason":       {"misplaced", getNow().Add(-time.Hour)},
+		"stolen with no date":  {identitydomain.RevokeStolen, time.Time{}},
+		"stolen in the future": {identitydomain.RevokeStolen, getNow().Add(time.Hour)},
+	}
+	for name, c := range cases {
+		if err := l.host.revoke().Execute(t.Context(), fingerprint, c.reason, c.since); !errors.Is(err, identitydomain.ErrInvalidRevokeReason) {
+			t.Errorf("%s: error = %v, want ErrInvalidRevokeReason", name, err)
+		}
+	}
+	if pending, err := l.host.publish().Execute(t.Context()); err != nil || pending.IsPending {
+		t.Errorf("a refused revoke left %+v pending: %v", pending, err)
+	}
+}
+
+func TestListDevices_NamesWhoRevokedADeviceWhenAndWhyOnBothDevices(t *testing.T) {
+	t.Parallel()
+	l := newLinkPair(t)
+	since := getNow().Add(-48 * time.Hour)
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeStolen, since); err != nil {
+		t.Fatal(err)
+	}
+	l.relay.settle(t, l.host, l.joiner)
+	if err := l.joiner.adopt().Execute(t.Context(), l.relay.head.Bytes()); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, device := range map[string]*linkDevice{"the laptop that revoked": l.host, "the phone that was revoked": l.joiner} {
+		devices, err := device.devices().Execute(t.Context())
+		if err != nil || len(devices) != 2 {
+			t.Fatalf("%s: ListDevices() = %+v, %v, want 2 devices", name, devices, err)
+		}
+		revocation := devices[1].Revocation
+		if !devices[1].IsRevoked || devices[1].Name != "Phone" || revocation.ByName != "Laptop" || revocation.IsByRecovery ||
+			revocation.Reason != identitydomain.RevokeStolen || !revocation.Since.Equal(since) || revocation.At.IsZero() {
+			t.Errorf("%s: revoked device = %+v, want the phone revoked by the laptop as stolen since %v", name, devices[1], since)
+		}
+		if devices[0].IsRevoked || devices[0].Revocation != (identitydomain.Revocation{}) {
+			t.Errorf("%s: the active device = %+v, want no revocation", name, devices[0])
+		}
+	}
+}
+
+func TestRevokeDevice_ALostDeviceIsListedAsLostWithNoDate(t *testing.T) {
+	t.Parallel()
+	l := newLinkPair(t)
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner), identitydomain.RevokeLost, time.Time{}); err != nil {
+		t.Fatal(err)
+	}
+	l.relay.settle(t, l.host, l.joiner)
+
+	devices, err := l.host.devices().Execute(t.Context())
+	if err != nil || devices[1].Revocation.Reason != identitydomain.RevokeLost || !devices[1].Revocation.Since.IsZero() {
+		t.Errorf("devices = %+v, %v, want the phone lost with no date", devices, err)
 	}
 }

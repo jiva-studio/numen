@@ -85,7 +85,7 @@ func accountOfWords(t *testing.T, words []string) string {
 func restoredOn(t *testing.T, sheets [][]string) (string, error) {
 	t.Helper()
 	fresh := newRestoreKit(t, "Phone")
-	if err := fresh.startKit.Execute(t.Context(), sheets); err != nil {
+	if err := fresh.startKit.Execute(t.Context(), sheets, ""); err != nil {
 		return "", err
 	}
 	if err := fresh.complete.Execute(t.Context(), syncPlugin, nil); err != nil {
@@ -340,7 +340,7 @@ func TestStartRestoreFromKit_JoinsTheAccountOfTheSheetsOnAnotherDevice(t *testin
 	made := first.kitOf(t, getLegalWords())
 	second := newRestoreKit(t, "Phone")
 
-	if err := second.startKit.Execute(t.Context(), pick(t, made, 2, 3)); err != nil {
+	if err := second.startKit.Execute(t.Context(), pick(t, made, 2, 3), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -368,7 +368,7 @@ func TestStartRestoreFromKit_CompletesOfflineAsTheAccountOfTheWords(t *testing.T
 	}
 	made := first.kitOf(t, getLegalWords())
 	fresh := newRestoreKit(t, "Phone")
-	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1, 3)); err != nil {
+	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1, 3), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -387,7 +387,7 @@ func TestStartRestoreFromKit_RefusesOneSheetAndNothingIsPending(t *testing.T) {
 	createdWith(t, k, getLegalWords())
 	made := kitOf(t, k, getLegalWords())
 	fresh := newRestoreKit(t, "Phone")
-	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1)); !errors.Is(err, identitydomain.ErrNotEnoughSheets) {
+	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1), ""); !errors.Is(err, identitydomain.ErrNotEnoughSheets) {
 		t.Errorf("error = %v, want ErrNotEnoughSheets", err)
 	}
 	if pending, err := fresh.pending.Execute(t.Context()); err != nil || pending.IsPending {
@@ -403,7 +403,7 @@ func TestStartRestoreFromKit_RefusesASheetWithAMistakeAndNothingIsPending(t *tes
 	fresh := newRestoreKit(t, "Phone")
 	sheets := pick(t, made, 1, 3)
 	sheets[1] = withWrongWord(sheets[1])
-	err := fresh.startKit.Execute(t.Context(), sheets)
+	err := fresh.startKit.Execute(t.Context(), sheets, "")
 	if !errors.Is(err, identitydomain.ErrInvalidSheets) {
 		t.Fatalf("error = %v, want ErrInvalidSheets", err)
 	}
@@ -424,14 +424,14 @@ func TestStartRestoreFromKit_RefusesWhenTheDeviceHasAnIdentity(t *testing.T) {
 	}
 	made := k.kitOf(t, getLegalWords())
 	before := k.keys.snapshot()[keyName]
-	if err := k.startKit.Execute(t.Context(), pick(t, made, 1, 2)); !errors.Is(err, identitydomain.ErrIdentityExists) {
+	if err := k.startKit.Execute(t.Context(), pick(t, made, 1, 2), ""); !errors.Is(err, identitydomain.ErrIdentityExists) {
 		t.Fatalf("error = %v, want ErrIdentityExists", err)
 	}
 	if k.keys.snapshot()[keyName] != before {
 		t.Error("the record changed")
 	}
 	k.keys.keys[keyName] = "not-a-record"
-	if err := k.startKit.Execute(t.Context(), pick(t, made, 1, 2)); !errors.Is(err, identitydomain.ErrIdentityExists) {
+	if err := k.startKit.Execute(t.Context(), pick(t, made, 1, 2), ""); !errors.Is(err, identitydomain.ErrIdentityExists) {
 		t.Errorf("over a broken record: error = %v, want ErrIdentityExists", err)
 	}
 	if pending, err := k.pending.Execute(t.Context()); err != nil || pending.IsPending {
@@ -445,7 +445,7 @@ func TestRecoveryKit_KeepsNoWordNoSecretNoSheetInTheKeyStore(t *testing.T) {
 	createdWith(t, k, getLegalWords())
 	made := kitOf(t, k, getLegalWords())
 	fresh := newRestoreKit(t, "Phone")
-	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 2, 3)); err != nil {
+	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 2, 3), ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := fresh.complete.Execute(t.Context(), syncPlugin, nil); err != nil {
@@ -481,5 +481,27 @@ func TestRecoveryKit_KeepsNoWordNoSecretNoSheetInTheKeyStore(t *testing.T) {
 				t.Errorf("%s holds a recovery secret or a share value", name)
 			}
 		}
+	}
+}
+
+func TestSaveRecoveryKit_PrintsTheChainMarkOfTheAccountAndARestoreThatTypesItIsAccepted(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	createdWith(t, k, getLegalWords())
+	made := kitOf(t, k, getLegalWords())
+	chain, err := identitylib.ParseChain(k.chains.chain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if made.ChainMark != chain.GetMark().String() {
+		t.Fatalf("the kit shows the chain mark %q, want %q", made.ChainMark, chain.GetMark())
+	}
+
+	fresh := newRestoreKit(t, "Phone")
+	if err := fresh.start.Execute(t.Context(), getLegalWords(), made.ChainMark); err != nil {
+		t.Fatal(err)
+	}
+	if err := fresh.complete.Execute(t.Context(), syncPlugin, chain.Bytes()); err != nil {
+		t.Errorf("CompleteRestore() = %v, want the chain of the kit accepted", err)
 	}
 }

@@ -25,7 +25,7 @@ func growChain(tb testing.TB) (identity.Chain, error) {
 			return chain, err
 		}
 		guest := next.ListDevices()[len(next.ListDevices())-1].Public.Sign
-		revoked, nextKeys, err := next.RevokeDevice(signer, keys, guest, rand.Reader, at)
+		revoked, nextKeys, err := next.RevokeDevice(signer, keys, guest, identity.Lost, rand.Reader, at)
 		if err != nil {
 			return chain, err
 		}

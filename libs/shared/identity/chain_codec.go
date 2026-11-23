@@ -72,7 +72,7 @@ func encodeEntryBody(entry Entry) []byte {
 		out = binary.AppendUvarint(out, uint64(len(add.Name)))
 		out = append(out, add.Name...)
 	case entry.Revoke != nil:
-		out = appendRevoke(out, entry.Revoke)
+		out = appendRevoke(out, entry.Kind, entry.Revoke)
 	}
 	return out
 }
@@ -106,8 +106,8 @@ func decodeEntry(b []byte) (Entry, error) {
 		copy(add.Device.Box[:], r.take(32))
 		add.Name = string(r.sized())
 		entry.AddDevice = add
-	case KindRevokeDevice:
-		entry.Revoke = readRevoke(&r)
+	case KindRevokeDevice, KindRotateKeys:
+		entry.Revoke = readRevoke(&r, entry.Kind)
 	default:
 		if r.err == nil {
 			r.err = fmt.Errorf("%w: entry kind %d", ErrMalformed, entry.Kind)
@@ -183,8 +183,12 @@ func (r *reader) sized() []byte {
 	return r.take(int(size))
 }
 
-func appendRevoke(out []byte, revoke *Revoke) []byte {
-	out = append(out, revoke.Device...)
+func appendRevoke(out []byte, kind EntryKind, revoke *Revoke) []byte {
+	if kind == KindRevokeDevice {
+		out = append(out, revoke.Device...)
+		out = append(out, byte(revoke.Reason))
+		out = binary.BigEndian.AppendUint64(out, encodeSince(revoke.Since))
+	}
 	out = binary.AppendUvarint(out, uint64(revoke.Epoch))
 	out = append(out, revoke.AccountBox[:]...)
 	out = binary.AppendUvarint(out, uint64(len(revoke.WrappedForRecovery.sealed)))
@@ -200,8 +204,22 @@ func appendRevoke(out []byte, revoke *Revoke) []byte {
 	return out
 }
 
-func readRevoke(r *reader) *Revoke {
-	revoke := &Revoke{Device: ed25519.PublicKey(r.take(ed25519.PublicKeySize))}
+func encodeSince(since time.Time) uint64 {
+	if since.IsZero() {
+		return 0
+	}
+	return uint64(since.Unix())
+}
+
+func readRevoke(r *reader, kind EntryKind) *Revoke {
+	revoke := &Revoke{}
+	if kind == KindRevokeDevice {
+		revoke.Device = ed25519.PublicKey(r.take(ed25519.PublicKeySize))
+		revoke.Reason = RevokeReason(r.byte())
+		if since := binary.BigEndian.Uint64(r.takeOrZeros(8)); since != 0 {
+			revoke.Since = time.Unix(int64(since), 0).UTC()
+		}
+	}
 	epoch := r.uvarint()
 	if epoch > math.MaxUint32 {
 		r.fail()

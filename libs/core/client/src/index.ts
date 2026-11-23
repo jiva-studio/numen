@@ -122,6 +122,9 @@ export {
   type LinkInfo,
   type IdentityClient,
   createIdentityClient,
+  type RevokeWhy,
+  type DeviceRevocation,
+  RestoreRefusedError,
 } from './identity'
 export {
   NoteGraphSchema,

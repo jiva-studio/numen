@@ -13,6 +13,8 @@ import (
 // Authors tells which signing keys belong to the devices of the account.
 type Authors interface {
 	IsTrusted(signKey []byte) bool
+	// IsKnown reports whether the key is the signing key of a device that the chain ever listed, revoked or not.
+	IsKnown(signKey []byte) bool
 }
 
 // ErrInvalidCatalog means the catalog of the server is not a signed, unbroken log of the devices of the account.
@@ -25,11 +27,20 @@ var (
 	errUnknownAuthor = errors.New("the author is not a device of the account")
 )
 
-// CheckEntries verifies that the entries are the unbroken log of the catalog, each signed by a device of the account.
+// CheckEntries verifies that the entries are the unbroken log of the catalog, each signed by a device of the account. The log is hash-linked,
+// so an entry of a trusted device vouches for every entry before it: those may be signed by a device that was revoked since, but the last
+// entries, after the last one of a trusted device, may not.
 func CheckEntries(entries []*syncv1.CatalogEntry, authors Authors) error {
 	var previous [32]byte
+	lastTrusted := -1
 	for i, entry := range entries {
-		if err := checkEntry(entry, uint64(i)+1, previous, authors); err != nil {
+		if authors.IsTrusted(entry.GetAuthorDeviceSignKey()) {
+			lastTrusted = i
+		}
+	}
+	for i, entry := range entries {
+		isVouched := i < lastTrusted
+		if err := checkEntry(entry, uint64(i)+1, previous, authors, isVouched); err != nil {
 			return fmt.Errorf("%w: entry %d: %w", ErrInvalidCatalog, i+1, err)
 		}
 		previous = syncprotocol.GetCatalogEntryID(entry)
@@ -37,7 +48,7 @@ func CheckEntries(entries []*syncv1.CatalogEntry, authors Authors) error {
 	return nil
 }
 
-func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, authors Authors) error {
+func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, authors Authors, isVouched bool) error {
 	if err := syncprotocol.CheckCatalogEntry(entry); err != nil {
 		return err
 	}
@@ -51,7 +62,8 @@ func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, a
 		syncprotocol.GetCatalogEntryMessage(entry), [64]byte(entry.GetSignature())) {
 		return errBadSignature
 	}
-	if !authors.IsTrusted(entry.GetAuthorDeviceSignKey()) {
+	author := entry.GetAuthorDeviceSignKey()
+	if !authors.IsTrusted(author) && !(isVouched && authors.IsKnown(author)) {
 		return errUnknownAuthor
 	}
 	return nil

@@ -145,6 +145,10 @@ export const WORDS = {
   proofWords: 'Recovery words',
   proofSheets: 'Recovery kit',
   restoreSheetsHint: 'Paste the words of any two sheets.',
+  restoreChainMark: 'Chain mark',
+  restoreChainMarkPlaceholder: '7-3FA912C077B1',
+  restoreChainMarkHint:
+    'Printed on the sheets. Numen refuses a server that holds an older history of your account. Leave it empty if your kit has none.',
   kitSheetField: (number: number) => `Sheet ${number}`,
   kitSheetPlaceholder: 'Type the 33 words of the sheet, separated by spaces',
   deviceRevokedNotice: 'This device was revoked',

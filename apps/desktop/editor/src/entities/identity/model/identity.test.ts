@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { IdentityClient } from '@numen/core-client'
+import { RestoreRefusedError, type IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
@@ -122,7 +122,7 @@ describe('the identity store', () => {
     const { store } = createStore(createClient({ create }))
     const answer = await store.create(WORDS)
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS)
+    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS, '')
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
   })
 
@@ -230,10 +230,10 @@ describe('the identity store restoring from words', () => {
       }),
     )
 
-    const answer = await settle(store.restore(WORDS))
+    const answer = await settle(store.restore(WORDS, ''))
 
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS)
+    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS, '')
     expect(create).not.toHaveBeenCalled()
     expect(reads).toBe(3)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
@@ -244,7 +244,7 @@ describe('the identity store restoring from words', () => {
     let isDone = false
     const { store } = createStore(createClient({ get: () => Promise.resolve(undefined) }))
 
-    store.restore(WORDS).then(
+    store.restore(WORDS, '').then(
       () => {
         isDone = true
       },
@@ -258,6 +258,25 @@ describe('the identity store restoring from words', () => {
     expect(store.identity.value).toBeUndefined()
   })
 
+  it('ends the wait with the reason when the core refuses the restore because the server is older than the kit', async () => {
+    vi.useFakeTimers()
+    const startRestore = vi.fn(() => Promise.resolve(asStarted()))
+    const { store } = createStore(
+      createClient({
+        startRestore,
+        get: () =>
+          Promise.reject(new RestoreRefusedError({ error: 'chainOutdated', message: 'older' })),
+      }),
+    )
+
+    const answer = await settle(store.restore(WORDS, '7-3FA912C077B1'))
+
+    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS, '7-3FA912C077B1')
+    expect(answer.ok).toBe(false)
+    expect(answer.ok ? '' : answer.error).toContain('older history of your account')
+    expect(store.identity.value).toBeUndefined()
+  })
+
   it('reports that the words are not valid, stores no identity and does not wait', async () => {
     const get = vi.fn(() => Promise.resolve(undefined))
     const { store } = createStore(
@@ -268,7 +287,7 @@ describe('the identity store restoring from words', () => {
       }),
     )
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore(WORDS, '')
 
     expect(answer).toStrictEqual({ ok: false, error: 'Some words are not valid.' })
     expect(get).not.toHaveBeenCalled()
@@ -284,7 +303,7 @@ describe('the identity store restoring from words', () => {
     )
     await store.load()
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore(WORDS, '')
 
     expect(answer).toStrictEqual({ ok: false, error: 'This device already has an identity.' })
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
@@ -295,7 +314,7 @@ describe('the identity store restoring from words', () => {
       createClient({ startRestore: () => Promise.reject(new Error('offline')) }),
     )
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore(WORDS, '')
 
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
@@ -374,7 +393,7 @@ describe('the identity store and the recovery kit', () => {
             Promise.resolve(asFailure({ error, message: 'sheet 2 is not valid' })),
         }),
       )
-      expect(await store.restoreFromKit(SHEETS)).toStrictEqual({ ok: false, error: text })
+      expect(await store.restoreFromKit(SHEETS, '')).toStrictEqual({ ok: false, error: text })
     }
   })
 
@@ -394,7 +413,7 @@ describe('the identity store and the recovery kit', () => {
       }),
     )
     expect((await store.saveKit({ words: WORDS })).ok).toBe(false)
-    expect((await store.restoreFromKit(SHEETS)).ok).toBe(false)
+    expect((await store.restoreFromKit(SHEETS, '')).ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
   })
 
@@ -411,10 +430,10 @@ describe('the identity store and the recovery kit', () => {
         },
       }),
     )
-    const pending = store.restoreFromKit(SHEETS)
+    const pending = store.restoreFromKit(SHEETS, '')
     await vi.advanceTimersByTimeAsync(2000)
     expect(await pending).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(startRestoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS)
+    expect(startRestoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS, '')
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
     vi.useRealTimers()
   })
@@ -428,7 +447,7 @@ describe('the identity store and the recovery kit', () => {
           Promise.resolve(asFailure({ error: 'notEnoughSheets', message: '' })),
       }),
     )
-    expect(await store.restoreFromKit(SHEETS.slice(0, 1))).toStrictEqual({
+    expect(await store.restoreFromKit(SHEETS.slice(0, 1), '')).toStrictEqual({
       ok: false,
       error: 'One more sheet is needed.',
     })
@@ -462,7 +481,7 @@ describe('the devices and the link of the identity store', () => {
         revokeDevice: () => Promise.resolve(asRefusal('revokeRaced')),
       }),
     )
-    const answer = await store.devices.revoke('B')
+    const answer = await store.devices.revoke('B', { reason: 'lost' })
     expect(answer).toStrictEqual({
       ok: false,
       error: 'A device was added while you revoked. Check the list.',
@@ -470,11 +489,25 @@ describe('the devices and the link of the identity store', () => {
     expect(listed).toBe(1)
   })
 
+  it('sends why the device is revoked to the core', async () => {
+    const sent: unknown[] = []
+    const { store } = createStore(
+      createClient({
+        revokeDevice: (fingerprint, why) => {
+          sent.push([fingerprint, why])
+          return Promise.resolve(asStarted())
+        },
+      }),
+    )
+    await store.devices.revoke('B', { reason: 'stolen', since: '2026-11-20T00:00:00Z' })
+    expect(sent).toStrictEqual([['B', { reason: 'stolen', since: '2026-11-20T00:00:00Z' }]])
+  })
+
   it('words the refusal of a revoke of this device', async () => {
     const { store } = createStore(
       createClient({ revokeDevice: () => Promise.resolve(asRefusal('notAllowedThisDevice')) }),
     )
-    expect(await store.devices.revoke('A')).toStrictEqual({
+    expect(await store.devices.revoke('A', { reason: 'lost' })).toStrictEqual({
       ok: false,
       error: 'This device cannot revoke itself.',
     })

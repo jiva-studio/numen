@@ -32,6 +32,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
@@ -105,6 +106,21 @@ func NewFirstComputer(t *testing.T, server *Server, clock *Clock, vault string, 
 	c := newComputer(t, server, clock, vault)
 	c.Fake.StartRestore(words)
 	if err := c.Client.CompleteRestore(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.SignIn(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// NewRestoredComputer is NewSecondComputer for a host that starts a new epoch of keys when the words restore an account, as the real host
+// does.
+func NewRestoredComputer(t *testing.T, server *Server, clock *Clock, vault string, words []string) *Computer {
+	t.Helper()
+	c := newComputer(t, server, clock, vault)
+	c.Fake.StartRestoreRotating(words)
+	if _, err := join.NewJoin(c.JoinDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if err := c.SignIn(t.Context()); err != nil {
@@ -346,7 +362,14 @@ func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 
 // ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
-	return chaincourier.Deps{Identity: c.Account, Core: c.Client, Chain: c.Cloud}
+	return chaincourier.Deps{
+		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Endorse: endorse.NewEndorse(c.EndorseDeps()),
+	}
+}
+
+// EndorseDeps are the dependencies of the endorsement of the heads of a device that is revoked.
+func (c *Computer) EndorseDeps() endorse.Deps {
+	return endorse.Deps{Identity: c.Account, Host: c.Host, State: c.State, Revisions: c.Cloud}
 }
 
 // LinkDeps are the dependencies of the courier of a link over the relay of the server.

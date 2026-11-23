@@ -8,10 +8,12 @@ export {
 } from './api/identity'
 export type {
   DeviceInfo,
+  DeviceRevocation,
   IdentityInfo,
   KitProof,
   LinkInfo,
   LinkMode,
   LinkPhase,
   LinkRole,
+  RevokeWhy,
 } from './lib/types'

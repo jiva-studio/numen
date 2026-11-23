@@ -15,10 +15,23 @@ const props = defineProps<{ device: DeviceInfo }>()
 const emit = defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const date = computed(() => {
-  const added = new Date(props.device.addedAt)
-  if (Number.isNaN(added.getTime())) return ''
-  return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(added)
+const formatDate = (text: string): string => {
+  const parsed = new Date(text)
+  if (text === '' || Number.isNaN(parsed.getTime())) return ''
+  return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(parsed)
+}
+
+const detail = computed(() => {
+  const linked = words.deviceLinked(formatDate(props.device.addedAt))
+  const revocation = props.device.revocation
+  if (revocation === undefined) return linked
+  const removed = words.deviceRevokedBy(
+    revocation.isByRecovery ? '' : revocation.revokedByName,
+    formatDate(revocation.revokedAt),
+    revocation.reason,
+    formatDate(revocation.since),
+  )
+  return `${linked}. ${removed}`
 })
 </script>
 
@@ -28,7 +41,7 @@ const date = computed(() => {
       category="device"
       is-static
       :name="device.name"
-      :detail="words.deviceLinked(date)"
+      :detail="detail"
     >
       <template #name-suffix>
         <span v-if="device.isThis" class="device-row__badge">{{ words.deviceThis }}</span>

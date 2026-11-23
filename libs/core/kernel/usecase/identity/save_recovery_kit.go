@@ -43,11 +43,15 @@ func (u *SaveRecoveryKit) Execute(ctx context.Context, words []string, sheets []
 	if err != nil {
 		return false, err
 	}
+	state, err := u.deps.records.readState(ctx)
+	if err != nil {
+		return false, err
+	}
 	made, err := identitylib.NewKit(u.deps.random, secret)
 	if err != nil {
 		return false, err
 	}
-	return u.saver.SaveKit(ctx, writeKit(made, account, u.deps.clock.Now()))
+	return u.saver.SaveKit(ctx, writeKit(made, account, state.Chain.GetMark().String(), u.deps.clock.Now()))
 }
 
 func proveSecret(words []string, sheets [][]string) (identitylib.RecoverySecret, error) {
@@ -64,10 +68,10 @@ func proveSecret(words []string, sheets [][]string) (identitylib.RecoverySecret,
 	return recovery.DeriveRecoverySecret(), nil
 }
 
-func writeKit(made identitylib.Kit, account string, now time.Time) identitydomain.Kit {
+func writeKit(made identitylib.Kit, account, mark string, now time.Time) identitydomain.Kit {
 	sheets := make([]identitydomain.Sheet, len(made.Sheets))
 	for i, sheet := range made.Sheets {
 		sheets[i] = identitydomain.Sheet{Number: sheet.Number(), Words: sheet.Words()}
 	}
-	return identitydomain.Kit{ID: made.ID, AccountFingerprint: account, CreatedAt: now, Sheets: sheets}
+	return identitydomain.Kit{ID: made.ID, AccountFingerprint: account, ChainMark: mark, CreatedAt: now, Sheets: sheets}
 }

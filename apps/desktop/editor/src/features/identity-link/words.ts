@@ -11,6 +11,19 @@ export const WORDS = {
   deviceRevokeWarning: (name: string) =>
     `${name} will lose access. New notes will not be readable on it. Its files stay on it.`,
   deviceRevokeCancel: 'Cancel',
+  deviceRevokeWhy: 'Why do you revoke it?',
+  deviceRevokeLost: 'Lost or no longer used',
+  deviceRevokeStolen: 'Stolen, or someone else may have used it',
+  deviceRevokeSince: 'Since which day?',
+  deviceRevokeNeedsDate: 'Choose the day it was stolen, or the first day you are not sure about.',
+  deviceRevokedBy: (by: string, date: string, reason: 'lost' | 'stolen', since: string) =>
+    [
+      by === '' ? 'Revoked with your recovery words' : `Revoked by ${by}`,
+      date === '' ? '' : ` on ${date}`,
+      reason === 'stolen' ? ` as stolen${since === '' ? '' : ` since ${since}`}` : ' as lost',
+    ].join(''),
+  deviceRevokeNotice: (by: string, name: string, date: string) =>
+    `${by} revoked ${name} on ${date}. If you did not do this, ${by} may be in other hands: revoke it as stolen.`,
   account: 'Account fingerprint',
   linkShow: 'Show a QR code',
   linkScan: 'Scan a QR code',

@@ -29,6 +29,7 @@ type pendingLink struct {
 type pendingRevoke struct {
 	chain    identitylib.Chain
 	device   []byte
+	why      identitylib.Revocation
 	attempts int
 }
 

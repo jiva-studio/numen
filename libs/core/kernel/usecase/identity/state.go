@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -116,7 +117,7 @@ func (r records) adoptState(ctx context.Context, state identitylib.State, chain 
 	if err != nil {
 		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
-	if next.Chain.Len() == state.Chain.Len() {
+	if bytes.Equal(next.Chain.Bytes(), state.Chain.Bytes()) {
 		return next, nil
 	}
 	if err := r.writeAdoptedState(ctx, next); err != nil {

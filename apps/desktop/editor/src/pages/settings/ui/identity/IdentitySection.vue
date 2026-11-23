@@ -24,7 +24,17 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 /* --------------------------------- State ---------------------------------- */
 const kit = useRecoveryKit(() => props.identity)
 const section = useIdentitySection(() => props.identity, kit.actions.hold)
-const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
+const {
+  identity: current,
+  step,
+  setup,
+  call,
+  confirmation,
+  restoring,
+  chainMark,
+  deletion,
+  actions,
+} = section
 const { stage, recoveryWords } = setup
 </script>
 
@@ -112,11 +122,13 @@ const { stage, recoveryWords } = setup
       :kind="restoring.kind.value"
       :entered="restoring.words.entered.value"
       :texts="restoring.sheets.texts.value"
+      :chain-mark="chainMark"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
       @change-kind="restoring.setKind"
       @change="restoring.words.setWord"
       @change-sheet="restoring.setSheet"
+      @change-mark="actions.setChainMark"
       @restore="actions.restore"
       @cancel="actions.cancel"
     />

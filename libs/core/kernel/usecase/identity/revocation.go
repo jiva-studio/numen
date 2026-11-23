@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
@@ -18,17 +19,27 @@ type revocation struct {
 	random  io.Reader
 }
 
-func (r revocation) makeChain(state identitylib.State, device []byte) (identitylib.Chain, error) {
+func (r revocation) readRevocation(reason identitydomain.RevokeReason, since time.Time) (identitylib.Revocation, error) {
+	switch {
+	case reason == identitydomain.RevokeLost:
+		return identitylib.Lost, nil
+	case reason == identitydomain.RevokeStolen && !since.IsZero() && !since.After(r.clock.Now()):
+		return identitylib.Revocation{Reason: identitylib.ReasonStolen, Since: since}, nil
+	}
+	return identitylib.Revocation{}, identitydomain.ErrInvalidRevokeReason
+}
+
+func (r revocation) makeChain(state identitylib.State, device []byte, why identitylib.Revocation) (identitylib.Chain, error) {
 	keys, err := state.OpenAccountKeys()
 	if err != nil {
 		return identitylib.Chain{}, err
 	}
-	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, device, r.random, r.clock.Now())
+	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, device, why, r.random, r.clock.Now())
 	return chain, err
 }
 
-func (r revocation) revokeWith(state identitylib.State, keys identitylib.AccountKeys, device []byte) (identitylib.Chain, bool) {
-	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, device, r.random, r.clock.Now())
+func (r revocation) revokeWith(state identitylib.State, keys identitylib.AccountKeys, device []byte, why identitylib.Revocation) (identitylib.Chain, bool) {
+	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, device, why, r.random, r.clock.Now())
 	return chain, err == nil
 }
 
@@ -65,7 +76,7 @@ func (r revocation) rebuildLocked(store *linkStore, state identitylib.State, pen
 	if err != nil {
 		return err
 	}
-	chain, isRevoked := r.revokeWith(state, keys, pending.device)
+	chain, isRevoked := r.revokeWith(state, keys, pending.device, pending.why)
 	if !isRevoked {
 		store.revoke = nil
 		return nil

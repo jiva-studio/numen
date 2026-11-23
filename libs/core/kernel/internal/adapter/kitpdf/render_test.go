@@ -21,6 +21,8 @@ import (
 
 const fingerprint = "1A2B 3C4D 5E6F 7A8B 9C0D 1E2F 3A4B 5C6D"
 
+const chainMark = "7-3FA912C077B1"
+
 var (
 	pageObject = regexp.MustCompile(`/Type /Page\b[^s]`)
 	stream     = regexp.MustCompile(`(?s)stream\r?\n(.*?)\r?\nendstream`)
@@ -40,6 +42,7 @@ func getSampleKit() identitydomain.Kit {
 	return identitydomain.Kit{
 		ID:                 "C0DE",
 		AccountFingerprint: fingerprint,
+		ChainMark:          chainMark,
 		CreatedAt:          time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC),
 		Sheets:             sheets,
 	}
@@ -100,6 +103,8 @@ func TestRender_ShowsTheFingerprintTheRuleAndTheWordsOfEachSheetInOrder(t *testi
 			"Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.",
 			"23 November 2026",
 			"Kept at:",
+			"3.  In the field Chain mark, type the mark below. A server that went back in time is refused.",
+			chainMark,
 		} {
 			if !slices.Contains(page, want) {
 				t.Errorf("page %d does not show %q", i+1, want)

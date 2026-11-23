@@ -87,6 +87,17 @@ func (f *Fake) StartRestore(words []string) {
 	f.pending = restore
 }
 
+// StartRestoreRotating is StartRestore for a host that, like the real one, starts a new epoch of keys for every device of the chain when
+// the restore joins an account. The other devices of the account take the new keys when they adopt the chain.
+func (f *Fake) StartRestoreRotating(words []string) {
+	f.t.Helper()
+	restore := newPendingRestore(f.t, words)
+	restore.rotates = true
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.pending = restore
+}
+
 // Fail makes every call fail with err, which is not account.ErrNoIdentity. A nil err ends the failure.
 func (f *Fake) Fail(err error) {
 	f.mu.Lock()

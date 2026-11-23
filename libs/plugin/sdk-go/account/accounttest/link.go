@@ -156,7 +156,7 @@ func (f *Fake) RevokeDevice(deviceSignKey []byte) error {
 }
 
 func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {
-	revoked, keys, err := f.record.Chain.RevokeDevice(f.record.Device, f.record.keys, deviceSignKey, rand.Reader, now)
+	revoked, keys, err := f.record.Chain.RevokeDevice(f.record.Device, f.record.keys, deviceSignKey, identity.Lost, rand.Reader, now)
 	if err != nil {
 		return err
 	}
@@ -276,9 +276,20 @@ func (s *service) AdoptChain(_ context.Context, req *connect.Request[v1.AdoptCha
 		return nil, refuse(connect.CodeFailedPrecondition, "NO_IDENTITY")
 	}
 	chain, err := identity.ParseChain(req.Msg.GetChain())
-	if err != nil || !chain.IsExtensionOf(f.record.Chain) {
+	if err != nil {
 		return nil, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
-	f.record.Chain = chain
+	state, err := identity.NewState(f.record.Record, f.record.Chain)
+	if err != nil {
+		return nil, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+	}
+	next, err := state.Adopt(chain)
+	if err != nil {
+		return nil, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+	}
+	f.record.Record, f.record.Chain = next.Record, next.Chain
+	if keys, err := next.OpenAccountKeys(); err == nil && next.Status == identity.StatusActive {
+		f.record.keys = keys
+	}
 	return connect.NewResponse(&v1.AdoptChainResponse{}), nil
 }

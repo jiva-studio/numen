@@ -3,6 +3,7 @@
  * through the calls that make and use them.
  */
 import { shallowRef } from 'vue'
+import { RestoreRefusedError } from '@numen/core-client'
 import { createRequestGuard } from '@numen/ui'
 import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
@@ -56,17 +57,29 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
+  /** Reads the identity until the restore makes it; the restore that the core refused ends the wait with its refusal. */
   const waitForIdentity = async (): Promise<IdentityInfo> => {
     for (;;) {
       await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-      const found = await api.account.getIdentity().catch(() => undefined)
+      const found = await api.account.getIdentity().catch((caughtError: unknown) => {
+        if (caughtError instanceof RestoreRefusedError) throw caughtError
+        return undefined
+      })
       if (found !== undefined) return found
     }
   }
 
-  const restore = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
+  const describeRestoreFailure = (caughtError: unknown): string =>
+    caughtError instanceof RestoreRefusedError
+      ? IDENTITY_WORDS.describeFailure(caughtError.failure)
+      : formatError(caughtError)
+
+  const restore = async (
+    words: readonly string[],
+    chainMark: string,
+  ): Promise<Result<IdentityInfo, string>> => {
     try {
-      const started = await api.account.startRestore(words)
+      const started = await api.account.startRestore(words, chainMark)
       if (!started.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
       }
@@ -74,7 +87,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
       identity.value = found
       return { ok: true, value: found }
     } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
+      return { ok: false, error: describeRestoreFailure(caughtError) }
     }
   }
 
@@ -107,15 +120,19 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const restoreFromKit = async (
     sheets: readonly (readonly string[])[],
+    chainMark: string,
   ): Promise<Result<IdentityInfo, string>> => {
-    const started = await settle(() => api.account.startRestoreFromKit(sheets), 'sheets')
+    const started = await settle(
+      () => api.account.startRestoreFromKit(sheets, chainMark),
+      'sheets',
+    )
     if (!started.ok) return started
     try {
       const found = await waitForIdentity()
       identity.value = found
       return { ok: true, value: found }
     } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
+      return { ok: false, error: describeRestoreFailure(caughtError) }
     }
   }
 

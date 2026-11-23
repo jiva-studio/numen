@@ -5,7 +5,14 @@
  */
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
-import type { IdentityFailure, IdentityInfo, KitProof, LinkMode, LinkRole } from '../lib/types'
+import type {
+  IdentityFailure,
+  IdentityInfo,
+  KitProof,
+  LinkMode,
+  LinkRole,
+  RevokeWhy,
+} from '../lib/types'
 
 type AccountClient = Pick<
   IdentityClient,
@@ -39,8 +46,10 @@ export const createAccountApi = (identity: AccountClient) => ({
     identity.create(words),
 
   /** Starts to restore the account of the twelve `words`; the core completes it in the background. */
-  startRestore: (words: readonly string[]): Promise<Result<undefined, IdentityFailure>> =>
-    identity.startRestore(words),
+  startRestore: (
+    words: readonly string[],
+    chainMark: string,
+  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestore(words, chainMark),
 
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),
@@ -54,7 +63,8 @@ export const createAccountApi = (identity: AccountClient) => ({
   /** Starts to restore the account of two `sheets` of a kit; the core completes it in the background. */
   startRestoreFromKit: (
     sheets: readonly (readonly string[])[],
-  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestoreFromKit(sheets),
+    chainMark: string,
+  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestoreFromKit(sheets, chainMark),
 })
 
 /** The calls of a link of this device to an account. */
@@ -85,7 +95,7 @@ export const createDevicesApi = (identity: DevicesClient) => ({
   listDevices: () => identity.listDevices(),
 
   /** Removes a device from the account. */
-  revokeDevice: (fingerprint: string) => identity.revokeDevice(fingerprint),
+  revokeDevice: (fingerprint: string, why: RevokeWhy) => identity.revokeDevice(fingerprint, why),
 })
 
 type AccountApi = ReturnType<typeof createAccountApi>

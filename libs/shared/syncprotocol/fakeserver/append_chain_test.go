@@ -27,7 +27,7 @@ func (a *ownedAccount) extend(tb testing.TB, by identity.Signer, name string) (i
 
 func (a *ownedAccount) revoke(tb testing.TB, by identity.Signer, victim identity.DeviceKey) identity.Chain {
 	tb.Helper()
-	chain, keys, err := a.chain.RevokeDevice(by, a.keys, victim.Public().Sign, rand.Reader, machineClock{}.Now())
+	chain, keys, err := a.chain.RevokeDevice(by, a.keys, victim.Public().Sign, identity.Lost, rand.Reader, machineClock{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -143,5 +143,51 @@ func TestAppendChain_AcceptsAnEntryTheRootSigned(t *testing.T) {
 	_, byRoot := e.account.extend(t, e.account.root, "Restored")
 	if _, err := e.accounts.AppendChain(t.Context(), byRoot.Bytes()); err != nil {
 		t.Errorf("error = %v, want the entry of the root accepted", err)
+	}
+}
+
+func TestAppendChain_TheRevokeOfTheRecoveryKeyReplacesTheEntriesOfADeviceAtAFork(t *testing.T) {
+	t.Parallel()
+	_, address := newServer(t)
+	account := newOwnedAccount(t)
+	laptop := account.addDevice(t, "Laptop")
+	phone := account.addDevice(t, "Phone")
+	laptopEnv := newEnvOn(t, address, &account, laptop)
+	phoneEnv := newEnvOn(t, address, &account, phone)
+	_, withThiefDevice := account.extend(t, laptop, "Thief phone")
+	if _, err := laptopEnv.accounts.AppendChain(t.Context(), withThiefDevice.Bytes()); err != nil {
+		t.Fatal(err)
+	}
+	rotated, _, err := account.chain.RevokeDevice(account.root, account.keys, laptop.Public().Sign, identity.Lost, rand.Reader, machineClock{}.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	head, err := phoneEnv.accounts.AppendChain(t.Context(), rotated.Bytes())
+
+	if err != nil || !bytes.Equal(head, rotated.Bytes()) {
+		t.Fatalf("head = %d bytes, error = %v, want the chain of the recovery key", len(head), err)
+	}
+	stored, err := phoneEnv.accounts.GetAccountChain(t.Context())
+	if err != nil || !bytes.Equal(stored, rotated.Bytes()) {
+		t.Errorf("GetAccountChain() = %d bytes, error = %v, want the chain of the recovery key", len(stored), err)
+	}
+}
+
+func TestAppendChain_AChainOfADeviceDoesNotReplaceTheEntriesOfAnotherDeviceAtAFork(t *testing.T) {
+	t.Parallel()
+	_, address := newServer(t)
+	account := newOwnedAccount(t)
+	laptop := account.addDevice(t, "Laptop")
+	phone := account.addDevice(t, "Phone")
+	laptopEnv := newEnvOn(t, address, &account, laptop)
+	phoneEnv := newEnvOn(t, address, &account, phone)
+	_, withTablet := account.extend(t, laptop, "Tablet")
+	if _, err := laptopEnv.accounts.AppendChain(t.Context(), withTablet.Bytes()); err != nil {
+		t.Fatal(err)
+	}
+	_, withDesktop := account.extend(t, phone, "Desktop")
+	if _, err := phoneEnv.accounts.AppendChain(t.Context(), withDesktop.Bytes()); !errors.As(err, &syncprotocol.ChainStaleError{}) {
+		t.Errorf("error = %v, want ChainStaleError", err)
 	}
 }

@@ -17,6 +17,7 @@ import {
   LinkRole,
   ListDevicesResponseSchema,
   RevokeDeviceResponseSchema,
+  RevokeReason,
   SaveRecoveryKitResponseSchema,
   StartLinkResponseSchema,
   StartRestoreFromKitResponseSchema,
@@ -24,7 +25,7 @@ import {
 } from '@numen/protocol'
 import { createIdentityRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
-import { createIdentityClient, type IdentityInfo } from './identity'
+import { createIdentityClient, RestoreRefusedError, type IdentityInfo } from './identity'
 
 const WORDS = [
   'legal',
@@ -122,17 +123,46 @@ describe('createIdentityClient', () => {
     expect(calls).toBe(1)
   })
 
-  it('sends the words to start a restore and reads that it started', async () => {
+  it('sends the words and the chain mark to start a restore and reads that it started', async () => {
     let sent: readonly string[] = []
+    let sentMark = ''
     const client = createClient({
       startRestore: (request) => {
         sent = [...request.words]
+        sentMark = request.chainMark
         return create(StartRestoreResponseSchema, {})
       },
     })
-    const answer = await client.startRestore(WORDS)
+    const answer = await client.startRestore(WORDS, '7-3FA912C077B1')
     expect(answer).toStrictEqual({ ok: true, value: undefined })
     expect(sent).toStrictEqual(WORDS)
+    expect(sentMark).toBe('7-3FA912C077B1')
+  })
+
+  it('reads the refusals of a chain mark as failures', async () => {
+    const codes: Array<[IdentityErrorCode, string]> = [
+      [IdentityErrorCode.INVALID_CHAIN_MARK, 'invalidChainMark'],
+      [IdentityErrorCode.CHAIN_OUTDATED, 'chainOutdated'],
+    ]
+    for (const [code, expected] of codes) {
+      const client = createClient({
+        startRestore: () => create(StartRestoreResponseSchema, { error: code, detail: 'refused' }),
+      })
+      expect(await client.startRestore(WORDS, 'x')).toStrictEqual({
+        ok: false,
+        error: { error: expected, message: 'refused' },
+      })
+    }
+  })
+
+  it('throws the refusal of a restore that the core ended when the identity is read', async () => {
+    const client = createClient({
+      getIdentity: () =>
+        create(GetIdentityResponseSchema, { error: IdentityErrorCode.CHAIN_OUTDATED, detail: 'older' }),
+    })
+    await expect(client.get()).rejects.toStrictEqual(
+      new RestoreRefusedError({ error: 'chainOutdated', message: 'older' }),
+    )
   })
 
   it('reads each served error code of a restore as a failure', async () => {
@@ -145,7 +175,7 @@ describe('createIdentityClient', () => {
       const client = createClient({
         startRestore: () => create(StartRestoreResponseSchema, { error: code, detail: 'refused' }),
       })
-      expect(await client.startRestore(WORDS)).toStrictEqual({
+      expect(await client.startRestore(WORDS, '')).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
@@ -216,7 +246,7 @@ describe('createIdentityClient recovery kit', () => {
         return create(StartRestoreFromKitResponseSchema, {})
       },
     })
-    expect(await client.startRestoreFromKit([SHEET_TWO, SHEET_THREE])).toStrictEqual({
+    expect(await client.startRestoreFromKit([SHEET_TWO, SHEET_THREE], '')).toStrictEqual({
       ok: true,
       value: undefined,
     })
@@ -231,7 +261,7 @@ describe('createIdentityClient recovery kit', () => {
           detail: 'two sheets are needed',
         }),
     })
-    expect(await client.startRestoreFromKit([SHEET_ONE])).toStrictEqual({
+    expect(await client.startRestoreFromKit([SHEET_ONE], '')).toStrictEqual({
       ok: false,
       error: { error: 'notEnoughSheets', message: 'two sheets are needed' },
     })
@@ -377,12 +407,71 @@ describe('createIdentityClient link', () => {
           return create(RevokeDeviceResponseSchema, { error: code, detail: 'refused' })
         },
       })
-      expect(await client.revokeDevice('B')).toStrictEqual({
+      expect(await client.revokeDevice('B', { reason: 'lost' })).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
       expect(sent).toBe('B')
     }
+  })
+
+  it('sends why a device is revoked: lost with no date, stolen with the date', async () => {
+    const sent: Array<[RevokeReason, string]> = []
+    const client = createClient({
+      revokeDevice: (request) => {
+        sent.push([request.reason, request.since])
+        return create(RevokeDeviceResponseSchema, {})
+      },
+    })
+    await client.revokeDevice('B', { reason: 'lost' })
+    await client.revokeDevice('B', { reason: 'stolen', since: '2026-11-20T00:00:00Z' })
+    expect(sent).toStrictEqual([
+      [RevokeReason.LOST, ''],
+      [RevokeReason.STOLEN, '2026-11-20T00:00:00Z'],
+    ])
+  })
+
+  it('reads who revoked a device, when and why', async () => {
+    const client = createClient({
+      listDevices: () =>
+        create(ListDevicesResponseSchema, {
+          devices: [
+            {
+              name: 'Phone',
+              fingerprint: 'B',
+              addedAt: 'y',
+              isThis: false,
+              isRevoked: true,
+              revocation: {
+                revokedAt: '2026-11-21T10:00:00Z',
+                revokedByName: 'Laptop',
+                isByRecovery: false,
+                reason: RevokeReason.STOLEN,
+                since: '2026-11-20T00:00:00Z',
+              },
+            },
+          ],
+        }),
+    })
+    expect(await client.listDevices()).toStrictEqual({
+      ok: true,
+      value: [
+        {
+          name: 'Phone',
+          fingerprint: 'B',
+          addedAt: 'y',
+          isThis: false,
+          isRevoked: true,
+          revocation: {
+            revokedAt: '2026-11-21T10:00:00Z',
+            revokedByName: 'Laptop',
+            isByRecovery: false,
+            reason: 'stolen',
+            since: '2026-11-20T00:00:00Z',
+          },
+        },
+      ],
+    })
   })
 
   it('reads that this device was revoked', async () => {

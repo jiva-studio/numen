@@ -20,6 +20,8 @@ var (
 	ErrNoChain = errors.New("this device has no chain file")
 	// ErrDeviceRevoked means the account revoked this device, which no link or revoke can start from.
 	ErrDeviceRevoked = errors.New("this device was revoked")
+	// ErrInvalidRevokeReason means a revoke gave no known reason, or a stolen device without the date it was lost, or a date in the future.
+	ErrInvalidRevokeReason = errors.New("a revoke needs the reason lost or stolen, and for a stolen device the date it was lost")
 )
 
 type LinkRole string
@@ -82,13 +84,32 @@ type Link struct {
 	Reason             LinkReason
 }
 
-// Device is one device of the account as the list of devices shows it.
+// RevokeReason is why a device is revoked: lost with no sign that anybody else used it, or stolen since a date.
+type RevokeReason string
+
+const (
+	RevokeLost   RevokeReason = "lost"
+	RevokeStolen RevokeReason = "stolen"
+)
+
+// Revocation is how a revoked device was removed: when, by whom and for what reason. A device of the person revoked it by name; the
+// recovery words revoked it when IsByRecovery is set. Since is when a stolen device was lost.
+type Revocation struct {
+	At           time.Time
+	ByName       string
+	IsByRecovery bool
+	Reason       RevokeReason
+	Since        time.Time
+}
+
+// Device is one device of the account as the list of devices shows it. Revocation is set for a revoked device.
 type Device struct {
 	Name        string
 	Fingerprint string
 	AddedAt     time.Time
 	IsThis      bool
 	IsRevoked   bool
+	Revocation  Revocation
 }
 
 // LinkWork is what the courier of a link carries: opaque blobs for the other side and the channel.

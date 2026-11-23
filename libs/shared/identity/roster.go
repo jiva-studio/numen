@@ -43,11 +43,20 @@ func (r *roster) apply(entry Entry) {
 		r.known[string(entry.AddDevice.Device.Sign)] = struct{}{}
 	case entry.Kind == KindRevokeDevice && entry.Revoke != nil:
 		if i := r.indexOf(entry.Revoke.Device); i >= 0 {
-			r.revoked = append(r.revoked, r.active[i])
-			r.active = slices.Delete(slices.Clone(r.active), i, i+1)
+			removal := Removal{At: entry.Time, By: entry.Signer, Reason: entry.Revoke.Reason, Since: entry.Revoke.Since}
+			r.drop(i, removal)
 		}
 		r.epoch = entry.Revoke.Epoch
+	case entry.Kind == KindRotateKeys && entry.Revoke != nil:
+		r.epoch = entry.Revoke.Epoch
 	}
+}
+
+func (r *roster) drop(i int, removal Removal) {
+	device := r.active[i]
+	device.Removal = removal
+	r.revoked = append(r.revoked, device)
+	r.active = slices.Delete(slices.Clone(r.active), i, i+1)
 }
 
 func (r *roster) verify(entry Entry, i int) error {
@@ -62,6 +71,8 @@ func (r *roster) verify(entry Entry, i int) error {
 		return r.verifyAdd(entry, i)
 	case KindRevokeDevice:
 		return r.verifyRevoke(entry, i)
+	case KindRotateKeys:
+		return r.verifyRotate(entry, i)
 	default:
 		return fmt.Errorf("%w: entry %d has kind %d", ErrMalformed, i, entry.Kind)
 	}
@@ -96,13 +107,48 @@ func (r *roster) verifyRevoke(entry Entry, i int) error {
 	if index < 0 {
 		return fmt.Errorf("%w: entry %d", ErrUnknownDevice, i)
 	}
+	if err := checkRevocation(revoke, entry, i); err != nil {
+		return err
+	}
+	return r.verifyKeys(revoke, slices.Delete(slices.Clone(r.active), index, index+1), i)
+}
+
+func checkRevocation(revoke *Revoke, entry Entry, i int) error {
+	switch revoke.Reason {
+	case ReasonLost:
+		if !revoke.Since.IsZero() {
+			return fmt.Errorf("%w: entry %d gives a date for a lost device", ErrMalformed, i)
+		}
+	case ReasonStolen:
+		if revoke.Since.IsZero() || revoke.Since.After(entry.Time) {
+			return fmt.Errorf("%w: entry %d has no date or a date after the entry", ErrMalformed, i)
+		}
+	default:
+		return fmt.Errorf("%w: entry %d has reason %d", ErrMalformed, i, revoke.Reason)
+	}
+	return nil
+}
+
+func (r *roster) verifyRotate(entry Entry, i int) error {
+	revoke := entry.Revoke
+	if revoke == nil || len(revoke.Device) != 0 || revoke.Reason != 0 || !revoke.Since.IsZero() {
+		return fmt.Errorf("%w: entry %d is not a rotation", ErrMalformed, i)
+	}
+	if !bytes.Equal(entry.Signer, r.root) {
+		return fmt.Errorf("%w: entry %d is not signed by the recovery key", ErrUnknownSigner, i)
+	}
+	return r.verifyKeys(revoke, r.active, i)
+}
+
+// verifyKeys checks the keys an entry starts an epoch with: the epoch follows, the sizes are right and one wrap is made for each
+// device that stays, in the order of the roster.
+func (r *roster) verifyKeys(revoke *Revoke, remaining []Device, i int) error {
 	if revoke.Epoch != r.epoch+1 {
 		return fmt.Errorf("%w: entry %d raises the epoch to %d", ErrBrokenLink, i, revoke.Epoch)
 	}
 	if len(revoke.WrappedForRecovery.sealed) != wrappedSize || len(revoke.PreviousKeys) != previousKeysSize {
 		return fmt.Errorf("%w: entry %d has keys of the wrong size", ErrMalformed, i)
 	}
-	remaining := slices.Delete(slices.Clone(r.active), index, index+1)
 	if len(revoke.Wrapped) != len(remaining) {
 		return fmt.Errorf("%w: entry %d", ErrWrappedSet, i)
 	}
@@ -114,7 +160,7 @@ func (r *roster) verifyRevoke(entry Entry, i int) error {
 	return nil
 }
 
-// Epoch returns the number of revokes in the chain: 0 until the first one.
+// Epoch returns the number of entries that changed the keys: 0 until the first one.
 func (c Chain) Epoch() uint32 { return c.replay().epoch }
 
 // ListRevokedDevices returns the revoked devices in the order they were revoked.
@@ -148,6 +194,20 @@ func (c Chain) SignersSince(prefix Chain) []ed25519.PublicKey {
 	var signers []ed25519.PublicKey
 	for i := len(prefix.entries); i < len(c.entries); i++ {
 		signers = append(signers, bytes.Clone(c.entries[i].Signer))
+	}
+	return signers
+}
+
+// SignersSinceFork returns the signing key of each entry of c from the first entry where it differs from other, in order.
+// It is empty when one chain is a prefix of the other.
+func (c Chain) SignersSinceFork(other Chain) []ed25519.PublicKey {
+	i := c.getForkIndex(other)
+	if i < 0 {
+		return nil
+	}
+	var signers []ed25519.PublicKey
+	for _, entry := range c.entries[i:] {
+		signers = append(signers, bytes.Clone(entry.Signer))
 	}
 	return signers
 }

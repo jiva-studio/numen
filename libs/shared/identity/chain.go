@@ -19,6 +19,7 @@ const (
 	KindGenesis      EntryKind = 1
 	KindAddDevice    EntryKind = 2
 	KindRevokeDevice EntryKind = 3
+	KindRotateKeys   EntryKind = 4
 )
 
 type Entry struct {
@@ -48,6 +49,17 @@ type Device struct {
 	Public  DevicePublicKey
 	Name    string
 	AddedAt time.Time
+	Removal Removal
+}
+
+// Removal says how a revoked device was removed. It is the zero value for an active device.
+type Removal struct {
+	At time.Time
+	// By is the signing key of the entry that removed the device.
+	By     ed25519.PublicKey
+	Reason RevokeReason
+	// Since is the time a stolen device was lost; it is zero for the other reasons.
+	Since time.Time
 }
 
 // Signer signs a chain entry. RecoveryKey and DeviceKey implement it.
@@ -210,8 +222,8 @@ func (c Chain) WrappedForRecovery() WrappedAccountKeys {
 
 func (c Chain) latestRevoke() *Revoke {
 	for i := len(c.entries) - 1; i > 0; i-- {
-		if c.entries[i].Kind == KindRevokeDevice && c.entries[i].Revoke != nil {
-			return c.entries[i].Revoke
+		if revoke := c.entries[i].keyChange(); revoke != nil {
+			return revoke
 		}
 	}
 	return nil
@@ -242,4 +254,39 @@ func checkDeviceName(name string) error {
 		return fmt.Errorf("%w: a control character", ErrDeviceName)
 	}
 	return nil
+}
+
+func (e Entry) keyChange() *Revoke {
+	if e.Kind == KindRevokeDevice || e.Kind == KindRotateKeys {
+		return e.Revoke
+	}
+	return nil
+}
+
+// getForkIndex returns the index of the first entry where the two chains differ, or -1 when one is a prefix of the other.
+func (c Chain) getForkIndex(other Chain) int {
+	for i := range min(len(c.entries), len(other.entries)) {
+		if hashEntry(c.entries[i]) != hashEntry(other.entries[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// Outranks reports whether c replaces other at a fork: both chains have the same root and the same genesis, and at the first entry
+// where they differ the entry of c is signed by the root while the entry of other is not. When both are signed by the root the entry
+// with the lower hash wins, so every device settles on the same chain. Every entry of other from that index on is void.
+func (c Chain) Outranks(other Chain) bool {
+	i := c.getForkIndex(other)
+	if i < 1 || !bytes.Equal(c.Root().Sign, other.Root().Sign) {
+		return false
+	}
+	root := c.Root().Sign
+	mine, theirs := c.entries[i], other.entries[i]
+	isMineRoot, isTheirsRoot := bytes.Equal(mine.Signer, root), bytes.Equal(theirs.Signer, root)
+	if isMineRoot && isTheirsRoot {
+		mineHash, theirsHash := hashEntry(mine), hashEntry(theirs)
+		return bytes.Compare(mineHash[:], theirsHash[:]) < 0
+	}
+	return isMineRoot
 }

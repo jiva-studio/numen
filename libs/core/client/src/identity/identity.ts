@@ -11,6 +11,8 @@ import {
   LinkPhase as ProtoLinkPhase,
   LinkReason as ProtoLinkReason,
   LinkRole as ProtoLinkRole,
+  RevokeReason as ProtoRevokeReason,
+  type DeviceRevocation as ProtoDeviceRevocation,
   type DeviceInfo as ProtoDeviceInfo,
   type IdentityInfo as ProtoIdentityInfo,
   type IdentityService,
@@ -49,6 +51,17 @@ type IdentityErrorCode =
 
 /** A served refusal with the reason the core gives. */
 export type IdentityFailure = Failure<IdentityErrorCode>
+
+/** The restore the core started was refused after it had begun: the failure is why. */
+export class RestoreRefusedError extends Error {
+  readonly failure: IdentityFailure
+
+  constructor(failure: IdentityFailure) {
+    super(failure.message)
+    this.name = 'RestoreRefusedError'
+    this.failure = failure
+  }
+}
 
 /** The device that has the account is the host, a device with none is the joiner. */
 export type LinkRole = 'host' | 'joiner'
@@ -103,7 +116,24 @@ export interface DeviceInfo {
   readonly addedAt: string
   readonly isThis: boolean
   readonly isRevoked: boolean
+  /** How the device was revoked; set when isRevoked is. */
+  readonly revocation?: DeviceRevocation
 }
+
+/** How a revoked device was removed: when, by which device or by the recovery words, and why. */
+export interface DeviceRevocation {
+  readonly revokedAt: string
+  readonly revokedByName: string
+  readonly isByRecovery: boolean
+  readonly reason: 'lost' | 'stolen'
+  /** When a stolen device was lost, RFC 3339; empty for a lost one. */
+  readonly since: string
+}
+
+/** Why a device is revoked: gone, or stolen since a date (RFC 3339). */
+export type RevokeWhy =
+  | { readonly reason: 'lost' }
+  | { readonly reason: 'stolen'; readonly since: string }
 
 type Rpc<Name extends keyof Client<typeof IdentityService>> = Pick<
   Client<typeof IdentityService>,
@@ -143,7 +173,10 @@ export interface AccountClient {
   generateWords(): Promise<readonly string[]>
   create(words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>>
   /** Starts to restore the account of the words; the identity exists once the core has completed it. */
-  startRestore(words: readonly string[]): Promise<Result<undefined, IdentityFailure>>
+  startRestore(
+    words: readonly string[],
+    chainMark: string,
+  ): Promise<Result<undefined, IdentityFailure>>
   delete(): Promise<void>
   /**
    * Makes a new kit of three sheets once the proof fits the account of this device and saves it as a
@@ -153,6 +186,7 @@ export interface AccountClient {
   /** Starts to restore the account of two sheets of a kit, like startRestore does for the words. */
   startRestoreFromKit(
     sheets: readonly (readonly string[])[],
+    chainMark: string,
   ): Promise<Result<undefined, IdentityFailure>>
 }
 
@@ -178,7 +212,7 @@ export interface LinkClient {
 export interface DevicesClient {
   /** The devices of the account: the active ones, then the revoked ones. */
   listDevices(): Promise<Result<readonly DeviceInfo[], IdentityFailure>>
-  revokeDevice(fingerprint: string): Promise<Result<undefined, IdentityFailure>>
+  revokeDevice(fingerprint: string, why: RevokeWhy): Promise<Result<undefined, IdentityFailure>>
 }
 
 /** The identity of this device, its link and the devices of its account. */
@@ -210,6 +244,9 @@ const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = 
   [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'deviceRevoked',
   [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknownDevice',
   [ProtoIdentityErrorCode.CODE_INVALID]: 'codeInvalid',
+  [ProtoIdentityErrorCode.INVALID_REVOKE_REASON]: 'invalidRevokeReason',
+  [ProtoIdentityErrorCode.INVALID_CHAIN_MARK]: 'invalidChainMark',
+  [ProtoIdentityErrorCode.CHAIN_OUTDATED]: 'chainOutdated',
 }
 
 const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined =>
@@ -267,13 +304,27 @@ const readLink = (link: ProtoLinkInfo): LinkInfo => ({
   isApproved: link.isApproved,
 })
 
+const readRevocation = (revocation: ProtoDeviceRevocation): DeviceRevocation => ({
+  revokedAt: revocation.revokedAt,
+  revokedByName: revocation.revokedByName,
+  isByRecovery: revocation.isByRecovery,
+  reason: revocation.reason === ProtoRevokeReason.STOLEN ? 'stolen' : 'lost',
+  since: revocation.since,
+})
+
 const readDevice = (device: ProtoDeviceInfo): DeviceInfo => ({
   name: device.name,
   fingerprint: device.fingerprint,
   addedAt: device.addedAt,
   isThis: device.isThis,
   isRevoked: device.isRevoked,
+  ...(device.revocation === undefined ? {} : { revocation: readRevocation(device.revocation) }),
 })
+
+const writeWhy = (why: RevokeWhy) =>
+  why.reason === 'stolen'
+    ? { reason: ProtoRevokeReason.STOLEN, since: why.since }
+    : { reason: ProtoRevokeReason.LOST, since: '' }
 
 interface Refusal {
   error: ProtoIdentityErrorCode
@@ -323,7 +374,9 @@ const readLinkAnswer = (
 /** The calls that keep the identity of this device, over an IdentityService client. */
 export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
-    const { identity } = await rpc.getIdentity({})
+    const { identity, error, detail } = await rpc.getIdentity({})
+    const code = readErrorCode(error)
+    if (code !== undefined) throw new RestoreRefusedError({ error: code, message: detail })
     return identity === undefined ? undefined : readInfo(identity)
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],
@@ -335,7 +388,8 @@ export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
       missing: 'The core returned no identity.',
     })
   },
-  startRestore: async (words) => readStartAnswer(await rpc.startRestore({ words: [...words] })),
+  startRestore: async (words, chainMark) =>
+    readStartAnswer(await rpc.startRestore({ words: [...words], chainMark })),
   delete: async () => {
     await rpc.deleteIdentity({})
   },
@@ -346,8 +400,8 @@ export const createAccountClient = (rpc: AccountRpc): AccountClient => ({
       ? asValue(answer.isSaved)
       : asFailure({ error, message: answer.detail })
   },
-  startRestoreFromKit: async (sheets) =>
-    readStartAnswer(await rpc.startRestoreFromKit({ sheets: writeSheets(sheets) })),
+  startRestoreFromKit: async (sheets, chainMark) =>
+    readStartAnswer(await rpc.startRestoreFromKit({ sheets: writeSheets(sheets), chainMark })),
 })
 
 /** The calls of the link of this device to an account, over an IdentityService client. */
@@ -376,7 +430,8 @@ export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
       ? asValue(answer.devices.map(readDevice))
       : asFailure({ error, message: answer.detail })
   },
-  revokeDevice: async (fingerprint) => readStartAnswer(await rpc.revokeDevice({ fingerprint })),
+  revokeDevice: async (fingerprint, why) =>
+    readStartAnswer(await rpc.revokeDevice({ fingerprint, ...writeWhy(why) })),
 })
 
 /** The identity managed through an IdentityService client. */

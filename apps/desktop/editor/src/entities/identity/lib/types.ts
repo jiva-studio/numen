@@ -32,6 +32,9 @@ export type IdentityErrorCode =
   | 'deviceRevoked'
   | 'unknownDevice'
   | 'codeInvalid'
+  | 'invalidRevokeReason'
+  | 'invalidChainMark'
+  | 'chainOutdated'
 
 /** What proves the account when a kit is saved: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
@@ -96,4 +99,21 @@ export interface DeviceInfo {
   readonly addedAt: string
   readonly isThis: boolean
   readonly isRevoked: boolean
+  /** How the device was revoked; set when isRevoked is. */
+  readonly revocation?: DeviceRevocation
 }
+
+/** How a revoked device was removed: when, by which device or by the recovery words, and why. */
+export interface DeviceRevocation {
+  readonly revokedAt: string
+  readonly revokedByName: string
+  readonly isByRecovery: boolean
+  readonly reason: 'lost' | 'stolen'
+  /** When a stolen device was lost, RFC 3339; empty for a lost one. */
+  readonly since: string
+}
+
+/** Why a device is revoked: gone, or stolen since a date (RFC 3339). */
+export type RevokeWhy =
+  | { readonly reason: 'lost' }
+  | { readonly reason: 'stolen'; readonly since: string }

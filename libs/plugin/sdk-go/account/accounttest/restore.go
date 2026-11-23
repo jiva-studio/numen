@@ -19,6 +19,7 @@ import (
 type pendingRestore struct {
 	recovery identity.RecoveryKey
 	device   identity.DeviceKey
+	rotates  bool
 }
 
 func newPendingRestore(t *testing.T, words []string) *pendingRestore {
@@ -159,7 +160,31 @@ func joinRestore(restore *pendingRestore, chainBytes []byte) (held, error) {
 	if err != nil {
 		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
+	if restore.rotates {
+		return rotateDevices(restore, chain, keys, now)
+	}
 	return appendDevice(restore, chain, keys, now)
+}
+
+// rotateDevices joins the device and starts a new epoch of keys for every device of the chain, as the host does after a restore from the words.
+func rotateDevices(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (held, error) {
+	history, err := chain.OpenKeyHistory(keys)
+	if err != nil {
+		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+	}
+	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), "Test device", now)
+	if err != nil {
+		return held{}, connect.NewError(connect.CodeInternal, err)
+	}
+	chain, fresh, err := chain.RotateKeys(restore.recovery, history, rand.Reader, now)
+	if err != nil {
+		return held{}, connect.NewError(connect.CodeInternal, err)
+	}
+	wrapped, ok := chain.GetWrappedFor(restore.device.SignerKey())
+	if !ok {
+		return held{}, connect.NewError(connect.CodeInternal, errors.New("the rotation holds no keys for the device"))
+	}
+	return held{Record: identity.Record{Device: restore.device, Wrapped: wrapped}, Chain: chain, root: restore.recovery, keys: fresh}, nil
 }
 
 func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (held, error) {

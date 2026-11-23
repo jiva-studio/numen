@@ -37,6 +37,12 @@ export const IDENTITY_WORDS = {
         return 'Another link is in progress.'
       case 'codeInvalid':
         return 'The code has six digits.'
+      case 'invalidRevokeReason':
+        return 'Say whether the device was lost or stolen, and since when for a stolen one.'
+      case 'invalidChainMark':
+        return 'The chain mark is a number, a dash and 12 digits or letters, as printed on the kit.'
+      case 'chainOutdated':
+        return 'The server holds an older history of your account than your kit names. Nothing was restored. Try again later, or restore without the chain mark if you know the server lost your account.'
       default:
         return failure.message
     }

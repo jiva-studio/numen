@@ -14,6 +14,7 @@ defineProps<{
   kind: ProofKind
   entered: readonly string[]
   texts: readonly [string, string]
+  chainMark: string
   problem: string
   isBusy: boolean
 }>()
@@ -22,6 +23,7 @@ const emit = defineEmits<{
   (e: 'change-kind', kind: ProofKind): void
   (e: 'change', index: number, value: string): void
   (e: 'change-sheet', index: number, value: string): void
+  (e: 'change-mark', value: string): void
   (e: 'restore'): void
   (e: 'cancel'): void
 }>()
@@ -43,6 +45,21 @@ const emit = defineEmits<{
         @change-word="(index, value) => emit('change', index, value)"
         @change-sheet="(index, value) => emit('change-sheet', index, value)"
       />
+      <label v-if="kind === 'sheets'" class="identity-restore__mark">
+        <span>{{ words.restoreChainMark }}</span>
+        <input
+          type="text"
+          class="identity-restore__mark-field"
+          :value="chainMark"
+          :disabled="isBusy"
+          :placeholder="words.restoreChainMarkPlaceholder"
+          :aria-label="words.restoreChainMark"
+          autocomplete="off"
+          spellcheck="false"
+          @input="emit('change-mark', ($event.target as HTMLInputElement).value)"
+        />
+        <small>{{ words.restoreChainMarkHint }}</small>
+      </label>
       <p v-if="problem !== ''" role="alert" class="identity-restore__problem">{{ problem }}</p>
     </div>
     <div class="identity-restore__actions">
@@ -61,6 +78,18 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.identity-restore__mark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--numen-text-1);
+  color: var(--numen-ink);
+}
+
+.identity-restore__mark-field {
+  font-family: var(--numen-font-mono);
 }
 
 .identity-restore__problem {

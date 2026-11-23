@@ -21,6 +21,12 @@ type Deps struct {
 	Identity ports.Identity
 	Core     ports.ChainCore
 	Chain    ports.Chain
+	Endorse  Endorser
+}
+
+// Endorser signs the heads the devices of a revoke wrote, so the revoke does not make them unverified.
+type Endorser interface {
+	Execute(ctx context.Context, revoked [][]byte) error
 }
 
 // Publish gives the server the chain the core wants it to hold and tells the core the answer.
@@ -36,6 +42,9 @@ func (u *Publish) Execute(ctx context.Context) (bool, error) {
 	if err != nil || !pending.IsPending {
 		return false, err
 	}
+	if err := u.endorse(ctx, pending.Chain); err != nil {
+		return false, err
+	}
 	_, err = u.deps.Chain.AppendChain(ctx, pending.Chain)
 	if stale, isStale := errors.AsType[syncprotocol.ChainStaleError](err); isStale {
 		return true, u.deps.Core.PutChainPublished(ctx, false, stale.Head)
@@ -44,6 +53,28 @@ func (u *Publish) Execute(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return true, u.deps.Core.PutChainPublished(ctx, true, nil)
+}
+
+// endorse has the devices the pending chain revokes endorsed before the server learns of the revoke: once the chain is on the server
+// nothing that those devices wrote counts any more.
+func (u *Publish) endorse(ctx context.Context, pending []byte) error {
+	chain, err := identity.ParseChain(pending)
+	if err != nil {
+		return err
+	}
+	stored, err := u.deps.Chain.GetAccountChain(ctx)
+	if err != nil {
+		return err
+	}
+	prefix, err := identity.ParseChain(stored)
+	if err != nil || !chain.IsExtensionOf(prefix) {
+		return err
+	}
+	var revoked [][]byte
+	for _, device := range chain.RevokedSince(prefix) {
+		revoked = append(revoked, device)
+	}
+	return u.deps.Endorse.Execute(ctx, revoked)
 }
 
 // Adopt gives the core the chain of the server when the server holds a longer one than the core.

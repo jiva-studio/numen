@@ -13,6 +13,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
+var errNoRevokeReason = errors.New("give the reason lost or stolen")
+
 // LinkUseCases are the use cases of a link a window starts, looks at, answers and ends.
 type LinkUseCases struct {
 	Start  *identity.StartLink
@@ -100,7 +102,13 @@ func (h *Handler) RevokeDevice(
 	ctx context.Context,
 	r *connect.Request[v1.RevokeDeviceRequest],
 ) (*connect.Response[v1.RevokeDeviceResponse], error) {
-	code, detail, err := serveLinkCall(h.identity.Account.Revoke.Execute(ctx, r.Msg.GetFingerprint()))
+	reason, since, err := readRevocation(r.Msg)
+	if err != nil {
+		return connect.NewResponse(&v1.RevokeDeviceResponse{
+			Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_REVOKE_REASON, Detail: err.Error(),
+		}), nil
+	}
+	code, detail, err := serveLinkCall(h.identity.Account.Revoke.Execute(ctx, r.Msg.GetFingerprint(), reason, since))
 	return connect.NewResponse(&v1.RevokeDeviceResponse{Error: code, Detail: detail}), err
 }
 
@@ -124,9 +132,37 @@ func (h *Handler) ListDevices(
 			AddedAt:     device.AddedAt.UTC().Format(time.RFC3339),
 			IsThis:      device.IsThis,
 			IsRevoked:   device.IsRevoked,
+			Revocation:  writeRevocation(device),
 		})
 	}
 	return connect.NewResponse(&v1.ListDevicesResponse{Devices: listed}), nil
+}
+
+func readRevocation(request *v1.RevokeDeviceRequest) (identitydomain.RevokeReason, time.Time, error) {
+	switch request.GetReason() {
+	case v1.RevokeReason_REVOKE_REASON_LOST:
+		return identitydomain.RevokeLost, time.Time{}, nil
+	case v1.RevokeReason_REVOKE_REASON_STOLEN:
+		since, err := time.Parse(time.RFC3339, request.GetSince())
+		return identitydomain.RevokeStolen, since, err
+	}
+	return "", time.Time{}, errNoRevokeReason
+}
+
+func writeRevocation(device identitydomain.Device) *v1.DeviceRevocation {
+	if !device.IsRevoked {
+		return nil
+	}
+	revocation := device.Revocation
+	written := &v1.DeviceRevocation{
+		RevokedAt: revocation.At.UTC().Format(time.RFC3339), RevokedByName: revocation.ByName, IsByRecovery: revocation.IsByRecovery,
+		Reason: v1.RevokeReason_REVOKE_REASON_LOST,
+	}
+	if revocation.Reason == identitydomain.RevokeStolen {
+		written.Reason = v1.RevokeReason_REVOKE_REASON_STOLEN
+		written.Since = revocation.Since.UTC().Format(time.RFC3339)
+	}
+	return written
 }
 
 func serveLinkCall(err error) (v1.IdentityErrorCode, string, error) {

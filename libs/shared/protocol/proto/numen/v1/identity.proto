@@ -100,6 +100,13 @@ enum IdentityErrorCode {
   IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
   // IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
   IDENTITY_ERROR_CODE_CODE_INVALID = 16;
+  // IDENTITY_ERROR_CODE_INVALID_REVOKE_REASON is a revoke with no reason, or a stolen device with no date or a date in the future.
+  IDENTITY_ERROR_CODE_INVALID_REVOKE_REASON = 17;
+  // IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
+  IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 18;
+  // IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
+  // kit: older, or another history, or none. The restore is over; nothing was kept.
+  IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 19;
 }
 
 // IdentityInfo is what a person can see of the identity of this device.
@@ -122,6 +129,9 @@ message GetIdentityRequest {}
 message GetIdentityResponse {
   // identity is unset when this device holds no identity.
   IdentityInfo identity = 1;
+  // error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
+  IdentityErrorCode error = 2;
+  string detail = 3;
 }
 
 message GenerateRecoveryWordsRequest {}
@@ -143,6 +153,9 @@ message CreateIdentityResponse {
 
 message StartRestoreRequest {
   repeated string words = 1 [debug_redact = true];
+  // chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
+  // not contain it.
+  string chain_mark = 2;
 }
 
 message StartRestoreResponse {
@@ -186,6 +199,8 @@ message SaveRecoveryKitResponse {
 
 message StartRestoreFromKitRequest {
   repeated RecoverySheet sheets = 1;
+  // chain_mark is the chain mark printed on the sheets, or empty.
+  string chain_mark = 2;
 }
 
 message StartRestoreFromKitResponse {
@@ -314,6 +329,27 @@ message CancelLinkResponse {
   string detail = 2;
 }
 
+// RevokeReason is why a device is revoked.
+enum RevokeReason {
+  REVOKE_REASON_UNSPECIFIED = 0;
+  // REVOKE_REASON_LOST is a device that is gone: what it wrote until now is the work of the person.
+  REVOKE_REASON_LOST = 1;
+  // REVOKE_REASON_STOLEN is a device that someone else may have used since a date.
+  REVOKE_REASON_STOLEN = 2;
+}
+
+// DeviceRevocation is how a revoked device was removed.
+message DeviceRevocation {
+  // revoked_at is when the revoke was signed, RFC 3339 in UTC.
+  string revoked_at = 1;
+  // revoked_by_name is the name of the device that revoked it; empty when the recovery words did.
+  string revoked_by_name = 2;
+  bool is_by_recovery = 3;
+  RevokeReason reason = 4;
+  // since is when a stolen device was lost, RFC 3339 in UTC; empty for a lost one.
+  string since = 5;
+}
+
 // DeviceInfo is one device of the account.
 message DeviceInfo {
   string name = 1;
@@ -322,6 +358,8 @@ message DeviceInfo {
   string added_at = 3;
   bool is_this = 4;
   bool is_revoked = 5;
+  // revocation is set when is_revoked is.
+  DeviceRevocation revocation = 6;
 }
 
 message ListDevicesRequest {}
@@ -335,6 +373,9 @@ message ListDevicesResponse {
 message RevokeDeviceRequest {
   // fingerprint is the fingerprint of the device to revoke, as ListDevices shows it.
   string fingerprint = 1;
+  RevokeReason reason = 2;
+  // since is when a stolen device was lost, RFC 3339; required for a stolen device and not in the future, empty for a lost one.
+  string since = 3;
 }
 
 message RevokeDeviceResponse {

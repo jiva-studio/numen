@@ -29,6 +29,7 @@ export function useIdentitySection(
   const { stage, recoveryWords } = setup
   const confirmation = useWordsConfirmation(recoveryWords)
   const restoring = useRecoveryProof(problem)
+  const chainMark = ref('')
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
 
   onMounted(() => {
@@ -46,6 +47,7 @@ export function useIdentitySection(
     setup.clear()
     confirmation.clear()
     restoring.clear()
+    chainMark.value = ''
     problem.value = ''
     deletion.cancelDelete()
   }
@@ -63,6 +65,11 @@ export function useIdentitySection(
   const startRestore = (): void => {
     reset()
     step.value = 'restore'
+  }
+
+  const setChainMark = (value: string): void => {
+    chainMark.value = value
+    problem.value = ''
   }
 
   const setEntered = (position: number, value: string): void => {
@@ -93,8 +100,8 @@ export function useIdentitySection(
     }
     const answer = await run(() =>
       'words' in given
-        ? getIdentity().restore(given.words)
-        : getIdentity().restoreFromKit(given.sheets),
+        ? getIdentity().restore(given.words, '')
+        : getIdentity().restoreFromKit(given.sheets, chainMark.value.trim()),
     )
     if (answer.ok) reset()
   }
@@ -106,6 +113,7 @@ export function useIdentitySection(
     call,
     confirmation,
     restoring,
+    chainMark,
     deletion,
     actions: {
       startSetup,
@@ -114,6 +122,7 @@ export function useIdentitySection(
       showWords: setup.showWords,
       cancel: reset,
       setEntered,
+      setChainMark,
       keep,
       restore,
     },

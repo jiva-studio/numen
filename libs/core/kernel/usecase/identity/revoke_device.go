@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
@@ -21,9 +22,14 @@ func NewRevokeDevice(d Deps) *RevokeDevice {
 }
 
 // Execute makes the chain that revokes the device with the fingerprint and the keys of the next epoch, and keeps them in memory until the
-// server accepted the chain. It never revokes this device (identitylib.ErrSelfRevoke) and never leaves the account with no device
-// (ErrLastDevice); a device that is not active is identitylib.ErrUnknownDevice.
-func (u *RevokeDevice) Execute(ctx context.Context, fingerprint string) error {
+// server accepted the chain. The reason is lost or stolen; a stolen device needs the date since when it was out of the hands of the person,
+// not in the future (ErrInvalidRevokeReason). It never revokes this device (identitylib.ErrSelfRevoke) and never leaves the account with no
+// device (ErrLastDevice); a device that is not active is identitylib.ErrUnknownDevice.
+func (u *RevokeDevice) Execute(ctx context.Context, fingerprint string, reason identitydomain.RevokeReason, since time.Time) error {
+	why, err := u.revocation.readRevocation(reason, since)
+	if err != nil {
+		return err
+	}
 	state, err := u.revocation.records.readState(ctx)
 	if err != nil {
 		return err
@@ -35,13 +41,13 @@ func (u *RevokeDevice) Execute(ctx context.Context, fingerprint string) error {
 	if err != nil {
 		return err
 	}
-	chain, err := u.revocation.makeChain(state, target)
+	chain, err := u.revocation.makeChain(state, target, why)
 	if err != nil {
 		return err
 	}
 	store, release := u.links.hold()
 	defer release()
-	store.revoke = &pendingRevoke{chain: chain, device: target}
+	store.revoke = &pendingRevoke{chain: chain, device: target, why: why}
 	store.bumpLocked()
 	return nil
 }

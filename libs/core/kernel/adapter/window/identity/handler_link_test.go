@@ -201,7 +201,7 @@ func TestRevokeDevice_RefusesToRevokeTheLastDeviceOfTheAccount(t *testing.T) {
 	h := newLinkHandler()
 	created := createGenerated(t, h)
 
-	answer, err := h.RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: created.GetIdentity().GetDeviceFingerprint()}))
+	answer, err := h.RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: created.GetIdentity().GetDeviceFingerprint(), Reason: v1.RevokeReason_REVOKE_REASON_LOST}))
 
 	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE {
 		t.Errorf("RevokeDevice() = %v, %v, want LAST_DEVICE", answer, err)
@@ -210,8 +210,28 @@ func TestRevokeDevice_RefusesToRevokeTheLastDeviceOfTheAccount(t *testing.T) {
 
 func TestRevokeDevice_AnswersNoIdentityWithoutOne(t *testing.T) {
 	t.Parallel()
-	answer, err := newLinkHandler().RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: strings.Repeat("0", 8)}))
+	answer, err := newLinkHandler().RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: strings.Repeat("0", 8), Reason: v1.RevokeReason_REVOKE_REASON_LOST}))
 	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY {
 		t.Errorf("RevokeDevice() = %v, %v, want NO_IDENTITY", answer, err)
+	}
+}
+
+func TestRevokeDevice_RefusesARevokeWithoutAReasonOrAStolenDeviceWithoutADate(t *testing.T) {
+	t.Parallel()
+	h := newLinkHandler()
+	created := createGenerated(t, h)
+	fingerprint := created.GetIdentity().GetDeviceFingerprint()
+	for name, request := range map[string]*v1.RevokeDeviceRequest{
+		"no reason":           {Fingerprint: fingerprint},
+		"stolen with no date": {Fingerprint: fingerprint, Reason: v1.RevokeReason_REVOKE_REASON_STOLEN},
+		"stolen in the future": {
+			Fingerprint: fingerprint, Reason: v1.RevokeReason_REVOKE_REASON_STOLEN, Since: time.Now().Add(48 * time.Hour).UTC().Format(time.RFC3339),
+		},
+		"stolen with a date that is no date": {Fingerprint: fingerprint, Reason: v1.RevokeReason_REVOKE_REASON_STOLEN, Since: "last week"},
+	} {
+		answer, err := h.RevokeDevice(t.Context(), connect.NewRequest(request))
+		if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_REVOKE_REASON {
+			t.Errorf("%s: RevokeDevice() = %v, %v, want INVALID_REVOKE_REASON", name, answer, err)
+		}
 	}
 }

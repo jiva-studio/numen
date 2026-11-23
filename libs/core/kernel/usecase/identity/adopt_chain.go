@@ -19,7 +19,9 @@ func NewAdoptChain(d Deps) *AdoptChain {
 	return &AdoptChain{links: d.progress.links, records: d.records}
 }
 
-// Execute takes the chain when it is the chain of this device or a longer one that extends it (identitylib.ErrNotExtension otherwise).
+// Execute takes the chain when it is the chain of this device, a longer one that extends it, or one that a recovery-signed entry makes win at a
+// fork, which voids the entries of the devices after it (identitylib.ErrNotExtension otherwise; identitylib.ErrDeviceVoided when this device
+// was added by a voided entry).
 // When the epoch grew the record takes the keys the chain wraps for this device; when the chain revokes this device the record stays as it is
 // and the device is revoked. Taking the same chain again changes nothing.
 func (u *AdoptChain) Execute(ctx context.Context, chainBytes []byte) error {

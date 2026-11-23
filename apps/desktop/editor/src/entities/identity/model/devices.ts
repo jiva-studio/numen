@@ -4,7 +4,14 @@ import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { DevicesApi, LinkApi } from '../api/identity'
-import type { DeviceInfo, IdentityFailure, LinkInfo, LinkMode, LinkRole } from '../lib/types'
+import type {
+  DeviceInfo,
+  IdentityFailure,
+  LinkInfo,
+  LinkMode,
+  LinkRole,
+  RevokeWhy,
+} from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 
 interface DevicesCalls {
@@ -46,8 +53,8 @@ export function createDeviceStore(api: DevicesCalls, notify: MessageWriter) {
     cancel: () => ask(() => api.link.cancelLink()),
   }
 
-  const revoke = async (fingerprint: string): Promise<Result<undefined, string>> => {
-    const answer = await ask(() => api.devices.revokeDevice(fingerprint))
+  const revoke = async (fingerprint: string, why: RevokeWhy): Promise<Result<undefined, string>> => {
+    const answer = await ask(() => api.devices.revokeDevice(fingerprint, why))
     await load()
     return answer
   }
