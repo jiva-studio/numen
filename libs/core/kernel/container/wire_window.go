@@ -89,18 +89,14 @@ func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup 
 	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.Listing, GetClock(res), startup.db)
 }
 
-// WindowOpening names the vault to show, the output and the optional editor frame.
+// WindowOpening names the vault to show, the output, the optional editor frame, the scales the themes are applied at, where the fault of loading them is reported once, and the optional native dialog.
 type WindowOpening struct {
-	Named string
-	Out   io.Writer
-	Frame editor.Frame
-	// Scales are the interface and text scales the themes are applied at.
-	Scales Scales
-	// ReportThemes is called once with why the themes could not be loaded, or nil. The window keeps the
-	// themes the binary ships when it is an error.
+	Named        string
+	Out          io.Writer
+	Frame        editor.Frame
+	Scales       Scales
 	ReportThemes func(error)
-	// Dialog is the native dialog the window chooses folders and files with, or nil when the application has none.
-	Dialog editor.PathDialog
+	Dialog       editor.PathDialog
 }
 
 type windowRoutes struct {

@@ -44,8 +44,6 @@ func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences
 	return c
 }
 
-// getThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
-// which says the theme the settings name is found now.
 func getThemeWarning(tasks *run.Tasks) func(message string) {
 	return func(message string) {
 		const applyingTheme = "apply theme"

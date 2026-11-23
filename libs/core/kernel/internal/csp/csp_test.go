@@ -64,7 +64,6 @@ func TestAWindowConnectingOutsideReturnsSoAndNoMore(t *testing.T) {
 	}
 }
 
-// A plugin page runs only the scripts of its own files and frames only the origins named.
 func TestAPluginPageRunsOnlyItsOwnScriptsAndFramesWhatIsNamed(t *testing.T) {
 	const target = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
 		"frame-src 'self' https://player.example; object-src 'none'; base-uri 'none'; form-action 'none'"
@@ -73,7 +72,6 @@ func TestAPluginPageRunsOnlyItsOwnScriptsAndFramesWhatIsNamed(t *testing.T) {
 	}
 }
 
-// A picture loads nothing and is sandboxed.
 func TestAPictureLoadsNothing(t *testing.T) {
 	got := csp.GetPictureOnlyPolicy()
 	if !strings.Contains(got, "default-src 'none'") || !strings.Contains(got, "sandbox") {
