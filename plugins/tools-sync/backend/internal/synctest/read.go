@@ -35,7 +35,7 @@ type FileRow struct {
 // Connect connects the vault as a new synced vault.
 func (c *Computer) Connect(t *testing.T, id domain.VaultID) {
 	t.Helper()
-	in := catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew}
+	in := catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""}
 	if err := catalog.NewConnectVault(c.CatalogDeps()).Execute(t.Context(), in); err != nil {
 		t.Fatal(err)
 	}
