@@ -25,6 +25,7 @@ const (
 	cannotOpenReason       = "CANNOT_OPEN"
 	noPendingRestoreReason = "NO_PENDING_RESTORE"
 	invalidChainReason     = "INVALID_CHAIN"
+	noLinkReason           = "NO_LINK"
 )
 
 var (
@@ -101,6 +102,9 @@ func (c *Client) GetPublicIdentity(ctx context.Context) (PublicIdentity, error) 
 		DeviceFingerprint:  response.Msg.GetDeviceFingerprint(),
 		DeviceSignKey:      response.Msg.GetDeviceSignKey(),
 		Chain:              response.Msg.GetChain(),
+		KeyEpoch:           response.Msg.GetKeyEpoch(),
+		ChainLength:        response.Msg.GetChainLength(),
+		IsRevoked:          response.Msg.GetIsRevoked(),
 	}, nil
 }
 
@@ -195,6 +199,8 @@ func readError(err error) error {
 		return ErrNoPendingRestore
 	case invalidChainReason:
 		return ErrInvalidChain
+	case noLinkReason:
+		return ErrNoLink
 	}
 	return err
 }
