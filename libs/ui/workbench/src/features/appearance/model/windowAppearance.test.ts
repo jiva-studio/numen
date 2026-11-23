@@ -14,7 +14,6 @@ import { createWindowAppearance as create } from './windowAppearance'
 type Themes = ThemeSource
 type Appearance = ThemeState
 
-/** Follows a stream the way the window's follower does: resumed after a wait, and lost while it is down. */
 const createFollower: CreateFollower = (deps) => async (stream, each) => {
   while (deps.isOpen()) {
     try {
