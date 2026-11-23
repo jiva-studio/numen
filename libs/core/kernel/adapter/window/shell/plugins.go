@@ -12,12 +12,12 @@ import (
 // FrontendPlugins lists the plugins for the window and locates their frontend files.
 type FrontendPlugins struct {
 	numenv1connect.UnimplementedPluginServiceHandler
-	getIDs    func() []string
-	directory func(string) (string, bool)
+	getIDs       func() []string
+	getPluginDir func(string) (string, bool)
 }
 
-func NewFrontendPlugins(getIDs func() []string, directory func(string) (string, bool)) FrontendPlugins {
-	return FrontendPlugins{getIDs: getIDs, directory: directory}
+func NewFrontendPlugins(getIDs func() []string, getPluginDir func(string) (string, bool)) FrontendPlugins {
+	return FrontendPlugins{getIDs: getIDs, getPluginDir: getPluginDir}
 }
 
 func (l FrontendPlugins) ListPlugins(

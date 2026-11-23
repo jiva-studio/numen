@@ -1523,7 +1523,7 @@ func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 
 	reported := getReportedPaths(changes)
 
-	installation.Imports(t.Context(), "physics", []string{cover})
+	installation.ImportFiles(t.Context(), "physics", []string{cover})
 
 	target, err := os.ReadFile(filepath.Join(root, "physics", "Cover.png"))
 	if err != nil {
@@ -1554,7 +1554,7 @@ func TestImports_ExistingNameKeepsFileAndReportsTask(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	installation.Imports(t.Context(), "", []string{theirs})
+	installation.ImportFiles(t.Context(), "", []string{theirs})
 
 	target, err := os.ReadFile(filepath.Join(root, "Entropy.md"))
 	if err != nil {

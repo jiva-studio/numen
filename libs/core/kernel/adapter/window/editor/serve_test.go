@@ -834,7 +834,7 @@ func (p *routedPlugins) ListFrameOrigins() []string {
 
 func (p *routedPlugins) GetFrameOrigins(pluginID string) []string { return p.frames[pluginID] }
 
-func (p *routedPlugins) Serves(string) bool { return false }
+func (p *routedPlugins) CanServe(string) bool { return false }
 
 func (p *routedPlugins) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "no plugin serves this service", http.StatusNotFound)

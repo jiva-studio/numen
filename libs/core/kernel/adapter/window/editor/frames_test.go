@@ -71,7 +71,7 @@ func getStorePagePolicy(t *testing.T, plugins PluginServices) string {
 	back := api.state.Media.playing.Load()
 	testsupport.CloseAfter(t, loopbackCloser{back})
 
-	resp := fetch(t, http.DefaultClient, back.PluginFileAddress(vault, file.Address{PluginID: importer, Path: pageName}, int64(len(pageBytes))))
+	resp := fetch(t, http.DefaultClient, back.BuildPluginFileAddress(vault, file.Address{PluginID: importer, Path: pageName}, int64(len(pageBytes))))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("answered %d %q", resp.StatusCode, resp.Body)
 	}

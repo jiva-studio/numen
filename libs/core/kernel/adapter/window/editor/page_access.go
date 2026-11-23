@@ -40,11 +40,11 @@ func (s *Media) ClosePlaying(ctx context.Context) error { return s.playing.Load(
 // GetMediaAddress is where the file with this stat is loaded from, and nowhere while the socket
 // does not answer.
 func (s *Media) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
-	return s.playing.Load().Address(v, stat)
+	return s.playing.Load().BuildAddress(v, stat)
 }
 
 // GetPluginFileAddress is where a file of a plugin's store of the vault is loaded from, and nowhere
 // while the socket does not answer.
 func (s *Media) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
-	return s.playing.Load().PluginFileAddress(v, address, size)
+	return s.playing.Load().BuildPluginFileAddress(v, address, size)
 }

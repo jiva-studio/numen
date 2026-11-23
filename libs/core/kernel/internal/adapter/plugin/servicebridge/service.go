@@ -75,8 +75,8 @@ func GetService(urlPath string) string {
 	return service
 }
 
-// Serves reports whether an enabled plugin serves the service the path names.
-func (p *Proxy) Serves(urlPath string) bool {
+// CanServe reports whether an enabled plugin serves the service the path names.
+func (p *Proxy) CanServe(urlPath string) bool {
 	svc := GetService(urlPath)
 	if svc == "" {
 		return false
