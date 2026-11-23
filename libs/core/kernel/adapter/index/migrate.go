@@ -108,7 +108,7 @@ func checkFile(ctx context.Context, file string) error {
 	if err != nil {
 		return err
 	}
-	plain, err := sql.Open("sqlite", buildDSNWithPragmas(file, nil))
+	plain, err := sql.Open("sqlite", buildDSNWithPragmas(file, []string{busyTimeout}))
 	if err != nil {
 		return fmt.Errorf("open the index at %s: %w", file, err)
 	}
