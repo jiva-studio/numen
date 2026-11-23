@@ -166,13 +166,15 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).not.toContain('Account fingerprint')
   })
 
-  it('shows the account fingerprint and this device when the device has an identity', async () => {
+  it('shows the account fingerprint and the linked device when the device has an identity', async () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Account fingerprint')
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-    expect(tab.text()).toContain('This device')
     expect(tab.text()).toContain('Laptop')
-    expect(tab.text()).toContain('Created November 22, 2026')
+    expect(tab.text()).toContain('This device')
+    expect(tab.text()).toContain('Linked November 22, 2026')
+    expect(tab.text().match(/November 22, 2026/g)).toHaveLength(1)
+    expect(tab.text()).not.toContain('Created')
     expect(tab.text()).toContain('Devices')
     expect(tab.text()).toContain('1 device')
     expect(tab.text()).toContain(IDENTITY.deviceFingerprint)

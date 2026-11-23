@@ -91,7 +91,6 @@ export const WORDS = {
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
   identityNone: 'Not created',
-  identityCreatedOn: (date: string) => `Created ${date}`,
   identityNoneDetail:
     'An identity is the key your devices recognize each other by and your subscription knows whose it is. The key is kept only on your devices; Numen does not have it.',
   identityCreate: 'Create identity',
@@ -126,9 +125,7 @@ export const WORDS = {
   identityThisDevice: 'This device',
   identityDevices: 'Devices',
   identityDeviceCount: (count: number) => (count === 1 ? '1 device' : `${count} devices`),
-  identityDeviceNow: 'Now',
-  identityDeviceDetail: (date: string, fingerprint: string) =>
-    `This device · linked ${date} · fingerprint ${fingerprint}`,
+  identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   identityRemoveName: 'Identity on this device',
   identityRemoveDetail: 'Remove the key from this device',
   identityDelete: 'Delete from this device',

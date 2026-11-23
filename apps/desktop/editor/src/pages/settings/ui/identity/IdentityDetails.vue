@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The identity of this device as two cards: its fingerprints with the way to delete it, after a
- * confirmation, and the list of devices it is linked to.
+ * The identity of this device as two cards: the account fingerprint with the way to delete the identity,
+ * after a confirmation, and the list of devices it is linked to.
  */
 import { computed } from 'vue'
 import { Button, IslandCard } from '@numen/ui'
@@ -35,20 +35,13 @@ const date = computed(() => {
 
 <template>
   <IslandCard :title="words.identitySection">
-    <template v-if="date !== ''" #aside>{{ words.identityCreatedOn(date) }}</template>
     <SettingRow
+      class="identity-details__fact"
       at="identity-account"
       :name="words.identityAccount"
       :detail="words.identityAccountDetail"
     >
       <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
-    </SettingRow>
-    <SettingRow
-      at="identity-device"
-      :name="words.identityThisDevice"
-      :detail="date === '' ? info.deviceName : `${info.deviceName} · ${date}`"
-    >
-      <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
     </SettingRow>
     <SettingRow
       at="identity-remove"
@@ -69,10 +62,11 @@ const date = computed(() => {
       category="device"
       is-static
       :name="info.deviceName"
-      :detail="words.identityDeviceDetail(date, info.deviceFingerprint)"
+      :detail="words.identityDeviceLinked(date)"
     >
       <template #trail>
-        <span class="identity-details__state">{{ words.identityDeviceNow }}</span>
+        <span class="identity-details__badge">{{ words.identityThisDevice }}</span>
+        <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
       </template>
     </NavigationRow>
   </IslandCard>
@@ -95,6 +89,11 @@ const date = computed(() => {
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.identity-details__fact.identity-details__fact {
+  grid-template-columns: minmax(0, 1fr) max-content;
 }
 
 .identity-details__devices :deep(.island-card__body) {
@@ -106,8 +105,13 @@ const date = computed(() => {
   background-color: var(--settings-hover-bg);
 }
 
-.identity-details__state {
+.identity-details__badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--numen-radius-tight);
+  background-color: var(--settings-hover-bg);
   color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+  white-space: nowrap;
 }
 
 .identity-details__problem {
