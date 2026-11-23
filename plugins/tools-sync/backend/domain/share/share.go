@@ -3,11 +3,32 @@
 package share
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"strings"
+
+	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+)
+
+const (
+	sealVersion      = 0x01
+	metaLabel        = "numen-sync/share-meta/v1"
+	bodyLabel        = "numen-sync/share-body/v1"
+	previousKeyLabel = "numen-sync/share-prevkey/v1"
+	sealLabel        = "numen-sync/share-seal/v1"
+	ownerBodyLabel   = "numen-sync/share-owner/v1"
+	readerPrefix     = "numen-reader-1."
+	invitationPrefix = "numen-share-1."
+	idSize           = 16
+	fingerprintSize  = 16
 )
 
 var (
@@ -21,9 +42,9 @@ var (
 	ErrCannotOpen = errors.New("the shared data cannot be opened")
 	// ErrBadCode means a reader code or an invitation does not parse.
 	ErrBadCode = errors.New("this is not a reader code or an invitation")
+	// errNoPreviousEpoch means the first epoch has no epoch before it.
+	errNoPreviousEpoch = errors.New("the first epoch has no previous key")
 )
-
-var errNotImplemented = errors.New("not implemented")
 
 // Body is what a reader sees of a share before it has any file: the name of its vault.
 type Body struct {
@@ -38,64 +59,252 @@ type Invitation struct {
 	OwnerChain        []byte
 }
 
+// NormalizeFolder returns the folder without the slashes around it; the vault root is the empty string.
+func NormalizeFolder(folder string) string {
+	trimmed := strings.Trim(strings.ReplaceAll(folder, "\\", "/"), "/")
+	if trimmed == "." {
+		return ""
+	}
+	return trimmed
+}
+
+func getSegments(folder string) []string {
+	normalized := NormalizeFolder(folder)
+	if normalized == "" {
+		return nil
+	}
+	return strings.Split(normalized, "/")
+}
+
+func hasPrefix(segments, prefix []string) bool {
+	if len(prefix) > len(segments) {
+		return false
+	}
+	for i, one := range prefix {
+		if !strings.EqualFold(segments[i], one) {
+			return false
+		}
+	}
+	return true
+}
+
 // CheckNesting returns nil when folder may be shared next to the shared folders given: not the vault root, not a
 // shared folder or inside one, not holding one. Folders are paths of the vault, compared by segment and without
 // case.
-func CheckNesting(_ string, _ []string) error { return errNotImplemented }
+func CheckNesting(folder string, shared []string) error {
+	segments := getSegments(folder)
+	if len(segments) == 0 {
+		return ErrWholeVault
+	}
+	for _, one := range shared {
+		other := getSegments(one)
+		if len(other) == 0 {
+			continue
+		}
+		if hasPrefix(segments, other) {
+			return ErrInsideShare
+		}
+		if hasPrefix(other, segments) {
+			return ErrHoldsShare
+		}
+	}
+	return nil
+}
 
 // GetRelativePath returns the path of a file relative to the shared folder, and false when the file is not under it.
-func GetRelativePath(_, _ string) (string, bool) { return "", false }
+func GetRelativePath(folder, filePath string) (string, bool) {
+	prefix := getSegments(folder)
+	segments := strings.Split(filePath, "/")
+	if len(prefix) == 0 || len(segments) <= len(prefix) || !hasPrefix(segments, prefix) {
+		return "", false
+	}
+	return strings.Join(segments[len(prefix):], "/"), true
+}
 
 // GetShareName returns the name a reader gives the vault of the folder: its last segment.
-func GetShareName(_ string) string { return "" }
+func GetShareName(folder string) string {
+	segments := getSegments(folder)
+	if len(segments) == 0 {
+		return ""
+	}
+	return segments[len(segments)-1]
+}
+
+// CleanName returns the name a received vault gets on this computer: a name from an owner that holds no separator
+// and is not empty.
+func CleanName(name string) string {
+	cleaned := strings.TrimSpace(strings.NewReplacer("/", "_", "\\", "_", ":", "_").Replace(name))
+	if cleaned == "" || cleaned == "." || cleaned == ".." {
+		return "Shared"
+	}
+	return cleaned
+}
+
+func getBigEndian(value uint32) []byte { return binary.BigEndian.AppendUint32(nil, value) }
+
+func seal(random io.Reader, key [32]byte, associated, plain []byte) ([]byte, error) {
+	aead, err := chacha20poly1305.NewX(key[:])
+	if err != nil {
+		return nil, fmt.Errorf("make the share cipher: %w", err)
+	}
+	nonce := make([]byte, chacha20poly1305.NonceSizeX)
+	if _, err := io.ReadFull(random, nonce); err != nil {
+		return nil, fmt.Errorf("read a nonce: %w", err)
+	}
+	sealed := append([]byte{sealVersion}, nonce...)
+	return aead.Seal(sealed, nonce, plain, associated), nil
+}
+
+func open(key [32]byte, associated, sealed []byte) ([]byte, error) {
+	if len(sealed) < 1+chacha20poly1305.NonceSizeX || sealed[0] != sealVersion {
+		return nil, ErrCannotOpen
+	}
+	aead, err := chacha20poly1305.NewX(key[:])
+	if err != nil {
+		return nil, fmt.Errorf("make the share cipher: %w", err)
+	}
+	nonce, body := sealed[1:1+chacha20poly1305.NonceSizeX], sealed[1+chacha20poly1305.NonceSizeX:]
+	plain, err := aead.Open(nil, nonce, body, associated)
+	if err != nil {
+		return nil, ErrCannotOpen
+	}
+	return plain, nil
+}
+
+func getMetaData(shareID, fileID []byte, epoch uint32) []byte {
+	return bytes.Join([][]byte{[]byte(metaLabel), shareID, fileID, getBigEndian(epoch)}, nil)
+}
 
 // SealMeta returns the metadata of a file under a share sealed with the key of the epoch, bound to the share, the
 // file and the epoch. The path in meta is relative to the shared folder.
-func SealMeta(_ io.Reader, _ [32]byte, _, _ []byte, _ uint32, _ note.Meta) ([]byte, error) {
-	return nil, errNotImplemented
+func SealMeta(random io.Reader, key [32]byte, shareID, fileID []byte, epoch uint32, meta note.Meta) ([]byte, error) {
+	plain, err := json.Marshal(meta)
+	if err != nil {
+		return nil, fmt.Errorf("encode the metadata: %w", err)
+	}
+	return seal(random, key, getMetaData(shareID, fileID, epoch), plain)
 }
 
 // OpenMeta opens what SealMeta sealed. Any other key, share, file or epoch is ErrCannotOpen.
-func OpenMeta(_ [32]byte, _, _ []byte, _ uint32, _ []byte) (note.Meta, error) {
-	return note.Meta{}, errNotImplemented
+func OpenMeta(key [32]byte, shareID, fileID []byte, epoch uint32, sealed []byte) (note.Meta, error) {
+	plain, err := open(key, getMetaData(shareID, fileID, epoch), sealed)
+	if err != nil {
+		return note.Meta{}, err
+	}
+	var meta note.Meta
+	if err := json.Unmarshal(plain, &meta); err != nil {
+		return note.Meta{}, ErrCannotOpen
+	}
+	return meta, nil
+}
+
+func getBodyData(shareID []byte, epoch uint32) []byte {
+	return bytes.Join([][]byte{[]byte(bodyLabel), shareID, getBigEndian(epoch)}, nil)
 }
 
 // SealBody returns the share body sealed with the key of the epoch.
-func SealBody(_ io.Reader, _ [32]byte, _ []byte, _ uint32, _ Body) ([]byte, error) {
-	return nil, errNotImplemented
+func SealBody(random io.Reader, key [32]byte, shareID []byte, epoch uint32, body Body) ([]byte, error) {
+	plain, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("encode the share body: %w", err)
+	}
+	return seal(random, key, getBodyData(shareID, epoch), plain)
 }
 
 // OpenBody opens what SealBody sealed. Any other key, share or epoch is ErrCannotOpen.
-func OpenBody(_ [32]byte, _ []byte, _ uint32, _ []byte) (Body, error) {
-	return Body{}, errNotImplemented
+func OpenBody(key [32]byte, shareID []byte, epoch uint32, sealed []byte) (Body, error) {
+	plain, err := open(key, getBodyData(shareID, epoch), sealed)
+	if err != nil {
+		return Body{Name: ""}, err
+	}
+	var body Body
+	if err := json.Unmarshal(plain, &body); err != nil {
+		return Body{Name: ""}, ErrCannotOpen
+	}
+	return body, nil
+}
+
+func getPreviousKeyData(shareID []byte, epoch uint32) []byte {
+	return bytes.Join([][]byte{[]byte(previousKeyLabel), shareID, getBigEndian(epoch - 1)}, nil)
 }
 
 // SealPreviousKey seals the key of epoch-1 under the key of the epoch, as the prev_key_seal of an entry carries it.
-func SealPreviousKey(_ io.Reader, _, _ [32]byte, _ []byte, _ uint32) ([]byte, error) {
-	return nil, errNotImplemented
+func SealPreviousKey(random io.Reader, newer, older [32]byte, shareID []byte, epoch uint32) ([]byte, error) {
+	if epoch == 0 {
+		return nil, errNoPreviousEpoch
+	}
+	return seal(random, newer, getPreviousKeyData(shareID, epoch), older[:])
 }
 
 // OpenPreviousKey opens what SealPreviousKey sealed with the key of the epoch.
-func OpenPreviousKey(_ [32]byte, _ []byte, _ uint32, _ []byte) ([32]byte, error) {
-	return [32]byte{}, errNotImplemented
+func OpenPreviousKey(newer [32]byte, shareID []byte, epoch uint32, sealed []byte) ([32]byte, error) {
+	if epoch == 0 {
+		return [32]byte{}, errNoPreviousEpoch
+	}
+	plain, err := open(newer, getPreviousKeyData(shareID, epoch), sealed)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	if len(plain) != len(newer) {
+		return [32]byte{}, ErrCannotOpen
+	}
+	return [32]byte(plain), nil
 }
 
 // GetSealContext returns the context the seal of an epoch key for a reader is made under.
-func GetSealContext(_, _ []byte, _ uint32) []byte { return nil }
+func GetSealContext(shareID, reader []byte, epoch uint32) []byte {
+	return bytes.Join([][]byte{[]byte(sealLabel), shareID, reader, getBigEndian(epoch)}, nil)
+}
 
 // GetOwnerBodyContext returns the context the owner body of an entry is sealed under.
-func GetOwnerBodyContext(_ []byte, _ uint64) []byte { return nil }
+func GetOwnerBodyContext(shareID []byte, version uint64) []byte {
+	return binary.BigEndian.AppendUint64(bytes.Join([][]byte{[]byte(ownerBodyLabel), shareID}, nil), version)
+}
 
 // NewReaderCode returns the code a reader gives the owner: the chain of the reader.
-func NewReaderCode(_ []byte) string { return "" }
+func NewReaderCode(chain []byte) string {
+	return readerPrefix + base64.RawURLEncoding.EncodeToString(chain)
+}
 
 // ParseReaderCode returns the chain a reader code holds, verified.
-func ParseReaderCode(_ string) (identity.Chain, error) {
-	return identity.Chain{}, errNotImplemented
+func ParseReaderCode(text string) (identity.Chain, error) {
+	encoded, ok := strings.CutPrefix(strings.TrimSpace(text), readerPrefix)
+	if !ok {
+		return identity.Chain{}, ErrBadCode
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		return identity.Chain{}, fmt.Errorf("%w: %w", ErrBadCode, err)
+	}
+	chain, err := identity.ParseChain(raw)
+	if err != nil {
+		return identity.Chain{}, fmt.Errorf("%w: %w", ErrBadCode, err)
+	}
+	return chain, nil
 }
 
 // NewInvitation returns the text of an invitation.
-func NewInvitation(_ Invitation) string { return "" }
+func NewInvitation(invitation Invitation) string {
+	raw := bytes.Join([][]byte{invitation.ShareRootID, invitation.ReaderFingerprint[:], invitation.OwnerChain}, nil)
+	return invitationPrefix + base64.RawURLEncoding.EncodeToString(raw)
+}
 
 // ParseInvitation reads the text of an invitation.
-func ParseInvitation(_ string) (Invitation, error) { return Invitation{}, errNotImplemented }
+func ParseInvitation(text string) (Invitation, error) {
+	encoded, ok := strings.CutPrefix(strings.TrimSpace(text), invitationPrefix)
+	if !ok {
+		return Invitation{}, ErrBadCode
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		return Invitation{}, fmt.Errorf("%w: %w", ErrBadCode, err)
+	}
+	if len(raw) <= idSize+fingerprintSize {
+		return Invitation{}, ErrBadCode
+	}
+	return Invitation{
+		ShareRootID:       raw[:idSize],
+		ReaderFingerprint: identity.Fingerprint(raw[idSize : idSize+fingerprintSize]),
+		OwnerChain:        raw[idSize+fingerprintSize:],
+	}, nil
+}

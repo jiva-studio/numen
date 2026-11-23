@@ -2,13 +2,13 @@ package synctest
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 )
-
-var errNotImplemented = errors.New("not implemented")
 
 // ReaderCode is what a person gives the owner of a share: the code and the fingerprint shown beside it.
 type ReaderCode struct {
@@ -71,53 +71,74 @@ func NewUnsignedComputer(t *testing.T, server *Server, clock *Clock, vault strin
 }
 
 // GetReaderCode returns the reader code of this computer.
-func (c *Computer) GetReaderCode(_ context.Context) (ReaderCode, error) {
-	return ReaderCode{}, errNotImplemented
+func (c *Computer) GetReaderCode(ctx context.Context) (ReaderCode, error) {
+	code, err := receive.NewGetReaderCode(c.ReceiveDeps()).Execute(ctx)
+	return ReaderCode{Code: code.Code, Fingerprint: code.Fingerprint}, err
 }
 
 // CreateShare shares the folder of the vault and waits until its files are rewrapped.
-func (c *Computer) CreateShare(_ context.Context, _ domain.VaultID, _ string) error {
-	return errNotImplemented
+func (c *Computer) CreateShare(ctx context.Context, id domain.VaultID, folder string) error {
+	return share.NewCreateShare(c.ShareDeps()).Execute(ctx, id, folder)
 }
 
 // AddReader adds the reader of the code to the sharing of the folder and returns the invitation.
-func (c *Computer) AddReader(_ context.Context, _ domain.VaultID, _, _, _ string, _ bool) (ShareInvitation, error) {
-	return ShareInvitation{}, errNotImplemented
+func (c *Computer) AddReader(ctx context.Context, id domain.VaultID, folder, code, label string, isConfirmed bool) (ShareInvitation, error) {
+	invited, err := share.NewAddReader(c.ShareDeps()).Execute(ctx, share.AddReaderInput{
+		VaultID: id, Folder: folder, Code: code, Label: label, IsConfirmed: isConfirmed,
+	})
+	return ShareInvitation{Text: invited.Text, ReaderFingerprint: invited.Fingerprint}, err
 }
 
 // RemoveReader removes the reader with the account fingerprint from the sharing of the folder.
-func (c *Computer) RemoveReader(_ context.Context, _ domain.VaultID, _, _ string) error {
-	return errNotImplemented
+func (c *Computer) RemoveReader(ctx context.Context, id domain.VaultID, folder, fingerprint string) error {
+	return share.NewRemoveReader(c.ShareDeps()).Execute(ctx, id, folder, fingerprint)
 }
 
 // StopShare stops the sharing of the folder.
-func (c *Computer) StopShare(_ context.Context, _ domain.VaultID, _ string) error {
-	return errNotImplemented
+func (c *Computer) StopShare(ctx context.Context, id domain.VaultID, folder string) error {
+	return share.NewStopShare(c.ShareDeps()).Execute(ctx, id, folder)
 }
 
 // GetShare returns the sharing of the folder as the owner lists it.
-func (c *Computer) GetShare(_ context.Context, _ domain.VaultID, _ string) (ShareState, error) {
-	return ShareState{}, errNotImplemented
+func (c *Computer) GetShare(ctx context.Context, id domain.VaultID, folder string) (ShareState, error) {
+	overview, err := share.NewGetShare(c.ShareDeps()).Execute(ctx, id, folder)
+	state := ShareState{State: overview.State, Readers: nil}
+	for _, reader := range overview.Readers {
+		state.Readers = append(state.Readers, SharedReader{Label: reader.Label, Fingerprint: reader.Fingerprint, State: reader.GetState()})
+	}
+	return state, err
 }
 
 // ReadInvitation shows what an invitation offers and stores nothing.
-func (c *Computer) ReadInvitation(_ context.Context, _ string) (SharePreview, error) {
-	return SharePreview{}, errNotImplemented
+func (c *Computer) ReadInvitation(ctx context.Context, text string) (SharePreview, error) {
+	preview, err := receive.NewReadInvitation(c.ReceiveDeps()).Execute(ctx, text)
+	return SharePreview{
+		ShareName: preview.ShareName, OwnerFingerprint: preview.OwnerFingerprint, IsForThisAccount: preview.IsForThisAccount,
+		AlreadyReceived: preview.IsReceived,
+	}, err
 }
 
 // AcceptInvitation receives the share of the invitation as a vault managed by the sync plugin and runs its first pass.
-func (c *Computer) AcceptInvitation(_ context.Context, _ string) (ReceivedShare, error) {
-	return ReceivedShare{}, errNotImplemented
+func (c *Computer) AcceptInvitation(ctx context.Context, text string) (ReceivedShare, error) {
+	accepted, err := receive.NewAcceptInvitation(c.ReceiveDeps()).Execute(ctx, text)
+	return ReceivedShare{VaultID: accepted.VaultID, Name: accepted.Name, OwnerFingerprint: "", State: "", ConflictCount: 0}, err
 }
 
 // ListReceived lists the shares this computer received.
-func (c *Computer) ListReceived(_ context.Context) ([]ReceivedShare, error) {
-	return nil, errNotImplemented
+func (c *Computer) ListReceived(ctx context.Context) ([]ReceivedShare, error) {
+	listed, err := receive.NewListReceived(c.ReceiveDeps()).Execute(ctx)
+	shares := make([]ReceivedShare, len(listed))
+	for i, one := range listed {
+		shares[i] = ReceivedShare{
+			VaultID: one.VaultID, Name: one.Name, OwnerFingerprint: one.OwnerFingerprint, State: one.State, ConflictCount: one.ConflictCount,
+		}
+	}
+	return shares, err
 }
 
 // ConnectVault connects the vault as a new synced vault through the use case of the plugin.
-func (c *Computer) ConnectVault(_ context.Context, _ domain.VaultID) error {
-	return errNotImplemented
+func (c *Computer) ConnectVault(ctx context.Context, id domain.VaultID) error {
+	return catalog.NewConnectVault(c.CatalogDeps()).Execute(ctx, catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""})
 }
 
 // MoveNote moves a file of the vault to a folder the way the host moves a note.

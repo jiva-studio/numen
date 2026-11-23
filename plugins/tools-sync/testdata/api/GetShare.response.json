@@ -1,0 +1,8 @@
+{
+  "state": "active",
+  "readers": [
+    { "label": "Anna", "fingerprint": "0F3A 9C21 77B0 D4E6 18AA 5C02 93F1 EE40", "state": "active" },
+    { "label": "Bo", "fingerprint": "A1B2 C3D4 E5F6 0718 293A 4B5C 6D7E 8F90", "state": "removed" }
+  ],
+  "error": "The share is not ready for readers"
+}

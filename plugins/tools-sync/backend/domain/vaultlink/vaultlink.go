@@ -88,11 +88,17 @@ const (
 	KindReceived = "received"
 )
 
-// Received is what a received vault knows of its share: the share, the pinned root of the owner and the sealed keys.
+// Received is what a received vault knows of its share: the share, the pinned root of the owner, the sealed keys and
+// the last entry of the share log it verified.
 type Received struct {
 	ShareRootID   string `json:"shareRootId"`
 	OwnerRoot     []byte `json:"ownerRoot"`
 	OwnerChain    []byte `json:"ownerChain"`
 	SealedKeys    []byte `json:"sealedKeys"`
 	ServerVersion uint64 `json:"serverVersion"`
+	HeadID        []byte `json:"headId"`
+	VaultID       []byte `json:"vaultId"`
+	Epoch         uint32 `json:"epoch"`
+	Name          string `json:"name"`
+	IsEnded       bool   `json:"isEnded"`
 }

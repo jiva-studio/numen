@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
@@ -18,6 +19,14 @@ type batchRun struct {
 	deps   Deps
 	vault  transfer.Vault
 	author []byte
+	shares []share.Root
+}
+
+// sealedMeta is the sealed metadata of a revision and, for a note in a shared folder, the share and its epoch.
+type sealedMeta struct {
+	encoded []byte
+	shareID []byte
+	epoch   uint32
 }
 
 // prepared is a note sealed and signed, ready to commit.
@@ -73,14 +82,15 @@ func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
 		return nil, err
 	}
 	meta := note.Meta{Path: path, Size: int64(len(file.Content)), MTime: file.ModifiedAt, Hash: note.Hash(file.Content), Key: key, Kind: note.KindMarkdown}
-	sealed, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
+	sealed, err := r.sealMeta(path, fileID, meta)
 	if err != nil {
 		return nil, err
 	}
 	hash := sha256.Sum256(blob)
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
-		EncMeta: sealed, PathHash: note.PathHash(r.vault.Key, path), AuthorDeviceSignKey: r.author,
+		EncMeta: sealed.encoded, PathHash: note.PathHash(r.vault.Key, path), ShareRootId: sealed.shareID, Epoch: sealed.epoch,
+		AuthorDeviceSignKey: r.author,
 	}
 	return &prepared{index: index, blob: blob, revision: revision}, nil
 }
@@ -155,10 +165,7 @@ func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, out
 			rest = append(rest, item)
 			continue
 		}
-		status := transfer.ParentMismatch
-		if conflict.GetKind() == syncv1.ConflictKind_CONFLICT_KIND_PATH_TAKEN {
-			status = transfer.PathTaken
-		}
+		status := getStatus(conflict.GetKind())
 		outcomes[item.index] = transfer.Outcome{
 			Path: files[item.index].Path, Status: status, FileID: item.revision.GetFileId(), RevID: nil,
 			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(),
@@ -174,4 +181,32 @@ func findConflict(conflicts []*syncv1.Conflict, fileID []byte) *syncv1.Conflict 
 		}
 	}
 	return nil
+}
+
+func getStatus(kind syncv1.ConflictKind) transfer.CommitStatus {
+	switch kind {
+	case syncv1.ConflictKind_CONFLICT_KIND_PATH_TAKEN:
+		return transfer.PathTaken
+	case syncv1.ConflictKind_CONFLICT_KIND_SHARE_EPOCH:
+		return transfer.StaleEpoch
+	default:
+		return transfer.ParentMismatch
+	}
+}
+
+// sealMeta seals the metadata under the key of the share whose folder holds the path, at the epoch of the share, with
+// the path relative to the folder. A path outside every share is sealed under the vault key.
+func (r *batchRun) sealMeta(path string, fileID []byte, meta note.Meta) (sealedMeta, error) {
+	root, isShared := share.FindRootOf(r.shares, path)
+	if !isShared {
+		encoded, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
+		return sealedMeta{encoded: encoded, shareID: nil, epoch: 0}, err
+	}
+	key, isKnown := root.GetKey()
+	if !isKnown {
+		return sealedMeta{}, errNoShareKey
+	}
+	meta.Path, _ = share.GetRelativePath(root.Folder, path)
+	encoded, err := share.SealMeta(r.deps.Random, key, root.ID, fileID, root.Epoch, meta)
+	return sealedMeta{encoded: encoded, shareID: root.ID, epoch: root.Epoch}, err
 }

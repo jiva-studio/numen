@@ -1,0 +1,18 @@
+{
+  "shares": [
+    {
+      "vaultId": "01JCX6Q4ZB3W8N2V7T5R9K1M0R",
+      "name": "Food",
+      "ownerFingerprint": "7C10 2D5E B3A9 4F68 E0D1 5A27 9B3C 6481",
+      "state": "ready",
+      "lastSyncedAt": "2026-11-23T12:00:00Z"
+    },
+    {
+      "vaultId": "01JCX6Q4ZB3W8N2V7T5R9K1M0S",
+      "name": "Plans",
+      "ownerFingerprint": "7C10 2D5E B3A9 4F68 E0D1 5A27 9B3C 6481",
+      "state": "ended",
+      "lastSyncedAt": ""
+    }
+  ]
+}

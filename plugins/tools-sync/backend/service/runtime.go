@@ -9,6 +9,7 @@ import (
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
@@ -42,12 +43,13 @@ type runtime struct {
 	parts    parts
 	wakes    *loops.Wakes
 	interval *loops.Interval
+	received *loops.Text
 	session  *loops.Supervisor[*Backend]
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
-		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), session: nil,
+		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), received: loops.NewText(), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -67,6 +69,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 
 func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
+	r.received.Set(values[settingReceivedFolder])
 	r.session.Configure(values[settingServer])
 }
 
@@ -78,7 +81,8 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.Random(),
-		Subscriptions: cloudSide,
+		Subscriptions: cloudSide, Shares: cloudSide, ShareStates: p.state, Box: p.identity, Vaults: p.vaults,
+		Folders: folders.NewReceived(r.received.Get),
 	}
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: syncwire.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,

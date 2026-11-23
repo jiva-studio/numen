@@ -29,6 +29,7 @@ type Cloud struct {
 	blobs        *syncclient.BlobClient
 	account      *syncclient.AccountClient
 	subscription *syncclient.SubscriptionClient
+	shares       *syncclient.ShareClient
 }
 
 // New returns the server of the config.
@@ -41,6 +42,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		shares:       syncclient.NewShareClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}
 }
 
@@ -108,4 +110,38 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 // CreateCheckout returns the address of a payment page.
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
+}
+
+// AppendShareLogEntry adds an entry to the member log of a share. A refused entry comes back not committed, with the
+// entry at the head of the log.
+func (c *Cloud) AppendShareLogEntry(ctx context.Context, entry *syncv1.ShareLogEntry) (*syncv1.AppendShareLogEntryResponse, error) {
+	return call(ctx, c, func() (*syncv1.AppendShareLogEntryResponse, error) { return c.shares.AppendShareLogEntry(ctx, entry) })
+}
+
+// ListShares returns the share roots of the account.
+func (c *Cloud) ListShares(ctx context.Context) ([]*syncv1.ShareSummary, error) {
+	return call(ctx, c, func() ([]*syncv1.ShareSummary, error) { return c.shares.ListShares(ctx) })
+}
+
+// GetShareLog returns the entries of the share log after the version and the chain of the owner.
+func (c *Cloud) GetShareLog(ctx context.Context, shareRootID []byte, sinceVersion uint64) ([]*syncv1.ShareLogEntry, []byte, error) {
+	var chain []byte
+	entries, err := call(ctx, c, func() ([]*syncv1.ShareLogEntry, error) {
+		read, readChain, err := c.shares.GetShareLog(ctx, shareRootID, sinceVersion)
+		chain = readChain
+		return read, err
+	})
+	return entries, chain, err
+}
+
+// GetShareChanges returns a page of the changes of a share after the sequence number.
+func (c *Cloud) GetShareChanges(ctx context.Context, shareRootID []byte, sinceSeq uint64, limit uint32) (*syncv1.GetShareChangesResponse, error) {
+	return call(ctx, c, func() (*syncv1.GetShareChangesResponse, error) {
+		return c.shares.GetShareChanges(ctx, shareRootID, sinceSeq, limit)
+	})
+}
+
+// GetShareBlobUrls returns a download for each blob of the share.
+func (c *Cloud) GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
+	return call(ctx, c, func() ([]*syncv1.BlobDownload, error) { return c.shares.GetShareBlobUrls(ctx, shareRootID, blobIDs) })
 }

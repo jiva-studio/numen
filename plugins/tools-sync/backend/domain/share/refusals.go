@@ -30,3 +30,14 @@ var (
 	// ErrNotReady means the owner has not finished making the share, so no reader is added yet.
 	ErrNotReady = errors.New("the share is not ready for readers")
 )
+
+var (
+	// ErrUnknownReader means the folder has no reader with the fingerprint.
+	ErrUnknownReader = errors.New("this person does not read the folder")
+	// ErrUnknownShare means the server has no such share for this account.
+	ErrUnknownShare = errors.New("this share does not exist or is not meant for you")
+	// ErrLogBusy means other devices of the owner changed the share log first, every time.
+	ErrLogBusy = errors.New("the share log changed on another device again and again")
+	// ErrNotShared means the folder has no share to change.
+	ErrNotShared = errors.New("the folder is not shared")
+)

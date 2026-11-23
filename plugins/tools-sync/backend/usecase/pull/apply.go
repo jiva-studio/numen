@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"path"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -15,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -71,6 +73,9 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 		return note.Meta{}, false
 	}
 	meta, err := r.check(stored)
+	if errors.Is(err, errUnknownShare) {
+		r.hold(stored.GetSeq())
+	}
 	if err != nil {
 		r.result.Unverified++
 		return note.Meta{}, false
@@ -78,7 +83,35 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 	return meta, true
 }
 
-var errUnverified = errors.New("the revision does not verify")
+var (
+	errUnverified   = errors.New("the revision does not verify")
+	errUnknownShare = errors.New("the revision belongs to a share this device does not know")
+)
+
+// openMeta opens the metadata of a revision with the vault key, or with the key of its share for a revision under a
+// shared folder, and returns the path from the root of the vault.
+func (r *run) openMeta(rev *syncv1.Revision) (note.Meta, error) {
+	if len(rev.GetShareRootId()) == 0 {
+		return note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
+	}
+	root, isFound := share.FindRootByID(r.in.Shares, rev.GetShareRootId())
+	if !isFound {
+		return note.Meta{}, errUnknownShare
+	}
+	key, isKnown := root.Keys.Get(rev.GetEpoch())
+	if !isKnown {
+		return note.Meta{}, errUnverified
+	}
+	meta, err := share.OpenMeta(key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	if err != nil {
+		return note.Meta{}, err
+	}
+	meta.Path = path.Join(root.Folder, meta.Path)
+	if _, isUnder := share.GetRelativePath(root.Folder, meta.Path); !isUnder {
+		return note.Meta{}, errUnverified
+	}
+	return meta, nil
+}
 
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
@@ -88,7 +121,10 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 		!r.in.Authors(rev.GetAuthorDeviceSignKey()) {
 		return note.Meta{}, errUnverified
 	}
-	meta, err := note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
+	meta, err := r.openMeta(rev)
+	if errors.Is(err, errUnknownShare) {
+		return note.Meta{}, err
+	}
 	if err != nil || len(meta.Key) != 32 {
 		return note.Meta{}, errUnverified
 	}

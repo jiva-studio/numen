@@ -5,6 +5,7 @@ package transfer
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 )
 
 // CommitStatus is how the server took a note.
@@ -19,6 +20,8 @@ const (
 	PathTaken
 	// TooLarge means the sealed note is larger than the server stores.
 	TooLarge
+	// StaleEpoch means the share the note belongs to moved to another epoch, so the device must read the share log.
+	StaleEpoch
 )
 
 // Vault is the synced vault: its id on the server and its key.
@@ -36,10 +39,11 @@ type File struct {
 	ModifiedAt int64
 }
 
-// CommitInput is the notes to commit to a vault.
+// CommitInput is the notes to commit to a vault. A note under a folder of Shares is sealed under the key of that share.
 type CommitInput struct {
-	Vault Vault
-	Files []File
+	Vault  Vault
+	Files  []File
+	Shares []share.Root
 }
 
 // Outcome is what became of one note. Head is the head of the file the server holds for ParentMismatch and for
@@ -67,10 +71,12 @@ type Change struct {
 	ModifiedAt int64
 }
 
-// PullInput is the vault and the check of the author of a revision.
+// PullInput is the vault, the check of the author of a revision and the shares of the vault, whose revisions open with
+// the keys of the share.
 type PullInput struct {
 	VaultID domain.VaultID
 	Authors func(deviceSignKey []byte) bool
+	Shares  []share.Root
 }
 
 // PullResult is the notes written, the notes left as they were because both computers changed them, and the

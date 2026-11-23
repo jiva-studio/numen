@@ -3,11 +3,13 @@ package catalog
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
@@ -44,6 +46,9 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	if _, err := u.reader.deps.Identity.GetPublicIdentity(ctx); err != nil {
 		return err
 	}
+	if err := u.checkNotReceived(ctx, in.VaultID); err != nil {
+		return err
+	}
 	if err := u.checkNotConnected(ctx, in); err != nil {
 		return err
 	}
@@ -55,6 +60,21 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 		return u.connectNew(ctx, in.VaultID, name)
 	}
 	return u.connectExisting(ctx, in, name)
+}
+
+// checkNotReceived refuses a vault that is the share of another person, which is not synced as an own vault.
+func (u *ConnectVault) checkNotReceived(ctx context.Context, id domain.VaultID) error {
+	link, err := u.reader.deps.State.ReadLink(ctx, id)
+	if errors.Is(err, vaultlink.ErrNotConnected) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if link.Kind == vaultlink.KindReceived {
+		return share.ErrReceivedNotSynced
+	}
+	return nil
 }
 
 func (u *ConnectVault) getVaultName(ctx context.Context, id domain.VaultID) (string, error) {

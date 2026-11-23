@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -19,8 +20,16 @@ type pass struct {
 	use        *SyncVault
 	id         domain.VaultID
 	authors    trust.Authors
+	shares     []share.Root
 	conflicts  []string
 	unverified int
+}
+
+// retry says what the pass has to do again after a push: pull, because the head of a note moved, and read the shares,
+// because the epoch of a share moved.
+type retry struct {
+	isPull  bool
+	isEpoch bool
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -31,11 +40,11 @@ func (p *pass) run(ctx context.Context) error {
 	if err := p.pull(ctx); err != nil {
 		return err
 	}
-	isRetry, err := p.push(ctx)
+	again, err := p.pushAgain(ctx)
 	if err != nil {
 		return p.use.reports.settle(ctx, err)
 	}
-	if isRetry {
+	if again.isPull {
 		if err := p.pull(ctx); err != nil {
 			return err
 		}
@@ -47,7 +56,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted})
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted, Shares: p.shares})
 	if err != nil {
 		return err
 	}
@@ -56,26 +65,26 @@ func (p *pass) pull(ctx context.Context) error {
 	return nil
 }
 
-func (p *pass) push(ctx context.Context) (bool, error) {
+func (p *pass) push(ctx context.Context) (retry, error) {
 	records, err := p.use.deps.State.ReadRecords(ctx, p.id)
 	if err != nil {
-		return false, err
+		return retry{}, err
 	}
 	changes, err := p.use.steps.Scan.Execute(ctx, transfer.ScanInput{VaultID: p.id, Bases: getBases(records)})
 	if err != nil {
-		return false, err
+		return retry{}, err
 	}
 	files, err := p.readFiles(ctx, records, changes)
 	if err != nil || len(files) == 0 {
-		return false, err
+		return retry{}, err
 	}
 	vault, err := p.openVault(ctx)
 	if err != nil {
-		return false, err
+		return retry{}, err
 	}
-	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files})
+	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files, Shares: p.shares})
 	if err != nil {
-		return false, err
+		return retry{}, err
 	}
 	return p.record(ctx, records, files, outcomes)
 }
@@ -127,8 +136,8 @@ func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 	return transfer.Vault{ID: remote, Key: [32]byte(key)}, nil
 }
 
-func (p *pass) record(ctx context.Context, records []note.FileRecord, files []transfer.File, outcomes []transfer.Outcome) (bool, error) {
-	isRetry := false
+func (p *pass) record(ctx context.Context, records []note.FileRecord, files []transfer.File, outcomes []transfer.Outcome) (retry, error) {
+	again := retry{isPull: false, isEpoch: false}
 	for i, outcome := range outcomes {
 		switch outcome.Status {
 		case transfer.Committed:
@@ -136,11 +145,13 @@ func (p *pass) record(ctx context.Context, records []note.FileRecord, files []tr
 				FileID: outcome.FileID, Path: outcome.Path, BaseHash: note.Hash(files[i].Content), HeadRev: outcome.RevID,
 			})
 		case transfer.ParentMismatch, transfer.PathTaken:
-			isRetry = true
+			again.isPull = true
+		case transfer.StaleEpoch:
+			again.isEpoch = true
 		case transfer.TooLarge:
 		}
 	}
-	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)
+	return again, p.use.deps.State.WriteRecords(ctx, p.id, records)
 }
 
 func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRecord {
@@ -150,4 +161,32 @@ func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRec
 	}
 	records[at] = record
 	return records
+}
+
+// pushAgain pushes, and pushes once more after reading the shares again when a share moved to another epoch. It
+// returns whether the head of a note moved.
+func (p *pass) pushAgain(ctx context.Context) (retry, error) {
+	again, err := p.push(ctx)
+	if err != nil || !again.isEpoch {
+		return again, err
+	}
+	if p.shares, err = p.use.steps.Shares.Execute(ctx, p.id); err != nil {
+		return retry{}, err
+	}
+	next, err := p.push(ctx)
+	next.isPull = next.isPull || again.isPull
+	return next, err
+}
+
+// rewrap continues the rewrap of every share this device made whose files are not all rewrapped.
+func (p *pass) rewrap(ctx context.Context) error {
+	for _, root := range p.shares {
+		if root.IsClosed || root.Phase != share.PhaseCreated {
+			continue
+		}
+		if err := p.use.steps.Rewrap.Execute(ctx, p.id, root); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	subscriptiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
@@ -50,6 +51,11 @@ type Deps struct {
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
+	Shares        ports.Shares
+	ShareStates   ports.ShareStates
+	Box           ports.Box
+	Vaults        ports.VaultList
+	Folders       ports.Folders
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.
@@ -77,6 +83,21 @@ type SubscriptionReader interface {
 	Execute(ctx context.Context) (subscriptiondomain.State, error)
 }
 
+// SharesReader reads the shares of a vault.
+type SharesReader interface {
+	Execute(ctx context.Context, id domain.VaultID) ([]share.Root, error)
+}
+
+// Rewrapper rewraps the files of a share.
+type Rewrapper interface {
+	Execute(ctx context.Context, id domain.VaultID, root share.Root) error
+}
+
+// Receiver brings the files of a received share into its vault.
+type Receiver interface {
+	Execute(ctx context.Context, id domain.VaultID) (transfer.PullResult, error)
+}
+
 // Steps are the use cases a pass runs.
 type Steps struct {
 	Rename       Renamer
@@ -84,6 +105,9 @@ type Steps struct {
 	Scan         Scanner
 	Commit       Committer
 	Subscription SubscriptionReader
+	Shares       SharesReader
+	Rewrap       Rewrapper
+	Receive      Receiver
 }
 
 // SyncVault runs one pass over one vault.
@@ -101,8 +125,12 @@ func NewSyncVault(deps Deps, steps Steps) *SyncVault {
 // Execute pulls, then pushes, and keeps the warnings of the vault. It returns ErrNotConnected for a vault that is
 // not connected.
 func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
-	if _, err := u.deps.State.ReadLink(ctx, id); err != nil {
+	link, err := u.deps.State.ReadLink(ctx, id)
+	if err != nil {
 		return err
+	}
+	if link.Kind == vaultlink.KindReceived {
+		return u.executeReceived(ctx, id)
 	}
 	if _, err := u.steps.Rename.Execute(ctx, id); err != nil {
 		return err
@@ -114,7 +142,14 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.Indexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0}
+	shares, err := u.steps.Shares.Execute(ctx, id)
+	if err != nil {
+		return err
+	}
+	p := &pass{use: u, id: id, authors: authors, shares: shares, conflicts: nil, unverified: 0}
+	if err := p.rewrap(ctx); err != nil {
+		return err
+	}
 	return p.run(ctx)
 }
 

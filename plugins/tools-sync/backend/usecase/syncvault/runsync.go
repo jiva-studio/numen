@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -115,8 +116,17 @@ func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	return u.finish(ctx, err, isConnected)
 }
 
+// pass runs the pass over a vault that is connected. It returns true for a vault of the person; a received vault is
+// synced without asking the subscription, and a share the owner ended is not a failure.
 func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
-	if _, err := u.deps.State.ReadLink(ctx, id); errors.Is(err, vaultlink.ErrNotConnected) {
+	link, err := u.deps.State.ReadLink(ctx, id)
+	if errors.Is(err, vaultlink.ErrNotConnected) {
+		return false, nil
+	}
+	if err == nil && link.Kind == vaultlink.KindReceived {
+		if err := u.deps.Pass.Execute(ctx, id); !errors.Is(err, share.ErrEnded) {
+			return false, err
+		}
 		return false, nil
 	}
 	return true, u.deps.Pass.Execute(ctx, id)

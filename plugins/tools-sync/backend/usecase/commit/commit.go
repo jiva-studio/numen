@@ -33,7 +33,7 @@ func (u *CommitRevisions) Execute(ctx context.Context, in transfer.CommitInput) 
 	if err != nil {
 		return nil, err
 	}
-	run := &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey}
+	run := &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey, shares: in.Shares}
 	outcomes := make([]transfer.Outcome, 0, len(in.Files))
 	for start := 0; start < len(in.Files); start += batchSize {
 		batch, err := run.execute(ctx, in.Files[start:min(start+batchSize, len(in.Files))])
@@ -45,4 +45,7 @@ func (u *CommitRevisions) Execute(ctx context.Context, in transfer.CommitInput) 
 	return outcomes, nil
 }
 
-var errUnexpectedAnswer = errors.New("the server answered a batch it did not commit with no conflict")
+var (
+	errUnexpectedAnswer = errors.New("the server answered a batch it did not commit with no conflict")
+	errNoShareKey       = errors.New("the share has no key for its epoch")
+)
