@@ -5,7 +5,8 @@
  */
 import { computed, shallowRef, type Component, type ComputedRef, type ShallowRef } from 'vue'
 import { type Disposable, type SlotName, type SlotViewRegistration } from '@numen/plugin-sdk'
-import { WINDOW_SLOTS, createStyledView } from '../slots'
+import { WINDOW_SLOTS, createStyledViews } from '../slots'
+import type { PluginStyles } from '../styles'
 
 /** A view of a slot with the plugin that registered it. */
 export interface DeclaredSlotView {
@@ -15,6 +16,7 @@ export interface DeclaredSlotView {
 }
 
 export interface SlotViewRegistryDeps {
+  readonly styles: PluginStyles
   readonly reportIssue?: (pluginId: string, message: string) => void
 }
 
@@ -25,6 +27,7 @@ export interface SlotViewRegistryDeps {
  * registered one, and is reactive.
  */
 export interface SlotViewRegistry {
+  readonly styles: PluginStyles
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
   readonly registerSlotView: (
@@ -78,8 +81,9 @@ function findSlotView(views: readonly DeclaredSlotView[], slot: string): Declare
   return inSlot[0] ?? null
 }
 
-export function createSlotViewRegistry(deps: SlotViewRegistryDeps = {}): SlotViewRegistry {
+export function createSlotViewRegistry(deps: SlotViewRegistryDeps): SlotViewRegistry {
   const views = shallowRef<readonly DeclaredSlotView[]>([])
+  const createStyledView = createStyledViews(deps.styles)
 
   const reportHidden = (hidden: DeclaredSlotView, drawn: DeclaredSlotView): void => {
     deps.reportIssue?.(
@@ -120,6 +124,7 @@ export function createSlotViewRegistry(deps: SlotViewRegistryDeps = {}): SlotVie
   }
 
   return {
+    styles: deps.styles,
     views,
     registerSlotView,
     findView: (pluginId, view) => {

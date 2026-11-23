@@ -72,7 +72,11 @@ async function createWindow() {
   })
   holder.current = host
   await declared.load()
-  return { host, loader: createPluginLoader({ host: host.lifecycle }), reportCommandIssue }
+  return {
+    host,
+    loader: createPluginLoader({ host: host.lifecycle, styles: host.slotViews.styles }),
+    reportCommandIssue,
+  }
 }
 
 describe('the commands of a view plugin that starts in a window with a backend plugin', () => {

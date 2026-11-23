@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createCustomTabKind, pickCustomTabParts } from './customTabKind'
-import { registerPluginStyle } from '../styles'
+import { createPluginStyles } from '../styles'
 import {
   CONVERSATION,
   NOTE_EDITOR,
@@ -12,7 +12,12 @@ import {
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import { STUB_COMPONENT, STUB_CONNECTIONS } from '../testing/stubComponent'
-import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+import { createTestHostDeps, createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+
+const NO_HOST = createTestHostDeps({
+  target: 'desktop.editor',
+  registerKind: () => () => undefined,
+})
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
@@ -441,6 +446,7 @@ describe('createPluginHost', () => {
     const Wrapper = createCustomTabKind(
       'crashing.plugin',
       pickCustomTabParts({ kind: 'test.kind', component: CrashingComponent }),
+      { ...NO_HOST, styles: createPluginStyles() },
     ).pane
     const wrapper = mount(Wrapper, {
       props: { state: { path: '/test/note.md' } },
@@ -460,10 +466,12 @@ describe('createPluginHost', () => {
       },
     })
 
-    registerPluginStyle('sample.plugin', '/plugin/sample.plugin/styles.css')
+    const styles = createPluginStyles()
+    styles.register('sample.plugin', '/plugin/sample.plugin/styles.css')
     const Wrapper = createCustomTabKind(
       'sample.plugin',
       pickCustomTabParts({ kind: 'test.kind', component: SampleComponent }),
+      { ...NO_HOST, styles },
     ).pane
     const wrapper = mount(Wrapper, {
       props: { state: {} },

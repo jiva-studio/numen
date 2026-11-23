@@ -4,14 +4,18 @@
  */
 import { createPluginLoader, isPluginEnabledValue, type PluginLoaderDeps } from '../loader'
 import { createPluginStatus } from '../loading'
+import { createPluginStyles, type PluginStyles } from '../styles'
 
-export function createTestPluginLoader(deps: PluginLoaderDeps) {
+/** The deps of a loader, with a stylesheet store of its own where the test gives none. */
+type TestLoaderDeps = Omit<PluginLoaderDeps, 'styles'> & { readonly styles?: PluginStyles }
+
+export function createTestPluginLoader(deps: TestLoaderDeps) {
   const status =
     deps.status ??
     createPluginStatus({
       isEnabled: (id) => isPluginEnabledValue(deps.host.getSetting?.(id, 'enabled')),
     })
-  const loader = createPluginLoader({ ...deps, status })
+  const loader = createPluginLoader({ styles: createPluginStyles(), ...deps, status })
   const { activePlugins } = status.state
   return {
     ...loader,

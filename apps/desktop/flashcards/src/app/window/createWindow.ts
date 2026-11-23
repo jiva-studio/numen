@@ -7,7 +7,9 @@
 import {
   createPluginLoader,
   createWindowHost,
+  createFrameRuntimeLoader,
   createWindowFrameControls,
+  openExternalUrl,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
@@ -42,13 +44,15 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const listPlugins = createPluginLister(clients.pluginService)
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(createWindowFrameControls())
+  const frameRuntime = createFrameRuntimeLoader()
+  const frame = useWindowFrame(createWindowFrameControls(frameRuntime))
   const { vaults, isListing } = useVaults(createVaultLister(clients.vaultsService), (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
   )
   const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), notices)
   const { getSlotLayout } = useSlotLayouts(clients.settingsService)
-  const { host, mountView, titleBarView } = createShellHost({
+  const { host, styles, mountView, titleBarView } = createShellHost({
+    openExternal: (href) => openExternalUrl(href, frameRuntime),
     relations: createWindowRelations(clients.notes),
     getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
@@ -70,19 +74,20 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   })
   const loader = createPluginLoader({
     host,
+    styles,
     ...deps,
   })
   const start = useAppStart(listPlugins, loader)
   useWindowKeys({ tabs, vaults })
   const appearance = useAppearance({ themes: createThemes(clients.theme), listPlugins }, notices)
 
-  usePluginStyles(() => tabs.frontPlugins.value)
+  usePluginStyles(styles, () => tabs.frontPlugins.value)
 
   return {
     tabs,
     vaults: { list: vaults, isListing },
     plugins: start,
-    titleBarView,
+    views: { titleBar: titleBarView, styles },
     notices,
     backgroundTasks,
     mountView,

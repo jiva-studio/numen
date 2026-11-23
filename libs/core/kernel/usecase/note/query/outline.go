@@ -56,7 +56,7 @@ func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, paths
 	if err != nil {
 		return nil, err
 	}
-	tabKinds, err := u.tabKinds.Execute(ctx, v, uniquePaths(near))
+	tabKinds, err := u.tabKinds.ListTabKinds(ctx, v, uniquePaths(near))
 	if err != nil {
 		return nil, err
 	}

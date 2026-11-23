@@ -14,10 +14,13 @@ import { reportError } from './events'
 import { createReaderTabKind, createCustomTabKind, pickCustomTabParts } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
+import type { PluginStyles } from '../styles'
 import type { EditorPlacement, PluginHostDeps } from './types'
 
 /** What a registration of a reader or a tab kind reads of the window. */
-type EntryDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>
+type EntryDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'> & {
+  readonly styles: PluginStyles
+}
 
 import type {
   PluginItemRegistration,
@@ -95,7 +98,11 @@ export function registerReaderEntry(
   requireFreeKind(owners, { pluginId, what: 'reader', id: registration.id })
   const cleanups: (() => void)[] = []
   try {
-    cleanups.push(deps.kinds.registerKind(createReaderTabKind(pluginId, registration, getContext)))
+    cleanups.push(
+      deps.kinds.registerKind(
+        createReaderTabKind(pluginId, registration, { styles: deps.styles, getContext }),
+      ),
+    )
     registerReaderExtensions(deps, item, cleanups)
   } catch (error) {
     undoSteps(cleanups)
@@ -135,7 +142,7 @@ export function registerTabKindEntry(
   const { tabKinds } = owners
   requireFreeKind(owners, { pluginId, what: 'tab kind', id: registration.kind })
   const kind = isDeclaredTabKind(registration)
-    ? createDeclaredTabKind(pluginId, registration)
+    ? createDeclaredTabKind(pluginId, registration, deps.styles)
     : createCustomTabKind(pluginId, pickCustomTabParts(registration), {
         ...deps,
         getContext,

@@ -65,6 +65,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
   const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
   const services = partialServices as PluginServices
   const named: HostParts = {
+    window: { openExternal: () => Promise.resolve() },
     commands: pickDefinedEntries({
       getCommandDeclarations: deps.getCommandDeclarations,
       reportCommandIssue: deps.reportCommandIssue,

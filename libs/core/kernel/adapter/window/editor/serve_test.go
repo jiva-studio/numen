@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -44,7 +45,7 @@ import (
 // noTabKinds gives no note a kind of tab.
 type noTabKinds struct{}
 
-func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]string, error) {
+func (noTabKinds) ListTabKinds(context.Context, domain.Vault, []string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
 

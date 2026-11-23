@@ -8,8 +8,8 @@
 import type { Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
+import type { PluginStyles } from './styles'
 import {
-  removePluginStyles,
   isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
@@ -29,6 +29,7 @@ import {
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
   readonly status?: PluginStatus
+  readonly styles: PluginStyles
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<PluginModule>
@@ -44,6 +45,7 @@ export function isPluginEnabledValue(value: JsonValue | undefined): boolean {
 
 interface DeactivateDeps {
   readonly host: LoaderHost
+  readonly styles: PluginStyles
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, Manifest>
   readonly reportError: (pluginId: string, error: unknown) => void
@@ -52,7 +54,7 @@ interface DeactivateDeps {
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
   const entry = deps.activePlugins.value.get(pluginId)
   if (!entry) {
-    removePluginStyles(pluginId)
+    deps.styles.unregister(pluginId)
     deps.manifests.delete(pluginId)
     deps.host.disposePlugin(pluginId)
     return false
@@ -62,7 +64,7 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
   } catch (error) {
     deps.reportError(pluginId, error)
   } finally {
-    removePluginStyles(pluginId)
+    deps.styles.unregister(pluginId)
     deps.manifests.delete(pluginId)
     deps.host.disposePlugin(pluginId)
     const next = new Map(deps.activePlugins.value)
@@ -107,6 +109,7 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
     importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
     // Without a reporter the failure is already recorded in the failures map.
     reportError: deps.onError ?? (() => undefined),
+    styles: deps.styles,
   }
 }
 
@@ -293,7 +296,7 @@ function createRuntime(
       isRunning.value = false
       settings.close()
       await run.closePlugins()
-      for (const id of status.state.manifests.keys()) removePluginStyles(id)
+      for (const id of status.state.manifests.keys()) deps.styles.unregister(id)
       host.disposeAll()
     },
   }

@@ -19,7 +19,7 @@ import (
 type PluginCommands struct {
 	List   plugincommand.List
 	ByName plugincommand.RunByName
-	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
+	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Runner, func() error, error)
 }
 
 // declaredCommand is a command a plugin manifest declares, run by that plugin's backend.

@@ -49,7 +49,7 @@ func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, l
 	for _, m := range found {
 		paths = append(paths, m.Path)
 	}
-	kinds, err := u.tabKinds.Execute(ctx, v, paths)
+	kinds, err := u.tabKinds.ListTabKinds(ctx, v, paths)
 	if err != nil {
 		return NameResults{}, err
 	}
@@ -93,7 +93,7 @@ func (u *FindText) Execute(ctx context.Context, v domain.Vault, query string, mo
 	if err != nil {
 		return FindTextOutput{}, err
 	}
-	kinds, err := u.tabKinds.Execute(ctx, v, sources)
+	kinds, err := u.tabKinds.ListTabKinds(ctx, v, sources)
 	if err != nil {
 		return FindTextOutput{}, err
 	}

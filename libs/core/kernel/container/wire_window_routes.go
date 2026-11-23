@@ -131,7 +131,7 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 	folders := filewindow.NewFolders(
 		&state.Runtime,
 		file.NewListFolder(file.NewGetFolderEntries(readers, db.NoteQueries()), kinds.list),
-		file.NewListFileKinds(kinds.files, kinds.chooser),
+		file.NewListFileKinds(kinds.files, kinds.choice),
 		file.NewCreateFolder(vaultDeps.Writers, w.page.Writes.AdmitWrite),
 	)
 	moveFile := note.NewMoveFile(placing.Move, db.Sources(), w.page.Writes.AdmitWrite, w.page.Writes)
@@ -157,7 +157,7 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file.ListTabKinds, wake indexing.WriteWake) {
+func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
 	state := w.session
 	queries := vaultQueries(db)
 	writes := w.page.Writes

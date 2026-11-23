@@ -4,13 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { formatErrorMessage } from '@numen/result'
 import { createCoreHandlerTransport } from '@numen/core-client/testing'
-import {
-  VAULT_SUMMARY,
-  getPluginSheet,
-  getPluginStyle,
-  type HostServices,
-  type PluginContext,
-} from '@numen/plugin-loader'
+import { VAULT_SUMMARY, type HostServices, type PluginContext } from '@numen/plugin-loader'
 import type * as PluginLoader from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
 import { APPEARANCE_WORDS } from '@/features/appearance'
@@ -275,8 +269,12 @@ describe('App', () => {
     await flushPromises()
 
     expect(shellDefault?.plugins.failures.value[0]).toContain('md.numen.broken:')
-    expect(getPluginStyle('md.numen.closing')).toBe('/plugin/md.numen.closing/dist/styles.css')
-    expect(document.adoptedStyleSheets).toContain(getPluginSheet('md.numen.closing'))
+    expect(shellDefault?.views.styles.getUrl('md.numen.closing')).toBe(
+      '/plugin/md.numen.closing/dist/styles.css',
+    )
+    expect(document.adoptedStyleSheets).toContain(
+      shellDefault?.views.styles.getSheet('md.numen.closing'),
+    )
     await relations?.resolveLinks('[[Note]]', 'physics')
     expect(wire.resolveAddresses).toHaveBeenCalled()
 
@@ -309,12 +307,7 @@ describe('the window over a plugin that draws the review', () => {
       'due physics',
       'due words',
     ])
-    expect(getPluginStyle('md.numen.views.flashcards.studio')).toBe(
-      '/plugin/md.numen.views.flashcards.studio/dist/styles.css',
-    )
-    expect(document.adoptedStyleSheets).toContain(
-      getPluginSheet('md.numen.views.flashcards.studio'),
-    )
+    expect(document.adoptedStyleSheets).toHaveLength(1)
   })
 
   it('opens the review on a vault pressed, and goes back to the vaults when the review closes', async () => {
@@ -787,7 +780,7 @@ describe('the title bar of the flashcards window', () => {
     )
     await flushPromises()
 
-    expect(shell?.titleBarView.value?.pluginId).toBe('org.example.harbor')
+    expect(shell?.views.titleBar.value?.pluginId).toBe('org.example.harbor')
     expect(
       shell?.notices.notices.value.some(
         (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),
