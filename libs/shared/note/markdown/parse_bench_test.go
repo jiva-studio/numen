@@ -79,7 +79,7 @@ func BenchmarkWikilinksIn(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = WikilinksIn(benchSampleLine)
+		_ = FindWikilinks(benchSampleLine)
 	}
 }
 

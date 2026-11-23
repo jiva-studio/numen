@@ -167,5 +167,5 @@ const maxInt64AsFloat = float64(1 << 63)
 // IsHeadingMatch reports whether a heading of a note is the heading text: the whole of it, without the spaces
 // around it, ignoring case.
 func IsHeadingMatch(heading, text string) bool {
-	return domain.FoldName(strings.TrimSpace(heading)) == domain.FoldName(strings.TrimSpace(text))
+	return domain.NormalizeName(strings.TrimSpace(heading)) == domain.NormalizeName(strings.TrimSpace(text))
 }

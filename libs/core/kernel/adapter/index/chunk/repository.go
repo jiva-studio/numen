@@ -367,7 +367,7 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	if !isRenamed {
 		return nil
 	}
-	if err := exec(ctx, tx, "rename_note", domain.FoldName(domain.Basename(to)), displayName, vault, from); err != nil {
+	if err := exec(ctx, tx, "rename_note", domain.NormalizeName(domain.GetBasename(to)), displayName, vault, from); err != nil {
 		return err
 	}
 	return exec(ctx, tx, "rename_title", vault, from, displayName)

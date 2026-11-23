@@ -11,7 +11,7 @@ import (
 // OpenFromEnv builds the host clients from the process environment. newRecords keeps the floor
 // records in the store folder of a vault.
 func OpenFromEnv(newRecords func(relevance.Folder) relevance.Records) (relevance.Hosts, error) {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return relevance.Hosts{}, err
 	}

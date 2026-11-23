@@ -145,7 +145,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 		return out, err
 	}
 	// The name the cards write is the name the card model is linked by.
-	named := domain.Basename(in.CardModel)
+	named := domain.GetBasename(in.CardModel)
 	one := deckWriter{
 		reader: reader, writer: writer, links: u.links, vault: v,
 		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier, createCardID: newCardIDs(u.entropy),

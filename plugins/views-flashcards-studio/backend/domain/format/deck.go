@@ -216,7 +216,7 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 			continue
 		}
 		// A paragraph that is one wikilink and nothing else names the card model.
-		found := markdown.WikilinksIn(line)
+		found := markdown.FindWikilinks(line)
 		if len(found) == 1 && found[0].At == 0 && found[0].To == len(line) &&
 			isParagraphEnd(body, next, to) {
 			return found[0].Inside, next

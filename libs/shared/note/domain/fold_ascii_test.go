@@ -9,12 +9,12 @@ import (
 func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIByte(t *testing.T) {
 	for c := range utf8.RuneSelf {
 		name := string([]byte{byte(c)})
-		if got, want := FoldName(name), getGeneralFold(name); got != want {
-			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
+		if got, want := NormalizeName(name), getGeneralFold(name); got != want {
+			t.Errorf("NormalizeName(%q) = %q, want %q", name, got, want)
 		}
 		wrapped := "a" + name + "Z" + name
-		if got, want := FoldName(wrapped), getGeneralFold(wrapped); got != want {
-			t.Errorf("FoldName(%q) = %q, want %q", wrapped, got, want)
+		if got, want := NormalizeName(wrapped), getGeneralFold(wrapped); got != want {
+			t.Errorf("NormalizeName(%q) = %q, want %q", wrapped, got, want)
 		}
 	}
 }
@@ -23,8 +23,8 @@ func TestTheASCIIFoldIsTheGeneralFoldForEveryASCIIPair(t *testing.T) {
 	for a := range utf8.RuneSelf {
 		for b := range utf8.RuneSelf {
 			name := string([]byte{byte(a), byte(b)})
-			if got, want := FoldName(name), getGeneralFold(name); got != want {
-				t.Fatalf("FoldName(%q) = %q, want %q", name, got, want)
+			if got, want := NormalizeName(name), getGeneralFold(name); got != want {
+				t.Fatalf("NormalizeName(%q) = %q, want %q", name, got, want)
 			}
 		}
 	}
@@ -56,20 +56,20 @@ func TestTheFoldIsTheGeneralFoldForNamesBeyondASCII(t *testing.T) {
 		strings.Repeat("Ab", 100) + "ß",
 	}
 	for _, name := range names {
-		if got, want := FoldName(name), getGeneralFold(name); got != want {
-			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
+		if got, want := NormalizeName(name), getGeneralFold(name); got != want {
+			t.Errorf("NormalizeName(%q) = %q, want %q", name, got, want)
 		}
 	}
 }
 
 func TestAnASCIINameAlreadyFoldedIsReturnedWithoutAllocating(t *testing.T) {
 	name := strings.Repeat("folded name-1_", 4)
-	allocs := testing.AllocsPerRun(100, func() { _ = FoldName(name) })
+	allocs := testing.AllocsPerRun(100, func() { _ = NormalizeName(name) })
 	if allocs != 0 {
 		t.Errorf("FoldName allocated %v times for a folded ASCII name", allocs)
 	}
-	if got := FoldName(name); got != name {
-		t.Errorf("FoldName(%q) = %q", name, got)
+	if got := NormalizeName(name); got != name {
+		t.Errorf("NormalizeName(%q) = %q", name, got)
 	}
 	if folded, ok := getASCIIFold("AbC"); !ok || folded != "abc" {
 		t.Errorf("foldASCII(\"AbC\") = %q, %v; want \"abc\", true", folded, ok)

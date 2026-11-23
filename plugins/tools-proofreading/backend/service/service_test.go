@@ -46,7 +46,7 @@ func newScene(t *testing.T) *scene {
 		settings: settings.NewStore(),
 		script:   func(string) string { return "" },
 	}
-	s.texts.File(scanPath, []byte("the scan"))
+	s.texts.WriteFile(scanPath, []byte("the scan"))
 	store := vault.Store()
 	s.texts.SetStore(PluginID, store)
 	complete := func(_ context.Context, request *llm.CompleteRequest, _ connection.Priority) (*llm.CompleteResult, error) {
@@ -72,7 +72,7 @@ func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	if err := host.WriteText(t.Context(), s.texts.GetStore(ocrID), "recognition.jsonl", parts); err != nil {
 		t.Fatal(err)
 	}
-	version, err := s.texts.As(ocrID).PutVersion(t.Context(), host.TextPut{
+	version, err := s.texts.UsePlugin(ocrID).PutVersion(t.Context(), host.TextPut{
 		Path: scanPath, Key: "recognition", Kind: "recognition", InputHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
 	})
 	if err != nil {

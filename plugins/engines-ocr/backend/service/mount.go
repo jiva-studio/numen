@@ -41,7 +41,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 // Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
 // versions and the queue through the host the environment names. The recognizer closes with s.
 func (a *App) Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed
 	})
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		auto.Close()
 		launcher.Close()
 		return holder.Close()

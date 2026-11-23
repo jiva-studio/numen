@@ -87,8 +87,8 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 		if body[pos[2]:pos[3]] != from {
 			continue
 		}
-		// gomutants:disable-next-line BRANCH_IF reason="SpliceBody on a document whose frontmatter SetFields just succeeded does not fail."
-		if err := f.doc.SpliceBody(pos[0], pos[1], content); err != nil {
+		// gomutants:disable-next-line BRANCH_IF reason="ReplaceBody on a document whose frontmatter SetFields just succeeded does not fail."
+		if err := f.doc.ReplaceBody(pos[0], pos[1], content); err != nil {
 			return err
 		}
 	}
@@ -100,7 +100,7 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 func (f *CardModelFile) AddTemplate(template CardTemplate) error {
 	body := []byte(f.doc.Body())
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, formatTemplate(template)))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, formatTemplate(template)))
 }
 
 func formatTemplate(template CardTemplate) string {

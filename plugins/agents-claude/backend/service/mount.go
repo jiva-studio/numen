@@ -13,7 +13,7 @@ import (
 // names. The runs the plugin started end when s closes.
 func Mount(s *server.Server) error {
 	var host task.Tools
-	if endpoint, err := hostcall.FromEnv(); err == nil {
+	if endpoint, err := hostcall.ReadEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
 	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isAsync: true})
@@ -26,6 +26,6 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, a *agent) error {
 	s.SetUpdateConfig(a.settings.Apply)
 	connection.Mount(s, a.Provider())
-	s.OnClose(a.tasks.Close)
+	s.AddCloser(a.tasks.Close)
 	return nil
 }

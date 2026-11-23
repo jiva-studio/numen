@@ -100,7 +100,7 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 		"study/Verbs | strong.md",
 		"study/#1.md",
 	} {
-		target := named{domain.Basename(path): {path}}
+		target := named{domain.GetBasename(path): {path}}
 
 		to, err := edit.GetAddress(t.Context(), target, "v", path)
 		if !errors.Is(err, edit.ErrUnaddressable) {

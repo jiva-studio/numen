@@ -60,7 +60,7 @@ func (u *UseCase) score(ctx context.Context, query notescore.Query, paths []stri
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		title := domain.Basename(path)
+		title := domain.GetBasename(path)
 		if ref, ok := refs[path]; ok && ref.Title != "" {
 			title = ref.Title
 		}

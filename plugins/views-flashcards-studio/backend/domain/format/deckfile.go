@@ -66,7 +66,7 @@ func (f *DeckFile) WriteIdentifier(identifier string) (bool, error) {
 }
 
 func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
-	if _, carried := doc.Identifier(); carried {
+	if _, carried := doc.GetIdentifier(); carried {
 		return false, nil
 	}
 	return true, doc.SetIdentifier(identifier)
@@ -102,14 +102,14 @@ func (f *DeckFile) SetValue(card ID, field, value string) error {
 	}
 	for _, v := range span.values {
 		if v.field == field {
-			return f.doc.SpliceBody(v.from, v.to, formatSection(value, v.to == len(body)))
+			return f.doc.ReplaceBody(v.from, v.to, formatSection(value, v.to == len(body)))
 		}
 	}
 	block := buildHeadingLine(FieldLevel, collapseToLine(field))
 	if text := trimBlankLines(markdown.Normalize(value)); text != "" {
 		block += "\n\n" + text
 	}
-	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
+	return f.doc.ReplaceBody(span.end, span.end, insert(body, span.end, block))
 }
 
 // RemoveValue removes one field from a card: its heading line and its value. The other fields
@@ -139,7 +139,7 @@ func (f *DeckFile) RemoveValue(card ID, field string) error {
 				content = "\n"
 			}
 		}
-		return f.doc.SpliceBody(head, to, content)
+		return f.doc.ReplaceBody(head, to, content)
 	}
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
@@ -155,9 +155,9 @@ func (f *DeckFile) SetCardModel(card ID, name string) error {
 	}
 	link := "[[" + collapseToLine(name) + "]]"
 	if span.linkTo > span.linkFrom {
-		return f.doc.SpliceBody(span.linkFrom, span.linkTo, link)
+		return f.doc.ReplaceBody(span.linkFrom, span.linkTo, link)
 	}
-	return f.doc.SpliceBody(span.from, span.from, "\n"+link+"\n")
+	return f.doc.ReplaceBody(span.from, span.from, "\n"+link+"\n")
 }
 
 // RemoveCard removes a card from the deck: its heading, its card model link
@@ -180,7 +180,7 @@ func (f *DeckFile) RemoveCard(card ID) error {
 			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, content)
+	return f.doc.ReplaceBody(head, to, content)
 }
 
 func (f *DeckFile) getCardSpan(body []byte, card ID) (cardSpan, error) {
@@ -215,7 +215,7 @@ func (f *DeckFile) RenameSection(index int, name string) error {
 	if from := heads[index].from; from > 0 && body[from-1] == '\n' {
 		line += "\n"
 	}
-	return f.doc.SpliceBody(heads[index].head, heads[index].from, line)
+	return f.doc.ReplaceBody(heads[index].head, heads[index].from, line)
 }
 
 // RemoveSection removes the heading of the section at one index. A section is
@@ -242,7 +242,7 @@ func (f *DeckFile) RemoveSection(index int) error {
 			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, content)
+	return f.doc.ReplaceBody(head, to, content)
 }
 
 // AddSection appends a section at the end of the deck. The prose after the
@@ -254,14 +254,14 @@ func (f *DeckFile) AddSection(s Section) error {
 		blocks = append(blocks, lead)
 	}
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
 }
 
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, buildCardBlock(card)))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, buildCardBlock(card)))
 }
 
 // AddCardUnder writes a card at the end of the section standing at one place in
@@ -277,7 +277,7 @@ func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 	if sectionIndex+1 < len(heads) {
 		content = heads[sectionIndex+1].head
 	}
-	return f.doc.SpliceBody(content, content, insert(body, content, buildCardBlock(card)))
+	return f.doc.ReplaceBody(content, content, insert(body, content, buildCardBlock(card)))
 }
 
 func buildCardBlock(card Card) string {
@@ -395,7 +395,7 @@ func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to st
 		if head.from < len(body) {
 			line += "\n"
 		}
-		if err := f.doc.SpliceBody(head.head, head.from, line); err != nil {
+		if err := f.doc.ReplaceBody(head.head, head.from, line); err != nil {
 			return 0, err
 		}
 	}

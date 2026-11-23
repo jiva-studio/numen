@@ -187,7 +187,7 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 	if maps.Equal(p.Load, was.Load) {
 		return nil
 	}
-	entries, mapping := doc.EntryNames(loadKey)
+	entries, mapping := doc.ListEntryNames(loadKey)
 	// A `load` written in any form other than a week of days belongs to the user
 	// and is kept unchanged.
 	if !mapping {

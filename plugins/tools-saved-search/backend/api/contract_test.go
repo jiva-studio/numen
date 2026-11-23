@@ -12,16 +12,16 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		api.MethodGetResults: {Request: func() any { return &api.GetResultsRequest{} }, Response: func() any { return &api.GetResultsResponse{} }},
+		api.MethodGetResults: {CreateRequest: func() any { return &api.GetResultsRequest{} }, CreateResponse: func() any { return &api.GetResultsResponse{} }},
 		api.MethodWatchResults: {
-			Request: func() any { return &api.WatchResultsRequest{} }, Response: func() any { return &api.ResultsChange{} },
+			CreateRequest: func() any { return &api.WatchResultsRequest{} }, CreateResponse: func() any { return &api.ResultsChange{} },
 		},
 		api.MethodUpdateSearch: {
-			Request: func() any { return &api.UpdateSearchRequest{} }, Response: func() any { return &api.UpdateSearchResponse{} },
+			CreateRequest: func() any { return &api.UpdateSearchRequest{} }, CreateResponse: func() any { return &api.UpdateSearchResponse{} },
 		},
 		api.MethodListSearchFunctions: {
-			Request:  func() any { return &api.ListSearchFunctionsRequest{} },
-			Response: func() any { return &api.ListSearchFunctionsResponse{} },
+			CreateRequest:  func() any { return &api.ListSearchFunctionsRequest{} },
+			CreateResponse: func() any { return &api.ListSearchFunctionsResponse{} },
 		},
 	}
 }

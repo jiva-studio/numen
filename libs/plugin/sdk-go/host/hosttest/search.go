@@ -35,16 +35,16 @@ type Search struct {
 
 // searchHost is the index of every vault one host keeps.
 type searchHost struct {
-	mu      sync.Mutex
-	current domain.VaultID
-	hasShow bool
-	vaults  map[domain.VaultID]*searchVault
-	model   *SearchModel
-	embed   func(text string) []float32
-	failure error
-	denied  map[string]bool
-	embeds  [][]string
-	cosine  func(query, chunk []float32) float64
+	mu            sync.Mutex
+	current       domain.VaultID
+	hasShow       bool
+	vaults        map[domain.VaultID]*searchVault
+	model         *SearchModel
+	embed         func(text string) []float32
+	failure       error
+	denied        map[string]bool
+	embeds        [][]string
+	computeCosine func(query, chunk []float32) float64
 }
 
 // SampledChunk is a small chunk of the index in the fake: the vector it carries and the path of the
@@ -143,7 +143,7 @@ func (s *Search) SetSampledChunks(recipe string, chunks []SampledChunk) {
 func (s *Search) SetCosine(cosine func(query, chunk []float32) float64) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	s.all.cosine = cosine
+	s.all.computeCosine = cosine
 }
 
 // SetProgress is how many chunks of the vault can carry a vector, and how many do.
@@ -165,8 +165,8 @@ func (s *Search) SetIndexStats(stats host.IndexStats) {
 	}
 }
 
-// StoredFloor is the floor stored for the vault under the recipe, and false where none is.
-func (s *Search) StoredFloor(recipe string) (float64, bool) {
+// GetStoredFloor returns the floor stored for the vault under the recipe, and false where none is.
+func (s *Search) GetStoredFloor(recipe string) (float64, bool) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	one, ok := s.lookupVaultLocked()
@@ -366,10 +366,10 @@ func (s *Search) compareRowLocked(query host.SimilarityQuery, chunks []SampledCh
 }
 
 func (s *Search) compareLocked(query, chunk []float32) float64 {
-	if s.all.cosine != nil {
-		return s.all.cosine(query, chunk)
+	if s.all.computeCosine != nil {
+		return s.all.computeCosine(query, chunk)
 	}
-	return cosineOf(query, chunk)
+	return computeCosine(query, chunk)
 }
 
 func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFloor, error) {
@@ -423,7 +423,7 @@ func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64)
 	return nil
 }
 
-func cosineOf(query, chunk []float32) float64 {
+func computeCosine(query, chunk []float32) float64 {
 	if len(query) != len(chunk) || len(query) == 0 {
 		return 0
 	}

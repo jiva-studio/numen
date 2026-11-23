@@ -40,7 +40,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 // was started for. The model is the mock one where NUMEN_TEST_MOCK_ML is "true". The transcriptions and
 // the model end with s.
 func (a *App) Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		auto.Close()
 		transcriber.Close()
 		return holder.Close()

@@ -98,7 +98,7 @@ func (v textVault) Create(ctx context.Context, path string, content []byte) erro
 		return err
 	}
 	if v.texts != nil {
-		v.texts.File(path, content)
+		v.texts.WriteFile(path, content)
 	}
 	return nil
 }
@@ -135,7 +135,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
 	chemistry := hosttest.New("Chemistry")
-	vault.Beside(chemistry)
+	vault.LinkBeside(chemistry)
 	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
@@ -347,7 +347,7 @@ func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 	if !strings.Contains(out.Error, "503") || out.HasText {
 		t.Errorf("url_import returned %+v, want the failure of the fetch", out)
 	}
-	if _, isKept := s.vault.Content(out.Path); out.Path == "" || !isKept {
+	if _, isKept := s.vault.ReadContent(out.Path); out.Path == "" || !isKept {
 		t.Errorf("the note %q is not in the vault after the failed fetch", out.Path)
 	}
 }

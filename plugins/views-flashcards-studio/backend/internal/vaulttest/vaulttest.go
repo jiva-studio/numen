@@ -51,7 +51,7 @@ type Env struct {
 // New is a vault of the notes given.
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
-	host := hosttest.OnDisk(tb, createVaultName(tb), notes)
+	host := hosttest.CreateOnDisk(tb, createVaultName(tb), notes)
 	return BuildEnv(host)
 }
 
@@ -98,8 +98,8 @@ func NewInstallation() Installation {
 // Add makes a vault of the notes given, known to the host.
 func (i Installation) Add(tb testing.TB, notes map[string]string) domain.Vault {
 	tb.Helper()
-	added := hosttest.OnDisk(tb, createVaultName(tb), notes)
-	i.Host.Beside(added)
+	added := hosttest.CreateOnDisk(tb, createVaultName(tb), notes)
+	i.Host.LinkBeside(added)
 	i.vaults[added.Vault().ID] = added
 	return added.Vault()
 }

@@ -72,7 +72,7 @@ func (t *Tools) listCardCardModels(ctx context.Context, in cardModelListInput) (
 	res := cardModelListOutput{CardModels: nil, Total: count}
 	for _, s := range cardModels {
 		res.CardModels = append(res.CardModels, CardModel{
-			Path: s.Path, Name: domain.Basename(s.Path), Title: s.Title, Fields: s.Fields,
+			Path: s.Path, Name: domain.GetBasename(s.Path), Title: s.Title, Fields: s.Fields,
 		})
 	}
 	return res, nil
@@ -121,7 +121,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 	}
 	title := s.Title
 	if title == "" {
-		title = domain.Basename(in.Path)
+		title = domain.GetBasename(in.Path)
 	}
 	fields := s.Body.Fields
 	if fields == nil {

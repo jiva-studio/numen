@@ -25,7 +25,7 @@ var ErrUnaddressable = errors.New("no link can address a note with this name")
 // An exact path from the root wins over a path relative to the linking note, so a
 // subfolder note named like a root note is reachable only by its path.
 func GetAddress(ctx context.Context, names NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
-	name := domain.Basename(path)
+	name := domain.GetBasename(path)
 	if name == "" {
 		return domain.Address{}, errors.New("a link needs a note to go to")
 	}

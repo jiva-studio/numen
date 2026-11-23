@@ -48,8 +48,8 @@ type OptionsBy struct {
 // name in place of a setting, as the `app.platform` of the conditions of the window does.
 const FactPlatform = "app.platform"
 
-// Facts are the names a condition may name in place of a setting, each with the values it holds.
-func Facts() map[string][]string {
+// GetFacts returns the names a condition may name in place of a setting, each with the values it holds.
+func GetFacts() map[string][]string {
 	return map[string][]string{FactPlatform: {"darwin", "linux", "windows"}}
 }
 

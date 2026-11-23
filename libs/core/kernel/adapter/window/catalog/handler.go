@@ -92,7 +92,7 @@ func (h *Handler) GetCatalogEntry(
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	sourceErrors := newWireSourceErrors(catalog.SourceErrors(err))
+	sourceErrors := newWireSourceErrors(catalog.FindSourceErrors(err))
 	if errors.Is(err, catalog.ErrNotFound) {
 		return connect.NewResponse(&v1.GetCatalogEntryResponse{Error: newWireErrorCode(err), SourceErrors: sourceErrors}), nil
 	}
@@ -111,7 +111,7 @@ func (h *Handler) FindCatalogEntryByTabKind(
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	sourceErrors := newWireSourceErrors(catalog.SourceErrors(err))
+	sourceErrors := newWireSourceErrors(catalog.FindSourceErrors(err))
 	if errors.Is(err, catalog.ErrNotFound) {
 		return connect.NewResponse(&v1.FindCatalogEntryByTabKindResponse{Error: newWireErrorCode(err), SourceErrors: sourceErrors}), nil
 	}

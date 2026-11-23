@@ -18,7 +18,7 @@ type DependencyClient struct {
 }
 
 func NewDependencyClient(endpoint hostcall.Endpoint) *DependencyClient {
-	return &DependencyClient{rpc: numenv1connect.NewHostDependencyServiceClient(transport.HTTPClient(), endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &DependencyClient{rpc: numenv1connect.NewHostDependencyServiceClient(transport.GetHTTPClient(), endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 func (c *DependencyClient) FetchModelFile(ctx context.Context, address, digest string) (string, error) {

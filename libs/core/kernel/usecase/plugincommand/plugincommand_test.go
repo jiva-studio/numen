@@ -27,7 +27,7 @@ func (f fileTypes) GetContentType(name string) domain.ContentType {
 func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 	var out []string
 	for extension, one := range f {
-		if mask.Matches(one) {
+		if mask.IsMatch(one) {
 			out = append(out, extension[1:])
 		}
 	}

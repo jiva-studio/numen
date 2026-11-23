@@ -58,7 +58,7 @@ var (
 // NewClientFromEnv connects to the host the process was started for: its endpoint and the token identifying
 // the plugin come from the environment. It returns hostcall.ErrNoHost where the environment names no host.
 func NewClientFromEnv() (*Client, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -66,18 +66,18 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return newClientOver(transport.HTTPClient(), endpoint)
+	return newClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
-		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
 	}
 }
 

@@ -15,16 +15,16 @@ import (
 // catalog.StateInstalled or catalog.StateDisabled is a plugin on disk in that state.
 type Factory func(t *testing.T, entries []catalog.Entry) catalog.Source
 
-// OnDiskEntries are entries of plugins on disk, one enabled and one disabled, with contributions.
-func OnDiskEntries() []catalog.Entry {
+// ListOnDiskEntries returns the entries of plugins on disk, one enabled and one disabled, with contributions.
+func ListOnDiskEntries() []catalog.Entry {
 	return []catalog.Entry{
 		sampleEntry("org.example.alpha", "1.0.0", catalog.StateInstalled, "views", "alpha"),
 		sampleEntry("org.example.beta", "2.1.0", catalog.StateDisabled, "readers", "beta"),
 	}
 }
 
-// AvailableEntries are entries of plugins a source offers and that are not on disk.
-func AvailableEntries() []catalog.Entry {
+// ListAvailableEntries returns the entries of plugins a source offers and that are not on disk.
+func ListAvailableEntries() []catalog.Entry {
 	return []catalog.Entry{
 		sampleEntry("org.example.gamma", "0.3.0", catalog.StateAvailable, "tools", "gamma"),
 		sampleEntry("org.example.delta", "4.0.0", catalog.StateAvailable, "views", "delta"),

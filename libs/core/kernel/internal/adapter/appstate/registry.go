@@ -175,7 +175,7 @@ func (r *VaultRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error)
 		return domain.Vault{}, false, err
 	}
 	for _, v := range f.Vaults {
-		if string(v.ID) == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
+		if string(v.ID) == nameOrPath || domain.NormalizeName(v.Name) == domain.NormalizeName(nameOrPath) || v.Path == abs {
 			return domain.Vault(v), true, nil
 		}
 	}
