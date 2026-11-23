@@ -38,25 +38,31 @@ func (h *Handler) WatchTabLinks(
 		if err := send(convertSnapshotToWire(watch.Initial)); err != nil {
 			return err
 		}
-		for {
-			select {
-			case <-ctx.Done():
+		return sendTabLinkEvents(ctx, watch, r.Msg.GetWindowId(), send)
+	})
+}
+
+func sendTabLinkEvents(
+	ctx context.Context, watch *tablinks.Watch, windowID string, send func(*v1.WatchTabLinksResponse) error,
+) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-watch.Stop:
+			return nil
+		case event, open := <-watch.Events:
+			if !open {
 				return nil
-			case <-watch.Stop:
-				return nil
-			case event, open := <-watch.Events:
-				if !open {
-					return nil
-				}
-				if !event.IsFor(r.Msg.GetWindowId()) {
-					continue
-				}
-				if err := send(convertEventToWire(event)); err != nil {
-					return err
-				}
+			}
+			if !event.IsFor(windowID) {
+				continue
+			}
+			if err := send(convertEventToWire(event)); err != nil {
+				return err
 			}
 		}
-	})
+	}
 }
 
 func (h *Handler) CancelWatchTabLinks(

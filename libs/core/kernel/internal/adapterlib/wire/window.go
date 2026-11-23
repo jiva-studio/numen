@@ -102,20 +102,26 @@ func (w *Window) WatchWindowClose(
 		if err := send(&v1.WatchWindowCloseResponse{Token: token}); err != nil {
 			return err
 		}
-		for {
-			select {
-			case <-ctx.Done():
+		return sendFlushRequests(ctx, notified, send)
+	})
+}
+
+func sendFlushRequests(
+	ctx context.Context, notified <-chan string, send func(*v1.WatchWindowCloseResponse) error,
+) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case request, isOpen := <-notified:
+			if !isOpen {
 				return nil
-			case request, isOpen := <-notified:
-				if !isOpen {
-					return nil
-				}
-				if err := send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
-					return err
-				}
+			}
+			if err := send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
+				return err
 			}
 		}
-	})
+	}
 }
 
 // ReportPendingWork records the flush state a client reports.

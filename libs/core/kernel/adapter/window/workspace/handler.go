@@ -173,27 +173,35 @@ func (h *Handler) WatchFocus(
 	defer stopTabIDs()
 
 	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchFocusResponse) error) error {
-		for {
-			select {
-			case <-ctx.Done():
-				return nil
-			case id, isOpen := <-tabIDs:
-				if !isOpen {
-					return nil
-				}
-				if err := send(&v1.WatchFocusResponse{TabId: id}); err != nil {
-					return err
-				}
-			case pos, isOpen := <-places:
-				if !isOpen {
-					return nil
-				}
-				if err := send(&v1.WatchFocusResponse{Path: pos.Path, Ranges: convertByteRangesToWire(pos.Ranges)}); err != nil {
-					return err
-				}
-			}
-		}
+		return sendFocus(ctx, places, tabIDs, send)
 	})
+}
+
+func sendFocus(
+	ctx context.Context, places <-chan domain.Place, tabIDs <-chan string, send func(*v1.WatchFocusResponse) error,
+) error {
+	for {
+		message, isOpen := receiveFocus(ctx, places, tabIDs)
+		if !isOpen {
+			return nil
+		}
+		if err := send(message); err != nil {
+			return err
+		}
+	}
+}
+
+func receiveFocus(
+	ctx context.Context, places <-chan domain.Place, tabIDs <-chan string,
+) (*v1.WatchFocusResponse, bool) {
+	select {
+	case <-ctx.Done():
+		return nil, false
+	case id, isOpen := <-tabIDs:
+		return &v1.WatchFocusResponse{TabId: id}, isOpen
+	case pos, isOpen := <-places:
+		return &v1.WatchFocusResponse{Path: pos.Path, Ranges: convertByteRangesToWire(pos.Ranges)}, isOpen
+	}
 }
 
 func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {

@@ -249,23 +249,29 @@ func (h *Values) WatchSettings(
 	changes, stop := h.watch.Execute()
 	defer stop()
 	return wire.RunWatch(ctx, out, keepalive, nil, func(ctx context.Context, send func(*v1.WatchSettingsResponse) error) error {
-		if err := send(&v1.WatchSettingsResponse{}); err != nil {
-			return err
-		}
-		for {
-			select {
-			case <-ctx.Done():
+		return sendSettingChanges(ctx, changes, send)
+	})
+}
+
+func sendSettingChanges(
+	ctx context.Context, changes <-chan []settingsdomain.Setting, send func(*v1.WatchSettingsResponse) error,
+) error {
+	if err := send(&v1.WatchSettingsResponse{}); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case batch, open := <-changes:
+			if !open {
 				return nil
-			case batch, open := <-changes:
-				if !open {
-					return nil
-				}
-				if err := send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
-					return err
-				}
+			}
+			if err := send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
+				return err
 			}
 		}
-	})
+	}
 }
 
 const keepalive = 30 * time.Second
