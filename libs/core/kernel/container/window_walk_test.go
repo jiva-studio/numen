@@ -34,7 +34,7 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	if _, err := cfg.EnsureVault(cfg.Resources, root, "alpha", false); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "", Out: os.Stderr})
+	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowRequest{Named: "", Out: os.Stderr})
 	if err != nil {
 		t.Fatal(err)
 	}

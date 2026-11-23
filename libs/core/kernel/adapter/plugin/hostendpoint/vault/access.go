@@ -88,7 +88,7 @@ type LinkEditor interface {
 	// WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes, one result per
 	// write in order. A note that fails costs the others nothing; the notes of a canceled call get
 	// plugin.ErrNotAttempted.
-	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error)
+	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterResult, error)
 }
 
 // Watch tells of the moves in the vaults of the installation.

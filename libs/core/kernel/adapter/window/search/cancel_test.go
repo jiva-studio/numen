@@ -27,11 +27,11 @@ func newWaitingSource() waitingSource {
 	return waitingSource{started: make(chan struct{}), ended: make(chan error, 1)}
 }
 
-func (s waitingSource) Rank(ctx context.Context, _ domain.Vault, _ search.Query) (search.Ranking, error) {
+func (s waitingSource) Rank(ctx context.Context, _ domain.Vault, _ search.Query) (search.ParticipantResults, error) {
 	close(s.started)
 	<-ctx.Done()
 	s.ended <- ctx.Err()
-	return search.Ranking{}, ctx.Err()
+	return search.ParticipantResults{}, ctx.Err()
 }
 
 // waitingNames is a name index that answers only when the context of its call ends.

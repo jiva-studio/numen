@@ -7,7 +7,7 @@ import (
 )
 
 func TestReachedSurvivesEncoding(t *testing.T) {
-	raw, err := transcript.Reached{MS: 61000, Size: 2048}.Encode()
+	raw, err := transcript.PartialProgress{MS: 61000, Size: 2048}.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2,8 +2,8 @@ package reasoning
 
 import "strings"
 
-// Listed is a model as a program lists it.
-type Listed struct {
+// ListedModel is a model as a program lists it.
+type ListedModel struct {
 	Name  string
 	Title string
 }
@@ -47,10 +47,10 @@ func SplitTitle(title string) (string, string) {
 
 // GroupFamilies gathers the models that differ by the level in their titles into one family each, in the order
 // the first of each is listed. A title standing alone with a level in it stays as it was listed.
-func GroupFamilies(models []Listed) []Family {
+func GroupFamilies(models []ListedModel) []Family {
 	type group struct {
 		base     string
-		listings []Listed
+		listings []ListedModel
 		levels   []string
 	}
 	var groups []*group
@@ -58,7 +58,7 @@ func GroupFamilies(models []Listed) []Family {
 	for _, one := range models {
 		base, level := SplitTitle(one.Title)
 		if level == "" {
-			groups = append(groups, &group{base: one.Title, listings: []Listed{one}, levels: []string{""}})
+			groups = append(groups, &group{base: one.Title, listings: []ListedModel{one}, levels: []string{""}})
 			continue
 		}
 		found := byBase[base]
@@ -85,7 +85,7 @@ func GroupFamilies(models []Listed) []Family {
 	return families
 }
 
-func newFamily(title string, listings []Listed, names []string) Family {
+func newFamily(title string, listings []ListedModel, names []string) Family {
 	levels := NewLevels(names...)
 	Sort(levels)
 	variants := make(map[string]string, len(listings))
@@ -98,7 +98,7 @@ func newFamily(title string, listings []Listed, names []string) Family {
 	}
 }
 
-func getFamilyName(listings []Listed, levels []string) string {
+func getFamilyName(listings []ListedModel, levels []string) string {
 	shared := ""
 	for place, one := range listings {
 		trimmed, found := strings.CutSuffix(one.Name, "-"+levels[place])

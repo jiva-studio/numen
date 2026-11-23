@@ -42,8 +42,8 @@ type profilePusher interface {
 type settingPlugins interface {
 	getPluginSettings(pluginID string) map[string]any
 	getRequirementIDs(pluginID string) []string
-	listEnabledPlugins() []manifest.Discovered
-	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
+	listEnabledPlugins() []manifest.DiscoveredPlugin
+	getKnownPlugin(pluginID string) (manifest.DiscoveredPlugin, bool)
 }
 
 // Settings keeps in memory the values the user stores for the settings of the plugins. Writing a

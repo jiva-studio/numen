@@ -172,8 +172,8 @@ func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.File
 	return found, nil
 }
 
-func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult, onProgress func(vaultreading.ScanResult)) grouping {
-	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
+func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult, onProgress func(vaultreading.ScanResult)) grouper {
+	return grouper{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("%d notes of %s, %s to %s, cannot be indexed: %w",
@@ -188,7 +188,7 @@ func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult, onProgress 
 }
 
 func (u Scan) indexChanged(
-	ctx context.Context, walk vaultWalk, group *grouping, res *vaultreading.ScanResult,
+	ctx context.Context, walk vaultWalk, group *grouper, res *vaultreading.ScanResult,
 ) (map[string]bool, error) {
 	reader, found, indexed, recutPaths := walk.reader, walk.found, walk.recognized, walk.recutPaths
 	observed := make(map[string]bool, len(indexed))

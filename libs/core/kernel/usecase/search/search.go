@@ -75,9 +75,9 @@ type Query struct {
 	Floor      float64
 }
 
-// Ranking is the answer of one participant: search results best first. In a leading ranking the first
+// ParticipantResults is the answer of one participant: search results best first. In a leading ranking the first
 // search result of a source is shown before the other search results of that source.
-type Ranking struct {
+type ParticipantResults struct {
 	Results   []domain.SearchResult
 	IsLeading bool
 }
@@ -85,17 +85,17 @@ type Ranking struct {
 // Participant answers a query with a ranking of search results. The words and the section names of the index
 // are participants of the core; a search source of a plugin is another, and all are merged the same way.
 type Participant interface {
-	Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error)
+	Rank(ctx context.Context, v domain.Vault, q Query) (ParticipantResults, error)
 }
 
-// VaultPreparing prepares a Search for a vault once it has been found.
-type VaultPreparing = func(ctx context.Context, v domain.Vault) (Search, error)
+// VaultPreparer prepares a Search for a vault once it has been found.
+type VaultPreparer = func(ctx context.Context, v domain.Vault) (Search, error)
 
 // Search answers a query within one vault. Without a search source only the participants of the core run.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
 	lookup         vaultport.VaultLookup
-	prepare        VaultPreparing
+	prepare        VaultPreparer
 	words          Participant
 	names          Participant
 	sources        []externalSource
@@ -107,7 +107,7 @@ type Search struct {
 }
 
 // NewByName creates a Search that resolves the vault and prepares the search over it.
-func NewByName(lookup vaultport.VaultLookup, prepare VaultPreparing) Search {
+func NewByName(lookup vaultport.VaultLookup, prepare VaultPreparer) Search {
 	base := Search{lookup: lookup}
 	if prepare == nil {
 		prepare = func(context.Context, domain.Vault) (Search, error) { return base, nil }
@@ -178,33 +178,33 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	return u.readForQuery(ctx, v, query, mergeScores(collapse(merge(rankings...), rankings, p.Each, p.Limit), rankings))
 }
 
-// asked is one participant a search asks, with the number of search results it ranks and whether its failure
+// participantRun is one participant a search asks, with the number of search results it ranks and whether its failure
 // fails the search.
-type asked struct {
+type participantRun struct {
 	participant Participant
 	limit       int
 	source      *externalSource
 }
 
-func (u Search) getAskedParticipants(p Parameters) []asked {
-	var out []asked
+func (u Search) getAskedParticipants(p Parameters) []participantRun {
+	var out []participantRun
 	if p.Lexical > 0 {
-		out = append(out, asked{participant: u.words, limit: p.Lexical})
+		out = append(out, participantRun{participant: u.words, limit: p.Lexical})
 	}
 	if p.Named > 0 {
-		out = append(out, asked{participant: u.names, limit: p.Named})
+		out = append(out, participantRun{participant: u.names, limit: p.Named})
 	}
 	if p.Sources > 0 {
 		for i := range u.sources {
-			out = append(out, asked{source: &u.sources[i], limit: p.Sources})
+			out = append(out, participantRun{source: &u.sources[i], limit: p.Sources})
 		}
 	}
 	return out
 }
 
-func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Parameters) ([]Ranking, error) {
+func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Parameters) ([]ParticipantResults, error) {
 	asks := u.getAskedParticipants(p)
-	answers := make([]*Ranking, len(asks))
+	answers := make([]*ParticipantResults, len(asks))
 	g, gctx := errgroup.WithContext(ctx)
 	for i, one := range asks {
 		g.Go(func() error {
@@ -222,7 +222,7 @@ func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Par
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	out := make([]Ranking, 0, len(answers))
+	out := make([]ParticipantResults, 0, len(answers))
 	for _, one := range answers {
 		if one != nil {
 			out = append(out, *one)
@@ -231,7 +231,7 @@ func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Par
 	return out, nil
 }
 
-func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*Ranking, error) {
+func (u Search) rank(ctx context.Context, v domain.Vault, one participantRun, q Query) (*ParticipantResults, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

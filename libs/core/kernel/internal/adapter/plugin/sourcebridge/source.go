@@ -22,7 +22,7 @@ import (
 
 // Plugins finds the plugin of the search source and watches its configuration.
 type Plugins interface {
-	ResolveCapability(capability string) (manifest.Discovered, error)
+	ResolveCapability(capability string) (manifest.DiscoveredPlugin, error)
 	ConfigWatcher
 }
 

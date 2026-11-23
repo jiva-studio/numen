@@ -6,7 +6,7 @@ import (
 
 // Transfers moves a tab to another window, or to a window opened for it.
 type Transfers struct {
-	state shared
+	state stateHolder
 }
 
 // Detach stores a tab for ReadDetached and keeps the tab in its group while it

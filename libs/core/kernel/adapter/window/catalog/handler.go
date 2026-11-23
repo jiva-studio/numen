@@ -18,13 +18,13 @@ import (
 
 // Catalog is the plugins the application lists and finds.
 type Catalog interface {
-	List(ctx context.Context) (catalog.Listing, error)
+	List(ctx context.Context) (catalog.EntryList, error)
 	Get(ctx context.Context, id string) (catalog.Entry, error)
 	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)
 }
 
 // InstalledPlugins lists the installed plugins, enabled or not.
-type InstalledPlugins func() []manifest.Discovered
+type InstalledPlugins func() []manifest.DiscoveredPlugin
 
 // Handler answers CatalogService over a catalog and the installed plugins.
 type Handler struct {

@@ -67,7 +67,7 @@ func isolateHome(t *testing.T) {
 
 // unwritable is a set of writers that cannot open any vault for moving.
 type unwritable struct {
-	note.MoveWriting
+	note.MoveWriter
 	err error
 }
 

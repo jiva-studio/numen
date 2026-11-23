@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// Buffered is the note repository of the index, keeping the paths of the notes written through it while
+// BufferedNoteRepository is the note repository of the index, keeping the paths of the notes written through it while
 // the first walk is still reading the vault.
-type Buffered struct {
+type BufferedNoteRepository struct {
 	noteport.NoteRepository
 	Writes
 }
@@ -24,14 +24,14 @@ type Writes struct {
 }
 
 // Save writes the notes and records their paths.
-func (r *Buffered) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
+func (r *BufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	for _, one := range notes {
 		r.Record(one.Note.FileStat.Path)
 	}
 	return r.NoteRepository.Save(ctx, vaultID, notes)
 }
 
-func (r *Buffered) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
+func (r *BufferedNoteRepository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		r.Record(path)
 	}

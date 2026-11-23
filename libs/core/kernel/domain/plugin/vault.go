@@ -56,8 +56,8 @@ type FrontmatterWrite struct {
 	Values   map[string]any
 }
 
-// FrontmatterWritten is the outcome of one write: the note after it, or the error of a note not written.
-type FrontmatterWritten struct {
+// FrontmatterResult is the outcome of one write: the note after it, or the error of a note not written.
+type FrontmatterResult struct {
 	Stat domain.FileStat
 	Err  error
 }

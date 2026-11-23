@@ -10,7 +10,7 @@ import (
 )
 
 func TestRunningCancelsRemainingTasksOnClose(t *testing.T) {
-	r := &running{cancels: map[*context.CancelFunc]bool{}}
+	r := &runningTasks{cancels: map[*context.CancelFunc]bool{}}
 
 	var firstCanceled, secondCanceled, thirdCanceled bool
 	var first context.CancelFunc = func() { firstCanceled = true }

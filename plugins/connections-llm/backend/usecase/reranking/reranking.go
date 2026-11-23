@@ -13,22 +13,22 @@ import (
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/ports"
 )
 
-// Reranking carries out the rerank operation.
-type Reranking struct {
+// Reranker carries out the rerank operation.
+type Reranker struct {
 	gateway ports.Gateway
 	limits  *limits.Limits
 }
 
 // New returns a Reranking that asks gateway and takes the time of a request from limits.
-func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Reranking, error) {
+func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Reranker, error) {
 	if gateway == nil || requestLimits == nil {
 		return nil, errors.New("reranking: a gateway and limits are required")
 	}
-	return &Reranking{gateway: gateway, limits: requestLimits}, nil
+	return &Reranker{gateway: gateway, limits: requestLimits}, nil
 }
 
 // Rerank asks the service for one score for each document. No document is no request.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query, instruction string, documents []string) ([]float32, error) {
+func (r *Reranker) Rerank(ctx context.Context, call connection.Call, query, instruction string, documents []string) ([]float32, error) {
 	if len(documents) == 0 {
 		if err := ctx.Err(); err != nil {
 			return nil, err

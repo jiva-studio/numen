@@ -96,7 +96,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend.Entrypoint = "bin/plugin"
-		setPlugin(host.Management, id, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host.Management, id, catalogmanifest.DiscoveredPlugin{Manifest: manifest})
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -107,7 +107,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 			wiretest.KillProcess(t, proc)
 		}
 	})
-	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err

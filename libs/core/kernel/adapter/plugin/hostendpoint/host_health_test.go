@@ -18,7 +18,9 @@ import (
 // noPlugins is a host with no plugin enabled, whose commands an action could name.
 type noPlugins struct{}
 
-func (noPlugins) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }
+func (noPlugins) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
+}
 
 func newHealthClient(t *testing.T, items *pluginhealth.Items, token string) numenv1connect.PluginHealthServiceClient {
 	t.Helper()

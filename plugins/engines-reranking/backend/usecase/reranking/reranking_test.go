@@ -132,7 +132,7 @@ func (r *reports) getTexts() []string {
 	return slices.Clone(r.texts)
 }
 
-func newRerankingUseCase(t *testing.T, open *opener, report *reports) *reranking.Reranking {
+func newRerankingUseCase(t *testing.T, open *opener, report *reports) *reranking.Reranker {
 	t.Helper()
 	r, err := reranking.New(shippedSource{}, open.open, hosttest.NewQueue().EnqueueWork, report.report)
 	if err != nil {

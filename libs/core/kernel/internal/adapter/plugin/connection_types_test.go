@@ -8,34 +8,34 @@ import (
 )
 
 type fakeConnectionHost struct {
-	plugins []manifest.Discovered
+	plugins []manifest.DiscoveredPlugin
 	enabled map[string]bool
 }
 
-func (h fakeConnectionHost) ListPlugins() []manifest.Discovered { return h.plugins }
+func (h fakeConnectionHost) ListPlugins() []manifest.DiscoveredPlugin { return h.plugins }
 
-func (h fakeConnectionHost) GetPlugin(id string) (manifest.Discovered, bool) {
+func (h fakeConnectionHost) GetPlugin(id string) (manifest.DiscoveredPlugin, bool) {
 	for _, one := range h.plugins {
 		if one.Manifest.ID == id && h.enabled[id] {
 			return one, true
 		}
 	}
-	return manifest.Discovered{}, false
+	return manifest.DiscoveredPlugin{}, false
 }
 
-func connectionProvider(id, name string, types ...string) manifest.Discovered {
+func connectionProvider(id, name string, types ...string) manifest.DiscoveredPlugin {
 	var declared []manifest.ConnectionType
 	for _, one := range types {
 		declared = append(declared, manifest.ConnectionType{ID: one, Title: one, Operations: []string{"llm.complete"}})
 	}
-	return manifest.Discovered{Manifest: manifest.Manifest{
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 		ID: id, Name: name, Contributes: manifest.Contributes{ConnectionTypes: declared},
 	}}
 }
 
 func TestTheRegistryListsTheTypesOfEveryEnabledPluginWithComposedIDs(t *testing.T) {
 	registry := plugin.NewConnectionTypes(fakeConnectionHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			connectionProvider("md.numen.agents.claude", "Claude Code Agent", "claude-code"),
 			connectionProvider("md.numen.connections.llm", "LLM connections", "openrouter", "openai"),
 			connectionProvider("md.numen.tools.none", "No types"),
@@ -65,7 +65,7 @@ func TestTheRegistryListsTheTypesOfEveryEnabledPluginWithComposedIDs(t *testing.
 
 func TestTheRegistryFindsATypeByItsComposedID(t *testing.T) {
 	registry := plugin.NewConnectionTypes(fakeConnectionHost{
-		plugins: []manifest.Discovered{connectionProvider("md.numen.connections.llm", "LLM", "openrouter")},
+		plugins: []manifest.DiscoveredPlugin{connectionProvider("md.numen.connections.llm", "LLM", "openrouter")},
 		enabled: map[string]bool{"md.numen.connections.llm": true},
 	})
 
@@ -82,7 +82,7 @@ func TestTheRegistryFindsATypeByItsComposedID(t *testing.T) {
 
 func TestTheRegistryDoesNotListTheTypesOfADisabledPlugin(t *testing.T) {
 	registry := plugin.NewConnectionTypes(fakeConnectionHost{
-		plugins: []manifest.Discovered{connectionProvider("md.numen.connections.llm", "LLM", "openrouter")},
+		plugins: []manifest.DiscoveredPlugin{connectionProvider("md.numen.connections.llm", "LLM", "openrouter")},
 		enabled: map[string]bool{},
 	})
 
@@ -94,15 +94,15 @@ func TestTheRegistryDoesNotListTheTypesOfADisabledPlugin(t *testing.T) {
 	}
 }
 
-func titling(id string, operations ...manifest.Operation) manifest.Discovered {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: id, Name: id, Contributes: manifest.Contributes{Operations: operations}}}
+func titling(id string, operations ...manifest.Operation) manifest.DiscoveredPlugin {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id, Name: id, Contributes: manifest.Contributes{Operations: operations}}}
 }
 
 // The first title of an operation in the order of the plugin ids is the one listed, and a disabled
 // plugin titles nothing.
 func TestTheRegistryListsTheFirstTitleOfEachOperation(t *testing.T) {
 	registry := plugin.NewConnectionTypes(fakeConnectionHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			titling("md.numen.agents.acp", manifest.Operation{Name: "acp.task", Title: "run agent tasks"}),
 			titling("md.numen.agents.numen", manifest.Operation{Name: "acp.task", Title: "run tasks"}),
 			titling("md.numen.connections.llm",

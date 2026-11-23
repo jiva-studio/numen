@@ -64,7 +64,7 @@ func startKeptSource(t *testing.T) keptSource {
 	// Each start takes the next of the processes started here.
 	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		next := int(launches.Add(1)) - 1
 		if next >= len(processes) {
 			return nil, nil, errors.New("no process is left to start")

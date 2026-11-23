@@ -11,7 +11,7 @@ import (
 // reranker is the Reranker role of the SDK over the use case: it reads the request message and writes the
 // result message.
 type reranker struct {
-	reranking *reranking.Reranking
+	reranking *reranking.Reranker
 }
 
 func (r reranker) Rerank(ctx context.Context, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {

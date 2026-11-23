@@ -28,7 +28,7 @@ func (p Texts) PutVersion(ctx context.Context, v domain.Vault, pluginID string, 
 
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
-func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
+func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextVersionList, error) {
 	return p.texts.ListFileVersions(ctx, v, path)
 }
 

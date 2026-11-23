@@ -14,9 +14,9 @@ type TextPut struct {
 	File           string
 }
 
-// TextListing is the versions of a file and the live one, which is empty
+// TextVersionList is the versions of a file and the live one, which is empty
 // where none is live.
-type TextListing struct {
+type TextVersionList struct {
 	Versions []domain.TextVersion
 	Live     domain.TextVersionID
 }

@@ -12,8 +12,8 @@ type ListedCommand struct {
 	HasItems bool
 }
 
-// Listing is everything a window shows of the commands the enabled plugins declare.
-type Listing struct {
+// CommandList is everything a window shows of the commands the enabled plugins declare.
+type CommandList struct {
 	Commands               []ListedCommand
 	Slots                  []plugin.SlotEntry
 	SlotPoints             []plugin.SlotPointEntry
@@ -36,8 +36,8 @@ func NewListCommands(list List, types contenttypeport.ContentTypeTable) ListComm
 }
 
 // Execute lists every command whichever part of the plugin runs it.
-func (u ListCommands) Execute() Listing {
-	return Listing{
+func (u ListCommands) Execute() CommandList {
+	return CommandList{
 		Commands:               u.mark(u.list.ExecuteAll()),
 		Slots:                  u.list.ExecuteSlots(),
 		SlotPoints:             u.list.ExecuteSlotPoints(),

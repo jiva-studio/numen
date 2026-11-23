@@ -23,13 +23,13 @@ func newShelfClient(t *testing.T, calls chan<- searchfunction.Call) *searchfunct
 	shelves := map[string][]string{"east": {"a.md", "b.md", "c.md"}}
 	registry := searchfunction.New()
 	err := registry.Add("shelved", searchfunction.Function{
-		Match: func(_ context.Context, call searchfunction.Call, _ []string) (searchfunction.Matched, error) {
+		Match: func(_ context.Context, call searchfunction.Call, _ []string) (searchfunction.MatchResult, error) {
 			calls <- call
 			shelf, _ := call.Arguments.GetString("shelf")
 			if shelf == "" {
-				return searchfunction.Matched{}, fmt.Errorf("%w: shelved needs a shelf", searchfunction.ErrInvalidArguments)
+				return searchfunction.MatchResult{}, fmt.Errorf("%w: shelved needs a shelf", searchfunction.ErrInvalidArguments)
 			}
-			return searchfunction.Matched{Paths: append(slices.Clone(shelves[shelf]), "unasked.md"), Warning: "late"}, nil
+			return searchfunction.MatchResult{Paths: append(slices.Clone(shelves[shelf]), "unasked.md"), Warning: "late"}, nil
 		},
 		Find: func(_ context.Context, call searchfunction.Call, _ int) (searchfunction.Found, error) {
 			calls <- call

@@ -34,7 +34,7 @@ type scene struct {
 	settings *settings.Store
 	requests []*llm.CompleteRequest
 	script   func(prompt string) string
-	run      *proofread.Proofreading
+	run      *proofread.Proofreader
 }
 
 func newScene(t *testing.T) *scene {

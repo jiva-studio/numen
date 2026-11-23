@@ -42,7 +42,7 @@ func newStorageHost(t *testing.T) (*pluginhost.Host, string, string) {
 	host := newDiscoveredHost(t)
 	cacheRoot, dataRoot := t.TempDir(), t.TempDir()
 	host.Supervision.Storage.SetStorageRoots(cacheRoot, dataRoot)
-	setPlugin(host.Management, "org.example.other", manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
+	setPlugin(host.Management, "org.example.other", manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
 	return host, cacheRoot, dataRoot
 }
 

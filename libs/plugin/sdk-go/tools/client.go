@@ -166,22 +166,22 @@ func (t *ToolInfo) GetRequires() []string {
 	return t.Requires
 }
 
-// Listing is the list of tools a PluginToolService returns.
-type Listing struct {
+// ToolList is the list of tools a PluginToolService returns.
+type ToolList struct {
 	Tools []*ToolInfo
 }
 
-func readListing(res *v1.ListToolsResponse) Listing {
+func readListing(res *v1.ListToolsResponse) ToolList {
 	out := make([]*ToolInfo, len(res.GetTools()))
 	for i, t := range res.GetTools() {
 		out[i] = readToolInfo(t)
 	}
-	return Listing{Tools: out}
+	return ToolList{Tools: out}
 }
 
 // Client calls a PluginToolService endpoint.
 type Client interface {
-	ListTools(ctx context.Context) (Listing, error)
+	ListTools(ctx context.Context) (ToolList, error)
 	InvokeTool(ctx context.Context, call Call) (*CallResponse, error)
 }
 
@@ -196,10 +196,10 @@ func NewClient(endpoint hostcall.Endpoint) Client {
 	}
 }
 
-func (c *rpcClient) ListTools(ctx context.Context) (Listing, error) {
+func (c *rpcClient) ListTools(ctx context.Context) (ToolList, error) {
 	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
-		return Listing{}, err
+		return ToolList{}, err
 	}
 	return readListing(res.Msg), nil
 }

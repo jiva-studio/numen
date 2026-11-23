@@ -198,23 +198,23 @@ func (o *Options) refreshKept(
 	}
 }
 
-func (o *Options) resolveField(ctx context.Context, connectionID, field string) (connection.Resolved, manifest.ConnectionField, error) {
+func (o *Options) resolveField(ctx context.Context, connectionID, field string) (connection.Resolution, manifest.ConnectionField, error) {
 	if err := ctx.Err(); err != nil {
-		return connection.Resolved{}, manifest.ConnectionField{}, err
+		return connection.Resolution{}, manifest.ConnectionField{}, err
 	}
 	resolved, err := o.deps.Resolve(connectionID)
 	if err != nil {
-		return connection.Resolved{}, manifest.ConnectionField{}, err
+		return connection.Resolution{}, manifest.ConnectionField{}, err
 	}
 	declared, isDeclared := resolved.Declaration.GetRowField(field)
 	if !isDeclared || declared.OptionsFrom == "" {
-		return connection.Resolved{}, manifest.ConnectionField{}, fmt.Errorf("%w: %s", ErrNoOptions, field)
+		return connection.Resolution{}, manifest.ConnectionField{}, fmt.Errorf("%w: %s", ErrNoOptions, field)
 	}
 	return resolved, declared, nil
 }
 
 func (o *Options) newRequest(
-	resolved connection.Resolved, field string, options map[string]string, operations []string,
+	resolved connection.Resolution, field string, options map[string]string, operations []string,
 ) (request, error) {
 	grantRevision, isGranted, err := o.deps.Grants(resolved.PluginID)
 	if err != nil {
@@ -231,7 +231,7 @@ func (o *Options) newRequest(
 }
 
 func (o *Options) readOptions(
-	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked request,
+	ctx context.Context, resolved connection.Resolution, declared manifest.ConnectionField, asked request,
 ) ([]modelcall.Option, error) {
 	provider, release, err := o.deps.Source.OpenProvider(plugin.WithPurpose(ctx, o.describeOperation(declared.OptionsFrom)+" of "+resolved.Name), resolved.PluginID)
 	if err != nil {
@@ -253,7 +253,7 @@ func (o *Options) readOptions(
 }
 
 func (o *Options) askProvider(
-	ctx context.Context, provider connectionport.Provider, resolved connection.Resolved, operation string,
+	ctx context.Context, provider connectionport.Provider, resolved connection.Resolution, operation string,
 	secrets map[string]string, asked request,
 ) ([]modelcall.Option, error) {
 	readCtx, stop := context.WithTimeout(ctx, asked.timeout)

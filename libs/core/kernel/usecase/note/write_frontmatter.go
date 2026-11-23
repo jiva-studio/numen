@@ -26,7 +26,7 @@ type FrontmatterWrite struct {
 // WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes.
 type WriteFrontmatter struct {
 	readers vaultport.VaultReaders
-	writers NoteWriting
+	writers NoteWriter
 	index   edit.IndexUpdater
 	now     machineport.Clock
 }
@@ -34,7 +34,7 @@ type WriteFrontmatter struct {
 // NewWriteFrontmatter returns the use case that writes frontmatter keys. It takes the vault readers
 // and writers, the index updater and the clock, as NewEditLinks does.
 func NewWriteFrontmatter(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriter, index edit.IndexUpdater, now machineport.Clock,
 ) WriteFrontmatter {
 	return WriteFrontmatter{readers: readers, writers: writers, index: index, now: now}
 }
@@ -42,8 +42,8 @@ func NewWriteFrontmatter(
 // Execute writes the keys of each note and answers for each one, in the order given. A note that
 // cannot be written costs the others nothing. When ctx is canceled, every note not yet written gets
 // plugin.ErrNotAttempted, and the results are returned with a nil error.
-func (u WriteFrontmatter) Execute(ctx context.Context, v domain.Vault, writes []FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
-	results := make([]plugin.FrontmatterWritten, len(writes))
+func (u WriteFrontmatter) Execute(ctx context.Context, v domain.Vault, writes []FrontmatterWrite) ([]plugin.FrontmatterResult, error) {
+	results := make([]plugin.FrontmatterResult, len(writes))
 	for i, one := range writes {
 		var stat domain.FileStat
 		err := ctx.Err()

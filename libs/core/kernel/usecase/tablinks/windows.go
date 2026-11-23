@@ -8,7 +8,7 @@ import (
 
 // Windows tracks which windows watch the tab links and which tabs each reports.
 type Windows struct {
-	state shared
+	state stateHolder
 }
 
 // Watch subscribes a window to the tab links and cancels the pending removal

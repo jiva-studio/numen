@@ -80,7 +80,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		wiretest.ReapProcess(t, cmd.Process)
 	}()
 	port := wiretest.GetPort(t, server)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 

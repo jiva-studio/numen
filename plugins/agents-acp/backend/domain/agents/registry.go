@@ -1,8 +1,8 @@
 package agents
 
-// Known is an agent program of the ACP Registry that a person installs: Name is what the registry calls it,
+// KnownAgent is an agent program of the ACP Registry that a person installs: Name is what the registry calls it,
 // Program the command on the path, and Arguments the arguments that start its ACP server.
-type Known struct {
+type KnownAgent struct {
 	Name      string
 	Program   string
 	Arguments []string
@@ -15,8 +15,8 @@ const acpFlag = "--acp"
 // on 2026-11-13) that install a program of their own, in the order of their names. The registry also lists
 // adapters that run only through npx or uvx downloads, which are left out, and Claude, Codex and Antigravity,
 // which have plugins of their own.
-func ListKnown() []Known {
-	return []Known{
+func ListKnown() []KnownAgent {
+	return []KnownAgent{
 		{Name: "Amp", Program: "amp-acp", Arguments: nil},
 		{Name: "Auggie CLI", Program: "auggie", Arguments: []string{acpFlag}},
 		{Name: "Autohand Code", Program: "autohand", Arguments: []string{acpFlag}},

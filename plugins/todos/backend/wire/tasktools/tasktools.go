@@ -21,7 +21,7 @@ const (
 
 // Tasks lists the tasks of the index.
 type Tasks interface {
-	List(today string, f filter.Filter, limit int) index.Listing
+	List(today string, f filter.Filter, limit int) index.TaskList
 }
 
 // Editor changes the task lines of a note.

@@ -90,7 +90,7 @@ func (s *connectionSource) SearchChunks(
 	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: matches}), nil
 }
 
-func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
 	t.Helper()
 	var mu sync.Mutex
 	var started []*os.Process
@@ -108,7 +108,7 @@ func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest
 			}
 		}
 	})
-	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(ctx context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := exec.CommandContext(context.WithoutCancel(ctx), "/bin/sh", "-c", "read -r line")
 		input, err := cmd.StdinPipe()
 		if err != nil {

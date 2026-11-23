@@ -151,7 +151,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		setPlugin(host.Management, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
+		setPlugin(host.Management, id, manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
 	}
 	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
@@ -199,7 +199,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
-	setPlugin(host.Management, "md.numen.a", manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
+	setPlugin(host.Management, "md.numen.a", manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "md.numen.a"}})
 	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -218,13 +218,13 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		setPlugin(host.Management, id, manifest.Discovered{Manifest: manifest.Manifest{
+		setPlugin(host.Management, id, manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 			ID: id, ActivationEvents: []string{manifest.ActivationEventIndexChanged}, Backend: manifest.Backend{Entrypoint: "bin/plugin"},
 		}})
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
-	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p manifest.DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "a.failing" {
 			return nil, nil, errors.New("exec format error")
 		}

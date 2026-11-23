@@ -62,10 +62,10 @@ var ErrDuplicate = errors.New("a tool of that name is already added")
 // Registry is the tools one plugin offers. It serves PluginToolService.
 type Registry struct {
 	mu    sync.RWMutex
-	tools []registered
+	tools []registration
 }
 
-type registered struct {
+type registration struct {
 	tool           *v1.PluginTool
 	getDescription func(ctx context.Context) (string, error)
 	run            func(ctx context.Context, arguments []byte) *v1.ToolResult
@@ -95,7 +95,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			return fmt.Errorf("tool %s: result: %w", spec.Name, err)
 		}
 	}
-	return r.add(registered{
+	return r.add(registration{
 		getDescription: spec.GetDescription,
 		tool: &v1.PluginTool{
 			Name:         spec.Name,
@@ -121,10 +121,10 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 	})
 }
 
-func (r *Registry) add(one registered) error {
+func (r *Registry) add(one registration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if slices.ContainsFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == one.tool.GetName() }) {
+	if slices.ContainsFunc(r.tools, func(reg registration) bool { return reg.tool.GetName() == one.tool.GetName() }) {
 		return fmt.Errorf("%w: %s", ErrDuplicate, one.tool.GetName())
 	}
 	r.tools = append(r.tools, one)
@@ -168,8 +168,8 @@ func (h registryHandler) CallTool(
 ) (*connect.Response[v1.CallToolResponse], error) {
 	r := h.registry
 	r.mu.RLock()
-	index := slices.IndexFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == req.Msg.GetName() })
-	var one registered
+	index := slices.IndexFunc(r.tools, func(reg registration) bool { return reg.tool.GetName() == req.Msg.GetName() })
+	var one registration
 	if index >= 0 {
 		one = r.tools[index]
 	}
@@ -252,10 +252,10 @@ func writeResult(out any) *v1.ToolResult {
 	return &v1.ToolResult{Text: string(encoded)}
 }
 
-func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
+func (r *Registry) ListTools(ctx context.Context) (ToolList, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
-		return Listing{}, err
+		return ToolList{}, err
 	}
 	return readListing(res.Msg), nil
 }
@@ -273,7 +273,7 @@ func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, er
 	return readCallResponse(res.Msg), nil
 }
 
-func (one registered) describe(ctx context.Context) *v1.PluginTool {
+func (one registration) describe(ctx context.Context) *v1.PluginTool {
 	if one.getDescription == nil {
 		return one.tool
 	}

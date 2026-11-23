@@ -306,7 +306,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	model := recognizer.GetRecognitionModel()
 	rec = keepOrRestart(rec, req.Path, inputHash, model, doc.GetPageCount())
 
-	if err := r.readPages(ctx, pageReading{doc: doc, recognizer: recognizer, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
+	if err := r.readPages(ctx, pageReader{doc: doc, recognizer: recognizer, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
 	return putVersion(ctx, on, rec)
@@ -320,8 +320,8 @@ func keepOrRestart(rec *progress.Record, path, inputHash string, model scan.Mode
 	return &progress.Record{Path: path, InputHash: inputHash, Recipe: recipe, PageCount: pageCount, Pages: nil}
 }
 
-// pageReading is what the pages of one file are read with.
-type pageReading struct {
+// pageReader is what the pages of one file are read with.
+type pageReader struct {
 	doc        Document
 	recognizer ports.Recognizer
 	dpi        int
@@ -329,7 +329,7 @@ type pageReading struct {
 	task       *host.Task
 }
 
-func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *progress.Record) error {
+func (r *Recognition) readPages(ctx context.Context, on pageReader, rec *progress.Record) error {
 	on.task.TotalCount, on.task.CompletedCount = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 		return err

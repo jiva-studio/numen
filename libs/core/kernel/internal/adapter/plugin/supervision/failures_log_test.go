@@ -21,7 +21,7 @@ func (failureHealth) Remove(string, string) {}
 
 func TestRecordedActivationFailureNotifiesReporter(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
-	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: "example.plugin"}})
+	sup := sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "example.plugin"}})
 	failures := NewFailures(sups, failureClock{}, &errsink.Sink{}, failureHealth{})
 	var reported []plugin.Failure
 	failures.SetOnFailure(func(failure plugin.Failure) { reported = append(reported, failure) })

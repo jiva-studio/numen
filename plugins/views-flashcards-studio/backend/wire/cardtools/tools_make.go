@@ -25,10 +25,10 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 			"here: a note created with `note_create` is an ordinary note, and `card_add` writes " +
 			"only into a deck. The file is named after the title.",
 		Effect: tools.ReadWrite,
-	}, func(ctx context.Context, in deckCreateInput) (NoteCreated, error) {
+	}, func(ctx context.Context, in deckCreateInput) (CreatedNote, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
-			return NoteCreated{}, err
+			return CreatedNote{}, err
 		}
 		return newNoteCreated(t.cards.Create.CreateDeck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil}))
 	})
@@ -52,10 +52,10 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			"the title, and that filename is the name used in a card's wikilink, which " +
 			"`card_model_list` returns under `name`.",
 		Effect: tools.ReadWrite,
-	}, func(ctx context.Context, in cardModelCreateInput) (NoteCreated, error) {
+	}, func(ctx context.Context, in cardModelCreateInput) (CreatedNote, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
-			return NoteCreated{}, err
+			return CreatedNote{}, err
 		}
 		return newNoteCreated(t.cards.Create.CreateCardModel(ctx, v, cards.New{
 			Title: in.Title, Body: "", Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),

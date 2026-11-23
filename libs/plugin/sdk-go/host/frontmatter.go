@@ -75,8 +75,8 @@ type FrontmatterWrite struct {
 	Baseline domain.FileStat
 }
 
-// FrontmatterWritten is one outcome of a write: Stat is the note after it.
-type FrontmatterWritten struct {
+// FrontmatterResult is one outcome of a write: Stat is the note after it.
+type FrontmatterResult struct {
 	Stat domain.FileStat
 	Err  error
 }
@@ -84,7 +84,7 @@ type FrontmatterWritten struct {
 // WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes in one call, and
 // returns one result per write, in order. A stale or failed note costs the others nothing. It needs
 // vault:write, accepts at most 1000 notes, and returns ErrNoVault while the host shows no vault.
-func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite) ([]FrontmatterWritten, error) {
+func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite) ([]FrontmatterResult, error) {
 	notes := make([]*v1.NoteFrontmatterWrite, len(writes))
 	for i, one := range writes {
 		values := one.Values
@@ -107,9 +107,9 @@ func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	out := make([]FrontmatterWritten, 0, len(res.Msg.GetResults()))
+	out := make([]FrontmatterResult, 0, len(res.Msg.GetResults()))
 	for _, one := range res.Msg.GetResults() {
-		written := FrontmatterWritten{Err: getNoteError(one.GetError(), one.GetDetail())}
+		written := FrontmatterResult{Err: getNoteError(one.GetError(), one.GetDetail())}
 		if written.Err == nil {
 			written.Stat = readFileStat(one.GetStat())
 		}

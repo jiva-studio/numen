@@ -21,9 +21,9 @@ type VaultHolds interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
-// Claimed is the answer to a claim: Read is the indexing to start, or nil where none starts, and Closing ends the
+// ClaimResult is the answer to a claim: Read is the indexing to start, or nil where none starts, and Closing ends the
 // run. Underway says an indexing of the vault runs now, and Reason why the last one failed.
-type Claimed struct {
+type ClaimResult struct {
 	Read     IndexVault
 	Closing  <-chan struct{}
 	Underway bool
@@ -35,7 +35,7 @@ type Claimed struct {
 type RunState interface {
 	// Claim reserves the indexing of the vault for the caller, which starts it only when read is not nil.
 	// Otherwise underway says an indexing of the vault runs now, and reason why the last one failed.
-	Claim(v domain.Vault) Claimed
+	Claim(v domain.Vault) ClaimResult
 	// Record ends the indexing Claim reserved, with the error it ended with.
 	Record(v domain.Vault, err error)
 	// Clear forgets how the vault was indexed, so the next claim starts again.
@@ -162,26 +162,26 @@ func (r *Runs) Clear(id domain.VaultID) {
 }
 
 // Claim implements RunState.
-func (r *Runs) Claim(v domain.Vault) Claimed {
+func (r *Runs) Claim(v domain.Vault) ClaimResult {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.indexed[v.ID] {
-		return Claimed{}
+		return ClaimResult{}
 	}
 	if why, hasFailure := r.failures[v.ID]; hasFailure {
-		return Claimed{Reason: why}
+		return ClaimResult{Reason: why}
 	}
 	if r.running[v.ID] {
-		return Claimed{Underway: true}
+		return ClaimResult{Underway: true}
 	}
 	if r.indexVault == nil {
-		return Claimed{}
+		return ClaimResult{}
 	}
 	if r.running == nil {
 		r.running = make(map[domain.VaultID]bool)
 	}
 	r.running[v.ID] = true
-	return Claimed{Read: r.indexVault, Closing: r.closing, Underway: true}
+	return ClaimResult{Read: r.indexVault, Closing: r.closing, Underway: true}
 }
 
 // Record implements RunState.

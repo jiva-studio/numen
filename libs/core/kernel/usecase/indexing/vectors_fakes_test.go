@@ -39,7 +39,7 @@ type interruptedStore struct {
 	saved  int
 }
 
-func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []vector.Stored) error {
+func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []vector.StoredVector) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

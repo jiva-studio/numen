@@ -29,18 +29,18 @@ type servingHost struct {
 	released  int
 }
 
-func (h *servingHost) ResolveCapability(string) (catalogmanifest.Discovered, error) {
-	return catalogmanifest.Discovered{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
+func (h *servingHost) ResolveCapability(string) (catalogmanifest.DiscoveredPlugin, error) {
+	return catalogmanifest.DiscoveredPlugin{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 }
 
-func (h *servingHost) GetPlugin(id string) (catalogmanifest.Discovered, bool) {
+func (h *servingHost) GetPlugin(id string) (catalogmanifest.DiscoveredPlugin, bool) {
 	manifest, found := h.manifests[id]
-	return catalogmanifest.Discovered{Manifest: manifest}, found
+	return catalogmanifest.DiscoveredPlugin{Manifest: manifest}, found
 }
 
-func (h *servingHost) ResolveService(service string) (catalogmanifest.Discovered, bool) {
+func (h *servingHost) ResolveService(service string) (catalogmanifest.DiscoveredPlugin, bool) {
 	id, serves := h.services[service]
-	return catalogmanifest.Discovered{Manifest: catalogmanifest.Manifest{ID: id}}, serves
+	return catalogmanifest.DiscoveredPlugin{Manifest: catalogmanifest.Manifest{ID: id}}, serves
 }
 
 func (h *servingHost) EnsureActive(_ context.Context, id string, _ plugindomain.Holder) (transport.Endpoint, error) {

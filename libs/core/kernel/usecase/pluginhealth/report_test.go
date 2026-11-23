@@ -19,12 +19,12 @@ const (
 // plugins is the enabled plugins with the commands their manifests declare.
 type plugins map[string][]manifest.Command
 
-func (p plugins) GetPlugin(id string) (manifest.Discovered, bool) {
+func (p plugins) GetPlugin(id string) (manifest.DiscoveredPlugin, bool) {
 	commands, isEnabled := p[id]
 	if !isEnabled {
-		return manifest.Discovered{}, false
+		return manifest.DiscoveredPlugin{}, false
 	}
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: id, Contributes: manifest.Contributes{Commands: commands}}}, true
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id, Contributes: manifest.Contributes{Commands: commands}}}, true
 }
 
 func newReport() (*pluginhealth.Report, *pluginhealth.Items) {

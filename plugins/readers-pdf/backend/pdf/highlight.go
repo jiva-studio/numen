@@ -101,7 +101,7 @@ func (d *document) findWordBoxes(index, offset int) []HighlightBox {
 	}
 
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="wordReading initializes word bounding box and counters to zero"
-	collector := &wordReading{sheet: sheet, index: index, boxes: nil, word: responses.CharPosition{Left: 0, Right: 0, Top: 0, Bottom: 0}, start: 0, length: 0}
+	collector := &wordCursor{sheet: sheet, index: index, boxes: nil, word: responses.CharPosition{Left: 0, Right: 0, Top: 0, Bottom: 0}, start: 0, length: 0}
 	pos := offset
 	for _, char := range read.Chars {
 		text := char.Text
@@ -116,10 +116,10 @@ func (d *document) findWordBoxes(index, offset int) []HighlightBox {
 	return collector.boxes
 }
 
-// wordReading is the words of a page read character by character: the boxes
+// wordCursor is the words of a page read character by character: the boxes
 // done, and the word being read, with where it covers the page, where it begins
 // in the text, and how far it has got.
-type wordReading struct {
+type wordCursor struct {
 	sheet  pageGeometry
 	index  int
 	boxes  []HighlightBox
@@ -128,7 +128,7 @@ type wordReading struct {
 	length int
 }
 
-func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bool) {
+func (r *wordCursor) add(pos, size int, mark responses.CharPosition, isSpace bool) {
 	if isSpace || mark.Right <= mark.Left || mark.Top <= mark.Bottom {
 		r.finish()
 		return
@@ -145,7 +145,7 @@ func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bo
 	r.length += size
 }
 
-func (r *wordReading) finish() {
+func (r *wordCursor) finish() {
 	if r.length > 0 {
 		r.boxes = append(r.boxes, r.sheet.getWordBox(r.index, r.start, r.length, r.word))
 	}

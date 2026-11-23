@@ -25,7 +25,9 @@ func (absentLauncher) Launch(context.Context, string, []string) (acp.Process, er
 
 type fakeListings struct{}
 
-func (fakeListings) GetListing(context.Context, agents.Agent) acp.Listing { return acp.Listing{} }
+func (fakeListings) GetListing(context.Context, agents.Agent) acp.SessionModels {
+	return acp.SessionModels{}
+}
 
 func TestRequestLimitIsTheSettingElseTwoMinutes(t *testing.T) {
 	values := new(settings.Settings)

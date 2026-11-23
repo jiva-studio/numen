@@ -38,7 +38,7 @@ func getReachingRuns(batch Batch, reply string) []int {
 }
 
 func GatherAnswers(answers []Answer) (map[int]Line, []int) {
-	collector := gathering{
+	collector := correctionSet{
 		lines: make(map[int]Line),
 		owner: make(map[int]int),
 		best:  make(map[int]int),
@@ -59,14 +59,14 @@ func GatherAnswers(answers []Answer) (map[int]Line, []int) {
 	return collector.lines, past
 }
 
-// gathering is the corrections kept so far.
-type gathering struct {
+// correctionSet is the corrections kept so far.
+type correctionSet struct {
 	lines map[int]Line
 	owner map[int]int
 	best  map[int]int
 }
 
-func (g *gathering) keep(line Line, after map[int]int) {
+func (g *correctionSet) keep(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
 	for pos := first; pos <= last; pos++ {
 		if status, observed := g.best[pos]; observed && after[pos] < status {
@@ -84,7 +84,7 @@ func (g *gathering) keep(line Line, after map[int]int) {
 	}
 }
 
-func (g *gathering) evict(first int) {
+func (g *correctionSet) evict(first int) {
 	line := g.lines[first]
 	for pos := first; pos <= max(line.Last, line.Number); pos++ {
 		delete(g.owner, pos)

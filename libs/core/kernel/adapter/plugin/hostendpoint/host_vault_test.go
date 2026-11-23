@@ -420,6 +420,6 @@ func TestThePluginsCacheNeedsNoVaultPermission(t *testing.T) {
 	}
 }
 
-func (m *memoryVault) WriteFrontmatter(context.Context, []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+func (m *memoryVault) WriteFrontmatter(context.Context, []plugin.FrontmatterWrite) ([]plugin.FrontmatterResult, error) {
 	return nil, errors.New("not implemented")
 }

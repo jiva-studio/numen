@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-type rankFunc func(context.Context) (Ranking, error)
+type rankFunc func(context.Context) (ParticipantResults, error)
 
-func (f rankFunc) Rank(ctx context.Context, _ domain.Vault, _ Query) (Ranking, error) {
+func (f rankFunc) Rank(ctx context.Context, _ domain.Vault, _ Query) (ParticipantResults, error) {
 	return f(ctx)
 }
 
@@ -23,24 +23,24 @@ func TestRankingReturnsHealthyParticipantsWhenASourceHangs(t *testing.T) {
 		sourceContext := make(chan context.Context, 1)
 		diagnostics := make(chan error, 2)
 		answers := make(chan struct{}, 2)
-		healthy := Ranking{Results: []domain.SearchResult{{Path: "answer.md"}}}
+		healthy := ParticipantResults{Results: []domain.SearchResult{{Path: "answer.md"}}}
 		u := Search{
-			words: rankFunc(func(ctx context.Context) (Ranking, error) {
+			words: rankFunc(func(ctx context.Context) (ParticipantResults, error) {
 				if _, bounded := ctx.Deadline(); bounded {
 					t.Error("built-in search received a deadline")
 				}
 				return healthy, nil
 			}),
-			sources: newExternalSources([]Participant{rankFunc(func(ctx context.Context) (Ranking, error) {
+			sources: newExternalSources([]Participant{rankFunc(func(ctx context.Context) (ParticipantResults, error) {
 				sourceContext <- ctx
 				<-release
-				return Ranking{}, nil
+				return ParticipantResults{}, nil
 			})}),
 			errorHandler:   func(err error) { diagnostics <- err },
 			reportAnswered: func() { answers <- struct{}{} },
 		}
 
-		done := make(chan []Ranking, 1)
+		done := make(chan []ParticipantResults, 1)
 		go func() {
 			got, err := u.rankAll(t.Context(), domain.Vault{}, "word", Parameters{Lexical: 1, Sources: 1})
 			if err != nil {
@@ -77,9 +77,9 @@ func TestARequestDeadlineStopsSearchWhileAnExternalSourceIsBlocked(t *testing.T)
 		release := make(chan struct{})
 		defer close(release)
 		u := Search{
-			sources: newExternalSources([]Participant{rankFunc(func(context.Context) (Ranking, error) {
+			sources: newExternalSources([]Participant{rankFunc(func(context.Context) (ParticipantResults, error) {
 				<-release
-				return Ranking{}, nil
+				return ParticipantResults{}, nil
 			})}),
 			errorHandler:   func(err error) { t.Errorf("source failure: %v", err) },
 			reportAnswered: func() { t.Error("source counted as answered") },
@@ -104,15 +104,15 @@ func TestRepeatedSearchesBoundOutstandingCallsAndResumeWhenTheSourceRecovers(t *
 	synctest.Test(t, func(t *testing.T) {
 		release := make(chan struct{})
 		started := make(chan struct{}, 12)
-		plugin := rankFunc(func(ctx context.Context) (Ranking, error) {
+		plugin := rankFunc(func(ctx context.Context) (ParticipantResults, error) {
 			started <- struct{}{}
 			<-release
-			return Ranking{Results: []domain.SearchResult{{Path: "plugin.md"}}}, nil
+			return ParticipantResults{Results: []domain.SearchResult{{Path: "plugin.md"}}}, nil
 		})
 		diagnostics := make(chan error, 12)
 		u := New(nil, nil, nil, []Participant{plugin}, func(err error) { diagnostics <- err }, nil)
-		u.words = rankFunc(func(context.Context) (Ranking, error) {
-			return Ranking{Results: []domain.SearchResult{{Path: "healthy.md"}}}, nil
+		u.words = rankFunc(func(context.Context) (ParticipantResults, error) {
+			return ParticipantResults{Results: []domain.SearchResult{{Path: "healthy.md"}}}, nil
 		})
 		params := Parameters{Lexical: 1, Sources: 1}
 		for range 10 {
@@ -137,13 +137,13 @@ func TestRepeatedSearchesBoundOutstandingCallsAndResumeWhenTheSourceRecovers(t *
 }
 
 func TestAShorterSourceDeadlinePreservesTheHealthyRanking(t *testing.T) {
-	source := rankFunc(func(context.Context) (Ranking, error) {
-		return Ranking{}, context.DeadlineExceeded
+	source := rankFunc(func(context.Context) (ParticipantResults, error) {
+		return ParticipantResults{}, context.DeadlineExceeded
 	})
 	var reported error
 	u := New(nil, nil, nil, []Participant{source}, func(err error) { reported = err }, nil)
-	u.words = rankFunc(func(context.Context) (Ranking, error) {
-		return Ranking{Results: []domain.SearchResult{{Path: "words.md"}}}, nil
+	u.words = rankFunc(func(context.Context) (ParticipantResults, error) {
+		return ParticipantResults{Results: []domain.SearchResult{{Path: "words.md"}}}, nil
 	})
 	got, err := u.rankAll(t.Context(), domain.Vault{}, "word", Parameters{Lexical: 1, Sources: 1})
 	if err != nil || len(got) != 1 || got[0].Results[0].Path != "words.md" {
@@ -158,10 +158,10 @@ func TestCallerCancellationStopsAnActiveSearch(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	started := make(chan struct{})
-	source := rankFunc(func(ctx context.Context) (Ranking, error) {
+	source := rankFunc(func(ctx context.Context) (ParticipantResults, error) {
 		close(started)
 		<-ctx.Done()
-		return Ranking{}, ctx.Err()
+		return ParticipantResults{}, ctx.Err()
 	})
 	u := New(nil, nil, nil, []Participant{source}, func(err error) {
 		t.Errorf("caller cancellation reported as source failure: %v", err)

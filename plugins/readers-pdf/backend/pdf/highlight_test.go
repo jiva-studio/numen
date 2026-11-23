@@ -324,7 +324,7 @@ func TestIsWordContinued(t *testing.T) {
 
 func TestWordReadingAddAndFinish(t *testing.T) {
 	sheet := pageGeometry{width: 100, height: 100, rotation: 0}
-	r := &wordReading{sheet: sheet, index: 0}
+	r := &wordCursor{sheet: sheet, index: 0}
 	r.finish()
 	if len(r.boxes) != 0 {
 		t.Fatalf("expected 0 boxes after finishing empty wordReading, got %d", len(r.boxes))

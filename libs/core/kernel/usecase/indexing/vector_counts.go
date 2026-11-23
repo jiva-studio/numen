@@ -11,12 +11,12 @@ import (
 // VectorCounts counts the chunks of a vault that can carry a vector and the ones that carry one, under the
 // model the vault is embedded with.
 type VectorCounts struct {
-	embedding *Embedding
+	embedding *EmbeddingSetup
 	recorder  indexport.ModelRecorder
 }
 
 // NewVectorCounts creates the count over the embedding of a window, and records the model it counts under.
-func NewVectorCounts(embedding *Embedding, recorder indexport.ModelRecorder) VectorCounts {
+func NewVectorCounts(embedding *EmbeddingSetup, recorder indexport.ModelRecorder) VectorCounts {
 	return VectorCounts{embedding: embedding, recorder: recorder}
 }
 

@@ -40,7 +40,7 @@ func sendInitialize(t *testing.T, conn sdk.Connection, number int) *jsonrpc.Resp
 
 func TestSecondInitializeReturnsAnError(t *testing.T) {
 	t.Parallel()
-	host := &fakeToolHost{listing: tools.Listing{
+	host := &fakeToolHost{listing: tools.ToolList{
 		Tools: []*tools.ToolInfo{newToolWithSentences("orchard_pick", orchardPickSentence)},
 	}}
 	srv, err := NewServer(Config{}, host)
@@ -103,7 +103,7 @@ func postInitialize(t *testing.T, url string, number int, session string) (statu
 
 func TestSecondInitializeOverHTTPReturnsAnError(t *testing.T) {
 	t.Parallel()
-	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
+	host := &fakeToolHost{listing: tools.ToolList{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
 	srv, err := NewServer(Config{Token: "orchard-token"}, host)
 	if err != nil {
 		t.Fatal(err)

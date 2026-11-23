@@ -21,12 +21,12 @@ import (
 type ServiceResolver interface {
 	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
 	// to the windows, and false where none does.
-	ResolveService(service string) (manifest.Discovered, bool)
+	ResolveService(service string) (manifest.DiscoveredPlugin, bool)
 }
 
 // Plugins lists the installed plugins and reads their manifests.
 type Plugins interface {
-	GetPlugin(id string) (manifest.Discovered, bool)
+	GetPlugin(id string) (manifest.DiscoveredPlugin, bool)
 	GetPluginInfos() []plugin.Info
 }
 

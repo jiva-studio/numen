@@ -8,7 +8,7 @@ import (
 
 // Tools lists the tools of the host the plugin may offer and runs a call of one.
 type Tools interface {
-	ListTools(ctx context.Context) (tools.Listing, error)
+	ListTools(ctx context.Context) (tools.ToolList, error)
 	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
 }
 

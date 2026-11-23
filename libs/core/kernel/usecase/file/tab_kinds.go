@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
-// FolderListing is what a folder holds and the kind of tab each of its notes opens in.
-type FolderListing struct {
+// FolderContents is what a folder holds and the kind of tab each of its notes opens in.
+type FolderContents struct {
 	Folder
 	TabKinds map[string]string
 }
@@ -26,10 +26,10 @@ func NewListFolder(entries *GetFolderEntries, tabKinds windowport.TabKinds) *Lis
 	return &ListFolder{entries: entries, tabKinds: tabKinds}
 }
 
-func (u *ListFolder) Execute(ctx context.Context, v domain.Vault, path string) (FolderListing, error) {
+func (u *ListFolder) Execute(ctx context.Context, v domain.Vault, path string) (FolderContents, error) {
 	folder, err := u.entries.Execute(ctx, v, path)
 	if err != nil {
-		return FolderListing{}, err
+		return FolderContents{}, err
 	}
 	var notes []string
 	for _, one := range folder.Entries {
@@ -39,9 +39,9 @@ func (u *ListFolder) Execute(ctx context.Context, v domain.Vault, path string) (
 	}
 	kinds, err := u.tabKinds.ListTabKinds(ctx, v, notes)
 	if err != nil {
-		return FolderListing{}, err
+		return FolderContents{}, err
 	}
-	return FolderListing{Folder: folder, TabKinds: kinds}, nil
+	return FolderContents{Folder: folder, TabKinds: kinds}, nil
 }
 
 // ListFileKinds lists what the vault holds at some paths with the kind of tab each note opens in.
@@ -55,14 +55,14 @@ func NewListFileKinds(kinds *GetFileKinds, choice *plugin.TabKindChoice) *ListFi
 }
 
 // Execute lists the files at the paths in the order given.
-func (u *ListFileKinds) Execute(ctx context.Context, v domain.Vault, paths []string) (FolderListing, error) {
+func (u *ListFileKinds) Execute(ctx context.Context, v domain.Vault, paths []string) (FolderContents, error) {
 	folder, err := u.kinds.Execute(ctx, v, paths)
 	if err != nil {
-		return FolderListing{}, err
+		return FolderContents{}, err
 	}
 	heads := make(map[string]frontmatter.Head, len(folder.Properties))
 	for path, properties := range folder.Properties {
 		heads[path] = frontmatter.Head{Type: folder.Types[path], Values: properties}
 	}
-	return FolderListing{Folder: folder, TabKinds: u.choice.ChooseMany(heads)}, nil
+	return FolderContents{Folder: folder, TabKinds: u.choice.ChooseMany(heads)}, nil
 }

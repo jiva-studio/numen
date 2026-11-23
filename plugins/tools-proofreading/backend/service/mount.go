@@ -65,11 +65,11 @@ func mount(s *server.Server, h proofread.Host, complete model.Completer) error {
 	return nil
 }
 
-func newProofreading(h proofread.Host, complete model.Completer, current *settings.Store) *proofread.Proofreading {
+func newProofreading(h proofread.Host, complete model.Completer, current *settings.Store) *proofread.Proofreader {
 	return proofread.New(h, proofread.GetProofreadKinds(), model.NewAsk(complete), current.GetRunConfig)
 }
 
-func newCommands(run *proofread.Proofreading) (*command.Registry, error) {
+func newCommands(run *proofread.Proofreader) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
 		return nil, err

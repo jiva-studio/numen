@@ -191,7 +191,7 @@ func (s *Handler) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-func convertVaultToWire(v vaults.Listed) *v1.Vault {
+func convertVaultToWire(v vaults.ListedVault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
 		IsMissing: v.IsMissing,

@@ -2,11 +2,11 @@ package settings
 
 import "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 
-type Logging struct {
+type LoggingSettings struct {
 	Level string `json:"level"`
 }
 
-func DefaultLogging() Logging { return Logging{Level: getAppString(keyLogLevel)} }
+func DefaultLogging() LoggingSettings { return LoggingSettings{Level: getAppString(keyLogLevel)} }
 
 // LogLevel returns the application logging threshold.
 func (f *File) LogLevel() logs.Level {

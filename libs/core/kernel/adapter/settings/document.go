@@ -18,12 +18,12 @@ import (
 // id of a plugin with the settings of that plugin below it.
 type File struct {
 	Version     int
-	Appearance  Appearance  `json:"appearance"`
-	Titles      Titles      `json:"naming"`
-	Editor      Editor      `json:"editor"`
-	Performance Performance `json:"performance"`
-	Search      Search      `json:"search"`
-	Logging     Logging     `json:"logging"`
+	Appearance  Appearance      `json:"appearance"`
+	Titles      Titles          `json:"naming"`
+	Editor      Editor          `json:"editor"`
+	Performance Performance     `json:"performance"`
+	Search      Search          `json:"search"`
+	Logging     LoggingSettings `json:"logging"`
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
 	Notices     []string
@@ -31,23 +31,23 @@ type File struct {
 
 // appObject is the object of the owner app as the file lays it out.
 type appObject struct {
-	Appearance  Appearance  `json:"appearance"`
-	Titles      Titles      `json:"naming"`
-	Editor      Editor      `json:"editor"`
-	Performance Performance `json:"performance"`
-	Search      *Search     `json:"search"`
-	Logging     *Logging    `json:"logging"`
+	Appearance  Appearance       `json:"appearance"`
+	Titles      Titles           `json:"naming"`
+	Editor      Editor           `json:"editor"`
+	Performance Performance      `json:"performance"`
+	Search      *Search          `json:"search"`
+	Logging     *LoggingSettings `json:"logging"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
 // file leaves out keeps the value it had.
 type appSections struct {
-	Appearance  *Appearance  `json:"appearance"`
-	Titles      *Titles      `json:"naming"`
-	Editor      *Editor      `json:"editor"`
-	Performance *Performance `json:"performance"`
-	Search      *Search      `json:"search"`
-	Logging     *Logging     `json:"logging"`
+	Appearance  *Appearance      `json:"appearance"`
+	Titles      *Titles          `json:"naming"`
+	Editor      *Editor          `json:"editor"`
+	Performance *Performance     `json:"performance"`
+	Search      *Search          `json:"search"`
+	Logging     *LoggingSettings `json:"logging"`
 }
 
 const keyVersion = "v"

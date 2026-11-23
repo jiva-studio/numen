@@ -25,8 +25,8 @@ type Note struct {
 	Frontmatter map[string]any
 }
 
-// Written is the note a write wrote, its fingerprint after the write and the bytes written.
-type Written struct {
+// WrittenNote is the note a write wrote, its fingerprint after the write and the bytes written.
+type WrittenNote struct {
 	Path        string
 	Fingerprint string
 	Bytes       int
@@ -78,25 +78,25 @@ func (u *UseCase) Read(ctx context.Context, name string) (Note, error) {
 
 // Write replaces a note, or creates it when it does not exist and no fingerprint is given. text is nil
 // when the caller gave none.
-func (u *UseCase) Write(ctx context.Context, path string, text *string, token string) (Written, error) {
+func (u *UseCase) Write(ctx context.Context, path string, text *string, token string) (WrittenNote, error) {
 	if strings.TrimSpace(path) == "" {
-		return Written{}, errors.New("path is required")
+		return WrittenNote{}, errors.New("path is required")
 	}
 	if !strings.HasSuffix(path, ".md") {
 		path += ".md"
 	}
 	if text == nil {
-		return Written{}, errors.New("text is required")
+		return WrittenNote{}, errors.New("text is required")
 	}
 	content := *text
 	stat, err := u.save(ctx, path, content, token)
 	if err != nil {
-		return Written{}, err
+		return WrittenNote{}, err
 	}
 	if err := u.index.Scan(ctx, []string{path}); err != nil {
-		return Written{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
+		return WrittenNote{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
-	return Written{Path: path, Fingerprint: fingerprint.Format(stat), Bytes: len(content)}, nil
+	return WrittenNote{Path: path, Fingerprint: fingerprint.Format(stat), Bytes: len(content)}, nil
 }
 
 func (u *UseCase) save(ctx context.Context, path, content, token string) (domain.FileStat, error) {

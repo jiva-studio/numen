@@ -40,7 +40,7 @@ func (u *ListSettingValues) ListDefaults() (settingsdomain.Values, error) {
 	return u.list(u.defaults.GetDefaults())
 }
 
-func (u *ListSettingValues) list(stored settingsdomain.Stored) (settingsdomain.Values, error) {
+func (u *ListSettingValues) list(stored settingsdomain.StoredSettings) (settingsdomain.Values, error) {
 	values := settingsdomain.Values{}
 	var failures []error
 	add := func(path []string, value any) {
@@ -69,7 +69,7 @@ func (u *ListSettingValues) list(stored settingsdomain.Stored) (settingsdomain.V
 	return values, errors.Join(failures...)
 }
 
-func listPluginValues(stored settingsdomain.Stored, one plugin.Info, add func([]string, any), values settingsdomain.Values) {
+func listPluginValues(stored settingsdomain.StoredSettings, one plugin.Info, add func([]string, any), values settingsdomain.Values) {
 	for _, declared := range one.Settings {
 		path := []string{one.ID, declared.Key}
 		if value, found := stored.GetValue(path...); found {

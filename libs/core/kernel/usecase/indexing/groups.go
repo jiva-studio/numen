@@ -14,20 +14,20 @@ const (
 	bytesPerWrite = 8 << 20
 )
 
-// grouping collects parsed notes and writes them one group at a time, so neither
+// grouper collects parsed notes and writes them one group at a time, so neither
 // memory use nor the length of one write grows with the number of notes supplied.
 //
 // A walk of a whole vault and a handful of named files are the same job at
 // different sizes: a folder dropped into a watched vault arrives as one event
 // naming thousands of notes.
-type grouping struct {
+type grouper struct {
 	write func(context.Context, []domain.Note) error
 
 	notes []domain.Note
 	bytes int
 }
 
-func (g *grouping) add(ctx context.Context, note domain.Note, size int) error {
+func (g *grouper) add(ctx context.Context, note domain.Note, size int) error {
 	g.notes = append(g.notes, note)
 	g.bytes += size
 	if len(g.notes) >= notesPerWrite || g.bytes >= bytesPerWrite {
@@ -36,7 +36,7 @@ func (g *grouping) add(ctx context.Context, note domain.Note, size int) error {
 	return nil
 }
 
-func (g *grouping) flush(ctx context.Context) error {
+func (g *grouper) flush(ctx context.Context) error {
 	if len(g.notes) == 0 {
 		return nil
 	}

@@ -151,10 +151,10 @@ func getErrorHandler(indexPath string, res *Resources) window.ErrorHandler {
 	return windowlogs.ReportError(openOptionalRecordLog(indexPath, res), res.ErrorHandler, "Background operation failed")
 }
 
-func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsWiring {
+func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsParts {
 	runtime := getPluginExecution(exec).Runtime
 	prefs = getPluginPreferences(prefs)
-	return settingsWiring{
+	return settingsParts{
 		SettingsPath:    c.SettingsPath,
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
@@ -172,7 +172,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 	}
 }
 
-func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
+func createVaultWiring(res *Resources, base vaultParts, settings settingsParts, chunks noteChunkPolicy) vaultParts {
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, chunks)
 	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
@@ -180,7 +180,7 @@ func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring
 	return base
 }
 
-func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
+func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsParts, vaultIndexPlan, vaultParts) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	settings := createSettingsWiring(c, exec, prefs, res)
@@ -193,19 +193,19 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	return settings, plan, createVaultWiring(res, base, settings, plan.ChunkPolicy)
 }
 
-func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
+func setVaultSearch(v vaultParts, chunks noteChunkPolicy) vaultParts {
 	v.CutNotes = cutNotes(chunks)
 	v.SetNoteCut = func(scan *indexing.Scan) { setNoteCut(chunks, scan) }
 	return v
 }
 
-func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *vaultIndex, plugins textversion.TextPlugins) (vaultIndexPlan, vaultWiring) {
+func openIndexedVault(plan vaultIndexPlan, v vaultParts, db *vaultIndex, plugins textversion.TextPlugins) (vaultIndexPlan, vaultParts) {
 	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
 	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
 	return plan, v
 }
 
-func openVaultTextVersions(v vaultWiring, db *vaultIndex, plugins textversion.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+func openVaultTextVersions(v vaultParts, db *vaultIndex, plugins textversion.TextPlugins, chunks noteChunkPolicy) vaultParts {
 	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
 	return setVaultSearch(v, chunks)
 }

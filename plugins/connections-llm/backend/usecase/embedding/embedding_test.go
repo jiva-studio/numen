@@ -41,7 +41,7 @@ func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, []
 	return nil, nil
 }
 
-func newEmbedding(t *testing.T, g *gateway) *embedding.Embedding {
+func newEmbedding(t *testing.T, g *gateway) *embedding.Embedder {
 	t.Helper()
 	subject, err := embedding.New(g, &limits.Limits{})
 	if err != nil {

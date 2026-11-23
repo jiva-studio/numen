@@ -24,7 +24,7 @@ import (
 // none afterwards, because moving is not editing.
 type Move struct {
 	readers vaultport.VaultReaders
-	writers MoveWriting
+	writers MoveWriter
 	links   noteport.LinkQueries
 	names   edit.NameQueries
 	sources sourceport.SourceRepository
@@ -39,7 +39,7 @@ type Move struct {
 // move when set, and Sync reports whether a title and a filename are kept as one name.
 type MoveDeps struct {
 	Readers vaultport.VaultReaders
-	Writers MoveWriting
+	Writers MoveWriter
 	Links   noteport.LinkQueries
 	Names   edit.NameQueries
 	Sources sourceport.SourceRepository

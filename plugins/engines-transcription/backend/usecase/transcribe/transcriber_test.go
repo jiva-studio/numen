@@ -419,16 +419,16 @@ func (f *faultyStore) Rename(ctx context.Context, from, to string) error {
 
 type faultyTexts struct {
 	host.TextVersions
-	listRes  host.TextListing
+	listRes  host.TextVersionList
 	listErr  error
 	putErr   error
 	putErrFn func(req host.TextPut) error
 	puts     int
 }
 
-func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
 	if f.listErr != nil {
-		return host.TextListing{}, f.listErr
+		return host.TextVersionList{}, f.listErr
 	}
 	if len(f.listRes.Versions) > 0 {
 		return f.listRes, nil
@@ -655,7 +655,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		t.Fatalf("expected listErr, got %v", err)
 	}
 	ft.listErr = nil
-	ft.listRes = host.TextListing{
+	ft.listRes = host.TextVersionList{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID, File: getFileName("other")},
 			{Key: "k1", PluginID: "other.plugin", File: getFileName("k1")},
@@ -665,7 +665,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {
 		t.Fatalf("expected existing matching version to skip PutVersion, puts=%d, err=%v", ft.puts, err)
 	}
-	ft.listRes = host.TextListing{
+	ft.listRes = host.TextVersionList{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID, File: getFileName("other")},
 			{Key: "k1", PluginID: "other.plugin", File: getFileName("k1")},
@@ -837,7 +837,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// Self-referential source cycle in findLiveVersionOfWholeTranscript terminates with false.
 	ftCycle := &faultyTexts{
 		TextVersions: s2.texts,
-		listRes: host.TextListing{
+		listRes: host.TextVersionList{
 			Live: "other:cycle",
 			Versions: []domain.TextVersion{
 				{PluginID: "other", Key: "cycle", Source: "other:cycle"},

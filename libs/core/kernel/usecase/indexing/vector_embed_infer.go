@@ -19,7 +19,7 @@ import (
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
-	vectors []vector.Stored
+	vectors []vector.StoredVector
 	reused  int
 	id      uint64
 }
@@ -114,10 +114,10 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 		return completedBatch{}, err
 	}
 
-	out := make([]vector.Stored, len(prep.pending))
+	out := make([]vector.StoredVector, len(prep.pending))
 	for i := range prep.pending {
 		if pos := prep.askingMap[i]; pos >= 0 {
-			out[i] = vector.Stored{
+			out[i] = vector.StoredVector{
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Recipe:  prep.model.Recipe(),
@@ -136,10 +136,10 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 	}, nil
 }
 
-// extracted is the text of one source, to which chunk offsets refer, read from
+// extractor is the text of one source, to which chunk offsets refer, read from
 // the source again. The most recently opened source is cached, because the
 // chunks of one source are processed together.
-type extracted struct {
+type extractor struct {
 	files     vaultport.VaultReader
 	texts     textport.Texts
 	path      string
@@ -147,7 +147,7 @@ type extracted struct {
 	isIndexed bool
 }
 
-func (e *extracted) readText(ctx context.Context, path, from string) (string, bool, error) {
+func (e *extractor) readText(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isIndexed, nil
 	}
@@ -165,7 +165,7 @@ func (e *extracted) readText(ctx context.Context, path, from string) (string, bo
 	return e.text, true, nil
 }
 
-func (e *extracted) read(ctx context.Context, path, from string) (string, error) {
+func (e *extractor) read(ctx context.Context, path, from string) (string, error) {
 	if from == "" {
 		raw, err := e.files.Read(ctx, path)
 		return string(raw), err

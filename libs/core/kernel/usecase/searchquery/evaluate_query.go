@@ -20,7 +20,7 @@ type EvaluateQueryDeps struct {
 	Contents     NoteContents
 	Links        LinkReaders
 	Functions    SearchFunctions
-	Matcher      WordMatching
+	Matcher      WordMatcher
 	Readers      vaultport.VaultReaders
 	Texts        textport.Readers
 	Source       QuerySource
@@ -36,7 +36,7 @@ type EvaluateQuery struct {
 	contents     NoteContents
 	links        LinkReaders
 	functions    SearchFunctions
-	matcher      WordMatching
+	matcher      WordMatcher
 	readers      vaultport.VaultReaders
 	texts        textport.Readers
 	source       QuerySource

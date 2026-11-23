@@ -73,7 +73,7 @@ type VaultList interface {
 
 // VersionLister lists the text versions of a file.
 type VersionLister interface {
-	ListVersions(ctx context.Context, path string) (host.TextListing, error)
+	ListVersions(ctx context.Context, path string) (host.TextVersionList, error)
 }
 
 // TextReader reads the text of a version of a file.

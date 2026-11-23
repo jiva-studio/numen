@@ -12,10 +12,10 @@ import (
 type ApplyToPlugins struct {
 	codec     ValueCodec
 	config    PluginConfig
-	write     settingsWriting
-	notify    pluginNotifying
+	write     settingsWriter
+	notify    pluginNotifier
 	subscribe ChangeSubscriber
-	hosts     hostSubscribing
+	hosts     hostSubscriber
 }
 
 // ApplyToPluginsDeps is what ApplyToPlugins is made of. The host is identified by Config, which every
@@ -24,10 +24,10 @@ type ApplyToPlugins struct {
 type ApplyToPluginsDeps struct {
 	Codec     ValueCodec
 	Config    PluginConfig
-	Write     settingsWriting
-	Notify    pluginNotifying
+	Write     settingsWriter
+	Notify    pluginNotifier
 	Subscribe ChangeSubscriber
-	Hosts     hostSubscribing
+	Hosts     hostSubscriber
 }
 
 // NewApplyToPlugins makes the use case.
@@ -61,18 +61,18 @@ func (u *ApplyToPlugins) persist(pluginID, key string, value any) error {
 	return u.write.Execute([]settingsdomain.Setting{{Path: []string{pluginID, key}, JSON: raw}})
 }
 
-// settingsWriting saves settings.
-type settingsWriting interface {
+// settingsWriter saves settings.
+type settingsWriter interface {
 	Execute(entries []settingsdomain.Setting) error
 }
 
-// pluginNotifying delivers a batch of setting changes to the plugins that watch them.
-type pluginNotifying interface {
+// pluginNotifier delivers a batch of setting changes to the plugins that watch them.
+type pluginNotifier interface {
 	Execute(batch []settingsdomain.Setting)
 }
 
-// hostSubscribing delivers the setting changes to a host once.
-type hostSubscribing interface {
+// hostSubscriber delivers the setting changes to a host once.
+type hostSubscriber interface {
 	Subscribe(host any, subscribe ChangeSubscriber, deliver func([]settingsdomain.Setting))
 }
 

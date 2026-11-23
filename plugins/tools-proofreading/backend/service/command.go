@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
 )
 
-func newProofreadCommand(run *proofread.Proofreading) command.Run {
+func newProofreadCommand(run *proofread.Proofreader) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		source := domain.TextVersionID(req.Arguments.GetString(command.ArgumentVersion))
 		res, err := run.Proofread(ctx, proofread.Request{Vault: "", Path: req.Path, Source: source})

@@ -12,8 +12,8 @@ import (
 // provider answers the calls of the provider service with the use cases of the plugin.
 type provider struct {
 	completion *completion.Completion
-	embedding  *embedding.Embedding
-	reranking  *reranking.Reranking
+	embedding  *embedding.Embedder
+	reranking  *reranking.Reranker
 	models     *models.Models
 }
 

@@ -26,7 +26,7 @@ import (
 type VaultWriter struct {
 	root    string
 	opts    vaultconfig.Options
-	ignored *vaultconfig.Ignoring
+	ignored *vaultconfig.IgnoreRules
 	lock    *vaultLock
 }
 

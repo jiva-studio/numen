@@ -84,7 +84,7 @@ func startConfigurableSource(t *testing.T, mock *mockSourceServer) *pluginhost.H
 		t.Fatal(err)
 	}
 	cmd := wiretest.StartSleepProcess(t)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return host

@@ -175,7 +175,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 }
 
-func newTalkIndex(t *testing.T) (vaultIndexPlan, vaultWiring, *Index, domain.Vault, domain.TextVersion) {
+func newTalkIndex(t *testing.T) (vaultIndexPlan, vaultParts, *Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
 	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}, nil)
@@ -191,7 +191,7 @@ func newTalkIndex(t *testing.T) (vaultIndexPlan, vaultWiring, *Index, domain.Vau
 	return s, vaultDeps, db, v, version
 }
 
-func refreshPaths(t *testing.T, vaultDeps vaultWiring, db *Index, v domain.Vault, paths ...string) {
+func refreshPaths(t *testing.T, vaultDeps vaultParts, db *Index, v domain.Vault, paths ...string) {
 	t.Helper()
 	if _, err := createRefresh(vaultDeps, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)

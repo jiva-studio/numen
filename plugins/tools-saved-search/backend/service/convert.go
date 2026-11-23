@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/savedsearch"
 )
 
-func newSavedOutput(saved savedsearch.Saved) api.SavedOutput {
+func newSavedOutput(saved savedsearch.SavedSearch) api.SavedOutput {
 	return api.SavedOutput{
 		Path: saved.Path, URI: saved.URI, ResultCount: saved.ResultCount, Order: api.Order(saved.Order),
 		ComputedAt: formatTime(saved.ComputedAt), Warnings: saved.Warnings, Errors: convertProblems(saved.Errors),

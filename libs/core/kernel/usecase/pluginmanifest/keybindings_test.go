@@ -8,7 +8,7 @@ import (
 
 func TestListKeybindings_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Keybindings: []manifest.Keybinding{
 				{Key: "mod+shift+a", Command: "atlas.open"},
 				{Key: "a", Command: "atlas.open", When: "!window.isFieldFocused"},

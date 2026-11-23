@@ -25,7 +25,7 @@ func NewScanVault(read ReadWholeVault, summaries VaultSummaries) ScanVault {
 }
 
 // Execute reads the vault named by nameOrPath and counts what the index holds of it.
-func (u ScanVault) Execute(ctx context.Context, nameOrPath string, reporting Reporting) (ScanVaultResult, error) {
+func (u ScanVault) Execute(ctx context.Context, nameOrPath string, reporting ReadCallbacks) (ScanVaultResult, error) {
 	v, made, err := u.read.ExecuteByName(ctx, nameOrPath, reporting)
 	if err != nil {
 		return ScanVaultResult{}, err

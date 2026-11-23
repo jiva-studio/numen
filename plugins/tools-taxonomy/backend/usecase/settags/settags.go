@@ -20,7 +20,7 @@ type Reader interface {
 
 // PropertyWriter writes the frontmatter of notes.
 type PropertyWriter interface {
-	WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error)
+	WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterResult, error)
 }
 
 // Store reads and writes a file of the plugin's folder of a vault's store.
@@ -111,7 +111,7 @@ func (u *UseCase) ListRecent(ctx context.Context, id domain.VaultID) ([]string, 
 	return readRecent(ctx, u.open(id).Store)
 }
 
-func writeChanges(ctx context.Context, writer PropertyWriter, changes []change) ([]host.FrontmatterWritten, error) {
+func writeChanges(ctx context.Context, writer PropertyWriter, changes []change) ([]host.FrontmatterResult, error) {
 	if len(changes) == 0 {
 		return nil, nil
 	}

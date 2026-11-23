@@ -116,13 +116,13 @@ func BenchmarkSaveVectors(b *testing.B) {
 	value := make([]byte, getBenchModel().Width)
 	coarse := make([]byte, getBenchModel().Width/8)
 	numbered := make([]chunk.Vector, 0, len(found))
-	named := make([]vector.Stored, 0, len(found))
+	named := make([]vector.StoredVector, 0, len(found))
 	for i, p := range found {
 		hash := []byte(fmt.Sprintf("%032d", i))
 		numbered = append(numbered, chunk.Vector{
 			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
-		named = append(named, vector.Stored{
+		named = append(named, vector.StoredVector{
 			ChunkID: chunk.FormatID(p.Chunk), Hash: hash, Recipe: getBenchModel().Recipe(),
 			Kind: vector.QuantizedInt8, Value: value, Coarse: coarse,
 		})

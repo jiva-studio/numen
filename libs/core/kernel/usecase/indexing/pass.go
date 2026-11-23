@@ -127,7 +127,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) (isStoppedByWake bo
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsTextSkipped: p.skips.IsTextSkipped, NotifyTextsProgress: func(res vaultreading.IndexResult) {
+	reporting := ReadCallbacks{IsTextSkipped: p.skips.IsTextSkipped, NotifyTextsProgress: func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
@@ -264,7 +264,7 @@ func (p *pass) makeVectors(
 	items, cancel := newTaskCancel(limit)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsVectorSkipped: p.skips.IsVectorSkipped, NotifyVectorsProgress: func(res vaultreading.EmbedResult) {
+	reporting := ReadCallbacks{IsVectorSkipped: p.skips.IsVectorSkipped, NotifyVectorsProgress: func(res vaultreading.EmbedResult) {
 		current.set(getEmbeddingSources(res))
 		pos := work.Task{ID: work.MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {

@@ -29,18 +29,18 @@ func newWritingVault() *writingVault {
 	return &writingVault{linkingVault: newLinkingVault()}
 }
 
-func (w *writingVault) WriteFrontmatter(_ context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+func (w *writingVault) WriteFrontmatter(_ context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterResult, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.writes = append(w.writes, writes)
-	out := make([]plugin.FrontmatterWritten, len(writes))
+	out := make([]plugin.FrontmatterResult, len(writes))
 	for i, one := range writes {
 		if err := w.checkBaseline(one); err != nil {
-			out[i] = plugin.FrontmatterWritten{Err: err}
+			out[i] = plugin.FrontmatterResult{Err: err}
 			continue
 		}
 		stat, err := w.write(one.Path)
-		out[i] = plugin.FrontmatterWritten{Stat: stat, Err: err}
+		out[i] = plugin.FrontmatterResult{Stat: stat, Err: err}
 	}
 	return out, nil
 }

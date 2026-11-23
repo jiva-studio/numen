@@ -21,16 +21,16 @@ type LeaseHost struct {
 	QuestionsReleased atomic.Int32
 }
 
-func (h *LeaseHost) ResolveCapability(string) (manifestdomain.Discovered, error) {
-	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, nil
+func (h *LeaseHost) ResolveCapability(string) (manifestdomain.DiscoveredPlugin, error) {
+	return manifestdomain.DiscoveredPlugin{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, nil
 }
 
-func (h *LeaseHost) ResolveService(string) (manifestdomain.Discovered, bool) {
-	return manifestdomain.Discovered{}, false
+func (h *LeaseHost) ResolveService(string) (manifestdomain.DiscoveredPlugin, bool) {
+	return manifestdomain.DiscoveredPlugin{}, false
 }
 
-func (h *LeaseHost) GetPlugin(string) (manifestdomain.Discovered, bool) {
-	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
+func (h *LeaseHost) GetPlugin(string) (manifestdomain.DiscoveredPlugin, bool) {
+	return manifestdomain.DiscoveredPlugin{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
 }
 
 func (h *LeaseHost) EnsureActive(context.Context, string, plugin.Holder) (transport.Endpoint, error) {

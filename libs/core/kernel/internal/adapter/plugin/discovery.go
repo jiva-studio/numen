@@ -26,15 +26,15 @@ type cacheRemover interface {
 
 // discoveredPlugins is what a discovery reads and writes of the set of plugins.
 type discoveredPlugins interface {
-	refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem)
-	replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string
+	refuseConflicts(discovered []manifest.DiscoveredPlugin, problems []manifestjson.DiscoveryProblem) ([]manifest.DiscoveredPlugin, []manifestjson.DiscoveryProblem)
+	replaceDiscovered(discovered []manifest.DiscoveredPlugin, problems []manifestjson.DiscoveryProblem) []string
 	isOnDisk(pluginID string) bool
 	isRegistered(pluginID string) bool
 }
 
 // pluginRegistrar adds a plugin to the set.
 type pluginRegistrar interface {
-	addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error
+	addBuiltIn(p manifest.DiscoveredPlugin, serve func(vars map[string]string) (http.Handler, error)) error
 }
 
 // scanHold holds the set of plugins against the start of a plugin while a scan of the folders runs.
@@ -147,7 +147,7 @@ func (d *Discovery) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[str
 	if !slices.Contains(parsed.Targets, d.target) {
 		return fmt.Errorf("register built-in plugin %s: %w: %s", parsed.ID, errNotForTarget, d.target)
 	}
-	if err := d.registrar.addBuiltIn(manifest.Discovered{Dir: "", Manifest: parsed}, serve); err != nil {
+	if err := d.registrar.addBuiltIn(manifest.DiscoveredPlugin{Dir: "", Manifest: parsed}, serve); err != nil {
 		return fmt.Errorf("register built-in plugin %s: %w", parsed.ID, err)
 	}
 	return nil

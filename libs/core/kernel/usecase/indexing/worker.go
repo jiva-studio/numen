@@ -34,8 +34,8 @@ type Events interface {
 	ReportTexts(v domain.Vault, res vaultreading.IndexResult)
 }
 
-// OpenReading is the three passes over a vault, for the search source given.
-type OpenReading func(
+// ReadWholeVaultOpener is the three passes over a vault, for the search source given.
+type ReadWholeVaultOpener func(
 	ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error)
 
@@ -52,7 +52,7 @@ type IndexChanged func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
-	Reading      OpenReading
+	Reading      ReadWholeVaultOpener
 	Source       searchsourceport.Source
 	VectorCounts GetVectorCounts
 	IndexChanged IndexChanged
@@ -68,7 +68,7 @@ type Config struct {
 // vectors; and a file a plugin extended with more text. A search source that has not described itself is
 // not indexed for yet: the change of its description starts the pass that indexes for it.
 type Worker struct {
-	reading      OpenReading
+	reading      ReadWholeVaultOpener
 	source       searchsourceport.Source
 	vectorCounts GetVectorCounts
 	indexChanged IndexChanged

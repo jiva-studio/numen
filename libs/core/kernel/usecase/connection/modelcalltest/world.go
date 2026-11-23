@@ -214,7 +214,7 @@ type World struct {
 	Waits       *Waits
 	Clock       *Clock
 	Types       *fixedTypes
-	Detected    *Detected
+	Detected    *DetectedConnections
 	repository  *memoryRepository
 	next        int
 }
@@ -257,7 +257,7 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Detected = &Detected{}
+	w.Detected = &DetectedConnections{}
 	w.Connections = connectiontest.New(connectiontest.Parts{
 		Repository: w.repository, Types: types, Keys: w.Keys, Uses: NoUses{}, Detected: w.Detected, Titles: noTitles{},
 	}, func() (string, error) {
@@ -447,33 +447,33 @@ func (w *World) AddDetected(name, address string) Entry {
 	return Entry{ID: detected.ID, Name: name, Fields: detected.Fields}
 }
 
-// Detected is the connections the providers of the world detected, every type answered.
-type Detected struct {
+// DetectedConnections is the connections the providers of the world detected, every type answered.
+type DetectedConnections struct {
 	mu   sync.Mutex
 	list []connection.Connection
 }
 
-func (d *Detected) add(one connection.Connection) {
+func (d *DetectedConnections) add(one connection.Connection) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.list = append(d.list, one)
 }
 
 // ListDetected returns the connections added, in order.
-func (d *Detected) ListDetected() []connection.Connection {
+func (d *DetectedConnections) ListDetected() []connection.Connection {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return slices.Clone(d.list)
 }
 
 // IsPending reports none: every type answered.
-func (d *Detected) IsPending(string) bool { return false }
+func (d *DetectedConnections) IsPending(string) bool { return false }
 
 // Detect asks nothing.
-func (d *Detected) Detect(context.Context, string) {}
+func (d *DetectedConnections) Detect(context.Context, string) {}
 
 // Refresh asks nothing.
-func (d *Detected) Refresh() {}
+func (d *DetectedConnections) Refresh() {}
 
 // AddRowField appends the field to the type with typeID; a declaration read before keeps the row fields it
 // had.

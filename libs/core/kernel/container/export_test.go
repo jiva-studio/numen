@@ -110,7 +110,7 @@ func notifyHost(c TestInstallation, batch []settingsdomain.Setting) {
 	notifyPlugins(c.buildSettingsWiring(), c.Preferences).Execute(batch)
 }
 
-func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
+func settingsGetSettingsAt(c settingsParts, path string) (settingsadapter.File, error) {
 	return createSettingsStore(c).ReadUncheckedAt(path)
 }
 
@@ -199,7 +199,7 @@ func NewTestInstallation(c Config, host *TestPlugins) TestInstallation {
 	return TestInstallation{Config: c, TestPlugins: &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}, Resources: NewResources()}
 }
 
-func (c TestInstallation) buildSettingsWiring() settingsWiring {
+func (c TestInstallation) buildSettingsWiring() settingsParts {
 	return createSettingsWiring(c.Config, c.Execution, c.Preferences, c.Resources)
 }
 
@@ -208,7 +208,7 @@ func (c TestInstallation) buildPluginInstall() pluginInstall {
 	return install
 }
 
-func (c TestInstallation) buildVaultWiring() vaultWiring {
+func (c TestInstallation) buildVaultWiring() vaultParts {
 	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Resources, nil)
 	return vault
 }

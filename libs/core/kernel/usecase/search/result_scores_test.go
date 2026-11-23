@@ -121,8 +121,8 @@ func (fixedWords) GetNamedSections(context.Context, domain.VaultID, sourcedomain
 
 type fixedRanking struct{ found []domain.SearchResult }
 
-func (f fixedRanking) Rank(context.Context, domain.Vault, search.Query) (search.Ranking, error) {
-	return search.Ranking{Results: slices.Clone(f.found)}, nil
+func (f fixedRanking) Rank(context.Context, domain.Vault, search.Query) (search.ParticipantResults, error) {
+	return search.ParticipantResults{Results: slices.Clone(f.found)}, nil
 }
 
 func TestASearchKeepsTheBestSimilarityAndWordScoreOfEveryHitInOnePlace(t *testing.T) {

@@ -41,7 +41,7 @@ type Store interface {
 
 // Properties writes the frontmatter of the notes of a vault.
 type Properties interface {
-	WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error)
+	WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterResult, error)
 }
 
 // Vault is what the cache of one vault reads and writes.

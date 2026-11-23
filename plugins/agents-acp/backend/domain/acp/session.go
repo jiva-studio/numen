@@ -135,8 +135,8 @@ func Open(ctx context.Context, launcher Launcher, start Start) (*Session, error)
 }
 
 // GetListing returns the models the agent reported for the session, and the levels of the current one.
-func (s *Session) GetListing() Listing {
-	return Listing{Models: s.models, Current: s.current, Levels: s.thoughtLevels, Level: s.thoughtCurrent}
+func (s *Session) GetListing() SessionModels {
+	return SessionModels{Models: s.models, Current: s.current, Levels: s.thoughtLevels, Level: s.thoughtCurrent}
 }
 
 // SetModel makes the agent answer with model. An empty model or the current one changes nothing.

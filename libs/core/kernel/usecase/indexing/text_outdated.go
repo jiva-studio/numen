@@ -14,17 +14,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
-// outdated finds the sources whose text version is no longer the live one.
-type outdated struct {
+// outdatedSources finds the sources whose text version is no longer the live one.
+type outdatedSources struct {
 	sources sourceport.SourceRepository
 	records SourceRecords
 }
 
-func newOutdatedIndex(u Index) outdated {
-	return outdated{sources: u.sources, records: u.queries.records}
+func newOutdatedIndex(u Index) outdatedSources {
+	return outdatedSources{sources: u.sources, records: u.queries.records}
 }
 
-func (u outdated) dropOutdatedText(
+func (u outdatedSources) dropOutdatedText(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
@@ -63,7 +63,7 @@ func (u outdated) dropOutdatedText(
 	return notePaths, nil
 }
 
-func (u outdated) recordIfOutdated(
+func (u outdatedSources) recordIfOutdated(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
@@ -81,12 +81,12 @@ func (u outdated) recordIfOutdated(
 	return nil
 }
 
-func (u outdated) isOutdated(ctx context.Context, on openVault, source sourcedomain.Text) (bool, error) {
+func (u outdatedSources) isOutdated(ctx context.Context, on openVault, source sourcedomain.Text) (bool, error) {
 	_, outdated, err := u.statIfOutdated(ctx, on, source)
 	return outdated, err
 }
 
-func (u outdated) statIfOutdated(
+func (u outdatedSources) statIfOutdated(
 	ctx context.Context,
 	on openVault,
 	source sourcedomain.Text,

@@ -113,7 +113,7 @@ func (f *fixture) refresh(t *testing.T, paths ...string) {
 	}
 }
 
-func texts(listing Listing) []string {
+func texts(listing TaskList) []string {
 	out := []string{}
 	for _, task := range listing.Tasks {
 		out = append(out, task.Path+": "+task.Text)
@@ -121,7 +121,7 @@ func texts(listing Listing) []string {
 	return out
 }
 
-func (f *fixture) list(filters ...filter.Filter) Listing {
+func (f *fixture) list(filters ...filter.Filter) TaskList {
 	chosen := filter.Filter{}
 	if len(filters) > 0 {
 		chosen = filters[0]

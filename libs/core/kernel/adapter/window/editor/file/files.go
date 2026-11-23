@@ -77,7 +77,7 @@ func (h *Folders) ListFileKinds(
 	return connect.NewResponse(out), nil
 }
 
-func newWireFileKind(one domain.Entry, listing file.FolderListing) *v1.FileKind {
+func newWireFileKind(one domain.Entry, listing file.FolderContents) *v1.FileKind {
 	kind := &v1.FileKind{
 		Path:   one.Path,
 		IsNote: one.Kind == domain.KindNote,

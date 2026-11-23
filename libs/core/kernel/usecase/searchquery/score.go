@@ -11,7 +11,7 @@ import (
 
 type scorer struct {
 	places  ChunkPlaces
-	matcher WordMatching
+	matcher WordMatcher
 	words   WordQueries
 	req     *searchquery.Evaluation
 }

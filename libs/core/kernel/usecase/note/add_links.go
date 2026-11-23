@@ -25,11 +25,11 @@ type LinkAddition struct {
 // written in: the links of one note are one write against one file stat, and
 // succeed or fail together.
 type AddLinks struct {
-	linking linkAdding
+	linking linkAdder
 }
 
-// linkAdding is the write of relationships into one note that AddLinks repeats for each note.
-type linkAdding interface {
+// linkAdder is the write of relationships into one note that AddLinks repeats for each note.
+type linkAdder interface {
 	Add(
 		ctx context.Context, v domain.Vault, from string, stat domain.FileStat,
 		add domain.Link, more ...domain.Link,
@@ -38,7 +38,7 @@ type linkAdding interface {
 
 // NewAddLinks writes batches of relationships through the editor of a note's
 // relationships.
-func NewAddLinks(linking linkAdding) AddLinks {
+func NewAddLinks(linking linkAdder) AddLinks {
 	return AddLinks{linking: linking}
 }
 

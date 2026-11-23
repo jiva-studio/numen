@@ -8,7 +8,7 @@ import (
 )
 
 type enabledPlugins interface {
-	listEnabledPlugins() []manifest.Discovered
+	listEnabledPlugins() []manifest.DiscoveredPlugin
 }
 
 // ContentTypes gives a file the type of its name, as the table of types says, over the enabled

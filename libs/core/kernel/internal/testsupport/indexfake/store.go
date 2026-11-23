@@ -25,8 +25,8 @@ type Store struct {
 	mu          sync.RWMutex
 	Sources     map[domain.VaultID]map[string]domain.Source
 	Chunks      []Chunk
-	Vectors     map[domain.ChunkID][]vector.Stored
-	Groups      [][]vector.Stored
+	Vectors     map[domain.ChunkID][]vector.StoredVector
+	Groups      [][]vector.StoredVector
 	Extractions map[string]int
 	next        int64
 	Kept        map[string][]byte
@@ -48,7 +48,7 @@ type Chunk struct {
 func NewStore() *Store {
 	return &Store{
 		Sources:     map[domain.VaultID]map[string]domain.Source{},
-		Vectors:     map[domain.ChunkID][]vector.Stored{},
+		Vectors:     map[domain.ChunkID][]vector.StoredVector{},
 		Extractions: map[string]int{},
 	}
 }
@@ -72,7 +72,7 @@ func (s *Store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e doma
 	return nil
 }
 
-func (s *Store) SaveVectors(_ context.Context, vectors []vector.Stored) error {
+func (s *Store) SaveVectors(_ context.Context, vectors []vector.StoredVector) error {
 	if len(vectors) == 0 {
 		return nil
 	}
@@ -343,7 +343,7 @@ func (s *Store) HasChunk(chunk domain.ChunkID) bool {
 	return false
 }
 
-func (s *Store) GetVectors(c Chunk) []vector.Stored {
+func (s *Store) GetVectors(c Chunk) []vector.StoredVector {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return slices.Clone(s.Vectors[GetChunkID(c.ID)])
