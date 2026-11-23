@@ -33,7 +33,7 @@ func New(deps Deps) *Resolver {
 
 // Pick returns the strategy of the path: a copy and the head for a note, the head alone for any other file.
 func (r *Resolver) Pick(path string) Strategy {
-	if note.Kind(path) == note.KindMarkdown {
+	if note.GetKind(path) == note.KindMarkdown {
 		return markdown{host: r.deps.Host}
 	}
 	return overwrite{log: r.deps.Log}

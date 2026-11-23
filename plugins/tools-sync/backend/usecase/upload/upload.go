@@ -82,7 +82,7 @@ func (r *plainReader) ReadAt(p []byte, off int64) (int, error) {
 
 func isBig(storedSize int64) bool { return storedSize > note.BigFileLimit }
 
-func isText(path string) bool { return note.Kind(path) != note.KindBinary }
+func isText(path string) bool { return note.GetKind(path) != note.KindBinary }
 
 func readAll(r io.ReaderAt, size int64) ([]byte, error) {
 	whole := make([]byte, size)

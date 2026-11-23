@@ -125,7 +125,7 @@ func TestPullChanges_ReplacesAFileThatEqualsItsBaseWithABaselineOfWhatItSaw(t *t
 func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenTheHostFindsAnotherHash(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
-	spy.BeforePlace(func(call synctest.PlaceCall) {
+	spy.RunBeforePlace(func(call synctest.PlaceCall) {
 		p.b.Vaults.Store().With(target).WriteFile(call.Name, []byte("tampered"))
 	})
 	p.push(t, pdf, pdfText, nil)
