@@ -4,7 +4,7 @@
  */
 import { effectScope } from 'vue'
 import type { JsonValue } from '@/shared/api/json'
-import { closeTab, openTabAdjacent, paneById } from '@numen/workbench'
+import { closeTab, openTabAdjacent, findPane } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
 import { createRestoreFailedKind } from './restoreFailed'
@@ -76,7 +76,7 @@ export function createTabQueries(store: TabStore) {
   }
 
   const getFrontTab = (): ActiveTab | null => {
-    const id = paneById(layout.value.root, layout.value.focus)?.active
+    const id = findPane(layout.value.root, layout.value.focus)?.active
     if (!id) return null
     const one = open.value.get(id)
     return one ? { id, kind: one.kind.kind, state: one.state } : { id, kind: null, state: null }

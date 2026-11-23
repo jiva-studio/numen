@@ -3,7 +3,7 @@
  * plugin from the key the host holds for its command. Control and Command are equivalent.
  */
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { keyChord, type Keystroke } from '@numen/ui'
+import { createKeyChord, type Keystroke } from '@numen/ui'
 
 /** The keys that hold the window's modifier in a key a plugin declares, such as `mod+shift+x`. */
 const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'control', 'cmd'])
@@ -21,7 +21,7 @@ export const findShortcutKeys = (shortcut: string, agent: string): Keystroke | u
   const modifiers = parts.slice(0, -1)
   if (!/^[a-z]$/.test(letter) || !modifiers.some((one) => MODIFIERS.has(one))) return undefined
   if (modifiers.some((one) => !MODIFIERS.has(one) && one !== 'shift')) return undefined
-  return keyChord(letter, agent, modifiers.includes('shift'))
+  return createKeyChord(letter, agent, modifiers.includes('shift'))
 }
 
 type Values = Readonly<Record<string, string>>

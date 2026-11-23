@@ -12,7 +12,7 @@ type Trash struct {
 // New is this machine's trash. It stamps a trashed folder with the time of clock.
 func New(clock machineport.Clock) Trash { return Trash{clock: clock} }
 
-// Trash moves the folder to this machine's trash location. The path is absolute
+// MoveToTrash moves the folder to this machine's trash location. The path is absolute
 // and names an existing directory, which is moved as given: nothing on the way
 // to it is resolved here.
-func (t Trash) Trash(path string) error { return moveToTrash(path, t.clock.Now()) }
+func (t Trash) MoveToTrash(path string) error { return moveToTrash(path, t.clock.Now()) }

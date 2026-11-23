@@ -17,7 +17,7 @@ export interface Keystroke {
 /**
  * A keystroke of one letter and the key beside the space bar, as it is drawn.
  */
-export const keyChord = (letter: string, agent: string, shift = false): Keystroke => ({
+export const createKeyChord = (letter: string, agent: string, shift = false): Keystroke => ({
   icons: shift ? [overlayIcon(agent), 'shift'] : [overlayIcon(agent)],
   letter: letter.toUpperCase(),
 })

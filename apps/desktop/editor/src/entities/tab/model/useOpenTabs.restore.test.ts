@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { branch, getPanes, pane, type Workspace } from '@numen/workbench'
+import { branch, getPanes, createPane, type Workspace } from '@numen/workbench'
 import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '../lib/kinds'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -141,8 +141,8 @@ describe('saved pane layouts', () => {
       root: branch(
         'root',
         [
-          pane('stack', ['reader', 'note'], 'reader'),
-          branch('lower', [pane('file-pane', ['files']), pane('last', ['missing'])], [0.2, 0.8]),
+          createPane('stack', ['reader', 'note'], 'reader'),
+          branch('lower', [createPane('file-pane', ['files']), createPane('last', ['missing'])], [0.2, 0.8]),
         ],
         [0.45, 0.55],
       ),
@@ -161,7 +161,7 @@ describe('saved pane layouts', () => {
 
   it('restores saved tabs by kind placement when their layout has an obsolete tab id', () => {
     const window = createWindow()
-    const layout = { axis: 'vertical', root: pane('stack', ['gone']), focus: 'stack' }
+    const layout = { axis: 'vertical', root: createPane('stack', ['gone']), focus: 'stack' }
     window.restored.restoreTabs(
       [
         { id: 'note', kind: 'note', path: 'Notes/First.md' },

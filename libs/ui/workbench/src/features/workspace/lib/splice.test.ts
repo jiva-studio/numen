@@ -1,8 +1,8 @@
 /** Putting a pane beside a node, taking a tab off, and restoring the canonical tree. */
 import { describe, expect, it, vi } from 'vitest'
 import { commit, detach, mapPane, putAdjacent } from './splice'
-import { pane, type Pane, type WorkspaceNode } from './node'
-import { isBranch, isPane, findNode, paneById } from './tree'
+import { createPane, type Pane, type WorkspaceNode } from './node'
+import { isBranch, isPane, findNode, findPane } from './tree'
 import { createIdFactory, split, createStack, createWorkspace } from '../fixtures/build'
 
 describe('putAdjacent', () => {
@@ -60,8 +60,8 @@ describe('putAdjacent', () => {
 
 describe('detach', () => {
   const createMainTree = (active: string) =>
-    split('root', [pane('main', ['a', 'b', 'c'], active), createStack('other', 'x')])
-  const getActiveTab = (root: WorkspaceNode) => paneById(root, 'main')?.active
+    split('root', [createPane('main', ['a', 'b', 'c'], active), createStack('other', 'x')])
+  const getActiveTab = (root: WorkspaceNode) => findPane(root, 'main')?.active
 
   it('leaves the shown tab alone when another one goes', () => {
     expect(getActiveTab(detach(createMainTree('a'), 'c'))).toBe('a')
@@ -76,8 +76,8 @@ describe('detach', () => {
   })
 
   it('shows nothing when the last tab is removed', () => {
-    const lone = split('root', [pane('main', ['a']), createStack('other', 'x')])
-    expect(paneById(detach(lone, 'a'), 'main')?.active).toBeNull()
+    const lone = split('root', [createPane('main', ['a']), createStack('other', 'x')])
+    expect(findPane(detach(lone, 'a'), 'main')?.active).toBeNull()
   })
 
   it('leaves the tree alone for a tab that is not open', () => {
@@ -111,8 +111,8 @@ describe('mapPane', () => {
 
   it('changes the pane with that id', () => {
     const after = mapPane(root, 'b', (tab: Pane) => ({ ...tab, tabs: [...tab.tabs, 'new'] }))
-    expect(paneById(after, 'b')?.tabs).toStrictEqual(['two', 'new'])
-    expect(paneById(after, 'a')?.tabs).toStrictEqual(['one'])
+    expect(findPane(after, 'b')?.tabs).toStrictEqual(['two', 'new'])
+    expect(findPane(after, 'a')?.tabs).toStrictEqual(['one'])
   })
 
   it('leaves the tree alone for an id that is not there', () => {

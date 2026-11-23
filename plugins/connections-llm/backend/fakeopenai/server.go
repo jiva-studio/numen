@@ -121,8 +121,8 @@ func (s *Server) Requests() []Request {
 	return slices.Clone(s.requests)
 }
 
-// Aborted receives one value for every delayed request whose client went away before the delay ended.
-func (s *Server) Aborted() <-chan struct{} { return s.aborted }
+// GetAbortSignal receives one value for every delayed request whose client went away before the delay ended.
+func (s *Server) GetAbortSignal() <-chan struct{} { return s.aborted }
 
 // ServeHTTP answers the paths under /v1 or at the root.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

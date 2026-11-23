@@ -15,7 +15,7 @@ import { cutToFit } from '../../cutToFit'
 import { createTitle, type TitleSetting } from './labels'
 import { getDepth } from './ink'
 import { MIDDLE } from './positions'
-import type { Routing } from './routing'
+import type { EdgeRouting } from './routing'
 import type { NodeRoom } from '../layout/placement'
 
 /** A run of one line, as fractions of its length. */
@@ -49,7 +49,7 @@ const getSpanLength = (span: Span): number => span.to - span.from
 export function placeTitles(
   edges: readonly PlacedEdge[],
   nodes: readonly PlacedNode[],
-  routing: Routing,
+  routing: EdgeRouting,
   rooms: ReadonlyMap<string, NodeRoom> = new Map(),
 ): PlacedEdge[] {
   const width = routing.labelWidth

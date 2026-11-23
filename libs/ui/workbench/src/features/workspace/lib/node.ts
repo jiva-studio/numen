@@ -67,7 +67,7 @@ export const findSideOrientation = (side: Side): Orientation | null => {
 /** Whether a side puts what lands on it ahead of what it landed on. */
 export const isLeading = (side: Side): boolean => side === 'left' || side === 'top'
 
-export const pane = (id: NodeId, tabs: readonly TabId[], active?: TabId): Pane => ({
+export const createPane = (id: NodeId, tabs: readonly TabId[], active?: TabId): Pane => ({
   kind: 'pane',
   id,
   tabs,

@@ -32,18 +32,18 @@ const browserParts: UpdateParts = { api: updater, timer: browserTimer }
 export function createStatusView(
   plugin: Pick<PluginContext, 'identity'>,
   host: Pick<HostServices, 'ui'>,
-  updates: Updates,
+  updateModel: Updates,
 ) {
   return defineComponent({
     name: 'UpdateStatusView',
     setup: () => () =>
       h(UpdateIndicator, {
         version: plugin.identity.app.version,
-        update: updates.announced.value,
+        update: updateModel.announced.value,
         platform: plugin.identity.app.platform,
-        onDownload: () => showFailure(host, updates.announcement.openDownload()),
-        onReleaseNotes: () => showFailure(host, updates.announcement.openNotes()),
-        onDismiss: () => updates.announcement.dismiss(),
+        onDownload: () => showFailure(host, updateModel.announcement.openDownload()),
+        onReleaseNotes: () => showFailure(host, updateModel.announcement.openNotes()),
+        onDismiss: () => updateModel.announcement.dismiss(),
       }),
   })
 }
@@ -74,26 +74,26 @@ export const activate = (
   host: HostServices,
   parts: UpdateParts = browserParts,
 ): void => {
-  const updates = createUpdates({
+  const updateModel = createUpdates({
     api: parts.api,
     app: plugin.identity.app,
     openExternal: (url) => plugin.identity.openExternal(url),
     getIntervalHours: () => plugin.settings.get('checkIntervalHours'),
     timer: parts.timer,
   })
-  plugin.register.slotView({ id: UPDATE_VIEW, component: createStatusView(plugin, host, updates) })
-  plugin.settings.onChange('checkIntervalHours', () => updates.schedule.reschedule())
+  plugin.register.slotView({ id: UPDATE_VIEW, component: createStatusView(plugin, host, updateModel) })
+  plugin.settings.onChange('checkIntervalHours', () => updateModel.schedule.reschedule())
   const warnOfMissingAddress = () => showMissingAddress(plugin, host)
   plugin.settings.onChange('endpoint', () => {
-    updates.schedule.checkSoon()
+    updateModel.schedule.checkSoon()
     warnOfMissingAddress()
   })
   plugin.settings.onChange('channel', () => {
-    updates.schedule.checkSoon()
+    updateModel.schedule.checkSoon()
     warnOfMissingAddress()
   })
-  plugin.identity.subscriptions.push({ dispose: () => updates.schedule.stop() })
-  updates.schedule.start()
+  plugin.identity.subscriptions.push({ dispose: () => updateModel.schedule.stop() })
+  updateModel.schedule.start()
   warnOfMissingAddress()
 }
 

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
-import { openTab, getPanes, paneById } from '@numen/workbench'
+import { openTab, getPanes, findPane } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
@@ -1224,7 +1224,7 @@ describe('a tab of a kind moved to a path', () => {
     expect(navigations).toStrictEqual(['Wanted.md:'])
     expect(window.tabs.getTab(first)?.state).toMatchObject({ targetPath: 'Wanted.md' })
     expect(window.tabs.getTab(second)?.state).toMatchObject({ targetPath: 'Two.md' })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
+    expect(findPane(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
       first,
     )
 

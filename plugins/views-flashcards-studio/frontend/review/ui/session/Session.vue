@@ -6,7 +6,7 @@
  * what has been written belong to the session model, and this component renders
  * them.
  */
-import { Button, KeyCap, keyChord, nav } from '@numen/ui'
+import { Button, KeyCap, createKeyChord, nav } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'
@@ -40,7 +40,7 @@ defineEmits<{
 }>()
 
 /* -------------------------------- Helpers --------------------------------- */
-const buildChord = (letter: string) => keyChord(letter, nav.userAgent)
+const buildChord = (letter: string) => createKeyChord(letter, nav.userAgent)
 </script>
 
 <template>

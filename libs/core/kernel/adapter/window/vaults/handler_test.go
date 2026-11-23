@@ -64,7 +64,7 @@ type bin struct {
 	moved []string
 }
 
-func (b *bin) Trash(path string) error {
+func (b *bin) MoveToTrash(path string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.fails != nil {

@@ -123,7 +123,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.VectorIndex().Compact(t.Context()); err != nil {
+	if err := db.VectorIndex().Shrink(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 

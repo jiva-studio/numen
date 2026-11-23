@@ -73,7 +73,7 @@ func readSharedConstants(path string) (map[string]string, error) {
 			}
 			for i, name := range valSpec.Names {
 				if i < len(valSpec.Values) {
-					if text, ok := stringLiteral(valSpec.Values[i]); ok {
+					if text, ok := getStringLiteral(valSpec.Values[i]); ok {
 						consts[name.Name] = text
 					}
 				}
@@ -145,7 +145,7 @@ func readFileRegistrations(path string, sharedConsts map[string]string) ([]regis
 func findCommandPackages(parsed *ast.File) map[string]bool {
 	pkgs := map[string]bool{}
 	for _, imp := range parsed.Imports {
-		importPath, ok := stringLiteral(imp.Path)
+		importPath, ok := getStringLiteral(imp.Path)
 		if !ok || !strings.HasSuffix(importPath, "/command") {
 			continue
 		}
@@ -235,7 +235,7 @@ func resolveCommandIDs(expr ast.Expr, localConsts, sharedConsts map[string]strin
 }
 
 func resolveValue(expr ast.Expr, localConsts, sharedConsts map[string]string, commandPkgs map[string]bool) (string, bool) {
-	if text, ok := stringLiteral(expr); ok {
+	if text, ok := getStringLiteral(expr); ok {
 		return text, true
 	}
 	switch x := expr.(type) {
@@ -253,7 +253,7 @@ func resolveValue(expr ast.Expr, localConsts, sharedConsts map[string]string, co
 	return "", false
 }
 
-func stringLiteral(expr ast.Expr) (string, bool) {
+func getStringLiteral(expr ast.Expr) (string, bool) {
 	lit, ok := expr.(*ast.BasicLit)
 	if !ok || lit.Kind != token.STRING {
 		return "", false

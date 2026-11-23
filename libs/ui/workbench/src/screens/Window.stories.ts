@@ -14,12 +14,12 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
-import { Tree, keyChord } from '@numen/ui'
+import { Tree, createKeyChord } from '@numen/ui'
 import type { Keystroke, Row, TextRange } from '@numen/ui'
 import {
   WorkspaceLayout,
   branch,
-  pane,
+  createPane,
   type Tab,
   type Workspace as State,
 } from '@/features/workspace'
@@ -332,9 +332,9 @@ const OVER_WINDOW: PaletteGroup = {
   id: 'window',
   title: 'General',
   items: [
-    command('note', 'New note', keyChord('n', KEYBOARD)),
+    command('note', 'New note', createKeyChord('n', KEYBOARD)),
     command('plex', 'New plex'),
-    command('agent', 'New agent', keyChord('a', KEYBOARD, true)),
+    command('agent', 'New agent', createKeyChord('a', KEYBOARD, true)),
     command('appearance', 'Change theme'),
   ],
 }
@@ -344,7 +344,7 @@ const OVER_VAULT: PaletteGroup = {
   id: 'vault',
   title: 'Vault',
   items: [
-    command('goto', 'Go to a note', keyChord('g', KEYBOARD)),
+    command('goto', 'Go to a note', createKeyChord('g', KEYBOARD)),
     command('openVault', 'Open vault'),
   ],
 }
@@ -357,8 +357,8 @@ const COMMANDS: readonly PaletteGroup[] = [
     items: [
       command('read', 'Open note'),
       command('beside', 'Open beside'),
-      command('travel', 'Show in plex', keyChord('p', KEYBOARD, true)),
-      command('child', 'New child note', keyChord('c', KEYBOARD, true)),
+      command('travel', 'Show in plex', createKeyChord('p', KEYBOARD, true)),
+      command('child', 'New child note', createKeyChord('c', KEYBOARD, true)),
       command('parent', 'New parent note'),
       command('ask', 'Ask the agent'),
     ],
@@ -488,12 +488,12 @@ export const Writing: Story = {
         root: branch(
           'root',
           [
-            pane('main', [FILES]),
+            createPane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
             // two notes stand one above the other.
             branch(
               'beside',
-              [pane('upper', [NOTE, BOOK], NOTE), pane('lower', [OTHER_NOTE], OTHER_NOTE)],
+              [createPane('upper', [NOTE, BOOK], NOTE), createPane('lower', [OTHER_NOTE], OTHER_NOTE)],
               [0.5, 0.5],
             ),
           ],
@@ -518,7 +518,7 @@ export const Searching: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
+          [createPane('main', [FILES]), createPane('middle', [NOTE, BOOK], NOTE)],
           [0.46, 0.54],
         ),
         axis: 'horizontal',
@@ -546,7 +546,7 @@ export const Commanding: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
+          [createPane('main', [FILES]), createPane('middle', [NOTE, BOOK], NOTE)],
           [0.46, 0.54],
         ),
         axis: 'horizontal',
@@ -575,7 +575,7 @@ export const Asking: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('source', [BOOK], BOOK), pane('middle', [NOTE], NOTE), pane('aside', [AGENT])],
+          [createPane('source', [BOOK], BOOK), createPane('middle', [NOTE], NOTE), createPane('aside', [AGENT])],
           [0.4, 0.3, 0.3],
         ),
         axis: 'horizontal',
@@ -606,7 +606,7 @@ export const Recognising: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('aside', [FILES]), pane('main', [BOOK, NOTE], BOOK)],
+          [createPane('aside', [FILES]), createPane('main', [BOOK, NOTE], BOOK)],
           [0.26, 0.74],
         ),
         axis: 'horizontal',
@@ -640,14 +640,14 @@ export const Filing: Story = {
         root: branch(
           'root',
           [
-            pane('main', [FILES]),
+            createPane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
             branch(
               'middle',
-              [pane('map', [OTHER_NOTE]), pane('note', [NOTE, BOOK], NOTE)],
+              [createPane('map', [OTHER_NOTE]), createPane('note', [NOTE, BOOK], NOTE)],
               [0.52, 0.48],
             ),
-            pane('aside', [AGENT]),
+            createPane('aside', [AGENT]),
           ],
           [0.22, 0.5, 0.28],
         ),

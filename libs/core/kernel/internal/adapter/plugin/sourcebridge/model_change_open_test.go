@@ -47,7 +47,7 @@ func TestEmbedderReportsFailedOpenAfterSettingChange(t *testing.T) {
 	var reports []error
 	b.SetDescriptionReadErrorHandler(func(err error) { reports = append(reports, err) })
 	ran := 0
-	b.OnDescriptionChange(func() { ran++ })
+	b.WatchDescription(func() { ran++ })
 
 	b.announceDescriptionChange()
 

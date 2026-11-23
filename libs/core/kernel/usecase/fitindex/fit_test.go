@@ -54,7 +54,7 @@ func (x *vectorIndex) ApplyMinChunkLength(_ context.Context, length int) (int64,
 	return 0, nil
 }
 
-func (x *vectorIndex) Compact(context.Context) error {
+func (x *vectorIndex) Shrink(context.Context) error {
 	x.calls = append(x.calls, "compact")
 	return x.compactErr
 }

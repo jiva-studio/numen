@@ -34,7 +34,7 @@ export function findPath(root: WorkspaceNode, id: NodeId): Path | null {
   return null
 }
 
-export function paneById(root: WorkspaceNode, id: NodeId): Pane | null {
+export function findPane(root: WorkspaceNode, id: NodeId): Pane | null {
   return getPanes(root).find((pane) => pane.id === id) ?? null
 }
 

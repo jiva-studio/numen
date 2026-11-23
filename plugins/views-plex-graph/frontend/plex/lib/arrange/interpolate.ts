@@ -11,7 +11,7 @@ import type { PlacedNode, Position } from '../node'
 import type { Size } from './options'
 import { clampToUnit, interpolate, interpolateExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { createRouting, type Routing } from './edges/routing'
+import { createRouting, type EdgeRouting } from './edges/routing'
 import { routeEdges } from './edges/routeEdges'
 import type { PlexEdge } from '../../../types'
 
@@ -99,7 +99,7 @@ function tweenNodes(from: PlexFrame, to: PlexFrame, t: number): PlacedNode[] {
 
 interface EdgeTweenContext {
   readonly byId: ReadonlyMap<string, PlacedNode>
-  readonly routing: Routing
+  readonly routing: EdgeRouting
   readonly entryOpacity: number
   readonly exitOpacity: number
 }

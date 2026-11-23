@@ -1,7 +1,7 @@
 /** Workspaces to draw and to test against. */
 import {
   branch,
-  pane,
+  createPane,
   type NodeId,
   type Orientation,
   type Workspace,
@@ -11,7 +11,7 @@ import { getPanes } from '../lib/tree'
 import { getEvenShares } from '../lib/getEvenShares'
 import type { NodeIdFactory } from '../lib/edit'
 
-export const createStack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
+export const createStack = (id: NodeId, ...tabs: string[]): WorkspaceNode => createPane(id, tabs)
 
 const splitBranch = (
   id: NodeId,
@@ -83,6 +83,6 @@ export const createManyTabsWorkspace = (): Workspace =>
   )
 
 /** Nothing open. */
-export const createEmptyWorkspace = (): Workspace => createWorkspace(pane('main', []))
+export const createEmptyWorkspace = (): Workspace => createWorkspace(createPane('main', []))
 
 export { splitBranch as split }

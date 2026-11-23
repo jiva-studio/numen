@@ -96,8 +96,8 @@ func (s *Source) SearchChunks(ctx context.Context, place searchsource.Place, q s
 	})
 }
 
-// OnDescriptionChange registers fn with Watch.
-func (s *Source) OnDescriptionChange(fn func()) {
+// WatchDescription registers fn with Watch.
+func (s *Source) WatchDescription(fn func()) {
 	if s.Watch != nil {
 		s.Watch(fn)
 	}

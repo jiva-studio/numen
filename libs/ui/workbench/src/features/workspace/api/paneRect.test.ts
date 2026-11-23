@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { branch, pane, type Workspace } from '../lib/node'
+import { branch, createPane, type Workspace } from '../lib/node'
 import { getTabPaneRect } from './paneRect'
 
 const WORKSPACE: Workspace = {
-  root: branch('root', [pane('left', ['reef', 'tide']), pane('aside', ['atlas'])], [0.6, 0.4]),
+  root: branch('root', [createPane('left', ['reef', 'tide']), createPane('aside', ['atlas'])], [0.6, 0.4]),
   axis: 'horizontal',
   focus: 'left',
 }

@@ -1,5 +1,5 @@
 import { RELATIONS } from '../relation'
-import { getFocusSize, getNodeSize, type Padding } from './look'
+import { getFocusSize, getNodeSize, type BoxPadding } from './look'
 import type { Size } from '@numen/ui'
 import type { PlexRelation } from '../../../types'
 
@@ -15,7 +15,7 @@ interface BoxOptions {
   readonly focusSize: Size
   readonly nodeSize: Size
   readonly focusScale: number
-  readonly padding: Padding
+  readonly padding: BoxPadding
   readonly room: number
   readonly minWidth: number
   readonly iconWidth: number
@@ -64,7 +64,7 @@ const DEFAULT_DIRECTION: Readonly<Record<PlexRelation, Direction>> = Object.from
   Object.entries(RELATIONS).map(([relation, descriptor]) => [relation, descriptor.grows]),
 ) as Record<PlexRelation, Direction>
 
-const DEFAULT_PADDING: Padding = { inline: 10, block: 9.25 }
+const DEFAULT_PADDING: BoxPadding = { inline: 10, block: 9.25 }
 const DEFAULT_NODE_SIZE = getNodeSize(144, DEFAULT_PADDING)
 const DEFAULT_FOCUS_SCALE = 1.22
 
@@ -96,7 +96,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
  */
 export type PlexOptionsInput = Partial<
   Omit<PlexOptions, 'routing' | 'motion' | 'gesture' | 'padding'> & {
-    padding: Partial<Padding>
+    padding: Partial<BoxPadding>
     routing: Partial<RoutingOptions>
     motion: Partial<MotionOptions>
     gesture: Partial<GestureOptions>

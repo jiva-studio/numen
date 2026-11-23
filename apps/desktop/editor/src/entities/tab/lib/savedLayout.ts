@@ -1,4 +1,4 @@
-import { paneById, type Workspace } from '@numen/workbench'
+import { findPane, type Workspace } from '@numen/workbench'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
 import type { Result } from '@numen/result'
 
@@ -58,7 +58,7 @@ export function readSavedLayout(
       typeof value.focus === 'string' &&
       isWorkspaceNode(value.root, new Set(), remaining) &&
       remaining.size === 0 &&
-      paneById(value.root, value.focus)
+      findPane(value.root, value.focus)
     ) {
       return { ok: true, value: { root: value.root, axis: value.axis, focus: value.focus } }
     }

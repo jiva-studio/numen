@@ -88,7 +88,7 @@ func TestADelayedRequestIsCountedAsAbortedWhenTheClientDisconnects(t *testing.T)
 		t.Fatal("want a timeout")
 	}
 	select {
-	case <-fake.Aborted():
+	case <-fake.GetAbortSignal():
 	case <-time.After(5 * time.Second):
 		t.Fatal("the abort was not seen")
 	}
@@ -167,8 +167,8 @@ func TestVectorMathAndDefaultDimensions(t *testing.T) {
 		if got := len(srv.BuildVector("ferry")); got != 8 {
 			t.Errorf("New(Dimensions=%d).Vector len = %d, want 8", dims, got)
 		}
-		if got := cap(srv.Aborted()); got != 64 {
-			t.Errorf("cap(Aborted) = %d, want 64", got)
+		if got := cap(srv.GetAbortSignal()); got != 64 {
+			t.Errorf("cap(GetAbortSignal) = %d, want 64", got)
 		}
 	}
 

@@ -10,7 +10,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
 import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
-import { keyChord } from '@numen/ui'
+import { createKeyChord } from '@numen/ui'
 import type { PaletteGroup } from '../lib/item'
 import type { TextRange } from '@numen/ui'
 import { ARABIC, DEVANAGARI, GRAPHEMES, LONG, RUSSIAN } from '@/shared/fixtures/prose'
@@ -931,10 +931,10 @@ export const KeyHints: Story = {
         id: 'commands',
         title: 'Commands',
         items: [
-          { id: 'new', title: 'New note', keys: keyChord('n', APPLE), actions: RUN },
-          { id: 'plex', title: 'Show the plex', keys: keyChord('p', APPLE, true), actions: RUN },
-          { id: 'close', title: 'Close tab', keys: keyChord('w', OTHER, true), actions: RUN },
-          { id: 'goto', title: 'Go to a note', keys: keyChord('g', OTHER), actions: RUN },
+          { id: 'new', title: 'New note', keys: createKeyChord('n', APPLE), actions: RUN },
+          { id: 'plex', title: 'Show the plex', keys: createKeyChord('p', APPLE, true), actions: RUN },
+          { id: 'close', title: 'Close tab', keys: createKeyChord('w', OTHER, true), actions: RUN },
+          { id: 'goto', title: 'Go to a note', keys: createKeyChord('g', OTHER), actions: RUN },
           { id: 'run', title: 'Run it', keys: { icons: ['return'], letter: '' }, actions: RUN },
           {
             id: 'long',

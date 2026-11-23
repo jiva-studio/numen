@@ -4,7 +4,7 @@ import {
   isLeading,
   getOrientation,
   findSideOrientation,
-  pane,
+  createPane,
   type Branch,
   type NodeId,
   type Orientation,
@@ -62,15 +62,15 @@ export function putAdjacent(
   const path = findPath(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
-  const createdItem = pane(id(), [tab])
+  const newPane = createPane(id(), [tab])
   const index = path[path.length - 1]
   const above = path.slice(0, -1)
 
   if (index === undefined) {
     return {
-      root: branch(id(), arrangePair(createdItem, root, side), [0.5, 0.5]),
+      root: branch(id(), arrangePair(newPane, root, side), [0.5, 0.5]),
       axis: wanted,
-      focus: createdItem.id,
+      focus: newPane.id,
     }
   }
 
@@ -78,18 +78,18 @@ export function putAdjacent(
 
   if (getOrientation(axis, above.length) === wanted) {
     return {
-      root: replaceAt(root, above, joinAdjacent(parent, createdItem, { index, side })),
+      root: replaceAt(root, above, joinAdjacent(parent, newPane, { index, side })),
       axis,
-      focus: createdItem.id,
+      focus: newPane.id,
     }
   }
 
   const target = findNode(root, path) as WorkspaceNode
 
   return {
-    root: replaceAt(root, path, branch(id(), arrangePair(createdItem, target, side), [0.5, 0.5])),
+    root: replaceAt(root, path, branch(id(), arrangePair(newPane, target, side), [0.5, 0.5])),
     axis,
-    focus: createdItem.id,
+    focus: newPane.id,
   }
 }
 

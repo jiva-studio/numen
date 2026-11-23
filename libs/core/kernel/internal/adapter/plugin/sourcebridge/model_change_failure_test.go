@@ -219,7 +219,7 @@ func TestASettingThatAllowsTheSourceAnnouncesItsDescription(t *testing.T) {
 		t.Fatal("the failed start is reported without an error")
 	}
 	var announced atomic.Int32
-	bridge.OnDescriptionChange(func() { announced.Add(1) })
+	bridge.WatchDescription(func() { announced.Add(1) })
 
 	reads := mock.describeCalls.Load()
 	mock.failPrecondition.Store(false)
