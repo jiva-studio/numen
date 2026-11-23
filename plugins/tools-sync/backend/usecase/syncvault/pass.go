@@ -9,12 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
 type pass struct {
@@ -49,7 +47,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.pull.Execute(ctx, pull.Input{VaultID: p.id, Authors: p.authors.IsTrusted})
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted})
 	if err != nil {
 		return err
 	}
@@ -63,7 +61,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	changes, err := p.use.steps.scan.Execute(ctx, localchanges.Input{VaultID: p.id, Bases: getBases(records)})
+	changes, err := p.use.steps.Scan.Execute(ctx, transfer.ScanInput{VaultID: p.id, Bases: getBases(records)})
 	if err != nil {
 		return false, err
 	}
@@ -75,7 +73,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	outcomes, err := p.use.steps.commit.Execute(ctx, commit.Input{Vault: vault, Files: files})
+	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files})
 	if err != nil {
 		return false, err
 	}
@@ -90,8 +88,8 @@ func getBases(records []note.FileRecord) map[string]string {
 	return bases
 }
 
-func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes []localchanges.Change) ([]commit.File, error) {
-	var files []commit.File
+func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
+	var files []transfer.File
 	reader := p.use.deps.Host.Files(p.id)
 	for _, change := range changes {
 		if slices.Contains(p.conflicts, change.Path) {
@@ -104,7 +102,7 @@ func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes
 		if err != nil {
 			return nil, err
 		}
-		file := commit.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: content, ModifiedAt: change.ModifiedAt}
+		file := transfer.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: content, ModifiedAt: change.ModifiedAt}
 		if at := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
 			file.FileID, file.ParentRev = records[at].FileID, records[at].HeadRev
 		}
@@ -113,33 +111,33 @@ func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes
 	return files, nil
 }
 
-func (p *pass) openVault(ctx context.Context) (commit.Vault, error) {
+func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 	link, err := p.use.deps.State.ReadLink(ctx, p.id)
 	if err != nil {
-		return commit.Vault{}, err
+		return transfer.Vault{}, err
 	}
 	remote, err := hex.DecodeString(link.RemoteVaultID)
 	if err != nil {
-		return commit.Vault{}, err
+		return transfer.Vault{}, err
 	}
 	key, err := p.use.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
 	if err != nil {
-		return commit.Vault{}, err
+		return transfer.Vault{}, err
 	}
-	return commit.Vault{ID: remote, Key: [32]byte(key)}, nil
+	return transfer.Vault{ID: remote, Key: [32]byte(key)}, nil
 }
 
-func (p *pass) record(ctx context.Context, records []note.FileRecord, files []commit.File, outcomes []commit.Outcome) (bool, error) {
+func (p *pass) record(ctx context.Context, records []note.FileRecord, files []transfer.File, outcomes []transfer.Outcome) (bool, error) {
 	isRetry := false
 	for i, outcome := range outcomes {
 		switch outcome.Status {
-		case commit.Committed:
+		case transfer.Committed:
 			records = setRecord(records, note.FileRecord{
 				FileID: outcome.FileID, Path: outcome.Path, BaseHash: note.Hash(files[i].Content), HeadRev: outcome.RevID,
 			})
-		case commit.ParentMismatch, commit.PathTaken:
+		case transfer.ParentMismatch, transfer.PathTaken:
 			isRetry = true
-		case commit.TooLarge:
+		case transfer.TooLarge:
 		}
 	}
 	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)

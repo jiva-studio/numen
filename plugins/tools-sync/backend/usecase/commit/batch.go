@@ -11,11 +11,12 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 type batchRun struct {
 	deps   Deps
-	vault  Vault
+	vault  transfer.Vault
 	author []byte
 }
 
@@ -26,13 +27,13 @@ type prepared struct {
 	revision *syncv1.Revision
 }
 
-func (r *batchRun) execute(ctx context.Context, files []File) ([]Outcome, error) {
-	outcomes := make([]Outcome, len(files))
+func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transfer.Outcome, error) {
+	outcomes := make([]transfer.Outcome, len(files))
 	var items []*prepared
 	for i, file := range files {
 		item, err := r.seal(file, i)
 		if errors.Is(err, blobcipher.ErrTooLarge) {
-			outcomes[i] = Outcome{Path: file.Path, Status: TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil}
+			outcomes[i] = transfer.Outcome{Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil}
 			continue
 		}
 		if err != nil {
@@ -52,7 +53,7 @@ func (r *batchRun) execute(ctx context.Context, files []File) ([]Outcome, error)
 	return outcomes, nil
 }
 
-func (r *batchRun) seal(file File, index int) (*prepared, error) {
+func (r *batchRun) seal(file transfer.File, index int) (*prepared, error) {
 	path, err := note.NormalizePath(file.Path)
 	if err != nil {
 		return nil, fmt.Errorf("commit %s: %w", file.Path, err)
@@ -110,7 +111,7 @@ func (r *batchRun) upload(ctx context.Context, items []*prepared) error {
 	return nil
 }
 
-func (r *batchRun) commit(ctx context.Context, items []*prepared, files []File, outcomes []Outcome) error {
+func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transfer.File, outcomes []transfer.Outcome) error {
 	for len(items) > 0 {
 		revisions := make([]*syncv1.Revision, len(items))
 		for i, item := range items {
@@ -134,16 +135,16 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []File, 
 	return nil
 }
 
-func (r *batchRun) recordCommitted(items []*prepared, files []File, outcomes []Outcome, stored []*syncv1.StoredRevision) {
+func (r *batchRun) recordCommitted(items []*prepared, files []transfer.File, outcomes []transfer.Outcome, stored []*syncv1.StoredRevision) {
 	for i, item := range items {
-		outcomes[item.index] = Outcome{
-			Path: files[item.index].Path, Status: Committed, FileID: item.revision.GetFileId(), RevID: stored[i].GetRevId(),
+		outcomes[item.index] = transfer.Outcome{
+			Path: files[item.index].Path, Status: transfer.Committed, FileID: item.revision.GetFileId(), RevID: stored[i].GetRevId(),
 			Head: nil, ExistingFileID: nil,
 		}
 	}
 }
 
-func (r *batchRun) recordConflicts(items []*prepared, files []File, outcomes []Outcome, conflicts []*syncv1.Conflict) ([]*prepared, error) {
+func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, outcomes []transfer.Outcome, conflicts []*syncv1.Conflict) ([]*prepared, error) {
 	if len(conflicts) == 0 {
 		return nil, errUnexpectedAnswer
 	}
@@ -154,11 +155,11 @@ func (r *batchRun) recordConflicts(items []*prepared, files []File, outcomes []O
 			rest = append(rest, item)
 			continue
 		}
-		status := ParentMismatch
+		status := transfer.ParentMismatch
 		if conflict.GetKind() == syncv1.ConflictKind_CONFLICT_KIND_PATH_TAKEN {
-			status = PathTaken
+			status = transfer.PathTaken
 		}
-		outcomes[item.index] = Outcome{
+		outcomes[item.index] = transfer.Outcome{
 			Path: files[item.index].Path, Status: status, FileID: item.revision.GetFileId(), RevID: nil,
 			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(),
 		}

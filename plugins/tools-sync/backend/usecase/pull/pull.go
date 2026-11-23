@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -30,20 +30,6 @@ type Deps struct {
 	State     State
 }
 
-// Input is the vault and the check of the author of a revision.
-type Input struct {
-	VaultID domain.VaultID
-	Authors func(deviceSignKey []byte) bool
-}
-
-// Result is the notes written, the notes left as they were because both computers changed them, and the number
-// of revisions skipped because their author or their content could not be verified.
-type Result struct {
-	Applied    []string
-	Conflicts  []string
-	Unverified int
-}
-
 // PullChanges reads the changes after the position of the vault and applies them.
 type PullChanges struct{ deps Deps }
 
@@ -52,26 +38,26 @@ func NewPullChanges(deps Deps) *PullChanges { return &PullChanges{deps: deps} }
 
 // Execute applies every change after the position kept in the link. The position stops before the first note
 // that is left as it was, so the next pull reads it again.
-func (u *PullChanges) Execute(ctx context.Context, in Input) (Result, error) {
+func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error) {
 	link, err := u.deps.State.ReadLink(ctx, in.VaultID)
 	if err != nil {
-		return Result{}, err
+		return transfer.PullResult{}, err
 	}
 	records, err := u.deps.State.ReadRecords(ctx, in.VaultID)
 	if err != nil {
-		return Result{}, err
+		return transfer.PullResult{}, err
 	}
 	remote, err := hex.DecodeString(link.RemoteVaultID)
 	if err != nil {
-		return Result{}, fmt.Errorf("read the remote id of the link: %w", err)
+		return transfer.PullResult{}, fmt.Errorf("read the remote id of the link: %w", err)
 	}
 	key, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
 	if err != nil {
-		return Result{}, fmt.Errorf("open the vault key: %w", err)
+		return transfer.PullResult{}, fmt.Errorf("open the vault key: %w", err)
 	}
 	r := &run{
 		deps: u.deps, in: in, files: u.deps.Host.Files(in.VaultID), remote: remote, key: [32]byte(key), link: link, records: records,
-		result: Result{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
+		result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
 	}
 	err = r.execute(ctx)
 	return r.result, err

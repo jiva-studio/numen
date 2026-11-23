@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -23,13 +24,13 @@ var errBlobMissing = errors.New("the server has no blob for a revision")
 
 type run struct {
 	deps    Deps
-	in      Input
+	in      transfer.PullInput
 	files   ports.Files
 	remote  []byte
 	key     [32]byte
 	link    vaultlink.Link
 	records []note.FileRecord
-	result  Result
+	result  transfer.PullResult
 	holdSeq uint64
 	isHeld  bool
 }

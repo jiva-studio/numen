@@ -210,9 +210,19 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 	}
 }
 
+// NewSyncVault returns the pass over one vault with the use cases of its steps.
+func (c *Computer) NewSyncVault() *syncvault.SyncVault {
+	return syncvault.NewSyncVault(c.SyncDeps(), syncvault.Steps{
+		Rename: catalog.NewRenameRemoteVault(c.CatalogDeps()),
+		Pull:   pull.NewPullChanges(c.PullDeps()),
+		Scan:   localchanges.NewScanLocalChanges(c.LocalChangesDeps()),
+		Commit: commit.NewCommitRevisions(c.CommitDeps()),
+	})
+}
+
 // Sync runs one pass over the vault.
 func (c *Computer) Sync(ctx context.Context, id domain.VaultID) error {
-	return syncvault.NewSyncVault(c.SyncDeps()).Execute(ctx, id)
+	return c.NewSyncVault().Execute(ctx, id)
 }
 
 // NewPendingComputer makes a computer whose host keeps a restore of the words, with no identity and not signed
@@ -227,7 +237,7 @@ func NewPendingComputer(t *testing.T, server *Server, clock *Clock, vault string
 // RunDeps are the dependencies of the loop over the vaults, with a pass over one vault as SyncDeps makes it.
 func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID) syncvault.RunDeps {
 	return syncvault.RunDeps{
-		Pass: syncvault.NewSyncVault(c.SyncDeps()), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
+		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Interval: func() time.Duration { return interval }, Changed: changed,
 	}
 }
