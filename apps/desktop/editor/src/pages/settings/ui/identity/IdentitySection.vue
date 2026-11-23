@@ -4,6 +4,7 @@
  * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
  * one from its words.
  */
+import { KeyRound, Plus } from '@lucide/vue'
 import { Button, IslandCard } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
@@ -42,15 +43,17 @@ const { stage, recoveryWords } = setup
         :disabled="call.isBusy.value"
         @click="actions.startRestore"
       >
+        <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
       </Button>
       <Button
         type="button"
-        variant="solid"
+        variant="ghost"
         size="small"
         :disabled="call.isBusy.value"
         @click="actions.startSetup"
       >
+        <Plus :size="14" aria-hidden="true" />
         {{ words.identityCreate }}
       </Button>
     </template>
