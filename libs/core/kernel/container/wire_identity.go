@@ -7,11 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
-func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowidentity.UseCases {
+func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, pending *identity.PendingStore) *windowidentity.UseCases {
 	if install.KeyStore == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithPending(install.Restore)
+	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithPending(pending)
 	return &windowidentity.UseCases{
 		Get:           identity.NewGetIdentity(deps),
 		GenerateWords: identity.NewGenerateRecoveryWords(deps),

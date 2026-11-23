@@ -57,23 +57,29 @@ type Account interface {
 	SealData(ctx context.Context, pluginID string, dataContext, plain []byte) ([]byte, error)
 	// OpenData opens what SealData sealed for the plugin and the context; failure is identity.ErrCannotOpen.
 	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
+}
+
+// AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits
+// for the chain of the server. Its calls return identity.ErrNoPendingRestore when none is pending.
+type AccountRestore interface {
 	// GetPendingRestore returns the public keys of the restore that waits for a chain.
 	GetPendingRestore(ctx context.Context) (identitydomain.PendingRestore, error)
-	// SignAsRecovery signs with the recovery key of the pending restore; none pending is identity.ErrNoPendingRestore.
+	// SignAsRecovery signs with the recovery key of the pending restore.
 	SignAsRecovery(ctx context.Context, pluginID string, message []byte) ([]byte, error)
 	// CompleteRestore finishes the pending restore with the chain of the server, or with none.
 	CompleteRestore(ctx context.Context, pluginID string, chain []byte) error
 }
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Account is what a plugin may ask of the
-// identity of this device, and is nil where the host holds none. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Account and Restore are what a plugin may ask of the
+// identity of this device, and are nil where the host holds none. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Identity     Identity
 	Account      Account
+	Restore      AccountRestore
 	Leases       Leases
 	Lent         *Services
 	Tools        func() PluginTools

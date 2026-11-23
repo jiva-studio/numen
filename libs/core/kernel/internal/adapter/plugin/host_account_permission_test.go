@@ -55,6 +55,7 @@ func TestAnAccountCallWithoutTheIdentityPermissionIsRefusedByTheCore(t *testing.
 	})
 	callers := lentCallers(host)
 	callers.Account = signingAccount{}
+	callers.Restore = signingAccount{}
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, callers)
 	if err != nil {
 		t.Fatal(err)

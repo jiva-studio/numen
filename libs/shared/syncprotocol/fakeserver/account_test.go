@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -79,7 +78,7 @@ type chainRead struct {
 
 func readChain(e *env, signer identity.RecoveryKey, root []byte) chainRead {
 	e.tb.Helper()
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChainReadChallenge(e.tb.Context(), root)
 	if err != nil {
 		e.tb.Fatal(err)
@@ -139,7 +138,7 @@ func TestGetAccountChainByRoot_RefusesASignatureOverAnotherPluginDomain(t *testi
 	e := newEnv(t)
 	root := e.account.root.Public().Sign
 	read := readChain(e, e.account.root, root)
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChainReadChallenge(t.Context(), root)
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +172,7 @@ func TestGetAccountChainByRoot_RefusesASignatureOfTheSignInMessageOfTheSameChall
 	t.Parallel()
 	e := newEnv(t)
 	root := e.account.root.Public().Sign
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChallenge(t.Context(), root)
 	if err != nil {
 		t.Fatal(err)

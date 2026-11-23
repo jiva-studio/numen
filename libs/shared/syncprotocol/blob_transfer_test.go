@@ -15,6 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
+// machineClock reads the clock of the machine.
+type machineClock struct{}
+
+func (machineClock) Now() time.Time { return time.Now() }
+
 type transferRecord struct {
 	method string
 	header http.Header
@@ -135,7 +140,7 @@ func TestGetChainReadChallenge_ReturnsTheIDAndTheChainReadMessageOfTheRootKey(t 
 	served := httptest.NewServer(server)
 	t.Cleanup(served.Close)
 	server.SetAudience(served.URL)
-	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, machineClock{}.Now)
 	root := bytes.Repeat([]byte{3}, 32)
 
 	read, err := client.GetChainReadChallenge(t.Context(), root)
@@ -162,7 +167,7 @@ func TestGetChainReadChallenge_RefusesAChallengeOfAnotherServer(t *testing.T) {
 	server := fakeserver.New(fakeserver.Config{Audience: "https://other.example"})
 	served := httptest.NewServer(server)
 	t.Cleanup(served.Close)
-	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(served.URL, http.DefaultClient, machineClock{}.Now)
 
 	_, err := client.GetChainReadChallenge(t.Context(), bytes.Repeat([]byte{3}, 32))
 
