@@ -29,7 +29,7 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	})
 	if errors.Is(err, blobcipher.ErrTooLarge) {
 		return transfer.Outcome{
-			Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.FileRecord{},
+			Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.NoRecord(),
 		}, nil
 	}
 	if err != nil {

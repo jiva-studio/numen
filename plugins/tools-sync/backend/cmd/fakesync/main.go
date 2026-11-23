@@ -28,12 +28,12 @@ const (
 	payFolder    = "/pay/"
 )
 
-// keeper saves the data of the server after every request that may have changed it: any but a GET, and the
-// GET of a pay page.
 func newKeeper(fake *fakeserver.Server, path string, stopped *atomic.Bool, exit chan struct{}) *keeper {
 	return &keeper{next: fake, fake: fake, path: path, mu: sync.Mutex{}, stopped: stopped, exit: exit, once: sync.Once{}}
 }
 
+// keeper saves the data of the server after every request that may have changed it: any but a GET, and the
+// GET of a pay page.
 type keeper struct {
 	next    http.Handler
 	fake    *fakeserver.Server
