@@ -308,14 +308,22 @@ func TestGetSubscription_ReadsUsedBytesAboveTheQuota(t *testing.T) {
 func TestListPlans_ReturnsThePlansInTheOrderOfTheServer(t *testing.T) {
 	t.Parallel()
 	stub, address := serveSubscriptionStub(t, syncprotocol.Version)
-	stub.plans = []*syncv1.Plan{{Id: "basic", QuotaBytes: 10 << 30}, {Id: "plus", QuotaBytes: 100 << 30}, {Id: "pro", QuotaBytes: 250 << 30}}
+	stub.plans = []*syncv1.Plan{
+		{Id: "basic", Name: "Basic", QuotaBytes: 10 << 30, PriceCents: 500, Currency: "USD"},
+		{Id: "plus", Name: "Plus", QuotaBytes: 100 << 30, PriceCents: 1500, Currency: "USD"},
+		{Id: "pro", Name: "Pro", QuotaBytes: 250 << 30, PriceCents: 3000, Currency: "USD"},
+	}
 
 	got, err := newSubscriptionClient(address).ListPlans(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []syncprotocol.Plan{{ID: "basic", QuotaBytes: 10 << 30}, {ID: "plus", QuotaBytes: 100 << 30}, {ID: "pro", QuotaBytes: 250 << 30}}
+	want := []syncprotocol.Plan{
+		{ID: "basic", Name: "Basic", QuotaBytes: 10 << 30, PriceCents: 500, Currency: "USD"},
+		{ID: "plus", Name: "Plus", QuotaBytes: 100 << 30, PriceCents: 1500, Currency: "USD"},
+		{ID: "pro", Name: "Pro", QuotaBytes: 250 << 30, PriceCents: 3000, Currency: "USD"},
+	}
 	if !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}

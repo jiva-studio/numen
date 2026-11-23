@@ -246,7 +246,11 @@ func TestListPlans_ReturnsThePlansOfTheServerAscendingByQuota(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []api.Plan{{ID: "basic", QuotaBytes: 10 * gib}, {ID: "plus", QuotaBytes: 100 * gib}, {ID: "pro", QuotaBytes: 250 * gib}}
+	want := []api.Plan{
+		{ID: "basic", Name: "Basic", QuotaBytes: 10 * gib, PriceCents: 500, Currency: "USD"},
+		{ID: "plus", Name: "Plus", QuotaBytes: 100 * gib, PriceCents: 1500, Currency: "USD"},
+		{ID: "pro", Name: "Pro", QuotaBytes: 250 * gib, PriceCents: 3000, Currency: "USD"},
+	}
 	if !slices.Equal(got.Plans, want) {
 		t.Errorf("plans = %+v, want %+v", got.Plans, want)
 	}

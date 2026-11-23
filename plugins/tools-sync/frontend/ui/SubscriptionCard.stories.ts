@@ -11,9 +11,9 @@ const NOW = new Date('2026-11-23T12:00:00Z')
 
 const GIB = 2 ** 30
 const PLANS = [
-  { id: 'basic', quotaBytes: 10 * GIB },
-  { id: 'plus', quotaBytes: 100 * GIB },
-  { id: 'pro', quotaBytes: 250 * GIB },
+  { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 500, currency: 'USD' },
+  { id: 'plus', name: 'Plus', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' },
+  { id: 'pro', name: 'Pro', quotaBytes: 250 * GIB, priceCents: 3000, currency: 'USD' },
 ]
 
 const createResponse = (patch: Partial<SubscriptionResponse>): SubscriptionResponse => ({
@@ -53,7 +53,7 @@ export const None: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('No subscription')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
   },
 }
 
@@ -89,7 +89,7 @@ export const Grace: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Ended')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
   },
 }
 
@@ -107,7 +107,7 @@ export const ReadOnly: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Read only')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
   },
 }
 
@@ -116,7 +116,7 @@ export const Deleted: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Deleted')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
   },
 }
 
@@ -145,9 +145,9 @@ export const Unreachable: Story = {
 export const OffersEveryPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('button', { name: 'Buy Basic, 10 GB' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Buy Pro, 250 GB' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Basic, 10 GB, $5' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Buy Pro, 250 GB, $30' })).toBeVisible()
   },
 }
 

@@ -40,5 +40,8 @@ func (s State) CanWrite() bool {
 // Plan is a plan the server sells.
 type Plan struct {
 	ID         string
+	Name       string
 	QuotaBytes uint64
+	PriceCents uint64
+	Currency   string
 }

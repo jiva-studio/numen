@@ -218,9 +218,17 @@ func (x *GetSubscriptionResponse) GetUsedBytes() uint64 {
 }
 
 type Plan struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	QuotaBytes    uint64                 `protobuf:"varint,2,opt,name=quota_bytes,json=quotaBytes,proto3" json:"quota_bytes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the external id or the slug of the product of the plan.
+	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	QuotaBytes uint64 `protobuf:"varint,2,opt,name=quota_bytes,json=quotaBytes,proto3" json:"quota_bytes,omitempty"`
+	// name is the name of the plan as the seller shows it.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// price_cents is the price for one period in the smallest unit of the currency, tax included. It is information:
+	// the payment page holds the price that is charged.
+	PriceCents uint64 `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	// currency is the ISO 4217 code, such as USD.
+	Currency      string `protobuf:"bytes,5,opt,name=currency,proto3" json:"currency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,6 +275,27 @@ func (x *Plan) GetQuotaBytes() uint64 {
 		return x.QuotaBytes
 	}
 	return 0
+}
+
+func (x *Plan) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Plan) GetPriceCents() uint64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *Plan) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
 }
 
 type ListPlansRequest struct {
@@ -541,11 +570,15 @@ const file_numen_sync_v1_subscription_proto_rawDesc = "" +
 	"\vquota_bytes\x18\x06 \x01(\x04R\n" +
 	"quotaBytes\x12\x1d\n" +
 	"\n" +
-	"used_bytes\x18\a \x01(\x04R\tusedBytes\"7\n" +
+	"used_bytes\x18\a \x01(\x04R\tusedBytes\"\x88\x01\n" +
 	"\x04Plan\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vquota_bytes\x18\x02 \x01(\x04R\n" +
-	"quotaBytes\"\x12\n" +
+	"quotaBytes\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
+	"\vprice_cents\x18\x04 \x01(\x04R\n" +
+	"priceCents\x12\x1a\n" +
+	"\bcurrency\x18\x05 \x01(\tR\bcurrency\"\x12\n" +
 	"\x10ListPlansRequest\">\n" +
 	"\x11ListPlansResponse\x12)\n" +
 	"\x05plans\x18\x01 \x03(\v2\x13.numen.sync.v1.PlanR\x05plans\"+\n" +

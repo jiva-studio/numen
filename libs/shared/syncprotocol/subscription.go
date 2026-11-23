@@ -9,10 +9,14 @@ import (
 // SubscriptionPhase is the phase of a subscription as the server tells it.
 type SubscriptionPhase = syncv1.SubscriptionPhase
 
-// Plan is a plan the server sells: its id and how many bytes it holds.
+// Plan is a plan the server sells: its id, its name, how many bytes it holds and its price for one period in cents
+// of the currency, tax included. The price is information; the payment page holds the one that is charged.
 type Plan struct {
 	ID         string
+	Name       string
 	QuotaBytes uint64
+	PriceCents uint64
+	Currency   string
 }
 
 // Subscription is the subscription of an account. A time the server did not send is the zero time. PlanID is empty

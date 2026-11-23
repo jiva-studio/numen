@@ -14,8 +14,8 @@ const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
 
-/** The name of the button that buys the plan of a name with its size in GB, as the card writes it. */
-export const getBuyName = (name: string, gigabytes: number): string => `Buy ${name}, ${gigabytes} GB`
+/** Matches the button that buys the plan of a name with its size in GB; the card may add the price after the size. */
+export const getBuyName = (name: string, gigabytes: number): RegExp => new RegExp(`^Buy ${name}, ${gigabytes} GB(?:,|$)`)
 
 /** Matches the button that buys the plan of a name, whatever its size. */
 export const getBuyPattern = (name: string): RegExp => new RegExp(`^Buy ${name}, `)
@@ -219,7 +219,7 @@ export class IdentityDriver {
   /** Expects the card to offer to buy the plan of a name with its size in GB. */
   async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
-    await expect(card.getByRole('button', { name: getBuyName(name, gigabytes), exact: true })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByRole('button', { name: getBuyName(name, gigabytes) })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Expects the card to offer to buy no plan, after it showed the subscription. */

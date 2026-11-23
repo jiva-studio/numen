@@ -25,7 +25,11 @@ export interface SubscriptionResponse {
 /** A plan the server sells. */
 export interface PlanResponse {
   readonly id: string
+  readonly name: string
   readonly quotaBytes: number
+  /** The price for one period in cents of the currency, tax included. It is information only. */
+  readonly priceCents: number
+  readonly currency: string
 }
 
 interface ListPlansResponse {

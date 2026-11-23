@@ -21,6 +21,7 @@ export interface SubscriptionDates {
 /** A plan the person can buy or move to: its id and the label of the button, such as "Plus, 100 GB". */
 export interface PlanOffer {
   readonly id: string
+  readonly name: string
   readonly label: string
 }
 
@@ -85,10 +86,13 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
   }
 }
 
-/** A plan to show: its id and the bytes it holds. */
+/** A plan to show, as the server lists it. */
 export interface PlanSize {
   readonly id: string
+  readonly name: string
   readonly quotaBytes: number
+  readonly priceCents: number
+  readonly currency: string
 }
 
 /** The size in GB, where 1 GB is 2^30 bytes, such as "10 GB" or "1.5 GB". */
@@ -96,13 +100,18 @@ export function formatSize(_bytes: number): string {
   throw new Error('not implemented')
 }
 
-/** The display name of a plan id the client knows (basic, plus, pro), and empty for another id. */
-export function getPlanName(_id: string): string {
+/** The price for one period, such as "$5", "$4.99", "€10" or "7 CHF"; empty when the plan has no price. */
+export function formatPrice(_cents: number, _currency: string): string {
   throw new Error('not implemented')
 }
 
-/** The name and the size of a plan, such as "Plus, 100 GB"; only the size for a plan id the client does not know. */
+/** The name and the size of a plan, such as "Plus, 100 GB"; only the size when the plan has no name. */
 export function getPlanLabel(_plan: PlanSize): string {
+  throw new Error('not implemented')
+}
+
+/** The label of an offer: the name, the size and the price, such as "Plus, 100 GB, $15". */
+export function getOfferLabel(_plan: PlanSize): string {
   throw new Error('not implemented')
 }
 

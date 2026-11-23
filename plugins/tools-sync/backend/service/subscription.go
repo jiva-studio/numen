@@ -49,7 +49,7 @@ func (b *Backend) ListPlans(ctx context.Context, _ api.ListPlansRequest) (api.Li
 	}
 	response := api.ListPlansResponse{Plans: make([]api.Plan, 0, len(plans))}
 	for _, plan := range plans {
-		response.Plans = append(response.Plans, api.Plan{ID: plan.ID, QuotaBytes: plan.QuotaBytes})
+		response.Plans = append(response.Plans, api.Plan{ID: plan.ID, Name: plan.Name, QuotaBytes: plan.QuotaBytes, PriceCents: plan.PriceCents, Currency: plan.Currency})
 	}
 	return response, nil
 }

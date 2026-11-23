@@ -9,7 +9,7 @@ service SubscriptionService {
   // GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
   rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
 
-  // ListPlans returns the plans the server sells, ascending by quota.
+  // ListPlans returns the plans the server sells, ascending by quota, with the name and the price of each.
   rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
 
   // CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
@@ -54,8 +54,16 @@ message GetSubscriptionResponse {
 }
 
 message Plan {
+  // id is the external id or the slug of the product of the plan.
   string id = 1;
   uint64 quota_bytes = 2;
+  // name is the name of the plan as the seller shows it.
+  string name = 3;
+  // price_cents is the price for one period in the smallest unit of the currency, tax included. It is information:
+  // the payment page holds the price that is charged.
+  uint64 price_cents = 4;
+  // currency is the ISO 4217 code, such as USD.
+  string currency = 5;
 }
 
 message ListPlansRequest {}

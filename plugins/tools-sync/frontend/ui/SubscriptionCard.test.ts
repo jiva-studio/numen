@@ -11,9 +11,9 @@ const CHECKOUT_URL = 'https://pay.example/checkout/abc'
 
 const GIB = 2 ** 30
 const PLANS = [
-  { id: 'basic', quotaBytes: 10 * GIB },
-  { id: 'plus', quotaBytes: 100 * GIB },
-  { id: 'pro', quotaBytes: 250 * GIB },
+  { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 500, currency: 'USD' },
+  { id: 'plus', name: 'Plus', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' },
+  { id: 'pro', name: 'Pro', quotaBytes: 250 * GIB, priceCents: 3000, currency: 'USD' },
 ] as const
 const quotaOf = (plan: string): number => PLANS.find((one) => one.id === plan)?.quotaBytes ?? 0
 
@@ -166,7 +166,7 @@ describe('SubscriptionCard', () => {
   it('opens the payment page in the browser and waits when the person buys', async () => {
     const { wrapper, client, openExternal } = await render(createResponse({ phase: 'none' }))
 
-    await findBuy(wrapper, 'Plus, 100 GB')?.trigger('click')
+    await findBuy(wrapper, 'Plus, 100 GB, $15')?.trigger('click')
     await flushPromises()
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('plus')
@@ -181,9 +181,9 @@ describe('SubscriptionCard', () => {
   it('offers to buy every plan with its name and size when there is no subscription', async () => {
     const { wrapper } = await render(createResponse({ phase: 'none' }))
 
-    expect(findBuy(wrapper, 'Basic, 10 GB')).toBeDefined()
-    expect(findBuy(wrapper, 'Plus, 100 GB')).toBeDefined()
-    expect(findBuy(wrapper, 'Pro, 250 GB')).toBeDefined()
+    expect(findBuy(wrapper, 'Basic, 10 GB, $5')).toBeDefined()
+    expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined()
+    expect(findBuy(wrapper, 'Pro, 250 GB, $30')).toBeDefined()
     expect(findChange(wrapper)).toBeUndefined()
   })
 
@@ -211,7 +211,7 @@ describe('SubscriptionCard', () => {
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(openExternal).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Pro, 250 GB')
+    expect(wrapper.text()).toContain('Pro, 250 GB, $30')
     expect(findChange(wrapper, 'Pro')).toBeUndefined()
     expect(findChange(wrapper, 'Plus')).toBeDefined()
   })
@@ -261,7 +261,7 @@ describe('SubscriptionCard', () => {
     )
 
     expect(wrapper.text()).toContain('Plus, 100 GB')
-    expect(findBuy(wrapper, 'Plus, 100 GB')).toBeDefined()
+    expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined()
     expect(findChange(wrapper)).toBeUndefined()
   })
 

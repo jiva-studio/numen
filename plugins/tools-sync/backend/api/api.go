@@ -142,10 +142,14 @@ type CreateCheckoutResponse struct {
 // ListPlansRequest asks for the plans the sync server sells.
 type ListPlansRequest struct{}
 
-// Plan is a plan of the sync server: its id and how many bytes it holds.
+// Plan is a plan of the sync server: its id, its name, how many bytes it holds and its price for one period in cents
+// of the currency. The price is information; the payment page holds the one that is charged.
 type Plan struct {
 	ID         string `json:"id"`
+	Name       string `json:"name"`
 	QuotaBytes uint64 `json:"quotaBytes"`
+	PriceCents uint64 `json:"priceCents"`
+	Currency   string `json:"currency"`
 }
 
 // ListPlansResponse holds the plans ascending by quota.

@@ -47,7 +47,7 @@ type Config struct {
 	Now        func() time.Time
 	SessionTTL time.Duration
 	QuotaBytes uint64
-	// Plans are the plans the server sells, ascending by quota. Empty is basic with 10 GiB, plus with 100 GiB and pro with 250 GiB.
+	// Plans are the plans the server sells, ascending by quota. Empty is Basic with 10 GiB for 5 USD, Plus with 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro).
 	Plans []syncprotocol.Plan
 
 	NeedsSubscription bool

@@ -51,7 +51,7 @@ const (
 type SubscriptionServiceClient interface {
 	// GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
-	// ListPlans returns the plans the server sells, ascending by quota.
+	// ListPlans returns the plans the server sells, ascending by quota, with the name and the price of each.
 	ListPlans(context.Context, *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error)
 	// CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
 	// ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.
@@ -132,7 +132,7 @@ func (c *subscriptionServiceClient) ChangePlan(ctx context.Context, req *connect
 type SubscriptionServiceHandler interface {
 	// GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
-	// ListPlans returns the plans the server sells, ascending by quota.
+	// ListPlans returns the plans the server sells, ascending by quota, with the name and the price of each.
 	ListPlans(context.Context, *connect.Request[v1.ListPlansRequest]) (*connect.Response[v1.ListPlansResponse], error)
 	// CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
 	// ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.

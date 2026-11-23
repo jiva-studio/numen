@@ -32,9 +32,9 @@ const ACTIVE = createResponse({
 
 const GIB = 2 ** 30
 const PLANS = [
-  { id: 'basic', quotaBytes: 10 * GIB },
-  { id: 'plus', quotaBytes: 100 * GIB },
-  { id: 'pro', quotaBytes: 250 * GIB },
+  { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 500, currency: 'USD' },
+  { id: 'plus', name: 'Plus', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' },
+  { id: 'pro', name: 'Pro', quotaBytes: 250 * GIB, priceCents: 3000, currency: 'USD' },
 ] as const
 const quotaOf = (plan: string): number => PLANS.find((one) => one.id === plan)?.quotaBytes ?? 0
 
@@ -281,9 +281,9 @@ describe('useSubscription plans', () => {
     await subscription.load()
 
     expect(subscription.buyOffers.value).toStrictEqual([
-      { id: 'basic', label: 'Basic, 10 GB' },
-      { id: 'plus', label: 'Plus, 100 GB' },
-      { id: 'pro', label: 'Pro, 250 GB' },
+      { id: 'basic', name: 'Basic', label: 'Basic, 10 GB, $5' },
+      { id: 'plus', name: 'Plus', label: 'Plus, 100 GB, $15' },
+      { id: 'pro', name: 'Pro', label: 'Pro, 250 GB, $30' },
     ])
     expect(subscription.changeOffers.value).toStrictEqual([])
   })
@@ -311,8 +311,8 @@ describe('useSubscription plans', () => {
 
     expect(subscription.buyOffers.value).toStrictEqual([])
     expect(subscription.changeOffers.value).toStrictEqual([
-      { id: 'basic', label: 'Basic, 10 GB' },
-      { id: 'pro', label: 'Pro, 250 GB' },
+      { id: 'basic', name: 'Basic', label: 'Basic, 10 GB, $5' },
+      { id: 'pro', name: 'Pro', label: 'Pro, 250 GB, $30' },
     ])
   })
 
@@ -478,5 +478,33 @@ describe('useSubscription change of the plan', () => {
 
     expect(subscription.phase.value).toBe('grace')
     expect(subscription.changeOffers.value).toStrictEqual([])
+  })
+})
+
+describe('useSubscription plan names from the server', () => {
+  it('names the plan with the name the server lists for its id', async () => {
+    const client = createClient([ACTIVE_ON_PLUS])
+    client.listPlans.mockResolvedValue([
+      { id: 'plus', name: 'Standard', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' },
+    ])
+    const { subscription } = mountSubscription(client)
+
+    await subscription.load()
+
+    expect(subscription.planLine.value).toBe('Standard, 100 GB')
+  })
+
+  it('labels an offer with the price of the plan in its currency', async () => {
+    const client = createClient([createResponse()])
+    client.listPlans.mockResolvedValue([
+      { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 999, currency: 'EUR' },
+    ])
+    const { subscription } = mountSubscription(client)
+
+    await subscription.load()
+
+    expect(subscription.buyOffers.value.map((one) => one.label)).toStrictEqual([
+      'Basic, 10 GB, €9.99',
+    ])
   })
 })

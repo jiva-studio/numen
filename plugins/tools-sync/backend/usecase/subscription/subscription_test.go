@@ -137,14 +137,20 @@ func TestReadSubscription_KeepsThePlanOfAnEndedSubscription(t *testing.T) {
 }
 
 func TestListPlans_ReturnsThePlansInTheOrderOfTheServer(t *testing.T) {
-	plans := []syncprotocol.Plan{{ID: "basic", QuotaBytes: 10 << 30}, {ID: "plus", QuotaBytes: 100 << 30}, {ID: "pro", QuotaBytes: 250 << 30}}
+	plans := []syncprotocol.Plan{
+		{ID: "basic", Name: "Basic", QuotaBytes: 10 << 30, PriceCents: 500, Currency: "USD"},
+		{ID: "plus", Name: "Plus", QuotaBytes: 100 << 30, PriceCents: 1500, Currency: "USD"},
+	}
 
 	got, err := subscription.NewListPlans(subscription.Deps{Subscriptions: server{plans: plans}}).Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []domain.Plan{{ID: "basic", QuotaBytes: 10 << 30}, {ID: "plus", QuotaBytes: 100 << 30}, {ID: "pro", QuotaBytes: 250 << 30}}
+	want := []domain.Plan{
+		{ID: "basic", Name: "Basic", QuotaBytes: 10 << 30, PriceCents: 500, Currency: "USD"},
+		{ID: "plus", Name: "Plus", QuotaBytes: 100 << 30, PriceCents: 1500, Currency: "USD"},
+	}
 	if !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}

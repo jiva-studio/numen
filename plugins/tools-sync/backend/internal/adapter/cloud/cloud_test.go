@@ -197,14 +197,14 @@ func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T
 }
 
 func TestCloud_ListsThePlansOfTheServer(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{Plans: []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}}})
+	c, _ := newWorld(t, fakeserver.Config{Plans: []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}}})
 
 	got, err := c.Cloud.ListPlans(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}}
+	want := []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}}
 	if !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { formatSize, getPlanLabel, getPlanName, getUsageText } from './subscriptionView'
+import {
+  formatPrice,
+  formatSize,
+  getOfferLabel,
+  getPlanLabel,
+  getUsageText,
+} from './subscriptionView'
 
 const GIB = 2 ** 30
+const PLUS = { id: 'plus', name: 'Plus', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' }
 
 describe('formatSize', () => {
   it('shows whole gibibytes as GB', () => {
@@ -18,25 +25,42 @@ describe('formatSize', () => {
   })
 })
 
-describe('getPlanName', () => {
-  it('names the plans the client knows', () => {
-    expect(getPlanName('basic')).toBe('Basic')
-    expect(getPlanName('plus')).toBe('Plus')
-    expect(getPlanName('pro')).toBe('Pro')
+describe('formatPrice', () => {
+  it('shows whole dollars without cents', () => {
+    expect(formatPrice(500, 'USD')).toBe('$5')
   })
 
-  it('has no name for another id', () => {
-    expect(getPlanName('gold')).toBe('')
+  it('shows cents when there are some', () => {
+    expect(formatPrice(499, 'USD')).toBe('$4.99')
+  })
+
+  it('shows the symbol of euro and the code of another currency', () => {
+    expect(formatPrice(1000, 'EUR')).toBe('€10')
+    expect(formatPrice(700, 'CHF')).toBe('7 CHF')
+  })
+
+  it('shows nothing for a plan with no price', () => {
+    expect(formatPrice(0, 'USD')).toBe('')
   })
 })
 
 describe('getPlanLabel', () => {
-  it('joins the name and the size of a known plan', () => {
-    expect(getPlanLabel({ id: 'plus', quotaBytes: 100 * GIB })).toBe('Plus, 100 GB')
+  it('joins the name and the size of a plan', () => {
+    expect(getPlanLabel(PLUS)).toBe('Plus, 100 GB')
   })
 
-  it('shows only the size of a plan the client does not know', () => {
-    expect(getPlanLabel({ id: 'gold', quotaBytes: 50 * GIB })).toBe('50 GB')
+  it('shows only the size of a plan with no name', () => {
+    expect(getPlanLabel({ ...PLUS, name: '' })).toBe('100 GB')
+  })
+})
+
+describe('getOfferLabel', () => {
+  it('adds the price to the name and the size', () => {
+    expect(getOfferLabel(PLUS)).toBe('Plus, 100 GB, $15')
+  })
+
+  it('has no price part for a plan with no price', () => {
+    expect(getOfferLabel({ ...PLUS, priceCents: 0 })).toBe('Plus, 100 GB')
   })
 })
 

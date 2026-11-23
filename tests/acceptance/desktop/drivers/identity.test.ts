@@ -35,7 +35,9 @@ describe('planAnswers', () => {
 
 describe('the names of the buttons of the card', () => {
   it('names the button that buys a plan with its name and size', () => {
-    expect(getBuyName('Plus', 100)).toBe('Buy Plus, 100 GB')
+    expect(getBuyName('Plus', 100).test('Buy Plus, 100 GB')).toBe(true)
+    expect(getBuyName('Plus', 100).test('Buy Plus, 100 GB, $15')).toBe(true)
+    expect(getBuyName('Plus', 100).test('Buy Plus, 1000 GB')).toBe(false)
     expect(getBuyPattern('Plus').test('Buy Plus, 100 GB')).toBe(true)
     expect(getBuyPattern('Plus').test('Buy Pro, 250 GB')).toBe(false)
   })

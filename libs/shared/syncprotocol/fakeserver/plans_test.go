@@ -69,7 +69,11 @@ func TestListPlans_ReturnsBasicPlusAndProByDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []syncprotocol.Plan{{ID: "basic", QuotaBytes: 10 * gib}, {ID: "plus", QuotaBytes: 100 * gib}, {ID: "pro", QuotaBytes: 250 * gib}}
+	want := []syncprotocol.Plan{
+		{ID: "basic", Name: "Basic", QuotaBytes: 10 * gib, PriceCents: 500, Currency: "USD"},
+		{ID: "plus", Name: "Plus", QuotaBytes: 100 * gib, PriceCents: 1500, Currency: "USD"},
+		{ID: "pro", Name: "Pro", QuotaBytes: 250 * gib, PriceCents: 3000, Currency: "USD"},
+	}
 	if !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}
@@ -261,14 +265,14 @@ func TestReserveBlobs_RefusesNewBytesWhenThePlanBecameSmallerThanTheUsedBytes(t 
 
 func TestListPlans_ReturnsThePlansOfTheConfigOfTheServer(t *testing.T) {
 	t.Parallel()
-	_, plans := newPlansServer(t, []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}})
+	_, plans := newPlansServer(t, []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}})
 
 	got, err := plans.ListPlans(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want := []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}}; !slices.Equal(got, want) {
+	if want := []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}}; !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}
 }

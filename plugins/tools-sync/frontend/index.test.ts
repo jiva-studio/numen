@@ -35,8 +35,20 @@ const stubServer = (server: Server) => {
         return Promise.resolve(
           Response.json({
             plans: [
-              { id: 'basic', quotaBytes: 10 * 2 ** 30 },
-              { id: 'plus', quotaBytes: 100 * 2 ** 30 },
+              {
+                id: 'basic',
+                name: 'Basic',
+                quotaBytes: 10 * 2 ** 30,
+                priceCents: 500,
+                currency: 'USD',
+              },
+              {
+                id: 'plus',
+                name: 'Plus',
+                quotaBytes: 100 * 2 ** 30,
+                priceCents: 1500,
+                currency: 'USD',
+              },
             ],
           }),
         )
@@ -125,7 +137,7 @@ describe('the sync plugin frontend', () => {
 
     await wrapper
       .findAll('button')
-      .find((one) => one.text() === 'Buy Plus, 100 GB')
+      .find((one) => one.text() === 'Buy Plus, 100 GB, $15')
       ?.trigger('click')
     await flushPromises()
 

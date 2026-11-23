@@ -74,7 +74,7 @@ function onFailure(failure: unknown): void {
         variant="outline"
         @click="onChange(offer.id)"
       >
-        {{ `Change plan to ${offer.label}` }}
+        {{ `Change plan to ${offer.name}` }}
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
