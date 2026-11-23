@@ -106,13 +106,11 @@ apps/desktop/editor/src/testing/writer.ts	writer
 apps/landing/src/components/demo/lib/frame.ts	postMessage
 libs/core/kernel/adapter/index/recipes.go	Compact
 libs/core/kernel/adapter/window/editor/file/files.go	EmptyTrash
-libs/core/kernel/adapter/window/editor/file/files.go	eachOnce
 libs/core/kernel/adapter/window/editor/frames.go	PluginFileAddress
 libs/core/kernel/adapter/window/editor/loopback.go	Address
 libs/core/kernel/adapter/window/editor/loopback.go	File
 libs/core/kernel/adapter/window/editor/loopback.go	instant
 libs/core/kernel/adapter/window/editor/note/connections.go	failureOf
-libs/core/kernel/adapter/window/editor/note/wire.go	eachOnce
 libs/core/kernel/adapter/window/editor/note/wire.go	instant
 libs/core/kernel/adapter/window/editor/pages.go	Pages
 libs/core/kernel/adapter/window/editor/pages.go	Serves
