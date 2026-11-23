@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -26,16 +27,17 @@ type restoreState struct {
 	backup []byte
 }
 
-// getKey returns the key of the epochs, made on first use. The caller holds the lock.
-func (r *restoreState) getKey() (ed25519.PrivateKey, error) {
+// epochKeySeed is the seed of the key of the epochs. The stand-in has one fixed key, so a server that stops and runs again
+// signs with the key a device pinned.
+const epochKeySeed = "numen sync stand-in restore epoch key"
+
+// getKey returns the key of the epochs.
+func (r *restoreState) getKey() ed25519.PrivateKey {
 	if r.key == nil {
-		_, key, err := ed25519.GenerateKey(rand.Reader)
-		if err != nil {
-			return nil, fmt.Errorf("make the key of the epochs: %w", err)
-		}
-		r.key = key
+		seed := sha256.Sum256([]byte(epochKeySeed))
+		r.key = ed25519.NewKeyFromSeed(seed[:])
 	}
-	return r.key, nil
+	return r.key
 }
 
 // getEpochID returns the id of the current epoch, nil before the first one. The caller holds the lock.
@@ -55,10 +57,7 @@ func (s *Server) IssueRestoreEpoch() ([]byte, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key, err := s.restore.getKey()
-	if err != nil {
-		return nil, err
-	}
+	key := s.restore.getKey()
 	issuedAt := s.now().Unix()
 	s.restore.epoch = &syncv1.RestoreEpoch{
 		Id: id, IssuedAt: issuedAt, Signature: ed25519.Sign(key, syncprotocol.GetRestoreEpochMessage(id, issuedAt)),
@@ -96,10 +95,7 @@ func (s *Server) GetRestoreEpoch(_ context.Context, req *connect.Request[syncv1.
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key, err := s.restore.getKey()
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
+	key := s.restore.getKey()
 	public, ok := key.Public().(ed25519.PublicKey)
 	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, errors.New("the key of the epochs is not an Ed25519 key"))

@@ -213,6 +213,7 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud,
+		Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Pins: c.State, Journals: c.State},
 	}
 }
 
@@ -256,6 +257,7 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 func (c *Computer) RestoreDeps() restore.Deps {
 	return restore.Deps{
 		Address: c.Server.URL, Epochs: c.Cloud, Pins: c.State, Journals: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
-		Uploader: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Health: c.NewHealth(), Random: rand.Reader,
+		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
+		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}
 }

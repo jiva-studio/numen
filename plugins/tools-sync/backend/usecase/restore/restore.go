@@ -4,21 +4,31 @@
 package restore
 
 import (
+	"bytes"
 	"context"
-	"errors"
-	"io"
+	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-var errNotImplemented = errors.New("not implemented")
+// ErrKeyChanged is domain.ErrKeyChanged: the key that signs restore epochs is not the key this device pinned.
+var ErrKeyChanged = domain.ErrKeyChanged
 
-// ErrKeyChanged means the key that signs restore epochs is not the key this device pinned.
-var ErrKeyChanged = errors.New("the restore key of the sync server changed")
+// ErrDiverged is domain.ErrDiverged: a log on the server differs from the copy of this device, so nothing is replayed.
+var ErrDiverged = domain.ErrDiverged
 
-// ErrDiverged means a log on the server differs from the copy of this device, so nothing is replayed.
-var ErrDiverged = errors.New("the sync server holds another history than this device")
+// Committer commits notes to the server.
+type Committer interface {
+	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
+}
+
+// Remover commits the removal of notes to the server.
+type Remover interface {
+	Execute(ctx context.Context, in transfer.RemoveInput) ([]transfer.Outcome, error)
+}
 
 // Deps are what the use cases need. Address is the address of the server, the name its key is pinned under.
 type Deps struct {
@@ -29,13 +39,12 @@ type Deps struct {
 	Catalog   ports.Catalog
 	Chain     ports.Chain
 	Revisions ports.Revisions
-	Uploader  ports.BlobUploader
+	Blobs     ports.BlobDownloader
 	Crypto    ports.Crypto
-	Identity  ports.Identity
 	Host      ports.Host
 	State     State
-	Health    ports.Health
-	Random    io.Reader
+	Commit    Committer
+	Remove    Remover
 }
 
 // State is the link and the records of a vault.
@@ -45,25 +54,73 @@ type State interface {
 }
 
 // RecoverAccount checks the epoch of the server against the key this device pinned, pins the key the first time
-// it sees one, and sends the logs of the account the server lost: the catalog entries after the head of the
-// server and the chain of devices.
+// it sees one, signs in again with the chain of this device and sends the catalog entries the server lost.
 type RecoverAccount struct{ deps Deps }
 
 // NewRecoverAccount returns the use case over the dependencies.
 func NewRecoverAccount(deps Deps) *RecoverAccount { return &RecoverAccount{deps: deps} }
 
-// Execute returns ErrKeyChanged for a key that is not the pinned one, ErrDiverged for a log that differs from the
-// copy, and sends nothing in either case.
-func (u *RecoverAccount) Execute(ctx context.Context) error { return errNotImplemented }
+// Execute returns ErrKeyChanged for a key that is not the pinned one and ErrDiverged for a log that differs from
+// the copy, and sends nothing in either case.
+func (u *RecoverAccount) Execute(ctx context.Context) error {
+	_, key, err := u.deps.Epochs.GetRestoreEpoch(ctx)
+	if err != nil {
+		return err
+	}
+	if err := u.pin(ctx, key); err != nil {
+		return err
+	}
+	if err := u.deps.Chain.SendAccountChain(ctx); err != nil {
+		return err
+	}
+	return u.replayCatalog(ctx)
+}
 
-// RecoverVault sends the notes of one vault the server lost or holds in an older state, and writes the epoch id to
-// the link only after the last note was examined.
-type RecoverVault struct{ deps Deps }
+func (u *RecoverAccount) pin(ctx context.Context, key []byte) error {
+	pinned, err := u.deps.Pins.ReadPin(ctx, u.deps.Address)
+	if err != nil {
+		return err
+	}
+	switch {
+	case len(pinned) == 0:
+		return u.deps.Pins.WritePin(ctx, u.deps.Address, key)
+	case !bytes.Equal(pinned, key):
+		return ErrKeyChanged
+	}
+	return nil
+}
 
-// NewRecoverVault returns the use case over the dependencies.
-func NewRecoverVault(deps Deps) *RecoverVault { return &RecoverVault{deps: deps} }
-
-// Execute runs the recovery of the vault, continuing what an earlier run left in the link.
-func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
-	return errNotImplemented
+func (u *RecoverAccount) replayCatalog(ctx context.Context) error {
+	cache, err := u.deps.Journals.ReadJournal(ctx, domain.KindCatalog)
+	if err != nil || len(cache.Entries) == 0 {
+		return err
+	}
+	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
+	if err != nil {
+		return err
+	}
+	server := domain.Journal{Kind: domain.KindCatalog, Entries: make([][]byte, len(entries))}
+	for i, entry := range entries {
+		if server.Entries[i], err = syncprotocol.EncodeCatalogEntry(entry); err != nil {
+			return err
+		}
+	}
+	replay, err := domain.GetReplay(cache, server)
+	if err != nil {
+		return err
+	}
+	for _, raw := range replay {
+		entry, err := syncprotocol.DecodeCatalogEntry(raw)
+		if err != nil {
+			return err
+		}
+		response, err := u.deps.Catalog.AppendCatalogEntry(ctx, entry)
+		if err != nil {
+			return err
+		}
+		if !response.GetCommitted() {
+			return fmt.Errorf("%w: another device appended entry %d first", ErrDiverged, entry.GetVersion())
+		}
+	}
+	return nil
 }

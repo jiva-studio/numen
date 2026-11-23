@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -128,24 +127,4 @@ func (s *State) ReadSightings(ctx context.Context, id domain.VaultID) (map[strin
 // WriteSightings replaces the notes of the vault as the last look found them.
 func (s *State) WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error {
 	return s.write(ctx, id, sightingsFile, sightingsDocument{Notes: seen})
-}
-
-// ReadPin returns the key pinned for the server at the address, nil when none is.
-func (s *State) ReadPin(_ context.Context, _ string) ([]byte, error) {
-	return nil, errors.New("not implemented")
-}
-
-// WritePin pins the key for the server at the address.
-func (s *State) WritePin(_ context.Context, _ string, _ []byte) error {
-	return errors.New("not implemented")
-}
-
-// ReadJournal returns the copy of the log of the kind, empty when there is none.
-func (s *State) ReadJournal(_ context.Context, _ restore.Kind) (restore.Journal, error) {
-	return restore.Journal{}, errors.New("not implemented")
-}
-
-// WriteJournal replaces the copy of the log of the journal's kind.
-func (s *State) WriteJournal(_ context.Context, _ restore.Journal) error {
-	return errors.New("not implemented")
 }

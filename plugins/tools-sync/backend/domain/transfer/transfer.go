@@ -5,6 +5,7 @@ package transfer
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
@@ -41,6 +42,12 @@ type File struct {
 type CommitInput struct {
 	Vault Vault
 	Files []File
+}
+
+// RemoveInput is the records of the notes removed from the vault, to commit as removals.
+type RemoveInput struct {
+	Vault   Vault
+	Records []note.FileRecord
 }
 
 // Outcome is what became of one note. Head is the head of the file the server holds for ParentMismatch and for

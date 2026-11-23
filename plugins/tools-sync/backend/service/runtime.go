@@ -78,7 +78,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.Random(),
-		Subscriptions: cloudSide,
+		Subscriptions: cloudSide, Restore: syncvault.RestoreDeps{Address: address, Epochs: cloudSide, Pins: p.state, Journals: p.state},
 	}
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: syncwire.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,

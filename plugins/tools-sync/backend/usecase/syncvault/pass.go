@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -21,6 +22,7 @@ type pass struct {
 	authors    trust.Authors
 	conflicts  []string
 	unverified int
+	verdict    restore.Verdict
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -28,7 +30,7 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := p.pull(ctx); err != nil {
+	if isReady, err := p.pullOrRecover(ctx); err != nil || !isReady {
 		return err
 	}
 	isRetry, err := p.push(ctx)
@@ -53,6 +55,7 @@ func (p *pass) pull(ctx context.Context) error {
 	}
 	p.conflicts = result.Conflicts
 	p.unverified = result.Unverified
+	p.verdict = result.Verdict
 	return nil
 }
 

@@ -35,7 +35,8 @@ func NewBackend(deps syncvault.Deps) *Backend {
 		deps: deps,
 		catalog: catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Random: deps.Random,
+			Journals: deps.Restore.Journals,
+			Random:   deps.Random,
 		},
 	}
 }

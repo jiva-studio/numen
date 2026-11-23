@@ -58,12 +58,8 @@ func GetVerdict(memory Memory, look Look) Verdict {
 // Kind names a log the device keeps a copy of.
 type Kind string
 
-const (
-	// KindCatalog is the catalog of the vaults of the account.
-	KindCatalog Kind = "catalog"
-	// KindChain is the chain of the devices of the account.
-	KindChain Kind = "chain"
-)
+// KindCatalog is the catalog of the vaults of the account.
+const KindCatalog Kind = "catalog"
 
 // Journal is the signed entries of one log in order, as the device last verified them.
 type Journal struct {
@@ -84,6 +80,9 @@ const (
 	// Diverged means the logs differ at an entry they both hold.
 	Diverged
 )
+
+// ErrKeyChanged means the key that signs restore epochs is not the key this device pinned.
+var ErrKeyChanged = errors.New("the restore key of the sync server changed")
 
 // ErrDiverged means the log on the server differs from the copy at an entry both hold.
 var ErrDiverged = errors.New("the log on the sync server differs from the copy of this device")
@@ -132,18 +131,25 @@ const (
 	Tombstone
 	// Pull reads a note this device never knew from the server.
 	Pull
+	// Adopt records the head of the server as the base of a local note that already holds its content.
+	Adopt
 )
 
 // Head is the head of a file as the server holds it. IsBlobMissing is true when the server lost the body.
 type Head struct {
-	FileID        []byte
-	Rev           []byte
+	FileID []byte
+	Rev    []byte
+	// ParentRev is the revision the head was committed on top of.
+	ParentRev []byte
+	// Hash is the hash of the content of the head, empty when the head has none or does not open.
+	Hash          string
 	Path          string
 	IsDeleted     bool
 	IsBlobMissing bool
 }
 
-// Action is what a recovery does with a file. ParentRev is the head the commit goes on top of, empty for Recreate.
+// Action is what a recovery does with a file. ParentRev is the head the commit goes on top of, or the head to adopt,
+// and empty for Recreate and Keep.
 type Action struct {
 	Kind      ActionKind
 	FileID    []byte
@@ -160,9 +166,9 @@ func PlanRecovery(records []note.FileRecord, heads map[string]Head, local map[st
 	known := make(map[string]bool, len(records))
 	for _, record := range records {
 		known[string(record.FileID)] = true
-		head, found := heads[string(record.FileID)]
-		_, isLocal := local[record.Path]
-		actions = append(actions, planRecord(record, head, found, isLocal))
+		head, isFound := heads[string(record.FileID)]
+		hash, isLocal := local[record.Path]
+		actions = append(actions, planRecord(record, head, isFound, hash, isLocal))
 	}
 	for _, id := range slices.Sorted(maps.Keys(heads)) {
 		if !known[id] {
@@ -172,23 +178,29 @@ func PlanRecovery(records []note.FileRecord, heads map[string]Head, local map[st
 	return actions
 }
 
-func planRecord(record note.FileRecord, head Head, found, isLocal bool) Action {
-	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path}
-	isSame := found && bytes.Equal(head.Rev, record.HeadRev) && !head.IsBlobMissing
+// planRecord decides for a note this device knows. A head that is the one recorded, or was committed on top of it, is
+// left to the normal pull: nothing was lost and the other computer's text is not to be overwritten.
+func planRecord(record note.FileRecord, head Head, isFound bool, hash string, isLocal bool) Action {
+	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil}
+	isUsable := isFound && !head.IsBlobMissing
 	switch {
-	case isSame:
-	case isLocal && !found:
+	case isUsable && bytes.Equal(head.Rev, record.HeadRev):
+	case isUsable && len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev):
+	case isUsable && isLocal && !head.IsDeleted && head.Hash != "" && head.Hash == hash:
+		action.Kind = Adopt
+		action.ParentRev = head.Rev
+	case isLocal && !isFound:
 		action.Kind = Recreate
 	case isLocal:
 		action.Kind, action.ParentRev = Send, head.Rev
-	case found && !head.IsDeleted:
+	case isFound && !head.IsDeleted:
 		action.Kind, action.ParentRev = Tombstone, head.Rev
 	}
 	return action
 }
 
 func planUnknown(head Head, local map[string]string) Action {
-	action := Action{Kind: Keep, FileID: head.FileID, Path: head.Path}
+	action := Action{Kind: Keep, FileID: head.FileID, Path: head.Path, ParentRev: nil}
 	if _, isTaken := local[head.Path]; !isTaken && !head.IsDeleted && !head.IsBlobMissing {
 		action.Kind = Pull
 	}

@@ -22,9 +22,11 @@ type Catalog interface {
 	GetCatalog(ctx context.Context, sinceVersion uint64) ([]*syncv1.CatalogEntry, error)
 }
 
-// Chain is the chain of devices of the account the server stores.
+// Chain is the chain of devices of the account the server stores. SendAccountChain signs in again with the chain of this
+// device, which a server that lost devices of its chain takes over.
 type Chain interface {
 	GetAccountChain(ctx context.Context) ([]byte, error)
+	SendAccountChain(ctx context.Context) error
 }
 
 // Revisions is the revisions of the notes of a vault on the server.

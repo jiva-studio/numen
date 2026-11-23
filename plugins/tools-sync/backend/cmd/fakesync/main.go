@@ -1,7 +1,9 @@
 // Command fakesync serves the fake sync server on a local port for the end-to-end tests. It prints the
 // address it listens on, then serves until it is stopped. With -state-dir it keeps the data of the server in
 // a file there and reads it again at start, so the process can stop and run again. With -subscriptions a new account has no
-// subscription and its writes are refused until it pays at the address CreateCheckout returns.
+// subscription and its writes are refused until it pays at the address CreateCheckout returns. The admin paths /admin/backup,
+// /admin/restore, /admin/announce and /admin/retention keep the state, put it back, announce the restore and delete the
+// vaults, as the operator of a real server does; a backup and an announced epoch live in the memory of the process.
 package main
 
 import (

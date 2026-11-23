@@ -60,7 +60,8 @@ Feature: Numen Sync after the server is restored from a backup
   Rule: The list of synced vaults comes back
 
     Scenario: A vault connected after the backup is listed again
-      Given the operator makes a backup of the sync server
+      Given the empty vault "Work"
+      And the operator makes a backup of the sync server
       And the person connects the vault "Work" as a new synced vault
       When the operator restores the sync server from the backup
       And the operator announces the restore

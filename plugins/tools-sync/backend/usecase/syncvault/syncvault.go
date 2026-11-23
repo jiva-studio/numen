@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	subscriptiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
@@ -50,6 +51,16 @@ type Deps struct {
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
+	Restore       RestoreDeps
+}
+
+// RestoreDeps are where the recovery after a restored server reads the epoch and keeps the pinned key and the copies of
+// the logs. Address is the address of the server, the name its key is pinned under.
+type RestoreDeps struct {
+	Address  string
+	Epochs   ports.Epochs
+	Pins     ports.Pins
+	Journals ports.Journals
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.
@@ -126,7 +137,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.Indexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0}
+	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0, verdict: restore.Same}
 	return p.run(ctx)
 }
 
