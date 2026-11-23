@@ -54,6 +54,9 @@ const (
 	// HostAccountServiceCompleteRestoreProcedure is the fully-qualified name of the
 	// HostAccountService's CompleteRestore RPC.
 	HostAccountServiceCompleteRestoreProcedure = "/numen.v1.HostAccountService/CompleteRestore"
+	// HostAccountServiceGetEntitlementsProcedure is the fully-qualified name of the
+	// HostAccountService's GetEntitlements RPC.
+	HostAccountServiceGetEntitlementsProcedure = "/numen.v1.HostAccountService/GetEntitlements"
 )
 
 // HostAccountServiceClient is a client for the numen.v1.HostAccountService service.
@@ -79,6 +82,10 @@ type HostAccountServiceClient interface {
 	// with no chain when the server has no such account. A chain that does not verify or does not belong to
 	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
 	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
+	// GetEntitlements returns the products the account of this device owns right now, as the sync server of the account tells it:
+	// the slug, the end of validity, the phase and the quota (0 for a product without one). A device with no identity answers
+	// FAILED_PRECONDITION with the reason NO_IDENTITY, and a host that cannot reach the server answers UNAVAILABLE.
+	GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error)
 }
 
 // NewHostAccountServiceClient constructs a client for the numen.v1.HostAccountService service. By
@@ -134,6 +141,12 @@ func NewHostAccountServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
 			connect.WithClientOptions(opts...),
 		),
+		getEntitlements: connect.NewClient[v1.GetEntitlementsRequest, v1.GetEntitlementsResponse](
+			httpClient,
+			baseURL+HostAccountServiceGetEntitlementsProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("GetEntitlements")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -146,6 +159,7 @@ type hostAccountServiceClient struct {
 	getPendingRestore *connect.Client[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse]
 	signAsRecovery    *connect.Client[v1.SignAsRecoveryRequest, v1.SignAsRecoveryResponse]
 	completeRestore   *connect.Client[v1.CompleteRestoreRequest, v1.CompleteRestoreResponse]
+	getEntitlements   *connect.Client[v1.GetEntitlementsRequest, v1.GetEntitlementsResponse]
 }
 
 // SignAsDevice calls numen.v1.HostAccountService.SignAsDevice.
@@ -183,6 +197,11 @@ func (c *hostAccountServiceClient) CompleteRestore(ctx context.Context, req *con
 	return c.completeRestore.CallUnary(ctx, req)
 }
 
+// GetEntitlements calls numen.v1.HostAccountService.GetEntitlements.
+func (c *hostAccountServiceClient) GetEntitlements(ctx context.Context, req *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error) {
+	return c.getEntitlements.CallUnary(ctx, req)
+}
+
 // HostAccountServiceHandler is an implementation of the numen.v1.HostAccountService service.
 type HostAccountServiceHandler interface {
 	// SignAsDevice signs the message with the key of this device. The signed bytes are
@@ -206,6 +225,10 @@ type HostAccountServiceHandler interface {
 	// with no chain when the server has no such account. A chain that does not verify or does not belong to
 	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
 	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
+	// GetEntitlements returns the products the account of this device owns right now, as the sync server of the account tells it:
+	// the slug, the end of validity, the phase and the quota (0 for a product without one). A device with no identity answers
+	// FAILED_PRECONDITION with the reason NO_IDENTITY, and a host that cannot reach the server answers UNAVAILABLE.
+	GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error)
 }
 
 // NewHostAccountServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -257,6 +280,12 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 		connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostAccountServiceGetEntitlementsHandler := connect.NewUnaryHandler(
+		HostAccountServiceGetEntitlementsProcedure,
+		svc.GetEntitlements,
+		connect.WithSchema(hostAccountServiceMethods.ByName("GetEntitlements")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostAccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostAccountServiceSignAsDeviceProcedure:
@@ -273,6 +302,8 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 			hostAccountServiceSignAsRecoveryHandler.ServeHTTP(w, r)
 		case HostAccountServiceCompleteRestoreProcedure:
 			hostAccountServiceCompleteRestoreHandler.ServeHTTP(w, r)
+		case HostAccountServiceGetEntitlementsProcedure:
+			hostAccountServiceGetEntitlementsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -308,4 +339,8 @@ func (UnimplementedHostAccountServiceHandler) SignAsRecovery(context.Context, *c
 
 func (UnimplementedHostAccountServiceHandler) CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.CompleteRestore is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.GetEntitlements is not implemented"))
 }

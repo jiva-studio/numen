@@ -47,3 +47,16 @@ type PendingRestore struct {
 	RootSignKey   []byte
 	DeviceSignKey []byte
 }
+
+// ErrSyncUnavailable means the sync server of the account cannot be reached or does not sell products.
+var ErrSyncUnavailable = errors.New("the sync server is unavailable")
+
+// Entitlement is one product the account of this device owns right now, as the sync server tells it. Phase is "active" or "grace". QuotaBytes is 0 for a
+// product without a quota. ValidUntil is the end of the paid period or of the trial, and about 100 years after the purchase for a one-time product.
+type Entitlement struct {
+	Product    string
+	ValidUntil time.Time
+	Phase      string
+	QuotaBytes uint64
+	IsTrial    bool
+}

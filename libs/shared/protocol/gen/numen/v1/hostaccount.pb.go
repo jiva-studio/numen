@@ -681,6 +681,166 @@ func (*CompleteRestoreResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{13}
 }
 
+type GetEntitlementsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEntitlementsRequest) Reset() {
+	*x = GetEntitlementsRequest{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEntitlementsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEntitlementsRequest) ProtoMessage() {}
+
+func (x *GetEntitlementsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEntitlementsRequest.ProtoReflect.Descriptor instead.
+func (*GetEntitlementsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{14}
+}
+
+type HostEntitlement struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// product is the slug of the product, such as link.
+	Product string `protobuf:"bytes,1,opt,name=product,proto3" json:"product,omitempty"`
+	// valid_until is unix seconds.
+	ValidUntil int64 `protobuf:"varint,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
+	// phase is "active" or "grace".
+	Phase string `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
+	// quota_bytes is 0 for a product without a quota.
+	QuotaBytes    uint64 `protobuf:"varint,4,opt,name=quota_bytes,json=quotaBytes,proto3" json:"quota_bytes,omitempty"`
+	IsTrial       bool   `protobuf:"varint,5,opt,name=is_trial,json=isTrial,proto3" json:"is_trial,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostEntitlement) Reset() {
+	*x = HostEntitlement{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostEntitlement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostEntitlement) ProtoMessage() {}
+
+func (x *HostEntitlement) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostEntitlement.ProtoReflect.Descriptor instead.
+func (*HostEntitlement) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *HostEntitlement) GetProduct() string {
+	if x != nil {
+		return x.Product
+	}
+	return ""
+}
+
+func (x *HostEntitlement) GetValidUntil() int64 {
+	if x != nil {
+		return x.ValidUntil
+	}
+	return 0
+}
+
+func (x *HostEntitlement) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *HostEntitlement) GetQuotaBytes() uint64 {
+	if x != nil {
+		return x.QuotaBytes
+	}
+	return 0
+}
+
+func (x *HostEntitlement) GetIsTrial() bool {
+	if x != nil {
+		return x.IsTrial
+	}
+	return false
+}
+
+type GetEntitlementsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entitlements  []*HostEntitlement     `protobuf:"bytes,1,rep,name=entitlements,proto3" json:"entitlements,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEntitlementsResponse) Reset() {
+	*x = GetEntitlementsResponse{}
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEntitlementsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEntitlementsResponse) ProtoMessage() {}
+
+func (x *GetEntitlementsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostaccount_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEntitlementsResponse.ProtoReflect.Descriptor instead.
+func (*GetEntitlementsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostaccount_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetEntitlementsResponse) GetEntitlements() []*HostEntitlement {
+	if x != nil {
+		return x.Entitlements
+	}
+	return nil
+}
+
 var File_numen_v1_hostaccount_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostaccount_proto_rawDesc = "" +
@@ -718,7 +878,18 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature\".\n" +
 	"\x16CompleteRestoreRequest\x12\x14\n" +
 	"\x05chain\x18\x01 \x01(\fR\x05chain\"\x19\n" +
-	"\x17CompleteRestoreResponse2\xd2\x04\n" +
+	"\x17CompleteRestoreResponse\"\x18\n" +
+	"\x16GetEntitlementsRequest\"\x9e\x01\n" +
+	"\x0fHostEntitlement\x12\x18\n" +
+	"\aproduct\x18\x01 \x01(\tR\aproduct\x12\x1f\n" +
+	"\vvalid_until\x18\x02 \x01(\x03R\n" +
+	"validUntil\x12\x14\n" +
+	"\x05phase\x18\x03 \x01(\tR\x05phase\x12\x1f\n" +
+	"\vquota_bytes\x18\x04 \x01(\x04R\n" +
+	"quotaBytes\x12\x19\n" +
+	"\bis_trial\x18\x05 \x01(\bR\aisTrial\"X\n" +
+	"\x17GetEntitlementsResponse\x12=\n" +
+	"\fentitlements\x18\x01 \x03(\v2\x19.numen.v1.HostEntitlementR\fentitlements2\xaa\x05\n" +
 	"\x12HostAccountService\x12M\n" +
 	"\fSignAsDevice\x12\x1d.numen.v1.SignAsDeviceRequest\x1a\x1e.numen.v1.SignAsDeviceResponse\x12\\\n" +
 	"\x11GetPublicIdentity\x12\".numen.v1.GetPublicIdentityRequest\x1a#.numen.v1.GetPublicIdentityResponse\x12A\n" +
@@ -726,7 +897,8 @@ const file_numen_v1_hostaccount_proto_rawDesc = "" +
 	"\bOpenData\x12\x19.numen.v1.OpenDataRequest\x1a\x1a.numen.v1.OpenDataResponse\x12\\\n" +
 	"\x11GetPendingRestore\x12\".numen.v1.GetPendingRestoreRequest\x1a#.numen.v1.GetPendingRestoreResponse\x12S\n" +
 	"\x0eSignAsRecovery\x12\x1f.numen.v1.SignAsRecoveryRequest\x1a .numen.v1.SignAsRecoveryResponse\x12V\n" +
-	"\x0fCompleteRestore\x12 .numen.v1.CompleteRestoreRequest\x1a!.numen.v1.CompleteRestoreResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0fCompleteRestore\x12 .numen.v1.CompleteRestoreRequest\x1a!.numen.v1.CompleteRestoreResponse\x12V\n" +
+	"\x0fGetEntitlements\x12 .numen.v1.GetEntitlementsRequest\x1a!.numen.v1.GetEntitlementsResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostaccount_proto_rawDescOnce sync.Once
@@ -740,7 +912,7 @@ func file_numen_v1_hostaccount_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostaccount_proto_rawDescData
 }
 
-var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_hostaccount_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SignAsDeviceRequest)(nil),       // 0: numen.v1.SignAsDeviceRequest
 	(*SignAsDeviceResponse)(nil),      // 1: numen.v1.SignAsDeviceResponse
@@ -756,27 +928,33 @@ var file_numen_v1_hostaccount_proto_goTypes = []any{
 	(*SignAsRecoveryResponse)(nil),    // 11: numen.v1.SignAsRecoveryResponse
 	(*CompleteRestoreRequest)(nil),    // 12: numen.v1.CompleteRestoreRequest
 	(*CompleteRestoreResponse)(nil),   // 13: numen.v1.CompleteRestoreResponse
+	(*GetEntitlementsRequest)(nil),    // 14: numen.v1.GetEntitlementsRequest
+	(*HostEntitlement)(nil),           // 15: numen.v1.HostEntitlement
+	(*GetEntitlementsResponse)(nil),   // 16: numen.v1.GetEntitlementsResponse
 }
 var file_numen_v1_hostaccount_proto_depIdxs = []int32{
-	0,  // 0: numen.v1.HostAccountService.SignAsDevice:input_type -> numen.v1.SignAsDeviceRequest
-	2,  // 1: numen.v1.HostAccountService.GetPublicIdentity:input_type -> numen.v1.GetPublicIdentityRequest
-	4,  // 2: numen.v1.HostAccountService.SealData:input_type -> numen.v1.SealDataRequest
-	6,  // 3: numen.v1.HostAccountService.OpenData:input_type -> numen.v1.OpenDataRequest
-	8,  // 4: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
-	10, // 5: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
-	12, // 6: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
-	1,  // 7: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
-	3,  // 8: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
-	5,  // 9: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
-	7,  // 10: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
-	9,  // 11: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
-	11, // 12: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
-	13, // 13: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	15, // 0: numen.v1.GetEntitlementsResponse.entitlements:type_name -> numen.v1.HostEntitlement
+	0,  // 1: numen.v1.HostAccountService.SignAsDevice:input_type -> numen.v1.SignAsDeviceRequest
+	2,  // 2: numen.v1.HostAccountService.GetPublicIdentity:input_type -> numen.v1.GetPublicIdentityRequest
+	4,  // 3: numen.v1.HostAccountService.SealData:input_type -> numen.v1.SealDataRequest
+	6,  // 4: numen.v1.HostAccountService.OpenData:input_type -> numen.v1.OpenDataRequest
+	8,  // 5: numen.v1.HostAccountService.GetPendingRestore:input_type -> numen.v1.GetPendingRestoreRequest
+	10, // 6: numen.v1.HostAccountService.SignAsRecovery:input_type -> numen.v1.SignAsRecoveryRequest
+	12, // 7: numen.v1.HostAccountService.CompleteRestore:input_type -> numen.v1.CompleteRestoreRequest
+	14, // 8: numen.v1.HostAccountService.GetEntitlements:input_type -> numen.v1.GetEntitlementsRequest
+	1,  // 9: numen.v1.HostAccountService.SignAsDevice:output_type -> numen.v1.SignAsDeviceResponse
+	3,  // 10: numen.v1.HostAccountService.GetPublicIdentity:output_type -> numen.v1.GetPublicIdentityResponse
+	5,  // 11: numen.v1.HostAccountService.SealData:output_type -> numen.v1.SealDataResponse
+	7,  // 12: numen.v1.HostAccountService.OpenData:output_type -> numen.v1.OpenDataResponse
+	9,  // 13: numen.v1.HostAccountService.GetPendingRestore:output_type -> numen.v1.GetPendingRestoreResponse
+	11, // 14: numen.v1.HostAccountService.SignAsRecovery:output_type -> numen.v1.SignAsRecoveryResponse
+	13, // 15: numen.v1.HostAccountService.CompleteRestore:output_type -> numen.v1.CompleteRestoreResponse
+	16, // 16: numen.v1.HostAccountService.GetEntitlements:output_type -> numen.v1.GetEntitlementsResponse
+	9,  // [9:17] is the sub-list for method output_type
+	1,  // [1:9] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostaccount_proto_init() }
@@ -790,7 +968,7 @@ func file_numen_v1_hostaccount_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostaccount_proto_rawDesc), len(file_numen_v1_hostaccount_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

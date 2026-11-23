@@ -203,3 +203,9 @@ func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, ke
 	}
 	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}
 }
+
+// SetEntitlements sets the products the host answers to GetEntitlements, in this order. Nothing set is an empty list.
+func (f *Fake) SetEntitlements(_ []account.Entitlement) {}
+
+// FailEntitlements makes GetEntitlements answer account.ErrSyncUnavailable while on is true; the other calls keep working.
+func (f *Fake) FailEntitlements(_ bool) {}

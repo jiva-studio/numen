@@ -61,6 +61,14 @@ type Account interface {
 
 // AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits
 // for the chain of the server. Its calls return identity.ErrNoPendingRestore when none is pending.
+// AccountEntitlements is what a plugin with the identity permission may ask of the products the account of this device owns. The host asks the sync
+// server of the account with the identity of this device; a plugin sends no account, no session and no address.
+type AccountEntitlements interface {
+	// GetEntitlements returns the products the account owns now, ordered by product. identity.ErrNoIdentity means no identity on this device and
+	// identity.ErrSyncUnavailable that the server cannot be reached.
+	GetEntitlements(ctx context.Context) ([]identitydomain.Entitlement, error)
+}
+
 type AccountRestore interface {
 	// GetPendingRestore returns the public keys of the restore that waits for a chain.
 	GetPendingRestore(ctx context.Context) (identitydomain.PendingRestore, error)
@@ -87,6 +95,7 @@ type Callers struct {
 	Activation   Activation
 	Account      Account
 	Restore      AccountRestore
+	Entitlements AccountEntitlements
 	Lent         *Services
 	Tools        func() PluginTools
 	Health       HealthCalls
