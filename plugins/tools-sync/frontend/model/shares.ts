@@ -40,7 +40,6 @@ const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
 /** Whether a refusal is the warning the person must confirm before the reader is added. */
 export const isIdentityWarning = (message: string): boolean => message === words.otherIdentity
 
-/** Puts the text on the clipboard of the machine. */
 const copyText = (text: string): Promise<void> => globalThis.navigator.clipboard.writeText(text)
 
 function createRepeater(delayMs: number, onFail: (failure: unknown) => void) {
