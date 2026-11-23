@@ -37,7 +37,7 @@ func OpenRevision(vaultKey [32]byte, stored *syncv1.StoredRevision, isTrusted fu
 func CheckRevision(stored *syncv1.StoredRevision, isTrusted func(deviceSignKey []byte) bool) error {
 	rev := stored.GetRevision()
 	id := syncprotocol.GetRevisionID(rev)
-	if syncprotocol.CheckRevision(rev) != nil || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
+	if syncprotocol.CheckRevision(rev) != nil || rev.GetFileVersion() < 1 || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
 		!identity.VerifyForPlugin(rev.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(rev), [64]byte(rev.GetSignature())) ||
 		!isTrusted(rev.GetAuthorDeviceSignKey()) {
 		return ErrUnverified
