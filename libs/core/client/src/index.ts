@@ -116,9 +116,10 @@ export {
   createLicenseClient,
 } from './licenses'
 export {
-  type IdentityClient,
+  type IdentityInfo,
   type IdentityFailure,
   type LinkInfo,
+  type IdentityClient,
   createIdentityClient,
 } from './identity'
 export {

@@ -70,7 +70,8 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
 	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
-	mountServices(opened, install, res, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
+	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
+	mountIdentity(opened, install, vaultDeps, res)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
 	opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out)
 	return connectWindow(ctx, install, exec, vaultDeps, opened, startup)
@@ -226,7 +227,7 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
-func mountServices(w *windowRoutes, install pluginInstall, res *Resources, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
+func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
 	mountPluginData(w, vaultDeps)
 	mountSettings(w, settingsDeps, dialog)
 	mountMedia(w, vaultDeps)
@@ -234,7 +235,6 @@ func mountServices(w *windowRoutes, install pluginInstall, res *Resources, exec 
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
 	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
 	mountLicense(w, install, settingsDeps, vaultDeps)
-	mountIdentity(w, install, vaultDeps, res)
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
 	mountHealth(w, exec)
