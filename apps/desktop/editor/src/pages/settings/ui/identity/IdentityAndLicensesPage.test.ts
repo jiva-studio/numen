@@ -467,7 +467,7 @@ const submitDialog = async (tab: Page) => {
 const chooseSheets = async (tab: Page) => {
   const choice = getDialog(tab)
     .findAll('button')
-    .find((one) => one.text() === 'Recovery kit sheets')
+    .find((one) => one.text() === 'Recovery kit')
   if (!choice) throw new Error('the dialog offers no sheets')
   await choice.trigger('click')
   await flushPromises()
@@ -594,7 +594,9 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     await chooseSheets(tab)
     expect(getSheetField(tab, 1).element).toBeInstanceOf(HTMLTextAreaElement)
     expect(getSheetField(tab, 2).element).toBeInstanceOf(HTMLTextAreaElement)
-    expect(getRestoreInputs(tab)).toHaveLength(0)
+    expect(
+      getDialog(tab).get('ol[aria-label="Recovery words"]').element.closest('[inert]'),
+    ).not.toBeNull()
   })
 
   it('sends the sheets that are typed and shows the identity', async () => {

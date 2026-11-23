@@ -141,11 +141,10 @@ export const WORDS = {
   kitProofHint:
     'A new kit needs your 12 recovery words or two sheets of an earlier kit. An earlier kit keeps working.',
   kitOneMoreSheet: 'One more sheet is needed.',
-  proofChoice: 'Recovery words or kit sheets',
-  proofWords: '12 recovery words',
-  proofSheets: 'Recovery kit sheets',
-  restoreSheetsHint:
-    'Type the words of any two sheets of your recovery kit, one sheet in each field.',
+  proofChoice: 'Recovery words or recovery kit',
+  proofWords: 'Recovery words',
+  proofSheets: 'Recovery kit',
+  restoreSheetsHint: 'Paste the words of any two sheets.',
   kitSheetField: (number: number) => `Sheet ${number}`,
   kitSheetPlaceholder: 'Type the 33 words of the sheet, separated by spaces',
   /** The page of licenses. */
