@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execTool } from '../../../shared/tools.mjs'
-import { findFunctionNames, findPossibleFunctionNames, getNameFault } from './function-names.mjs'
+import { findFunctionNames, findPossibleFunctionNames, getNameFault, isGoAccessor } from './function-names.mjs'
 
 const args = process.argv.slice(2)
 
@@ -679,7 +679,7 @@ function scanFile(filePath) {
     // 5. Third-person singular function names
     if (isCode && !isCommentLine && shouldCheckCategory('third-person')) {
       const m = isGo ? RE_GO_THIRD_PERSON_FUNC.exec(line) : RE_TS_THIRD_PERSON_FUNC.exec(line)
-      if (m) {
+      if (m && !(isGo && isGoAccessor(line))) {
         const funcName = m[1]
         if ((!filterWord || filterWord === funcName) && !baselineKeys.has(getBaselineKey({ file: relPath, func: funcName }))) {
           findings.thirdPersonFunctions.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', func: funcName, text: trimmed })
