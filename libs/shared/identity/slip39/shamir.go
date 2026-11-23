@@ -13,7 +13,7 @@ type rawShare struct {
 	data []byte
 }
 
-func gfMul(a, b byte) byte {
+func computeGFProduct(a, b byte) byte {
 	var product byte
 	for range 8 {
 		if b&1 == 1 {
@@ -29,10 +29,10 @@ func gfMul(a, b byte) byte {
 	return product
 }
 
-func gfInverse(a byte) byte {
+func invertGF(a byte) byte {
 	result := byte(1)
 	for range 254 {
-		result = gfMul(result, a)
+		result = computeGFProduct(result, a)
 	}
 	return result
 }
@@ -48,11 +48,11 @@ func interpolate(shares []rawShare, x byte) []byte {
 		basis := byte(1)
 		for j, other := range shares {
 			if i != j {
-				basis = gfMul(basis, gfMul(x^other.x, gfInverse(share.x^other.x)))
+				basis = computeGFProduct(basis, computeGFProduct(x^other.x, invertGF(share.x^other.x)))
 			}
 		}
 		for k := range out {
-			out[k] ^= gfMul(share.data[k], basis)
+			out[k] ^= computeGFProduct(share.data[k], basis)
 		}
 	}
 	return out

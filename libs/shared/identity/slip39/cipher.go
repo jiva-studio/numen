@@ -7,7 +7,7 @@ import (
 	"slices"
 )
 
-func saltOf(identifier uint16, extendable bool) []byte {
+func createSalt(identifier uint16, extendable bool) []byte {
 	if extendable {
 		return nil
 	}
@@ -24,10 +24,10 @@ func roundFunction(round int, passphrase, salt, right []byte, exponent uint8) ([
 	return key, nil
 }
 
-func feistel(data, passphrase []byte, share Share, decrypt bool) ([]byte, error) {
+func applyFeistel(data, passphrase []byte, share Share, decrypt bool) ([]byte, error) {
 	half := len(data) / 2
 	left, right := slices.Clone(data[:half]), slices.Clone(data[half:])
-	salt := saltOf(share.Identifier, share.Extendable)
+	salt := createSalt(share.Identifier, share.Extendable)
 	for step := range roundCount {
 		round := step
 		if decrypt {

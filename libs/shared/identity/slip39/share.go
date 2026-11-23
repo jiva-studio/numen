@@ -20,7 +20,7 @@ func (s Share) String() string { return "[slip39 share]" }
 func (s Share) GoString() string { return s.String() }
 
 func (s Share) Words() []string {
-	list := wordList()
+	list := listWords()
 	indices := s.indices()
 	out := make([]string, len(indices))
 	for i, at := range indices {
@@ -40,8 +40,8 @@ func (s Share) indices() []int {
 		params = params<<4 | field
 	}
 	data := append(toIndices(idExp, idExpWords), toIndices(params, paramWords)...)
-	data = append(data, valueIndices(s.Value)...)
-	return append(data, createChecksum(customization(s.Extendable), data)...)
+	data = append(data, encodeValueIndices(s.Value)...)
+	return append(data, createChecksum(getCustomization(s.Extendable), data)...)
 }
 
 func toIndices(number, count int) []int {
@@ -60,7 +60,7 @@ func fromIndices(indices []int) int {
 	return number
 }
 
-func valueIndices(value []byte) []int {
+func encodeValueIndices(value []byte) []int {
 	count := (len(value)*8 + radixBits - 1) / radixBits
 	padding := count*radixBits - len(value)*8
 	out := make([]int, count)
@@ -75,7 +75,7 @@ func valueIndices(value []byte) []int {
 	return out
 }
 
-func valuePadding(wordCount int) int {
+func computeValuePadding(wordCount int) int {
 	return radixBits * (wordCount - metadataWords) % 16
 }
 
@@ -97,7 +97,7 @@ func decodeValue(data []int, padding int) ([]byte, error) {
 }
 
 func lookupWords(words []string) ([]int, error) {
-	index := wordIndex()
+	index := indexWords()
 	data := make([]int, len(words))
 	for i, word := range words {
 		at, ok := index[strings.ToLower(strings.TrimSpace(word))]
@@ -111,7 +111,7 @@ func lookupWords(words []string) ([]int, error) {
 
 // ParseShare reads one mnemonic of whole words from the SLIP-39 list, each trimmed and lower-cased.
 func ParseShare(words []string) (Share, error) {
-	if len(words) < minMnemonicWords || valuePadding(len(words)) > 8 {
+	if len(words) < minMnemonicWords || computeValuePadding(len(words)) > 8 {
 		return Share{}, fmt.Errorf("%w: got %d", ErrWordCount, len(words))
 	}
 	data, err := lookupWords(words)
@@ -124,7 +124,7 @@ func ParseShare(words []string) (Share, error) {
 		Extendable:        idExp>>iterationExpBits&1 == 1,
 		IterationExponent: uint8(idExp & (1<<iterationExpBits - 1)),
 	}
-	if !verifyChecksum(customization(share.Extendable), data) {
+	if !verifyChecksum(getCustomization(share.Extendable), data) {
 		return Share{}, ErrChecksum
 	}
 	params := fromIndices(data[idExpWords : idExpWords+paramWords])
@@ -136,7 +136,7 @@ func ParseShare(words []string) (Share, error) {
 	if share.GroupCount < share.GroupThreshold {
 		return Share{}, fmt.Errorf("%w: group threshold %d of %d groups", ErrInvalidShare, share.GroupThreshold, share.GroupCount)
 	}
-	share.Value, err = decodeValue(data[idExpWords+paramWords:len(data)-checksumWords], valuePadding(len(words)))
+	share.Value, err = decodeValue(data[idExpWords+paramWords:len(data)-checksumWords], computeValuePadding(len(words)))
 	if err != nil {
 		return Share{}, err
 	}

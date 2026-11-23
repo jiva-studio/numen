@@ -26,7 +26,7 @@ func Split(random io.Reader, secret []byte, threshold, count int) ([]Share, erro
 		GroupCount:        1,
 		MemberThreshold:   uint8(threshold),
 	}
-	encrypted, err := feistel(secret, nil, template, false)
+	encrypted, err := applyFeistel(secret, nil, template, false)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func checkSplit(size, threshold, count int) error {
 	return nil
 }
 
-func sameSet(a, b Share) bool {
+func isSameSet(a, b Share) bool {
 	return a.Identifier == b.Identifier && a.Extendable == b.Extendable &&
 		a.IterationExponent == b.IterationExponent && a.GroupThreshold == b.GroupThreshold &&
 		a.GroupCount == b.GroupCount && len(a.Value) == len(b.Value)
@@ -101,7 +101,7 @@ func Combine(shares []Share, passphrase []byte) ([]byte, error) {
 		return nil, ErrNotEnoughShares
 	}
 	for _, share := range shares[1:] {
-		if !sameSet(shares[0], share) {
+		if !isSameSet(shares[0], share) {
 			return nil, ErrMixedSets
 		}
 	}
@@ -125,5 +125,5 @@ func Combine(shares []Share, passphrase []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return feistel(encrypted, passphrase, shares[0], true)
+	return applyFeistel(encrypted, passphrase, shares[0], true)
 }
