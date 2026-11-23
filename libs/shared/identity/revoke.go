@@ -262,7 +262,7 @@ func (c Chain) getKeyIndex(sign ed25519.PublicKey) int {
 		if entry.Kind == KindAddDevice && entry.AddDevice != nil && bytes.Equal(entry.AddDevice.Device.Sign, sign) {
 			found = i
 		}
-		if entry.Kind == KindRevokeDevice && entry.Revoke != nil {
+		if (entry.Kind == KindRevokeDevice || entry.Kind == KindRotateKeys) && entry.Revoke != nil {
 			if _, ok := entry.Revoke.getWrapFor(sign); ok {
 				found = i
 			}

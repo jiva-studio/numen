@@ -173,7 +173,15 @@ func TestDecideLink_TheHostStoresTheLongerChainOnlyAfterTheServerAcceptedIt(t *t
 		t.Fatal(err)
 	}
 	r.settle(t, host, joiner)
-	approveAndEnterCode(t, r, host, joiner)
+	code := host.getLink(t).Code
+	if err := host.decide().Execute(t.Context(), true); err != nil {
+		t.Fatalf("DecideLink() = %v", err)
+	}
+	r.settle(t, host, joiner)
+	if err := joiner.code().Execute(t.Context(), code); err != nil {
+		t.Fatalf("EnterLinkCode() = %v", err)
+	}
+	r.carry(t, joiner, host)
 
 	pending, err := host.publish().Execute(t.Context())
 	if err != nil || !pending.IsPending {
