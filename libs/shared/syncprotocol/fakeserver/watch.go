@@ -111,7 +111,7 @@ func (s *Server) WatchChanges(ctx context.Context, req *connect.Request[syncv1.W
 	w := s.streams.add(session.AccountFingerprint)
 	defer s.streams.remove(w)
 	s.streams.merge(w, s.listVaultSeqs(session.AccountFingerprint))
-	if err := stream.Send(newStarted(s.streams.heartbeat)); err != nil {
+	if err := stream.Send(newStartedMessage(s.streams.heartbeat)); err != nil {
 		return fmt.Errorf("send started: %w", err)
 	}
 	return s.runStream(ctx, w, session.Token, stream)
@@ -165,7 +165,7 @@ func (s *Server) sendPending(w *watcher, stream *connect.ServerStream[syncv1.Wat
 	return len(hints) > 0
 }
 
-func newStarted(heartbeat time.Duration) *syncv1.WatchChangesResponse {
+func newStartedMessage(heartbeat time.Duration) *syncv1.WatchChangesResponse {
 	seconds := uint32((heartbeat + time.Second - 1) / time.Second)
 	return &syncv1.WatchChangesResponse{Event: &syncv1.WatchChangesResponse_Started{Started: &syncv1.Started{HeartbeatSeconds: seconds}}}
 }

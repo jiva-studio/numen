@@ -73,8 +73,6 @@ type received struct {
 	err   error
 }
 
-// read returns why the stream ended: it ends on an error or a clean end of the stream, and on a silence of
-// silenceBeats heartbeats, which only the clock of the plugin can tell from a quiet but healthy stream.
 func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) string {
 	readCtx, stop := context.WithCancel(ctx)
 	var group sync.WaitGroup
@@ -84,6 +82,7 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) string {
 	}()
 	events := make(chan received)
 	group.Go(func() { pump(readCtx, watch, events) })
+	// Only the clock of the plugin can tell a silence of silenceBeats heartbeats from a quiet but healthy stream.
 	beat := silenceBeats * max(watch.GetHeartbeat(), minHeartbeat)
 	silence := u.startSilence(readCtx, &group, beat)
 	for {
@@ -144,8 +143,6 @@ func (u *WatchChanges) startSilence(ctx context.Context, group *sync.WaitGroup, 
 	return silence{fired: fired, cancel: cancel}
 }
 
-// wakeFor wakes each vault linked to the vault of the hint whose cursor is behind the seq of the hint. A hint is
-// a level, not an event: the pass reads the changes from the cursor of the link and trusts nothing else.
 func (u *WatchChanges) wakeFor(ctx context.Context, event ports.HintEvent) {
 	if event.IsHeartbeat() {
 		return

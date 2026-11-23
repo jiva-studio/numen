@@ -72,8 +72,9 @@ func (s *WatchStream) Receive() (*syncv1.WatchChangesResponse, error) {
 	return nil, io.EOF
 }
 
-// Close ends the stream.
+// Close ends the stream. The context ends first: Connect drains the body before it closes it, and a stream
+// that is still open has no end to drain.
 func (s *WatchStream) Close() error {
-	defer s.cancel()
+	s.cancel()
 	return s.stream.Close()
 }

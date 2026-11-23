@@ -179,7 +179,7 @@ func TestWatchChanges_SendsAHeartbeatOnASilentStream(t *testing.T) {
 	e.openWatch().receiveHeartbeat()
 }
 
-func TestWatchChanges_GivesNothingOfAnotherAccount(t *testing.T) {
+func TestWatchChanges_HintsNothingOfAnotherAccount(t *testing.T) {
 	t.Parallel()
 	_, e := newWatchEnv(t)
 	watch := e.openWatch()
@@ -264,8 +264,9 @@ func TestCountStreams_CountsOpenStreamsAndDropsAClosedOne(t *testing.T) {
 		t.Fatal(err)
 	}
 	second.receiveHeartbeat()
-	deadline := time.Now().Add(receiveLimit)
-	for server.CountStreams() != 1 && time.Now().Before(deadline) {
+	clock := machineClock{}
+	deadline := clock.Now().Add(receiveLimit)
+	for server.CountStreams() != 1 && clock.Now().Before(deadline) {
 		second.receiveHeartbeat()
 	}
 	if got := server.CountStreams(); got != 1 {
@@ -289,11 +290,15 @@ func TestAdminStreams_ReportsTheCountAsText(t *testing.T) {
 	_, e := newWatchEnv(t)
 	e.openWatch()
 
-	response, err := http.Get(e.address + "/admin/streams")
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, e.address+"/admin/streams", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = response.Body.Close() }()
 	body, _ := io.ReadAll(response.Body)
 
 	if got := strings.TrimSpace(string(body)); got != "1" {
@@ -306,11 +311,15 @@ func TestAdminStreamsEnd_EndsEveryStream(t *testing.T) {
 	server, e := newWatchEnv(t)
 	watch := e.openWatch()
 
-	response, err := http.Post(e.address+"/admin/streams/end", "text/plain", nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, e.address+"/admin/streams/end", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	response.Body.Close()
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
 
 	for {
 		got := watch.receive()

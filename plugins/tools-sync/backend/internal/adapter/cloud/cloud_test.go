@@ -232,7 +232,7 @@ func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer watch.Close()
+	defer func() { _ = watch.Close() }()
 
 	event, err := watch.Receive(t.Context())
 
@@ -257,7 +257,7 @@ func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkW
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer watch.Close()
+	defer func() { _ = watch.Close() }()
 	event, err := watch.Receive(t.Context())
 
 	if err != nil {
@@ -277,7 +277,7 @@ func TestCloud_WatchReturnsTheErrorOfItsContextFromReceive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer watch.Close()
+	defer func() { _ = watch.Close() }()
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -301,7 +301,7 @@ func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer watch.Close()
+	defer func() { _ = watch.Close() }()
 
 	if refreshes != 1 {
 		t.Errorf("sign-ins = %d, want 1", refreshes)

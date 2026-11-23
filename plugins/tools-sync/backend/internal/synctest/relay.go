@@ -1,6 +1,7 @@
 package synctest
 
 import (
+	"context"
 	"net"
 	"sync"
 	"testing"
@@ -25,7 +26,7 @@ type relayConn struct {
 func NewRelay(t *testing.T, address string) *Relay {
 	t.Helper()
 	target := address[len("http://"):]
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +53,7 @@ func (r *Relay) accept(target string) {
 		if err != nil {
 			return
 		}
-		upstream, err := net.Dial("tcp", target)
+		upstream, err := (&net.Dialer{}).DialContext(context.Background(), "tcp", target)
 		if err != nil {
 			_ = client.Close()
 			continue
@@ -67,8 +68,8 @@ func (r *Relay) accept(target string) {
 }
 
 func (c *relayConn) copy(to, from net.Conn) {
-	defer to.Close()
-	defer from.Close()
+	defer func() { _ = to.Close() }()
+	defer func() { _ = from.Close() }()
 	buffer := make([]byte, 4096)
 	for {
 		n, err := from.Read(buffer)

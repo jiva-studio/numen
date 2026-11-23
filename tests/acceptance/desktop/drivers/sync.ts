@@ -37,7 +37,7 @@ const SETTLE_MS = 3_000
 /** A number and a unit, as a scenario writes an interval. */
 const INTERVAL_PATTERN = /^(\d+) (second|minute|hour)s?$/
 const INTERVAL_UNITS = { second: 1, minute: 60, hour: 3600 } as const
-/** The server counts the streams of the plugin on both computers; a change comes back within a few seconds of retrying. */
+/** The server counts the streams of the plugin on both computers; a change arrives within a few seconds of retrying. */
 const STREAM_TIMEOUT_MS = 15_000
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */

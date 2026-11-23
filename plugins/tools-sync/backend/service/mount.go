@@ -75,6 +75,4 @@ func (a *App) HandleEvent(_ context.Context, event string) error {
 
 func newHTTPClient() *http.Client { return &http.Client{Timeout: requestTimeout} }
 
-// newStreamHTTPClient returns the client of the stream of change hints, which has no Timeout: a Timeout ends the
-// read of the body, and the stream lives as long as the connection.
 func newStreamHTTPClient() *http.Client { return loops.NewStreamHTTP(streamHeaderTimeout) }
