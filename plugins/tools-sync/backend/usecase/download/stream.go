@@ -104,7 +104,8 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 		return nil, false, nil
 	}
 	hasher := r.deps.Digests.Create()
-	if hasher.Restore(kept.StoredHashState) != nil {
+	restored := hasher.Restore(kept.StoredHashState) == nil
+	if !restored {
 		return nil, false, nil
 	}
 	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
