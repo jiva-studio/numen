@@ -119,6 +119,7 @@ func newAccountHost(t *testing.T) accountHost {
 	fake.granted = []string{manifest.PermissionIdentity}
 	hosted := fake.asCallers()
 	hosted.Account = operations
+	hosted.Restore = operations
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{endpoint: &Endpoint{callers: hosted}}))
 	server := httptest.NewServer(mux)

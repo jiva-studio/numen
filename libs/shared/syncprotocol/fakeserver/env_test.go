@@ -18,6 +18,11 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
+// machineClock reads the clock of the machine.
+type machineClock struct{}
+
+func (machineClock) Now() time.Time { return time.Now() }
+
 type ownedAccount struct {
 	root  identity.RecoveryKey
 	keys  identity.AccountKeys
@@ -38,7 +43,7 @@ func newOwnedAccount(tb testing.TB) ownedAccount {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err := identity.NewChain(root, keys, time.Now())
+	chain, err := identity.NewChain(root, keys, machineClock{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -51,7 +56,7 @@ func (a *ownedAccount) addDevice(tb testing.TB, name string) identity.DeviceKey 
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err := a.chain.AppendDevice(a.root, device.Public(), name, time.Now())
+	chain, err := a.chain.AppendDevice(a.root, device.Public(), name, machineClock{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -70,7 +75,7 @@ func newServer(tb testing.TB) (*fakeserver.Server, string) {
 
 func signIn(tb testing.TB, address string, device identity.DeviceKey, chain identity.Chain) string {
 	tb.Helper()
-	client := syncprotocol.NewSignInClient(address, http.DefaultClient, time.Now)
+	client := syncprotocol.NewSignInClient(address, http.DefaultClient, machineClock{}.Now)
 	key := device.Public().Sign
 	challenge, err := client.GetChallenge(tb.Context(), key)
 	if err != nil {
