@@ -22,7 +22,7 @@ func (c *Computer) CommitRemoval(t *testing.T, vault transfer.Vault, notePath st
 	if err != nil {
 		t.Fatal(err)
 	}
-	sealed, err := note.SealMeta(rand.Reader, vault.Key, vault.ID, previous.FileID, note.Meta{Path: notePath, Key: key, Kind: note.KindMarkdown})
+	sealed, err := note.SealMeta(rand.Reader, vault.Key, vault.ID, previous.FileID, note.Meta{Path: notePath, Size: 0, MTime: 0, Hash: "", Key: key, Kind: note.KindMarkdown})
 	if err != nil {
 		t.Fatal(err)
 	}
