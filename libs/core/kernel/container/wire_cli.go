@@ -97,15 +97,12 @@ func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) c
 }
 
 type cliIndex struct {
-	source    sourcebridge.Binding
-	workers   int
-	openWork  cliPluginWork
-	closers   *[]func() error
-	db        *vaultIndex
-	report    window.ErrorHandler
-	plan      vaultIndexPlan
-	vaultDeps vaultWiring
-	plugins   textversion.TextPlugins
+	source   sourcebridge.Binding
+	workers  int
+	openWork cliPluginWork
+	closers  *[]func() error
+	db       *vaultIndex
+	report   window.ErrorHandler
 }
 
 func newCLIIndex(r *cliRun, db *vaultIndex, report window.ErrorHandler, openWork cliPluginWork) cliIndex {
@@ -123,18 +120,26 @@ type cliPreparations struct {
 }
 
 func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cliPreparations {
-	index.plan, index.vaultDeps = plan, vaultDeps
-	index.plugins = getRunningExecution(exec, install.SafeMode).Runtime.Listing
+	plugins := getRunningExecution(exec, install.SafeMode).Runtime.Listing
+	db := index.db
+	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
+		return prepareCLIScan(index, ctx, v, ranking, storage)
+	}
+	prepareSearch := func(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
+		return prepareCLISearch(index, ctx, v, ranking, storage)
+	}
 	prepareQuery := func(ctx context.Context, v domain.Vault, notices connection.ReportSetAside) (*searchqueryusecase.FindSearchResults, error) {
-		ranking, storage := openIndexedVault(plan, vaultDeps, index.db, index.plugins)
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		embedder, err := openCLISearchSource(index, ctx, v, storage)
 		if err != nil {
 			return nil, err
 		}
 		setModelCalls(install, exec, settingsDeps, storage, notices)
-		return newFindSearchResults(openQueryPorts(install, exec, settingsDeps, storage), settingsDeps, newTextSearch(ranking, index.workers), index.db, embedder, index.report), nil
+		return newFindSearchResults(openQueryPorts(install, exec, settingsDeps, storage), settingsDeps, newTextSearch(ranking, index.workers), db, embedder, index.report), nil
 	}
-	return cliPreparations{scan: index.prepareScan, search: index.prepareSearch, query: prepareQuery}
+	return cliPreparations{scan: prepareScan, search: prepareSearch, query: prepareQuery}
 }
 
 func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices connection.ReportSetAside) cli.Indexed {
@@ -160,8 +165,7 @@ func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, 
 	}
 }
 
-func (i cliIndex) prepareScan(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
-	plan, vaultDeps := openIndexedVault(i.plan, i.vaultDeps, i.db, i.plugins)
+func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultWiring) (indexing.ReadWholeVault, error) {
 	if _, err := i.openWork(vaultDeps, i.db, v); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -174,8 +178,7 @@ func (i cliIndex) prepareScan(ctx context.Context, v domain.Vault) (indexing.Rea
 	return read, nil
 }
 
-func (i cliIndex) prepareSearch(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
-	plan, vaultDeps := openIndexedVault(i.plan, i.vaultDeps, i.db, i.plugins)
+func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultWiring) (searchusecase.Search, error) {
 	embedder, err := openCLISearchSource(i, ctx, v, vaultDeps)
 	if err != nil {
 		return searchusecase.Search{}, err
@@ -183,7 +186,6 @@ func (i cliIndex) prepareSearch(ctx context.Context, v domain.Vault) (searchusec
 	return newSearch(newTextSearch(plan, i.workers), i.db, embedder.searchSource, i.report, nil), nil
 }
 
-// openCLISearchSource opens the plugin work over v and the source a search asks, and reports why that source cannot answer.
 func openCLISearchSource(i cliIndex, ctx context.Context, v domain.Vault, vaultDeps vaultWiring) (sourceAccess, error) {
 	if _, err := i.openWork(vaultDeps, i.db, v); err != nil {
 		return sourceAccess{}, err

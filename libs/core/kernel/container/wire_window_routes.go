@@ -53,7 +53,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
@@ -335,13 +334,9 @@ func mountConnection(w *windowRoutes, install pluginInstall, exec *PluginExecuti
 }
 
 func mountConnectionCall(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	handler := openConnectionCalls(install, exec, settingsDeps, vaultDeps)
-	w.Installation.Mount(editor.NewRoute(connectioncall.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
-func openConnectionCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) numenv1connect.ConnectionCallServiceHandler {
 	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
-	return connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(vaultDeps.Clock))
+	handler := connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(vaultDeps.Clock))
+	w.Installation.Mount(editor.NewRoute(connectioncall.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
 func mountLicense(w *windowRoutes, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {

@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -92,11 +94,12 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	log := opening.Log
+	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	api := &shell.API{
 		Window:          shell.NewWindow(opening.Target, nil),
 		Frontends:       shell.NewFrontendPlugins(exec.Runtime.Manifests.ListFrontendPluginIDs, func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }),
 		PluginServices:  servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing),
-		ConnectionCalls: openConnectionCalls(install, exec, settingsDeps, vaultDeps),
+		ConnectionCalls: connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)

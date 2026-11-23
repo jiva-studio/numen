@@ -8,7 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// NewRoute returns the path IdentityService is served at and the handler that serves it, and the handler it answers through.
+// NewRoute is where IdentityService is mounted, what the schema generated to answer it, and the
+// handler it answers through.
 func NewRoute(handler numenv1connect.IdentityServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
 	path, served = numenv1connect.NewIdentityServiceHandler(handler, counted)
 	return path, served, handler
