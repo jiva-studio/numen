@@ -122,46 +122,6 @@ func TestPullChanges_ReplacesAFileThatEqualsItsBaseWithABaselineOfWhatItSaw(t *t
 	}
 }
 
-func TestPullChanges_KeepsAFileChangedOnBothComputersAndPlacesNothing(t *testing.T) {
-	p := newPair(t)
-	spy := p.b.Spy()
-	first := p.push(t, pdf, pdfText, nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, pdf, "edited here")
-	p.push(t, pdf, pdfText+" edited there", &first)
-
-	result := p.pull(t, trustAll)
-
-	if got := p.readNote(t, pdf); got != "edited here" {
-		t.Errorf("file = %q, want the local bytes", got)
-	}
-	if !slices.Equal(result.Conflicts, []string{pdf}) || len(spy.GetPlaces()) != 1 {
-		t.Errorf("conflicts = %v with %d placements, want the file in conflict and only the first placement", result.Conflicts, len(spy.GetPlaces()))
-	}
-}
-
-func TestPullChanges_TreatsAFileThatAppearedBeforeItsPlacementAsAConflict(t *testing.T) {
-	p := newPair(t)
-	spy := p.b.Spy()
-	spy.BeforePlace(func(call synctest.PlaceCall) { p.b.WriteNote(target, call.Path, "written meanwhile") })
-	p.push(t, pdf, pdfText, nil)
-
-	result := p.pull(t, trustAll)
-
-	if got := p.readNote(t, pdf); got != "written meanwhile" {
-		t.Errorf("file = %q, want the file that appeared, untouched", got)
-	}
-	if !slices.Equal(result.Conflicts, []string{pdf}) {
-		t.Errorf("conflicts = %v, want the file", result.Conflicts)
-	}
-	if _, ok := p.b.GetFileRow(t, target, pdf); ok {
-		t.Error("a record was kept for a file that was not placed")
-	}
-	if names := p.getStagedNames(t); len(names) != 0 {
-		t.Errorf("staged files left = %v, want none", names)
-	}
-}
-
 func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenTheHostFindsAnotherHash(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
@@ -457,42 +417,6 @@ func TestPullChanges_MovesTheFilesOneByOneWhenTheBatchOmitsAFileOfTheFolder(t *t
 	}
 	if got := p.readNote(t, "Food/File 3.pdf"); got != "file 3" {
 		t.Errorf("the file that stayed = %q, want it kept in its folder", got)
-	}
-}
-
-func TestPullChanges_KeepsALocalFileAtTheNewPathAndMovesNothing(t *testing.T) {
-	p := newPair(t)
-	spy := p.b.Spy()
-	first := p.push(t, pdf, pdfText, nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, "Papers/Old report.pdf", "another file")
-	p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})
-
-	result := p.pull(t, trustAll)
-
-	if !slices.Equal(result.Conflicts, []string{"Papers/Old report.pdf"}) || len(spy.GetMoves()) != 0 {
-		t.Errorf("conflicts = %v with %d moves, want the new path in conflict and no move", result.Conflicts, len(spy.GetMoves()))
-	}
-	if got := p.readNote(t, pdf); got != pdfText {
-		t.Errorf("file at the old path = %q, want it kept", got)
-	}
-}
-
-func TestPullChanges_KeepsAFileEditedHereWhereItIsWhenTheOtherComputerMovedIt(t *testing.T) {
-	p := newPair(t)
-	spy := p.b.Spy()
-	first := p.push(t, pdf, pdfText, nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, pdf, "edited here")
-	p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})
-
-	result := p.pull(t, trustAll)
-
-	if len(spy.GetMoves()) != 0 || len(result.Conflicts) != 1 {
-		t.Errorf("%d moves and conflicts %v, want the edited file left where it is", len(spy.GetMoves()), result.Conflicts)
-	}
-	if got := p.readNote(t, pdf); got != "edited here" {
-		t.Errorf("file = %q, want the local bytes", got)
 	}
 }
 

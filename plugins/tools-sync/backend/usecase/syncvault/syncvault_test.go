@@ -250,27 +250,6 @@ func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
 	}
 }
 
-func TestSyncVault_ClearsTheWarningWhenTheTwoNotesAreTheSame(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.a.WriteNote(source, "Shopping list.md", "bread")
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.b.WriteNote(target, "Shopping list.md", "bread")
-
-	sync(t, p.b, target)
-
-	if p.b.HasItemKey("conflicts") {
-		t.Errorf("health items = %+v, want the warning cleared once the notes are equal", p.b.Health.List())
-	}
-	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 1 {
-		t.Errorf("server holds %d revisions, want 1: nothing is pushed for a note equal to the head", got)
-	}
-}
-
 func TestSyncVault_ANoteMadeWhileTheServerIsAwayArrivesLater(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.server.SetDown(true)

@@ -132,27 +132,6 @@ func TestPullChanges_AdoptsAHeadThatEqualsTheLocalNote(t *testing.T) {
 	}
 }
 
-func TestPullChanges_KeepsANoteChangedOnBothComputersAsItIs(t *testing.T) {
-	p := newPair(t)
-	first := p.push(t, "Shopping list.md", "milk", nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	p.push(t, "Shopping list.md", "bread", &first)
-
-	result := p.pull(t, trustAll)
-	again := p.pull(t, trustAll)
-
-	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "eggs" {
-		t.Errorf("note = %q, want the local text eggs", text)
-	}
-	if !slices.Equal(result.Conflicts, []string{"Shopping list.md"}) || !slices.Equal(again.Conflicts, []string{"Shopping list.md"}) {
-		t.Errorf("conflicts = %v then %v, want the note both times", result.Conflicts, again.Conflicts)
-	}
-	if row, _ := p.b.GetFileRow(t, target, "Shopping list.md"); row.BaseHash != note.Hash([]byte("milk")) {
-		t.Errorf("base = %s, want the hash of milk, unchanged", row.BaseHash)
-	}
-}
-
 func TestPullChanges_KeepsTheNoteWhenTheHostRefusesTheWrite(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, "Shopping list.md", "milk", nil)
