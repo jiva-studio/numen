@@ -123,38 +123,6 @@ func (c *SubscriptionClient) ChangePlan(ctx context.Context, plan string) (syncp
 	return readSubscription(response.Msg.GetSubscription())
 }
 
-// ListProducts returns the products the server sells that are no plans, in the order of the server. A server that sells none is ErrBillingUnavailable.
-func (c *SubscriptionClient) ListProducts(ctx context.Context) ([]syncprotocol.Product, error) {
-	response, err := c.rpc.ListProducts(ctx, connect.NewRequest(&syncv1.ListProductsRequest{}))
-	if err != nil {
-		return nil, syncprotocol.ReadSubscriptionError(err)
-	}
-	products := make([]syncprotocol.Product, 0, len(response.Msg.GetProducts()))
-	for _, product := range response.Msg.GetProducts() {
-		products = append(products, syncprotocol.Product{
-			ID: product.GetId(), Slug: product.GetSlug(), Name: product.GetName(), PriceCents: product.GetPriceCents(),
-			Currency: product.GetCurrency(), OneTime: product.GetOneTime(),
-		})
-	}
-	return products, nil
-}
-
-// GetEntitlements returns every product the account of the session owns right now, ordered by product slug. A server without billing is ErrBillingUnavailable.
-func (c *SubscriptionClient) GetEntitlements(ctx context.Context) ([]syncprotocol.Entitlement, error) {
-	response, err := c.rpc.GetEntitlements(ctx, connect.NewRequest(&syncv1.GetEntitlementsRequest{}))
-	if err != nil {
-		return nil, syncprotocol.ReadSubscriptionError(err)
-	}
-	entitlements := make([]syncprotocol.Entitlement, 0, len(response.Msg.GetEntitlements()))
-	for _, one := range response.Msg.GetEntitlements() {
-		entitlements = append(entitlements, syncprotocol.Entitlement{
-			Product: one.GetProduct(), ValidUntil: readUnixTime(one.GetValidUntil()), Phase: one.GetPhase(),
-			QuotaBytes: one.GetQuotaBytes(), IsTrial: one.GetIsTrial(),
-		})
-	}
-	return entitlements, nil
-}
-
 // CreatePortalSession returns the address of the customer portal of the payment provider. The refusals are ErrNoActiveSubscription for an account that
 // never paid by payment, ErrBillingUnavailable and ErrUnreachable when the payment provider fails.
 func (c *SubscriptionClient) CreatePortalSession(ctx context.Context) (string, error) {

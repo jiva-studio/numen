@@ -29,9 +29,7 @@ type subscriptionStub struct {
 	plans    []*syncv1.Plan
 	asked    []string
 
-	products     []*syncv1.Product
-	entitlements []*syncv1.Entitlement
-	portal       string
+	portal string
 }
 
 func (s *subscriptionStub) record(header http.Header) error {
