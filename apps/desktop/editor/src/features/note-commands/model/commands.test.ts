@@ -97,7 +97,7 @@ const createWindow = (answers: Answers = {}) => {
     notes: {
       getTabAt: (path: string) => (path === targetPath ? 'active' : null),
       getPath: (id: string) => id,
-      asking: () => answers.isAsking === true,
+      isAsking: () => answers.isAsking === true,
       flushPending: async (id: string) => {
         actions.push(`flushPending ${id}`)
       },
@@ -191,7 +191,7 @@ describe('the commands over a note', () => {
   it('is offered over every file but not over the vault root', () => {
     const { set } = createWindow()
     const removing = set.commands.find((one) => one.id === 'app:file.remove')
-    const runs = { canRun: () => true, cannotRun: () => undefined }
+    const runs = { canRun: () => true, reportCannotRun: () => undefined }
     const over = (path: string) => removing?.isAvailable(front({ path, file: path }), runs) ?? false
 
     expect(over('physics/Ontology.md')).toBe(true)

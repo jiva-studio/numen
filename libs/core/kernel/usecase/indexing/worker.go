@@ -58,7 +58,7 @@ type Config struct {
 	IndexChanged IndexChanged
 	Events       Events
 	Quiet        time.Duration
-	After        func(time.Duration) <-chan time.Time
+	CreateTimer  func(time.Duration) <-chan time.Time
 }
 
 // Worker keeps the index of a vault in sync with its content, one pass at a
@@ -74,7 +74,7 @@ type Worker struct {
 	indexChanged IndexChanged
 	events       Events
 	debounce     time.Duration
-	after        func(time.Duration) <-chan time.Time
+	createTimer  func(time.Duration) <-chan time.Time
 	wakes        atomic.Pointer[channelWakes]
 	skips        *vaultreading.Skips
 }
@@ -87,7 +87,7 @@ func NewWorker(cfg Config) *Worker {
 		indexChanged: cfg.IndexChanged,
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
-		after:        cfg.After,
+		createTimer:  cfg.CreateTimer,
 		skips:        vaultreading.NewSkips(),
 	}
 	worker.wakes.Store(newChannelWakes())
@@ -113,7 +113,7 @@ func (w *Worker) openReading(
 
 func (w *Worker) hasSource() bool { return w.source != nil && w.source.Describe().IsDescribed() }
 
-func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
+func (w *Worker) waitForQuiet() <-chan time.Time { return w.createTimer(w.debounce) }
 
 func (w *Worker) wakeRead() { w.wakes.Load().wakeRead() }
 
@@ -130,8 +130,8 @@ func (w *Worker) newPass(s *Session, rebuild bool) *pass {
 
 // wakeWaits waits for the signals that something arrived for a pass to do.
 type wakeWaits interface {
-	sourcesWoken() <-chan struct{}
-	notesWoken() <-chan struct{}
+	getSourcesWake() <-chan struct{}
+	getNotesWake() <-chan struct{}
 	readWakeChannel() <-chan struct{}
 	// stopOnWake returns a context that ends when any of the signals arrives, and leaves that signal held.
 	stopOnWake(ctx context.Context) (context.Context, func())
@@ -152,7 +152,7 @@ func newChannelWakes() *channelWakes {
 	return &channelWakes{sources: make(chan struct{}, 1), notes: make(chan struct{}, 1), read: make(chan struct{}, 1)}
 }
 
-func (c *channelWakes) forVault(id domain.VaultID) *channelWakes {
+func (c *channelWakes) getVaultWakes(id domain.VaultID) *channelWakes {
 	next := *c
 	if c.vault != "" && c.vault != id {
 		next.notes = make(chan struct{}, 1)
@@ -167,9 +167,9 @@ func (c *channelWakes) wakeNotes() { signal(c.notes) }
 
 func (c *channelWakes) wakeRead() { signal(c.read) }
 
-func (c *channelWakes) sourcesWoken() <-chan struct{} { return c.sources }
+func (c *channelWakes) getSourcesWake() <-chan struct{} { return c.sources }
 
-func (c *channelWakes) notesWoken() <-chan struct{} { return c.notes }
+func (c *channelWakes) getNotesWake() <-chan struct{} { return c.notes }
 
 func (c *channelWakes) readWakeChannel() <-chan struct{} { return c.read }
 
@@ -271,7 +271,7 @@ type Session struct {
 
 // NewSession directs committed writes to this vault before its first scan starts.
 func (w *Worker) NewSession(v domain.Vault) *Session {
-	signals := w.wakes.Load().forVault(v.ID)
+	signals := w.wakes.Load().getVaultWakes(v.ID)
 	w.wakes.Store(signals)
 	return &Session{host: w, signals: signals, vault: v}
 }

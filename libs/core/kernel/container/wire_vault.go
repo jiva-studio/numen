@@ -127,5 +127,5 @@ func getProblems(problems check.ProblemQueries) *vault.GetProblems {
 	if problems == nil {
 		return vault.NewGetProblems(check.Checks{})
 	}
-	return vault.NewGetProblems(check.Standard(problems))
+	return vault.NewGetProblems(check.CreateStandard(problems))
 }

@@ -45,7 +45,7 @@ func getVectorForSeed(seed byte) []float32 {
 }
 
 func getPreciseBytes(v []float32) []byte {
-	q := vector.Bytes(vector.Normalize(v))
+	q := vector.QuantizeBytes(vector.Normalize(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

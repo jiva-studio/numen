@@ -43,7 +43,7 @@ export const createNotes = (
   noteOpeners: NoteOpeners,
   writeMessage: MessageWriter,
 ): Notes => {
-  const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
+  const findStore = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
     getTabAt: (path) => {
       for (const one of stores) {
@@ -52,12 +52,12 @@ export const createNotes = (
       }
       return null
     },
-    getPath: (id) => holder(id)?.getPath(id) ?? id,
-    asking: (id) => holder(id)?.asking(id) ?? false,
+    getPath: (id) => findStore(id)?.getPath(id) ?? id,
+    isAsking: (id) => findStore(id)?.isAsking(id) ?? false,
     flushPending: async (id) => {
-      await holder(id)?.flushPending(id)
+      await findStore(id)?.flushPending(id)
     },
-    close: (id) => holder(id)?.close(id),
+    close: (id) => findStore(id)?.close(id),
     openFile: (path, title, placement, place) =>
       runInBackground(
         noteOpeners.openFile(path, title, createPlacement(placement, place)),

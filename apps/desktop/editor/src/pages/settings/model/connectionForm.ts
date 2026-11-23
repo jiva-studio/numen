@@ -28,8 +28,8 @@ import { WORDS as words } from '../words'
 
 /** What the form is made from and where it saves. */
 export interface ConnectionFormInput {
-  readonly types: () => readonly ConnectionTypeInfo[]
-  readonly connection: () => ConnectionInfo | undefined
+  readonly listTypes: () => readonly ConnectionTypeInfo[]
+  readonly getConnection: () => ConnectionInfo | undefined
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
   readonly onSaved: (connection: ConnectionInfo) => void
@@ -54,11 +54,11 @@ export interface ConnectionFormView {
 }
 
 function createState(input: ConnectionFormInput): ConnectionFormState {
-  const stored = input.connection()
+  const stored = input.getConnection()
   return reactive({
-    typeId: stored?.typeId ?? input.types().find((one) => one.isAvailable)?.id ?? '',
+    typeId: stored?.typeId ?? input.listTypes().find((one) => one.isAvailable)?.id ?? '',
     name: stored?.name ?? '',
-    values: createInitialValues(input.types(), stored),
+    values: createInitialValues(input.listTypes(), stored),
     secrets: {},
     problem: '',
     isSaving: false,
@@ -67,11 +67,11 @@ function createState(input: ConnectionFormInput): ConnectionFormState {
 
 function createView(input: ConnectionFormInput, state: ConnectionFormState) {
   return computed<ConnectionFormView>(() => {
-    const type = input.types().find((one) => one.id === state.typeId)
+    const type = input.listTypes().find((one) => one.id === state.typeId)
     if (!type) {
       return { type, fields: [], storedKeys: [], isKeyLost: false }
     }
-    const stored = input.connection()
+    const stored = input.getConnection()
     return {
       type,
       fields: getEditableFields(type),
@@ -88,7 +88,7 @@ function createActions(
 ) {
   const chooseType = (id: string): void => {
     state.typeId = id
-    const target = input.types().find((one) => one.id === id)
+    const target = input.listTypes().find((one) => one.id === id)
     state.values = target ? createFieldValues(target) : {}
     state.secrets = {}
     state.problem = ''
@@ -103,7 +103,7 @@ function createActions(
   }
 
   const send = (target: ConnectionTypeInfo): Promise<Result<ConnectionInfo, string>> => {
-    const stored = input.connection()
+    const stored = input.getConnection()
     const request = {
       name: state.name,
       fields: getSentFields(target, state.values),
@@ -153,8 +153,8 @@ export function useConnectionForm(input: ConnectionFormInput) {
   return {
     state,
     view,
-    availableTypes: computed(() => input.types().filter((one) => one.isAvailable)),
-    isEditing: input.connection() !== undefined,
+    availableTypes: computed(() => input.listTypes().filter((one) => one.isAvailable)),
+    isEditing: input.getConnection() !== undefined,
     actions: createActions(input, state, () => view.value),
   }
 }

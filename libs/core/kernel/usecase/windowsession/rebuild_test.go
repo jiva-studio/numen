@@ -12,8 +12,8 @@ type announcing struct {
 	announce     func(isChunkSizeChanged bool)
 }
 
-func (a *announcing) Describe() (name, recipe string)                { return a.name, a.recipe }
-func (a *announcing) OnModelChange(fn func(isChunkSizeChanged bool)) { a.announce = fn }
+func (a *announcing) Describe() (name, recipe string)                       { return a.name, a.recipe }
+func (a *announcing) SubscribeModelChange(fn func(isChunkSizeChanged bool)) { a.announce = fn }
 
 func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 	embedder := &announcing{name: "first", recipe: "mean-8"}

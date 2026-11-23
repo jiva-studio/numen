@@ -5,7 +5,7 @@
 import { NAME_SOURCE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
-import { mockVaultState, pendingStream } from '../answers'
+import { mockVaultState, createPendingStream } from '../answers'
 
 export const noteAnswers = {
   notes: {
@@ -33,7 +33,7 @@ export const noteAnswers = {
       requests.renamed.push(`${request.path} ${request.title}`)
       return { path: request.path, title: request.title, nameSource: NAME_SOURCE.FRONTMATTER }
     },
-    watchEdits: pendingStream,
+    watchEdits: createPendingStream,
     listHeadings: () => ({ headings: [] }),
   },
 } satisfies CoreAnswers

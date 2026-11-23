@@ -6,8 +6,8 @@ import "sync/atomic"
 // the index reflects it before the save returns. While no vault is being opened the refresh comes from
 // Fallback.
 type CurrentRefresh struct {
-	Fallback func() Refreshing
-	current  atomic.Pointer[Refreshing]
+	CreateFallback func() Refreshing
+	current        atomic.Pointer[Refreshing]
 }
 
 // Get returns the refresh of the vault being opened, or the fallback while none is.
@@ -15,7 +15,7 @@ func (r *CurrentRefresh) Get() Refreshing {
 	if running := r.current.Load(); running != nil {
 		return *running
 	}
-	return r.Fallback()
+	return r.CreateFallback()
 }
 
 // Publish makes refresh the refresh of the vault being opened.

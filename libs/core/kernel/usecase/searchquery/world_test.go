@@ -129,7 +129,7 @@ func (w world) vectorize(t *testing.T, filePath string, direction func(record ch
 			t.Fatal(err)
 		}
 		one := direction(p)
-		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.Bits(one)})
+		vectors = append(vectors, chunk.Vector{Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(), Value: precise(one), Coarse: vector.QuantizeBits(one)})
 	}
 	if len(vectors) == 0 {
 		t.Fatalf("no small chunk of %s to embed", filePath)
@@ -140,7 +140,7 @@ func (w world) vectorize(t *testing.T, filePath string, direction func(record ch
 }
 
 func precise(v []float32) []byte {
-	q := vector.Bytes(vector.Normalize(slices.Clone(v)))
+	q := vector.QuantizeBytes(vector.Normalize(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

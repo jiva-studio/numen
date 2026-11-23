@@ -43,7 +43,7 @@ const create = (
         ),
       ),
     },
-    handle: { front: () => front },
+    handle: { getFrontTab: () => front },
     kinds: {
       findKind: (isWanted: (kind: { kind: string }) => boolean) =>
         entries
@@ -247,7 +247,7 @@ describe('the open tabs', () => {
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
       panes: { layout: ref(createWorkspace([], [])) },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
       tabs: {
         tabs,
         getTab: (id: string) => ({
@@ -305,7 +305,7 @@ describe('the open tabs', () => {
     const rejecting = {
       windowTabs: {
         panes: { layout: ref(createWorkspace([], [])) },
-        handle: { front: () => null },
+        handle: { getFrontTab: () => null },
         tabs: { tabs, getTab: () => undefined },
       },
       writeMessage,

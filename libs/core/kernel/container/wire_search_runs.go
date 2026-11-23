@@ -26,7 +26,7 @@ func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
 
 func emitIndexChanged(generations *indexgeneration.Generations, events *editor.Events) func(context.Context, domain.Vault) {
 	return func(ctx context.Context, v domain.Vault) {
-		generations.IncreaseGeneration(v.ID)
+		generations.BumpGeneration(v.ID)
 		events.EmitIndexChanged(ctx, v)
 	}
 }
@@ -46,7 +46,7 @@ func newSearchRuns(
 		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       tasks,
 		Clock:       clock,
-		After:       clock.After,
+		CreateTimer: clock.After,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: generations,
@@ -54,7 +54,7 @@ func newSearchRuns(
 		Names: func(pluginID string) string {
 			return getPluginName(resolver, pluginID)
 		},
-		Catalog:    getSearchCatalog(manifests),
+		GetCatalog: getSearchCatalog(manifests),
 		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs

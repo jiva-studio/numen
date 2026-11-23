@@ -8,12 +8,12 @@ import (
 	pathpkg "path"
 )
 
-// EmptyTrash deletes every file and folder under the vault's trash, deepest
+// ClearTrash deletes every file and folder under the vault's trash, deepest
 // first, and keeps the trash folder. The paths that could not be deleted are
 // returned relative to the vault; an entry that fails does not stop the others.
 // A folder holding an undeleted entry stays unreported; an unreadable folder is
 // one undeleted path. A trash that is a link is removed and its target kept.
-func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err error) {
+func (w *VaultWriter) ClearTrash(ctx context.Context) (undeleted []string, err error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}

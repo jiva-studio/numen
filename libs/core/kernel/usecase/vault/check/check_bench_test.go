@@ -72,5 +72,5 @@ func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}
-	return check.Standard(db.NoteProblems()), v
+	return check.CreateStandard(db.NoteProblems()), v
 }

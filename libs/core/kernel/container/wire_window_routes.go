@@ -298,7 +298,7 @@ func (s windowStartup) newIndexWorker(
 		IndexChanged: indexChanged,
 		Events:       windowsession.NewIndexEvents(runtime, tasks, s.opening.Out, vaultDeps.RecordLog),
 		Quiet:        indexing.QuietPeriod,
-		After:        vaultDeps.Clock.After,
+		CreateTimer:  vaultDeps.Clock.After,
 	})
 }
 
@@ -341,8 +341,8 @@ func startVault(vaultDeps vaultWiring, db *vaultIndex, current *indexing.Current
 		opening := createVaultOpener(vaultDeps, db)
 		opening.ShouldRebuild = rebuild
 		var changed func(indexing.VaultChanges)
-		if report.Changed != nil {
-			changed = func(m indexing.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+		if report.NotifyChanged != nil {
+			changed = func(m indexing.VaultChanges) { report.NotifyChanged(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
 		open := opening.Begin(ctx, v, changed, report.Failed)
@@ -393,8 +393,8 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 		Emit: func(v domain.Vault, types []domain.FileType) {
 			exec.Runtime.EmitFilesChanged(string(v.ID), types)
 		},
-		Quiet: windowsession.FeedQuietPeriod,
-		After: vaultDeps.Clock.After,
+		Quiet:       windowsession.FeedQuietPeriod,
+		CreateTimer: vaultDeps.Clock.After,
 	}
 	return events.Start
 }

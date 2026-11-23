@@ -11,11 +11,11 @@ import (
 )
 
 func cutSnippet(text string, matchOffset int, query string) (string, []domain.UnitRange) {
-	read, matched := nearby(text, matchOffset)
-	return getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
+	read, matched := readAround(text, matchOffset)
+	return getTextAround(read, findSpans(read, query), markdown.CountUTF16(read, matched))
 }
 
-func spans(text, query string) []domain.UnitRange {
+func findSpans(text, query string) []domain.UnitRange {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
 		return nil
@@ -183,7 +183,7 @@ func getClosingRune(units []int, pos int) int {
 // the words that can open it.
 const reach = 8 * glancing
 
-func nearby(text string, index int) (string, int) {
+func readAround(text string, index int) (string, int) {
 	from, to := index-reach, index+reach
 	if from < 0 {
 		from = 0

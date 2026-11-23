@@ -37,12 +37,12 @@ type Tasks interface {
 
 // Searches is the kept searches with the cancels, tasks and policy that go with them.
 type Searches struct {
-	Store   Store
-	Cancels Cancels
-	Tasks   Tasks
-	Clock   machineport.Clock
-	After   func(d time.Duration) <-chan time.Time
-	Policy  searchrun.Policy
+	Store       Store
+	Cancels     Cancels
+	Tasks       Tasks
+	Clock       machineport.Clock
+	CreateTimer func(d time.Duration) <-chan time.Time
+	Policy      searchrun.Policy
 }
 
 func getTaskID(id searchrun.ID) string {
@@ -89,7 +89,7 @@ func (s *Searches) Touch(id searchrun.ID) {
 }
 
 func NewSearches(store Store, cancels Cancels, tasks Tasks, clock machineport.Clock, after func(d time.Duration) <-chan time.Time, policy searchrun.Policy) *Searches {
-	return &Searches{Store: store, Cancels: cancels, Tasks: tasks, Clock: clock, After: after, Policy: policy}
+	return &Searches{Store: store, Cancels: cancels, Tasks: tasks, Clock: clock, CreateTimer: after, Policy: policy}
 }
 
 // keptSearches is what the use cases of the searches read of the kept searches; an interface keeps the

@@ -17,7 +17,7 @@ import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
 import type { HealthApi, PluginHostApi } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
-import type { fileOpeners, WindowTabs } from '@/entities/tab'
+import type { createFileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 import { createRowChangeWatcher } from './pluginSettings'
 
@@ -42,7 +42,7 @@ export type TabActionParts = Required<
 export function createTabKindParts(deps: {
   readonly windowTabs: Pick<WindowTabs, 'kinds'>
   readonly tabOpeners: Pick<
-    ReturnType<typeof fileOpeners>,
+    ReturnType<typeof createFileOpeners>,
     'registerExtensionReader' | 'registerEditor'
   >
 }): TabKindParts {

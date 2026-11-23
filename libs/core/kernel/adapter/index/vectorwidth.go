@@ -95,7 +95,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 		if err := rows.Scan(&one.chunk, &one.vault, &value); err != nil {
 			return fmt.Errorf("the vectors the recipe holds: %w", err)
 		}
-		one.bits = vector.Coarse(vector.Dimensions(value))
+		one.bits = vector.QuantizeCoarse(vector.ReadDimensions(value))
 		target = append(target, one)
 	}
 	if err := rows.Err(); err != nil {

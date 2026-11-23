@@ -30,7 +30,7 @@ func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vaul
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return check.Standard(db.NoteProblems()), v
+	return check.CreateStandard(db.NoteProblems()), v
 }
 
 func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []domain.VaultProblem {
@@ -199,7 +199,7 @@ func (b brokenQueries) GetUnreadable(context.Context, domain.VaultID) ([]domain.
 // reported as though the vault were clean.
 func TestAStoreThatCannotAnswerIsAFailedCheck(t *testing.T) {
 	broken := errors.New("the store is gone")
-	l := check.Standard(brokenQueries{err: broken})
+	l := check.CreateStandard(brokenQueries{err: broken})
 
 	for _, name := range []domain.Check{domain.CheckParse, domain.CheckFrontmatter} {
 		found, err := l.Run(t.Context(), domain.Vault{ID: "v"}, name)

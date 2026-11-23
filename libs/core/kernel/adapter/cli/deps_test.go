@@ -133,7 +133,7 @@ func (s *session) openIndexedSession(
 	find := parts.ports.Lookup
 
 	notes := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
-	notes = notes.Rebuilding(options.Rebuild)
+	notes = notes.SetRebuild(options.Rebuild)
 	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers}, ShouldRebuildIndex: options.Rebuild,
@@ -152,7 +152,7 @@ func (s *session) openIndexedSession(
 			testsupport.Texts{Readers: vaultreader.Readers{Options: vaultOptions}}, nil, options.ErrorHandler, nil))),
 	}
 	indexed.Links = query.NewShowLinksByName(find, query.NewShowLinks(db.NoteQueries()))
-	indexed.Problems = vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.Standard(db.NoteProblems())))
+	indexed.Problems = vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.CreateStandard(db.NoteProblems())))
 	return indexed, nil
 }
 

@@ -18,7 +18,7 @@ export interface RunSupport {
   /** Whether this build can do a run at all. A view drawing it follows the answer. */
   canRun(run: string): boolean
   /** A run the application answered it cannot do at all. */
-  cannotRun(run: string): void
+  reportCannotRun(run: string): void
 }
 
 /**

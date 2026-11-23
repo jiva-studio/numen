@@ -44,7 +44,7 @@ func newTextSearch(plan vaultIndexPlan, workers int) textSearch {
 func cutNotes(c noteChunkPolicy) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
 	if c.Profiles != nil {
-		cutter.Profiles = c.Profiles.ResolveNoteProfile
+		cutter.FindProfile = c.Profiles.ResolveNoteProfile
 	}
 	return cutter
 }
@@ -65,7 +65,7 @@ func searchScan(c vaultIndexPlan, db *vaultIndex) indexing.Scan {
 	)
 	setNoteCut(c.ChunkPolicy, &scan)
 	scan.Walks = &db.Walks
-	return scan.Rebuilding(c.ShouldRebuildIndex)
+	return scan.SetRebuild(c.ShouldRebuildIndex)
 }
 
 func readWholeVault(c vaultIndexPlan,

@@ -88,12 +88,12 @@ func (u EditLinks) Update(
 	})
 }
 
-// PointAt makes a note name one place under a link `type`, in one read and one
+// SetLink makes a note name one place under a link `type`, in one read and one
 // write. An empty address takes the entry out.
 // Its role, label and reason are kept, and every other entry of the block is
 // written back byte for byte. FileStat, when given, is what the caller believes
 // is on disk; a changed note is left alone and port.ErrStale is returned.
-func (u EditLinks) PointAt(
+func (u EditLinks) SetLink(
 	ctx context.Context, v domain.Vault, from string, p LinkPoint,
 ) (domain.FileStat, error) {
 	e := u.newEdit()

@@ -87,9 +87,9 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	var notes, books, made atomic.Int32
 
 	result, err := making.Execute(t.Context(), v, indexing.Reporting{
-		OnNotesProgress:   func(vaultreading.ScanResult) { notes.Add(1) },
-		OnTextsProgress:   func(vaultreading.IndexResult) { books.Add(1) },
-		OnVectorsProgress: func(vaultreading.EmbedResult) { made.Add(1) },
+		NotifyNotesProgress:   func(vaultreading.ScanResult) { notes.Add(1) },
+		NotifyTextsProgress:   func(vaultreading.IndexResult) { books.Add(1) },
+		NotifyVectorsProgress: func(vaultreading.EmbedResult) { made.Add(1) },
 	})
 	if err != nil {
 		t.Fatal(err)

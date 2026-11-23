@@ -72,7 +72,7 @@ func TestWatchThemesReportsThePluginThemesOfAPluginDisabled(t *testing.T) {
 
 	desk.plugins.disable()
 
-	watching.await(t, themedomain.PluginName(pluginID, "night"), themedomain.PluginName(pluginID, "day"))
+	watching.await(t, themedomain.BuildPluginName(pluginID, "night"), themedomain.BuildPluginName(pluginID, "day"))
 }
 
 func TestWatchThemesReportsThePluginThemesOfAPluginEnabled(t *testing.T) {
@@ -82,7 +82,7 @@ func TestWatchThemesReportsThePluginThemesOfAPluginEnabled(t *testing.T) {
 
 	desk.plugins.enable(createFakePlugins().themes...)
 
-	watching.await(t, themedomain.PluginName(pluginID, "night"), themedomain.PluginName(pluginID, "day"))
+	watching.await(t, themedomain.BuildPluginName(pluginID, "night"), themedomain.BuildPluginName(pluginID, "day"))
 }
 
 // A build with no folder but with plugins still streams.
@@ -95,7 +95,7 @@ func TestWatchThemesOfABuildWithoutAFolderStillWatchesPlugins(t *testing.T) {
 
 	desk.plugins.disable()
 
-	watching.await(t, themedomain.PluginName(pluginID, "night"))
+	watching.await(t, themedomain.BuildPluginName(pluginID, "night"))
 }
 
 func TestWatchThemesOfABuildWithoutAFolderOrPluginsIsRefused(t *testing.T) {

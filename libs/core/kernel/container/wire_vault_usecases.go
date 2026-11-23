@@ -210,7 +210,7 @@ func getMediaType() *file.GetMediaType {
 
 func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, record func(domain.Vault)) *indexing.OpenVaults[*vaultIndex] {
 	return &indexing.OpenVaults[*vaultIndex]{
-		Opener: func(i *vaultIndex) *indexing.VaultOpener { return createVaultOpener(c, i) }, Index: db, Out: out, Label: label,
+		CreateOpener: func(i *vaultIndex) *indexing.VaultOpener { return createVaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,
 	}
 }

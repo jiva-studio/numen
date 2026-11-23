@@ -167,7 +167,7 @@ func buildWindow(
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	current := &indexing.CurrentRefresh{Fallback: func() indexing.Refreshing {
+	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refreshing {
 		v := vaultDeps
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return createRefresh(v, db, db.Notes())

@@ -154,7 +154,7 @@ func (w readingParts) scan(db *testIndex, rebuild bool) indexing.Scan {
 	scan := indexing.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
-	return scan.Rebuilding(rebuild)
+	return scan.SetRebuild(rebuild)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.

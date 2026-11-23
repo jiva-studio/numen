@@ -78,7 +78,7 @@ export function createLayoutStart(deps: LayoutStartDeps) {
   if (deps.closeWhenEmpty) {
     closeWindowWhenEmpty({
       isLayoutReady: deps.layout.isReady,
-      tabCount: () => windowTabs.tabs.tabs.value.length,
+      countTabs: () => windowTabs.tabs.tabs.value.length,
       closeWindow: deps.closeWhenEmpty,
       onError: (error) => writeMessage(`The window did not close: ${formatError(error)}`, 'error'),
     })

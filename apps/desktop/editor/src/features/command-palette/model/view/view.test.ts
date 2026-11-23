@@ -37,7 +37,7 @@ const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
 
 const lists: PaletteLists = {
   getStepGroups: () => [],
-  previewItem: vi.fn(),
+  applyItemPreview: vi.fn(),
 }
 
 const createView = (commands: readonly Command[]) =>
