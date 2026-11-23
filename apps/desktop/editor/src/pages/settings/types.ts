@@ -15,7 +15,8 @@ import type {
   OperationTitles,
   RowOption,
 } from '@/entities/connection'
-import type { DeviceInfo, IdentityInfo, LinkInfo, LinkMode, LinkRole } from '@/entities/identity'
+import type { IdentityInfo } from '@/entities/identity'
+import type { DeviceCalls } from '@/features/identity-link'
 import type { LicenseInfo } from '@/entities/license'
 import type {
   PluginInfo,
@@ -165,28 +166,13 @@ export interface ConnectionEdits {
  * The identity of this device. The recovery words pass through `generateWords` and `create` and
  * are not held here.
  */
-export interface InstallationIdentity {
+export interface InstallationIdentity extends DeviceCalls {
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
-  /** The devices of the account: the active ones, then the revoked ones. */
-  readonly devices: Readonly<Ref<readonly DeviceInfo[]>>
-  loadDevices(): Promise<void>
-  revoke(fingerprint: string): Promise<Result<undefined, string>>
-  readonly link: InstallationLink
   load(): Promise<void>
   generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
   restore(words: readonly string[]): Promise<Result<IdentityInfo, string>>
   delete(): Promise<Result<void, string>>
-}
-
-/** The link of a device to the account by a QR code, as the dialogs of the page drive it. */
-export interface InstallationLink {
-  start(role: LinkRole, mode: LinkMode, scannedText: string): Promise<Result<LinkInfo, string>>
-  get(): Promise<Result<LinkInfo, string>>
-  decide(approve: boolean): Promise<Result<undefined, string>>
-  enterCode(code: string): Promise<Result<undefined, string>>
-  confirmJoin(approve: boolean): Promise<Result<undefined, string>>
-  cancel(): Promise<Result<undefined, string>>
 }
 
 /**

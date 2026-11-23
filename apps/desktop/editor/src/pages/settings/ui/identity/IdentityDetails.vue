@@ -5,7 +5,7 @@
 import { Button } from '@numen/ui'
 import type { IdentityInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{ info: IdentityInfo; isBusy: boolean; isAskingDelete: boolean }>()

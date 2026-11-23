@@ -7,7 +7,7 @@ import { Button } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
-import DevicesSection from './DevicesSection.vue'
+import { DevicesSection } from '@/features/identity-link'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
 import IdentitySetup from './IdentitySetup.vue'
@@ -31,16 +31,17 @@ const {
 
 <template>
   <section class="settings-card identity-section" :aria-label="words.identitySection">
-    <IdentityDetails
-      v-if="current"
-      :info="current"
-      :is-busy="call.isBusy.value"
-      :is-asking-delete="deletion.isAskingDelete.value"
-      @ask="deletion.askDelete"
-      @confirm="deletion.confirmDelete"
-      @cancel="deletion.cancelDelete"
-    />
-    <DevicesSection v-if="current && !current.isRevoked" :identity="identity" :has-identity="true" />
+    <template v-if="current">
+      <IdentityDetails
+        :info="current"
+        :is-busy="call.isBusy.value"
+        :is-asking-delete="deletion.isAskingDelete.value"
+        @ask="deletion.askDelete"
+        @confirm="deletion.confirmDelete"
+        @cancel="deletion.cancelDelete"
+      />
+      <DevicesSection v-if="!current.isRevoked" :calls="identity" :has-identity="true" />
+    </template>
 
     <template v-else>
       <div class="identity-section__empty">
@@ -49,8 +50,8 @@ const {
           {{ words.identityNoneDetail }}
         </p>
       </div>
-      <DevicesSection v-if="step === 'idle'" :identity="identity" :has-identity="false" />
 
+      <DevicesSection v-if="step === 'idle'" :calls="identity" :has-identity="false" />
 
       <div v-if="step === 'idle'" class="identity-section__actions">
         <Button

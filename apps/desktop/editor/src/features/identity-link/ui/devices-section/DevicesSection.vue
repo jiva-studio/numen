@@ -4,51 +4,29 @@
  * account with one, and the revoke of a device after a question. Each device that is not this one has a Revoke
  * button; this one has none.
  */
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button, runInBackground } from '@numen/ui'
-import type { DeviceInfo, LinkRole } from '@/entities/identity'
-import type { InstallationIdentity } from '../../types'
+import { ref } from 'vue'
+import { Button } from '@numen/ui'
+import type { LinkRole } from '@/entities/identity'
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
+import type { DeviceCalls } from '../../lib/types'
+import { useDevices } from '../../model/useDevices'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
-import LinkDialog from './LinkDialog.vue'
+import { LinkDialog } from '../link-dialog'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ identity: InstallationIdentity; hasIdentity: boolean }>()
+const props = defineProps<{ calls: DeviceCalls; hasIdentity: boolean }>()
 
 /* --------------------------------- State ---------------------------------- */
-const REFRESH_MS = 2000
 const dialogRole = ref<LinkRole | undefined>(undefined)
-const revoking = ref<DeviceInfo | undefined>(undefined)
-const problem = ref('')
-let timer: ReturnType<typeof setInterval> | undefined
-
-/* ---------------------------------- Hooks --------------------------------- */
-onMounted(() => {
-  refresh()
-  timer = setInterval(refresh, REFRESH_MS)
-})
-
-onBeforeUnmount(() => {
-  if (timer !== undefined) clearInterval(timer)
-})
+const { asked, problem, refresh, confirmRevoke } = useDevices(
+  () => props.calls,
+  () => props.hasIdentity,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
-function refresh(): void {
-  if (!props.hasIdentity) return
-  runInBackground(props.identity.loadDevices(), () => undefined)
-}
-
 function onClose(): void {
   dialogRole.value = undefined
   refresh()
-}
-
-async function onRevoke(): Promise<void> {
-  const device = revoking.value
-  revoking.value = undefined
-  if (device === undefined) return
-  const answer = await props.identity.revoke(device.fingerprint)
-  problem.value = answer.ok ? '' : answer.error
 }
 </script>
 
@@ -56,17 +34,12 @@ async function onRevoke(): Promise<void> {
   <section class="devices" :aria-label="words.devices">
     <template v-if="hasIdentity">
       <ul class="devices__list" :aria-label="words.devices">
-        <li v-for="device in identity.devices.value" :key="device.fingerprint" class="devices__row">
+        <li v-for="device in calls.devices.value" :key="device.fingerprint" class="devices__row">
           <span>{{ device.name }}</span>
           <span class="devices__fingerprint">{{ device.fingerprint }}</span>
           <span v-if="device.isThis" class="devices__mark">{{ words.deviceThis }}</span>
           <span v-if="device.isRevoked" class="devices__mark">{{ words.deviceRevoked }}</span>
-          <Button
-            v-if="!device.isThis && !device.isRevoked"
-            type="button"
-            variant="outline"
-            @click="revoking = device"
-          >
+          <Button v-if="!device.isThis && !device.isRevoked" type="button" variant="outline" @click="asked = device">
             {{ words.deviceRevoke }}
           </Button>
         </li>
@@ -78,27 +51,21 @@ async function onRevoke(): Promise<void> {
       <Button v-if="hasIdentity" type="button" variant="outline" @click="dialogRole = 'host'">
         {{ words.deviceLinkNew }}
       </Button>
-      <Button type="button" variant="outline" @click="dialogRole = 'joiner'">
+      <Button v-else type="button" variant="outline" @click="dialogRole = 'joiner'">
         {{ words.deviceJoin }}
       </Button>
     </div>
 
-    <LinkDialog
-      v-if="dialogRole !== undefined"
-      :role="dialogRole"
-      :link="identity.link"
-      :blocked="dialogRole === 'joiner' && hasIdentity ? words.linkReason('device_has_identity') : ''"
-      @close="onClose"
-    />
+    <LinkDialog v-if="dialogRole !== undefined" :role="dialogRole" :calls="calls.link" @close="onClose" />
     <ConfirmDialog
-      v-if="revoking !== undefined"
+      v-if="asked !== undefined"
       tone="danger"
-      :text="words.deviceRevokeWarning(revoking.name)"
+      :text="words.deviceRevokeWarning(asked.name)"
       :label="words.deviceRevokeTitle"
       :confirm-text="words.deviceRevoke"
       :cancel-text="words.deviceRevokeCancel"
-      @confirm="onRevoke"
-      @cancel="revoking = undefined"
+      @confirm="confirmRevoke"
+      @cancel="asked = undefined"
     />
   </section>
 </template>

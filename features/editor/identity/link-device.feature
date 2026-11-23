@@ -76,6 +76,4 @@ Feature: Link a device to the account
 
     Scenario: A device with an identity does not join another account
       Given the second computer creates an identity
-      When the person shows the QR code to link a new device
-      And the second computer scans the QR code
-      Then the second computer warns about "This device has an identity"
+      Then the second computer cannot join an account

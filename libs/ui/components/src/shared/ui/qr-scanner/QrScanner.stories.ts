@@ -3,6 +3,8 @@
  * a camera gives.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, fn, waitFor, within } from 'storybook/test'
+import { encode } from 'uqr'
 import QrScanner from './QrScanner.vue'
 
 const meta = {
@@ -43,5 +45,63 @@ export const Scanning: Story = {
       }
       return Promise.resolve(canvas.captureStream(8))
     },
+  },
+}
+
+const LINK_TEXT = 'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
+const CELL = 8
+const QUIET = 4
+const REFRESH_MS = 100
+const FRAME_RATE = 8
+
+/** A camera that films a printed QR code of the text: one fixed frame, painted again so the stream keeps delivering it. */
+const filmCode = (text: string) => (): Promise<MediaStream> => {
+  const modules = encode(text, { ecc: 'M', border: 0 })
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = (modules.length + 2 * QUIET) * CELL
+  const drawing = canvas.getContext('2d')
+  const paint = (isEven: boolean): void => {
+    if (drawing === null) return
+    drawing.fillStyle = '#ffffff'
+    drawing.fillRect(0, 0, canvas.width, canvas.height)
+    drawing.fillStyle = '#000000'
+    modules.forEach((row, y) =>
+      row.forEach((isDark, x) => {
+        if (isDark) drawing.fillRect((x + QUIET) * CELL, (y + QUIET) * CELL, CELL, CELL)
+      }),
+    )
+    drawing.fillStyle = isEven ? '#fefefe' : '#ffffff'
+    drawing.fillRect(0, 0, 1, 1)
+  }
+  paint(true)
+  let isEven = false
+  const stream = canvas.captureStream(FRAME_RATE)
+  const refresh = setInterval(() => paint((isEven = !isEven)), REFRESH_MS)
+  stream.getTracks().forEach((track) => track.addEventListener('ended', () => clearInterval(refresh)))
+  return Promise.resolve(stream)
+}
+
+/** The camera films the QR code of a link: the scanner says its text once. */
+export const ReadsALink: Story = {
+  args: { camera: filmCode(LINK_TEXT), onScanned: fn(), onFailed: fn() },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
+    expect(args.onFailed).not.toHaveBeenCalled()
+  },
+}
+
+/** The camera films a QR code that is not a link of Numen: the scanner says so and gives no text. */
+export const ShowsAnInvalidCode: Story = {
+  args: {
+    camera: filmCode('https://example.org/menu'),
+    accepts: (text: string) => text.startsWith('numen://link'),
+    onScanned: fn(),
+    onFailed: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const alert = await within(canvasElement).findByRole('alert', undefined, { timeout: 10_000 })
+    expect(alert).toHaveTextContent('This code is not a link of Numen.')
+    expect(args.onFailed).toHaveBeenCalledWith('This code is not a link of Numen.')
+    expect(args.onScanned).not.toHaveBeenCalled()
   },
 }

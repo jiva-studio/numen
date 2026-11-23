@@ -1,25 +1,3 @@
-<script lang="ts">
-/** Opens the camera; the scanner asks the machine for one unless a caller gives its own. */
-export type ScannerCamera = () => Promise<MediaStream>
-
-const FRAMES_PER_SECOND = 8
-
-const openMachineCamera: ScannerCamera = () =>
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-
-/** Whether this machine can open a camera at all. */
-export const hasCamera = (): boolean => typeof navigator.mediaDevices?.getUserMedia === 'function'
-
-/** What a person reads when the camera does not open. */
-export const describeCameraFailure = (cause: unknown): string => {
-  const name = cause instanceof DOMException ? cause.name : ''
-  if (name === 'NotAllowedError') return 'The camera is not allowed.'
-  if (name === 'NotFoundError') return 'No camera was found.'
-  return 'The camera did not open.'
-}
-
-export { FRAMES_PER_SECOND, openMachineCamera }
-</script>
 
 <script setup lang="ts">
 /**
@@ -28,11 +6,17 @@ export { FRAMES_PER_SECOND, openMachineCamera }
  */
 import jsQR from 'jsqr'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  describeCameraFailure,
+  FRAMES_PER_SECOND,
+  openMachineCamera,
+  type ScannerCamera,
+} from '@/shared/lib/camera/camera'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = withDefaults(defineProps<{ camera?: ScannerCamera; isLink?: (text: string) => boolean }>(), {
+const props = withDefaults(defineProps<{ camera?: ScannerCamera; accepts?: (text: string) => boolean }>(), {
   camera: openMachineCamera,
-  isLink: () => true,
+  accepts: () => true,
 })
 
 const emit = defineEmits<{
@@ -46,6 +30,7 @@ const status = ref<'waiting' | 'scanning' | 'failed'>('waiting')
 const problem = ref('')
 let stream: MediaStream | undefined
 let timer: ReturnType<typeof setInterval> | undefined
+let rejected = ''
 
 /* -------------------------------- Handlers -------------------------------- */
 function readFrame(): void {
@@ -60,7 +45,9 @@ function readFrame(): void {
   const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
   const found = jsQR(pixels.data, pixels.width, pixels.height)
   if (found === null) return
-  if (!props.isLink(found.data)) {
+  if (!props.accepts(found.data)) {
+    if (found.data === rejected) return
+    rejected = found.data
     problem.value = 'This code is not a link of Numen.'
     emit('failed', problem.value)
     return

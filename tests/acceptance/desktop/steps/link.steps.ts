@@ -80,3 +80,7 @@ Then('the person cannot revoke this device', async ({ person }) => {
 Then('the sync server has no session for the second computer', async ({ person }) => {
   await person.computers.expectNoSessionOfSecond()
 })
+
+Then('the second computer cannot join an account', async ({ person }) => {
+  await person.computers.expectSecondCannotJoin()
+})

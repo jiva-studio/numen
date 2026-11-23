@@ -197,6 +197,10 @@ export class ComputerDriver {
     this.secondFingerprint = undefined
   }
 
+  async expectSecondCannotJoin(): Promise<void> {
+    await this.requireSecond().devices.expectNoJoin()
+  }
+
   async createSecondIdentity(): Promise<void> {
     await (await this.ensureSecond()).identity.create()
   }

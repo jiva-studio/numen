@@ -85,6 +85,13 @@ export class DevicesDriver {
     return dialog
   }
 
+  /** Expects the page of this computer to offer no way to join an account: it has one already. */
+  async expectNoJoin(): Promise<void> {
+    const panel = await this.showPage()
+    await expect(panel.getByRole('button', { name: LINK_NEW, exact: true })).toBeVisible({ timeout: STEP_LIMIT_MS })
+    await expect(panel.getByRole('button', { name: JOIN_WITH_QR, exact: true })).toHaveCount(0)
+  }
+
   private async readQr(dialog: Locator): Promise<string> {
     const image = dialog.getByRole('img', { name: QR_IMAGE })
     await expect(image).toBeVisible({ timeout: STEP_LIMIT_MS })
