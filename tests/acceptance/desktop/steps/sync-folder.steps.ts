@@ -1,5 +1,5 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
-import { Then, When } from '../support/bdd.js'
+import { Given, Then, When } from '../support/bdd.js'
 
 Then('the second computer is asked to confirm {string}', async ({ person }, text: string) => {
   await person.computers.expectAskedToConfirm('second', text)
@@ -27,4 +27,16 @@ When('{computer} removes the note {string} in {owned}', ({ person }, computer: C
 
 Then('{holder} is without the note {string}{inside}', async ({ person }, holder: Holder, title: string, vault: string | undefined) => {
   await person.computers.expectNoNote(holder, title, vault)
+})
+
+Given('the second computer is offline', ({ person }) => {
+  person.computers.setOnline('second', false)
+})
+
+When('the second computer is online', ({ person }) => {
+  person.computers.setOnline('second', true)
+})
+
+Given('the sync server forgets which notes were removed', async ({ person }) => {
+  await person.sync.forgetRemovals()
 })

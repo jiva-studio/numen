@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
-// reconcile lists the heads of the vault from the start, because the server no longer holds the removals the position
-// of this device is older than, and settles every record whose file the server does not list.
 func (r *run) reconcile(ctx context.Context) error {
 	present := map[string]bool{}
 	r.isListing = true
@@ -43,8 +41,6 @@ func (r *run) reconcile(ctx context.Context) error {
 	return r.settleRemovals(ctx)
 }
 
-// settleAbsent drops the record of a file the server does not list, and queues the removal of its note when the note
-// is as it was synced. A server that lists no file at all proves no removal.
 func (r *run) settleAbsent(ctx context.Context, present map[string]bool) error {
 	oldSeq := r.link.ServerSeq
 	for _, record := range slices.Clone(r.records) {

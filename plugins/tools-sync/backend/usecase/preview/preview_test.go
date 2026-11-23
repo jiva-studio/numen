@@ -109,7 +109,7 @@ func TestPreviewConnect_MatchesPathsThatDifferInUnicodeCompositionOnly(t *testin
 	}
 }
 
-func TestPreviewConnect_LeavesAFileThatIsNotSyncedOutOfBothSides(t *testing.T) {
+func TestPreviewConnect_ExcludesAFileThatIsNotSyncedFromBothSides(t *testing.T) {
 	w := newWorld(t)
 	w.b.WriteNote(target, "draft.tmp", "bytes")
 
@@ -156,7 +156,7 @@ func TestPreviewConnect_RefusesAnIdThatNoSyncedVaultHas(t *testing.T) {
 	}
 }
 
-func TestPreviewConnect_IgnoresANoteThatTheServerHoldsAsRemoved(t *testing.T) {
+func TestPreviewConnect_IgnoresANoteThatTheServerHasAsRemoved(t *testing.T) {
 	w := newWorld(t)
 	vault := transfer.Vault{ID: w.a.GetRemoteID(t, source), Key: w.a.GetVaultKey(t, source)}
 	outcomes, err := commit.NewCommitRevisions(w.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{

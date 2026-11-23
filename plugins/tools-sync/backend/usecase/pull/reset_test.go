@@ -40,7 +40,7 @@ func (w *away) sync(t *testing.T) {
 	}
 }
 
-func (w *away) countLive(t *testing.T) int {
+func (w *away) countLiveNotes(t *testing.T) int {
 	t.Helper()
 	live := 0
 	for _, stored := range w.a.ReadChanges(t, w.vault.ID) {
@@ -51,7 +51,7 @@ func (w *away) countLive(t *testing.T) int {
 	return live
 }
 
-func TestPullChanges_RemovesAnUnchangedNoteTheServerNoLongerHoldsToTheTrashOnAReset(t *testing.T) {
+func TestPullChanges_RemovesAnUnchangedNoteTheServerNoLongerHasToTheTrashOnAReset(t *testing.T) {
 	w := newAway(t)
 	w.forgetRemoval(t, "Shopping list.md", w.shopping)
 
@@ -68,7 +68,7 @@ func TestPullChanges_RemovesAnUnchangedNoteTheServerNoLongerHoldsToTheTrashOnARe
 	}
 }
 
-func TestPullChanges_KeepsANoteTheServerStillHoldsOnAReset(t *testing.T) {
+func TestPullChanges_KeepsANoteTheServerStillHasOnAReset(t *testing.T) {
 	w := newAway(t)
 	w.forgetRemoval(t, "Shopping list.md", w.shopping)
 	before, _ := w.b.GetFileRow(t, target, "Plan.md")
@@ -87,7 +87,7 @@ func TestPullChanges_KeepsANoteTheServerStillHoldsOnAReset(t *testing.T) {
 	}
 }
 
-func TestPullChanges_QueuesAChangedNoteTheServerNoLongerHoldsAsANewFileOnAReset(t *testing.T) {
+func TestPullChanges_QueuesAChangedNoteTheServerNoLongerHasAsANewFileOnAReset(t *testing.T) {
 	w := newAway(t)
 	w.b.WriteNote(target, "Shopping list.md", "bread")
 	w.forgetRemoval(t, "Shopping list.md", w.shopping)
@@ -116,8 +116,8 @@ func TestSyncPass_SendsAChangedNoteTheServerForgotAsANewNoteOnAReset(t *testing.
 	if text, _ := w.a.ReadNote(source, "Shopping list.md"); text != "bread" {
 		t.Errorf("note on the first computer = %q, want bread", text)
 	}
-	if w.countLive(t) != 2 {
-		t.Errorf("server holds %d live notes, want 2", w.countLive(t))
+	if w.countLiveNotes(t) != 2 {
+		t.Errorf("server holds %d live notes, want 2", w.countLiveNotes(t))
 	}
 }
 
@@ -146,7 +146,7 @@ func TestSyncPass_DoesNotSendARemovedNoteBackOnTheNextPassAfterAReset(t *testing
 	w.sync(t)
 	w.sync(t)
 
-	if live := w.countLive(t); live != 1 {
+	if live := w.countLiveNotes(t); live != 1 {
 		t.Errorf("server holds %d live notes, want 1 (the removed note did not come back)", live)
 	}
 }
@@ -189,7 +189,7 @@ func TestSyncPass_SendsEveryNoteBackWhenAResetListsNoNote(t *testing.T) {
 
 	w.sync(t)
 
-	if live := w.countLive(t); live != 2 {
+	if live := w.countLiveNotes(t); live != 2 {
 		t.Errorf("server holds %d live notes, want both notes of the away computer sent again", live)
 	}
 }

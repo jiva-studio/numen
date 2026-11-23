@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
-func TestMeet_SortsAPairByWhichSideHoldsTheNoteAndByItsText(t *testing.T) {
+func TestMeet_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
 	milk, bread := note.Hash([]byte("milk")), note.Hash([]byte("bread"))
 	tests := map[string]struct {
 		local, head string

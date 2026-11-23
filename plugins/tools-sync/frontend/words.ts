@@ -32,7 +32,7 @@ export const WORDS = {
   notesDiffer: (count: number): string =>
     count === 1
       ? '1 note differs from the synced vault'
-      : ` notes differ from the synced vault`,
+      : `${count} notes differ from the synced vault`,
   confirmConnect: 'Connect',
   cancelConnect: 'Cancel',
   loading: 'Loading vaults…',

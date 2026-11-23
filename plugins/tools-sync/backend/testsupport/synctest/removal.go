@@ -42,7 +42,6 @@ func (c *Computer) CommitRemoval(t *testing.T, vault transfer.Vault, notePath st
 	}
 }
 
-// GetDeviceSignKey returns the public signing key of this computer.
 func (c *Computer) GetDeviceSignKey(t *testing.T) []byte {
 	t.Helper()
 	public, err := c.Account.GetPublicIdentity(t.Context())

@@ -218,7 +218,7 @@ func TestPreviewConnect_CountsTheNotesWithAnotherTextOnEachSide(t *testing.T) {
 	}
 }
 
-func TestPreviewConnect_LeavesTheVaultNotConnected(t *testing.T) {
+func TestPreviewConnect_DoesNotConnectTheVault(t *testing.T) {
 	_, backend, remoteID := newJoiningWorld(t)
 
 	if _, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID}); err != nil {

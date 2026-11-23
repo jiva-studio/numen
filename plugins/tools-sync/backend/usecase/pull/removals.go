@@ -83,7 +83,6 @@ func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error
 	return nil
 }
 
-// queueRemoval holds a removal for the guard. The position of the vault stays before seq until the removal is settled.
 func (r *run) queueRemoval(one removal, seq uint64) {
 	if len(r.removals) == 0 || seq < r.removalSeq {
 		r.removalSeq = seq

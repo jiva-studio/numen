@@ -8,9 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
-// newJoined makes a pair whose first computer holds the note "Shopping list" with the text milk on the server and whose
-// second computer is connected to the same synced vault with a folder that held notes before.
-func newJoined(t *testing.T) *pair {
+func newFolderJoinPair(t *testing.T) *pair {
 	t.Helper()
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
@@ -19,7 +17,7 @@ func newJoined(t *testing.T) *pair {
 }
 
 func TestSyncVault_AdoptsANoteOfAFolderThatHasTheTextOfTheSyncedNote(t *testing.T) {
-	p := newJoined(t)
+	p := newFolderJoinPair(t)
 	p.b.WriteNote(target, "Shopping list.md", "milk")
 	revisions := p.a.ReadChanges(t, p.a.GetRemoteID(t, source))
 
@@ -35,8 +33,8 @@ func TestSyncVault_AdoptsANoteOfAFolderThatHasTheTextOfTheSyncedNote(t *testing.
 	}
 }
 
-func TestSyncVault_SendsANoteOnlyTheFolderHasAndBringsANoteOnlyTheSyncedVaultHas(t *testing.T) {
-	p := newJoined(t)
+func TestSyncVault_SendsANoteOnlyTheFolderHasAndReceivesANoteOnlyTheSyncedVaultHas(t *testing.T) {
+	p := newFolderJoinPair(t)
 	p.b.WriteNote(target, "Plan.md", "tea")
 
 	sync(t, p.b, target)
@@ -49,7 +47,7 @@ func TestSyncVault_SendsANoteOnlyTheFolderHasAndBringsANoteOnlyTheSyncedVaultHas
 // The next two tests wait for the conflict resolver of #2570: a note with another text on each side gets the text
 // of the synced vault and the text of the folder in a conflict note named with the day.
 func TestSyncVault_KeepsBothTextsOfANoteThatDiffersWhenAFolderJoins(t *testing.T) {
-	p := newJoined(t)
+	p := newFolderJoinPair(t)
 	p.b.WriteNote(target, "Shopping list.md", "bread")
 
 	sync(t, p.b, target)
@@ -59,7 +57,7 @@ func TestSyncVault_KeepsBothTextsOfANoteThatDiffersWhenAFolderJoins(t *testing.T
 }
 
 func TestSyncVault_SendsTheConflictNoteOfAJoinedFolderToTheOtherComputer(t *testing.T) {
-	p := newJoined(t)
+	p := newFolderJoinPair(t)
 	p.b.WriteNote(target, "Shopping list.md", "bread")
 
 	sync(t, p.b, target)
