@@ -100,4 +100,7 @@ message GetChangesResponse {
   bool has_more = 3;
   // head_seq is the vault seq when the page was read.
   uint64 head_seq = 4;
+  // is_reset is true when since_seq is older than the deletion records the server keeps. The page then holds
+  // the head of every live file from seq 0, whatever since_seq was, and no deletion record.
+  bool is_reset = 5;
 }

@@ -135,6 +135,7 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	mux.HandleFunc("/admin/forget-removals", s.serveForgetRemovals)
 	return mux
 }
 
@@ -313,5 +314,14 @@ func (s *Server) serveEnd(w http.ResponseWriter, r *http.Request) {
 		device = decoded
 	}
 	s.EndSessions(device)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) serveForgetRemovals(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	s.ForgetRemovals()
 	w.WriteHeader(http.StatusNoContent)
 }

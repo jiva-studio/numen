@@ -272,3 +272,7 @@ func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRev
 	}
 	return rows[:end]
 }
+
+// ForgetRemovals drops every removal the server keeps. A GetChanges after it, from a position before the drop,
+// answers with is_reset and the head of every live file.
+func (s *Server) ForgetRemovals() {}

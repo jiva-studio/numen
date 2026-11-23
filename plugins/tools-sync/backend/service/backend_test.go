@@ -182,3 +182,60 @@ func TestGetStatus_ReportsAServerThatIsAway(t *testing.T) {
 		t.Errorf("status = %+v, want an identity and an unreachable server", status)
 	}
 }
+
+func newJoiningWorld(t *testing.T) (*world, *service.Backend, string) {
+	t.Helper()
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	for path, text := range map[string]string{"Shopping list.md": "milk", "Plan.md": "tea", "Ideas.md": "walk"} {
+		w.c.WriteNote("Test", path, text)
+	}
+	if err := w.c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+	second := synctest.NewSecondComputer(t, w.server, w.clock, "Copy", w.words)
+	backend := service.NewBackend(second.SyncDeps())
+	remote, err := backend.ListRemoteVaults(t.Context(), api.ListRemoteVaultsRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second.WriteNote("Copy", "Shopping list.md", "milk")
+	second.WriteNote("Copy", "Plan.md", "eggs")
+	second.WriteNote("Copy", "Ideas.md", "run")
+	return w, backend, remote.Vaults[0].RemoteID
+}
+
+func TestPreviewConnect_CountsTheNotesWithAnotherTextOnEachSide(t *testing.T) {
+	_, backend, remoteID := newJoiningWorld(t)
+
+	response, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.DifferCount != 2 {
+		t.Errorf("differ count = %d, want 2 (Plan and Ideas)", response.DifferCount)
+	}
+}
+
+func TestPreviewConnect_LeavesTheVaultNotConnected(t *testing.T) {
+	_, backend, remoteID := newJoiningWorld(t)
+
+	if _, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID}); err != nil {
+		t.Fatal(err)
+	}
+
+	if vaults := listVaults(t, backend); len(vaults) != 1 || vaults[0].State != api.StateNotConnected {
+		t.Errorf("vaults = %+v, want Copy not connected", vaults)
+	}
+}
+
+func TestPreviewConnect_RefusesAnIdThatIsNotAnId(t *testing.T) {
+	_, backend, _ := newJoiningWorld(t)
+
+	_, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: "not an id"})
+
+	if err == nil {
+		t.Error("PreviewConnect of a bad id succeeded, want an error")
+	}
+}

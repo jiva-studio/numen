@@ -80,6 +80,7 @@ type Store interface {
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	Files(id domain.VaultID) Files
+	Trash(id domain.VaultID) Trash
 	Indexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }
@@ -130,4 +131,20 @@ type Clock interface {
 type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)
 	CreateCheckout(ctx context.Context) (string, error)
+}
+
+// Head is the head of a live note of a synced vault: its path and the hash of its text.
+type Head struct {
+	Path string
+	Hash string
+}
+
+// Heads lists the verified heads of the live notes of a synced vault of the account.
+type Heads interface {
+	ListHeads(ctx context.Context, remoteID string) ([]Head, error)
+}
+
+// Trash moves notes of a vault to the trash of the vault.
+type Trash interface {
+	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
 }

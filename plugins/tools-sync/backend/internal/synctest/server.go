@@ -109,3 +109,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		s.Fake.ServeHTTP(w, r)
 	}
 }
+
+// ForgetRemovals makes the server drop every removal it keeps, as it does when they are older than its
+// retention.
+func (s *Server) ForgetRemovals() { s.Fake.ForgetRemovals() }

@@ -33,3 +33,6 @@ func (v *Vaults) Indexer(id domain.VaultID) ports.Indexer { return v.client.With
 
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
+
+// Trash returns the trash of the vault.
+func (v *Vaults) Trash(id domain.VaultID) ports.Trash { return v.client.With(id) }

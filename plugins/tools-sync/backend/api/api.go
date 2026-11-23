@@ -9,6 +9,7 @@ const (
 	MethodListVaults       = "ListVaults"
 	MethodListRemoteVaults = "ListRemoteVaults"
 	MethodConnectVault     = "ConnectVault"
+	MethodPreviewConnect   = "PreviewConnect"
 	MethodGetStatus        = "GetStatus"
 	MethodGetSubscription  = "GetSubscription"
 	MethodCreateCheckout   = "CreateCheckout"
@@ -73,6 +74,17 @@ type ConnectVaultRequest struct {
 	VaultID  string `json:"vaultId"`
 	Mode     Mode   `json:"mode"`
 	RemoteID string `json:"remoteId,omitempty"`
+}
+
+// PreviewConnectRequest asks how many notes of a vault differ from the notes of a synced vault.
+type PreviewConnectRequest struct {
+	VaultID  string `json:"vaultId"`
+	RemoteID string `json:"remoteId"`
+}
+
+// PreviewConnectResponse is the number of notes that have another text on each side.
+type PreviewConnectResponse struct {
+	DifferCount int `json:"differCount"`
 }
 
 // ConnectVaultResponse is the answer to a connection that went through.

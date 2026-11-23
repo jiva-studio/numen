@@ -20,6 +20,7 @@ import (
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/heads"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -27,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -243,5 +245,16 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
+	}
+}
+
+// Trash returns the trash of the vault.
+func (h Host) Trash(id domain.VaultID) ports.Trash { return h.Root.With(id) }
+
+// PreviewDeps are the dependencies of the preview of a connection.
+func (c *Computer) PreviewDeps() preview.Deps {
+	return preview.Deps{
+		Heads: heads.New(heads.Deps{Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Crypto: c.Account, Identity: c.Account}),
+		Host:  c.Host,
 	}
 }

@@ -114,6 +114,11 @@ func (b *Backend) ConnectVault(ctx context.Context, request api.ConnectVaultRequ
 	return api.ConnectVaultResponse{}, catalog.NewConnectVault(b.catalog).Execute(ctx, input)
 }
 
+// PreviewConnect counts the notes of a vault that have another text than the note at the same path of a synced vault.
+func (b *Backend) PreviewConnect(_ context.Context, _ api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
+	return api.PreviewConnectResponse{}, errors.New("not implemented")
+}
+
 // GetStatus returns whether this device has an identity, whether the server answers and what warns.
 func (b *Backend) GetStatus(ctx context.Context, _ api.GetStatusRequest) (api.GetStatusResponse, error) {
 	status := api.GetStatusResponse{HasIdentity: true, IsReachable: false, Items: nil}
