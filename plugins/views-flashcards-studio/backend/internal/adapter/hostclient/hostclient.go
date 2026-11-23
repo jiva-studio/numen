@@ -21,29 +21,29 @@ func ReportError(what string, err error) {
 
 // Clients is what the use cases reach the host through.
 type Clients struct {
-	Vaults  func(domain.VaultID) ports.HostVault
-	Folders func(domain.VaultID) ports.HostFolder
+	GetVault  func(domain.VaultID) ports.HostVault
+	GetFolder func(domain.VaultID) ports.HostFolder
 }
 
 // NewFromEnv returns the clients of the host the environment names.
 func NewFromEnv() (Clients, error) {
 	client, err := host.NewClientFromEnv()
 	if err != nil {
-		return Clients{Vaults: nil, Folders: nil}, err
+		return Clients{GetVault: nil, GetFolder: nil}, err
 	}
 	store, err := host.NewStoreClientFromEnv()
 	if err != nil {
-		return Clients{Vaults: nil, Folders: nil}, err
+		return Clients{GetVault: nil, GetFolder: nil}, err
 	}
 	return newClients(client, store), nil
 }
 
 func newClients(client *host.Client, store *host.StoreClient) Clients {
 	return Clients{
-		Vaults: func(id domain.VaultID) ports.HostVault {
+		GetVault: func(id domain.VaultID) ports.HostVault {
 			on := client.With(id)
 			return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 		},
-		Folders: func(id domain.VaultID) ports.HostFolder { return store.With(id) },
+		GetFolder: func(id domain.VaultID) ports.HostFolder { return store.With(id) },
 	}
 }

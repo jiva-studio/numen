@@ -28,7 +28,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 		"two lines": "Birds\nof prey",
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := u.Deck(t.Context(), v, cards.New{Title: title}); !errors.Is(err, domain.ErrInvalidName) {
+			if _, err := u.CreateDeck(t.Context(), v, cards.New{Title: title}); !errors.Is(err, domain.ErrInvalidName) {
 				t.Errorf("make a deck titled %q = %v, want it rejected", title, err)
 			}
 		})
@@ -49,7 +49,7 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	plain, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
+	plain, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 		t.Errorf("a title the filename carries was written as a key: %q", got)
 	}
 
-	assigned, err := u.Deck(t.Context(), v, cards.New{Title: "Birds: a guide"})
+	assigned, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds: a guide"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	made, err := u.CardModel(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
+	made, err := u.CreateCardModel(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds", Body: "About birds."})
+	made, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds", Body: "About birds."})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestANoteIsNotMadeOverOneThatIsThere(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"}); err == nil {
+	if _, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds"}); err == nil {
 		t.Fatal("a deck was made over a note")
 	}
 	if got := read(t, v, "Birds.md"); got != "mine" {
@@ -130,7 +130,7 @@ func TestANoteIsNotMadeInAVaultThatCannotBeSaved(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(unopenable{}, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	if _, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"}); !errors.Is(err, errUnopenable) {
+	if _, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds"}); !errors.Is(err, errUnopenable) {
 		t.Errorf("make a deck = %v, want %v", err, errUnopenable)
 	}
 }
@@ -145,7 +145,7 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 		return nil
 	}, vaulttest.NewClock(), machineclock.Entropy{})
 
-	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
+	made, err := u.CreateDeck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,19 +159,19 @@ func TestACardModelAtTheNoteBoundIsMadeAndOverTheBoundIsRefused(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	baseBody, err := format.CardModelBody("", []format.CardTemplate{{Name: "Recognize", Front: "a", Back: "b"}}, "")
+	baseBody, err := format.BuildCardModelBody("", []format.CardTemplate{{Name: "Recognize", Front: "a", Back: "b"}}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	exactFront := strings.Repeat("a", 1+note.MaxBytes-len(baseBody))
-	if _, err := u.CardModel(t.Context(), v, cards.New{
+	if _, err := u.CreateCardModel(t.Context(), v, cards.New{
 		Title:     "Exact",
 		Fields:    []string{"Name"},
 		Templates: []format.CardTemplate{{Name: "Recognize", Front: exactFront, Back: "b"}},
 	}); err != nil {
 		t.Fatalf("CardModel at MaxBytes failed: %v", err)
 	}
-	if _, err := u.CardModel(t.Context(), v, cards.New{
+	if _, err := u.CreateCardModel(t.Context(), v, cards.New{
 		Title:     "Over",
 		Fields:    []string{"Name"},
 		Templates: []format.CardTemplate{{Name: "Recognize", Front: exactFront + "a", Back: "b"}},

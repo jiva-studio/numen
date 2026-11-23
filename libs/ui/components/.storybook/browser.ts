@@ -24,7 +24,11 @@ const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, f
 
 type PointerStep = 'down' | 'up' | 'move'
 
-const pointer: BrowserCommand<[step: PointerStep, at?: Position]> = async ({ page }, step, at) => {
+const pointer: BrowserCommand<[step: PointerStep, at?: Position]> = async (
+  { page },
+  step,
+  at,
+) => {
   if (at) await page.mouse.move(at.x, at.y)
   if (step === 'down') await page.mouse.down()
   if (step === 'up') await page.mouse.up()

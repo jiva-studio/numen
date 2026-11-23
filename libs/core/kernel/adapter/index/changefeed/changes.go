@@ -15,8 +15,8 @@ type Changes struct {
 	onPublish []func()
 }
 
-// OnPublish registers a callback invoked whenever any write is published.
-func (c *Changes) OnPublish(report func()) {
+// SetPublishHandler registers a callback invoked whenever any write is published.
+func (c *Changes) SetPublishHandler(report func()) {
 	if c == nil || report == nil {
 		return
 	}

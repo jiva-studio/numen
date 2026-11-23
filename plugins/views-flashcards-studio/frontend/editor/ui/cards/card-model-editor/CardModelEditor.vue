@@ -61,7 +61,7 @@ const {
   drop: dropTemplate,
   step: stepTemplate,
 } = useDrag<InsertionPoint>({
-  order: () => props.templates.map((each) => each.id),
+  getOrder: () => props.templates.map((each) => each.id),
   nowhere: null,
   isMoved: (dragged, lands) => lands !== dragged,
   move: (dragged, lands) => emit('move-template', dragged, lands),
@@ -85,7 +85,7 @@ const onAddTemplate = (): void => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
+const getWrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 </script>
 
 <template>
@@ -126,7 +126,7 @@ const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(
         :key="one.id"
         class="card-model__template caret-above"
         :template="one"
-        :wrong="wrongWithTemplate(one.id)"
+        :wrong="getWrongWithTemplate(one.id)"
         :words="words"
         :data-dragged="one.id === template || undefined"
         :data-before="one.id === templateAt || undefined"

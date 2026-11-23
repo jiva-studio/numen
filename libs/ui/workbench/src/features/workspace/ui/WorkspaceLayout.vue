@@ -82,7 +82,7 @@ provide(
     choose: onChooseTab,
     close: onCloseTab,
     startTabPress: press,
-    menu: onMenuTab,
+    openMenu: onMenuTab,
     claim: onClaimPane,
     resize: onResizeBranch,
     show: (tab: TabId) => emit('show', tab),

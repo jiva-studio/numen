@@ -22,9 +22,9 @@ type ChosenPath struct {
 // ChoosePluginPath opens the machine's native file picker for a setting of
 // type file, and writes the chosen path.
 type ChoosePluginPath struct {
-	dialog  PathDialog
-	plugins func() []plugindomain.Info
-	write   func(settings []settingsdomain.Setting) error
+	dialog      PathDialog
+	listPlugins func() []plugindomain.Info
+	write       func(settings []settingsdomain.Setting) error
 }
 
 // NewChoosePluginPath makes the use case over the picker and the plugins:
@@ -32,7 +32,7 @@ type ChoosePluginPath struct {
 func NewChoosePluginPath(
 	dialog PathDialog, plugins func() []plugindomain.Info, write func(settings []settingsdomain.Setting) error,
 ) *ChoosePluginPath {
-	return &ChoosePluginPath{dialog: dialog, plugins: plugins, write: write}
+	return &ChoosePluginPath{dialog: dialog, listPlugins: plugins, write: write}
 }
 
 // Execute prompts for the path and writes it. A path the setting does not accept
@@ -51,7 +51,7 @@ func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (C
 }
 
 func (u *ChoosePluginPath) findSetting(pluginID, key string) (plugindomain.Setting, error) {
-	for _, plugin := range u.plugins() {
+	for _, plugin := range u.listPlugins() {
 		if plugin.ID != pluginID {
 			continue
 		}

@@ -52,7 +52,7 @@ const (
 
 var ErrInvalidName = notesdomain.ErrInvalidName
 
-func Basename(path string) string { return notesdomain.Basename(path) }
+func GetBasename(path string) string { return notesdomain.GetBasename(path) }
 
 func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
 
@@ -60,8 +60,8 @@ func IsKnownRole(r LinkRole) bool { return notesdomain.IsKnownRole(r) }
 
 func IsWritableMarker(m LinkMarker) bool { return notesdomain.IsWritableMarker(m) }
 
-func Filename(title string) (filename string, exact bool, err error) {
-	return notesdomain.Filename(title)
+func CreateFilename(title string) (filename string, exact bool, err error) {
+	return notesdomain.CreateFilename(title)
 }
 
 func NewVersionText(version TextVersion, segments []TextSegment) VersionText {

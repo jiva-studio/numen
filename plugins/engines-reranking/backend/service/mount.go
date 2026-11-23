@@ -37,7 +37,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	s.OnClose(r.Close)
+	s.AddCloser(r.Close)
 	connection.Mount(s, newProvider(r))
 	return nil
 }

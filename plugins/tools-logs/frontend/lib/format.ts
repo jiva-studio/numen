@@ -6,12 +6,12 @@ import type { JsonValue } from '@numen/plugin-sdk'
 import type { FormattedProperty, LevelFilter, LogEntry, LogRow } from '../types'
 import { tokenizeJson, tokenizeSql } from './tokenize'
 
-const pad2 = (n: number): string => String(n).padStart(2, '0')
-const pad3 = (n: number): string => String(n).padStart(3, '0')
+const padToTwo = (n: number): string => String(n).padStart(2, '0')
+const padToThree = (n: number): string => String(n).padStart(3, '0')
 
 function formatTimestamp(timeMs: number): string {
   const date = new Date(timeMs)
-  return `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}.${pad3(date.getUTCMilliseconds())}`
+  return `${padToTwo(date.getUTCHours())}:${padToTwo(date.getUTCMinutes())}:${padToTwo(date.getUTCSeconds())}.${padToThree(date.getUTCMilliseconds())}`
 }
 
 function getPropertyKeys(properties: Readonly<Record<string, string>>): readonly string[] {
@@ -149,7 +149,7 @@ function createScalarProperty(key: string, display: string): FormattedProperty {
 
 const TRUNCATED_SUFFIX = '... [truncated]'
 
-function looksLikeTruncatedJson(text: string): boolean {
+function isTruncatedJson(text: string): boolean {
   const trimmed = text.trimStart()
   return (trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.endsWith(TRUNCATED_SUFFIX)
 }
@@ -224,7 +224,7 @@ function formatStringValue(key: string, text: string): FormattedProperty {
   if (nested.ok && typeof nested.parsed === 'object' && nested.parsed !== null) {
     return createJsonProperty(key, nested.parsed)
   }
-  if (looksLikeTruncatedJson(text)) {
+  if (isTruncatedJson(text)) {
     return createTruncatedJsonProperty(key, text)
   }
   return createScalarProperty(key, text)

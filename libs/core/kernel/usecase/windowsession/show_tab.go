@@ -4,9 +4,10 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"slices"
 	"time"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )

@@ -1,5 +1,5 @@
 import type { JsonObject } from './types'
-import type { Result } from '@numen/result'
+import type { Failure, Result } from '@numen/result'
 
 // TextKind is what a text version is, as the plugin that makes it names it. The core
 // compares it as an opaque string.
@@ -52,8 +52,8 @@ export interface LiveText {
 }
 
 // TextErrorCode is why an edit was not recorded: the source version is not there, or the segments
-// are not valid.
-export type TextErrorCode = 'missing' | 'invalid'
+// are not valid, or the plugin lacks the permission to write.
+export type TextErrorCode = 'notFound' | 'invalid' | 'permissionDenied'
 
 // VaultTexts is what a view reads of the text versions of the vault shown in the
 // window, and how it saves a user edit.
@@ -66,5 +66,5 @@ export interface VaultTexts {
     path: string,
     sourceVersionId: TextVersionId,
     segments: readonly TextSegment[],
-  ): Promise<Result<TextVersion, TextErrorCode>>
+  ): Promise<Result<TextVersion, Failure<TextErrorCode>>>
 }

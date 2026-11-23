@@ -25,7 +25,7 @@ func spanOf(t *testing.T, front, key string) (int, string, bool) {
 	if value == nil {
 		t.Fatalf("%q holds no %s", front, key)
 	}
-	start, end, ok := d.scalarSpan(value)
+	start, end, ok := d.findScalarSpan(value)
 	if !ok {
 		return 0, "", false
 	}
@@ -128,7 +128,7 @@ func TestAKeyInAnotherScriptOwnsItsOwnLines(t *testing.T) {
 }
 
 func TestEndingsAndFrontmatterSpanBounds(t *testing.T) {
-	if !endsWithBreak([]byte("\n")) || !endsWithBreak([]byte("\r\n")) || endsWithBreak([]byte("x")) {
+	if !hasTrailingBreak([]byte("\n")) || !hasTrailingBreak([]byte("\r\n")) || hasTrailingBreak([]byte("x")) {
 		t.Errorf("endsWithBreak unexpected result")
 	}
 
@@ -144,14 +144,14 @@ func TestEndingsAndFrontmatterSpanBounds(t *testing.T) {
 	}
 
 	d := &Document{front: []byte("a: |\n  indented\nb: 2\n")}
-	if _, _, found := d.span(&yaml.Node{
+	if _, _, found := d.findSpan(&yaml.Node{
 		Kind:    yaml.MappingNode,
 		Content: []*yaml.Node{{Value: "orphan", Line: 1, Column: 1}},
 	}, "orphan"); found {
 		t.Errorf("expected odd-length Content node not to match")
 	}
 
-	start, end, found := d.span(&yaml.Node{
+	start, end, found := d.findSpan(&yaml.Node{
 		Kind: yaml.MappingNode,
 		Content: []*yaml.Node{
 			{Value: "a", Line: 1, Column: 1},
@@ -165,7 +165,7 @@ func TestEndingsAndFrontmatterSpanBounds(t *testing.T) {
 	}
 
 	dShort := &Document{front: []byte("a: 1\n")}
-	start, end, found = dShort.span(&yaml.Node{
+	start, end, found = dShort.findSpan(&yaml.Node{
 		Kind: yaml.MappingNode,
 		Content: []*yaml.Node{
 			{Value: "a", Line: 1, Column: 1},
@@ -176,7 +176,7 @@ func TestEndingsAndFrontmatterSpanBounds(t *testing.T) {
 		t.Errorf("clamped span to lines bound: got %d..%d (%v), want 0..5", start, end, found)
 	}
 
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	if got := d.endLine(lines, &yaml.Node{
 		Kind:    yaml.MappingNode,
 		Line:    0,
@@ -214,7 +214,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 			Content: []*yaml.Node{{Value: "title"}},
 		},
 	}
-	if got, ok := d.Title(); ok || got != "" {
+	if got, ok := d.GetTitle(); ok || got != "" {
 		t.Errorf("Title on odd Content = %q, %v", got, ok)
 	}
 
@@ -227,7 +227,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 			},
 		},
 	}
-	if names, ok := dOdd.EntryNames("meta"); !ok || len(names) != 0 {
+	if names, ok := dOdd.ListEntryNames("meta"); !ok || len(names) != 0 {
 		t.Errorf("EntryNames on odd Content = %v, %v", names, ok)
 	}
 
@@ -235,7 +235,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if names, ok := doc.EntryNames("meta"); !ok || !slices.Equal(names, []string{"a", "b", "c"}) {
+	if names, ok := doc.ListEntryNames("meta"); !ok || !slices.Equal(names, []string{"a", "b", "c"}) {
 		t.Errorf("EntryNames = %v, %v, want [a b c]", names, ok)
 	}
 
@@ -387,7 +387,7 @@ func TestParseRangesScalarAndWikilinksBounds(t *testing.T) {
 	}
 
 	d := &Document{front: []byte("a: 1\n")}
-	if start, end, ok := d.scalarSpan(&yaml.Node{Kind: yaml.MappingNode, Line: 1, Column: 1, Value: "a"}); ok || start != 0 || end != 0 {
+	if start, end, ok := d.findScalarSpan(&yaml.Node{Kind: yaml.MappingNode, Line: 1, Column: 1, Value: "a"}); ok || start != 0 || end != 0 {
 		t.Errorf("scalarSpan on MappingNode = %d, %d, %v", start, end, ok)
 	}
 	if end, ok := findQuotedEnd([]byte("a'"), 0, '\''); ok || end != 0 {
@@ -397,7 +397,7 @@ func TestParseRangesScalarAndWikilinksBounds(t *testing.T) {
 		t.Errorf("findQuotedEnd unclosed = %d, %v", end, ok)
 	}
 
-	foldedOut, err := scalarLike("a\nb", yaml.FoldedStyle)
+	foldedOut, err := encodeScalarLike("a\nb", yaml.FoldedStyle)
 	if err != nil {
 		t.Fatalf("scalarLike: %v", err)
 	}
@@ -406,7 +406,7 @@ func TestParseRangesScalarAndWikilinksBounds(t *testing.T) {
 		t.Errorf("scalarLike folded roundtrip = %q (%v), want \"a\\nb\"", roundtrip, err)
 	}
 
-	links := WikilinksIn("[[]][[A]]")
+	links := FindWikilinks("[[]][[A]]")
 	if len(links) != 1 || links[0].Inside != "A" {
 		t.Errorf("WikilinksIn(\"[[]][[A]]\") = %+v", links)
 	}

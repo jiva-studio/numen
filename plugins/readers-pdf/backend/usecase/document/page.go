@@ -34,7 +34,7 @@ func (e *GaveUpError) Unwrap() error { return e.Err }
 // RenderPage draws the page at index of the file in the vault as a JPEG image pixelWidth pixels
 // across, or as wide as fits within MostPixels.
 func (r *Reader) RenderPage(ctx context.Context, vault domain.VaultID, path string, index, pixelWidth int) ([]byte, error) {
-	raw, _, err := r.files(vault).Read(ctx, path)
+	raw, _, err := r.getFiles(vault).Read(ctx, path)
 	if err != nil {
 		return nil, err
 	}

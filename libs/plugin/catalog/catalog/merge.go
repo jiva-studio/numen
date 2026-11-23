@@ -12,7 +12,7 @@ func mergeEntries(lists [][]Entry) []Entry {
 	for _, list := range lists {
 		for _, entry := range list {
 			current, exists := byID[entry.ID]
-			if !exists || precedes(entry, current) {
+			if !exists || isPreferred(entry, current) {
 				byID[entry.ID] = entry
 			}
 		}
@@ -25,7 +25,7 @@ func mergeEntries(lists [][]Entry) []Entry {
 	return merged
 }
 
-func precedes(candidate, current Entry) bool {
+func isPreferred(candidate, current Entry) bool {
 	if candidate.State.IsOnDisk() != current.State.IsOnDisk() {
 		return candidate.State.IsOnDisk()
 	}

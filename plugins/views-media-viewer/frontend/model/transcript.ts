@@ -64,7 +64,7 @@ export function useTranscript(
   const error = ref('')
   const following = ref(true)
   const isEditable = computed(() => !isWorking.value && !isArticle.value)
-  const requests = createRequestGuard()
+  const requestGuard = createRequestGuard()
 
   const playback = usePlayback(audioPlayer, plays, getOpenState)
   const draft = useTranscriptDraft({
@@ -78,7 +78,7 @@ export function useTranscript(
   const lines = useTranscriptLines(cues, draft.prose)
 
   const readRecording = async () => {
-    const mine = requests.begin()
+    const mine = requestGuard.begin()
     try {
       const [source, transcriptCues, article, isCreatable] = await Promise.all([
         recordings.getSource(path),
@@ -178,7 +178,7 @@ export function useTranscript(
     playback.controls.pause()
     isOpen = false
     stopWatchingTranscript()
-    requests.close()
+    requestGuard.close()
     cues.value = []
     draft.stop()
   }

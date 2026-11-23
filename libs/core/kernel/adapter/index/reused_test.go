@@ -50,7 +50,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashes[i], Recipe: testRecipe,
-			Value: value, Coarse: vector.Coarse(vector.Dimensions(value)),
+			Value: value, Coarse: vector.QuantizeCoarse(vector.ReadDimensions(value)),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {

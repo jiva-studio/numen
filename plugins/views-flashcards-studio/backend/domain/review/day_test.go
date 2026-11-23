@@ -419,7 +419,7 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 		"2026-08-28": 9,
 		"2026-08-29": 1,
 	})
-	if got := review.Streak(getCountingDay(), days, moment(t, "2026-08-29T20:00:00")); got != 3 {
+	if got := review.CountStreak(getCountingDay(), days, moment(t, "2026-08-29T20:00:00")); got != 3 {
 		t.Errorf("the streak is %d, want the three days since the gap", got)
 	}
 }
@@ -428,11 +428,11 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
 
-	if got := review.Streak(getCountingDay(), days, moment(t, "2026-08-29T09:00:00")); got != 2 {
+	if got := review.CountStreak(getCountingDay(), days, moment(t, "2026-08-29T09:00:00")); got != 2 {
 		t.Errorf("the streak is %d in the morning, want the two days behind it", got)
 	}
 	// And the day after that, the streak is over.
-	if got := review.Streak(getCountingDay(), days, moment(t, "2026-08-30T09:00:00")); got != 0 {
+	if got := review.CountStreak(getCountingDay(), days, moment(t, "2026-08-30T09:00:00")); got != 0 {
 		t.Errorf("the streak is %d a day later, want nothing", got)
 	}
 }
@@ -441,7 +441,7 @@ func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 // belongs to the day it began in.
 func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-28": 3, "2026-08-29": 5})
-	if got := review.Streak(getCountingDay(), days, moment(t, "2026-08-30T02:00:00")); got != 2 {
+	if got := review.CountStreak(getCountingDay(), days, moment(t, "2026-08-30T02:00:00")); got != 2 {
 		t.Errorf("the streak is %d at two in the morning, want 2", got)
 	}
 }
@@ -456,13 +456,13 @@ func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 		here.GetName(now.AddDate(0, 0, -1)): 1,
 	})
 
-	if got := review.Streak(here, days, now); got != 2 {
+	if got := review.CountStreak(here, days, now); got != 2 {
 		t.Errorf("the streak is %d, want the two days answered", got)
 	}
 }
 
 func TestStreak_ZeroWithoutAnswers(t *testing.T) {
-	if got := review.Streak(getCountingDay(), nil, moment(t, "2026-08-29T09:00:00")); got != 0 {
+	if got := review.CountStreak(getCountingDay(), nil, moment(t, "2026-08-29T09:00:00")); got != 0 {
 		t.Errorf("the streak is %d", got)
 	}
 }
@@ -488,7 +488,7 @@ func TestWhatWasRecalledIsCountedOverWhatWasLearned(t *testing.T) {
 	// Another card met for the first time on that second day.
 	response("01C", other, "2026-08-08T09:05:00", review.Again)
 
-	got := review.OrderAnswers(history).GetRetained(delta, getCountingDay())
+	got := review.SortAnswers(history).GetRetained(delta, getCountingDay())
 
 	// The first day is a card being learned, so nothing was tested on it.
 	if _, target := got["2026-08-01"]; target {
@@ -507,7 +507,7 @@ func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	delta := review.NewFSRS()
 
-	got := review.OrderAnswers([]review.Answer{
+	got := review.SortAnswers([]review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 	}).GetRetained(delta, getCountingDay())
@@ -522,7 +522,7 @@ func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 	delta := review.NewFSRS()
 
-	got := review.OrderAnswers([]review.Answer{
+	got := review.SortAnswers([]review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},

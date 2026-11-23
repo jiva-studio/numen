@@ -5,7 +5,7 @@
 import { NAME_SOURCE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
-import { mockVaultState, pendingStream } from '../answers'
+import { mockVaultState, createPendingStream } from '../answers'
 
 export const noteAnswers = {
   notes: {
@@ -16,15 +16,15 @@ export const noteAnswers = {
       graphs: request.paths.map((path) => ({
         focus: { path, title: path.replace(/\.md$/, '') },
         focusType: 'note',
-        related: [],
+        relatedNotes: [],
         connections: [],
       })),
     }),
     readNote: (request) => ({
       body: 'what is written',
-      at: { path: request.path, size: 1n, mtime: 1n },
+      fileStat: { path: request.path, size: 1n, mtime: 1n },
     }),
-    writeNote: (request) => ({ body: '', at: { path: request.path, size: 2n, mtime: 2n } }),
+    writeNote: (request) => ({ body: '', fileStat: { path: request.path, size: 2n, mtime: 2n } }),
     createNote: (request) => {
       requests.made.push(request.title)
       return { path: `${request.title}.md` }
@@ -33,7 +33,7 @@ export const noteAnswers = {
       requests.renamed.push(`${request.path} ${request.title}`)
       return { path: request.path, title: request.title, nameSource: NAME_SOURCE.FRONTMATTER }
     },
-    watchEdits: pendingStream,
+    watchEdits: createPendingStream,
     listHeadings: () => ({ headings: [] }),
   },
 } satisfies CoreAnswers

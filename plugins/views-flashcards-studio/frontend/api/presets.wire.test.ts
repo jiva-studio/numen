@@ -205,7 +205,7 @@ describe('what a preset evaluates to over the range of its goal', () => {
       },
     })
 
-    const curve = await presets.curve('Daily.md', DEFAULTS)
+    const curve = await presets.getCurve('Daily.md', DEFAULTS)
 
     expect(curve.at.map((one) => one.learns)).toEqual([30, undefined])
     expect(curve.at[0]?.backlog).toEqual([4, 2])
@@ -221,7 +221,7 @@ describe('what a preset evaluates to over the range of its goal', () => {
   it('remains nowhere where the answer suggests no place', async () => {
     replyWith({ curve: { goal: 'minutes_a_day', grid: [], days: [], at: [] } })
 
-    const curve = await presets.curve('Daily.md', DEFAULTS)
+    const curve = await presets.getCurve('Daily.md', DEFAULTS)
 
     expect(curve.now).toEqual(NO_CURVE_POINT)
     expect(curve.suggested).toEqual(NO_CURVE_POINT)
@@ -230,7 +230,7 @@ describe('what a preset evaluates to over the range of its goal', () => {
   it('is an empty one where the answer carries no curve at all', async () => {
     replyWith({})
 
-    expect(await presets.curve('Daily.md', DEFAULTS)).toMatchObject({
+    expect(await presets.getCurve('Daily.md', DEFAULTS)).toMatchObject({
       goal: DEFAULTS.goal,
       grid: [],
       at: [],
@@ -267,7 +267,7 @@ describe('what the requests of a preset name', () => {
   it('sends the path and the settings of a curve it asks for', async () => {
     replyWith({})
 
-    await presets.curve('Daily.md', { ...DEFAULTS, minutesADay: 45 })
+    await presets.getCurve('Daily.md', { ...DEFAULTS, minutesADay: 45 })
 
     expect(request[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
   })
@@ -393,13 +393,13 @@ describe('the curve of a goal other than the default', () => {
   it('carries the goal the answer names', async () => {
     replyWith({ curve: { goal: 'retention', grid: [], days: [], at: [] } })
 
-    expect((await presets.curve('Daily.md', DEFAULTS)).goal).toBe('retention')
+    expect((await presets.getCurve('Daily.md', DEFAULTS)).goal).toBe('retention')
   })
 
   it('is valid and honest', async () => {
     replyWith({ curve: { goal: 'retention', grid: [], days: [], at: [] } })
 
-    expect(await presets.curve('Daily.md', DEFAULTS)).toMatchObject({
+    expect(await presets.getCurve('Daily.md', DEFAULTS)).toMatchObject({
       isValid: true,
       isHonest: true,
     })
@@ -417,7 +417,7 @@ describe('the curve of a goal other than the default', () => {
       },
     })
 
-    const curve = await presets.curve('Daily.md', DEFAULTS)
+    const curve = await presets.getCurve('Daily.md', DEFAULTS)
 
     expect(curve.now).toEqual({ index: 3, value: 25, day: 'mon' })
     expect(curve.suggested).toEqual({ index: 5, value: 40, day: 'tue' })
@@ -433,7 +433,7 @@ describe('the curve of a goal other than the default', () => {
       },
     })
 
-    const curve = await presets.curve('Daily.md', DEFAULTS)
+    const curve = await presets.getCurve('Daily.md', DEFAULTS)
 
     expect('learns' in (curve.at[0] ?? { learns: 0 })).toBe(false)
   })

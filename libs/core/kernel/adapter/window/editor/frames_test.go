@@ -45,43 +45,31 @@ type noStart struct{}
 func (noStart) Execute(context.Context, domain.Vault) {}
 
 func TestAPluginPageFramesTheOriginsItsPluginDeclaresOnTheLoopback(t *testing.T) {
-	for name, setBeforeStart := range map[string]bool{"set before the start": true, "set after the start": false} {
-		t.Run(name, func(t *testing.T) {
-			policy := getStorePagePolicy(t, setBeforeStart, &routedPlugins{frames: map[string][]string{importer: {"https://player.example"}}})
-			if !strings.Contains(policy, "frame-src 'self' https://player.example;") {
-				t.Errorf("the page is served under %q", policy)
-			}
-		})
+	policy := getStorePagePolicy(t, &routedPlugins{frames: map[string][]string{importer: {"https://player.example"}}})
+	if !strings.Contains(policy, "frame-src 'self' https://player.example;") {
+		t.Errorf("the page is served under %q", policy)
 	}
 }
 
 func TestAPluginPageThatDeclaresNoOriginsFramesItselfOnTheLoopback(t *testing.T) {
-	policy := getStorePagePolicy(t, true, &routedPlugins{})
+	policy := getStorePagePolicy(t, &routedPlugins{})
 	if !strings.Contains(policy, "frame-src 'self';") {
 		t.Errorf("the page is served under %q", policy)
 	}
 }
 
-func getStorePagePolicy(t *testing.T, setBeforeStart bool, plugins PluginServices) string {
+func getStorePagePolicy(t *testing.T, plugins PluginServices) string {
 	t.Helper()
 	vault := vaulttest.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, file.NewOpenPluginFile(storedFiles{importer: {pageName: []byte(pageBytes)}}), file.NewGetMediaType(contenttype.Open()))
 	api.state.Runtime.SetVault(vault)
-	installation := NewInstallation(api.state.PageAccess, Lifecycle{}, nil, nil)
-	if setBeforeStart {
-		installation.SetPlugins(plugins, nil)
-	}
-	if err := installation.Start(t.Context(), vault, api.server, noStart{}, io.Discard); err != nil {
-		t.Fatal(err)
-	}
+	installation := NewInstallation(api.state.PageAccess, Lifecycle{}, nil, nil, WithPlugins(plugins, nil))
+	installation.Start(t.Context(), vault, api.server, noStart{}, io.Discard)
 	back := api.state.Media.playing.Load()
 	testsupport.CloseAfter(t, loopbackCloser{back})
-	if !setBeforeStart {
-		installation.SetPlugins(plugins, nil)
-	}
 
-	resp := fetch(t, http.DefaultClient, back.PluginFileAddress(vault, file.Address{PluginID: importer, Path: pageName}, int64(len(pageBytes))))
+	resp := fetch(t, http.DefaultClient, back.BuildPluginFileAddress(vault, file.Address{PluginID: importer, Path: pageName}, int64(len(pageBytes))))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("answered %d %q", resp.StatusCode, resp.Body)
 	}

@@ -59,7 +59,7 @@ func (e *APIError) Error() string {
 	return string(e.Code) + ": " + e.Message
 }
 
-func toAPIError(err error) *APIError {
+func createAPIError(err error) *APIError {
 	if failure, ok := errors.AsType[*APIError](err); ok {
 		return failure
 	}
@@ -128,7 +128,7 @@ func Handle[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		}
 		res, err := fn(withHeader(r.Context(), r.Header), req)
 		if err != nil {
-			writeFailure(w, toAPIError(err))
+			writeFailure(w, createAPIError(err))
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -157,7 +157,7 @@ func Stream[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		}
 		if err := fn(withHeader(r.Context(), r.Header), req, send); err != nil {
 			if r.Context().Err() == nil {
-				logWriteError(writeEvent(w, flusher, "error", toAPIError(err)))
+				logWriteError(writeEvent(w, flusher, "error", createAPIError(err)))
 			}
 			return
 		}

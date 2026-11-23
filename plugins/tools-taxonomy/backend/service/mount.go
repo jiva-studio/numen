@@ -59,7 +59,7 @@ func NewApp(open Open) (*App, error) {
 func Run() {
 	var app *App
 	server.Run(func(s *server.Server) error {
-		endpoint, err := hostcall.FromEnv()
+		endpoint, err := hostcall.ReadEnv()
 		if err != nil {
 			return err
 		}

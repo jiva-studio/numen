@@ -34,9 +34,9 @@ func storeOf(vault *hosttest.Vault) func(domain.VaultID) host.StoreWriter {
 func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Writer) {
 	t.Helper()
 	files := hosttest.New("vault")
-	files.File(name, string(raw))
+	files.WriteFile(name, string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
-	texts.File(name, raw)
+	texts.WriteFile(name, raw)
 	texts.SetStore(pluginID, files.Store())
 	server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue(), noReport)
 	t.Cleanup(server.Close)
@@ -119,9 +119,9 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			files := hosttest.New("vault")
-			files.File(name, string(raw))
+			files.WriteFile(name, string(raw))
 			texts := hosttest.NewTexts("vault", pluginID)
-			texts.File(name, raw)
+			texts.WriteFile(name, raw)
 			texts.SetStore(pluginID, files.Store())
 			queue := hosttest.NewQueue()
 			server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue, noReport)
@@ -143,7 +143,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 	}
 
 	files := hosttest.New("vault")
-	files.File("corrupted.epub", "INVALID_EPUB_ZIP")
+	files.WriteFile("corrupted.epub", "INVALID_EPUB_ZIP")
 	texts := hosttest.NewTexts("vault", pluginID)
 	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue(), noReport)
 	t.Cleanup(srv.Close)
@@ -156,11 +156,11 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	raw := testsupport.CreateImageEpub(t)
 	physics := hosttest.New("Physics")
 	chemistry := hosttest.New("Chemistry")
-	physics.Beside(chemistry)
-	chemistry.File("book.epub", string(raw))
+	physics.LinkBeside(chemistry)
+	chemistry.WriteFile("book.epub", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
 	other := texts.With("Chemistry")
-	other.File("book.epub", raw)
+	other.WriteFile("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
 	server := NewWriter(filesOf(physics), textsOf(texts), storeOf(physics), hosttest.NewQueue(), noReport)
 	t.Cleanup(server.Close)
@@ -279,9 +279,9 @@ func (f *failingTexts) PutVersion(_ context.Context, _ host.TextPut) (domain.Tex
 func TestWriterLifecycleAndFailures(t *testing.T) {
 	raw := testsupport.CreateImageEpub(t)
 	files := hosttest.New("vault")
-	files.File("book.epub", string(raw))
+	files.WriteFile("book.epub", string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
-	texts.File("book.epub", raw)
+	texts.WriteFile("book.epub", raw)
 	texts.SetStore(pluginID, files.Store())
 	var waitDone atomic.Bool
 	started := make(chan struct{})
@@ -387,8 +387,8 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	t.Cleanup(srv7.Close)
 	createText(t, srv7, Request{Path: "book.epub"})
 	guided := testsupport.CreateGuidedEpub(t)
-	files.File("book.epub", string(guided))
-	texts.File("book.epub", guided)
+	files.WriteFile("book.epub", string(guided))
+	texts.WriteFile("book.epub", guided)
 	createText(t, srv7, Request{Path: "book.epub"})
 	if live := readLiveText(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)

@@ -14,7 +14,7 @@ import (
 func stopFileWatch(t *testing.T, hub *watchhub.Hub, path string) {
 	t.Helper()
 	ctx, stop := context.WithCancel(t.Context())
-	moved, err := vaultwatch.Watcher{Hub: hub}.File(ctx, path)
+	moved, err := vaultwatch.Watcher{Hub: hub}.WatchFile(ctx, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestAVaultIsFollowedAfterAnEarlierWatchInsideItStops(t *testing.T) {
 	// The two watches go through one hub, as every watch of one container does.
 	hub := watchhub.NewHub()
 	ctx, stop := context.WithCancel(t.Context())
-	moved, err := vaultwatch.Watcher{Hub: hub}.File(ctx, filepath.Join(root, "settings", "numen.json"))
+	moved, err := vaultwatch.Watcher{Hub: hub}.WatchFile(ctx, filepath.Join(root, "settings", "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

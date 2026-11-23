@@ -6,7 +6,7 @@ import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import type { Tab } from '@/entities/tab'
 import { requests } from '../requests'
-import { mockVaultState, pendingStream } from '../answers'
+import { mockVaultState, createPendingStream } from '../answers'
 
 const toWire = ({
   id,
@@ -36,7 +36,7 @@ export const tabAnswers = {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
       return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
     },
-    watchTabLinks: pendingStream,
+    watchTabLinks: createPendingStream,
     cancelWatchTabLinks: () => ({}),
     writeTabLinks: () => ({}),
     syncTabPath: () => ({}),

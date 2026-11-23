@@ -20,7 +20,7 @@ func (NoDetection) Refresh()                              {}
 // EmptyNoteQueries is an index that holds no vault, no note and no name.
 type EmptyNoteQueries struct{}
 
-func (EmptyNoteQueries) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
+func (EmptyNoteQueries) ListNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, nil
 }
 

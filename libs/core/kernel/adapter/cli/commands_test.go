@@ -50,11 +50,11 @@ func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
 // failingLinkQueries answers every question about links with an error.
 type failingLinkQueries struct{}
 
-func (failingLinkQueries) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (failingLinkQueries) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
@@ -200,7 +200,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 // fixedProblemQueries answers the two stored questions with what the test wrote down.
 type fixedProblemQueries struct{ parse, unreadable []domain.VaultProblem }
 
-func (p fixedProblemQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (p fixedProblemQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.parse, nil
 }
 
@@ -220,7 +220,7 @@ func problemsDeps(queries check.ProblemQueries) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.Standard(queries)))}, nil
+			return cli.Indexed{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.CreateStandard(queries)))}, nil
 		},
 	}
 }
@@ -287,7 +287,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}{
 		"the list of vaults cannot be opened": {
 			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				problems := vaults.NewGetProblems(check.Standard(fixedProblemQueries{}))
+				problems := vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{}))
 				return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, problems)}, nil
 			}},
 			[]string{"problems", "notebook"},
@@ -313,7 +313,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		}
 	}
 	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-		return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+		return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{})))}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
@@ -495,7 +495,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			closes.add(db.Close)
 			readerOptions := vaultconfig.Options{}
 			readers := vaultreader.Readers{Options: readerOptions}
-			notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+			notes := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 			books := indexing.NewIndex(indexing.IndexDeps{
 				Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 				Texts: testsupport.Texts{Readers: readers},

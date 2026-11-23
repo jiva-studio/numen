@@ -48,8 +48,8 @@ export function createWindowSettings({
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatError(error), 'error')
   watch(appearance.preview.display.sized, () => onSizeChanged())
-  const settingPalette = createWindowSettingPalette({ rest, appearance, words })
-  const changes = createChangeFollower({
+  const windowSettingPalette = createWindowSettingPalette({ rest, appearance, words })
+  const changeWatcher = createChangeFollower({
     watchSettings,
     refresh: async (batch) => {
       try {
@@ -62,21 +62,21 @@ export function createWindowSettings({
   let isFollowing = false
   return {
     appearance,
-    settingPalette,
-    paletteLists: settingPalette.lists,
+    settingPalette: windowSettingPalette,
+    paletteLists: windowSettingPalette.lists,
     start: async () => {
       if (isFollowing) {
         runInBackground(appearance.reload(), reportError)
       } else {
         isFollowing = true
         runInBackground(appearance.start(), reportError)
-        runInBackground(changes.start(), reportError)
+        runInBackground(changeWatcher.start(), reportError)
       }
       // The plugins the window starts are named by what this read answers.
       await rest.start()
     },
     close: () => {
-      changes.close()
+      changeWatcher.close()
       appearance.close()
     },
   }

@@ -62,7 +62,7 @@ func TestPluginPackage_ReportsAnOutputDirectoryThatCannotBeCreated(t *testing.T)
 		t.Fatal(err)
 	}
 
-	_, err := Package(pluginDir, filepath.Join(blocker, "plugin.zip"), &bytes.Buffer{})
+	_, err := BuildPackage(pluginDir, filepath.Join(blocker, "plugin.zip"), &bytes.Buffer{})
 	if err == nil || !strings.Contains(err.Error(), "create output directory:") {
 		t.Fatalf("expected create output directory error, got %v", err)
 	}
@@ -72,7 +72,7 @@ func TestPluginPackage_ReportsAnArchiveFileThatCannotBeCreated(t *testing.T) {
 	pluginDir := writePluginDir(t)
 	var stdout bytes.Buffer
 
-	_, err := Package(pluginDir, t.TempDir(), &stdout)
+	_, err := BuildPackage(pluginDir, t.TempDir(), &stdout)
 	if err == nil || !strings.Contains(err.Error(), "create archive file:") {
 		t.Fatalf("expected create archive file error for a directory as output, got %v", err)
 	}
@@ -90,7 +90,7 @@ func TestPluginPackage_ReportsAShippedFileThatCannotBeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := Package(pluginDir, filepath.Join(t.TempDir(), "plugin.zip"), &bytes.Buffer{})
+	_, err := BuildPackage(pluginDir, filepath.Join(t.TempDir(), "plugin.zip"), &bytes.Buffer{})
 	if !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "add bin/link to archive:") {
 		t.Fatalf("expected add bin/link to archive error wrapping ErrNotExist, got %v", err)
 	}

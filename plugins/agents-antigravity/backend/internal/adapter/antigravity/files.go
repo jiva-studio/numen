@@ -14,7 +14,7 @@ import (
 func createTempDir(pattern string) (string, func() error, error) {
 	dir, err := os.MkdirTemp("", pattern)
 	if err != nil {
-		return "", noRelease, err
+		return "", releaseNothing, err
 	}
 	return dir, func() error {
 		if err := os.RemoveAll(dir); err != nil {

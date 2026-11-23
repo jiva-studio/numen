@@ -15,17 +15,17 @@ import { registerTabKindIcon } from '@/entities/note'
 // The mocked modules stand before the plugins that reach them are imported.
 import {
   requests,
-  cards,
+  listCards,
   createWindowTransport,
   DEBOUNCE,
   getWindowParts,
   mountWindow,
   mountWindowWithPalette,
-  nameAnswer,
+  createNameAnswer,
   searchResultAnswer,
   vaultState,
   settle,
-  sourceAnswer,
+  createSourceAnswer,
 } from '@/testing/window'
 import { Palette, type PaletteGroup } from '@numen/workbench'
 import { WORDS } from '@/shared/ui/words'
@@ -74,9 +74,9 @@ describe('the palette', () => {
   it('draws every kind of note a name turned up as what it is', async () => {
     drawPluginTypes()
     vaultState.names = [
-      nameAnswer('Ants.md', 'Ants'),
-      nameAnswer('Animals.md', 'Animals', 'sample'),
-      nameAnswer('Animal.md', 'Animal', 'form'),
+      createNameAnswer('Ants.md', 'Ants'),
+      createNameAnswer('Animals.md', 'Animals', 'sample'),
+      createNameAnswer('Animal.md', 'Animal', 'form'),
     ]
     const window = await mountWindowWithPalette()
 
@@ -103,8 +103,8 @@ describe('the palette', () => {
   it('draws a passage out of a file no reader opens as a plain file', async () => {
     vaultState.names = []
     vaultState.searchResults = [
-      sourceAnswer('Ants.bin', { page: 3 }),
-      sourceAnswer('Talk.bin', { t: [12, 14] }),
+      createSourceAnswer('Ants.bin', { page: 3 }),
+      createSourceAnswer('Talk.bin', { t: [12, 14] }),
     ]
     const window = await mountWindowWithPalette()
 
@@ -203,7 +203,7 @@ describe('a command reached by its own keystroke', () => {
   })
 
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
-    vaultState.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
+    vaultState.names = [createNameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindowWithPalette()
 
     const event = pressKey('g')
@@ -307,7 +307,7 @@ describe('a command requested for while the vault is being read', () => {
     await press('Enter')
 
     expect(requests.made).toStrictEqual(['Entropy'])
-    expect(cards()).toStrictEqual([])
+    expect(listCards()).toStrictEqual([])
   })
 })
 

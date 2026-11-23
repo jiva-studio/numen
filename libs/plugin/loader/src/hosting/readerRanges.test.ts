@@ -8,14 +8,16 @@ import type { TextRange } from '@numen/plugin-sdk'
 import { createReaderTabKind } from './customTabKind'
 import type { SourceReader } from './tabKinds'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createPluginStyles } from '../styles'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 describe('the ranges of a reader tab', () => {
   it('are none on a tab just opened', () => {
-    const kind = createReaderTabKind('sample.plugin', {
-      id: 'reader:bin',
-      component: STUB_COMPONENT,
-    })
+    const kind = createReaderTabKind(
+      'sample.plugin',
+      { id: 'reader:bin', component: STUB_COMPONENT },
+      { styles: createPluginStyles() },
+    )
 
     const state = kind.open('library/Birds.bin', 'tab-1') as { ranges?: unknown }
 

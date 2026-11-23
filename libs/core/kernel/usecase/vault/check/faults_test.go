@@ -16,7 +16,7 @@ var errUnreachable = errors.New("the index cannot be reached")
 // failingQueries is an index that answers every question with an error.
 type failingQueries struct{}
 
-func (failingQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (failingQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return nil, errUnreachable
 }
 
@@ -54,7 +54,7 @@ func TestACheckThatCannotLookFailsTheRunAndNamesItself(t *testing.T) {
 		domain.CheckParse, domain.CheckFrontmatter, domain.CheckAmbiguous, domain.CheckDangling,
 	} {
 		t.Run(string(name), func(t *testing.T) {
-			found, err := check.Standard(failingQueries{}).Run(t.Context(), domain.Vault{}, name)
+			found, err := check.CreateStandard(failingQueries{}).Run(t.Context(), domain.Vault{}, name)
 			if !errors.Is(err, errUnreachable) {
 				t.Fatalf("the run failed with %v, want the index's error", err)
 			}

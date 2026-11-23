@@ -20,7 +20,7 @@ func (parseCheck) Name() domain.Check { return domain.CheckParse }
 func (parseCheck) IsOptIn() bool      { return false }
 
 func (c parseCheck) FindProblems(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	noted, err := c.queries.GetParseProblems(ctx, v.ID)
+	noted, err := c.queries.ListParseProblems(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}

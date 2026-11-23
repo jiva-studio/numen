@@ -125,7 +125,7 @@ function createCardModelKindDefinition(deps: {
     },
     // The tab state holds no resource beyond the buffer store.
     onDestroy: () => undefined,
-    isAsking: (one) => store.stale(one.id) !== null,
+    isAsking: (one) => store.findConflict(one.id) !== null,
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => cards.createCardModel(name, folder, [words.newField]),
   }

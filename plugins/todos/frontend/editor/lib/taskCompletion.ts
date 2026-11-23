@@ -12,7 +12,7 @@ export interface TaskCompletionDeps {
 
 const PRIORITIES = Array.from({ length: 26 }, (_, at) => String.fromCharCode(65 + at))
 
-function matches(label: string, typed: string): boolean {
+function isMatch(label: string, typed: string): boolean {
   return label.toLowerCase().startsWith(typed.toLowerCase())
 }
 
@@ -22,18 +22,18 @@ function listFieldOptions(
   type: string,
 ): Completion[] {
   return counts
-    .filter((one) => matches(one.name, typed))
+    .filter((one) => isMatch(one.name, typed))
     .map((one) => ({ label: one.name, detail: String(one.count), type }))
 }
 
 function listDateOptions(today: string, typed: string): Completion[] {
   return listDateShortcuts(today)
-    .filter((one) => matches(one.label, typed))
+    .filter((one) => isMatch(one.label, typed))
     .map((one) => ({ label: one.label, detail: one.date, apply: one.date, type: 'date' }))
 }
 
 function listPriorityOptions(typed: string): Completion[] {
-  return PRIORITIES.filter((one) => matches(one, typed)).map((one) => ({
+  return PRIORITIES.filter((one) => isMatch(one, typed)).map((one) => ({
     label: one,
     type: 'priority',
   }))

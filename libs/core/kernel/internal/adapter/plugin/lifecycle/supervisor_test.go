@@ -183,7 +183,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 
-	closedCh := sup.ActivatingChan()
+	closedCh := sup.GetActivatingChan()
 	select {
 	case <-closedCh:
 	default:
@@ -194,7 +194,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 	if sup.GetState() != StateActivating {
 		t.Fatalf("expected StateActivating, got %v", sup.GetState())
 	}
-	ch2 := sup.ActivatingChan()
+	ch2 := sup.GetActivatingChan()
 
 	select {
 	case <-ch1:
@@ -207,8 +207,8 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
-	if !errors.Is(sup.ActivationError(), expectedErr) {
-		t.Fatalf("expected %v, got %v", expectedErr, sup.ActivationError())
+	if !errors.Is(sup.GetActivationError(), expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, sup.GetActivationError())
 	}
 
 	select {
@@ -223,7 +223,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 	}
 
 	ch3 := sup.SetActivating(plugin.Holder{})
-	if sup.ActivationError() != nil {
+	if sup.GetActivationError() != nil {
 		t.Fatal("expected ActivationError to be cleared on new activation")
 	}
 	sup.FinishActivating()

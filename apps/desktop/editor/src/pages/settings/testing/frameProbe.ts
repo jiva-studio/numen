@@ -14,7 +14,7 @@ const LIFT_FADES = ['background-color', 'box-shadow', 'opacity']
 const LIFTED = 'plugin-slots__row--lifted'
 const STATE_CLASSES = [LIFTED, 'plugin-slots__row--settling']
 
-const labelled = (rows: readonly HTMLElement[]): (readonly [string, HTMLElement])[] => {
+const getLabelRows = (rows: readonly HTMLElement[]): (readonly [string, HTMLElement])[] => {
   let separators = 0
   return rows.map((row) => [
     row.querySelector('.plugin-slots__label')?.textContent ?? `|${separators++}`,
@@ -22,7 +22,7 @@ const labelled = (rows: readonly HTMLElement[]): (readonly [string, HTMLElement]
   ])
 }
 
-const fadesOf = (row: HTMLElement): Set<string> =>
+const getFades = (row: HTMLElement): Set<string> =>
   new Set(
     row
       .getAnimations()
@@ -31,22 +31,22 @@ const fadesOf = (row: HTMLElement): Set<string> =>
 
 /** Samples every row on every animation frame: where it is, which classes it has, which properties fade, and whether it is still the same element. */
 export function startProbe(root: HTMLElement): { stop: () => Map<string, Frame[]> } {
-  const rowsOf = (): HTMLElement[] =>
+  const listRows = (): HTMLElement[] =>
     Array.from(root.querySelectorAll<HTMLElement>('.plugin-slots__row'))
-  const first = new Map(labelled(rowsOf()))
+  const first = new Map(getLabelRows(listRows()))
   const frames = new Map<string, Frame[]>()
   let n = 0
   let isRunning = true
   const sample = (): void => {
     if (!isRunning) return
-    labelled(rowsOf()).forEach(([label, row]) => {
+    getLabelRows(listRows()).forEach(([label, row]) => {
       frames.set(label, [
         ...(frames.get(label) ?? []),
         {
           n,
           top: measureRect(row).top,
           classes: new Set(row.classList),
-          fades: fadesOf(row),
+          fades: getFades(row),
           isSameNode: first.get(label) === row,
         },
       ])

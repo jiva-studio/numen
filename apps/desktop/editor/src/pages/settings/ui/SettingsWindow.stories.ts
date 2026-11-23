@@ -6,7 +6,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { WorkspaceLayout, pane } from '@numen/workbench'
+import { WorkspaceLayout, createPane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { Settings as SettingsIcon } from '@lucide/vue'
 import { computed, ref, shallowReactive, type Component } from 'vue'
@@ -33,7 +33,7 @@ const window = (tab: string, tabPane: Component, state: unknown) => ({
   components: { WorkspaceLayout },
   setup() {
     const layout = ref<Workspace>({
-      root: pane(
+      root: createPane(
         'main',
         TABS.map((one) => one.id),
         tab,

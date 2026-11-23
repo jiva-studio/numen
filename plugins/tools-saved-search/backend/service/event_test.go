@@ -11,7 +11,7 @@ import (
 )
 
 func addWinterNote(f *fixture) {
-	f.vault.File("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
+	f.vault.WriteFile("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
 	f.searches.SetAnswer(stormsQuery, getStormsAnswer(mooringText, passage("Harbor/Winter.md", "Winter", winterText, 0.5)))
 }
 

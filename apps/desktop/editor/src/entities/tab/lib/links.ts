@@ -68,6 +68,6 @@ export interface TabPathSync {
 export interface TabLinksEvent {
   readonly links?: TabLinksSnapshot
   readonly sync?: TabPathSync
-  readonly movedTab?: MovedTab
+  readonly tabMove?: MovedTab
   readonly isHighlighted?: boolean
 }

@@ -79,7 +79,7 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		}
 	}
 
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Rule, p.Interval, p.Retention = review.RuleInterval, 21, 0.9
 
 	// The threshold is the interval the preset carries: a card sent away for
@@ -164,7 +164,7 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 // so a setting that moves a card and not the mark would be read back under settings it was never
 // worked out for.
 func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
-	preset := review.Defaults()
+	preset := review.NewDefaultPreset()
 	preset.Load = map[time.Weekday]int{time.Saturday: 50}
 	was := preset.GetPlacing()
 
@@ -459,7 +459,7 @@ func TestWhatAPresetPreservesUnsaid(t *testing.T) {
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
-	if p.NewADay != review.Defaults().NewADay || p.ReviewsADay != review.Defaults().ReviewsADay {
+	if p.NewADay != review.NewDefaultPreset().NewADay || p.ReviewsADay != review.NewDefaultPreset().ReviewsADay {
 		t.Errorf("limits = %d new, %d reviews", p.NewADay, p.ReviewsADay)
 	}
 	if p.Retention != 0.95 {
@@ -492,7 +492,7 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {
 			t.Errorf("%q: problems = %v", content, problems)
 		}
-		if content == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
+		if content == "new_a_day: many\n" && p.NewADay != review.NewDefaultPreset().NewADay {
 			t.Errorf("%q: new a day = %d", content, p.NewADay)
 		}
 	}
@@ -517,7 +517,7 @@ func TestTheDayItAimsAt(t *testing.T) {
 // The share of a day that goes to the debt is read like the other whole
 // outside its bounds.
 func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
-	if got := review.Defaults().Backlog; got != review.AllBacklog {
+	if got := review.NewDefaultPreset().Backlog; got != review.AllBacklog {
 		t.Errorf("a preset naming nothing gives the debt %d of its day", got)
 	}
 
@@ -615,14 +615,14 @@ func readPresetCorpus(t *testing.T) presetCorpusFile {
 func TestAPresetNamingNothingIsScheduledByWhatTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).Defaults
 
-	d := review.Defaults()
+	d := review.NewDefaultPreset()
 	byDate := ""
 	if !d.By.IsZero() {
 		byDate = d.By.Format(review.DayLayout)
 	}
 	load := map[string]int{}
 	for day, share := range d.Load {
-		load[review.DayName(day)] = share
+		load[review.GetDayName(day)] = share
 	}
 	got := defaultPreset{
 		Goal:        string(d.Goal),
@@ -721,14 +721,14 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 		s := genSchedule(t)
 		pos := getLastAnswer().Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
-		standard := review.Defaults()
+		standard := review.NewDefaultPreset()
 		if review.IsKnownRule(p.Rule) {
 			standard.Rule = p.Rule
 		}
-		if review.GetIntervalBounds().Contains(float64(p.Interval)) {
+		if review.GetIntervalBounds().IsWithin(float64(p.Interval)) {
 			standard.Interval = p.Interval
 		}
-		if review.GetRetentionBounds().Contains(p.Retention) {
+		if review.GetRetentionBounds().IsWithin(p.Retention) {
 			standard.Retention = p.Retention
 		}
 		if got, want := p.IsLearned(s, pos), standard.IsLearned(s, pos); got != want {

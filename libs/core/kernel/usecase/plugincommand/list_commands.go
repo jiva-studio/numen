@@ -2,6 +2,7 @@ package plugincommand
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 )
 
@@ -49,7 +50,7 @@ func (u ListCommands) Execute() Listing {
 func (u ListCommands) mark(entries []plugin.CommandEntry) []ListedCommand {
 	out := make([]ListedCommand, 0, len(entries))
 	for _, one := range entries {
-		out = append(out, ListedCommand{CommandEntry: one, HasItems: hasItems(u.list.conditions, one.Command)})
+		out = append(out, ListedCommand{CommandEntry: one, HasItems: commandrun.HasItems(u.list.conditions, one.Command)})
 	}
 	return out
 }

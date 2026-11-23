@@ -9,7 +9,7 @@ import (
 )
 
 func TestAnUnresolvedProfileConsumesTheFallbackCounts(t *testing.T) {
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	if got, want := getThreads(cfg), min(settings.FallbackThreads, onnx.GetDefaultThreads()); got != want {
 		t.Errorf("the recognizer takes %d threads, want %d", got, want)
 	}
@@ -22,7 +22,7 @@ func TestAnUnresolvedProfileConsumesFourOfEach(t *testing.T) {
 	previous := runtime.GOMAXPROCS(8)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
 
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	if got := getThreads(cfg); got != 4 {
 		t.Errorf("the recognizer takes %d threads, want 4", got)
 	}
@@ -35,7 +35,7 @@ func TestAFallbackThreadCountStaysWithinTheCoresThereAre(t *testing.T) {
 	previous := runtime.GOMAXPROCS(2)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
 
-	if got := getThreads(settings.Defaults()); got != 2 {
+	if got := getThreads(settings.NewDefaultConfig()); got != 2 {
 		t.Errorf("the recognizer takes %d threads on two cores, want 2", got)
 	}
 }
@@ -44,7 +44,7 @@ func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
 	previous := runtime.GOMAXPROCS(4)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
 
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	cfg.Compute = settings.Compute{Threads: 6, Jobs: 3}
 	cfg.Recognize.Threads, cfg.Recognize.Jobs = 1, 1
 	if got := getThreads(cfg); got != 1 {

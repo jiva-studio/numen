@@ -8,7 +8,7 @@ import (
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
-func appearancePath(key string) []string {
+func getAppearancePath(key string) []string {
 	return []string{settingsdomain.AppOwner, "appearance", key}
 }
 
@@ -41,7 +41,7 @@ func (u *ReadAppearance) Execute() (themedomain.Appearance, error) {
 }
 
 func getAppearanceValue[T any](stored settingsdomain.Stored, key string) T {
-	value, _ := stored.GetValue(appearancePath(key)...)
+	value, _ := stored.GetValue(getAppearancePath(key)...)
 	typed, isTyped := value.(T)
 	if !isTyped {
 		var none T
@@ -67,20 +67,20 @@ func (u *WriteAppearance) Execute(selected themedomain.Appearance) error {
 		path  []string
 		value any
 	}{
-		{appearancePath("theme"), selected.ThemeName},
-		{appearancePath("mode"), selected.Mode.GetName()},
+		{getAppearancePath("theme"), selected.ThemeName},
+		{getAppearancePath("mode"), selected.Mode.GetName()},
 	}
 	if selected.InterfaceScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearancePath("interfaceScale"), selected.InterfaceScale})
+		}{getAppearancePath("interfaceScale"), selected.InterfaceScale})
 	}
 	if selected.TextScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearancePath("textScale"), selected.TextScale})
+		}{getAppearancePath("textScale"), selected.TextScale})
 	}
 	writing := make([]settingsdomain.Setting, 0, len(values))
 	for _, one := range values {

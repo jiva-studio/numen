@@ -13,15 +13,15 @@ import (
 // Runner holds the entry points of the runtime a Graph is run through, resolved by Bind from the
 // library the runtime opens.
 type Runner struct {
-	mu     sync.Mutex
-	ortRun func(
+	mu  sync.Mutex
+	run func(
 		session, runOptions, inputNames, inputValues, inputCount, outputNames, outputCount, outputValues uintptr,
 	) uintptr
-	ortGetTensorMutableData func(value, out uintptr) uintptr
-	ortReleaseValue         func(value uintptr)
-	ortReleaseStatus        func(status uintptr)
-	ortGetErrorCode         func(status uintptr) int32
-	ortGetErrorMessage      func(status uintptr) unsafe.Pointer
+	getTensorMutableData func(value, out uintptr) uintptr
+	releaseValue         func(value uintptr)
+	releaseStatus        func(status uintptr)
+	getErrorCode         func(status uintptr) int32
+	getErrorMessage      func(status uintptr) unsafe.Pointer
 }
 
 type ortAPIBase struct {
@@ -53,7 +53,7 @@ func NewRunner() *Runner {
 func (runner *Runner) Bind(pos string) error {
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
-	if runner.ortRun != nil {
+	if runner.run != nil {
 		return nil
 	}
 	if pos == "" {
@@ -83,12 +83,12 @@ func (runner *Runner) Bind(pos string) error {
 		return fmt.Errorf("failed to get OrtApi")
 	}
 
-	purego.RegisterFunc(&runner.ortRun, api.Run)
-	purego.RegisterFunc(&runner.ortGetTensorMutableData, api.GetTensorMutableData)
-	purego.RegisterFunc(&runner.ortReleaseValue, api.ReleaseValue)
-	purego.RegisterFunc(&runner.ortReleaseStatus, api.ReleaseStatus)
-	purego.RegisterFunc(&runner.ortGetErrorCode, api.GetErrorCode)
-	purego.RegisterFunc(&runner.ortGetErrorMessage, api.GetErrorMessage)
+	purego.RegisterFunc(&runner.run, api.Run)
+	purego.RegisterFunc(&runner.getTensorMutableData, api.GetTensorMutableData)
+	purego.RegisterFunc(&runner.releaseValue, api.ReleaseValue)
+	purego.RegisterFunc(&runner.releaseStatus, api.ReleaseStatus)
+	purego.RegisterFunc(&runner.getErrorCode, api.GetErrorCode)
+	purego.RegisterFunc(&runner.getErrorMessage, api.GetErrorMessage)
 	return nil
 }
 
@@ -96,9 +96,9 @@ func (runner *Runner) checkStatus(status uintptr) error {
 	if status == 0 {
 		return nil
 	}
-	defer runner.ortReleaseStatus(status)
-	code := runner.ortGetErrorCode(status)
-	msgPtr := runner.ortGetErrorMessage(status)
+	defer runner.releaseStatus(status)
+	code := runner.getErrorCode(status)
+	msgPtr := runner.getErrorMessage(status)
 	var msg string
 	if msgPtr != nil {
 		var b []byte
@@ -115,17 +115,17 @@ func (runner *Runner) checkStatus(status uintptr) error {
 func (runner *Runner) ObserveRelease(observe func(value uintptr)) (restore func()) {
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
-	original := runner.ortReleaseValue
+	original := runner.releaseValue
 	if original == nil {
 		return func() {}
 	}
-	runner.ortReleaseValue = func(value uintptr) {
+	runner.releaseValue = func(value uintptr) {
 		observe(value)
 		original(value)
 	}
 	return func() {
 		runner.mu.Lock()
 		defer runner.mu.Unlock()
-		runner.ortReleaseValue = original
+		runner.releaseValue = original
 	}
 }

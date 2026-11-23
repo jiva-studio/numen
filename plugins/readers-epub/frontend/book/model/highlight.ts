@@ -19,7 +19,7 @@ const target = new Map<string, Map<object, readonly Range[]>>()
 const canHighlight = (): boolean =>
   typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function'
 
-const redraw = (entry: string, books: ReadonlyMap<object, readonly Range[]>): void => {
+const drawHighlights = (entry: string, books: ReadonlyMap<object, readonly Range[]>): void => {
   if (!canHighlight()) return
   const all: Range[] = []
   for (const ranges of books.values()) all.push(...ranges)
@@ -32,13 +32,13 @@ export function highlight(entry: string, who: object, ranges: readonly Range[]):
   const books = target.get(entry) ?? new Map<object, readonly Range[]>()
   books.set(who, [...ranges])
   target.set(entry, books)
-  redraw(entry, books)
+  drawHighlights(entry, books)
 }
 
 /** One book's marked runs removed when it is disposed. */
-export function unhighlight(who: object): void {
+export function removeHighlight(who: object): void {
   for (const [entry, books] of target) {
     if (!books.delete(who)) continue
-    redraw(entry, books)
+    drawHighlights(entry, books)
   }
 }

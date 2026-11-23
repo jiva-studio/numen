@@ -156,7 +156,7 @@ func (e *vaultsCalls) RemoveVault(
 	if err != nil {
 		return nil, err
 	}
-	if req.Msg.GetTrash() {
+	if req.Msg.GetIsFolderTrashed() {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoTrash)
 	}
 	id := domain.VaultID(req.Msg.GetId())

@@ -95,15 +95,15 @@ func TestANameIsReachableOrItIsNot(t *testing.T) {
 // person put there.
 func TestALinkReturnsWhichVaultItLandedIn(t *testing.T) {
 	here := domain.ResolvedLink{ToVault: "one"}
-	if vault, crossed := here.InVault("one"); vault != "one" || crossed {
+	if vault, crossed := here.ResolveVault("one"); vault != "one" || crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
 	unsaid := domain.ResolvedLink{}
-	if vault, crossed := unsaid.InVault("one"); vault != "one" || crossed {
+	if vault, crossed := unsaid.ResolveVault("one"); vault != "one" || crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
 	resolvedLink := domain.ResolvedLink{ToVault: "two"}
-	if vault, crossed := resolvedLink.InVault("one"); vault != "two" || !crossed {
+	if vault, crossed := resolvedLink.ResolveVault("one"); vault != "two" || !crossed {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
 }

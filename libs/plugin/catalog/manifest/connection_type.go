@@ -104,9 +104,9 @@ func SplitConnectionTypeID(typeID string) (pluginID, id string, isValid bool) {
 	return pluginID, id, true
 }
 
-func reservedConnectionFieldKeys() []string { return []string{"type", "name", "id"} }
+func listReservedConnectionFieldKeys() []string { return []string{"type", "name", "id"} }
 
-func connectionFieldTypes() []string {
+func listConnectionFieldTypes() []string {
 	return []string{SettingTypeString, settingTypeNumber, settingTypeBoolean, SettingTypeEnum, SettingTypeFile, ConnectionFieldSecret}
 }
 
@@ -159,7 +159,7 @@ func listConnectionFieldIssues(t ConnectionType) []error {
 		switch {
 		case !connectionFieldKeyPattern.MatchString(field.Key):
 			issues = append(issues, newConnectionIssue("type %q: field key %q is not letters and digits starting with a letter", t.ID, field.Key))
-		case slices.Contains(reservedConnectionFieldKeys(), field.Key):
+		case slices.Contains(listReservedConnectionFieldKeys(), field.Key):
 			issues = append(issues, newConnectionIssue("type %q: field key %q is reserved", t.ID, field.Key))
 		case observed[field.Key]:
 			issues = append(issues, newConnectionIssue("type %q: field %q is declared twice", t.ID, field.Key))
@@ -180,7 +180,7 @@ func listConnectionFieldIssues(t ConnectionType) []error {
 }
 
 func listConnectionFieldShapeIssues(typeID string, field ConnectionField) []error {
-	if !slices.Contains(connectionFieldTypes(), field.Type) {
+	if !slices.Contains(listConnectionFieldTypes(), field.Type) {
 		return []error{newFieldIssue(typeID, field, "has type %q, which is not a field type", field.Type)}
 	}
 	issues := listConnectionFieldKindIssues(typeID, field)

@@ -33,7 +33,7 @@ type FeedEvents struct {
 	GetContentType func(path string) domain.ContentType
 	Emit           func(v domain.Vault, types []domain.FileType)
 	Quiet          time.Duration
-	After          func(time.Duration) <-chan time.Time
+	CreateTimer    func(time.Duration) <-chan time.Time
 }
 
 // Start begins the watch of the vault and returns the loop that sends its events until ctx ends, or nil
@@ -156,8 +156,8 @@ func (l *feedLoop) waitForChange(ctx context.Context) (isForced, ok bool) {
 }
 
 func (l *feedLoop) getQuiet() <-chan time.Time {
-	if l.events.After != nil {
-		return l.events.After(l.events.Quiet)
+	if l.events.CreateTimer != nil {
+		return l.events.CreateTimer(l.events.Quiet)
 	}
 	return time.After(l.events.Quiet)
 }

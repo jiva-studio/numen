@@ -21,7 +21,7 @@ export interface WikilinkOption {
 
 export interface WikilinkOptions {
   search(query: string): Promise<readonly WikilinkOption[]>
-  headings?(noteTitle: string): Promise<readonly string[]>
+  listHeadings?(noteTitle: string): Promise<readonly string[]>
   createNote?(title: string): Promise<string | null>
 }
 
@@ -75,11 +75,11 @@ function createSource(options: WikilinkOptions) {
     const isHeadingQuery = target.query.includes('#')
     let suggestions: Completion[]
 
-    if (isHeadingQuery && options.headings) {
+    if (isHeadingQuery && options.listHeadings) {
       const parts = target.query.split('#')
       const noteTitle = parts[0]?.trim() ?? ''
       const headingPrefix = parts[1]?.trim().toLowerCase() ?? ''
-      const headings = await options.headings(noteTitle)
+      const headings = await options.listHeadings(noteTitle)
 
       suggestions = headings
         .filter((h) => h.toLowerCase().includes(headingPrefix))

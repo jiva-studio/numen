@@ -160,10 +160,10 @@ func (m *memoryVault) GetTypes(_ context.Context, paths []string) (map[string]do
 	return out, nil
 }
 
-func (m *memoryVault) GetNamedPaths(_ context.Context, name string) ([]string, error) {
+func (m *memoryVault) ListNamedPaths(_ context.Context, name string) ([]string, error) {
 	var out []string
 	for path := range m.files {
-		if domain.Basename(path) == name {
+		if domain.GetBasename(path) == name {
 			out = append(out, path)
 		}
 	}
@@ -171,7 +171,7 @@ func (m *memoryVault) GetNamedPaths(_ context.Context, name string) ([]string, e
 	return out, nil
 }
 
-func (m *memoryVault) GetPathsOfType(_ context.Context, noteType domain.NoteType) ([]string, error) {
+func (m *memoryVault) ListPathsOfType(_ context.Context, noteType domain.NoteType) ([]string, error) {
 	if noteType != "sample" {
 		return nil, nil
 	}
@@ -190,11 +190,11 @@ func (m *memoryVault) link(from string) domain.ResolvedLink {
 	}
 }
 
-func (m *memoryVault) GetLinks(_ context.Context, from string) ([]domain.ResolvedLink, error) {
+func (m *memoryVault) ListLinks(_ context.Context, from string) ([]domain.ResolvedLink, error) {
 	return []domain.ResolvedLink{m.link(from)}, nil
 }
 
-func (m *memoryVault) GetBacklinks(_ context.Context, to string) ([]domain.ResolvedLink, error) {
+func (m *memoryVault) ListBacklinks(_ context.Context, to string) ([]domain.ResolvedLink, error) {
 	back := m.link("samples/" + to)
 	back.Role = domain.RoleParent
 	back.Why = "because"
@@ -210,7 +210,7 @@ func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []stri
 	return out, nil
 }
 
-func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, error) {
+func (m *memoryVault) ListParseProblems(context.Context) ([]domain.VaultProblem, error) {
 	return []domain.VaultProblem{{Path: "samples/A.md", Detail: "an entry has no role"}}, nil
 }
 
@@ -237,7 +237,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) HostVaultC
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 func newVaultFixture(t *testing.T) (HostVaultClient, *memoryVault) {
@@ -263,19 +263,19 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
-	refs, err := client.GetNoteRefs(ctx, connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"samples/A.md", "gone.md"}}))
+	refs, err := client.ListNoteRefs(ctx, connect.NewRequest(&v1.ListNoteRefsRequest{Paths: []string{"samples/A.md", "gone.md"}}))
 	if err != nil || len(refs.Msg.GetNotes()) != 1 || refs.Msg.GetNotes()[0].GetTitle() != "Title of samples/A.md" {
 		t.Errorf("the notes were %v (%v)", refs.Msg, err)
 	}
-	types, err := client.GetNoteTypes(ctx, connect.NewRequest(&v1.GetNoteTypesRequest{Paths: []string{"samples/A.md"}}))
+	types, err := client.ListNoteTypes(ctx, connect.NewRequest(&v1.ListNoteTypesRequest{Paths: []string{"samples/A.md"}}))
 	if err != nil || types.Msg.GetTypes()["samples/A.md"] != "sample" {
 		t.Errorf("the types were %v (%v)", types.Msg, err)
 	}
-	paths, err := client.GetPathsOfType(ctx, connect.NewRequest(&v1.GetPathsOfTypeRequest{Type: "sample"}))
+	paths, err := client.ListPathsOfType(ctx, connect.NewRequest(&v1.ListPathsOfTypeRequest{Type: "sample"}))
 	if err != nil || !slices.Equal(paths.Msg.GetPaths(), []string{"Animal.md", "samples/A.md"}) {
 		t.Errorf("the paths were %v (%v)", paths.Msg, err)
 	}
-	links, err := client.GetLinks(ctx, connect.NewRequest(&v1.GetLinksRequest{Path: "samples/A.md"}))
+	links, err := client.ListLinks(ctx, connect.NewRequest(&v1.ListLinksRequest{Path: "samples/A.md"}))
 	if err != nil || len(links.Msg.GetLinks()) != 1 {
 		t.Fatalf("the links were %v (%v)", links.Msg, err)
 	}
@@ -284,7 +284,7 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 		link.GetTargetScheme() != "name" || link.GetTargetValue() != "Animal" || link.GetLabel() != "by" || !link.GetIsAmbiguous() {
 		t.Errorf("the link came out as %v", link)
 	}
-	back, err := client.GetBacklinks(ctx, connect.NewRequest(&v1.GetBacklinksRequest{Path: "Animal.md"}))
+	back, err := client.ListBacklinks(ctx, connect.NewRequest(&v1.HostLinkServiceListBacklinksRequest{Path: "Animal.md"}))
 	if err != nil || len(back.Msg.GetLinks()) != 1 {
 		t.Errorf("the backlinks were %v (%v)", back.Msg, err)
 	}
@@ -292,7 +292,7 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	if err != nil || resolved.Msg.GetLinks()["Animal"].GetTo() != "Animal.md" {
 		t.Errorf("the resolved links were %v (%v)", resolved.Msg, err)
 	}
-	problems, err := client.GetParseProblems(ctx, connect.NewRequest(&v1.GetParseProblemsRequest{}))
+	problems, err := client.ListParseProblems(ctx, connect.NewRequest(&v1.ListParseProblemsRequest{}))
 	if err != nil || len(problems.Msg.GetProblems()) != 1 || problems.Msg.GetProblems()[0].GetDetail() != "an entry has no role" {
 		t.Errorf("the problems were %v (%v)", problems.Msg, err)
 	}
@@ -325,7 +325,7 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
-	res, err := client.GetNamedPaths(t.Context(), connect.NewRequest(&v1.GetNamedPathsRequest{Name: "Animal"}))
+	res, err := client.ListNamedPaths(t.Context(), connect.NewRequest(&v1.ListNamedPathsRequest{Name: "Animal"}))
 
 	if err != nil || !slices.Equal(res.Msg.GetPaths(), []string{"Animal.md"}) {
 		t.Errorf("the paths were %v (%v)", res.Msg.GetPaths(), err)
@@ -335,7 +335,7 @@ func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 func TestABacklinkCarriesItsRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
-	res, err := client.GetBacklinks(t.Context(), connect.NewRequest(&v1.GetBacklinksRequest{Path: "Animal.md"}))
+	res, err := client.ListBacklinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceListBacklinksRequest{Path: "Animal.md"}))
 
 	if err != nil || len(res.Msg.GetLinks()) != 1 {
 		t.Fatalf("the answer was %v (%v)", res.Msg, err)

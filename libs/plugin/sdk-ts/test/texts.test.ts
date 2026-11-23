@@ -38,7 +38,7 @@ describe('the text versions of a vault', () => {
 
     expect(await texts.createEdit('talk.mp3', 'x/y', [])).toStrictEqual({
       ok: false,
-      error: 'missing',
+      error: { error: 'notFound', message: 'no live version x/y at talk.mp3' },
     })
     expect(await texts.readLiveText('talk.mp3')).toBeNull()
   })

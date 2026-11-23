@@ -76,7 +76,7 @@ func TestEditOfTheNoteWithinTheCooldownRunsAtTheNextIndexChange(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
 
-	w.vault.File(stormsPath, formatSearchNote(stormsID, galesQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, galesQuery))
 	ranAt := w.clock.Advance(8 * time.Second)
 	w.changeIndex(t)
 

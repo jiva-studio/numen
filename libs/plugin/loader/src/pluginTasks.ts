@@ -2,16 +2,13 @@
  * The plugins' tasks from the window's task list, as a plugin watches them.
  */
 import { watch, type Ref } from 'vue'
+import type { CoreTask } from '@numen/core-client'
 import type { PluginTaskStatus, TaskHost } from '@numen/plugin-sdk'
 
 /** One piece of work in the window's task list, as the window reports it. */
-export interface WindowTask {
-  readonly id: string
-  readonly label: string
-  readonly about: string
-  readonly progress: { readonly completedCount: number; readonly total: number }
-  readonly error: string
-  readonly source: { readonly pluginId: string; readonly pluginName: string }
+export type WindowTask = Pick<CoreTask, 'id' | 'label' | 'about' | 'error'> & {
+  readonly progress: Pick<CoreTask['progress'], 'completedCount' | 'total'>
+  readonly source: Pick<CoreTask['source'], 'pluginId' | 'pluginName'>
 }
 
 const toStatus = (task: WindowTask): PluginTaskStatus => ({

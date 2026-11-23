@@ -76,7 +76,7 @@ func (u Create) resolveNamedNote(ctx context.Context, v domain.Vault, in NewNote
 
 func (u Create) createTitledNote(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact, err := domain.Filename(title)
+	name, exact, err := domain.CreateFilename(title)
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -123,7 +123,7 @@ func (u Create) createTitledNote(ctx context.Context, v domain.Vault, in NewNote
 	if err := u.updateIndex(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
+	shares, err := u.names.ListNamedPaths(ctx, v.ID, domain.GetBasename(path))
 	if err != nil {
 		return made, err
 	}

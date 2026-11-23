@@ -122,7 +122,7 @@ func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 	vectors := map[string][]float32{}
 	for _, one := range fixture.Titles {
 		vectors[one.Text] = one.Vector
-		vault.File(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
+		vault.WriteFile(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
 	}
 	search.SetEmbedder(func(text string) []float32 { return vectors[text] })
 	chunks := make([]hosttest.SampledChunk, len(fixture.Chunks))
@@ -186,13 +186,13 @@ func TestTheFloorOfTheCoreIsStoredByTheFloorsOfThePlugin(t *testing.T) {
 		t.Run(fixture.Name, func(t *testing.T) {
 			search, vault := hostOf(fixture)
 			search.SetProgress(10, 10)
-			floors := relevance.New(relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock())
+			floors := relevance.New(relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock())
 
 			outcome, state, err := floors.Calibrate(t.Context(), "")
 			if err != nil || outcome != relevance.Calibrated {
 				t.Fatalf("got %v, %v", outcome, err)
 			}
-			stored, found := search.StoredFloor(modelRecipe)
+			stored, found := search.GetStoredFloor(modelRecipe)
 			if !found || math.Abs(stored-fixture.Expected.Floor) > 1e-9 {
 				t.Errorf("the host stores %v (%v), want %v", stored, found, fixture.Expected.Floor)
 			}

@@ -5,7 +5,7 @@
  */
 import { useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { cn } from '@/shared/lib/dom/classes'
+import { joinClasses } from '@/shared/lib/dom/classes'
 import { Tooltip, useTooltip } from '../tooltip'
 import type { SelectTriggerProps } from './SelectTrigger.types'
 
@@ -35,7 +35,7 @@ const problemTip = useTooltip()
     :aria-description="problem || undefined"
     :aria-invalid="problem ? true : undefined"
     :class="
-      cn(
+      joinClasses(
         'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
         'h-action rounded-node border-field-rule bg-field border px-2.5',
         'text-ink text-left font-sans text-base leading-none',

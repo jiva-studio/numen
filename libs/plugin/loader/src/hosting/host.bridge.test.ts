@@ -376,7 +376,7 @@ describe('a tab kind component', () => {
     })
     expect(await bareCtx.plugin.identity.openExternal('https://numen.md/')).toEqual({
       ok: false,
-      error: 'This window cannot open web links',
+      error: { error: 'openFailed', message: 'This window cannot open web links' },
     })
     expect(bareCtx.host.tabs.navigate?.('note', 'a.md')).toBeUndefined()
     expect(() => bareCtx.host.tabs.close?.('tab-1')).not.toThrow()
