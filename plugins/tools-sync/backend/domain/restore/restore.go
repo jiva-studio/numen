@@ -7,8 +7,6 @@ import (
 	"errors"
 	"maps"
 	"slices"
-
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
 // Verdict is what one look at the server says about its history.
@@ -157,11 +155,19 @@ type Action struct {
 	ParentRev []byte
 }
 
+// Known is what a device records of a synced file: the head the file had on the server when it was last in step.
+type Known struct {
+	FileID   []byte
+	Path     string
+	BaseHash string
+	HeadRev  []byte
+}
+
 // PlanRecovery decides what to do with each file: records are what this device knows of its synced notes, heads
 // are the heads the server holds by file id, and local is the hash of each local note by path. The content of the
 // device is the truth: a note on the device is never replaced by the server's, and only a note this device never
 // knew is read from the server.
-func PlanRecovery(records []note.FileRecord, heads map[string]Head, local map[string]string) []Action {
+func PlanRecovery(records []Known, heads map[string]Head, local map[string]string) []Action {
 	actions := make([]Action, 0, len(records)+len(heads))
 	known := make(map[string]bool, len(records))
 	for _, record := range records {
@@ -180,7 +186,7 @@ func PlanRecovery(records []note.FileRecord, heads map[string]Head, local map[st
 
 // planRecord decides for a note this device knows. A head that is the one recorded, or was committed on top of it, is
 // left to the normal pull: nothing was lost and the other computer's text is not to be overwritten.
-func planRecord(record note.FileRecord, head Head, isFound bool, hash string, isLocal bool) Action {
+func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool) Action {
 	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil}
 	isUsable := isFound && !head.IsBlobMissing
 	switch {

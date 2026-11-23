@@ -51,6 +51,7 @@ type Deps struct {
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
+	Pauses        ports.Pauses
 	Restore       RestoreDeps
 }
 
@@ -68,6 +69,11 @@ type Renamer interface {
 	Execute(ctx context.Context, id domain.VaultID) (bool, error)
 }
 
+// Sweeper deletes the staged files of the vault that no download names.
+type Sweeper interface {
+	Sweep(ctx context.Context, vault domain.VaultID) error
+}
+
 // Puller brings the changes of the server into the vault.
 type Puller interface {
 	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
@@ -78,7 +84,25 @@ type Scanner interface {
 	Execute(ctx context.Context, in transfer.ScanInput) ([]transfer.Change, error)
 }
 
-// Committer commits notes to the server.
+// Detector finds the files that moved and the ones that are gone.
+type Detector interface {
+	Execute(ctx context.Context, in transfer.ScanInput) (transfer.Scan, error)
+}
+
+type MoveCommitter interface {
+	Execute(ctx context.Context, in transfer.MoveInput) ([]transfer.Outcome, error)
+}
+
+type RemovalCommitter interface {
+	Execute(ctx context.Context, in transfer.RemoveInput) ([]transfer.Outcome, error)
+}
+
+// Guard reports whether a pass may send removals.
+type Guard interface {
+	Execute(ctx context.Context, in transfer.GuardInput) (transfer.Verdict, error)
+}
+
+// Committer commits files to the server.
 type Committer interface {
 	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
 }
@@ -101,9 +125,14 @@ type VaultRecoverer interface {
 // Steps are the use cases a pass runs.
 type Steps struct {
 	Rename         Renamer
+	Sweep          Sweeper
 	Pull           Puller
 	Scan           Scanner
 	Commit         Committer
+	Detect         Detector
+	Move           MoveCommitter
+	Remove         RemovalCommitter
+	Guard          Guard
 	Subscription   SubscriptionReader
 	RecoverAccount AccountRecoverer
 	RecoverVault   VaultRecoverer
@@ -137,7 +166,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.Host.Indexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
-	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0, verdict: restore.Same}
+	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0, verdict: restore.Same, isReset: false}
 	return p.run(ctx)
 }
 

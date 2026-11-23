@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 var errEpochMoved = errors.New("the sync server announced another restore while its notes were read")
@@ -56,7 +57,7 @@ func (u *RecoverVault) readHeads(ctx context.Context, remote []byte, key [32]byt
 
 // markMissingBlobs sets IsBlobMissing on the heads of the records whose body the server no longer holds. Only a head
 // this device recorded needs the check: any other head is sent over or left to the pull.
-func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, found heads, records []note.FileRecord) error {
+func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, found heads, records []transfer.FileRecord) error {
 	var files []string
 	var ids [][]byte
 	for _, record := range records {

@@ -62,6 +62,12 @@ export class SyncVaultsDriver {
     await expect(panel.getByText(text).first()).toBeVisible({ timeout: CONNECT_LIMIT_MS })
   }
 
+  /** Presses the button of an action under the row of a vault, as "Remove the files" under a paused vault. */
+  async choose(action: string): Promise<void> {
+    const panel = await this.show()
+    await panel.getByRole('button', { name: action, exact: true }).click()
+  }
+
   async open(): Promise<void> {
     await this.show()
   }

@@ -22,7 +22,7 @@ func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	case p.verdict == restore.Changed:
 		return p.recover(ctx)
 	}
-	return true, p.use.reports.health.Clear(ctx, keyWentBack)
+	return !p.isReset, p.use.reports.health.Clear(ctx, keyWentBack)
 }
 
 func (p *pass) recover(ctx context.Context) (bool, error) {
@@ -44,5 +44,5 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 	if err := p.pull(ctx); err != nil {
 		return false, err
 	}
-	return p.verdict == restore.Same, nil
+	return p.verdict == restore.Same && !p.isReset, nil
 }

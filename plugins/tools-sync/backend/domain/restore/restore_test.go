@@ -109,8 +109,8 @@ func TestGetReplay_RefusesALogThatDiffersAtAnEntryBothHold(t *testing.T) {
 	}
 }
 
-func record(file byte, path, base string, head byte) note.FileRecord {
-	return note.FileRecord{FileID: id(file), Path: path, BaseHash: base, HeadRev: bytes.Repeat([]byte{head}, 32)}
+func record(file byte, path, base string, head byte) restore.Known {
+	return restore.Known{FileID: id(file), Path: path, BaseHash: base, HeadRev: bytes.Repeat([]byte{head}, 32)}
 }
 
 func head(file byte, path string, rev byte) restore.Head {
@@ -143,7 +143,7 @@ func wantAction(t *testing.T, got []restore.Action, kind restore.ActionKind, fil
 
 func TestPlanRecovery_RecreatesAKnownFileWhoseHeadIsMissingOnTheServer(t *testing.T) {
 	t.Parallel()
-	records := []note.FileRecord{record(1, "Shopping list.md", note.Hash([]byte("milk")), 7)}
+	records := []restore.Known{record(1, "Shopping list.md", note.Hash([]byte("milk")), 7)}
 	local := map[string]string{"Shopping list.md": note.Hash([]byte("milk"))}
 
 	got := restore.PlanRecovery(records, heads(), local)
@@ -157,7 +157,7 @@ func TestPlanRecovery_RecreatesAKnownFileWhoseHeadIsMissingOnTheServer(t *testin
 func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadEvenWhenLocalEqualsTheBase(t *testing.T) {
 	t.Parallel()
 	bread := note.Hash([]byte("bread"))
-	records := []note.FileRecord{record(1, "Shopping list.md", bread, 8)}
+	records := []restore.Known{record(1, "Shopping list.md", bread, 8)}
 	local := map[string]string{"Shopping list.md": bread}
 
 	got := restore.PlanRecovery(records, heads(head(1, "Shopping list.md", 7)), local)
@@ -171,7 +171,7 @@ func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadEvenWhenLocalEqualsTheBase
 func TestPlanRecovery_SendsTheLocalNoteWhenTheHeadHasNoBody(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 7)}
+	records := []restore.Known{record(1, "a.md", milk, 7)}
 	lost := head(1, "a.md", 7)
 	lost.IsBlobMissing = true
 
@@ -183,7 +183,7 @@ func TestPlanRecovery_SendsTheLocalNoteWhenTheHeadHasNoBody(t *testing.T) {
 func TestPlanRecovery_KeepsAFileWhoseHeadIsTheOneThisDeviceRecorded(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 7)}
+	records := []restore.Known{record(1, "a.md", milk, 7)}
 
 	got := restore.PlanRecovery(records, heads(head(1, "a.md", 7)), map[string]string{"a.md": milk})
 
@@ -192,7 +192,7 @@ func TestPlanRecovery_KeepsAFileWhoseHeadIsTheOneThisDeviceRecorded(t *testing.T
 
 func TestPlanRecovery_TombstonesAFileRemovedLocallyWhoseHeadIsLiveAndOlder(t *testing.T) {
 	t.Parallel()
-	records := []note.FileRecord{record(1, "a.md", note.Hash([]byte("milk")), 8)}
+	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 8)}
 
 	got := restore.PlanRecovery(records, heads(head(1, "a.md", 7)), map[string]string{})
 
@@ -204,7 +204,7 @@ func TestPlanRecovery_TombstonesAFileRemovedLocallyWhoseHeadIsLiveAndOlder(t *te
 
 func TestPlanRecovery_KeepsAFileRemovedLocallyWhoseHeadIsAlreadyDeleted(t *testing.T) {
 	t.Parallel()
-	records := []note.FileRecord{record(1, "a.md", note.Hash([]byte("milk")), 8)}
+	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 8)}
 	gone := head(1, "a.md", 7)
 	gone.IsDeleted = true
 
@@ -215,7 +215,7 @@ func TestPlanRecovery_KeepsAFileRemovedLocallyWhoseHeadIsAlreadyDeleted(t *testi
 
 func TestPlanRecovery_KeepsAFileRemovedLocallyAndMissingOnTheServer(t *testing.T) {
 	t.Parallel()
-	records := []note.FileRecord{record(1, "a.md", note.Hash([]byte("milk")), 8)}
+	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 8)}
 
 	got := restore.PlanRecovery(records, heads(), map[string]string{})
 
@@ -225,7 +225,7 @@ func TestPlanRecovery_KeepsAFileRemovedLocallyAndMissingOnTheServer(t *testing.T
 func TestPlanRecovery_SendsTheLocalNoteOverADeletedHead(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 8)}
+	records := []restore.Known{record(1, "a.md", milk, 8)}
 	gone := head(1, "a.md", 7)
 	gone.IsDeleted = true
 
@@ -267,7 +267,7 @@ func TestPlanRecovery_PullsNothingForAnUnknownHeadThatIsDeletedOrHasNoBody(t *te
 func TestPlanRecovery_HasNoActionThatWritesAPlainServerContentOverALocalNote(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 8), record(2, "b.md", milk, 8)}
+	records := []restore.Known{record(1, "a.md", milk, 8), record(2, "b.md", milk, 8)}
 	all := heads(head(1, "a.md", 7), head(2, "b.md", 8))
 	local := map[string]string{"a.md": note.Hash([]byte("mine")), "b.md": milk}
 

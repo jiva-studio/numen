@@ -11,7 +11,7 @@ import (
 func TestPlanRecovery_AdoptsAHeadWhoseContentIsTheLocalNoteInsteadOfSendingItAgain(t *testing.T) {
 	t.Parallel()
 	bread := note.Hash([]byte("bread"))
-	records := []note.FileRecord{record(1, "a.md", bread, 8)}
+	records := []restore.Known{record(1, "a.md", bread, 8)}
 	same := head(1, "a.md", 9)
 	same.Hash = bread
 
@@ -26,7 +26,7 @@ func TestPlanRecovery_AdoptsAHeadWhoseContentIsTheLocalNoteInsteadOfSendingItAga
 func TestPlanRecovery_LeavesAHeadAnotherComputerCommittedOnTopOfTheRecordedOneToThePull(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 7)}
+	records := []restore.Known{record(1, "a.md", milk, 7)}
 	newer := head(1, "a.md", 9)
 	newer.ParentRev = bytes.Repeat([]byte{7}, 32)
 	newer.Hash = note.Hash([]byte("tea"))
@@ -39,7 +39,7 @@ func TestPlanRecovery_LeavesAHeadAnotherComputerCommittedOnTopOfTheRecordedOneTo
 func TestPlanRecovery_SendsOverAHeadOnTopOfTheRecordedOneWhenItsBodyIsGone(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []note.FileRecord{record(1, "a.md", milk, 7)}
+	records := []restore.Known{record(1, "a.md", milk, 7)}
 	lost := head(1, "a.md", 9)
 	lost.ParentRev, lost.IsBlobMissing = bytes.Repeat([]byte{7}, 32), true
 

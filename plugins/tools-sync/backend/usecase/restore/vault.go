@@ -31,7 +31,7 @@ type recovery struct {
 	id      domain.VaultID
 	vault   transfer.Vault
 	link    vaultlink.Link
-	records []note.FileRecord
+	records []transfer.FileRecord
 	hashes  map[string]string
 }
 
@@ -65,7 +65,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}
-	work := run.getWork(domainrestore.PlanRecovery(records, found.byFile, run.hashes))
+	work := run.getWork(domainrestore.PlanRecovery(getKnown(records), found.byFile, run.hashes))
 	if err := run.execute(ctx, work); err != nil {
 		return err
 	}
@@ -149,11 +149,11 @@ func (r *recovery) finish(ctx context.Context, batch []domainrestore.Action) err
 
 func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Action) error {
 	var files []transfer.File
-	var removals []note.FileRecord
+	var removals []transfer.FileRecord
 	for _, action := range batch {
 		switch action.Kind {
 		case domainrestore.Adopt:
-			r.setRecord(note.FileRecord{FileID: action.FileID, Path: action.Path, BaseHash: r.hashes[action.Path], HeadRev: action.ParentRev})
+			r.setRecord(r.getAdopted(action))
 		case domainrestore.Send, domainrestore.Recreate:
 			file, isThere, err := r.readFile(ctx, action)
 			if err != nil {
@@ -163,7 +163,7 @@ func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Actio
 				files = append(files, file)
 			}
 		case domainrestore.Tombstone:
-			removals = append(removals, note.FileRecord{FileID: action.FileID, Path: action.Path, BaseHash: "", HeadRev: action.ParentRev})
+			removals = append(removals, r.getRemoval(action))
 		case domainrestore.Keep, domainrestore.Pull:
 		}
 	}
@@ -174,33 +174,47 @@ func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Actio
 }
 
 func (r *recovery) readFile(ctx context.Context, action domainrestore.Action) (transfer.File, bool, error) {
-	content, stat, err := r.deps.Host.Files(r.id).Read(ctx, action.Path)
+	files := r.deps.Host.Files(r.id)
+	stat, err := files.StatFile(ctx, action.Path)
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
+		return transfer.File{}, false, nil
+	}
+	if err != nil {
+		return transfer.File{}, false, err
+	}
+	file := transfer.File{FileID: action.FileID, ParentRev: action.ParentRev, Path: action.Path, Content: nil, ModifiedAt: stat.ModTime.UnixNano(), Stat: nil}
+	if stat.Size > note.SmallFileLimit {
+		file.Stat = &stat
+		return file, true, nil
+	}
+	content, _, err := files.Read(ctx, action.Path)
 	if errors.Is(err, host.ErrNotExist) {
 		return transfer.File{}, false, nil
 	}
 	if err != nil {
 		return transfer.File{}, false, err
 	}
-	return transfer.File{FileID: action.FileID, ParentRev: action.ParentRev, Path: action.Path, Content: content, ModifiedAt: stat.ModTime.UnixNano()}, true, nil
+	file.Content = content
+	return file, true, nil
 }
 
 func (r *recovery) send(ctx context.Context, files []transfer.File) error {
 	if len(files) == 0 {
 		return nil
 	}
-	outcomes, err := r.deps.Commit.Execute(ctx, transfer.CommitInput{Vault: r.vault, Files: files})
+	outcomes, err := r.deps.Commit.Execute(ctx, transfer.CommitInput{VaultID: r.id, Vault: r.vault, Files: files})
 	if err != nil {
 		return err
 	}
 	for i, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			r.setRecord(note.FileRecord{FileID: outcome.FileID, Path: files[i].Path, BaseHash: note.Hash(files[i].Content), HeadRev: outcome.RevID})
+			r.setRecord(outcome.Record)
 		}
 	}
 	return nil
 }
 
-func (r *recovery) remove(ctx context.Context, removals []note.FileRecord) error {
+func (r *recovery) remove(ctx context.Context, removals []transfer.FileRecord) error {
 	if len(removals) == 0 {
 		return nil
 	}
@@ -210,17 +224,46 @@ func (r *recovery) remove(ctx context.Context, removals []note.FileRecord) error
 	}
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			r.records = slices.DeleteFunc(r.records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
+			r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
 		}
 	}
 	return nil
 }
 
-func (r *recovery) setRecord(record note.FileRecord) {
-	at := slices.IndexFunc(r.records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
+func (r *recovery) setRecord(record transfer.FileRecord) {
+	at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
 	if at < 0 {
 		r.records = append(r.records, record)
 		return
 	}
 	r.records[at] = record
+}
+
+func getKnown(records []transfer.FileRecord) []domainrestore.Known {
+	known := make([]domainrestore.Known, len(records))
+	for i, record := range records {
+		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev}
+	}
+	return known
+}
+
+// getAdopted returns the record of a file whose head on the server is the content of this device. It keeps the
+// fields of the record this device had, which the body of the head still matches.
+func (r *recovery) getAdopted(action domainrestore.Action) transfer.FileRecord {
+	record := r.getRecord(action.FileID)
+	record.FileID, record.Path, record.BaseHash, record.HeadRev = action.FileID, action.Path, r.hashes[action.Path], action.ParentRev
+	return record
+}
+
+func (r *recovery) getRemoval(action domainrestore.Action) transfer.FileRecord {
+	record := r.getRecord(action.FileID)
+	record.FileID, record.Path, record.HeadRev = action.FileID, action.Path, action.ParentRev
+	return record
+}
+
+func (r *recovery) getRecord(fileID []byte) transfer.FileRecord {
+	if at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) }); at >= 0 {
+		return r.records[at]
+	}
+	return transfer.NoRecord()
 }

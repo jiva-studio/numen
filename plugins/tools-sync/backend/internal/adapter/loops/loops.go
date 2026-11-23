@@ -57,7 +57,6 @@ func (w *Wakes) Wake(vault domain.VaultID) {
 	}
 }
 
-// Vaults returns the vaults named by Wake.
 func (w *Wakes) Vaults() <-chan domain.VaultID { return w.vaults }
 
 // Start builds the session over address: the value its callers use, and the loops that run until ctx ends.

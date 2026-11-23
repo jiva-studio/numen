@@ -27,8 +27,3 @@ type State struct {
 	WritesEnd time.Time
 	DeleteAt  time.Time
 }
-
-// CanWrite is whether the server takes changes.
-func (s State) CanWrite() bool {
-	return s.Phase == PhaseActive || s.Phase == PhaseGrace
-}

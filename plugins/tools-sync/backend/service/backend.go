@@ -14,7 +14,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
 
@@ -27,6 +29,8 @@ const (
 type Backend struct {
 	deps    syncvault.Deps
 	catalog catalog.Deps
+	pending ports.PausedStore
+	resolve *deletions.ResolveDeletions
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -38,6 +42,7 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Journals: deps.Restore.Journals,
 			Random:   deps.Random,
 		},
+		pending: nil, resolve: nil,
 	}
 }
 
@@ -63,7 +68,7 @@ func (b *Backend) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.
 }
 
 func (b *Backend) getVault(ctx context.Context, vault domain.Vault, holders map[string]bool) (api.Vault, error) {
-	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0}
+	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil}
 	link, err := b.deps.State.ReadLink(ctx, vault.ID)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return one, nil
@@ -85,7 +90,8 @@ func (b *Backend) getVault(ctx context.Context, vault domain.Vault, holders map[
 		one.LastSyncedAt = status.LastSyncedAt.UTC().Format(time.RFC3339)
 	}
 	one.ConflictCount = status.ConflictCount
-	return one, nil
+	one.PausedDeletions, err = b.getPausedRemovals(ctx, vault.ID)
+	return one, err
 }
 
 // ListRemoteVaults lists the synced vaults of the account.

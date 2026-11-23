@@ -13,7 +13,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
 func newWorld(t *testing.T, cfg fakeserver.Config) (*synctest.Computer, *synctest.Server) {

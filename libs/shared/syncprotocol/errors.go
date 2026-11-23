@@ -67,3 +67,14 @@ type BlobMissingError struct {
 func (e BlobMissingError) Error() string { return ErrBlobMissing.Error() }
 
 func (e BlobMissingError) Is(target error) bool { return target == ErrBlobMissing }
+
+// MultipartIncompleteError means the parts the storage holds are not the parts the upload needs. Each list holds
+// the first 100 part numbers.
+type MultipartIncompleteError struct {
+	Missing   []uint32
+	WrongSize []uint32
+}
+
+func (e MultipartIncompleteError) Error() string {
+	return fmt.Sprintf("the multipart upload is incomplete: %d parts missing, %d of the wrong size", len(e.Missing), len(e.WrongSize))
+}

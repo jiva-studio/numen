@@ -66,6 +66,8 @@ func getErrorEntries() []errorEntry {
 		{edit.ErrNotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},
+		{plugin.ErrHashMismatch, v1.ErrorCode_ERROR_CODE_HASH_MISMATCH},
+		{plugin.ErrInvalidRange, v1.ErrorCode_ERROR_CODE_INVALID_RANGE},
 	}
 }
 

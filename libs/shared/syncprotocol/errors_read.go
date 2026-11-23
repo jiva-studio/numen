@@ -30,7 +30,7 @@ func ReadError(err error) error {
 }
 
 // ReadCallError is ReadError for the calls of a session: it also maps the refusals of the server to ErrWriteNotAllowed,
-// ErrNoVault, ErrVaultExists, QuotaExceededError, BlobNotReadyError and BlobMissingError, keeping the Connect error where there is one.
+// ErrNoVault, ErrVaultExists, QuotaExceededError, BlobNotReadyError, BlobMissingError and MultipartIncompleteError, keeping the Connect error where there is one.
 func ReadCallError(err error) error {
 	err = ReadError(err)
 	var failure *connect.Error
@@ -65,6 +65,8 @@ func readDetail(failure *connect.Error) error {
 			return BlobNotReadyError{Index: refusal.GetRevisionIndex()}
 		case *syncv1.BlobMissing:
 			return BlobMissingError{IDs: refusal.GetBlobIds()}
+		case *syncv1.MultipartIncomplete:
+			return MultipartIncompleteError{Missing: refusal.GetMissing(), WrongSize: refusal.GetWrongSize()}
 		}
 	}
 	return nil
