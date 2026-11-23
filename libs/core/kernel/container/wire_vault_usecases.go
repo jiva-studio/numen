@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -61,7 +60,7 @@ func vaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watche
 type noteViews struct {
 	Moves     note.TellMove
 	Admission vaultport.WriteAdmission
-	Follow    indexport.IndexFollow
+	Follow    note.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {

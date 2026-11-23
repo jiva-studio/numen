@@ -7,11 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// SourcesUnder answers which sources the index holds at a path and beneath it.
-type SourcesUnder interface {
-	GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error)
-}
-
 // RemovalLookup answers what the index holds about the sources at and under a
 // path that left the vault: where each sat, and the text it was read with.
 type RemovalLookup interface {
