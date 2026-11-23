@@ -38,7 +38,7 @@ defineProps<{
     <KitCheck
       v-if="model.checking.isChecking.value"
       :texts="texts"
-      :fits="model.checking.fits.value"
+      :is-fitting="model.checking.isFitting.value"
       :is-busy="isBusy"
       @change="model.edit.setSheetText"
       @check="model.checking.check"

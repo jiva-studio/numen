@@ -19,21 +19,21 @@ export function useKitCheck(
 ) {
   const { problem, run } = call
   const isChecking = ref(false)
-  const fits = ref(false)
+  const isFitting = ref(false)
 
   const reset = (): void => {
     isChecking.value = false
-    fits.value = false
+    isFitting.value = false
   }
 
   const forget = (): void => {
-    fits.value = false
+    isFitting.value = false
   }
 
   const open = (): void => {
     problem.value = ''
     fields.clear()
-    fits.value = false
+    isFitting.value = false
     isChecking.value = true
   }
 
@@ -50,8 +50,8 @@ export function useKitCheck(
       return
     }
     const answer = await run(() => getIdentity().checkKit(sheets))
-    fits.value = answer.ok
+    isFitting.value = answer.ok
   }
 
-  return { isChecking, fits, reset, forget, open, cancel, check }
+  return { isChecking, isFitting, reset, forget, open, cancel, check }
 }

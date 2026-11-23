@@ -16,7 +16,7 @@ import type {
   RowOption,
 } from '@/entities/connection'
 import type { IdentityInfo, KitProof, RecoveryKit } from '@/entities/identity'
-import type { Printer } from '@/shared/api/print'
+import type { Printer } from '@/pages/settings/lib/print'
 import type { LicenseInfo } from '@/entities/license'
 import type {
   PluginInfo,

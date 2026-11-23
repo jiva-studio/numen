@@ -12,11 +12,11 @@ import (
 // wordListSHA256 is the SHA-256 of shamir_mnemonic/wordlist.txt of trezor/python-shamir-mnemonic (1024 lines, each ended by a newline).
 const wordListSHA256 = "bcc4555340332d169718aed8bf31dd9d5248cb7da6e5d355140ef4f1e601eec3"
 
-func readWordList(t testing.TB) []string {
-	t.Helper()
+func readWordList(tb testing.TB) []string {
+	tb.Helper()
 	raw, err := os.ReadFile("wordlist.txt")
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return strings.Split(strings.TrimSuffix(string(raw), "\n"), "\n")
 }

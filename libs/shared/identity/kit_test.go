@@ -22,24 +22,24 @@ func streamOf(seed byte) *bytes.Reader {
 	return bytes.NewReader(bytes.Repeat([]byte{seed}, 4096))
 }
 
-func newKit(t testing.TB, seed byte, words identity.RecoveryWords) identity.Kit {
-	t.Helper()
+func newKit(tb testing.TB, seed byte, words identity.RecoveryWords) identity.Kit {
+	tb.Helper()
 	kit, err := identity.NewKit(streamOf(seed), words.DeriveRecoverySecret())
 	if err != nil {
-		t.Fatalf("NewKit error = %v", err)
+		tb.Fatalf("NewKit error = %v", err)
 	}
 	return kit
 }
 
-func restoreKey(t testing.TB, sheets ...identity.Sheet) identity.RecoveryPublicKey {
-	t.Helper()
+func restoreKey(tb testing.TB, sheets ...identity.Sheet) identity.RecoveryPublicKey {
+	tb.Helper()
 	secret, err := identity.RestoreSecret(sheets)
 	if err != nil {
-		t.Fatalf("RestoreSecret error = %v", err)
+		tb.Fatalf("RestoreSecret error = %v", err)
 	}
 	key, err := secret.DeriveRecoveryKey()
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return key.Public()
 }

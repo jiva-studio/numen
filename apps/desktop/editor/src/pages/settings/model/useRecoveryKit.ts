@@ -5,7 +5,7 @@
  */
 import { onBeforeUnmount, ref, shallowRef, type Ref } from 'vue'
 import type { RecoveryKit } from '@/entities/identity'
-import type { Printer } from '@/shared/api/print'
+import type { Printer } from '@/pages/settings/lib/print'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import type { useIdentityCall } from './useIdentityCall'

@@ -5,7 +5,7 @@
  * words or from two sheets of a kit.
  */
 import { Button } from '@numen/ui'
-import type { Printer } from '@/shared/api/print'
+import type { Printer } from '@/pages/settings/lib/print'
 import type { InstallationIdentity } from '../../types'
 import { useIdentityCall } from '../../model/useIdentityCall'
 import { useIdentitySection } from '../../model/useIdentitySection'

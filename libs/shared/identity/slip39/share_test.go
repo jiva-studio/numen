@@ -16,14 +16,14 @@ func validMnemonic(t *testing.T) []string {
 	return strings.Fields(readVectors(t)[22].Mnemonics[0])
 }
 
-func differentWord(t testing.TB, list []string, word string) string {
-	t.Helper()
+func differentWord(tb testing.TB, list []string, word string) string {
+	tb.Helper()
 	for _, candidate := range list {
 		if candidate != word {
 			return candidate
 		}
 	}
-	t.Fatal("the word list has one word")
+	tb.Fatal("the word list has one word")
 	return ""
 }
 

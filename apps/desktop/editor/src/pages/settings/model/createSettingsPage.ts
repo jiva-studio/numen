@@ -28,7 +28,7 @@ import {
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
-import { createPrinter } from '@/shared/api/print'
+import { createPrinter } from '@/pages/settings/lib/print'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'

@@ -8,7 +8,7 @@ import { WORDS as words } from '../../words'
 import SheetsInput from './SheetsInput.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ texts: readonly [string, string]; fits: boolean; isBusy: boolean }>()
+defineProps<{ texts: readonly [string, string]; isFitting: boolean; isBusy: boolean }>()
 
 const emit = defineEmits<{
   (e: 'change', index: number, value: string): void
@@ -24,7 +24,7 @@ const emit = defineEmits<{
       :is-disabled="isBusy"
       @change="(index, value) => emit('change', index, value)"
     />
-    <p v-if="fits" role="status" class="kit-check__fits">{{ words.kitFits }}</p>
+    <p v-if="isFitting" role="status" class="kit-check__fits">{{ words.kitFits }}</p>
     <div class="kit-check__actions">
       <Button type="button" variant="solid" :disabled="isBusy" @click="emit('check')">
         {{ words.kitCheckAction }}

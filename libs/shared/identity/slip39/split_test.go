@@ -19,20 +19,20 @@ func repeating(b byte) io.Reader {
 	return iotest.OneByteReader(bytes.NewReader(bytes.Repeat([]byte{b}, 1<<16)))
 }
 
-func mustSplit(t testing.TB, random io.Reader, secret []byte, threshold, count int) []slip39.Share {
-	t.Helper()
+func mustSplit(tb testing.TB, random io.Reader, secret []byte, threshold, count int) []slip39.Share {
+	tb.Helper()
 	shares, err := slip39.Split(random, secret, threshold, count)
 	if err != nil {
-		t.Fatalf("Split(%d bytes, %d of %d) error = %v", len(secret), threshold, count, err)
+		tb.Fatalf("Split(%d bytes, %d of %d) error = %v", len(secret), threshold, count, err)
 	}
 	return shares
 }
 
-func mustCombine(t testing.TB, shares []slip39.Share) []byte {
-	t.Helper()
+func mustCombine(tb testing.TB, shares []slip39.Share) []byte {
+	tb.Helper()
 	secret, err := slip39.Combine(shares, nil)
 	if err != nil {
-		t.Fatalf("Combine error = %v", err)
+		tb.Fatalf("Combine error = %v", err)
 	}
 	return secret
 }
