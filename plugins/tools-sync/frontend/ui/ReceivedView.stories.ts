@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import type { ReceivedShare, SharesClient } from '../api/shares'
+import type { FolderSharesClient, ReceivedShare, ReceivedSharesClient } from '../api/shares'
 import { createReceivedPage } from './receivedView'
 import '../styles.css'
 
@@ -19,6 +19,8 @@ interface Setup {
   readonly invitationRefusal?: string
   readonly acceptRefusal?: string
 }
+
+type SharesClient = FolderSharesClient & ReceivedSharesClient
 
 const createClient = (setup: Setup): SharesClient => ({
   getReaderCode: () => Promise.resolve({ code: 'numen-reader-1.abc', fingerprint: 'AAAA BBBB' }),

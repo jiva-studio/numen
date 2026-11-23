@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Share, SharesClient } from '../api/shares'
+import type { FolderSharesClient, ReceivedSharesClient, Share } from '../api/shares'
 import { createReceivedView, createShareView, isIdentityWarning } from './shares'
 
 const TARGET = { vaultId: 'v1', folder: 'Food' }
+
+type SharesClient = FolderSharesClient & ReceivedSharesClient
 
 const createClient = (patch: Partial<SharesClient> = {}): SharesClient => ({
   getReaderCode: vi.fn(() => Promise.resolve({ code: 'numen-reader-1.abc', fingerprint: 'AAAA BBBB' })),

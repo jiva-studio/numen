@@ -83,8 +83,6 @@ export interface ReceivedSharesClient {
   listReceived(): Promise<readonly ReceivedShare[]>
 }
 
-export type SharesClient = FolderSharesClient & ReceivedSharesClient
-
 type Empty = Record<string, never>
 
 const createFailure = (error: ApiError): Error => new Error(error.message)
