@@ -83,7 +83,7 @@ func splitWords(text string) []string {
 	return words
 }
 
-func stem(word string) string {
+func getStem(word string) string {
 	// The form a name and a sentence share: no plural or third-person ending, and one word for the verbs that mean the same operation.
 	switch {
 	case strings.HasSuffix(word, "ies") && len(word) > 4:
@@ -110,11 +110,11 @@ func isSameWord(commentWord, nameWord string) bool {
 	return strings.HasPrefix(nameWord, commentWord) || strings.HasPrefix(commentWord, nameWord)
 }
 
-func restatement(comment string, names []string) (matched, total int) {
+func countRestatement(comment string, names []string) (matched, total int) {
 	nameWords := map[string]bool{}
 	for _, name := range names {
 		for _, word := range splitWords(name) {
-			nameWords[stem(word)] = true
+			nameWords[getStem(word)] = true
 		}
 	}
 	for _, word := range splitWords(comment) {
@@ -122,7 +122,7 @@ func restatement(comment string, names []string) (matched, total int) {
 			continue
 		}
 		total++
-		stemmed := stem(word)
+		stemmed := getStem(word)
 		for name := range nameWords {
 			if isSameWord(stemmed, name) {
 				matched++
@@ -134,7 +134,7 @@ func restatement(comment string, names []string) (matched, total int) {
 }
 
 func isRestating(comment string, names []string) (matched, total int, ok bool) {
-	matched, total = restatement(comment, names)
+	matched, total = countRestatement(comment, names)
 	return matched, total, total > 0 && matched*100 >= restateThresholdPercent*total
 }
 

@@ -93,7 +93,7 @@ func (w *watchers) queue(key watchKey) {
 	}
 }
 
-func (w *watchers) unqueue(key watchKey) {
+func (w *watchers) dequeue(key watchKey) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if !w.queued[key] {

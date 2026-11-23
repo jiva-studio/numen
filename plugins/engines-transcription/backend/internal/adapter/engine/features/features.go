@@ -35,7 +35,7 @@ const (
 // one after another, each holding every frame, and how many frames there are.
 // It is computed on up to workers goroutines; zero or less is one per CPU.
 func GetLogMel(samples []float32, workers int) ([]float32, int) {
-	power, frames := spectrogram(applyPreemphasis(samples), workers)
+	power, frames := computeSpectrogram(applyPreemphasis(samples), workers)
 	if frames == 0 {
 		return nil, 0
 	}
@@ -104,7 +104,7 @@ func applyPreemphasis(samples []float32) []float64 {
 	return out
 }
 
-func spectrogram(x []float64, workers int) ([]float64, int) {
+func computeSpectrogram(x []float64, workers int) ([]float64, int) {
 	if len(x) == 0 {
 		return nil, 0
 	}
@@ -131,7 +131,7 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 				for i := range fftSize {
 					buf[i] = complex(padded[pos+i]*window[i], 0)
 				}
-				fft(buf, twiddles)
+				computeFFT(buf, twiddles)
 				offset := t * bins
 				for i := range bins {
 					re, im := real(buf[i]), imag(buf[i])
@@ -192,10 +192,10 @@ func getMelBank() []melFilter {
 	bins := fftSize/2 + 1
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="extra trailing edge elements are never read"
 	edges := make([]float64, MelBands+2)
-	low, high := hzToMel(melFloor), hzToMel(melCeiling)
+	low, high := convertHzToMel(melFloor), convertHzToMel(melCeiling)
 	for i := range edges {
 		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="low is zero at melFloor"
-		edges[i] = melToHz(low + (high-low)*float64(i)/float64(MelBands+1))
+		edges[i] = convertMelToHz(low + (high-low)*float64(i)/float64(MelBands+1))
 	}
 
 	freq := make([]float64, bins)
@@ -242,7 +242,7 @@ func getMelStep() float64 {
 	return math.Log(6.4) / 27.0
 }
 
-func hzToMel(hz float64) float64 {
+func convertHzToMel(hz float64) float64 {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Slaney mel curve is continuous at the knee"
 	if hz >= melKnee {
 		return melKnee/melLinear + math.Log(hz/melKnee)/getMelStep()
@@ -250,7 +250,7 @@ func hzToMel(hz float64) float64 {
 	return hz / melLinear
 }
 
-func melToHz(mel float64) float64 {
+func convertMelToHz(mel float64) float64 {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Slaney mel curve is continuous at the knee"
 	if knee := melKnee / melLinear; mel >= knee {
 		return melKnee * math.Exp(getMelStep()*(mel-knee))
@@ -258,7 +258,7 @@ func melToHz(mel float64) float64 {
 	return mel * melLinear
 }
 
-func fft(a, w []complex128) {
+func computeFFT(a, w []complex128) {
 	n := len(a)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at i == n the bit-reversed index is 0 so i < j is false"
 	for i, j := 1, 0; i < n; i++ {

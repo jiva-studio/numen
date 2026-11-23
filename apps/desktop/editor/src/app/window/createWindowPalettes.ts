@@ -48,10 +48,7 @@ type WindowBase = ReturnType<typeof createWindowBase>
 type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
 /** What the palettes of the window read of the foundation. */
-interface PalettesFoundation extends Pick<
-  WindowBase['foundation'],
-  'log' | 'rest' | 'registry'
-> {
+interface PalettesFoundation extends Pick<WindowBase['foundation'], 'log' | 'rest' | 'registry'> {
   readonly api: Pick<WindowBase['foundation']['api'], 'vault'>
   readonly settingsRequests: Pick<WindowBase['foundation']['settingsRequests'], 'emit'>
 }
@@ -83,7 +80,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
-    declaredCommands,
+    commandDeclarations: declaredCommands,
     itemLists: vault.itemLists,
     commandDeps,
     registry: foundation.registry,
@@ -103,7 +100,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   })
   watchCommandLists(
     {
-      declaredCommands,
+      commandDeclarations: declaredCommands,
       writeMessage,
       plugins: rest.state.plugins,
       getCommittedSetting: rest.read.getCommittedSetting,

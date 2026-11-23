@@ -255,7 +255,7 @@ func TestBrokenJSONIsAnError(t *testing.T) {
 }
 
 func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
-	path, err := settings.Path()
+	path, err := settings.GetPath()
 	if err != nil {
 		t.Fatal(err)
 	}

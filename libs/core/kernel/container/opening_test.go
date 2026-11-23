@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -120,9 +120,9 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	readers := makeStagedReaders()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
-	changesCh := make(chan vault.VaultChanges, 8)
+	changesCh := make(chan indexing.VaultChanges, 8)
 
-	open := opening.Begin(t.Context(), v, func(m vault.VaultChanges) { changesCh <- m }, nil)
+	open := opening.Begin(t.Context(), v, func(m indexing.VaultChanges) { changesCh <- m }, nil)
 	go open.Run(t.Context())
 
 	walked := make(chan error, 1)
@@ -314,7 +314,7 @@ func openVault(t *testing.T, notes map[string]string) (container.TestInstallatio
 	t.Helper()
 
 	cfg := container.NewTestInstallation(container.Config{
-		Paths: container.Paths{IndexPath: indexfile.Path(t)},
+		Paths: container.Paths{IndexPath: indexfile.GetPath(t)},
 	}, nil)
 	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {

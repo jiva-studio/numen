@@ -31,8 +31,8 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			tb.Fatal(err)
 		}
-		path := filepath.Join(dir, name(i)+".md")
-		if err := os.WriteFile(path, []byte(note(r, i, n)), 0o644); err != nil {
+		path := filepath.Join(dir, formatName(i)+".md")
+		if err := os.WriteFile(path, []byte(generateNote(r, i, n)), 0o644); err != nil {
 			tb.Fatal(err)
 		}
 	}
@@ -53,7 +53,7 @@ func getVocabulary() []string {
 	temperature energy conservation reversible irreversible statistical mechanics`)
 }
 
-func note(r *rand.Rand, i, total int) string {
+func generateNote(r *rand.Rand, i, total int) string {
 	var b strings.Builder
 
 	// Notes without links skip the link path and would make the parser and index
@@ -61,7 +61,7 @@ func note(r *rand.Rand, i, total int) string {
 	// others, as in a real vault.
 	fmt.Fprintf(&b, "---\ntitle: Note %d\nstatus: generated\n", i)
 	if i > 0 {
-		fmt.Fprintf(&b, "links:\n  - to: \"[[%s]]\"\n    role: parent\n", name(i/10))
+		fmt.Fprintf(&b, "links:\n  - to: \"[[%s]]\"\n    role: parent\n", formatName(i/10))
 	}
 	b.WriteString("---\n\n")
 	fmt.Fprintf(&b, "# Note %d\n\n", i)
@@ -86,11 +86,11 @@ func note(r *rand.Rand, i, total int) string {
 		// Two or three references into the rest of the vault, spread far enough
 		// apart that resolution is not answering from one page of the index.
 		for range 2 + r.IntN(2) {
-			fmt.Fprintf(&b, "see [[%s]] ", name(r.IntN(total)))
+			fmt.Fprintf(&b, "see [[%s]] ", formatName(r.IntN(total)))
 		}
 		b.WriteString("\n\n")
 	}
 	return b.String()
 }
 
-func name(i int) string { return fmt.Sprintf("note-%06d", i) }
+func formatName(i int) string { return fmt.Sprintf("note-%06d", i) }

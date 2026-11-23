@@ -59,7 +59,7 @@ func setNotes(vault *hosttest.Vault, n int) {
 			vault.Remove(fmt.Sprintf("note-%d.md", i))
 			continue
 		}
-		vault.File(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
+		vault.WriteFile(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
 	}
 }
 
@@ -72,12 +72,12 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	search.SetProgress(60, 60)
 
 	vault := hosttest.New("physics")
-	vault.Beside(hosttest.New("chemistry"))
+	vault.LinkBeside(hosttest.New("chemistry"))
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	processes := processtest.NewHost(t)
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
 	}, newFakeClock(getMeasuredAt()), processes.NewClient(t))
 
@@ -162,7 +162,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 	if set.State.Source != api.SourceManual || set.State.Floor != 0.7 || !set.State.IsManual || set.State.ManualFloor != 0.7 {
 		t.Errorf("set %+v", set)
 	}
-	if stored, _ := f.search.StoredFloor(modelRecipe); stored != 0.7 {
+	if stored, _ := f.search.GetStoredFloor(modelRecipe); stored != 0.7 {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 
@@ -224,7 +224,7 @@ func TestAnIndexChangedEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing
 	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
 		t.Errorf("the vault was measured %d times, want once", len(batches))
 	}
-	if stored, found := f.search.StoredFloor(modelRecipe); !found || stored < 0.51 || stored > 0.53 {
+	if stored, found := f.search.GetStoredFloor(modelRecipe); !found || stored < 0.51 || stored > 0.53 {
 		t.Errorf("the host applies %v (%v), want the measured floor", stored, found)
 	}
 	if f.search.FloorWrites() != 1 {
@@ -239,7 +239,7 @@ func TestAnEventOtherThanIndexChangedMeasuresNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, found := f.search.StoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
+	if _, found := f.search.GetStoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
 		t.Error("an event other than index changed measured the vault")
 	}
 }
@@ -250,7 +250,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	if err := f.app.HandleEvent(ctx, hosttest.GetIndexChangedEvent("chemistry")); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := f.search.StoredFloor(modelRecipe); found {
+	if _, found := f.search.GetStoredFloor(modelRecipe); found {
 		t.Error("the shown vault was given the floor measured on another")
 	}
 	if batches := f.search.EmbeddedBatches(); len(batches) != 0 {
@@ -328,10 +328,10 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		name  string
 		hosts service.Hosts
 	}{
-		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
+		{"missing search", service.Hosts{Floors: relevance.Host{GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
 		{"missing vault", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Store: foldersOf(vault)}, Queue: queue}},
-		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
-		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk, nil)
@@ -350,7 +350,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	setNotes(vault, 25)
 
 	appReportFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk, nil)
 	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
@@ -364,7 +364,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	search.FailEmbedding(nil)
 	appFinishFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk, nil)
 	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {

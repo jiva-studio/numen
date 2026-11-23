@@ -32,8 +32,8 @@ type FileMover interface {
 
 // TrashEmptier deletes what a vault keeps in its trash.
 type TrashEmptier interface {
-	// EmptyTrash deletes everything under the vault's trash and returns the paths it could not delete.
-	EmptyTrash(ctx context.Context) (undeleted []string, err error)
+	// ClearTrash deletes everything under the vault's trash and returns the paths it could not delete.
+	ClearTrash(ctx context.Context) (undeleted []string, err error)
 }
 
 // NoteWriters opens a vault for writing notes. Which vault a use case works on

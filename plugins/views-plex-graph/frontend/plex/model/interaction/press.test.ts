@@ -25,7 +25,7 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
     activate: vi.fn<NodePressReport['activate']>(),
     show: vi.fn<NodePressReport['show']>(),
     reach: vi.fn<NodePressReport['reach']>(),
-    menu: vi.fn<NodePressReport['menu']>(),
+    openMenu: vi.fn<NodePressReport['openMenu']>(),
   }
   let site!: Parameters<ReachStrategy['listeners']>[0]
   const reaching: ReachStrategy = {
@@ -73,7 +73,7 @@ describe('the menu key', () => {
     const { press, response } = createPress()
     const event = key('ContextMenu')
     press.handlers.onKeyDown(event)
-    expect(response.menu).toHaveBeenCalledWith({ x: 5, y: 7 }, 'keyboard')
+    expect(response.openMenu).toHaveBeenCalledWith({ x: 5, y: 7 }, 'keyboard')
     expect(event.defaultPrevented).toBe(true)
   })
 
@@ -81,7 +81,7 @@ describe('the menu key', () => {
     const { press, response } = createPress('open', null)
     const event = key('ContextMenu')
     press.handlers.onKeyDown(event)
-    expect(response.menu).not.toHaveBeenCalled()
+    expect(response.openMenu).not.toHaveBeenCalled()
     expect(event.defaultPrevented).toBe(true)
   })
 
@@ -89,7 +89,7 @@ describe('the menu key', () => {
     const { press, response } = createPress('ghost')
     const event = key('ContextMenu')
     press.handlers.onKeyDown(event)
-    expect(response.menu).not.toHaveBeenCalled()
+    expect(response.openMenu).not.toHaveBeenCalled()
     expect(event.defaultPrevented).toBe(false)
   })
 })

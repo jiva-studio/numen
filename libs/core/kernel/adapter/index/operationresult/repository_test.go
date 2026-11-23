@@ -20,7 +20,7 @@ func getStart() time.Time { return time.Date(2026, time.March, 2, 12, 0, 0, 0, t
 
 func openIndex(t *testing.T) *index.DB {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func openIndex(t *testing.T) *index.DB {
 }
 
 func TestASaveAboveTheLimitRemovesTheLeastRecentlyUsedAndAFindKeepsARow(t *testing.T) {
-	results := openIndex(t).OperationResults(3)
+	results := openIndex(t).GetOperationResults(3)
 	for i, hash := range []string{"a", "b", "c"} {
 		if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{hash: {byte(i)}}, getStart().Add(time.Duration(i)*time.Minute)); err != nil {
 			t.Fatal(err)
@@ -54,7 +54,7 @@ func TestASaveAboveTheLimitRemovesTheLeastRecentlyUsedAndAFindKeepsARow(t *testi
 }
 
 func TestAResultIsFoundForItsOwnRecipeAndOperationOnly(t *testing.T) {
-	results := openIndex(t).OperationResults(100)
+	results := openIndex(t).GetOperationResults(100)
 	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {7}}, getStart()); err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestAResultIsFoundForItsOwnRecipeAndOperationOnly(t *testing.T) {
 }
 
 func TestFindResultsReadsMoreHashesThanOneBatch(t *testing.T) {
-	results := openIndex(t).OperationResults(5000)
+	results := openIndex(t).GetOperationResults(5000)
 	outputs := map[string][]byte{}
 	var hashes []string
 	for i := range 1200 {
@@ -91,7 +91,7 @@ func TestFindResultsReadsMoreHashesThanOneBatch(t *testing.T) {
 }
 
 func TestClearResultsRemovesEveryRowAndCountsThem(t *testing.T) {
-	results := openIndex(t).OperationResults(100)
+	results := openIndex(t).GetOperationResults(100)
 	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {1}, "b": {2}}, getStart()); err != nil {
 		t.Fatal(err)
 	}

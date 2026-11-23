@@ -50,8 +50,8 @@ func (h *textHost) ListTextVersions(_ context.Context, req *connect.Request[v1.L
 
 func (h *textHost) ReadText(_ context.Context, req *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error) {
 	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
-	if req.Msg.GetCursor() == "" {
-		return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "one ", Selector: `{"t":[1.5,2]}`}}, NextCursor: "1"}), nil
+	if req.Msg.GetPageToken() == "" {
+		return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "one ", Selector: `{"t":[1.5,2]}`}}, NextPageToken: "1"}), nil
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "two"}}}), nil
 }

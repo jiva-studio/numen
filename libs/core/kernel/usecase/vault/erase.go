@@ -94,7 +94,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 		return EraseResult{}, domain.NewDetailError(fmt.Sprintf("%s is no longer the vault %s; the folder is not moved to the trash", v.Path, v.Name), vaultdomain.ErrUnreadable)
 	}
 
-	if err := u.trash.Trash(v.Path); err != nil {
+	if err := u.trash.MoveToTrash(v.Path); err != nil {
 		return EraseResult{}, fmt.Errorf("%s cannot be moved to the trash: %w", v.Path, err)
 	}
 	return EraseResult{IsTrashed: true}, u.unregister.Execute(ctx, v)

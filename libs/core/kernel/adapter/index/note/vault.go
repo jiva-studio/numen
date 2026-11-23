@@ -19,7 +19,7 @@ type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
+func getVaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
 	err := db.QueryRowContext(ctx, vaultRowSQL, string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {

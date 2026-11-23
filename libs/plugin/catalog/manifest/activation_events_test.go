@@ -10,7 +10,7 @@ import (
 )
 
 func TestIndexChangedAndFilesChangedAreTheActivationEventsAPluginDeclares(t *testing.T) {
-	if got := PluginActivationEvents(); !slices.Equal(got, []string{"onIndexChanged", "onFilesChanged"}) {
+	if got := ListPluginActivationEvents(); !slices.Equal(got, []string{"onIndexChanged", "onFilesChanged"}) {
 		t.Errorf("activation events = %v, want [onIndexChanged onFilesChanged]", got)
 	}
 }

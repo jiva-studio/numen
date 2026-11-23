@@ -101,14 +101,14 @@ type Client struct {
 // NewClient creates a client for the host at baseURL, authenticating with token.
 func NewClient(httpClient *http.Client, baseURL, token string) *Client {
 	return &Client{host: numenv1connect.NewConnectionCallServiceClient(
-		httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)),
+		httpClient, baseURL, connect.WithInterceptors(transport.NewBearer(token)),
 	)}
 }
 
 // NewClientFromEnv creates a client for the host named by NUMEN_HOST_PORT, authenticating with
 // NUMEN_PLUGIN_TOKEN.
 func NewClientFromEnv() (*Client, error) {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 func newClientAt(endpoint hostcall.Endpoint) *Client {
-	return NewClient(transport.HTTPClient(), endpoint.BaseURL, endpoint.Token)
+	return NewClient(transport.GetHTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
 // Call asks the rows of the plugin, in order, to carry out the operation. The core goes to the next row
@@ -133,17 +133,17 @@ func (c *Client) call(ctx context.Context, request *v1.ConnectionCallServiceCall
 		}
 		return nil, fmt.Errorf("connection: call %s: %w", request.GetOperation(), err)
 	}
-	return &callStream{stream: stream, contextErr: ctx.Err, operation: request.GetOperation()}, nil
+	return &callStream{stream: stream, getContextErr: ctx.Err, operation: request.GetOperation()}, nil
 }
 
 type callStream struct {
-	stream     *connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse]
-	contextErr func() error
-	operation  string
-	data       []byte
-	done       []byte
-	err        error
-	isDone     bool
+	stream        *connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse]
+	getContextErr func() error
+	operation     string
+	data          []byte
+	done          []byte
+	err           error
+	isDone        bool
 }
 
 func (s *callStream) Next() bool {
@@ -177,7 +177,7 @@ func (s *callStream) Close() error { return s.stream.Close() }
 
 func (s *callStream) readEnd() error {
 	if err := s.stream.Err(); err != nil {
-		if ctxErr := s.contextErr(); ctxErr != nil {
+		if ctxErr := s.getContextErr(); ctxErr != nil {
 			return ctxErr
 		}
 		return fmt.Errorf("connection: call %s: %w", s.operation, err)

@@ -54,7 +54,7 @@ func openConfigurableEmbedder(t *testing.T) (*pluginhost.Host, *sourcebridge.Sou
 	t.Cleanup(func() { testsupport.Close(t, bridge) })
 
 	var announced atomic.Int32
-	bridge.OnDescriptionChange(func() { announced.Add(1) })
+	bridge.WatchDescription(func() { announced.Add(1) })
 	return host, bridge, mock, &announced
 }
 

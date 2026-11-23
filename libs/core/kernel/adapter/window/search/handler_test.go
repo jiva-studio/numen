@@ -62,7 +62,7 @@ func (t titles) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (m
 // tabKinds is the kind of tab each note opens in, by path.
 type tabKinds map[string]string
 
-func (k tabKinds) Execute(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
+func (k tabKinds) ListTabKinds(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, path := range paths {
 		if kind, ok := k[path]; ok {
@@ -92,7 +92,7 @@ func TestSearchNamesAnswersTheTitleAndTheHeadingWithWhereTheyMatched(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetMatches()
 	if len(found) != 2 {
 		t.Fatalf("%d answers, want 2: %v", len(found), found)
 	}
@@ -110,7 +110,7 @@ func TestSearchNamesInAWindowShowingNoVaultFindsNothing(t *testing.T) {
 
 	answer, err := handler.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "entropy"}))
 
-	if err != nil || len(answer.Msg.GetFound()) != 0 {
+	if err != nil || len(answer.Msg.GetMatches()) != 0 {
 		t.Fatalf("answered %v (%v)", answer.Msg, err)
 	}
 }
@@ -131,8 +131,8 @@ func TestSearchNamesAsksForAtMostTheLimitOfTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(byDefault.Msg.GetFound()) != search.MostFound || len(asked.Msg.GetFound()) != 3 {
-		t.Errorf("answered %d by default and %d when asked for 3", len(byDefault.Msg.GetFound()), len(asked.Msg.GetFound()))
+	if len(byDefault.Msg.GetMatches()) != search.MostFound || len(asked.Msg.GetMatches()) != 3 {
+		t.Errorf("answered %d by default and %d when asked for 3", len(byDefault.Msg.GetMatches()), len(asked.Msg.GetMatches()))
 	}
 }
 

@@ -152,7 +152,7 @@ func (m *meaningSearch) keepSimilar(query []float32, stored []source.StoredVecto
 		if len(one.Vector) != len(query) {
 			continue
 		}
-		similarity := vector.SimilarityBytes(query, one.Vector)
+		similarity := vector.ComputeSimilarityBytes(query, one.Vector)
 		if similarity < m.req.Floor {
 			isPastFloor = true
 			continue

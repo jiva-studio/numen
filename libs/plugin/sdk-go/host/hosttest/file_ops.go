@@ -81,7 +81,7 @@ func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err erro
 	if v.isPresent(entry) {
 		return []string{entry}, false, nil
 	}
-	paths, err := v.files.paths()
+	paths, err := v.files.listPaths()
 	if err != nil {
 		return nil, false, err
 	}
@@ -156,7 +156,7 @@ func (v *Vault) ReadBytes(ctx context.Context, filePath string, start, length in
 	if err != nil {
 		return host.ByteRange{}, err
 	}
-	stat, err := v.hashed(at)
+	stat, err := v.hashStat(at)
 	if err != nil {
 		return host.ByteRange{}, err
 	}

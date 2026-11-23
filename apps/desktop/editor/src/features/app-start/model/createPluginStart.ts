@@ -10,7 +10,7 @@ type SettingPlugins = () => readonly { readonly id: string; readonly hasFrontend
 
 export interface PluginStartDeps {
   readonly pluginLoader: PluginLoader
-  readonly getPlugins: SettingPlugins
+  readonly listPlugins: SettingPlugins
   readonly waitForDeclaredCommands: () => Promise<void>
   readonly writeMessage: MessageWriter
 }
@@ -18,7 +18,7 @@ export interface PluginStartDeps {
 /** Tracks the frontends of the plugins the settings name, and again as the settings change them. */
 export function createPluginStart(deps: PluginStartDeps) {
   const { pluginLoader } = deps
-  watch(deps.getPlugins, (plugins) => {
+  watch(deps.listPlugins, (plugins) => {
     runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), (error) =>
       deps.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
     )
@@ -26,7 +26,7 @@ export function createPluginStart(deps: PluginStartDeps) {
   return {
     /** Tracks the plugins the settings name and starts those of the window slots. */
     start: async (): Promise<void> => {
-      await pluginLoader.trackPlugins(getFrontendPluginIds(deps.getPlugins()))
+      await pluginLoader.trackPlugins(getFrontendPluginIds(deps.listPlugins()))
       await pluginLoader.start()
     },
     // The title bar and the shortcuts read the commands the plugins declare, so the window waits for

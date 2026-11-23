@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
 // FileText provides the live text of a file and records user edits of it.
@@ -27,8 +28,7 @@ type VaultProvider interface {
 	GetCurrentVault() domain.Vault
 }
 
-// Handler serves TextService over the shown vault. A handler with no text
-// returns no live version and rejects edits.
+// Handler serves TextService over the shown vault.
 type Handler struct {
 	vaults VaultProvider
 	text   FileText
@@ -39,15 +39,12 @@ func NewHandler(vaults VaultProvider, text FileText) *Handler {
 	return &Handler{vaults: vaults, text: text}
 }
 
-// errNoVault is a call while the window shows no vault.
-var errNoVault = errors.New("the window shows no vault")
-
 // ReadLiveText returns the live version of the file and its segments.
 func (h *Handler) ReadLiveText(
 	ctx context.Context, r *connect.Request[v1.ReadLiveTextRequest],
 ) (*connect.Response[v1.ReadLiveTextResponse], error) {
 	v := h.vaults.GetCurrentVault()
-	if h.text == nil || v.ID == "" {
+	if v.ID == "" {
 		return connect.NewResponse(&v1.ReadLiveTextResponse{}), nil
 	}
 	text, ok, err := h.text.ReadLiveText(ctx, v, r.Msg.GetPath())
@@ -55,7 +52,7 @@ func (h *Handler) ReadLiveText(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	if !ok {
 		return connect.NewResponse(&v1.ReadLiveTextResponse{}), nil
@@ -71,8 +68,8 @@ func (h *Handler) CreateTextEdit(
 	ctx context.Context, r *connect.Request[v1.CreateTextEditRequest],
 ) (*connect.Response[v1.CreateTextEditResponse], error) {
 	v := h.vaults.GetCurrentVault()
-	if h.text == nil || v.ID == "" {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+	if v.ID == "" {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	version, err := h.text.CreateEdit(ctx, v, textdomain.Edit{
 		PluginID: r.Msg.GetPluginId(), Path: r.Msg.GetPath(), Source: domain.TextVersionID(r.Msg.GetSourceVersionId()),
@@ -86,5 +83,5 @@ func (h *Handler) CreateTextEdit(
 	case errors.Is(err, textdomain.ErrInvalidVersion):
 		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.TextErrorCode_TEXT_ERROR_CODE_INVALID}), nil
 	}
-	return nil, connect.NewError(connect.CodeInternal, err)
+	return nil, wire.NewInternalError(err)
 }

@@ -5,13 +5,13 @@
  * Nodes are matched by identifier alone; nothing here depends on what a node
  * represents.
  */
-import { edgeKey, type PlacedEdge } from '../edge'
+import { buildEdgeKey, type PlacedEdge } from '../edge'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
 import type { Size } from './options'
-import { clamp01, lerp, lerpExtent } from './math'
+import { clampToUnit, interpolate, interpolateExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { createRouting, type Routing } from './edges/routing'
+import { createRouting, type EdgeRouting } from './edges/routing'
 import { routeEdges } from './edges/routeEdges'
 import type { PlexEdge } from '../../../types'
 
@@ -48,11 +48,11 @@ function getCentre(to: PlexFrame): Position {
 function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode {
   return {
     ...target,
-    x: lerp(start.x, target.x, t),
-    y: lerp(start.y, target.y, t),
-    width: lerp(start.width, target.width, t),
-    height: lerp(start.height, target.height, t),
-    opacity: lerp(start.opacity, target.opacity, t),
+    x: interpolate(start.x, target.x, t),
+    y: interpolate(start.y, target.y, t),
+    width: interpolate(start.width, target.width, t),
+    height: interpolate(start.height, target.height, t),
+    opacity: interpolate(start.opacity, target.opacity, t),
     settled: getSize(target),
   }
 }
@@ -60,10 +60,10 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
 function openNode(target: PlacedNode, origin: Origin, t: number): PlacedNode {
   return {
     ...target,
-    x: lerp(origin.x, target.x, t),
-    y: lerp(origin.y, target.y, t),
-    width: lerp(origin.width ?? target.width, target.width, t),
-    height: lerp(origin.height ?? target.height, target.height, t),
+    x: interpolate(origin.x, target.x, t),
+    y: interpolate(origin.y, target.y, t),
+    width: interpolate(origin.width ?? target.width, target.width, t),
+    height: interpolate(origin.height ?? target.height, target.height, t),
     settled: getSize(target),
   }
 }
@@ -71,9 +71,9 @@ function openNode(target: PlacedNode, origin: Origin, t: number): PlacedNode {
 function closeNode(start: PlacedNode, origin: Origin, t: number): PlacedNode {
   return {
     ...start,
-    x: lerp(start.x, origin.x, t),
-    y: lerp(start.y, origin.y, t),
-    opacity: lerp(start.opacity, 0, t),
+    x: interpolate(start.x, origin.x, t),
+    y: interpolate(start.y, origin.y, t),
+    opacity: interpolate(start.opacity, 0, t),
     settled: start.settled ?? getSize(start),
   }
 }
@@ -99,23 +99,23 @@ function tweenNodes(from: PlexFrame, to: PlexFrame, t: number): PlacedNode[] {
 
 interface EdgeTweenContext {
   readonly byId: ReadonlyMap<string, PlacedNode>
-  readonly routing: Routing
+  readonly routing: EdgeRouting
   readonly entryOpacity: number
   readonly exitOpacity: number
 }
 
 function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): PlacedEdge[] {
   const { byId, routing, entryOpacity, exitOpacity } = context
-  const wasEdge = new Set(from.edges.map(edgeKey))
-  const willEdge = new Set(to.edges.map(edgeKey))
+  const wasEdge = new Set(from.edges.map(buildEdgeKey))
+  const willEdge = new Set(to.edges.map(buildEdgeKey))
 
   const both: PlexEdge[] = [...to.edges]
   for (const edge of from.edges) {
-    if (!willEdge.has(edgeKey(edge))) both.push(edge)
+    if (!willEdge.has(buildEdgeKey(edge))) both.push(edge)
   }
 
-  const edgeOpacity = (edge: PlexEdge): number => {
-    const key = edgeKey(edge)
+  const getEdgeOpacity = (edge: PlexEdge): number => {
+    const key = buildEdgeKey(edge)
     if (wasEdge.has(key) && willEdge.has(key)) return 1
     return willEdge.has(key) ? entryOpacity : exitOpacity
   }
@@ -125,12 +125,12 @@ function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): 
   // edge is going, or from where it is leaving for an edge that only rests
   // there. A title held this way stays put for the length of a movement.
   const resolved = new Map<string, Title>()
-  for (const edge of from.edges) resolved.set(edgeKey(edge), getTitles(edge))
-  for (const edge of to.edges) resolved.set(edgeKey(edge), getTitles(edge))
+  for (const edge of from.edges) resolved.set(buildEdgeKey(edge), getTitles(edge))
+  for (const edge of to.edges) resolved.set(buildEdgeKey(edge), getTitles(edge))
 
-  return routeEdges(both, byId, { routing, opacity: edgeOpacity }).map((edge) => ({
+  return routeEdges(both, byId, { routing, getOpacity: getEdgeOpacity }).map((edge) => ({
     ...edge,
-    ...resolved.get(edgeKey(edge)),
+    ...resolved.get(buildEdgeKey(edge)),
   }))
 }
 
@@ -146,14 +146,14 @@ export function interpolatePlex(
   const progress = typeof input === 'number' ? input : (input.progress ?? 0)
   const options = typeof input === 'number' ? undefined : input
 
-  const t = clamp01(progress)
+  const t = clampToUnit(progress)
   if (t <= 0) return from
   if (t >= 1) return to
 
   const resolved = resolveOptions(options)
   const { arriveAfter, leaveBefore } = resolved.motion
-  const incoming = clamp01((t - arriveAfter) / (1 - arriveAfter))
-  const leaving = 1 - clamp01(t / leaveBefore)
+  const incoming = clampToUnit((t - arriveAfter) / (1 - arriveAfter))
+  const leaving = 1 - clampToUnit(t / leaveBefore)
 
   const nodes = tweenNodes(from, to, t)
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -166,7 +166,7 @@ export function interpolatePlex(
       entryOpacity: incoming,
       exitOpacity: leaving,
     }),
-    extent: lerpExtent(from.extent, to.extent, t),
+    extent: interpolateExtent(from.extent, to.extent, t),
     overflow: to.overflow,
   }
 }

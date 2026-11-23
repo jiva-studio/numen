@@ -24,7 +24,7 @@ const createStarts = () => {
         }
       },
     },
-    getPlugins: () => PLUGINS,
+    listPlugins: () => PLUGINS,
     writeMessage,
   })
   return { starts, started, startedTabKinds, writeMessage }

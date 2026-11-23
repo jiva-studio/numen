@@ -145,7 +145,7 @@ function createAimHarness() {
   let closeCount = 0
 
   const aim = createSubmenuAim({
-    clock: () => now,
+    getTime: () => now,
     getActiveId: () => activeId,
     getSubmenuBox: () => submenuBox,
     isInsideSubmenu: () => insideSubmenu,

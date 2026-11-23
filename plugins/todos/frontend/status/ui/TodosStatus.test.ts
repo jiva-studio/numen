@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { createFakeApi, refuse, settle, SUMMARY, task } from '../../testing/fakeApi'
+import { createFakeApi, refuse, settle, SUMMARY, createTask } from '../../testing/fakeApi'
 import { taskDoneLabel, WORDS } from '../../words'
 import type { Summary } from '../../types'
 import type { ShownGroups } from '../model/chip'
@@ -12,27 +12,44 @@ const ALL_SHOWN: ShownGroups = { overdue: true, today: true, nextSevenDays: true
 const TASKS = {
   overdue: {
     tasks: [
-      task({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' }),
-      task({ path: 'Daily/2026-11-12.md', line: 3, text: 'call the bank', due: '2026-11-12' }),
+      createTask({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' }),
+      createTask({
+        path: 'Daily/2026-11-12.md',
+        line: 3,
+        text: 'call the bank',
+        due: '2026-11-12',
+      }),
     ],
     total: 7,
     revision: 4,
   },
   today: {
-    tasks: [task({ path: 'Daily/2026-11-14.md', line: 2, text: 'write the report', due: TODAY })],
+    tasks: [
+      createTask({ path: 'Daily/2026-11-14.md', line: 2, text: 'write the report', due: TODAY }),
+    ],
     total: 1,
     revision: 4,
   },
   nextSevenDays: {
     tasks: [
-      task({ path: 'Daily/2026-11-15.md', line: 5, text: 'plan the trip', due: '2026-11-15' }),
-      task({ path: 'Daily/2026-11-20.md', line: 1, text: 'send the form', due: '2026-11-20' }),
+      createTask({
+        path: 'Daily/2026-11-15.md',
+        line: 5,
+        text: 'plan the trip',
+        due: '2026-11-15',
+      }),
+      createTask({
+        path: 'Daily/2026-11-20.md',
+        line: 1,
+        text: 'send the form',
+        due: '2026-11-20',
+      }),
     ],
     total: 2,
     revision: 4,
   },
   none: {
-    tasks: [task({ path: 'Ideas.md', line: 12, text: 'learn to juggle' })],
+    tasks: [createTask({ path: 'Ideas.md', line: 12, text: 'learn to juggle' })],
     total: 1,
     revision: 4,
   },
@@ -284,24 +301,28 @@ describe('the groups of the todos popover', () => {
     const fake = createFakeApi({
       tasks: {
         overdue: {
-          tasks: [task({ path: 'a.md', line: 1, text: 'yesterday', due: '2026-11-13' })],
+          tasks: [createTask({ path: 'a.md', line: 1, text: 'yesterday', due: '2026-11-13' })],
           total: 1,
           revision: 1,
         },
         today: {
-          tasks: [task({ path: 'a.md', line: 2, text: 'now', due: TODAY })],
+          tasks: [createTask({ path: 'a.md', line: 2, text: 'now', due: TODAY })],
           total: 1,
           revision: 1,
         },
         nextSevenDays: {
           tasks: [
-            task({ path: 'a.md', line: 3, text: 'tomorrow', due: '2026-11-15' }),
-            task({ path: 'a.md', line: 4, text: 'in six days', due: '2026-11-20' }),
+            createTask({ path: 'a.md', line: 3, text: 'tomorrow', due: '2026-11-15' }),
+            createTask({ path: 'a.md', line: 4, text: 'in six days', due: '2026-11-20' }),
           ],
           total: 2,
           revision: 1,
         },
-        none: { tasks: [task({ path: 'a.md', line: 5, text: 'floating' })], total: 1, revision: 1 },
+        none: {
+          tasks: [createTask({ path: 'a.md', line: 5, text: 'floating' })],
+          total: 1,
+          revision: 1,
+        },
       },
     })
     const { wrapper: view } = draw(
@@ -374,7 +395,7 @@ describe('ticking a task in the todos popover', () => {
         ...TASKS,
         today: {
           tasks: [
-            task({
+            createTask({
               path: 'Weekly.md',
               line: 4,
               text: 'water the plants',
@@ -409,7 +430,12 @@ describe('ticking a task in the todos popover', () => {
         ...TASKS,
         overdue: {
           tasks: [
-            task({ path: 'Home.md', line: 1, text: 'water the plants', recurrence: 'rec:1w' }),
+            createTask({
+              path: 'Home.md',
+              line: 1,
+              text: 'water the plants',
+              recurrence: 'rec:1w',
+            }),
           ],
           total: 1,
           revision: 4,

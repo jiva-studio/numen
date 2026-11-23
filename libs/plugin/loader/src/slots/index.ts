@@ -3,10 +3,8 @@ export {
   readManifestSlotEntries,
   type DeclaredSlotEntry,
   type SlotCommandLook,
-  type SlotRegistryDeps,
 } from './slotRegistry'
 export {
-  applyLayout,
   arrangeByLayout,
   collapseSeparators,
   SLOT_SEPARATOR_ID,
@@ -14,6 +12,6 @@ export {
   type DeclaredSlotPoint,
   type SlotLayout,
 } from './slotLayout'
-export { getEntryKey, orderSlotEntries, separateGroups, type GroupedRows } from './slotKeys'
-export { createStyledView } from './styledView'
+export { getEntryKey, sortSlotEntries, insertSeparators } from './slotKeys'
+export { createStyledViews } from './styledView'
 export { WINDOW_SLOTS } from './windowSlots'

@@ -45,7 +45,7 @@ function createVault() {
   const queries: string[] = []
 
   const core: SearchDeps = {
-    names: (query) => {
+    searchNames: (query) => {
       queries.push(query)
       const one = createDeferred<readonly NameMatch[]>()
       names.push(one)

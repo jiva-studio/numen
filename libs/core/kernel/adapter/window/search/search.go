@@ -11,6 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -60,10 +61,10 @@ func (h *Handler) SearchNames(
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	tabKinds := found.TabKinds
-	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found.Matches))}
+	out := &v1.SearchNamesResponse{Matches: make([]*v1.NameMatch, 0, len(found.Matches))}
 	for _, m := range found.Matches {
 		titled := &v1.NameMatch{
 			Note:    &v1.Note{Path: m.Path, Title: m.Title},
@@ -74,7 +75,7 @@ func (h *Handler) SearchNames(
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
 		}
-		out.Found = append(out.Found, titled)
+		out.Matches = append(out.Matches, titled)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -107,16 +108,16 @@ func (h *Handler) SearchText(
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 
-	out := &v1.SearchTextResponse{Found: make([]*v1.SearchResult, 0, len(found.Results))}
-	for _, p := range found.Results {
-		text, pos := search.CutSnippet(p.Text, p.MatchOffset, query)
+	out := &v1.SearchTextResponse{Results: make([]*v1.SearchResult, 0, len(found.Results))}
+	for i, p := range found.Results {
+		snippet := found.Snippets[i]
 		result := &v1.SearchResult{
 			Path:        p.Path,
-			Text:        text,
-			MatchRanges: convertUnitRangesToWire(pos),
+			Text:        snippet.Text,
+			MatchRanges: convertUnitRangesToWire(snippet.Ranges),
 			PlaceLabel:  p.PlaceLabel,
 			ByteRange:   &v1.Range{Start: int32(p.Start), End: int32(p.Start + p.Length)},
 			MatchLine:   int32(p.MatchLine),
@@ -128,7 +129,7 @@ func (h *Handler) SearchText(
 			result.Type = convertNoteTypeToWire(found.Types[p.Path])
 			result.TabKind = found.TabKinds[p.Path]
 		}
-		out.Found = append(out.Found, result)
+		out.Results = append(out.Results, result)
 	}
 	return connect.NewResponse(out), nil
 }

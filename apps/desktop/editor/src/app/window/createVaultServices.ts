@@ -33,7 +33,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const noteEditors = createNoteEditors({
     api: {
       notes: vault.note,
-      making: { createNote: vault.note.createNote, relations: vault.relations },
+      noteMaking: { createNote: vault.note.createNote, relations: vault.relations },
       quit: api.window.quit,
     },
     log,
@@ -43,7 +43,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     ...noteEditors,
     reached: createNotes([noteEditors.store], tabOpeners, writeMessage),
   }
-  const renames = createEmitter<readonly PathRename[]>()
+  const renameEmitter = createEmitter<readonly PathRename[]>()
   const vaultChanges = createEmitter<VaultChangeEvent>()
   const window = useWindowStreams(
     {
@@ -58,7 +58,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
       ...createVaultChangeHandlers({
         editing,
         navigation,
-        renames,
+        renames: renameEmitter,
         notifyPlugins: (event) => vaultChanges.emit(event),
         writeMessage,
       }),
@@ -73,11 +73,11 @@ export function createVaultServices(deps: VaultServicesDeps) {
       listVaults: vault.listVaults,
       log,
     }),
-    renames,
+    renames: renameEmitter,
     vaultChanges,
     itemLists: createCommandItemLists({
       listLists: api.plugins.declaredCommands.listDeclaredItemLists,
-      fileKinds: vault.file.getFileKinds,
+      readFileKinds: vault.file.getFileKinds,
     }),
     navigator: createNoteNavigator({
       navigation,

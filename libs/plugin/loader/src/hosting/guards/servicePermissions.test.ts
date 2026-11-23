@@ -3,6 +3,7 @@
  * path reaches a service member the table of permissions does not list.
  */
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
+import type { Failure, Result } from '@numen/result'
 import {
   type BackgroundTaskHost,
   type BufferHost,
@@ -29,7 +30,6 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createPluginParts } from '../context'
-import { disposeSubscriptions } from './subscriptions'
 import { SERVICE_RULES, type RulesOf } from './servicePermissions'
 import type { PluginContextHost } from '../types'
 import { createTestContextHost, type ContextHostParts } from '../../testing/contextHost'
@@ -37,6 +37,7 @@ import { createTestContextHost, type ContextHostParts } from '../../testing/cont
 interface Rule {
   readonly permissions: readonly string[]
   readonly isAsync: boolean
+  readonly isResult: boolean
   readonly reason: string
 }
 
@@ -147,6 +148,11 @@ const MEMBERS = SERVICE_PARTS.flatMap((part) =>
   })),
 ).filter((leaf) => leaf.rule.permissions.length > 0)
 
+function readDenial(answer: unknown): string {
+  expect(answer).toMatchObject({ ok: false, error: { error: 'permissionDenied' } })
+  return (answer as { error: { message: string } }).error.message
+}
+
 const label = (path: readonly string[]) => path.join('.')
 
 describe('every member of a service that lists a permission', () => {
@@ -158,7 +164,9 @@ describe('every member of a service that lists a permission', () => {
       const missing = member.rule.permissions[0] ?? ''
       const denied = createPluginParts('md.numen.sample', host, MANIFEST([]))
 
-      const failure = member.rule.isAsync
+      const failure = member.rule.isResult
+        ? await Promise.resolve(call(denied.host, member.path)).then(readDenial)
+        : member.rule.isAsync
         ? await Promise.resolve()
             .then(() => call(denied.host, member.path))
             .catch((error: unknown) => error)
@@ -298,6 +306,16 @@ describe('the services of a plugin context', () => {
     expectTypeOf<Fits<SyncRule, { peek(): string }>>().toEqualTypeOf<true>()
   })
 
+  it('takes the result rule of a member that answers a Result whose failure can be a refusal', () => {
+    type ResultRule = typeof SERVICE_RULES.vault.texts.createEdit
+    type Fits<Rule, Member> = [Rule] extends [RulesOf<Member>[keyof Member]] ? true : false
+    type Denied = Promise<Result<null, Failure<'permissionDenied'>>>
+
+    expectTypeOf<Fits<ResultRule, { open(): Denied }>>().toEqualTypeOf<true>()
+    expectTypeOf<Fits<ResultRule, { open(): Promise<Result<null>> }>>().toEqualTypeOf<false>()
+    expectTypeOf<Fits<ResultRule, { open(): Promise<string> }>>().toEqualTypeOf<false>()
+  })
+
   it('rejects, and never throws, from every member whose type returns a promise', async () => {
     const asyncMembers = MEMBERS.filter((one) => one.rule.isAsync)
     expect(asyncMembers.length).toBeGreaterThan(0)
@@ -339,10 +357,9 @@ describe('the services of a plugin context', () => {
 })
 
 describe('the subscriptions of a plugin', () => {
-  const createSubscriptions = () => {
-    const context = createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
-    return context.plugin.identity.subscriptions
-  }
+  const createContext = () =>
+    createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
+  const createSubscriptions = () => createContext().plugin.identity.subscriptions
 
   it('cannot be spliced, popped, shifted or reassigned', () => {
     const subscriptions = createSubscriptions() as unknown as Record<string, unknown>
@@ -362,17 +379,16 @@ describe('the subscriptions of a plugin', () => {
   })
 
   it('still releases what the plugin added when the host disposes them', () => {
-    const subscriptions = createSubscriptions()
+    const context = createContext()
     const first = vi.fn()
     const second = vi.fn()
-    subscriptions.push({ dispose: first }, { dispose: second })
+    context.plugin.identity.subscriptions.push({ dispose: first }, { dispose: second })
 
-    disposeSubscriptions(subscriptions)
+    context.subscriptions.disposeAll()
 
     expect(first).toHaveBeenCalledOnce()
     expect(second).toHaveBeenCalledOnce()
-    expect(subscriptions.length).toBe(0)
-    expect(() => disposeSubscriptions([] as never)).not.toThrow()
+    expect(context.plugin.identity.subscriptions.length).toBe(0)
   })
 })
 

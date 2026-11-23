@@ -27,7 +27,7 @@ function matchCommandWord(one: Command, word: string): { matches: boolean; found
 /** The view one palette draws, over the state that palette holds. */
 export function getPaletteView(state: ViewState) {
   const { words, runs } = state
-  const steps = createStepGroups(state)
+  const stepGroups = createStepGroups(state)
   const choices = createChoiceGroups(state)
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
@@ -57,17 +57,17 @@ export function getPaletteView(state: ViewState) {
   /** Every command offered over what is in front, in the groups it holds. */
   const getCommandGroups = (target: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
-    const items = (group: CommandGroup): readonly PaletteItem[] =>
+    const listItems = (group: CommandGroup): readonly PaletteItem[] =>
       getGroupCommands(state.commands, group)
         .filter((one) => one.isAvailable(target, runs))
         .map((one) => renderItem(one, target, word))
         .filter((item) => item !== null)
 
-    const note = items('note')
-    const file = items('file')
-    const window = items('window')
-    const settings = items('settings')
-    const vault = items('vault')
+    const note = listItems('note')
+    const file = listItems('file')
+    const window = listItems('window')
+    const settings = listItems('settings')
+    const vault = listItems('vault')
 
     const groups: PaletteGroup[] = []
     if (note.length > 0) {
@@ -91,13 +91,13 @@ export function getPaletteView(state: ViewState) {
   /** What the palette draws at its current position, over the words typed into it. */
   const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(target, text)
-    if (step.step === 'name') return [steps.getNamingGroup(step, text)]
-    if (step.step === 'arguments') return [steps.getArgumentGroup(step, text)]
+    if (step.step === 'name') return [stepGroups.getNamingGroup(step, text)]
+    if (step.step === 'arguments') return [stepGroups.getArgumentGroup(step, text)]
     if (step.step === 'note') return [choices.getPickingGroup(step, text)]
-    if (step.step === 'items') return steps.getItemGroups(step, text)
+    if (step.step === 'items') return stepGroups.getItemGroups(step, text)
     if (step.step === 'vault') return [choices.getVaultsGroup(text, step)]
-    if (step.step === 'confirmation') return [steps.getConfirmGroup(step, text)]
-    return [steps.getExactlyGroup(step, text)]
+    if (step.step === 'confirmation') return [stepGroups.getConfirmGroup(step, text)]
+    return [stepGroups.getExactlyGroup(step, text)]
   }
 
   return { createGroups, findTabKind: choices.findTabKind, getVaultAside: choices.getVaultAside }

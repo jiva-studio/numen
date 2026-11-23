@@ -17,7 +17,7 @@ func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search,
 	t.Helper()
 	search, vault := newHost(hint)
 	fill(search, vault, 25, sampledChunksOf(60, 3))
-	return relevance.New(relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock()), search, vault
+	return relevance.New(relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock()), search, vault
 }
 
 func TestGetShowsTheHintOfTheModelBeforeAnythingIsStored(t *testing.T) {
@@ -65,7 +65,7 @@ func TestCalibrateKeepsTheMeasurementAndTheHostAppliesItsFloor(t *testing.T) {
 		state.Calibration.QueryCount != 25 || state.IsManual {
 		t.Errorf("state %+v", state)
 	}
-	if stored, found := search.StoredFloor(modelRecipe); !found || stored != state.Floor {
+	if stored, found := search.GetStoredFloor(modelRecipe); !found || stored != state.Floor {
 		t.Errorf("the host stores %v (%v), want %v", stored, found, state.Floor)
 	}
 
@@ -87,7 +87,7 @@ func TestCalibrateOfAVaultWithTooFewNotesChangesNothing(t *testing.T) {
 	if state.Source != relevance.SourceModel || state.Calibration != nil {
 		t.Errorf("state %+v", state)
 	}
-	if _, found := search.StoredFloor(modelRecipe); found || search.FloorWrites() != 0 {
+	if _, found := search.GetStoredFloor(modelRecipe); found || search.FloorWrites() != 0 {
 		t.Error("a floor was stored for a vault too small to measure")
 	}
 }
@@ -108,7 +108,7 @@ func TestCalibrateRespectsTheFloorOfThePerson(t *testing.T) {
 	if abs(state.AutomaticFloor-0.52) > 1e-6 || state.Calibration == nil {
 		t.Errorf("state %+v, want the measurement kept beside it", state)
 	}
-	if stored, _ := search.StoredFloor(modelRecipe); stored != 0.7 {
+	if stored, _ := search.GetStoredFloor(modelRecipe); stored != 0.7 {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 }
@@ -164,7 +164,7 @@ func TestSetOfAutomaticReturnsToTheMeasuredFloorAndDropsTheValueSent(t *testing.
 	if state.IsManual || state.ManualFloor != 0 || state.Source != relevance.SourceCalibrated || abs(state.Floor-0.52) > 1e-6 {
 		t.Errorf("state %+v, want the measured floor and no manual floor", state)
 	}
-	if stored, _ := search.StoredFloor(modelRecipe); abs(stored-0.52) > 1e-6 {
+	if stored, _ := search.GetStoredFloor(modelRecipe); abs(stored-0.52) > 1e-6 {
 		t.Errorf("the host applies %v, want the measured floor", stored)
 	}
 }
@@ -182,7 +182,7 @@ func TestSetOfAutomaticWithoutAMeasurementFallsBackToTheHint(t *testing.T) {
 	if state.Floor != 0.4 || state.Source != relevance.SourceModel {
 		t.Errorf("state %+v, want the hint", state)
 	}
-	if _, found := search.StoredFloor(modelRecipe); found {
+	if _, found := search.GetStoredFloor(modelRecipe); found {
 		t.Error("the host still stores a floor")
 	}
 }
@@ -235,12 +235,12 @@ func TestAnUnreadableRecordIsAnErrorAndNotAnEmptyOne(t *testing.T) {
 	if err != nil || len(files) != 1 {
 		t.Fatalf("listed %v (%v)", files, err)
 	}
-	vault.Store().File(files[0].Name, []byte(`{"recipe":"other","isManual":true,"manualFloor":0.8}`))
+	vault.Store().WriteFile(files[0].Name, []byte(`{"recipe":"other","isManual":true,"manualFloor":0.8}`))
 	if got, found, err := records.Read(t.Context(), modelRecipe); err != nil || found || got.IsManual {
 		t.Errorf("mismatched recipe gave %+v, found=%v, err=%v", got, found, err)
 	}
 
-	vault.Store().File(files[0].Name, []byte("{broken"))
+	vault.Store().WriteFile(files[0].Name, []byte("{broken"))
 	if _, found, err := records.Read(t.Context(), modelRecipe); err == nil || found || errors.Unwrap(err) == nil {
 		t.Errorf("broken record gave found=%v, err=%v", found, err)
 	}
@@ -332,7 +332,7 @@ func TestEnsureMeasuresAnEmbeddedVaultOnceAndWritesTheFloorOnce(t *testing.T) {
 	if batches := search.EmbeddedBatches(); len(batches) != 1 {
 		t.Errorf("the vault was measured %d times, want once", len(batches))
 	}
-	if stored, found := search.StoredFloor(modelRecipe); !found || abs(stored-0.52) > 1e-6 {
+	if stored, found := search.GetStoredFloor(modelRecipe); !found || abs(stored-0.52) > 1e-6 {
 		t.Errorf("the host applies %v (%v), want the measured floor", stored, found)
 	}
 	if search.FloorWrites() != 1 {
@@ -353,7 +353,7 @@ func TestEnsureWaitsForTheVectors(t *testing.T) {
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := search.StoredFloor(modelRecipe); !found {
+	if _, found := search.GetStoredFloor(modelRecipe); !found {
 		t.Error("the vault was not measured once the vectors existed")
 	}
 }
@@ -364,7 +364,7 @@ func TestEnsureTreatsAStartAfterTheVectorsAsTheEventItMissed(t *testing.T) {
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := search.StoredFloor(modelRecipe); !found {
+	if _, found := search.GetStoredFloor(modelRecipe); !found {
 		t.Error("a plugin that started after the vectors existed did not measure the vault")
 	}
 }
@@ -382,7 +382,7 @@ func TestEnsureOfAVaultWithTooFewNotesTriesAgainAtTheNextCall(t *testing.T) {
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := search.StoredFloor(modelRecipe); !found {
+	if _, found := search.GetStoredFloor(modelRecipe); !found {
 		t.Error("the vault was not measured once it was large enough")
 	}
 }
@@ -399,7 +399,7 @@ func TestEnsureAppliesTheRecordWhereTheHostLostItsFloor(t *testing.T) {
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if stored, _ := search.StoredFloor(modelRecipe); stored != 0.66 {
+	if stored, _ := search.GetStoredFloor(modelRecipe); stored != 0.66 {
 		t.Errorf("the host applies %v, want the floor of the record, 0.66", stored)
 	}
 	if batches := search.EmbeddedBatches(); len(batches) != 0 {
@@ -510,7 +510,7 @@ func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 			if err := floors.Ensure(t.Context(), ""); err != nil {
 				t.Fatalf("Ensure gave %v", err)
 			}
-			if stored, found := search.StoredFloor(modelRecipe); found != tc.wantFound || stored != tc.wantStored {
+			if stored, found := search.GetStoredFloor(modelRecipe); found != tc.wantFound || stored != tc.wantStored {
 				t.Errorf("stored %v (%v), want %v (%v)", stored, found, tc.wantStored, tc.wantFound)
 			}
 		})
@@ -523,7 +523,7 @@ func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
-	if stored, found := search.StoredFloor(modelRecipe); !found || abs(stored-0.52) > 1e-6 {
+	if stored, found := search.GetStoredFloor(modelRecipe); !found || abs(stored-0.52) > 1e-6 {
 		t.Errorf("Ensure after clearing manual floor stored %v (%v), want 0.52", stored, found)
 	}
 }
@@ -612,7 +612,7 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 				s.Search = rawSearch.With(id)
 				return relevance.Search{Index: s, Policy: s}
 			},
-			Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) },
+			GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) },
 			Store: func(id domain.VaultID) relevance.Records {
 				st.Store = vault.Store().With(id)
 				return floorrecords.New(st)

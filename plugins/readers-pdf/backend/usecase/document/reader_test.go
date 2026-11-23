@@ -42,7 +42,7 @@ func TestDrawPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
 	if MostPixels != 16_777_216 {
 		t.Fatalf("MostPixels = %d, want 16777216", MostPixels)
 	}
-	vault := hosttest.OnDisk(t, "vault", map[string]string{"broken.pdf": "not a pdf"})
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{"broken.pdf": "not a pdf"})
 	reader := newReader(t, vault)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -66,7 +66,7 @@ func TestDrawPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
 }
 
 func TestGetPagesListsTheSizeOfEachPage(t *testing.T) {
-	vault := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
 
 	pages, err := newReader(t, vault).GetPages(t.Context(), "", "tiny.pdf")
 
@@ -76,7 +76,7 @@ func TestGetPagesListsTheSizeOfEachPage(t *testing.T) {
 }
 
 func TestGetPagesNamesTheFailureToOpenAFile(t *testing.T) {
-	vault := hosttest.OnDisk(t, "vault", map[string]string{"broken.pdf": "not a pdf"})
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{"broken.pdf": "not a pdf"})
 	reader := newReader(t, vault)
 
 	_, err := reader.GetPages(t.Context(), "", "broken.pdf")
@@ -91,7 +91,7 @@ func TestGetPagesNamesTheFailureToOpenAFile(t *testing.T) {
 }
 
 func TestGetHighlightsRefusesRangesThatAreNotRangesOfAText(t *testing.T) {
-	vault := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
 	reader := newReader(t, vault)
 
 	tooMany := make([]domain.ByteRange, mostSpans+1)

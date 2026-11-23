@@ -33,7 +33,7 @@ func (s *Server) OpenListener(name string) (net.Listener, error) {
 		return nil, errors.Join(fmt.Errorf("listener %s address %s is not a TCP address", name, ln.Addr()), ln.Close())
 	}
 	s.listeners = append(s.listeners, listenerPort{name: name, port: addr.Port})
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		if err := ln.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 			return fmt.Errorf("close listener %s: %w", name, err)
 		}

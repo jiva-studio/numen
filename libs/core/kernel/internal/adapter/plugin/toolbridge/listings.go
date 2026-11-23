@@ -31,18 +31,18 @@ type listing struct {
 // listings keeps the ListTools answer of every plugin by plugin id, version and revision of the catalog of
 // search functions the tool descriptions name, in memory and in files.
 type listings struct {
-	files    ListingFiles
-	revision func() string
-	mu       sync.Mutex
-	byPlugin map[string]listing
+	files       ListingFiles
+	getRevision func() string
+	mu          sync.Mutex
+	byPlugin    map[string]listing
 }
 
-func newListings(files ListingFiles, revision func() string) *listings {
-	return &listings{files: files, revision: revision, byPlugin: map[string]listing{}}
+func newListings(files ListingFiles, getRevision func() string) *listings {
+	return &listings{files: files, getRevision: getRevision, byPlugin: map[string]listing{}}
 }
 
 func (l *listings) getKey(version string) string {
-	return version + "+" + l.revision()
+	return version + "+" + l.getRevision()
 }
 
 func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {

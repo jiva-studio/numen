@@ -122,10 +122,10 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
   const placement: PlacementContext = { sectioned, dragCard }
   const tiles = cards.map((card) => createTile(card, cardModels, placement))
 
-  const tilesUnder = (section: string | null): readonly Tile[] =>
+  const listTilesUnder = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)
 
-  const head = tilesUnder(null)
+  const head = listTilesUnder(null)
   const renderedTiles = [
     {
       id: HEAD,
@@ -136,7 +136,7 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
     ...sections.map((section, index) => ({
       id: section.id,
       section: { id: section.id, name: section.name, at: index + 1 },
-      tiles: tilesUnder(section.id),
+      tiles: listTilesUnder(section.id),
       isDropTarget: false,
     })),
   ]

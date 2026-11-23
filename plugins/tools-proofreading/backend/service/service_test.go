@@ -46,7 +46,7 @@ func newScene(t *testing.T) *scene {
 		settings: settings.NewStore(),
 		script:   func(string) string { return "" },
 	}
-	s.texts.File(scanPath, []byte("the scan"))
+	s.texts.WriteFile(scanPath, []byte("the scan"))
 	store := vault.Store()
 	s.texts.SetStore(PluginID, store)
 	complete := func(_ context.Context, request *llm.CompleteRequest, _ connection.Priority) (*llm.CompleteResult, error) {
@@ -54,9 +54,9 @@ func newScene(t *testing.T) *scene {
 		return &llm.CompleteResult{Text: s.script(request.GetMessages()[1].GetText())}, nil
 	}
 	s.host = proofread.Host{
-		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
-		Texts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
-		Queue: s.queue,
+		Store:    func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		GetTexts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
+		Queue:    s.queue,
 	}
 	s.run = newProofreading(s.host, complete, s.settings)
 	return s
@@ -72,7 +72,7 @@ func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	if err := host.WriteText(t.Context(), s.texts.GetStore(ocrID), "recognition.jsonl", parts); err != nil {
 		t.Fatal(err)
 	}
-	version, err := s.texts.As(ocrID).PutVersion(t.Context(), host.TextPut{
+	version, err := s.texts.UsePlugin(ocrID).PutVersion(t.Context(), host.TextPut{
 		Path: scanPath, Key: "recognition", Kind: "recognition", InputHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
 	})
 	if err != nil {
@@ -242,9 +242,9 @@ func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *
 func TestMountAndHostValidation(t *testing.T) {
 	s := newScene(t)
 	for _, incomplete := range []proofread.Host{
-		{Texts: s.host.Texts, Queue: s.host.Queue},
+		{GetTexts: s.host.GetTexts, Queue: s.host.Queue},
 		{Store: s.host.Store, Queue: s.host.Queue},
-		{Store: s.host.Store, Texts: s.host.Texts},
+		{Store: s.host.Store, GetTexts: s.host.GetTexts},
 	} {
 		if err := mount(server.New(), incomplete, failWith(connection.ErrNoConnection)); !errors.Is(err, errIncompleteHost) {
 			t.Errorf("incomplete host got %v, want %v", err, errIncompleteHost)
@@ -256,7 +256,7 @@ func TestMountAndHostValidation(t *testing.T) {
 	}
 
 	opened := openHostAt(hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "tok"})
-	if opened.Store("v") == nil || opened.Texts("v") == nil || opened.Queue == nil {
+	if opened.Store("v") == nil || opened.GetTexts("v") == nil || opened.Queue == nil {
 		t.Errorf("openHostAt returned nil field: %+v", opened)
 	}
 

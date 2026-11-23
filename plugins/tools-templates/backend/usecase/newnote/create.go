@@ -106,7 +106,7 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 	if err != nil {
 		return Result{}, err
 	}
-	if Etag(text) != in.Etag {
+	if ComputeEtag(text) != in.Etag {
 		return Result{}, ErrTemplateChanged
 	}
 	name := strings.TrimSpace(in.Name)
@@ -130,7 +130,7 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 }
 
 func (u CreateFromTemplate) checkQuestions(ctx context.Context, template, text string, data engine.Data) error {
-	fields, err := u.renderer.Fields(ctx, pathpkg.Base(template), text, engine.Data{Title: data.Title, Folder: data.Folder, ID: data.ID, Now: data.Now, Values: nil})
+	fields, err := u.renderer.ListFields(ctx, pathpkg.Base(template), text, engine.Data{Title: data.Title, Folder: data.Folder, ID: data.ID, Now: data.Now, Values: nil})
 	if err != nil {
 		return wrapRenderError(err)
 	}
@@ -175,8 +175,8 @@ func isTemplate(path string, masks mask.Set) bool {
 	return isNamed
 }
 
-// Etag is what tells a text of a template from another.
-func Etag(text string) string {
+// ComputeEtag is what tells a text of a template from another.
+func ComputeEtag(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:])
 }

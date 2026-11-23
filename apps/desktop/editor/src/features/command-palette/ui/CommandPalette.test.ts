@@ -93,7 +93,7 @@ async function mountField(
   showSilence = false,
 ) {
   const core: SearchDeps = {
-    names: async () => found.names ?? [],
+    searchNames: async () => found.names ?? [],
     search: async (_query, mode) => (mode === 'words' ? (found.searchResults ?? []) : []),
   }
   const search = useSearch(core, words, {
@@ -102,11 +102,11 @@ async function mountField(
     menu: { getEntries: () => [SHOW] },
   })
   const commands = createCommandPalette({
-    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
     words,
-    at: () => inFront,
+    getTarget: () => inFront,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    lists: { getStepGroups: () => [], applyItemPreview: () => undefined },
     runs: runSupport(),
     getCommands: createAppCommands,
   })
@@ -269,7 +269,7 @@ describe('the highlight of the search menu as groups answer', () => {
     let meaningTurn = 0
     let holdTurn = 0
     const core: SearchDeps = {
-      names: () => names[namesTurn++]!.promise,
+      searchNames: () => names[namesTurn++]!.promise,
       search: (_query, mode) =>
         mode === 'words' ? wordsGroup[wordsTurn++]!.promise : meaningGroup[meaningTurn++]!.promise,
     }
@@ -279,11 +279,11 @@ describe('the highlight of the search menu as groups answer', () => {
       menu: { getEntries: () => [SHOW] },
     })
     const commands = createCommandPalette({
-      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
       words,
-      at: () => inFront,
+      getTarget: () => inFront,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: () => undefined },
+      lists: { getStepGroups: () => [], applyItemPreview: () => undefined },
       runs: runSupport(),
     })
     const field = mount(CommandPalette, {
@@ -373,16 +373,16 @@ describe('the spinner of the search field', () => {
   it('turns while the meaning of the query is out and stops once it answers', async () => {
     const meaning = createDeferred<readonly SearchResult[]>()
     const core: SearchDeps = {
-      names: async () => [],
+      searchNames: async () => [],
       search: async (_query, mode) => (mode === 'meaning' ? meaning.promise : [noteResult]),
     }
     const search = useSearch(core, words, { wait: now })
     const commands = createCommandPalette({
-      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
       words,
-      at: () => inFront,
+      getTarget: () => inFront,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: () => undefined },
+      lists: { getStepGroups: () => [], applyItemPreview: () => undefined },
       runs: runSupport(),
       getCommands: createAppCommands,
     })

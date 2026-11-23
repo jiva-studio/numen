@@ -152,7 +152,7 @@ func FuzzReadConfig(f *testing.F) {
 	if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
 		f.Fatal(err)
 	}
-	pos := ConfigAt(root, DefaultServiceDir)
+	pos := GetConfigPath(root, DefaultServiceDir)
 
 	f.Fuzz(func(t *testing.T, raw string) {
 		if err := os.WriteFile(pos, []byte(raw), 0o644); err != nil {
@@ -160,7 +160,7 @@ func FuzzReadConfig(f *testing.F) {
 		}
 
 		target, err := ReadConfig(root, DefaultServiceDir)
-		if err == nil && !ulid.Valid(target.ID) {
+		if err == nil && !ulid.IsValid(target.ID) {
 			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {

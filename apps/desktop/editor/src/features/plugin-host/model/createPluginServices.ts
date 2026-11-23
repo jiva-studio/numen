@@ -61,7 +61,7 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps): PluginServic
       getMessageWriter: (name) => log.getWriter(name),
     }),
     getNoteInFocus: () => getNoteInFocus(windowTabs),
-    today: () => formatLocalDate(getCurrentDate()),
+    getToday: () => formatLocalDate(getCurrentDate()),
   })
 }
 

@@ -39,7 +39,7 @@ func (u *EvaluateQuery) run(
 		return searchquery.SearchResults{}, err
 	}
 	places := &placeCache{
-		source: u.places, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, document: docs.getDocument, load: docs.loadDocuments,
+		source: u.places, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, getDocument: docs.getDocument, load: docs.loadDocuments,
 	}
 	meaning := &meaningSearch{vectors: u.vectors, source: u.source, filter: places.filterScope, req: req, warnings: warns}
 	vectors, err := meaning.embed(ctx)
@@ -51,7 +51,7 @@ func (u *EvaluateQuery) run(
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	candidates, isCut, err := places.unite(ctx, lists, req.Limits.MaxCandidates)
+	candidates, isCut, err := places.mergeLists(ctx, lists, req.Limits.MaxCandidates)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -77,7 +77,7 @@ func (u *EvaluateQuery) run(
 	results := searchquery.SearchResults{
 		ScoreKind: searchquery.GetScoreKind(req.Query.Conditions), Floor: req.Floor, Candidates: len(candidates),
 	}
-	results.Results = evaluator{req: req, document: docs.getDocument}.evaluate(candidates, scores, texts, documents, results.ScoreKind)
+	results.Results = evaluator{req: req, getDocument: docs.getDocument}.evaluate(candidates, scores, texts, documents, results.ScoreKind)
 	results.Warnings = slices.Concat(warns.list, calls.warning)
 	searchquery.Sort(&results)
 	return results, nil

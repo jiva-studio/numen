@@ -18,7 +18,7 @@ export class SearchDriver {
     this.found = new SearchResults(scenario)
   }
 
-  private async type(): Promise<void> {
+  private async enterQuery(): Promise<void> {
     const { page } = this.scenario
     const field = this.palette.searchField()
     if (!(await field.isVisible())) await page.keyboard.press('Control+k')
@@ -29,18 +29,18 @@ export class SearchDriver {
   async search(query: string): Promise<void> {
     await this.scenario.ensureWorkspace()
     this.query = query
-    await this.type()
+    await this.enterQuery()
   }
 
   private getResults(text: string, group: string): Locator {
-    return this.found.results(text, group)
+    return this.found.getResults(text, group)
   }
 
   private async waitForResult(text: string, group: string): Promise<Locator> {
     // A new file is found once indexed, so the words are typed again until the result shows.
     const results = this.getResults(text, group)
     await expect(async () => {
-      await this.type()
+      await this.enterQuery()
       await expect(results.first()).toBeVisible({ timeout: 3_000 })
     }).toPass({ timeout: INDEXING_LIMIT_MS })
     return this.found.pickRow(results, text)
@@ -53,15 +53,15 @@ export class SearchDriver {
   async expectNoResult(text: string, group: string): Promise<void> {
     const results = this.getResults(text, group)
     if (this.query === '') {
-      await expect(this.found.busyGroups()).toHaveCount(0)
+      await expect(this.found.getBusyGroups()).toHaveCount(0)
       await expect(results).toHaveCount(0)
       return
     }
     // The index removes a file that lost its text after a delay, so the words are typed again until the index has no hit for the file.
     // An empty list is read only when every group has answered: a group that has not answered shows nothing yet.
     await expect(async () => {
-      await this.type()
-      await expect(this.found.busyGroups()).toHaveCount(0, { timeout: 3_000 })
+      await this.enterQuery()
+      await expect(this.found.getBusyGroups()).toHaveCount(0, { timeout: 3_000 })
       await expect(results).toHaveCount(0, { timeout: 3_000 })
     }).toPass({ timeout: INDEXING_LIMIT_MS })
   }
@@ -75,14 +75,14 @@ export class SearchDriver {
     const { page } = this.scenario
     const row = await this.waitForResult(text, group)
     // The groups answer in any order, and one that answers can move the light back to the first row.
-    await expect(this.found.busyGroups()).toHaveCount(0)
-    const rows = this.found.rows()
+    await expect(this.found.getBusyGroups()).toHaveCount(0)
+    const rows = this.found.getRows()
     for (let step = 0; step < (await rows.count()) && (await row.getAttribute('aria-selected')) !== 'true'; step += 1) {
       await page.keyboard.press('ArrowDown')
     }
     await expect(row).toHaveAttribute('aria-selected', 'true')
     await page.keyboard.press('Control+k')
-    await expect(this.found.actionRows().first()).toBeVisible()
+    await expect(this.found.getActionRows().first()).toBeVisible()
   }
 
   async listActions(text: string, group: string): Promise<string[]> {
@@ -107,7 +107,7 @@ export class SearchDriver {
   }
 
   async chooseAction(action: string): Promise<void> {
-    const rows = this.found.actionNamed(action)
+    const rows = this.found.getActionNamed(action)
     await expect(rows, `the result offers no action "${action}"`).toHaveCount(1)
     await rows.click()
   }

@@ -7,7 +7,7 @@
  * what the window shows while the list is navigated and what it shows after the list is left.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
+import { requests, listCards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
 import { SETTINGS_WORDS, type PluginSettingInfo } from '@/entities/settings'
 
 const MARKER = 'data-appearance'
@@ -365,7 +365,7 @@ describe('the commands of the settings over how the window is drawn and works', 
       await press('Enter')
       await wait()
 
-      expect(cards().join(' ')).toContain(SETTINGS_WORDS.unturned)
+      expect(listCards().join(' ')).toContain(SETTINGS_WORDS.unturned)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
   })

@@ -44,5 +44,5 @@ func run() (code int) {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
 		return 1
 	}
-	return cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg, services))
+	return cli.Execute(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg, services))
 }

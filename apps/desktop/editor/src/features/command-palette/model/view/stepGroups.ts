@@ -40,15 +40,15 @@ function getArgumentGroup(step: PendingStep, text: string, words: Words): Palett
   const prompt = getPrompt(step)
   const value = text.trim()
   const title = prompt?.title ?? ''
-  const item = (itemTitle: string, action: string): PaletteItem => ({
+  const createItem = (itemTitle: string, action: string): PaletteItem => ({
     id: step.command.id,
     title: itemTitle,
     actions: [{ id: step.command.id, text: action }],
   })
   let items: PaletteItem[] = []
-  if (value) items = [item(`${title}: “${value}”`, words.givesIt)]
+  if (value) items = [createItem(`${title}: “${value}”`, words.givesIt)]
   else if (prompt && !prompt.isRequired)
-    items = [item(`${words.leavesOut} ${title}`, words.leavesOut)]
+    items = [createItem(`${words.leavesOut} ${title}`, words.leavesOut)]
   return { id: 'arguments', title, items, silence: title }
 }
 

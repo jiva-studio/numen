@@ -4,17 +4,47 @@
  * whatever reads it, such as the host and the tabs of a plugin, so none of them needs the loader to
  * exist.
  */
-import { shallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 import type { Manifest } from '@numen/core-client'
 import type { PluginModule } from '../module'
 import type { ActivePluginEntry } from './activation'
-import { createPluginStarts, type PluginStarter } from './pluginStarts'
+import { createPluginStarts, type ContributionMatch, type PluginStarter } from './pluginStarts'
 
 export interface PluginStatusDeps {
   readonly isEnabled: (id: string) => boolean
 }
 
-export function createPluginStatus(deps: PluginStatusDeps) {
+interface PluginStatusState {
+  readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
+  readonly failures: ShallowRef<ReadonlyMap<string, string>>
+  readonly starting: ShallowRef<ReadonlySet<string>>
+  readonly manifests: Map<string, Manifest>
+  readonly starter: { current: PluginStarter | undefined }
+  readonly moduleLoaders: Map<string, () => Promise<PluginModule>>
+  readonly tracked: ShallowRef<ReadonlySet<string>>
+  readonly isRunning: ShallowRef<boolean>
+  readonly isEnabled: (id: string) => boolean
+  readonly listPlugins: () => string[]
+}
+
+/**
+ * `state` is what the loader keeps and changes; the rest only reads it. `startTabPlugins` starts the
+ * enabled plugins that declare one of the tab kinds, and every enabled plugin that declares a tab
+ * kind where no kinds are given, and waits for them. `findPluginsOf` gives the enabled plugins whose
+ * manifest, as read so far, declares the contribution. `isPluginStarting` is reactive and, before
+ * the plugins are listed, true for every plugin, as none is known to be off yet.
+ */
+export interface PluginStatus {
+  readonly state: PluginStatusState
+  readonly startPlugin: (id: string) => Promise<void>
+  readonly startPluginsOf: (match: ContributionMatch) => Promise<void>
+  readonly startTabPlugins: (kinds?: readonly string[]) => Promise<void>
+  readonly findPluginsOf: (match: ContributionMatch) => string[]
+  readonly isPluginStarting: (id: string) => boolean
+  readonly getPluginFailure: (id: string) => string | undefined
+}
+
+export function createPluginStatus(deps: PluginStatusDeps): PluginStatus {
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
   const failures = shallowRef<ReadonlyMap<string, string>>(new Map())
   const starting = shallowRef<ReadonlySet<string>>(new Set())
@@ -24,7 +54,7 @@ export function createPluginStatus(deps: PluginStatusDeps) {
   const tracked = shallowRef<ReadonlySet<string>>(new Set())
   const isRunning = shallowRef(false)
   const listPlugins = (): string[] => [...new Set([...moduleLoaders.keys(), ...tracked.value])]
-  const starts = createPluginStarts({
+  const pluginStarts = createPluginStarts({
     isRunning,
     listPlugins,
     isEnabled: deps.isEnabled,
@@ -34,7 +64,6 @@ export function createPluginStatus(deps: PluginStatusDeps) {
     starter,
   })
   return {
-    /** What the loader keeps and changes; the rest only reads it. */
     state: {
       activePlugins,
       failures,
@@ -47,13 +76,11 @@ export function createPluginStatus(deps: PluginStatusDeps) {
       isEnabled: deps.isEnabled,
       listPlugins,
     },
-    startPlugin: starts.startPlugin,
-    startPluginsOf: starts.startPluginsOf,
-    startTabPlugins: starts.startTabPlugins,
-    findPluginsOf: starts.findPluginsOf,
-    isPluginStarting: starts.isPluginStarting,
+    startPlugin: pluginStarts.startPlugin,
+    startPluginsOf: pluginStarts.startPluginsOf,
+    startTabPlugins: pluginStarts.startTabPlugins,
+    findPluginsOf: pluginStarts.findPluginsOf,
+    isPluginStarting: pluginStarts.isPluginStarting,
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),
   }
 }
-
-export type PluginStatus = ReturnType<typeof createPluginStatus>

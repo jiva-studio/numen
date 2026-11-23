@@ -53,7 +53,7 @@ export interface CardWords {
   readonly cut: string
   readonly cardStem: string
   readonly nothing: string
-  readonly unknown: (cardModel: string | null) => string
+  readonly describeUnknown: (cardModel: string | null) => string
   readonly wrong: string
 }
 
@@ -77,7 +77,7 @@ export const DECK_WORDS: DeckWords = {
   cardStem: 'Card',
   sectionStem: 'Section',
   nothing: 'Nothing in it',
-  unknown: (cardModel) =>
+  describeUnknown: (cardModel) =>
     cardModel === null ? 'Cut by no card model' : `No card model called ${cardModel}`,
   sectionObjection: 'A section needs a name',
   wrong: 'What is wrong',

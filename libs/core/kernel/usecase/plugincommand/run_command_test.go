@@ -58,7 +58,7 @@ func newProofreading() *declaredCommands {
 
 func TestRunCommandRunsACommandWithItemsOverTheVersionItsItemNames(t *testing.T) {
 	declared, versions := newProofreading(), &proofreadingVersions{}
-	commands := newUseCases(declared, declared, getTypes(), nil, nil).withVersions(versions)
+	commands := newUseCases(declared, declared, getTypes()).withVersions(versions)
 
 	result, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.ears", Command: "proofread", Path: "talks/a.mp3", ItemID: "org.example.ears/ears",
@@ -71,7 +71,7 @@ func TestRunCommandRunsACommandWithItemsOverTheVersionItsItemNames(t *testing.T)
 
 func TestRunCommandRunsACommandWithoutItemsInItsPlugin(t *testing.T) {
 	declared := newProofreading()
-	commands := newUseCases(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
+	commands := newUseCases(declared, declared, getTypes()).withVersions(&proofreadingVersions{})
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "org.example.ears", Command: "tidy"})
 
@@ -82,7 +82,7 @@ func TestRunCommandRunsACommandWithoutItemsInItsPlugin(t *testing.T) {
 
 func TestRunCommandRefusesACommandWithItemsOverAnItemItDoesNotOffer(t *testing.T) {
 	declared := newProofreading()
-	commands := newUseCases(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
+	commands := newUseCases(declared, declared, getTypes()).withVersions(&proofreadingVersions{})
 
 	for name, call := range map[string]plugin.CommandCall{
 		"no item":         {PluginID: "org.example.ears", Command: "proofread", Path: "talks/a.mp3"},
@@ -90,7 +90,7 @@ func TestRunCommandRefusesACommandWithItemsOverAnItemItDoesNotOffer(t *testing.T
 		"delete no item":  {Command: text.DeleteCommand, Path: "talks/a.mp3"},
 		"delete a bad id": {Command: text.DeleteCommand, Path: "talks/a.mp3", ItemID: "org.example.ears/gone"},
 	} {
-		if _, err := commands.RunCommand.Execute(t.Context(), getVault(), call); !errors.Is(err, plugincommand.ErrBadArguments) {
+		if _, err := commands.RunCommand.Execute(t.Context(), getVault(), call); !errors.Is(err, plugin.ErrBadArguments) {
 			t.Errorf("%s: the call answered %v, want bad arguments", name, err)
 		}
 	}
@@ -98,7 +98,7 @@ func TestRunCommandRefusesACommandWithItemsOverAnItemItDoesNotOffer(t *testing.T
 
 func TestRunCommandDeletesTheVersionItsItemNames(t *testing.T) {
 	declared, versions := newProofreading(), &proofreadingVersions{}
-	commands := newUseCases(declared, declared, getTypes(), nil, nil).withVersions(versions)
+	commands := newUseCases(declared, declared, getTypes()).withVersions(versions)
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		Command: text.DeleteCommand, Path: "talks/a.mp3", ItemID: "org.example.ears/older",
@@ -111,20 +111,20 @@ func TestRunCommandDeletesTheVersionItsItemNames(t *testing.T) {
 
 func TestRunCommandWithoutVersionsRefusesACommandWithItems(t *testing.T) {
 	declared := newProofreading()
-	commands := newUseCases(declared, declared, getTypes(), nil, nil)
+	commands := newUseCases(declared, declared, getTypes())
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.ears", Command: "proofread", ItemID: "org.example.ears/ears",
 	})
 
-	if err == nil || errors.Is(err, plugincommand.ErrBadArguments) {
+	if err == nil || errors.Is(err, plugin.ErrBadArguments) {
 		t.Errorf("a window with no text versions ran a command with items: %v", err)
 	}
 }
 
 func TestListItemsListsTheVersionsOfACommandWithItemsAndNothingForOthers(t *testing.T) {
 	declared := newProofreading()
-	commands := newUseCases(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
+	commands := newUseCases(declared, declared, getTypes()).withVersions(&proofreadingVersions{})
 
 	lists := commands.ListItems.Execute(t.Context(), getVault(), "talks/a.mp3", []plugincommand.CommandID{
 		{PluginID: "org.example.ears", Command: "proofread"},
@@ -142,7 +142,7 @@ func TestListItemsListsTheVersionsOfACommandWithItemsAndNothingForOthers(t *test
 	if lists[1].Err != nil || len(lists[1].Items) != 0 {
 		t.Errorf("a command without items listed %+v (%v)", lists[1].Items, lists[1].Err)
 	}
-	if !errors.Is(lists[2].Err, plugincommand.ErrUnknownCommand) {
+	if !errors.Is(lists[2].Err, plugin.ErrUnknownCommand) {
 		t.Errorf("an unknown command listed %v", lists[2].Err)
 	}
 	if lists[3].Err != nil || len(lists[3].Items) != 2 {

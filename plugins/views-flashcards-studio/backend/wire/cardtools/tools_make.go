@@ -30,7 +30,7 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 		if err != nil {
 			return NoteCreated{}, err
 		}
-		return newNoteCreated(t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil}))
+		return newNoteCreated(t.cards.Create.CreateDeck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil}))
 	})
 }
 
@@ -57,7 +57,7 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 		if err != nil {
 			return NoteCreated{}, err
 		}
-		return newNoteCreated(t.cards.Create.CardModel(ctx, v, cards.New{
+		return newNoteCreated(t.cards.Create.CreateCardModel(ctx, v, cards.New{
 			Title: in.Title, Body: "", Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),
 		}))
 	})

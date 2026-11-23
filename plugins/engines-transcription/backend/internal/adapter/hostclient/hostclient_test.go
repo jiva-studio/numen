@@ -14,8 +14,8 @@ func newFiles(lectures *hosttest.Vault) Files {
 func TestReadFileReadsTheVaultNamed(t *testing.T) {
 	lectures := hosttest.New("Lectures")
 	chemistry := hosttest.New("Chemistry")
-	lectures.Beside(chemistry)
-	chemistry.File("assets/only-chemistry.wav", "chem bytes")
+	lectures.LinkBeside(chemistry)
+	chemistry.WriteFile("assets/only-chemistry.wav", "chem bytes")
 
 	raw, err := newFiles(lectures).ReadFile(t.Context(), "Chemistry", "assets/only-chemistry.wav")
 

@@ -97,7 +97,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   /** Whether a read has declared the settings and the file they stand in. */
   let hasDeclarations = false
 
-  const requested = createRemoteValues<SettingEdit, SettingsWritten>(
+  const remoteValues = createRemoteValues<SettingEdit, SettingsWritten>(
     (values) => api.updateSettings([...values.values()]),
     (answer) => {
       const file = parseSettingsText(answer.written)
@@ -113,7 +113,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   )
 
   const applySettings = (answer: Configuration, file: JsonValue) => {
-    const isTaken = requested.takeAnswer(answer.version, () => {
+    const isTaken = remoteValues.takeAnswer(answer.version, () => {
       target.value = file
       path.value = answer.path
       plugins.value = answer.plugins ?? []
@@ -148,10 +148,10 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
 
   /** Whether a value requested at a path has not been answered by the vault yet. */
   const isRequested = (path: readonly string[]): boolean =>
-    requested.getRequestedValue(getPathKey(path)) !== undefined
+    remoteValues.getRequestedValue(getPathKey(path)) !== undefined
 
   /** Whether the write of a setting is in flight. */
-  const isPending = (path: readonly string[]): boolean => requested.isPending(getPathKey(path))
+  const isPending = (path: readonly string[]): boolean => remoteValues.isPending(getPathKey(path))
 
   /**
    * A setting as the vault answered it: the last read, and each value written since from the
@@ -163,7 +163,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   }
 
   const getSetting = (path: readonly string[]): JsonValue | undefined => {
-    const edit = requested.getRequestedValue(getPathKey(path))?.value
+    const edit = remoteValues.getRequestedValue(getPathKey(path))?.value
     return (edit && parseEditValue(edit)) ?? getCommittedSetting(path)
   }
 
@@ -172,7 +172,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     say('')
 
     try {
-      await requested.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
+      await remoteValues.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
     } catch (caughtError) {
       say(`${words.unturned} ${formatError(caughtError)}`, 'error')
     }

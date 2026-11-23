@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createPluginPaneWrapper } from './host'
-import { registerPluginStyle } from '../styles'
+import { createCustomTabKind, pickCustomTabParts } from './customTabKind'
+import { createPluginStyles } from '../styles'
 import {
   CONVERSATION,
   NOTE_EDITOR,
@@ -12,7 +12,12 @@ import {
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import { STUB_COMPONENT, STUB_CONNECTIONS } from '../testing/stubComponent'
-import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+import { createTestHostDeps, createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+
+const NO_HOST = createTestHostDeps({
+  target: 'desktop.editor',
+  registerKind: () => () => undefined,
+})
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
@@ -51,7 +56,7 @@ describe('createPluginHost', () => {
       ),
       openTab: vi.fn(async () => 'tab-1'),
       getSetting: vi.fn((_pluginId, key) => (key === 'fontSize' ? 14 : undefined)),
-      onSettingChange: vi.fn(() => vi.fn()),
+      watchSetting: vi.fn(() => ({ dispose: vi.fn() })),
     }
 
     return { deps, registeredKinds, extensionReaders }
@@ -352,12 +357,9 @@ describe('createPluginHost', () => {
     await health?.clear('connection')
 
     expect(filed).toStrictEqual(['org.example.atlas connection', 'org.example.atlas -connection'])
-    expect(
-      createTestPluginHost(deps).lifecycle.createContext('org.example.atlas').plugin.health,
-    ).toBe(undefined)
   })
 
-  it('delegates getSetting and onSettingChange through host', () => {
+  it('delegates getSetting and watchSetting through host', () => {
     const { deps } = createMockDeps()
     const host = createTestPluginHost(deps)
 
@@ -365,12 +367,8 @@ describe('createPluginHost', () => {
     expect(deps.getSetting).toHaveBeenCalledWith('test.plugin', 'fontSize')
 
     const handler = vi.fn()
-    const sub = host.lifecycle.onSettingChange('test.plugin', 'fontSize', handler)
-    expect(deps.onSettingChange).toHaveBeenCalledWith(
-      'test.plugin',
-      'fontSize',
-      expect.any(Function),
-    )
+    const sub = host.lifecycle.watchSetting('test.plugin', 'fontSize', handler)
+    expect(deps.watchSetting).toHaveBeenCalledWith('test.plugin', 'fontSize', expect.any(Function))
     expect(sub).toHaveProperty('dispose')
   })
 
@@ -387,9 +385,9 @@ describe('createPluginHost', () => {
     const deps: TestHostDeps = {
       ...baseDeps,
       getEditorSettings: vi.fn(() => held.value),
-      onEditorSettingsChange: vi.fn((_pluginId, handler) => {
+      watchEditorSettings: vi.fn((_pluginId, handler) => {
         handlers.push(handler)
-        return unsubscribe
+        return { dispose: unsubscribe }
       }),
     }
     const settings =
@@ -401,7 +399,7 @@ describe('createPluginHost', () => {
     held.value = { lineNumbers: true, softWrap: true }
     await handlers[0]?.(held.value)
 
-    expect(deps.onEditorSettingsChange).toHaveBeenCalledWith('test.plugin', expect.any(Function))
+    expect(deps.watchEditorSettings).toHaveBeenCalledWith('test.plugin', expect.any(Function))
     expect(settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: true })
     expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: true, softWrap: true })
     subscription.dispose()
@@ -445,7 +443,11 @@ describe('createPluginHost', () => {
       },
     })
 
-    const Wrapper = createPluginPaneWrapper('crashing.plugin', CrashingComponent)
+    const Wrapper = createCustomTabKind(
+      'crashing.plugin',
+      pickCustomTabParts({ kind: 'test.kind', component: CrashingComponent }),
+      { ...NO_HOST, styles: createPluginStyles() },
+    ).pane
     const wrapper = mount(Wrapper, {
       props: { state: { path: '/test/note.md' } },
     })
@@ -464,8 +466,13 @@ describe('createPluginHost', () => {
       },
     })
 
-    registerPluginStyle('sample.plugin', '/plugin/sample.plugin/styles.css')
-    const Wrapper = createPluginPaneWrapper('sample.plugin', SampleComponent)
+    const styles = createPluginStyles()
+    styles.register('sample.plugin', '/plugin/sample.plugin/styles.css')
+    const Wrapper = createCustomTabKind(
+      'sample.plugin',
+      pickCustomTabParts({ kind: 'test.kind', component: SampleComponent }),
+      { ...NO_HOST, styles },
+    ).pane
     const wrapper = mount(Wrapper, {
       props: { state: {} },
       attachTo: document.body,

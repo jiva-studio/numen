@@ -43,7 +43,7 @@ func TestParseKeepsOnlyLinesWithAModelId(t *testing.T) {
 }
 
 func TestFoldGroupsTheLevelsOfAModel(t *testing.T) {
-	families := Fold([]Model{{Name: "m-high", Title: "Model (High)"}, {Name: "m-low", Title: "Model (Low)"}, {Name: "solo", Title: "Solo"}})
+	families := GroupFamilies([]Model{{Name: "m-high", Title: "Model (High)"}, {Name: "m-low", Title: "Model (Low)"}, {Name: "solo", Title: "Solo"}})
 	if len(families) != 2 {
 		t.Fatalf("the families are %v", families)
 	}

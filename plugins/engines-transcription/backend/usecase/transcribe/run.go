@@ -44,7 +44,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return fmt.Errorf("read %s: %w", path, err)
 	}
 	fileHash := domain.HashContent(raw)
-	stores, texts := t.stores(vault), t.texts(vault)
+	stores, texts := t.getFolder(vault), t.getTexts(vault)
 	j := &job{
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
 		store: transcripts{store: stores}, texts: texts, turn: nil,
@@ -77,7 +77,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return fmt.Errorf("open the model: %w", err)
 	}
-	if err := t.hear(ctx, j, model, raw); err != nil {
+	if err := t.recognizeJob(ctx, j, model, raw); err != nil {
 		return rememberFailure(ctx, j, err)
 	}
 	err = j.store.finish(ctx, j.key)
@@ -104,14 +104,14 @@ func rememberFailure(ctx context.Context, j *job, err error) error {
 	return errors.Join(err, j.store.writeFailure(ctx, j.key, err))
 }
 
-func (t *Transcriber) hear(ctx context.Context, j *job, model ports.Recognizer, raw []byte) (err error) {
+func (t *Transcriber) recognizeJob(ctx context.Context, j *job, model ports.Recognizer, raw []byte) (err error) {
 	recording, err := model.Open(ctx, raw)
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened: %w", j.path, err)
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing recording in defer releases audio resources"
 	defer func() { err = errors.Join(err, recording.Close()) }()
-	return t.hearSegments(ctx, j, model, recording)
+	return t.recognizeSegments(ctx, j, model, recording)
 }
 
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
@@ -135,7 +135,7 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 }
 
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
-	turn, err := host.InferenceQueue(t.queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: !t.isBackground(getTaskID(j.vault, j.path)), OnWaiting: func() {
+	turn, err := host.InferenceQueue(t.queue.EnqueueWork).Acquire(ctx, host.Work{IsUserStarted: !t.isBackground(getTaskID(j.vault, j.path)), NotifyWaiting: func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
 		t.reportTask(ctx, host.Task{
 			ID: getTaskID(j.vault, j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,
@@ -150,7 +150,7 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	return nil
 }
 
-func (t *Transcriber) hearSegments(ctx context.Context, j *job, model ports.Recognizer, recording ports.Recording) error {
+func (t *Transcriber) recognizeSegments(ctx context.Context, j *job, model ports.Recognizer, recording ports.Recording) error {
 	from, err := j.store.readReachedPosition(ctx, j.key)
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func (t *Transcriber) hearSegments(ctx context.Context, j *job, model ports.Reco
 	length := recording.GetDuration()
 	for {
 		t.reportProgress(ctx, j.vault, j.path, from, length)
-		cues, reached, err := hearBatch(ctx, model, recording, j.path, from)
+		cues, reached, err := recognizeBatch(ctx, model, recording, j.path, from)
 		if err != nil {
 			return err
 		}
@@ -190,7 +190,7 @@ func (t *Transcriber) yieldTurn(ctx context.Context, j *job) error {
 	return t.takeTurn(ctx, j)
 }
 
-func hearBatch(
+func recognizeBatch(
 	ctx context.Context, model ports.Recognizer, recording ports.Recording, path string, from int,
 ) ([]transcript.Cue, int, error) {
 	segments, err := recording.GetSegments(ctx, from, batchSize)

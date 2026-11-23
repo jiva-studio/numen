@@ -52,9 +52,9 @@ func (u ListFields) Execute(ctx context.Context, in FieldsRequest) (FieldsResult
 		return FieldsResult{}, err
 	}
 	data := engine.Data{Title: name, Folder: in.Folder, ID: "", Now: u.clock.Now(), Values: nil}
-	fields, err := u.renderer.Fields(ctx, pathpkg.Base(in.Template), text, data)
+	fields, err := u.renderer.ListFields(ctx, pathpkg.Base(in.Template), text, data)
 	if err != nil {
 		return FieldsResult{}, fmt.Errorf("%w: %w", ErrInvalidNote, err)
 	}
-	return FieldsResult{Fields: fields, Etag: Etag(text), Name: name}, nil
+	return FieldsResult{Fields: fields, Etag: ComputeEtag(text), Name: name}, nil
 }

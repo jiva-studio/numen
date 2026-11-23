@@ -11,7 +11,7 @@ interface ReaderPlugin {
 
 export interface TabPluginStartsDeps {
   readonly status: Pick<PluginStatus, 'startPlugin' | 'startTabPlugins'>
-  readonly getPlugins: () => readonly ReaderPlugin[]
+  readonly listPlugins: () => readonly ReaderPlugin[]
   readonly writeMessage: MessageWriter
 }
 
@@ -29,8 +29,10 @@ export function createTabPluginStarts(deps: TabPluginStartsDeps) {
       ),
     startExtensionReader: async (extension: string): Promise<void> => {
       const plugins = deps
-        .getPlugins()
-        .filter((one) => (one.readers ?? []).some((reader) => reader.extensions.includes(extension)))
+        .listPlugins()
+        .filter((one) =>
+          (one.readers ?? []).some((reader) => reader.extensions.includes(extension)),
+        )
       await Promise.all(plugins.map((one) => status.startPlugin(one.id)))
     },
   }

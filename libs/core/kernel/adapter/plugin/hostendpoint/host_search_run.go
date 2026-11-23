@@ -86,18 +86,18 @@ func (e *searchEndpoint) GetSearch(
 	return connect.NewResponse(&v1.GetSearchResponse{Search: state}), nil
 }
 
-func (e *searchEndpoint) RemoveSearch(
-	ctx context.Context, req *connect.Request[v1.RemoveSearchRequest],
-) (*connect.Response[v1.RemoveSearchResponse], error) {
+func (e *searchEndpoint) DeleteSearch(
+	ctx context.Context, req *connect.Request[v1.DeleteSearchRequest],
+) (*connect.Response[v1.DeleteSearchResponse], error) {
 	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, false)
 	if err != nil {
 		return nil, err
 	}
 	if code := call.getRunErrorCode(false); code != 0 {
-		return connect.NewResponse(&v1.RemoveSearchResponse{Error: code}), nil
+		return connect.NewResponse(&v1.DeleteSearchResponse{Error: code}), nil
 	}
 	code, err := answerRun(ctx, call.search.Runs.Remove.Execute(ctx, call.pluginID, searchrun.ID(req.Msg.GetId())))
-	return connect.NewResponse(&v1.RemoveSearchResponse{Error: code}), err
+	return connect.NewResponse(&v1.DeleteSearchResponse{Error: code}), err
 }
 
 func (e *searchEndpoint) ListSearchFunctions(

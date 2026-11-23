@@ -6,7 +6,14 @@
  * interval the setting names.
  */
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
-import type { ApiError, AppInfo, JsonValue, Result } from '@numen/plugin-sdk'
+import type {
+  ApiError,
+  AppInfo,
+  Failure,
+  JsonValue,
+  OpenExternalErrorCode,
+  Result,
+} from '@numen/plugin-sdk'
 import type { UpdateApi } from '../api/wire'
 import type { Status, Update } from '../api/updater'
 import { RETRY_DELAYS_MS, SETTLE_DELAY_MS, getIntervalMs } from './waits'
@@ -20,7 +27,7 @@ export interface Timer {
 export interface UpdateDeps {
   readonly api: UpdateApi
   readonly app: AppInfo
-  readonly openExternal: (url: string) => Promise<Result<null>>
+  readonly openExternal: (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
   readonly getIntervalHours: () => JsonValue | undefined
   readonly timer: Timer
 }
@@ -40,8 +47,8 @@ export interface Updates {
   }
   readonly announcement: {
     dismiss(): void
-    openDownload(): Promise<Result<null>>
-    openNotes(): Promise<Result<null>>
+    openDownload(): Promise<Result<null, Failure<OpenExternalErrorCode>>>
+    openNotes(): Promise<Result<null, Failure<OpenExternalErrorCode>>>
   }
 }
 
@@ -94,7 +101,7 @@ export function createUpdates(deps: UpdateDeps): Updates {
     deps.api.check(deps.app).then(settle, retry)
   }
 
-  const open = (url: string | undefined): Promise<Result<null>> =>
+  const open = (url: string | undefined): Promise<Result<null, Failure<OpenExternalErrorCode>>> =>
     url ? deps.openExternal(url) : Promise.resolve({ ok: true, value: null })
 
   return {

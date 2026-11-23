@@ -151,7 +151,7 @@ func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }
 
 func getCoveringPatterns() []string {

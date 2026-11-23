@@ -7,11 +7,11 @@ import { createPluginLister } from '@/entities/plugin'
 import { createWindowClients } from '@/shared/api/clients'
 import { useAppStart, type PluginStarter } from './useAppStart'
 
-const getPlugins = vi.fn()
+const requestPlugins = vi.fn()
 
 const listPlugins = createPluginLister(
   createWindowClients(
-    createCoreHandlerTransport({ getPlugins: (request: unknown) => getPlugins(request) }),
+    createCoreHandlerTransport({ listPlugins: (request: unknown) => requestPlugins(request) }),
   ).pluginService,
 )
 
@@ -54,7 +54,7 @@ const mountStart = (loader: PluginStarter) => {
 }
 
 beforeEach(() => {
-  getPlugins.mockResolvedValue({ plugins: [{ id: 'md.numen.cards' }] })
+  requestPlugins.mockResolvedValue({ plugins: [{ id: 'md.numen.cards' }] })
 })
 afterEach(() => {
   vi.useRealTimers()
@@ -80,7 +80,7 @@ describe('useAppStart', () => {
   it('draws the window once the wait for the interface plugins has passed', async () => {
     vi.useFakeTimers()
     const { loader } = createLoader()
-    getPlugins.mockReturnValue(new Promise(() => undefined))
+    requestPlugins.mockReturnValue(new Promise(() => undefined))
     const { start } = mountStart(loader)
 
     await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
@@ -93,7 +93,7 @@ describe('useAppStart', () => {
   it('aborts the wait for the interface plugins when the window unmounts early', async () => {
     vi.useFakeTimers()
     const { loader, settleInterface } = createLoader()
-    getPlugins.mockReturnValue(new Promise(() => undefined))
+    requestPlugins.mockReturnValue(new Promise(() => undefined))
     const { wrapper, start } = mountStart(loader)
 
     wrapper.unmount()
@@ -107,7 +107,7 @@ describe('useAppStart', () => {
   it('says why there is no view: the list failed, or a plugin did not start', async () => {
     const { loader, failed } = createLoader()
     failed.push({ id: 'md.numen.cards', error: 'no entry' })
-    getPlugins.mockRejectedValue(new Error('the core is down'))
+    requestPlugins.mockRejectedValue(new Error('the core is down'))
     const { start } = mountStart(loader)
 
     await vi.waitFor(() => expect(start.isStarted.value).toBe(true))

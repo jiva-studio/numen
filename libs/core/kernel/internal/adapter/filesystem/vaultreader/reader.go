@@ -88,9 +88,9 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) er
 }
 
 func (s *VaultReader) getWalkedFileStat(p string, d fs.DirEntry) (*domain.FileStat, error) {
-	kind := s.opts.Kind(d.Name())
+	kind := s.opts.GetKind(d.Name())
 	rel := s.getRelPath(p)
-	if s.ignored.MatchesPath(rel) {
+	if s.ignored.IsMatch(rel) {
 		return nil, nil
 	}
 	found, err := getEntryInfo(p, d)
@@ -155,7 +155,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			entries = append(entries, entry)
 		}
 	}
-	slices.SortFunc(entries, inOrder)
+	slices.SortFunc(entries, compareEntries)
 	return entries, nil
 }
 
@@ -166,15 +166,15 @@ func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Ent
 		if found, err := d.Info(); err == nil {
 			entry.ModTime = found.ModTime()
 		}
-		return entry, !s.opts.IsService(d.Name()) && !s.ignored.MatchesPath(rel+"/")
+		return entry, !s.opts.IsService(d.Name()) && !s.ignored.IsMatch(rel+"/")
 	}
-	if s.ignored.MatchesPath(rel) {
+	if s.ignored.IsMatch(rel) {
 		return domain.Entry{}, false
 	}
 	if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil {
 		entry.ModTime = found.ModTime()
 		if found.Mode().IsRegular() {
-			entry.Kind = s.opts.Kind(d.Name())
+			entry.Kind = s.opts.GetKind(d.Name())
 		}
 	}
 	return entry, true
@@ -191,7 +191,7 @@ func getEntryInfo(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	return found, nil
 }
 
-func inOrder(a, b domain.Entry) int {
+func compareEntries(a, b domain.Entry) int {
 	if a.IsFolder != b.IsFolder {
 		if a.IsFolder {
 			return -1
@@ -347,10 +347,10 @@ func (s *VaultReader) getNotANoteError(path string) error {
 }
 
 func (s *VaultReader) isSkipped(path, name string) bool {
-	return s.opts.IsService(name) || s.ignored.MatchesPath(path+"/")
+	return s.opts.IsService(name) || s.ignored.IsMatch(path+"/")
 }
 
-func (s *VaultReader) relative(absolute string) (path string, inside bool) {
+func (s *VaultReader) getRelativePath(absolute string) (path string, inside bool) {
 	rel, err := filepath.Rel(s.root, absolute)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", false
@@ -362,12 +362,12 @@ func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir()); err != nil {
 		return "", false
 	}
-	kind := s.opts.Kind(pathpkg.Base(path))
-	if s.ignored.MatchesPath(path) {
+	kind := s.opts.GetKind(pathpkg.Base(path))
+	if s.ignored.IsMatch(path) {
 		return "", false
 	}
 	for dir := pathpkg.Dir(path); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
-		if s.opts.IsService(pathpkg.Base(dir)) || s.ignored.MatchesPath(dir+"/") {
+		if s.opts.IsService(pathpkg.Base(dir)) || s.ignored.IsMatch(dir+"/") {
 			return "", false
 		}
 	}

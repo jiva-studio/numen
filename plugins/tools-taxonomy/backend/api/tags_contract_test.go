@@ -13,8 +13,8 @@ const fixtureDir = "../../testdata/api"
 
 func TestTheTagsMessagesMatchTheirFixtures(t *testing.T) {
 	plugintest.CheckMessageFixtures(t, fixtureDir, map[string]plugintest.MessageContract{
-		api.MethodGetTags: {Request: func() any { return &api.GetTagsRequest{} }, Response: func() any { return &api.TagList{} }},
-		api.MethodSetTags: {Request: func() any { return &api.SetTagsRequest{} }, Response: func() any { return &api.SetTagsResult{} }},
+		api.MethodGetTags: {CreateRequest: func() any { return &api.GetTagsRequest{} }, CreateResponse: func() any { return &api.TagList{} }},
+		api.MethodSetTags: {CreateRequest: func() any { return &api.SetTagsRequest{} }, CreateResponse: func() any { return &api.SetTagsResult{} }},
 	})
 }
 

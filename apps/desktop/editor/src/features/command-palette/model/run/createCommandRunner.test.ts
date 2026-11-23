@@ -49,13 +49,13 @@ const setup = () => {
   })
   const commands = createCommandPalette({
     core: {
-      names: () => Promise.resolve([]),
-      vaults: () => Promise.resolve({ vaults: [], showing: '' }),
+      searchNames: () => Promise.resolve([]),
+      listVaults: () => Promise.resolve({ vaults: [], showing: '' }),
     },
     words: { ...WORDS, ...PALETTE_WORDS },
-    at: () => TARGET,
+    getTarget: () => TARGET,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    lists: { getStepGroups: () => [], applyItemPreview: () => undefined },
     runs,
     getCommands: () => [
       row('app:note.save'),

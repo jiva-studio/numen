@@ -7,7 +7,7 @@
  * browser.
  */
 import type { TextRange } from '@numen/ui'
-import { NARROWEST, columnWidth, getColumn, getSpread } from './columnGrid'
+import { NARROWEST, getColumnWidth, getColumn, getSpread } from './columnGrid'
 
 /** The position of one run of text in the laid-out document. */
 export interface Mark {
@@ -40,7 +40,7 @@ export function countColumns(width: number, size: number): number {
 /**
  * Column height calculated to fit full lines.
  */
-export function columnHeight(height: number, line: number): number {
+export function getColumnHeight(height: number, line: number): number {
   if (line <= 0 || height <= 0) return Math.max(height, 0)
   return Math.max(Math.floor(height / line), 1) * line
 }
@@ -51,7 +51,7 @@ export function columnHeight(height: number, line: number): number {
  * fills one column next to an empty one, and only the marks show which.
  */
 export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
-  if (columnWidth(flow) <= 0 || marks.length === 0) return 0
+  if (getColumnWidth(flow) <= 0 || marks.length === 0) return 0
   let last = 0
   for (const mark of marks) last = Math.max(last, getColumn(flow, mark.x))
   return last + 1
@@ -66,7 +66,7 @@ export interface Pages {
 /**
  * Number of columns of this document after the active spread.
  */
-export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
+export function getLeftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
   const here = countFilledColumns(marks, flow)
   return Math.max(here - (spread + 1) * flow.columns, 0)
 }
@@ -110,7 +110,11 @@ export function getSpreadStart(flow: Flow, spread: number): number {
 /**
  * Returns the byte offset of the first mark in a spread, or undefined if empty.
  */
-export function inFront(marks: readonly Mark[], flow: Flow, spread: number): number | undefined {
+export function findFirstMark(
+  marks: readonly Mark[],
+  flow: Flow,
+  spread: number,
+): number | undefined {
   for (const mark of marks) {
     if (getSpread(flow, mark.x) === spread) return mark.at
   }

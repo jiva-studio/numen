@@ -26,7 +26,7 @@ export interface Walk {
  *
  * `keeps` is a story saying Tab stays where it is, and how a person leaves.
  */
-export function faults({ stops, trapped }: Walk, keeps = false): string[] {
+export function findFaults({ stops, trapped }: Walk, keeps = false): string[] {
   const wrong: string[] = []
   if (trapped && !keeps) wrong.push(`${trapped} answers Tab by keeping it`)
   for (const stop of stops) {

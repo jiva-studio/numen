@@ -65,10 +65,10 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if snapshot, err := readSettings(settingsOf(Config{}, nil, nil, NewResources()))(); err == nil || snapshot.Path != "" {
+	if snapshot, err := readSettings(createSettingsWiring(Config{}, nil, nil, NewResources()))(); err == nil || snapshot.Path != "" {
 		t.Errorf("settings were read from %q: %v", snapshot.Path, err)
 	}
-	err := getSettingsWriter(settingsOf(Config{}, nil, nil, NewResources()))([]settings.Setting{
+	err := getSettingsWriter(createSettingsWiring(Config{}, nil, nil, NewResources()))([]settings.Setting{
 		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err == nil {
@@ -84,7 +84,7 @@ func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	}
 	want = filepath.Join(want, "numen", "numen.json")
 
-	got, err := settingsSettingsFile(settingsOf(Config{}, nil, nil, NewResources()))
+	got, err := getSettingsFile(createSettingsWiring(Config{}, nil, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
-	got, err := settingsSettingsFile(settingsOf(Config{
+	got, err := getSettingsFile(createSettingsWiring(Config{
 		Paths: Paths{RegistryPath: registry},
 	}, nil, nil, NewResources()))
 	if err != nil {
@@ -176,7 +176,7 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := getSettingsWriter(settingsOf(Config{}, nil, nil, NewResources()))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
+	err := getSettingsWriter(createSettingsWiring(Config{}, nil, nil, NewResources()))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -206,7 +206,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
-	got, err := (Config{Paths: Paths{RegistryPath: named}}).registry()
+	got, err := (Config{Paths: Paths{RegistryPath: named}}).openRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
-	got, err = (Config{}).registry()
+	got, err = (Config{}).openRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,10 +229,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity(NewTestInstallation(Config{}, nil).buildVaultWiring().Options) == nil {
+	if createVaultIdentity(NewTestInstallation(Config{}, nil).buildVaultWiring().Options) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash(NewTestInstallation(Config{}, nil).buildVaultWiring().Clock) == nil {
+	if createTrash(NewTestInstallation(Config{}, nil).buildVaultWiring().Clock) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }

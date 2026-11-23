@@ -20,7 +20,7 @@ func TestADictionaryOfTheSettingsIsReadAsThePaddleOCRFormat(t *testing.T) {
 	if err := os.WriteFile(dict, []byte("а\nб\r\nв\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	classes, written, err := alphabet("model.onnx", settings.RecognizerModel{Dict: dict, Classes: 5})
+	classes, written, err := loadAlphabet("model.onnx", settings.RecognizerModel{Dict: dict, Classes: 5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestADictionaryOfTheSettingsIsReadAsThePaddleOCRFormat(t *testing.T) {
 		t.Errorf("the alphabet written is %q", got)
 	}
 	for _, mismatch := range []int64{1, 7} {
-		gotClasses, _, err := alphabet("model.onnx", settings.RecognizerModel{Dict: dict, Classes: mismatch})
+		gotClasses, _, err := loadAlphabet("model.onnx", settings.RecognizerModel{Dict: dict, Classes: mismatch})
 		if err == nil || gotClasses != 0 {
 			t.Errorf("classes=%d returned (%d, %v), want (0, error)", mismatch, gotClasses, err)
 		}
@@ -55,10 +55,10 @@ func appendBytesField(dst []byte, field int, payload []byte) []byte {
 func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 	dir := t.TempDir()
 	missingDict := filepath.Join(dir, "missing-dict.txt")
-	if gotClasses, _, err := alphabet("model.onnx", settings.RecognizerModel{Dict: missingDict}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
+	if gotClasses, _, err := loadAlphabet("model.onnx", settings.RecognizerModel{Dict: missingDict}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
 		t.Fatalf("missing dict returned (%d, %v), want os.ErrNotExist", gotClasses, err)
 	}
-	if gotClasses, _, err := alphabet(filepath.Join(dir, "missing-model.onnx"), settings.RecognizerModel{}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
+	if gotClasses, _, err := loadAlphabet(filepath.Join(dir, "missing-model.onnx"), settings.RecognizerModel{}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
 		t.Fatalf("missing model returned (%d, %v), want os.ErrNotExist", gotClasses, err)
 	}
 
@@ -95,7 +95,7 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	classes, written, err := alphabet(modelPath, settings.RecognizerModel{})
+	classes, written, err := loadAlphabet(modelPath, settings.RecognizerModel{})
 	if err != nil || classes != 4 {
 		t.Fatalf("alphabet from metadata = (%d, %q, %v), want (4, ..., nil)", classes, written, err)
 	}
@@ -122,7 +122,7 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 
 	t.Setenv("TMPDIR", filepath.Join(dir, "no-such-tmp"))
 	var pathErr *fs.PathError
-	if gotClasses, _, err := alphabet(modelPath, settings.RecognizerModel{}); !errors.As(err, &pathErr) || gotClasses != 0 {
+	if gotClasses, _, err := loadAlphabet(modelPath, settings.RecognizerModel{}); !errors.As(err, &pathErr) || gotClasses != 0 {
 		t.Fatalf("alphabet with invalid TMPDIR = (%d, %v), want *fs.PathError", gotClasses, err)
 	}
 }

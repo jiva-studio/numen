@@ -17,7 +17,7 @@ type trashWriterStub struct {
 	calls     *int
 }
 
-func (w trashWriterStub) EmptyTrash(context.Context) ([]string, error) {
+func (w trashWriterStub) ClearTrash(context.Context) ([]string, error) {
 	*w.calls++
 	return w.undeleted, w.err
 }

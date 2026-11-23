@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// GetLinksOf reads the links of every path in one query and resolves them with one set of prepared statements.
-func (q *QueryReads) GetLinksOf(ctx context.Context, vaultID domain.VaultID, from []string) (map[string][]domain.ResolvedLink, error) {
+// ListLinksOf reads the links of every path in one query and resolves them with one set of prepared statements.
+func (q *QueryReads) ListLinksOf(ctx context.Context, vaultID domain.VaultID, from []string) (map[string][]domain.ResolvedLink, error) {
 	if len(from) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
 	}
@@ -37,7 +37,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, allLinks); err != nil {
+	if err := r.preloadCandidates(ctx, allLinks); err != nil {
 		return nil, err
 	}
 	return r.resolveLinksOf(ctx, grouped, order)
@@ -98,8 +98,8 @@ func (r *resolution) resolveLinksOf(ctx context.Context, grouped map[string][]do
 	return out, nil
 }
 
-// GetBacklinksOf reads the backlinks of every path in one batch and resolves them with one set of prepared statements.
-func (q *QueryReads) GetBacklinksOf(ctx context.Context, vaultID domain.VaultID, to []string) (map[string][]domain.ResolvedLink, error) {
+// ListBacklinksOf reads the backlinks of every path in one batch and resolves them with one set of prepared statements.
+func (q *QueryReads) ListBacklinksOf(ctx context.Context, vaultID domain.VaultID, to []string) (map[string][]domain.ResolvedLink, error) {
 	if len(to) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
 	}
@@ -130,7 +130,7 @@ func (r *resolution) getBacklinksOf(ctx context.Context, to []string) (_ map[str
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, candidates); err != nil {
+	if err := r.preloadCandidates(ctx, candidates); err != nil {
 		return nil, err
 	}
 

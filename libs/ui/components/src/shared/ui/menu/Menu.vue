@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<MenuProps>(), {
   margin: 8,
   to: 'body',
   name: 'Menu',
-  clock: () => getNow(),
+  getTime: () => getNow(),
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -40,10 +40,10 @@ const menu = useTemplateRef<HTMLElement>('menu')
 const submenuRef = useTemplateRef<{ getElement?: () => HTMLElement | null }>('submenuRef')
 
 const { setSize, resetSize, menuStyle } = useMenuPlacement({
-  at: () => props.at,
-  viewport: () => props.viewport,
-  margin: () => props.margin,
-  asking: () => props.asking,
+  getPosition: () => props.at,
+  getViewport: () => props.viewport,
+  getMargin: () => props.margin,
+  getAskedWidth: () => props.asking,
 })
 
 const isIgnored = (event: Event): boolean =>
@@ -54,12 +54,12 @@ const getFrom = () => props.from
 
 const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'), isIgnored, getFrom)
 
-const { visibleItems, rows, here, submenu, focusInitial, pointTo, onKey, onResetNavigation } =
+const { visibleItems, rows, here, submenu, focusInitial, highlightRow, onKey, onResetNavigation } =
   useMenuNavigation({
-    items: () => props.items,
+    getItems: () => props.items,
     trigger: () => props.trigger,
-    current: () => props.current,
-    clock: props.clock,
+    getCurrent: () => props.current,
+    getTime: props.getTime,
     menuRef: menu,
     getFallbackPosition: () => props.at,
     getSubmenuPosition: (el) => getSubmenuPosition(el),
@@ -98,7 +98,7 @@ function onRowHover(item: MenuItem, index: number, event: MouseEvent): void {
   if (event.type !== 'mousemove') return
   const moved = !lastPointer || lastPointer.x !== event.clientX || lastPointer.y !== event.clientY
   lastPointer = { x: event.clientX, y: event.clientY }
-  if (moved && !item.isDisabled) pointTo(index)
+  if (moved && !item.isDisabled) highlightRow(index)
 }
 
 function onMenuLeave(event: MouseEvent): void {
@@ -172,7 +172,7 @@ function measure(): void {
       :viewport="viewport"
       :margin="margin"
       :to="to"
-      :clock="clock"
+      :get-time="getTime"
       :has-groups="hasGroups"
       :trigger="submenu.trigger.value"
       is-open

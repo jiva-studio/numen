@@ -31,7 +31,7 @@ func (q *Queries) getVaultRow(ctx context.Context, vaultID domain.VaultID) (int6
 		return row, nil
 	}
 	gen := q.cache.getGeneration()
-	row, err := vaultRow(ctx, q.db, vaultID)
+	row, err := getVaultRow(ctx, q.db, vaultID)
 	if err == nil {
 		q.cache.setVaultRow(gen, vaultID, row)
 	}
@@ -45,7 +45,7 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map
 
 // Has reports whether the index carries this vault at all.
 func (q *Queries) Has(ctx context.Context, vaultID domain.VaultID) (bool, error) {
-	_, err := vaultRow(ctx, q.db, vaultID)
+	_, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return false, nil
 	}
@@ -57,7 +57,7 @@ func (q *Queries) Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 
 func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) {
 	var s domain.VaultSummary
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return s, nil
 	}
@@ -68,11 +68,11 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	return s, err
 }
 
-// GetNamedPaths is every note filed under one name. A name that answers for
+// ListNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and
 // is worth saying out loud before it surprises anyone.
-func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) (_ []string, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+func (q *Queries) ListNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) (_ []string, err error) {
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -80,7 +80,7 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.NormalizeName(name))
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +112,12 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 		return nil, fmt.Errorf("titles limit must be positive, got %d", limit)
 	}
 
-	words := chunk.Expression(query, true)
+	words := chunk.BuildExpression(query, true)
 	if words == "" {
 		return nil, nil
 	}
 
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}

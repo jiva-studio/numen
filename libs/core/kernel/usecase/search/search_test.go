@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -55,14 +55,14 @@ func newCorpus(t *testing.T) corpus {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(ctx, indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 
 	c := corpus{db: db}
 	for i, notes := range []map[string]string{getFirstNotes(), getSecondNotes()} {
@@ -115,7 +115,7 @@ func (c corpus) vectorize(t *testing.T, v domain.Vault, direction []float32) {
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(),
-			Value: precise(direction), Coarse: vector.Bits(direction),
+			Value: precise(direction), Coarse: vector.QuantizeBits(direction),
 		})
 	}
 	if err := c.db.Chunks().SaveVectors(t.Context(), vectors); err != nil {
@@ -124,7 +124,7 @@ func (c corpus) vectorize(t *testing.T, v domain.Vault, direction []float32) {
 }
 
 func precise(v []float32) []byte {
-	q := vector.Bytes(vector.Normalize(slices.Clone(v)))
+	q := vector.QuantizeBytes(vector.Normalize(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -136,7 +136,7 @@ func (c corpus) participants(model sourcefake.Embedder) []search.Participant {
 	if model == nil {
 		return nil
 	}
-	source := sourcefake.Wrap(model).Over(search.NewFindNearest(c.db.ChunkSearch()).Execute)
+	source := sourcefake.Wrap(model).UseNearest(search.NewFindNearest(c.db.ChunkSearch()).Execute)
 	return []search.Participant{search.NewSource(source, c.db.ChunkSearch())}
 }
 
@@ -434,7 +434,7 @@ func TestAResultCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	const path = "notes/Isotherm.md"
 	const target = "The curve holds throughout."
 	v := vaulttest.NewVault(t, map[string]string{path: getIsotherm()})
-	scan := vaults.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}

@@ -220,7 +220,7 @@ func TestAChangeOfTheIndexMakesAFinishedSearchStale(t *testing.T) {
 	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	id := w.start(t, owner, `words("tide")`)
 	before := w.readFinalPage(t, owner, id)
-	w.generations.IncreaseGeneration(getTideVault().ID)
+	w.generations.BumpGeneration(getTideVault().ID)
 	after, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id})
 	if err != nil || before.IsStale || !after.IsStale || after.Record.IndexGeneration != before.Record.IndexGeneration {
 		t.Fatalf("stale before %v, after %v (%v), generations %q and %q", before.IsStale, after.IsStale, err,

@@ -55,12 +55,12 @@ const listId = useId()
 
 const { rows, queryText, isListOpen, activeKey, activeIndex, moveBy, moveToEnd, findRow } =
   useListRows({
-    items: () => props.items,
+    getItems: () => props.items,
     query,
-    current: () => currentIds.value[0] ?? null,
+    getCurrent: () => currentIds.value[0] ?? null,
     isFiltered: () => props.isFiltered,
     hasAction: () => props.hasAction,
-    needsQuery: () => props.needsQuery,
+    shouldWaitForQuery: () => props.needsQuery,
   })
 
 /** The items in force: the chosen ones where the caller gave them, else the model. */
