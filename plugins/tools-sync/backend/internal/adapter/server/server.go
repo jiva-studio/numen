@@ -21,12 +21,16 @@ type Config struct {
 
 // Server is the sync server at an address.
 type Server struct {
-	client *syncprotocol.SignInClient
+	client  *syncprotocol.SignInClient
+	account *syncprotocol.AccountClient
 }
 
 // New returns the server at the address of the config.
 func New(cfg Config) *Server {
-	return &Server{client: syncprotocol.NewSignInClient(cfg.Address, cfg.HTTP, cfg.Now)}
+	return &Server{
+		client:  syncprotocol.NewSignInClient(cfg.Address, cfg.HTTP, cfg.Now),
+		account: syncprotocol.NewAccountClient(cfg.Address, cfg.HTTP, func() string { return "" }),
+	}
 }
 
 // GetChallenge asks for a challenge. It returns one only if it names the address dialed, expires near
@@ -60,4 +64,21 @@ func readError(err error) error {
 		return session.ErrUnreachable
 	}
 	return err
+}
+
+// GetChainReadChallenge asks for a challenge of the root key, with the checks of GetChallenge. Its message is the
+// one the recovery key signs to read the chain of its account.
+func (s *Server) GetChainReadChallenge(ctx context.Context, rootSignKey []byte) (session.Challenge, error) {
+	challenge, err := s.client.GetChainReadChallenge(ctx, rootSignKey)
+	if err != nil {
+		return session.Challenge{}, readError(err)
+	}
+	return session.Challenge{ID: challenge.ID, Message: challenge.Message}, nil
+}
+
+// GetAccountChainByRoot returns the chain the server stores for the account of the root key, and false when it
+// has no such account.
+func (s *Server) GetAccountChainByRoot(ctx context.Context, challengeID, rootSignKey, signature []byte) ([]byte, bool, error) {
+	chain, found, err := s.account.GetAccountChainByRoot(ctx, challengeID, rootSignKey, signature)
+	return chain, found, readError(err)
 }

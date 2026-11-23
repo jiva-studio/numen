@@ -33,8 +33,47 @@ func (a *Account) SignAsDevice(ctx context.Context, message []byte) ([]byte, err
 }
 
 func readError(err error) error {
-	if errors.Is(err, sdk.ErrNoIdentity) {
+	switch {
+	case errors.Is(err, sdk.ErrNoIdentity):
 		return session.ErrNoIdentity
+	case errors.Is(err, sdk.ErrCannotOpen):
+		return session.ErrCannotOpen
+	case errors.Is(err, sdk.ErrNoPendingRestore):
+		return session.ErrNoPendingRestore
+	case errors.Is(err, sdk.ErrInvalidChain):
+		return session.ErrInvalidChain
 	}
 	return err
+}
+
+// SealData seals the plain bytes for every device of the account, bound to the context.
+func (a *Account) SealData(ctx context.Context, dataContext, plain []byte) ([]byte, error) {
+	sealed, err := a.client.SealData(ctx, dataContext, plain)
+	return sealed, readError(err)
+}
+
+// OpenData opens what SealData sealed, or fails with session.ErrCannotOpen.
+func (a *Account) OpenData(ctx context.Context, dataContext, sealed []byte) ([]byte, error) {
+	plain, err := a.client.OpenData(ctx, dataContext, sealed)
+	return plain, readError(err)
+}
+
+// GetPendingRestore returns the restore that waits for an account chain.
+func (a *Account) GetPendingRestore(ctx context.Context) (session.PendingRestore, error) {
+	pending, err := a.client.GetPendingRestore(ctx)
+	if err != nil {
+		return session.PendingRestore{}, readError(err)
+	}
+	return session.PendingRestore{IsPending: pending.IsPending, RootSignKey: pending.RootSignKey, DeviceSignKey: pending.DeviceSignKey}, nil
+}
+
+// SignAsRecovery signs the message with the recovery key of the pending restore.
+func (a *Account) SignAsRecovery(ctx context.Context, message []byte) ([]byte, error) {
+	signature, err := a.client.SignAsRecovery(ctx, message)
+	return signature, readError(err)
+}
+
+// CompleteRestore finishes the pending restore with the chain, or with none.
+func (a *Account) CompleteRestore(ctx context.Context, chain []byte) error {
+	return readError(a.client.CompleteRestore(ctx, chain))
 }

@@ -4,6 +4,7 @@ package session
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -82,10 +83,13 @@ func newSignInFailedConcern() concern {
 type Keep struct {
 	deps   Deps
 	raised string
+
+	mu    sync.Mutex
+	token string
 }
 
 // NewKeep returns the use case over the dependencies.
-func NewKeep(deps Deps) *Keep { return &Keep{deps: deps} }
+func NewKeep(deps Deps) *Keep { return &Keep{deps: deps, raised: "", mu: sync.Mutex{}, token: ""} }
 
 // Execute runs until ctx ends and returns its error.
 func (u *Keep) Execute(ctx context.Context) error {
@@ -101,26 +105,50 @@ func (u *Keep) Execute(ctx context.Context) error {
 }
 
 func (u *Keep) signIn(ctx context.Context) time.Duration {
-	public, err := u.deps.Identity.GetPublicIdentity(ctx)
-	if err != nil {
-		return u.raise(ctx, err)
-	}
-	challenge, err := u.deps.Server.GetChallenge(ctx, public.DeviceSignKey)
-	if err != nil {
-		return u.raise(ctx, err)
-	}
-	signature, err := u.deps.Identity.SignAsDevice(ctx, challenge.Message)
-	if err != nil {
-		return u.raise(ctx, err)
-	}
-	current, err := u.deps.Server.SignIn(ctx, domain.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
-	})
+	current, err := u.open(ctx)
 	if err != nil {
 		return u.raise(ctx, err)
 	}
 	u.clear(ctx)
 	return max(current.ExpiresAt.Sub(u.deps.Clock.Now())-renewBeforeExpiry, shortestRenewal)
+}
+
+// Refresh signs in once more and returns why it could not.
+func (u *Keep) Refresh(ctx context.Context) error {
+	_, err := u.open(ctx)
+	return err
+}
+
+// GetToken returns the token of the session, empty before the first sign-in.
+func (u *Keep) GetToken() string {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.token
+}
+
+func (u *Keep) open(ctx context.Context) (domain.Session, error) {
+	public, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	challenge, err := u.deps.Server.GetChallenge(ctx, public.DeviceSignKey)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	signature, err := u.deps.Identity.SignAsDevice(ctx, challenge.Message)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	current, err := u.deps.Server.SignIn(ctx, domain.Proof{
+		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
+	})
+	if err != nil {
+		return domain.Session{}, err
+	}
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.token = current.Token
+	return current, nil
 }
 
 func (u *Keep) raise(ctx context.Context, cause error) time.Duration {

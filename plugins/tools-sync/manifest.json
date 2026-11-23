@@ -5,6 +5,7 @@
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
     "licenses": [
@@ -22,7 +23,8 @@
     ],
     "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
   },
-  "permissions": ["identity"],
+  "permissions": ["identity", "vault:read", "vault:write"],
+  "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
     "lifecycle": "persistent"
@@ -34,7 +36,16 @@
       "title": "Sync server",
       "description": "Address of the server this device signs in to",
       "default": "https://sync.numen.md"
+    },
+    {
+      "key": "syncIntervalSeconds",
+      "type": "number",
+      "title": "Sync interval",
+      "description": "How often this device asks the server for changes",
+      "default": 30,
+      "min": 1
     }
   ],
+  "settingsViews": [{ "id": "vaults", "title": "Vaults" }],
   "frontend": {}
 }

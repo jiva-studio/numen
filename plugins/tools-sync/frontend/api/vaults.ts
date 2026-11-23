@@ -1,0 +1,78 @@
+/**
+ * The JSON messages of the vaults service the plugin's backend serves, and the client that calls it.
+ * Keys and meaning match the Go messages in backend/api; testdata/api holds the fixtures both sides
+ * are tested against.
+ */
+import type { Api, ApiError } from '@numen/plugin-sdk'
+
+export const SERVICE = 'md.numen.tools.sync'
+
+export type VaultState = 'notConnected' | 'connected' | 'copy'
+
+export interface Vault {
+  readonly id: string
+  readonly name: string
+  readonly path: string
+  readonly state: VaultState
+  readonly lastSyncedAt: string
+  readonly conflictCount: number
+}
+
+export interface RemoteVault {
+  readonly remoteId: string
+  readonly name: string
+  readonly isConnected: boolean
+}
+
+export interface StatusItem {
+  readonly key: string
+  readonly text: string
+}
+
+type Empty = Record<string, never>
+
+export interface ListVaultsResponse {
+  readonly vaults: readonly Vault[]
+}
+
+export interface ListRemoteVaultsResponse {
+  readonly vaults: readonly RemoteVault[]
+}
+
+export interface ConnectVaultRequest {
+  readonly vaultId: string
+  readonly mode: 'new' | 'existing'
+  readonly remoteId?: string
+}
+
+export interface GetStatusResponse {
+  readonly hasIdentity: boolean
+  readonly isReachable: boolean
+  readonly items: readonly StatusItem[]
+}
+
+export interface VaultsClient {
+  listVaults(): Promise<ListVaultsResponse>
+  listRemoteVaults(): Promise<ListRemoteVaultsResponse>
+  connectVault(request: ConnectVaultRequest): Promise<void>
+  getStatus(): Promise<GetStatusResponse>
+}
+
+const createFailure = (error: ApiError): Error => new Error(error.message)
+
+export function createVaultsClient(api: Api): VaultsClient {
+  async function call<Req, Res>(method: string, request: Req): Promise<Res> {
+    const result = await api.call<Req, Res>(method, request)
+    if (!result.ok) throw createFailure(result.error)
+    return result.value
+  }
+
+  return {
+    listVaults: () => call<Empty, ListVaultsResponse>('ListVaults', {}),
+    listRemoteVaults: () => call<Empty, ListRemoteVaultsResponse>('ListRemoteVaults', {}),
+    connectVault: async (request) => {
+      await call<ConnectVaultRequest, Empty>('ConnectVault', request)
+    },
+    getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}),
+  }
+}

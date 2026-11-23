@@ -7,41 +7,71 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
-	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 )
 
 const (
-	settingServer  = "server"
-	requestTimeout = 30 * time.Second
+	settingServer   = "server"
+	settingInterval = "syncIntervalSeconds"
+	requestTimeout  = 30 * time.Second
 )
 
-// Mount keeps the device signed in to the server of the setting server from the moment the host
-// configures the plugin, and starts again over the new address when the setting changes.
-func Mount(s *server.Server) error {
+// App is the backend of Numen Sync: Mount registers its methods and keeps the sync running, and HandleEvent wakes
+// the sync of a vault whose files changed.
+type App struct {
+	runtime *runtime
+}
+
+// NewApp returns the backend, not yet mounted.
+func NewApp() *App { return &App{runtime: nil} }
+
+// Mount registers the methods of the settings view, and keeps this device signed in to the server of the setting
+// server and its vaults in sync from the moment the host configures the plugin. It starts again over the new
+// address when the setting changes.
+func (a *App) Mount(s *server.Server) error {
 	endpoint, err := s.GetHostEndpoint()
 	if err != nil {
 		return err
 	}
-	deps := session.Deps{
-		Identity: accountadapter.New(account.NewClient(endpoint)),
-		Health:   health.NewClient(endpoint),
-		Clock:    clock.System{},
-	}
+	vaults := hostvault.New(host.NewClient(endpoint), host.NewStoreClient(endpoint))
 	root, cancelRoot := context.WithCancel(context.Background())
-	keeper := &keeper{deps: deps}
-	s.SetUpdateConfig(func(values map[string]string) { keeper.configure(root, values) })
+	a.runtime = newRuntime(root, parts{
+		identity: accountadapter.New(account.NewClient(endpoint)),
+		health:   health.NewClient(endpoint),
+		clock:    clock.System{},
+		vaults:   vaults,
+		state:    hoststore.New(vaults),
+	})
+	service := s.NewAPI(api.Service)
+	mountMethods(service, a.runtime)
+	if err := service.Err(); err != nil {
+		cancelRoot()
+		return err
+	}
+	s.SetUpdateConfig(a.runtime.configure)
 	s.OnClose(func() error {
 		cancelRoot()
-		keeper.stop()
+		a.runtime.stop()
 		return nil
 	})
 	return nil
 }
 
-func newServer(address string, now func() time.Time) session.Server {
-	return serveradapter.New(serveradapter.Config{Address: address, HTTP: &http.Client{Timeout: requestTimeout}, Now: now})
+// HandleEvent wakes the sync of the vault an onFilesChanged event names, and ignores any other event.
+func (a *App) HandleEvent(_ context.Context, event string) error {
+	if a.runtime == nil {
+		return nil
+	}
+	if vault, isChange := host.ReadFilesChangedEvent(event); isChange {
+		a.runtime.wake(vault)
+	}
+	return nil
 }
+
+func newHTTPClient() *http.Client { return &http.Client{Timeout: requestTimeout} }
