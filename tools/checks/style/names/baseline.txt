@@ -1,4 +1,5 @@
 apps/desktop/app/fatal_report.go	page
+apps/desktop/editor/src/pages/settings/ui/setting-row/SettingRow.vue	action
 apps/desktop/flashcards/src/app/window/createWindow.ts	notices
 apps/desktop/internal/frame/frame.go	Window
 apps/desktop/internal/plugincli/cli.go	printf
