@@ -56,11 +56,11 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 	}
 }
 
-func (f filing) move() note.MoveTree { return f.newMove(true) }
+func (f filing) move() tree { return f.newMove(true) }
 
-func (f filing) moveApart() note.MoveTree { return f.newMove(false) }
+func (f filing) moveApart() tree { return f.newMove(false) }
 
-func (f filing) newMove(preserved naming.SyncTitleAndFilename) note.MoveTree {
+func (f filing) newMove(preserved naming.SyncTitleAndFilename) tree {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: f.db.NoteQueries(), Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
@@ -70,10 +70,7 @@ func (f filing) newMove(preserved naming.SyncTitleAndFilename) note.MoveTree {
 			return nil
 		},
 	})
-	return note.NewMoveTree(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.NoteQueries(), f.db.Sources(), f.db.Sources(), notes,
-	)
+	return tree{note.NewMoveFile(notes, f.db.Sources(), nil, indexedAlways{})}
 }
 
 func (f filing) resolves(t *testing.T, in string) string {

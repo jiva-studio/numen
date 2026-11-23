@@ -612,12 +612,12 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	move := note.NewMoveTree(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, f.index.NoteQueries(), f.index.Sources(),
-		stuck{f.index.Sources()}, newNoteMover(f.index),
-	)
+	moved := note.NewMove(note.MoveDeps{
+		Readers: vaultreader.Readers{}, Writers: newVaultWriters(), Links: f.index.NoteQueries(), Names: f.index.NoteQueries(),
+		Sources: stuck{f.index.Sources()}, Now: testsupport.NewClock(),
+	})
 
-	moveFile := note.NewMoveFile(&move, editor.PagesOf(f.installation).Writes.AdmitWrite, editor.PagesOf(f.installation).Writes)
+	moveFile := note.NewMoveFile(moved, f.index.Sources(), editor.PagesOf(f.installation).Writes.AdmitWrite, editor.PagesOf(f.installation).Writes)
 	mountFileEdit(t, f.mux, f.installation, numenv1connect.FileServiceMoveFileProcedure, &moveFile, nil)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{

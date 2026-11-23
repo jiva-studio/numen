@@ -154,8 +154,8 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, s, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := note.NewMoveTree(vaultDeps.Writers, db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
-	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
+	move := note.NewMoveFile(note.NewMove(note.MoveDeps{Writers: vaultDeps.Writers, Links: db.NoteQueries(), Sources: db.Sources()}), db.Sources(), nil, noFollow{})
+	if _, _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
 
@@ -382,3 +382,8 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatalf("found %+v, want the talk at its new path", found)
 	}
 }
+
+// noFollow is an index that followed every write.
+type noFollow struct{}
+
+func (noFollow) IsIndexOutdated(error) bool { return false }

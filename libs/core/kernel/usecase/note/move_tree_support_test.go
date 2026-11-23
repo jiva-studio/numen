@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -66,7 +67,21 @@ func isolateHome(t *testing.T) {
 
 // unwritable is a set of writers that cannot open any vault for moving.
 type unwritable struct {
+	note.MoveWriting
 	err error
 }
 
 func (u unwritable) OpenFileMover(domain.Vault) (vaultport.FileMover, error) { return nil, u.err }
+
+// tree is the move of a file or a folder without the admission and the follow of a write.
+type tree struct{ note.MoveFile }
+
+func (t tree) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+	moved, _, err := t.MoveFile.Execute(ctx, v, from, to)
+	return moved, err
+}
+
+// indexedAlways is an index that followed every write.
+type indexedAlways struct{}
+
+func (indexedAlways) IsIndexOutdated(error) bool { return false }
