@@ -1,7 +1,12 @@
 package vault_test
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const managingPlugin = "md.numen.tools.sync"
@@ -46,7 +51,12 @@ func TestAManagedVaultStillRefusesAFolderInsideAnotherVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := add.ExecuteManaged(outer+"/inner", "inner", managingPlugin); err == nil {
-		t.Error("a managed vault was added inside another vault")
+	inner := filepath.Join(outer, "inner")
+	if err := os.MkdirAll(inner, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := add.ExecuteManaged(inner, "inner", managingPlugin); !errors.Is(err, domain.ErrOverlaps) {
+		t.Errorf("error = %v, want ErrOverlaps", err)
 	}
 }
