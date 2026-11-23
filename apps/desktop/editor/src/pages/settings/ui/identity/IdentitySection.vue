@@ -53,41 +53,40 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
   </template>
 
   <IslandCard v-else :title="words.identitySection">
-    <template #aside>{{ words.identityNone }}</template>
+    <template v-if="!isRestoring" #aside>
+      <Button
+        type="button"
+        variant="ghost"
+        size="small"
+        :disabled="call.isBusy.value"
+        @click="actions.startRestore('restore')"
+      >
+        {{ words.identityRestore }}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="small"
+        :disabled="call.isBusy.value"
+        @click="actions.startRestore('restoreSheets')"
+      >
+        {{ words.identityRestoreSheets }}
+      </Button>
+      <Button
+        type="button"
+        variant="solid"
+        size="small"
+        :disabled="call.isBusy.value"
+        @click="actions.startSetup"
+      >
+        {{ words.identityCreate }}
+      </Button>
+    </template>
     <div class="identity-section__body">
-      <p v-if="!isRestoring" class="identity-section__detail">
-        {{ words.identityNoneDetail }}
-      </p>
-
-      <div v-if="!isRestoring" class="identity-section__actions">
-        <Button
-          type="button"
-          variant="ghost"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore('restore')"
-        >
-          {{ words.identityRestore }}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore('restoreSheets')"
-        >
-          {{ words.identityRestoreSheets }}
-        </Button>
-        <Button
-          type="button"
-          variant="solid"
-          :disabled="call.isBusy.value"
-          @click="actions.startSetup"
-        >
-          {{ words.identityCreate }}
-        </Button>
-      </div>
+      <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
 
       <IdentityRestore
-        v-else-if="step === 'restore'"
+        v-if="step === 'restore'"
         :text="restoring.typing.restoreText.value"
         :is-busy="call.isBusy.value"
         @change="restoring.typing.setRestoreText"
@@ -96,7 +95,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
       />
 
       <IdentityRestoreSheets
-        v-else
+        v-else-if="step === 'restoreSheets'"
         :texts="fields.texts.value"
         :is-busy="call.isBusy.value"
         @change="restoring.setSheetText"
@@ -136,20 +135,12 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-block: 0.375rem;
+  padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
 }
 
 .identity-section__detail,
 .identity-section__problem {
   margin: 0;
-}
-
-.identity-section__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 
 .identity-section__problem {

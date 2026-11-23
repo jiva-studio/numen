@@ -15,6 +15,8 @@ import { createInstallation, createSettingsState } from '@/pages/settings/testin
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
+const NO_IDENTITY = 'An identity is a key kept only on your devices.'
+
 const RECOVERY_WORDS = [
   'legal',
   'winner',
@@ -190,7 +192,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('offers to create or restore an identity when the device has none', async () => {
     const { tab } = await createPage()
-    expect(tab.text()).toContain('Not created')
+    expect(tab.text()).toContain(NO_IDENTITY)
     expect(findButton(tab, 'Create identity')).toBeDefined()
     expect(findButton(tab, 'Restore')).toBeDefined()
     expect(tab.text()).not.toContain('Account fingerprint')
@@ -263,7 +265,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Continue')
     expect(create).not.toHaveBeenCalled()
     expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
-    expect(tab.text()).toContain('Not created')
+    expect(tab.text()).toContain(NO_IDENTITY)
   })
 
   it('goes back to the words from the second step and drops the problem', async () => {
@@ -322,7 +324,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Restore')
     expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
     expect(identity.value).toBeUndefined()
-    expect(tab.text()).toContain('Not created')
+    expect(tab.text()).toContain(NO_IDENTITY)
   })
 
   it('warns that the identity cannot be restored without the words before it deletes', async () => {
@@ -355,7 +357,7 @@ describe('the page "Identity and licenses"', () => {
     confirm?.click()
     await flushPromises()
     expect(remove).toHaveBeenCalledOnce()
-    expect(tab.text()).toContain('Not created')
+    expect(tab.text()).toContain(NO_IDENTITY)
   })
 })
 
@@ -598,7 +600,7 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([KIT.sheets[0]])
     expect(tab.get('[role="alert"]').text()).toBe('One more sheet is needed.')
     expect(identity.value).toBeUndefined()
-    expect(tab.text()).toContain('Not created')
+    expect(tab.text()).toContain(NO_IDENTITY)
   })
 
   it('drops the typed sheets when the person cancels', async () => {
