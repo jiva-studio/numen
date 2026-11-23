@@ -129,7 +129,11 @@ describe('the running plugins indicator', () => {
     const pane = document.body.appendChild(document.createElement('div'))
 
     pane.dispatchEvent(new Event('scroll'))
-    const held = { ...ATLAS, leaseCount: 1, holders: [{ requester: 'Search', reason: 'search notes' }] }
+    const held = {
+      ...ATLAS,
+      leaseCount: 1,
+      holders: [{ requester: 'Search', reason: 'search notes' }],
+    }
     await wrapper.setProps({ processes: [held], now: NOW + 1_000 })
 
     expect(wrapper.find('.plugin-popover').exists()).toBe(true)

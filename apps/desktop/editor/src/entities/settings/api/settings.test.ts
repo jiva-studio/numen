@@ -400,8 +400,8 @@ describe('the settings that change', () => {
       yield { changed: [] }
       yield {
         changed: [
-          { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-          { at: ['md.numen.sample', 'indent'], value: 'false' },
+          { keyPath: ['app', 'appearance', 'mode'], value: '"dark"' },
+          { keyPath: ['md.numen.sample', 'indent'], value: 'false' },
         ],
       }
     })
