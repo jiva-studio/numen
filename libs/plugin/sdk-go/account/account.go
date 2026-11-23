@@ -36,8 +36,10 @@ var (
 	ErrNoPendingRestore = errors.New("no restore is pending on this device")
 	// ErrInvalidChain means the chain does not verify or does not belong to the recovery words.
 	ErrInvalidChain = errors.New("the account chain is not valid for the recovery words")
-	errMessageSize  = errors.New("the message to sign has 1 to 4096 bytes")
-	errDataSize     = errors.New("the data to seal has at most 32 KiB")
+	// ErrNoLink means no link is in progress on this device.
+	ErrNoLink      = errors.New("no link is in progress on this device")
+	errMessageSize = errors.New("the message to sign has 1 to 4096 bytes")
+	errDataSize    = errors.New("the data to seal has at most 32 KiB")
 )
 
 // PublicIdentity is what is public of the identity of this device.
@@ -52,6 +54,12 @@ type PublicIdentity struct {
 	DeviceSignKey []byte
 	// Chain is the signed device chain of the account.
 	Chain []byte
+	// KeyEpoch is the epoch of the account keys of this device, 0 until a device is revoked.
+	KeyEpoch uint32
+	// ChainLength is the number of entries of Chain.
+	ChainLength uint32
+	// IsRevoked is true when the account revoked this device.
+	IsRevoked bool
 }
 
 // Client asks the host for the identity of this device.
