@@ -215,9 +215,9 @@ export interface HostKinds {
 
 /** The tabs of the window. */
 export interface HostTabs {
-  readonly openTab: (kind: string, at?: string) => Promise<string>
-  readonly openTabAdjacent: (kind: string, at?: string) => Promise<string>
-  readonly navigateTab: (kind: string, path: string) => Promise<string>
+  readonly openTab: (kind: string, at?: string) => Promise<string> | undefined
+  readonly openTabAdjacent: (kind: string, at?: string) => Promise<string> | undefined
+  readonly navigateTab: (kind: string, path: string) => Promise<string> | undefined
   readonly closeTab: (id: string) => void
   readonly getTabState: (id: string) => object | undefined
 }

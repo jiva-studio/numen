@@ -79,11 +79,11 @@ export const NO_KINDS: Omit<HostKinds, 'registerKind'> = {
   writeNote: undefined,
 }
 
-/** A window that opens no tab. */
+/** A window that opens no tab: each open answers undefined. */
 export const NO_TABS: HostTabs = {
-  openTab: () => Promise.reject(new ReportedError('This window cannot open tabs')),
-  openTabAdjacent: () => Promise.reject(new ReportedError('This window cannot open tabs')),
-  navigateTab: () => Promise.reject(new ReportedError('This window cannot open tabs')),
+  openTab: () => undefined,
+  openTabAdjacent: () => undefined,
+  navigateTab: () => undefined,
   closeTab: () => undefined,
   getTabState: () => undefined,
 }

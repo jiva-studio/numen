@@ -64,7 +64,7 @@ function registerReaderExtensions(
         ext,
         (path, selector, ranges) => {
           openTab(kindId, path)
-            .then((tabId) => {
+            ?.then((tabId) => {
               if (!selector && !ranges) return
               const state = getTabState(tabId) as
                 { selector: Selector | null; ranges: readonly TextRange[] | null } | undefined
@@ -150,11 +150,10 @@ export function registerTabKindEntry(
       const where = extractWhere(options)
       const line = extractLine(options)
       const opening =
-        where === 'split'
-          ? openTabAdjacent(registration.kind, path)
-          : openTab(registration.kind, path)
+        (where === 'split' ? openTabAdjacent(registration.kind, path) : undefined) ??
+        openTab(registration.kind, path)
       opening
-        .then((tabId) => {
+        ?.then((tabId) => {
           if (line === undefined) return
           const state = getTabState(tabId) as { revealLine?: (line: number) => void } | undefined
           state?.revealLine?.(line)
