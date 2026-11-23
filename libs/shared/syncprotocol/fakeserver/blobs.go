@@ -124,7 +124,8 @@ func (s *Server) getDownload(account, vault string, id []byte) *syncv1.BlobDownl
 	if !found || row.account != account || row.vault != vault || row.state != blobCommitted {
 		return &syncv1.BlobDownload{BlobId: id}
 	}
-	return &syncv1.BlobDownload{BlobId: id, Url: s.getBlobURL(id), ExpiresAt: s.now().Add(blobLife).Unix(), Found: true}
+	row.downloadUntil = s.now().Add(blobLife)
+	return &syncv1.BlobDownload{BlobId: id, Url: s.getBlobURL(id), ExpiresAt: row.downloadUntil.Unix(), Found: true}
 }
 
 func (s *Server) serveBlob(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +170,7 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 	s.mu.Lock()
 	row, found := s.blobs[id]
 	var body []byte
-	if found && row.state == blobCommitted {
+	if found && row.state == blobCommitted && row.downloadUntil.After(s.now()) {
 		body = slices.Clone(row.body)
 	}
 	s.mu.Unlock()

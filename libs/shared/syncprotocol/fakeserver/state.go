@@ -51,13 +51,14 @@ const (
 )
 
 type blobRow struct {
-	account    string
-	vault      string
-	size       uint64
-	expiresAt  time.Time
-	state      blobState
-	body       []byte
-	isUploaded bool
+	account       string
+	vault         string
+	size          uint64
+	expiresAt     time.Time
+	downloadUntil time.Time
+	state         blobState
+	body          []byte
+	isUploaded    bool
 }
 
 func (s *Server) authenticate(header http.Header) (string, error) {
