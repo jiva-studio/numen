@@ -56,7 +56,7 @@ func newBillingServer(tb testing.TB, clock *testClock, needsSubscription bool) (
 
 func createBillingEnv(tb testing.TB, needsSubscription bool) *billing {
 	tb.Helper()
-	clock := &testClock{now: time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)}
+	clock := &testClock{now: machineClock{}.Now()}
 	server, address := newBillingServer(tb, clock, needsSubscription)
 	account := newOwnedAccount(tb)
 	device := account.addDevice(tb, "First")
@@ -516,7 +516,7 @@ func TestPayPage_InReadOnlyOpensTheWritesAgain(t *testing.T) {
 
 func TestSnapshot_CarriesTheSubscriptionsOfTheAccounts(t *testing.T) {
 	t.Parallel()
-	clock := &testClock{now: time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)}
+	clock := &testClock{now: machineClock{}.Now()}
 	first, address := newBillingServer(t, clock, true)
 	account := newOwnedAccount(t)
 	device := account.addDevice(t, "First")

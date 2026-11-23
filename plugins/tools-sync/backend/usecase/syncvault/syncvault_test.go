@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
@@ -169,14 +170,14 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 
 	wire := bytes.Clone(p.server.GetStoredBlobs(t))
 	for _, entry := range p.a.ReadCatalog(t) {
-		raw, err := synctest.EncodeMessage(entry)
+		raw, err := wiretest.EncodeMessage(entry)
 		if err != nil {
 			t.Fatal(err)
 		}
 		wire = append(wire, raw...)
 	}
 	for _, change := range p.a.ReadChanges(t, p.a.GetRemoteID(t, source)) {
-		raw, err := synctest.EncodeMessage(change)
+		raw, err := wiretest.EncodeMessage(change)
 		if err != nil {
 			t.Fatal(err)
 		}
