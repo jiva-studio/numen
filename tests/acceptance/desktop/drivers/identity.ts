@@ -103,7 +103,7 @@ export class IdentityDriver {
     const fields = panel.getByRole('textbox', { name: /^Word \d+$/ })
     await expect(fields).toHaveCount(CONFIRMATIONS)
     const labels = await fields.evaluateAll((all) =>
-      all.map((one) => (one as HTMLInputElement).labels?.[0]?.textContent?.trim() ?? ''),
+      all.map((one) => (one as HTMLInputElement).labels?.[0]?.textContent.trim() ?? ''),
     )
     const answers = planAnswers(labels.map(readPosition), this.words, mistake)
     for (const [index, answer] of answers.entries()) await fields.nth(index).fill(answer)

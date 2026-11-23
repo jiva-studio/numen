@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -71,7 +70,8 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
 	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
-	mountServices(opened, install, res.restore, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
+	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
+	mountIdentity(opened, install, vaultDeps, res.restore)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
 	opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out)
 	return connectWindow(ctx, install, exec, vaultDeps, opened, startup)
@@ -227,7 +227,7 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
-func mountServices(w *windowRoutes, install pluginInstall, pending *identity.PendingStore, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
+func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
 	mountPluginData(w, vaultDeps)
 	mountSettings(w, settingsDeps, dialog)
 	mountMedia(w, vaultDeps)
@@ -235,7 +235,6 @@ func mountServices(w *windowRoutes, install pluginInstall, pending *identity.Pen
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
 	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
 	mountLicense(w, install, settingsDeps, vaultDeps)
-	mountIdentity(w, install, vaultDeps, pending)
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
 	mountHealth(w, exec)
