@@ -23,6 +23,49 @@ export interface Sizes {
 /** Where the appearance reports a failure. */
 export type AppearanceWriter = (text: string, severity: 'error') => void
 
+/** The words the appearance reports a failure in. */
+export interface AppearanceWords {
+  readonly unlisted: string
+  readonly themeUnreadable: string
+}
+
+/** The styles the window was served with and the changes applied as the appearance is read. */
+export interface AppearanceOutput {
+  readonly servedTheme: string
+  readonly writeMode: (mode: Mode) => void
+  readonly writeTheme: (css: string) => void
+  readonly writeSizes: (sizes: Sizes) => void
+}
+
+/** The theme, mode and sizes the settings apply to the window, and every theme listed. */
+export interface ThemeState {
+  readonly themes: readonly Theme[]
+  readonly applied: string
+  readonly mode: Mode
+  readonly sizes: Sizes
+}
+
+/** The themes the application provides to the appearance. */
+export interface ThemeSource {
+  getAppearance(): Promise<ThemeState>
+  readTheme(name: string): Promise<string>
+  /** The names of themes that changed, until the signal aborts. */
+  watchThemes(signal: AbortSignal): AsyncIterable<readonly string[]>
+}
+
+/** What a follower reads of the window it follows for. */
+interface FollowerDeps {
+  isOpen(): boolean
+  setLost(message: string): void
+  wait(ms: number): Promise<void>
+}
+
+/** Follows a stream for as long as the window is open, resuming it after a loss. */
+export type CreateFollower = (deps: FollowerDeps) => <T>(
+  stream: () => AsyncIterable<T>,
+  each: (item: T) => void | Promise<void>,
+) => Promise<void>
+
 /** The modes, in the order they are offered. */
 export const MODES: readonly Mode[] = ['system', 'light', 'dark']
 
