@@ -63,7 +63,7 @@ export interface Wait {
 export const parseWait = (text: string): Wait => {
   const match = /^ within "(\d+)" seconds(.*)$/.exec(text)
   if (!match) throw new Error(`"${text}" does not name a wait in seconds`)
-  return { seconds: Number(match[1]), vault: parseInside(match[2] ?? '') }
+  return { seconds: Number(match[1]), vault: parseInside(match[2]) }
 }
 
 /** The path of a note a scenario names by its title. */
