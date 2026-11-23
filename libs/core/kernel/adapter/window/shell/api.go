@@ -22,7 +22,7 @@ import (
 // API is what the page may ask of the window itself.
 type API struct {
 	Ensure          *ensureindexed.Ensure
-	Runs            ensureindexed.Runs
+	Runs            *ensureindexed.Runs
 	Themes          numenv1connect.ThemeServiceHandler
 	Window          *wire.Window
 	Frontends       FrontendPlugins

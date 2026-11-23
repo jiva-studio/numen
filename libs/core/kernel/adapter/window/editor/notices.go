@@ -2,7 +2,9 @@ package editor
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -85,3 +87,18 @@ func (a *broadcaster[T]) Publish(what T) { a.inner.Publish(what) }
 
 // Subscribe returns what is published from now on and the function that ends the subscription.
 func (a *broadcaster[T]) Subscribe() (<-chan T, func()) { return a.inner.Subscribe() }
+
+// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
+const applyingTheme = "apply theme"
+
+// NewThemeWarning returns what records a theme warning as a task of tasks, and takes the task out for an
+// empty message, which says the theme the settings name is found now.
+func NewThemeWarning(tasks *run.Tasks) func(message string) {
+	return func(message string) {
+		if message == "" {
+			tasks.Remove(applyingTheme)
+			return
+		}
+		tasks.Set(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	}
+}

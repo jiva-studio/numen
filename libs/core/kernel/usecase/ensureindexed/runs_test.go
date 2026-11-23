@@ -15,8 +15,7 @@ func getUnreadVault() domain.Vault {
 
 // A vault forgotten after a clean indexing is claimable again.
 func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
-	r := &ensureindexed.Runs{}
-	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	r := ensureindexed.NewRuns(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	r.Record(getUnreadVault(), nil)
 	if r.Claim(getUnreadVault()).Read != nil {
@@ -35,8 +34,7 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 // failed indexing returns why and begins nothing, and a vault indexed cleanly
 // begins nothing and is not underway.
 func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
-	r := &ensureindexed.Runs{}
-	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	r := ensureindexed.NewRuns(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
 	claim := r.Claim(v)

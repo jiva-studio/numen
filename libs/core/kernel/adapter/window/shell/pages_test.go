@@ -48,7 +48,7 @@ func (themeList) WatchThemes(
 // The window uses the installation's themes, so a theme chosen in the editor
 // is applied here as well.
 func TestTheWindowAppliesTheInstallationsThemes(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.Themes = themeList{applied: "Evening"}
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
@@ -67,7 +67,7 @@ func TestTheWindowAppliesTheInstallationsThemes(t *testing.T) {
 // A folder of themes that could not be made leaves the window undressed and not unopened: it
 // goes on answering, and asking about themes is what fails.
 func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -178,7 +178,7 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "dist", "index.js"), []byte("export {}"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.Frontends = NewFrontendPlugins(func() []string { return []string{"md.numen.example"} }, func(id string) (string, bool) { return dir, id == "md.numen.example" })
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -205,7 +205,7 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 }
 
 func TestAWindowWithNoPluginsListsNone(t *testing.T) {
-	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
+	server := httptest.NewServer(newAPI(t, nil).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)

@@ -2,17 +2,12 @@ package editor
 
 import (
 	"embed"
-	"errors"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
+	"path"
 	"slices"
 	"strings"
 
-	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
-	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
-	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -62,12 +57,12 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
-	window     *PageAccess
-	routes     []Route
-	themes     numenv1connect.ThemeServiceHandler
-	plugins    PluginServices
-	pluginDir  func(id string) (string, bool)
-	mediaTypes *file.GetMediaType
+	window    *PageAccess
+	routes    []Route
+	themes    numenv1connect.ThemeServiceHandler
+	plugins   PluginServices
+	pluginDir func(id string) (string, bool)
+	assets    *file.OpenVaultFile
 }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
@@ -133,15 +128,6 @@ func (s pageSet) newRoutes(named []string) []Route {
 			routes = append(routes, one)
 		}
 	}
-	// The themes belong to the installation and arrive here from whatever put
-	// the window together, so a build put together without a catalog serves
-	// none.
-	if s.themes != nil {
-		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.window.Gate.CountQuestions())
-		if themed := NewRoute(path, handler, s.themes); isServed(named, themed) {
-			routes = append(routes, themed)
-		}
-	}
 	return routes
 }
 
@@ -190,40 +176,17 @@ func (s pageSet) serveAsset(w http.ResponseWriter, r *http.Request) {
 
 func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
 	vault := s.window.session.GetCurrentVault()
-	name := filepath.FromSlash(unescapedPath)
-	if vault.Path == "" || !filepath.IsLocal(name) {
+	if vault.Path == "" {
 		return false
 	}
-	file, info, err := openVaultFile(vault.Path, name)
+	opened, err := s.assets.ExecuteLatest(r.Context(), vault, unescapedPath)
 	if err != nil {
 		return false
 	}
-	defer closeAndReport(s.window.Window.AddTask, file)
-	setAssetHeaders(w.Header(), s.mediaTypes.Execute(info.Name()))
-	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+	defer closeAndReport(s.window.Window.AddTask, opened.Body)
+	setAssetHeaders(w.Header(), opened.MediaType)
+	http.ServeContent(w, r, path.Base(opened.Path), opened.ModTime, opened.Body)
 	return true
-}
-
-func openVaultFile(vaultDir, name string) (*os.File, os.FileInfo, error) {
-	root, err := os.OpenRoot(vaultDir)
-	if err != nil {
-		return nil, nil, err
-	}
-	file, err := root.Open(name)
-	if err != nil {
-		return nil, nil, errors.Join(err, root.Close())
-	}
-	if err := root.Close(); err != nil {
-		return nil, nil, errors.Join(err, file.Close())
-	}
-	info, err := file.Stat()
-	if err == nil && info.IsDir() {
-		err = os.ErrNotExist
-	}
-	if err != nil {
-		return nil, nil, errors.Join(err, file.Close())
-	}
-	return file, info, nil
 }
 
 func (s pageSet) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
@@ -249,22 +212,6 @@ func (s pageSet) setRequestVault(r *http.Request) {
 	if v := s.window.session.GetCurrentVault(); v.ID != "" {
 		r.Header.Set(requestVaultHeader, string(v.ID))
 	}
-}
-
-func NewNoteRoute(gate *wire.Gate, handler *notewindow.Handler) Route {
-	path, served := numenv1connect.NewNoteServiceHandler(handler, gate.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-func NewFileRoute(gate *wire.Gate, handler *filewindow.Handler) Route {
-	path, served := numenv1connect.NewFileServiceHandler(handler, gate.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewMediaRoute is the route of the service that tells where a media file is played from.
-func NewMediaRoute(gate *wire.Gate, handler *mediawindow.Handler) Route {
-	path, served := numenv1connect.NewMediaServiceHandler(handler, gate.CountQuestions())
-	return NewRoute(path, served, handler)
 }
 
 // CallerHeader names the part of the window that makes a request: a tag known to

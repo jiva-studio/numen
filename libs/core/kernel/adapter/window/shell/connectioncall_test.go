@@ -56,7 +56,7 @@ func callConnection(t *testing.T, api *API) []*v1.ConnectionCallServiceCallRespo
 
 func TestTheWindowCarriesOutTheConnectionCallsOfItsPlugins(t *testing.T) {
 	calls := &answeringCalls{calls: make(chan recordedCall, 1)}
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.ConnectionCalls = connectioncall.NewHandler(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 
 	frames := callConnection(t, api)
@@ -72,7 +72,7 @@ func TestTheWindowCarriesOutTheConnectionCallsOfItsPlugins(t *testing.T) {
 }
 
 func TestAWindowWithoutConnectionCallsAnswersThemAsUnimplemented(t *testing.T) {
-	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
+	server := httptest.NewServer(newAPI(t, nil).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewConnectionCallServiceClient(server.Client(), server.URL)
 
