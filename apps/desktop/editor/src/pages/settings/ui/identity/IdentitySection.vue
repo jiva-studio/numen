@@ -17,17 +17,8 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
 const section = useIdentitySection(() => props.identity)
-const {
-  identity: current,
-  step,
-  stage,
-  recoveryWords,
-  call,
-  confirmation,
-  typing,
-  deletion,
-  actions,
-} = section
+const { identity: current, step, setup, call, confirmation, typing, deletion, actions } = section
+const { stage, recoveryWords } = setup
 </script>
 
 <template>
@@ -52,19 +43,19 @@ const {
       <div v-if="step !== 'restore'" class="identity-section__actions">
         <Button
           type="button"
+          variant="ghost"
+          :disabled="call.isBusy.value"
+          @click="actions.startRestore"
+        >
+          {{ words.identityRestore }}
+        </Button>
+        <Button
+          type="button"
           variant="solid"
           :disabled="call.isBusy.value"
           @click="actions.startSetup"
         >
           {{ words.identityCreate }}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore"
-        >
-          {{ words.identityRestore }}
         </Button>
       </div>
 
@@ -92,11 +83,12 @@ const {
       :recovery-words="recoveryWords"
       :positions="confirmation.positions.value"
       :entered="confirmation.entered.value"
+      :is-complete="confirmation.isComplete.value"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
       @change="actions.setEntered"
       @check="actions.showCheck"
-      @show-words="actions.showWords"
+      @back="actions.showWords"
       @keep="actions.keep"
       @cancel="actions.cancel"
     />
@@ -120,6 +112,7 @@ const {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 

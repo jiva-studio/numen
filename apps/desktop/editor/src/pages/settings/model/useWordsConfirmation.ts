@@ -2,7 +2,7 @@
  * The check that a person wrote the recovery words down: three positions picked at random, and the
  * words typed for them compared with the words of the identity being set up.
  */
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 
 const WORD_COUNT = 12
 const CONFIRMED_COUNT = 3
@@ -54,5 +54,9 @@ export function useWordsConfirmation(recoveryWords: Readonly<Ref<readonly string
       (position) => normalize(entered.value[position] ?? '') === recoveryWords.value[position - 1],
     )
 
-  return { positions, entered, pick, clear, setEntered, isConfirmed }
+  const isComplete = computed(() =>
+    positions.value.every((position) => (entered.value[position] ?? '').trim() !== ''),
+  )
+
+  return { positions, entered, isComplete, pick, clear, setEntered, isConfirmed }
 }

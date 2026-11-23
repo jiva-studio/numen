@@ -162,7 +162,7 @@ describe('the page "Identity and licenses"', () => {
     const { tab } = await createPage()
     expect(tab.text()).toContain('Not created')
     expect(findButton(tab, 'Create identity')).toBeDefined()
-    expect(findButton(tab, 'Restore from words')).toBeDefined()
+    expect(findButton(tab, 'Restore')).toBeDefined()
     expect(tab.text()).not.toContain('Account fingerprint')
   })
 
@@ -187,7 +187,7 @@ describe('the page "Identity and licenses"', () => {
     expect(generateWords).toHaveBeenCalledOnce()
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
     expect(tab.text()).toContain('Write the 12 words down in order. We show them once.')
-    expect(tab.text()).toContain('Nobody can recover these words')
+    expect(tab.text()).toContain('Neither Numen nor support can recover these words')
     expect(getConfirmInputs(tab)).toHaveLength(0)
     expect(findButton(tab, 'Cancel')).toBeDefined()
   })
@@ -201,7 +201,6 @@ describe('the page "Identity and licenses"', () => {
     expect(positions.every((position) => position >= 1 && position <= 12)).toBe(true)
     expect(tab.get('[role="dialog"] h2').text()).toBe('Check the words')
     expect(tab.text()).toContain('from your record.')
-    expect(tab.text()).toContain('Case does not matter.')
     expect(getShownWords(tab)).toStrictEqual([])
   })
 
@@ -237,21 +236,14 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).toContain('Not created')
   })
 
-  it('shows the words again from the second step so the person can look at them', async () => {
+  it('goes back to the words from the second step and drops the problem', async () => {
     const { tab } = await createPage()
     await startSetup(tab)
     await fillConfirmations(tab, { word: 'zoo' })
     await press(tab, 'Continue')
-    await press(tab, 'Show the words again')
-    expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
-    expect(tab.find('[role="alert"]').exists()).toBe(false)
-  })
-
-  it('goes back to the words with the Back button', async () => {
-    const { tab } = await createPage()
-    await startSetup(tab)
     await press(tab, 'Back')
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
+    expect(tab.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('drops the words from the page when the person cancels the first step', async () => {
@@ -282,7 +274,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('sends the words that are typed to create when the person restores', async () => {
     const { tab, create } = await createPage()
-    await press(tab, 'Restore from words')
+    await press(tab, 'Restore')
     await tab
       .get('textarea[aria-label="Your 12 recovery words"]')
       .setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
@@ -295,7 +287,7 @@ describe('the page "Identity and licenses"', () => {
     const { tab, identity } = await createPage(undefined, () =>
       Promise.resolve(asFailure('Some words are not valid.')),
     )
-    await press(tab, 'Restore from words')
+    await press(tab, 'Restore')
     await tab.get('textarea[aria-label="Your 12 recovery words"]').setValue('abandon '.repeat(12))
     await press(tab, 'Restore')
     expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')

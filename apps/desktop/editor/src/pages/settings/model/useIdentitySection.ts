@@ -12,17 +12,17 @@ import { useIdentityDelete } from './useIdentityDelete'
 import { useIdentityCall } from './useIdentityCall'
 import { useRestoreText } from './useRestoreText'
 import { useWordsConfirmation } from './useWordsConfirmation'
+import { useSetupStage } from './useSetupStage'
 
 type Step = 'idle' | 'setup' | 'restore'
-type SetupStage = 'words' | 'check'
 
 export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const identity = computed(() => getIdentity().identity.value)
   const step = ref<Step>('idle')
-  const stage = ref<SetupStage>('words')
-  const recoveryWords = ref<readonly string[]>([])
   const call = useIdentityCall()
   const { problem, isBusy, run } = call
+  const setup = useSetupStage(problem)
+  const { stage, recoveryWords } = setup
   const confirmation = useWordsConfirmation(recoveryWords)
   const typing = useRestoreText(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
@@ -39,8 +39,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
 
   function reset(): void {
     step.value = 'idle'
-    stage.value = 'words'
-    recoveryWords.value = []
+    setup.clear()
     confirmation.clear()
     typing.restoreText.value = ''
     problem.value = ''
@@ -55,16 +54,6 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     confirmation.pick()
     stage.value = 'words'
     step.value = 'setup'
-  }
-
-  const showCheck = (): void => {
-    problem.value = ''
-    stage.value = 'check'
-  }
-
-  const showWords = (): void => {
-    problem.value = ''
-    stage.value = 'words'
   }
 
   const startRestore = (): void => {
@@ -97,8 +86,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   return {
     identity,
     step,
-    stage,
-    recoveryWords,
+    setup,
     call,
     confirmation,
     typing,
@@ -106,8 +94,8 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     actions: {
       startSetup,
       startRestore,
-      showCheck,
-      showWords,
+      showCheck: setup.showCheck,
+      showWords: setup.showWords,
       cancel: reset,
       setEntered,
       keep,

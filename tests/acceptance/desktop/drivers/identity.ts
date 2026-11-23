@@ -140,7 +140,7 @@ export class IdentityDriver {
 
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore from words', exact: true }).click()
+    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
     await panel.getByRole('textbox', { name: 'Your 12 recovery words' }).fill(text)
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
   }

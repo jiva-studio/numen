@@ -5,25 +5,19 @@
  * backdrop cancel the setup, and Tab stays inside the dialog.
  */
 import { computed, onMounted, useId, useTemplateRef, watch } from 'vue'
-import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import ConfirmWords from './ConfirmWords.vue'
+import IdentitySetupActions from './IdentitySetupActions.vue'
+import type { IdentitySetupProps } from './IdentitySetup.types'
 import RecoveryWords from './RecoveryWords.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  stage: 'words' | 'check'
-  recoveryWords: readonly string[]
-  positions: readonly number[]
-  entered: Readonly<Record<number, string>>
-  problem: string
-  isBusy: boolean
-}>()
+const props = defineProps<IdentitySetupProps>()
 
 const emit = defineEmits<{
   (e: 'change', position: number, value: string): void
   (e: 'check'): void
-  (e: 'show-words'): void
+  (e: 'back'): void
   (e: 'keep'): void
   (e: 'cancel'): void
 }>()
@@ -32,22 +26,15 @@ const emit = defineEmits<{
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const isWords = computed(() => props.stage === 'words')
-const isComplete = computed(() =>
-  props.positions.every((position) => (props.entered[position] ?? '').trim() !== ''),
-)
 
 /* ---------------------------------- Hooks --------------------------------- */
 onMounted(focusFirst)
 watch(() => props.stage, focusFirst, { flush: 'post' })
 
 /* -------------------------------- Handlers -------------------------------- */
-function focusFirst(): void {
-  dialog.value?.querySelector<HTMLElement>('input, button')?.focus()
-}
-
 function onSubmit(): void {
   if (isWords.value) emit('check')
-  else if (isComplete.value) emit('keep')
+  else if (props.isComplete) emit('keep')
 }
 
 function onKeepFocus(event: KeyboardEvent): void {
@@ -64,6 +51,11 @@ function onKeepFocus(event: KeyboardEvent): void {
     event.preventDefault()
     first.focus()
   }
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function focusFirst(): void {
+  dialog.value?.querySelector<HTMLElement>('input, button')?.focus()
 }
 </script>
 
@@ -87,12 +79,6 @@ function onKeepFocus(event: KeyboardEvent): void {
         <p class="connection-dialog__text">{{ words.identityWriteDown }}</p>
         <RecoveryWords :recovery-words="recoveryWords" />
         <p class="caution caution--card caution--alarm">{{ words.identityNobodyRecovers }}</p>
-        <div class="connection-actions">
-          <Button type="button" variant="outline" @click="emit('cancel')">
-            {{ words.identityCancel }}
-          </Button>
-          <Button type="submit" variant="solid">{{ words.identityWordsWritten }}</Button>
-        </div>
       </template>
 
       <template v-else>
@@ -105,28 +91,18 @@ function onKeepFocus(event: KeyboardEvent): void {
           @change="(position, value) => emit('change', position, value)"
           @submit="onSubmit"
         />
-        <p class="connection-dialog__hint">{{ words.identityConfirmCase }}</p>
         <p v-if="problem !== ''" role="alert" class="connection-dialog__problem">
           {{ problem }}
         </p>
-        <div class="connection-actions">
-          <Button
-            type="button"
-            variant="outline"
-            class="connection-actions__start"
-            :disabled="isBusy"
-            @click="emit('show-words')"
-          >
-            {{ words.identityShowWords }}
-          </Button>
-          <Button type="button" variant="outline" :disabled="isBusy" @click="emit('show-words')">
-            {{ words.identityBack }}
-          </Button>
-          <Button type="submit" variant="solid" :disabled="isBusy || !isComplete">
-            {{ isBusy ? words.identityKeeping : words.identityContinue }}
-          </Button>
-        </div>
       </template>
+
+      <IdentitySetupActions
+        :stage="stage"
+        :is-busy="isBusy"
+        :is-complete="isComplete"
+        @cancel="emit('cancel')"
+        @back="emit('back')"
+      />
     </form>
   </div>
 </template>
@@ -169,31 +145,12 @@ function onKeepFocus(event: KeyboardEvent): void {
 }
 
 .connection-dialog__text,
-.connection-dialog__hint,
 .connection-dialog__problem {
   margin: 0;
 }
 
-.connection-dialog__hint,
 .connection-dialog__problem {
   font-size: var(--numen-text-1);
-}
-
-.connection-dialog__hint {
-  color: var(--numen-hushed);
-}
-
-.connection-dialog__problem {
   color: var(--numen-alarm);
-}
-
-.connection-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.375rem;
-}
-
-.connection-actions__start {
-  margin-inline-end: auto;
 }
 </style>
