@@ -124,3 +124,9 @@ func (e *accountEndpoint) CompleteRestore(
 	}
 	return connect.NewResponse(&v1.CompleteRestoreResponse{}), nil
 }
+
+func (e *accountEndpoint) OpenSealedBox(
+	_ context.Context, _ *connect.Request[v1.OpenSealedBoxRequest],
+) (*connect.Response[v1.OpenSealedBoxResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+}

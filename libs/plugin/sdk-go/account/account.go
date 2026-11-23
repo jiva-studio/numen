@@ -203,3 +203,10 @@ func readReason(failure *connect.Error) string {
 	}
 	return ""
 }
+
+// OpenSealedBox opens a box that identity.SealToAccountBox sealed to the account box key of this device, for this
+// plugin and the same context. It returns ErrCannotOpen for bytes that do not open, and ErrNoIdentity where the device
+// holds no identity.
+func (c *Client) OpenSealedBox(_ context.Context, _, _ []byte) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}

@@ -169,3 +169,7 @@ func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.A
 	}
 	return identity.Record{Device: restore.device, Wrapped: wrapped, Chain: chain}, nil
 }
+
+func (s *service) OpenSealedBox(context.Context, *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+}
