@@ -16,22 +16,11 @@ const pluginID = "md.numen.tools.sync"
 
 func newClient(t *testing.T, fake *accounttest.Fake) *account.Client {
 	t.Helper()
-	for name, value := range fake.Vars("token-of-the-plugin") {
-		t.Setenv(name, value)
-	}
-	client, err := account.NewClientFromEnv()
+	endpoint, err := hostcall.FromVars(fake.Vars("token-of-the-plugin"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return client
-}
-
-func TestNewClientFromEnv_ReportsNoHostWhereTheEnvironmentNamesNone(t *testing.T) {
-	t.Setenv(hostcall.HostPortEnv, "")
-
-	if _, err := account.NewClientFromEnv(); !errors.Is(err, hostcall.ErrNoHost) {
-		t.Errorf("error = %v, want ErrNoHost", err)
-	}
+	return account.NewClient(endpoint)
 }
 
 func TestGetPublicIdentity_ReturnsWhatIsPublicOfTheIdentity(t *testing.T) {
