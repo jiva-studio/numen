@@ -16,8 +16,9 @@ const maxDeviceName = 64
 type EntryKind uint8
 
 const (
-	KindGenesis   EntryKind = 1
-	KindAddDevice EntryKind = 2
+	KindGenesis      EntryKind = 1
+	KindAddDevice    EntryKind = 2
+	KindRevokeDevice EntryKind = 3
 )
 
 type Entry struct {
@@ -28,6 +29,7 @@ type Entry struct {
 	Signer    ed25519.PublicKey
 	Genesis   *Genesis
 	AddDevice *AddDevice
+	Revoke    *Revoke
 	Signature [64]byte
 }
 

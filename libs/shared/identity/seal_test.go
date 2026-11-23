@@ -7,6 +7,7 @@ import (
 	"crypto/hkdf"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"testing"
 
@@ -39,7 +40,7 @@ func newFixedAccount(tb testing.TB, fixed []byte) identity.AccountKeys {
 	return account
 }
 
-func readSealVector(tb testing.TB, kek, salt []byte, pluginID, context string, plain []byte) []byte {
+func readSealVector(tb testing.TB, kek, salt []byte, epoch uint32, pluginID, context string, plain []byte) []byte {
 	tb.Helper()
 	pluginKey, err := hkdf.Key(sha256.New, kek, nil, "numen/v1/plugin/"+pluginID, 32)
 	if err != nil {
@@ -57,8 +58,10 @@ func readSealVector(tb testing.TB, kek, salt []byte, pluginID, context string, p
 	if err != nil {
 		tb.Fatal(err)
 	}
-	associated := []byte("numen/v1/plugin-seal/" + pluginID + "\x00" + context)
-	out := append([]byte{0x01}, salt...)
+	associated := binary.BigEndian.AppendUint32([]byte("numen/v1/plugin-seal/"+pluginID+"\x00"), epoch)
+	associated = append(associated, context...)
+	out := binary.BigEndian.AppendUint32([]byte{0x02}, epoch)
+	out = append(out, salt...)
 	return aead.Seal(out, make([]byte, 12), plain, associated)
 }
 
@@ -77,12 +80,12 @@ func TestSealForPlugin_ProducesTheFrozenFormatForAFixedRandomReader(t *testing.T
 		t.Fatal(err)
 	}
 
-	want := readSealVector(t, kek, salt, sealPluginID, sealContext, plain)
+	want := readSealVector(t, kek, salt, 0, sealPluginID, sealContext, plain)
 	if !bytes.Equal(sealed, want) {
 		t.Errorf("sealed = %x\nwant     %x", sealed, want)
 	}
-	if len(sealed) != 1+16+len(plain)+16 {
-		t.Errorf("sealed has %d bytes, want %d", len(sealed), 1+16+len(plain)+16)
+	if len(sealed) != 1+4+16+len(plain)+16 {
+		t.Errorf("sealed has %d bytes, want %d", len(sealed), 1+4+16+len(plain)+16)
 	}
 }
 
@@ -123,7 +126,7 @@ func TestSealForPlugin_ReturnsDifferentBytesForTheSamePlainEachTime(t *testing.T
 	if bytes.Equal(first, second) {
 		t.Error("two seals of one plain text are equal")
 	}
-	if bytes.Equal(first[1:17], second[1:17]) {
+	if bytes.Equal(first[5:21], second[5:21]) {
 		t.Error("two seals use the same salt")
 	}
 }
@@ -182,7 +185,7 @@ func TestOpenForPlugin_RefusesInputThatIsTooShortOrTruncatedOrLonger(t *testing.
 		t.Fatal(err)
 	}
 
-	for _, size := range []int{0, 1, 16, 17, 32, len(sealed) - 1} {
+	for _, size := range []int{0, 1, 4, 5, 20, 21, 32, len(sealed) - 1} {
 		if _, err := account.OpenForPlugin(sealPluginID, []byte(sealContext), sealed[:size]); !errors.Is(err, identity.ErrUnwrap) {
 			t.Errorf("%d bytes: error = %v, want ErrUnwrap", size, err)
 		}
@@ -195,16 +198,57 @@ func TestOpenForPlugin_RefusesInputThatIsTooShortOrTruncatedOrLonger(t *testing.
 	}
 }
 
-func TestOpenForPlugin_RefusesAnotherFormatVersion(t *testing.T) {
+func TestOpenForPlugin_RefusesTheFormatsThatAreNotTheCurrentOne(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
-	sealed, err := account.SealForPlugin(rand.Reader, sealPluginID, []byte(sealContext), []byte("milk"))
+	for _, version := range []byte{0x00, 0x01, 0x03} {
+		sealed, err := account.SealForPlugin(rand.Reader, sealPluginID, []byte(sealContext), []byte("milk"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sealed[0] = version
+		if _, err := account.OpenForPlugin(sealPluginID, []byte(sealContext), sealed); !errors.Is(err, identity.ErrUnwrap) {
+			t.Errorf("version %d: error = %v, want ErrUnwrap", version, err)
+		}
+	}
+}
+
+func TestSealForPlugin_NamesTheEpochOfTheKeysItUsed(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	chain, keys := m.revokeSecond(t)
+	sealed, err := keys.SealForPlugin(rand.Reader, sealPluginID, []byte(sealContext), []byte("milk"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	sealed[0] = 0x02
+	if got := binary.BigEndian.Uint32(sealed[1:5]); got != chain.Epoch() {
+		t.Errorf("the seal names epoch %d, want %d", got, chain.Epoch())
+	}
+}
 
-	if _, err := account.OpenForPlugin(sealPluginID, []byte(sealContext), sealed); !errors.Is(err, identity.ErrUnwrap) {
+func TestOpenForPlugin_RefusesDataOfALaterEpochWithKeysOfAnEarlierOne(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	_, keys := m.revokeSecond(t)
+	sealed, err := keys.SealForPlugin(rand.Reader, sealPluginID, []byte(sealContext), []byte("milk"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if opened, err := m.firstKeys.OpenForPlugin(sealPluginID, []byte(sealContext), sealed); !errors.Is(err, identity.ErrUnwrap) || opened != nil {
+		t.Errorf("a revoked device opened = %q, error = %v, want nil and ErrUnwrap", opened, err)
+	}
+}
+
+func TestOpenForPlugin_RefusesAnEpochThatWasChangedInTheSeal(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	_, keys := m.revokeSecond(t)
+	sealed, err := keys.SealForPlugin(rand.Reader, sealPluginID, []byte(sealContext), []byte("milk"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	binary.BigEndian.PutUint32(sealed[1:5], 0)
+	if _, err := m.firstKeys.OpenForPlugin(sealPluginID, []byte(sealContext), sealed); !errors.Is(err, identity.ErrUnwrap) {
 		t.Errorf("error = %v, want ErrUnwrap", err)
 	}
 }
