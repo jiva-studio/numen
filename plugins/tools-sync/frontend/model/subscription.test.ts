@@ -315,6 +315,41 @@ describe('useSubscription buy', () => {
     expect(client.getSubscription).toHaveBeenCalledTimes(reads)
   })
 
+  it('asks the server no more once the person stops waiting', async () => {
+    const client = createClient([createResponse()])
+    const { subscription } = mountSubscription(client)
+    await subscription.session.load()
+    await subscription.payment.buy('plus')
+
+    subscription.payment.cancel()
+    await vi.advanceTimersByTimeAsync(600_000)
+
+    expect(subscription.payment.waiting.value).toBe(false)
+    expect(subscription.session.problem.value).toBe('')
+    expect(client.getSubscription).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens no payment page when the person stops waiting before it is ready', async () => {
+    const client = createClient([createResponse()])
+    let openCheckout: (url: string) => void = () => undefined
+    client.createCheckout.mockReturnValue(
+      new Promise<string>((resolve) => {
+        openCheckout = resolve
+      }),
+    )
+    const { subscription, openExternal } = mountSubscription(client)
+    await subscription.session.load()
+
+    const bought = subscription.payment.buy('plus')
+    subscription.payment.cancel()
+    openCheckout(CHECKOUT_URL)
+    await bought
+
+    expect(openExternal).not.toHaveBeenCalled()
+    expect(subscription.payment.starting.value).toBe(false)
+    expect(subscription.payment.waiting.value).toBe(false)
+  })
+
   it('is still waiting just before the 10 minutes end', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
     await subscription.session.load()

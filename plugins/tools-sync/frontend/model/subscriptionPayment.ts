@@ -19,7 +19,7 @@ export interface SubscriptionPaymentOptions {
 
 /**
  * The purchase of a plan: it opens the payment page in the browser, then asks the server until the
- * subscription is active or the limit passes.
+ * subscription is active, the limit passes or the person stops waiting.
  */
 export function useSubscriptionPayment(
   options: SubscriptionPaymentOptions,
@@ -33,6 +33,7 @@ export function useSubscriptionPayment(
   } = options
   const { account, waiting, problem, load, readIfReachable } = session
   const starting = ref(false)
+  let attempt = 0
   let pollTimer: ReturnType<typeof setTimeout> | undefined
   let limitTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -69,23 +70,41 @@ export function useSubscriptionPayment(
     }, pollLimitMs)
   }
 
+  async function openCheckout(offer: string, isCurrent: () => boolean): Promise<void> {
+    const url = await client.createCheckout(offer)
+    if (!isCurrent()) return
+    const opened = await openExternal(url)
+    if (!isCurrent()) return
+    if (opened.ok) beginPaymentPoll()
+    else problem.value = opened.error
+  }
+
   async function buy(offer: string): Promise<void> {
     if (waiting.value || starting.value) return
     problem.value = ''
     starting.value = true
+    attempt += 1
+    const current = attempt
+    const isCurrent = (): boolean => current === attempt
     try {
-      const opened = await openExternal(await client.createCheckout(offer))
-      if (opened.ok) beginPaymentPoll()
-      else problem.value = opened.error
+      await openCheckout(offer, isCurrent)
     } catch (failure) {
+      if (!isCurrent()) return
       if (getFailureCode(failure) === 'already_exists') await load()
       else problem.value = getMessage(failure)
     } finally {
-      starting.value = false
+      if (isCurrent()) starting.value = false
     }
+  }
+
+  /** Stops waiting for the payment: the payment page stays closed when it is not open yet, and the server is asked no more. */
+  function cancel(): void {
+    attempt += 1
+    starting.value = false
+    endPaymentPoll()
   }
 
   onScopeDispose(endPaymentPoll)
 
-  return { waiting, starting, buy }
+  return { waiting, starting, buy, cancel }
 }

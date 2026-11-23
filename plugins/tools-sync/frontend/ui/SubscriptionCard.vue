@@ -3,7 +3,8 @@
  * The card of the subscription of the account on the page "Identity and licenses", an island card with
  * the plan as its badge: a row per plan that buys it on a click when there is no subscription, and the
  * rows of the plan, the end of the paid period and the space used with the actions to change or manage
- * it when there is.
+ * it when there is. While a payment is awaited, a layer over the rows keeps them in place, says so and
+ * offers to stop waiting.
  */
 import { computed, onMounted } from 'vue'
 import { ChevronRight } from '@lucide/vue'
@@ -34,7 +35,7 @@ const { session, payment, offers, summary } = useSubscription({
 })
 const { problem, load, change, manage } = session
 const { status } = session.account
-const { waiting, starting, buy } = payment
+const { waiting, starting, buy, cancel } = payment
 const { buyOffers, changeOffers, canManage } = offers
 const { view, planLine, usage, usedPercent, isFull, validity } = summary
 
@@ -42,6 +43,7 @@ const hasSettingsAction = computed(
   () => status.value === 'unreachable' && props.openSettings !== undefined,
 )
 const hasManageAction = computed(() => canManage.value && validity.value === undefined)
+const isPaying = computed(() => waiting.value || starting.value)
 
 const getOfferDetail = (offer: PlanOffer): string =>
   [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
@@ -88,11 +90,7 @@ function onFailure(failure: unknown): void {
         {{ view.badge }}
       </span>
     </template>
-    <p v-if="waiting" role="status" class="subscription__waiting">
-      <Spinner class="subscription__spinner" />
-      <span>{{ words.waitingForPayment }}</span>
-    </p>
-    <template v-else>
+    <div class="subscription__content" :inert="isPaying" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
       <p v-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
       <div v-if="planLine !== ''" class="subscription__row">
@@ -150,7 +148,6 @@ function onFailure(failure: unknown): void {
         :key="offer.id"
         type="button"
         class="subscription__row subscription__offer"
-        :disabled="starting"
         :aria-label="words.chooseNamed(offer.name, getOfferDetail(offer))"
         @click="onBuy(offer.id)"
       >
@@ -179,7 +176,16 @@ function onFailure(failure: unknown): void {
           {{ words.manageSubscription }}
         </Button>
       </div>
-    </template>
+    </div>
+    <div v-if="isPaying" class="subscription__waiting">
+      <p role="status" class="subscription__waiting-text">
+        <Spinner class="subscription__spinner" />
+        <span>{{ words.waitingForPayment }}</span>
+      </p>
+      <Button type="button" variant="ghost" size="small" @click="cancel">
+        {{ words.stopWaiting }}
+      </Button>
+    </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
   </IslandCard>
 </template>

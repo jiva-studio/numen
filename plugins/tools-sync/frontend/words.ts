@@ -34,6 +34,7 @@ export const WORDS = {
   cloudFull:
     'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
   waitingForPayment: 'Finish the payment in your browser. This card updates by itself.',
+  stopWaiting: 'Cancel',
   unreachableText: (server: string): string =>
     server === ''
       ? 'Start the sync server, or correct its address in the settings.'

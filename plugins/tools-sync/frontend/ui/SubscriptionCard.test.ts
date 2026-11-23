@@ -88,6 +88,11 @@ const getRow = (wrapper: VueWrapper, name: string): string =>
     .find((row) => row.find('.subscription__name').text() === name)
     ?.text() ?? ''
 
+const getContent = (wrapper: VueWrapper) => wrapper.get('.subscription__content')
+
+const findCancel = (wrapper: VueWrapper) =>
+  wrapper.findAll('button').find((one) => one.text() === 'Cancel')
+
 const findPlanSelect = (wrapper: VueWrapper) => wrapper.find('button[data-slot="select"]')
 
 const getPlanChoices = () =>
@@ -221,8 +226,22 @@ describe('SubscriptionCard', () => {
     expect(wrapper.get('[role="status"]').text()).toBe(
       'Finish the payment in your browser. This card updates by itself.',
     )
-    expect(wrapper.text()).not.toContain('Pick the storage you need')
-    expect(findChoose(wrapper)).toBeUndefined()
+    expect(wrapper.text()).toContain('Pick the storage you need')
+    expect(getChooseNames(wrapper)).toHaveLength(3)
+    expect(getContent(wrapper).attributes('inert')).toBeDefined()
+  })
+
+  it('gives the plan rows back and stops waiting when the person cancels', async () => {
+    const { wrapper } = await render(createResponse({ phase: 'none' }))
+    await findChoose(wrapper, 'Plus')?.trigger('click')
+    await flushPromises()
+
+    await findCancel(wrapper)?.trigger('click')
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(findCancel(wrapper)).toBeUndefined()
+    expect(getContent(wrapper).attributes('inert')).toBeUndefined()
+    expect(getChooseNames(wrapper)).toHaveLength(3)
   })
 
   it('shows each plan as a row to click with the name, the size and the price', async () => {
@@ -245,18 +264,21 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).not.toContain('Choose')
   })
 
-  it('disables the plan rows while the payment page is being opened', async () => {
-    const { wrapper, client } = await render(createResponse({ phase: 'none' }))
+  it('keeps the plan rows in place under the waiting layer while the payment page is being opened', async () => {
+    const { wrapper, client, openExternal } = await render(createResponse({ phase: 'none' }))
     client.createCheckout.mockReturnValue(new Promise<string>(() => undefined))
 
     await findChoose(wrapper, 'Plus')?.trigger('click')
     await flushPromises()
 
     expect(getChooseNames(wrapper)).toHaveLength(3)
-    wrapper
-      .findAll('button')
-      .filter((one) => one.attributes('aria-label')?.startsWith('Choose ') === true)
-      .forEach((one) => expect(one.attributes('disabled')).toBeDefined())
+    expect(getContent(wrapper).attributes('inert')).toBeDefined()
+    expect(wrapper.get('[role="status"]').text()).toBe(
+      'Finish the payment in your browser. This card updates by itself.',
+    )
+    await findCancel(wrapper)?.trigger('click')
+    expect(getContent(wrapper).attributes('inert')).toBeUndefined()
+    expect(openExternal).not.toHaveBeenCalled()
   })
 
   it('shows the rows of an active subscription in the order plan, renewal, storage', async () => {
