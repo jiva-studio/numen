@@ -18,7 +18,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { canBuy, waiting, problem, view, load, buy } = useSubscription({
+const { buyOffers, changeOffers, waiting, problem, view, load, buy, change } = useSubscription({
   openExternal: props.openExternal,
   client: props.client,
   now: props.now,
@@ -30,8 +30,12 @@ onMounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onBuy(): void {
-  buy().catch(onFailure)
+function onBuy(plan: string): void {
+  buy(plan).catch(onFailure)
+}
+
+function onChange(plan: string): void {
+  change(plan).catch(onFailure)
 }
 
 function onFailure(failure: unknown): void {
@@ -52,9 +56,25 @@ function onFailure(failure: unknown): void {
       </span>
     </div>
     <p v-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
-    <div v-if="canBuy" class="subscription__controls">
-      <Button type="button" variant="solid" :disabled="waiting" @click="onBuy">
-        {{ waiting ? words.waitingForPayment : words.buy }}
+    <div v-if="buyOffers.length > 0 || changeOffers.length > 0" class="subscription__controls">
+      <Button
+        v-for="offer in buyOffers"
+        :key="`buy-${offer.id}`"
+        type="button"
+        variant="solid"
+        :disabled="waiting"
+        @click="onBuy(offer.id)"
+      >
+        {{ waiting ? words.waitingForPayment : `${words.buy} ${offer.label}` }}
+      </Button>
+      <Button
+        v-for="offer in changeOffers"
+        :key="`change-${offer.id}`"
+        type="button"
+        variant="outline"
+        @click="onChange(offer.id)"
+      >
+        {{ `Change plan to ${offer.label}` }}
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>

@@ -7,6 +7,7 @@ import {
   getSubscriptionView,
   type SubscriptionPhase,
   type SubscriptionDates,
+  type PlanOffer,
   type SubscriptionStatus,
 } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
@@ -104,11 +105,11 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }, pollLimitMs)
   }
 
-  async function buy(): Promise<void> {
+  async function buy(plan: string): Promise<void> {
     if (waiting.value) return
     problem.value = ''
     try {
-      const opened = await openExternal(await client.createCheckout())
+      const opened = await openExternal(await client.createCheckout(plan))
       if (opened.ok) beginPaymentPoll()
       else problem.value = opened.error
     } catch (failure) {
@@ -119,5 +120,30 @@ export function useSubscription(options: UseSubscriptionOptions) {
 
   onScopeDispose(endPaymentPoll)
 
-  return { status, phase, canBuy, waiting, problem, view, load, buy }
+  const buyOffers = computed<readonly PlanOffer[]>(() => [])
+  const changeOffers = computed<readonly PlanOffer[]>(() => [])
+  const planLine = computed(() => '')
+  const usage = computed(() => '')
+  const isFull = computed(() => false)
+
+  function change(_plan: string): Promise<void> {
+    return Promise.reject(new Error('not implemented'))
+  }
+
+  return {
+    status,
+    phase,
+    canBuy,
+    waiting,
+    problem,
+    view,
+    buyOffers,
+    changeOffers,
+    planLine,
+    usage,
+    isFull,
+    load,
+    buy,
+    change,
+  }
 }

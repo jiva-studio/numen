@@ -9,17 +9,40 @@ type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscripti
 const NOW = new Date('2026-11-23T12:00:00Z')
 const CHECKOUT_URL = 'https://pay.example/checkout/abc'
 
+const GIB = 2 ** 30
+const PLANS = [
+  { id: 'basic', quotaBytes: 10 * GIB },
+  { id: 'plus', quotaBytes: 100 * GIB },
+  { id: 'pro', quotaBytes: 250 * GIB },
+] as const
+const quotaOf = (plan: string): number => PLANS.find((one) => one.id === plan)?.quotaBytes ?? 0
+
 const createResponse = (patch: Partial<SubscriptionResponse> = {}): SubscriptionResponse => ({
   hasIdentity: true,
   phase: 'none',
   periodEndAt: '',
   writesEndAt: '',
   deleteAt: '',
+  plan: '',
+  quotaBytes: 0,
+  usedBytes: 0,
   ...patch,
+})
+
+const ACTIVE_ON_PLUS = createResponse({
+  phase: 'active',
+  periodEndAt: '2026-12-23T12:00:00Z',
+  plan: 'plus',
+  quotaBytes: 100 * GIB,
+  usedBytes: 2 * GIB,
 })
 
 const createClient = (answer: () => Promise<SubscriptionResponse>) => ({
   getSubscription: vi.fn<SubscriptionClient['getSubscription']>(answer),
+  listPlans: vi.fn<SubscriptionClient['listPlans']>(() => Promise.resolve(PLANS)),
+  changePlan: vi.fn<SubscriptionClient['changePlan']>((plan) =>
+    Promise.resolve(createResponse({ ...ACTIVE_ON_PLUS, plan, quotaBytes: quotaOf(plan) })),
+  ),
   createCheckout: vi.fn<SubscriptionClient['createCheckout']>(() => Promise.resolve(CHECKOUT_URL)),
 })
 
@@ -33,8 +56,21 @@ const render = async (response: SubscriptionResponse) => {
   return { wrapper, client, openExternal }
 }
 
-const findBuy = (wrapper: VueWrapper) =>
-  wrapper.findAll('button').find((one) => one.text() === 'Buy')
+const findBuy = (wrapper: VueWrapper, label?: string) =>
+  wrapper
+    .findAll('button')
+    .find((one) =>
+      label === undefined ? one.text().startsWith('Buy ') : one.text() === `Buy ${label}`,
+    )
+
+const findChange = (wrapper: VueWrapper, name?: string) =>
+  wrapper
+    .findAll('button')
+    .find((one) =>
+      name === undefined
+        ? one.text().startsWith('Change plan to ')
+        : one.text() === `Change plan to ${name}`,
+    )
 
 describe('SubscriptionCard', () => {
   it('shows the title Numen Sync', async () => {
@@ -130,15 +166,111 @@ describe('SubscriptionCard', () => {
   it('opens the payment page in the browser and waits when the person buys', async () => {
     const { wrapper, client, openExternal } = await render(createResponse({ phase: 'none' }))
 
-    await findBuy(wrapper)?.trigger('click')
+    await findBuy(wrapper, 'Plus, 100 GB')?.trigger('click')
     await flushPromises()
 
-    expect(client.createCheckout).toHaveBeenCalledOnce()
+    expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('plus')
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
     const waiting = wrapper
       .findAll('button')
       .find((one) => one.text() === 'Waiting for the payment…')
     expect(waiting?.attributes('disabled')).toBeDefined()
     expect(findBuy(wrapper)).toBeUndefined()
+  })
+
+  it('offers to buy every plan with its name and size when there is no subscription', async () => {
+    const { wrapper } = await render(createResponse({ phase: 'none' }))
+
+    expect(findBuy(wrapper, 'Basic, 10 GB')).toBeDefined()
+    expect(findBuy(wrapper, 'Plus, 100 GB')).toBeDefined()
+    expect(findBuy(wrapper, 'Pro, 250 GB')).toBeDefined()
+    expect(findChange(wrapper)).toBeUndefined()
+  })
+
+  it('shows the plan with its size and the space used while the subscription is active', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    expect(wrapper.text()).toContain('Plus, 100 GB')
+    expect(wrapper.text()).toContain('2 GB of 100 GB used')
+    expect(findBuy(wrapper)).toBeUndefined()
+  })
+
+  it('offers to change to every other plan and not to the plan the account has', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    expect(findChange(wrapper, 'Basic')).toBeDefined()
+    expect(findChange(wrapper, 'Pro')).toBeDefined()
+    expect(findChange(wrapper, 'Plus')).toBeUndefined()
+  })
+
+  it('changes the plan without opening a browser and shows the new plan', async () => {
+    const { wrapper, client, openExternal } = await render(ACTIVE_ON_PLUS)
+
+    await findChange(wrapper, 'Pro')?.trigger('click')
+    await flushPromises()
+
+    expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
+    expect(openExternal).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Pro, 250 GB')
+    expect(findChange(wrapper, 'Pro')).toBeUndefined()
+    expect(findChange(wrapper, 'Plus')).toBeDefined()
+  })
+
+  it('shows the problem of a refused change and keeps the plan', async () => {
+    const { wrapper, client } = await render(ACTIVE_ON_PLUS)
+    client.changePlan.mockRejectedValue(
+      Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+    )
+
+    await findChange(wrapper, 'Pro')?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('Could not reach the sync server')
+    expect(wrapper.text()).toContain('Plus, 100 GB')
+  })
+
+  it('shows the used space above the plan and says the cloud is full', async () => {
+    const { wrapper } = await render(
+      createResponse({
+        ...ACTIVE_ON_PLUS,
+        plan: 'basic',
+        quotaBytes: 10 * GIB,
+        usedBytes: 20 * GIB,
+      }),
+    )
+
+    expect(wrapper.text()).toContain('20 GB of 10 GB used')
+    expect(wrapper.text()).toContain('Cloud storage is full: changes stay on this device')
+  })
+
+  it('does not say the cloud is full while there is room', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    expect(wrapper.text()).not.toContain('Cloud storage is full')
+  })
+
+  it('shows the plan of an ended subscription with the offers to buy and none to change', async () => {
+    const { wrapper } = await render(
+      createResponse({
+        phase: 'grace',
+        periodEndAt: '2026-11-20T12:00:00Z',
+        writesEndAt: '2026-11-27T12:00:00Z',
+        plan: 'plus',
+        quotaBytes: 100 * GIB,
+      }),
+    )
+
+    expect(wrapper.text()).toContain('Plus, 100 GB')
+    expect(findBuy(wrapper, 'Plus, 100 GB')).toBeDefined()
+    expect(findChange(wrapper)).toBeUndefined()
+  })
+
+  it('shows only the size of a plan the client does not know', async () => {
+    const { wrapper } = await render(
+      createResponse({ ...ACTIVE_ON_PLUS, plan: 'gold', quotaBytes: 50 * GIB }),
+    )
+
+    expect(wrapper.text()).toContain('50 GB')
+    expect(wrapper.text()).not.toContain('gold')
   })
 })

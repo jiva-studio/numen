@@ -26,6 +26,18 @@ const stubServer = (server: Server) => {
             periodEndAt: '',
             writesEndAt: '',
             deleteAt: '',
+            plan: '',
+            quotaBytes: 0,
+            usedBytes: 0,
+          }),
+        )
+      case 'ListPlans':
+        return Promise.resolve(
+          Response.json({
+            plans: [
+              { id: 'basic', quotaBytes: 10 * 2 ** 30 },
+              { id: 'plus', quotaBytes: 100 * 2 ** 30 },
+            ],
           }),
         )
       case 'CreateCheckout':
@@ -104,7 +116,7 @@ describe('the sync plugin frontend', () => {
     expect(wrapper.find('.sync-badge__label').text()).toBe(WORDS.syncedLabel)
   })
 
-  it('opens the payment page through the identity of the plugin when the person buys', async () => {
+  it('opens the payment page of the chosen plan through the identity of the plugin when the person buys', async () => {
     const { context } = setup()
     const card = context.getRegisteredSettingsViews().find((one) => one.id === 'subscription')
     const wrapper = mount(card?.component as never)
@@ -113,7 +125,7 @@ describe('the sync plugin frontend', () => {
 
     await wrapper
       .findAll('button')
-      .find((one) => one.text() === 'Buy')
+      .find((one) => one.text() === 'Buy Plus, 100 GB')
       ?.trigger('click')
     await flushPromises()
 

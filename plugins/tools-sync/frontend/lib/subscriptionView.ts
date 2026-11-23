@@ -18,6 +18,12 @@ export interface SubscriptionDates {
   readonly deleteAt: string
 }
 
+/** A plan the person can buy or move to: its id and the label of the button, such as "Plus, 100 GB". */
+export interface PlanOffer {
+  readonly id: string
+  readonly label: string
+}
+
 export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
@@ -77,4 +83,30 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
         ? { badge: '', text: '', tone: 'neutral' }
         : getPhaseView(snapshot.phase, snapshot.dates)
   }
+}
+
+/** A plan to show: its id and the bytes it holds. */
+export interface PlanSize {
+  readonly id: string
+  readonly quotaBytes: number
+}
+
+/** The size in GB, where 1 GB is 2^30 bytes, such as "10 GB" or "1.5 GB". */
+export function formatSize(_bytes: number): string {
+  throw new Error('not implemented')
+}
+
+/** The display name of a plan id the client knows (basic, plus, pro), and empty for another id. */
+export function getPlanName(_id: string): string {
+  throw new Error('not implemented')
+}
+
+/** The name and the size of a plan, such as "Plus, 100 GB"; only the size for a plan id the client does not know. */
+export function getPlanLabel(_plan: PlanSize): string {
+  throw new Error('not implemented')
+}
+
+/** The space in use against the quota, such as "2 GB of 100 GB used". It may be above the quota. */
+export function getUsageText(_usedBytes: number, _quotaBytes: number): string {
+  throw new Error('not implemented')
 }
