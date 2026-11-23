@@ -48,7 +48,7 @@ const { commands, search } = palettes.palette
 const { runCommand, runChoice } = palettes.palette.runs
 const { commandDeps, picker } = palettes
 const { pluginWays } = palettes.pluginPalette
-const { titleBarView, statusBarView, windowEdge } = views
+const { pluginHost, titleBarView, statusBarView, windowEdge } = views
 const { fileFlush, getTitle } = vault.editing
 const { failure } = vault.window.health
 const { vaultList } = vault.vaults
@@ -61,7 +61,7 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
   <LoadingIndicator v-if="!isStarted" class="starting" :label="WINDOW_WORDS.appName" />
 
   <main v-else :class="{ 'is-highlighted': isHighlighted }">
-    <SlotViewHost :view="titleBarView" />
+    <SlotViewHost :view="titleBarView" :styles="pluginHost.slotViews.styles" />
 
     <CoreFailureNotice :failure="failure" />
 
@@ -129,7 +129,7 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
       </template>
     </WorkspaceLayout>
 
-    <SlotViewHost :view="statusBarView" />
+    <SlotViewHost :view="statusBarView" :styles="pluginHost.slotViews.styles" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

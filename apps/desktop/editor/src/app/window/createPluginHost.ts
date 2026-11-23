@@ -3,7 +3,13 @@
  * the window gives a plugin, and the host read through the views it draws.
  */
 import { computed } from 'vue'
-import { SLOT, type PickerHost, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
+import {
+  SLOT,
+  openExternalUrl,
+  type PickerHost,
+  type PluginHost,
+  type PluginStatus,
+} from '@numen/plugin-loader'
 import { createNoticeQueue, type NoticeQueue, type WindowFrame } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import { createPickerSession } from '@/features/command-palette'
@@ -64,6 +70,9 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
         getNoteBuffer: () => services.noteBuffer,
       },
       vault: { resolveLink: deps.api.vault.links.resolveNameLink },
+      window: {
+        openExternal: (href: string) => openExternalUrl(href, deps.api.window.frameRuntime),
+      },
     },
     ...deps.hostParts,
   ]

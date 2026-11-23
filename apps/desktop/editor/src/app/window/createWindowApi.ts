@@ -3,6 +3,7 @@
  * to the parts that make them, grouped by what they reach: the vault, the window, the tabs, the
  * plugins and the configuration.
  */
+import { createFrameRuntimeLoader } from '@numen/plugin-loader'
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
 import { createLicenseApi } from '@/entities/license'
@@ -63,6 +64,7 @@ export function createWindowApi(transports: WindowTransports) {
       quit: createQuitApi(workspaceClients.windowService),
       shownVault,
       tasks: createTaskApi(workspaceClients.windowService),
+      frameRuntime: createFrameRuntimeLoader(),
     },
     tabs: {
       savedTabs: createSavedTabsApi(workspaceClients.workspace),

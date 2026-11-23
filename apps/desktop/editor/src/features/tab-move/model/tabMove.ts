@@ -5,7 +5,6 @@
 import { win } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
-import { focusWindow } from '@/entities/window'
 import type { Result } from '@numen/result'
 import {
   formatSavedState,
@@ -108,7 +107,7 @@ export interface MovedTabOpenerDeps {
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'restored'>
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
-  readonly focusWindow?: () => Promise<void>
+  readonly focusWindow: () => Promise<void>
   readonly wait?: (ms: number) => Promise<void>
   readonly onError: (error: unknown) => void
 }
@@ -125,7 +124,7 @@ export const createMoveAcceptor =
 /** Opens a tab sent from another window as the active tab and focuses the window. */
 export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
   const wait = deps.wait ?? waitMs
-  const focus = deps.focusWindow ?? focusWindow
+  const focus = deps.focusWindow
   /**
    * Sends AcceptTabMove, and sends it again after a thrown request. The core returns success for
    * a repeated accept of a completed move, so a success result means the move completed.

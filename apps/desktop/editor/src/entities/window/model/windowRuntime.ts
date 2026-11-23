@@ -2,14 +2,14 @@
  * Focus and close requests for the desktop window, sent through the Wails runtime.
  */
 import { watch, type Ref } from 'vue'
-import { loadFrameRuntime, type FrameRuntimeLoader } from '../api/frameRuntime'
+import type { FrameRuntimeLoader } from '../api/frameRuntime'
 
-export async function focusWindow(load: FrameRuntimeLoader = loadFrameRuntime): Promise<void> {
+export async function focusWindow(load: FrameRuntimeLoader): Promise<void> {
   await (await load())?.Window?.Focus?.()
 }
 
 /** Closes the window through the same path as its close button. */
-export async function closeWindow(load: FrameRuntimeLoader = loadFrameRuntime): Promise<void> {
+export async function closeWindow(load: FrameRuntimeLoader): Promise<void> {
   await (await load())?.Window?.Close?.()
 }
 

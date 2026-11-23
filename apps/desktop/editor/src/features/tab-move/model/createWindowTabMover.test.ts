@@ -126,6 +126,7 @@ describe('the tabs of a window', () => {
       } as never,
       closeTab: () => true,
       acceptMove: async () => ({ ok: true, value: undefined }),
+      focusWindow: async () => undefined,
       writeMessage,
     })
     startMoved({

@@ -1,12 +1,12 @@
 import type { Disposable, Subscriptions } from '@numen/plugin-sdk'
 
-const listsByView = new WeakMap<Subscriptions, Disposable[]>()
-
 /** What a plugin context keeps for disposal: the view the plugin gets, and the list only the host reaches. */
 export interface SubscriptionList {
   readonly view: Subscriptions
   add(disposable: Disposable): void
   remove(disposable: Disposable): void
+  /** Disposes what a plugin subscribed, the last added first, including what the disposals add. */
+  disposeAll(): void
 }
 
 /** A list whose view lets a plugin add and count but never remove, replace or clear. */
@@ -18,7 +18,6 @@ export function createSubscriptionList(): SubscriptionList {
       return items.length
     },
   })
-  listsByView.set(view, items)
   return {
     view,
     add: (disposable) => {
@@ -28,11 +27,8 @@ export function createSubscriptionList(): SubscriptionList {
       const index = items.indexOf(disposable)
       if (index !== -1) items.splice(index, 1)
     },
+    disposeAll: () => {
+      while (items.length > 0) items.pop()?.dispose()
+    },
   }
-}
-
-/** Disposes what a plugin subscribed, the last added first, including what the disposals add. */
-export function disposeSubscriptions(view: Subscriptions): void {
-  const items = listsByView.get(view)
-  while (items !== undefined && items.length > 0) items.pop()?.dispose()
 }
