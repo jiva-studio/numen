@@ -6,13 +6,13 @@ const Service = "md.numen.tools.sync"
 
 // The methods of the service.
 const (
-	MethodListVaults       = "ListVaults"
-	MethodListRemoteVaults = "ListRemoteVaults"
-	MethodConnectVault     = "ConnectVault"
-	MethodPreviewConnect   = "PreviewConnect"
-	MethodGetStatus        = "GetStatus"
-	MethodGetSubscription  = "GetSubscription"
-	MethodCreateCheckout   = "CreateCheckout"
+	MethodListVaults        = "ListVaults"
+	MethodListRemoteVaults  = "ListRemoteVaults"
+	MethodConnectVault      = "ConnectVault"
+	MethodGetConnectPreview = "GetConnectPreview"
+	MethodGetStatus         = "GetStatus"
+	MethodGetSubscription   = "GetSubscription"
+	MethodCreateCheckout    = "CreateCheckout"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -77,14 +77,14 @@ type ConnectVaultRequest struct {
 	RemoteID string `json:"remoteId,omitempty"`
 }
 
-// PreviewConnectRequest asks how many notes of a vault differ from the notes of a synced vault.
-type PreviewConnectRequest struct {
+// GetConnectPreviewRequest asks how many notes of a vault differ from the notes of a synced vault.
+type GetConnectPreviewRequest struct {
 	VaultID  string `json:"vaultId"`
 	RemoteID string `json:"remoteId"`
 }
 
-// PreviewConnectResponse is the number of notes that have another text on each side.
-type PreviewConnectResponse struct {
+// GetConnectPreviewResponse is the number of notes that have another text on each side.
+type GetConnectPreviewResponse struct {
 	DifferCount int `json:"differCount"`
 }
 

@@ -12,8 +12,8 @@ type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
 type ListRemoteVaultsResponse = Awaited<ReturnType<VaultsClient['listRemoteVaults']>>
 type ConnectVaultRequest = Parameters<VaultsClient['connectVault']>[0]
 type GetStatusResponse = Awaited<ReturnType<VaultsClient['getStatus']>>
-type PreviewConnectRequest = Parameters<VaultsClient['previewConnect']>[0]
-type PreviewConnectResponse = Awaited<ReturnType<VaultsClient['previewConnect']>>
+type GetConnectPreviewRequest = Parameters<VaultsClient['getConnectPreview']>[0]
+type GetConnectPreviewResponse = Awaited<ReturnType<VaultsClient['getConnectPreview']>>
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -79,15 +79,15 @@ describe('the fixtures of the vaults service', () => {
     expect(read('ConnectVault.response')).toStrictEqual({})
   })
 
-  it('reads the PreviewConnect fixture as PreviewConnectRequest and PreviewConnectResponse', () => {
-    const request: PreviewConnectRequest = {
+  it('reads the GetConnectPreview fixture as GetConnectPreviewRequest and GetConnectPreviewResponse', () => {
+    const request: GetConnectPreviewRequest = {
       vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0Q',
       remoteId: '00112233445566778899aabbccddeeff',
     }
-    const response: PreviewConnectResponse = { differCount: 2 }
+    const response: GetConnectPreviewResponse = { differCount: 2 }
 
-    expect(read('PreviewConnect.request')).toStrictEqual(request)
-    expect(read('PreviewConnect.response')).toStrictEqual(response)
+    expect(read('GetConnectPreview.request')).toStrictEqual(request)
+    expect(read('GetConnectPreview.response')).toStrictEqual(response)
   })
 
   it('reads the ResolveDeletions fixture as ResolveDeletionsRequest', () => {
@@ -140,14 +140,14 @@ describe('the vaults client', () => {
     expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/ConnectVault`, body: request }])
   })
 
-  it('asks PreviewConnect and answers its response', async () => {
-    const request = read('PreviewConnect.request') as PreviewConnectRequest
-    const answer = read('PreviewConnect.response') as PreviewConnectResponse
+  it('asks GetConnectPreview and answers its response', async () => {
+    const request = read('GetConnectPreview.request') as GetConnectPreviewRequest
+    const answer = read('GetConnectPreview.response') as GetConnectPreviewResponse
     const { client, sent } = createClient(() => Response.json(answer))
 
-    const response = await client.previewConnect(request)
+    const response = await client.getConnectPreview(request)
 
-    expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/PreviewConnect`, body: request }])
+    expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/GetConnectPreview`, body: request }])
     expect(response).toStrictEqual(answer)
   })
 

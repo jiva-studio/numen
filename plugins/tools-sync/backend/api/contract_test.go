@@ -16,8 +16,8 @@ func getContracts() map[string]plugintest.MessageContract {
 			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
 		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodPreviewConnect: {
-			CreateRequest: func() any { return &api.PreviewConnectRequest{} }, CreateResponse: func() any { return &api.PreviewConnectResponse{} },
+		api.MethodGetConnectPreview: {
+			CreateRequest: func() any { return &api.GetConnectPreviewRequest{} }, CreateResponse: func() any { return &api.GetConnectPreviewResponse{} },
 		},
 		api.MethodResolveDeletions: {
 			CreateRequest: func() any { return &api.ResolveDeletionsRequest{} }, CreateResponse: func() any { return &api.ResolveDeletionsResponse{} },
@@ -42,7 +42,7 @@ func TestEveryMethodHasItsFixturePair(t *testing.T) {
 
 func TestTheServiceAndMethodNames(t *testing.T) {
 	if api.Service != "md.numen.tools.sync" || api.MethodListVaults != "ListVaults" || api.MethodListRemoteVaults != "ListRemoteVaults" ||
-		api.MethodPreviewConnect != "PreviewConnect" || api.MethodConnectVault != "ConnectVault" || api.MethodGetStatus != "GetStatus" {
+		api.MethodGetConnectPreview != "GetConnectPreview" || api.MethodConnectVault != "ConnectVault" || api.MethodGetStatus != "GetStatus" {
 		t.Errorf("service %q with %q, %q, %q, %q", api.Service, api.MethodListVaults, api.MethodListRemoteVaults, api.MethodConnectVault, api.MethodGetStatus)
 	}
 }

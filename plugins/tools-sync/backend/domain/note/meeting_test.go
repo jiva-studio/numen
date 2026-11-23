@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
-func TestMeet_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
+func TestCompare_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
 	milk, bread := note.Hash([]byte("milk")), note.Hash([]byte("bread"))
 	tests := map[string]struct {
 		local, head string
@@ -21,8 +21,8 @@ func TestMeet_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := note.Meet(tc.local, tc.head); got != tc.want {
-				t.Errorf("Meet(%q, %q) = %v, want %v", tc.local, tc.head, got, tc.want)
+			if got := note.Compare(tc.local, tc.head); got != tc.want {
+				t.Errorf("Compare(%q, %q) = %v, want %v", tc.local, tc.head, got, tc.want)
 			}
 		})
 	}

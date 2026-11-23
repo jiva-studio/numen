@@ -45,14 +45,14 @@ func (w *world) syncedNote(t *testing.T, path, text string) {
 
 func (w *world) preview(t *testing.T) preview.Preview {
 	t.Helper()
-	got, err := preview.NewPreviewConnect(w.b.PreviewDeps()).Execute(t.Context(), preview.Input{VaultID: target, RemoteID: w.remote})
+	got, err := preview.NewGetConnectPreview(w.b.PreviewDeps()).Execute(t.Context(), preview.Input{VaultID: target, RemoteID: w.remote})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return got
 }
 
-func TestPreviewConnect_SortsEveryNoteOfBothSidesByHowTheyMeet(t *testing.T) {
+func TestGetConnectPreview_SortsEveryNoteOfBothSidesByHowTheyMeet(t *testing.T) {
 	w := newWorld(t)
 	w.syncedNote(t, "Shopping list.md", "milk")
 	w.syncedNote(t, "Plan.md", "eggs")
@@ -72,7 +72,7 @@ func TestPreviewConnect_SortsEveryNoteOfBothSidesByHowTheyMeet(t *testing.T) {
 	}
 }
 
-func TestPreviewConnect_ListsEachGroupInPathOrder(t *testing.T) {
+func TestGetConnectPreview_ListsEachGroupInPathOrder(t *testing.T) {
 	w := newWorld(t)
 	w.syncedNote(t, "Zebra.md", "one")
 	w.syncedNote(t, "Apple.md", "two")
@@ -85,7 +85,7 @@ func TestPreviewConnect_ListsEachGroupInPathOrder(t *testing.T) {
 	}
 }
 
-func TestPreviewConnect_FindsNoDifferenceInAFolderWithEqualNotesOnly(t *testing.T) {
+func TestGetConnectPreview_FindsNoDifferenceInAFolderWithEqualNotesOnly(t *testing.T) {
 	w := newWorld(t)
 	w.syncedNote(t, "Shopping list.md", "milk")
 	w.b.WriteNote(target, "Shopping list.md", "milk")
@@ -97,7 +97,7 @@ func TestPreviewConnect_FindsNoDifferenceInAFolderWithEqualNotesOnly(t *testing.
 	}
 }
 
-func TestPreviewConnect_MatchesPathsThatDifferInUnicodeCompositionOnly(t *testing.T) {
+func TestGetConnectPreview_MatchesPathsThatDifferInUnicodeCompositionOnly(t *testing.T) {
 	w := newWorld(t)
 	w.syncedNote(t, "Café.md", "latte")
 	w.b.WriteNote(target, "Café.md", "latte")
@@ -109,7 +109,7 @@ func TestPreviewConnect_MatchesPathsThatDifferInUnicodeCompositionOnly(t *testin
 	}
 }
 
-func TestPreviewConnect_ExcludesAFileThatIsNotSyncedFromBothSides(t *testing.T) {
+func TestGetConnectPreview_ExcludesAFileThatIsNotSyncedFromBothSides(t *testing.T) {
 	w := newWorld(t)
 	w.b.WriteNote(target, "draft.tmp", "bytes")
 
@@ -120,7 +120,7 @@ func TestPreviewConnect_ExcludesAFileThatIsNotSyncedFromBothSides(t *testing.T) 
 	}
 }
 
-func TestPreviewConnect_WritesNoLinkNoRecordAndNoFile(t *testing.T) {
+func TestGetConnectPreview_WritesNoLinkNoRecordAndNoFile(t *testing.T) {
 	w := newWorld(t)
 	w.syncedNote(t, "Shopping list.md", "milk")
 	w.b.WriteNote(target, "Plan.md", "tea")
@@ -145,18 +145,18 @@ func TestPreviewConnect_WritesNoLinkNoRecordAndNoFile(t *testing.T) {
 	}
 }
 
-func TestPreviewConnect_RefusesAnIdThatNoSyncedVaultHas(t *testing.T) {
+func TestGetConnectPreview_RefusesAnIdThatNoSyncedVaultHas(t *testing.T) {
 	w := newWorld(t)
 	w.remote = "00112233445566778899aabbccddeeff"
 
-	_, err := preview.NewPreviewConnect(w.b.PreviewDeps()).Execute(t.Context(), preview.Input{VaultID: target, RemoteID: w.remote})
+	_, err := preview.NewGetConnectPreview(w.b.PreviewDeps()).Execute(t.Context(), preview.Input{VaultID: target, RemoteID: w.remote})
 
 	if err == nil {
 		t.Error("error = nil, want a refusal for an unknown synced vault")
 	}
 }
 
-func TestPreviewConnect_IgnoresANoteThatTheServerHasAsRemoved(t *testing.T) {
+func TestGetConnectPreview_IgnoresANoteThatTheServerHasAsRemoved(t *testing.T) {
 	w := newWorld(t)
 	vault := transfer.Vault{ID: w.a.GetRemoteID(t, source), Key: w.a.GetVaultKey(t, source)}
 	outcomes, err := commit.NewCommitRevisions(w.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{

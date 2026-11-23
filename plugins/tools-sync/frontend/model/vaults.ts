@@ -146,7 +146,7 @@ export function useVaults(options: UseVaultsOptions) {
 
   async function connectExisting(vaultId: string, remoteId: string): Promise<void> {
     try {
-      const { differCount } = await client.previewConnect({ vaultId, remoteId })
+      const { differCount } = await client.getConnectPreview({ vaultId, remoteId })
       error.value = ''
       if (differCount === 0) {
         await connect({ vaultId, mode: 'existing', remoteId })

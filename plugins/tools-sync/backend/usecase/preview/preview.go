@@ -31,14 +31,14 @@ type Preview struct {
 	Same, LocalOnly, RemoteOnly, Differ []string
 }
 
-// PreviewConnect reads both sides and sorts their notes.
-type PreviewConnect struct{ deps Deps }
+// GetConnectPreview reads both sides and sorts their notes.
+type GetConnectPreview struct{ deps Deps }
 
-// NewPreviewConnect returns the use case over the dependencies.
-func NewPreviewConnect(deps Deps) *PreviewConnect { return &PreviewConnect{deps: deps} }
+// NewGetConnectPreview returns the use case over the dependencies.
+func NewGetConnectPreview(deps Deps) *GetConnectPreview { return &GetConnectPreview{deps: deps} }
 
 // Execute reads the heads of the synced vault and the notes of the folder and pairs them by path.
-func (u *PreviewConnect) Execute(ctx context.Context, in Input) (Preview, error) {
+func (u *GetConnectPreview) Execute(ctx context.Context, in Input) (Preview, error) {
 	heads, err := u.deps.Heads.ListHeads(ctx, in.RemoteID)
 	if err != nil {
 		return Preview{}, err
@@ -47,14 +47,14 @@ func (u *PreviewConnect) Execute(ctx context.Context, in Input) (Preview, error)
 	if err != nil {
 		return Preview{}, err
 	}
-	return pair(local, heads), nil
+	return matchByPath(local, heads), nil
 }
 
-func pair(local, remote []ports.Head) Preview {
+func matchByPath(local, remote []ports.Head) Preview {
 	locals, remotes := index(local), index(remote)
 	var found Preview
 	for key, one := range locals {
-		switch note.Meet(one.Hash, remotes[key].Hash) {
+		switch note.Compare(one.Hash, remotes[key].Hash) {
 		case note.Same:
 			found.Same = append(found.Same, one.Path)
 		case note.LocalOnly:
