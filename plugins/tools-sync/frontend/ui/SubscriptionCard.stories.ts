@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import { asValue } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
@@ -52,7 +52,7 @@ type Story = StoryObj<typeof meta>
 export const None: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Choose a plan')).toBeVisible()
+    await expect(await canvas.findByText(/^Sync your vaults between your devices/)).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
     await expect(canvas.queryByText('No subscription')).toBeNull()
   },
@@ -147,7 +147,7 @@ export const Unreachable: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Could not reach the sync server')).toBeVisible()
+    await expect(await canvas.findByText('Offline')).toBeVisible()
     await expect(await canvas.findByText(/https:\/\/sync\.numen\.md/)).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Open the settings' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
@@ -160,7 +160,7 @@ export const OffersEveryPlan: Story = {
     await expect(await canvas.findByRole('button', { name: 'Choose Basic' })).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Choose Plus' })).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Choose Pro' })).toBeVisible()
-    await expect(await canvas.findByText('$5 / month')).toBeVisible()
+    await expect(await canvas.findByText('10 GB of synced files')).toBeVisible()
   },
 }
 
@@ -178,8 +178,8 @@ export const ActiveWithPlanAndUsage: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Plus, 100 GB')).toBeVisible()
-    await expect(await canvas.findByText('2 GB of 100 GB used')).toBeVisible()
+    await expect(await canvas.findByText('100 GB, $15 / month')).toBeVisible()
+    await expect(await canvas.findByText('2 GB of 100 GB')).toBeVisible()
     await expect(await canvas.findByRole('progressbar', { name: 'Space used' })).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
   },
@@ -199,9 +199,9 @@ export const FullPlan: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('20 GB of 10 GB used')).toBeVisible()
+    await expect(await canvas.findByText('20 GB of 10 GB')).toBeVisible()
     await expect(
-      await canvas.findByText('Cloud storage is full: changes stay on this device'),
+      await canvas.findByText(/^Cloud storage is full: changes stay on this device/),
     ).toBeVisible()
   },
 }
@@ -220,7 +220,7 @@ export const EndedWithPlan: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Plus, 100 GB')).toBeVisible()
+    await expect(await canvas.findByText('Plus, 100 GB, $15 / month')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Change plan' })).toBeNull()
   },
 }
@@ -242,5 +242,16 @@ export const Trial: Story = {
     await expect(await canvas.findByText('Trial until')).toBeVisible()
     await expect(await canvas.findByText('December 7, 2026')).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
+  },
+}
+
+export const WaitingForPayment: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Choose Plus' }))
+    await expect(await canvas.findByRole('status')).toHaveTextContent(
+      'Finish the payment in your browser. This card updates by itself.',
+    )
+    await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }

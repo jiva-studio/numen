@@ -41,7 +41,7 @@ Feature: Numen Sync plan change
       And the person changes the plan to "Pro"
       And the cloud holds 20 GB of the notes of the person
       When the person changes the plan to "Basic"
-      Then the subscription shows "20 GB of 10 GB used"
+      Then the subscription shows "20 GB of 10 GB"
       And the second computer has the note "Archive" with the text "old" in its vault "Copy"
 
     Scenario: A plan smaller than the notes stops new changes

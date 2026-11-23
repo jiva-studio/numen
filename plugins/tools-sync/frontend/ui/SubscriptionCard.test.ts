@@ -72,10 +72,14 @@ const findChoose = (wrapper: VueWrapper, name?: string) =>
   wrapper
     .findAll('button')
     .find((one) =>
-      name === undefined
-        ? (one.attributes('aria-label') ?? '').startsWith('Choose ')
-        : one.attributes('aria-label') === `Choose ${name}`,
+      name === undefined ? one.text().startsWith('Choose ') : one.text() === `Choose ${name}`,
     )
+
+const getRow = (wrapper: VueWrapper, name: string): string =>
+  wrapper
+    .findAll('.subscription__row')
+    .find((row) => row.find('.subscription__name').text() === name)
+    ?.text() ?? ''
 
 const findPlanSelect = (wrapper: VueWrapper) => wrapper.find('button[data-slot="select"]')
 
@@ -106,7 +110,9 @@ describe('SubscriptionCard', () => {
 
     expect(wrapper.find('.subscription__badge').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('No subscription')
-    expect(wrapper.text()).toContain('Buy a subscription to sync your vaults between your devices.')
+    expect(wrapper.text()).toContain(
+      'Sync your vaults between your devices. Pick the storage you need, change it any time.',
+    )
     expect(findChoose(wrapper)).toBeDefined()
   })
 
@@ -114,19 +120,18 @@ describe('SubscriptionCard', () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
     expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
-    expect(wrapper.get('.subscription__facts').text()).toContain('Active until')
-    expect(wrapper.get('.subscription__facts').text()).toContain('December 23, 2026')
+    expect(getRow(wrapper, 'Renews')).toContain('December 23, 2026')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
   it('shows the plan, the space used as a bar and the end of the paid period as rows', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    const rows = wrapper.get('.subscription__facts').text()
-    expect(rows).toContain('Plan')
-    expect(rows).toContain('Plus, 100 GB')
-    expect(rows).toContain('Storage')
-    expect(rows).toContain('2 GB of 100 GB used')
+    expect(getRow(wrapper, 'Plan')).toContain('100 GB, $15 / month')
+    expect(getRow(wrapper, 'Plan')).toContain('Change plan')
+    expect(getRow(wrapper, 'Storage')).toContain('Space used by your synced vaults')
+    expect(getRow(wrapper, 'Storage')).toContain('2 GB of 100 GB')
+    expect(getRow(wrapper, 'Renews')).toContain('Manage subscription')
     expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('2')
   })
 
@@ -194,7 +199,7 @@ describe('SubscriptionCard', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Could not reach the sync server')
+    expect(wrapper.get('.subscription__badge').text()).toBe('Offline')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
@@ -206,29 +211,24 @@ describe('SubscriptionCard', () => {
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('plus')
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
-    expect(wrapper.get('[role="status"]').text()).toContain('Waiting for the payment…')
-    expect(wrapper.text()).not.toContain('Choose a plan')
+    expect(wrapper.get('[role="status"]').text()).toBe(
+      'Finish the payment in your browser. This card updates by itself.',
+    )
+    expect(wrapper.text()).not.toContain('Pick the storage you need')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
-  it('asks to choose a plan above the plans when there is no subscription', async () => {
+  it('shows a row for each plan with the name, the size, the price and the button Choose', async () => {
     const { wrapper } = await render(createResponse({ phase: 'none' }))
 
-    expect(wrapper.text()).toContain('Choose a plan')
-  })
-
-  it('lays the plans out as tiles with the name, the size, the price and the button Choose', async () => {
-    const { wrapper } = await render(createResponse({ phase: 'none' }))
-
-    const tiles = wrapper.findAll('.subscription__tile')
     const expected = [
-      ['Basic', '10 GB', '$5 / month'],
-      ['Plus', '100 GB', '$15 / month'],
-      ['Pro', '250 GB', '$30 / month'],
-    ]
-    expect(tiles).toHaveLength(expected.length)
-    tiles.forEach((tile, at) => {
-      ;[...(expected[at] ?? []), 'Choose'].forEach((part) => expect(tile.text()).toContain(part))
+      ['Basic', '10 GB of synced files', '$5', '/ month', 'Choose Basic'],
+      ['Plus', '100 GB of synced files', '$15', '/ month', 'Choose Plus'],
+      ['Pro', '250 GB of synced files', '$30', '/ month', 'Choose Pro'],
+    ] as const
+    expect(wrapper.findAll('.subscription__row')).toHaveLength(expected.length)
+    expected.forEach(([name, ...parts]) => {
+      parts.forEach((part) => expect(getRow(wrapper, name)).toContain(part))
     })
   })
 
@@ -299,11 +299,12 @@ describe('SubscriptionCard', () => {
     expect(getPlanChoices()).toStrictEqual(['Basic', 'Pro'])
   })
 
-  it('offers one Manage subscription and no row of plan buttons while the subscription is active', async () => {
+  it('offers one Manage subscription and no plan to choose while the subscription is active', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(wrapper.findAll('.subscription__actions button')).toHaveLength(2)
-    expect(wrapper.findAll('.subscription__tile')).toHaveLength(0)
+    const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')
+    expect(manage).toHaveLength(1)
+    expect(findChoose(wrapper)).toBeUndefined()
   })
 
   it('changes the plan without opening a browser and shows the new plan', async () => {
@@ -314,7 +315,7 @@ describe('SubscriptionCard', () => {
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(openExternal).not.toHaveBeenCalled()
     expect(wrapper.get('.subscription__badge').text()).toBe('Pro')
-    expect(wrapper.get('.subscription__facts').text()).toContain('Pro, 250 GB')
+    expect(getRow(wrapper, 'Plan')).toContain('250 GB, $30 / month')
     expect(findPlanSelect(wrapper).text()).toBe('Change plan')
   })
 
@@ -327,10 +328,10 @@ describe('SubscriptionCard', () => {
     await changePlanTo(wrapper, 'Pro')
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Could not reach the sync server')
-    expect(wrapper.text()).toContain('Plus, 100 GB')
+    expect(getRow(wrapper, 'Plan')).toContain('100 GB, $15 / month')
   })
 
-  it('shows the used space above the plan and says the cloud is full', async () => {
+  it('shows the used space above the plan, says the cloud is full and offers a larger plan', async () => {
     const { wrapper } = await render(
       createResponse({
         ...ACTIVE_ON_PLUS,
@@ -340,9 +341,14 @@ describe('SubscriptionCard', () => {
       }),
     )
 
-    expect(wrapper.text()).toContain('20 GB of 10 GB used')
+    expect(getRow(wrapper, 'Storage')).toContain('20 GB of 10 GB')
     expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('100')
-    expect(wrapper.text()).toContain('Cloud storage is full: changes stay on this device')
+    expect(wrapper.text()).toContain(
+      'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
+    )
+    await findPlanSelect(wrapper).trigger('click')
+    await flushPromises()
+    expect(getPlanChoices()).toStrictEqual(['Plus', 'Pro'])
   })
 
   it('does not say the cloud is full while there is room', async () => {
@@ -362,7 +368,7 @@ describe('SubscriptionCard', () => {
       }),
     )
 
-    expect(wrapper.text()).toContain('Plus, 100 GB')
+    expect(getRow(wrapper, 'Plan')).toContain('Plus, 100 GB, $15 / month')
     expect(findChoose(wrapper, 'Plus')).toBeDefined()
     expect(findPlanSelect(wrapper).exists()).toBe(false)
   })
@@ -385,9 +391,8 @@ describe('SubscriptionCard trial and portal', () => {
       createResponse({ ...ACTIVE_ON_PLUS, isTrial: true, periodEndAt: '2026-12-07T12:00:00Z' }),
     )
 
-    expect(wrapper.get('.subscription__facts').text()).toContain('Trial until')
-    expect(wrapper.get('.subscription__facts').text()).toContain('December 7, 2026')
-    expect(wrapper.text()).not.toContain('Active until')
+    expect(getRow(wrapper, 'Trial until')).toContain('December 7, 2026')
+    expect(wrapper.text()).not.toContain('Renews')
   })
 
   it('opens the portal in the browser with the one button Manage subscription', async () => {

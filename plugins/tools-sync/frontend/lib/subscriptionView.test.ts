@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatPrice,
   formatSize,
-  getPlanLabel,
-  getPlanPrice,
+  getPlanLine,
   getSubscriptionView,
   getUsagePercent,
   getUsageText,
@@ -28,33 +28,34 @@ describe('formatSize', () => {
   })
 })
 
-describe('getPlanLabel', () => {
-  it('joins the name and the size of a plan', () => {
-    expect(getPlanLabel(PLUS)).toBe('Plus, 100 GB')
+describe('getPlanLine', () => {
+  it('joins the size and the price for a month of a plan', () => {
+    expect(getPlanLine(PLUS, false)).toBe('100 GB, $15 / month')
   })
 
-  it('shows only the size of a plan with no name', () => {
-    expect(getPlanLabel({ ...PLUS, name: '' })).toBe('100 GB')
+  it('puts the name in front where the badge does not name the plan', () => {
+    expect(getPlanLine(PLUS, true)).toBe('Plus, 100 GB, $15 / month')
+  })
+
+  it('leaves out an empty name and an empty price', () => {
+    expect(getPlanLine({ ...PLUS, name: '' }, true)).toBe('100 GB, $15 / month')
+    expect(getPlanLine({ ...PLUS, priceCents: 0 }, false)).toBe('100 GB')
   })
 })
 
-describe('getPlanPrice', () => {
-  it('prices a plan for a month', () => {
-    expect(getPlanPrice(PLUS)).toBe('$15 / month')
-  })
-
-  it('has no price for a plan with no price', () => {
-    expect(getPlanPrice({ ...PLUS, priceCents: 0 })).toBe('')
+describe('formatPrice', () => {
+  it('has no price for no cents', () => {
+    expect(formatPrice(0, 'USD')).toBe('')
   })
 
   it('shows whole dollars without cents and cents when there are some', () => {
-    expect(getPlanPrice({ ...PLUS, priceCents: 500 })).toBe('$5 / month')
-    expect(getPlanPrice({ ...PLUS, priceCents: 499 })).toBe('$4.99 / month')
+    expect(formatPrice(500, 'USD')).toBe('$5')
+    expect(formatPrice(499, 'USD')).toBe('$4.99')
   })
 
   it('shows the symbol of euro and the code of another currency', () => {
-    expect(getPlanPrice({ ...PLUS, priceCents: 1000, currency: 'EUR' })).toBe('€10 / month')
-    expect(getPlanPrice({ ...PLUS, priceCents: 700, currency: 'CHF' })).toBe('7 CHF / month')
+    expect(formatPrice(1000, 'EUR')).toBe('€10')
+    expect(formatPrice(700, 'CHF')).toBe('7 CHF')
   })
 })
 
@@ -83,14 +84,29 @@ describe('getSubscriptionView', () => {
     expect(view.badge).toBe('')
     expect(view.text).toBe('Create an identity to buy a subscription.')
   })
+
+  it('badges an unreachable server as offline and names it in the text', () => {
+    const view = getSubscriptionView({
+      status: 'unreachable',
+      phase: '',
+      dates: DATES,
+      server: 'http://127.0.0.1:8787',
+    })
+
+    expect(view).toStrictEqual({
+      badge: 'Offline',
+      text: 'Could not connect to http://127.0.0.1:8787. Start the server, or change the address in the settings.',
+      tone: 'warning',
+    })
+  })
 })
 
 describe('getValidity', () => {
   const DATES = { periodEnd: '2026-12-23T12:00:00Z', writesEnd: '', deleteAt: '' }
 
-  it('says until when the paid period lasts', () => {
+  it('says when the paid period renews', () => {
     expect(getValidity(DATES, false)).toStrictEqual({
-      label: 'Active until',
+      label: 'Renews',
       date: 'December 23, 2026',
     })
   })
@@ -124,10 +140,10 @@ describe('getUsagePercent', () => {
 
 describe('getUsageText', () => {
   it('says how much of the plan is used', () => {
-    expect(getUsageText(2 * GIB, 100 * GIB)).toBe('2 GB of 100 GB used')
+    expect(getUsageText(2 * GIB, 100 * GIB)).toBe('2 GB of 100 GB')
   })
 
   it('shows the used space above the quota as it is', () => {
-    expect(getUsageText(20 * GIB, 10 * GIB)).toBe('20 GB of 10 GB used')
+    expect(getUsageText(20 * GIB, 10 * GIB)).toBe('20 GB of 10 GB')
   })
 })

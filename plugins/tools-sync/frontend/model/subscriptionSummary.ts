@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import {
   formatSize,
-  getPlanLabel,
+  getPlanLine,
   getSubscriptionView,
   getUsagePercent,
   getUsageText,
@@ -25,9 +25,9 @@ export function useSubscriptionSummary(account: SubscriptionAccount, server: Ref
   )
   const planLine = computed(() => {
     if (plan.value === '') return ''
-    return knownPlan.value === undefined
-      ? formatSize(quotaBytes.value)
-      : getPlanLabel({ ...knownPlan.value, quotaBytes: quotaBytes.value })
+    if (knownPlan.value === undefined) return formatSize(quotaBytes.value)
+    const shown = { ...knownPlan.value, quotaBytes: quotaBytes.value }
+    return getPlanLine(shown, phase.value !== 'active')
   })
   const hasUsage = computed(
     () =>

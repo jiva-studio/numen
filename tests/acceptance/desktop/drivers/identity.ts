@@ -10,17 +10,17 @@ const NO_IDENTITY = 'No identity on this device'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const CHOOSE = /^Choose /
 const CHANGE_PLAN = 'Change plan'
-const ACTIVE_UNTIL = 'Active until'
+const RENEWS = 'Renews'
 const PAYMENT_RECEIVED = 'Payment received'
 const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
 
-/** The name of the button that chooses the plan of a name on a tile of the card. */
+/** The name of the button to choose the plan of a name on a row of the card. */
 export const getChooseName = (name: string): string => `Choose ${name}`
 
-/** The text of the plan line of the card: the name and the size in GB. */
-export const getPlanLine = (name: string, gigabytes: number): string => `${name}, ${gigabytes} GB`
+/** The plan row of the card: the size in GB and the price, with the name in front once the subscription ended. */
+export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^(${name}, )?${gigabytes} GB(,|$)`)
 
 
 /** The day as the card of the subscription writes it, such as "December 7, 2026". */
@@ -165,7 +165,19 @@ export class IdentityDriver {
   }
 
   private getCard(panel: Locator): Locator {
-    return panel.locator('.settings-card').filter({ hasText: SUBSCRIPTION_TITLE })
+    return panel.getByRole('region', { name: SUBSCRIPTION_TITLE, exact: true })
+  }
+
+  private getBadge(card: Locator, text: string): Locator {
+    return card.locator('header').getByText(text, { exact: true })
+  }
+
+  /** Expects the card to show the plan of a name and a size in GB: the name in the badge of an active subscription, in the plan row of an ended one. */
+  async expectPlan(name: string, gigabytes: number): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const named = this.getBadge(card, name).or(card.getByText(new RegExp(`^${name}, ${gigabytes} GB`)))
+    await expect(named.first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByText(getPlanLinePattern(name, gigabytes)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Expects the card of the subscription to show the badge or the text; the plugin asks the server every 3 seconds while a payment is awaited. */
@@ -204,9 +216,9 @@ export class IdentityDriver {
     await this.expectActive()
   }
 
-  /** Expects the card to show an active subscription: the row of the end of the paid period. */
+  /** Expects the card to show an active subscription: the row with the day it renews. */
   async expectActive(): Promise<void> {
-    await this.expectSubscription(ACTIVE_UNTIL)
+    await this.expectSubscription(RENEWS)
   }
 
   /** Expects the card to say until which day the trial runs. */
@@ -226,11 +238,11 @@ export class IdentityDriver {
     await this.expectActive()
   }
 
-  /** Expects the card to offer to choose the plan of a name on a tile with its size in GB. */
+  /** Expects the card to offer to choose the plan of a name on a row with its size in GB. */
   async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const tile = card.locator('.subscription__tile').filter({ hasText: `${gigabytes} GB` }).filter({ has: this.scenario.page.getByRole('button', { name: getChooseName(name), exact: true }) })
-    await expect(tile).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    const row = card.locator('.subscription__row').filter({ hasText: `${gigabytes} GB of synced files` }).filter({ has: this.scenario.page.getByRole('button', { name: getChooseName(name), exact: true }) })
+    await expect(row).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Expects the card to offer to buy no plan, after it showed the subscription. */
@@ -259,7 +271,7 @@ export class IdentityDriver {
   async changePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     await (await this.openChangeItem(card, name)).click()
-    await expect(card.getByText(new RegExp(`^${name}, `)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(this.getBadge(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */

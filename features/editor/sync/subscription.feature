@@ -50,4 +50,4 @@ Feature: Numen Sync subscription
     Scenario: The page tells when the server is away
       Given the sync server stops
       When the person opens the page "Identity and licenses"
-      Then the subscription shows "Could not reach the sync server"
+      Then the subscription shows "Offline"

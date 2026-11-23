@@ -1,5 +1,4 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
-import { getPlanLine } from '../drivers/identity.js'
 import type { PlanSpec } from '../drivers/sync.js'
 import { Given, Then, When } from '../support/bdd.js'
 
@@ -170,7 +169,7 @@ Then('the page does not offer to buy a plan', async ({ person }) => {
 })
 
 Then('the subscription shows the plan {string} with {int} GB{on}', async ({ person }, name: string, gigabytes: number, computer: ComputerName) => {
-  await person.computers.expectSubscription(computer, getPlanLine(name, gigabytes))
+  await person.computers.expectPlan(computer, name, gigabytes)
 })
 
 When('the person changes the plan to {string}', async ({ person }, name: string) => {

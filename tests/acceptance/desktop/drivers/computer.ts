@@ -160,6 +160,11 @@ export class ComputerDriver {
     await identity.expectSubscription(text)
   }
 
+  async expectPlan(computer: ComputerName, name: string, gigabytes: number): Promise<void> {
+    const identity = computer === 'first' ? this.identity : this.requireSecond().identity
+    await identity.expectPlan(name, gigabytes)
+  }
+
   async expectActive(computer: ComputerName): Promise<void> {
     const identity = computer === 'first' ? this.identity : this.requireSecond().identity
     await identity.expectActive()

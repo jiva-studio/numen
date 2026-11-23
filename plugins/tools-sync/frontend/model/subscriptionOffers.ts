@@ -1,13 +1,13 @@
 import { computed } from 'vue'
 import type { PlanResponse } from '../api/subscription'
-import { formatSize, getPlanPrice, type PlanOffer } from '../lib/subscriptionView'
+import { formatPrice, formatSize, type PlanOffer } from '../lib/subscriptionView'
 import type { SubscriptionAccount } from './subscriptionAccount'
 
 const toOffer = (one: PlanResponse): PlanOffer => ({
   id: one.id,
   name: one.name,
   size: formatSize(one.quotaBytes),
-  price: getPlanPrice(one),
+  price: formatPrice(one.priceCents, one.currency),
 })
 
 /** The plans the person can choose and the actions the account allows: to buy a plan, to change it, to manage it. */
