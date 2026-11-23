@@ -21,10 +21,10 @@ import (
 
 const (
 	vaultID   domain.VaultID = "Copy"
-	list                     = "Shopping list.md"
-	listCopy                 = "Shopping list (conflict 2026-11-23).md"
-	listCopy2                = "Shopping list (conflict 2026-11-23 2).md"
-	pdf                      = "Papers/Report.pdf"
+	list      string         = "Shopping list.md"
+	listCopy  string         = "Shopping list (conflict 2026-11-23).md"
+	listCopy2 string         = "Shopping list (conflict 2026-11-23 2).md"
+	pdf       string         = "Papers/Report.pdf"
 )
 
 type setup struct {

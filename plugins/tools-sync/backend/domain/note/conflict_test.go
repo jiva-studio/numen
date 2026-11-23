@@ -7,10 +7,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
-var day = time.Date(2026, time.November, 23, 23, 30, 0, 0, time.UTC)
+func day() time.Time { return time.Date(2026, time.November, 23, 23, 30, 0, 0, time.UTC) }
 
 func TestGetConflictCopyPath_NamesTheCopyAfterTheNoteAndTheDay(t *testing.T) {
-	got := note.GetConflictCopyPath("Shopping list.md", day, 1)
+	got := note.GetConflictCopyPath("Shopping list.md", day(), 1)
 
 	if want := "Shopping list (conflict 2026-11-23).md"; got != want {
 		t.Errorf("copy path = %q, want %q", got, want)
@@ -18,7 +18,7 @@ func TestGetConflictCopyPath_NamesTheCopyAfterTheNoteAndTheDay(t *testing.T) {
 }
 
 func TestGetConflictCopyPath_KeepsTheFolderOfTheNote(t *testing.T) {
-	got := note.GetConflictCopyPath("Food/Daily/Monday.md", day, 1)
+	got := note.GetConflictCopyPath("Food/Daily/Monday.md", day(), 1)
 
 	if want := "Food/Daily/Monday (conflict 2026-11-23).md"; got != want {
 		t.Errorf("copy path = %q, want %q", got, want)
@@ -31,14 +31,14 @@ func TestGetConflictCopyPath_AddsTheNumberAfterTheDayFromTheSecondName(t *testin
 		3: "Shopping list (conflict 2026-11-23 3).md",
 	}
 	for number, want := range cases {
-		if got := note.GetConflictCopyPath("Shopping list.md", day, number); got != want {
+		if got := note.GetConflictCopyPath("Shopping list.md", day(), number); got != want {
 			t.Errorf("copy path %d = %q, want %q", number, got, want)
 		}
 	}
 }
 
 func TestGetConflictCopyPath_KeepsTheExtensionInTheCaseOfTheNote(t *testing.T) {
-	got := note.GetConflictCopyPath("Shopping list.MD", day, 1)
+	got := note.GetConflictCopyPath("Shopping list.MD", day(), 1)
 
 	if want := "Shopping list (conflict 2026-11-23).md"; got != want {
 		t.Errorf("copy path = %q, want the markdown extension in lower case", got)
@@ -48,7 +48,7 @@ func TestGetConflictCopyPath_KeepsTheExtensionInTheCaseOfTheNote(t *testing.T) {
 func TestGetConflictCopyPath_ReturnsNormalFormC(t *testing.T) {
 	decomposed := "Café.md"
 
-	got := note.GetConflictCopyPath(decomposed, day, 1)
+	got := note.GetConflictCopyPath(decomposed, day(), 1)
 
 	if want := "Café (conflict 2026-11-23).md"; got != want {
 		t.Errorf("copy path = %q, want the composed form %q", got, want)
