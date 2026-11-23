@@ -25,7 +25,7 @@ export function createWindowFoundation(api: WindowApi) {
     log,
     rest,
     connections: createConnectionStore(configuration.connection, log.getWriter('connections')),
-    frame: useWindowFrame(createWindowFrameControls()),
+    frame: useWindowFrame(createWindowFrameControls(api.window.frameRuntime)),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),
     /** The settings a part asks for: the page of a plugin and a setting of it, or the settings tab. */

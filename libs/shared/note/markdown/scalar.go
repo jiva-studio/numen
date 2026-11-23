@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
+func (d *Document) findScalarSpan(node *yaml.Node) (start, end int, ok bool) {
 	start, ok = d.readScalarStart(node)
 	if !ok {
 		return 0, 0, false
@@ -29,11 +29,11 @@ func (d *Document) readScalarStart(node *yaml.Node) (int, bool) {
 	if node.Kind != yaml.ScalarNode {
 		return 0, false
 	}
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	if node.Line < 1 || node.Line >= len(lines) || node.Column < 1 {
 		return 0, false
 	}
-	start := columnOffset(d.front, lines, node.Line, node.Column)
+	start := getColumnOffset(d.front, lines, node.Line, node.Column)
 	if start >= len(d.front) {
 		return 0, false
 	}
@@ -98,7 +98,7 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	return 0, false
 }
 
-func scalar(value string) (string, error) {
+func encodeScalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
 	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="SetIndent does not affect encoding of a single scalar string"
@@ -114,9 +114,9 @@ func scalar(value string) (string, error) {
 	return strings.TrimRight(out.String(), "\n"), nil
 }
 
-func scalarLike(value string, style yaml.Style) (string, error) {
+func encodeScalarLike(value string, style yaml.Style) (string, error) {
 	if style == 0 {
-		return scalar(value)
+		return encodeScalar(value)
 	}
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
@@ -135,7 +135,7 @@ func scalarLike(value string, style yaml.Style) (string, error) {
 	var parsed string
 	// gomutants:disable-next-line INVERT_LOGICAL reason="yaml.Encoder output for a scalar node is always valid YAML so err is always nil"
 	if err := yaml.Unmarshal([]byte(content), &parsed); err != nil || parsed != value {
-		return scalar(value)
+		return encodeScalar(value)
 	}
 	return content, nil
 }

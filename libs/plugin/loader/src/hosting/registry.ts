@@ -14,10 +14,9 @@ import type {
 } from '@numen/plugin-sdk'
 import { shallowRef } from 'vue'
 import type { Manifest } from '@numen/core-client'
-import type { PluginParts } from '../host'
+import type { HostedParts } from './context'
 import type { SlotViewRegistry } from '../slot-views'
 import type { PluginListener } from './events'
-import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginHostDeps } from './types'
 
 export interface RegisteredReader {
@@ -56,7 +55,7 @@ export interface TabKindOwners {
 
 /** The plugins the host made a context for: their parts and manifests, and which are active, starting and stopped. */
 export interface PluginRecords {
-  readonly contexts: Map<string, PluginParts>
+  readonly contexts: Map<string, HostedParts>
   readonly manifests: Map<string, Manifest>
   readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
@@ -98,10 +97,6 @@ export interface PluginItemRegistration<T> {
   readonly pluginId: string
   readonly registration: T
   readonly getContext?: () => PluginContext | undefined
-}
-
-function clearSubscriptions(parts?: PluginParts): void {
-  if (parts) disposeSubscriptions(parts.plugin.identity.subscriptions)
 }
 
 function cleanupMapItems(
@@ -171,9 +166,9 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   plugins.disposed.add(pluginId)
   plugins.activated.value = new Set([...plugins.activated.value].filter((id) => id !== pluginId))
   setStarting(plugins, pluginId, false)
-  deps?.kinds.closeTabsForPlugin?.(pluginId)
-  deps?.window.clearNotices?.(pluginId)
-  clearSubscriptions(plugins.contexts.get(pluginId))
+  deps?.kinds.closeTabsForPlugin(pluginId)
+  deps?.window.clearNotices(pluginId)
+  plugins.contexts.get(pluginId)?.subscriptions.disposeAll()
   plugins.contexts.delete(pluginId)
   plugins.manifests.delete(pluginId)
   if (plugins.contextManifests?.value.has(pluginId)) {

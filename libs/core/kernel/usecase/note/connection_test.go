@@ -3,9 +3,10 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -41,12 +42,12 @@ func (c changeFixture) saveConnectionWith(writers note.NoteWriting) note.SaveCon
 	return note.NewSaveConnection(c.connectionDeps(writers))
 }
 
-func (c changeFixture) removeConnection() note.RemoveConnection {
-	return note.NewRemoveConnection(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
+func (c changeFixture) deleteConnection() note.DeleteConnection {
+	return note.NewDeleteConnection(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
-func (c changeFixture) removeSide() note.RemoveSide {
-	return note.NewRemoveSide(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
+func (c changeFixture) deleteConnectionSide() note.DeleteConnectionSide {
+	return note.NewDeleteConnectionSide(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
 func (c changeFixture) join() note.Join {
@@ -344,7 +345,7 @@ func TestRemovingASideDoesNotWriteTheOtherNote(t *testing.T) {
 	}
 	entropy := c.read(t, "Entropy.md")
 
-	if err := c.removeSide().Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", ""); err != nil {
+	if err := c.deleteConnectionSide().Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -365,7 +366,7 @@ func TestRemovingAConnectionRemovesBothSidesButNotOtherTypes(t *testing.T) {
 		"Entropy.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	if err := c.removeConnection().Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", ""); err != nil {
+	if err := c.deleteConnection().Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -501,7 +502,7 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    marker: arrow\n---\n# Idea\n",
 	})
 
-	got, err := query.NewGetBacklinks(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Area.md")
+	got, err := query.NewListBacklinks(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Area.md")
 	if err != nil {
 		t.Fatal(err)
 	}

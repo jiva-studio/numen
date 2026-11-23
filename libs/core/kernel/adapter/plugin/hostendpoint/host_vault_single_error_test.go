@@ -125,7 +125,7 @@ func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 
 	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{
 		Paths: []string{tooLargePath, "Rivers/Rhine.md"}, Folder: "Archive",

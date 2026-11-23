@@ -12,22 +12,22 @@ import (
 // Mount registers the plugin's services and handlers on the plugin server.
 func Mount(s *server.Server) error {
 	var client exposetools.Host
-	if endpoint, err := hostcall.FromEnv(); err == nil {
+	if endpoint, err := hostcall.ReadEnv(); err == nil {
 		client = tools.NewClient(endpoint)
 	}
 
 	srv := newEndpoint("", client)
 
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		// gomutants:disable-next-line RETURN_ERROR_NIL reason="loopback listener shutdown within the timeout does not error"
 		return srv.Close(context.Background())
 	})
 
 	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
 		if !srv.host.Aggregator.HasClient() {
-			if endpoint, err := hostcall.FromVars(values); err == nil {
+			if endpoint, err := hostcall.ReadVars(values); err == nil {
 				srv.host.Aggregator.SetClient(tools.NewClient(endpoint))
-			} else if endpoint, err := hostcall.FromEnv(); err == nil {
+			} else if endpoint, err := hostcall.ReadEnv(); err == nil {
 				srv.host.Aggregator.SetClient(tools.NewClient(endpoint))
 			}
 		}

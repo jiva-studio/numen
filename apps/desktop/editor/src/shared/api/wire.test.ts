@@ -19,7 +19,7 @@ describe('a range', () => {
 
 describe('the result of a move', () => {
   it('keeps where the file stood, at its current position and which links were repaired', () => {
-    expect(mapMoveResult({ from: 'A.md', to: 'B.md', repaired: ['C.md'] })).toStrictEqual({
+    expect(mapMoveResult({ from: 'A.md', to: 'B.md', repairedNotes: ['C.md'] })).toStrictEqual({
       from: 'A.md',
       to: 'B.md',
       repaired: ['C.md'],

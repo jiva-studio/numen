@@ -28,7 +28,7 @@ describe('a plugin whose module is read after the start limit', () => {
         new Response(
           String(url).endsWith('.css') ? '' : JSON.stringify(MANIFEST),
         )) as unknown as typeof fetch,
-      dynamicImport: async () => {
+      importModule: async () => {
         await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
         return { activate }
       },
@@ -67,7 +67,7 @@ describe('a plugin that started within the limit', () => {
         new Response(
           String(url).endsWith('.css') ? '' : JSON.stringify(MANIFEST),
         )) as unknown as typeof fetch,
-      dynamicImport: async () => ({
+      importModule: async () => ({
         activate: (one: PluginContext) => {
           context = one
         },

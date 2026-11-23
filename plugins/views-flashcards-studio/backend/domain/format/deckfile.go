@@ -66,24 +66,24 @@ func (f *DeckFile) WriteIdentifier(identifier string) (bool, error) {
 }
 
 func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
-	if _, carried := doc.Identifier(); carried {
+	if _, carried := doc.GetIdentifier(); carried {
 		return false, nil
 	}
 	return true, doc.SetIdentifier(identifier)
 }
 
-// Deck is the deck read from the current content of the file.
-func (f *DeckFile) Deck(ref domain.FileStat) Deck {
+// BuildDeck is the deck read from the current content of the file.
+func (f *DeckFile) BuildDeck(ref domain.FileStat) Deck {
 	deck, _ := readDeck(ref, []byte(f.doc.Body()))
 	return deck
 }
 
-// Whole makes every card of the file whole and reports the card ids it gave, which
-// is what Whole does to a body. The file keeps its own line endings.
-func (f *DeckFile) Whole(
+// AssignCardIDs makes every card of the file whole and reports the card ids it gave, which
+// is what AssignCardIDs does to a body. The file keeps its own line endings.
+func (f *DeckFile) AssignCardIDs(
 	cardModels map[string]CardModel, createID func() ID,
 ) ([]CardID, error) {
-	body, provided := Whole(markdown.Normalize(f.doc.Body()), cardModels, createID)
+	body, provided := AssignCardIDs(markdown.Normalize(f.doc.Body()), cardModels, createID)
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
@@ -102,14 +102,14 @@ func (f *DeckFile) SetValue(card ID, field, value string) error {
 	}
 	for _, v := range span.values {
 		if v.field == field {
-			return f.doc.SpliceBody(v.from, v.to, formatSection(value, v.to == len(body)))
+			return f.doc.ReplaceBody(v.from, v.to, formatSection(value, v.to == len(body)))
 		}
 	}
-	block := headingLine(FieldLevel, oneLine(field))
+	block := buildHeadingLine(FieldLevel, collapseToLine(field))
 	if text := trimBlankLines(markdown.Normalize(value)); text != "" {
 		block += "\n\n" + text
 	}
-	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
+	return f.doc.ReplaceBody(span.end, span.end, insert(body, span.end, block))
 }
 
 // RemoveValue removes one field from a card: its heading line and its value. The other fields
@@ -139,7 +139,7 @@ func (f *DeckFile) RemoveValue(card ID, field string) error {
 				content = "\n"
 			}
 		}
-		return f.doc.SpliceBody(head, to, content)
+		return f.doc.ReplaceBody(head, to, content)
 	}
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
@@ -153,11 +153,11 @@ func (f *DeckFile) SetCardModel(card ID, name string) error {
 	if err != nil {
 		return err
 	}
-	link := "[[" + oneLine(name) + "]]"
+	link := "[[" + collapseToLine(name) + "]]"
 	if span.linkTo > span.linkFrom {
-		return f.doc.SpliceBody(span.linkFrom, span.linkTo, link)
+		return f.doc.ReplaceBody(span.linkFrom, span.linkTo, link)
 	}
-	return f.doc.SpliceBody(span.from, span.from, "\n"+link+"\n")
+	return f.doc.ReplaceBody(span.from, span.from, "\n"+link+"\n")
 }
 
 // RemoveCard removes a card from the deck: its heading, its card model link
@@ -180,7 +180,7 @@ func (f *DeckFile) RemoveCard(card ID) error {
 			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, content)
+	return f.doc.ReplaceBody(head, to, content)
 }
 
 func (f *DeckFile) getCardSpan(body []byte, card ID) (cardSpan, error) {
@@ -206,16 +206,16 @@ func (f *DeckFile) getCardSpan(body []byte, card ID) (cardSpan, error) {
 // name. What is placed under it is left where it was.
 func (f *DeckFile) RenameSection(index int, name string) error {
 	body := []byte(f.doc.Body())
-	heads := sectionHeads(body)
+	heads := findSectionHeads(body)
 	if index < 0 || index >= len(heads) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
-	line := headingLine(1, name)
+	line := buildHeadingLine(1, name)
 	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="A section heading is at least '# ' (1 or more bytes), so heads[index].from is always >= 1."
 	if from := heads[index].from; from > 0 && body[from-1] == '\n' {
 		line += "\n"
 	}
-	return f.doc.SpliceBody(heads[index].head, heads[index].from, line)
+	return f.doc.ReplaceBody(heads[index].head, heads[index].from, line)
 }
 
 // RemoveSection removes the heading of the section at one index. A section is
@@ -223,7 +223,7 @@ func (f *DeckFile) RenameSection(index int, name string) error {
 // belong to the preceding section.
 func (f *DeckFile) RemoveSection(index int) error {
 	body := []byte(f.doc.Body())
-	heads := sectionHeads(body)
+	heads := findSectionHeads(body)
 	if index < 0 || index >= len(heads) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
@@ -242,26 +242,26 @@ func (f *DeckFile) RemoveSection(index int) error {
 			content = "\n"
 		}
 	}
-	return f.doc.SpliceBody(head, to, content)
+	return f.doc.ReplaceBody(head, to, content)
 }
 
 // AddSection appends a section at the end of the deck. The prose after the
 // heading is written unchanged.
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
-	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
+	blocks := []string{buildHeadingLine(SectionLevel, collapseToLine(s.Name))}
 	if lead := trimBlankLines(markdown.Normalize(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
 }
 
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
 	pos := len(body)
-	return f.doc.SpliceBody(pos, pos, insert(body, pos, cardBlock(card)))
+	return f.doc.ReplaceBody(pos, pos, insert(body, pos, buildCardBlock(card)))
 }
 
 // AddCardUnder writes a card at the end of the section standing at one place in
@@ -269,7 +269,7 @@ func (f *DeckFile) AddCard(card Card) error {
 // the deck holds no section standing there.
 func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 	body := []byte(f.doc.Body())
-	heads := sectionHeads(body)
+	heads := findSectionHeads(body)
 	if sectionIndex < 0 || sectionIndex >= len(heads) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, sectionIndex)
 	}
@@ -277,11 +277,11 @@ func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 	if sectionIndex+1 < len(heads) {
 		content = heads[sectionIndex+1].head
 	}
-	return f.doc.SpliceBody(content, content, insert(body, content, cardBlock(card)))
+	return f.doc.ReplaceBody(content, content, insert(body, content, buildCardBlock(card)))
 }
 
-func cardBlock(card Card) string {
-	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.CardID))}
+func buildCardBlock(card Card) string {
+	blocks := []string{buildHeadingLine(CardLevel, WriteHeading(collapseToLine(card.Heading), card.CardID))}
 	if card.CardModelLink != "" {
 		blocks = append(blocks, "[["+card.CardModelLink+"]]")
 	}
@@ -289,7 +289,7 @@ func cardBlock(card Card) string {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
-		blocks = append(blocks, headingLine(FieldLevel, oneLine(v.Field)))
+		blocks = append(blocks, buildHeadingLine(FieldLevel, collapseToLine(v.Field)))
 		if text := trimBlankLines(markdown.Normalize(v.Text)); text != "" {
 			blocks = append(blocks, text)
 		}
@@ -339,8 +339,8 @@ func (w *deckBodyWriter) writeCard(card Card) error {
 	return w.scratch.AddCard(card)
 }
 
-// DeckBody renders the cards and sections of d as the body of a deck note.
-func DeckBody(d Deck) (string, error) {
+// BuildDeckBody renders the cards and sections of d as the body of a deck note.
+func BuildDeckBody(d Deck) (string, error) {
 	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
 	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that OpenDeck always opens."
 	if err != nil {
@@ -379,7 +379,7 @@ func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to st
 
 	var heads []valueSpan
 	for i, span := range spans {
-		if !usesCardModel(deck.Cards[i], cutting, cardModel) {
+		if !hasCardModel(deck.Cards[i], cutting, cardModel) {
 			continue
 		}
 		for _, v := range span.values {
@@ -391,18 +391,18 @@ func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to st
 
 	// Backwards, because a splice moves every byte after it.
 	for _, head := range slices.Backward(heads) {
-		line := headingLine(FieldLevel, oneLine(to))
+		line := buildHeadingLine(FieldLevel, collapseToLine(to))
 		if head.from < len(body) {
 			line += "\n"
 		}
-		if err := f.doc.SpliceBody(head.head, head.from, line); err != nil {
+		if err := f.doc.ReplaceBody(head.head, head.from, line); err != nil {
 			return 0, err
 		}
 	}
 	return len(heads), nil
 }
 
-func usesCardModel(card Card, linkTargets map[string]string, cardModel string) bool {
+func hasCardModel(card Card, linkTargets map[string]string, cardModel string) bool {
 	pos, lands := linkTargets[card.CardModelLink]
 	return lands && pos == cardModel
 }

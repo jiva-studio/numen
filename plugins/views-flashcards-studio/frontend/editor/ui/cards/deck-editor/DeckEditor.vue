@@ -54,7 +54,7 @@ const {
   drop,
   step,
 } = useDrag<InsertionPoint | undefined>({
-  order: () => [HEAD, ...props.cards.map((card) => card.id)],
+  getOrder: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
   isMoved: (dragged: string, target: InsertionPoint): boolean =>
     isMoved(grid.value.runs, dragged, target),

@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func (e *watchCalls) WatchMoves(
-	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
+func (e *watchCalls) WatchIndexChanges(
+	ctx context.Context, req *connect.Request[v1.WatchIndexChangesRequest], stream *connect.ServerStream[v1.WatchIndexChangesResponse],
 ) error {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
@@ -20,11 +20,11 @@ func (e *watchCalls) WatchMoves(
 	if vault == nil {
 		return connect.NewError(connect.CodeFailedPrecondition, plugin.ErrNoVault)
 	}
-	moves, err := vault.Watch.WatchMoves(ctx)
+	moves, err := vault.Watch.WatchIndexChanges(ctx)
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
-	if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+	if err := stream.Send(&v1.WatchIndexChangesResponse{}); err != nil {
 		return err
 	}
 	for {
@@ -35,7 +35,7 @@ func (e *watchCalls) WatchMoves(
 			if !open {
 				return nil
 			}
-			if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+			if err := stream.Send(&v1.WatchIndexChangesResponse{}); err != nil {
 				return err
 			}
 		}

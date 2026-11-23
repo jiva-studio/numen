@@ -75,7 +75,11 @@ const textareaRef = useTemplateRef<InstanceType<typeof AutosizeTextarea>>('writt
     <!-- What is wrong with the half is in the foot of the part, over what is
          written there. -->
     <div v-if="pane.stray.length" class="template__amiss">
-      <ErrorMessage class="template__objections" role="alert" :said="words.stray(pane.stray)" />
+      <ErrorMessage
+        class="template__objections"
+        role="alert"
+        :said="words.describeStray(pane.stray)"
+      />
     </div>
   </div>
 </template>

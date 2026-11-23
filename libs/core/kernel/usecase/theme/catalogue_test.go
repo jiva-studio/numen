@@ -84,7 +84,7 @@ func TestAPersonsThemeExistsAdjacentAPluginThemeOfTheSameFilename(t *testing.T) 
 	desk.writeTheme(t, "night.css", ":root { --numen-surface: #000000 }")
 
 	themes := desk.getThemes().List
-	pluginName := themedomain.PluginName(pluginID, "night")
+	pluginName := themedomain.BuildPluginName(pluginID, "night")
 	if !hasTheme(themes, pluginName) || !hasTheme(themes, "mine:night") {
 		t.Fatalf("one hides the other: %v", getNames(themes))
 	}

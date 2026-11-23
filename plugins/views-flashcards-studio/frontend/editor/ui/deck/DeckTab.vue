@@ -31,7 +31,7 @@ function onChooseSchedule(path: string) {
 }
 
 function onAddCard(cardModel: string, section: string | null) {
-  props.state.actions.addCard(cardModel, empty(cardModel), section)
+  props.state.actions.addCard(cardModel, buildBlankCard(cardModel), section)
 }
 
 function onRemoveCard(id: string) {
@@ -67,7 +67,7 @@ function onTake() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function empty(cardModel: string) {
+function buildBlankCard(cardModel: string) {
   return cardBlanks(
     cardFields(cardModels.value.find((one) => one.name === cardModel)?.fields ?? []),
   )

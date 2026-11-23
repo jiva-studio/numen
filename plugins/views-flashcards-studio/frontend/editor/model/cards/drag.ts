@@ -3,7 +3,7 @@ import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '
 
 /** Dependencies for ordering and moving dragged items. */
 export interface DragDeps<At extends InsertionPoint | undefined> {
-  readonly order: () => readonly string[]
+  readonly getOrder: () => readonly string[]
   readonly nowhere: At
   readonly isMoved: (dragged: string, target: InsertionPoint) => boolean
   readonly move: (dragged: string, target: InsertionPoint) => void
@@ -50,7 +50,7 @@ export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At
   }
 
   const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {
-    const lands = getStepInsertionPoint(drag.order(), what, direction)
+    const lands = getStepInsertionPoint(drag.getOrder(), what, direction)
     if (lands === undefined || !drag.isMoved(what, lands)) return
     press.preventDefault()
     drag.move(what, lands)

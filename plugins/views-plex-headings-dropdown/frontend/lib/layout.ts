@@ -1,4 +1,4 @@
-import type { Measures } from './measures'
+import type { TextMeasures } from './measures'
 import type { Box, Size } from '../types'
 
 /** What the list needs to be drawn under a node: how many rows stand at once and where the node is on the screen. */
@@ -18,7 +18,7 @@ export interface ListLayoutRequest {
   readonly limit: number
   readonly node: Box
   readonly room: Size
-  readonly measures: Measures
+  readonly measures: TextMeasures
 }
 
 /**

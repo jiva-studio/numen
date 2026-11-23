@@ -456,12 +456,12 @@ func TestFrontmatterLinesCountsTheLinesAboveTheProse(t *testing.T) {
 		"windows ends": {[]byte("---\r\na: b\r\n---\r\nx"), 3},
 	}
 	for name, tc := range cases {
-		got, err := FrontmatterLines(tc.raw)
+		got, err := CountFrontmatterLines(tc.raw)
 		if err != nil || got != tc.want {
 			t.Errorf("%s: FrontmatterLines = %d, %v, want %d", name, got, err, tc.want)
 		}
 	}
-	if _, err := FrontmatterLines(lines("---", "a: b")); !errors.Is(err, ErrUnreadable) {
+	if _, err := CountFrontmatterLines(lines("---", "a: b")); !errors.Is(err, ErrUnreadable) {
 		t.Errorf("unclosed frontmatter: error = %v, want ErrUnreadable", err)
 	}
 }

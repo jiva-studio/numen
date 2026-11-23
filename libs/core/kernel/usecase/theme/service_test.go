@@ -13,7 +13,7 @@ import (
 var errNotWritten = errors.New("the settings are read-only")
 
 func TestTheListReturnsWhatIsAppliedAndWhichHalfItIsReadAs(t *testing.T) {
-	night := themedomain.PluginName(pluginID, "night")
+	night := themedomain.BuildPluginName(pluginID, "night")
 	desk := createThemesDesk(t, themedomain.Appearance{ThemeName: night, Mode: themedomain.Dark})
 	desk.writeTheme(t, "mine.css", ":root { --numen-surface: #000000 }")
 
@@ -43,11 +43,11 @@ func TestReadThemeResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 
 	for name, want := range map[string]string{
 		"mine:kept": "#123456",
-		themedomain.PluginName(pluginID, "night"): "--numen-surface",
-		themedomain.Default:                       "own palette",
-		"preset:dracula":                          "",
-		"mine:../../../.ssh/id_rsa":               "",
-		"mine:gone":                               "",
+		themedomain.BuildPluginName(pluginID, "night"): "--numen-surface",
+		themedomain.Default:                            "own palette",
+		"preset:dracula":                               "",
+		"mine:../../../.ssh/id_rsa":                    "",
+		"mine:gone":                                    "",
 	} {
 		text, err := desk.readTheme(name)
 		if err != nil {

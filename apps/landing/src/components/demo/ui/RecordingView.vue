@@ -5,7 +5,7 @@
 import { computed, ref } from 'vue'
 import { LocateFixed, Pause, Play } from '@lucide/vue'
 import { Slider } from '@numen/ui'
-import { clock } from '../lib/duration'
+import { formatClock } from '../lib/duration'
 import { LECTURE_CUES, LECTURE_MEDIA_URL, getActiveCueIndex } from '../lib/cues'
 import type { Player } from '../model/player'
 import { usePlayerLoad } from '../model/usePlayerLoad'
@@ -29,7 +29,7 @@ usePlayerLoad(() => props.player, LECTURE_MEDIA_URL)
         <Pause v-if="player.isPlaying.value" class="recording__icon" />
         <Play v-else class="recording__icon" />
       </button>
-      <time class="recording__time">{{ clock(player.position.value) }}</time>
+      <time class="recording__time">{{ formatClock(player.position.value) }}</time>
       <Slider
         class="recording__slider"
         :model-value="player.position.value"
@@ -37,7 +37,7 @@ usePlayerLoad(() => props.player, LECTURE_MEDIA_URL)
         :step="100"
         @update:model-value="player.seek"
       />
-      <time class="recording__time">{{ clock(player.duration.value) }}</time>
+      <time class="recording__time">{{ formatClock(player.duration.value) }}</time>
       <button
         type="button"
         class="recording__action"

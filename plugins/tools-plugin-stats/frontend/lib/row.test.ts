@@ -14,7 +14,7 @@ const IDLE: PluginProcess = {
   idleStopTime: NOW - 65_000 + 180_000,
   health: 'warning',
   healthText: 'The tiles are old',
-  startedBy: { who: 'Settings', why: 'list tools' },
+  startedBy: { requester: 'Settings', reason: 'list tools' },
   holders: [],
 }
 

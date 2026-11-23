@@ -1,1 +1,1 @@
-export { loadFrameRuntime, type FrameRuntimeLoader } from '@numen/plugin-loader'
+export type { FrameRuntimeLoader } from '@numen/plugin-loader'

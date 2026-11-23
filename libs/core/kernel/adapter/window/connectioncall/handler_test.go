@@ -161,7 +161,7 @@ func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
 
 	_, err := call(t, client, connect.NewRequest(&v1.ConnectionCallServiceCallRequest{
 		PluginId: "md.numen.views.agent.chat", Operation: "acp.task",
-		Preferred: &v1.PreferredRow{ConnectionId: "c-claude", Options: map[string]string{"model": "opus"}},
+		PreferredRow: &v1.PreferredRow{ConnectionId: "c-claude", Options: map[string]string{"model": "opus"}},
 	}))
 
 	preferred := calls.request.Preferred

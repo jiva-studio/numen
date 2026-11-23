@@ -34,7 +34,7 @@ func TestTheWikilinksInALineAreTheOnesTheSchemaReturns(t *testing.T) {
 
 	for _, one := range cases {
 		found := []string{}
-		for _, w := range markdown.WikilinksIn(one.Text) {
+		for _, w := range markdown.FindWikilinks(one.Text) {
 			found = append(found, w.Target.String())
 		}
 		if !slices.Equal(found, one.Found) {
@@ -44,7 +44,7 @@ func TestTheWikilinksInALineAreTheOnesTheSchemaReturns(t *testing.T) {
 }
 
 func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
-	found := markdown.WikilinksIn("Under [[Entropy|the other way]] it sits.")
+	found := markdown.FindWikilinks("Under [[Entropy|the other way]] it sits.")
 	if len(found) != 1 {
 		t.Fatalf("got %d wikilinks", len(found))
 	}
@@ -59,7 +59,7 @@ func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
 func TestWikilinksInText_SkipsCodeAndReportsOffsets(t *testing.T) {
 	text := "See [[Kite]].\n```\n[[Gnomon]]\n```\nThen `[[Sundial]]` and [[Entropy]]."
 
-	found := markdown.WikilinksInText(text)
+	found := markdown.FindTextWikilinks(text)
 
 	var raws []string
 	for _, one := range found {
@@ -71,7 +71,7 @@ func TestWikilinksInText_SkipsCodeAndReportsOffsets(t *testing.T) {
 }
 
 func TestWikilinksInTextReadsALineEndingInACarriageReturn(t *testing.T) {
-	found := markdown.WikilinksInText("[[Kite]]\r\n[[Gnomon]]")
+	found := markdown.FindTextWikilinks("[[Kite]]\r\n[[Gnomon]]")
 
 	if len(found) != 2 || found[1].At != 10 || found[1].Target.String() != "name://Gnomon" {
 		t.Errorf("found %+v", found)

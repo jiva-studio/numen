@@ -34,8 +34,8 @@ export const createVaultStateApi = (vault: WindowClients['vault']) => {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {
         paths: change.paths,
-        shouldReload: change.reload,
-        renamed: change.renamed.map((went) => ({ from: went.from, to: went.to })),
+        shouldReload: change.isReloadRequired,
+        renamed: change.moves.map((went) => ({ from: went.from, to: went.to })),
         versionPaths: change.versionPaths,
       }
     }

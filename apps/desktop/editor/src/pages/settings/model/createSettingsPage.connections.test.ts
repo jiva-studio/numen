@@ -72,7 +72,7 @@ describe('the connections in the settings tab', () => {
   it('give the reason in words when the core refuses a create', async () => {
     vi.spyOn(api.configuration.connection, 'createConnection').mockResolvedValue({
       ok: false,
-      error: { errorCode: 'name_taken', detail: 'Work' },
+      error: { error: 'nameTaken', message: 'Work' },
     })
     const { connections: installed } = createSettings().configured.state.installation
 

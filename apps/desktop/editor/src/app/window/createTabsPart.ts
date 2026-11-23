@@ -9,11 +9,11 @@ import {
   createTabPluginStarts,
   createTabSync,
   createWindowTabs,
-  fileOpeners,
+  createFileOpeners,
   RestoreFailedPane,
   UnavailablePane,
 } from '@/entities/tab'
-import { isSecondaryWindow } from '@/entities/window'
+import { focusWindow, isSecondaryWindow } from '@/entities/window'
 import { createTabLinking, createWindowTabLinkSession } from '@/features/tab-linking'
 import { createMoveAcceptor, createMovedTabStarter } from '@/features/tab-move'
 import { formatError } from '@/shared/api/errors'
@@ -34,7 +34,7 @@ export function createTabsPart(deps: TabsPartDeps) {
   const { tabLinks: tabLinksApi, tabMove } = api.tabs
   const pluginStarts = createTabPluginStarts({
     status,
-    getPlugins: () => deps.rest.state.plugins.value,
+    listPlugins: () => deps.rest.state.plugins.value,
     writeMessage,
   })
   const windowTabs = createWindowTabs(
@@ -58,8 +58,8 @@ export function createTabsPart(deps: TabsPartDeps) {
     isMain,
     writeMessage,
   })
-  const tabOpeners = fileOpeners({
-    fileKinds: api.vault.file.getFileKinds,
+  const tabOpeners = createFileOpeners({
+    readFileKinds: api.vault.file.getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,
@@ -74,6 +74,7 @@ export function createTabsPart(deps: TabsPartDeps) {
     windowTabs,
     closeTab: windowTabs.panes.closeTab,
     acceptMove: createMoveAcceptor(tabMove.acceptTabMove, windowId, reports.waitForReports),
+    focusWindow: () => focusWindow(api.window.frameRuntime),
     writeMessage,
   })
   const linkSession = createWindowTabLinkSession({

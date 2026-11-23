@@ -101,7 +101,7 @@ func splitLines(content string) []string {
 
 func computeEditScript(orig, prop []string) []editItem {
 	table := buildLcsTable(orig, prop)
-	return backtrackEditScript(orig, prop, table)
+	return buildEditScript(orig, prop, table)
 }
 
 func buildLcsTable(orig, prop []string) [][]int {
@@ -125,7 +125,7 @@ func buildLcsTable(orig, prop []string) [][]int {
 	return table
 }
 
-func backtrackEditScript(orig, prop []string, table [][]int) []editItem {
+func buildEditScript(orig, prop []string, table [][]int) []editItem {
 	origLen := len(orig)
 	propLen := len(prop)
 	var script []editItem

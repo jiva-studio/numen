@@ -19,7 +19,7 @@ type Discovered struct {
 func FilterByTarget(plugins []Discovered, target string) []Discovered {
 	var matched []Discovered
 	for _, p := range plugins {
-		if p.Manifest.Supports(target) {
+		if p.Manifest.CanTarget(target) {
 			matched = append(matched, p)
 		}
 	}

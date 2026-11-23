@@ -27,7 +27,7 @@ const getOffset = (doc: Text, place: Place): number => {
   return Math.min(line.from + place.column, line.to)
 }
 
-const difference = (was: Text, now: Text): ChangeSpec => {
+const buildChange = (was: Text, now: Text): ChangeSpec => {
   const before = was.toString()
   const after = now.toString()
   const most = Math.min(before.length, after.length)
@@ -64,7 +64,7 @@ export const replace = (state: EditorState, newText: string): TransactionSpec =>
   )
 
   return {
-    changes: difference(state.doc, now),
+    changes: buildChange(state.doc, now),
     selection: EditorSelection.create(ranges, state.selection.mainIndex),
     annotations: Transaction.addToHistory.of(false),
   }

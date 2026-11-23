@@ -1,11 +1,11 @@
 /** The panes at the top edge and the top corners, for each arrangement of the screen. */
 import { describe, expect, it } from 'vitest'
 import { NO_STRIP_EDGE, findTopPanes, getStripEdge } from './edges'
-import { createWorkspace, split, stack } from '../fixtures/build'
+import { createWorkspace, split, createStack } from '../fixtures/build'
 
 describe('findTopPanes', () => {
   it('gives one pane the top edge and both corners', () => {
-    const workspace = createWorkspace(stack('ledger', 'harvest'))
+    const workspace = createWorkspace(createStack('ledger', 'harvest'))
 
     expect(findTopPanes(workspace)).toStrictEqual({
       top: ['ledger'],
@@ -16,7 +16,11 @@ describe('findTopPanes', () => {
 
   it('gives every pane of a row the top edge, the first the left corner and the last the right', () => {
     const workspace = createWorkspace(
-      split('row', [stack('ledger', 'harvest'), stack('map', 'orchard'), stack('chat', 'agent')]),
+      split('row', [
+        createStack('ledger', 'harvest'),
+        createStack('map', 'orchard'),
+        createStack('chat', 'agent'),
+      ]),
     )
 
     expect(findTopPanes(workspace)).toStrictEqual({
@@ -28,7 +32,7 @@ describe('findTopPanes', () => {
 
   it('gives the first pane of a column the top edge and both corners', () => {
     const workspace = createWorkspace(
-      split('column', [stack('ledger', 'harvest'), stack('log', 'rain')]),
+      split('column', [createStack('ledger', 'harvest'), createStack('log', 'rain')]),
       'vertical',
     )
 
@@ -42,8 +46,8 @@ describe('findTopPanes', () => {
   it('leaves out a pane below another in the right column of a row', () => {
     const workspace = createWorkspace(
       split('row', [
-        stack('ledger', 'harvest'),
-        split('aside', [stack('chat', 'agent'), stack('log', 'rain')]),
+        createStack('ledger', 'harvest'),
+        split('aside', [createStack('chat', 'agent'), createStack('log', 'rain')]),
       ]),
     )
 
@@ -57,8 +61,8 @@ describe('findTopPanes', () => {
   it('takes the corners from the row at the top of a column', () => {
     const workspace = createWorkspace(
       split('column', [
-        split('upper', [stack('ledger', 'harvest'), stack('map', 'orchard')]),
-        stack('log', 'rain'),
+        split('upper', [createStack('ledger', 'harvest'), createStack('map', 'orchard')]),
+        createStack('log', 'rain'),
       ]),
       'vertical',
     )
@@ -73,8 +77,8 @@ describe('findTopPanes', () => {
   it('gives no pane at the bottom of the window the top edge', () => {
     const workspace = createWorkspace(
       split('column', [
-        split('upper', [stack('ledger', 'harvest'), stack('map', 'orchard')]),
-        split('lower', [stack('log', 'rain'), stack('chat', 'agent')]),
+        split('upper', [createStack('ledger', 'harvest'), createStack('map', 'orchard')]),
+        split('lower', [createStack('log', 'rain'), createStack('chat', 'agent')]),
       ]),
       'vertical',
     )
@@ -88,9 +92,9 @@ describe('findTopPanes', () => {
   it('follows the left and the right column down to the panes at the top', () => {
     const workspace = createWorkspace(
       split('row', [
-        split('left', [stack('ledger', 'harvest'), stack('log', 'rain')]),
-        stack('map', 'orchard'),
-        split('right', [stack('chat', 'agent'), stack('notes', 'pruning')]),
+        split('left', [createStack('ledger', 'harvest'), createStack('log', 'rain')]),
+        createStack('map', 'orchard'),
+        split('right', [createStack('chat', 'agent'), createStack('notes', 'pruning')]),
       ]),
     )
 
@@ -104,10 +108,10 @@ describe('findTopPanes', () => {
   it('reads three levels of splits', () => {
     const workspace = createWorkspace(
       split('row', [
-        stack('ledger', 'harvest'),
+        createStack('ledger', 'harvest'),
         split('aside', [
-          split('upper', [stack('map', 'orchard'), stack('chat', 'agent')]),
-          stack('log', 'rain'),
+          split('upper', [createStack('map', 'orchard'), createStack('chat', 'agent')]),
+          createStack('log', 'rain'),
         ]),
       ]),
     )
@@ -123,8 +127,8 @@ describe('findTopPanes', () => {
     const panes = findTopPanes(
       createWorkspace(
         split('row', [
-          stack('ledger', 'harvest'),
-          split('aside', [stack('chat', 'agent'), stack('log', 'rain')]),
+          createStack('ledger', 'harvest'),
+          split('aside', [createStack('chat', 'agent'), createStack('log', 'rain')]),
         ]),
       ),
     )
@@ -145,7 +149,7 @@ describe('findTopPanes', () => {
   })
 
   it('names the empty pane of a window with no tabs', () => {
-    const workspace = createWorkspace(stack('empty'))
+    const workspace = createWorkspace(createStack('empty'))
 
     expect(findTopPanes(workspace)).toStrictEqual({ top: ['empty'], left: 'empty', right: 'empty' })
   })

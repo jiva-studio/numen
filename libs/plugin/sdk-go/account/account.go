@@ -61,11 +61,11 @@ type Client struct {
 
 // NewClient returns the client of the host at the endpoint, sending its calls with the default HTTP client.
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return newClientOver(transport.HTTPClient(), endpoint)
+	return newClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostAccountServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &Client{rpc: numenv1connect.NewHostAccountServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // SignAsDevice returns the signature of the key of this device over the message, 64 bytes, made under the

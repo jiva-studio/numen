@@ -37,7 +37,7 @@ export function summarizeTasks(tasks: readonly BackgroundTask[]): TaskSummary {
 }
 
 /** The tasks newest first: the window lists them oldest first. */
-export function orderTasks(tasks: readonly BackgroundTask[]): readonly BackgroundTask[] {
+export function sortTasks(tasks: readonly BackgroundTask[]): readonly BackgroundTask[] {
   return [...tasks].reverse()
 }
 

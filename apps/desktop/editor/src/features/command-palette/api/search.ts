@@ -50,11 +50,11 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
   }
 
   return {
-    names: async (query, limit, signal) => {
+    searchNames: async (query, limit, signal) => {
       const answer = await askCancellable(signal, (searchId, options) =>
         search.searchNames({ query, limit, searchId }, options),
       )
-      return answer.found.map((one) => ({
+      return answer.matches.map((one) => ({
         path: one.note?.path ?? '',
         title: one.note?.title ?? '',
         heading: one.heading?.text ?? '',
@@ -68,7 +68,7 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
       const answer = await askCancellable(signal, (searchId, options) =>
         search.searchText({ query, limit, mode: modes[mode], searchId }, options),
       )
-      return answer.found.map((one) => ({
+      return answer.results.map((one) => ({
         path: one.path,
         title: one.note?.title ?? '',
         isNote: one.note !== undefined,

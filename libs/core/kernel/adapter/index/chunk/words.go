@@ -17,7 +17,7 @@ import (
 // bm25, best first, within q.Paths when set, else within q.PathPrefixes and q.SourceKinds, at most q.Limit.
 // An expression FTS5 cannot parse returns source.ErrInvalidWords.
 func (q *Search) FindWords(ctx context.Context, vaultID domain.VaultID, query searchquery.WordQuery) ([]searchquery.WordMatch, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -55,7 +55,7 @@ func (q *Search) GetWordScores(ctx context.Context, _ domain.VaultID, expression
 	}
 	ids := make([]int64, len(chunks))
 	for i, id := range chunks {
-		row, err := Row(id)
+		row, err := ParseRow(id)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +85,7 @@ func scanWordMatches(rows *sql.Rows) (_ []searchquery.WordMatch, err error) {
 		if err := rows.Scan(&row, &score); err != nil {
 			return nil, err
 		}
-		out = append(out, searchquery.WordMatch{Chunk: ID(row), Score: score})
+		out = append(out, searchquery.WordMatch{Chunk: FormatID(row), Score: score})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, getWordsError(err)

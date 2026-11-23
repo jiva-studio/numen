@@ -17,7 +17,7 @@ func TestEveryProtocolAndSDKItemHasAConsumer(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace and every TypeScript package")
 	}
-	checkDeadExports(t, load.Workspace(t))
+	checkDeadExports(t, load.LoadWorkspace(t))
 }
 
 func listPlantedFiles() map[string]string {
@@ -377,5 +377,5 @@ func TestDeadExportsWalk_FindsThePlantedItems(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

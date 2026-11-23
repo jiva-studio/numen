@@ -28,7 +28,7 @@ import { openAfterSavingTabs, type TabsHold } from './leaveVault'
  */
 export interface VaultCommandsDeps {
   readonly vaults: Vaults
-  readonly emptyTrash: () => Promise<number>
+  readonly clearTrash: () => Promise<number>
   readonly tabsHold?: TabsHold | undefined
   readonly setVaultName: (vault: VaultRef) => void
   readonly reload: () => void
@@ -73,8 +73,8 @@ const removeVault = async (
   if (!answer.ok) deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
 }
 
-const emptyVaultTrash = async (deps: VaultCommandsDeps): Promise<void> => {
-  const undeleted = await deps.emptyTrash()
+const clearVaultTrash = async (deps: VaultCommandsDeps): Promise<void> => {
+  const undeleted = await deps.clearTrash()
   if (undeleted > 0) deps.writeMessage(VAULT_WORDS.undeleted(undeleted), 'error')
 }
 
@@ -161,6 +161,6 @@ export const createVaultCommands = (deps: VaultCommandsDeps, agent: string): Fea
     [COMMAND.renameVault]: (invocation) => renameVault(invocation, deps),
     [COMMAND.removeVault]: (invocation) => removeVault(invocation, deps, false),
     [COMMAND.eraseVault]: (invocation) => removeVault(invocation, deps, true),
-    [COMMAND.emptyTrash]: () => emptyVaultTrash(deps),
+    [COMMAND.emptyTrash]: () => clearVaultTrash(deps),
   },
 })

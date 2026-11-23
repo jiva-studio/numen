@@ -55,7 +55,7 @@ func getWorkName(work string, link Link, key string) string {
 }
 
 // IsCopyable reports whether something on this machine copies what the address publishes.
-func (l *Links) IsCopyable(parsed address.URL) bool { return l.fetcher().CanCopy(string(parsed)) }
+func (l *Links) IsCopyable(parsed address.URL) bool { return l.getFetcher().CanCopy(string(parsed)) }
 
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
 // published. A failure is current as the task of the work that failed.

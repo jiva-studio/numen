@@ -126,7 +126,7 @@ func (i *Index) drop(path string) bool {
 	defer i.mu.Unlock()
 	known, isKnown := i.entries[path]
 	i.removeEntry(path)
-	return isKnown && !isSame(known, emptyEntry())
+	return isKnown && !isSame(known, newEmptyEntry())
 }
 
 func (i *Index) set(path string, next entry) {
@@ -142,7 +142,7 @@ func isSame(a, b entry) bool {
 	return len(a.tasks) == 0 || reflect.DeepEqual(a.tasks, b.tasks)
 }
 
-func emptyEntry() entry {
+func newEmptyEntry() entry {
 	return entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, tags: nil, isUnreadable: false}
 }
 

@@ -135,7 +135,7 @@ func TestResolveReturnsTheFileTheSearchPatternFindsAsReady(t *testing.T) {
 	server, requests := serveFiles(t, nil)
 	provisioner := newTestProvisioner(t, false)
 	provisioner.cfg.Client = server.Client()
-	provisioner.cfg.Getenv = func(name string) string {
+	provisioner.cfg.GetEnv = func(name string) string {
 		if name == "SAMPLE_HOME" {
 			return filepath.Dir(found)
 		}

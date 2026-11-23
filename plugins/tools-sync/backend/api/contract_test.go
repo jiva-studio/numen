@@ -11,12 +11,12 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		api.MethodListVaults: {Request: func() any { return &api.ListVaultsRequest{} }, Response: func() any { return &api.ListVaultsResponse{} }},
+		api.MethodListVaults: {CreateRequest: func() any { return &api.ListVaultsRequest{} }, CreateResponse: func() any { return &api.ListVaultsResponse{} }},
 		api.MethodListRemoteVaults: {
-			Request: func() any { return &api.ListRemoteVaultsRequest{} }, Response: func() any { return &api.ListRemoteVaultsResponse{} },
+			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
-		api.MethodConnectVault: {Request: func() any { return &api.ConnectVaultRequest{} }, Response: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodGetStatus:    {Request: func() any { return &api.GetStatusRequest{} }, Response: func() any { return &api.GetStatusResponse{} }},
+		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
+		api.MethodGetStatus:    {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
 	}
 }
 

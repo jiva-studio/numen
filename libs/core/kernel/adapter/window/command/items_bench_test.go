@@ -30,7 +30,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Management.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := newUseCases(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.Management.ContentTypes, nil, nil)
+	commands := newUseCases(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.Management.ContentTypes, nil)
 	return newHandler(commands.withVersions(&versionItems{}))
 }
 

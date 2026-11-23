@@ -4,11 +4,7 @@ package plugincommand
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"maps"
 	"slices"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
@@ -16,44 +12,32 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// RunnerOpener opens the command runner over a vault.
-type RunnerOpener = func(ctx context.Context, v domain.Vault) (Run, func() error, error)
+// Runner is the helper that runs a command of a plugin, checked against its declaration, as the container
+// builds and hands it on: the container may import nothing under internal/.
+type Runner struct{ commandrun.Runner }
 
-var (
-	// ErrUnknownCommand is a command no enabled plugin declares.
-	ErrUnknownCommand = errors.New("no enabled plugin declares that command")
-	// ErrBadArguments is arguments or a file that do not meet the declaration.
-	ErrBadArguments = errors.New("the arguments do not meet the command")
-)
+func NewRunner(commands commandrun.Commands, runs commandrun.Runs, types commandrun.ContentTypes, readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions) Runner {
+	var open commandrun.OpenReader
+	if readers != nil {
+		open = func(v domain.Vault) (edit.Reader, error) { return readers.Open(v) }
+	}
+	return Runner{commandrun.New(commands, runs, types, open, config, conditions)}
+}
+
+// RunnerOpener opens the command runner over a vault.
+type RunnerOpener = func(ctx context.Context, v domain.Vault) (Runner, func() error, error)
 
 // NewList makes the scenario that lists the commands the plugins declare and, over points, the slots they
 // draw; points may be nil, which lists none. conditions parses the condition of a command; it is shared
 // with the scenarios that run commands, so one condition is parsed once.
 func NewList(commands PluginCommands, points SlotPoints, conditions *when.Conditions) List {
 	return List{commands: commands, points: points, conditions: conditions}
-}
-
-// NewRun makes the scenario that runs a command in the backend that declares it, over the backends that run
-// them, which may be nothing, the table that gives a file its type, the readers of the vault, which give the type and properties of
-// a note, and the settings a condition reads as config; without settings a condition over config is
-// undecided and holds.
-func NewRun(
-	commands PluginCommands, runs PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions,
-) Run {
-	run := Run{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
-	if readers != nil {
-		run.notes = readingNotes{readers}
-	}
-	if config != nil {
-		run.config = givenConfig{config}
-	}
-	return run
 }
 
 // List lists the commands the enabled plugins declare.
@@ -129,157 +113,6 @@ func (u List) Find(id string) (plugin.CommandEntry, bool) {
 	return plugin.CommandEntry{}, false
 }
 
-// Run runs one command in the backend of the plugin that declares it.
-type Run struct {
-	commands   PluginCommands
-	runs       PluginCommandRuns
-	types      contenttypeport.ContentTypeTable
-	notes      targetNotes
-	config     targetConfig
-	conditions *when.Conditions
-}
-
-// Execute checks the call against the declaration and runs it over the vault; a call of a shared
-// command runs the handler the plugin declares. A call that does not meet the declaration is
-// ErrBadArguments, saying what is wrong, and nothing is run. A call over Paths meets it where each of
-// them does; a path of Paths that holds no file is a removed note, with no note type and no properties.
-func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
-	var entries []plugin.CommandEntry
-	if manifest.IsSharedCommand(call.Command) {
-		entries = u.commands.ListHandlers()
-	} else {
-		entries = u.commands.ListCommands()
-	}
-	if !u.commands.GetParts(call.PluginID).HasBackend {
-		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
-	}
-	index := slices.IndexFunc(entries, func(one plugin.CommandEntry) bool {
-		return one.PluginID == call.PluginID && one.Command.ID == call.Command
-	})
-	if index < 0 {
-		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
-	}
-	declared := entries[index].Command
-	if err := u.checkCall(ctx, v, declared, call); err != nil {
-		return plugin.CommandResult{}, err
-	}
-	normalized := call
-	normalized.Arguments = normalizeArguments(declared, call.Arguments)
-	return u.runs.RunCommand(ctx, normalized)
-}
-
-// IsAvailable reports whether the condition of the command of the entry holds over the path, as a
-// run of it checks; a condition the core cannot decide holds.
-func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry plugin.CommandEntry, path string) bool {
-	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}, false) == nil
-}
-
-func (u Run) checkCall(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
-	if len(call.Paths) == 0 {
-		if err := u.checkPath(ctx, v, declared, call, false); err != nil {
-			return err
-		}
-	}
-	for _, path := range call.Paths {
-		one := call
-		one.Path, one.Paths = path, nil
-		if err := u.checkPath(ctx, v, declared, one, true); err != nil {
-			return err
-		}
-	}
-	return checkArguments(declared, call, hasItems(u.conditions, declared))
-}
-
-func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall, isGoneAllowed bool) error {
-	condition, err := u.conditions.Parse(declared.When)
-	if err != nil {
-		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
-	}
-	if condition.HasItems() && call.Path == "" {
-		return fmt.Errorf("%w: %s needs a file", ErrBadArguments, declared.ID)
-	}
-	target := plugin.NewTargetValues(call.Path, false, u.getContentType(call.Path))
-	values, err := u.readNote(ctx, v, condition, target, call.Path)
-	if isGoneAllowed && errors.Is(err, edit.ErrNotExist) {
-		values, err = target.WithNote("", nil), nil
-	}
-	if err != nil {
-		return fmt.Errorf("read the note %s: %w", call.Path, err)
-	}
-	if slices.Contains(condition.ListNames(), "config") {
-		values = u.config.addConfig(values)
-	}
-	if condition.Evaluate(values.Get()) == when.False {
-		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
-			ErrBadArguments, declared.ID, call.Path, declared.When)
-	}
-	return nil
-}
-
-func checkArguments(declared manifest.Command, call plugin.CommandCall, hasItems bool) error {
-	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
-		if name == manifest.CommandArgumentVersion && hasItems {
-			continue
-		}
-		argument, isDeclared := declared.GetArgument(name)
-		if !isDeclared {
-			return fmt.Errorf("%w: %s takes no argument %q", ErrBadArguments, declared.ID, name)
-		}
-		if !isOfType(argument.Type, call.Arguments[name]) {
-			return fmt.Errorf("%w: %s is a %s, and %q is none", ErrBadArguments, argument.Name, argument.Type, call.Arguments[name])
-		}
-	}
-	for _, argument := range declared.Arguments {
-		if _, isGiven := call.Arguments[argument.Name]; argument.IsRequired && !isGiven {
-			return fmt.Errorf("%w: %s needs %s", ErrBadArguments, declared.ID, argument.Name)
-		}
-	}
-	return nil
-}
-
-func isOfType(argumentType, value string) bool {
-	switch argumentType {
-	case manifest.CommandArgumentNumber:
-		_, err := strconv.ParseFloat(value, 64)
-		return err == nil
-	case manifest.CommandArgumentBoolean:
-		_, err := strconv.ParseBool(value)
-		return err == nil
-	}
-	return true
-}
-
-func normalizeArguments(declared manifest.Command, arguments map[string]string) map[string]string {
-	normalized := make(map[string]string, len(arguments))
-	for name, value := range arguments {
-		if argument, _ := declared.GetArgument(name); argument.Type == manifest.CommandArgumentBoolean {
-			parsed, err := strconv.ParseBool(value)
-			value = strconv.FormatBool(err == nil && parsed)
-		}
-		normalized[name] = value
-	}
-	return normalized
-}
-
-func (u Run) getContentType(path string) domain.ContentType {
-	return u.types.GetContentType(path)
-}
-
-func (u Run) readNote(
-	ctx context.Context, v domain.Vault, condition when.Condition, target plugin.TargetValues, path string,
-) (plugin.TargetValues, error) {
-	names := condition.ListNames()
-	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || !target.IsNote() {
-		return target, nil
-	}
-	return u.notes.addNote(ctx, v, target, path)
-}
-
-func hasItems(conditions *when.Conditions, command manifest.Command) bool {
-	condition, err := conditions.Parse(command.When)
-	return err != nil || condition.HasItems()
-}
-
 // HasTargetVariable reports whether the condition of the command names the target it runs over, so a
 // call names a path.
 func (u List) HasTargetVariable(command manifest.Command) bool {
@@ -300,45 +133,3 @@ func (u ContentTypes) Execute() map[string]string {
 	}
 	return out
 }
-
-// targetNotes adds the type and the properties of a note to the values a condition reads.
-type targetNotes interface {
-	addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error)
-}
-
-type readingNotes struct{ readers vaultport.VaultReaders }
-
-func (n readingNotes) addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error) {
-	reader, err := n.readers.Open(v)
-	if err != nil {
-		return target, err
-	}
-	noteType, properties, err := edit.ReadHead(ctx, reader, path)
-	if err != nil {
-		return target, err
-	}
-	return target.WithNote(noteType, properties), nil
-}
-
-// noNotes leaves a condition over the type or the properties of a note undecided.
-type noNotes struct{}
-
-func (noNotes) addNote(_ context.Context, _ domain.Vault, target plugin.TargetValues, _ string) (plugin.TargetValues, error) {
-	return target, nil
-}
-
-// targetConfig adds the config variable to the values a condition reads.
-type targetConfig interface {
-	addConfig(values plugin.TargetValues) plugin.TargetValues
-}
-
-type givenConfig struct{ config pluginport.WhenConfig }
-
-func (c givenConfig) addConfig(values plugin.TargetValues) plugin.TargetValues {
-	return values.WithConfig(c.config.GetWhenConfig())
-}
-
-// noConfig leaves a condition over config undecided.
-type noConfig struct{}
-
-func (noConfig) addConfig(values plugin.TargetValues) plugin.TargetValues { return values }

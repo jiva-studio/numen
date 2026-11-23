@@ -2,8 +2,8 @@
 // Stryker disable StringLiteral: interface copy
 import { StopReason } from '../../../lib/stop'
 import { formatStopReasonMessage } from '../../../lib/wire/stop'
-import { many, percent } from '@numen/ui'
-import { parseDay, daysBetween } from '../../../lib/day'
+import { formatCount, formatPercent } from '@numen/ui'
+import { parseDay, countDays } from '../../../lib/day'
 
 import { isSpent } from './progress'
 import type { Preset, Settings } from './types'
@@ -26,7 +26,7 @@ export const STOPPED = {
  * The word accompanies the figure.
  */
 export const LEARNED = {
-  share: (of: number) => `${percent(of)} learned`,
+  share: (of: number) => `${formatPercent(of)} learned`,
   /** The preset scheduling the deck could not be read, and the rule is its. */
   unruled: 'no learned rule',
 } as const
@@ -38,7 +38,7 @@ export const LEARNED = {
  * It is the count the session itself will ask, so it is printed as is.
  */
 export const getLeftWords = (one: Preset): string => {
-  if (one.cards > 0) return many(one.cards, 'card')
+  if (one.cards > 0) return formatCount(one.cards, 'card')
   return isSpent(one) ? STOPPED.full : STOPPED.nothing
 }
 
@@ -66,16 +66,16 @@ export const getStoppedWords = (
 export const getGoalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
     case 'retention':
-      return `${percent(settings.retention)} remembered`
+      return `${formatPercent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
-      const daysLeft = daysBetween(today, settings.byDate)
+      const daysLeft = countDays(today, settings.byDate)
       if (daysLeft <= 0) return `by ${getDayWords(settings.byDate)}`
-      return `${many(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
+      return `${formatCount(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':
       if (settings.minutesADay === 0) return formatStopReasonMessage(StopReason.NO_MINUTES)
-      return `${many(settings.minutesADay, 'minute')} a day`
+      return `${formatCount(settings.minutesADay, 'minute')} a day`
   }
 }
 

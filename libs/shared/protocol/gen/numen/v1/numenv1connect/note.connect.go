@@ -64,13 +64,15 @@ const (
 	// NoteServiceSaveConnectionProcedure is the fully-qualified name of the NoteService's
 	// SaveConnection RPC.
 	NoteServiceSaveConnectionProcedure = "/numen.v1.NoteService/SaveConnection"
-	// NoteServiceRemoveSideProcedure is the fully-qualified name of the NoteService's RemoveSide RPC.
-	NoteServiceRemoveSideProcedure = "/numen.v1.NoteService/RemoveSide"
-	// NoteServiceRemoveConnectionProcedure is the fully-qualified name of the NoteService's
-	// RemoveConnection RPC.
-	NoteServiceRemoveConnectionProcedure = "/numen.v1.NoteService/RemoveConnection"
-	// NoteServiceJoinNotesProcedure is the fully-qualified name of the NoteService's JoinNotes RPC.
-	NoteServiceJoinNotesProcedure = "/numen.v1.NoteService/JoinNotes"
+	// NoteServiceDeleteConnectionSideProcedure is the fully-qualified name of the NoteService's
+	// DeleteConnectionSide RPC.
+	NoteServiceDeleteConnectionSideProcedure = "/numen.v1.NoteService/DeleteConnectionSide"
+	// NoteServiceDeleteConnectionProcedure is the fully-qualified name of the NoteService's
+	// DeleteConnection RPC.
+	NoteServiceDeleteConnectionProcedure = "/numen.v1.NoteService/DeleteConnection"
+	// NoteServiceCreateConnectionSideProcedure is the fully-qualified name of the NoteService's
+	// CreateConnectionSide RPC.
+	NoteServiceCreateConnectionSideProcedure = "/numen.v1.NoteService/CreateConnectionSide"
 	// NoteServiceCreateRelatedNoteProcedure is the fully-qualified name of the NoteService's
 	// CreateRelatedNote RPC.
 	NoteServiceCreateRelatedNoteProcedure = "/numen.v1.NoteService/CreateRelatedNote"
@@ -117,14 +119,14 @@ type NoteServiceClient interface {
 	// in both notes or in neither. A connection that would put a note above
 	// itself in the hierarchy is not saved.
 	SaveConnection(context.Context, *connect.Request[v1.SaveConnectionRequest]) (*connect.Response[v1.SaveConnectionResponse], error)
-	// RemoveSide removes the record one note writes about another. The other note
+	// DeleteConnectionSide removes the record one note writes about another. The other note
 	// is left alone.
-	RemoveSide(context.Context, *connect.Request[v1.RemoveSideRequest]) (*connect.Response[v1.RemoveSideResponse], error)
-	// RemoveConnection removes the records two notes write about each other.
-	RemoveConnection(context.Context, *connect.Request[v1.RemoveConnectionRequest]) (*connect.Response[v1.RemoveConnectionResponse], error)
-	// JoinNotes makes one note write a record about another and keeps the record
+	DeleteConnectionSide(context.Context, *connect.Request[v1.DeleteConnectionSideRequest]) (*connect.Response[v1.DeleteConnectionSideResponse], error)
+	// DeleteConnection removes the records two notes write about each other.
+	DeleteConnection(context.Context, *connect.Request[v1.DeleteConnectionRequest]) (*connect.Response[v1.DeleteConnectionResponse], error)
+	// CreateConnectionSide makes one note write a record about another and keeps the record
 	// the other note already writes.
-	JoinNotes(context.Context, *connect.Request[v1.JoinNotesRequest]) (*connect.Response[v1.JoinNotesResponse], error)
+	CreateConnectionSide(context.Context, *connect.Request[v1.CreateConnectionSideRequest]) (*connect.Response[v1.CreateConnectionSideResponse], error)
 	// CreateRelatedNote makes a note joined to an existing one. The new note
 	// writes the record about the existing note, with the inverse role, and is
 	// filed in the folder of the existing note.
@@ -207,22 +209,22 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("SaveConnection")),
 			connect.WithClientOptions(opts...),
 		),
-		removeSide: connect.NewClient[v1.RemoveSideRequest, v1.RemoveSideResponse](
+		deleteConnectionSide: connect.NewClient[v1.DeleteConnectionSideRequest, v1.DeleteConnectionSideResponse](
 			httpClient,
-			baseURL+NoteServiceRemoveSideProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("RemoveSide")),
+			baseURL+NoteServiceDeleteConnectionSideProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("DeleteConnectionSide")),
 			connect.WithClientOptions(opts...),
 		),
-		removeConnection: connect.NewClient[v1.RemoveConnectionRequest, v1.RemoveConnectionResponse](
+		deleteConnection: connect.NewClient[v1.DeleteConnectionRequest, v1.DeleteConnectionResponse](
 			httpClient,
-			baseURL+NoteServiceRemoveConnectionProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("RemoveConnection")),
+			baseURL+NoteServiceDeleteConnectionProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("DeleteConnection")),
 			connect.WithClientOptions(opts...),
 		),
-		joinNotes: connect.NewClient[v1.JoinNotesRequest, v1.JoinNotesResponse](
+		createConnectionSide: connect.NewClient[v1.CreateConnectionSideRequest, v1.CreateConnectionSideResponse](
 			httpClient,
-			baseURL+NoteServiceJoinNotesProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("JoinNotes")),
+			baseURL+NoteServiceCreateConnectionSideProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("CreateConnectionSide")),
 			connect.WithClientOptions(opts...),
 		),
 		createRelatedNote: connect.NewClient[v1.CreateRelatedNoteRequest, v1.CreateRelatedNoteResponse](
@@ -254,22 +256,22 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // noteServiceClient implements NoteServiceClient.
 type noteServiceClient struct {
-	getOpeningNote    *connect.Client[v1.GetOpeningNoteRequest, v1.GetOpeningNoteResponse]
-	listRelatedNotes  *connect.Client[v1.ListRelatedNotesRequest, v1.ListRelatedNotesResponse]
-	resolveAddresses  *connect.Client[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse]
-	listHeadings      *connect.Client[v1.ListHeadingsRequest, v1.ListHeadingsResponse]
-	readNote          *connect.Client[v1.ReadNoteRequest, v1.ReadNoteResponse]
-	writeNote         *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
-	createNote        *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
-	getConnection     *connect.Client[v1.GetConnectionRequest, v1.GetConnectionResponse]
-	saveConnection    *connect.Client[v1.SaveConnectionRequest, v1.SaveConnectionResponse]
-	removeSide        *connect.Client[v1.RemoveSideRequest, v1.RemoveSideResponse]
-	removeConnection  *connect.Client[v1.RemoveConnectionRequest, v1.RemoveConnectionResponse]
-	joinNotes         *connect.Client[v1.JoinNotesRequest, v1.JoinNotesResponse]
-	createRelatedNote *connect.Client[v1.CreateRelatedNoteRequest, v1.CreateRelatedNoteResponse]
-	listBacklinks     *connect.Client[v1.ListBacklinksRequest, v1.ListBacklinksResponse]
-	renameNote        *connect.Client[v1.RenameNoteRequest, v1.RenameNoteResponse]
-	watchEdits        *connect.Client[v1.WatchEditsRequest, v1.WatchEditsResponse]
+	getOpeningNote       *connect.Client[v1.GetOpeningNoteRequest, v1.GetOpeningNoteResponse]
+	listRelatedNotes     *connect.Client[v1.ListRelatedNotesRequest, v1.ListRelatedNotesResponse]
+	resolveAddresses     *connect.Client[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse]
+	listHeadings         *connect.Client[v1.ListHeadingsRequest, v1.ListHeadingsResponse]
+	readNote             *connect.Client[v1.ReadNoteRequest, v1.ReadNoteResponse]
+	writeNote            *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
+	createNote           *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
+	getConnection        *connect.Client[v1.GetConnectionRequest, v1.GetConnectionResponse]
+	saveConnection       *connect.Client[v1.SaveConnectionRequest, v1.SaveConnectionResponse]
+	deleteConnectionSide *connect.Client[v1.DeleteConnectionSideRequest, v1.DeleteConnectionSideResponse]
+	deleteConnection     *connect.Client[v1.DeleteConnectionRequest, v1.DeleteConnectionResponse]
+	createConnectionSide *connect.Client[v1.CreateConnectionSideRequest, v1.CreateConnectionSideResponse]
+	createRelatedNote    *connect.Client[v1.CreateRelatedNoteRequest, v1.CreateRelatedNoteResponse]
+	listBacklinks        *connect.Client[v1.ListBacklinksRequest, v1.ListBacklinksResponse]
+	renameNote           *connect.Client[v1.RenameNoteRequest, v1.RenameNoteResponse]
+	watchEdits           *connect.Client[v1.WatchEditsRequest, v1.WatchEditsResponse]
 }
 
 // GetOpeningNote calls numen.v1.NoteService.GetOpeningNote.
@@ -317,19 +319,19 @@ func (c *noteServiceClient) SaveConnection(ctx context.Context, req *connect.Req
 	return c.saveConnection.CallUnary(ctx, req)
 }
 
-// RemoveSide calls numen.v1.NoteService.RemoveSide.
-func (c *noteServiceClient) RemoveSide(ctx context.Context, req *connect.Request[v1.RemoveSideRequest]) (*connect.Response[v1.RemoveSideResponse], error) {
-	return c.removeSide.CallUnary(ctx, req)
+// DeleteConnectionSide calls numen.v1.NoteService.DeleteConnectionSide.
+func (c *noteServiceClient) DeleteConnectionSide(ctx context.Context, req *connect.Request[v1.DeleteConnectionSideRequest]) (*connect.Response[v1.DeleteConnectionSideResponse], error) {
+	return c.deleteConnectionSide.CallUnary(ctx, req)
 }
 
-// RemoveConnection calls numen.v1.NoteService.RemoveConnection.
-func (c *noteServiceClient) RemoveConnection(ctx context.Context, req *connect.Request[v1.RemoveConnectionRequest]) (*connect.Response[v1.RemoveConnectionResponse], error) {
-	return c.removeConnection.CallUnary(ctx, req)
+// DeleteConnection calls numen.v1.NoteService.DeleteConnection.
+func (c *noteServiceClient) DeleteConnection(ctx context.Context, req *connect.Request[v1.DeleteConnectionRequest]) (*connect.Response[v1.DeleteConnectionResponse], error) {
+	return c.deleteConnection.CallUnary(ctx, req)
 }
 
-// JoinNotes calls numen.v1.NoteService.JoinNotes.
-func (c *noteServiceClient) JoinNotes(ctx context.Context, req *connect.Request[v1.JoinNotesRequest]) (*connect.Response[v1.JoinNotesResponse], error) {
-	return c.joinNotes.CallUnary(ctx, req)
+// CreateConnectionSide calls numen.v1.NoteService.CreateConnectionSide.
+func (c *noteServiceClient) CreateConnectionSide(ctx context.Context, req *connect.Request[v1.CreateConnectionSideRequest]) (*connect.Response[v1.CreateConnectionSideResponse], error) {
+	return c.createConnectionSide.CallUnary(ctx, req)
 }
 
 // CreateRelatedNote calls numen.v1.NoteService.CreateRelatedNote.
@@ -386,14 +388,14 @@ type NoteServiceHandler interface {
 	// in both notes or in neither. A connection that would put a note above
 	// itself in the hierarchy is not saved.
 	SaveConnection(context.Context, *connect.Request[v1.SaveConnectionRequest]) (*connect.Response[v1.SaveConnectionResponse], error)
-	// RemoveSide removes the record one note writes about another. The other note
+	// DeleteConnectionSide removes the record one note writes about another. The other note
 	// is left alone.
-	RemoveSide(context.Context, *connect.Request[v1.RemoveSideRequest]) (*connect.Response[v1.RemoveSideResponse], error)
-	// RemoveConnection removes the records two notes write about each other.
-	RemoveConnection(context.Context, *connect.Request[v1.RemoveConnectionRequest]) (*connect.Response[v1.RemoveConnectionResponse], error)
-	// JoinNotes makes one note write a record about another and keeps the record
+	DeleteConnectionSide(context.Context, *connect.Request[v1.DeleteConnectionSideRequest]) (*connect.Response[v1.DeleteConnectionSideResponse], error)
+	// DeleteConnection removes the records two notes write about each other.
+	DeleteConnection(context.Context, *connect.Request[v1.DeleteConnectionRequest]) (*connect.Response[v1.DeleteConnectionResponse], error)
+	// CreateConnectionSide makes one note write a record about another and keeps the record
 	// the other note already writes.
-	JoinNotes(context.Context, *connect.Request[v1.JoinNotesRequest]) (*connect.Response[v1.JoinNotesResponse], error)
+	CreateConnectionSide(context.Context, *connect.Request[v1.CreateConnectionSideRequest]) (*connect.Response[v1.CreateConnectionSideResponse], error)
 	// CreateRelatedNote makes a note joined to an existing one. The new note
 	// writes the record about the existing note, with the inverse role, and is
 	// filed in the folder of the existing note.
@@ -472,22 +474,22 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("SaveConnection")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceRemoveSideHandler := connect.NewUnaryHandler(
-		NoteServiceRemoveSideProcedure,
-		svc.RemoveSide,
-		connect.WithSchema(noteServiceMethods.ByName("RemoveSide")),
+	noteServiceDeleteConnectionSideHandler := connect.NewUnaryHandler(
+		NoteServiceDeleteConnectionSideProcedure,
+		svc.DeleteConnectionSide,
+		connect.WithSchema(noteServiceMethods.ByName("DeleteConnectionSide")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceRemoveConnectionHandler := connect.NewUnaryHandler(
-		NoteServiceRemoveConnectionProcedure,
-		svc.RemoveConnection,
-		connect.WithSchema(noteServiceMethods.ByName("RemoveConnection")),
+	noteServiceDeleteConnectionHandler := connect.NewUnaryHandler(
+		NoteServiceDeleteConnectionProcedure,
+		svc.DeleteConnection,
+		connect.WithSchema(noteServiceMethods.ByName("DeleteConnection")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceJoinNotesHandler := connect.NewUnaryHandler(
-		NoteServiceJoinNotesProcedure,
-		svc.JoinNotes,
-		connect.WithSchema(noteServiceMethods.ByName("JoinNotes")),
+	noteServiceCreateConnectionSideHandler := connect.NewUnaryHandler(
+		NoteServiceCreateConnectionSideProcedure,
+		svc.CreateConnectionSide,
+		connect.WithSchema(noteServiceMethods.ByName("CreateConnectionSide")),
 		connect.WithHandlerOptions(opts...),
 	)
 	noteServiceCreateRelatedNoteHandler := connect.NewUnaryHandler(
@@ -534,12 +536,12 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceGetConnectionHandler.ServeHTTP(w, r)
 		case NoteServiceSaveConnectionProcedure:
 			noteServiceSaveConnectionHandler.ServeHTTP(w, r)
-		case NoteServiceRemoveSideProcedure:
-			noteServiceRemoveSideHandler.ServeHTTP(w, r)
-		case NoteServiceRemoveConnectionProcedure:
-			noteServiceRemoveConnectionHandler.ServeHTTP(w, r)
-		case NoteServiceJoinNotesProcedure:
-			noteServiceJoinNotesHandler.ServeHTTP(w, r)
+		case NoteServiceDeleteConnectionSideProcedure:
+			noteServiceDeleteConnectionSideHandler.ServeHTTP(w, r)
+		case NoteServiceDeleteConnectionProcedure:
+			noteServiceDeleteConnectionHandler.ServeHTTP(w, r)
+		case NoteServiceCreateConnectionSideProcedure:
+			noteServiceCreateConnectionSideHandler.ServeHTTP(w, r)
 		case NoteServiceCreateRelatedNoteProcedure:
 			noteServiceCreateRelatedNoteHandler.ServeHTTP(w, r)
 		case NoteServiceListBacklinksProcedure:
@@ -593,16 +595,16 @@ func (UnimplementedNoteServiceHandler) SaveConnection(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.SaveConnection is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) RemoveSide(context.Context, *connect.Request[v1.RemoveSideRequest]) (*connect.Response[v1.RemoveSideResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.RemoveSide is not implemented"))
+func (UnimplementedNoteServiceHandler) DeleteConnectionSide(context.Context, *connect.Request[v1.DeleteConnectionSideRequest]) (*connect.Response[v1.DeleteConnectionSideResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.DeleteConnectionSide is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) RemoveConnection(context.Context, *connect.Request[v1.RemoveConnectionRequest]) (*connect.Response[v1.RemoveConnectionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.RemoveConnection is not implemented"))
+func (UnimplementedNoteServiceHandler) DeleteConnection(context.Context, *connect.Request[v1.DeleteConnectionRequest]) (*connect.Response[v1.DeleteConnectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.DeleteConnection is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) JoinNotes(context.Context, *connect.Request[v1.JoinNotesRequest]) (*connect.Response[v1.JoinNotesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.JoinNotes is not implemented"))
+func (UnimplementedNoteServiceHandler) CreateConnectionSide(context.Context, *connect.Request[v1.CreateConnectionSideRequest]) (*connect.Response[v1.CreateConnectionSideResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.CreateConnectionSide is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) CreateRelatedNote(context.Context, *connect.Request[v1.CreateRelatedNoteRequest]) (*connect.Response[v1.CreateRelatedNoteResponse], error) {

@@ -57,7 +57,7 @@ type stubLinkQueries struct {
 	backlinks    map[string][]domain.ResolvedLink
 }
 
-func (s stubLinkQueries) GetLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.linksErr != nil {
 		return nil, s.linksErr
 	}
@@ -68,7 +68,7 @@ func (s stubLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, [
 	return nil, nil
 }
 
-func (s stubLinkQueries) GetBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.backlinksErr != nil {
 		return nil, s.backlinksErr
 	}
@@ -92,7 +92,7 @@ func (s stubNoteQueries) Has(_ context.Context, _ domain.VaultID) (bool, error) 
 	return s.has, s.hasErr
 }
 
-func (s stubNoteQueries) GetPathsOfType(
+func (s stubNoteQueries) ListPathsOfType(
 	_ context.Context, _ domain.VaultID, kind domain.NoteType,
 ) ([]string, error) {
 	if err := s.pathsErr[kind]; err != nil {
@@ -119,7 +119,7 @@ func (s stubNoteQueries) GetTypes(
 	return s.types, nil
 }
 
-func (s stubNoteQueries) GetNamedPaths(
+func (s stubNoteQueries) ListNamedPaths(
 	_ context.Context, _ domain.VaultID, name string,
 ) ([]string, error) {
 	if s.namesErr != nil {
@@ -137,7 +137,7 @@ type stubProblemQueries struct {
 	problems []domain.VaultProblem
 }
 
-func (s stubProblemQueries) GetParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
+func (s stubProblemQueries) ListParseProblems(_ context.Context, _ domain.VaultID) ([]domain.VaultProblem, error) {
 	return s.problems, s.err
 }
 
@@ -222,13 +222,13 @@ func TestBudgetInternals(t *testing.T) {
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/B.md"}
 	if _, err := getBudgets(ctx, v, budgetInputs{
-		reads:       readsErr,
-		day:         day,
-		reviewCards: []ReviewCard{c1},
-		schedules:   map[review.CardID]review.Schedule{},
-		delta:       review.NewFSRS(),
-		pos:         newSchedulerAt,
-		now:         now,
+		reads:        readsErr,
+		day:          day,
+		reviewCards:  []ReviewCard{c1},
+		schedules:    map[review.CardID]review.Schedule{},
+		delta:        review.NewFSRS(),
+		getScheduler: newSchedulerAt,
+		now:          now,
 	}); !errors.Is(err, errLinks) {
 		t.Fatalf("expected links error from getBudgets, got %v", err)
 	}
@@ -248,13 +248,13 @@ func TestBudgetInternals(t *testing.T) {
 		Day:     day,
 	})
 	b, err := getBudgets(ctx, env.Vault, budgetInputs{
-		reads:       deckPresets.Execute(),
-		day:         day,
-		reviewCards: []ReviewCard{c1, c2},
-		schedules:   map[review.CardID]review.Schedule{},
-		delta:       review.NewFSRS(),
-		pos:         newSchedulerAt,
-		now:         now,
+		reads:        deckPresets.Execute(),
+		day:          day,
+		reviewCards:  []ReviewCard{c1, c2},
+		schedules:    map[review.CardID]review.Schedule{},
+		delta:        review.NewFSRS(),
+		getScheduler: newSchedulerAt,
+		now:          now,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -282,13 +282,13 @@ func TestBudgetInternals(t *testing.T) {
 		Day:     day,
 	})
 	bNear, err := getBudgets(ctx, envNear.Vault, budgetInputs{
-		reads:       presetsNear.Execute(),
-		day:         day,
-		reviewCards: []ReviewCard{c1, c2},
-		schedules:   map[review.CardID]review.Schedule{},
-		delta:       review.NewFSRS(),
-		pos:         newSchedulerAt,
-		now:         now,
+		reads:        presetsNear.Execute(),
+		day:          day,
+		reviewCards:  []ReviewCard{c1, c2},
+		schedules:    map[review.CardID]review.Schedule{},
+		delta:        review.NewFSRS(),
+		getScheduler: newSchedulerAt,
+		now:          now,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -298,7 +298,7 @@ func TestBudgetInternals(t *testing.T) {
 			bNear.allowances["DatePreset.md"].admits.Keeps.New)
 	}
 
-	totals := sumSpentByPreset(map[string]review.Spent{
+	totals := groupSpentByPreset(map[string]review.Spent{
 		"decks/A.md": {Answered: 2, New: 1, Reviews: 3, Took: 5 * time.Second},
 		"decks/B.md": {Answered: 4, New: 2, Reviews: 6, Took: 7 * time.Second},
 	}, map[string]string{
@@ -322,10 +322,10 @@ func TestBudgetInternals(t *testing.T) {
 			},
 		},
 	}
-	if bCharge.charge(share, c1.ID, false) {
+	if bCharge.applyCharge(share, c1.ID, false) {
 		t.Fatal("expected false charging card with missing preset")
 	}
-	if bCharge.charge(share, c2.ID, false) {
+	if bCharge.applyCharge(share, c2.ID, false) {
 		t.Fatal("expected false charging card with paused preset")
 	}
 
@@ -415,14 +415,14 @@ func TestBudgetInternals(t *testing.T) {
 	if _, hasC := collected.shares["02-active.md"]["decks/C.md"]; !hasC {
 		t.Fatal("expected deck with prior activity in shares")
 	}
-	alloc := bSpend.spend([]ReviewCard{c2}, []ReviewCard{c1})
+	alloc := bSpend.recordSpend([]ReviewCard{c2}, []ReviewCard{c1})
 	if !alloc.dueCards[0] || alloc.newCards[0] {
 		t.Fatalf("expected active preset card allocated and paused skipped, got %+v", alloc)
 	}
 
 	emptyShare := &deckShare{deck: "decks/C.md", dueIndex: 5, newIndex: 5}
 	emptyAlloc := budgetAllocation{}
-	bSpend.spendPreset(bSpend.allowances["02-active.md"], []*deckShare{emptyShare}, nil, nil, &emptyAlloc)
+	bSpend.computePresetAllocation(bSpend.allowances["02-active.md"], []*deckShare{emptyShare}, nil, nil, &emptyAlloc)
 	if emptyShare.dueIndex != 0 || emptyShare.newIndex != 0 {
 		t.Fatalf("expected spendPreset to reset dueIndex and newIndex to 0, got %d, %d",
 			emptyShare.dueIndex, emptyShare.newIndex)
@@ -620,13 +620,13 @@ type cancelingNoteQueries struct {
 	cancel context.CancelFunc
 }
 
-func (c cancelingNoteQueries) GetPathsOfType(
+func (c cancelingNoteQueries) ListPathsOfType(
 	ctx context.Context, id domain.VaultID, kind domain.NoteType,
 ) ([]string, error) {
 	if c.cancel != nil {
 		c.cancel()
 	}
-	return c.stubNoteQueries.GetPathsOfType(ctx, id, kind)
+	return c.stubNoteQueries.ListPathsOfType(ctx, id, kind)
 }
 
 type cancelingScheduleStore struct {
@@ -878,11 +878,11 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	pc := NewProjectCurve(ListReviewCards{}, Schedules{}, presets.OpenReads{}, day, newFakeClock(now))
-	if pc.Cores != 0 || pc.By != nil {
+	if pc.Cores != 0 || pc.GetScheduler != nil {
 		t.Fatalf("expected Cores=0 and By=nil from NewProjectCurve, got %+v", pc)
 	}
 
-	goalDatePreset := review.Defaults()
+	goalDatePreset := review.NewDefaultPreset()
 	goalDatePreset.Goal = review.GoalDate
 	goalDatePreset.By = time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
 	if err := checkGoal(goalDatePreset); err != nil {
@@ -964,7 +964,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	}
 	calledBy := false
 	pcCustom := pc
-	pcCustom.By = func(retention float64) review.Scheduler {
+	pcCustom.GetScheduler = func(retention float64) review.Scheduler {
 		calledBy = true
 		return review.NewFSRSAt(retention)
 	}
@@ -978,7 +978,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	rcEnv := NewListReviewCards(env.Ports.Readers, env.Queries, cards.NewRead(env.Ports.Readers, env.Queries))
 	schedLogErr := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), day, rcEnv, deckPresets)
 	if _, err := NewProjectCurve(rcEnv, schedLogErr, deckPresets, day, newFakeClock(now)).Execute(
-		ctx, env.Vault, "P.md", review.Defaults(),
+		ctx, env.Vault, "P.md", review.NewDefaultPreset(),
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected log error in ProjectCurve.Execute, got %v", err)
 	}
@@ -994,7 +994,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	})
 	schedLinkFail := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, presetsLinkFail)
 	if _, err := NewProjectCurve(rcEnv, schedLinkFail, presetsLinkFail, day, newFakeClock(now)).Execute(
-		ctx, env.Vault, "", review.Defaults(),
+		ctx, env.Vault, "", review.NewDefaultPreset(),
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected assignment error in ProjectCurve.Execute, got %v", err)
 	}
@@ -1015,7 +1015,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 
 	schedEmptyDeck := NewSchedules(envEmptyDeck.Ports.Logs, review.NewFSRS(), day, rcEmptyDeck, presetsEmptyFail)
 	if _, err := NewProjectCurve(rcEmptyDeck, schedEmptyDeck, presetsEmptyFail, day, newFakeClock(now)).Execute(
-		ctx, envEmptyDeck.Vault, "", review.Defaults(),
+		ctx, envEmptyDeck.Vault, "", review.NewDefaultPreset(),
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected countPointingDecks error in ProjectCurve.Execute, got %v", err)
 	}
@@ -1025,7 +1025,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	cancel()
 	schedEnv := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, deckPresets)
 	if _, err := NewProjectCurve(rcEnv, schedEnv, deckPresets, day, newFakeClock(now)).Execute(
-		ctxCancel, env.Vault, "P.md", review.Defaults(),
+		ctxCancel, env.Vault, "P.md", review.NewDefaultPreset(),
 	); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled from run.Curve in ProjectCurve.Execute, got %v", err)
 	}
@@ -1041,7 +1041,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	gotCurve, err := NewProjectCurve(rcEnv, schedEnv, deckPresets, day, newFakeClock(now)).Execute(
-		ctx, env.Vault, "P.md", review.Defaults(),
+		ctx, env.Vault, "P.md", review.NewDefaultPreset(),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1123,7 +1123,7 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	v := domain.Vault{ID: "v1"}
 	errBoom := errors.New("boom")
 
-	// Test AssignCardIDs: nil notes, GetPathsOfType error, deck read error followed by valid deck.
+	// Test AssignCardIDs: nil notes, ListPathsOfType error, deck read error followed by valid deck.
 	ac := NewAssignCardIDs(nil, nil, nil)
 	resNil, err := ac.Execute(ctx, v)
 	if err != nil || len(resNil.Unwritten) != 0 {
@@ -1131,7 +1131,7 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	}
 	acErr := NewAssignCardIDs(stubNoteQueries{pathsErr: map[domain.NoteType]error{format.TypeDeck: errBoom}}, nil, nil)
 	if _, err := acErr.Execute(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetPathsOfType error from AssignCardIDs, got %v", err)
+		t.Fatalf("expected ListPathsOfType error from AssignCardIDs, got %v", err)
 	}
 	acReadErr := NewAssignCardIDs(
 		stubNoteQueries{paths: map[domain.NoteType][]string{format.TypeDeck: {"Broken.md"}}},
@@ -1445,7 +1445,7 @@ func TestUseCasesSchedulesAndSessionInternals(t *testing.T) {
 	if scheduleSet.Schedules.Cache != schedCache || countSet.Counted.Cache != dayCountCache {
 		t.Fatal("expected Schedules.Cache and Counted.Cache wired")
 	}
-	if scheduleSet.Schedules.At == nil || scheduleSet.Curves.By == nil || scheduleSet.Schedules.scheduler == nil {
+	if scheduleSet.Schedules.GetScheduler == nil || scheduleSet.Curves.GetScheduler == nil || scheduleSet.Schedules.scheduler == nil {
 		t.Fatal("expected custom Scheduler wired to Schedules and Curves")
 	}
 

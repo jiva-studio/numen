@@ -49,7 +49,7 @@ const createLoader = (activations: Record<string, number> = {}, options: LoaderO
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!
       return new Response(String(url).endsWith('.css') ? '' : JSON.stringify(MANIFESTS[id]))
     }) as unknown as typeof fetch,
-    dynamicImport: async (url: string) => {
+    importModule: async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => url.includes(`/${one}/`))!
       return {
         activate: async () => {

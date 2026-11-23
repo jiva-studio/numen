@@ -12,7 +12,7 @@ import {
   type VNodeChild,
 } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { getPluginStyle } from '../../styles'
+import type { PluginStyles } from '../../styles'
 import { adoptHostStyles, parseStatePath, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './paneHost'
 
 type AsyncComponentRegistration = {
@@ -109,6 +109,7 @@ export function renderFallback(pluginId: string, error: Error) {
 export interface PaneContentDeps {
   readonly pluginId: string
   readonly component: Component | null
+  readonly styles: PluginStyles
   readonly state: object
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
@@ -128,7 +129,7 @@ export function renderPaneContent(deps: PaneContentDeps) {
     state: deps.state,
     ...(deps.context ? { context: deps.context } : {}),
   })
-  const styleUrl = deps.hasAdoptedStyle ? undefined : getPluginStyle(deps.pluginId)
+  const styleUrl = deps.hasAdoptedStyle ? undefined : deps.styles.getUrl(deps.pluginId)
   const styleNode = styleUrl
     ? h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': deps.pluginId })
     : null

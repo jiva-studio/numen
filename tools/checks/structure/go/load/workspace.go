@@ -23,9 +23,9 @@ func (w WorkspacePackages) ListModule(t *testing.T, dir string) []*packages.Pack
 	return pkgs
 }
 
-// Workspace loads and type-checks the modules of the workspace named by their path from the repository
+// LoadWorkspace loads and type-checks the modules of the workspace named by their path from the repository
 // root, or every module when none is named.
-func Workspace(t *testing.T, modules ...string) WorkspacePackages {
+func LoadWorkspace(t *testing.T, modules ...string) WorkspacePackages {
 	t.Helper()
 	return loadWorkspace(t, nil, modules)
 }
@@ -42,7 +42,7 @@ func loadWorkspace(t *testing.T, env []string, modules []string) WorkspacePackag
 	if len(modules) > 0 {
 		dirs = nil
 		for _, rel := range modules {
-			dirs = append(dirs, absoluteDir(t, rel))
+			dirs = append(dirs, getAbsoluteDir(t, rel))
 		}
 	}
 	var (
@@ -77,7 +77,7 @@ func IsTestVariant(pkg *packages.Package) bool {
 	return strings.Contains(pkg.ID, " [") || strings.HasSuffix(pkg.ID, ".test")
 }
 
-func absoluteDir(t *testing.T, rel string) string {
+func getAbsoluteDir(t *testing.T, rel string) string {
 	t.Helper()
 	dir, err := filepath.Abs(filepath.Join(RepoRootDir, rel))
 	if err != nil {

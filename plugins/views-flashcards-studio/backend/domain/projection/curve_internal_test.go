@@ -69,23 +69,23 @@ func TestGridHelpers(t *testing.T) {
 
 	// snap bounds and tie-breaking.
 	grid := []float64{10, 20, 30}
-	snap(grid, 99, -1, 2)
-	snap(grid, 99, 0, 3)
-	snap(grid, 99, 2, 1)
+	setNearestCell(grid, 99, -1, 2)
+	setNearestCell(grid, 99, 0, 3)
+	setNearestCell(grid, 99, 2, 1)
 	if !slices.Equal(grid, []float64{10, 20, 30}) {
 		t.Fatalf("snap out-of-bounds modified grid: %v", grid)
 	}
-	snap(grid, 25, 1, 1)
+	setNearestCell(grid, 25, 1, 1)
 	if !slices.Equal(grid, []float64{10, 25, 30}) {
 		t.Fatalf("snap first==last = %v, want [10 25 30]", grid)
 	}
 	grid = []float64{10, 20, 30}
-	snap(grid, 15, 0, 2)
+	setNearestCell(grid, 15, 0, 2)
 	if !slices.Equal(grid, []float64{15, 20, 30}) {
 		t.Fatalf("snap tie = %v, want [15 20 30]", grid)
 	}
 	grid = []float64{10, 20, 30}
-	snap(grid, 28, 0, 2)
+	setNearestCell(grid, 28, 0, 2)
 	if !slices.Equal(grid, []float64{10, 20, 28}) {
 		t.Fatalf("snap last index = %v, want [10 20 28]", grid)
 	}
@@ -103,13 +103,13 @@ func TestProjectionMethodsAndDateSuggestions(t *testing.T) {
 		Backlog:     []int{3, 2, 1},
 		Through:     []float64{0.79, 0.80, 0.85},
 	}
-	if got := p.minutesADay(0); got != 0 {
+	if got := p.computeMinutesADay(0); got != 0 {
 		t.Fatalf("minutesADay(0) = %v, want 0", got)
 	}
-	if got := p.minutesADay(1); got != 12 {
+	if got := p.computeMinutesADay(1); got != 12 {
 		t.Fatalf("minutesADay(1) = %v, want 12", got)
 	}
-	if got := p.minutesADay(2); got != 21 {
+	if got := p.computeMinutesADay(2); got != 21 {
 		t.Fatalf("minutesADay(2) = %v, want 21", got)
 	}
 
@@ -126,7 +126,7 @@ func TestProjectionMethodsAndDateSuggestions(t *testing.T) {
 		t.Fatal("expected day 2 (0.85 >= 0.80) to be all learned")
 	}
 
-	if day, ok := p.Session(); !ok || day != 1 {
+	if day, ok := p.FindSession(); !ok || day != 1 {
 		t.Fatalf("Session() = (%d, %v), want (1, true)", day, ok)
 	}
 	pausedProj := Projection{
@@ -140,13 +140,13 @@ func TestProjectionMethodsAndDateSuggestions(t *testing.T) {
 		Backlog:     []int{4},
 		Through:     []float64{0.5},
 	}
-	if day, ok := pausedProj.Session(); ok || day != 0 {
+	if day, ok := pausedProj.FindSession(); ok || day != 0 {
 		t.Fatalf("paused Session() = (%d, %v), want (0, false)", day, ok)
 	}
 	if got := getSessionClosed(pausedProj); !slices.Equal(got, BudgetNames{ClosedPaused}) {
 		t.Fatalf("getSessionClosed(paused) = %v, want [paused]", got)
 	}
-	if got := session(pausedProj); got.Reviews != 7 || got.Minutes != 15 {
+	if got := buildSessionPoint(pausedProj); got.Reviews != 7 || got.Minutes != 15 {
 		t.Fatalf("session(paused) = %+v, want Reviews=7 Minutes=15", got)
 	}
 	if got := getSessionMinutes(pausedProj); got != 0 {

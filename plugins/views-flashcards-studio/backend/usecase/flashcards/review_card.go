@@ -92,7 +92,7 @@ func (u ListReviewCards) GetDeckPaths(ctx context.Context, v domain.Vault) ([]st
 	if !target {
 		return nil, ErrNotCarried
 	}
-	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	return u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
 // GetReviewCards returns the review cards of the decks at paths, in the order of paths. A
@@ -181,7 +181,7 @@ func (u ListReviewCards) getCachedCards(
 func (u ListReviewCards) parseDeck(
 	ctx context.Context, v domain.Vault, path string, epoch uint64, cardModels *cardModelMemo,
 ) []ReviewCard {
-	deck, err := cardModels.read.Deck(ctx, v, path)
+	deck, err := cardModels.read.ReadDeck(ctx, v, path)
 	if err != nil || deck.Outcome != edit.Ok {
 		return nil
 	}
@@ -222,7 +222,7 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 		cardModel: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil},
 		stat:      domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, isWhole: false,
 	}
-	one, err := m.read.CardModel(ctx, v, path)
+	one, err := m.read.ReadCardModel(ctx, v, path)
 	if err == nil && one.Outcome == edit.Ok && one.Type == format.TypeCardModel {
 		out = cardModelRead{cardModel: one.Body, stat: one.FileStat, isWhole: true}
 	}
@@ -422,13 +422,13 @@ func (c *reviewCardCache) invalidate(vault domain.VaultID, paths []string) {
 		if key.vault != vault {
 			continue
 		}
-		if slices.Contains(paths, key.path) || usesAny(getEntry(item).cardModels, paths) {
+		if slices.Contains(paths, key.path) || hasAnyCardModel(getEntry(item).cardModels, paths) {
 			c.removeElement(item)
 		}
 	}
 }
 
-func usesAny(cardModels map[string]domain.FileStat, paths []string) bool {
+func hasAnyCardModel(cardModels map[string]domain.FileStat, paths []string) bool {
 	for _, path := range paths {
 		if _, target := cardModels[path]; target {
 			return true

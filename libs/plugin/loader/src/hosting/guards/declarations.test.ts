@@ -175,7 +175,7 @@ describe('a registration the manifest declares', () => {
 })
 
 describe('openExternal', () => {
-  it('rejects for a plugin without link:open and does not open the address', async () => {
+  it('answers permissionDenied for a plugin without link:open and does not open the address', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
     const host = createTestContextHost({ ui: { openExternal } })
     const context = createPluginParts(
@@ -184,9 +184,13 @@ describe('openExternal', () => {
       createMockManifest('md.numen.sample', { permissions: PERMISSIONS }),
     )
 
-    await expect(context.plugin.identity.openExternal('https://numen.md/')).rejects.toThrowError(
-      'lacks required permission "link:open" for openExternal',
-    )
+    await expect(context.plugin.identity.openExternal('https://numen.md/')).resolves.toEqual({
+      ok: false,
+      error: {
+        error: 'permissionDenied',
+        message: 'Plugin "md.numen.sample" lacks required permission "link:open" for openExternal',
+      },
+    })
     expect(openExternal).not.toHaveBeenCalled()
   })
 

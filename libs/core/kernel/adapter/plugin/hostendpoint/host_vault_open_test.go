@@ -31,7 +31,7 @@ func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, HostVaultCli
 		t.Fatal(err)
 	}
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return endpoint, NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return endpoint, NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 }
 
 func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {

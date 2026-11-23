@@ -60,7 +60,7 @@ const TERMINATORS = new Set([
   0x5d, 0x5e, 0x5f, 0x60, 0x7b, 0x7d, 0x7e,
 ])
 
-const text = (state: StateInline, silent: boolean): boolean => {
+const parseText = (state: StateInline, silent: boolean): boolean => {
   const pieces = getPieces(state)
   let pos = state.pos
   while (pos < state.posMax) {
@@ -85,6 +85,6 @@ export const linkPieces = (md: MarkdownIt): void => {
       if (disableNested) state.linkLevel--
     }
   }
-  md.inline.ruler.at('text', text)
+  md.inline.ruler.at('text', parseText)
   md.inline.ruler.before('text', 'link_piece', linkPiece)
 }

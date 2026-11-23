@@ -74,10 +74,10 @@ func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 func TestGetPluginNameReadsTheManifest(t *testing.T) {
 	cfg := newFailingConfig(t)
 
-	if got := pluginsGetPluginName(cfg.Execution.Runtime.Resolver, "md.numen.sample"); got != "Sample" {
+	if got := getPluginName(cfg.Execution.Runtime.Resolver, "md.numen.sample"); got != "Sample" {
 		t.Errorf("getPluginName(md.numen.sample) = %q, want Sample", got)
 	}
-	if got := pluginsGetPluginName(cfg.Execution.Runtime.Resolver, "md.numen.absent"); got != "md.numen.absent" {
+	if got := getPluginName(cfg.Execution.Runtime.Resolver, "md.numen.absent"); got != "md.numen.absent" {
 		t.Errorf("getPluginName(md.numen.absent) = %q, want the id", got)
 	}
 }

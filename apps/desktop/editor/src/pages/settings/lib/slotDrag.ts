@@ -17,7 +17,7 @@ export function clampRowOffset(spans: readonly RowSpan[], from: number, delta: n
 
 const HYSTERESIS = 1 / 8
 
-const middleOf = (span: RowSpan): number => span.top + span.height / 2
+const getMiddle = (span: RowSpan): number => span.top + span.height / 2
 
 /**
  * The place the held row is over, from where the rows stood when the drag began and how far the pointer
@@ -34,14 +34,14 @@ export function getDropIndex(
   if (!held) return null
   if (delta >= clampRowOffset(spans, from, Infinity)) return spans.length - 1
   if (delta <= clampRowOffset(spans, from, -Infinity)) return 0
-  const centre = middleOf(held) + delta
+  const centre = getMiddle(held) + delta
   const margin = held.height * HYSTERESIS
   const isPassed = (at: number, isBelow: boolean): boolean => {
     const span = spans[at]
     if (!span) return false
     const isHeldBy = isBelow ? current >= at : current <= at
     const reach = isHeldBy ? -margin : margin
-    return isBelow ? centre > middleOf(span) + reach : centre < middleOf(span) - reach
+    return isBelow ? centre > getMiddle(span) + reach : centre < getMiddle(span) - reach
   }
   let target = from
   while (isPassed(target + 1, true)) target += 1

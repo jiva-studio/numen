@@ -7,6 +7,7 @@ package vault
 
 import (
 	"context"
+
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"

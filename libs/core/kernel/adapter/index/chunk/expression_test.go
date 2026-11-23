@@ -10,7 +10,7 @@ func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
 	// passed to FTS5 unquoted: a hyphen is read as a column reference, a plus as an
 	// operator, a quote as the start of a string.
 	for _, input := range []string{"state-function", "C++", `"entropy`, "a:b", "one (two)"} {
-		got := Expression(input, true)
+		got := BuildExpression(input, true)
 		if got == "" {
 			t.Errorf("%q produced no expression", input)
 		}
@@ -21,7 +21,7 @@ func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
 }
 
 func TestWordsAreCombinedWithImplicitAnd(t *testing.T) {
-	if got, want := Expression("entropy shannon", true), `"entropy" "shannon"*`; got != want {
+	if got, want := BuildExpression("entropy shannon", true), `"entropy" "shannon"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
@@ -29,17 +29,17 @@ func TestWordsAreCombinedWithImplicitAnd(t *testing.T) {
 func TestTheLastWordIsMatchedOnItsPrefix(t *testing.T) {
 	// The index holds whole words, and a word still being typed is a prefix of
 	// the one in the text.
-	if got, want := Expression("наставник", true), `"наставник"*`; got != want {
+	if got, want := BuildExpression("наставник", true), `"наставник"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 	// Only the last one: the words before it are finished.
-	if got, want := Expression("entro mixing", true), `"entro" "mixing"*`; got != want {
+	if got, want := BuildExpression("entro mixing", true), `"entro" "mixing"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
 func TestEmbeddedQuotesAreDoubled(t *testing.T) {
-	if got, want := Expression(`say"hello`, true), `"say""hello"*`; got != want {
+	if got, want := BuildExpression(`say"hello`, true), `"say""hello"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
@@ -48,7 +48,7 @@ func TestBlankInputProducesNoExpression(t *testing.T) {
 	// An empty expression is not a query that matches everything; the caller
 	// answers with nothing.
 	for _, input := range []string{"", "   ", "\t\n"} {
-		if got := Expression(input, true); got != "" {
+		if got := BuildExpression(input, true); got != "" {
 			t.Errorf("%q produced %q", input, got)
 		}
 	}
@@ -57,10 +57,10 @@ func TestBlankInputProducesNoExpression(t *testing.T) {
 func TestExpression_ExactTermsWhenNotGrowing(t *testing.T) {
 	// A search by words is what answers a question spelled precisely. An agent
 	// asking whether a word is in the vault is asking about that word.
-	if got, want := Expression("наставник", false), `"наставник"`; got != want {
+	if got, want := BuildExpression("наставник", false), `"наставник"`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
-	if got, want := Expression("entro mixing", false), `"entro" "mixing"`; got != want {
+	if got, want := BuildExpression("entro mixing", false), `"entro" "mixing"`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
@@ -93,7 +93,7 @@ func getExpressionInputs() []string {
 func TestExpressionMatchesReference(t *testing.T) {
 	for _, input := range getExpressionInputs() {
 		for _, growing := range []bool{false, true} {
-			if got, want := Expression(input, growing), expressionReference(input, growing); got != want {
+			if got, want := BuildExpression(input, growing), expressionReference(input, growing); got != want {
 				t.Errorf("Expression(%q, %v) = %q, want %q", input, growing, got, want)
 			}
 		}
@@ -112,7 +112,7 @@ func BenchmarkExpression(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				_ = Expression(c.typed, true)
+				_ = BuildExpression(c.typed, true)
 			}
 		})
 	}

@@ -464,9 +464,9 @@ describe('a setting that is previewed while focused', () => {
   it('is applied under its path for each row the keyboard moves to', () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
-    palette.lists.previewItem('setting:app:appearance.mode', 'light')
-    palette.lists.previewItem('setting:app:appearance.interfaceScale', '1.4')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'preset:dracula')
+    palette.lists.applyItemPreview('setting:app:appearance.mode', 'light')
+    palette.lists.applyItemPreview('setting:app:appearance.interfaceScale', '1.4')
 
     expect(applied).toStrictEqual([
       'apply app/appearance/theme "preset:dracula"',
@@ -478,10 +478,10 @@ describe('a setting that is previewed while focused', () => {
   it('is restored once when the keyboard exits the step without a choice', () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
-    palette.lists.previewItem('setting:app:appearance.theme', 'mine:sea')
-    palette.lists.previewItem('setting:app:appearance.theme', '')
-    palette.lists.previewItem('setting:app:appearance.theme', '')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'preset:dracula')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'mine:sea')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', '')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', '')
 
     expect(applied).toStrictEqual([
       'apply app/appearance/theme "preset:dracula"',
@@ -493,7 +493,7 @@ describe('a setting that is previewed while focused', () => {
   it('restores nothing when the keyboard never stood on a row', () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:appearance.theme', '')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', '')
 
     expect(applied).toStrictEqual([])
   })
@@ -501,9 +501,9 @@ describe('a setting that is previewed while focused', () => {
   it('is not restored after a row was chosen, the write being the value in force', async () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'preset:dracula')
     await palette.choose('setting:app:appearance.theme', 'preset:dracula')
-    palette.lists.previewItem('setting:app:appearance.theme', '')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', '')
 
     expect(applied).toStrictEqual(['apply app/appearance/theme "preset:dracula"'])
   })
@@ -511,8 +511,8 @@ describe('a setting that is previewed while focused', () => {
   it('is applied only for a row the setting offers', () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:appearance.theme', 'preset:missing')
-    palette.lists.previewItem('setting:app:appearance.interfaceScale', '5')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'preset:missing')
+    palette.lists.applyItemPreview('setting:app:appearance.interfaceScale', '5')
 
     expect(applied).toStrictEqual([])
   })
@@ -520,11 +520,11 @@ describe('a setting that is previewed while focused', () => {
   it('is not applied for a setting that does not carry the flag', () => {
     const { palette, applied } = createPalette()
 
-    palette.lists.previewItem('setting:app:performance.profile', 'eco')
-    palette.lists.previewItem('setting:app:naming.syncTitleAndFilename', 'off')
-    palette.lists.previewItem('setting:md.example.scanner:engine', 'fast')
-    palette.lists.previewItem('setting:app:performance.profile', '')
-    palette.lists.previewItem('setting:unknown:missing', 'on')
+    palette.lists.applyItemPreview('setting:app:performance.profile', 'eco')
+    palette.lists.applyItemPreview('setting:app:naming.syncTitleAndFilename', 'off')
+    palette.lists.applyItemPreview('setting:md.example.scanner:engine', 'fast')
+    palette.lists.applyItemPreview('setting:app:performance.profile', '')
+    palette.lists.applyItemPreview('setting:unknown:missing', 'on')
 
     expect(applied).toStrictEqual([])
   })
@@ -536,8 +536,8 @@ describe('a setting that is previewed while focused', () => {
     }
     const { palette, applied } = createPalette([flagged])
 
-    palette.lists.previewItem('setting:md.example.scanner:engine', 'fast')
-    palette.lists.previewItem('setting:md.example.scanner:engine', '')
+    palette.lists.applyItemPreview('setting:md.example.scanner:engine', 'fast')
+    palette.lists.applyItemPreview('setting:md.example.scanner:engine', '')
 
     expect(applied).toStrictEqual([
       'apply md.example.scanner/engine "fast"',
@@ -632,9 +632,9 @@ describe('windowConfig and windowPalette', () => {
   })
 
   it('previews appearance settings and reloads appearance only when an appearance setting is written', async () => {
-    const previewTheme = vi.fn()
-    const previewMode = vi.fn()
-    const previewSize = vi.fn()
+    const showThemePreview = vi.fn()
+    const showModePreview = vi.fn()
+    const showSizePreview = vi.fn()
     const restore = vi.fn()
     const reload = vi.fn(async () => undefined)
     const writeSettings = vi.fn(async () => undefined)
@@ -666,7 +666,7 @@ describe('windowConfig and windowPalette', () => {
       rest: rest as never,
       appearance: {
         preview: {
-          keyboard: { previewTheme, previewMode, previewSize },
+          keyboard: { showThemePreview, showModePreview, showSizePreview },
           restore,
         },
         reload,
@@ -676,28 +676,28 @@ describe('windowConfig and windowPalette', () => {
 
     expect(palette.getCommands().length).toBeGreaterThan(0)
 
-    palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
-    expect(previewTheme).toHaveBeenCalledExactlyOnceWith('preset:dracula')
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'preset:dracula')
+    expect(showThemePreview).toHaveBeenCalledExactlyOnceWith('preset:dracula')
 
-    palette.lists.previewItem('setting:app:appearance.mode', 'light')
-    palette.lists.previewItem('setting:app:appearance.mode', 'invalid')
-    expect(previewMode).toHaveBeenCalledExactlyOnceWith('light')
+    palette.lists.applyItemPreview('setting:app:appearance.mode', 'light')
+    palette.lists.applyItemPreview('setting:app:appearance.mode', 'invalid')
+    expect(showModePreview).toHaveBeenCalledExactlyOnceWith('light')
 
-    palette.lists.previewItem('setting:app:appearance.interfaceScale', '1.2')
-    palette.lists.previewItem('setting:app:appearance.textScale', '1.2')
-    palette.lists.previewItem('setting:app:appearance.otherScale', '2')
-    palette.lists.previewItem('setting:app:appearance.sub.theme', 'a')
-    palette.lists.previewItem('setting:app:editor.tabSize', '4')
-    palette.lists.previewItem('setting:md.example.scanner:autoScan', 'on')
-    expect(previewSize).toHaveBeenCalledTimes(2)
-    expect(previewSize).toHaveBeenNthCalledWith(1, 'interfaceScale', 1.2)
-    expect(previewSize).toHaveBeenNthCalledWith(2, 'textScale', 1.2)
+    palette.lists.applyItemPreview('setting:app:appearance.interfaceScale', '1.2')
+    palette.lists.applyItemPreview('setting:app:appearance.textScale', '1.2')
+    palette.lists.applyItemPreview('setting:app:appearance.otherScale', '2')
+    palette.lists.applyItemPreview('setting:app:appearance.sub.theme', 'a')
+    palette.lists.applyItemPreview('setting:app:editor.tabSize', '4')
+    palette.lists.applyItemPreview('setting:md.example.scanner:autoScan', 'on')
+    expect(showSizePreview).toHaveBeenCalledTimes(2)
+    expect(showSizePreview).toHaveBeenNthCalledWith(1, 'interfaceScale', 1.2)
+    expect(showSizePreview).toHaveBeenNthCalledWith(2, 'textScale', 1.2)
 
     appSettings.value = [NON_STRING_THEME, NON_NUMBER_SCALE]
-    palette.lists.previewItem('setting:app:appearance.theme', 'on')
-    palette.lists.previewItem('setting:app:appearance.interfaceScale', 'normal')
-    expect(previewTheme).toHaveBeenCalledTimes(1)
-    expect(previewSize).toHaveBeenCalledTimes(2)
+    palette.lists.applyItemPreview('setting:app:appearance.theme', 'on')
+    palette.lists.applyItemPreview('setting:app:appearance.interfaceScale', 'normal')
+    expect(showThemePreview).toHaveBeenCalledTimes(1)
+    expect(showSizePreview).toHaveBeenCalledTimes(2)
 
     appSettings.value = [THEME, PROFILE]
     await palette.choose('setting:app:performance.profile', 'eco')
@@ -731,7 +731,7 @@ describe('windowConfig and windowPalette', () => {
       rest: rest as never,
       appearance: {
         preview: {
-          keyboard: { previewTheme: vi.fn(), previewMode: vi.fn(), previewSize: vi.fn() },
+          keyboard: { showThemePreview: vi.fn(), showModePreview: vi.fn(), showSizePreview: vi.fn() },
           restore: vi.fn(),
         },
         reload: vi.fn(async () => undefined),

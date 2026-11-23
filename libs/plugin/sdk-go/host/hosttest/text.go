@@ -95,11 +95,11 @@ func (t *Texts) With(id domain.VaultID) *Texts {
 	return &Texts{world: t.world.all.getWorld(id), pluginID: t.pluginID}
 }
 
-// As is the same texts, as another plugin works them.
-func (t *Texts) As(pluginID string) *Texts { return &Texts{world: t.world, pluginID: pluginID} }
+// UsePlugin returns the same texts, as another plugin works them.
+func (t *Texts) UsePlugin(pluginID string) *Texts { return &Texts{world: t.world, pluginID: pluginID} }
 
-// File puts a file's bytes in the vault: what a version made from the file is compared with.
-func (t *Texts) File(path string, raw []byte) {
+// WriteFile puts a file's bytes in the vault: what a version made from the file is compared with.
+func (t *Texts) WriteFile(path string, raw []byte) {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()
 	t.world.files[path] = raw

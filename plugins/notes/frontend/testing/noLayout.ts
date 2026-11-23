@@ -13,12 +13,12 @@
 
 const createEmptyRect = (): DOMRect => new DOMRect(0, 0, 0, 0)
 
-const noBoxes = (): DOMRectList => {
+const createEmptyRects = (): DOMRectList => {
   const list: DOMRect[] = []
-  const item = (pos: number): DOMRect | null => list[pos] ?? null
-  const rects: DOMRectList = Object.assign(list, { item })
+  const getRect = (pos: number): DOMRect | null => list[pos] ?? null
+  const rects: DOMRectList = Object.assign(list, { item: getRect })
   return rects
 }
 
 Range.prototype.getBoundingClientRect = createEmptyRect
-Range.prototype.getClientRects = noBoxes
+Range.prototype.getClientRects = createEmptyRects

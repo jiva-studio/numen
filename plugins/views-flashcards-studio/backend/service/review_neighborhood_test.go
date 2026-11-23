@@ -93,7 +93,7 @@ func TestGetDeckNeighborhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 // brokenLinks is an index that cannot say what a note points at.
 type brokenLinks struct{ ports.LinkQueries }
 
-func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (brokenLinks) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errors.New("the index is out of reach")
 }
 
@@ -113,7 +113,7 @@ func getBacklinkedVault() map[string]string {
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	handler, target := newAPI(t, getJoinedVault())
 	handler.neighborhood = neighborhood.NewShow(
-		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{Vaults: handler.vaults}))
+		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{GetVault: handler.getHostVault}))
 
 	_, err := handler.GetDeckNeighborhood(t.Context(), &api.GetDeckNeighborhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",
