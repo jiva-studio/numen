@@ -137,7 +137,7 @@ func (u *ReadInvitation) Execute(ctx context.Context, text string) (Preview, err
 	}
 	return Preview{
 		ShareName: domainshare.CleanName(name), OwnerFingerprint: o.ownerChain.Root().Fingerprint().String(),
-		IsForThisAccount: true, IsReceived: isReceived,
+		IsForThisAccount: true, IsReceived: isReceived && !link.Received.IsEnded,
 	}, nil
 }
 
@@ -160,26 +160,47 @@ func NewAcceptInvitation(deps Deps) *AcceptInvitation {
 
 // Execute verifies the invitation, makes the folder, adds it to the vault list as a vault only this plugin writes,
 // writes the link with the pinned root of the owner and runs the first pass. A share received already is refused,
-// and so is an invitation for the same share with another owner root.
+// and so is an invitation for the same share with another owner root. A share the owner ended, to which the owner
+// added this reader again, is received into the vault it had: the reader keeps its files and the keys of the epochs
+// it held, and reads the log again from its first entry.
 func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, error) {
 	o, err := u.open(ctx, text)
 	if err != nil {
 		return Accepted{}, err
 	}
-	_, link, isReceived, err := u.findReceived(ctx, o.invitation.ShareRootID)
+	vaultID, link, isReceived, err := u.findReceived(ctx, o.invitation.ShareRootID)
 	if err != nil {
 		return Accepted{}, err
 	}
-	if isReceived {
-		if !bytes.Equal(link.Received.OwnerRoot, o.ownerChain.Root().Sign) {
-			return Accepted{}, domainshare.ErrOwnerChanged
-		}
-		return Accepted{}, domainshare.ErrAlreadyReceived
+	if err := checkReceived(link, isReceived, o); err != nil {
+		return Accepted{}, err
 	}
 	read, err := u.follow(ctx, o)
 	if err != nil {
 		return Accepted{}, err
 	}
+	if isReceived {
+		return u.rejoin(ctx, vaultID, link, o, read)
+	}
+	return u.receive(ctx, o, read)
+}
+
+// checkReceived refuses a share received already and still running, and a share of another owner root than the
+// pinned one.
+func checkReceived(link vaultlink.Link, isReceived bool, o opened) error {
+	if !isReceived {
+		return nil
+	}
+	if !bytes.Equal(link.Received.OwnerRoot, o.ownerChain.Root().Sign) {
+		return domainshare.ErrOwnerChanged
+	}
+	if !link.Received.IsEnded {
+		return domainshare.ErrAlreadyReceived
+	}
+	return nil
+}
+
+func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed) (Accepted, error) {
 	folder, err := u.deps.Folders.MakeReceivedFolder(ctx, domainshare.CleanName(read.position.Name))
 	if err != nil {
 		return Accepted{}, err
@@ -188,21 +209,35 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 	if err != nil {
 		return Accepted{}, err
 	}
-	if err := u.writeLink(ctx, vault.ID, o, read); err != nil {
+	if err := u.writeLink(ctx, vault.ID, o, read, nil); err != nil {
 		return Accepted{}, err
 	}
-	result, err := u.pull.Execute(ctx, vault.ID)
-	if err != nil {
-		return Accepted{}, err
-	}
-	status := statusOf(result, u.deps.Clock.Now())
-	if err := u.deps.Statuses.WriteStatus(ctx, vault.ID, status); err != nil {
+	if err := u.runFirstPass(ctx, vault.ID); err != nil {
 		return Accepted{}, err
 	}
 	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
 }
 
-func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed) error {
+// rejoin gives the vault of an ended share the new position in the log. The revisions it saw stay remembered.
+func (u *AcceptInvitation) rejoin(ctx context.Context, id domain.VaultID, link vaultlink.Link, o opened, read followed) (Accepted, error) {
+	if err := u.writeLink(ctx, id, o, read, link.Received.Seen); err != nil {
+		return Accepted{}, err
+	}
+	if err := u.runFirstPass(ctx, id); err != nil {
+		return Accepted{}, err
+	}
+	return Accepted{VaultID: id, Name: domainshare.CleanName(read.position.Name)}, nil
+}
+
+func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) error {
+	result, err := u.pull.Execute(ctx, id)
+	if err != nil {
+		return err
+	}
+	return u.deps.Statuses.WriteStatus(ctx, id, statusOf(result, u.deps.Clock.Now()))
+}
+
+func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed, seen map[string][][]byte) error {
 	keys, err := read.position.Keys.Encode()
 	if err != nil {
 		return err
@@ -214,7 +249,7 @@ func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o o
 	received := vaultlink.Received{
 		ShareRootID: hex.EncodeToString(o.invitation.ShareRootID), OwnerRoot: o.ownerChain.Root().Sign, OwnerChain: read.ownerChain,
 		SealedKeys: sealed, ServerVersion: read.position.Version, HeadID: read.position.HeadID[:], VaultID: read.position.VaultID,
-		Epoch: read.position.Epoch, Name: read.position.Name, IsEnded: false,
+		Epoch: read.position.Epoch, Name: read.position.Name, IsEnded: false, Seen: seen,
 	}
 	link := vaultlink.Link{
 		RemoteVaultID: "", SealedKey: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},

@@ -159,8 +159,11 @@ func (r *pullRun) followLog(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	entries, chain, err := r.deps.Shares.GetShareLog(ctx, r.shareID, received.ServerVersion)
+	entries, chain, err := r.deps.Shares.GetShareLog(ctx, r.shareID, received.ServerVersion-1)
 	if err != nil {
+		return err
+	}
+	if entries, err = domainshare.ContinueFrom(entries, received.ServerVersion, headID); err != nil {
 		return err
 	}
 	if r.authors, err = trust.NewAuthors(received.OwnerChain, chain); err != nil {
@@ -247,11 +250,18 @@ func (r *pullRun) addConflict(path string, seq uint64) {
 
 func (r *pullRun) apply(ctx context.Context, change *syncv1.ShareChange) error {
 	if err := r.verify(change); err != nil {
+		if errors.Is(err, domainshare.ErrRolledBack) {
+			return err
+		}
 		r.result.Unverified++
 		return nil
 	}
 	stored := change.GetChange()
 	rev := stored.GetRevision()
+	if r.link.Received.IsRegressed(rev.GetFileId(), stored.GetRevId()) {
+		return fmt.Errorf("%w: a file is served at a revision older than the one this reader has seen", domainshare.ErrRolledBack)
+	}
+	r.link.Received.NoteRevision(rev.GetFileId(), stored.GetRevId())
 	if change.GetLeft() || rev.GetDeleted() {
 		return r.remove(ctx, rev.GetFileId(), stored.GetSeq())
 	}
@@ -299,8 +309,11 @@ func (r *pullRun) isSigned(stored *syncv1.StoredRevision, metaHash [32]byte) boo
 func (r *pullRun) checkBelonging(change *syncv1.ShareChange) error {
 	rev := change.GetChange().GetRevision()
 	isOfShare := bytes.Equal(rev.GetShareRootId(), r.shareID)
-	if change.GetLeft() == isOfShare || (isOfShare && rev.GetEpoch() > r.link.Received.Epoch) {
+	if change.GetLeft() == isOfShare {
 		return errUnverified
+	}
+	if isOfShare && rev.GetEpoch() > r.link.Received.Epoch {
+		return fmt.Errorf("%w: a revision has epoch %d and the share log held ends at epoch %d", domainshare.ErrRolledBack, rev.GetEpoch(), r.link.Received.Epoch)
 	}
 	return nil
 }

@@ -3,6 +3,7 @@
 package vaultlink
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -101,4 +102,41 @@ type Received struct {
 	Epoch         uint32 `json:"epoch"`
 	Name          string `json:"name"`
 	IsEnded       bool   `json:"isEnded"`
+	// Seen holds, for each file (the hex of its id), the last revisions of it this reader was served, the newest last.
+	// A revision served again that is not the newest is the server taking the file back.
+	Seen map[string][][]byte `json:"seen,omitempty"`
+}
+
+// maxSeen is how many revisions of a file a received share remembers.
+const maxSeen = 8
+
+// IsRegressed reports whether the revision is one the share served for the file before its newest one.
+func (r *Received) IsRegressed(fileID, revID []byte) bool {
+	seen := r.Seen[hex.EncodeToString(fileID)]
+	if len(seen) == 0 {
+		return false
+	}
+	for _, one := range seen[:len(seen)-1] {
+		if bytes.Equal(one, revID) {
+			return true
+		}
+	}
+	return false
+}
+
+// NoteRevision remembers that the share served the revision as the newest of the file.
+func (r *Received) NoteRevision(fileID, revID []byte) {
+	if r.Seen == nil {
+		r.Seen = map[string][][]byte{}
+	}
+	key := hex.EncodeToString(fileID)
+	seen := r.Seen[key]
+	if len(seen) > 0 && bytes.Equal(seen[len(seen)-1], revID) {
+		return
+	}
+	seen = append(seen, revID)
+	if len(seen) > maxSeen {
+		seen = seen[len(seen)-maxSeen:]
+	}
+	r.Seen[key] = seen
 }

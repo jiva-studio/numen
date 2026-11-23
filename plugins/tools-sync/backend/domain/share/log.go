@@ -56,13 +56,11 @@ func NewFollower(rules Rules, position Position) *Follower {
 // GetPosition returns the position after the entries followed so far.
 func (f *Follower) GetPosition() Position { return f.position }
 
-// Follow verifies the entries, which must continue the position, and takes the seals addressed to the reader. It
-// stops after the entry that ended the share for the reader.
+// Follow verifies the entries, which must continue the position, and takes the seals addressed to the reader. The
+// entry that removes the reader ends its share; a later entry that adds the same reader again starts it anew, and the
+// keys of the epochs before stay with the reader.
 func (f *Follower) Follow(ctx context.Context, entries []*syncv1.ShareLogEntry) error {
 	for _, entry := range entries {
-		if f.position.IsEnded {
-			break
-		}
 		if err := f.apply(ctx, entry); err != nil {
 			return err
 		}
@@ -94,7 +92,7 @@ func (f *Follower) take(ctx context.Context, entry *syncv1.ShareLogEntry) error 
 		f.position.VaultID = entry.GetVaultId()
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
 		if isMe {
-			f.position.IsActive = true
+			f.position.IsActive, f.position.IsEnded = true, false
 			return f.takeSeal(ctx, entry)
 		}
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
@@ -238,3 +236,13 @@ var (
 	errUnknownAuthor = errors.New("the author is not a device of the owner")
 	errBadSignature  = errors.New("the signature is not valid")
 )
+
+// ContinueFrom returns the entries after the one a reader verified last. The entries start at that one: the server
+// must serve it again, with the id the reader stored, or it has taken the log back to an older state or made another
+// one (ErrRolledBack).
+func ContinueFrom(entries []*syncv1.ShareLogEntry, version uint64, headID [32]byte) ([]*syncv1.ShareLogEntry, error) {
+	if len(entries) == 0 || entries[0].GetVersion() != version || syncprotocol.GetShareLogEntryID(entries[0]) != headID {
+		return nil, fmt.Errorf("%w: the entry %d the reader holds is not at the head of what the server serves", ErrRolledBack, version)
+	}
+	return entries[1:], nil
+}
