@@ -233,6 +233,5 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,
-		Restore:         res.restore,
 	}
 }

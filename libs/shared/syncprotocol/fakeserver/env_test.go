@@ -14,9 +14,15 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
+
+// machineClock reads the clock of the machine.
+type machineClock struct{}
+
+func (machineClock) Now() time.Time { return time.Now() }
 
 type ownedAccount struct {
 	root  identity.RecoveryKey
@@ -38,7 +44,7 @@ func newOwnedAccount(tb testing.TB) ownedAccount {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err := identity.NewChain(root, keys, time.Now())
+	chain, err := identity.NewChain(root, keys, machineClock{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -51,7 +57,7 @@ func (a *ownedAccount) addDevice(tb testing.TB, name string) identity.DeviceKey 
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err := a.chain.AppendDevice(a.root, device.Public(), name, time.Now())
+	chain, err := a.chain.AppendDevice(a.root, device.Public(), name, machineClock{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -70,14 +76,14 @@ func newServer(tb testing.TB) (*fakeserver.Server, string) {
 
 func signIn(tb testing.TB, address string, device identity.DeviceKey, chain identity.Chain) string {
 	tb.Helper()
-	client := syncprotocol.NewSignInClient(address, http.DefaultClient, time.Now)
+	client := syncclient.NewSignInClient(address, http.DefaultClient, machineClock{}.Now)
 	key := device.Public().Sign
 	challenge, err := client.GetChallenge(tb.Context(), key)
 	if err != nil {
 		tb.Fatal(err)
 	}
 	signature := device.SignForPlugin(syncprotocol.SignInPluginID, challenge.Message)
-	session, err := client.SignIn(tb.Context(), syncprotocol.Proof{ChallengeID: challenge.ID, DeviceSignKey: key, Signature: signature[:], Chain: chain.Bytes()})
+	session, err := client.SignIn(tb.Context(), syncclient.Proof{ChallengeID: challenge.ID, DeviceSignKey: key, Signature: signature[:], Chain: chain.Bytes()})
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -90,10 +96,10 @@ type env struct {
 	account  *ownedAccount
 	device   identity.DeviceKey
 	token    string
-	catalog  *syncprotocol.CatalogClient
-	revision *syncprotocol.RevisionClient
-	blob     *syncprotocol.BlobClient
-	accounts *syncprotocol.AccountClient
+	catalog  *syncclient.CatalogClient
+	revision *syncclient.RevisionClient
+	blob     *syncclient.BlobClient
+	accounts *syncclient.AccountClient
 
 	version uint64
 	head    [32]byte
@@ -105,10 +111,10 @@ func newEnvOn(tb testing.TB, address string, account *ownedAccount, device ident
 	provide := func() string { return token }
 	return &env{
 		tb: tb, address: address, account: account, device: device, token: token,
-		catalog:  syncprotocol.NewCatalogClient(address, http.DefaultClient, provide),
-		revision: syncprotocol.NewRevisionClient(address, http.DefaultClient, provide),
-		blob:     syncprotocol.NewBlobClient(address, http.DefaultClient, provide),
-		accounts: syncprotocol.NewAccountClient(address, http.DefaultClient, provide),
+		catalog:  syncclient.NewCatalogClient(address, http.DefaultClient, provide),
+		revision: syncclient.NewRevisionClient(address, http.DefaultClient, provide),
+		blob:     syncclient.NewBlobClient(address, http.DefaultClient, provide),
+		accounts: syncclient.NewAccountClient(address, http.DefaultClient, provide),
 	}
 }
 
@@ -180,7 +186,7 @@ func (e *env) upload(vault, body []byte) *syncv1.BlobUpload {
 	if len(uploads) != 1 {
 		e.tb.Fatalf("uploads = %d, want 1", len(uploads))
 	}
-	if err := syncprotocol.PutBlob(e.tb.Context(), http.DefaultClient, uploads[0].GetUrl(), body); err != nil {
+	if err := syncclient.PutBlob(e.tb.Context(), http.DefaultClient, uploads[0].GetUrl(), body); err != nil {
 		e.tb.Fatal(err)
 	}
 	return uploads[0]

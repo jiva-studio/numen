@@ -1,48 +1,19 @@
-package syncprotocol
+package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
 
 func newClientOptions(token func() string) connect.ClientOption {
-	return connect.WithInterceptors(NewVersionInterceptor(), NewBearerInterceptor(token))
-}
-
-func readCallError(err error) error {
-	err = readError(err)
-	var failure *connect.Error
-	if !errors.As(err, &failure) {
-		return err
-	}
-	switch failure.Code() {
-	case connect.CodePermissionDenied:
-		return refusalError{sentinel: ErrWriteNotAllowed, cause: failure}
-	case connect.CodeNotFound:
-		return refusalError{sentinel: ErrNoVault, cause: failure}
-	case connect.CodeAlreadyExists:
-		return refusalError{sentinel: ErrVaultExists, cause: failure}
-	}
-	for _, detail := range failure.Details() {
-		value, valueErr := detail.Value()
-		if valueErr != nil {
-			continue
-		}
-		switch refusal := value.(type) {
-		case *syncv1.QuotaExceeded:
-			return QuotaExceededError{Used: refusal.GetUsedBytes(), Limit: refusal.GetLimitBytes()}
-		case *syncv1.BlobNotReady:
-			return BlobNotReadyError{Index: refusal.GetRevisionIndex()}
-		}
-	}
-	return err
+	return connect.WithInterceptors(syncprotocol.NewVersionInterceptor(), syncprotocol.NewBearerInterceptor(token))
 }
 
 // CatalogClient calls the catalog service of one server with the bearer of the session.
@@ -61,7 +32,7 @@ func NewCatalogClient(address string, httpClient *http.Client, token func() stri
 func (c *CatalogClient) AppendCatalogEntry(ctx context.Context, entry *syncv1.CatalogEntry) (*syncv1.AppendCatalogEntryResponse, error) {
 	response, err := c.rpc.AppendCatalogEntry(ctx, connect.NewRequest(&syncv1.AppendCatalogEntryRequest{Entry: entry}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg, nil
 }
@@ -72,7 +43,7 @@ func (c *CatalogClient) GetCatalog(ctx context.Context, sinceVersion uint64) ([]
 	for {
 		response, err := c.rpc.GetCatalog(ctx, connect.NewRequest(&syncv1.GetCatalogRequest{SinceVersion: sinceVersion}))
 		if err != nil {
-			return nil, readCallError(err)
+			return nil, syncprotocol.ReadCallError(err)
 		}
 		page := response.Msg.GetEntries()
 		entries = append(entries, page...)
@@ -102,7 +73,7 @@ func NewRevisionClient(address string, httpClient *http.Client, token func() str
 func (c *RevisionClient) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
 	response, err := c.rpc.CommitRevisions(ctx, connect.NewRequest(&syncv1.CommitRevisionsRequest{VaultId: vaultID, Revisions: revisions}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg, nil
 }
@@ -111,7 +82,7 @@ func (c *RevisionClient) CommitRevisions(ctx context.Context, vaultID []byte, re
 func (c *RevisionClient) GetChanges(ctx context.Context, vaultID []byte, sinceSeq uint64, limit uint32) (*syncv1.GetChangesResponse, error) {
 	response, err := c.rpc.GetChanges(ctx, connect.NewRequest(&syncv1.GetChangesRequest{VaultId: vaultID, SinceSeq: sinceSeq, Limit: limit}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg, nil
 }
@@ -132,7 +103,7 @@ func NewBlobClient(address string, httpClient *http.Client, token func() string)
 func (c *BlobClient) ReserveBlobs(ctx context.Context, vaultID []byte, sizes []uint64) ([]*syncv1.BlobUpload, error) {
 	response, err := c.rpc.ReserveBlobs(ctx, connect.NewRequest(&syncv1.ReserveBlobsRequest{VaultId: vaultID, Sizes: sizes}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg.GetUploads(), nil
 }
@@ -141,7 +112,7 @@ func (c *BlobClient) ReserveBlobs(ctx context.Context, vaultID []byte, sizes []u
 func (c *BlobClient) GetBlobUrls(ctx context.Context, vaultID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
 	response, err := c.rpc.GetBlobUrls(ctx, connect.NewRequest(&syncv1.GetBlobUrlsRequest{VaultId: vaultID, BlobIds: blobIDs}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg.GetDownloads(), nil
 }
@@ -161,19 +132,19 @@ func NewAccountClient(address string, httpClient *http.Client, token func() stri
 func (c *AccountClient) GetAccountChain(ctx context.Context) ([]byte, error) {
 	response, err := c.rpc.GetAccountChain(ctx, connect.NewRequest(&syncv1.GetAccountChainRequest{}))
 	if err != nil {
-		return nil, readCallError(err)
+		return nil, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg.GetChain(), nil
 }
 
 // GetAccountChainByRoot returns the stored chain of the account with the root key, for a caller that signed
-// GetChainReadMessage of the challenge with the recovery key. found is false when no account has this root.
+// syncprotocol.GetChainReadMessage of the challenge with the recovery key. found is false when no account has this root.
 func (c *AccountClient) GetAccountChainByRoot(ctx context.Context, challengeID, rootSignKey, signature []byte) (chain []byte, found bool, err error) {
 	response, err := c.rpc.GetAccountChainByRoot(ctx, connect.NewRequest(&syncv1.GetAccountChainByRootRequest{
 		ChallengeId: challengeID, RootSignKey: rootSignKey, Signature: signature,
 	}))
 	if err != nil {
-		return nil, false, readCallError(err)
+		return nil, false, syncprotocol.ReadCallError(err)
 	}
 	return response.Msg.GetChain(), response.Msg.GetFound(), nil
 }

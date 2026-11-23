@@ -20,10 +20,14 @@ import (
 // ErrNotConnected means the vault has no synced vault to sync with.
 var ErrNotConnected = vaultlink.ErrNotConnected
 
-// State is what a pass keeps of the vault.
+// State is the link and the records a pass keeps of the vault.
 type State interface {
 	ports.Links
 	ports.Records
+}
+
+// Progress is how the last pass over the vault ended and the notes it saw.
+type Progress interface {
 	ports.Statuses
 	ports.Sightings
 }
@@ -44,19 +48,25 @@ type Deps struct {
 	Identity      ports.Identity
 	Host          ports.Host
 	State         State
+	Progress      Progress
 	Health        ports.Health
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
 }
 
+// passSteps are the use cases a pass runs.
+type passSteps struct {
+	rename *catalog.RenameRemoteVault
+	pull   *pull.PullChanges
+	scan   *localchanges.ScanLocalChanges
+	commit *commit.CommitRevisions
+}
+
 // SyncVault runs one pass over one vault.
 type SyncVault struct {
 	deps    Deps
-	rename  *catalog.RenameRemoteVault
-	pull    *pull.PullChanges
-	scan    *localchanges.ScanLocalChanges
-	commit  *commit.CommitRevisions
+	steps   passSteps
 	reports reporter
 }
 
@@ -64,15 +74,17 @@ type SyncVault struct {
 func NewSyncVault(deps Deps) *SyncVault {
 	return &SyncVault{
 		deps: deps,
-		rename: catalog.NewRenameRemoteVault(catalog.Deps{
-			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Random: deps.Random,
-		}),
-		pull: pull.NewPullChanges(pull.Deps{
-			Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
-		}),
-		scan:    localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.State, Clock: deps.Clock}),
-		commit:  commit.NewCommitRevisions(commit.Deps{Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Random: deps.Random}),
+		steps: passSteps{
+			rename: catalog.NewRenameRemoteVault(catalog.Deps{
+				Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
+				Random: deps.Random,
+			}),
+			pull: pull.NewPullChanges(pull.Deps{
+				Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
+			}),
+			scan:   localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
+			commit: commit.NewCommitRevisions(commit.Deps{Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Random: deps.Random}),
+		},
 		reports: reporter{health: deps.Health, subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions})},
 	}
 }
@@ -83,14 +95,14 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.State.ReadLink(ctx, id); err != nil {
 		return err
 	}
-	if _, err := u.rename.Execute(ctx, id); err != nil {
+	if _, err := u.steps.rename.Execute(ctx, id); err != nil {
 		return err
 	}
 	authors, err := u.getAuthors(ctx)
 	if err != nil {
 		return err
 	}
-	if _, err := u.deps.Host.Files(id).EnsureIndexed(ctx); err != nil {
+	if _, err := u.deps.Host.Indexer(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
 	p := &pass{use: u, id: id, authors: authors, conflicts: nil, unverified: 0}

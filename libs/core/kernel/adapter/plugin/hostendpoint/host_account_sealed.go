@@ -30,6 +30,18 @@ func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, err
 	return pluginID, account, nil
 }
 
+func (e *accountEndpoint) getRestoreOf(header http.Header) (string, AccountRestore, error) {
+	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
+	if err != nil {
+		return "", nil, err
+	}
+	restore := e.endpoint.callers.Restore
+	if restore == nil {
+		return "", nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
+	}
+	return pluginID, restore, nil
+}
+
 func (e *accountEndpoint) SealData(
 	ctx context.Context, req *connect.Request[v1.SealDataRequest],
 ) (*connect.Response[v1.SealDataResponse], error) {
@@ -67,11 +79,11 @@ func (e *accountEndpoint) OpenData(
 func (e *accountEndpoint) GetPendingRestore(
 	ctx context.Context, req *connect.Request[v1.GetPendingRestoreRequest],
 ) (*connect.Response[v1.GetPendingRestoreResponse], error) {
-	_, account, err := e.getAccountOf(req.Header())
+	_, restore, err := e.getRestoreOf(req.Header())
 	if err != nil {
 		return nil, err
 	}
-	pending, err := account.GetPendingRestore(ctx)
+	pending, err := restore.GetPendingRestore(ctx)
 	if err != nil {
 		return nil, getAccountError(err)
 	}
@@ -85,7 +97,7 @@ func (e *accountEndpoint) GetPendingRestore(
 func (e *accountEndpoint) SignAsRecovery(
 	ctx context.Context, req *connect.Request[v1.SignAsRecoveryRequest],
 ) (*connect.Response[v1.SignAsRecoveryResponse], error) {
-	pluginID, account, err := e.getAccountOf(req.Header())
+	pluginID, restore, err := e.getRestoreOf(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +105,7 @@ func (e *accountEndpoint) SignAsRecovery(
 	if len(message) == 0 || len(message) > maxSignedMessage {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errMessageSize)
 	}
-	signature, err := account.SignAsRecovery(ctx, pluginID, message)
+	signature, err := restore.SignAsRecovery(ctx, pluginID, message)
 	if err != nil {
 		return nil, getAccountError(err)
 	}
@@ -103,11 +115,11 @@ func (e *accountEndpoint) SignAsRecovery(
 func (e *accountEndpoint) CompleteRestore(
 	ctx context.Context, req *connect.Request[v1.CompleteRestoreRequest],
 ) (*connect.Response[v1.CompleteRestoreResponse], error) {
-	pluginID, account, err := e.getAccountOf(req.Header())
+	pluginID, restore, err := e.getRestoreOf(req.Header())
 	if err != nil {
 		return nil, err
 	}
-	if err := account.CompleteRestore(ctx, pluginID, req.Msg.GetChain()); err != nil {
+	if err := restore.CompleteRestore(ctx, pluginID, req.Msg.GetChain()); err != nil {
 		return nil, getAccountError(err)
 	}
 	return connect.NewResponse(&v1.CompleteRestoreResponse{}), nil

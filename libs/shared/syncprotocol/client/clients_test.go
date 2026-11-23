@@ -1,4 +1,4 @@
-package syncprotocol_test
+package client_test
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
@@ -132,18 +133,18 @@ func serveStub(tb testing.TB, serverVersion uint32) (*stubServer, string) {
 }
 
 type stubCalls struct {
-	catalog  *syncprotocol.CatalogClient
-	revision *syncprotocol.RevisionClient
-	blob     *syncprotocol.BlobClient
-	account  *syncprotocol.AccountClient
+	catalog  *syncclient.CatalogClient
+	revision *syncclient.RevisionClient
+	blob     *syncclient.BlobClient
+	account  *syncclient.AccountClient
 }
 
 func newStubCalls(address string, token func() string) stubCalls {
 	return stubCalls{
-		catalog:  syncprotocol.NewCatalogClient(address, http.DefaultClient, token),
-		revision: syncprotocol.NewRevisionClient(address, http.DefaultClient, token),
-		blob:     syncprotocol.NewBlobClient(address, http.DefaultClient, token),
-		account:  syncprotocol.NewAccountClient(address, http.DefaultClient, token),
+		catalog:  syncclient.NewCatalogClient(address, http.DefaultClient, token),
+		revision: syncclient.NewRevisionClient(address, http.DefaultClient, token),
+		blob:     syncclient.NewBlobClient(address, http.DefaultClient, token),
+		account:  syncclient.NewAccountClient(address, http.DefaultClient, token),
 	}
 }
 
@@ -190,7 +191,7 @@ func TestEveryClientReadsTheTokenAtEachCall(t *testing.T) {
 	stub, address := serveStub(t, syncprotocol.Version)
 	var mu sync.Mutex
 	token := "first"
-	catalog := syncprotocol.NewCatalogClient(address, http.DefaultClient, func() string {
+	catalog := syncclient.NewCatalogClient(address, http.DefaultClient, func() string {
 		mu.Lock()
 		defer mu.Unlock()
 		return token
@@ -285,7 +286,7 @@ func TestErrQuotaExceededCarriesTheUsedAndTheLimitOfTheServer(t *testing.T) {
 	failure.AddDetail(detail)
 	stub.fail = failure
 
-	_, got := syncprotocol.NewBlobClient(address, http.DefaultClient, func() string { return "t" }).ReserveBlobs(t.Context(), bytes.Repeat([]byte{1}, 16), []uint64{4096})
+	_, got := syncclient.NewBlobClient(address, http.DefaultClient, func() string { return "t" }).ReserveBlobs(t.Context(), bytes.Repeat([]byte{1}, 16), []uint64{4096})
 
 	var quota syncprotocol.QuotaExceededError
 	if !errors.As(got, &quota) || quota.Used != 700 || quota.Limit != 500 {
@@ -300,7 +301,7 @@ func TestGetCatalogReadsEveryPageAndReturnsTheEntriesInOrder(t *testing.T) {
 	t.Parallel()
 	stub, address := serveStub(t, syncprotocol.Version)
 
-	entries, err := syncprotocol.NewCatalogClient(address, http.DefaultClient, func() string { return "t" }).GetCatalog(t.Context(), 0)
+	entries, err := syncclient.NewCatalogClient(address, http.DefaultClient, func() string { return "t" }).GetCatalog(t.Context(), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +325,7 @@ func TestGetCatalogStartsAfterTheVersionOfTheRequest(t *testing.T) {
 	t.Parallel()
 	_, address := serveStub(t, syncprotocol.Version)
 
-	entries, err := syncprotocol.NewCatalogClient(address, http.DefaultClient, func() string { return "t" }).GetCatalog(t.Context(), 3)
+	entries, err := syncclient.NewCatalogClient(address, http.DefaultClient, func() string { return "t" }).GetCatalog(t.Context(), 3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,7 +366,7 @@ func TestTheWrappersReturnWhatTheServerAnswered(t *testing.T) {
 func TestGetAccountChainByRootReportsWhetherTheAccountExists(t *testing.T) {
 	t.Parallel()
 	stub, address := serveStub(t, syncprotocol.Version)
-	account := syncprotocol.NewAccountClient(address, http.DefaultClient, func() string { return "" })
+	account := syncclient.NewAccountClient(address, http.DefaultClient, func() string { return "" })
 	id, root, signature := bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{8}, 64)
 
 	chain, found, err := account.GetAccountChainByRoot(t.Context(), id, root, signature)
@@ -384,7 +385,7 @@ func TestGetAccountChainReturnsTheChainOfTheSession(t *testing.T) {
 	stub, address := serveStub(t, syncprotocol.Version)
 	stub.chain = []byte("chain bytes")
 
-	chain, err := syncprotocol.NewAccountClient(address, http.DefaultClient, func() string { return "t" }).GetAccountChain(t.Context())
+	chain, err := syncclient.NewAccountClient(address, http.DefaultClient, func() string { return "t" }).GetAccountChain(t.Context())
 
 	if err != nil || string(chain) != "chain bytes" {
 		t.Errorf("chain = %q, error = %v, want the chain", chain, err)
@@ -398,7 +399,7 @@ func TestACallToAServerThatIsNotThereIsUnreachable(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 	defer cancel()
 
-	_, err := syncprotocol.NewCatalogClient(address.URL, http.DefaultClient, func() string { return "t" }).GetCatalog(ctx, 0)
+	_, err := syncclient.NewCatalogClient(address.URL, http.DefaultClient, func() string { return "t" }).GetCatalog(ctx, 0)
 
 	if !errors.Is(err, syncprotocol.ErrUnreachable) {
 		t.Errorf("error = %v, want ErrUnreachable", err)

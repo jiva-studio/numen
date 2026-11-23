@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 )
 
 func TestGetAccountChain_ReturnsTheChainTheDeviceSignedInWith(t *testing.T) {
@@ -62,7 +62,7 @@ func TestGetAccountChain_KeepsTheLongerChainWhenAnOlderDeviceSignsInAgainWithThe
 func TestGetAccountChain_WithoutASessionIsUnauthenticated(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
-	anonymous := syncprotocol.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
+	anonymous := syncclient.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
 
 	_, err := anonymous.GetAccountChain(t.Context())
 
@@ -79,7 +79,7 @@ type chainRead struct {
 
 func readChain(e *env, signer identity.RecoveryKey, root []byte) chainRead {
 	e.tb.Helper()
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncclient.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChainReadChallenge(e.tb.Context(), root)
 	if err != nil {
 		e.tb.Fatal(err)
@@ -89,7 +89,7 @@ func readChain(e *env, signer identity.RecoveryKey, root []byte) chainRead {
 }
 
 func (c chainRead) ask(e *env) ([]byte, bool, error) {
-	anonymous := syncprotocol.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
+	anonymous := syncclient.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
 	return anonymous.GetAccountChainByRoot(e.tb.Context(), c.id, c.root, c.signature)
 }
 
@@ -139,7 +139,7 @@ func TestGetAccountChainByRoot_RefusesASignatureOverAnotherPluginDomain(t *testi
 	e := newEnv(t)
 	root := e.account.root.Public().Sign
 	read := readChain(e, e.account.root, root)
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncclient.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChainReadChallenge(t.Context(), root)
 	if err != nil {
 		t.Fatal(err)
@@ -173,13 +173,13 @@ func TestGetAccountChainByRoot_RefusesASignatureOfTheSignInMessageOfTheSameChall
 	t.Parallel()
 	e := newEnv(t)
 	root := e.account.root.Public().Sign
-	client := syncprotocol.NewSignInClient(e.address, http.DefaultClient, time.Now)
+	client := syncclient.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
 	challenge, err := client.GetChallenge(t.Context(), root)
 	if err != nil {
 		t.Fatal(err)
 	}
 	signature := e.account.root.SignForRecovery(syncprotocol.SignInPluginID, challenge.Message)
-	anonymous := syncprotocol.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
+	anonymous := syncclient.NewAccountClient(e.address, http.DefaultClient, func() string { return "" })
 
 	_, found, got := anonymous.GetAccountChainByRoot(t.Context(), challenge.ID, root, signature[:])
 

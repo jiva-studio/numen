@@ -107,11 +107,11 @@ func (r *runtime) startWithLock(address string) {
 	cloudSide := cloud.New(cloud.Config{Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
-		Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock, Random: rand.Reader, Subscriptions: cloudSide,
+		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: rand.Reader, Subscriptions: cloudSide,
 	}
 	r.current = NewBackend(deps)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: syncvault.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
+		Pass: syncvault.NewSyncVault(deps), Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock,
 		Subscriptions: cloudSide,
 		Interval:      func() time.Duration { return time.Duration(r.secs.Load()) * time.Second }, Changed: r.woken,
 	})

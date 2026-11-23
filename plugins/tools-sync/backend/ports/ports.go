@@ -58,10 +58,11 @@ type Identity interface {
 
 // Files is the files of one vault and the feed of their changes.
 type Files interface {
-	host.FileReader
-	host.FileWriter
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
+	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
+	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
+	Create(ctx context.Context, path string, content []byte) error
 	host.FileChangeLister
-	Indexer
 }
 
 // Indexer asks the host to read a vault into its index.
@@ -79,6 +80,7 @@ type Store interface {
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	Files(id domain.VaultID) Files
+	Indexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }
 

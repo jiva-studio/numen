@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
-import type { SubscriptionClient, SubscriptionResponse } from '../api/subscription'
+import type { SubscriptionClient } from '../api/subscription'
 import { useSubscription } from './subscription'
+
+type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 const CHECKOUT_URL = 'https://pay.example/checkout/abc'

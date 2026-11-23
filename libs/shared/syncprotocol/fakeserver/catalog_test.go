@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 )
 
 func TestAppendCatalogEntry_CommitsTheFirstEntryAndGetCatalogReturnsIt(t *testing.T) {
@@ -193,7 +194,7 @@ func TestAppendCatalogEntry_RefusesAVaultThatExistsAndAnEntryForAVaultThatDoesNo
 func TestACatalogCallWithoutASessionIsUnauthenticated(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
-	anonymous := syncprotocol.NewCatalogClient(e.address, http.DefaultClient, func() string { return "not-a-session" })
+	anonymous := syncclient.NewCatalogClient(e.address, http.DefaultClient, func() string { return "not-a-session" })
 
 	_, appendErr := anonymous.AppendCatalogEntry(t.Context(), e.newCatalogEntry(newID(16), true, "body"))
 	_, readErr := anonymous.GetCatalog(t.Context(), 0)

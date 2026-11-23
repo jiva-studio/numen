@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -23,11 +24,11 @@ type Config struct {
 type Cloud struct {
 	http         *http.Client
 	refresh      func(ctx context.Context) error
-	catalog      *syncprotocol.CatalogClient
-	revisions    *syncprotocol.RevisionClient
-	blobs        *syncprotocol.BlobClient
-	account      *syncprotocol.AccountClient
-	subscription *syncprotocol.SubscriptionClient
+	catalog      *syncclient.CatalogClient
+	revisions    *syncclient.RevisionClient
+	blobs        *syncclient.BlobClient
+	account      *syncclient.AccountClient
+	subscription *syncclient.SubscriptionClient
 }
 
 // New returns the server of the config.
@@ -35,11 +36,11 @@ func New(cfg Config) *Cloud {
 	return &Cloud{
 		http:         cfg.HTTP,
 		refresh:      cfg.Refresh,
-		catalog:      syncprotocol.NewCatalogClient(cfg.Address, cfg.HTTP, cfg.Token),
-		revisions:    syncprotocol.NewRevisionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		blobs:        syncprotocol.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
-		account:      syncprotocol.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
-		subscription: syncprotocol.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		catalog:      syncclient.NewCatalogClient(cfg.Address, cfg.HTTP, cfg.Token),
+		revisions:    syncclient.NewRevisionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
+		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
+		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}
 }
 
@@ -93,11 +94,11 @@ func (c *Cloud) GetAccountChain(ctx context.Context) ([]byte, error) {
 
 // PutBlob uploads a blob to the URL of its reservation.
 func (c *Cloud) PutBlob(ctx context.Context, url string, body []byte) error {
-	return syncprotocol.PutBlob(ctx, c.http, url, body)
+	return syncclient.PutBlob(ctx, c.http, url, body)
 }
 
 func (c *Cloud) GetBlob(ctx context.Context, url string) ([]byte, error) {
-	return syncprotocol.GetBlob(ctx, c.http, url)
+	return syncclient.GetBlob(ctx, c.http, url)
 }
 
 func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription, error) {

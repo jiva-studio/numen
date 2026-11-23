@@ -26,7 +26,7 @@ type pass struct {
 }
 
 func (p *pass) run(ctx context.Context) error {
-	previous, err := p.use.deps.State.ReadStatus(ctx, p.id)
+	previous, err := p.use.deps.Progress.ReadStatus(ctx, p.id)
 	if err != nil {
 		return err
 	}
@@ -45,11 +45,11 @@ func (p *pass) run(ctx context.Context) error {
 	if err := p.use.reports.report(ctx, len(p.conflicts), previous.ConflictCount, p.unverified); err != nil {
 		return err
 	}
-	return p.use.deps.State.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: len(p.conflicts)})
+	return p.use.deps.Progress.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: len(p.conflicts)})
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.pull.Execute(ctx, pull.Input{VaultID: p.id, Authors: p.authors.IsTrusted})
+	result, err := p.use.steps.pull.Execute(ctx, pull.Input{VaultID: p.id, Authors: p.authors.IsTrusted})
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	changes, err := p.use.scan.Execute(ctx, localchanges.Input{VaultID: p.id, Bases: getBases(records)})
+	changes, err := p.use.steps.scan.Execute(ctx, localchanges.Input{VaultID: p.id, Bases: getBases(records)})
 	if err != nil {
 		return false, err
 	}
@@ -75,7 +75,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	outcomes, err := p.use.commit.Execute(ctx, commit.Input{Vault: vault, Files: files})
+	outcomes, err := p.use.steps.commit.Execute(ctx, commit.Input{Vault: vault, Files: files})
 	if err != nil {
 		return false, err
 	}

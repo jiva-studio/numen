@@ -193,7 +193,7 @@ func newRecord(t *testing.T) identity.Record {
 
 func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey) identity.Record {
 	t.Helper()
-	chain, err := chain.AppendDevice(root, device.Public(), "Test device", time.Now())
+	chain, err := chain.AppendDevice(root, device.Public(), "Test device", clock.System{}.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

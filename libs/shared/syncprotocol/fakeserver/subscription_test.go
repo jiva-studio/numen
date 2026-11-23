@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
@@ -41,7 +42,7 @@ type billing struct {
 	clock        *testClock
 	address      string
 	env          *env
-	subscription *syncprotocol.SubscriptionClient
+	subscription *syncclient.SubscriptionClient
 }
 
 func newBillingServer(tb testing.TB, clock *testClock, needsSubscription bool) (*fakeserver.Server, string) {
@@ -67,7 +68,7 @@ func newBillingOf(tb testing.TB, server *fakeserver.Server, clock *testClock, ad
 	e := newEnvOn(tb, address, account, device)
 	return &billing{
 		tb: tb, server: server, clock: clock, address: address, env: e,
-		subscription: syncprotocol.NewSubscriptionClient(address, http.DefaultClient, func() string { return e.token }),
+		subscription: syncclient.NewSubscriptionClient(address, http.DefaultClient, func() string { return e.token }),
 	}
 }
 
@@ -179,7 +180,7 @@ func TestGetSubscription_IsNoneForANewAccountWhenTheServerNeedsASubscription(t *
 func TestGetSubscription_WithoutASessionIsUnauthenticated(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, true)
-	anonymous := syncprotocol.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return "" })
+	anonymous := syncclient.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return "" })
 
 	_, err := anonymous.GetSubscription(t.Context())
 
@@ -244,7 +245,7 @@ func TestPayPage_OfAnotherAccountDoesNotActivateThisAccount(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, true)
 	other := newSecondAccountOn(t, b.address)
-	otherClient := syncprotocol.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return other.token })
+	otherClient := syncclient.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return other.token })
 	url, err := otherClient.CreateCheckout(t.Context())
 	if err != nil {
 		t.Fatal(err)

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GetStatusResponse, VaultsClient } from '../api/vaults'
+import type { VaultsClient } from '../api/vaults'
 import { createSyncState } from './sync'
+
+type GetStatusResponse = Awaited<ReturnType<VaultsClient['getStatus']>>
 
 const createStatus = (patch: Partial<GetStatusResponse> = {}): GetStatusResponse => ({
   hasIdentity: true,

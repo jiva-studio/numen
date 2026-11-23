@@ -1,4 +1,4 @@
-package syncprotocol
+package client
 
 import (
 	"context"
@@ -11,20 +11,10 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
-
-// SubscriptionPhase is the phase of a subscription as the server tells it.
-type SubscriptionPhase = syncv1.SubscriptionPhase
-
-// Subscription is the subscription of an account. A time the server did not send is the zero time.
-type Subscription struct {
-	Phase     SubscriptionPhase
-	PeriodEnd time.Time
-	WritesEnd time.Time
-	DeleteAt  time.Time
-}
 
 // SubscriptionClient calls the subscription service of one server with the bearer of the session.
 type SubscriptionClient struct {
@@ -38,15 +28,15 @@ func NewSubscriptionClient(address string, httpClient *http.Client, token func()
 }
 
 // GetSubscription returns the subscription of the account of the session. A response with no phase is an error.
-func (c *SubscriptionClient) GetSubscription(ctx context.Context) (Subscription, error) {
+func (c *SubscriptionClient) GetSubscription(ctx context.Context) (syncprotocol.Subscription, error) {
 	response, err := c.rpc.GetSubscription(ctx, connect.NewRequest(&syncv1.GetSubscriptionRequest{}))
 	if err != nil {
-		return Subscription{}, readSubscriptionError(err)
+		return syncprotocol.Subscription{}, syncprotocol.ReadSubscriptionError(err)
 	}
 	if response.Msg.GetPhase() == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_UNSPECIFIED {
-		return Subscription{}, errors.New("the sync server sent a subscription without a phase")
+		return syncprotocol.Subscription{}, errors.New("the sync server sent a subscription without a phase")
 	}
-	return Subscription{
+	return syncprotocol.Subscription{
 		Phase:     response.Msg.GetPhase(),
 		PeriodEnd: readUnixTime(response.Msg.GetPeriodEndAt()),
 		WritesEnd: readUnixTime(response.Msg.GetWritesEndAt()),
@@ -60,25 +50,13 @@ func (c *SubscriptionClient) GetSubscription(ctx context.Context) (Subscription,
 func (c *SubscriptionClient) CreateCheckout(ctx context.Context) (string, error) {
 	response, err := c.rpc.CreateCheckout(ctx, connect.NewRequest(&syncv1.CreateCheckoutRequest{}))
 	if err != nil {
-		return "", readSubscriptionError(err)
+		return "", syncprotocol.ReadSubscriptionError(err)
 	}
 	address := response.Msg.GetCheckoutUrl()
 	if err := checkCheckoutAddress(address); err != nil {
 		return "", err
 	}
 	return address, nil
-}
-
-func readSubscriptionError(err error) error {
-	if failure, ok := errors.AsType[*connect.Error](err); ok {
-		switch failure.Code() {
-		case connect.CodeAlreadyExists:
-			return refusalError{sentinel: ErrAlreadySubscribed, cause: failure}
-		case connect.CodeUnimplemented:
-			return refusalError{sentinel: ErrBillingUnavailable, cause: failure}
-		}
-	}
-	return readError(err)
 }
 
 func readUnixTime(seconds int64) time.Time {

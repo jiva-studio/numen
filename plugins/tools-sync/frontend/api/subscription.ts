@@ -7,10 +7,8 @@ import type { Api, ApiError } from '@numen/plugin-sdk'
 
 import type { SubscriptionPhase } from '../lib/subscriptionView'
 
-export type { SubscriptionPhase }
-
 /** The phase is empty when the device has no identity. A time is RFC 3339, and empty when the server sent none. */
-export interface SubscriptionResponse {
+interface SubscriptionResponse {
   readonly hasIdentity: boolean
   readonly phase: SubscriptionPhase | ''
   readonly periodEndAt: string
@@ -18,7 +16,7 @@ export interface SubscriptionResponse {
   readonly deleteAt: string
 }
 
-export interface CreateCheckoutResponse {
+interface CreateCheckoutResponse {
   readonly checkoutUrl: string
 }
 
@@ -29,7 +27,7 @@ export interface SubscriptionClient {
 }
 
 /** A failed call: the message of the backend and its code, such as `unavailable` or `already_exists`. */
-export interface SubscriptionFailure extends Error {
+interface SubscriptionFailure extends Error {
   readonly code: string
 }
 

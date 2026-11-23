@@ -42,6 +42,9 @@ func (h Host) GetVaults(ctx context.Context) ([]domain.Vault, error) { return h.
 // Files returns the files of the vault.
 func (h Host) Files(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
+// Indexer returns the index of the vault.
+func (h Host) Indexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
+
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
@@ -203,7 +206,7 @@ func (c *Computer) JoinDeps() join.Deps {
 func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
-		Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud,
+		Host: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud,
 	}
 }
 

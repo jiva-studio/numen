@@ -24,28 +24,28 @@ export interface RemoteVault {
   readonly isConnected: boolean
 }
 
-export interface StatusItem {
+interface StatusItem {
   readonly key: string
   readonly text: string
 }
 
 type Empty = Record<string, never>
 
-export interface ListVaultsResponse {
+interface ListVaultsResponse {
   readonly vaults: readonly Vault[]
 }
 
-export interface ListRemoteVaultsResponse {
+interface ListRemoteVaultsResponse {
   readonly vaults: readonly RemoteVault[]
 }
 
-export interface ConnectVaultRequest {
+interface ConnectVaultRequest {
   readonly vaultId: string
   readonly mode: 'new' | 'existing'
   readonly remoteId?: string
 }
 
-export interface GetStatusResponse {
+interface GetStatusResponse {
   readonly hasIdentity: boolean
   readonly isReachable: boolean
   readonly items: readonly StatusItem[]

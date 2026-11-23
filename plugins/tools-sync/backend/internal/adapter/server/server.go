@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 )
 
@@ -21,15 +22,15 @@ type Config struct {
 
 // Server is the sync server at an address.
 type Server struct {
-	client  *syncprotocol.SignInClient
-	account *syncprotocol.AccountClient
+	client  *syncclient.SignInClient
+	account *syncclient.AccountClient
 }
 
 // New returns the server at the address of the config.
 func New(cfg Config) *Server {
 	return &Server{
-		client:  syncprotocol.NewSignInClient(cfg.Address, cfg.HTTP, cfg.Now),
-		account: syncprotocol.NewAccountClient(cfg.Address, cfg.HTTP, func() string { return "" }),
+		client:  syncclient.NewSignInClient(cfg.Address, cfg.HTTP, cfg.Now),
+		account: syncclient.NewAccountClient(cfg.Address, cfg.HTTP, func() string { return "" }),
 	}
 }
 
@@ -45,7 +46,7 @@ func (s *Server) GetChallenge(ctx context.Context, deviceSignKey []byte) (sessio
 
 // SignIn sends the proof and returns the session the server gives.
 func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Session, error) {
-	opened, err := s.client.SignIn(ctx, syncprotocol.Proof{
+	opened, err := s.client.SignIn(ctx, syncclient.Proof{
 		ChallengeID: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
 	})
 	if err != nil {

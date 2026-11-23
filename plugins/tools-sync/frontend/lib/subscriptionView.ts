@@ -4,14 +4,11 @@ export type SubscriptionPhase = 'none' | 'active' | 'grace' | 'readOnly' | 'dele
 
 export type SubscriptionStatus = 'loading' | 'ready' | 'unreachable' | 'noIdentity'
 
-/** How loud the badge of the card is. */
-export type BadgeTone = 'neutral' | 'positive' | 'warning'
-
 /** What the card says: the badge and the text under the title. */
 export interface SubscriptionView {
   readonly badge: string
   readonly text: string
-  readonly tone: BadgeTone
+  readonly tone: 'neutral' | 'positive' | 'warning'
 }
 
 /** The times of the subscription as the server sent them, RFC 3339 or empty. */
@@ -35,7 +32,7 @@ const NUMERIC_DATE = new Intl.DateTimeFormat('en-GB', {
 })
 
 /** A local date such as `2 Jan 2006`, and an empty text for a time that is not there. */
-export function formatDate(time: string): string {
+function formatDate(time: string): string {
   const at = Date.parse(time)
   if (Number.isNaN(at)) return ''
   const parts = new Map(NUMERIC_DATE.formatToParts(at).map((one) => [one.type, one.value]))

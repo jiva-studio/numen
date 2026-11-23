@@ -6,7 +6,12 @@ import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { SERVICE } from './vaults'
 import { createSubscriptionClient } from './subscription'
-import type { CreateCheckoutResponse, SubscriptionResponse } from './subscription'
+import type { SubscriptionClient } from './subscription'
+
+type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
+interface CreateCheckoutResponse {
+  readonly checkoutUrl: string
+}
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,

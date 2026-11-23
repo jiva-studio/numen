@@ -1,4 +1,4 @@
-package syncprotocol_test
+package client_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
@@ -57,8 +58,8 @@ func serveSubscriptionStub(tb testing.TB, serverVersion uint32) (*subscriptionSt
 	return stub, server.URL
 }
 
-func newSubscriptionClient(address string) *syncprotocol.SubscriptionClient {
-	return syncprotocol.NewSubscriptionClient(address, http.DefaultClient, func() string { return "token-of-the-session" })
+func newSubscriptionClient(address string) *syncclient.SubscriptionClient {
+	return syncclient.NewSubscriptionClient(address, http.DefaultClient, func() string { return "token-of-the-session" })
 }
 
 func TestSubscriptionClient_SendsTheVersionAndTheBearerOfTheTokenInEachRequest(t *testing.T) {

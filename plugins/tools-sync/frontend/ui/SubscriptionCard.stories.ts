@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import { asValue } from '@numen/plugin-sdk'
-import type { SubscriptionResponse } from '../api/subscription'
+import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 import '../styles.css'
+
+type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 

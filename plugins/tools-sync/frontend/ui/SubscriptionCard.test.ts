@@ -1,8 +1,10 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { asValue, type Result } from '@numen/plugin-sdk'
-import type { SubscriptionClient, SubscriptionResponse } from '../api/subscription'
+import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
+
+type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 const CHECKOUT_URL = 'https://pay.example/checkout/abc'
