@@ -9,7 +9,10 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-const restoreFallback = 30 * time.Second
+const (
+	restoreFallback = 30 * time.Second
+	restoreLifetime = 10 * time.Minute
+)
 
 // StartRestore starts to restore the account of recovery words on this device.
 type StartRestore struct{ completion restoreCompletion }
@@ -19,7 +22,7 @@ func NewStartRestore(d Deps) *StartRestore { return &StartRestore{completion: d.
 
 // Execute parses the words (ErrInvalidWords), refuses when an identity exists (ErrIdentityExists), derives the
 // recovery key, makes a device key and keeps both in memory, replacing an earlier pending restore. Nothing is
-// written. When no plugin completes the restore within 30 seconds, it completes as a restore with no chain.
+// written. When no plugin completes the restore within 30 seconds, it completes as a restore with no chain. A pending restore that is not completed within 10 minutes is dropped with its keys.
 func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	parsed, err := identitylib.ParseRecoveryWords(words)
 	if err != nil {
@@ -44,7 +47,16 @@ func (c restoreCompletion) start(ctx context.Context, recovery identitylib.Recov
 	restore := &pendingRestore{recovery: recovery, device: device, startedAt: clock.Now(), replaced: make(chan struct{})}
 	c.restores.replace(restore)
 	go c.completeAfterFallback(context.WithoutCancel(ctx), restore, clock.After(restoreFallback))
+	go c.expireAfterLifetime(restore, clock.After(restoreLifetime))
 	return nil
+}
+
+func (c restoreCompletion) expireAfterLifetime(restore *pendingRestore, fired <-chan time.Time) {
+	select {
+	case <-restore.replaced:
+	case <-fired:
+		c.restores.expire(restore)
+	}
 }
 
 func (c restoreCompletion) completeAfterFallback(ctx context.Context, restore *pendingRestore, fired <-chan time.Time) {

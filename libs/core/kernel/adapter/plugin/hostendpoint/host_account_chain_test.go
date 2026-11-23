@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -100,7 +99,10 @@ func newRevokeSetup(t *testing.T) *revokeSetup {
 	clock := testsupport.NewClockAt(time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC))
 	keys, chains, progress := &memoryKeys{keys: map[string]string{}}, &memoryChain{}, identity.NewProgress()
 	deps := identity.NewDeps(keys, deviceNames{}, clock).WithChains(chains).WithProgress(progress)
-	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
+	words, err := identity.NewGenerateRecoveryWords(deps).Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := identity.NewCreateIdentity(deps).Execute(t.Context(), words); err != nil {
 		t.Fatal(err)
 	}

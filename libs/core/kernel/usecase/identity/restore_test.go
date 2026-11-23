@@ -23,7 +23,7 @@ type restoreKit struct {
 	keys     *fakeKeyStore
 	clock    *testsupport.ManualClock
 	get      *identity.GetIdentity
-	create   *identity.CreateIdentity
+	create   *identity.SeededCreate
 	public   *identity.GetPublicIdentity
 	start    *identity.StartRestore
 	pending  *identity.GetPendingRestore
@@ -45,7 +45,7 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	return restoreKit{
 		keys: keys, clock: clock, saver: saver,
 		get:      identity.NewGetIdentity(deps),
-		create:   identity.NewCreateIdentity(deps),
+		create:   identity.NewSeededCreate(deps),
 		public:   identity.NewGetPublicIdentity(deps),
 		start:    identity.NewStartRestore(deps),
 		pending:  identity.NewGetPendingRestore(deps),
@@ -551,4 +551,34 @@ func (k restoreKit) kitOf(tb testing.TB, words []string) identitydomain.Kit {
 		tb.Fatal("no kit reached the saver")
 	}
 	return made
+}
+
+func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *testing.T) {
+	t.Parallel()
+	k := newRestoreKit(t, "Phone")
+	k.keys.setFails = errors.New("key store is locked")
+	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	k.clock.Advance(restoreFallback)
+	if pending, err := k.pending.Execute(t.Context()); err != nil || !pending.IsPending {
+		t.Fatalf("pending = %+v, error = %v, want the restore to stay pending after a failed completion", pending, err)
+	}
+
+	k.clock.Advance(10 * time.Minute)
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		pending, err := k.pending.Execute(t.Context())
+		if err == nil && !pending.IsPending {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("pending = %+v, error = %v, want the restore dropped after 10 minutes", pending, err)
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if _, err := k.sign.Execute(t.Context(), syncPlugin, []byte("message")); !errors.Is(err, identitydomain.ErrNoPendingRestore) {
+		t.Errorf("SignAsRecovery after the expiry: error = %v, want ErrNoPendingRestore", err)
+	}
 }

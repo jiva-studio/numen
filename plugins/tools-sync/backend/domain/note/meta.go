@@ -33,8 +33,10 @@ func getMetaData(vaultID, fileID []byte) []byte {
 	return bytes.Join([][]byte{[]byte(metaContext), vaultID, fileID}, nil)
 }
 
+const metaPadStep = 64
+
 // SealMeta returns the sealed metadata: one byte of version, a random nonce and the JSON sealed under the vault
-// key, bound to the vault and the file.
+// key, bound to the vault and the file. The JSON is padded with spaces to a multiple of 64 bytes.
 func SealMeta(random io.Reader, vaultKey [32]byte, vaultID, fileID []byte, meta Meta) ([]byte, error) {
 	aead, err := chacha20poly1305.NewX(vaultKey[:])
 	if err != nil {
@@ -44,6 +46,7 @@ func SealMeta(random io.Reader, vaultKey [32]byte, vaultID, fileID []byte, meta 
 	if err != nil {
 		return nil, fmt.Errorf("encode the metadata: %w", err)
 	}
+	plain = append(plain, bytes.Repeat([]byte{' '}, (metaPadStep-len(plain)%metaPadStep)%metaPadStep)...)
 	nonce := make([]byte, chacha20poly1305.NonceSizeX)
 	if _, err := io.ReadFull(random, nonce); err != nil {
 		return nil, fmt.Errorf("read a nonce: %w", err)

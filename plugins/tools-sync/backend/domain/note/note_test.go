@@ -136,3 +136,21 @@ func TestDecide_ConflictsWhenTheLocalNoteDiffersFromTheBaseAndTheHead(t *testing
 		t.Errorf("Decide(a local note with no base) = %v, want Conflict", got)
 	}
 }
+
+func TestSealMeta_PadsTheSealedMetadataToAMultipleOf64Bytes(t *testing.T) {
+	t.Parallel()
+	key, vaultID, fileID := getVaultKey(), []byte("vault"), []byte("file")
+	for _, path := range []string{"a.md", "notes/a longer name.md", "notes/projects/2026/a much longer name of a note.md"} {
+		sealed, err := note.SealMeta(bytes.NewReader(bytes.Repeat([]byte{7}, 24)), key, vaultID, fileID, note.Meta{Path: path, Key: make([]byte, 32), Hash: "h"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body := len(sealed) - 1 - 24 - 16; body%64 != 0 {
+			t.Errorf("%q: sealed body has %d bytes, want a multiple of 64", path, body)
+		}
+		got, err := note.OpenMeta(key, vaultID, fileID, sealed)
+		if err != nil || got.Path != path {
+			t.Errorf("%q: OpenMeta() = %+v, %v, want the path back", path, got, err)
+		}
+	}
+}
