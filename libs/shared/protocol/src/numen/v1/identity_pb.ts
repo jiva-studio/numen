@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/identity.proto.
  */
 export const file_numen_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEidQoMSWRlbnRpdHlJbmZvEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSGgoSZGV2aWNlX2ZpbmdlcnByaW50GAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJEhcKD2RldmljZV9hZGRlZF9hdBgEIAEoCSIUChJHZXRJZGVudGl0eVJlcXVlc3QiPwoTR2V0SWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbyIeChxHZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0IjMKHUdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlEhIKBXdvcmRzGAEgAygJQgOAAQEiKwoVQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEifgoWQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIXChVEZWxldGVJZGVudGl0eVJlcXVlc3QiGAoWRGVsZXRlSWRlbnRpdHlSZXNwb25zZSqyAQoRSWRlbnRpdHlFcnJvckNvZGUSIwofSURFTlRJVFlfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIUlERU5USVRZX0VSUk9SX0NPREVfSU5WQUxJRF9XT1JEUxABEicKI0lERU5USVRZX0VSUk9SX0NPREVfSURFTlRJVFlfRVhJU1RTEAISKAokSURFTlRJVFlfRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAMy8QIKD0lkZW50aXR5U2VydmljZRJKCgtHZXRJZGVudGl0eRIcLm51bWVuLnYxLkdldElkZW50aXR5UmVxdWVzdBodLm51bWVuLnYxLkdldElkZW50aXR5UmVzcG9uc2USaAoVR2VuZXJhdGVSZWNvdmVyeVdvcmRzEiYubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdBonLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlElMKDkNyZWF0ZUlkZW50aXR5Eh8ubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRJTCg5EZWxldGVJZGVudGl0eRIfLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUlkZW50aXR5UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEidQoMSWRlbnRpdHlJbmZvEhsKE2FjY291bnRfZmluZ2VycHJpbnQYASABKAkSGgoSZGV2aWNlX2ZpbmdlcnByaW50GAIgASgJEhMKC2RldmljZV9uYW1lGAMgASgJEhcKD2RldmljZV9hZGRlZF9hdBgEIAEoCSIUChJHZXRJZGVudGl0eVJlcXVlc3QiPwoTR2V0SWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbyIeChxHZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXF1ZXN0IjMKHUdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlEhIKBXdvcmRzGAEgAygJQgOAAQEiKwoVQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEifgoWQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRIoCghpZGVudGl0eRgBIAEoCzIWLm51bWVuLnYxLklkZW50aXR5SW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIpChNTdGFydFJlc3RvcmVSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQEiUgoUU3RhcnRSZXN0b3JlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiFwoVRGVsZXRlSWRlbnRpdHlSZXF1ZXN0IhgKFkRlbGV0ZUlkZW50aXR5UmVzcG9uc2UqsgEKEUlkZW50aXR5RXJyb3JDb2RlEiMKH0lERU5USVRZX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIlCiFJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfV09SRFMQARInCiNJREVOVElUWV9FUlJPUl9DT0RFX0lERU5USVRZX0VYSVNUUxACEigKJElERU5USVRZX0VSUk9SX0NPREVfS0VZX1NUT1JFX0ZBSUxFRBADMsADCg9JZGVudGl0eVNlcnZpY2USSgoLR2V0SWRlbnRpdHkSHC5udW1lbi52MS5HZXRJZGVudGl0eVJlcXVlc3QaHS5udW1lbi52MS5HZXRJZGVudGl0eVJlc3BvbnNlEmgKFUdlbmVyYXRlUmVjb3ZlcnlXb3JkcxImLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1JlcXVlc3QaJy5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRJTCg5DcmVhdGVJZGVudGl0eRIfLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USTQoMU3RhcnRSZXN0b3JlEh0ubnVtZW4udjEuU3RhcnRSZXN0b3JlUmVxdWVzdBoeLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlc3BvbnNlElMKDkRlbGV0ZUlkZW50aXR5Eh8ubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * IdentityInfo is what a person can see of the identity of this device.
@@ -161,6 +161,47 @@ export const CreateIdentityResponseSchema: GenMessage<CreateIdentityResponse> = 
   messageDesc(file_numen_v1_identity, 6);
 
 /**
+ * @generated from message numen.v1.StartRestoreRequest
+ */
+export type StartRestoreRequest = Message<"numen.v1.StartRestoreRequest"> & {
+  /**
+   * @generated from field: repeated string words = 1;
+   */
+  words: string[];
+};
+
+/**
+ * Describes the message numen.v1.StartRestoreRequest.
+ * Use `create(StartRestoreRequestSchema)` to create a new message.
+ */
+export const StartRestoreRequestSchema: GenMessage<StartRestoreRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 7);
+
+/**
+ * @generated from message numen.v1.StartRestoreResponse
+ */
+export type StartRestoreResponse = Message<"numen.v1.StartRestoreResponse"> & {
+  /**
+   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   */
+  error: IdentityErrorCode;
+
+  /**
+   * detail names the first wrong position and never holds a word.
+   *
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.StartRestoreResponse.
+ * Use `create(StartRestoreResponseSchema)` to create a new message.
+ */
+export const StartRestoreResponseSchema: GenMessage<StartRestoreResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_identity, 8);
+
+/**
  * @generated from message numen.v1.DeleteIdentityRequest
  */
 export type DeleteIdentityRequest = Message<"numen.v1.DeleteIdentityRequest"> & {
@@ -171,7 +212,7 @@ export type DeleteIdentityRequest = Message<"numen.v1.DeleteIdentityRequest"> & 
  * Use `create(DeleteIdentityRequestSchema)` to create a new message.
  */
 export const DeleteIdentityRequestSchema: GenMessage<DeleteIdentityRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 7);
+  messageDesc(file_numen_v1_identity, 9);
 
 /**
  * @generated from message numen.v1.DeleteIdentityResponse
@@ -184,7 +225,7 @@ export type DeleteIdentityResponse = Message<"numen.v1.DeleteIdentityResponse"> 
  * Use `create(DeleteIdentityResponseSchema)` to create a new message.
  */
 export const DeleteIdentityResponseSchema: GenMessage<DeleteIdentityResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 8);
+  messageDesc(file_numen_v1_identity, 10);
 
 /**
  * IdentityErrorCode is why a CreateIdentity call was refused. The zero value is a call that
@@ -229,7 +270,7 @@ export const IdentityErrorCodeSchema: GenEnum<IdentityErrorCode> = /*@__PURE__*/
 
 /**
  * IdentityService manages the account identity of this device. No secret key reaches the window; the
- * recovery words cross the wire only in GenerateRecoveryWords and CreateIdentity.
+ * recovery words cross the wire only in GenerateRecoveryWords, CreateIdentity and StartRestore.
  *
  * @generated from service numen.v1.IdentityService
  */
@@ -264,6 +305,19 @@ export const IdentityService: GenService<{
     methodKind: "unary";
     input: typeof CreateIdentityRequestSchema;
     output: typeof CreateIdentityResponseSchema;
+  },
+  /**
+   * StartRestore starts to restore the account of 12 recovery words on this device. It keeps the words
+   * and a new device key in memory and writes nothing: the sync plugin joins the existing account of the
+   * words, or the core makes the identity of the words alone after 30 seconds. Poll GetIdentity until it
+   * returns an identity.
+   *
+   * @generated from rpc numen.v1.IdentityService.StartRestore
+   */
+  startRestore: {
+    methodKind: "unary";
+    input: typeof StartRestoreRequestSchema;
+    output: typeof StartRestoreResponseSchema;
   },
   /**
    * DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.

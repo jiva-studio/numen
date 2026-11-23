@@ -42,6 +42,9 @@ const (
 	// IdentityServiceCreateIdentityProcedure is the fully-qualified name of the IdentityService's
 	// CreateIdentity RPC.
 	IdentityServiceCreateIdentityProcedure = "/numen.v1.IdentityService/CreateIdentity"
+	// IdentityServiceStartRestoreProcedure is the fully-qualified name of the IdentityService's
+	// StartRestore RPC.
+	IdentityServiceStartRestoreProcedure = "/numen.v1.IdentityService/StartRestore"
 	// IdentityServiceDeleteIdentityProcedure is the fully-qualified name of the IdentityService's
 	// DeleteIdentity RPC.
 	IdentityServiceDeleteIdentityProcedure = "/numen.v1.IdentityService/DeleteIdentity"
@@ -56,6 +59,11 @@ type IdentityServiceClient interface {
 	// CreateIdentity keeps an identity on this device for the 12 recovery words. The same words give
 	// the same account fingerprint on every device.
 	CreateIdentity(context.Context, *connect.Request[v1.CreateIdentityRequest]) (*connect.Response[v1.CreateIdentityResponse], error)
+	// StartRestore starts to restore the account of 12 recovery words on this device. It keeps the words
+	// and a new device key in memory and writes nothing: the sync plugin joins the existing account of the
+	// words, or the core makes the identity of the words alone after 30 seconds. Poll GetIdentity until it
+	// returns an identity.
+	StartRestore(context.Context, *connect.Request[v1.StartRestoreRequest]) (*connect.Response[v1.StartRestoreResponse], error)
 	// DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
 	DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error)
 }
@@ -89,6 +97,12 @@ func NewIdentityServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(identityServiceMethods.ByName("CreateIdentity")),
 			connect.WithClientOptions(opts...),
 		),
+		startRestore: connect.NewClient[v1.StartRestoreRequest, v1.StartRestoreResponse](
+			httpClient,
+			baseURL+IdentityServiceStartRestoreProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("StartRestore")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteIdentity: connect.NewClient[v1.DeleteIdentityRequest, v1.DeleteIdentityResponse](
 			httpClient,
 			baseURL+IdentityServiceDeleteIdentityProcedure,
@@ -103,6 +117,7 @@ type identityServiceClient struct {
 	getIdentity           *connect.Client[v1.GetIdentityRequest, v1.GetIdentityResponse]
 	generateRecoveryWords *connect.Client[v1.GenerateRecoveryWordsRequest, v1.GenerateRecoveryWordsResponse]
 	createIdentity        *connect.Client[v1.CreateIdentityRequest, v1.CreateIdentityResponse]
+	startRestore          *connect.Client[v1.StartRestoreRequest, v1.StartRestoreResponse]
 	deleteIdentity        *connect.Client[v1.DeleteIdentityRequest, v1.DeleteIdentityResponse]
 }
 
@@ -121,6 +136,11 @@ func (c *identityServiceClient) CreateIdentity(ctx context.Context, req *connect
 	return c.createIdentity.CallUnary(ctx, req)
 }
 
+// StartRestore calls numen.v1.IdentityService.StartRestore.
+func (c *identityServiceClient) StartRestore(ctx context.Context, req *connect.Request[v1.StartRestoreRequest]) (*connect.Response[v1.StartRestoreResponse], error) {
+	return c.startRestore.CallUnary(ctx, req)
+}
+
 // DeleteIdentity calls numen.v1.IdentityService.DeleteIdentity.
 func (c *identityServiceClient) DeleteIdentity(ctx context.Context, req *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error) {
 	return c.deleteIdentity.CallUnary(ctx, req)
@@ -135,6 +155,11 @@ type IdentityServiceHandler interface {
 	// CreateIdentity keeps an identity on this device for the 12 recovery words. The same words give
 	// the same account fingerprint on every device.
 	CreateIdentity(context.Context, *connect.Request[v1.CreateIdentityRequest]) (*connect.Response[v1.CreateIdentityResponse], error)
+	// StartRestore starts to restore the account of 12 recovery words on this device. It keeps the words
+	// and a new device key in memory and writes nothing: the sync plugin joins the existing account of the
+	// words, or the core makes the identity of the words alone after 30 seconds. Poll GetIdentity until it
+	// returns an identity.
+	StartRestore(context.Context, *connect.Request[v1.StartRestoreRequest]) (*connect.Response[v1.StartRestoreResponse], error)
 	// DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
 	DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error)
 }
@@ -164,6 +189,12 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 		connect.WithSchema(identityServiceMethods.ByName("CreateIdentity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	identityServiceStartRestoreHandler := connect.NewUnaryHandler(
+		IdentityServiceStartRestoreProcedure,
+		svc.StartRestore,
+		connect.WithSchema(identityServiceMethods.ByName("StartRestore")),
+		connect.WithHandlerOptions(opts...),
+	)
 	identityServiceDeleteIdentityHandler := connect.NewUnaryHandler(
 		IdentityServiceDeleteIdentityProcedure,
 		svc.DeleteIdentity,
@@ -178,6 +209,8 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 			identityServiceGenerateRecoveryWordsHandler.ServeHTTP(w, r)
 		case IdentityServiceCreateIdentityProcedure:
 			identityServiceCreateIdentityHandler.ServeHTTP(w, r)
+		case IdentityServiceStartRestoreProcedure:
+			identityServiceStartRestoreHandler.ServeHTTP(w, r)
 		case IdentityServiceDeleteIdentityProcedure:
 			identityServiceDeleteIdentityHandler.ServeHTTP(w, r)
 		default:
@@ -199,6 +232,10 @@ func (UnimplementedIdentityServiceHandler) GenerateRecoveryWords(context.Context
 
 func (UnimplementedIdentityServiceHandler) CreateIdentity(context.Context, *connect.Request[v1.CreateIdentityRequest]) (*connect.Response[v1.CreateIdentityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.CreateIdentity is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) StartRestore(context.Context, *connect.Request[v1.StartRestoreRequest]) (*connect.Response[v1.StartRestoreResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.StartRestore is not implemented"))
 }
 
 func (UnimplementedIdentityServiceHandler) DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error) {

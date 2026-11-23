@@ -417,6 +417,103 @@ func (x *CreateIdentityResponse) GetDetail() string {
 	return ""
 }
 
+type StartRestoreRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Words         []string               `protobuf:"bytes,1,rep,name=words,proto3" json:"words,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartRestoreRequest) Reset() {
+	*x = StartRestoreRequest{}
+	mi := &file_numen_v1_identity_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartRestoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartRestoreRequest) ProtoMessage() {}
+
+func (x *StartRestoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartRestoreRequest.ProtoReflect.Descriptor instead.
+func (*StartRestoreRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StartRestoreRequest) GetWords() []string {
+	if x != nil {
+		return x.Words
+	}
+	return nil
+}
+
+type StartRestoreResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	// detail names the first wrong position and never holds a word.
+	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartRestoreResponse) Reset() {
+	*x = StartRestoreResponse{}
+	mi := &file_numen_v1_identity_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartRestoreResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartRestoreResponse) ProtoMessage() {}
+
+func (x *StartRestoreResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_identity_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartRestoreResponse.ProtoReflect.Descriptor instead.
+func (*StartRestoreResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *StartRestoreResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *StartRestoreResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
 type DeleteIdentityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -425,7 +522,7 @@ type DeleteIdentityRequest struct {
 
 func (x *DeleteIdentityRequest) Reset() {
 	*x = DeleteIdentityRequest{}
-	mi := &file_numen_v1_identity_proto_msgTypes[7]
+	mi := &file_numen_v1_identity_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +534,7 @@ func (x *DeleteIdentityRequest) String() string {
 func (*DeleteIdentityRequest) ProtoMessage() {}
 
 func (x *DeleteIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[7]
+	mi := &file_numen_v1_identity_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +547,7 @@ func (x *DeleteIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteIdentityRequest.ProtoReflect.Descriptor instead.
 func (*DeleteIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{9}
 }
 
 type DeleteIdentityResponse struct {
@@ -461,7 +558,7 @@ type DeleteIdentityResponse struct {
 
 func (x *DeleteIdentityResponse) Reset() {
 	*x = DeleteIdentityResponse{}
-	mi := &file_numen_v1_identity_proto_msgTypes[8]
+	mi := &file_numen_v1_identity_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -473,7 +570,7 @@ func (x *DeleteIdentityResponse) String() string {
 func (*DeleteIdentityResponse) ProtoMessage() {}
 
 func (x *DeleteIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_identity_proto_msgTypes[8]
+	mi := &file_numen_v1_identity_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -486,7 +583,7 @@ func (x *DeleteIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteIdentityResponse.ProtoReflect.Descriptor instead.
 func (*DeleteIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{10}
 }
 
 var File_numen_v1_identity_proto protoreflect.FileDescriptor
@@ -511,18 +608,24 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x16CreateIdentityResponse\x122\n" +
 	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x17\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"0\n" +
+	"\x13StartRestoreRequest\x12\x19\n" +
+	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"a\n" +
+	"\x14StartRestoreResponse\x121\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x17\n" +
 	"\x15DeleteIdentityRequest\"\x18\n" +
 	"\x16DeleteIdentityResponse*\xb2\x01\n" +
 	"\x11IdentityErrorCode\x12#\n" +
 	"\x1fIDENTITY_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
 	"!IDENTITY_ERROR_CODE_INVALID_WORDS\x10\x01\x12'\n" +
 	"#IDENTITY_ERROR_CODE_IDENTITY_EXISTS\x10\x02\x12(\n" +
-	"$IDENTITY_ERROR_CODE_KEY_STORE_FAILED\x10\x032\xf1\x02\n" +
+	"$IDENTITY_ERROR_CODE_KEY_STORE_FAILED\x10\x032\xc0\x03\n" +
 	"\x0fIdentityService\x12J\n" +
 	"\vGetIdentity\x12\x1c.numen.v1.GetIdentityRequest\x1a\x1d.numen.v1.GetIdentityResponse\x12h\n" +
 	"\x15GenerateRecoveryWords\x12&.numen.v1.GenerateRecoveryWordsRequest\x1a'.numen.v1.GenerateRecoveryWordsResponse\x12S\n" +
-	"\x0eCreateIdentity\x12\x1f.numen.v1.CreateIdentityRequest\x1a .numen.v1.CreateIdentityResponse\x12S\n" +
+	"\x0eCreateIdentity\x12\x1f.numen.v1.CreateIdentityRequest\x1a .numen.v1.CreateIdentityResponse\x12M\n" +
+	"\fStartRestore\x12\x1d.numen.v1.StartRestoreRequest\x1a\x1e.numen.v1.StartRestoreResponse\x12S\n" +
 	"\x0eDeleteIdentity\x12\x1f.numen.v1.DeleteIdentityRequest\x1a .numen.v1.DeleteIdentityResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -538,7 +641,7 @@ func file_numen_v1_identity_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_identity_proto_goTypes = []any{
 	(IdentityErrorCode)(0),                // 0: numen.v1.IdentityErrorCode
 	(*IdentityInfo)(nil),                  // 1: numen.v1.IdentityInfo
@@ -548,26 +651,31 @@ var file_numen_v1_identity_proto_goTypes = []any{
 	(*GenerateRecoveryWordsResponse)(nil), // 5: numen.v1.GenerateRecoveryWordsResponse
 	(*CreateIdentityRequest)(nil),         // 6: numen.v1.CreateIdentityRequest
 	(*CreateIdentityResponse)(nil),        // 7: numen.v1.CreateIdentityResponse
-	(*DeleteIdentityRequest)(nil),         // 8: numen.v1.DeleteIdentityRequest
-	(*DeleteIdentityResponse)(nil),        // 9: numen.v1.DeleteIdentityResponse
+	(*StartRestoreRequest)(nil),           // 8: numen.v1.StartRestoreRequest
+	(*StartRestoreResponse)(nil),          // 9: numen.v1.StartRestoreResponse
+	(*DeleteIdentityRequest)(nil),         // 10: numen.v1.DeleteIdentityRequest
+	(*DeleteIdentityResponse)(nil),        // 11: numen.v1.DeleteIdentityResponse
 }
 var file_numen_v1_identity_proto_depIdxs = []int32{
-	1, // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	1, // 1: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	0, // 2: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
-	2, // 3: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
-	4, // 4: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
-	6, // 5: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
-	8, // 6: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
-	3, // 7: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
-	5, // 8: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
-	7, // 9: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
-	9, // 10: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	1,  // 1: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	0,  // 2: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 3: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
+	2,  // 4: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
+	4,  // 5: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
+	6,  // 6: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
+	8,  // 7: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
+	10, // 8: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
+	3,  // 9: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
+	5,  // 10: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
+	7,  // 11: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
+	9,  // 12: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
+	11, // 13: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_identity_proto_init() }
@@ -581,7 +689,7 @@ func file_numen_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_identity_proto_rawDesc), len(file_numen_v1_identity_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

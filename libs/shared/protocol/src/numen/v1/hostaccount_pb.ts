@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostaccount.proto.
  */
 export const file_numen_v1_hostaccount: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwywQEKEkhvc3RBY2NvdW50U2VydmljZRJNCgxTaWduQXNEZXZpY2USHS5udW1lbi52MS5TaWduQXNEZXZpY2VSZXF1ZXN0Gh4ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVzcG9uc2USXAoRR2V0UHVibGljSWRlbnRpdHkSIi5udW1lbi52MS5HZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QaIy5udW1lbi52MS5HZXRQdWJsaWNJZGVudGl0eVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlMtIEChJIb3N0QWNjb3VudFNlcnZpY2USTQoMU2lnbkFzRGV2aWNlEh0ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlc3BvbnNlElwKEUdldFB1YmxpY0lkZW50aXR5EiIubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRJBCghTZWFsRGF0YRIZLm51bWVuLnYxLlNlYWxEYXRhUmVxdWVzdBoaLm51bWVuLnYxLlNlYWxEYXRhUmVzcG9uc2USQQoIT3BlbkRhdGESGS5udW1lbi52MS5PcGVuRGF0YVJlcXVlc3QaGi5udW1lbi52MS5PcGVuRGF0YVJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.SignAsDeviceRequest
@@ -102,6 +102,202 @@ export const GetPublicIdentityResponseSchema: GenMessage<GetPublicIdentityRespon
   messageDesc(file_numen_v1_hostaccount, 3);
 
 /**
+ * @generated from message numen.v1.SealDataRequest
+ */
+export type SealDataRequest = Message<"numen.v1.SealDataRequest"> & {
+  /**
+   * context is bound into the sealed bytes; the same context opens them. The plugin chooses it.
+   *
+   * @generated from field: bytes context = 1;
+   */
+  context: Uint8Array;
+
+  /**
+   * plain is 0 to 32768 bytes.
+   *
+   * @generated from field: bytes plain = 2;
+   */
+  plain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.SealDataRequest.
+ * Use `create(SealDataRequestSchema)` to create a new message.
+ */
+export const SealDataRequestSchema: GenMessage<SealDataRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 4);
+
+/**
+ * @generated from message numen.v1.SealDataResponse
+ */
+export type SealDataResponse = Message<"numen.v1.SealDataResponse"> & {
+  /**
+   * @generated from field: bytes sealed = 1;
+   */
+  sealed: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.SealDataResponse.
+ * Use `create(SealDataResponseSchema)` to create a new message.
+ */
+export const SealDataResponseSchema: GenMessage<SealDataResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 5);
+
+/**
+ * @generated from message numen.v1.OpenDataRequest
+ */
+export type OpenDataRequest = Message<"numen.v1.OpenDataRequest"> & {
+  /**
+   * @generated from field: bytes context = 1;
+   */
+  context: Uint8Array;
+
+  /**
+   * @generated from field: bytes sealed = 2;
+   */
+  sealed: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenDataRequest.
+ * Use `create(OpenDataRequestSchema)` to create a new message.
+ */
+export const OpenDataRequestSchema: GenMessage<OpenDataRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 6);
+
+/**
+ * @generated from message numen.v1.OpenDataResponse
+ */
+export type OpenDataResponse = Message<"numen.v1.OpenDataResponse"> & {
+  /**
+   * @generated from field: bytes plain = 1;
+   */
+  plain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.OpenDataResponse.
+ * Use `create(OpenDataResponseSchema)` to create a new message.
+ */
+export const OpenDataResponseSchema: GenMessage<OpenDataResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 7);
+
+/**
+ * @generated from message numen.v1.GetPendingRestoreRequest
+ */
+export type GetPendingRestoreRequest = Message<"numen.v1.GetPendingRestoreRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetPendingRestoreRequest.
+ * Use `create(GetPendingRestoreRequestSchema)` to create a new message.
+ */
+export const GetPendingRestoreRequestSchema: GenMessage<GetPendingRestoreRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 8);
+
+/**
+ * @generated from message numen.v1.GetPendingRestoreResponse
+ */
+export type GetPendingRestoreResponse = Message<"numen.v1.GetPendingRestoreResponse"> & {
+  /**
+   * @generated from field: bool is_pending = 1;
+   */
+  isPending: boolean;
+
+  /**
+   * root_sign_key is the Ed25519 public key of the recovery signing key, 32 bytes.
+   *
+   * @generated from field: bytes root_sign_key = 2;
+   */
+  rootSignKey: Uint8Array;
+
+  /**
+   * device_sign_key is the Ed25519 public key of the device that joins, 32 bytes.
+   *
+   * @generated from field: bytes device_sign_key = 3;
+   */
+  deviceSignKey: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.GetPendingRestoreResponse.
+ * Use `create(GetPendingRestoreResponseSchema)` to create a new message.
+ */
+export const GetPendingRestoreResponseSchema: GenMessage<GetPendingRestoreResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 9);
+
+/**
+ * @generated from message numen.v1.SignAsRecoveryRequest
+ */
+export type SignAsRecoveryRequest = Message<"numen.v1.SignAsRecoveryRequest"> & {
+  /**
+   * message is 1 to 4096 bytes.
+   *
+   * @generated from field: bytes message = 1;
+   */
+  message: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.SignAsRecoveryRequest.
+ * Use `create(SignAsRecoveryRequestSchema)` to create a new message.
+ */
+export const SignAsRecoveryRequestSchema: GenMessage<SignAsRecoveryRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 10);
+
+/**
+ * @generated from message numen.v1.SignAsRecoveryResponse
+ */
+export type SignAsRecoveryResponse = Message<"numen.v1.SignAsRecoveryResponse"> & {
+  /**
+   * signature is an Ed25519 signature of 64 bytes.
+   *
+   * @generated from field: bytes signature = 1;
+   */
+  signature: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.SignAsRecoveryResponse.
+ * Use `create(SignAsRecoveryResponseSchema)` to create a new message.
+ */
+export const SignAsRecoveryResponseSchema: GenMessage<SignAsRecoveryResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 11);
+
+/**
+ * @generated from message numen.v1.CompleteRestoreRequest
+ */
+export type CompleteRestoreRequest = Message<"numen.v1.CompleteRestoreRequest"> & {
+  /**
+   * chain is the signed device chain of the server; empty when the server has no such account.
+   *
+   * @generated from field: bytes chain = 1;
+   */
+  chain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.CompleteRestoreRequest.
+ * Use `create(CompleteRestoreRequestSchema)` to create a new message.
+ */
+export const CompleteRestoreRequestSchema: GenMessage<CompleteRestoreRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 12);
+
+/**
+ * @generated from message numen.v1.CompleteRestoreResponse
+ */
+export type CompleteRestoreResponse = Message<"numen.v1.CompleteRestoreResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.CompleteRestoreResponse.
+ * Use `create(CompleteRestoreResponseSchema)` to create a new message.
+ */
+export const CompleteRestoreResponseSchema: GenMessage<CompleteRestoreResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 13);
+
+/**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
  * by its token, and every call needs the permission identity. No call returns or accepts a secret key.
  *
@@ -131,6 +327,62 @@ export const HostAccountService: GenService<{
     methodKind: "unary";
     input: typeof GetPublicIdentityRequestSchema;
     output: typeof GetPublicIdentityResponseSchema;
+  },
+  /**
+   * SealData encrypts the data under a key only the plugin of the token can derive from the account keys
+   * of this device. The context is bound into the sealed bytes. Plain is at most 32 KiB.
+   *
+   * @generated from rpc numen.v1.HostAccountService.SealData
+   */
+  sealData: {
+    methodKind: "unary";
+    input: typeof SealDataRequestSchema;
+    output: typeof SealDataResponseSchema;
+  },
+  /**
+   * OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
+   * device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
+   *
+   * @generated from rpc numen.v1.HostAccountService.OpenData
+   */
+  openData: {
+    methodKind: "unary";
+    input: typeof OpenDataRequestSchema;
+    output: typeof OpenDataResponseSchema;
+  },
+  /**
+   * GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
+   *
+   * @generated from rpc numen.v1.HostAccountService.GetPendingRestore
+   */
+  getPendingRestore: {
+    methodKind: "unary";
+    input: typeof GetPendingRestoreRequestSchema;
+    output: typeof GetPendingRestoreResponseSchema;
+  },
+  /**
+   * SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
+   * "numen/v1/recovery-sign/", the id of the plugin of the token, a zero byte and the message. Nothing
+   * pending answers FAILED_PRECONDITION with the reason NO_PENDING_RESTORE.
+   *
+   * @generated from rpc numen.v1.HostAccountService.SignAsRecovery
+   */
+  signAsRecovery: {
+    methodKind: "unary";
+    input: typeof SignAsRecoveryRequestSchema;
+    output: typeof SignAsRecoveryResponseSchema;
+  },
+  /**
+   * CompleteRestore finishes the pending restore with the chain the server stores for the account, or
+   * with no chain when the server has no such account. A chain that does not verify or does not belong to
+   * the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+   *
+   * @generated from rpc numen.v1.HostAccountService.CompleteRestore
+   */
+  completeRestore: {
+    methodKind: "unary";
+    input: typeof CompleteRestoreRequestSchema;
+    output: typeof CompleteRestoreResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostaccount, 0);

@@ -39,6 +39,21 @@ const (
 	// HostAccountServiceGetPublicIdentityProcedure is the fully-qualified name of the
 	// HostAccountService's GetPublicIdentity RPC.
 	HostAccountServiceGetPublicIdentityProcedure = "/numen.v1.HostAccountService/GetPublicIdentity"
+	// HostAccountServiceSealDataProcedure is the fully-qualified name of the HostAccountService's
+	// SealData RPC.
+	HostAccountServiceSealDataProcedure = "/numen.v1.HostAccountService/SealData"
+	// HostAccountServiceOpenDataProcedure is the fully-qualified name of the HostAccountService's
+	// OpenData RPC.
+	HostAccountServiceOpenDataProcedure = "/numen.v1.HostAccountService/OpenData"
+	// HostAccountServiceGetPendingRestoreProcedure is the fully-qualified name of the
+	// HostAccountService's GetPendingRestore RPC.
+	HostAccountServiceGetPendingRestoreProcedure = "/numen.v1.HostAccountService/GetPendingRestore"
+	// HostAccountServiceSignAsRecoveryProcedure is the fully-qualified name of the HostAccountService's
+	// SignAsRecovery RPC.
+	HostAccountServiceSignAsRecoveryProcedure = "/numen.v1.HostAccountService/SignAsRecovery"
+	// HostAccountServiceCompleteRestoreProcedure is the fully-qualified name of the
+	// HostAccountService's CompleteRestore RPC.
+	HostAccountServiceCompleteRestoreProcedure = "/numen.v1.HostAccountService/CompleteRestore"
 )
 
 // HostAccountServiceClient is a client for the numen.v1.HostAccountService service.
@@ -48,6 +63,22 @@ type HostAccountServiceClient interface {
 	SignAsDevice(context.Context, *connect.Request[v1.SignAsDeviceRequest]) (*connect.Response[v1.SignAsDeviceResponse], error)
 	// GetPublicIdentity returns what is public of the identity of this device.
 	GetPublicIdentity(context.Context, *connect.Request[v1.GetPublicIdentityRequest]) (*connect.Response[v1.GetPublicIdentityResponse], error)
+	// SealData encrypts the data under a key only the plugin of the token can derive from the account keys
+	// of this device. The context is bound into the sealed bytes. Plain is at most 32 KiB.
+	SealData(context.Context, *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error)
+	// OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
+	// device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
+	OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error)
+	// GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
+	GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error)
+	// SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
+	// "numen/v1/recovery-sign/", the id of the plugin of the token, a zero byte and the message. Nothing
+	// pending answers FAILED_PRECONDITION with the reason NO_PENDING_RESTORE.
+	SignAsRecovery(context.Context, *connect.Request[v1.SignAsRecoveryRequest]) (*connect.Response[v1.SignAsRecoveryResponse], error)
+	// CompleteRestore finishes the pending restore with the chain the server stores for the account, or
+	// with no chain when the server has no such account. A chain that does not verify or does not belong to
+	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
 }
 
 // NewHostAccountServiceClient constructs a client for the numen.v1.HostAccountService service. By
@@ -73,6 +104,36 @@ func NewHostAccountServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			connect.WithSchema(hostAccountServiceMethods.ByName("GetPublicIdentity")),
 			connect.WithClientOptions(opts...),
 		),
+		sealData: connect.NewClient[v1.SealDataRequest, v1.SealDataResponse](
+			httpClient,
+			baseURL+HostAccountServiceSealDataProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("SealData")),
+			connect.WithClientOptions(opts...),
+		),
+		openData: connect.NewClient[v1.OpenDataRequest, v1.OpenDataResponse](
+			httpClient,
+			baseURL+HostAccountServiceOpenDataProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("OpenData")),
+			connect.WithClientOptions(opts...),
+		),
+		getPendingRestore: connect.NewClient[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse](
+			httpClient,
+			baseURL+HostAccountServiceGetPendingRestoreProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("GetPendingRestore")),
+			connect.WithClientOptions(opts...),
+		),
+		signAsRecovery: connect.NewClient[v1.SignAsRecoveryRequest, v1.SignAsRecoveryResponse](
+			httpClient,
+			baseURL+HostAccountServiceSignAsRecoveryProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("SignAsRecovery")),
+			connect.WithClientOptions(opts...),
+		),
+		completeRestore: connect.NewClient[v1.CompleteRestoreRequest, v1.CompleteRestoreResponse](
+			httpClient,
+			baseURL+HostAccountServiceCompleteRestoreProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -80,6 +141,11 @@ func NewHostAccountServiceClient(httpClient connect.HTTPClient, baseURL string, 
 type hostAccountServiceClient struct {
 	signAsDevice      *connect.Client[v1.SignAsDeviceRequest, v1.SignAsDeviceResponse]
 	getPublicIdentity *connect.Client[v1.GetPublicIdentityRequest, v1.GetPublicIdentityResponse]
+	sealData          *connect.Client[v1.SealDataRequest, v1.SealDataResponse]
+	openData          *connect.Client[v1.OpenDataRequest, v1.OpenDataResponse]
+	getPendingRestore *connect.Client[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse]
+	signAsRecovery    *connect.Client[v1.SignAsRecoveryRequest, v1.SignAsRecoveryResponse]
+	completeRestore   *connect.Client[v1.CompleteRestoreRequest, v1.CompleteRestoreResponse]
 }
 
 // SignAsDevice calls numen.v1.HostAccountService.SignAsDevice.
@@ -92,6 +158,31 @@ func (c *hostAccountServiceClient) GetPublicIdentity(ctx context.Context, req *c
 	return c.getPublicIdentity.CallUnary(ctx, req)
 }
 
+// SealData calls numen.v1.HostAccountService.SealData.
+func (c *hostAccountServiceClient) SealData(ctx context.Context, req *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error) {
+	return c.sealData.CallUnary(ctx, req)
+}
+
+// OpenData calls numen.v1.HostAccountService.OpenData.
+func (c *hostAccountServiceClient) OpenData(ctx context.Context, req *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error) {
+	return c.openData.CallUnary(ctx, req)
+}
+
+// GetPendingRestore calls numen.v1.HostAccountService.GetPendingRestore.
+func (c *hostAccountServiceClient) GetPendingRestore(ctx context.Context, req *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error) {
+	return c.getPendingRestore.CallUnary(ctx, req)
+}
+
+// SignAsRecovery calls numen.v1.HostAccountService.SignAsRecovery.
+func (c *hostAccountServiceClient) SignAsRecovery(ctx context.Context, req *connect.Request[v1.SignAsRecoveryRequest]) (*connect.Response[v1.SignAsRecoveryResponse], error) {
+	return c.signAsRecovery.CallUnary(ctx, req)
+}
+
+// CompleteRestore calls numen.v1.HostAccountService.CompleteRestore.
+func (c *hostAccountServiceClient) CompleteRestore(ctx context.Context, req *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error) {
+	return c.completeRestore.CallUnary(ctx, req)
+}
+
 // HostAccountServiceHandler is an implementation of the numen.v1.HostAccountService service.
 type HostAccountServiceHandler interface {
 	// SignAsDevice signs the message with the key of this device. The signed bytes are
@@ -99,6 +190,22 @@ type HostAccountServiceHandler interface {
 	SignAsDevice(context.Context, *connect.Request[v1.SignAsDeviceRequest]) (*connect.Response[v1.SignAsDeviceResponse], error)
 	// GetPublicIdentity returns what is public of the identity of this device.
 	GetPublicIdentity(context.Context, *connect.Request[v1.GetPublicIdentityRequest]) (*connect.Response[v1.GetPublicIdentityResponse], error)
+	// SealData encrypts the data under a key only the plugin of the token can derive from the account keys
+	// of this device. The context is bound into the sealed bytes. Plain is at most 32 KiB.
+	SealData(context.Context, *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error)
+	// OpenData decrypts bytes that SealData sealed for the plugin of the token and the same context, on any
+	// device of the account. Bytes that do not open answer FAILED_PRECONDITION with the reason CANNOT_OPEN.
+	OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error)
+	// GetPendingRestore returns the public keys of a restore that waits for the account chain of the server.
+	GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error)
+	// SignAsRecovery signs the message with the recovery key of the pending restore. The signed bytes are
+	// "numen/v1/recovery-sign/", the id of the plugin of the token, a zero byte and the message. Nothing
+	// pending answers FAILED_PRECONDITION with the reason NO_PENDING_RESTORE.
+	SignAsRecovery(context.Context, *connect.Request[v1.SignAsRecoveryRequest]) (*connect.Response[v1.SignAsRecoveryResponse], error)
+	// CompleteRestore finishes the pending restore with the chain the server stores for the account, or
+	// with no chain when the server has no such account. A chain that does not verify or does not belong to
+	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
 }
 
 // NewHostAccountServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -120,12 +227,52 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 		connect.WithSchema(hostAccountServiceMethods.ByName("GetPublicIdentity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostAccountServiceSealDataHandler := connect.NewUnaryHandler(
+		HostAccountServiceSealDataProcedure,
+		svc.SealData,
+		connect.WithSchema(hostAccountServiceMethods.ByName("SealData")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceOpenDataHandler := connect.NewUnaryHandler(
+		HostAccountServiceOpenDataProcedure,
+		svc.OpenData,
+		connect.WithSchema(hostAccountServiceMethods.ByName("OpenData")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceGetPendingRestoreHandler := connect.NewUnaryHandler(
+		HostAccountServiceGetPendingRestoreProcedure,
+		svc.GetPendingRestore,
+		connect.WithSchema(hostAccountServiceMethods.ByName("GetPendingRestore")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceSignAsRecoveryHandler := connect.NewUnaryHandler(
+		HostAccountServiceSignAsRecoveryProcedure,
+		svc.SignAsRecovery,
+		connect.WithSchema(hostAccountServiceMethods.ByName("SignAsRecovery")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceCompleteRestoreHandler := connect.NewUnaryHandler(
+		HostAccountServiceCompleteRestoreProcedure,
+		svc.CompleteRestore,
+		connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostAccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostAccountServiceSignAsDeviceProcedure:
 			hostAccountServiceSignAsDeviceHandler.ServeHTTP(w, r)
 		case HostAccountServiceGetPublicIdentityProcedure:
 			hostAccountServiceGetPublicIdentityHandler.ServeHTTP(w, r)
+		case HostAccountServiceSealDataProcedure:
+			hostAccountServiceSealDataHandler.ServeHTTP(w, r)
+		case HostAccountServiceOpenDataProcedure:
+			hostAccountServiceOpenDataHandler.ServeHTTP(w, r)
+		case HostAccountServiceGetPendingRestoreProcedure:
+			hostAccountServiceGetPendingRestoreHandler.ServeHTTP(w, r)
+		case HostAccountServiceSignAsRecoveryProcedure:
+			hostAccountServiceSignAsRecoveryHandler.ServeHTTP(w, r)
+		case HostAccountServiceCompleteRestoreProcedure:
+			hostAccountServiceCompleteRestoreHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -141,4 +288,24 @@ func (UnimplementedHostAccountServiceHandler) SignAsDevice(context.Context, *con
 
 func (UnimplementedHostAccountServiceHandler) GetPublicIdentity(context.Context, *connect.Request[v1.GetPublicIdentityRequest]) (*connect.Response[v1.GetPublicIdentityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.GetPublicIdentity is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) SealData(context.Context, *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.SealData is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) OpenData(context.Context, *connect.Request[v1.OpenDataRequest]) (*connect.Response[v1.OpenDataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.OpenData is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.GetPendingRestore is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) SignAsRecovery(context.Context, *connect.Request[v1.SignAsRecoveryRequest]) (*connect.Response[v1.SignAsRecoveryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.SignAsRecovery is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.CompleteRestore is not implemented"))
 }
