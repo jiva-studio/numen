@@ -147,11 +147,11 @@ Then('the page says {string}', async ({ person }, text: string) => {
   await person.identity.expectPageSays(text)
 })
 
-When('both computers ask the sync server for changes only every {string}', async ({ person }, interval: string) => {
+When('both computers check for changes only every {string}', async ({ person }, interval: string) => {
   await person.computers.setInterval(interval)
 })
 
-Given('the connection of the second computer to the sync server drops', async ({ person }) => {
+Given('the second computer goes offline for a moment', async ({ person }) => {
   await person.computers.dropConnection()
 })
 

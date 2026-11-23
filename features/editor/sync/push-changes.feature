@@ -14,7 +14,7 @@ Feature: Receive changes within seconds
     And the person connects the vault "Test" as a new synced vault
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
-    And both computers ask the sync server for changes only every "1 hour"
+    And both computers check for changes only every "1 hour"
 
   Rule: A change reaches the other computer within seconds
 
@@ -35,7 +35,7 @@ Feature: Receive changes within seconds
   Rule: A computer receives changes again after its connection drops
 
     Scenario: A note written after the connection drops still arrives
-      Given the connection of the second computer to the sync server drops
+      Given the second computer goes offline for a moment
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" within "15" seconds
 

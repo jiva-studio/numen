@@ -151,7 +151,7 @@ export class ComputerDriver {
     await this.sync.expectStreams(STREAMS_OF_BOTH)
   }
 
-  /** Cuts the connection of the second computer to the sync server and waits until the server holds none. */
+  /** Takes the second computer offline for a moment: the server ends its open connections and waits until none is open. */
   async dropConnection(): Promise<void> {
     await this.sync.dropStreams()
   }
