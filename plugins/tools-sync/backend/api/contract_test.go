@@ -20,8 +20,12 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodGetSubscription: {
 			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
 		},
-		api.MethodListPlans:  {Request: func() any { return &api.ListPlansRequest{} }, Response: func() any { return &api.ListPlansResponse{} }},
-		api.MethodChangePlan: {Request: func() any { return &api.ChangePlanRequest{} }, Response: func() any { return &api.ChangePlanResponse{} }},
+		api.MethodListPlans:    {Request: func() any { return &api.ListPlansRequest{} }, Response: func() any { return &api.ListPlansResponse{} }},
+		api.MethodChangePlan:   {Request: func() any { return &api.ChangePlanRequest{} }, Response: func() any { return &api.ChangePlanResponse{} }},
+		api.MethodListProducts: {Request: func() any { return &api.ListProductsRequest{} }, Response: func() any { return &api.ListProductsResponse{} }},
+		api.MethodCreatePortalSession: {
+			Request: func() any { return &api.CreatePortalSessionRequest{} }, Response: func() any { return &api.CreatePortalSessionResponse{} },
+		},
 		api.MethodCreateCheckout: {
 			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
 		},

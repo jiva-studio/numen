@@ -4,7 +4,6 @@ package subscription
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -30,11 +29,18 @@ func (u *ReadSubscription) Execute(ctx context.Context) (domain.State, error) {
 	if err != nil {
 		return domain.State{}, err
 	}
+	return getState(read)
+}
+
+func getState(read syncprotocol.Subscription) (domain.State, error) {
 	phase, err := getPhase(read.Phase)
 	if err != nil {
 		return domain.State{}, err
 	}
-	return domain.State{Phase: phase, PeriodEnd: read.PeriodEnd, WritesEnd: read.WritesEnd, DeleteAt: read.DeleteAt}, nil
+	return domain.State{
+		Phase: phase, PeriodEnd: read.PeriodEnd, WritesEnd: read.WritesEnd, DeleteAt: read.DeleteAt,
+		PlanID: read.PlanID, QuotaBytes: read.QuotaBytes, UsedBytes: read.UsedBytes, IsTrial: read.IsTrial,
+	}, nil
 }
 
 func getPhase(wire syncprotocol.SubscriptionPhase) (domain.Phase, error) {
@@ -73,8 +79,16 @@ type ListPlans struct{ deps Deps }
 func NewListPlans(deps Deps) *ListPlans { return &ListPlans{deps: deps} }
 
 // Execute returns the plans in the order of the server, ascending by quota.
-func (u *ListPlans) Execute(_ context.Context) ([]domain.Plan, error) {
-	return nil, errors.New("not implemented")
+func (u *ListPlans) Execute(ctx context.Context) ([]domain.Plan, error) {
+	read, err := u.deps.Subscriptions.ListPlans(ctx)
+	if err != nil {
+		return nil, err
+	}
+	plans := make([]domain.Plan, 0, len(read))
+	for _, plan := range read {
+		plans = append(plans, domain.Plan{ID: plan.ID, Name: plan.Name, QuotaBytes: plan.QuotaBytes, PriceCents: plan.PriceCents, Currency: plan.Currency})
+	}
+	return plans, nil
 }
 
 // ChangePlan moves the active subscription to another plan.
@@ -85,6 +99,49 @@ func NewChangePlan(deps Deps) *ChangePlan { return &ChangePlan{deps: deps} }
 
 // Execute returns the subscription after the change. The refusals of the server are returned as it sent them:
 // syncprotocol.ErrNoActiveSubscription, ErrSamePlan, ErrUnknownPlan and ErrBillingUnavailable.
-func (u *ChangePlan) Execute(_ context.Context, _ string) (domain.State, error) {
-	return domain.State{}, errors.New("not implemented")
+func (u *ChangePlan) Execute(ctx context.Context, plan string) (domain.State, error) {
+	read, err := u.deps.Subscriptions.ChangePlan(ctx, plan)
+	if err != nil {
+		return domain.State{}, err
+	}
+	return getState(read)
+}
+
+// ShopDeps are what the use cases of the products and the portal need.
+type ShopDeps struct {
+	Shop ports.Shop
+}
+
+// ListProducts asks the server for the products it sells that are no plans.
+type ListProducts struct{ deps ShopDeps }
+
+// NewListProducts returns the use case over the dependencies.
+func NewListProducts(deps ShopDeps) *ListProducts { return &ListProducts{deps: deps} }
+
+// Execute returns the products in the order of the server.
+func (u *ListProducts) Execute(ctx context.Context) ([]domain.Product, error) {
+	read, err := u.deps.Shop.ListProducts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	products := make([]domain.Product, 0, len(read))
+	for _, product := range read {
+		products = append(products, domain.Product{
+			ID: product.ID, Slug: product.Slug, Name: product.Name, PriceCents: product.PriceCents, Currency: product.Currency, OneTime: product.OneTime,
+		})
+	}
+	return products, nil
+}
+
+// CreatePortalSession asks the server for the page where the person manages the subscription.
+type CreatePortalSession struct{ deps ShopDeps }
+
+// NewCreatePortalSession returns the use case over the dependencies.
+func NewCreatePortalSession(deps ShopDeps) *CreatePortalSession {
+	return &CreatePortalSession{deps: deps}
+}
+
+// Execute returns the address of the portal. An account that never paid by payment gets syncprotocol.ErrNoActiveSubscription.
+func (u *CreatePortalSession) Execute(ctx context.Context) (string, error) {
+	return u.deps.Shop.CreatePortalSession(ctx)
 }

@@ -119,3 +119,13 @@ func (c *Cloud) ListPlans(ctx context.Context) ([]syncprotocol.Plan, error) {
 func (c *Cloud) ChangePlan(ctx context.Context, plan string) (syncprotocol.Subscription, error) {
 	return call(ctx, c, func() (syncprotocol.Subscription, error) { return c.subscription.ChangePlan(ctx, plan) })
 }
+
+// ListProducts returns the products the server sells that are no plans.
+func (c *Cloud) ListProducts(ctx context.Context) ([]syncprotocol.Product, error) {
+	return call(ctx, c, func() ([]syncprotocol.Product, error) { return c.subscription.ListProducts(ctx) })
+}
+
+// CreatePortalSession returns the address of the page where the person manages the subscription.
+func (c *Cloud) CreatePortalSession(ctx context.Context) (string, error) {
+	return call(ctx, c, func() (string, error) { return c.subscription.CreatePortalSession(ctx) })
+}

@@ -14,7 +14,7 @@ import (
 // GetSubscription returns the subscription of the account. A device with no identity gets an empty answer and
 // the server is not asked.
 func (b *Backend) GetSubscription(ctx context.Context, _ api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
-	none := api.GetSubscriptionResponse{HasIdentity: false, Phase: "", PeriodEndAt: "", WritesEndAt: "", DeleteAt: "", Plan: "", QuotaBytes: 0, UsedBytes: 0}
+	none := api.GetSubscriptionResponse{HasIdentity: false, Phase: "", PeriodEndAt: "", WritesEndAt: "", DeleteAt: "", Plan: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false}
 	_, err := b.deps.Identity.GetPublicIdentity(ctx)
 	if errors.Is(err, sessiondomain.ErrNoIdentity) {
 		return none, nil
@@ -33,7 +33,7 @@ func getSubscriptionResponse(state subscription.State) api.GetSubscriptionRespon
 	return api.GetSubscriptionResponse{
 		HasIdentity: true, Phase: getPhase(state.Phase), PeriodEndAt: formatTime(state.PeriodEnd),
 		WritesEndAt: formatTime(state.WritesEnd), DeleteAt: formatTime(state.DeleteAt),
-		Plan: state.PlanID, QuotaBytes: state.QuotaBytes, UsedBytes: state.UsedBytes,
+		Plan: state.PlanID, QuotaBytes: state.QuotaBytes, UsedBytes: state.UsedBytes, IsTrial: state.IsTrial,
 	}
 }
 
@@ -97,4 +97,33 @@ func formatTime(at time.Time) string {
 		return ""
 	}
 	return at.UTC().Format(time.RFC3339)
+}
+
+// ListProducts returns the products the server sells that are no plans. A device with no identity gets ErrNoIdentity
+// and the server is not asked.
+func (b *Backend) ListProducts(ctx context.Context, _ api.ListProductsRequest) (api.ListProductsResponse, error) {
+	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+		return api.ListProductsResponse{Products: nil}, err
+	}
+	products, err := usecase.NewListProducts(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
+	if err != nil {
+		return api.ListProductsResponse{Products: nil}, err
+	}
+	response := api.ListProductsResponse{Products: make([]api.Product, 0, len(products))}
+	for _, product := range products {
+		response.Products = append(response.Products, api.Product{
+			ID: product.ID, Slug: product.Slug, Name: product.Name, PriceCents: product.PriceCents, Currency: product.Currency, OneTime: product.OneTime,
+		})
+	}
+	return response, nil
+}
+
+// CreatePortalSession returns the address of the page where the person manages the subscription. A device with no
+// identity gets ErrNoIdentity and the server is not asked.
+func (b *Backend) CreatePortalSession(ctx context.Context, _ api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
+	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+		return api.CreatePortalSessionResponse{PortalURL: ""}, err
+	}
+	address, err := usecase.NewCreatePortalSession(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
+	return api.CreatePortalSessionResponse{PortalURL: address}, err
 }

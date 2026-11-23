@@ -50,6 +50,7 @@ type Deps struct {
 	Clock         ports.Clock
 	Random        io.Reader
 	Subscriptions ports.Subscriptions
+	Shop          ports.Shop
 }
 
 // Renamer gives the synced vault the name of its local vault, and reports whether it did.

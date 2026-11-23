@@ -1,0 +1,5 @@
+{
+  "products": [
+    { "id": "prod_link", "slug": "link", "name": "Numen Link", "priceCents": 2000, "currency": "USD", "oneTime": true }
+  ]
+}

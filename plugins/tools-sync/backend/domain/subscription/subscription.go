@@ -30,6 +30,8 @@ type State struct {
 	PlanID     string
 	QuotaBytes uint64
 	UsedBytes  uint64
+	// IsTrial is true while a trial runs that no payment has followed; PeriodEnd is then the end of the trial.
+	IsTrial bool
 }
 
 // CanWrite is whether the server takes changes.
@@ -44,4 +46,14 @@ type Plan struct {
 	QuotaBytes uint64
 	PriceCents uint64
 	Currency   string
+}
+
+// Product is a product the server sells that is no plan. OneTime is true for a single payment.
+type Product struct {
+	ID         string
+	Slug       string
+	Name       string
+	PriceCents uint64
+	Currency   string
+	OneTime    bool
 }

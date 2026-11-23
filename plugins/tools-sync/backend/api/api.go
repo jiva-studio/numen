@@ -6,14 +6,16 @@ const Service = "md.numen.tools.sync"
 
 // The methods of the service.
 const (
-	MethodListVaults       = "ListVaults"
-	MethodListRemoteVaults = "ListRemoteVaults"
-	MethodConnectVault     = "ConnectVault"
-	MethodGetStatus        = "GetStatus"
-	MethodGetSubscription  = "GetSubscription"
-	MethodCreateCheckout   = "CreateCheckout"
-	MethodListPlans        = "ListPlans"
-	MethodChangePlan       = "ChangePlan"
+	MethodListVaults          = "ListVaults"
+	MethodListRemoteVaults    = "ListRemoteVaults"
+	MethodConnectVault        = "ConnectVault"
+	MethodGetStatus           = "GetStatus"
+	MethodGetSubscription     = "GetSubscription"
+	MethodCreateCheckout      = "CreateCheckout"
+	MethodListPlans           = "ListPlans"
+	MethodChangePlan          = "ChangePlan"
+	MethodListProducts        = "ListProducts"
+	MethodCreatePortalSession = "CreatePortalSession"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -127,6 +129,7 @@ type GetSubscriptionResponse struct {
 	Plan        string `json:"plan"`
 	QuotaBytes  uint64 `json:"quotaBytes"`
 	UsedBytes   uint64 `json:"usedBytes"`
+	IsTrial     bool   `json:"isTrial"`
 }
 
 // CreateCheckoutRequest asks for a payment page for the plan with this id.
@@ -165,4 +168,30 @@ type ChangePlanRequest struct {
 // ChangePlanResponse is the subscription after the change.
 type ChangePlanResponse struct {
 	Subscription GetSubscriptionResponse `json:"subscription"`
+}
+
+// ListProductsRequest asks for the products the sync server sells that are no plans.
+type ListProductsRequest struct{}
+
+// Product is a product of the sync server that is no plan. OneTime is true for a single payment. The price is information.
+type Product struct {
+	ID         string `json:"id"`
+	Slug       string `json:"slug"`
+	Name       string `json:"name"`
+	PriceCents uint64 `json:"priceCents"`
+	Currency   string `json:"currency"`
+	OneTime    bool   `json:"oneTime"`
+}
+
+// ListProductsResponse holds the products in the order of the server.
+type ListProductsResponse struct {
+	Products []Product `json:"products"`
+}
+
+// CreatePortalSessionRequest asks for the address of the page where the person manages the subscription.
+type CreatePortalSessionRequest struct{}
+
+// CreatePortalSessionResponse is the address of the portal.
+type CreatePortalSessionResponse struct {
+	PortalURL string `json:"portalUrl"`
 }

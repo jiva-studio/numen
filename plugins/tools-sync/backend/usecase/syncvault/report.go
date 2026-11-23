@@ -32,7 +32,7 @@ func (r reporter) settle(ctx context.Context, err error) error {
 	var notReady syncprotocol.BlobNotReadyError
 	switch {
 	case errors.As(err, &quota):
-		return r.raise(ctx, keyStorageFull, "Sync storage is full")
+		return r.raise(ctx, keyStorageFull, "Cloud storage is full: changes stay on this device")
 	case errors.Is(err, syncprotocol.ErrWriteNotAllowed):
 		return r.raise(ctx, domain.WarningKey, r.getRefusedText(ctx))
 	case errors.As(err, &notReady):

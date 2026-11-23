@@ -35,6 +35,12 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodChangePlan, func(ctx context.Context, request api.ChangePlanRequest) (api.ChangePlanResponse, error) {
 		return handle(r, func(b *Backend) (api.ChangePlanResponse, error) { return b.ChangePlan(ctx, request) })
 	})
+	server.Handle(service, api.MethodListProducts, func(ctx context.Context, request api.ListProductsRequest) (api.ListProductsResponse, error) {
+		return handle(r, func(b *Backend) (api.ListProductsResponse, error) { return b.ListProducts(ctx, request) })
+	})
+	server.Handle(service, api.MethodCreatePortalSession, func(ctx context.Context, request api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
+		return handle(r, func(b *Backend) (api.CreatePortalSessionResponse, error) { return b.CreatePortalSession(ctx, request) })
+	})
 }
 
 func handle[T any](r *runtime, call func(b *Backend) (T, error)) (T, error) {
@@ -54,9 +60,11 @@ func getCode(err error) server.ErrorCode {
 	switch {
 	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):
 		return server.CodeUnavailable
-	case errors.Is(err, syncprotocol.ErrAlreadySubscribed):
+	case errors.Is(err, syncprotocol.ErrAlreadySubscribed), errors.Is(err, syncprotocol.ErrSamePlan):
 		return server.CodeAlreadyExists
-	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable):
+	case errors.Is(err, syncprotocol.ErrUnknownPlan):
+		return server.CodeInvalidArgument
+	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable), errors.Is(err, syncprotocol.ErrNoActiveSubscription):
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal
