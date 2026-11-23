@@ -48,7 +48,7 @@ func getRemovedPaths(scan transfer.Scan) []string {
 	return paths
 }
 
-func TestDetectMoves_FindsAFileThatIsGoneAndAFileWithItsHashAndSizeAsAMove(t *testing.T) {
+func TestDetectMoves_FindsAFileThatIsMissingAndAFileWithItsHashAndSizeAsAMove(t *testing.T) {
 	c := newComputer(t)
 	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Old report.pdf", "pdf bytes")
@@ -63,7 +63,7 @@ func TestDetectMoves_FindsAFileThatIsGoneAndAFileWithItsHashAndSizeAsAMove(t *te
 	}
 }
 
-func TestDetectMoves_FindsNoMoveWhenTwoNewFilesHaveTheHashOfTheGoneFile(t *testing.T) {
+func TestDetectMoves_FindsNoMoveWhenTwoNewFilesHaveTheHashOfTheMissingFile(t *testing.T) {
 	c := newComputer(t)
 	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Copy 1.pdf", "pdf bytes")
@@ -76,7 +76,7 @@ func TestDetectMoves_FindsNoMoveWhenTwoNewFilesHaveTheHashOfTheGoneFile(t *testi
 	}
 }
 
-func TestDetectMoves_FindsNoMoveWhenTwoGoneFilesHaveTheHashOfTheNewFile(t *testing.T) {
+func TestDetectMoves_FindsNoMoveWhenTwoMissingFilesHaveTheHashOfTheNewFile(t *testing.T) {
 	c := newComputer(t)
 	records := []note.FileRecord{newRecord(1, "Papers/A.pdf", "pdf bytes"), newRecord(2, "Papers/B.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/C.pdf", "pdf bytes")
@@ -134,7 +134,7 @@ func TestDetectMoves_WaitsForAFileYoungerThanTenSecondsBeforeItCallsItAMove(t *t
 	}
 }
 
-func TestDetectMoves_ListsAFileAsRemovedOnlyOnceItStayedGoneForTheDelay(t *testing.T) {
+func TestDetectMoves_ListsAFileAsRemovedOnlyOnceItStayedMissingForTheDelay(t *testing.T) {
 	c := newComputer(t)
 	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 

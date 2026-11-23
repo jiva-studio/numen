@@ -182,7 +182,7 @@ func TestSyncVault_ARenamedFolderIsRenamedOnTheSecondComputerInOneStep(t *testin
 	}
 }
 
-func TestSyncVault_ARemovedFileIsRemovedOnTheSecondComputerOnceItStayedGoneForTheDelay(t *testing.T) {
+func TestSyncVault_ARemovedFileIsRemovedOnTheSecondComputerOnceItStayedMissingForTheDelay(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
@@ -407,7 +407,7 @@ func TestSyncVault_ManyRemovedFilesPauseTheSyncAndSendNothingUntilTheAnswer(t *t
 	}
 }
 
-func TestSyncVault_TheRemovalOfManyFilesGoesOnceThePersonConfirmsItOnEachComputer(t *testing.T) {
+func TestSyncVault_TheRemovalOfManyFilesIsSentOnceThePersonConfirmsItOnEachComputer(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
@@ -441,7 +441,7 @@ func TestSyncVault_TheRemovalOfManyFilesGoesOnceThePersonConfirmsItOnEachCompute
 	}
 }
 
-func TestSyncVault_TheFilesComeBackWhenThePersonKeepsThemAfterTheyWereRemovedHere(t *testing.T) {
+func TestSyncVault_TheFilesAreRestoredWhenThePersonKeepsThemAfterTheyWereRemovedHere(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
@@ -486,7 +486,7 @@ func TestSyncVault_AFewRemovedFilesDoNotPauseTheSync(t *testing.T) {
 	wantNote(t, p.b, target, "Papers/File 2.pdf", "file 2")
 }
 
-func TestSyncVault_ManyFilesRemovedOnTheOtherComputerPauseThisOneAndComeBackWhenThePersonKeepsThem(t *testing.T) {
+func TestSyncVault_ManyFilesRemovedOnTheOtherComputerPauseThisOneAndAreRestoredWhenThePersonKeepsThem(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.writeMany(t, 10)
 	sync(t, p.a, source)

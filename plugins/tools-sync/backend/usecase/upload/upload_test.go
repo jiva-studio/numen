@@ -330,7 +330,7 @@ func TestUploadFile_ForgetDropsTheStateOfACommittedUpload(t *testing.T) {
 	}
 }
 
-func TestUploadFile_GoesOnAfterABreakAndSendsNoPartTwice(t *testing.T) {
+func TestUploadFile_ContinuesAfterABreakAndSendsNoPartTwice(t *testing.T) {
 	w := newWorld(t)
 	source := w.newSource("Videos/Trip.bin", 4)
 	fileID := newFileID(t)
@@ -370,7 +370,7 @@ func TestUploadFile_GoesOnAfterABreakAndSendsNoPartTwice(t *testing.T) {
 	}
 }
 
-func TestUploadFile_BuildsTheHashAgainWhenTheServerHoldsFewerPartsThanTheState(t *testing.T) {
+func TestUploadFile_BuildsTheHashAgainWhenTheServerHasFewerPartsThanTheState(t *testing.T) {
 	w := newWorld(t)
 	source := w.newSource("Videos/Trip.bin", 5)
 	fileID := newFileID(t)
@@ -409,7 +409,7 @@ func (w *world) writeEntries(t *testing.T, entries []transfer.UploadEntry) {
 	}
 }
 
-func TestUploadFile_SendsAgainThePartsTheServerHoldsBeyondTheState(t *testing.T) {
+func TestUploadFile_SendsAgainThePartsTheServerHasBeyondTheState(t *testing.T) {
 	w := newWorld(t)
 	source := w.newSource("Videos/Trip.bin", 6)
 	fileID := newFileID(t)

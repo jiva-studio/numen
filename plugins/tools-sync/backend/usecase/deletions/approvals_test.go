@@ -46,7 +46,7 @@ func newAnsweredSetup() (*setup, *approvalStore) {
 	return s, answers
 }
 
-func TestGuardDeletions_LetsTheRemovalsGoOnceAfterThePersonAnsweredRemove(t *testing.T) {
+func TestGuardDeletions_ReleasesTheRemovalsOnceAfterThePersonAnsweredRemove(t *testing.T) {
 	t.Parallel()
 	s, _ := newAnsweredSetup()
 	s.check(t, transfer.DirectionSend, 6, 10)

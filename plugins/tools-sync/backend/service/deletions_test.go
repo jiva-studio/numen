@@ -50,7 +50,7 @@ func TestListVaults_ShowsNoPauseForAVaultWhoseRemovalsDoNotWait(t *testing.T) {
 	}
 }
 
-func TestResolveDeletions_TakesTheAnswerOfThePersonAndClearsThePause(t *testing.T) {
+func TestResolveDeletions_AcceptsTheAnswerOfThePersonAndClearsThePause(t *testing.T) {
 	backend, w := newPausedBackend(t)
 
 	if _, err := backend.ResolveDeletions(t.Context(), api.ResolveDeletionsRequest{VaultID: "Test", Choice: "keep"}); err != nil {

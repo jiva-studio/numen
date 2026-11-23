@@ -64,7 +64,11 @@ func (u *DownloadFile) Forget(ctx context.Context, vault domain.VaultID, fileID 
 	if err != nil {
 		return err
 	}
-	return u.deps.Entries.WriteDownloads(ctx, vault, withoutFile(entries, fileID))
+	kept := withoutFile(entries, fileID)
+	if len(kept) == len(entries) {
+		return nil
+	}
+	return u.deps.Entries.WriteDownloads(ctx, vault, kept)
 }
 
 // Discard deletes the staged file of a download and its state.

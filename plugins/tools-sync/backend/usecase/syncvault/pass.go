@@ -211,9 +211,9 @@ func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []
 		}
 		file := files[i]
 		switch {
-		case outcome.Head == nil:
+		case outcome.Head == nil && len(file.ParentRev) > 0:
 			file.ParentRev = nil
-		case outcome.Head.GetRevision().GetDeleted():
+		case outcome.Head != nil && outcome.Head.GetRevision().GetDeleted():
 			file.ParentRev = outcome.Head.GetRevId()
 		default:
 			continue

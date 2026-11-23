@@ -126,7 +126,7 @@ func (r *run) resume(ctx context.Context, e transfer.UploadEntry) (*session, err
 	if err != nil {
 		return nil, fmt.Errorf("open the key of an upload: %w", err)
 	}
-	s := &session{up: up, entry: e, key: [32]byte(opened), hasher: sha256.New()}
+	s := &session{up: up, entry: e, key: [32]byte(opened), sealer: nil, hasher: sha256.New()}
 	if s.sealer, err = blobcipher.NewSealer(s.key, [16]byte(r.in.FileID), [16]byte(e.Salt), e.PlainSize); err != nil {
 		return nil, err
 	}

@@ -43,7 +43,11 @@ func (u *UploadFile) Forget(ctx context.Context, vault domain.VaultID, fileID []
 	if err != nil {
 		return err
 	}
-	return u.deps.Entries.WriteUploads(ctx, vault, withoutFile(entries, fileID))
+	kept := withoutFile(entries, fileID)
+	if len(kept) == len(entries) {
+		return nil
+	}
+	return u.deps.Entries.WriteUploads(ctx, vault, kept)
 }
 
 // plainReader reads a file by ranges and ends with ErrFileChanged when its stat is not the one it began with.

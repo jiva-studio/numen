@@ -330,7 +330,7 @@ func TestCommitRevisions_KeepsTheUploadOfABigFileWhenTheServerRefusesItsParent(t
 	}
 }
 
-func TestCommitRevisions_ReportsAFileThatIsTooLargeForTheServerAndGoesOn(t *testing.T) {
+func TestCommitRevisions_ReportsAFileThatIsTooLargeForTheServerAndContinues(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 	huge := domain.FileStat{Path: "Videos/Huge.bin", Size: syncprotocol.MaxMultipartSize + 1, ModTime: synctest.GetStart(), Hash: "not read"}
 

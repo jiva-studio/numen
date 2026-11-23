@@ -162,7 +162,7 @@ func TestPullChanges_TreatsAFileThatAppearedBeforeItsPlacementAsAConflict(t *tes
 	}
 }
 
-func TestPullChanges_RaisesTheIntegrityItemAndHoldsThePositionWhenTheHostFindsAnotherHash(t *testing.T) {
+func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenTheHostFindsAnotherHash(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
 	spy.BeforePlace(func(call synctest.PlaceCall) { p.b.Vaults.Store().With(target).File(call.Name, []byte("tampered")) })
@@ -261,7 +261,7 @@ func TestPullChanges_KeepsAFileEditedHereAndPointsItsRecordAtTheRemoval(t *testi
 	}
 }
 
-func TestPullChanges_DropsTheRecordOfARemovedFileThatIsAlreadyGone(t *testing.T) {
+func TestPullChanges_DropsTheRecordOfARemovedFileThatIsAlreadyMissing(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, pdf, pdfText, nil)
 	p.pull(t, trustAll)
@@ -287,7 +287,7 @@ func TestPullChanges_IgnoresTheRemovalOfAFileItNeverHad(t *testing.T) {
 	}
 }
 
-func TestPullChanges_LeavesManyRemovalsToTheGuardAndHoldsThePosition(t *testing.T) {
+func TestPullChanges_DefersManyRemovalsToTheGuardAndStopsThePosition(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
@@ -439,7 +439,7 @@ func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileUnderIt(t *testi
 	}
 }
 
-func TestPullChanges_MovesTheFilesOneByOneWhenTheBatchLeavesAFileOfTheFolderOut(t *testing.T) {
+func TestPullChanges_MovesTheFilesOneByOneWhenTheBatchOmitsAFileOfTheFolder(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Food", 3)
