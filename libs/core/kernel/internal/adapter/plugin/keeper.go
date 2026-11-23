@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 	"sync"
 
@@ -11,8 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
-// persistentHolder is the holder of the lease the keeper takes on the process of a plugin it keeps.
-var persistentHolder = plugindomain.Holder{Who: plugindomain.WhoPersistent, Why: "stay running"}
+// persistentHolder returns the holder of the lease the keeper takes on the process of a plugin it keeps.
+func persistentHolder() plugindomain.Holder {
+	return plugindomain.Holder{Who: plugindomain.WhoPersistent, Why: "stay running"}
+}
 
 type heldStarter interface {
 	ensureActiveDuringDiscovery(ctx context.Context, pluginID string, lease lifecycle.Lease) (transport.Endpoint, error)
@@ -119,9 +122,11 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 	if k.isHolding(pluginID) {
 		return
 	}
-	lease := lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: persistentHolder}
-	// Failures lists a start that failed; the next exit, use or enabling starts it again.
-	_, _ = k.starter.ensureActiveDuringDiscovery(withoutProvisioning(ctx), pluginID, lease)
+	lease := lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: persistentHolder()}
+	// A start that failed is not repeated until the next exit, use or enabling.
+	if _, err := k.starter.ensureActiveDuringDiscovery(withoutProvisioning(ctx), pluginID, lease); err != nil {
+		slog.Warn("the keeper could not start a plugin", "plugin", pluginID, "error", err)
+	}
 }
 
 func (k *Keeper) beginStart(pluginID string) bool {
@@ -149,5 +154,5 @@ func (k *Keeper) isHolding(pluginID string) bool {
 	if !isRunning {
 		return false
 	}
-	return slices.Contains(usage.Holders, persistentHolder)
+	return slices.Contains(usage.Holders, persistentHolder())
 }

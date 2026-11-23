@@ -28,10 +28,10 @@ func TestGetSignInMessage_JoinsTheLabelAudienceNonceExpiryKeyAndVersionInTheFroz
 	var want []byte
 	want = append(want, "numen-sync/sign-in/v1"...)
 	want = append(want, 0)
-	want = binary.AppendUvarint(want, uint64(len(challenge.Audience)))
-	want = append(want, challenge.Audience...)
-	want = append(want, challenge.Nonce...)
-	want = binary.BigEndian.AppendUint64(want, uint64(challenge.ExpiresAt))
+	want = binary.AppendUvarint(want, uint64(len(challenge.GetAudience())))
+	want = append(want, challenge.GetAudience()...)
+	want = append(want, challenge.GetNonce()...)
+	want = binary.BigEndian.AppendUint64(want, uint64(challenge.GetExpiresAt()))
 	want = append(want, key...)
 	want = binary.BigEndian.AppendUint32(want, 1)
 	if !bytes.Equal(got, want) {

@@ -9,7 +9,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
-func TestIsSameAddress_ComparesSchemeHostAndPortAfterNormalising(t *testing.T) {
+func TestIsSameAddress_ComparesSchemeHostAndPortAfterNormalizing(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
 		a, b string
@@ -61,19 +61,21 @@ func TestNormalizeAddress_ReturnsSchemeHostAndPortInLowerCaseWithoutTheDefaultPo
 	}
 }
 
-var clockNow = time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+func clockNow() time.Time {
+	return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+}
 
 func challengeExpiringIn(audience string, in time.Duration) *syncv1.GetChallengeResponse {
 	challenge := newChallenge()
 	challenge.Audience = audience
-	challenge.ExpiresAt = clockNow.Add(in).Unix()
+	challenge.ExpiresAt = clockNow().Add(in).Unix()
 	return challenge
 }
 
 func TestCheckChallenge_AcceptsTheAddressItDialledAndAnExpiryNearItsClock(t *testing.T) {
 	t.Parallel()
 	for _, in := range []time.Duration{60 * time.Second, 0, -120 * time.Second, 120 * time.Second} {
-		if err := syncprotocol.CheckChallenge(challengeExpiringIn("https://sync.numen.md", in), "https://sync.numen.md:443", clockNow); err != nil {
+		if err := syncprotocol.CheckChallenge(challengeExpiringIn("https://sync.numen.md", in), "https://sync.numen.md:443", clockNow()); err != nil {
 			t.Errorf("expiry %v from now: %v", in, err)
 		}
 	}
@@ -82,7 +84,7 @@ func TestCheckChallenge_AcceptsTheAddressItDialledAndAnExpiryNearItsClock(t *tes
 func TestCheckChallenge_RefusesAnAudienceThatIsNotTheAddressItDialled(t *testing.T) {
 	t.Parallel()
 	for _, audience := range []string{"https://evil.example", "http://sync.numen.md", "https://sync.numen.md:8443", ""} {
-		err := syncprotocol.CheckChallenge(challengeExpiringIn(audience, 60*time.Second), "https://sync.numen.md", clockNow)
+		err := syncprotocol.CheckChallenge(challengeExpiringIn(audience, 60*time.Second), "https://sync.numen.md", clockNow())
 		if !errors.Is(err, syncprotocol.ErrAudienceMismatch) {
 			t.Errorf("audience %q: error = %v, want ErrAudienceMismatch", audience, err)
 		}
@@ -92,7 +94,7 @@ func TestCheckChallenge_RefusesAnAudienceThatIsNotTheAddressItDialled(t *testing
 func TestCheckChallenge_RefusesAnExpiryMoreThan120SecondsFromItsClock(t *testing.T) {
 	t.Parallel()
 	for _, in := range []time.Duration{121 * time.Second, -121 * time.Second, 24 * time.Hour, -24 * time.Hour} {
-		err := syncprotocol.CheckChallenge(challengeExpiringIn("https://sync.numen.md", in), "https://sync.numen.md", clockNow)
+		err := syncprotocol.CheckChallenge(challengeExpiringIn("https://sync.numen.md", in), "https://sync.numen.md", clockNow())
 		if !errors.Is(err, syncprotocol.ErrChallengeOutOfRange) {
 			t.Errorf("expiry %v from now: error = %v, want ErrChallengeOutOfRange", in, err)
 		}
@@ -102,12 +104,12 @@ func TestCheckChallenge_RefusesAnExpiryMoreThan120SecondsFromItsClock(t *testing
 func TestCheckChallenge_RefusesANonceOrIDOfTheWrongLength(t *testing.T) {
 	t.Parallel()
 	short := challengeExpiringIn("https://sync.numen.md", 60*time.Second)
-	short.Nonce = short.Nonce[:31]
+	short.Nonce = short.GetNonce()[:31]
 	noID := challengeExpiringIn("https://sync.numen.md", 60*time.Second)
 	noID.ChallengeId = nil
 
 	for name, challenge := range map[string]*syncv1.GetChallengeResponse{"short nonce": short, "no id": noID} {
-		if err := syncprotocol.CheckChallenge(challenge, "https://sync.numen.md", clockNow); !errors.Is(err, syncprotocol.ErrMalformedChallenge) {
+		if err := syncprotocol.CheckChallenge(challenge, "https://sync.numen.md", clockNow()); !errors.Is(err, syncprotocol.ErrMalformedChallenge) {
 			t.Errorf("%s: error = %v, want ErrMalformedChallenge", name, err)
 		}
 	}

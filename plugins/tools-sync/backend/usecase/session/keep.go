@@ -61,12 +61,21 @@ type concern struct {
 	retry     time.Duration
 }
 
-var (
-	noIdentity        = concern{"no-identity", "No identity on this device", retryWithoutIdentity}
-	serverUnreachable = concern{"server-unreachable", "Could not reach the sync server", retryAfterFailure}
-	updateRequired    = concern{"update-required", "Update Numen", retryAfterFailure}
-	signInFailed      = concern{"sign-in-failed", "Could not sign in", retryAfterFailure}
-)
+func noIdentity() concern {
+	return concern{"no-identity", "No identity on this device", retryWithoutIdentity}
+}
+
+func serverUnreachable() concern {
+	return concern{"server-unreachable", "Could not reach the sync server", retryAfterFailure}
+}
+
+func updateRequired() concern {
+	return concern{"update-required", "Update Numen", retryAfterFailure}
+}
+
+func signInFailed() concern {
+	return concern{"sign-in-failed", "Could not sign in", retryAfterFailure}
+}
 
 // Keep signs in with the identity of this device, signs in again before the session ends, and tries
 // again at a fixed interval where it cannot.
@@ -118,14 +127,14 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	if ctx.Err() != nil {
 		return 0
 	}
-	what := signInFailed
+	what := signInFailed()
 	switch {
 	case errors.Is(cause, domain.ErrNoIdentity):
-		what = noIdentity
+		what = noIdentity()
 	case errors.Is(cause, domain.ErrUpdateRequired):
-		what = updateRequired
+		what = updateRequired()
 	case errors.Is(cause, domain.ErrUnreachable):
-		what = serverUnreachable
+		what = serverUnreachable()
 	}
 	if u.raised == what.key {
 		return what.retry

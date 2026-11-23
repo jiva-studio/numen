@@ -106,7 +106,7 @@ func (s *Server) ListSessions() []Session {
 	return slices.Clone(s.sessions)
 }
 
-// EndSessions ends the sessions of the device. A nil key ends the sessions of every device.
+// EndSessions drops the sessions of one device, or of all devices when deviceSignKey is nil.
 func (s *Server) EndSessions(deviceSignKey []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -21,7 +21,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 )
 
-var start = time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+func start() time.Time {
+	return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+}
 
 type setup struct {
 	protocol   uint32
@@ -45,7 +47,7 @@ type kit struct {
 
 func newKit(t *testing.T, s setup) *kit {
 	t.Helper()
-	k := &kit{clock: newManualClock(start), done: make(chan error, 1)}
+	k := &kit{clock: newManualClock(start()), done: make(chan error, 1)}
 	if s.signAs == "" {
 		s.signAs = syncprotocol.SignInPluginID
 	}

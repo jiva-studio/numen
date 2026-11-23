@@ -43,7 +43,7 @@ const (
 	launchDiesBeforeHandshake
 )
 
-func (l *keptLauncher) launch(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+func (l *keptLauncher) launch(ctx context.Context, _ catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	l.launches.Add(1)
 	cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
@@ -56,12 +56,20 @@ func (l *keptLauncher) launch(ctx context.Context, p catalogmanifest.Discovered,
 	switch l.mode.Load() {
 	case launchSilent:
 		silent, writer := io.Pipe()
-		l.t.Cleanup(func() { _ = writer.Close() })
+		l.t.Cleanup(func() {
+			if err := writer.Close(); err != nil {
+				l.t.Error(err)
+			}
+		})
 		return cmd.Process, silent, nil
 	case launchDiesBeforeHandshake:
 		wiretest.KillProcess(l.t, cmd.Process)
 		silent, writer := io.Pipe()
-		l.t.Cleanup(func() { _ = writer.Close() })
+		l.t.Cleanup(func() {
+			if err := writer.Close(); err != nil {
+				l.t.Error(err)
+			}
+		})
 		return cmd.Process, silent, nil
 	}
 	return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", l.port))), nil

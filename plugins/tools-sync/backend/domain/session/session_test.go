@@ -13,7 +13,7 @@ func TestASessionNeverPrintsItsToken(t *testing.T) {
 	s := session.Session{Token: "secret-bearer-token", ExpiresAt: time.Unix(1_795_000_000, 0), AccountFingerprint: "3F2A 91C0"}
 
 	for name, text := range map[string]string{
-		"%v": fmt.Sprintf("%v", s), "%+v": fmt.Sprintf("%+v", s), "%s": fmt.Sprintf("%s", s), "pointer": fmt.Sprintf("%v", &s),
+		"%v": fmt.Sprintf("%v", s), "%+v": fmt.Sprintf("%+v", s), "%s": fmt.Sprint(s), "pointer": fmt.Sprintf("%v", &s),
 	} {
 		if strings.Contains(text, "secret-bearer-token") {
 			t.Errorf("%s prints the token: %q", name, text)

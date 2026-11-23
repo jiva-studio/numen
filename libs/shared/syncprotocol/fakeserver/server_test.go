@@ -86,12 +86,12 @@ func (w world) signIn(ctx context.Context, t *testing.T, challenge *syncv1.GetCh
 	t.Helper()
 	signature := w.record.Device.SignForPlugin(w.signAs, syncprotocol.GetSignInMessage(challenge, w.deviceSignKey(), syncprotocol.Version))
 	_, err := w.service.SignIn(ctx, connect.NewRequest(&syncv1.SignInRequest{
-		ChallengeId: challenge.ChallengeId, DeviceSignKey: w.deviceSignKey(), Signature: signature[:], Chain: w.record.Chain.Bytes(),
+		ChallengeId: challenge.GetChallengeId(), DeviceSignKey: w.deviceSignKey(), Signature: signature[:], Chain: w.record.Chain.Bytes(),
 	}))
 	return err
 }
 
-func TestASignInSignedUnderThePluginOfTheServerOpensASessionOfTheAccount(t *testing.T) {
+func TestASignInOfTheServerPluginOpensASession(t *testing.T) {
 	w := newWorld(t, syncprotocol.SignInPluginID, fakeserver.Config{})
 
 	if err := w.signIn(t.Context(), t, w.getChallenge(t.Context(), t)); err != nil {
@@ -104,7 +104,7 @@ func TestASignInSignedUnderThePluginOfTheServerOpensASessionOfTheAccount(t *test
 	}
 }
 
-func TestASignInSignedUnderAnotherPluginIsUnauthenticated(t *testing.T) {
+func TestASignInOfAnotherPluginIsUnauthenticated(t *testing.T) {
 	w := newWorld(t, "md.numen.tools.link", fakeserver.Config{})
 
 	err := w.signIn(t.Context(), t, w.getChallenge(t.Context(), t))

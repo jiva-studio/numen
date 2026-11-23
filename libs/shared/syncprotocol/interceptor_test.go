@@ -125,7 +125,7 @@ func TestAnErrorThatIsNotAMismatchIsLeftAsTheServerSentIt(t *testing.T) {
 	_, url := serve(t, syncprotocol.Version)
 	client := syncv1connect.NewSignInServiceClient(http.DefaultClient, url, connect.WithInterceptors(syncprotocol.NewVersionInterceptor()))
 
-	_, err := client.SignIn(context.Background(), connect.NewRequest(&syncv1.SignInRequest{}))
+	_, err := client.SignIn(t.Context(), connect.NewRequest(&syncv1.SignInRequest{}))
 
 	if errors.Is(err, syncprotocol.ErrUpdateRequired) || connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("error = %v, want the unimplemented of the service", err)

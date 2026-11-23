@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"sync"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
@@ -36,7 +38,10 @@ func (k *keeper) configure(ctx context.Context, values map[string]string) {
 	k.address, k.cancel, k.done = address, cancel, done
 	go func() {
 		defer close(done)
-		_ = session.NewKeep(deps).Execute(ctx) // returns only the error of its context
+		// Execute returns only the error of its context, which ends with the keeper.
+		if err := session.NewKeep(deps).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			slog.Warn("the sign-in keeper ended", "error", err)
+		}
 	}()
 }
 
