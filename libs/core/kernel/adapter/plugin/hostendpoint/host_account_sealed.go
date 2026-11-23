@@ -14,9 +14,13 @@ import (
 const (
 	maxSealPlain  = 32 << 10
 	maxOpenSealed = maxSealPlain + 256
+	maxBoxBytes   = 1 << 10
 )
 
-var errDataSize = errors.New("the data to seal has at most 32 KiB")
+var (
+	errDataSize = errors.New("the data to seal has at most 32 KiB")
+	errBoxSize  = errors.New("the box to open has at most 1 KiB")
+)
 
 func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, error) {
 	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
@@ -126,7 +130,18 @@ func (e *accountEndpoint) CompleteRestore(
 }
 
 func (e *accountEndpoint) OpenSealedBox(
-	_ context.Context, _ *connect.Request[v1.OpenSealedBoxRequest],
+	ctx context.Context, req *connect.Request[v1.OpenSealedBoxRequest],
 ) (*connect.Response[v1.OpenSealedBoxResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+	pluginID, account, err := e.getAccountOf(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	if len(req.Msg.GetSealed()) > maxBoxBytes {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errBoxSize)
+	}
+	plain, err := account.OpenSealedBox(ctx, pluginID, req.Msg.GetContext(), req.Msg.GetSealed())
+	if err != nil {
+		return nil, getAccountError(err)
+	}
+	return connect.NewResponse(&v1.OpenSealedBoxResponse{Plain: plain}), nil
 }

@@ -170,6 +170,14 @@ func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.A
 	return identity.Record{Device: restore.device, Wrapped: wrapped, Chain: chain}, nil
 }
 
-func (s *service) OpenSealedBox(context.Context, *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("not implemented"))
+func (s *service) OpenSealedBox(_ context.Context, req *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {
+	keys, err := s.fake.readAccountKeys()
+	if err != nil {
+		return nil, err
+	}
+	plain, err := keys.OpenSealedBox(s.fake.pluginID, req.Msg.GetContext(), req.Msg.GetSealed())
+	if err != nil {
+		return nil, refuse(connect.CodeFailedPrecondition, "CANNOT_OPEN")
+	}
+	return connect.NewResponse(&v1.OpenSealedBoxResponse{Plain: plain}), nil
 }
