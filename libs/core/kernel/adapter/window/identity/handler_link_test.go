@@ -119,9 +119,9 @@ func TestCancelLink_EndsTheLinkSoThatTheNextOneCanStart(t *testing.T) {
 	create(t, h, getLegalWords())
 	startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
 
-	cancelled, err := h.CancelLink(t.Context(), connect.NewRequest(&v1.CancelLinkRequest{}))
-	if err != nil || cancelled.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("CancelLink() = %v, %v", cancelled, err)
+	canceled, err := h.CancelLink(t.Context(), connect.NewRequest(&v1.CancelLinkRequest{}))
+	if err != nil || canceled.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("CancelLink() = %v, %v", canceled, err)
 	}
 
 	got, err := h.GetLink(t.Context(), connect.NewRequest(&v1.GetLinkRequest{}))

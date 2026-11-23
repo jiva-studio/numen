@@ -105,16 +105,20 @@ func TestParseLinkPayload_RefusesWhatIsNotAVersionOneLink(t *testing.T) {
 	}
 	good := payload.Text()
 	enc := base64.RawURLEncoding
+	before := func(marker string) string {
+		headOf, _, _ := strings.Cut(good, marker)
+		return headOf
+	}
 	cases := map[string]string{
 		"empty":            "",
 		"another scheme":   strings.Replace(good, "numen://", "https://", 1),
 		"another version":  strings.Replace(good, "v=1", "v=2", 1),
 		"no version":       strings.Replace(good, "v=1&", "", 1),
 		"extra field":      good + "&x=1",
-		"short secret":     good[:strings.Index(good, "&s=")] + "&s=" + enc.EncodeToString(make([]byte, 15)),
-		"long secret":      good[:strings.Index(good, "&s=")] + "&s=" + enc.EncodeToString(make([]byte, 17)),
+		"short secret":     before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 15)),
+		"long secret":      before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 17)),
 		"short channel":    strings.Replace(good, "c="+enc.EncodeToString(payload.Channel[:]), "c="+enc.EncodeToString(make([]byte, 15)), 1),
-		"not base64":       good[:strings.Index(good, "&k=")] + "&k=!!!&s=" + enc.EncodeToString(payload.Secret[:]),
+		"not base64":       before("&k=") + "&k=!!!&s=" + enc.EncodeToString(payload.Secret[:]),
 		"server not http":  good + "&h=ftp://sync.example.org",
 		"server with path": good + "&h=https://sync.example.org/path",
 	}

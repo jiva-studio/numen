@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -33,8 +34,11 @@ func (d Deps) receiveJoinLocked(link *pendingLink, body []byte) error {
 		return nil
 	}
 	join, err := decodeJoin(body)
-	if err != nil {
+	if errors.Is(err, errBadMessage) {
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 	if link.mode == identitydomain.LinkModeScan {
 		code, err := d.makeCode()
@@ -88,8 +92,8 @@ func (d Deps) publishLinkLocked(ctx context.Context, link *pendingLink) error {
 }
 
 func (d Deps) extendLocked(link *pendingLink, state identitylib.State) error {
-	extended, err := state.Chain.AppendDevice(state.Record.Device, link.host.join.device, link.host.join.name, d.clock.Now())
-	if err != nil {
+	extended, isAppended := d.appendJoiner(state, link)
+	if !isAppended {
 		d.links.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
 		d.links.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonStaleChain)
 		return nil
@@ -97,4 +101,9 @@ func (d Deps) extendLocked(link *pendingLink, state identitylib.State) error {
 	link.host.extended = extended
 	d.links.setPhaseLocked(link, identitydomain.LinkPhasePublishing)
 	return nil
+}
+
+func (d Deps) appendJoiner(state identitylib.State, link *pendingLink) (identitylib.Chain, bool) {
+	extended, err := state.Chain.AppendDevice(state.Record.Device, link.host.join.device, link.host.join.name, d.clock.Now())
+	return extended, err == nil
 }

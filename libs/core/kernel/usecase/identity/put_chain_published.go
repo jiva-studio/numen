@@ -42,11 +42,8 @@ func (d Deps) answerLinkLocked(ctx context.Context, link *pendingLink, accepted 
 	if accepted {
 		return d.grantLocked(ctx, link, state)
 	}
-	head, err := identitylib.ParseChain(latest)
-	if err == nil {
-		state, err = d.adoptState(ctx, state, head)
-	}
-	if err != nil || link.host.isRebuilt || state.Status != identitylib.StatusActive {
+	state, isAdopted := d.adoptLatest(ctx, state, latest)
+	if !isAdopted || link.host.isRebuilt || state.Status != identitylib.StatusActive {
 		d.links.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
 		d.links.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonStaleChain)
 		return nil
@@ -107,8 +104,8 @@ func (d Deps) rebuildRevokeLocked(state identitylib.State, pending *pendingRevok
 	if err != nil {
 		return err
 	}
-	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, pending.device, d.random, d.clock.Now())
-	if err != nil {
+	chain, isRevoked := d.revokeChain(state, keys, pending)
+	if !isRevoked {
 		d.links.revoke = nil
 		return nil
 	}
@@ -116,4 +113,18 @@ func (d Deps) rebuildRevokeLocked(state identitylib.State, pending *pendingRevok
 	pending.attempts++
 	d.links.bumpLocked()
 	return nil
+}
+
+func (d Deps) adoptLatest(ctx context.Context, state identitylib.State, latest []byte) (identitylib.State, bool) {
+	head, err := identitylib.ParseChain(latest)
+	if err != nil {
+		return state, false
+	}
+	adopted, err := d.adoptState(ctx, state, head)
+	return adopted, err == nil
+}
+
+func (d Deps) revokeChain(state identitylib.State, keys identitylib.AccountKeys, pending *pendingRevoke) (identitylib.Chain, bool) {
+	chain, _, err := state.Chain.RevokeDevice(state.Record.Device, keys, pending.device, d.random, d.clock.Now())
+	return chain, err == nil
 }

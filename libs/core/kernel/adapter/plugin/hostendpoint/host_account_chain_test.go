@@ -191,7 +191,10 @@ func TestAPluginPublishesTheChainOfARevokeAndTheCoreKeepsItOnceTheServerAccepted
 	if !pending.GetIsPending() || s.readChain(t, pending.GetChain()).IsActiveDevice(s.phone.Public().Sign) {
 		t.Fatalf("pending = %v, want a chain that revokes the phone", pending)
 	}
-	stored, _ := s.chains.Read(t.Context())
+	stored, err := s.chains.Read(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !s.readChain(t, stored).IsActiveDevice(s.phone.Public().Sign) {
 		t.Fatal("the core kept the revoke before the server accepted it")
 	}
@@ -200,7 +203,10 @@ func TestAPluginPublishesTheChainOfARevokeAndTheCoreKeepsItOnceTheServerAccepted
 		t.Fatalf("PutChainPublished(accepted) = %v", err)
 	}
 
-	stored, _ = s.chains.Read(t.Context())
+	stored, err = s.chains.Read(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if s.readChain(t, stored).IsActiveDevice(s.phone.Public().Sign) || s.getPendingChain(t).GetIsPending() {
 		t.Error("after the answer the phone is still active or the chain is still pending")
 	}
@@ -235,7 +241,10 @@ func TestARevokeIsEndedWithoutAnErrorWhenTheRevokedDeviceAddedADeviceMeanwhile(t
 	if s.getPendingChain(t).GetIsPending() {
 		t.Error("the aborted revoke is still pending")
 	}
-	stored, _ := s.chains.Read(t.Context())
+	stored, err := s.chains.Read(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	kept := s.readChain(t, stored)
 	if !kept.IsActiveDevice(s.phone.Public().Sign) || kept.Len() != s.readChain(t, head).Len() {
 		t.Error("the core must hold the chain of the server with the phone still active")

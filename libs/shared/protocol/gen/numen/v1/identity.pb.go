@@ -303,7 +303,7 @@ const (
 	LinkReason_LINK_REASON_WRONG_CODE           LinkReason = 3
 	LinkReason_LINK_REASON_TOO_MANY_WRONG_CODES LinkReason = 4
 	LinkReason_LINK_REASON_STALE_CHAIN          LinkReason = 5
-	LinkReason_LINK_REASON_CANCELLED            LinkReason = 6
+	LinkReason_LINK_REASON_CANCELED             LinkReason = 6
 	LinkReason_LINK_REASON_EXPIRED              LinkReason = 7
 	LinkReason_LINK_REASON_INVALID              LinkReason = 8
 )
@@ -317,7 +317,7 @@ var (
 		3: "LINK_REASON_WRONG_CODE",
 		4: "LINK_REASON_TOO_MANY_WRONG_CODES",
 		5: "LINK_REASON_STALE_CHAIN",
-		6: "LINK_REASON_CANCELLED",
+		6: "LINK_REASON_CANCELED",
 		7: "LINK_REASON_EXPIRED",
 		8: "LINK_REASON_INVALID",
 	}
@@ -328,7 +328,7 @@ var (
 		"LINK_REASON_WRONG_CODE":           3,
 		"LINK_REASON_TOO_MANY_WRONG_CODES": 4,
 		"LINK_REASON_STALE_CHAIN":          5,
-		"LINK_REASON_CANCELLED":            6,
+		"LINK_REASON_CANCELED":             6,
 		"LINK_REASON_EXPIRED":              7,
 		"LINK_REASON_INVALID":              8,
 	}
@@ -2030,7 +2030,7 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x15LINK_PHASE_PUBLISHING\x10\x06\x12\x1e\n" +
 	"\x1aLINK_PHASE_CONFIRM_ACCOUNT\x10\a\x12\x15\n" +
 	"\x11LINK_PHASE_LINKED\x10\b\x12\x15\n" +
-	"\x11LINK_PHASE_FAILED\x10\t*\x94\x02\n" +
+	"\x11LINK_PHASE_FAILED\x10\t*\x93\x02\n" +
 	"\n" +
 	"LinkReason\x12\x1b\n" +
 	"\x17LINK_REASON_UNSPECIFIED\x10\x00\x12\x18\n" +
@@ -2038,8 +2038,8 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x1fLINK_REASON_DEVICE_HAS_IDENTITY\x10\x02\x12\x1a\n" +
 	"\x16LINK_REASON_WRONG_CODE\x10\x03\x12$\n" +
 	" LINK_REASON_TOO_MANY_WRONG_CODES\x10\x04\x12\x1b\n" +
-	"\x17LINK_REASON_STALE_CHAIN\x10\x05\x12\x19\n" +
-	"\x15LINK_REASON_CANCELLED\x10\x06\x12\x17\n" +
+	"\x17LINK_REASON_STALE_CHAIN\x10\x05\x12\x18\n" +
+	"\x14LINK_REASON_CANCELED\x10\x06\x12\x17\n" +
 	"\x13LINK_REASON_EXPIRED\x10\a\x12\x17\n" +
 	"\x13LINK_REASON_INVALID\x10\b2\x91\b\n" +
 	"\x0fIdentityService\x12J\n" +

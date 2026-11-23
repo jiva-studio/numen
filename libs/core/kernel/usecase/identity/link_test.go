@@ -433,7 +433,7 @@ func TestCancelLink_EndsTheLinkOnBothDevices(t *testing.T) {
 		t.Errorf("host GetLink() = %v, want ErrNoLink", err)
 	}
 	if got := s.joiner.getLink(t); got.Phase != identitydomain.LinkPhaseFailed || got.Reason != identitydomain.LinkReasonCancelled {
-		t.Errorf("joiner link = %+v, want FAILED, cancelled", got)
+		t.Errorf("joiner link = %+v, want FAILED, canceled", got)
 	}
 	if err := s.host.cancel().Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoLink) {
 		t.Errorf("cancel without a link: error = %v, want ErrNoLink", err)

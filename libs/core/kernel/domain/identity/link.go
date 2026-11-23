@@ -48,7 +48,7 @@ const (
 	LinkPhaseConfirmAccount    LinkPhase = "CONFIRM_ACCOUNT"
 	LinkPhaseLinked            LinkPhase = "LINKED"
 	LinkPhaseFailed            LinkPhase = "FAILED"
-	LinkPhaseCancelled         LinkPhase = "CANCELLED"
+	LinkPhaseCancelled         LinkPhase = "CANCELED"
 )
 
 type LinkReason string
@@ -59,7 +59,7 @@ const (
 	LinkReasonWrongCode         LinkReason = "wrong_code"
 	LinkReasonTooManyWrongCodes LinkReason = "too_many_wrong_codes"
 	LinkReasonStaleChain        LinkReason = "stale_chain"
-	LinkReasonCancelled         LinkReason = "cancelled"
+	LinkReasonCancelled         LinkReason = "canceled"
 	LinkReasonExpired           LinkReason = "expired"
 	LinkReasonInvalid           LinkReason = "invalid"
 )

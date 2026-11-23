@@ -12,7 +12,7 @@ type GetLink struct{ deps Deps }
 // NewGetLink returns the use case that shows the link in progress.
 func NewGetLink(d Deps) *GetLink { return &GetLink{deps: d} }
 
-// Execute returns the link, or ErrNoLink when none is in progress or the person cancelled it. A link that ran for ten minutes ends here.
+// Execute returns the link, or ErrNoLink when none is in progress or the person canceled it. A link that ran for ten minutes ends here.
 func (u *GetLink) Execute(_ context.Context) (identitydomain.Link, error) {
 	store := u.deps.links
 	store.mu.Lock()

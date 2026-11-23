@@ -256,7 +256,7 @@ func (s *service) GetChainPublish(context.Context, *connect.Request[v1.GetChainP
 	return connect.NewResponse(&v1.GetChainPublishResponse{IsPending: true, Chain: f.link.pending.Bytes()}), nil
 }
 
-func (s *service) PutChainPublished(_ context.Context, req *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error) {
+func (s *service) PutChainPublished(_ context.Context, _ *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error) {
 	f := s.fake
 	f.mu.Lock()
 	defer f.mu.Unlock()

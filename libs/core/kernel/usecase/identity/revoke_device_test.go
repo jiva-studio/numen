@@ -147,8 +147,8 @@ func TestChainPublished_RevokeAbortsWhenRevokedDeviceAddedDeviceMeanwhile(t *tes
 			t.Errorf("%+v is revoked: the revoke was aborted", device)
 		}
 	}
-	if pending, _ := l.host.publish().Execute(t.Context()); pending.IsPending {
-		t.Error("an aborted revoke is still pending")
+	if pending, err := l.host.publish().Execute(t.Context()); err != nil || pending.IsPending {
+		t.Errorf("an aborted revoke is still pending: %+v, %v", pending, err)
 	}
 }
 

@@ -230,7 +230,7 @@ const readReason = (reason: ProtoLinkReason): LinkReason | undefined => {
       return 'too_many_wrong_codes'
     case ProtoLinkReason.STALE_CHAIN:
       return 'stale_chain'
-    case ProtoLinkReason.CANCELLED:
+    case ProtoLinkReason.CANCELED:
       return 'cancelled'
     case ProtoLinkReason.EXPIRED:
       return 'expired'

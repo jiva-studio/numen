@@ -81,9 +81,6 @@ func (d *linkDevice) public() *identity.GetPublicIdentity {
 }
 func (d *linkDevice) seal() *identity.SealData         { return identity.NewSealData(d.deps) }
 func (d *linkDevice) remove() *identity.DeleteIdentity { return identity.NewDeleteIdentity(d.deps) }
-func (d *linkDevice) words() *identity.GenerateRecoveryWords {
-	return identity.NewGenerateRecoveryWords(d.deps)
-}
 
 func (d *linkDevice) createAccount(tb testing.TB) identitydomain.Identity {
 	tb.Helper()
@@ -247,6 +244,7 @@ func newLinkPair(tb testing.TB) linked {
 		tb.Fatalf("ConfirmJoin() = %v", err)
 	}
 	r.settle(tb, host, joiner)
+	r.published = nil
 	return linked{host: host, joiner: joiner, relay: r, clock: clock}
 }
 

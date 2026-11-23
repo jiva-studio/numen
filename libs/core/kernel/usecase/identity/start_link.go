@@ -55,7 +55,11 @@ func (d Deps) newLink(ctx context.Context, role identitydomain.LinkRole, mode id
 		if state.Status == identitylib.StatusRevoked {
 			return nil, identitydomain.ErrDeviceRevoked
 		}
-		link.own = newOwnIdentity(state, "")
+		me, err := identityOf(state)
+		if err != nil {
+			return nil, err
+		}
+		link.own = newOwnIdentity(state, me.DeviceName)
 		return link, nil
 	}
 	if err := checkAbsent(ctx, d); err != nil {

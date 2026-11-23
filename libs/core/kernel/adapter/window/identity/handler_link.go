@@ -237,7 +237,7 @@ func writeLinkReason(reason identitydomain.LinkReason) v1.LinkReason {
 		identitydomain.LinkReasonWrongCode:         v1.LinkReason_LINK_REASON_WRONG_CODE,
 		identitydomain.LinkReasonTooManyWrongCodes: v1.LinkReason_LINK_REASON_TOO_MANY_WRONG_CODES,
 		identitydomain.LinkReasonStaleChain:        v1.LinkReason_LINK_REASON_STALE_CHAIN,
-		identitydomain.LinkReasonCancelled:         v1.LinkReason_LINK_REASON_CANCELLED,
+		identitydomain.LinkReasonCancelled:         v1.LinkReason_LINK_REASON_CANCELED,
 		identitydomain.LinkReasonExpired:           v1.LinkReason_LINK_REASON_EXPIRED,
 		identitydomain.LinkReasonInvalid:           v1.LinkReason_LINK_REASON_INVALID,
 	}
