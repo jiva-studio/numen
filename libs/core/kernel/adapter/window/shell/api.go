@@ -37,8 +37,8 @@ type API struct {
 // PluginServices is where the calls for the services plugins serve are forwarded.
 type PluginServices interface {
 	http.Handler
-	// Serves reports whether an enabled plugin serves the service the path names.
-	Serves(urlPath string) bool
+	// CanServe reports whether an enabled plugin serves the service the path names.
+	CanServe(urlPath string) bool
 }
 
 // NewWindow is the window named, over the list a build keeps of what it is doing. A nil list is

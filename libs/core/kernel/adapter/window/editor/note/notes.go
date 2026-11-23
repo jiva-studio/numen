@@ -290,7 +290,7 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 		return domain.FileStat{}
 	}
 	return domain.FileStat{
-		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime()),
+		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: parseInstant(pos.GetMtime()),
 		Hash: pos.GetHash(), Version: pos.GetVersion(),
 	}
 }

@@ -21,7 +21,7 @@ type connectionFailure struct {
 	isCycle   bool
 }
 
-func failureOf(err error) (connectionFailure, error) {
+func getFailure(err error) (connectionFailure, error) {
 	switch {
 	case err == nil:
 		return connectionFailure{}, nil
@@ -67,7 +67,7 @@ func (h *Connections) SaveConnection(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	failure, err := failureOf(h.saveConnection.Execute(ctx, showing, saving))
+	failure, err := getFailure(h.saveConnection.Execute(ctx, showing, saving))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (h *Connections) DeleteConnectionSide(
 	if err != nil {
 		return nil, err
 	}
-	failure, err := failureOf(h.deleteConnectionSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
+	failure, err := getFailure(h.deleteConnectionSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (h *Connections) DeleteConnection(
 	if err != nil {
 		return nil, err
 	}
-	failure, err := failureOf(
+	failure, err := getFailure(
 		h.deleteConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (h *Connections) CreateConnectionSide(
 	if err != nil || side == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Join(errNoSide, err))
 	}
-	failure, err := failureOf(h.join.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo(), *side))
+	failure, err := getFailure(h.join.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo(), *side))
 	if err != nil {
 		return nil, err
 	}
