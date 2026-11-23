@@ -210,7 +210,6 @@ func (s *Server) ChangePlan(_ context.Context, req *connect.Request[syncv1.Chang
 	return connect.NewResponse(&syncv1.ChangePlanResponse{Subscription: s.getSubscriptionMessage(account)}), nil
 }
 
-// getQuota returns the bytes the account may store: the quota of its plan, or the quota of the server for an account without one.
 func (s *Server) getQuota(account string) uint64 {
 	if plan, found := s.findPlan(s.planOf[account]); found {
 		return plan.QuotaBytes

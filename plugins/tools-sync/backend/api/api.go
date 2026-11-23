@@ -172,7 +172,6 @@ type ChangePlanResponse struct {
 // CreatePortalSessionRequest asks for the address of the page where the person manages the subscription.
 type CreatePortalSessionRequest struct{}
 
-// CreatePortalSessionResponse is the address of the portal.
 type CreatePortalSessionResponse struct {
 	PortalURL string `json:"portalUrl"`
 }

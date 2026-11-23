@@ -40,15 +40,15 @@ func (systemClock) Now() time.Time { return time.Now() }
 // Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
 // tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
 // session lives (zero is an hour), the bytes an account may store (zero is 10 GiB) and whether an account needs a
-// subscription to write.
+// subscription to write. Plans are the plans the server sells, ascending by quota; empty is Basic with 10 GiB for 5 USD, Plus with
+// 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro).
 type Config struct {
 	Protocol   uint32
 	Audience   string
 	Now        func() time.Time
 	SessionTTL time.Duration
 	QuotaBytes uint64
-	// Plans are the plans the server sells, ascending by quota. Empty is Basic with 10 GiB for 5 USD, Plus with 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro).
-	Plans []syncprotocol.Plan
+	Plans      []syncprotocol.Plan
 
 	NeedsSubscription bool
 }
@@ -72,7 +72,9 @@ type challenge struct {
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
 // the id and the body of every stored blob, raw). The subscription service has the pay page at /pay/ and the admin
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
-// may write when its subscription allows it, and every account does unless the config sets NeedsSubscription.
+// may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The admin paths
+// /admin/trial and /admin/cancel-trial (POST, plan=id and an optional account) start and cancel a trial, and /admin/usage (POST, bytes=N and an
+// optional account) sets the bytes the cloud holds.
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 

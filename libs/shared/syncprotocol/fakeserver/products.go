@@ -90,7 +90,6 @@ func (s *Server) servePortal(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// serveTrial starts a trial of a plan (POST, plan=id and an optional account): the subscription runs to the end of the trial.
 func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -110,7 +109,6 @@ func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// serveCancelTrial cancels the trial of a plan (POST, plan=id and an optional account): the subscription keeps running to the end of the trial.
 func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -130,7 +128,6 @@ func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// serveUsage sets the bytes the cloud holds (POST, bytes=N and an optional account).
 func (s *Server) serveUsage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

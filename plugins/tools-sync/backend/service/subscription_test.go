@@ -286,7 +286,7 @@ func TestGetSubscription_ReportsThePlanAfterThePersonPaidForIt(t *testing.T) {
 	}
 }
 
-func TestGetSubscription_ReportsTheBytesTheCloudHolds(t *testing.T) {
+func TestGetSubscription_ReportsTheUsedBytes(t *testing.T) {
 	w := newBillingWorld(t)
 	backend := service.NewBackend(w.c.SyncDeps())
 	payFor(t, backend, "plus")

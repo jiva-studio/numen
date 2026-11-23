@@ -27,7 +27,7 @@ func (b *billing) payPlan(plan string) {
 	}
 }
 
-func (b *billing) holds(bytes uint64) {
+func (b *billing) setUsage(bytes uint64) {
 	b.tb.Helper()
 	request, err := http.NewRequestWithContext(b.tb.Context(), http.MethodPost, b.address+"/admin/usage?bytes="+strconv.FormatUint(bytes, 10), nil)
 	if err != nil {
@@ -128,12 +128,12 @@ func TestGetSubscription_KeepsThePlanAfterTheSubscriptionEnded(t *testing.T) {
 	}
 }
 
-func TestGetSubscription_ReportsTheBytesTheCloudHolds(t *testing.T) {
+func TestGetSubscription_ReportsTheUsedBytes(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, true)
 	b.payPlan("plus")
 
-	b.holds(2 * gib)
+	b.setUsage(2 * gib)
 
 	if got := b.subscriptionNow(); got.UsedBytes != 2*gib {
 		t.Errorf("UsedBytes = %d, want 2 GiB", got.UsedBytes)
@@ -217,7 +217,7 @@ func TestReserveBlobs_RefusesBytesAbovePlanQuotaWithTheLimitOfThePlan(t *testing
 	b := createBillingEnv(t, true)
 	b.payPlan("basic")
 	vault := b.env.newVault()
-	b.holds(10 * gib)
+	b.setUsage(10 * gib)
 
 	err := b.reserve(vault, 1)
 
@@ -232,7 +232,7 @@ func TestReserveBlobs_AcceptsBytesAfterThePlanBecameLarger(t *testing.T) {
 	b := createBillingEnv(t, true)
 	b.payPlan("basic")
 	vault := b.env.newVault()
-	b.holds(10 * gib)
+	b.setUsage(10 * gib)
 	if _, err := b.subscription.ChangePlan(t.Context(), "plus"); err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestReserveBlobs_RefusesNewBytesWhenThePlanBecameSmallerThanTheUsedBytes(t 
 	b := createBillingEnv(t, true)
 	b.payPlan("pro")
 	vault := b.env.newVault()
-	b.holds(20 * gib)
+	b.setUsage(20 * gib)
 	if _, err := b.subscription.ChangePlan(t.Context(), "basic"); err != nil {
 		t.Fatal(err)
 	}
@@ -265,14 +265,18 @@ func TestReserveBlobs_RefusesNewBytesWhenThePlanBecameSmallerThanTheUsedBytes(t 
 
 func TestListPlans_ReturnsThePlansOfTheConfigOfTheServer(t *testing.T) {
 	t.Parallel()
-	_, plans := newPlansServer(t, []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}})
+	want := []syncprotocol.Plan{
+		{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"},
+		{ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"},
+	}
+	_, plans := newPlansServer(t, want)
 
 	got, err := plans.ListPlans(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want := []syncprotocol.Plan{{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"}, {ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"}}; !slices.Equal(got, want) {
+	if !slices.Equal(got, want) {
 		t.Errorf("plans = %+v, want %+v", got, want)
 	}
 }

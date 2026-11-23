@@ -20,18 +20,18 @@ const (
 	PhaseDeleted
 )
 
-// State is the subscription with its times. A time the server did not send is the zero time.
+// State is the subscription with its times. A time the server did not send is the zero time. PlanID is empty while
+// the phase is none, and UsedBytes may be above QuotaBytes. IsTrial is true while a trial runs that no payment has followed; PeriodEnd is then the
+// end of the trial.
 type State struct {
-	Phase     Phase
-	PeriodEnd time.Time
-	WritesEnd time.Time
-	DeleteAt  time.Time
-	// PlanID is empty while the phase is none. UsedBytes may be above QuotaBytes.
+	Phase      Phase
+	PeriodEnd  time.Time
+	WritesEnd  time.Time
+	DeleteAt   time.Time
 	PlanID     string
 	QuotaBytes uint64
 	UsedBytes  uint64
-	// IsTrial is true while a trial runs that no payment has followed; PeriodEnd is then the end of the trial.
-	IsTrial bool
+	IsTrial    bool
 }
 
 // CanWrite is whether the server takes changes.

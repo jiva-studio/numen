@@ -10,6 +10,7 @@ import type { SubscriptionPhase } from '../lib/subscriptionView'
 /**
  * The phase is empty when the device has no identity. A time is RFC 3339, and empty when the server sent none.
  * The plan is the id of the plan, empty while the phase is none. The used bytes may be above the quota.
+ * isTrial is true while a trial runs that no payment has followed, and the backend leaves it out otherwise.
  */
 export interface SubscriptionResponse {
   readonly hasIdentity: boolean
@@ -20,16 +21,14 @@ export interface SubscriptionResponse {
   readonly plan: string
   readonly quotaBytes: number
   readonly usedBytes: number
-  /** True while a trial runs that no payment has followed; the backend leaves it out otherwise. */
   readonly isTrial?: boolean | undefined
 }
 
-/** A plan the server sells. */
+/** A plan the server sells. The price is for one period in cents of the currency, tax included, and is information only. */
 export interface PlanResponse {
   readonly id: string
   readonly name: string
   readonly quotaBytes: number
-  /** The price for one period in cents of the currency, tax included. It is information only. */
   readonly priceCents: number
   readonly currency: string
 }
