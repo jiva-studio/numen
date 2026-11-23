@@ -13,17 +13,17 @@ import (
 // The fold is locale-independent, so `İstanbul` and `istanbul` are two names.
 // The form is NFC, but `Ｎｏｔｅ` and `Note` stay two names, as on disk.
 func FoldName(name string) string {
-	if folded, ok := foldASCII(name); ok {
+	if folded, ok := getASCIIFold(name); ok {
 		return folded
 	}
-	return foldGeneral(name)
+	return getGeneralFold(name)
 }
 
-func foldGeneral(name string) string {
+func getGeneralFold(name string) string {
 	return norm.NFC.String(cases.Fold().String(norm.NFC.String(name)))
 }
 
-func foldASCII(name string) (folded string, ok bool) {
+func getASCIIFold(name string) (folded string, ok bool) {
 	hasUpper := false
 	for i := range len(name) {
 		c := name[i]

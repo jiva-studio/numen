@@ -20,7 +20,7 @@ import (
 )
 
 func failWithDialog(cfg container.Config, why error) error {
-	page, err := fatalReport{}.page(cfg, why)
+	page, err := fatalReport{}.buildPage(cfg, why)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func failWithDialog(cfg container.Config, why error) error {
 }
 
 func getFatalWindowOptions() application.WebviewWindowOptions {
-	return frame.Window(application.WebviewWindowOptions{
+	return frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:  appName,
 		Width:  720,
 		Height: 520,
@@ -89,7 +89,7 @@ const (
 	factSettings = "settings"
 )
 
-func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
+func (fatalReport) buildPage(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
 	if constructed, ok := debug.ReadBuildInfo(); ok {

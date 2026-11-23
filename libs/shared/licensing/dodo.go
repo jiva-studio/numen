@@ -84,7 +84,7 @@ func (p *DodoProvider) Activate(ctx context.Context, req ActivationRequest) (Act
 	if key == "" || instanceName == "" {
 		return ActivationResult{}, fmt.Errorf("%w: key and instance name are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/licenses/activate",
@@ -146,7 +146,7 @@ func (p *DodoProvider) Validate(ctx context.Context, key, instanceID string) (Va
 	if cleanKey == "" || cleanInstance == "" {
 		return ValidationResult{}, fmt.Errorf("%w: key and instance id are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/licenses/validate",
@@ -184,7 +184,7 @@ func (p *DodoProvider) Deactivate(ctx context.Context, key, instanceID string) e
 	if cleanKey == "" || cleanInstance == "" {
 		return fmt.Errorf("%w: key and instance id are required", ErrInvalidArgument)
 	}
-	code, raw, err := postJSON(
+	code, raw, err := sendJSON(
 		ctx,
 		p.client,
 		p.baseURL+"/licenses/deactivate",

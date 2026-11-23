@@ -42,21 +42,21 @@ export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const clients = createWindowClients(transport)
   const listPlugins = createPluginLister(clients.pluginService)
-  const notices = createNoticeQueue()
+  const noticeQueue = createNoticeQueue()
   const tabs = createWindowTabs()
   const frameRuntime = createFrameRuntimeLoader()
   const frame = useWindowFrame(createWindowFrameControls(frameRuntime))
   const { vaults, isListing } = useVaults(createVaultLister(clients.vaultsService), (text) =>
-    notices.show(WINDOW_SOURCE, text, 'error'),
+    noticeQueue.show(WINDOW_SOURCE, text, 'error'),
   )
-  const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), notices)
+  const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), noticeQueue)
   const { getSlotLayout } = useSlotLayouts(clients.settingsService)
   const { host, styles, mountView, titleBarView } = createShellHost({
     openExternal: (href) => openExternalUrl(href, frameRuntime),
     relations: createWindowRelations(clients.notes),
     getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
-    notices,
+    notices: noticeQueue,
     getPlatform: () => frame.platform.value,
     getSlotLayout,
     services: {
@@ -67,7 +67,7 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
         openTab: tabs.openTab,
       }),
       window: createWindowHost(frame, (error) =>
-        notices.show(WINDOW_SOURCE, formatError(error), 'error'),
+        noticeQueue.show(WINDOW_SOURCE, formatError(error), 'error'),
       ),
       backgroundTasks,
     },
@@ -79,7 +79,7 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   })
   const start = useAppStart(listPlugins, loader)
   useWindowKeys({ tabs, vaults })
-  const appearance = useAppearance({ themes: createThemes(clients.theme), listPlugins }, notices)
+  const appearance = useAppearance({ themes: createThemes(clients.theme), listPlugins }, noticeQueue)
 
   usePluginStyles(styles, () => tabs.frontPlugins.value)
 
@@ -88,7 +88,7 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
     vaults: { list: vaults, isListing },
     plugins: start,
     views: { titleBar: titleBarView, styles },
-    notices,
+    notices: noticeQueue,
     backgroundTasks,
     mountView,
     appearance,

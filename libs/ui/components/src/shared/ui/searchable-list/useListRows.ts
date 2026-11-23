@@ -9,12 +9,12 @@ import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { buildRows, filterItems, stepRow, type ListItem, type ListRow } from './rows'
 
 export interface ListRowsOptions {
-  readonly items: () => readonly ListItem[]
+  readonly getItems: () => readonly ListItem[]
   readonly query: Readonly<Ref<string>>
-  readonly current: () => string | null
+  readonly getCurrent: () => string | null
   readonly isFiltered: () => boolean
   readonly hasAction: () => boolean
-  readonly needsQuery: () => boolean
+  readonly shouldWaitForQuery: () => boolean
 }
 
 export interface ListRowsState {
@@ -34,18 +34,20 @@ export function useListRows(options: ListRowsOptions): ListRowsState {
   const queryText = computed(() => options.query.value.trim())
 
   const matches = computed(() =>
-    options.isFiltered() ? filterItems(options.items(), options.query.value) : options.items(),
+    options.isFiltered()
+      ? filterItems(options.getItems(), options.query.value)
+      : options.getItems(),
   )
 
   const rows = computed(() => buildRows(matches.value, options.query.value, options.hasAction()))
 
-  const isListOpen = computed(() => !options.needsQuery() || queryText.value !== '')
+  const isListOpen = computed(() => !options.shouldWaitForQuery() || queryText.value !== '')
 
   /** Where the keyboard starts: on the item in force while nothing is typed, else the first row. */
   const startIndex = computed(() => {
     if (queryText.value !== '') return 0
     return Math.max(
-      rows.value.findIndex((row) => row.key === options.current()),
+      rows.value.findIndex((row) => row.key === options.getCurrent()),
       0,
     )
   })

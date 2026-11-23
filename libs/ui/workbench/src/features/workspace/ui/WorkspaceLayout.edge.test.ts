@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import type { Tab, Workspace } from '../lib/node'
-import { createWorkspace, sideBySide, split, stack } from '../fixtures/build'
+import { createWorkspace, createSideBySide, split, createStack } from '../fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe('a workspace at the top of the window', () => {
   it('moves the window by the strips at the top edge', () => {
-    const wrapper = mountWorkspace(sideBySide(), EDGE)
+    const wrapper = mountWorkspace(createSideBySide(), EDGE)
 
     for (const pane of ['main', 'aside']) {
       expect(getStrip(wrapper, pane).hasAttribute('data-window-drag')).toBe(true)
@@ -40,7 +40,7 @@ describe('a workspace at the top of the window', () => {
 
   it('does not move the window by a strip below another pane', () => {
     const column = createWorkspace(
-      split('column', [stack('upper', 'plex'), stack('lower', 'rain')]),
+      split('column', [createStack('upper', 'plex'), createStack('lower', 'rain')]),
       'vertical',
     )
     const wrapper = mountWorkspace(column, EDGE)
@@ -52,7 +52,7 @@ describe('a workspace at the top of the window', () => {
 
 describe('a workspace under a title bar', () => {
   it('moves the window by no strip', () => {
-    const wrapper = mountWorkspace(sideBySide())
+    const wrapper = mountWorkspace(createSideBySide())
 
     for (const pane of ['main', 'aside']) {
       expect(getStrip(wrapper, pane).hasAttribute('data-window-drag')).toBe(false)

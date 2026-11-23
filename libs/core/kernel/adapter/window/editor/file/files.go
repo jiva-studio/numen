@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-var errComingUp = errors.New("the vault is still coming up")
-
 // errTooManyPaths is a filter naming more paths than are answered at once.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
@@ -50,9 +48,6 @@ func (h *Folders) ListFiles(
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
-	}
-	if h.listFolder == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	listing, err := h.listFolder.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
@@ -90,9 +85,6 @@ func (h *Folders) ListFileKinds(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	if h.listKinds == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
-	}
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
@@ -128,9 +120,6 @@ func (h *Folders) CreateFolder(
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
-	}
-	if h.createFolder == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	out := &v1.CreateFolderResponse{}
 	if err := h.createFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
@@ -231,9 +220,6 @@ func (h *Changes) EmptyTrash(
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
-	}
-	if h.emptyTrash == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	undeleted, err := h.emptyTrash.Execute(ctx, showing)
 	if errors.Is(err, windowdomain.ErrClosing) {

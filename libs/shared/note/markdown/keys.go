@@ -112,7 +112,7 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	if err != nil {
 		return nil, false
 	}
-	target := d.entries(node, key)
+	target := d.findEntries(node, key)
 	if target == nil {
 		return nil, false
 	}
@@ -123,7 +123,7 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	return out, true
 }
 
-func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
+func (d *Document) findEntries(node *yaml.Node, key string) *yaml.Node {
 	if node == nil {
 		return &yaml.Node{Kind: yaml.MappingNode}
 	}
@@ -150,14 +150,14 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	if err != nil {
 		return err
 	}
-	existing := d.entries(node, key)
+	existing := d.findEntries(node, key)
 	// gomutants:disable-next-line BRANCH_IF reason="pair returns an empty nodePair when given a nil mapping node"
 	if existing == nil {
 		existing = &yaml.Node{Kind: yaml.MappingNode}
 	}
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
-		was := pair(existing, one.Key)
+		was := findPair(existing, one.Key)
 		target := was.value
 		if !one.IsVerbatim {
 			target = &yaml.Node{}

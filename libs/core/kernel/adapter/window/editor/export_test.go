@@ -101,8 +101,8 @@ func createServices(state *testWindow) *Services {
 	}
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil, searchcancel.NewSearches(testsupport.NewClock())), search.NewRoute),
-		RouteOf(state, settings.NewHandler(settings.Values{}), settings.NewRoute),
-		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
+		RouteOf(state, settings.NewHandler(settings.Values{}, settings.NewUnavailablePathChoice()), settings.NewRoute),
+		RouteOf[windowtext.Service](state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
 	services.UseNotes()
 	return services

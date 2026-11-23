@@ -23,13 +23,13 @@ func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 // NewHandler is everything this window answers: the window itself, its themes, the calls its plugin
 // views make through their connections, the list of vaults, where the links of a text land, its
 // plugins and the files of their frontends, the services they serve, and the files the page is made
-// of. A window given no ConnectionCalls answers each such call as unimplemented.
+// of. A window given no ConnectionCalls, Vaults or ResolveLinks answers each such call as unimplemented.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(a.Frontends)
 	callsRoute, calls := numenv1connect.NewConnectionCallServiceHandler(a.getConnectionCalls())
-	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
-	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks})
+	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(a.getVaults())
+	notesRoute, notes := numenv1connect.NewNoteServiceHandler(a.getNotes())
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
 	if a.Themes != nil {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)
@@ -47,6 +47,20 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		}
 		a.serveOther(w, r, files)
 	})
+}
+
+func (a *API) getVaults() numenv1connect.VaultsServiceHandler {
+	if a.Vaults == nil {
+		return numenv1connect.UnimplementedVaultsServiceHandler{}
+	}
+	return vaultList{list: a.Vaults.Execute}
+}
+
+func (a *API) getNotes() numenv1connect.NoteServiceHandler {
+	if a.ResolveLinks == nil {
+		return numenv1connect.UnimplementedNoteServiceHandler{}
+	}
+	return noteLinks{resolve: a.ResolveLinks}
 }
 
 func (a *API) getConnectionCalls() numenv1connect.ConnectionCallServiceHandler {

@@ -46,17 +46,11 @@ func NewHandler(
 }
 
 func (h *Handler) GetLogLevel(_ context.Context, _ *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error) {
-	level := domainlogs.DefaultLevel
-	if h.getLevel != nil {
-		level = h.getLevel()
-	}
+	level := h.getLevel()
 	return connect.NewResponse(&v1.GetLogLevelResponse{Level: wire.DescribeLogLevel(level)}), nil
 }
 
 func (h *Handler) SetLogLevel(_ context.Context, req *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error) {
-	if h.setLevel == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errors.New("logging settings are unavailable"))
-	}
 	if err := h.setLevel(wire.ReadLogLevel(req.Msg.GetLevel())); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
