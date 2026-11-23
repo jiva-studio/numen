@@ -5,7 +5,7 @@
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
 import { KeyRound, Plus } from '@lucide/vue'
-import { IslandCard } from '@numen/ui'
+import { IslandCard, Toast } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
@@ -41,7 +41,6 @@ const { stage, recoveryWords } = setup
       @cancel="deletion.cancelDelete"
     >
       <RecoveryKitRow
-        :is-saved="kit.isSaved.value"
         :problem="kit.isAsking.value ? '' : kit.call.problem.value"
         :is-busy="kit.call.isBusy.value"
         @download="kit.actions.download"
@@ -61,6 +60,8 @@ const { stage, recoveryWords } = setup
       @download="kit.actions.submit"
       @cancel="kit.actions.close"
     />
+
+    <Toast :text="kit.isSaved.value ? words.kitSaved : ''" @close="kit.actions.dismissSaved" />
   </template>
 
   <IslandCard v-else :title="words.identitySection">

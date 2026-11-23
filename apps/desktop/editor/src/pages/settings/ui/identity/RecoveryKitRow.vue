@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * The recovery kit of the identity as one row: what the kit is, and the button that saves a new kit
- * as a PDF. The row says when the kit is saved, and why it was not.
+ * The recovery kit of the identity as one row: what the kit is, and the action that saves a new kit
+ * as a PDF. The row says why a kit was not saved.
  */
 import { Download } from '@lucide/vue'
-import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
+import CardAction from './CardAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ isSaved: boolean; problem: string; isBusy: boolean }>()
+defineProps<{ problem: string; isBusy: boolean }>()
 
 const emit = defineEmits<{
   (e: 'download'): void
@@ -18,26 +18,19 @@ const emit = defineEmits<{
 
 <template>
   <SettingRow at="identity-kit" :name="words.kitTitle" :detail="words.kitDetail">
-    <Button type="button" variant="outline" :disabled="isBusy" @click="emit('download')">
+    <CardAction :is-disabled="isBusy" @click="emit('download')">
       <Download :size="14" aria-hidden="true" />
       {{ isBusy ? words.kitDownloading : words.kitDownload }}
-    </Button>
+    </CardAction>
   </SettingRow>
-  <p v-if="problem !== ''" role="alert" class="recovery-kit__note recovery-kit__note--alarm">
-    {{ problem }}
-  </p>
-  <p v-else-if="isSaved" role="status" class="recovery-kit__note">{{ words.kitSaved }}</p>
+  <p v-if="problem !== ''" role="alert" class="recovery-kit__problem">{{ problem }}</p>
 </template>
 
 <style scoped>
-.recovery-kit__note {
+.recovery-kit__problem {
   margin: 0;
   padding-block: 0.5rem;
   font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-}
-
-.recovery-kit__note--alarm {
   color: var(--numen-alarm);
 }
 </style>

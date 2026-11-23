@@ -347,6 +347,8 @@ describe('the page "Identity and licenses"', () => {
     expect(getRestoreInputs(tab).map((input) => input.attributes('aria-label'))).toStrictEqual(
       Array.from({ length: 12 }, (_, index) => `Recovery word ${index + 1}`),
     )
+    expect(getDialog(tab).findAll('ol[aria-label="Recovery words"] li input')).toHaveLength(12)
+    expect(getDialog(tab).text()).toContain('Type the 12 words in order.')
   })
 
   it('starts a restore with the words typed one to a field when the person restores', async () => {
@@ -485,6 +487,12 @@ const pressDownload = async (tab: Page) => {
   await flushPromises()
 }
 
+/** The texts of the live status regions of the window, where a toast shows. */
+const readToasts = (): string[] =>
+  [...document.body.querySelectorAll('[role="status"]')]
+    .map((one) => one.textContent?.trim() ?? '')
+    .filter((text) => text !== '')
+
 const submitDialog = async (tab: Page) => {
   await getDialog(tab).get('button[type="submit"]').trigger('click')
   await flushPromises()
@@ -493,7 +501,7 @@ const submitDialog = async (tab: Page) => {
 const chooseSheets = async (tab: Page) => {
   const choice = getDialog(tab)
     .findAll('button')
-    .find((one) => one.text() === 'Recovery kit sheets')
+    .find((one) => one.text() === 'Recovery kit')
   if (!choice) throw new Error('the dialog offers no sheets')
   await choice.trigger('click')
   await flushPromises()
@@ -523,7 +531,8 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await pressDownload(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
-    expect(tab.get('[role="status"]').text()).toBe('The recovery kit is saved.')
+    expect(readToasts()).toStrictEqual(['Recovery kit saved'])
+    expect(tab.text()).not.toContain('Recovery kit saved')
     for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
   })
 
@@ -543,7 +552,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await pressDownload(tab)
     expect(saveKit).toHaveBeenCalledTimes(2)
     expect(saveKit).toHaveBeenLastCalledWith({ words: RECOVERY_WORDS })
-    expect(tab.find('[role="status"]').exists()).toBe(false)
+    expect(readToasts()).toStrictEqual([])
   })
 
   it('asks for the 12 words in a dialog and saves the kit for them', async () => {
@@ -554,7 +563,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await submitDialog(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
-    expect(tab.get('[role="status"]').text()).toBe('The recovery kit is saved.')
+    expect(readToasts()).toStrictEqual(['Recovery kit saved'])
   })
 
   it('saves the kit for two sheets of an earlier kit', async () => {
@@ -575,7 +584,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
     await submitDialog(tab)
     expect(getDialog(tab).get('[role="alert"]').text()).toBe('The words belong to another account.')
-    expect(tab.find('[role="status"]').exists()).toBe(false)
+    expect(readToasts()).toStrictEqual([])
   })
 
   it('asks for one more sheet before it calls the core with none', async () => {
@@ -619,7 +628,9 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     await chooseSheets(tab)
     expect(getSheetField(tab, 1).element).toBeInstanceOf(HTMLTextAreaElement)
     expect(getSheetField(tab, 2).element).toBeInstanceOf(HTMLTextAreaElement)
-    expect(getRestoreInputs(tab)).toHaveLength(0)
+    expect(
+      getDialog(tab).get('ol[aria-label="Recovery words"]').element.closest('[inert]'),
+    ).not.toBeNull()
   })
 
   it('sends the sheets that are typed and shows the identity', async () => {

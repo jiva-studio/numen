@@ -56,6 +56,9 @@ export { reportFailure } from './shared/api/report'
 
 export { Spinner } from './shared/ui/spinner'
 
+/** A short message at the bottom of the window that goes away by itself. */
+export { Toast } from './shared/ui/toast'
+
 /** A Lucide icon drawn by the name a manifest gives it. */
 export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'

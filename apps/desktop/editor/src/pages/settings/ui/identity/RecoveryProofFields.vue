@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * The fields that prove an account: a choice between the twelve recovery words, one field each, and
- * two sheets of a recovery kit.
+ * The fields that prove an account: a choice between the twelve recovery words, typed into the
+ * numbered boxes of the setup, and two sheets of a recovery kit, with a hint for each. Both sets of
+ * fields stay laid out over each other and only the chosen one is shown, so a change of choice moves
+ * nothing in the dialog.
  */
 import { SegmentedControl } from '@numen/ui'
 import type { ProofKind } from '../../model/useRecoveryProof'
 import { WORDS as words } from '../../words'
-import RestoreWordInputs from './RestoreWordInputs.vue'
+import RecoveryWords from './RecoveryWords.vue'
 import SheetsInput from './SheetsInput.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -36,30 +38,75 @@ function onChoose(value: string): void {
 </script>
 
 <template>
-  <SegmentedControl
-    class="proof-fields__choice"
-    :model-value="kind"
-    :choices="choices"
-    :is-disabled="isDisabled"
-    :aria-label="words.proofChoice"
-    @update:model-value="onChoose"
-  />
-  <RestoreWordInputs
-    v-if="kind === 'words'"
-    :entered="entered"
-    :is-disabled="isDisabled"
-    @change="(index, value) => emit('change-word', index, value)"
-  />
-  <SheetsInput
-    v-else
-    :texts="texts"
-    :is-disabled="isDisabled"
-    @change="(index, value) => emit('change-sheet', index, value)"
-  />
+  <div class="proof-fields">
+    <SegmentedControl
+      class="proof-fields__choice"
+      :model-value="kind"
+      :choices="choices"
+      :is-disabled="isDisabled"
+      :aria-label="words.proofChoice"
+      @update:model-value="onChoose"
+    />
+    <div class="proof-fields__stack">
+      <div
+        class="proof-fields__pane"
+        :class="{ 'proof-fields__pane--away': kind !== 'words' }"
+        :inert="kind !== 'words' || undefined"
+      >
+        <p class="proof-fields__hint">{{ words.identityRestoreHint }}</p>
+        <RecoveryWords
+          :recovery-words="entered"
+          is-editable
+          :is-disabled="isDisabled"
+          @change="(index, value) => emit('change-word', index, value)"
+        />
+      </div>
+      <div
+        class="proof-fields__pane"
+        :class="{ 'proof-fields__pane--away': kind !== 'sheets' }"
+        :inert="kind !== 'sheets' || undefined"
+      >
+        <p class="proof-fields__hint">{{ words.restoreSheetsHint }}</p>
+        <SheetsInput
+          :texts="texts"
+          :is-disabled="isDisabled"
+          @change="(index, value) => emit('change-sheet', index, value)"
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.proof-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .proof-fields__choice {
   align-self: flex-start;
+}
+
+.proof-fields__stack {
+  display: grid;
+}
+
+.proof-fields__pane {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-inline-size: 0;
+}
+
+.proof-fields__pane--away {
+  visibility: hidden;
+}
+
+.proof-fields__hint {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
 }
 </style>

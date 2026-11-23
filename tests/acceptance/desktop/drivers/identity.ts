@@ -300,7 +300,7 @@ export class IdentityDriver {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
     const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
-    await dialog.getByRole('radio', { name: 'Recovery kit sheets', exact: true }).click()
+    await dialog.getByRole('radio', { name: 'Recovery kit', exact: true }).click()
     await this.typeSheets(dialog, readSheetNumbers(numbers), mistakeSheet)
     await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
   }

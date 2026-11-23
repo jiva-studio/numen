@@ -33,9 +33,6 @@ const emit = defineEmits<{
     @submit="emit('restore')"
     @cancel="emit('cancel')"
   >
-    <p class="identity-restore__text">
-      {{ kind === 'words' ? words.identityRestoreHint : words.restoreSheetsHint }}
-    </p>
     <div class="identity-restore__words">
       <RecoveryProofFields
         :kind="kind"
@@ -66,12 +63,8 @@ const emit = defineEmits<{
   gap: 0.5rem;
 }
 
-.identity-restore__text,
 .identity-restore__problem {
   margin: 0;
-}
-
-.identity-restore__problem {
   font-size: var(--numen-text-1);
   color: var(--numen-alarm);
 }
