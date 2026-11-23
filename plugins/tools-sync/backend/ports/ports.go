@@ -234,3 +234,29 @@ type ConflictOutcome struct {
 type ConflictResolver interface {
 	Resolve(ctx context.Context, in ConflictInput) (ConflictOutcome, error)
 }
+
+// HintEvent is a message of the stream: a hint of a synced vault, or a heartbeat.
+type HintEvent struct {
+	RemoteVaultID string
+	Seq           uint64
+}
+
+// IsHeartbeat reports whether the event is a heartbeat.
+func (e HintEvent) IsHeartbeat() bool { return e.RemoteVaultID == "" }
+
+// Watch is one open stream of hints.
+type Watch interface {
+	GetHeartbeat() time.Duration
+	Receive(ctx context.Context) (HintEvent, error)
+	Close() error
+}
+
+// Hints opens the stream of change hints of the account.
+type Hints interface {
+	Watch(ctx context.Context) (Watch, error)
+}
+
+// Waker asks the sync loop to pass over a vault now.
+type Waker interface {
+	Wake(vault domain.VaultID)
+}

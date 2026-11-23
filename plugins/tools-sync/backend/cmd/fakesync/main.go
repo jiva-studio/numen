@@ -1,5 +1,5 @@
 // Command fakesync serves the fake sync server on a local port for the end-to-end tests. It prints the
-// address it listens on, then serves until it is stopped. With -state-dir it keeps the data of the server in
+// address it listens on, then serves until it is stopped. With -heartbeat a stream of change hints sends a heartbeat after that silence. With -state-dir it keeps the data of the server in
 // a file there and reads it again at start, so the process can stop and run again. With -subscriptions a new account has no
 // subscription and its writes are refused until it pays at the address CreateCheckout returns. The admin paths /admin/backup,
 // /admin/restore, /admin/announce and /admin/retention keep the state, put it back, announce the restore and delete the
@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
@@ -97,6 +98,7 @@ func main() {
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
 	plansFlag := flag.String("plans", "", "plans the server sells as id:GB pairs, such as basic:10,plus:100; empty sells basic, plus and pro")
+	heartbeat := flag.Duration("heartbeat", syncprotocol.WatchHeartbeat, "silence after which a stream of change hints sends a heartbeat")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
 	plans, err := readPlans(*plansFlag)
@@ -112,7 +114,7 @@ func main() {
 	var stopped atomic.Bool
 	config := fakeserver.Config{
 		Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Plans: plans,
-		Stop: func() { stopped.Store(true) },
+		Heartbeat: *heartbeat, Stop: func() { stopped.Store(true) },
 	}
 	if *stateDir != "" {
 		config.BodyDir = filepath.Join(*stateDir, bodiesFolder)

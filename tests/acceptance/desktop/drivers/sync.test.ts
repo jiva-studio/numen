@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids, getCloudBytes, getPlansFlag, getSubscriptionPhase, parsePlans } from './sync.js'
+import { findBackendPids, getCloudBytes, getIntervalSeconds, getPlansFlag, getSubscriptionPhase, parsePlans } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -68,5 +68,16 @@ describe('getCloudBytes', () => {
   it('counts a GB as 2 to the power of 30 bytes', () => {
     expect(getCloudBytes(2)).toBe(2 * 1024 * 1024 * 1024)
     expect(getCloudBytes(0)).toBe(0)
+  })
+})
+
+describe('getIntervalSeconds', () => {
+  it('reads the units a scenario names', () => {
+    expect(getIntervalSeconds('1 second')).toBe(1)
+    expect(getIntervalSeconds('1 hour')).toBe(3600)
+  })
+
+  it('refuses a text that is not a number of a unit', () => {
+    expect(() => getIntervalSeconds('often')).toThrow('does not name an interval')
   })
 })

@@ -305,3 +305,19 @@ Given('the connection breaks while the second computer receives the file {string
 When('the person chooses {string}', async ({ person }, action: string) => {
   await person.files.choose(action)
 })
+
+When('both computers check for changes only every {string}', async ({ person }, interval: string) => {
+  await person.computers.setInterval(interval)
+})
+
+Given('the second computer goes offline for a moment', async ({ person }) => {
+  await person.computers.dropConnection()
+})
+
+Then(
+  '{holder} has the note {string} with the text {string} within {string} seconds{inside}',
+  async ({ person }, holder: Holder, title: string, text: string, ...rest: [seconds: string, vault: string | undefined]) => {
+    const [seconds, vault] = rest
+    await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) }, vault)
+  },
+)

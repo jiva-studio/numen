@@ -18,6 +18,7 @@ type Config struct {
 	HTTP    *http.Client
 	Token   func() string
 	Refresh func(ctx context.Context) error
+	Stream  *http.Client
 }
 
 // Cloud is the sync server at an address.
@@ -30,6 +31,7 @@ type Cloud struct {
 	account      *syncclient.AccountClient
 	subscription *syncclient.SubscriptionClient
 	restore      *syncclient.RestoreClient
+	watch        *syncclient.WatchClient
 }
 
 // New returns the server of the config.
@@ -43,6 +45,7 @@ func New(cfg Config) *Cloud {
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
 		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token),
+		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 	}
 }
 

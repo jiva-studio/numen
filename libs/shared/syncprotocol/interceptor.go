@@ -28,8 +28,16 @@ func (versionClientInterceptor) WrapStreamingClient(next connect.StreamingClient
 	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
 		conn := next(ctx, spec)
 		conn.RequestHeader().Set(HeaderVersion, strconv.FormatUint(uint64(Version), 10))
-		return conn
+		return versionStreamConn{StreamingClientConn: conn}
 	}
+}
+
+// versionStreamConn reads the answer of a server of another version at the first Receive, where Connect reports
+// the refusal of a stream.
+type versionStreamConn struct{ connect.StreamingClientConn }
+
+func (c versionStreamConn) Receive(message any) error {
+	return readUpdateRequired(c.StreamingClientConn.Receive(message))
 }
 
 func (versionClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {

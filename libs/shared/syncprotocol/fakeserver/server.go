@@ -43,7 +43,8 @@ func (systemClock) Now() time.Time { return time.Now() }
 // subscription to write. Plans are the plans the server sells, ascending by quota; empty is Basic with 10 GiB for 5 USD, Plus with
 // 100 GiB for 15 USD and Pro with 250 GiB for 30 USD (ids basic, plus, pro). BodyDir is the folder that keeps the parts and the
 // objects of multipart uploads in files (empty keeps them in memory); Stop is called when an admin stop-after budget ends, so the
-// host program can exit once it saved the data.
+// host program can exit once it saved the data. Heartbeat is the silence after which a stream of change hints sends a heartbeat
+// (zero is syncprotocol.WatchHeartbeat; the Started message announces it in whole seconds, rounded up).
 type Config struct {
 	Protocol   uint32
 	Audience   string
@@ -54,8 +55,9 @@ type Config struct {
 
 	NeedsSubscription bool
 
-	BodyDir string
-	Stop    func()
+	BodyDir   string
+	Stop      func()
+	Heartbeat time.Duration
 }
 
 // Session is a session the server issued and has not ended.
@@ -75,7 +77,8 @@ type challenge struct {
 // Server serves the sign-in, account, catalog, revision and blob services from memory, the presigned blob
 // URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
-// the id and the body of every stored blob, raw). The subscription service has the pay page at /pay/ and the admin
+// the id and the body of every stored blob, raw). The watch service streams change hints; /admin/streams (GET) returns the count of open streams as text and
+// /admin/streams/end (POST) ends them all. The subscription service has the pay page at /pay/ and the admin
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
 // may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The admin paths
 // /admin/trial and /admin/cancel-trial (POST, plan=id and an optional account) start and cancel a trial, and /admin/usage (POST, bytes=N and an
@@ -95,6 +98,7 @@ type Server struct {
 
 	mu            sync.Mutex
 	audience      string
+	streams       streamSet
 	challenges    map[string]challenge
 	chains        map[string]identity.Chain
 	sessions      []Session
@@ -122,7 +126,7 @@ func New(cfg Config) *Server {
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
-		store: newBodyStore(cfg.BodyDir), stop: cfg.Stop,
+		store: newBodyStore(cfg.BodyDir), stop: cfg.Stop, streams: streamSet{heartbeat: cfg.Heartbeat, watchers: map[*watcher]struct{}{}},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -130,6 +134,9 @@ func New(cfg Config) *Server {
 	if s.now == nil {
 		var machine clock = systemClock{}
 		s.now = machine.Now
+	}
+	if s.streams.heartbeat == 0 {
+		s.streams.heartbeat = syncprotocol.WatchHeartbeat
 	}
 	if s.ttl == 0 {
 		s.ttl = defaultSessionTTL
@@ -145,7 +152,7 @@ func New(cfg Config) *Server {
 }
 
 func (s *Server) newMux() http.Handler {
-	options := connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(s.protocol), s.newCallCounter())
+	options := connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(s.protocol), callCounter{server: s})
 	mux := http.NewServeMux()
 	mux.Handle(syncv1connect.NewSignInServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewAccountServiceHandler(s, options))
@@ -154,6 +161,9 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewRestoreServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewWatchServiceHandler(s, options))
+	mux.HandleFunc("/admin/streams", s.serveStreams)
+	mux.HandleFunc("/admin/streams/end", s.serveStreamsEnd)
 	mux.HandleFunc(payFolder, s.servePay)
 	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/admin/usage", s.serveUsage)
@@ -208,17 +218,6 @@ func (s *Server) CountCalls(procedure string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.calls[procedure]
-}
-
-func (s *Server) newCallCounter() connect.Interceptor {
-	return connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			s.mu.Lock()
-			s.calls[req.Spec().Procedure]++
-			s.mu.Unlock()
-			return next(ctx, req)
-		}
-	})
 }
 
 func (s *Server) GetChallenge(_ context.Context, req *connect.Request[syncv1.GetChallengeRequest]) (*connect.Response[syncv1.GetChallengeResponse], error) {

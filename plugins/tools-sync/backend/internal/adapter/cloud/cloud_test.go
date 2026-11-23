@@ -6,13 +6,16 @@ import (
 	"crypto/rand"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/slowwatchtest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
@@ -265,5 +268,108 @@ func TestCloud_AnswersABlobTheServerLostAsBlobMissing(t *testing.T) {
 
 	if !errors.Is(err, syncprotocol.ErrBlobMissing) {
 		t.Errorf("GetBlobUrls = %v, want ErrBlobMissing", err)
+	}
+}
+
+func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *testing.T) {
+	served := httptest.NewServer(slowwatchtest.NewHandler(500 * time.Millisecond))
+	t.Cleanup(served.Close)
+	hints := cloud.New(cloud.Config{
+		Address: served.URL, HTTP: &http.Client{Timeout: 100 * time.Millisecond}, Stream: &http.Client{},
+		Token: func() string { return "t" }, Refresh: nil,
+	})
+	watch, err := hints.Watch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	event, err := watch.Receive(t.Context())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.Seq != 4 || event.IsHeartbeat() {
+		t.Errorf("event = %+v, want the hint at seq 4", event)
+	}
+}
+
+func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkWritesIt(t *testing.T) {
+	c, _ := newWorld(t, fakeserver.Config{Heartbeat: 2 * time.Second})
+	c.AddVault(t, "Notes")
+	c.Connect(t, "Notes")
+	c.WriteNote("Notes", "Shopping list.md", "milk")
+	if err := c.Sync(t.Context(), "Notes"); err != nil {
+		t.Fatal(err)
+	}
+
+	watch, err := c.Cloud.Watch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	event, err := watch.Receive(t.Context())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := watch.GetHeartbeat(); got != 2*time.Second {
+		t.Errorf("heartbeat = %v, want 2s", got)
+	}
+	if want := c.Link(t, "Notes").RemoteVaultID; event.RemoteVaultID != want || event.Seq != 1 {
+		t.Errorf("event = %+v, want vault %s at seq 1", event, want)
+	}
+}
+
+func TestCloud_WatchReturnsTheErrorOfItsContextFromReceive(t *testing.T) {
+	c, _ := newWorld(t, fakeserver.Config{Heartbeat: 2 * time.Second})
+	watch, err := c.Cloud.Watch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	_, err = watch.Receive(ctx)
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
+	}
+}
+
+func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testing.T) {
+	c, server := newWorld(t, fakeserver.Config{})
+	server.Fake.EndSessions(nil)
+	var refreshes int
+	hints := c.NewCloud(c.Server.URL, func(ctx context.Context) error {
+		refreshes++
+		return c.SignIn(ctx)
+	})
+
+	watch, err := hints.Watch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	if refreshes != 1 {
+		t.Errorf("sign-ins = %d, want 1", refreshes)
 	}
 }

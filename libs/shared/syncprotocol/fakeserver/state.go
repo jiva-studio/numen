@@ -65,18 +65,30 @@ type blobRow struct {
 }
 
 func (s *Server) authenticate(header http.Header) (string, error) {
+	session, err := s.authenticateSession(header)
+	return session.AccountFingerprint, err
+}
+
+func (s *Server) authenticateSession(header http.Header) (Session, error) {
 	authorization := header.Get("Authorization")
 	if !strings.HasPrefix(authorization, bearerPrefix) {
-		return "", connect.NewError(connect.CodeUnauthenticated, errNotSignedIn)
+		return Session{}, connect.NewError(connect.CodeUnauthenticated, errNotSignedIn)
 	}
-	token := strings.TrimPrefix(authorization, bearerPrefix)
+	session, isLive := s.findLiveSession(strings.TrimPrefix(authorization, bearerPrefix))
+	if !isLive {
+		return Session{}, connect.NewError(connect.CodeUnauthenticated, errNotSignedIn)
+	}
+	return session, nil
+}
+
+func (s *Server) findLiveSession(token string) (Session, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	at := slices.IndexFunc(s.sessions, func(one Session) bool { return one.Token == token && one.ExpiresAt.After(s.now()) })
 	if at < 0 {
-		return "", connect.NewError(connect.CodeUnauthenticated, errNotSignedIn)
+		return Session{}, false
 	}
-	return s.sessions[at].AccountFingerprint, nil
+	return s.sessions[at], true
 }
 
 func (s *Server) getOwnedVault(account string, id []byte) (*vaultState, error) {

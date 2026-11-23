@@ -214,6 +214,7 @@ func (s *Server) applyBatch(b *batch) *syncv1.CommitRevisionsResponse {
 	for _, i := range fresh {
 		stored[i] = s.storeRevision(b, i)
 	}
+	s.streams.announce(b.account, b.vaultID, b.vault.seq)
 	return &syncv1.CommitRevisionsResponse{Committed: true, Seq: b.vault.seq, Revisions: stored}
 }
 

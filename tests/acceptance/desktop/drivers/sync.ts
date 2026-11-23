@@ -26,6 +26,8 @@ const SESSION_SECONDS = 62
 const SYNC_INTERVAL_SECONDS = '1'
 /** How long the plugin watches a removed file before it sends the removal, so a scenario waits a second and not a minute. */
 const REMOVAL_DELAY_SECONDS = '1'
+/** A stream of change hints is silent for at most this long, so a connection that half-dropped shows within a scenario. */
+const HEARTBEAT = '1s'
 /** A subscription that ended fewer days ago than this is in the grace period; the server allows writes then. */
 const GRACE_DAYS = 7
 /** A subscription that ended this many days ago or more is deleted. */
@@ -36,6 +38,12 @@ const NEWER_PROTOCOL = 1000
 const SETTLE_MS = 3_000
 /** The computer that reaches the server first commits its changes within a few passes, which come every second. */
 const LEAD_MS = 5_000
+
+/** A number and a unit, as a scenario writes an interval. */
+const INTERVAL_PATTERN = /^(\d+) (second|minute|hour)s?$/
+const INTERVAL_UNITS = { second: 1, minute: 60, hour: 3600 } as const
+/** The server counts the streams of the plugin on both computers; a change arrives within a few seconds of retrying. */
+const STREAM_TIMEOUT_MS = 15_000
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */
 const PLUGINS: Readonly<Partial<Record<string, { readonly id: string; readonly backend: string }>>> = {
@@ -86,6 +94,16 @@ const startProgram = (listen: string, flags: readonly string[]): Promise<Running
       resolve({ child, address: chunk.toString().trim() })
     })
   })
+
+/** The seconds a scenario names as an interval: "1 hour" is 3600 and "1 second" is 1. */
+export const getIntervalSeconds = (text: string): number => {
+  const found = INTERVAL_PATTERN.exec(text)
+  const unit = found?.[2]
+  if (found?.[1] === undefined || unit === undefined) {
+    throw new Error(`"${text}" does not name an interval: write a number and a unit, such as "1 hour"`)
+  }
+  return Number(found[1]) * INTERVAL_UNITS[unit as keyof typeof INTERVAL_UNITS]
+}
 
 /** The phase the stand-in of the payment sets for a subscription that ended some days ago. */
 export const getSubscriptionPhase = (daysAgo: number): string => {
@@ -306,7 +324,7 @@ export class SyncDriver {
 
   private getStateFlags(): string[] {
     const state = this.stateDir === undefined ? [] : ['-state-dir', this.stateDir]
-    return [...state, ...this.extraFlags]
+    return [...state, '-heartbeat', HEARTBEAT, ...this.extraFlags]
   }
 
   /** Makes the sync server need a protocol no application implements, where it listened before. */
@@ -335,6 +353,18 @@ export class SyncDriver {
     fs.rmSync(this.stateDir, { recursive: true, force: true })
     freeFromRemoval('dir', this.stateDir)
     this.stateDir = undefined
+  }
+
+  /** Ends every open stream of change hints at the server, as a connection that drops does, and waits until none is open. */
+  async dropStreams(): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/streams/end`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the end of the streams`)
+    await this.expectStreams(0)
+  }
+
+  /** Waits until the server holds exactly this many open streams of change hints. */
+  async expectStreams(count: number): Promise<void> {
+    await expect.poll(() => this.readStreamCount(), { timeout: STREAM_TIMEOUT_MS }).toBe(count)
   }
 
   async expectSession(): Promise<void> {
@@ -405,6 +435,12 @@ export class SyncDriver {
     const answer = await fetch(`${this.requireRunning().address}/admin/sessions`)
     if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the list of its sessions`)
     return (await answer.json()) as SessionRow[]
+  }
+
+  private async readStreamCount(): Promise<number> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/streams`)
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the count of its streams`)
+    return Number((await answer.text()).trim())
   }
 
   private async readProcesses(): Promise<ProcessRow[]> {

@@ -1,5 +1,7 @@
 package syncprotocol
 
+import "time"
+
 const (
 	MaxBlobSize       = 64 << 20
 	MaxBatchRevisions = 5000
@@ -17,4 +19,10 @@ const (
 	DefaultPartSize  = 16 << 20
 	MaxPartURLs      = 100
 	MaxMultipartSize = 5<<40 - 5<<20
+)
+
+const (
+	WatchHeartbeat    = 20 * time.Second
+	MinWatchHeartbeat = time.Second
+	MaxWatchHeartbeat = 30 * time.Second
 )

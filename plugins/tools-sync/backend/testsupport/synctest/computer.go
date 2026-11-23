@@ -143,7 +143,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	}
 	c.State = hoststore.New(c.Host)
 	c.token.Store("")
-	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: web, Token: c.getToken, Refresh: c.SignIn})
+	c.Cloud = c.NewCloud(server.URL, c.SignIn)
 	return c
 }
 
@@ -310,4 +310,12 @@ func (c *Computer) RestoreDeps() restore.Deps {
 		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
 		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}
+}
+
+// NewCloud returns the cloud adapter of this computer over the address, with the stream client that has no
+// timeout, both over the network link of this computer, and refresh as the way to sign in again.
+func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
+	return cloud.New(cloud.Config{
+		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh,
+	})
 }

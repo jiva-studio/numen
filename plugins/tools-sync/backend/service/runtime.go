@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -79,7 +80,9 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock})
-	cloudSide := cloud.New(cloud.Config{Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh})
+	cloudSide := cloud.New(cloud.Config{
+		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
+	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.NewRandom(),
@@ -96,6 +99,9 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
 		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(),
 	})
+	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute}
+	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)), map[string]func(context.Context) error{
+		"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
+	}
 }
