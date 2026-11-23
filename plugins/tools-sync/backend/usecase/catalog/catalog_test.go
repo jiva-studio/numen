@@ -78,7 +78,7 @@ func (r *tamperedCatalog) GetCatalog(ctx context.Context, since uint64) ([]*sync
 	}
 	cloned := make([]*syncv1.CatalogEntry, len(entries))
 	for i, entry := range entries {
-		cloned[i] = synctest.CloneCatalogEntry(entry)
+		cloned[i] = fakeserver.CloneCatalogEntry(entry)
 	}
 	return r.change(cloned), nil
 }
