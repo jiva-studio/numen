@@ -8,7 +8,6 @@ const WORD_COUNT = 12
 
 const createEmptyWords = (): readonly string[] => Array.from({ length: WORD_COUNT }, () => '')
 
-/** The words of a text: whole words, lower-cased. */
 const splitWords = (text: string): string[] =>
   text
     .split(/\s+/)
