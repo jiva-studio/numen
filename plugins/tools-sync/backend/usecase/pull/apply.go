@@ -126,33 +126,17 @@ func (r *run) setRecord(record note.FileRecord) {
 	r.records[at] = record
 }
 
-func (r *run) removeRecord(fileID []byte) {
-	r.records = slices.DeleteFunc(r.records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
-}
-
 func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
 	rev := stored.GetRevision()
 	plain, err := r.fetch(ctx, rev, meta)
 	if err != nil {
 		return err
 	}
-	previous, isKnown := r.getRecord(rev.GetFileId())
-	r.setRecord(note.FileRecord{FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId()})
-	if err := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); err != nil {
-		return err
-	}
 	err = r.write(ctx, meta.Path, plain, stat, isAbsent)
 	if err == nil {
+		r.setRecord(note.FileRecord{FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId()})
 		r.result.Applied = append(r.result.Applied, meta.Path)
 		return nil
-	}
-	if isKnown {
-		r.setRecord(previous)
-	} else {
-		r.removeRecord(rev.GetFileId())
-	}
-	if saveErr := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); saveErr != nil {
-		return saveErr
 	}
 	if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
 		r.addConflict(meta.Path, stored.GetSeq())

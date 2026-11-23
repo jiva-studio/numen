@@ -65,6 +65,7 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (trans
 
 func (r *run) execute(ctx context.Context) error {
 	since := r.link.ServerSeq
+	var failures []error
 	for {
 		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
 		if err != nil {
@@ -72,14 +73,18 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		for _, stored := range page.GetChanges() {
 			if err := r.apply(ctx, stored); err != nil {
-				return err
+				if !isBlobFailure(err) {
+					return err
+				}
+				r.hold(stored.GetSeq())
+				failures = append(failures, err)
 			}
 		}
 		if err := r.save(ctx, page.GetNextSeq()); err != nil {
 			return err
 		}
 		if !page.GetHasMore() {
-			return nil
+			return errors.Join(failures...)
 		}
 		since = page.GetNextSeq()
 	}
@@ -100,4 +105,8 @@ func (r *run) hold(seq uint64) {
 	if !r.isHeld || seq-1 < r.holdSeq {
 		r.holdSeq, r.isHeld = seq-1, true
 	}
+}
+
+func isBlobFailure(err error) bool {
+	return errors.Is(err, errBlobMissing) || errors.Is(err, ErrCorruptBlob)
 }

@@ -1,17 +1,21 @@
 package pull_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
@@ -238,5 +242,89 @@ func TestPullChanges_DownloadsNothingWhenNothingChanged(t *testing.T) {
 	}
 	if len(result.Applied) != 0 {
 		t.Errorf("applied = %v, want none", result.Applied)
+	}
+}
+
+type missingFirstBlob struct {
+	ports.BlobDownloader
+	calls int
+}
+
+func (b *missingFirstBlob) GetBlobUrls(ctx context.Context, vaultID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
+	downloads, err := b.BlobDownloader.GetBlobUrls(ctx, vaultID, blobIDs)
+	b.calls++
+	if b.calls == 1 {
+		for _, download := range downloads {
+			download.Found = false
+		}
+	}
+	return downloads, err
+}
+
+type powerLossHost struct{ synctest.Host }
+
+func (h powerLossHost) GetFiles(id domain.VaultID) ports.Files {
+	return powerLossFiles{Files: h.Host.GetFiles(id)}
+}
+
+type powerLossFiles struct{ ports.Files }
+
+func (powerLossFiles) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("power loss")
+}
+
+type recordsLostAfterOneWrite struct {
+	pull.State
+	writes int
+}
+
+func (s *recordsLostAfterOneWrite) WriteRecords(ctx context.Context, id domain.VaultID, records []note.FileRecord) error {
+	s.writes++
+	if s.writes > 1 {
+		return errors.New("power loss")
+	}
+	return s.State.WriteRecords(ctx, id, records)
+}
+
+func TestPullChanges_AppliesTheOtherNotesWhenOneBlobIsMissing(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Plan.md", "tea", nil)
+	p.push(t, "Shopping list.md", "milk", nil)
+	deps := p.b.PullDeps()
+	deps.Blobs = &missingFirstBlob{BlobDownloader: deps.Blobs}
+
+	_, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
+	if err == nil {
+		t.Fatal("pull reported no error for a missing blob")
+	}
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Errorf("note after the failure = %q, want milk from the healthy revision", text)
+	}
+	p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Plan.md"); text != "tea" {
+		t.Errorf("held note after the next pull = %q, want tea", text)
+	}
+}
+
+func TestPullChanges_DownloadsANoteAgainAfterAStopBetweenTheBaseAndTheWrite(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, "Shopping list.md", "milk", nil)
+	p.pull(t, trustAll)
+	p.push(t, "Shopping list.md", "bread", &first)
+	deps := p.b.PullDeps()
+	deps.Host = powerLossHost{Host: p.b.Host}
+	deps.State = &recordsLostAfterOneWrite{State: deps.State}
+	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll}); err == nil {
+		t.Fatal("pull reported no error for a write that stopped")
+	}
+
+	result := p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "bread" {
+		t.Errorf("note = %q, want bread", text)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Errorf("conflicts = %v, want none", result.Conflicts)
 	}
 }
