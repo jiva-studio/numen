@@ -178,7 +178,7 @@ describe('the settings as they are put together', () => {
     try {
       const { settings, onSizeChanged } = createSettings()
 
-      settings.appearance.preview.keyboard.previewSize('interfaceScale', 1.2)
+      settings.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.2)
       settings.close()
       vi.advanceTimersByTime(1000)
       await Promise.resolve()
