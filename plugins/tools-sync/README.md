@@ -6,13 +6,13 @@ Synchronizes your vaults across devices when you have a subscription. The plugin
 
 ## What You Can Do
 
-- **Buy a subscription**: The page **Identity and licenses** has the card **Numen Sync**. **Choose** on a plan opens the payment page in your browser, and the card shows the subscription once you pay. There is no license key.
+- **Buy a subscription**: The page **Identity and licenses** has the card **Numen Sync**. A click on a plan row opens the payment page in your browser, and the card shows the subscription once you pay. There is no license key.
 - **See the state of your vault**: The status shows whether the vault is still synchronizing or already synchronized.
 - **Sign in with your identity**: Numen Sync signs in to the sync server with the identity of this device. There is no account name and no password. With no identity on this device it warns **No identity on this device**, and it signs in once the identity is created.
 
 ## The subscription
 
-The sync server tells where the subscription of your account stands, and the card shows it: no badge and a row per plan to choose, the plan as the badge with the day it renews, **Ended** (changes are still sent until a date), **Read only** (the vaults in the cloud can only be read, changes stay on this device, and the cloud deletes them on a date) or **Deleted**. The plans to choose are shown in every phase but active, where **Change plan** and **Manage subscription** are shown instead. After **Choose** the card asks the server every 3 seconds for up to 10 minutes whether you paid.
+The sync server tells where the subscription of your account stands, and the card shows it: no badge and a row per plan to choose, the plan as the badge with the rows Plan, Renews and Storage, **Ended** (changes are still sent until a date), **Read only** (the vaults in the cloud can only be read, changes stay on this device, and the cloud deletes them on a date) or **Deleted**. The plans to choose are shown in every phase but active, where **Change plan** and **Manage subscription** are shown instead. After a click on a plan row the card asks the server every 3 seconds for up to 10 minutes whether you paid.
 
 When the server refuses a change, or the grace period of an ended subscription runs, the plugin warns on its page: **Sync needs a subscription**, **Subscription ended: changes are sent until a date** or **Subscription ended: changes stay on this device**. The warning goes away when a pass goes well with an active subscription.
 

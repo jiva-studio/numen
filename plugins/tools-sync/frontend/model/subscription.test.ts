@@ -530,6 +530,28 @@ describe('useSubscription buy of a plan', () => {
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('pro')
   })
+
+  it('is starting until the payment page opens and asks one payment page for two clicks', async () => {
+    const client = createClient([createResponse()])
+    let openCheckout: (url: string) => void = () => undefined
+    client.createCheckout.mockReturnValue(
+      new Promise<string>((resolve) => {
+        openCheckout = resolve
+      }),
+    )
+    const { subscription } = mountSubscription(client)
+    await subscription.session.load()
+
+    const first = subscription.payment.buy('pro')
+    expect(subscription.payment.starting.value).toBe(true)
+    await subscription.payment.buy('plus')
+    openCheckout(CHECKOUT_URL)
+    await first
+
+    expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('pro')
+    expect(subscription.payment.starting.value).toBe(false)
+    expect(subscription.payment.waiting.value).toBe(true)
+  })
 })
 
 describe('useSubscription change of the plan', () => {

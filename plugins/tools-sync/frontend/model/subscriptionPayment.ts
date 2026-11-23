@@ -1,4 +1,4 @@
-import { onScopeDispose } from 'vue'
+import { onScopeDispose, ref } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { getFailureCode, type SubscriptionClient } from '../api/subscription'
@@ -32,6 +32,7 @@ export function useSubscriptionPayment(
     pollLimitMs = DEFAULT_POLL_LIMIT_MS,
   } = options
   const { account, waiting, problem, load, readIfReachable } = session
+  const starting = ref(false)
   let pollTimer: ReturnType<typeof setTimeout> | undefined
   let limitTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -69,8 +70,9 @@ export function useSubscriptionPayment(
   }
 
   async function buy(offer: string): Promise<void> {
-    if (waiting.value) return
+    if (waiting.value || starting.value) return
     problem.value = ''
+    starting.value = true
     try {
       const opened = await openExternal(await client.createCheckout(offer))
       if (opened.ok) beginPaymentPoll()
@@ -78,10 +80,12 @@ export function useSubscriptionPayment(
     } catch (failure) {
       if (getFailureCode(failure) === 'already_exists') await load()
       else problem.value = getMessage(failure)
+    } finally {
+      starting.value = false
     }
   }
 
   onScopeDispose(endPaymentPoll)
 
-  return { waiting, buy }
+  return { waiting, starting, buy }
 }

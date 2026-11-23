@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * The card of the subscription of the account on the page "Identity and licenses", an island card with
- * the plan as its badge: the plans to choose as rows when there is no subscription, and the rows of the
- * plan, the space used and the end of the paid period with the actions to change or manage it when
- * there is.
+ * the plan as its badge: a row per plan that buys it on a click when there is no subscription, and the
+ * rows of the plan, the end of the paid period and the space used with the actions to change or manage
+ * it when there is.
  */
 import { computed, onMounted } from 'vue'
+import { ChevronRight } from '@lucide/vue'
 import type { PluginSettings, Result } from '@numen/plugin-sdk'
 import { Button, IslandCard, Select, Spinner } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
@@ -33,7 +34,7 @@ const { session, payment, offers, summary } = useSubscription({
 })
 const { problem, load, change, manage } = session
 const { status } = session.account
-const { waiting, buy } = payment
+const { waiting, starting, buy } = payment
 const { buyOffers, changeOffers, canManage } = offers
 const { view, planLine, usage, usedPercent, isFull, validity } = summary
 
@@ -42,12 +43,15 @@ const hasSettingsAction = computed(
 )
 const hasManageAction = computed(() => canManage.value && validity.value === undefined)
 
+const getOfferDetail = (offer: PlanOffer): string =>
+  [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
+    .filter((part) => part !== '')
+    .join(', ')
+
 const toChoice = (offer: PlanOffer) => ({
   id: offer.id,
   text: offer.name,
-  detail: [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
-    .filter((part) => part !== '')
-    .join(', '),
+  detail: getOfferDetail(offer),
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -109,6 +113,17 @@ function onFailure(failure: unknown): void {
           />
         </div>
       </div>
+      <div v-if="validity !== undefined" class="subscription__row">
+        <div class="subscription__label">
+          <span class="subscription__name">{{ validity.label }}</span>
+          <span class="subscription__detail">{{ validity.date }}</span>
+        </div>
+        <div v-if="canManage" class="subscription__value">
+          <Button type="button" variant="outline" @click="onManage">
+            {{ words.manageSubscription }}
+          </Button>
+        </div>
+      </div>
       <div v-if="usage !== ''" class="subscription__row">
         <div class="subscription__label">
           <span class="subscription__name">{{ words.storageRow }}</span>
@@ -130,32 +145,27 @@ function onFailure(failure: unknown): void {
           </div>
         </div>
       </div>
-      <div v-if="validity !== undefined" class="subscription__row">
-        <div class="subscription__label">
-          <span class="subscription__name">{{ validity.label }}</span>
-          <span class="subscription__detail">{{ validity.date }}</span>
-        </div>
-        <div v-if="canManage" class="subscription__value">
-          <Button type="button" variant="outline" @click="onManage">
-            {{ words.manageSubscription }}
-          </Button>
-        </div>
-      </div>
-      <div v-for="offer in buyOffers" :key="offer.id" class="subscription__row">
-        <div class="subscription__label">
+      <button
+        v-for="offer in buyOffers"
+        :key="offer.id"
+        type="button"
+        class="subscription__row subscription__offer"
+        :disabled="starting"
+        :aria-label="words.chooseNamed(offer.name, getOfferDetail(offer))"
+        @click="onBuy(offer.id)"
+      >
+        <span class="subscription__label">
           <span class="subscription__name">{{ offer.name }}</span>
           <span class="subscription__detail">{{ words.syncedFiles(offer.size) }}</span>
-        </div>
-        <div class="subscription__value">
+        </span>
+        <span class="subscription__value">
           <span v-if="offer.price !== ''" class="subscription__price">
             {{ offer.price }}
             <small>{{ words.perMonth }}</small>
           </span>
-          <Button type="button" variant="outline" @click="onBuy(offer.id)">
-            {{ words.chooseNamed(offer.name) }}
-          </Button>
-        </div>
-      </div>
+          <ChevronRight class="subscription__chevron" :size="16" aria-hidden="true" />
+        </span>
+      </button>
       <div v-if="hasSettingsAction || hasManageAction" class="subscription__actions">
         <Button
           v-if="hasSettingsAction"

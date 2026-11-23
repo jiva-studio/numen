@@ -25,7 +25,8 @@ export const WORDS = {
   deletedText: 'The cloud deleted your vaults. Buy a subscription to sync again.',
   noIdentityText: 'Create an identity to buy a subscription.',
   offline: 'Offline',
-  chooseNamed: (name: string): string => `Choose ${name}`,
+  chooseNamed: (name: string, detail: string): string =>
+    detail === '' ? `Choose ${name}` : `Choose ${name}, ${detail}`,
   changePlan: 'Change plan',
   changePlanChoices: 'Plans to change to',
   usagePercentName: 'Space used',
