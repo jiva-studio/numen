@@ -130,7 +130,7 @@ export class IdentityDriver {
 
   async delete(): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Delete from this device', exact: true }).click()
+    await panel.getByRole('button', { name: 'Delete identity', exact: true }).click()
     await this.scenario.page
       .getByRole('alertdialog')
       .getByRole('button', { name: 'Delete', exact: true })

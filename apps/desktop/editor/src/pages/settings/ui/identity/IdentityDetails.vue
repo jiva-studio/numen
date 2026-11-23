@@ -64,8 +64,10 @@ const date = computed(() => {
       :name="info.deviceName"
       :detail="words.identityDeviceLinked(date)"
     >
-      <template #trail>
+      <template #name-suffix>
         <span class="identity-details__badge">{{ words.identityThisDevice }}</span>
+      </template>
+      <template #trail>
         <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
       </template>
     </NavigationRow>

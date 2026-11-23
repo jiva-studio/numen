@@ -128,7 +128,7 @@ export const WORDS = {
   identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   identityRemoveName: 'Identity on this device',
   identityRemoveDetail: 'Remove the key from this device',
-  identityDelete: 'Delete from this device',
+  identityDelete: 'Delete identity',
   identityDeleteTitle: 'Delete the identity from this device?',
   identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',
   identityDeleteConfirm: 'Delete',

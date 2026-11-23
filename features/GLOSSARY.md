@@ -558,8 +558,8 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 - Is: The account of a person, kept as keys on each of their devices and not on any server. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
 - States: not created; an identity with its account fingerprint and this device.
-- Actions: "Create identity", "Restore from words", "Delete from this device"; a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes.
-- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge of the linked device), "Linked <date>"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
+- Actions: "Create identity", "Restore from words", "Delete identity"; a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes.
+- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
 ### row

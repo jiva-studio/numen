@@ -305,7 +305,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('warns that the identity cannot be restored without the words before it deletes', async () => {
     const { tab, delete: remove } = await createPage(IDENTITY)
-    await press(tab, 'Delete from this device')
+    await press(tab, 'Delete identity')
     await nextTick()
     const dialog = document.body.querySelector('[role="alertdialog"]')
     expect(dialog?.textContent).toContain('Without the 12 words this identity cannot be restored.')
@@ -314,7 +314,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('keeps the identity when the person cancels the delete', async () => {
     const { tab, delete: remove } = await createPage(IDENTITY)
-    await press(tab, 'Delete from this device')
+    await press(tab, 'Delete identity')
     const cancel = Array.from(
       document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
     ).find((one) => one.textContent?.trim() === 'Cancel')
@@ -326,7 +326,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('deletes the identity once the person confirms', async () => {
     const { tab, delete: remove } = await createPage(IDENTITY)
-    await press(tab, 'Delete from this device')
+    await press(tab, 'Delete identity')
     const confirm = Array.from(
       document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
     ).find((one) => one.textContent?.trim() === 'Delete')
