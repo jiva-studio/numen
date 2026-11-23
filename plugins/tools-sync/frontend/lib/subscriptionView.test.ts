@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   formatPrice,
   formatSize,
+  getOfferDetail,
+  getOfferLine,
   getPlanLine,
   getSubscriptionView,
   getUsagePercent,
@@ -147,5 +149,18 @@ describe('getUsageText', () => {
 
   it('shows the used space above the quota as it is', () => {
     expect(getUsageText(20 * GIB, 10 * GIB)).toBe('20 GB of 10 GB')
+  })
+})
+
+describe('getOfferLine', () => {
+  const PRO_OFFER = { id: 'pro', name: 'Pro', size: '250 GB', price: '$30' }
+
+  it('names the plan with its size and its price for a month', () => {
+    expect(getOfferLine(PRO_OFFER)).toBe('Pro, 250 GB, $30 / month')
+    expect(getOfferDetail(PRO_OFFER)).toBe('250 GB, $30 / month')
+  })
+
+  it('leaves out the price of a plan with no price', () => {
+    expect(getOfferLine({ ...PRO_OFFER, price: '' })).toBe('Pro, 250 GB')
   })
 })

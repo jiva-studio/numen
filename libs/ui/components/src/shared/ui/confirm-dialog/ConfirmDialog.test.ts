@@ -47,6 +47,18 @@ describe('ConfirmDialog', () => {
     expect(document.getElementById(describedBy!)?.textContent).toBe('Delete the page?')
   })
 
+  it('draws what the default slot holds in place of the text, as the description', () => {
+    const dialog = mount(ConfirmDialog, {
+      attachTo: document.body,
+      props: { label: 'Switch to Pro?', confirmText: 'Switch to Pro', cancelText: 'Cancel' },
+      slots: { default: '<dl><dt>New plan</dt><dd>Pro, 250 GB, $30 / month</dd></dl>' },
+    })
+    const describedBy = dialog.get('[role="alertdialog"]').attributes('aria-describedby')
+    expect(document.getElementById(describedBy!)?.querySelector('dd')?.textContent).toBe(
+      'Pro, 250 GB, $30 / month',
+    )
+  })
+
   it('starts focus on the cancel button', () => {
     mountDialog()
     expect(document.activeElement?.textContent?.trim()).toBe('Cancel')
@@ -70,7 +82,7 @@ describe('ConfirmDialog', () => {
 
   it('does not cancel on a press inside the box', async () => {
     const dialog = mountDialog()
-    await dialog.get('p').trigger('click')
+    await dialog.get('.confirm-dialog__text').trigger('click')
     expect(dialog.emitted('cancel')).toBeUndefined()
   })
 

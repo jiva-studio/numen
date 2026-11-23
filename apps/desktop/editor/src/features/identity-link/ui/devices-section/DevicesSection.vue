@@ -5,9 +5,8 @@
  * Each device that is not this one has a Revoke button; this one has none.
  */
 import { computed, ref } from 'vue'
-import { Button } from '@numen/ui'
+import { Button, ConfirmDialog } from '@numen/ui'
 import type { DeviceInfo, LinkRole } from '@/entities/identity'
-import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import type { DeviceCalls } from '../../model/types'
 import { useDevices } from '../../model/useDevices'
 import { WORDS as words } from '../../words'

@@ -3,17 +3,20 @@
  * The card of the subscription of the account on the page "Identity and licenses", an island card with
  * the plan as its badge: a row per plan that buys it on a click when there is no subscription, and the
  * rows of the plan, the end of the paid period and the space used with the actions to change or manage
- * it when there is. While a payment is awaited, a layer over the rows keeps them in place, says so and
- * offers to stop waiting.
+ * it when there is. A plan chosen in the menu "Change plan" is changed to only after the person confirms
+ * the switch. While a payment is awaited, a layer over the rows keeps them in place, says so and offers to
+ * stop waiting.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ChevronRight } from '@lucide/vue'
 import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
-import { Button, IslandCard, Select, Spinner } from '@numen/ui'
+import { Button, IslandCard, Spinner } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
-import type { PlanOffer } from '../lib/subscriptionView'
+import { getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription, type UseSubscriptionOptions } from '../model/subscription'
 import { WORDS as words } from '../words'
+import ChangePlanMenu from './ChangePlanMenu.vue'
+import SwitchPlanDialog from './SwitchPlanDialog.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -36,7 +39,7 @@ const { session, payment, offers, summary } = useSubscription({
 const { problem, load, change, manage } = session
 const { status } = session.account
 const { waiting, starting, startPurchase, cancel } = payment
-const { buyOffers, changeOffers, canManage } = offers
+const { buyOffers, changeOffers, currentOffer, canManage } = offers
 const { view, planLine, usage, usedPercent, isFull, validity } = summary
 
 const hasSettingsAction = computed(
@@ -45,16 +48,11 @@ const hasSettingsAction = computed(
 const hasManageAction = computed(() => canManage.value && validity.value === undefined)
 const isPaying = computed(() => waiting.value || starting.value)
 
-const getOfferDetail = (offer: PlanOffer): string =>
-  [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
-    .filter((part) => part !== '')
-    .join(', ')
-
-const toChoice = (offer: PlanOffer) => ({
-  id: offer.id,
-  text: offer.name,
-  detail: getOfferDetail(offer),
-})
+/** The plan chosen in the menu "Change plan" that waits for the person to confirm the switch. */
+const pendingOffer = ref<PlanOffer | undefined>(undefined)
+const currentLine = computed(() =>
+  currentOffer.value === undefined ? planLine.value : getOfferLine(currentOffer.value),
+)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -66,8 +64,18 @@ function onBuy(plan: string): void {
   startPurchase(plan).catch(onFailure)
 }
 
-function onChange(plan: string): void {
-  change(plan).catch(onFailure)
+function onChoosePlan(offer: PlanOffer): void {
+  pendingOffer.value = offer
+}
+
+function onConfirmSwitch(): void {
+  const offer = pendingOffer.value
+  pendingOffer.value = undefined
+  if (offer !== undefined) change(offer.id).catch(onFailure)
+}
+
+function onCancelSwitch(): void {
+  pendingOffer.value = undefined
 }
 
 function onManage(): void {
@@ -99,15 +107,11 @@ function onFailure(failure: unknown): void {
           <span class="subscription__detail">{{ planLine }}</span>
         </div>
         <div v-if="changeOffers.length > 0" class="subscription__value">
-          <Select
-            class="subscription__change"
-            :class="{ 'subscription__change--solid': isFull }"
-            model-value=""
-            :choices="changeOffers.map(toChoice)"
-            :placeholder="words.changePlan"
-            :name="words.changePlanChoices"
-            :aria-label="words.changePlan"
-            @update:model-value="onChange"
+          <ChangePlanMenu
+            :offers="changeOffers"
+            :current-id="currentOffer?.id ?? ''"
+            :is-solid="isFull"
+            @choose="onChoosePlan"
           />
         </div>
       </div>
@@ -187,5 +191,13 @@ function onFailure(failure: unknown): void {
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
+    <SwitchPlanDialog
+      v-if="pendingOffer"
+      :offer="pendingOffer"
+      :current-line="currentLine"
+      :renewal="validity?.date ?? ''"
+      @confirm="onConfirmSwitch"
+      @cancel="onCancelSwitch"
+    />
   </IslandCard>
 </template>

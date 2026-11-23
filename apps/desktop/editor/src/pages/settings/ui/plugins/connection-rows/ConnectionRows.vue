@@ -21,13 +21,12 @@
  * row that is not complete changes nothing meanwhile.
  */
 import { computed, nextTick, useTemplateRef } from 'vue'
-import { Button, runInBackground } from '@numen/ui'
+import { Button, ConfirmDialog, runInBackground } from '@numen/ui'
 import { PluginSettingsCard } from '@numen/plugin-manager'
 import { getRowKey, readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
-import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
 import ConnectionRowsHeader from './ConnectionRowsHeader.vue'

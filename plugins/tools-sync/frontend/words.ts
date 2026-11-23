@@ -30,7 +30,17 @@ export const WORDS = {
   chooseNamed: (name: string, detail: string): string =>
     detail === '' ? `Choose ${name}` : `Choose ${name}, ${detail}`,
   changePlan: 'Change plan',
-  changePlanChoices: 'Plans to change to',
+  changePlanChoices: 'Plans',
+  currentPlan: 'Current plan',
+  switchQuestion: (name: string): string => `Switch to ${name}?`,
+  switchTo: (name: string): string => `Switch to ${name}`,
+  cancelSwitch: 'Cancel',
+  nowFact: 'Now',
+  newPlanFact: 'New plan',
+  chargedNowFact: 'Charged now',
+  chargedNowText: 'The difference for the rest of this period, to the card on file',
+  nextPaymentFact: 'Next payment',
+  nextPayment: (price: string, date: string): string => `${price} on ${date}`,
   usagePercentName: 'Space used',
   manageSubscription: 'Manage subscription',
   cloudFull:

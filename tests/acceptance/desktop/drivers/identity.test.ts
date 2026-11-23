@@ -3,6 +3,7 @@ import zlib from 'node:zlib'
 import {
   formatDay,
   getChoosePattern,
+  getPlanItemPattern,
   getPlanLinePattern,
   pickOtherWords,
   planAnswers,
@@ -166,5 +167,18 @@ describe('readKitSheets', () => {
         ['acne', 'ACID', 'a b'],
       ]),
     ).toStrictEqual([['academic', 'acid'], ['acne']])
+  })
+})
+
+describe('getPlanItemPattern', () => {
+  it('matches the item of the plan with or without its size and price', () => {
+    expect(getPlanItemPattern('Pro').test('Pro')).toBe(true)
+    expect(getPlanItemPattern('Pro').test('Pro 250 GB, $30 / month')).toBe(true)
+    expect(getPlanItemPattern('Pro').test('Pro250 GB, $30 / month')).toBe(true)
+  })
+
+  it('does not match a plan whose name only starts with the name', () => {
+    expect(getPlanItemPattern('Pro').test('Professional 1 TB')).toBe(false)
+    expect(getPlanItemPattern('Plus').test('Pro 250 GB')).toBe(false)
   })
 })

@@ -10,7 +10,10 @@ const toOffer = (one: PlanResponse): PlanOffer => ({
   price: formatPrice(one.priceCents, one.currency),
 })
 
-/** The plans the person can choose and the actions the account allows: to buy a plan, to change it, to manage it. */
+/**
+ * The plans the person can choose and the actions the account allows: to buy a plan, to change it, to manage it.
+ * An active subscription offers every plan to change to, its own plan among them as the current one.
+ */
 export function useSubscriptionOffers(account: SubscriptionAccount) {
   const canBuy = computed(
     () => account.status.value === 'ready' && account.phase.value !== 'active',
@@ -20,8 +23,11 @@ export function useSubscriptionOffers(account: SubscriptionAccount) {
   )
   const changeOffers = computed<readonly PlanOffer[]>(() =>
     account.status.value === 'ready' && account.phase.value === 'active'
-      ? account.plans.value.filter((one) => one.id !== account.plan.value).map(toOffer)
+      ? account.plans.value.map(toOffer)
       : [],
+  )
+  const currentOffer = computed<PlanOffer | undefined>(() =>
+    changeOffers.value.find((one) => one.id === account.plan.value),
   )
   const canManage = computed(
     () =>
@@ -30,5 +36,5 @@ export function useSubscriptionOffers(account: SubscriptionAccount) {
       account.phase.value !== '',
   )
 
-  return { canBuy, canManage, buyOffers, changeOffers }
+  return { canBuy, canManage, buyOffers, changeOffers, currentOffer }
 }

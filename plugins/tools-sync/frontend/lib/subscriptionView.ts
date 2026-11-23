@@ -167,3 +167,15 @@ export function getUsagePercent(usedBytes: number, quotaBytes: number): number {
   if (quotaBytes <= 0) return 0
   return Math.min(100, Math.round((usedBytes / quotaBytes) * 100))
 }
+
+/** The size and the price for a month of a plan to choose, such as "100 GB, $15 / month"; a plan with no price shows only its size. */
+export function getOfferDetail(offer: PlanOffer): string {
+  return [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
+    .filter((part) => part !== '')
+    .join(', ')
+}
+
+/** A plan to choose with its name in front, such as "Plus, 100 GB, $15 / month". */
+export function getOfferLine(offer: PlanOffer): string {
+  return [offer.name, getOfferDetail(offer)].filter((part) => part !== '').join(', ')
+}

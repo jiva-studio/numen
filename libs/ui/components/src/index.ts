@@ -64,6 +64,9 @@ export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { ErrorState } from './shared/ui/error-state'
 export { IslandCard } from './shared/ui/island-card'
+
+/** A question over the window answered with one of two buttons. */
+export { ConfirmDialog } from './shared/ui/confirm-dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
 /** A link that leads out of the application, and the window held against it. */
