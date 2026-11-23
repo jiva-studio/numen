@@ -48,9 +48,9 @@ const (
 	// PluginLifecycleServiceConfigureProcedure is the fully-qualified name of the
 	// PluginLifecycleService's Configure RPC.
 	PluginLifecycleServiceConfigureProcedure = "/numen.v1.PluginLifecycleService/Configure"
-	// PluginServiceGetPluginsProcedure is the fully-qualified name of the PluginService's GetPlugins
+	// PluginServiceListPluginsProcedure is the fully-qualified name of the PluginService's ListPlugins
 	// RPC.
-	PluginServiceGetPluginsProcedure = "/numen.v1.PluginService/GetPlugins"
+	PluginServiceListPluginsProcedure = "/numen.v1.PluginService/ListPlugins"
 	// PluginProcessServiceWatchPluginProcessesProcedure is the fully-qualified name of the
 	// PluginProcessService's WatchPluginProcesses RPC.
 	PluginProcessServiceWatchPluginProcessesProcedure = "/numen.v1.PluginProcessService/WatchPluginProcesses"
@@ -187,7 +187,7 @@ func (UnimplementedPluginLifecycleServiceHandler) Configure(context.Context, *co
 
 // PluginServiceClient is a client for the numen.v1.PluginService service.
 type PluginServiceClient interface {
-	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+	ListPlugins(context.Context, *connect.Request[v1.ListPluginsRequest]) (*connect.Response[v1.ListPluginsResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the numen.v1.PluginService service. By default, it
@@ -201,10 +201,10 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 	baseURL = strings.TrimRight(baseURL, "/")
 	pluginServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginService").Methods()
 	return &pluginServiceClient{
-		getPlugins: connect.NewClient[v1.GetPluginsRequest, v1.GetPluginsResponse](
+		listPlugins: connect.NewClient[v1.ListPluginsRequest, v1.ListPluginsResponse](
 			httpClient,
-			baseURL+PluginServiceGetPluginsProcedure,
-			connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
+			baseURL+PluginServiceListPluginsProcedure,
+			connect.WithSchema(pluginServiceMethods.ByName("ListPlugins")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -212,17 +212,17 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // pluginServiceClient implements PluginServiceClient.
 type pluginServiceClient struct {
-	getPlugins *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
+	listPlugins *connect.Client[v1.ListPluginsRequest, v1.ListPluginsResponse]
 }
 
-// GetPlugins calls numen.v1.PluginService.GetPlugins.
-func (c *pluginServiceClient) GetPlugins(ctx context.Context, req *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
-	return c.getPlugins.CallUnary(ctx, req)
+// ListPlugins calls numen.v1.PluginService.ListPlugins.
+func (c *pluginServiceClient) ListPlugins(ctx context.Context, req *connect.Request[v1.ListPluginsRequest]) (*connect.Response[v1.ListPluginsResponse], error) {
+	return c.listPlugins.CallUnary(ctx, req)
 }
 
 // PluginServiceHandler is an implementation of the numen.v1.PluginService service.
 type PluginServiceHandler interface {
-	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+	ListPlugins(context.Context, *connect.Request[v1.ListPluginsRequest]) (*connect.Response[v1.ListPluginsResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -232,16 +232,16 @@ type PluginServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	pluginServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginService").Methods()
-	pluginServiceGetPluginsHandler := connect.NewUnaryHandler(
-		PluginServiceGetPluginsProcedure,
-		svc.GetPlugins,
-		connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
+	pluginServiceListPluginsHandler := connect.NewUnaryHandler(
+		PluginServiceListPluginsProcedure,
+		svc.ListPlugins,
+		connect.WithSchema(pluginServiceMethods.ByName("ListPlugins")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case PluginServiceGetPluginsProcedure:
-			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
+		case PluginServiceListPluginsProcedure:
+			pluginServiceListPluginsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -251,8 +251,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 // UnimplementedPluginServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPluginServiceHandler struct{}
 
-func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.GetPlugins is not implemented"))
+func (UnimplementedPluginServiceHandler) ListPlugins(context.Context, *connect.Request[v1.ListPluginsRequest]) (*connect.Response[v1.ListPluginsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.ListPlugins is not implemented"))
 }
 
 // PluginProcessServiceClient is a client for the numen.v1.PluginProcessService service.

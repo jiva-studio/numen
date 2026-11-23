@@ -20,13 +20,13 @@ export function createNoteApi(
     async readNote(path) {
       const answer = await notes.readNote({ path })
       if (answer.error) return { ok: false, error: formatErrorCode(answer.error) }
-      return { ok: true, value: { prose: answer.body, stamp: mapStamp(answer.at) } }
+      return { ok: true, value: { prose: answer.body, stamp: mapStamp(answer.fileStat) } }
     },
     async writeNote(path, prose, baseline) {
       const answer = await notes.writeNote({
         path,
         body: prose,
-        baseline: baseline ? { prose: baseline.prose, at: baseline.stamp } : undefined,
+        baseline: baseline ? { prose: baseline.prose, fileStat: baseline.stamp } : undefined,
       })
       if (answer.error) return { ok: false, error: formatErrorCode(answer.error) }
       return { ok: true, value: null }

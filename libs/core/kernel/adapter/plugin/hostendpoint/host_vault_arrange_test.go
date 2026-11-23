@@ -311,13 +311,13 @@ func TestVaultListChangesAreServedWithVaultManage(t *testing.T) {
 
 func TestVaultChecksNeedVaultRead(t *testing.T) {
 	denied, _, _ := newArrangeClient(t, nil)
-	_, err := denied.GetVaultProblems(t.Context(), connect.NewRequest(&v1.GetVaultProblemsRequest{}))
+	_, err := denied.ListVaultProblems(t.Context(), connect.NewRequest(&v1.ListVaultProblemsRequest{}))
 	if !isDenied(err) {
 		t.Errorf("the checks without vault:read returned %v, want permission denied", err)
 	}
 
 	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
-	res, err := client.GetVaultProblems(t.Context(), connect.NewRequest(&v1.GetVaultProblemsRequest{Checks: []string{"ambiguous", "dangling"}}))
+	res, err := client.ListVaultProblems(t.Context(), connect.NewRequest(&v1.ListVaultProblemsRequest{Checks: []string{"ambiguous", "dangling"}}))
 	if err != nil {
 		t.Fatalf("the checks with vault:read returned %v", err)
 	}

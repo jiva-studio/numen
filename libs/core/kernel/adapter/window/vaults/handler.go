@@ -103,7 +103,7 @@ func (s *Dialog) ChooseFolder(
 	if choose == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDialog)
 	}
-	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
 	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}

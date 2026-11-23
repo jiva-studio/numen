@@ -74,7 +74,7 @@ func TestAMoveIsReportedToTheWatch(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	v := hosttest.New("Physics")
-	moves, err := v.WatchMoves(ctx)
+	moves, err := v.WatchIndexChanges(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

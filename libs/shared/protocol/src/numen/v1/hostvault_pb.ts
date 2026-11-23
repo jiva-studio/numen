@@ -12,25 +12,25 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostvault.proto.
  */
 export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QieQoaRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJwoFc3RhdGUYAiABKA4yGC5udW1lbi52MS5Ib3N0SW5kZXhTdGF0ZRIOCgZyZWFzb24YAyABKAkiEwoRV2F0Y2hNb3Zlc1JlcXVlc3QiFAoSV2F0Y2hNb3Zlc1Jlc3BvbnNlIhUKE0dldEhvc3RWYXVsdFJlcXVlc3QiYgoUR2V0SG9zdFZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEcGF0aBgCIAEoCRIKCgJpZBgDIAEoCRIMCgRuYW1lGAQgASgJIhIKEExvY2tWYXVsdFJlcXVlc3QiRQoRTG9ja1ZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEbG9jaxgCIAEoCSIiChJVbmxvY2tWYXVsdFJlcXVlc3QSDAoEbG9jaxgBIAEoCSIVChNVbmxvY2tWYXVsdFJlc3BvbnNlIhkKF0dldFBhcnNlUHJvYmxlbXNSZXF1ZXN0IjAKEEhvc3RQYXJzZVByb2JsZW0SDAoEcGF0aBgBIAEoCRIOCgZkZXRhaWwYAiABKAkibAoYR2V0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiwKCHByb2JsZW1zGAIgAygLMhoubnVtZW4udjEuSG9zdFBhcnNlUHJvYmxlbSIpChdHZXRWYXVsdFByb2JsZW1zUmVxdWVzdBIOCgZjaGVja3MYASADKAkigAEKEEhvc3RWYXVsdFByb2JsZW0SDAoEcGF0aBgBIAEoCRINCgVjaGVjaxgCIAEoCRIOCgZkZXRhaWwYAyABKAkSFQoNdGFyZ2V0X3NjaGVtZRgEIAEoCRIUCgx0YXJnZXRfdmFsdWUYBSABKAkSEgoKY2FuZGlkYXRlcxgGIAMoCSJ8ChhHZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0VmF1bHRQcm9ibGVtEg4KBmNoZWNrcxgDIAMoCSqMAQoOSG9zdEluZGV4U3RhdGUSIAocSE9TVF9JTkRFWF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEhPU1RfSU5ERVhfU1RBVEVfSU5ERVhFRBABEh0KGUhPU1RfSU5ERVhfU1RBVEVfSU5ERVhJTkcQAhIbChdIT1NUX0lOREVYX1NUQVRFX0ZBSUxFRBADMtUEChBIb3N0VmF1bHRTZXJ2aWNlEk0KDEdldEhvc3RWYXVsdBIdLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlcXVlc3QaHi5udW1lbi52MS5HZXRIb3N0VmF1bHRSZXNwb25zZRJfChJFbnN1cmVWYXVsdEluZGV4ZWQSIy5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0GiQubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USRAoJTG9ja1ZhdWx0EhoubnVtZW4udjEuTG9ja1ZhdWx0UmVxdWVzdBobLm51bWVuLnYxLkxvY2tWYXVsdFJlc3BvbnNlEkoKC1VubG9ja1ZhdWx0EhwubnVtZW4udjEuVW5sb2NrVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuVW5sb2NrVmF1bHRSZXNwb25zZRJZChBHZXRQYXJzZVByb2JsZW1zEiEubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USWQoQR2V0VmF1bHRQcm9ibGVtcxIhLm51bWVuLnYxLkdldFZhdWx0UHJvYmxlbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1Jlc3BvbnNlEkkKCldhdGNoTW92ZXMSGy5udW1lbi52MS5XYXRjaE1vdmVzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoTW92ZXNSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhMKEUluZGV4VmF1bHRSZXF1ZXN0InEKEkluZGV4VmF1bHRSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRInCgVzdGF0ZRgCIAEoDjIYLm51bWVuLnYxLkhvc3RJbmRleFN0YXRlEg4KBnJlYXNvbhgDIAEoCSIaChhXYXRjaEluZGV4Q2hhbmdlc1JlcXVlc3QiGwoZV2F0Y2hJbmRleENoYW5nZXNSZXNwb25zZSIVChNHZXRIb3N0VmF1bHRSZXF1ZXN0ImIKFEdldEhvc3RWYXVsdFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSCgoCaWQYAyABKAkSDAoEbmFtZRgEIAEoCSISChBMb2NrVmF1bHRSZXF1ZXN0IkUKEUxvY2tWYXVsdFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEgwKBGxvY2sYAiABKAkiIgoSVW5sb2NrVmF1bHRSZXF1ZXN0EgwKBGxvY2sYASABKAkiFQoTVW5sb2NrVmF1bHRSZXNwb25zZSIaChhMaXN0UGFyc2VQcm9ibGVtc1JlcXVlc3QiMAoQSG9zdFBhcnNlUHJvYmxlbRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCSJtChlMaXN0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiwKCHByb2JsZW1zGAIgAygLMhoubnVtZW4udjEuSG9zdFBhcnNlUHJvYmxlbSIqChhMaXN0VmF1bHRQcm9ibGVtc1JlcXVlc3QSDgoGY2hlY2tzGAEgAygJIoABChBIb3N0VmF1bHRQcm9ibGVtEgwKBHBhdGgYASABKAkSDQoFY2hlY2sYAiABKAkSDgoGZGV0YWlsGAMgASgJEhUKDXRhcmdldF9zY2hlbWUYBCABKAkSFAoMdGFyZ2V0X3ZhbHVlGAUgASgJEhIKCmNhbmRpZGF0ZXMYBiADKAkifQoZTGlzdFZhdWx0UHJvYmxlbXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RWYXVsdFByb2JsZW0SDgoGY2hlY2tzGAMgAygJKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMy2AQKEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlEkcKCkluZGV4VmF1bHQSGy5udW1lbi52MS5JbmRleFZhdWx0UmVxdWVzdBocLm51bWVuLnYxLkluZGV4VmF1bHRSZXNwb25zZRJECglMb2NrVmF1bHQSGi5udW1lbi52MS5Mb2NrVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuTG9ja1ZhdWx0UmVzcG9uc2USSgoLVW5sb2NrVmF1bHQSHC5udW1lbi52MS5VbmxvY2tWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5VbmxvY2tWYXVsdFJlc3BvbnNlElwKEUxpc3RQYXJzZVByb2JsZW1zEiIubnVtZW4udjEuTGlzdFBhcnNlUHJvYmxlbXNSZXF1ZXN0GiMubnVtZW4udjEuTGlzdFBhcnNlUHJvYmxlbXNSZXNwb25zZRJcChFMaXN0VmF1bHRQcm9ibGVtcxIiLm51bWVuLnYxLkxpc3RWYXVsdFByb2JsZW1zUmVxdWVzdBojLm51bWVuLnYxLkxpc3RWYXVsdFByb2JsZW1zUmVzcG9uc2USXgoRV2F0Y2hJbmRleENoYW5nZXMSIi5udW1lbi52MS5XYXRjaEluZGV4Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaEluZGV4Q2hhbmdlc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.EnsureVaultIndexedRequest
+ * @generated from message numen.v1.IndexVaultRequest
  */
-export type EnsureVaultIndexedRequest = Message<"numen.v1.EnsureVaultIndexedRequest"> & {
+export type IndexVaultRequest = Message<"numen.v1.IndexVaultRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.EnsureVaultIndexedRequest.
- * Use `create(EnsureVaultIndexedRequestSchema)` to create a new message.
+ * Describes the message numen.v1.IndexVaultRequest.
+ * Use `create(IndexVaultRequestSchema)` to create a new message.
  */
-export const EnsureVaultIndexedRequestSchema: GenMessage<EnsureVaultIndexedRequest> = /*@__PURE__*/
+export const IndexVaultRequestSchema: GenMessage<IndexVaultRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 0);
 
 /**
- * @generated from message numen.v1.EnsureVaultIndexedResponse
+ * @generated from message numen.v1.IndexVaultResponse
  */
-export type EnsureVaultIndexedResponse = Message<"numen.v1.EnsureVaultIndexedResponse"> & {
+export type IndexVaultResponse = Message<"numen.v1.IndexVaultResponse"> & {
   /**
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
@@ -48,36 +48,36 @@ export type EnsureVaultIndexedResponse = Message<"numen.v1.EnsureVaultIndexedRes
 };
 
 /**
- * Describes the message numen.v1.EnsureVaultIndexedResponse.
- * Use `create(EnsureVaultIndexedResponseSchema)` to create a new message.
+ * Describes the message numen.v1.IndexVaultResponse.
+ * Use `create(IndexVaultResponseSchema)` to create a new message.
  */
-export const EnsureVaultIndexedResponseSchema: GenMessage<EnsureVaultIndexedResponse> = /*@__PURE__*/
+export const IndexVaultResponseSchema: GenMessage<IndexVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 1);
 
 /**
- * @generated from message numen.v1.WatchMovesRequest
+ * @generated from message numen.v1.WatchIndexChangesRequest
  */
-export type WatchMovesRequest = Message<"numen.v1.WatchMovesRequest"> & {
+export type WatchIndexChangesRequest = Message<"numen.v1.WatchIndexChangesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.WatchMovesRequest.
- * Use `create(WatchMovesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchIndexChangesRequest.
+ * Use `create(WatchIndexChangesRequestSchema)` to create a new message.
  */
-export const WatchMovesRequestSchema: GenMessage<WatchMovesRequest> = /*@__PURE__*/
+export const WatchIndexChangesRequestSchema: GenMessage<WatchIndexChangesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 2);
 
 /**
- * @generated from message numen.v1.WatchMovesResponse
+ * @generated from message numen.v1.WatchIndexChangesResponse
  */
-export type WatchMovesResponse = Message<"numen.v1.WatchMovesResponse"> & {
+export type WatchIndexChangesResponse = Message<"numen.v1.WatchIndexChangesResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.WatchMovesResponse.
- * Use `create(WatchMovesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchIndexChangesResponse.
+ * Use `create(WatchIndexChangesResponseSchema)` to create a new message.
  */
-export const WatchMovesResponseSchema: GenMessage<WatchMovesResponse> = /*@__PURE__*/
+export const WatchIndexChangesResponseSchema: GenMessage<WatchIndexChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 3);
 
 /**
@@ -195,16 +195,16 @@ export const UnlockVaultResponseSchema: GenMessage<UnlockVaultResponse> = /*@__P
   messageDesc(file_numen_v1_hostvault, 9);
 
 /**
- * @generated from message numen.v1.GetParseProblemsRequest
+ * @generated from message numen.v1.ListParseProblemsRequest
  */
-export type GetParseProblemsRequest = Message<"numen.v1.GetParseProblemsRequest"> & {
+export type ListParseProblemsRequest = Message<"numen.v1.ListParseProblemsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.GetParseProblemsRequest.
- * Use `create(GetParseProblemsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListParseProblemsRequest.
+ * Use `create(ListParseProblemsRequestSchema)` to create a new message.
  */
-export const GetParseProblemsRequestSchema: GenMessage<GetParseProblemsRequest> = /*@__PURE__*/
+export const ListParseProblemsRequestSchema: GenMessage<ListParseProblemsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 10);
 
 /**
@@ -232,9 +232,9 @@ export const HostParseProblemSchema: GenMessage<HostParseProblem> = /*@__PURE__*
   messageDesc(file_numen_v1_hostvault, 11);
 
 /**
- * @generated from message numen.v1.GetParseProblemsResponse
+ * @generated from message numen.v1.ListParseProblemsResponse
  */
-export type GetParseProblemsResponse = Message<"numen.v1.GetParseProblemsResponse"> & {
+export type ListParseProblemsResponse = Message<"numen.v1.ListParseProblemsResponse"> & {
   /**
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
@@ -247,16 +247,16 @@ export type GetParseProblemsResponse = Message<"numen.v1.GetParseProblemsRespons
 };
 
 /**
- * Describes the message numen.v1.GetParseProblemsResponse.
- * Use `create(GetParseProblemsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListParseProblemsResponse.
+ * Use `create(ListParseProblemsResponseSchema)` to create a new message.
  */
-export const GetParseProblemsResponseSchema: GenMessage<GetParseProblemsResponse> = /*@__PURE__*/
+export const ListParseProblemsResponseSchema: GenMessage<ListParseProblemsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 12);
 
 /**
- * @generated from message numen.v1.GetVaultProblemsRequest
+ * @generated from message numen.v1.ListVaultProblemsRequest
  */
-export type GetVaultProblemsRequest = Message<"numen.v1.GetVaultProblemsRequest"> & {
+export type ListVaultProblemsRequest = Message<"numen.v1.ListVaultProblemsRequest"> & {
   /**
    * The checks to run. Empty runs every check that is not opt-in.
    *
@@ -266,10 +266,10 @@ export type GetVaultProblemsRequest = Message<"numen.v1.GetVaultProblemsRequest"
 };
 
 /**
- * Describes the message numen.v1.GetVaultProblemsRequest.
- * Use `create(GetVaultProblemsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListVaultProblemsRequest.
+ * Use `create(ListVaultProblemsRequestSchema)` to create a new message.
  */
-export const GetVaultProblemsRequestSchema: GenMessage<GetVaultProblemsRequest> = /*@__PURE__*/
+export const ListVaultProblemsRequestSchema: GenMessage<ListVaultProblemsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 13);
 
 /**
@@ -325,9 +325,9 @@ export const HostVaultProblemSchema: GenMessage<HostVaultProblem> = /*@__PURE__*
   messageDesc(file_numen_v1_hostvault, 14);
 
 /**
- * @generated from message numen.v1.GetVaultProblemsResponse
+ * @generated from message numen.v1.ListVaultProblemsResponse
  */
-export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsResponse"> & {
+export type ListVaultProblemsResponse = Message<"numen.v1.ListVaultProblemsResponse"> & {
   /**
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
@@ -347,10 +347,10 @@ export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsRespons
 };
 
 /**
- * Describes the message numen.v1.GetVaultProblemsResponse.
- * Use `create(GetVaultProblemsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListVaultProblemsResponse.
+ * Use `create(ListVaultProblemsResponseSchema)` to create a new message.
  */
-export const GetVaultProblemsResponseSchema: GenMessage<GetVaultProblemsResponse> = /*@__PURE__*/
+export const ListVaultProblemsResponseSchema: GenMessage<ListVaultProblemsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 15);
 
 /**
@@ -416,16 +416,16 @@ export const HostVaultService: GenService<{
     output: typeof GetHostVaultResponseSchema;
   },
   /**
-   * EnsureVaultIndexed brings the vault into the index when it is not there yet,
-   * and says where that stands. The work goes on after the call returns, and the
-   * caller asks again once WatchMoves tells it something moved.
+   * IndexVault starts indexing the vault when it is not indexed yet, and returns the
+   * indexing state. Indexing continues after the call returns; the caller calls
+   * again after WatchIndexChanges reports a change.
    *
-   * @generated from rpc numen.v1.HostVaultService.EnsureVaultIndexed
+   * @generated from rpc numen.v1.HostVaultService.IndexVault
    */
-  ensureVaultIndexed: {
+  indexVault: {
     methodKind: "unary";
-    input: typeof EnsureVaultIndexedRequestSchema;
-    output: typeof EnsureVaultIndexedResponseSchema;
+    input: typeof IndexVaultRequestSchema;
+    output: typeof IndexVaultResponseSchema;
   },
   /**
    * LockVault holds the vault's writers to one caller until UnlockVault, or
@@ -439,7 +439,7 @@ export const HostVaultService: GenService<{
     output: typeof LockVaultResponseSchema;
   },
   /**
-   * UnlockVault lets the writers go.
+   * UnlockVault releases the lock taken by LockVault.
    *
    * @generated from rpc numen.v1.HostVaultService.UnlockVault
    */
@@ -449,38 +449,38 @@ export const HostVaultService: GenService<{
     output: typeof UnlockVaultResponseSchema;
   },
   /**
-   * GetParseProblems lists what parsing each file of the vault turned up.
+   * ListParseProblems lists what parsing each file of the vault turned up.
    *
-   * @generated from rpc numen.v1.HostVaultService.GetParseProblems
+   * @generated from rpc numen.v1.HostVaultService.ListParseProblems
    */
-  getParseProblems: {
+  listParseProblems: {
     methodKind: "unary";
-    input: typeof GetParseProblemsRequestSchema;
-    output: typeof GetParseProblemsResponseSchema;
+    input: typeof ListParseProblemsRequestSchema;
+    output: typeof ListParseProblemsResponseSchema;
   },
   /**
-   * GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+   * ListVaultProblems runs the named checks of the vault (parse, frontmatter,
    * ambiguous, dangling), or every check that is not opt-in when none is named.
    * It needs vault:read.
    *
-   * @generated from rpc numen.v1.HostVaultService.GetVaultProblems
+   * @generated from rpc numen.v1.HostVaultService.ListVaultProblems
    */
-  getVaultProblems: {
+  listVaultProblems: {
     methodKind: "unary";
-    input: typeof GetVaultProblemsRequestSchema;
-    output: typeof GetVaultProblemsResponseSchema;
+    input: typeof ListVaultProblemsRequestSchema;
+    output: typeof ListVaultProblemsResponseSchema;
   },
   /**
-   * WatchMoves tells that something moved in some vault of the installation,
-   * until the caller disconnects. It says nothing of what moved. The first message is
-   * sent at once, so that the caller knows the watch is on.
+   * WatchIndexChanges streams a message when any vault of the installation changes,
+   * until the caller disconnects. A message does not say what changed. The first
+   * message is sent at once, to confirm the watch is active.
    *
-   * @generated from rpc numen.v1.HostVaultService.WatchMoves
+   * @generated from rpc numen.v1.HostVaultService.WatchIndexChanges
    */
-  watchMoves: {
+  watchIndexChanges: {
     methodKind: "server_streaming";
-    input: typeof WatchMovesRequestSchema;
-    output: typeof WatchMovesResponseSchema;
+    input: typeof WatchIndexChangesRequestSchema;
+    output: typeof WatchIndexChangesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostvault, 0);

@@ -116,7 +116,7 @@ type LinkQueries interface {
 
 // ProblemQueries is what parsing a vault's files turned up.
 type ProblemQueries interface {
-	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
 // Entry is one file of review answers: the run that wrote it, and how many bytes it holds.

@@ -32,7 +32,7 @@ const getCore = () => {
 }
 
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
-  written: JSON.stringify(content),
+  settingsJson: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   version: 7n,
   plugins: [],
@@ -45,7 +45,7 @@ const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
 beforeEach(() => {
   request.getSettings.mockReset()
-  request.writeSettings.mockReset().mockResolvedValue({ written: '{}', version: 1n })
+  request.writeSettings.mockReset().mockResolvedValue({ settingsJson: '{}', version: 1n })
   request.choosePluginPath.mockReset()
 })
 
@@ -204,7 +204,7 @@ describe('every setting', () => {
     await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
     expect(writtenLast()).toMatchObject({
-      settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
+      settings: [{ keyPath: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
   })
 })
@@ -216,7 +216,7 @@ describe('the version of the settings', () => {
   })
 
   it('arrives with the state a write left', async () => {
-    request.writeSettings.mockResolvedValue({ written: '{"a":1}', version: 8n })
+    request.writeSettings.mockResolvedValue({ settingsJson: '{"a":1}', version: 8n })
     const written = await getCore().updateSettings([{ at: ['a'], value: '1' }])
     expect(written).toStrictEqual({ written: '{"a":1}', version: 8n })
   })
@@ -400,8 +400,8 @@ describe('the settings that change', () => {
       yield { changed: [] }
       yield {
         changed: [
-          { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-          { at: ['md.numen.sample', 'indent'], value: 'false' },
+          { keyPath: ['app', 'appearance', 'mode'], value: '"dark"' },
+          { keyPath: ['md.numen.sample', 'indent'], value: 'false' },
         ],
       }
     })
@@ -425,7 +425,7 @@ describe('the settings that change', () => {
     request.watchSettings.mockImplementation(async function* (_req, context) {
       yield { changed: [] }
       if (!context.signal.aborted) {
-        yield { changed: [{ at: ['app', 'appearance', 'mode'], value: '"dark"' }] }
+        yield { changed: [{ keyPath: ['app', 'appearance', 'mode'], value: '"dark"' }] }
       }
     })
     const controller = new AbortController()

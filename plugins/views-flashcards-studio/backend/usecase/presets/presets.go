@@ -244,7 +244,7 @@ func (r *Reads) readRolelessProblems(ctx context.Context, v domain.Vault, deck s
 		return nil, nil
 	}
 	if r.parseProblems == nil {
-		noted, err := r.problems.GetParseProblems(ctx, v.ID)
+		noted, err := r.problems.ListParseProblems(ctx, v.ID)
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}

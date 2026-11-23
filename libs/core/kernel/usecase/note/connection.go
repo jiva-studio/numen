@@ -253,7 +253,7 @@ func NewSaveConnection(d ConnectionDeps) SaveConnection {
 }
 
 // Execute replaces the records of both notes. A side that is nil is removed from
-// its note. A connection with no side is refused: RemoveConnection removes one.
+// its note. A connection with no side is refused: DeleteConnection removes one.
 func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Connection) error {
 	return u.editor.run(ctx, func(ctx context.Context) error {
 		if c.IsEmpty() {
@@ -270,20 +270,20 @@ func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Co
 	})
 }
 
-// RemoveConnection removes the records of one type that two notes write about each
+// DeleteConnection removes the records of one type that two notes write about each
 // other.
-type RemoveConnection struct {
+type DeleteConnection struct {
 	editor connectionEditor
 }
 
-// NewRemoveConnection builds the use case over d.
-func NewRemoveConnection(d ConnectionDeps) RemoveConnection {
-	return RemoveConnection{editor: newConnectionEditor(d)}
+// NewDeleteConnection builds the use case over d.
+func NewDeleteConnection(d ConnectionDeps) DeleteConnection {
+	return DeleteConnection{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type from both notes. The empty type names the
 // records that carry none.
-func (u RemoveConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
+func (u DeleteConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
 	return u.editor.run(ctx, func(ctx context.Context) error {
 		c := domain.Connection{A: a, B: b}
 		if err := c.Validate(); err != nil {
@@ -297,19 +297,19 @@ func (u RemoveConnection) Execute(ctx context.Context, v domain.Vault, a, b, kin
 	})
 }
 
-// RemoveSide removes the record one note writes about another and leaves the other
+// DeleteConnectionSide removes the record one note writes about another and leaves the other
 // note as it is.
-type RemoveSide struct {
+type DeleteConnectionSide struct {
 	editor connectionEditor
 }
 
-// NewRemoveSide builds the use case over d.
-func NewRemoveSide(d ConnectionDeps) RemoveSide {
-	return RemoveSide{editor: newConnectionEditor(d)}
+// NewDeleteConnectionSide builds the use case over d.
+func NewDeleteConnectionSide(d ConnectionDeps) DeleteConnectionSide {
+	return DeleteConnectionSide{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type that `from` writes about `to`.
-func (u RemoveSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
+func (u DeleteConnectionSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
 	return u.editor.run(ctx, func(ctx context.Context) error {
 		if err := (domain.Connection{A: from, B: to}).Validate(); err != nil {
 			return err

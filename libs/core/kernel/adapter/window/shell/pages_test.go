@@ -184,7 +184,7 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
-	out, err := plugins.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	out, err := plugins.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +209,7 @@ func TestAWindowWithNoPluginsListsNone(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
-	out, err := plugins.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	out, err := plugins.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

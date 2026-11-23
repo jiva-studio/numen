@@ -46,7 +46,7 @@ async function* waits(): AsyncGenerator<never> {
 const wire = {
   waits,
   resolveAddresses: vi.fn(),
-  getPlugins: vi.fn(),
+  listPlugins: vi.fn(),
   listVaults: vi.fn(),
   tasks: (): AsyncIterable<unknown> => waits(),
   cancelTask: vi.fn(),
@@ -65,7 +65,7 @@ const CORE_FAULT = 'internal error'
 /** The core of every window of the test, answered from `wire`. */
 const core = createCoreHandlerTransport({
   resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
-  getPlugins: (request: unknown) => wire.getPlugins(request),
+  listPlugins: (request: unknown) => wire.listPlugins(request),
   listVaults: (request: unknown) => wire.listVaults(request),
   listThemes: (request: unknown) => wire.listThemes(request),
   readTheme: (request: unknown) => wire.readTheme(request),
@@ -132,7 +132,7 @@ const serveCore = (
   pluginIds: readonly string[],
   listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS,
 ) => {
-  wire.getPlugins.mockResolvedValue({ plugins: pluginIds.map((id) => ({ id, name: id })) })
+  wire.listPlugins.mockResolvedValue({ plugins: pluginIds.map((id) => ({ id, name: id })) })
   wire.listVaults.mockImplementation(async () => ({ vaults: await listVaults() }))
 }
 
@@ -147,15 +147,15 @@ const createDeps = (listVaults?: () => Promise<readonly VaultRow[]>) => {
 const mounted: { unmount(): void }[] = []
 
 beforeEach(() => {
-  wire.getPlugins.mockReset()
+  wire.listPlugins.mockReset()
   wire.listVaults.mockReset()
   wire.listThemes.mockReset()
   wire.readTheme.mockReset()
   wire.writeAppearance.mockReset()
   wire.cancelTask.mockReset()
   wire.resolveAddresses.mockReset()
-  wire.resolveAddresses.mockResolvedValue({ found: [], resolved: [] })
-  wire.getPlugins.mockResolvedValue({ plugins: [] })
+  wire.resolveAddresses.mockResolvedValue({ links: [], resolved: [] })
+  wire.listPlugins.mockResolvedValue({ plugins: [] })
   wire.listVaults.mockResolvedValue({ vaults: [] })
   wire.listThemes.mockResolvedValue({
     themes: [],
@@ -181,7 +181,7 @@ afterEach(() => {
 
 describe('App', () => {
   it('says why it draws nothing when the plugins cannot be listed', async () => {
-    wire.getPlugins.mockRejectedValueOnce(new Error('the window is gone'))
+    wire.listPlugins.mockRejectedValueOnce(new Error('the window is gone'))
     wire.listVaults.mockResolvedValueOnce({ vaults: [] })
 
     const window = mount(createRoot(core))
@@ -193,7 +193,7 @@ describe('App', () => {
   })
 
   it('lists the vaults of the installation, as the window is served them', async () => {
-    wire.getPlugins.mockResolvedValueOnce({
+    wire.listPlugins.mockResolvedValueOnce({
       plugins: [{ id: 'md.numen.missing', name: 'Missing' }],
     })
     wire.listVaults.mockResolvedValueOnce({
@@ -482,8 +482,8 @@ describe('the appearance palette', () => {
       interfaceScale: 1,
       textScale: 1,
     })
-    wire.getPlugins.mockResolvedValueOnce({ plugins: [] })
-    wire.getPlugins.mockResolvedValue({
+    wire.listPlugins.mockResolvedValueOnce({ plugins: [] })
+    wire.listPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
     })
     const window = mount(createRoot(core), { attachTo: document.body })
@@ -583,7 +583,7 @@ describe('the appearance palette', () => {
     expect(shell?.appearance.isOpen.value).toBe(false)
 
     shell!.appearance.query.value = 'stale'
-    wire.getPlugins.mockRejectedValueOnce(new Error('plugins offline'))
+    wire.listPlugins.mockRejectedValueOnce(new Error('plugins offline'))
     const cmdP = new KeyboardEvent('keydown', { key: 'P', metaKey: true, cancelable: true })
     globalThis.dispatchEvent(cmdP)
     expect(cmdP.defaultPrevented).toBe(true)
@@ -804,7 +804,7 @@ describe('the title bar of the flashcards window', () => {
 
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
     const deps = createDeps()
-    wire.getPlugins.mockReturnValue(new Promise(() => undefined))
+    wire.listPlugins.mockReturnValue(new Promise(() => undefined))
     const window = mount(createRoot(core, deps), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()

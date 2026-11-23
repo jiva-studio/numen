@@ -31,21 +31,23 @@ const getFileText = (): string =>
 export const settingsAnswers = {
   settingsService: {
     getSettings: () => ({
-      written: getFileText(),
+      settingsJson: getFileText(),
       version,
       path: '/vaults/Physics/.numen/settings.json',
       plugins: [],
       app: mockVaultState.app.map(getSettingInForce).map(toWireSetting),
       appGroups: [],
     }),
-    writeSettings: (request: { settings: readonly { at: readonly string[]; value: string }[] }) => {
+    writeSettings: (request: {
+      settings: readonly { keyPath: readonly string[]; value: string }[]
+    }) => {
       if (mockVaultState.writeError) throw createLostConnection(mockVaultState.writeError)
       for (const one of request.settings) {
-        requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
-        keepSetting(one.at.join('.'), JSON.parse(one.value))
+        requests.settingsWritten.push(`${one.keyPath.join('.')} ${one.value}`)
+        keepSetting(one.keyPath.join('.'), JSON.parse(one.value))
       }
       version += 1n
-      return { written: getFileText(), version }
+      return { settingsJson: getFileText(), version }
     },
     watchSettings: pendingStream,
   },

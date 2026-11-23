@@ -210,7 +210,7 @@ func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []stri
 	return out, nil
 }
 
-func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, error) {
+func (m *memoryVault) ListParseProblems(context.Context) ([]domain.VaultProblem, error) {
 	return []domain.VaultProblem{{Path: "samples/A.md", Detail: "an entry has no role"}}, nil
 }
 
@@ -292,7 +292,7 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	if err != nil || resolved.Msg.GetLinks()["Animal"].GetTo() != "Animal.md" {
 		t.Errorf("the resolved links were %v (%v)", resolved.Msg, err)
 	}
-	problems, err := client.GetParseProblems(ctx, connect.NewRequest(&v1.GetParseProblemsRequest{}))
+	problems, err := client.ListParseProblems(ctx, connect.NewRequest(&v1.ListParseProblemsRequest{}))
 	if err != nil || len(problems.Msg.GetProblems()) != 1 || problems.Msg.GetProblems()[0].GetDetail() != "an entry has no role" {
 		t.Errorf("the problems were %v (%v)", problems.Msg, err)
 	}

@@ -13,7 +13,7 @@ let settings = createAnsweredSettings({})
 const AT = ['p', 'enabled'] as const
 
 const answerWith = (written: string, version = 0n) => ({
-  written,
+  settingsJson: written,
   version,
   path: '/f',
   plugins: [],
@@ -41,7 +41,7 @@ describe('settings store', () => {
             ;(file as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
           }
           version += 1n
-          const written = { written: JSON.stringify(file), version }
+          const written = { settingsJson: JSON.stringify(file), version }
           applied = true
           await released // the plugin host applies the change
           return written
@@ -88,12 +88,12 @@ const createHeldVault = (isEnabled: boolean) => {
           reads.push({ resolve: () => resolve(answer), reject })
         }),
       writeSettings: (request) =>
-        new Promise<{ written: string; version: bigint }>((resolve, reject) => {
+        new Promise<{ settingsJson: string; version: bigint }>((resolve, reject) => {
           writes.push({
             resolve: () => {
               for (const e of request.settings) file.p.enabled = JSON.parse(e.value) as boolean
               version += 1n
-              resolve({ written: JSON.stringify(file), version })
+              resolve({ settingsJson: JSON.stringify(file), version })
             },
             reject,
           })

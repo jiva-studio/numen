@@ -60,7 +60,7 @@ export const createVaults = (
 ): Vaults => ({
   list: async () => (await vaultsService.listVaults({})).vaults.map(mapVault),
   choose: async (title) => {
-    const answer = await folderDialog.chooseFolder({ title, startingAt: '' })
+    const answer = await folderDialog.chooseFolder({ title, startFolder: '' })
     return answer.isChosen ? answer.path : ''
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),

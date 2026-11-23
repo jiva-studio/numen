@@ -70,7 +70,7 @@ describe('the layout of the slots a plugin draws', () => {
           change = resolve
           signal.addEventListener('abort', () => resolve())
         })
-        yield { changed: [{ at: [BAR, 'slots'], value: '{}' }] }
+        yield { changed: [{ keyPath: [BAR, 'slots'], value: '{}' }] }
       },
     )
     await flushPromises()

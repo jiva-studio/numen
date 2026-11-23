@@ -14,8 +14,8 @@ type FlushResult = 'written' | 'unsaved'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
-  watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
-  reportFlush(token: string, result?: FlushResult): Promise<void>
+  watchWindowClose(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  reportPendingWork(token: string, result?: FlushResult): Promise<void>
 }
 
 /**
@@ -100,7 +100,7 @@ function createFlushReporter(
     const result: FlushResult = all.length > 0 || failed ? 'unsaved' : 'written'
     if (result === lastResult) return
     lastResult = result
-    await core.reportFlush(token, result)
+    await core.reportPendingWork(token, result)
   }
 
   /** A report that failed was not received, so the next one is sent again. */
@@ -196,7 +196,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
   /** Listen for the quit, for as long as the window is drawn. */
   const start = () =>
     follows(
-      () => core.watchQuit(abortController.signal),
+      () => core.watchWindowClose(abortController.signal),
       async (message) => {
         if (message.flush) await reporter.answer(message.token)
       },

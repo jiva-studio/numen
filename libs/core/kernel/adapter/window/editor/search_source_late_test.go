@@ -162,8 +162,8 @@ func (f *showing) findMeaning(t *testing.T, query string) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	paths := make([]string, 0, len(found.Msg.GetFound()))
-	for _, one := range found.Msg.GetFound() {
+	paths := make([]string, 0, len(found.Msg.GetResults()))
+	for _, one := range found.Msg.GetResults() {
 		paths = append(paths, one.GetPath())
 	}
 	return paths

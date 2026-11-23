@@ -66,9 +66,9 @@ const (
 	// HostSearchServiceGetSearchProcedure is the fully-qualified name of the HostSearchService's
 	// GetSearch RPC.
 	HostSearchServiceGetSearchProcedure = "/numen.v1.HostSearchService/GetSearch"
-	// HostSearchServiceRemoveSearchProcedure is the fully-qualified name of the HostSearchService's
-	// RemoveSearch RPC.
-	HostSearchServiceRemoveSearchProcedure = "/numen.v1.HostSearchService/RemoveSearch"
+	// HostSearchServiceDeleteSearchProcedure is the fully-qualified name of the HostSearchService's
+	// DeleteSearch RPC.
+	HostSearchServiceDeleteSearchProcedure = "/numen.v1.HostSearchService/DeleteSearch"
 	// HostSearchServiceListSearchFunctionsProcedure is the fully-qualified name of the
 	// HostSearchService's ListSearchFunctions RPC.
 	HostSearchServiceListSearchFunctionsProcedure = "/numen.v1.HostSearchService/ListSearchFunctions"
@@ -122,8 +122,8 @@ type HostSearchServiceClient interface {
 	// wait_ms for the search to stop; zero answers at once. A search is kept for 10 minutes after its last
 	// read, and at most 20 are kept. Only the plugin that started a search reads it.
 	GetSearch(context.Context, *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error)
-	// RemoveSearch cancels a running search and forgets it.
-	RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error)
+	// DeleteSearch cancels a running search and forgets it.
+	DeleteSearch(context.Context, *connect.Request[v1.DeleteSearchRequest]) (*connect.Response[v1.DeleteSearchResponse], error)
 	// ListSearchFunctions is the functions, variables and stages of the search language.
 	ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error)
 }
@@ -205,10 +205,10 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("GetSearch")),
 			connect.WithClientOptions(opts...),
 		),
-		removeSearch: connect.NewClient[v1.RemoveSearchRequest, v1.RemoveSearchResponse](
+		deleteSearch: connect.NewClient[v1.DeleteSearchRequest, v1.DeleteSearchResponse](
 			httpClient,
-			baseURL+HostSearchServiceRemoveSearchProcedure,
-			connect.WithSchema(hostSearchServiceMethods.ByName("RemoveSearch")),
+			baseURL+HostSearchServiceDeleteSearchProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("DeleteSearch")),
 			connect.WithClientOptions(opts...),
 		),
 		listSearchFunctions: connect.NewClient[v1.ListSearchFunctionsRequest, v1.ListSearchFunctionsResponse](
@@ -233,7 +233,7 @@ type hostSearchServiceClient struct {
 	setSearchFloor      *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
 	startSearch         *connect.Client[v1.StartSearchRequest, v1.StartSearchResponse]
 	getSearch           *connect.Client[v1.GetSearchRequest, v1.GetSearchResponse]
-	removeSearch        *connect.Client[v1.RemoveSearchRequest, v1.RemoveSearchResponse]
+	deleteSearch        *connect.Client[v1.DeleteSearchRequest, v1.DeleteSearchResponse]
 	listSearchFunctions *connect.Client[v1.ListSearchFunctionsRequest, v1.ListSearchFunctionsResponse]
 }
 
@@ -292,9 +292,9 @@ func (c *hostSearchServiceClient) GetSearch(ctx context.Context, req *connect.Re
 	return c.getSearch.CallUnary(ctx, req)
 }
 
-// RemoveSearch calls numen.v1.HostSearchService.RemoveSearch.
-func (c *hostSearchServiceClient) RemoveSearch(ctx context.Context, req *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error) {
-	return c.removeSearch.CallUnary(ctx, req)
+// DeleteSearch calls numen.v1.HostSearchService.DeleteSearch.
+func (c *hostSearchServiceClient) DeleteSearch(ctx context.Context, req *connect.Request[v1.DeleteSearchRequest]) (*connect.Response[v1.DeleteSearchResponse], error) {
+	return c.deleteSearch.CallUnary(ctx, req)
 }
 
 // ListSearchFunctions calls numen.v1.HostSearchService.ListSearchFunctions.
@@ -350,8 +350,8 @@ type HostSearchServiceHandler interface {
 	// wait_ms for the search to stop; zero answers at once. A search is kept for 10 minutes after its last
 	// read, and at most 20 are kept. Only the plugin that started a search reads it.
 	GetSearch(context.Context, *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error)
-	// RemoveSearch cancels a running search and forgets it.
-	RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error)
+	// DeleteSearch cancels a running search and forgets it.
+	DeleteSearch(context.Context, *connect.Request[v1.DeleteSearchRequest]) (*connect.Response[v1.DeleteSearchResponse], error)
 	// ListSearchFunctions is the functions, variables and stages of the search language.
 	ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error)
 }
@@ -429,10 +429,10 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("GetSearch")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostSearchServiceRemoveSearchHandler := connect.NewUnaryHandler(
-		HostSearchServiceRemoveSearchProcedure,
-		svc.RemoveSearch,
-		connect.WithSchema(hostSearchServiceMethods.ByName("RemoveSearch")),
+	hostSearchServiceDeleteSearchHandler := connect.NewUnaryHandler(
+		HostSearchServiceDeleteSearchProcedure,
+		svc.DeleteSearch,
+		connect.WithSchema(hostSearchServiceMethods.ByName("DeleteSearch")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostSearchServiceListSearchFunctionsHandler := connect.NewUnaryHandler(
@@ -465,8 +465,8 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceStartSearchHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetSearchProcedure:
 			hostSearchServiceGetSearchHandler.ServeHTTP(w, r)
-		case HostSearchServiceRemoveSearchProcedure:
-			hostSearchServiceRemoveSearchHandler.ServeHTTP(w, r)
+		case HostSearchServiceDeleteSearchProcedure:
+			hostSearchServiceDeleteSearchHandler.ServeHTTP(w, r)
 		case HostSearchServiceListSearchFunctionsProcedure:
 			hostSearchServiceListSearchFunctionsHandler.ServeHTTP(w, r)
 		default:
@@ -522,8 +522,8 @@ func (UnimplementedHostSearchServiceHandler) GetSearch(context.Context, *connect
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetSearch is not implemented"))
 }
 
-func (UnimplementedHostSearchServiceHandler) RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.RemoveSearch is not implemented"))
+func (UnimplementedHostSearchServiceHandler) DeleteSearch(context.Context, *connect.Request[v1.DeleteSearchRequest]) (*connect.Response[v1.DeleteSearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.DeleteSearch is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error) {

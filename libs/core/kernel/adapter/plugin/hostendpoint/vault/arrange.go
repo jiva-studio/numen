@@ -50,15 +50,15 @@ func checkBatch(paths []string) error {
 	return nil
 }
 
-func (e *arrangeCalls) GetVaultProblems(
-	ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
-) (*connect.Response[v1.GetVaultProblemsResponse], error) {
+func (e *arrangeCalls) ListVaultProblems(
+	ctx context.Context, req *connect.Request[v1.ListVaultProblemsRequest],
+) (*connect.Response[v1.ListVaultProblemsResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListVaultProblemsResponse{Error: noVault}), nil
 	}
 	checks := make([]domain.Check, 0, len(req.Msg.GetChecks()))
 	for _, one := range req.Msg.GetChecks() {
@@ -67,9 +67,9 @@ func (e *arrangeCalls) GetVaultProblems(
 	checkNames, problems, err := vault.Arranger.GetProblems(ctx, checks)
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListVaultProblemsResponse{Error: code}), err
 	}
-	out := &v1.GetVaultProblemsResponse{
+	out := &v1.ListVaultProblemsResponse{
 		Checks:   make([]string, 0, len(checkNames)),
 		Problems: make([]*v1.HostVaultProblem, 0, len(problems)),
 	}
@@ -213,24 +213,24 @@ func removeNote(ctx context.Context, vault Arranger, target string) (*v1.HostNot
 func isCanceled(ctx context.Context) bool {
 	return ctx.Err() != nil
 }
-func (e *arrangeCalls) GetParseProblems(
-	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
-) (*connect.Response[v1.GetParseProblemsResponse], error) {
+func (e *arrangeCalls) ListParseProblems(
+	ctx context.Context, req *connect.Request[v1.ListParseProblemsRequest],
+) (*connect.Response[v1.ListParseProblemsResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListParseProblemsResponse{Error: noVault}), nil
 	}
-	target, err := vault.Arranger.GetParseProblems(ctx)
+	target, err := vault.Arranger.ListParseProblems(ctx)
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListParseProblemsResponse{Error: code}), err
 	}
 	problems := make([]*v1.HostParseProblem, 0, len(target))
 	for _, one := range target {
 		problems = append(problems, &v1.HostParseProblem{Path: one.Path, Detail: one.Detail})
 	}
-	return connect.NewResponse(&v1.GetParseProblemsResponse{Problems: problems}), nil
+	return connect.NewResponse(&v1.ListParseProblemsResponse{Problems: problems}), nil
 }

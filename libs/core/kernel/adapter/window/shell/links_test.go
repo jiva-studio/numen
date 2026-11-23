@@ -67,14 +67,14 @@ func TestResolveAddressesAnswersInTheNamedVault(t *testing.T) {
 	}
 
 	var raws []string
-	for _, one := range answer.Msg.GetFound() {
+	for _, one := range answer.Msg.GetLinks() {
 		raws = append(raws, one.GetRaw())
 	}
 	if len(raws) != 2 || raws[0] != "[[Compost|compost]]" || raws[1] != "[[Peat]]" {
 		t.Errorf("found %q", raws)
 	}
 	resolved := answer.Msg.GetResolved()
-	if len(resolved) != 1 || resolved[0].GetWritten() != "name://Compost" || resolved[0].GetPath() != "Compost.md" {
+	if len(resolved) != 1 || resolved[0].GetAddress() != "name://Compost" || resolved[0].GetPath() != "Compost.md" {
 		t.Errorf("resolved %v", resolved)
 	}
 	if len(index.queried) != 1 || index.queried[0] != "garden" {

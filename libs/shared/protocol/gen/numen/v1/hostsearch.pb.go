@@ -2048,27 +2048,27 @@ func (x *SearchRerank) GetReusedCount() int32 {
 	return 0
 }
 
-type RemoveSearchRequest struct {
+type DeleteSearchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RemoveSearchRequest) Reset() {
-	*x = RemoveSearchRequest{}
+func (x *DeleteSearchRequest) Reset() {
+	*x = DeleteSearchRequest{}
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RemoveSearchRequest) String() string {
+func (x *DeleteSearchRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveSearchRequest) ProtoMessage() {}
+func (*DeleteSearchRequest) ProtoMessage() {}
 
-func (x *RemoveSearchRequest) ProtoReflect() protoreflect.Message {
+func (x *DeleteSearchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2080,39 +2080,39 @@ func (x *RemoveSearchRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveSearchRequest.ProtoReflect.Descriptor instead.
-func (*RemoveSearchRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteSearchRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSearchRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *RemoveSearchRequest) GetId() string {
+func (x *DeleteSearchRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-type RemoveSearchResponse struct {
+type DeleteSearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RemoveSearchResponse) Reset() {
-	*x = RemoveSearchResponse{}
+func (x *DeleteSearchResponse) Reset() {
+	*x = DeleteSearchResponse{}
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RemoveSearchResponse) String() string {
+func (x *DeleteSearchResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveSearchResponse) ProtoMessage() {}
+func (*DeleteSearchResponse) ProtoMessage() {}
 
-func (x *RemoveSearchResponse) ProtoReflect() protoreflect.Message {
+func (x *DeleteSearchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2124,12 +2124,12 @@ func (x *RemoveSearchResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveSearchResponse.ProtoReflect.Descriptor instead.
-func (*RemoveSearchResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteSearchResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSearchResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *RemoveSearchResponse) GetError() HostSearchErrorCode {
+func (x *DeleteSearchResponse) GetError() HostSearchErrorCode {
 	if x != nil {
 		return x.Error
 	}
@@ -2484,9 +2484,9 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\n" +
 	"sent_count\x18\x02 \x01(\x05R\tsentCount\x12!\n" +
 	"\freused_count\x18\x03 \x01(\x05R\vreusedCount\"%\n" +
-	"\x13RemoveSearchRequest\x12\x0e\n" +
+	"\x13DeleteSearchRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"K\n" +
-	"\x14RemoveSearchResponse\x123\n" +
+	"\x14DeleteSearchResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\x1c\n" +
 	"\x1aListSearchFunctionsRequest\"\xa6\x01\n" +
 	"\x1bListSearchFunctionsResponse\x123\n" +
@@ -2535,7 +2535,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x0eSetSearchFloor\x12\x1f.numen.v1.SetSearchFloorRequest\x1a .numen.v1.SetSearchFloorResponse\x12J\n" +
 	"\vStartSearch\x12\x1c.numen.v1.StartSearchRequest\x1a\x1d.numen.v1.StartSearchResponse\x12D\n" +
 	"\tGetSearch\x12\x1a.numen.v1.GetSearchRequest\x1a\x1b.numen.v1.GetSearchResponse\x12M\n" +
-	"\fRemoveSearch\x12\x1d.numen.v1.RemoveSearchRequest\x1a\x1e.numen.v1.RemoveSearchResponse\x12b\n" +
+	"\fDeleteSearch\x12\x1d.numen.v1.DeleteSearchRequest\x1a\x1e.numen.v1.DeleteSearchResponse\x12b\n" +
 	"\x13ListSearchFunctions\x12$.numen.v1.ListSearchFunctionsRequest\x1a%.numen.v1.ListSearchFunctionsResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -2584,8 +2584,8 @@ var file_numen_v1_hostsearch_proto_goTypes = []any{
 	(*SearchProgress)(nil),                      // 28: numen.v1.SearchProgress
 	(*SearchProblem)(nil),                       // 29: numen.v1.SearchProblem
 	(*SearchRerank)(nil),                        // 30: numen.v1.SearchRerank
-	(*RemoveSearchRequest)(nil),                 // 31: numen.v1.RemoveSearchRequest
-	(*RemoveSearchResponse)(nil),                // 32: numen.v1.RemoveSearchResponse
+	(*DeleteSearchRequest)(nil),                 // 31: numen.v1.DeleteSearchRequest
+	(*DeleteSearchResponse)(nil),                // 32: numen.v1.DeleteSearchResponse
 	(*ListSearchFunctionsRequest)(nil),          // 33: numen.v1.ListSearchFunctionsRequest
 	(*ListSearchFunctionsResponse)(nil),         // 34: numen.v1.ListSearchFunctionsResponse
 	(*SearchFunction)(nil),                      // 35: numen.v1.SearchFunction
@@ -2622,7 +2622,7 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	39, // 23: numen.v1.SearchState.results:type_name -> numen.v1.SearchResult
 	29, // 24: numen.v1.SearchState.errors:type_name -> numen.v1.SearchProblem
 	30, // 25: numen.v1.SearchState.reranks:type_name -> numen.v1.SearchRerank
-	0,  // 26: numen.v1.RemoveSearchResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	0,  // 26: numen.v1.DeleteSearchResponse.error:type_name -> numen.v1.HostSearchErrorCode
 	0,  // 27: numen.v1.ListSearchFunctionsResponse.error:type_name -> numen.v1.HostSearchErrorCode
 	35, // 28: numen.v1.ListSearchFunctionsResponse.functions:type_name -> numen.v1.SearchFunction
 	2,  // 29: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
@@ -2636,7 +2636,7 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	19, // 37: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
 	23, // 38: numen.v1.HostSearchService.StartSearch:input_type -> numen.v1.StartSearchRequest
 	25, // 39: numen.v1.HostSearchService.GetSearch:input_type -> numen.v1.GetSearchRequest
-	31, // 40: numen.v1.HostSearchService.RemoveSearch:input_type -> numen.v1.RemoveSearchRequest
+	31, // 40: numen.v1.HostSearchService.DeleteSearch:input_type -> numen.v1.DeleteSearchRequest
 	33, // 41: numen.v1.HostSearchService.ListSearchFunctions:input_type -> numen.v1.ListSearchFunctionsRequest
 	3,  // 42: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
 	6,  // 43: numen.v1.HostSearchService.GetIndexStats:output_type -> numen.v1.GetIndexStatsResponse
@@ -2649,7 +2649,7 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	20, // 50: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
 	24, // 51: numen.v1.HostSearchService.StartSearch:output_type -> numen.v1.StartSearchResponse
 	26, // 52: numen.v1.HostSearchService.GetSearch:output_type -> numen.v1.GetSearchResponse
-	32, // 53: numen.v1.HostSearchService.RemoveSearch:output_type -> numen.v1.RemoveSearchResponse
+	32, // 53: numen.v1.HostSearchService.DeleteSearch:output_type -> numen.v1.DeleteSearchResponse
 	34, // 54: numen.v1.HostSearchService.ListSearchFunctions:output_type -> numen.v1.ListSearchFunctionsResponse
 	42, // [42:55] is the sub-list for method output_type
 	29, // [29:42] is the sub-list for method input_type

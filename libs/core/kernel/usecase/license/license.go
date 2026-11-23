@@ -67,7 +67,7 @@ func (o operation) listDeclarations() []license.Declaration {
 	if o.declarations == nil {
 		return nil
 	}
-	discovered := o.declarations.GetPlugins()
+	discovered := o.declarations.ListPlugins()
 	entries := make([]license.PluginEntry, 0, len(discovered))
 	for _, p := range discovered {
 		if len(p.Manifest.Contributes.Licenses) == 0 {

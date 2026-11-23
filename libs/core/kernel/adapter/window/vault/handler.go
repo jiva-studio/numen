@@ -106,6 +106,6 @@ func newChangeResponse(what window.Change) *v1.WatchVaultChangesResponse {
 		renamedMoves = append(renamedMoves, &v1.MoveResult{From: went.From, To: went.To})
 	}
 	return &v1.WatchVaultChangesResponse{
-		Paths: what.Paths, Reload: what.ShouldReload, Renamed: renamedMoves, VersionPaths: what.VersionPaths,
+		Paths: what.Paths, IsReloadRequired: what.ShouldReload, Moves: renamedMoves, VersionPaths: what.VersionPaths,
 	}
 }

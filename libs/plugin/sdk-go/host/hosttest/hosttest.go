@@ -325,7 +325,7 @@ func (v *Vault) WriteCache(ctx context.Context, name string, content []byte) err
 	return nil
 }
 
-func (v *Vault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
+func (v *Vault) WatchIndexChanges(ctx context.Context) (<-chan host.Move, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if v.unknown {

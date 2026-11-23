@@ -106,22 +106,22 @@ func NewLinks(
 
 // Connections reads and changes the relationship between two notes.
 type Connections struct {
-	vault            Vault
-	getConnection    *query.GetConnection
-	saveConnection   *note.SaveConnection
-	removeSide       *note.RemoveSide
-	removeConnection *note.RemoveConnection
-	join             *note.Join
+	vault                Vault
+	getConnection        *query.GetConnection
+	saveConnection       *note.SaveConnection
+	deleteConnectionSide *note.DeleteConnectionSide
+	deleteConnection     *note.DeleteConnection
+	join                 *note.Join
 }
 
 // NewConnections is the part of NoteService that works the connections between notes.
 func NewConnections(
 	window Vault,
-	get *query.GetConnection, save *note.SaveConnection, removeSide *note.RemoveSide,
-	remove *note.RemoveConnection, join *note.Join,
+	get *query.GetConnection, save *note.SaveConnection, deleteConnectionSide *note.DeleteConnectionSide,
+	remove *note.DeleteConnection, join *note.Join,
 ) *Connections {
 	return &Connections{
-		vault: window, getConnection: get, saveConnection: save, removeSide: removeSide,
-		removeConnection: remove, join: join,
+		vault: window, getConnection: get, saveConnection: save, deleteConnectionSide: deleteConnectionSide,
+		deleteConnection: remove, join: join,
 	}
 }

@@ -200,7 +200,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 // fixedProblemQueries answers the two stored questions with what the test wrote down.
 type fixedProblemQueries struct{ parse, unreadable []domain.VaultProblem }
 
-func (p fixedProblemQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (p fixedProblemQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.parse, nil
 }
 
