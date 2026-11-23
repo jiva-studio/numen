@@ -106,6 +106,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
       :recovery-words="recoveryWords"
       :positions="confirmation.positions.value"
       :entered="confirmation.entered.value"
+      :wrong="confirmation.wrong.value"
       :is-complete="confirmation.isComplete.value"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
