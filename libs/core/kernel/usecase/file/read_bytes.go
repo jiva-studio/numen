@@ -32,7 +32,7 @@ func (u *ReadBytes) Execute(ctx context.Context, v domain.Vault, path string, st
 	if start < 0 || length < 1 || length > MostBytes {
 		return nil, domain.FileStat{}, fmt.Errorf("read %d bytes of %s from %d: %w", length, path, start, plugin.ErrInvalidRange)
 	}
-	stat, err := u.stat.Execute(ctx, v, path)
+	stat, err := u.stat.ExecuteKnown(ctx, v, path)
 	if err != nil {
 		return nil, domain.FileStat{}, err
 	}

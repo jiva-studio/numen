@@ -221,6 +221,32 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	return streamReplace(ctx, root, name, content)
 }
 
+// Replace streams content over the file at path, whole or not at all, and keeps the permissions of the file. A path
+// with no file returns fs.ErrNotExist.
+func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reader) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.resolvePath(path)
+	if err != nil {
+		return err
+	}
+	root, name, err := w.openRoot(target)
+	if err != nil {
+		return err
+	}
+	defer closeAndJoin(&err, root)
+	info, err := root.Stat(name)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return fmt.Errorf("replace %s: it is a directory", path)
+	}
+	_, err = atomicfile.Replace(ctx, root, name, content, info.Mode().Perm())
+	return err
+}
+
 func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
 	_, err := atomicfile.Replace(ctx, root, target, content, newFileMode)
 	return err

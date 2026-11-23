@@ -87,6 +87,9 @@ func (w Writer) checkBaseline(ctx context.Context, v domain.Vault, path string, 
 		return nil
 	}
 	now, err := w.Stat.Execute(ctx, v, path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
+	}
 	if err != nil {
 		return err
 	}
@@ -100,31 +103,12 @@ func (w Writer) checkBaseline(ctx context.Context, v domain.Vault, path string, 
 // the target and is renamed over it, so no reader sees a file that is not whole.
 func (w Writer) PlaceFile(
 	ctx context.Context, pluginID, name, path, expectedHash string, baseline *domain.FileStat,
-) (_ domain.FileStat, err error) {
+) (domain.FileStat, error) {
 	v, err := w.session.open()
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	store, err := w.StoreReaders(v, pluginID)
-	if err != nil {
-		return domain.FileStat{}, err
-	}
-	staged, _, err := store.Open(ctx, name)
-	if err != nil {
-		return domain.FileStat{}, err
-	}
-	defer func() { err = errors.Join(err, staged.Close()) }()
-	if err := checkStaged(staged, expectedHash); err != nil {
-		return domain.FileStat{}, err
-	}
-	if err := w.checkTarget(ctx, v, path, baseline); err != nil {
-		return domain.FileStat{}, err
-	}
-	folders, err := w.Folders.OpenFolderWriter(v)
-	if err != nil {
-		return domain.FileStat{}, err
-	}
-	if err := folders.Import(ctx, path, staged); err != nil {
+	if err := w.copyStaged(ctx, v, pluginID, name, path, expectedHash, baseline); err != nil {
 		return domain.FileStat{}, err
 	}
 	err = w.Index.Execute(ctx, v, []string{path})
@@ -133,6 +117,34 @@ func (w Writer) PlaceFile(
 		return domain.FileStat{}, err
 	}
 	return w.finishPlacing(ctx, v, pluginID, name, path)
+}
+
+func (w Writer) copyStaged(
+	ctx context.Context, v domain.Vault, pluginID, name, path, expectedHash string, baseline *domain.FileStat,
+) (err error) {
+	store, err := w.StoreReaders(v, pluginID)
+	if err != nil {
+		return err
+	}
+	staged, _, err := store.Open(ctx, name)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, staged.Close()) }()
+	if err := checkStaged(staged, expectedHash); err != nil {
+		return err
+	}
+	if err := w.checkTarget(ctx, v, path, baseline); err != nil {
+		return err
+	}
+	folders, err := w.Folders.OpenFolderWriter(v)
+	if err != nil {
+		return err
+	}
+	if baseline != nil {
+		return folders.Replace(ctx, path, staged)
+	}
+	return folders.Import(ctx, path, staged)
 }
 
 func checkStaged(staged io.ReadSeeker, expectedHash string) error {

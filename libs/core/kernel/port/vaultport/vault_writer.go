@@ -17,6 +17,8 @@ type NoteWriter interface {
 type FolderWriter interface {
 	MakeFolder(ctx context.Context, path string) error
 	Import(ctx context.Context, path string, content io.Reader) error
+	// Replace streams content over the file at path, whole or not at all.
+	Replace(ctx context.Context, path string, content io.Reader) error
 }
 
 type FileMover interface {
