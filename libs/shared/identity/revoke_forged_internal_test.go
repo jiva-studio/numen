@@ -12,6 +12,8 @@ type forgery struct {
 	signer  DeviceKey
 	chain   Chain
 	revoked DevicePublicKey
+	other   DeviceKey
+	keys    AccountKeys
 }
 
 func newForgery(tb testing.TB) forgery {
@@ -41,7 +43,7 @@ func newForgery(tb testing.TB) forgery {
 	if err != nil {
 		tb.Fatalf("RevokeDevice() = %v", err)
 	}
-	return forgery{signer: devices[0], chain: revoked, revoked: devices[2].Public()}
+	return forgery{signer: devices[0], chain: revoked, revoked: devices[2].Public(), other: devices[1], keys: keys}
 }
 
 func (f forgery) resign(change func(*Entry)) Chain {
