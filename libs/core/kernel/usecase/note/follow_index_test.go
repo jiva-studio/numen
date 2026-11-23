@@ -23,7 +23,7 @@ func TestFollowIndex_DropsOnlyTheOutdatedIndexError(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			outdated, err := note.NewFollowIndex(&followReport{}).Execute(c.err)
+			outdated, err := note.NewFollowIndex(&followReport{}).Settle(c.err)
 			if outdated != c.outdated || !errors.Is(err, c.want) || (c.want == nil && err != nil) {
 				t.Errorf("got outdated %v, err %v; want %v, %v", outdated, err, c.outdated, c.want)
 			}

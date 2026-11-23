@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
-// cutSnippet returns the window around the hit of a search result and the matched query spans inside it.
 func cutSnippet(text string, matchOffset int, query string) (string, []domain.UnitRange) {
 	read, matched := nearby(text, matchOffset)
 	return getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))

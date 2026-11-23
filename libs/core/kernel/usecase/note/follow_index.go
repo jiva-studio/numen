@@ -10,9 +10,9 @@ func NewFollowIndex(follow IndexFollow) *FollowIndex {
 	return &FollowIndex{follow: follow}
 }
 
-// Execute reports whether the index did not follow the write that ended in err. A write that reached the vault
+// Settle reports whether the index did not follow the write that ended in err. A write that reached the vault
 // and not the index has happened, so its error is dropped and every other error is returned.
-func (u *FollowIndex) Execute(err error) (bool, error) {
+func (u *FollowIndex) Settle(err error) (bool, error) {
 	if u.follow.IsIndexOutdated(err) {
 		return true, nil
 	}
