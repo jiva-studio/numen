@@ -50,7 +50,7 @@ func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 
 	noVault := hosttest.New("vault")
 	noVault.Hide()
-	noVaultWriter := testsupport.NewWriter(t, testsupport.FilesOf(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
+	noVaultWriter := testsupport.NewWriter(t, testsupport.NewFiles(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
 	noVaultCommands, err := newCommands(noVaultWriter)
 	if err != nil {
 		t.Fatal(err)

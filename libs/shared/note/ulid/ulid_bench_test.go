@@ -26,7 +26,7 @@ func BenchmarkValid(b *testing.B) {
 	}
 	b.ReportAllocs()
 	for b.Loop() {
-		if !ulid.Valid(id) {
+		if !ulid.IsValid(id) {
 			b.Fatal("invalid")
 		}
 	}

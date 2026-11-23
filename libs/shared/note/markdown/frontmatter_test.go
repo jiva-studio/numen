@@ -69,7 +69,7 @@ func TestSetAddsAKeyThatWasNotThere(t *testing.T) {
 	if !strings.Contains(got, "apple: 2\n") || !strings.Contains(got, "id: 01J8F3K2M9QRSTVWXYZ012\n") {
 		t.Fatalf("expected both keys:\n%s", got)
 	}
-	if id, ok := reopen(t, got).Identifier(); !ok || id != "01J8F3K2M9QRSTVWXYZ012" {
+	if id, ok := reopen(t, got).GetIdentifier(); !ok || id != "01J8F3K2M9QRSTVWXYZ012" {
 		t.Errorf("the identifier did not survive a reopen: %q %v", id, ok)
 	}
 }
@@ -682,7 +682,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 
 	got := string(d.Bytes())
 	back := reopen(t, got)
-	if id, ok := back.Identifier(); !ok || id != "01J8" {
+	if id, ok := back.GetIdentifier(); !ok || id != "01J8" {
 		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
 	}
 	front := Parse(domain.FileStat{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
@@ -941,10 +941,10 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("render(nested) = (%q, %v), want %q", rendered, err, "outer:\n  inner: val\n")
 	}
 
-	if got := pair(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got.name != nil || got.value != nil {
+	if got := findPair(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got.name != nil || got.value != nil {
 		t.Fatalf("pair on SequenceNode = %+v, want empty", got)
 	}
-	if got := pair(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got.name != nil {
+	if got := findPair(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got.name != nil {
 		t.Fatalf("pair on odd Content = %+v, want empty", got)
 	}
 	pairMap := &yaml.Node{
@@ -956,7 +956,7 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Value: "v2"},
 		},
 	}
-	if got := pair(pairMap, "k2"); got.value == nil || got.value.Value != "v2" {
+	if got := findPair(pairMap, "k2"); got.value == nil || got.value.Value != "v2" {
 		t.Fatalf("pair(pairMap, k2) = %+v, want v2", got)
 	}
 
@@ -998,7 +998,7 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 	if err := oneByteFrontDoc.SetIdentifier("01J8"); err != nil {
 		t.Fatalf("SetIdentifier on 1-byte comment front: %v", err)
 	}
-	if id, ok := oneByteFrontDoc.Identifier(); !ok || id != "01J8" {
+	if id, ok := oneByteFrontDoc.GetIdentifier(); !ok || id != "01J8" {
 		t.Fatalf("Identifier after 1-byte comment front = (%q, %v)", id, ok)
 	}
 
@@ -1023,36 +1023,36 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 	}
 
 	indentDoc := &Document{front: []byte("  a: 1\n")}
-	if got := indentDoc.indent(&yaml.Node{Kind: yaml.MappingNode}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Kind: yaml.MappingNode}); got != "" {
 		t.Fatalf("indent empty Content = %q, want empty", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 1}}}); got != "  " {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 1}}}); got != "  " {
 		t.Fatalf("indent 1-item Content = %q, want 2 spaces", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 0}}}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 0}}}); got != "" {
 		t.Fatalf("indent Line 0 = %q, want empty", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 2}}}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 2}}}); got != "" {
 		t.Fatalf("indent Line==len(lines) = %q, want empty", got)
 	}
 
-	if got := string(indentLines([]byte("x"), "  ")); got != "  x" {
+	if got := string(addIndentToLines([]byte("x"), "  ")); got != "  x" {
 		t.Fatalf("indentLines 1-byte = %q, want %q", got, "  x")
 	}
-	if got := string(indentLines([]byte("\na\n \nb"), "  ")); got != "\n  a\n \n  b" {
+	if got := string(addIndentToLines([]byte("\na\n \nb"), "  ")); got != "\n  a\n \n  b" {
 		t.Fatalf("indentLines multi = %q, want %q", got, "\n  a\n \n  b")
 	}
 }
 
 func TestSpanAndEndLineBoundaries(t *testing.T) {
 	d := &Document{front: []byte("a: 1\nb: 2\n")}
-	if s, e, ok := d.span(nil, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(nil, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(nil) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(odd Content) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(
+	if s, e, ok := d.findSpan(
 		&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a", Line: 1, Column: 1}, {Value: "1", Line: 1}}},
 		"missing",
 	); s != 0 || e != 0 ||
@@ -1071,14 +1071,14 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Value: "2", Line: 2, Column: 4},
 		},
 	}
-	if s, e, ok := d.span(dupSpanNode, "k"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(dupSpanNode, "k"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(dupSpanNode, k) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
-	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 0}, {Value: "1", Line: 1}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 0}, {Value: "1", Line: 1}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(keyLine 0) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 3}, {Value: "1", Line: 3}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 3}, {Value: "1", Line: 3}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(keyLine>=len(lines)) = (%d, %d, %v)", s, e, ok)
 	}
 
@@ -1090,7 +1090,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readMapping seqDoc: %v", err)
 	}
-	if s, e, ok := seqDoc.span(seqMap, "tags"); !ok || s != 0 || e != len(seqDoc.front) {
+	if s, e, ok := seqDoc.findSpan(seqMap, "tags"); !ok || s != 0 || e != len(seqDoc.front) {
 		t.Fatalf("span(seqDoc, tags) = (%d, %d, %v), want (0, %d, true)", s, e, ok, len(seqDoc.front))
 	}
 
@@ -1100,7 +1100,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 0},
 		},
 	}
-	if s, e, ok := d.span(zeroValNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(zeroValNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(zeroValNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1112,7 +1112,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 2},
 		},
 	}
-	if s, e, ok := d.span(clampNextNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(clampNextNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(clampNextNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1125,7 +1125,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 3, Column: 4},
 		},
 	}
-	if s, e, ok := withCommentDoc.span(withCommentNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := withCommentDoc.findSpan(withCommentNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(withCommentNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1135,11 +1135,11 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.MappingNode, Line: 10},
 		},
 	}
-	if s, e, ok := d.span(clampLinesNode, "a"); !ok || s != 0 || e != 10 {
+	if s, e, ok := d.findSpan(clampLinesNode, "a"); !ok || s != 0 || e != 10 {
 		t.Fatalf("span(clampLinesNode) = (%d, %d, %v), want (0, 10, true)", s, e, ok)
 	}
 
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	if got := d.endLine(lines, nil, 1); got != 0 {
 		t.Fatalf("endLine(nil) = %d, want 0", got)
 	}
@@ -1172,12 +1172,12 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 	}
 
 	scalarDoc := &Document{front: []byte("a: |\n  x\n\n b\nc: 2\n  d: 3\n")}
-	scalarLines := lineOffsets(scalarDoc.front)
+	scalarLines := getLineOffsets(scalarDoc.front)
 	if got := scalarDoc.endLineOfScalar(scalarLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 4 {
 		t.Fatalf("endLineOfScalar = %d, want 4", got)
 	}
 	twoLineDoc := &Document{front: []byte("a: |\n  x\n")}
-	twoLines := lineOffsets(twoLineDoc.front)
+	twoLines := getLineOffsets(twoLineDoc.front)
 	if got := twoLineDoc.endLineOfScalar(twoLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 2 {
 		t.Fatalf("endLineOfScalar(twoLineDoc) = %d, want 2", got)
 	}
@@ -1250,10 +1250,10 @@ func TestReadMappingAndNodePredicates(t *testing.T) {
 
 func TestKeysMethodsAndBoundaries(t *testing.T) {
 	emptyDoc := &Document{}
-	if id, ok := emptyDoc.Identifier(); id != "" || ok {
+	if id, ok := emptyDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("emptyDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := emptyDoc.Title(); title != "" || ok {
+	if title, ok := emptyDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("emptyDoc.Title() = (%q, %v)", title, ok)
 	}
 	if list, ok := emptyDoc.List("tags"); list != nil || ok {
@@ -1261,16 +1261,16 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	}
 
 	badDoc := &Document{front: []byte(": bad")}
-	if id, ok := badDoc.Identifier(); id != "" || ok {
+	if id, ok := badDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("badDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := badDoc.Title(); title != "" || ok {
+	if title, ok := badDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("badDoc.Title() = (%q, %v)", title, ok)
 	}
 	if list, ok := badDoc.List("tags"); list != nil || ok {
 		t.Fatalf("badDoc.List() = (%v, %v)", list, ok)
 	}
-	if names, ok := badDoc.EntryNames("load"); names != nil || ok {
+	if names, ok := badDoc.ListEntryNames("load"); names != nil || ok {
 		t.Fatalf("badDoc.EntryNames() = (%v, %v)", names, ok)
 	}
 
@@ -1280,10 +1280,10 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 			Content: []*yaml.Node{{Kind: yaml.ScalarNode, Value: "id"}},
 		},
 	}
-	if id, ok := oddMappingDoc.Identifier(); id != "" || ok {
+	if id, ok := oddMappingDoc.GetIdentifier(); id != "" || ok {
 		t.Fatalf("oddMappingDoc.Identifier() = (%q, %v)", id, ok)
 	}
-	if title, ok := oddMappingDoc.Title(); title != "" || ok {
+	if title, ok := oddMappingDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("oddMappingDoc.Title() = (%q, %v)", title, ok)
 	}
 
@@ -1291,10 +1291,10 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open valCollisionDoc: %v", err)
 	}
-	if id, ok := valCollisionDoc.Identifier(); !ok || id != "real-id" {
+	if id, ok := valCollisionDoc.GetIdentifier(); !ok || id != "real-id" {
 		t.Fatalf("valCollisionDoc.Identifier() = (%q, %v), want real-id", id, ok)
 	}
-	if title, ok := valCollisionDoc.Title(); !ok || title != "real-title" {
+	if title, ok := valCollisionDoc.GetTitle(); !ok || title != "real-title" {
 		t.Fatalf("valCollisionDoc.Title() = (%q, %v), want real-title", title, ok)
 	}
 
@@ -1302,7 +1302,7 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open blankTitleDoc: %v", err)
 	}
-	if title, ok := blankTitleDoc.Title(); title != "" || ok {
+	if title, ok := blankTitleDoc.GetTitle(); title != "" || ok {
 		t.Fatalf("blankTitleDoc.Title() = (%q, %v), want empty/false", title, ok)
 	}
 
@@ -1325,20 +1325,20 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 		t.Fatalf("mixedListDoc.List() = (%v, %v), want [keep]", list, ok)
 	}
 
-	if got := emptyDoc.entries(nil, "load"); got == nil || got.Kind != yaml.MappingNode {
+	if got := emptyDoc.findEntries(nil, "load"); got == nil || got.Kind != yaml.MappingNode {
 		t.Fatalf("entries(nil) = %+v, want MappingNode", got)
 	}
 	nullEntryDoc, err := Open([]byte("---\nload:\nscalar: 1\n---\n"))
 	if err != nil {
 		t.Fatalf("Open nullEntryDoc: %v", err)
 	}
-	if names, ok := nullEntryDoc.EntryNames("load"); !ok || len(names) != 0 {
+	if names, ok := nullEntryDoc.ListEntryNames("load"); !ok || len(names) != 0 {
 		t.Fatalf("EntryNames(null load) = (%v, %v), want empty/true", names, ok)
 	}
-	if names, ok := nullEntryDoc.EntryNames("missing"); !ok || len(names) != 0 {
+	if names, ok := nullEntryDoc.ListEntryNames("missing"); !ok || len(names) != 0 {
 		t.Fatalf("EntryNames(missing) = (%v, %v), want empty/true", names, ok)
 	}
-	if names, ok := nullEntryDoc.EntryNames("scalar"); ok || names != nil {
+	if names, ok := nullEntryDoc.ListEntryNames("scalar"); ok || names != nil {
 		t.Fatalf("EntryNames(scalar) = (%v, %v), want nil/false", names, ok)
 	}
 
@@ -1360,7 +1360,7 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}, {Key: "sat", IsVerbatim: true}}); err != nil {
 		t.Fatalf("SetMapping partial verbatim: %v", err)
 	}
-	if names, ok := verbatimDoc.EntryNames("load"); !ok || !reflect.DeepEqual(names, []string{"sat"}) {
+	if names, ok := verbatimDoc.ListEntryNames("load"); !ok || !reflect.DeepEqual(names, []string{"sat"}) {
 		t.Fatalf("EntryNames after partial verbatim = (%v, %v)", names, ok)
 	}
 	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}}); err != nil {
@@ -1677,13 +1677,13 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 
 func TestScalarHelpersAndBoundaries(t *testing.T) {
 	d := &Document{front: []byte("\"actual\"\n")}
-	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.MappingNode}); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findScalarSpan(&yaml.Node{Kind: yaml.MappingNode}); s != 0 || e != 0 || ok {
 		t.Fatalf("scalarSpan(MappingNode) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findScalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
 		t.Fatalf("scalarSpan(LiteralStyle) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.scalarSpan(
+	if s, e, ok := d.findScalarSpan(
 		&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Line: 1, Column: 1, Value: "mismatch"},
 	); s != 0 || e != 0 ||
 		ok {
@@ -1764,13 +1764,13 @@ func TestScalarHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("findQuotedEnd(multiline) = (%d, %v)", end, ok)
 	}
 
-	if got, err := scalarLike("true", 0); err != nil || got != `"true"` {
+	if got, err := encodeScalarLike("true", 0); err != nil || got != `"true"` {
 		t.Fatalf("scalarLike(true, 0) = (%q, %v), want \"true\"", got, err)
 	}
-	if got, err := scalarLike("true", yaml.TaggedStyle); err != nil || got != "true" {
+	if got, err := encodeScalarLike("true", yaml.TaggedStyle); err != nil || got != "true" {
 		t.Fatalf("scalarLike(true, TaggedStyle) = (%q, %v), want true", got, err)
 	}
-	if got, err := scalarLike("a\r\nb", yaml.SingleQuotedStyle); err != nil || got != `"a\r\nb"` {
+	if got, err := encodeScalarLike("a\r\nb", yaml.SingleQuotedStyle); err != nil || got != `"a\r\nb"` {
 		t.Fatalf("scalarLike(CRLF, SingleQuotedStyle) = (%q, %v), want \"a\\r\\nb\"", got, err)
 	}
 }

@@ -32,7 +32,7 @@ export type { ListItem } from './shared/ui/searchable-list'
 /** Whether a key was pressed into something being written in. */
 export { isTyping } from './shared/lib/dom/typing'
 
-export { KeyCap, keyChord } from './shared/ui/key-cap'
+export { KeyCap, getKeyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
 
 export {
@@ -59,7 +59,7 @@ export { Skeleton } from './shared/ui/skeleton'
 /** A link that leads out of the application, and the window held against it. */
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
+export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
 export type { LinkPiece } from './shared/lib/text/marks'
@@ -86,7 +86,7 @@ export {
   nav,
   win,
 } from './shared/api/dom'
-export { cn } from './shared/lib/dom/classes'
+export { joinClasses } from './shared/lib/dom/classes'
 
 /** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
 export { stepTo } from './shared/lib/dom/roving'

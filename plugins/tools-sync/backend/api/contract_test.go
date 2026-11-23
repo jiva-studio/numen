@@ -11,40 +11,40 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		api.MethodListVaults: {Request: func() any { return &api.ListVaultsRequest{} }, Response: func() any { return &api.ListVaultsResponse{} }},
+		api.MethodListVaults: {CreateRequest: func() any { return &api.ListVaultsRequest{} }, CreateResponse: func() any { return &api.ListVaultsResponse{} }},
 		api.MethodListRemoteVaults: {
-			Request: func() any { return &api.ListRemoteVaultsRequest{} }, Response: func() any { return &api.ListRemoteVaultsResponse{} },
+			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
-		api.MethodConnectVault: {Request: func() any { return &api.ConnectVaultRequest{} }, Response: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodGetStatus:    {Request: func() any { return &api.GetStatusRequest{} }, Response: func() any { return &api.GetStatusResponse{} }},
+		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
+		api.MethodGetStatus:    {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
 		api.MethodGetSubscription: {
-			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
+			CreateRequest: func() any { return &api.GetSubscriptionRequest{} }, CreateResponse: func() any { return &api.GetSubscriptionResponse{} },
 		},
 		api.MethodCreateCheckout: {
-			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
+			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
 		api.MethodGetReaderCode: {
-			Request: func() any { return &api.GetReaderCodeRequest{} }, Response: func() any { return &api.GetReaderCodeResponse{} },
+			CreateRequest: func() any { return &api.GetReaderCodeRequest{} }, CreateResponse: func() any { return &api.GetReaderCodeResponse{} },
 		},
 		api.MethodReadReaderCode: {
-			Request: func() any { return &api.ReadReaderCodeRequest{} }, Response: func() any { return &api.ReadReaderCodeResponse{} },
+			CreateRequest: func() any { return &api.ReadReaderCodeRequest{} }, CreateResponse: func() any { return &api.ReadReaderCodeResponse{} },
 		},
-		api.MethodGetShare: {Request: func() any { return &api.GetShareRequest{} }, Response: func() any { return &api.GetShareResponse{} }},
+		api.MethodGetShare: {CreateRequest: func() any { return &api.GetShareRequest{} }, CreateResponse: func() any { return &api.GetShareResponse{} }},
 		api.MethodAddReader: {
-			Request: func() any { return &api.AddReaderRequest{} }, Response: func() any { return &api.AddReaderResponse{} },
+			CreateRequest: func() any { return &api.AddReaderRequest{} }, CreateResponse: func() any { return &api.AddReaderResponse{} },
 		},
 		api.MethodRemoveReader: {
-			Request: func() any { return &api.RemoveReaderRequest{} }, Response: func() any { return &api.RemoveReaderResponse{} },
+			CreateRequest: func() any { return &api.RemoveReaderRequest{} }, CreateResponse: func() any { return &api.RemoveReaderResponse{} },
 		},
-		api.MethodStopShare: {Request: func() any { return &api.StopShareRequest{} }, Response: func() any { return &api.StopShareResponse{} }},
+		api.MethodStopShare: {CreateRequest: func() any { return &api.StopShareRequest{} }, CreateResponse: func() any { return &api.StopShareResponse{} }},
 		api.MethodReadInvitation: {
-			Request: func() any { return &api.ReadInvitationRequest{} }, Response: func() any { return &api.ReadInvitationResponse{} },
+			CreateRequest: func() any { return &api.ReadInvitationRequest{} }, CreateResponse: func() any { return &api.ReadInvitationResponse{} },
 		},
 		api.MethodAcceptInvitation: {
-			Request: func() any { return &api.AcceptInvitationRequest{} }, Response: func() any { return &api.AcceptInvitationResponse{} },
+			CreateRequest: func() any { return &api.AcceptInvitationRequest{} }, CreateResponse: func() any { return &api.AcceptInvitationResponse{} },
 		},
 		api.MethodListReceived: {
-			Request: func() any { return &api.ListReceivedRequest{} }, Response: func() any { return &api.ListReceivedResponse{} },
+			CreateRequest: func() any { return &api.ListReceivedRequest{} }, CreateResponse: func() any { return &api.ListReceivedResponse{} },
 		},
 	}
 }

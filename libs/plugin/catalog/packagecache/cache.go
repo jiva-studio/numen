@@ -48,7 +48,7 @@ func DefaultDir() (string, error) {
 	return filepath.Join(base, "numen", "packages"), nil
 }
 
-func (c *Cache) pathOf(checksum string) (string, error) {
+func (c *Cache) getPath(checksum string) (string, error) {
 	if !checksumPattern.MatchString(checksum) {
 		return "", fmt.Errorf("%w: %q", catalog.ErrInvalidChecksum, checksum)
 	}
@@ -58,7 +58,7 @@ func (c *Cache) pathOf(checksum string) (string, error) {
 // Put stores the content under the checksum after hashing it. Content whose hash differs is
 // refused with catalog.ErrChecksumMismatch and leaves no file.
 func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) error {
-	destination, err := c.pathOf(checksum)
+	destination, err := c.getPath(checksum)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) err
 
 // Open returns the package after hashing it. A package that fails the check is removed.
 func (c *Cache) Open(ctx context.Context, checksum string) (io.ReadCloser, error) {
-	source, err := c.pathOf(checksum)
+	source, err := c.getPath(checksum)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (c *Cache) Open(ctx context.Context, checksum string) (io.ReadCloser, error
 }
 
 func (c *Cache) Remove(ctx context.Context, checksum string) error {
-	target, err := c.pathOf(checksum)
+	target, err := c.getPath(checksum)
 	if err != nil {
 		return err
 	}

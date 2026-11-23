@@ -90,7 +90,7 @@ type Callers struct {
 	Account      Account
 	Restore      AccountRestore
 	Lent         *Services
-	Tools        func() PluginTools
+	GetTools     func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes

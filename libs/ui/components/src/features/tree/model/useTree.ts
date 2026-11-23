@@ -16,7 +16,7 @@ interface TreeInput {
   readonly selected: readonly RowId[]
   readonly threshold: number
   readonly clock: Clock
-  readonly counted: (rows: number) => string
+  readonly getCountText: (rows: number) => string
 }
 
 export interface TreeOptions {
@@ -69,7 +69,7 @@ export function useTree(options: TreeOptions) {
     },
     getThreshold: () => input.threshold,
     getClock: () => input.clock,
-    getCountWords: () => input.counted,
+    getCountWords: () => input.getCountText,
     emit,
   })
 
@@ -87,7 +87,7 @@ export function useTree(options: TreeOptions) {
     emit,
   })
 
-  const renaming = createTreeRenaming(renamingPath, rows, emit)
+  const renamer = createTreeRenaming(renamingPath, rows, emit)
 
   return {
     visibleRows,
@@ -97,6 +97,6 @@ export function useTree(options: TreeOptions) {
     picked: selection.picked,
     drag,
     gestures,
-    renaming,
+    renamer,
   }
 }

@@ -102,7 +102,7 @@ func newShelfWorld(t *testing.T) world {
 
 func (w world) newShelfFind(plugin *shelfPlugin) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
-	deps.Catalog = getShelfCatalog
+	deps.GetCatalog = getShelfCatalog
 	deps.Evaluate.Functions = plugin
 	return searchquerytest.New(deps)
 }

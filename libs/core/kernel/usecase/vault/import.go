@@ -53,14 +53,14 @@ func (u Import) Execute(
 			return result, err
 		}
 		name := u.files.GetName(handle)
-		if err := u.bring(ctx, writer, v, handle, path.Join(into, name), &result); err != nil {
+		if err := u.importEntry(ctx, writer, v, handle, path.Join(into, name), &result); err != nil {
 			result.Errors = append(result.Errors, vaultdomain.ImportFailure{Name: name, Why: err})
 		}
 	}
 	return result, nil
 }
 
-func (u Import) bring(
+func (u Import) importEntry(
 	ctx context.Context,
 	writer vaultport.FolderWriter,
 	v domain.Vault,
@@ -105,7 +105,7 @@ func (u Import) importFolder(
 		return err
 	}
 	for _, one := range entries {
-		if err := u.bring(ctx, writer, v, one.Handle, path.Join(to, one.Name), result); err != nil {
+		if err := u.importEntry(ctx, writer, v, one.Handle, path.Join(to, one.Name), result); err != nil {
 			result.Errors = append(result.Errors, vaultdomain.ImportFailure{Name: one.Name, Why: err})
 		}
 	}

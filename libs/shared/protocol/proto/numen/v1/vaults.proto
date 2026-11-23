@@ -153,10 +153,10 @@ message RemoveVaultRequest {
   // The vault to remove, by its identity.
   string id = 1;
 
-  // Trash sends the folder to the trash of this machine, where a person
+  // is_folder_trashed sends the folder to the trash of this machine, where a person
   // deleted. A folder no longer carrying this vault's identity stays where it
   // is and the vault stays on the list.
-  bool trash = 2;
+  bool is_folder_trashed = 2;
 }
 
 message RemoveVaultResponse {

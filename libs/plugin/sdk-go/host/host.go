@@ -80,12 +80,12 @@ type VaultIndex interface {
 	// EnsureIndexed starts reading the vault into the index when it is not there, and returns the index
 	// state. The work continues after it returns.
 	EnsureIndexed(ctx context.Context) (IndexState, error)
-	// WatchMoves signals that something moved in some vault, until ctx is done. It returns once the
+	// WatchIndexChanges signals that something moved in some vault, until ctx is done. It returns once the
 	// watch is active, and the channel closes when the watch ends.
-	WatchMoves(ctx context.Context) (<-chan Move, error)
+	WatchIndexChanges(ctx context.Context) (<-chan Move, error)
 	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
-	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
 // FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of
@@ -127,13 +127,13 @@ type FileWriter interface {
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
-	GetNamedPaths(ctx context.Context, name string) ([]string, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListNamedPaths(ctx context.Context, name string) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 type LinkLookup interface {
-	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error)
 }
 

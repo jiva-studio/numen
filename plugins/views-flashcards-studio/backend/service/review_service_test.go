@@ -156,7 +156,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // their vaults are gone.
 func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
-	handler := New(Config{Vaults: unreadable{Vault: installation.Host}.vaults(), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()}).newReviewHandler()
+	handler := New(Config{GetVault: unreadable{Vault: installation.Host}.vaults(), Store: vaulttest.NewFolders(installation.Host), Now: vaulttest.NewClock()}).newReviewHandler()
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(t.Context(),
 		&api.WatchCardsDueRequest{})
@@ -223,7 +223,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
 	v := target[0]
-	reviewCards := handler.flash().Schedules.Schedules.ReviewCards()
+	reviewCards := handler.getFlashReview().Schedules.Schedules.ReviewCards()
 
 	before, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || len(before) != 1 {
@@ -282,7 +282,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log.Stores = unopenable{}
+	handler.getFlashReview().Reviews.Log.Stores = unopenable{}
 
 	out, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -298,8 +298,8 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Counts.GetReviewDays = flashcards.NewGetReviewDays(
-		flashcards.NewCountReviews(unopenable{}, handler.flash().Schedules.Schedules, getReviewDay(), vaulttest.NewClock()))
+	handler.getFlashReview().Counts.GetReviewDays = flashcards.NewGetReviewDays(
+		flashcards.NewCountReviews(unopenable{}, handler.getFlashReview().Schedules.Schedules, getReviewDay(), vaulttest.NewClock()))
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -405,7 +405,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log.Stores = refusingStores{}
+	handler.getFlashReview().Reviews.Log.Stores = refusingStores{}
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]

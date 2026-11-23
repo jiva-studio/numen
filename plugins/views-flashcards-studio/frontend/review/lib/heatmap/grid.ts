@@ -65,27 +65,27 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   // The grid running back from now: the Sunday ending the last week kept for
   // what is still to come, and the columns before it.
   const last = new Date(now)
-  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
+  last.setDate(last.getDate() + ((7 - getWeekday(last)) % 7) + weeks * ROWS)
   const startDate = new Date(last)
   startDate.setDate(startDate.getDate() - (columns * ROWS - 1))
 
   // The grid opened on the current week, which is the case for a vault with no
   // history: every column is in the future and this is the furthest end the range
   // can have.
-  const opens = monday(now)
+  const opens = findMonday(now)
   const ahead = new Date(opens)
   ahead.setDate(ahead.getDate() + columns * ROWS - 1)
 
   return { from: getDayName(startDate), to: getDayName(ahead) }
 }
 
-function monday(date: Date): Date {
+function findMonday(date: Date): Date {
   const out = new Date(date)
-  out.setDate(out.getDate() - (weekday(out) - 1))
+  out.setDate(out.getDate() - (getWeekday(out) - 1))
   return out
 }
 
-function weekday(date: Date): number {
+function getWeekday(date: Date): number {
   const day = date.getDay()
   return day === 0 ? 7 : day
 }

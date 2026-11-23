@@ -15,35 +15,35 @@ import (
 // Session chooses the vault a call works, follows it, and tells the window that a call changed a file.
 // Each other group of the vault reads the vault of a call through it.
 type Session struct {
-	Current    func() (domain.Vault, bool)
-	Vaults     func() ([]domain.Vault, error)
+	GetCurrent func() (domain.Vault, bool)
+	ListVaults func() ([]domain.Vault, error)
 	Find       func(id domain.VaultID) (domain.Vault, error)
 	IndexState func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
-	Moved      func(ctx context.Context) (<-chan struct{}, error)
+	WatchMoves func(ctx context.Context) (<-chan struct{}, error)
 	indexing.WriteWake
 
 	rebuild func(found domain.Vault) *vault.Access
 }
 
-func (s *Session) showing(found domain.Vault) Session {
+func (s *Session) selectVault(found domain.Vault) Session {
 	return Session{
-		Current: func() (domain.Vault, bool) { return found, true }, Vaults: s.Vaults, Find: s.Find,
-		IndexState: s.IndexState, Moved: s.Moved, WriteWake: s.WriteWake,
+		GetCurrent: func() (domain.Vault, bool) { return found, true }, ListVaults: s.ListVaults, Find: s.Find,
+		IndexState: s.IndexState, WatchMoves: s.WatchMoves, WriteWake: s.WriteWake,
 	}
 }
 
 // GetVault returns the vault the window shows, if it shows one.
 func (s *Session) GetVault() (domain.Vault, bool) {
-	if s.Current == nil {
+	if s.GetCurrent == nil {
 		return domain.Vault{}, false
 	}
-	return s.Current()
+	return s.GetCurrent()
 }
 
 // GetVaults returns the vaults of the installation, or the vault shown when it lists none.
 func (s *Session) GetVaults() ([]domain.Vault, error) {
-	if s.Vaults != nil {
-		return s.Vaults()
+	if s.ListVaults != nil {
+		return s.ListVaults()
 	}
 	if v, showing := s.GetVault(); showing {
 		return []domain.Vault{v}, nil
@@ -82,12 +82,12 @@ func (s *Session) EnsureIndexed(ctx context.Context) (plugin.IndexState, error) 
 	return s.IndexState(ctx, v)
 }
 
-// WatchMoves reports each time the window moves.
-func (s *Session) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
-	if s.Moved == nil {
+// WatchIndexChanges reports each time the window moves.
+func (s *Session) WatchIndexChanges(ctx context.Context) (<-chan struct{}, error) {
+	if s.WatchMoves == nil {
 		return nil, fmt.Errorf("watch moves: %w", domain.ErrUnavailable)
 	}
-	return s.Moved(ctx)
+	return s.WatchMoves(ctx)
 }
 
 func (s *Session) open() (domain.Vault, error) {

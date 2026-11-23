@@ -27,7 +27,7 @@ func TestTheRelatedNotesOfANoteTellWhichWayAReferenceIsLinked(t *testing.T) {
 		direction v1.LinkDirection
 	}
 	got := map[string]item{}
-	for _, r := range graphOf(t, related.Msg).GetRelated() {
+	for _, r := range graphOf(t, related.Msg).GetRelatedNotes() {
 		got[r.GetNote().GetPath()] = item{r.GetRelation(), r.GetDirection()}
 	}
 	want := map[string]item{
@@ -62,7 +62,7 @@ func TestTwoNotesThatLinkEachOtherAreReferencesInBothDirections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := graphOf(t, related.Msg).GetRelated()
+	got := graphOf(t, related.Msg).GetRelatedNotes()
 	if len(got) != 1 || got[0].GetNote().GetPath() != "Alpha.md" ||
 		got[0].GetRelation() != v1.Relation_RELATION_REFERENCE ||
 		got[0].GetDirection() != v1.LinkDirection_LINK_DIRECTION_BOTH {

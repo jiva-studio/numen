@@ -7,7 +7,19 @@ import { ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { createPluginHost, type DeclaredSlotEntry, type PluginHost } from '@numen/plugin-loader'
+import {
+  createPluginHost,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
+  type DeclaredSlotEntry,
+  type PluginHost,
+} from '@numen/plugin-loader'
 import {
   createCommandDeps,
   createSearchRequests,
@@ -122,14 +134,14 @@ const createHost = (
     writeIssue: () => undefined,
   })
   const host = createPluginHost({
-    window: { target: 'desktop.editor' },
-    commands: slots.hostDeps.commands,
-    slots: { ...slots.hostDeps.slots, getSlotEntries: () => entries },
-    kinds: {
-      registerKind: () => () => undefined,
-      registerExtensionReader: () => () => undefined,
-    },
-    tabs: { openTab: () => Promise.resolve('tab-1') },
+    window: { ...NO_WINDOW, target: 'desktop.editor' },
+    plugins: NO_PLUGINS,
+    commands: { ...NO_COMMANDS, ...slots.hostDeps.commands },
+    slots: { ...NO_SLOTS, ...slots.hostDeps.slots, getSlotEntries: () => entries },
+    kinds: { ...NO_KINDS, registerKind: () => () => undefined },
+    tabs: { ...NO_TABS, openTab: () => Promise.resolve('tab-1') },
+    vault: NO_VAULT,
+    work: NO_WORK,
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
@@ -157,7 +169,7 @@ interface ComposeOptions {
   }
   readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
   readonly itemLists: {
-    fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+    readFileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   }
   readonly emitEvent?: ((event: string) => void) | undefined
 }
@@ -178,7 +190,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
-    declaredCommands,
+    commandDeclarations: declaredCommands,
     itemLists: options.itemLists,
     commandDeps,
     registry,
@@ -201,7 +213,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   })
   watchCommandLists(
     {
-      declaredCommands,
+      commandDeclarations: declaredCommands,
       writeMessage,
       plugins: settings.state.plugins,
       getCommittedSetting: settings.read.getCommittedSetting,
@@ -259,13 +271,13 @@ export function createRealWindow(parts: RealWindowParts) {
     },
     getTarget: () => NOTE,
     knows: { getTitle: () => '', getTabAt: () => null },
-    paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
+    paletteLists: { getStepGroups: () => [], applyItemPreview: () => undefined },
     runs: runSupport(),
     registry,
     reached: {
       getTabAt: () => null,
       getPath: (id: string) => id,
-      asking: () => false,
+      isAsking: () => false,
       flushPending: () => Promise.resolve(),
       close: () => undefined,
       openFile: () => undefined,
@@ -275,7 +287,7 @@ export function createRealWindow(parts: RealWindowParts) {
     pluginHost,
     settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
     declaredCommands,
-    itemLists: { fileKinds: () => Promise.resolve(new Map()) },
+    itemLists: { readFileKinds: () => Promise.resolve(new Map()) },
   }
   const noLinks = {
     tabs: [],
@@ -305,7 +317,7 @@ export function createRealWindow(parts: RealWindowParts) {
       files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
       vaults: {
         vaults: api.vault.vaults,
-        emptyTrash: api.vault.file.emptyTrash,
+        clearTrash: api.vault.file.emptyTrash,
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,

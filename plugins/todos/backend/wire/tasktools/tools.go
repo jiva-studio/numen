@@ -184,7 +184,7 @@ func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
 			return TaskOutput{}, err
 		}
 		if result.Refusal != "" {
-			return TaskOutput{}, refusalError(result.Refusal)
+			return TaskOutput{}, newRefusalError(result.Refusal)
 		}
 		result.Task.Path = in.Path
 		return encodeTask(result.Task), nil

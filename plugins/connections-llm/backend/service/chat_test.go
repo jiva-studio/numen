@@ -352,7 +352,7 @@ func TestAChatCanceledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 		t.Errorf("err = %v, want the cancellation", err)
 	}
 	select {
-	case <-fake.Aborted():
+	case <-fake.GetAbortSignal():
 	case <-time.After(5 * time.Second):
 		t.Error("the request to the service was not abandoned")
 	}

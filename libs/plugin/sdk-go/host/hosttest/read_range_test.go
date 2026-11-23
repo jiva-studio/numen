@@ -13,7 +13,7 @@ import (
 
 func TestReadRangeReadsTheBytesFromStartAsTextWithTheFileStat(t *testing.T) {
 	v := hosttest.New("Geology")
-	v.File("Rocks/Slate.md", "Slate splits into thin sheets.\n")
+	v.WriteFile("Rocks/Slate.md", "Slate splits into thin sheets.\n")
 
 	got, err := v.ReadRange(t.Context(), "Rocks/Slate.md", 6, 6)
 	if err != nil {
@@ -31,7 +31,7 @@ func TestReadRangeReadsTheBytesFromStartAsTextWithTheFileStat(t *testing.T) {
 func TestReadRangeSnapsStartForwardAndEndsOnAWholeCharacter(t *testing.T) {
 	v := hosttest.New("Geology")
 	// "ab" is bytes 0 and 1, "é" bytes 2 and 3, "cd" bytes 4 and 5.
-	v.File("Rocks/Gneiss.txt", "abécd")
+	v.WriteFile("Rocks/Gneiss.txt", "abécd")
 
 	inside, err := v.ReadRange(t.Context(), "Rocks/Gneiss.txt", 3, 10)
 	if err != nil {
@@ -52,7 +52,7 @@ func TestReadRangeSnapsStartForwardAndEndsOnAWholeCharacter(t *testing.T) {
 
 func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
 	v := hosttest.New("Geology")
-	v.File("Rocks/Sandstone.txt", strings.Repeat("s", 20000))
+	v.WriteFile("Rocks/Sandstone.txt", strings.Repeat("s", 20000))
 
 	for _, length := range []int{0, 50000} {
 		got, err := v.ReadRange(t.Context(), "Rocks/Sandstone.txt", 0, length)
@@ -74,7 +74,7 @@ func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
 
 func TestReadRangeOfBytesThatAreNotUTF8IsNotText(t *testing.T) {
 	v := hosttest.New("Geology")
-	v.File("Rocks/Core.bin", "CORE\xff\xfe\xfd\xfc")
+	v.WriteFile("Rocks/Core.bin", "CORE\xff\xfe\xfd\xfc")
 
 	_, err := v.ReadRange(t.Context(), "Rocks/Core.bin", 0, 100)
 
@@ -85,7 +85,7 @@ func TestReadRangeOfBytesThatAreNotUTF8IsNotText(t *testing.T) {
 
 func TestReadRangeOfAFolderOrAMissingFileIsNotExist(t *testing.T) {
 	v := hosttest.New("Geology")
-	v.File("Rocks/Slate.md", "Slate.\n")
+	v.WriteFile("Rocks/Slate.md", "Slate.\n")
 
 	for _, target := range []string{"Rocks", "Rocks/Chalk.md"} {
 		if _, err := v.ReadRange(t.Context(), target, 0, 100); !errors.Is(err, host.ErrNotExist) {
@@ -99,7 +99,7 @@ func newRangeTexts(t *testing.T, segments []domain.TextSegment) (*hosttest.Texts
 	ctx := t.Context()
 	file := []byte("%PDF")
 	texts := hosttest.NewTexts("v1", "org.example.ocr")
-	texts.File("Strata.pdf", file)
+	texts.WriteFile("Strata.pdf", file)
 	if err := host.WriteText(ctx, texts.GetStore("org.example.ocr"), "k.jsonl", segments); err != nil {
 		t.Fatal(err)
 	}

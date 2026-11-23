@@ -11,28 +11,28 @@ export class SearchResults {
     this.palette = new Palette(host)
   }
 
-  results(text: string, group: string): Locator {
+  getResults(text: string, group: string): Locator {
     return this.host.page.getByRole('group', { name: group }).getByRole('option').filter({ hasText: text })
   }
 
   /** The result named exactly by the words, or the first result that has them when no name is the same. */
   async pickRow(results: Locator, text: string): Promise<Locator> {
-    const named = results.filter({ has: this.palette.nameCell(new RegExp(`^${escapeRegExp(text)}$`)) })
+    const named = results.filter({ has: this.palette.getNameCell(new RegExp(`^${escapeRegExp(text)}$`)) })
     return (await named.count()) > 0 ? named.first() : results.first()
   }
 
   /** Every result of the open list. */
-  rows(): Locator {
-    return this.palette.rows()
+  getRows(): Locator {
+    return this.palette.getRows()
   }
 
   /** The groups that have not answered yet. */
-  busyGroups(): Locator {
-    return this.palette.busyGroups()
+  getBusyGroups(): Locator {
+    return this.palette.getBusyGroups()
   }
 
   /** The rows of the list of actions of the lit result. */
-  actionRows(): Locator {
+  getActionRows(): Locator {
     return this.host.page.locator('[data-actions="list"] [role="option"]')
   }
 
@@ -43,8 +43,8 @@ export class SearchResults {
   }
 
   /** The action rows named exactly by the words. */
-  actionNamed(action: string): Locator {
+  getActionNamed(action: string): Locator {
     const name = new RegExp('^' + escapeRegExp(action) + '$')
-    return this.actionRows().filter({ has: this.host.page.locator('[data-actions="name"]', { hasText: name }) })
+    return this.getActionRows().filter({ has: this.host.page.locator('[data-actions="name"]', { hasText: name }) })
   }
 }

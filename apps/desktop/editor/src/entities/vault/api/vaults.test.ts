@@ -43,7 +43,7 @@ describe('a vault requested for', () => {
     expect(await vaults.choose('Pick')).toBe('')
     expect(requestLog.chooseFolder.mock.calls.at(-1)?.[0]).toMatchObject({
       title: 'Pick',
-      startingAt: '',
+      startFolder: '',
     })
 
     requestLog.chooseFolder.mockResolvedValue({ isChosen: true, path: '/v2' })
@@ -95,7 +95,10 @@ describe('a vault requested for', () => {
     const vaults = getVaults()
     requestLog.removeVault.mockResolvedValue({})
     expect(await vaults.remove('v1', true)).toStrictEqual({ ok: true, value: null })
-    expect(requestLog.removeVault.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'v1', trash: true })
+    expect(requestLog.removeVault.mock.calls.at(-1)?.[0]).toMatchObject({
+      id: 'v1',
+      isFolderTrashed: true,
+    })
 
     requestLog.openVault.mockResolvedValue({})
     expect(await vaults.open('v1')).toStrictEqual({ ok: true, value: null })

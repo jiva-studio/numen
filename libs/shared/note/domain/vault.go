@@ -87,7 +87,7 @@ func (vs Vaults) CheckOverlap(path string) error {
 // name typed at a command line match despite differing composition and case.
 func (vs Vaults) FindByName(name string, self VaultID) (Vault, bool) {
 	for _, v := range vs {
-		if v.ID != self && FoldName(v.Name) == FoldName(name) {
+		if v.ID != self && NormalizeName(v.Name) == NormalizeName(name) {
 			return v, true
 		}
 	}
@@ -120,7 +120,7 @@ func IsAbsPath(path string) bool {
 	return filepath.IsAbs(path)
 }
 
-// BasePath returns the last element of path.
-func BasePath(path string) string {
+// GetBasePath returns the last element of path.
+func GetBasePath(path string) string {
 	return filepath.Base(path)
 }

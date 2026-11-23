@@ -65,7 +65,7 @@ type latticeNode struct {
 	isSet bool
 }
 
-func relaxNode(best []latticeNode, start, end, id int, score float64) {
+func updateBestNode(best []latticeNode, start, end, id int, score float64) {
 	total := best[start].score + score
 	if !best[end].isSet || total > best[end].score {
 		best[end] = latticeNode{score: total, start: start, id: id, isSet: true}
@@ -81,19 +81,19 @@ func (v *vocabulary) appendIDs(out []int, piece string) []int {
 	for start := 0; start < len(piece); {
 		_, firstLen := utf8.DecodeRuneInString(piece[start:])
 		if best[start].isSet {
-			v.relaxFrom(best, piece, start, firstLen)
+			v.updateBestFrom(best, piece, start, firstLen)
 		}
 		start += firstLen
 	}
 	return v.appendPath(out, best)
 }
 
-func (v *vocabulary) relaxFrom(best []latticeNode, piece string, start, firstLen int) {
+func (v *vocabulary) updateBestFrom(best []latticeNode, piece string, start, firstLen int) {
 	hasSingle := false
 	for end := start + firstLen; end <= len(piece) && end-start <= v.maxPieceLen; {
 		if id, ok := v.ids[piece[start:end]]; ok {
 			hasSingle = hasSingle || end-start == firstLen
-			relaxNode(best, start, end, id, v.scores[id])
+			updateBestNode(best, start, end, id, v.scores[id])
 		}
 		if end == len(piece) {
 			break
@@ -102,7 +102,7 @@ func (v *vocabulary) relaxFrom(best []latticeNode, piece string, start, firstLen
 		end += size
 	}
 	if !hasSingle {
-		relaxNode(best, start, start+firstLen, v.unkID, v.unknownScore)
+		updateBestNode(best, start, start+firstLen, v.unkID, v.unknownScore)
 	}
 }
 

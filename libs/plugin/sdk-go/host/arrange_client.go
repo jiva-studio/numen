@@ -54,8 +54,8 @@ func readMove(m *v1.MoveResult) domain.MoveResult {
 		From:     m.GetFrom(),
 		To:       m.GetTo(),
 		IsMoved:  m.GetTo() != "",
-		Repaired: m.GetRepaired(),
-		Dangling: m.GetDangling(),
+		Repaired: m.GetRepairedNotes(),
+		Dangling: m.GetDanglingNotes(),
 	}
 }
 
@@ -77,8 +77,8 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
 		Move:        nil,
 	}
-	if res.Msg.GetMoved() != nil {
-		move := readMove(res.Msg.GetMoved())
+	if res.Msg.GetMoveResult() != nil {
+		move := readMove(res.Msg.GetMoveResult())
 		out.Move = &move
 	}
 	return out, nil
@@ -124,7 +124,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 }
 
 func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblems, error) {
-	res, err := c.vaults.GetVaultProblems(ctx, request(c, &v1.GetVaultProblemsRequest{Checks: checks}))
+	res, err := c.vaults.ListVaultProblems(ctx, request(c, &v1.ListVaultProblemsRequest{Checks: checks}))
 	if err != nil {
 		return VaultProblems{}, readError(err)
 	}

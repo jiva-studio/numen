@@ -87,7 +87,7 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 	again := make([]review.Schedule, len(cards))
 	for i, c := range cards {
 		alone[i] = delta.Next(c, when, review.Good)
-		good[i], again[i] = delta.Endings(c, when)
+		good[i], again[i] = delta.ComputeEndings(c, when)
 	}
 
 	// Every asking writes its own answer down, so what the detector sees is the
@@ -104,7 +104,7 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 		for i, c := range cards {
 			together.Go(func() {
 				pos[round][i] = delta.Next(c, when, review.Good)
-				ends[round][i], fell[round][i] = delta.Endings(c, when)
+				ends[round][i], fell[round][i] = delta.ComputeEndings(c, when)
 			})
 		}
 	}
@@ -148,7 +148,7 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 		assertFinitePositive(t, r.String(), delta.Next(corrupt, when, r).Stability)
 	}
 
-	good, again := delta.Endings(corrupt, when)
+	good, again := delta.ComputeEndings(corrupt, when)
 	assertFinitePositive(t, "Endings good", good.Stability)
 	assertFinitePositive(t, "Endings again", again.Stability)
 }
@@ -240,7 +240,7 @@ func libraryAgrees(
 		got := delta.Next(s, getLibraryNow(), review.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, describe(s)), got, want)
 	}
-	good, again := delta.Endings(s, getLibraryNow())
+	good, again := delta.ComputeEndings(s, getLibraryNow())
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, describe(s)),
 		good, asSchedule(engine.Next(asCard(status), getLibraryNow(), fsrs.Good).Card))
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, describe(s)),

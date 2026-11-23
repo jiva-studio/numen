@@ -3,20 +3,11 @@
  * manifest.json.
  */
 import { fromJson, type JsonValue } from '@bufbuild/protobuf'
-import {
-  ManifestSchema,
-  type Manifest as ManifestMessage,
-  type ManifestContributes as ManifestContributesMessage,
-  type ManifestTabKind as ManifestTabKindMessage,
-} from '@numen/protocol'
+import { ManifestSchema, type Manifest as ManifestMessage } from '@numen/protocol'
 import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/result'
 
 /** The schema of a plugin's manifest.json. */
 export type Manifest = ManifestMessage
-/** What a plugin adds to the application, known before its frontend is loaded. */
-export type ManifestContributes = ManifestContributesMessage
-/** A kind of tab a plugin registers. */
-export type ManifestTabKind = ManifestTabKindMessage
 
 /**
  * The text of a manifest.json read against the generated schema. Keys the schema does not name are

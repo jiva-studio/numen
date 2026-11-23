@@ -165,7 +165,7 @@ func TestMP3DecodeContainsMemoryInProportionToOneChannel(t *testing.T) {
 	moments := 2000 * 1152
 
 	peak := peakHeap(func() {
-		got, _, err := fromMP3(raw)
+		got, _, err := decodeMP3(raw)
 		if err != nil {
 			t.Error(err)
 		}

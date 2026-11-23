@@ -21,9 +21,9 @@ const (
 	Easy
 )
 
-// Valid reports whether a rating is one of the four. Any other value read from a
+// IsValid reports whether a rating is one of the four. Any other value read from a
 // file is an unusable line.
-func (r Rating) Valid() bool { return r >= Again && r <= Easy }
+func (r Rating) IsValid() bool { return r >= Again && r <= Easy }
 
 func (r Rating) String() string {
 	switch r {
@@ -125,7 +125,7 @@ func Write(a Answer) ([]byte, error) {
 func Read(raw []byte) (answers []Answer, skipped int) {
 	// Content after the last newline is a line that was not written whole.
 	if lastNewline := bytes.LastIndexByte(raw, '\n'); lastNewline < 0 {
-		return nil, whole(raw)
+		return nil, countWholeLines(raw)
 	} else if lastNewline+1 < len(raw) {
 		skipped, raw = 1, raw[:lastNewline+1]
 	}
@@ -144,7 +144,7 @@ func Read(raw []byte) (answers []Answer, skipped int) {
 	return answers, skipped
 }
 
-func whole(raw []byte) int {
+func countWholeLines(raw []byte) int {
 	if len(bytes.TrimSpace(raw)) == 0 {
 		return 0
 	}
@@ -180,7 +180,7 @@ func answer(raw []byte) (Answer, bool) {
 			Rating: 0, Took: 0, Undoes: l.Undo,
 		}, true
 	}
-	if l.Card == "" || l.Template == "" || !Rating(l.Rating).Valid() {
+	if l.Card == "" || l.Template == "" || !Rating(l.Rating).IsValid() {
 		// gomutants:disable-next-line RETURN_ZERO reason="Helper newNoAnswer returns the zero Answer value."
 		return newNoAnswer(), false
 	}

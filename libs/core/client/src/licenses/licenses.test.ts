@@ -40,8 +40,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
             keyHint: '••••-814A',
             activeProvider: 'creem',
             instanceName: 'workstation',
-            expiresAt: '2026-12-31T00:00:00Z',
-            verifiedAt: '2026-11-18T12:00:00Z',
+            expiresUnixMs: 1798675200000n,
+            verifiedUnixMs: 1795003200000n,
           },
         ],
       }),
@@ -120,8 +120,8 @@ describe('createLicenseClient', () => {
         keyHint: '••••-814A',
         activeProvider: 'creem',
         instanceName: 'workstation',
-        expiresAt: '2026-12-31T00:00:00Z',
-        verifiedAt: '2026-11-18T12:00:00Z',
+        expiresUnixMs: 1798675200000,
+        verifiedUnixMs: 1795003200000,
       },
     ])
   })
@@ -140,14 +140,14 @@ describe('createLicenseClient', () => {
 
   it('reads each served error code as a failure', async () => {
     const codes: Array<[LicenseErrorCode, string]> = [
-      [LicenseErrorCode.NOT_FOUND, 'not_found'],
-      [LicenseErrorCode.INVALID_KEY, 'invalid_key'],
-      [LicenseErrorCode.ACTIVATION_LIMIT_REACHED, 'activation_limit_reached'],
+      [LicenseErrorCode.NOT_FOUND, 'notFound'],
+      [LicenseErrorCode.INVALID_KEY, 'invalidKey'],
+      [LicenseErrorCode.ACTIVATION_LIMIT_REACHED, 'activationLimitReached'],
       [LicenseErrorCode.EXPIRED, 'expired'],
       [LicenseErrorCode.DISABLED, 'disabled'],
-      [LicenseErrorCode.PRODUCT_MISMATCH, 'product_mismatch'],
-      [LicenseErrorCode.PROVIDER_UNAVAILABLE, 'provider_unavailable'],
-      [LicenseErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+      [LicenseErrorCode.PRODUCT_MISMATCH, 'productMismatch'],
+      [LicenseErrorCode.PROVIDER_UNAVAILABLE, 'providerUnavailable'],
+      [LicenseErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createLicenseClient(
@@ -161,7 +161,7 @@ describe('createLicenseClient', () => {
       const answer = await client.activate('numen.sync', 'BAD')
       expect(answer).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })

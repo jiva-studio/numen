@@ -5,7 +5,7 @@
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind, TabKindAddress, TabKindDisplay, TabKindEvents } from './tabKinds'
-import { adoptPluginStyle, getPluginStyle } from '../styles'
+import type { PluginStyles } from '../styles'
 import { parsePluginComponent, renderFallback, type PluginComponentSource } from './pane/pluginView'
 
 /** A registration that declares the content of its tabs. */
@@ -70,6 +70,7 @@ export function pickDeclaredParts<State extends object>(
 function createDeclaredPane(
   pluginId: string,
   rawComponent: PluginComponentSource | null,
+  styles: PluginStyles,
 ): Component {
   const component = parsePluginComponent(rawComponent)
   return defineComponent({
@@ -81,7 +82,7 @@ function createDeclaredPane(
       // The sheet is adopted before the first render, so the pane is never drawn without it.
       const release =
         // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: JSDOM always defines document
-        typeof document === 'undefined' ? undefined : adoptPluginStyle(pluginId, document)
+        typeof document === 'undefined' ? undefined : styles.adopt(pluginId, document)
       onBeforeUnmount(() => release?.())
       const error = ref<Error | null>(null)
       onErrorCaptured((err) => {
@@ -93,7 +94,7 @@ function createDeclaredPane(
         // Stryker disable next-line ConditionalExpression: h(null) also renders an empty comment vnode in Vue
         if (!component) return null
         const node = h(component, { state: props.state })
-        const styleUrl = release ? undefined : getPluginStyle(pluginId)
+        const styleUrl = release ? undefined : styles.getUrl(pluginId)
         if (!styleUrl) return node
         return [h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': pluginId }), node]
       }
@@ -105,6 +106,7 @@ function createDeclaredPane(
 export function createDeclaredTabKind(
   pluginId: string,
   registration: DeclaredTabKindRegistration,
+  styles: PluginStyles,
 ): AnyTabKind {
   const { kind, title, getTitle } = registration
   const declared = pickDeclaredParts(registration)
@@ -112,7 +114,7 @@ export function createDeclaredTabKind(
     kind,
     pluginId,
     open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
-    pane: createDeclaredPane(pluginId, registration.component),
+    pane: createDeclaredPane(pluginId, registration.component, styles),
     getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     display: declared.display,
     events: declared.events,

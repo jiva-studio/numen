@@ -74,7 +74,7 @@ func (e connectionEditor) getAddresses(
 		return nil, err
 	}
 	out := []domain.Address{canonical}
-	links, err := e.links.GetLinks(ctx, v.ID, from)
+	links, err := e.links.ListLinks(ctx, v.ID, from)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (e connectionEditor) getAddresses(
 }
 
 func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	links, err := e.links.GetLinks(ctx, v.ID, path)
+	links, err := e.links.ListLinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path s
 			parents = append(parents, l.To)
 		}
 	}
-	backlinks, err := e.links.GetBacklinks(ctx, v.ID, path)
+	backlinks, err := e.links.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func NewSaveConnection(d ConnectionDeps) SaveConnection {
 }
 
 // Execute replaces the records of both notes. A side that is nil is removed from
-// its note. A connection with no side is refused: RemoveConnection removes one.
+// its note. A connection with no side is refused: DeleteConnection removes one.
 func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Connection) error {
 	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		if c.IsEmpty() {
@@ -270,20 +270,20 @@ func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Co
 	})
 }
 
-// RemoveConnection removes the records of one type that two notes write about each
+// DeleteConnection removes the records of one type that two notes write about each
 // other.
-type RemoveConnection struct {
+type DeleteConnection struct {
 	editor connectionEditor
 }
 
-// NewRemoveConnection builds the use case over d.
-func NewRemoveConnection(d ConnectionDeps) RemoveConnection {
-	return RemoveConnection{editor: newConnectionEditor(d)}
+// NewDeleteConnection builds the use case over d.
+func NewDeleteConnection(d ConnectionDeps) DeleteConnection {
+	return DeleteConnection{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type from both notes. The empty type names the
 // records that carry none.
-func (u RemoveConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
+func (u DeleteConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
 	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		c := domain.Connection{A: a, B: b}
 		if err := c.Validate(); err != nil {
@@ -297,19 +297,19 @@ func (u RemoveConnection) Execute(ctx context.Context, v domain.Vault, a, b, kin
 	})
 }
 
-// RemoveSide removes the record one note writes about another and leaves the other
+// DeleteConnectionSide removes the record one note writes about another and leaves the other
 // note as it is.
-type RemoveSide struct {
+type DeleteConnectionSide struct {
 	editor connectionEditor
 }
 
-// NewRemoveSide builds the use case over d.
-func NewRemoveSide(d ConnectionDeps) RemoveSide {
-	return RemoveSide{editor: newConnectionEditor(d)}
+// NewDeleteConnectionSide builds the use case over d.
+func NewDeleteConnectionSide(d ConnectionDeps) DeleteConnectionSide {
+	return DeleteConnectionSide{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type that `from` writes about `to`.
-func (u RemoveSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
+func (u DeleteConnectionSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
 	return u.editor.run(ctx, v, func(ctx context.Context) error {
 		if err := (domain.Connection{A: from, B: to}).Validate(); err != nil {
 			return err
@@ -341,7 +341,7 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 		if err := c.Validate(); err != nil {
 			return err
 		}
-		links, err := u.editor.links.GetLinks(ctx, v.ID, to)
+		links, err := u.editor.links.ListLinks(ctx, v.ID, to)
 		if err != nil {
 			return err
 		}
@@ -359,7 +359,7 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 
 func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault, path string) (domain.Address, error) {
 	if names == nil {
-		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(path)}, nil
+		return domain.Address{Scheme: domain.SchemeName, Value: domain.GetBasename(path)}, nil
 	}
 	return edit.GetAddress(ctx, names, v.ID, path)
 }

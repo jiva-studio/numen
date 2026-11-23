@@ -2,9 +2,9 @@ package catalog
 
 import "errors"
 
-// SourceErrors returns every *SourceError that err holds, directly or inside the errors it joins or
+// FindSourceErrors returns every *SourceError that err holds, directly or inside the errors it joins or
 // wraps, in the order they were joined.
-func SourceErrors(err error) []*SourceError {
+func FindSourceErrors(err error) []*SourceError {
 	var found []*SourceError
 	collectSourceErrors(err, &found)
 	return found

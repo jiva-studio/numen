@@ -40,7 +40,7 @@ func (s *RunningSource) OpenRunningProvider(ctx context.Context, pluginID string
 	if !isRunning {
 		return nil, nil, false
 	}
-	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
+	interceptor := connect.WithInterceptors(transport.CreateAuthInterceptor(endpoint.Token))
 	client := numenv1connect.NewProviderServiceClient(s.clients.GetClient(endpoint), transport.GetBaseURL(endpoint), interceptor)
 	var once sync.Once
 	return &provider{client: client}, func() { once.Do(func() { s.host.ReleaseQuestion(pluginID, endpoint.Token, holder) }) }, true

@@ -73,7 +73,7 @@ func TestAnAccountCallWithoutTheIdentityPermissionIsRefusedByTheCore(t *testing.
 		client := numenv1connect.NewHostAccountServiceClient(
 			&http.Client{Timeout: 5 * time.Second},
 			"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
-			connect.WithInterceptors(transport.AuthInterceptor(one.token)),
+			connect.WithInterceptors(transport.CreateAuthInterceptor(one.token)),
 		)
 		_, signErr := client.SignAsDevice(t.Context(), connect.NewRequest(&v1.SignAsDeviceRequest{Message: []byte("m")}))
 		_, readErr := client.GetPublicIdentity(t.Context(), connect.NewRequest(&v1.GetPublicIdentityRequest{}))

@@ -25,10 +25,10 @@ type Log struct {
 
 // ReviewLog is what a vault's log came to.
 type ReviewLog struct {
-	Answers []review.Answer
-	order   func() review.History
-	Files   []ports.Entry
-	Skipped int
+	Answers    []review.Answer
+	getHistory func() review.History
+	Files      []ports.Entry
+	Skipped    int
 }
 
 // GetHistory returns the answers in the order they were given: nothing a line takes
@@ -37,14 +37,14 @@ type ReviewLog struct {
 // One request evaluates several things over one loaded log, and each reads this
 // order. It is computed once per log and shared.
 func (h ReviewLog) GetHistory() review.History {
-	if h.order == nil {
-		return review.OrderAnswers(h.Answers)
+	if h.getHistory == nil {
+		return review.SortAnswers(h.Answers)
 	}
-	return h.order()
+	return h.getHistory()
 }
 
 func newHistory(answers []review.Answer) func() review.History {
-	return sync.OnceValue(func() review.History { return review.OrderAnswers(answers) })
+	return sync.OnceValue(func() review.History { return review.SortAnswers(answers) })
 }
 
 // GetLogFiles lists what the vault's log is made of, without reading any of it. It is
@@ -84,7 +84,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 		out.Answers = append(out.Answers, ran.Answers...)
 		out.Files = append(out.Files, ports.Entry{Run: file.Run, Size: ran.Size})
 	}
-	out.order = newHistory(out.Answers)
+	out.getHistory = newHistory(out.Answers)
 	return out, nil
 }
 
@@ -205,7 +205,7 @@ func NewRecord(now ports.Clock, entropy ports.Entropy) Record {
 func (u Record) Answer(
 	ctx context.Context, run *LogWriter, on review.CardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
-	if !r.Valid() {
+	if !r.IsValid() {
 		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
 	}
 	if on.Card == "" || on.Template == "" {

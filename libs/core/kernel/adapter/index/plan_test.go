@@ -174,7 +174,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
-	db, err := Open(ctx, newMigratedTemplate().Path(t))
+	db, err := Open(ctx, newMigratedTemplate().GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -52,7 +52,7 @@ func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 		{getFirstVault(), "sheets/animal.md"},
 		{getSecond(), "patterns/quasar.md"},
 	} {
-		found, err := db.NoteQueries().GetPathsOfType(t.Context(), target.vault.ID, formType)
+		found, err := db.NoteQueries().ListPathsOfType(t.Context(), target.vault.ID, formType)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -53,14 +53,14 @@ func createPluginCommandDeps() (stubSession, *pluginCommands, *[]domain.Vault) {
 		}},
 	}}
 	var vaults []domain.Vault
-	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(_ context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+				Open: func(_ context.Context, v domain.Vault) (plugincommand.Runner, func() error, error) {
 					vaults = append(vaults, v)
 					return commands.Run, nil, nil
 				},
@@ -130,7 +130,7 @@ func TestACommandMissingARequiredArgumentRunsNothing(t *testing.T) {
 
 	_, err := runWithDeps(deps, "sample.create", "notebook", "--folder", "samples")
 
-	if !errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
+	if !errors.Is(err, plugin.ErrBadArguments) || len(declared.calls) != 0 {
 		t.Errorf("the command answered %v and sent %+v", err, declared.calls)
 	}
 }
@@ -190,14 +190,14 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		PluginID: "md.numen.engines.transcription",
 		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
-	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
+				Open: func(context.Context, domain.Vault) (plugincommand.Runner, func() error, error) {
 					return commands.Run, nil, nil
 				},
 			}
@@ -230,7 +230,7 @@ func (f fileTypes) GetContentType(name string) domain.ContentType {
 func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 	var out []string
 	for extension, one := range f {
-		if mask.Matches(one) {
+		if mask.IsMatch(one) {
 			out = append(out, extension[1:])
 		}
 	}
@@ -242,7 +242,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		PluginID: "md.numen.links",
 		Command:  manifest.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
-	commands := newUseCases(declared, declared, fileTypes{}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{}, nil)
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -261,14 +261,14 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		PluginID: "md.numen.tools.proofreading",
 		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
-	commands := newUseCases(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil)
 	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List, ByName: plugincommand.NewRunByName(find),
-				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
+				Open: func(context.Context, domain.Vault) (plugincommand.Runner, func() error, error) {
 					return commands.Run, func() error { return nil }, nil
 				},
 			}

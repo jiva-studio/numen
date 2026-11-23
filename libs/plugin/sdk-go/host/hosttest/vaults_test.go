@@ -10,7 +10,7 @@ import (
 
 func TestGetVaultListMarksAMissingVault(t *testing.T) {
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
-	physics.Beside(chemistry)
+	physics.LinkBeside(chemistry)
 	chemistry.SetMissing(true)
 
 	got, err := physics.GetVaultList(t.Context())
@@ -45,7 +45,7 @@ func TestAddVaultJoinsTheList(t *testing.T) {
 
 func TestRenameVaultToATakenNameIsNameTaken(t *testing.T) {
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
-	physics.Beside(chemistry)
+	physics.LinkBeside(chemistry)
 
 	if _, err := physics.RenameVault(t.Context(), chemistry.Vault().ID, "physics"); !errors.Is(err, host.ErrVaultNameTaken) {
 		t.Errorf("got %v", err)
@@ -58,7 +58,7 @@ func TestRenameVaultToATakenNameIsNameTaken(t *testing.T) {
 
 func TestRemoveVaultRejectsTheLastAndTheOpenedVault(t *testing.T) {
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
-	physics.Beside(chemistry)
+	physics.LinkBeside(chemistry)
 	if err := physics.OpenVault(t.Context(), physics.Vault().ID); err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func TestRemoveVaultRejectsTheLastAndTheOpenedVault(t *testing.T) {
 
 func TestOpenVaultRecordsTheVault(t *testing.T) {
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
-	physics.Beside(chemistry)
+	physics.LinkBeside(chemistry)
 
 	if err := physics.OpenVault(t.Context(), chemistry.Vault().ID); err != nil {
 		t.Fatal(err)

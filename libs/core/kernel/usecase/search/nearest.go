@@ -44,7 +44,7 @@ func rankCandidates(ctx context.Context, queries NearestQueries, q source.Stored
 		if len(s.Vector) != len(query) {
 			return nil, fmt.Errorf("chunk %s holds %d dimensions where the query has %d", s.Chunk, len(s.Vector), len(query))
 		}
-		if similarity := vector.SimilarityBytes(query, s.Vector); similarity >= floor {
+		if similarity := vector.ComputeSimilarityBytes(query, s.Vector); similarity >= floor {
 			passing = append(passing, ranked{chunk: s.Chunk, similarity: similarity})
 		}
 	}

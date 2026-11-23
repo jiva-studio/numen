@@ -11,10 +11,10 @@ import (
 func TestImportResult_DirectChildren(t *testing.T) {
 	result := vault.ImportResult{Imported: []string{"Cover.png", "physics/Cover.png", "physics/deep/Slide.png"}}
 
-	if got := result.DirectChildren(""); !slices.Equal(got, []string{"Cover.png"}) {
+	if got := result.ListDirectChildren(""); !slices.Equal(got, []string{"Cover.png"}) {
 		t.Errorf("root children = %v", got)
 	}
-	if got := result.DirectChildren("physics"); !slices.Equal(got, []string{"physics/Cover.png"}) {
+	if got := result.ListDirectChildren("physics"); !slices.Equal(got, []string{"physics/Cover.png"}) {
 		t.Errorf("physics children = %v", got)
 	}
 }

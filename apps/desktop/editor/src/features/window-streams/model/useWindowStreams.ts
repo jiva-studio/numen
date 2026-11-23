@@ -138,11 +138,11 @@ export function useWindowStreams(api: WindowStreamsApi, how: StreamHandlers = {}
 
   const ask = () => readShownVault(api.getVaultState, vault)
 
-  const follows = createStreamFollower(health, wait, () => open)
+  const follower = createStreamFollower(health, wait, () => open)
   const streams: StreamRunners = {
     follow: createVaultStream({
       watchVaultChanges: api.watchVaultChanges,
-      follows,
+      follower: follower,
       listening: abortController,
       opening,
       isVaultSwapped: () => isVaultSwapped(api.getVaultState, vault),
@@ -152,13 +152,13 @@ export function useWindowStreams(api: WindowStreamsApi, how: StreamHandlers = {}
     }),
     draw: createEditStream({
       watchEdits: api.watchEdits,
-      follows,
+      follower: follower,
       listening: abortController,
       reportChange: how.reportChange ?? (() => undefined),
     }),
     watch: createFocusStream({
       watchFocus: api.watchFocus,
-      follows,
+      follower: follower,
       listening: abortController,
       travelTo: how.travelTo ?? (() => undefined),
       openFileAt: how.openFileAt ?? (() => undefined),
@@ -166,14 +166,14 @@ export function useWindowStreams(api: WindowStreamsApi, how: StreamHandlers = {}
     }),
     followTasks: createTaskStream({
       watchTasks: api.watchTasks,
-      follows,
+      follower: follower,
       listening: abortController,
       tasks,
       ask,
     }),
     followHealth: createHealthStream({
       watchPluginHealth: api.watchPluginHealth,
-      follows,
+      follower: follower,
       listening: abortController,
       items: pluginHealth,
     }),

@@ -2,7 +2,18 @@
  * Note domain conversions between schema representations and window models.
  */
 import { formatFingerprint } from '@numen/plugin-loader'
-import { findErrorCode, isStaleAnswer, NAME_SOURCE, NOTE_LINK_DIRECTION, NOTE_RELATION, parseFingerprint, type NameSourceCode, type NoteErrorCodeValue, type NoteLinkDirectionCode, type NoteRelationCode } from '@numen/core-client'
+import {
+  findErrorCode,
+  isStaleAnswer,
+  NAME_SOURCE,
+  NOTE_LINK_DIRECTION,
+  NOTE_RELATION,
+  parseFingerprint,
+  type NameSourceCode,
+  type NoteErrorCodeValue,
+  type NoteLinkDirectionCode,
+  type NoteRelationCode,
+} from '@numen/core-client'
 import { asFailure, asValue } from '@numen/result'
 import type { LinkDirection, NoteGraph, NoteResult, NoteRelation, WriteResult } from '../lib/note'
 import { mapNoteType } from '@/shared/api/wire'
@@ -12,7 +23,7 @@ interface NoteGraphWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
   readonly focusType: string
   readonly focusTabKind?: string
-  readonly related: readonly {
+  readonly relatedNotes: readonly {
     readonly note?: { readonly path: string; readonly title: string } | undefined
     readonly type: string
     readonly tabKind?: string
@@ -53,17 +64,17 @@ const directionByWire: Record<NoteLinkDirectionCode, LinkDirection | null> = {
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,
-  at: parseFingerprint(baseline.stat),
+  fileStat: parseFingerprint(baseline.stat),
 })
 
 export const mapNoteResult = (from: {
   body?: string | undefined
   error?: NoteErrorCodeValue | undefined
-  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  fileStat?: { path: string; size: bigint; mtime: bigint } | undefined
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
-  const stat = formatFingerprint(from.at)
+  const stat = formatFingerprint(from.fileStat)
   return asValue({
     body: from.body ?? '',
     ...(stat === undefined ? {} : { at: stat }),
@@ -74,7 +85,7 @@ export const mapNoteResult = (from: {
 export const mapWriteResult = (from: {
   body?: string | undefined
   error?: NoteErrorCodeValue | undefined
-  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  fileStat?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
 }): WriteResult => (isStaleAnswer(from) ? asFailure('changed') : mapNoteResult(from))
@@ -86,7 +97,7 @@ export const mapNoteGraph = (answer: NoteGraphWire): NoteGraph => ({
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: mapNoteType(answer.focusType),
   ...(answer.focusTabKind ? { focusTabKind: answer.focusTabKind } : {}),
-  related: answer.related.flatMap((one) => {
+  related: answer.relatedNotes.flatMap((one) => {
     const relation = relationByWire[one.relation] ?? null
     if (relation === null || one.note === undefined) return []
     const direction =

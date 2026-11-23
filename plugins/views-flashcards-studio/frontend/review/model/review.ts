@@ -152,7 +152,7 @@ export const useReview = (deps: ReviewDeps) => {
   const reviewDays = useReviewDays({
     cards,
     reportError: notices.reportError,
-    widest: () => {
+    getWidest: () => {
       const { screen, page } = deps.getViewport()
       return Math.max(screen, page)
     },
@@ -161,10 +161,10 @@ export const useReview = (deps: ReviewDeps) => {
   const notesPage = shallowRef<NotesPage | null>(null)
 
   const panels = usePanels({
-    card: () => state.cards.queue.card.value,
+    getCard: () => state.cards.queue.card.value,
     connections: deps.connections,
     resolveLinks: (text) => deps.relations.resolveLinks(text, deps.vault),
-    vault: () => deps.vault,
+    getVault: () => deps.vault,
     showNotice: (text) => notices.showNotice(text, 'warning'),
   })
 

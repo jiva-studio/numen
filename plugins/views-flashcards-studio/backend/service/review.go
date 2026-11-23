@@ -22,19 +22,19 @@ import (
 // reviewHandler serves the review window.
 type reviewHandler struct {
 	*vaultSession
-	now          ports.Clock
-	runs         *flashcards.RunRegistry
-	flash        func() *flashReview
-	neighborhood neighborhood.Show
+	now            ports.Clock
+	runs           *flashcards.RunRegistry
+	getFlashReview func() *flashReview
+	neighborhood   neighborhood.Show
 }
 
 func (b *Backend) newReviewHandler() *reviewHandler {
 	return &reviewHandler{
-		vaultSession: b.vaultSession,
-		now:          b.now,
-		runs:         b.runs,
-		flash:        b.flash.Get,
-		neighborhood: neighborhood.NewShow(note.NewShowLinks(b.ports.Links), b.ports.Notes, note.NewRead(b.ports.Readers)),
+		vaultSession:   b.vaultSession,
+		now:            b.now,
+		runs:           b.runs,
+		getFlashReview: b.flash.Get,
+		neighborhood:   neighborhood.NewShow(note.NewShowLinks(b.ports.Links), b.ports.Notes, note.NewRead(b.ports.Readers)),
 	}
 }
 
@@ -43,18 +43,18 @@ func (b *Backend) newReviewHandler() *reviewHandler {
 func (h *reviewHandler) WatchCardsDue(
 	ctx context.Context, _ *api.WatchCardsDueRequest, send func(*api.WatchCardsDueResponse) error,
 ) error {
-	recognized, err := h.vaults("").Selector.GetVaults(ctx)
+	recognized, err := h.getHostVault("").Selector.GetVaults(ctx)
 	if err != nil {
 		return apierror.NewInternal(err)
 	}
 	sendVaults := func() error {
-		return send(reviewwire.NewVaultsResponse(recognized, h.flash().Day.GetName(h.now.Now())))
+		return send(reviewwire.NewVaultsResponse(recognized, h.getFlashReview().Day.GetName(h.now.Now())))
 	}
 	return vaultcount.Watch(ctx, recognized, clock.Tickers{}, h.countVault, send, sendVaults)
 }
 
 func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.WatchCardsDueResponse {
-	counted := vaultcount.Count(ctx, h.vaults(v.ID).Index, h.flash().Counts.CardsDue, v)
+	counted := vaultcount.Count(ctx, h.getHostVault(v.ID).Index, h.getFlashReview().Counts.CardsDue, v)
 	return reviewwire.NewCountedResponse(counted, h.newTitler(ctx, v))
 }
 
@@ -65,7 +65,7 @@ func (h *reviewHandler) StartSession(ctx context.Context, req *api.StartSessionR
 	if err != nil {
 		return nil, err
 	}
-	flash := h.flash()
+	flash := h.getFlashReview()
 	session, err := flash.Reviews.Session.Execute(ctx, v, reviewwire.NewScope(req))
 	if err != nil {
 		return nil, reviewwire.NewSessionError(err)
@@ -82,7 +82,7 @@ func (h *reviewHandler) RecordReview(ctx context.Context, req *api.RecordReviewR
 	if err != nil {
 		return nil, err
 	}
-	answer, err := h.runs.RecordAnswer(ctx, h.flash().Reviews.Record, flashcards.AnswerRequest{
+	answer, err := h.runs.RecordAnswer(ctx, h.getFlashReview().Reviews.Record, flashcards.AnswerRequest{
 		Vault:    v.ID,
 		Run:      req.Run,
 		Card:     review.CardID{Card: req.CardID, Template: req.Template},
@@ -100,7 +100,7 @@ func (h *reviewHandler) UndoReview(ctx context.Context, req *api.UndoReviewReque
 	if err != nil {
 		return nil, err
 	}
-	if err := h.runs.UndoAnswer(ctx, h.flash().Reviews.Record, v.ID, req.Run, req.Answer); err != nil {
+	if err := h.runs.UndoAnswer(ctx, h.getFlashReview().Reviews.Record, v.ID, req.Run, req.Answer); err != nil {
 		return nil, reviewwire.NewUndoError(err)
 	}
 	return &api.UndoReviewResponse{}, nil
@@ -113,7 +113,7 @@ func (h *reviewHandler) GetVaultDeckPreset(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.GetForDeck.Execute(ctx, v, req.Deck)
+	found, err := h.getFlashReview().Schedules.Presets.GetForDeck.Execute(ctx, v, req.Deck)
 	return presetwire.NewVaultDeckPresetResponse(found, err, h.newTitler(ctx, v))
 }
 
@@ -122,7 +122,7 @@ func (h *reviewHandler) ListReviewDays(ctx context.Context, req *api.ListReviewD
 	if err != nil {
 		return nil, err
 	}
-	counts, err := h.flash().Counts.GetReviewDays.Execute(ctx, v, req.From, req.To)
+	counts, err := h.getFlashReview().Counts.GetReviewDays.Execute(ctx, v, req.From, req.To)
 	return reviewwire.NewDaysResponse(counts, err)
 }
 
@@ -142,8 +142,8 @@ func (h *reviewHandler) GetDeckNeighborhood(
 func (h *reviewHandler) WatchReloads(
 	ctx context.Context, _ *api.WatchReloadsRequest, send func(*api.WatchReloadsResponse) error,
 ) error {
-	err := reloads.WatchTicks(ctx, h.vaults("").Index, clock.Tickers{},
-		func() { h.flash().Reviews.ReviewCards.InvalidateAll() },
+	err := reloads.WatchTicks(ctx, h.getHostVault("").Index, clock.Tickers{},
+		func() { h.getFlashReview().Reviews.ReviewCards.InvalidateAll() },
 		func(reload bool) error { return send(&api.WatchReloadsResponse{Reload: reload}) })
 	return reviewwire.NewWatchError(err)
 }

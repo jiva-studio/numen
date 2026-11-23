@@ -26,7 +26,7 @@ func newTools(requests *transcribe.Requests) *toolset {
 	return &toolset{requests: requests}
 }
 
-func (t *toolset) registry() (*tools.Registry, error) {
+func (t *toolset) buildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
 		Name:  "transcript_create",

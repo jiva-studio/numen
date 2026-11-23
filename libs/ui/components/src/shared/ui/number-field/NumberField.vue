@@ -9,7 +9,7 @@
 import { computed, useId, useTemplateRef } from 'vue'
 import { runInBackground } from '@/shared/lib/async/background'
 import { reportFailure } from '@/shared/api/report'
-import { cn } from '@/shared/lib/dom/classes'
+import { joinClasses } from '@/shared/lib/dom/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 import type { NumberFieldProps } from './NumberField.types'
 
@@ -82,7 +82,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     :aria-valuetext="speechText"
     :aria-invalid="isInvalid || undefined"
     :class="
-      cn(
+      joinClasses(
         'rounded-tight border-field-rule bg-field w-full border',
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',

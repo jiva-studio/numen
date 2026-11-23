@@ -22,7 +22,7 @@ const create = (windowTabs = createTestTabs()) => {
   return createNoteEditors({
     api: {
       notes: api.vault.note,
-      making: { createNote: api.vault.note.createNote, relations: api.vault.relations },
+      noteMaking: { createNote: api.vault.note.createNote, relations: api.vault.relations },
       quit: api.window.quit,
     },
     log: createMessageLog(),
@@ -49,7 +49,7 @@ describe('the editors of a window', () => {
     expect(editors.store.getTabAt('Tides.md')).toBe('note:1')
     expect(editors.store.getTabAt('Moon.md')).toBeNull()
     expect(editors.getTitle('note:1')).toBe('Tides.md')
-    expect(editors.store.asking('note:1')).toBe(false)
+    expect(editors.store.isAsking('note:1')).toBe(false)
   })
 
   it('name a note by the title of the tab it is open in', async () => {
@@ -94,12 +94,12 @@ describe('the editors of a window', () => {
         createNote: async () => ({ error: NOTE_ERROR_CODE.INVALID_NAME }),
       },
       windowService: {
-        watchQuit: async function* (_req, context) {
+        watchWindowClose: async function* (_req, context) {
           signals.push(context.signal)
-          yield { token: 'quit-1', flush: true }
+          yield { token: 'quit-1', isFlushRequired: true }
           await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
         },
-        reportFlush: async ({ token, result }) => {
+        reportPendingWork: async ({ token, result }) => {
           reported.push(`${token}:${result}`)
           return {}
         },
@@ -109,7 +109,7 @@ describe('the editors of a window', () => {
     const editors = createNoteEditors({
       api: {
         notes: api.vault.note,
-        making: { createNote: api.vault.note.createNote, relations: api.vault.relations },
+        noteMaking: { createNote: api.vault.note.createNote, relations: api.vault.relations },
         quit: api.window.quit,
       },
       log,

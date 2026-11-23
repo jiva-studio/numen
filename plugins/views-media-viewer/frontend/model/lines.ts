@@ -3,8 +3,8 @@
  * milliseconds it covers and its clock time.
  */
 import { computed, type Ref } from 'vue'
-import { clock } from '../lib/duration'
-import { spanCues } from '../lib/cues'
+import { formatClock } from '../lib/duration'
+import { rebuildCues } from '../lib/cues'
 import type { Cue } from '../types'
 
 export function useTranscriptLines(cues: Ref<readonly Cue[]>, prose: Ref<string>) {
@@ -16,7 +16,7 @@ export function useTranscriptLines(cues: Ref<readonly Cue[]>, prose: Ref<string>
    * shows that state in their place.
    */
   const spans = computed(() =>
-    cues.value.length === 0 && prose.value === '' ? [] : spanCues(cues.value, prose.value),
+    cues.value.length === 0 && prose.value === '' ? [] : rebuildCues(cues.value, prose.value),
   )
 
   /**
@@ -33,7 +33,7 @@ export function useTranscriptLines(cues: Ref<readonly Cue[]>, prose: Ref<string>
    * words alone, so a transcript of any length is written out once and unchanged
    * while the recording plays.
    */
-  const times = computed(() => spans.value.map((cue) => clock(cue.from)))
+  const times = computed(() => spans.value.map((cue) => formatClock(cue.from)))
 
   /** How far into the recording the words written down reach, in milliseconds. */
   const transcribedDuration = computed(() => cues.value.at(-1)?.to ?? 0)

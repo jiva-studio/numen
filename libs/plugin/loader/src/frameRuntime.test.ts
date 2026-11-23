@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createWindowFrameControls, loadFrameRuntime, openExternalUrl } from './frameRuntime'
+import {
+  createFrameRuntimeLoader,
+  createWindowFrameControls,
+  openExternalUrl,
+} from './frameRuntime'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -81,8 +85,13 @@ describe('desktop frame controls', () => {
 })
 
 it('shares the pending shell import and its unavailable result', async () => {
-  const pending = loadFrameRuntime()
-  expect(loadFrameRuntime()).toBe(pending)
+  const load = createFrameRuntimeLoader()
+  const pending = load()
+  expect(load()).toBe(pending)
   await expect(pending).resolves.toBeUndefined()
-  expect(loadFrameRuntime()).toBe(pending)
+  expect(load()).toBe(pending)
+})
+
+it('imports the shell separately for each loader', () => {
+  expect(createFrameRuntimeLoader()()).not.toBe(createFrameRuntimeLoader()())
 })

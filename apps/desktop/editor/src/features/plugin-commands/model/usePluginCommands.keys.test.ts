@@ -12,7 +12,7 @@ import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 /** The kinds of files, over a core that answers none. */
 const { getFileKinds } = createAnsweredApi({}).vault.file
-const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
+const RUNS: RunSupport = { canRun: () => true, reportCannotRun: () => undefined }
 
 describe('the palette entry of a command a plugin declares with a Shift shortcut', () => {
   it('is drawn with the keystroke holding Shift that the manifest names, offers welcome ways, and runs registered commands', async () => {
@@ -38,7 +38,7 @@ describe('the palette entry of a command a plugin declares with a Shift shortcut
     const registry = createCommandRegistry()
     const pluginCommands = usePluginCommands(
       registry,
-      createCommandNoteReader({ fileKinds: async () => new Map() }),
+      createCommandNoteReader({ readFileKinds: async () => new Map() }),
       host,
     )
     const entries = pluginCommands.getPaletteEntries()
@@ -126,7 +126,7 @@ describe('the palette entry of a command a plugin declares with a Shift shortcut
   it('returns empty plugin entries and welcome ways when no pluginHost is provided', () => {
     const withoutHost = usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       undefined,
     )
 

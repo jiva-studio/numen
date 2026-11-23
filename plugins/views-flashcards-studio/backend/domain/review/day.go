@@ -17,8 +17,8 @@ const DayStartTime = 4 * time.Hour
 // at.
 var ErrNotAnHour = errors.New("a day of review begins at an hour of the day")
 
-// Clock writes a length of time past midnight as an hour of the day.
-func Clock(starts time.Duration) string {
+// FormatClock writes a length of time past midnight as an hour of the day.
+func FormatClock(starts time.Duration) string {
 	return fmt.Sprintf("%02d:%02d", int(starts.Hours()), int(starts.Minutes())%60)
 }
 
@@ -66,7 +66,7 @@ func (d Day) GetDate(target time.Time) time.Time {
 	local := target.In(d.zone())
 	y, m, day := local.Date()
 	date := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
-	h, minute := d.boundary()
+	h, minute := d.getBoundary()
 	if local.Hour() < h || (local.Hour() == h && local.Minute() < minute) {
 		return date.AddDate(0, 0, -1)
 	}
@@ -74,22 +74,22 @@ func (d Day) GetDate(target time.Time) time.Time {
 }
 
 func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
-	h, minute := d.boundary()
+	h, minute := d.getBoundary()
 	open := time.Date(y, m, day, h, minute, 0, 0, d.zone())
 	// An hour the clock skips over is read by no instant, and the day begins
 	// where the clock jumped to.
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="Adding zero duration at a normal wall clock boundary returns the same instant, and DST gaps are whole minutes."
-	if late := time.Date(y, m, day, h, minute, 0, 0, time.UTC).Sub(wall(open)); late > 0 {
+	if late := time.Date(y, m, day, h, minute, 0, 0, time.UTC).Sub(convertToWall(open)); late > 0 {
 		return open.Add(late)
 	}
 	return open
 }
 
-func (d Day) boundary() (int, int) {
+func (d Day) getBoundary() (int, int) {
 	return int(d.Starts / time.Hour), int(d.Starts % time.Hour / time.Minute)
 }
 
-func wall(pos time.Time) time.Time {
+func convertToWall(pos time.Time) time.Time {
 	y, m, day := pos.Date()
 	return time.Date(y, m, day, pos.Hour(), pos.Minute(), 0, 0, time.UTC)
 }
@@ -123,11 +123,11 @@ func ParseDayStart(raw string) (time.Duration, error) {
 	}
 	pos, err := time.Parse("15:04", raw)
 	if err != nil {
-		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), raw)
+		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, FormatClock(LatestDayStart), raw)
 	}
 	starts := time.Duration(pos.Hour())*time.Hour + time.Duration(pos.Minute())*time.Minute
 	if starts > LatestDayStart {
-		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), raw)
+		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, FormatClock(LatestDayStart), raw)
 	}
 	return starts, nil
 }
@@ -218,7 +218,7 @@ func GetSpentUnder(
 	d Day, day string, answers []Answer,
 	presetMap map[CardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	return OrderAnswers(answers).GetSpentUnder(d, day, presetMap, counts)
+	return SortAnswers(answers).GetSpentUnder(d, day, presetMap, counts)
 }
 
 // GetSpentUnder is the same over a history already in order.
@@ -264,7 +264,7 @@ func (h History) GetSpentUnder(
 // GetReviewed is the review cards answered in the day named. An answer taken back is
 // not one, and a review card answered again in the day is the one review card.
 func GetReviewed(d Day, day string, answers []Answer) map[CardID]bool {
-	return OrderAnswers(answers).GetReviewed(d, day)
+	return SortAnswers(answers).GetReviewed(d, day)
 }
 
 // GetReviewed is the same over a history already in order.
@@ -278,12 +278,12 @@ func (h History) GetReviewed(d Day, day string) map[CardID]bool {
 	return out
 }
 
-// Streak is the number of consecutive days up to now with at least one answer.
+// CountStreak is the number of consecutive days up to now with at least one answer.
 //
 // A current day without answers does not end the streak: the streak is the
 // run of days ending the previous day. A current day with answers is counted
 // as part of the run.
-func Streak(d Day, days map[string]Tally, now time.Time) int {
+func CountStreak(d Day, days map[string]Tally, now time.Time) int {
 	pos := now.In(d.zone())
 	if days[d.GetName(pos)].Answered == 0 {
 		// Today is not answered yet, so the count is of the days behind it.

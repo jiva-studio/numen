@@ -23,6 +23,9 @@ import (
 // errNoPlugin is a call of a plugin's command that names no plugin.
 var errNoPlugin = errors.New("a command call names the plugin that declares the command")
 
+// errFailed is what a command that failed for a reason the core does not name is answered with.
+var errFailed = errors.New("the command failed")
+
 // VaultProvider names the vault the window shows. A window showing none answers a vault with no ID.
 type VaultProvider interface {
 	GetCurrentVault() domain.Vault
@@ -43,11 +46,10 @@ func NewHandler(
 	return &Handler{vaults: vaults, listing: listing, runCommand: runCommand, listItems: listItems}
 }
 
-// NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
-// handler it answers through; the window turns the three into a route.
-func NewRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewRoute is where CommandService is mounted, and what the schema generated to answer it.
+func NewRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewCommandServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
 // ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them; one with
@@ -84,18 +86,26 @@ func (h *Handler) RunPluginCommand(
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 		}
-		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: err.Error()}), nil
+		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: getMessage(err)}), nil
 	}
 	return connect.NewResponse(&v1.RunPluginCommandResponse{
 		Message: result.Message, OpenedPath: result.OpenedPath,
 	}), nil
 }
 
+func getMessage(err error) string {
+	var failed *plugin.CommandFailedError
+	if getErrorCode(err) == v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED && !errors.As(err, &failed) {
+		return errFailed.Error()
+	}
+	return err.Error()
+}
+
 func getErrorCode(err error) v1.CommandErrorCode {
 	switch {
-	case errors.Is(err, plugincommand.ErrUnknownCommand):
+	case errors.Is(err, plugin.ErrUnknownCommand):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
-	case errors.Is(err, plugincommand.ErrBadArguments):
+	case errors.Is(err, plugin.ErrBadArguments):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
 	case errors.Is(err, domain.ErrUnavailable):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE
@@ -194,18 +204,16 @@ func clampToInt32(value int) int32 {
 	return int32(value)
 }
 
-// NewContributionRoute is where ContributionService is mounted, what the schema generated to answer it, and
-// the handler it answers through.
-func NewContributionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewContributionRoute is where ContributionService is mounted, and what the schema generated to answer it.
+func NewContributionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewContributionServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
-// NewVersionRoute is where TextVersionService is mounted, what the schema generated to answer it, and the
-// handler it answers through.
-func NewVersionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewVersionRoute is where TextVersionService is mounted, and what the schema generated to answer it.
+func NewVersionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewTextVersionServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
 // ListContributions lists the slot entries, the slot points, the handlers of shared commands and the

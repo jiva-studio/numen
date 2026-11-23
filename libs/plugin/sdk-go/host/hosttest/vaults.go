@@ -73,7 +73,7 @@ func (v *Vault) AddManagedVault(ctx context.Context, root, name, managedBy strin
 		name = path.Base(root)
 	}
 	name = v.getFreeName(name)
-	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root, ManagedBy: managedBy}, inMemory())
+	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root, ManagedBy: managedBy}, createMemoryFiles())
 	added.world = v.world
 	v.world.members = append(v.world.members, added)
 	return added.vault, nil
@@ -178,9 +178,9 @@ func (v *Vault) findByID(id domain.VaultID) (*Vault, bool) {
 }
 
 func (v *Vault) findByName(name string) (*Vault, bool) {
-	foldedName := notesdomain.FoldName(name)
+	foldedName := notesdomain.NormalizeName(name)
 	for _, member := range v.world.members {
-		if notesdomain.FoldName(member.vault.Name) == foldedName {
+		if notesdomain.NormalizeName(member.vault.Name) == foldedName {
 			return member, true
 		}
 	}
@@ -217,7 +217,7 @@ func (v *Vault) checkOverlap(root string) error {
 
 // Beside links the vault with this one, so each lists the other and resolves it by
 // identity. Vaults linked to one vault are known to all vaults that know either.
-func (v *Vault) Beside(other *Vault) {
+func (v *Vault) LinkBeside(other *Vault) {
 	if v.world == other.world {
 		return
 	}
@@ -231,7 +231,7 @@ func (v *Vault) Beside(other *Vault) {
 func (v *Vault) GetVault(ctx context.Context) (domain.Vault, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return domain.Vault{}, err
 	}
 	return v.vault, nil

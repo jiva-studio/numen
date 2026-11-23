@@ -70,7 +70,7 @@ func setKeys(doc *markdown.Document, values map[string]any) error {
 		var err error
 		if value := values[key]; value == nil {
 			err = doc.Remove(key)
-		} else if names, isList := asNames(value); isList {
+		} else if names, isList := readNames(value); isList {
 			err = doc.SetList(key, names)
 		} else {
 			err = doc.SetValue(key, value)
@@ -82,7 +82,7 @@ func setKeys(doc *markdown.Document, values map[string]any) error {
 	return nil
 }
 
-func asNames(value any) ([]string, bool) {
+func readNames(value any) ([]string, bool) {
 	switch list := value.(type) {
 	case []string:
 		return list, true

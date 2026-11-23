@@ -136,14 +136,6 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 	}, nil
 }
 
-func packVector(q []int8) []byte {
-	out := make([]byte, len(q))
-	for i, x := range q {
-		out[i] = byte(x)
-	}
-	return out
-}
-
 // extracted is the text of one source, to which chunk offsets refer, read from
 // the source again. The most recently opened source is cached, because the
 // chunks of one source are processed together.
@@ -155,7 +147,7 @@ type extracted struct {
 	isIndexed bool
 }
 
-func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
+func (e *extracted) readText(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isIndexed, nil
 	}
@@ -201,10 +193,10 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 		if len(v) != prep.model.Width {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
-		quantized := vector.Bytes(vector.Normalize(v))
+		quantized := vector.QuantizeBytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
-			value:  packVector(quantized),
-			coarse: vector.Coarse(quantized),
+			value:  vector.Pack(quantized),
+			coarse: vector.QuantizeCoarse(quantized),
 		}
 	}
 	return unique, nil

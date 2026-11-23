@@ -18,19 +18,19 @@ type LifecycleOption func(*LifecycleServer)
 // signals termination even when fn fails, and answers the failure.
 func WithLifecycleShutdown(fn func() error) LifecycleOption {
 	return func(s *LifecycleServer) {
-		s.onShutdown = fn
+		s.handleShutdown = fn
 	}
 }
 
 // LifecycleServer holds the lifecycle state of a plugin: its configuration and its shutdown signal.
 // Server serves it to the host as the plugin lifecycle service.
 type LifecycleServer struct {
-	shutdownCh   chan struct{}
-	shutdownOnce sync.Once
-	mu           sync.RWMutex
-	config       map[string]string
-	onConfigure  func(ctx context.Context, values map[string]string) error
-	onShutdown   func() error
+	shutdownCh      chan struct{}
+	shutdownOnce    sync.Once
+	mu              sync.RWMutex
+	config          map[string]string
+	handleConfigure func(ctx context.Context, values map[string]string) error
+	handleShutdown  func() error
 }
 
 // NewLifecycleServer creates a lifecycle service handler with a shutdown signal channel.
@@ -47,8 +47,8 @@ func NewLifecycleServer(shutdownCh chan struct{}, opts ...LifecycleOption) *Life
 
 func (s *LifecycleServer) shutdown() error {
 	var closeErr error
-	if s.onShutdown != nil {
-		closeErr = s.onShutdown()
+	if s.handleShutdown != nil {
+		closeErr = s.handleShutdown()
 	}
 	s.TriggerShutdown()
 	return closeErr
@@ -60,7 +60,7 @@ func (s *LifecycleServer) configureWith(ctx context.Context, values map[string]s
 		s.config = make(map[string]string)
 	}
 	maps.Copy(s.config, values)
-	callback := s.onConfigure
+	callback := s.handleConfigure
 	s.mu.Unlock()
 
 	if callback != nil {
@@ -85,7 +85,7 @@ func (s *LifecycleServer) ShutdownTrigger() <-chan struct{} {
 func (s *LifecycleServer) SetConfigure(fn func(ctx context.Context, values map[string]string) error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.onConfigure = fn
+	s.handleConfigure = fn
 }
 
 // SetUpdateConfig registers a simplified configuration updater callback.

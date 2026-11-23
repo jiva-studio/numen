@@ -15,11 +15,11 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 export const createProcessHost = (
   pluginProcessService: WindowClients['pluginProcessService'],
 ): ProcessHost => {
-  const processes = createProcessClient(pluginProcessService)
+  const processClient = createProcessClient(pluginProcessService)
   return {
     watch: (handler) => {
       const listening = new AbortController()
-      const follows = createFollower({
+      const follower = createFollower({
         isOpen: () => !listening.signal.aborted,
         setLost: () => undefined,
         wait,
@@ -27,8 +27,8 @@ export const createProcessHost = (
       // A follower catches every fault of the stream it reads, so nothing reaches the error
       // handler.
       runInBackground(
-        follows(
-          () => processes.watchProcesses(listening.signal),
+        follower(
+          () => processClient.watchProcesses(listening.signal),
           (list) => handler(list.processes, list.time),
         ),
         () => undefined,

@@ -64,7 +64,7 @@ func TestAPausedPresetAnswersNothing(t *testing.T) {
 	if !got.Closed[0].Has(ClosedPaused) {
 		t.Errorf("a paused day is closed by %v", got.Closed[0])
 	}
-	if _, isAdmitted := got.Session(); isAdmitted {
+	if _, isAdmitted := got.FindSession(); isAdmitted {
 		t.Error("a paused run has a session")
 	}
 }
@@ -245,19 +245,19 @@ func TestWhatADateCannotReachIsShort(t *testing.T) {
 	t.Parallel()
 	run, open := newTestSimulation(1), getTestOpen()
 	p := Settings{Goal: GoalDate, By: open.AddDate(0, 0, 2), Rule: RuleInterval, Interval: 30}
-	if got := run.short(p, getOverdueCards(2), 3, open); got != 5 {
+	if got := run.countShort(p, getOverdueCards(2), 3, open); got != 5 {
 		t.Errorf("%d of five cards are short of an interval of 30 in three days", got)
 	}
 	p.Interval = 1
-	if got := run.short(p, getOverdueCards(2), 3, open); got != 0 {
+	if got := run.countShort(p, getOverdueCards(2), 3, open); got != 0 {
 		t.Errorf("%d cards are short of an interval of 1 in three days", got)
 	}
 	p.By = time.Time{}
-	if got := run.short(p, getOverdueCards(2), 3, open); got != 0 {
+	if got := run.countShort(p, getOverdueCards(2), 3, open); got != 0 {
 		t.Errorf("a date naming no day leaves %d short", got)
 	}
 	p.Goal, p.By = GoalMinutes, open.AddDate(0, 0, 2)
-	if got := run.short(p, getOverdueCards(2), 3, open); got != 0 {
+	if got := run.countShort(p, getOverdueCards(2), 3, open); got != 0 {
 		t.Errorf("a goal of minutes leaves %d short", got)
 	}
 }

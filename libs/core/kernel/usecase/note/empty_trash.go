@@ -42,7 +42,7 @@ func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, erro
 	if err != nil {
 		return nil, err
 	}
-	undeleted, err := writer.EmptyTrash(ctx)
+	undeleted, err := writer.ClearTrash(ctx)
 	if err != nil {
 		return undeleted, err
 	}

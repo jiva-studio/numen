@@ -21,7 +21,7 @@ type Follows = ReturnType<typeof createFollower>
 /** What the stream of the changes to the vault reaches. */
 export interface VaultStreamDeps {
   readonly watchVaultChanges: VaultStateApi['watchVaultChanges']
-  readonly follows: Follows
+  readonly follower: Follows
   readonly listening: AbortController
   readonly opening: Pick<ReturnType<typeof useOpeningNote>, 'path' | 'read'>
   readonly isVaultSwapped: () => Promise<boolean>
@@ -37,7 +37,7 @@ export interface VaultStreamDeps {
 /** What the stream of the changes to the notes reaches. */
 export interface EditStreamDeps {
   readonly watchEdits: NoteApi['watchEdits']
-  readonly follows: Follows
+  readonly follower: Follows
   readonly listening: AbortController
   readonly reportChange: (edit: NoteEdit) => void
 }
@@ -45,7 +45,7 @@ export interface EditStreamDeps {
 /** What the stream of the requests to show a note reaches. */
 export interface FocusStreamDeps {
   readonly watchFocus: FocusApi['watchFocus']
-  readonly follows: Follows
+  readonly follower: Follows
   readonly listening: AbortController
   readonly travelTo: (path: string) => Promise<void> | void
   readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
@@ -55,7 +55,7 @@ export interface FocusStreamDeps {
 /** What the stream of the running tasks reaches. */
 export interface TaskStreamDeps {
   readonly watchTasks: TaskApi['watchTasks']
-  readonly follows: Follows
+  readonly follower: Follows
   readonly listening: AbortController
   readonly tasks: ShallowRef<readonly Task[]>
   readonly ask: () => Promise<VaultScan>
@@ -64,7 +64,7 @@ export interface TaskStreamDeps {
 /** What the stream of the health items of the plugins reaches. */
 export interface HealthStreamDeps {
   readonly watchPluginHealth: HealthApi['watchPluginHealth']
-  readonly follows: Follows
+  readonly follower: Follows
   readonly listening: AbortController
   readonly items: ShallowRef<readonly PluginHealthItem[]>
 }
@@ -137,7 +137,7 @@ async function handleFocusChange(
 export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
   let isOpening = true
   return () =>
-    deps.follows(
+    deps.follower(
       () => {
         isOpening = true
         return deps.watchVaultChanges(deps.listening.signal)
@@ -155,7 +155,7 @@ export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
 /** Follows the changes being made to notes. */
 export function createEditStream(deps: EditStreamDeps): () => Promise<void> {
   return () =>
-    deps.follows(
+    deps.follower(
       () => deps.watchEdits(deps.listening.signal),
       (response) => {
         // The stream opens with an empty message, which distinguishes an open
@@ -168,7 +168,7 @@ export function createEditStream(deps: EditStreamDeps): () => Promise<void> {
 /** Follows the requests to show a note or a tab. */
 export function createFocusStream(deps: FocusStreamDeps): () => Promise<void> {
   return () =>
-    deps.follows(
+    deps.follower(
       () => deps.watchFocus(deps.listening.signal),
       (request) => handleFocusChange(request, deps),
     )
@@ -178,7 +178,7 @@ export function createFocusStream(deps: FocusStreamDeps): () => Promise<void> {
 export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
   const { tasks } = deps
   return () =>
-    deps.follows(
+    deps.follower(
       () => deps.watchTasks(deps.listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
@@ -192,7 +192,7 @@ export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
 /** Follows the health items of the plugins. */
 export function createHealthStream(deps: HealthStreamDeps): () => Promise<void> {
   return () =>
-    deps.follows(
+    deps.follower(
       () => deps.watchPluginHealth(deps.listening.signal),
       (list) => {
         deps.items.value = list

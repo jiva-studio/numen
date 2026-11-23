@@ -114,7 +114,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: queuetest.NewLog(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue,
+	w.links = link.New(link.Host{PluginID: pluginID, GetVault: vaultsOf(vault), Store: foldersOf(vault), GetTexts: textsOf(w.texts), Queue: w.queue,
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
 		func() ports.Fetcher { return w.sites },
 		func() fetch.Settings {
@@ -139,14 +139,14 @@ func (w *world) createIn(t *testing.T, folder, address string) link.Link {
 	if err := w.vault.Scan(t.Context(), []string{made.Path}); err != nil {
 		t.Fatal(err)
 	}
-	content, _ := w.vault.Content(made.Path)
-	w.texts.File(made.Path, []byte(content))
+	content, _ := w.vault.ReadContent(made.Path)
+	w.texts.WriteFile(made.Path, []byte(content))
 	return made
 }
 
 func (w *world) readProperty(t *testing.T, path, key string) string {
 	t.Helper()
-	content, _ := w.vault.Content(path)
+	content, _ := w.vault.ReadContent(path)
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, []byte(content))
 	value, isText := note.Frontmatter[key].(string)
 	if !isText {
@@ -181,7 +181,7 @@ func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	if !strings.HasPrefix(made.Path, "links/") || !strings.HasSuffix(made.Path, ".md") {
 		t.Errorf("the link is filed at %s", made.Path)
 	}
-	content, _ := w.vault.Content(made.Path)
+	content, _ := w.vault.ReadContent(made.Path)
 	if !strings.Contains(content, "type: link\n") || !strings.Contains(content, "url: "+articleAddress+"\n") {
 		t.Errorf("the note holds %q", content)
 	}
@@ -195,7 +195,7 @@ func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	if _, err := w.links.Create(t.Context(), "", "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {
 		t.Errorf("a file address was answered %v", err)
 	}
-	w.vault.File("notes/plain.md", "---\ntype: deck\nurl: https://a.example/\n---\n")
+	w.vault.WriteFile("notes/plain.md", "---\ntype: deck\nurl: https://a.example/\n---\n")
 	if _, err := w.links.Read(t.Context(), "notes/plain.md"); !errors.Is(err, link.ErrNotALink) {
 		t.Errorf("a note of another type was read as a link: %v", err)
 	}
@@ -389,10 +389,10 @@ func TestFetchTextStoresTheArticleOfANewLink(t *testing.T) {
 
 func (w *world) edit(t *testing.T, made link.Link) link.Link {
 	t.Helper()
-	content, _ := w.vault.Content(made.Path)
+	content, _ := w.vault.ReadContent(made.Path)
 	content += "Seen on a visit to the estuary.\n"
-	w.vault.File(made.Path, content)
-	w.texts.File(made.Path, []byte(content))
+	w.vault.WriteFile(made.Path, content)
+	w.texts.WriteFile(made.Path, []byte(content))
 	edited, err := w.links.Read(t.Context(), made.Path)
 	if err != nil {
 		t.Fatal(err)
@@ -448,8 +448,8 @@ func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	content, _ := w.vault.Content(made.Path)
-	w.texts.File(made.Path, []byte(content))
+	content, _ := w.vault.ReadContent(made.Path)
+	w.texts.WriteFile(made.Path, []byte(content))
 	if text := w.readLiveText(t, made.Path); text == "" {
 		t.Error("the note with its media has no live text")
 	}
@@ -494,10 +494,10 @@ func TestTheTextIsNotLiveOnceTheURLChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	content, _ := w.vault.Content(made.Path)
+	content, _ := w.vault.ReadContent(made.Path)
 	content = strings.Replace(content, "url: "+articleAddress, "url: https://example.org/another-mill", 1)
-	w.vault.File(made.Path, content)
-	w.texts.File(made.Path, []byte(content))
+	w.vault.WriteFile(made.Path, content)
+	w.texts.WriteFile(made.Path, []byte(content))
 
 	if listing, err := w.texts.ListVersions(t.Context(), made.Path); err != nil || listing.Live != "" {
 		t.Errorf("after the url changed the live version is %q (%v), want none", listing.Live, err)
@@ -590,7 +590,7 @@ func TestCopyOfAStoredVideoSetsTheMediaOfANewNote(t *testing.T) {
 func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	w := newWorld(t)
 	chemistry := hosttest.New("Chemistry")
-	w.vault.Beside(chemistry)
+	w.vault.LinkBeside(chemistry)
 	chemTexts := w.texts.With("Chemistry")
 	chemTexts.SetStore(pluginID, chemistry.Store())
 

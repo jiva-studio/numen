@@ -30,7 +30,7 @@ export type ChatFrameInit = MessageInitShape<typeof ChatFrameSchema>
 
 type Answer<T> = Promise<Result<T, ConnectionError>>
 
-/** The operations a test serves. An operation the roles leave out ends with `no_connection`. */
+/** The operations a test serves. An operation the roles leave out ends with `noConnection`. */
 export interface Roles {
   readonly complete?: (
     request: CompleteRequest,
@@ -129,7 +129,7 @@ export function createLlmHost(roles: Roles): ConnectionHost {
         return {
           ok: false,
           error: {
-            error: 'no_connection',
+            error: 'noConnection',
             message: `no connection serves ${operation}`,
             failures: [],
           },

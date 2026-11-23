@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -30,7 +31,7 @@ func (h *Handler) ListCommandItems(
 	for _, one := range commands {
 		var list *v1.CommandItemList
 		if one.PluginID == "" {
-			list = newWireItemList(plugincommand.ItemList{Err: fmt.Errorf("%w: %w", plugincommand.ErrUnknownCommand, errNoPlugin)})
+			list = newWireItemList(plugincommand.ItemList{Err: fmt.Errorf("%w: %w", plugin.ErrUnknownCommand, errNoPlugin)})
 		} else {
 			list = newWireItemList(listed[next])
 			next++

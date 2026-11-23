@@ -35,7 +35,7 @@ type flight struct {
 func (g *flightGroup) do(
 	ctx context.Context,
 	key string,
-	onProgress func(plugin.DependencyStatus),
+	handleProgress func(plugin.DependencyStatus),
 	run func(ctx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error),
 ) (plugin.ResolvedDependency, error) {
 	g.mu.Lock()
@@ -47,7 +47,7 @@ func (g *flightGroup) do(
 		g.mu.Unlock()
 		select {
 		case <-current.completion:
-			return g.do(ctx, key, onProgress, run)
+			return g.do(ctx, key, handleProgress, run)
 		case <-ctx.Done():
 			return plugin.ResolvedDependency{}, ctx.Err()
 		}
@@ -62,8 +62,8 @@ func (g *flightGroup) do(
 	current.next++
 	var joiner *subscriber
 	var replay *plugin.DependencyStatus
-	if onProgress != nil {
-		joiner = &subscriber{deliver: onProgress}
+	if handleProgress != nil {
+		joiner = &subscriber{deliver: handleProgress}
 		joiner.mu.Lock()
 		current.subscribers[id] = joiner
 		replay = current.last

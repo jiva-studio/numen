@@ -301,7 +301,7 @@ func FuzzMarkup(f *testing.F) {
 			}
 			read += doc.Length
 
-			rendered, err := book.Markup(doc.Path)
+			rendered, err := book.ParseMarkup(doc.Path)
 			if err != nil {
 				t.Fatalf("%s is a document of the book and failed as %v", doc.Path, err)
 			}
@@ -318,7 +318,7 @@ func FuzzMarkup(f *testing.F) {
 			checkSpans(t, book.Text, doc, rendered.Nodes, doc.Offset+doc.Length)
 			checkHTML(t, book, doc, rendered)
 		}
-		if _, err := book.Markup("nothing/the-spine-names.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
+		if _, err := book.ParseMarkup("nothing/the-spine-names.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
 			t.Fatalf("a document the book was not read from was answered with %v", err)
 		}
 	})

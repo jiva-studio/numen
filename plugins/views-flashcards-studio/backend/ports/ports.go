@@ -97,18 +97,18 @@ type NoteTypeQueries interface {
 
 // TypePathQueries returns the paths of the notes of one type from the index.
 type TypePathQueries interface {
-	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
 // NameQueries returns the paths of the notes that a name resolves to.
 type NameQueries interface {
-	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	ListNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // LinkQueries is what the index provides about a vault's links.
 type LinkQueries interface {
-	GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)
 	// ResolveLinks returns the target of each address written in a note, keyed by
 	// the address as written. An address that resolves to nothing is absent.
 	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error)
@@ -116,7 +116,7 @@ type LinkQueries interface {
 
 // ProblemQueries is what parsing a vault's files turned up.
 type ProblemQueries interface {
-	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
 // Entry is one file of review answers: the run that wrote it, and how many bytes it holds.
@@ -168,8 +168,8 @@ type PresetReads interface {
 	// HasLinks reports whether the links of a deck can be resolved. Without them every deck is
 	// scheduled by the defaults.
 	HasLinks() bool
-	// GetBacklinks returns the links that point at the note at path.
-	GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
+	// ListBacklinks returns the links that point at the note at path.
+	ListBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
 	// GetForDeck returns the preset the deck at path is scheduled by.
 	GetForDeck(ctx context.Context, v domain.Vault, deck string) (review.PresetNote, error)
 	// GetPreset returns the preset at path.

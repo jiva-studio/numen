@@ -34,23 +34,23 @@ export interface LicenseInfo {
   readonly keyHint: string
   readonly activeProvider: string
   readonly instanceName: string
-  readonly expiresAt: string
-  readonly verifiedAt: string
+  readonly expiresUnixMs: number
+  readonly verifiedUnixMs: number
 }
 
 /** Why an activation or deactivation call was refused. */
 export type LicenseErrorCode =
-  | 'not_found'
-  | 'invalid_key'
-  | 'activation_limit_reached'
+  | 'notFound'
+  | 'invalidKey'
+  | 'activationLimitReached'
   | 'expired'
   | 'disabled'
-  | 'product_mismatch'
-  | 'provider_unavailable'
-  | 'key_store_failed'
+  | 'productMismatch'
+  | 'providerUnavailable'
+  | 'keyStoreFailed'
 
 /** A served refusal with the reason the core gives. */
 export interface LicenseFailure {
-  readonly errorCode: LicenseErrorCode
-  readonly detail: string
+  readonly error: LicenseErrorCode
+  readonly message: string
 }

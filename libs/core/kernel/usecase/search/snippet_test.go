@@ -132,7 +132,7 @@ func TestSpansFindsMatchedWordsInResult(t *testing.T) {
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := spans(c.text, c.query)
+			got := findSpans(c.text, c.query)
 			if len(got) != len(c.want) {
 				t.Fatalf("spans(%q, %q) = %+v, want %+v", c.text, c.query, got, c.want)
 			}
@@ -156,7 +156,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("a passage short enough is left as it stands", func(t *testing.T) {
 		text := "no engine beats a reversible engine"
-		pos := spans(text, "engine")
+		pos := findSpans(text, "engine")
 
 		trimmed, retainedSpans := getTextAround(text, pos, 0)
 		if trimmed != text {
@@ -169,7 +169,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("a long passage opens on the words about the first span", func(t *testing.T) {
 		text := long(500) + " engine " + long(500)
-		trimmedVal, retainedVal := getTextAround(text, spans(text, "engine"), 0)
+		trimmedVal, retainedVal := getTextAround(text, findSpans(text, "engine"), 0)
 
 		if len([]rune(trimmedVal)) > glancing+2 {
 			t.Errorf("cut is %d characters, want no more than %d and two marks",
@@ -204,7 +204,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("a span near the end of a passage opens the window all the same", func(t *testing.T) {
 		text := long(500) + " engine ends here"
-		trimmedRecord, retainedRecord := getTextAround(text, spans(text, "engine"), 0)
+		trimmedRecord, retainedRecord := getTextAround(text, findSpans(text, "engine"), 0)
 
 		if len(retainedRecord) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", retainedRecord)
@@ -225,7 +225,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("a span near the end of a passage of two bytes a character", func(t *testing.T) {
 		text := strings.Repeat("слово ", 200) + "дышать не можем"
-		trimmedEntry, retainedEntry := getTextAround(text, spans(text, "дышать"), 0)
+		trimmedEntry, retainedEntry := getTextAround(text, findSpans(text, "дышать"), 0)
 
 		if len(retainedEntry) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", retainedEntry)
@@ -237,7 +237,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("a span left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
-		offset := spans(text, "engine")
+		offset := findSpans(text, "engine")
 		if len(offset) != 2 {
 			t.Fatalf("the passage holds %d spans, want 2", len(offset))
 		}
@@ -250,7 +250,7 @@ func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 
 	t.Run("spans stay counted the way a client counts text", func(t *testing.T) {
 		text := "👋 " + long(400) + " engine " + long(400)
-		trimmedData, retained1 := getTextAround(text, spans(text, "engine"), 0)
+		trimmedData, retained1 := getTextAround(text, findSpans(text, "engine"), 0)
 
 		if len(retained1) != 1 {
 			t.Fatalf("kept %+v spans, want 1", retained1)

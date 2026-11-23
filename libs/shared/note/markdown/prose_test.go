@@ -57,11 +57,11 @@ func TestProseInsideAFenceIsNotPointedAnywhere(t *testing.T) {
 // text of the example.
 func TestBackticksInsideATildeFenceAreNotAFence(t *testing.T) {
 	body := []byte("~~~\n```\n[[Inside]]\n~~~\n\n[[Outside]]\n")
-	links := bodyLinks(body)
+	links := getBodyLinks(body)
 	if len(links) != 1 || links[0].Target.Value != "Outside" {
 		t.Errorf("links = %v", links)
 	}
-	if got := headings([]byte("~~~\n```\n# Inside\n~~~\n\n# Outside\n")); len(got) != 1 || got[0].Text != "Outside" {
+	if got := findHeadings([]byte("~~~\n```\n# Inside\n~~~\n\n# Outside\n")); len(got) != 1 || got[0].Text != "Outside" {
 		t.Errorf("headings = %v", got)
 	}
 }
@@ -107,7 +107,7 @@ func TestRedirectProseAndParseHelpers(t *testing.T) {
 	}
 
 	// Direct tests for headings, parseHeading, trimClosingMarks, and Fence.
-	hs := headings([]byte("# One\n# Two"))
+	hs := findHeadings([]byte("# One\n# Two"))
 	if len(hs) != 2 || hs[0].Line != 0 || hs[1].Line != 1 || hs[1].Offset != 6 {
 		t.Errorf("headings(# One\\n# Two) = %+v", hs)
 	}
@@ -142,13 +142,13 @@ func TestRedirectProseAndParseHelpers(t *testing.T) {
 	}
 
 	// Wikilink and code-span edge cases.
-	w1 := WikilinksIn("[[A]] text [[B]] and [[]] and [[[Good]] and `unclosed [[AfterUnclosed]]")
+	w1 := FindWikilinks("[[A]] text [[B]] and [[]] and [[[Good]] and `unclosed [[AfterUnclosed]]")
 	if len(w1) != 4 || w1[0].Inside != "A" || w1[1].Inside != "B" || w1[1].At != 11 || w1[2].Inside != "Good" || w1[3].Inside != "AfterUnclosed" {
-		t.Errorf("WikilinksIn edge cases = %+v", w1)
+		t.Errorf("FindWikilinks edge cases = %+v", w1)
 	}
-	w2 := WikilinksInText("\n```\n[[Ignored]]\n```\n[[Kept]]")
+	w2 := FindTextWikilinks("\n```\n[[Ignored]]\n```\n[[Kept]]")
 	if len(w2) != 1 || w2[0].Inside != "Kept" {
-		t.Errorf("WikilinksInText leading newline = %+v", w2)
+		t.Errorf("FindTextWikilinks leading newline = %+v", w2)
 	}
 	if spans := getCodeSpans("`unclosed"); len(spans) != 0 {
 		t.Errorf("getCodeSpans(`unclosed) = %v", spans)

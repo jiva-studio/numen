@@ -46,3 +46,11 @@ func TestAListingThatTheIndexCannotAnswerIsAnError(t *testing.T) {
 		t.Error("a closed index answered")
 	}
 }
+
+func TestRelatedNotesOfTooManyPathsAreRefused(t *testing.T) {
+	paths := make([]string, domain.MaxRelatedNotePaths+1)
+	_, err := query.NewGetRelatedNotesView(nil, nil, nil, nil).Execute(t.Context(), domain.Vault{ID: "v"}, paths, domain.DepthNear)
+	if !errors.Is(err, domain.ErrTooManyRelatedPaths) {
+		t.Errorf("got %v, want ErrTooManyRelatedPaths", err)
+	}
+}

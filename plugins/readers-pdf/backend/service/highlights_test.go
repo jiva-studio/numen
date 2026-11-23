@@ -95,5 +95,5 @@ func TestTheStatusOfAVaultFailure(t *testing.T) {
 
 func hostVault(t *testing.T, name string) *hosttest.Vault {
 	t.Helper()
-	return hosttest.OnDisk(t, "vault", map[string]string{name: string(testsupport.ReadFixture(t, name))})
+	return hosttest.CreateOnDisk(t, "vault", map[string]string{name: string(testsupport.ReadFixture(t, name))})
 }

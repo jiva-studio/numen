@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import type { PlexDragState } from '../../model/interaction/drag'
 import type { Gesture } from '../../model/interaction/gesture'
-import { createEdgeLabel, edgeKey } from '../../lib/edge'
+import { createEdgeLabel, buildEdgeKey } from '../../lib/edge'
 import { getLines, type EdgeLine } from '../../lib/lines'
 import type { PlexFrame } from '../../lib/frame'
 import type { Attention } from '../../model/useAttention'
@@ -27,12 +27,12 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
       (props.gesture?.from.value ?? null) === null && (props.dragging?.at.value ?? null) === null,
   )
   const getNodeToHighlight = () => (props.highlightLinks && isIdle.value ? attention.node : null)
-  const frame = () => props.frame
-  const lines = computed(() => getLines(frame().edges, uid))
+  const getFrame = () => props.frame
+  const lines = computed(() => getLines(getFrame().edges, uid))
   const overKey = ref<string | null>(null)
 
-  watch(frame, (next) => {
-    if (next.edges.some((edge) => edgeKey(edge) === overKey.value)) return
+  watch(getFrame, (next) => {
+    if (next.edges.some((edge) => buildEdgeKey(edge) === overKey.value)) return
     overKey.value = null
   })
 
@@ -51,7 +51,7 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
     getLabel: (line: EdgeLine): string =>
       createEdgeLabel(
         line.edge,
-        (id) => frame().nodes.find((node) => node.id === id)?.title || 'Untitled',
+        (id) => getFrame().nodes.find((node) => node.id === id)?.title || 'Untitled',
       ),
   }
 }

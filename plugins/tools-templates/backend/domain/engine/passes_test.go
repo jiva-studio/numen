@@ -16,7 +16,7 @@ func TestRefuseAFieldAskedInTwoWays(t *testing.T) {
 		{"two selects with the options in another order", `{{ select "Kind" "a" "b" }}{{ select "Kind" "b" "a" }}`},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			_, err := engine.New(nil).Fields(t.Context(), "T.md", c.in, getData())
+			_, err := engine.New(nil).ListFields(t.Context(), "T.md", c.in, getData())
 
 			if !errors.Is(err, engine.ErrTemplate) || !strings.Contains(err.Error(), `"Kind"`) || !strings.Contains(err.Error(), "differently") {
 				t.Errorf("error = %v", err)
@@ -24,7 +24,7 @@ func TestRefuseAFieldAskedInTwoWays(t *testing.T) {
 		})
 	}
 	t.Run("takes the same field asked again in the same way", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields(t.Context(), "T.md", `{{ prompt "A" "x" }}{{ prompt "A" "y" }}{{ select "K" "a" "b" }}{{ select "K" "a" "b" }}`, getData())
+		fields, err := engine.New(nil).ListFields(t.Context(), "T.md", `{{ prompt "A" "x" }}{{ prompt "A" "y" }}{{ select "K" "a" "b" }}{{ select "K" "a" "b" }}`, getData())
 
 		if err != nil || len(fields) != 2 {
 			t.Errorf("fields = %+v, %v", fields, err)

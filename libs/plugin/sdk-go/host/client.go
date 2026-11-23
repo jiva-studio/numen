@@ -58,7 +58,7 @@ var (
 // NewClientFromEnv connects to the host the process was started for: its endpoint and the token identifying
 // the plugin come from the environment. It returns hostcall.ErrNoHost where the environment names no host.
 func NewClientFromEnv() (*Client, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -66,18 +66,18 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return newClientOver(transport.HTTPClient(), endpoint)
+	return newClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
-		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
-		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
+		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...),
 	}
 }
 
@@ -262,7 +262,7 @@ func (c *Client) Scan(ctx context.Context, paths []string) error {
 }
 
 func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	res, err := c.notes.GetNoteRefs(ctx, request(c, &v1.GetNoteRefsRequest{Paths: paths}))
+	res, err := c.notes.ListNoteRefs(ctx, request(c, &v1.ListNoteRefsRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -277,7 +277,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 }
 
 func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
-	res, err := c.notes.GetNoteTypes(ctx, request(c, &v1.GetNoteTypesRequest{Paths: paths}))
+	res, err := c.notes.ListNoteTypes(ctx, request(c, &v1.ListNoteTypesRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -291,8 +291,8 @@ func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domai
 	return out, nil
 }
 
-func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
-	res, err := c.notes.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
+func (c *Client) ListNamedPaths(ctx context.Context, name string) ([]string, error) {
+	res, err := c.notes.ListNamedPaths(ctx, request(c, &v1.ListNamedPathsRequest{Name: name}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -302,8 +302,8 @@ func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, erro
 	return res.Msg.GetPaths(), nil
 }
 
-func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	res, err := c.notes.GetPathsOfType(ctx, request(c, &v1.GetPathsOfTypeRequest{Type: string(noteType)}))
+func (c *Client) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	res, err := c.notes.ListPathsOfType(ctx, request(c, &v1.ListPathsOfTypeRequest{Type: string(noteType)}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -313,8 +313,8 @@ func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) (
 	return res.Msg.GetPaths(), nil
 }
 
-func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
-	res, err := c.links.GetLinks(ctx, request(c, &v1.GetLinksRequest{Path: from}))
+func (c *Client) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+	res, err := c.links.ListLinks(ctx, request(c, &v1.ListLinksRequest{Path: from}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -324,8 +324,8 @@ func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 	return readLinks(res.Msg.GetLinks()), nil
 }
 
-func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
-	res, err := c.links.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
+func (c *Client) ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+	res, err := c.links.ListBacklinks(ctx, request(c, &v1.HostLinkServiceListBacklinksRequest{Path: to}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -350,8 +350,8 @@ func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string
 	return out, nil
 }
 
-func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
-	res, err := c.vaults.GetParseProblems(ctx, request(c, &v1.GetParseProblemsRequest{}))
+func (c *Client) ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+	res, err := c.vaults.ListParseProblems(ctx, request(c, &v1.ListParseProblemsRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -405,7 +405,7 @@ func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 }
 
 func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
-	res, err := c.vaults.EnsureVaultIndexed(ctx, request(c, &v1.EnsureVaultIndexedRequest{}))
+	res, err := c.vaults.IndexVault(ctx, request(c, &v1.IndexVaultRequest{}))
 	if err != nil {
 		return IndexState{}, readError(err)
 	}
@@ -425,8 +425,8 @@ func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
 	return out, nil
 }
 
-func (c *Client) WatchMoves(ctx context.Context) (<-chan Move, error) {
-	stream, err := c.vaults.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
+func (c *Client) WatchIndexChanges(ctx context.Context) (<-chan Move, error) {
+	stream, err := c.vaults.WatchIndexChanges(ctx, request(c, &v1.WatchIndexChangesRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -438,7 +438,7 @@ func (c *Client) WatchMoves(ctx context.Context) (<-chan Move, error) {
 		return nil, errors.Join(fmt.Errorf("host: the watch ended before it began"), closeErr)
 	}
 	moves := make(chan Move)
-	go followStream(ctx, stream, moves, func(*v1.WatchMovesResponse) Move { return Move{Err: nil} },
+	go followStream(ctx, stream, moves, func(*v1.WatchIndexChangesResponse) Move { return Move{Err: nil} },
 		func(err error) Move { return Move{Err: err} })
 	return moves, nil
 }

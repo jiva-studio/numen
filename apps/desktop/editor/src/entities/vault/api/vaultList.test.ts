@@ -26,7 +26,7 @@ describe('the vault list', () => {
           ],
         }),
       },
-      windowService: { getCurrentVault: () => ({ vault: 'heat' }) },
+      windowService: { getCurrentVault: () => ({ vaultId: 'heat' }) },
     })
 
     expect(await getVaultList()).toStrictEqual({
@@ -40,7 +40,7 @@ describe('the vault list', () => {
 
   it('is not answered where the core does not list the vaults', async () => {
     const getVaultList = createAnsweredReader({
-      windowService: { getCurrentVault: () => ({ vault: 'heat' }) },
+      windowService: { getCurrentVault: () => ({ vaultId: 'heat' }) },
     })
 
     await expect(getVaultList()).rejects.toThrow()

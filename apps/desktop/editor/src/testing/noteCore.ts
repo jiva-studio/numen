@@ -39,7 +39,7 @@ const CODES: Record<string, NoteErrorCodeValue> = {
 const toWire = (answer: NoteAnswer) => {
   if (answer.ok) {
     const { body, at: stat } = answer.value
-    return { body, ...(stat === undefined ? {} : { at: parseFingerprint(stat) }) }
+    return { body, ...(stat === undefined ? {} : { fileStat: parseFingerprint(stat) }) }
   }
   const error = CODES[answer.error]
   if (error === undefined) throw new Error(`no error code is named ${answer.error}`)
@@ -63,7 +63,7 @@ export const createNoteAnswers = (core: Partial<NoteCore>): CoreAnswers => {
           request.baseline
             ? {
                 prose: request.baseline.prose,
-                stat: formatFingerprint(request.baseline.at) ?? '',
+                stat: formatFingerprint(request.baseline.fileStat) ?? '',
               }
             : null,
         ),

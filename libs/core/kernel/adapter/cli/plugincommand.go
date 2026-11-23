@@ -19,19 +19,19 @@ import (
 type PluginCommands struct {
 	List   plugincommand.List
 	ByName plugincommand.RunByName
-	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
+	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Runner, func() error, error)
 }
 
 // declaredCommand is a command a plugin manifest declares, run by that plugin's backend.
 type declaredCommand struct {
-	plugins func() PluginCommands
-	entry   plugin.CommandEntry
+	getPlugins func() PluginCommands
+	entry      plugin.CommandEntry
 }
 
 func (c declaredCommand) Name() string { return c.entry.Command.ID }
 
 func (c declaredCommand) Synopsis() string {
-	return fmt.Sprintf("  numen-cli %s\n      %s", getPluginCommandSynopsis(c.plugins().List, c.entry.Command), c.entry.Command.Title)
+	return fmt.Sprintf("  numen-cli %s\n      %s", getPluginCommandSynopsis(c.getPlugins().List, c.entry.Command), c.entry.Command.Title)
 }
 
 func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command) string {
@@ -54,7 +54,7 @@ func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command)
 
 func (c declaredCommand) Run(ctx context.Context, term terminal, args []string) error {
 	declared := c.entry.Command
-	commands := c.plugins()
+	commands := c.getPlugins()
 	list := commands.List
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(list, declared))
 	fs, arguments := newArgumentFlags(declared)
@@ -102,10 +102,10 @@ func newArgumentFlags(declared manifest.Command) (*flag.FlagSet, map[string]stri
 func writeResult(out io.Writer, result plugin.CommandResult) error {
 	r := newReporter(out)
 	if result.Message != "" {
-		r.Println(result.Message)
+		r.WriteLine(result.Message)
 	}
 	if result.OpenedPath != "" {
-		r.Println(result.OpenedPath)
+		r.WriteLine(result.OpenedPath)
 	}
 	return r.Err()
 }

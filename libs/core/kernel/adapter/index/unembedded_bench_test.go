@@ -123,7 +123,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
 		named = append(named, vector.Stored{
-			ChunkID: chunk.ID(p.Chunk), Hash: hash, Recipe: getBenchModel().Recipe(),
+			ChunkID: chunk.FormatID(p.Chunk), Hash: hash, Recipe: getBenchModel().Recipe(),
 			Kind: vector.QuantizedInt8, Value: value, Coarse: coarse,
 		})
 	}
@@ -151,13 +151,13 @@ func BenchmarkChunkIdentity(b *testing.B) {
 	b.Run("Name", func(b *testing.B) {
 		// b.Loop keeps the calls in its body from being optimized away.
 		for i := 0; b.Loop(); i++ {
-			chunk.ID(int64(i))
+			chunk.FormatID(int64(i))
 		}
 	})
 	b.Run("Row", func(b *testing.B) {
-		id := chunk.ID(918273645)
+		id := chunk.FormatID(918273645)
 		for b.Loop() {
-			if _, err := chunk.Row(id); err != nil {
+			if _, err := chunk.ParseRow(id); err != nil {
 				b.Fatal(err)
 			}
 		}

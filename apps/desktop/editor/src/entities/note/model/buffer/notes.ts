@@ -248,12 +248,12 @@ export function useOpenNotes(api: NoteBufferApi, how: OpenNotesOptions = {}) {
     onReplaced,
   })
 
-  const opening = createNoteOpening(context)
-  const queries = createNoteQueries(context, how.isReadOnly ?? (() => false))
-  const editing = createNoteEditing(context, queries.getOpenIds, now)
-  const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id), queries.getOpenIds)
+  const noteOpening = createNoteOpening(context)
+  const noteQueries = createNoteQueries(context, how.isReadOnly ?? (() => false))
+  const noteEditing = createNoteEditing(context, noteQueries.getOpenIds, now)
+  const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id), noteQueries.getOpenIds)
 
-  return { opening, editing, conflicts, queries }
+  return { opening: noteOpening, editing: noteEditing, conflicts, queries: noteQueries }
 }
 
 type OpenNotes = ReturnType<typeof useOpenNotes>

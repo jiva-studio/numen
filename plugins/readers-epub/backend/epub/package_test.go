@@ -340,10 +340,10 @@ func TestHowLargeADocumentMayBe(t *testing.T) {
 		t.Errorf("text = %q", book.Text)
 	}
 
-	if raw, err := book.Entry("OEBPS/exact.xhtml"); err != nil || len(raw) != mostPerDocument {
+	if raw, err := book.ReadEntry("OEBPS/exact.xhtml"); err != nil || len(raw) != mostPerDocument {
 		t.Errorf("entry at the bound: %d bytes, %v", len(raw), err)
 	}
-	if _, err := book.Entry("OEBPS/over.xhtml"); !errors.Is(err, epub.ErrNoEntry) {
+	if _, err := book.ReadEntry("OEBPS/over.xhtml"); !errors.Is(err, epub.ErrNoEntry) {
 		t.Errorf("entry over the bound: err = %v, want %v", err, epub.ErrNoEntry)
 	}
 }
@@ -390,7 +390,7 @@ func TestAnEntryTheArchiveCannotOpenIsLeftUnread(t *testing.T) {
 	if got, want := getDocumentPaths(book), []string{twoDoc}; !slices.Equal(got, want) {
 		t.Errorf("documents = %v, want %v", got, want)
 	}
-	if _, err := book.Entry(oneDoc); !errors.Is(err, epub.ErrNoEntry) {
+	if _, err := book.ReadEntry(oneDoc); !errors.Is(err, epub.ErrNoEntry) {
 		t.Errorf("entry: err = %v, want %v", err, epub.ErrNoEntry)
 	}
 }

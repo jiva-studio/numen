@@ -30,7 +30,7 @@ func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 // Order matters: new rows first, kept chunks re-pointed at their large chunk,
 // removed rows last, because `parent_id ON DELETE CASCADE` removes the chunks inside a large one.
 func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64, chunks []Chunk) error {
-	target, err := chunksOf(ctx, tx, source)
+	target, err := listChunks(ctx, tx, source)
 	if err != nil {
 		return err
 	}
@@ -42,12 +42,12 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 
 	writer := chunkWriter{tx: tx, target: target, source: source, vault: vault}
 	for _, large := range chunks {
-		row, err := writer.upsert(ctx, large, nil, len(large.Small) == 0)
+		row, err := writer.writeChunk(ctx, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := writer.upsert(ctx, small, row, true); err != nil {
+			if _, err := writer.writeChunk(ctx, small, row, true); err != nil {
 				return err
 			}
 		}
@@ -65,7 +65,7 @@ type chunkWriter struct {
 	source, vault int64
 }
 
-func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf bool) (int64, error) {
+func (w chunkWriter) writeChunk(ctx context.Context, c Chunk, parent any, isLeaf bool) (int64, error) {
 	tx, target, source, vault := w.tx, w.target, w.source, w.vault
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
 	if row, hasRow := target.takeUnusedRow(key); hasRow {
@@ -120,7 +120,7 @@ type rows struct {
 	hash          map[int64]string
 }
 
-func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *rows, err error) {
+func listChunks(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *rows, err error) {
 	cursor, err := tx.QueryContext(ctx, getStatement("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)

@@ -71,7 +71,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 
 	// Backlinks are read before the move; afterwards nothing points at the old
 	// path.
-	pointing, err := u.links.GetBacklinks(ctx, v.ID, from)
+	pointing, err := u.links.ListBacklinks(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -175,7 +175,7 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 }
 
 func (u Move) getLandingPath(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, exists bool, err error) {
-	links, err := u.links.GetLinks(ctx, v.ID, was.From)
+	links, err := u.links.ListLinks(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err
 	}

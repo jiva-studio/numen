@@ -35,7 +35,7 @@ func getGraphVault(
 	if vault, ok := cache.getVaultRow(vaultID); ok {
 		return vault, true, nil
 	}
-	vault, err := vaultRow(ctx, db, vaultID)
+	vault, err := getVaultRow(ctx, db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, false, nil
 	}
