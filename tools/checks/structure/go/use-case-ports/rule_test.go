@@ -189,7 +189,6 @@ func listKernelPackages(t *testing.T, workspace load.WorkspacePackages) []*packa
 
 func getKnownInterfaceExceptions() map[string]string {
 	return map[string]string{
-		"NoteScanner is implemented by the use case vault.Scan":         "merging Scan breaks go/source-size, and ReadWholeVault needs a design",
 		"TriggerRunner is implemented by the use case trigger.Triggers": "waits for the window adapters of PR 8",
 	}
 }
