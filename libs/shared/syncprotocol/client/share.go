@@ -21,7 +21,7 @@ type ShareClient struct {
 // NewShareClient returns the client of the server at address. token returns the session token and is read again
 // for each call.
 func NewShareClient(address string, httpClient *http.Client, token func() string) *ShareClient {
-	return &ShareClient{rpc: syncv1connect.NewShareServiceClient(httpClient, address, newClientOptions(token))}
+	return &ShareClient{rpc: syncv1connect.NewShareServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // AppendShareLogEntry adds an entry to the member log of a share root. When another device was first, the answer

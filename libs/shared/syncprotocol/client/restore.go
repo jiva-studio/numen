@@ -21,7 +21,7 @@ type RestoreClient struct {
 // NewRestoreClient returns the client of the server at address. token returns the session token and is read
 // again for each call.
 func NewRestoreClient(address string, httpClient *http.Client, token func() string) *RestoreClient {
-	return &RestoreClient{rpc: syncv1connect.NewRestoreServiceClient(httpClient, address, newClientOptions(token))}
+	return &RestoreClient{rpc: syncv1connect.NewRestoreServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // GetRestoreEpoch returns the current epoch, nil before the first restore, and the key of the server that signs

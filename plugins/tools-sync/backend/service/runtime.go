@@ -83,7 +83,7 @@ func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
-	r.session.Configure(values[settingServer])
+	r.session.Configure(r.readServerAddress(values[settingServer]))
 }
 
 func (r *runtime) start(_ context.Context, address string) (*Backend, map[string]func(context.Context) error) {
@@ -92,6 +92,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
+		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),
 	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,

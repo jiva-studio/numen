@@ -3,10 +3,7 @@ package client
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/netip"
-	"net/url"
 	"time"
 
 	"connectrpc.com/connect"
@@ -18,13 +15,14 @@ import (
 
 // SubscriptionClient calls the subscription service of one server with the bearer of the session.
 type SubscriptionClient struct {
-	rpc syncv1connect.SubscriptionServiceClient
+	rpc    syncv1connect.SubscriptionServiceClient
+	server string
 }
 
 // NewSubscriptionClient returns the client of the server at address. token returns the session token and is
 // read again for each call.
 func NewSubscriptionClient(address string, httpClient *http.Client, token func() string) *SubscriptionClient {
-	return &SubscriptionClient{rpc: syncv1connect.NewSubscriptionServiceClient(httpClient, address, newClientOptions(token))}
+	return &SubscriptionClient{rpc: syncv1connect.NewSubscriptionServiceClient(httpClient, address, newClientOptions(address, token)), server: address}
 }
 
 // GetSubscription returns the subscription of the account of the session. A response with no phase is an error.
@@ -53,15 +51,15 @@ func readSubscription(message *syncv1.GetSubscriptionResponse) (syncprotocol.Sub
 }
 
 // CreateCheckout returns the address of a payment page for the plan and the account of the session. An account with an
-// active subscription gets ErrAlreadySubscribed. An address that is not https, or http on a loopback host, is
-// an error: the caller opens it in a browser.
+// active subscription gets ErrAlreadySubscribed. An address that syncprotocol.CheckPaymentAddress refuses is an
+// error: the caller opens it in a browser.
 func (c *SubscriptionClient) CreateCheckout(ctx context.Context, plan string) (string, error) {
 	response, err := c.rpc.CreateCheckout(ctx, connect.NewRequest(&syncv1.CreateCheckoutRequest{Plan: plan}))
 	if err != nil {
 		return "", syncprotocol.ReadSubscriptionError(err)
 	}
 	address := response.Msg.GetCheckoutUrl()
-	if err := checkCheckoutAddress(address); err != nil {
+	if err := syncprotocol.CheckPaymentAddress(c.server, address); err != nil {
 		return "", err
 	}
 	return address, nil
@@ -72,29 +70,6 @@ func readUnixTime(seconds int64) time.Time {
 		return time.Time{}
 	}
 	return time.Unix(seconds, 0)
-}
-
-func checkCheckoutAddress(address string) error {
-	parsed, err := url.Parse(address)
-	if err != nil {
-		return errors.New("the sync server sent a payment address that is not an address")
-	}
-	host := parsed.Hostname()
-	if host == "" || !isBrowserScheme(parsed.Scheme, host) {
-		return fmt.Errorf("the sync server sent a payment address that is not https: %q", parsed.Scheme)
-	}
-	return nil
-}
-
-func isBrowserScheme(scheme, host string) bool {
-	if scheme == "https" {
-		return true
-	}
-	if scheme != "http" {
-		return false
-	}
-	ip, err := netip.ParseAddr(host)
-	return host == "localhost" || (err == nil && ip.IsLoopback())
 }
 
 // ListPlans returns the plans the server sells, ascending by quota. A server that sells none is
@@ -131,7 +106,7 @@ func (c *SubscriptionClient) CreatePortalSession(ctx context.Context) (string, e
 		return "", syncprotocol.ReadChangePlanError(err)
 	}
 	address := response.Msg.GetPortalUrl()
-	if err := checkCheckoutAddress(address); err != nil {
+	if err := syncprotocol.CheckPaymentAddress(c.server, address); err != nil {
 		return "", err
 	}
 	return address, nil

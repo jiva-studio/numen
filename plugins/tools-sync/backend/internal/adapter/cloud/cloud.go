@@ -3,6 +3,7 @@
 package cloud
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"net/http"
@@ -19,11 +20,14 @@ type Config struct {
 	Token   func() string
 	Refresh func(ctx context.Context) error
 	Stream  *http.Client
+	// Storage moves the blobs over presigned addresses; a nil Storage uses HTTP.
+	Storage *http.Client
 }
 
 // Cloud is the sync server at an address.
 type Cloud struct {
 	http         *http.Client
+	storage      *http.Client
 	refresh      func(ctx context.Context) error
 	catalog      *syncclient.CatalogClient
 	revisions    *syncclient.RevisionClient
@@ -39,6 +43,7 @@ type Cloud struct {
 func New(cfg Config) *Cloud {
 	return &Cloud{
 		http:         cfg.HTTP,
+		storage:      cmp.Or(cfg.Storage, cfg.HTTP),
 		refresh:      cfg.Refresh,
 		catalog:      syncclient.NewCatalogClient(cfg.Address, cfg.HTTP, cfg.Token),
 		revisions:    syncclient.NewRevisionClient(cfg.Address, cfg.HTTP, cfg.Token),
@@ -101,11 +106,11 @@ func (c *Cloud) GetAccountChain(ctx context.Context) ([]byte, error) {
 
 // PutBlob uploads a blob to the URL of its reservation.
 func (c *Cloud) PutBlob(ctx context.Context, url string, body []byte) error {
-	return syncclient.PutBlob(ctx, c.http, url, body)
+	return syncclient.PutBlob(ctx, c.storage, url, body)
 }
 
 func (c *Cloud) GetBlob(ctx context.Context, url string) ([]byte, error) {
-	return syncclient.GetBlob(ctx, c.http, url)
+	return syncclient.GetBlob(ctx, c.storage, url)
 }
 
 func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription, error) {
