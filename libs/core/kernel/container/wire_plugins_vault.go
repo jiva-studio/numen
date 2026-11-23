@@ -124,9 +124,7 @@ func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) plugin
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.WatchMoves == nil {
-		hooks.WatchMoves = func(ctx context.Context) (<-chan struct{}, error) {
-			return watchVaultMoves(ctx, v.IndexPath, v.Watcher)
-		}
+		hooks.WatchMoves = func(ctx context.Context) (<-chan struct{}, error) { return watchMoves(ctx, v.IndexPath, v.Watcher) }
 	}
 	return hooks
 }

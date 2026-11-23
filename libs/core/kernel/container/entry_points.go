@@ -115,7 +115,7 @@ type ShellLog struct {
 }
 
 func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := watchVaultMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
+	changes, err := watchMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {

@@ -49,7 +49,7 @@ func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (
 	return &vaultIndex{DB: db, File: path, Ledger: indexing.NewLedger(), Versions: version.NewIndexVersions(db.TextVersions())}, nil
 }
 
-func watchVaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watcher) (<-chan struct{}, error) {
+func watchMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watcher) (<-chan struct{}, error) {
 	path, err := indexfolder.Prepare(indexPath)
 	if err != nil {
 		return nil, err

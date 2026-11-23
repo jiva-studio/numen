@@ -155,7 +155,7 @@ func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
 
 func Moves(c TestInstallation, ctx context.Context) (<-chan struct{}, error) {
 	access := c.buildVaultWiring()
-	return watchVaultMoves(ctx, access.IndexPath, access.Watcher)
+	return watchMoves(ctx, access.IndexPath, access.Watcher)
 }
 
 func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases {
