@@ -8,7 +8,9 @@ import Toast from './Toast.vue'
 const mounted: VueWrapper[] = []
 
 const mountToast = (text: string, durationMs?: number) => {
-  const toast = mount(Toast, { props: { text, durationMs } })
+  const toast = mount(Toast, {
+    props: durationMs === undefined ? { text } : { text, durationMs },
+  })
   mounted.push(toast)
   return toast
 }
