@@ -1246,7 +1246,10 @@ type PluginSettingsView struct {
 	// The id the frontend registers the component under.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// What the component is called.
-	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Where the component is drawn: empty for the settings of the plugin, "identity" for the page "Identity and
+	// licenses".
+	Page          string `protobuf:"bytes,3,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1291,6 +1294,13 @@ func (x *PluginSettingsView) GetId() string {
 func (x *PluginSettingsView) GetTitle() string {
 	if x != nil {
 		return x.Title
+	}
+	return ""
+}
+
+func (x *PluginSettingsView) GetPage() string {
+	if x != nil {
+		return x.Page
 	}
 	return ""
 }
@@ -1999,10 +2009,11 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04keys\x18\x03 \x01(\tR\x04keys\":\n" +
 	"\x12PluginSettingGroup\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\":\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"N\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\">\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\tR\x04page\">\n" +
 	"\fPluginReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +

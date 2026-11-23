@@ -3230,9 +3230,11 @@ func (x *ManifestSettingGroup) GetTitle() string {
 }
 
 type ManifestSettingsView struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// page is empty for the form of the plugin, or "identity" for the page "Identity and licenses".
+	Page          string `protobuf:"bytes,3,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3277,6 +3279,13 @@ func (x *ManifestSettingsView) GetId() string {
 func (x *ManifestSettingsView) GetTitle() string {
 	if x != nil {
 		return x.Title
+	}
+	return ""
+}
+
+func (x *ManifestSettingsView) GetPage() string {
+	if x != nil {
+		return x.Page
 	}
 	return ""
 }
@@ -3577,10 +3586,11 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04rank\x18\x03 \x01(\tR\x04rank\"<\n" +
 	"\x14ManifestSettingGroup\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"<\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"P\n" +
 	"\x14ManifestSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05titleBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\tR\x04pageBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_manifest_proto_rawDescOnce sync.Once
