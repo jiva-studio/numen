@@ -103,8 +103,12 @@ const findPlanButton = (wrapper: VueWrapper) =>
 const getPlanItems = () =>
   Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'))
 
-const getPlanName = (item: Element): string =>
-  item.querySelector('.menu__text')?.firstChild?.textContent?.trim() ?? ''
+const getPlanName = (item: Element): string => {
+  const name = Array.from(item.querySelector('.menu__text')?.childNodes ?? []).find(
+    (node) => node.nodeType !== Node.COMMENT_NODE,
+  )
+  return name?.textContent?.trim() ?? ''
+}
 
 const getPlanChoices = (): string[] => getPlanItems().map(getPlanName)
 

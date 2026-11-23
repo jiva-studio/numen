@@ -3,10 +3,11 @@
  * The button "Change plan" of the card and the menu it opens: every plan with its size and price, the current
  * one checked, tagged "Current plan" and not to be chosen. Choosing another plan emits it; nothing changes here.
  */
-import { computed, defineComponent, h, markRaw, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { Check, ChevronDown } from '@lucide/vue'
-import { Button, Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
-import { getOfferDetail, type PlanOffer } from '../lib/subscriptionView'
+import { Button, Menu, measureRect, type Position } from '@numen/ui'
+import { getPlanItems } from '../lib/planItems'
+import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -31,27 +32,7 @@ const getTrigger = (): HTMLElement | null => {
 /** Where the menu is drawn and how wide its button is, and nothing while it is closed. */
 const anchor = ref<{ at: Position; wide: number } | null>(null)
 
-const createCurrentName = (name: string) =>
-  markRaw(
-    defineComponent({
-      name: 'CurrentPlanName',
-      setup: () => () => [
-        h('span', name),
-        h('span', { class: 'subscription__current-tag' }, words.currentPlan),
-      ],
-    }),
-  )
-
-const items = computed<readonly MenuItem[]>(() =>
-  props.offers.map((offer) => ({
-    id: offer.id,
-    text: offer.name,
-    detail: getOfferDetail(offer),
-    ...(offer.id === props.currentId
-      ? { isDisabled: true, component: createCurrentName(offer.name) }
-      : {}),
-  })),
-)
+const items = computed(() => getPlanItems(props.offers, props.currentId))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(): void {

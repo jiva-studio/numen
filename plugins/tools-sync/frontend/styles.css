@@ -277,7 +277,7 @@
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   font-weight: 500;
 }
 

@@ -222,7 +222,7 @@ export const ChangePlanOpen: Story = {
 }
 
 export const ConfirmSwitch: Story = {
-  args: ChangePlanOpen.args,
+  args: { ...ChangePlanOpen.args },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
