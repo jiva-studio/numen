@@ -41,7 +41,14 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(ctx context.Context, install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup) (*editor.Installation, error) {
+func connectWindow(
+	ctx context.Context,
+	install pluginInstall,
+	exec *PluginExecution,
+	vaultDeps vaultWiring,
+	opened *windowRoutes,
+	startup windowStartup,
+) (*editor.Installation, error) {
 	if !startup.isEditor {
 		return opened.Installation, nil
 	}

@@ -164,7 +164,8 @@ func CreatePluginHost(management *PluginManagement, roles *PluginSupervision) (*
 		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: management.Settings, Stopper: management.Teardown, Failures: roles.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: roles.Health, Keeper: management.Keeper,
+			Health: roles.Health,
+			Keeper: management.Keeper,
 		}).Execute,
 		Views: pluginViews{
 			Types: types, Operations: types,
