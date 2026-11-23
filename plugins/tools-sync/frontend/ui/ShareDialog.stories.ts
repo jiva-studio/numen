@@ -84,7 +84,7 @@ export const InvitationShown: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('textbox', { name: 'Invitation' })).toHaveValue(INVITATION)
-    await expect(canvas.getByText(/only they can use it/)).toBeVisible()
+    await expect(canvas.getByText(/only the reader can use it/)).toBeVisible()
   },
 }
 

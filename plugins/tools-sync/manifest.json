@@ -46,7 +46,8 @@
       "key": "receivedFolder",
       "type": "string",
       "title": "Folder for shared vaults",
-      "description": "Where the folders shared with you are kept. Empty means Numen Shared in your home folder.",
+      "description": "Where the folders shared with you are kept",
+      "details": "Where the folders shared with you are kept. Empty means Numen Shared in your home folder.",
       "default": ""
     }
   ],

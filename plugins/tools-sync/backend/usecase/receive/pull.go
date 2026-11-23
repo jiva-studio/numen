@@ -62,8 +62,8 @@ func (u *PullShare) Execute(ctx context.Context, id domain.VaultID) (transfer.Pu
 		return transfer.PullResult{}, err
 	}
 	err = r.execute(ctx)
-	if _, isEnded := errors.AsType[syncprotocol.ShareEndedError](err); isEnded {
-		err = r.end(ctx)
+	if ended, isEnded := errors.AsType[syncprotocol.ShareEndedError](err); isEnded {
+		err = r.end(ctx, ended.Version)
 	}
 	return r.result, err
 }
@@ -206,12 +206,12 @@ func (r *pullRun) sealKeys(ctx context.Context, keys domainshare.Keys) error {
 	return nil
 }
 
-func (r *pullRun) end(ctx context.Context) error {
+func (r *pullRun) end(ctx context.Context, version uint64) error {
 	r.link.Received.IsEnded = true
 	if err := r.deps.Links.WriteLink(ctx, r.id, r.link); err != nil {
 		return err
 	}
-	return domainshare.ErrEnded
+	return fmt.Errorf("%w at version %d", domainshare.ErrEnded, version)
 }
 
 func toEntryID(raw []byte) ([32]byte, error) {
@@ -435,9 +435,9 @@ func (r *pullRun) removeRecord(fileID []byte) {
 func (r *pullRun) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
 	rev := stored.GetRevision()
 	plain, err := r.fetch(ctx, rev, meta)
-	if _, isLimited := errors.AsType[syncprotocol.RateLimitedError](err); isLimited {
+	if limited, isLimited := errors.AsType[syncprotocol.RateLimitedError](err); isLimited {
 		r.hold(stored.GetSeq())
-		return errRateLimited
+		return fmt.Errorf("%w: retry after %s", errRateLimited, limited.RetryAfter)
 	}
 	if err != nil {
 		return err
