@@ -71,8 +71,8 @@ func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
 
 // A vault read into the index drops the failure shown for it and tells the subscribers.
 func TestAVaultReadReleasesItsRunAndReportsAChange(t *testing.T) {
-	runs, changes := &ensureindexed.Runs{}, &ensureindexed.Changes{}
-	runs.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	runs := ensureindexed.NewRuns(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	changes := &ensureindexed.Changes{}
 	runs.Record(getUnreadVault(), nil)
 	line, stop := changes.Subscribe()
 	defer stop()
