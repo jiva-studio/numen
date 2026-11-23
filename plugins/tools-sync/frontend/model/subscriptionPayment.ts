@@ -104,7 +104,7 @@ export function useSubscriptionPayment(
     endPaymentPoll()
   }
 
-  onScopeDispose(endPaymentPoll)
+  onScopeDispose(cancel)
 
   return { waiting, starting, startPurchase, cancel }
 }

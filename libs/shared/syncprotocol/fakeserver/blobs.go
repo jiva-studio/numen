@@ -176,6 +176,8 @@ func (s *Server) storeBlobBody(w http.ResponseWriter, r *http.Request, id string
 	switch {
 	case !found || row.state != blobReserved:
 		http.NotFound(w, r)
+	case s.checkWriteAllowed(row.account) != nil:
+		http.Error(w, "the subscription does not allow writes", http.StatusForbidden)
 	case !row.expiresAt.After(s.now()):
 		http.Error(w, "the upload URL expired", http.StatusForbidden)
 	case r.ContentLength != int64(len(body)) || uint64(len(body)) != row.size:

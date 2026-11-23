@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,6 +48,7 @@ func (s *Server) getPhase(account string) (syncv1.SubscriptionPhase, time.Time) 
 	case now.Before(periodEnd.Add(retention)):
 		return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, periodEnd
 	}
+	s.deleteVaults(account)
 	return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, periodEnd
 }
 
@@ -149,6 +151,14 @@ func (s *Server) serveSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 	phase := r.URL.Query().Get("phase")
 	age, known := getPhaseAge(phase)
+	if days := r.URL.Query().Get("days"); known && phase != "active" && days != "" {
+		count, err := strconv.Atoi(days)
+		if err != nil || count < 0 {
+			http.Error(w, "days is a number of days", http.StatusBadRequest)
+			return
+		}
+		age = time.Duration(count) * day
+	}
 	if !known && phase != "none" {
 		http.Error(w, "phase is none, active, grace, read_only or deleted", http.StatusBadRequest)
 		return
@@ -232,4 +242,19 @@ func (s *Server) getSubscriptionMessage(account string) *syncv1.GetSubscriptionR
 		response.UsedBytes = s.used[account]
 	}
 	return response
+}
+
+func (s *Server) deleteVaults(account string) {
+	delete(s.catalogs, account)
+	delete(s.used, account)
+	for id, vault := range s.vaults {
+		if vault.account == account {
+			delete(s.vaults, id)
+		}
+	}
+	for id, row := range s.blobs {
+		if row.account == account {
+			delete(s.blobs, id)
+		}
+	}
 }

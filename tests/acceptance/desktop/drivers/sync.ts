@@ -216,7 +216,7 @@ export class SyncDriver {
   /** Sets the subscription of every account to one that ended some days ago. */
   async endSubscription(daysAgo: number): Promise<void> {
     const phase = getSubscriptionPhase(daysAgo)
-    const answer = await fetch(`${this.requireRunning().address}/admin/subscription?phase=${phase}`, { method: 'POST' })
+    const answer = await fetch(`${this.requireRunning().address}/admin/subscription?phase=${phase}&days=${daysAgo}`, { method: 'POST' })
     if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the end of the subscription`)
     if (phase === 'deleted') await this.sendAdminRequest('/admin/retention', 'the deletion of the vaults')
   }
