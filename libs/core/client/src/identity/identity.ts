@@ -54,23 +54,23 @@ export type LinkMode = 'show' | 'scan'
 
 /** Where the link stands. */
 export type LinkPhase =
-  | 'waiting_for_channel'
-  | 'waiting_for_peer'
-  | 'confirm_peer'
-  | 'waiting_for_accept'
-  | 'enter_code'
+  | 'waitingForChannel'
+  | 'waitingForPeer'
+  | 'confirmPeer'
+  | 'waitingForAccept'
+  | 'enterCode'
   | 'publishing'
-  | 'confirm_account'
+  | 'confirmAccount'
   | 'linked'
   | 'failed'
 
 /** Why a link failed. */
 export type LinkReason =
   | 'declined'
-  | 'device_has_identity'
-  | 'wrong_code'
-  | 'too_many_wrong_codes'
-  | 'stale_chain'
+  | 'deviceHasIdentity'
+  | 'wrongCode'
+  | 'tooManyWrongCodes'
+  | 'staleChain'
   | 'cancelled'
   | 'expired'
   | 'invalid'
@@ -190,13 +190,13 @@ const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefi
   ERROR_CODES[code]
 
 const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
-  [ProtoLinkPhase.WAITING_FOR_CHANNEL]: 'waiting_for_channel',
-  [ProtoLinkPhase.WAITING_FOR_PEER]: 'waiting_for_peer',
-  [ProtoLinkPhase.CONFIRM_PEER]: 'confirm_peer',
-  [ProtoLinkPhase.WAITING_FOR_ACCEPT]: 'waiting_for_accept',
-  [ProtoLinkPhase.ENTER_CODE]: 'enter_code',
+  [ProtoLinkPhase.WAITING_FOR_CHANNEL]: 'waitingForChannel',
+  [ProtoLinkPhase.WAITING_FOR_PEER]: 'waitingForPeer',
+  [ProtoLinkPhase.CONFIRM_PEER]: 'confirmPeer',
+  [ProtoLinkPhase.WAITING_FOR_ACCEPT]: 'waitingForAccept',
+  [ProtoLinkPhase.ENTER_CODE]: 'enterCode',
   [ProtoLinkPhase.PUBLISHING]: 'publishing',
-  [ProtoLinkPhase.CONFIRM_ACCOUNT]: 'confirm_account',
+  [ProtoLinkPhase.CONFIRM_ACCOUNT]: 'confirmAccount',
   [ProtoLinkPhase.LINKED]: 'linked',
 }
 
@@ -209,13 +209,13 @@ const readReason = (reason: ProtoLinkReason): LinkReason | undefined => {
     case ProtoLinkReason.DECLINED:
       return 'declined'
     case ProtoLinkReason.DEVICE_HAS_IDENTITY:
-      return 'device_has_identity'
+      return 'deviceHasIdentity'
     case ProtoLinkReason.WRONG_CODE:
-      return 'wrong_code'
+      return 'wrongCode'
     case ProtoLinkReason.TOO_MANY_WRONG_CODES:
-      return 'too_many_wrong_codes'
+      return 'tooManyWrongCodes'
     case ProtoLinkReason.STALE_CHAIN:
-      return 'stale_chain'
+      return 'staleChain'
     case ProtoLinkReason.CANCELED:
       return 'cancelled'
     case ProtoLinkReason.EXPIRED:
@@ -330,7 +330,7 @@ export const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
 })
 
 /** The identity managed through an IdentityService client. */
-export const buildIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
+export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   ...createAccountClient(rpc),
   ...createLinkClient(rpc),
   ...createDevicesClient(rpc),

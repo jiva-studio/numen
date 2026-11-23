@@ -1,8 +1,8 @@
 /** The list of devices, the revoke after a question, and the one way to join an account, against the real store. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import type { DeviceInfo, IdentityClient } from '@numen/core-client'
-import { createIdentityStore } from '@/entities/identity'
+import type { IdentityClient } from '@numen/core-client'
+import { createIdentityStore, type DeviceInfo } from '@/entities/identity'
 import { click, dispose, findButton, findButtons, findText } from '@/testing/dom'
 import {
   createDeviceInfo,

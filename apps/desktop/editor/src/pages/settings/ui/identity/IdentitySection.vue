@@ -23,18 +23,17 @@ const { stage, recoveryWords } = setup
 </script>
 
 <template>
-  <template v-if="current">
-    <IdentityDetails
-      :info="current"
-      :problem="call.problem.value"
-      :is-busy="call.isBusy.value"
-      :is-asking-delete="deletion.isAskingDelete.value"
-      @ask="deletion.askDelete"
-      @confirm="deletion.confirmDelete"
-      @cancel="deletion.cancelDelete"
-    />
-    <DevicesSection v-if="!current.isRevoked" :calls="identity.devices" has-identity />
-  </template>
+  <IdentityDetails
+    v-if="current"
+    :info="current"
+    :problem="call.problem.value"
+    :is-busy="call.isBusy.value"
+    :is-asking-delete="deletion.isAskingDelete.value"
+    :devices="identity.devices"
+    @ask="deletion.askDelete"
+    @confirm="deletion.confirmDelete"
+    @cancel="deletion.cancelDelete"
+  />
 
   <IslandCard v-else :title="words.identitySection">
     <template #aside>{{ words.identityNone }}</template>

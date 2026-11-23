@@ -76,7 +76,7 @@ describe('useLinkSession', () => {
 
   it('passes the answer of the person on and reads the link again', async () => {
     const decideLink = vi.fn(() => ok(undefined))
-    const getLink = vi.fn(() => ok(createLinkInfo({ phase: 'confirm_peer' })))
+    const getLink = vi.fn(() => ok(createLinkInfo({ phase: 'confirmPeer' })))
     const { session, answers } = mountSession({
       startLink: () => ok(createLinkInfo()),
       getLink,

@@ -44,23 +44,23 @@ export type LinkMode = 'show' | 'scan'
 
 /** Where the link stands. */
 export type LinkPhase =
-  | 'waiting_for_channel'
-  | 'waiting_for_peer'
-  | 'confirm_peer'
-  | 'waiting_for_accept'
-  | 'enter_code'
+  | 'waitingForChannel'
+  | 'waitingForPeer'
+  | 'confirmPeer'
+  | 'waitingForAccept'
+  | 'enterCode'
   | 'publishing'
-  | 'confirm_account'
+  | 'confirmAccount'
   | 'linked'
   | 'failed'
 
 /** Why a link failed. */
 type LinkReason =
   | 'declined'
-  | 'device_has_identity'
-  | 'wrong_code'
-  | 'too_many_wrong_codes'
-  | 'stale_chain'
+  | 'deviceHasIdentity'
+  | 'wrongCode'
+  | 'tooManyWrongCodes'
+  | 'staleChain'
   | 'cancelled'
   | 'expired'
   | 'invalid'

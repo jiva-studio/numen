@@ -1,10 +1,11 @@
 /** An identity client of the core that refuses every call; a test overrides the calls it needs. */
-import type { DeviceInfo, IdentityClient, IdentityFailure, LinkInfo } from '@numen/core-client'
+import type { IdentityClient, IdentityFailure, LinkInfo } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import {
   createAccountApi,
   createDevicesApi,
   createDeviceLinkApi,
+  type DeviceInfo,
   type IdentityApi,
 } from '@/entities/identity'
 
@@ -33,7 +34,7 @@ export const createIdentityClient = (overrides: Partial<IdentityClient> = {}): I
 
 /** A link in the phase and with the fields the test gives; the rest is empty. */
 export const createLinkInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => ({
-  phase: 'waiting_for_peer',
+  phase: 'waitingForPeer',
   mode: 'show',
   role: 'host',
   qrText: 'numen://link?v=1&c=AAAA&k=BBBB&s=CCCC',

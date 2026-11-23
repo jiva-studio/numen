@@ -22,7 +22,7 @@ import {
 } from '@numen/protocol'
 import { createIdentityRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
-import { buildIdentityClient, type IdentityInfo } from './identity'
+import { createIdentityClient, type IdentityInfo } from './identity'
 
 const WORDS = [
   'legal',
@@ -49,9 +49,9 @@ const INFO = {
 const EXPECTED: IdentityInfo = { ...INFO, isRevoked: false, keyEpoch: 0 }
 
 const createClient = (answers: CoreAnswers['identity'] = {}) =>
-  buildIdentityClient(createIdentityRpc(createCoreTransport({ identity: answers })))
+  createIdentityClient(createIdentityRpc(createCoreTransport({ identity: answers })))
 
-describe('buildIdentityClient', () => {
+describe('createIdentityClient', () => {
   it('reads the identity of this device', async () => {
     const client = createClient({
       getIdentity: () => create(GetIdentityResponseSchema, { identity: INFO }),
@@ -167,7 +167,7 @@ const LINK = {
   isApproved: false,
 }
 
-describe('buildIdentityClient link', () => {
+describe('createIdentityClient link', () => {
   it('sends the role, the mode and the scanned text to start a link and reads the link', async () => {
     let sent: { role: LinkRole; mode: LinkMode; scannedText: string } | undefined
     const client = createClient({
@@ -185,7 +185,7 @@ describe('buildIdentityClient link', () => {
     expect(answer).toMatchObject({
       ok: true,
       value: {
-        phase: 'confirm_peer',
+        phase: 'confirmPeer',
         mode: 'scan',
         role: 'host',
         code: '123456',
@@ -203,7 +203,7 @@ describe('buildIdentityClient link', () => {
     })
     expect(await client.getLink()).toMatchObject({
       ok: true,
-      value: { phase: 'failed', reason: 'too_many_wrong_codes' },
+      value: { phase: 'failed', reason: 'tooManyWrongCodes' },
     })
   })
 

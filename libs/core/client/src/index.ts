@@ -116,12 +116,10 @@ export {
   createLicenseClient,
 } from './licenses'
 export {
-  type DeviceInfo,
   type IdentityClient,
   type IdentityFailure,
   type LinkInfo,
-  type LinkRole,
-  buildIdentityClient,
+  createIdentityClient,
 } from './identity'
 export {
   NoteGraphSchema,

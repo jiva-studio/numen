@@ -1,8 +1,8 @@
 /** The dialog of a link: the choice, the QR code, the new device, the code and the account, against the real store. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import type { IdentityClient, LinkRole } from '@numen/core-client'
-import { createIdentityStore, type LinkInfo } from '@/entities/identity'
+import type { IdentityClient } from '@numen/core-client'
+import { createIdentityStore, type LinkInfo, type LinkRole } from '@/entities/identity'
 import { click, dispose, enterText, findButton, textInputs } from '@/testing/dom'
 import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
 import LinkDialog from './LinkDialog.vue'
@@ -59,7 +59,7 @@ describe('the link dialog', () => {
   })
 
   it('starts as the scanner with the text pasted', async () => {
-    const startLink = vi.fn(() => ok(createLinkInfo({ phase: 'waiting_for_accept', mode: 'scan' })))
+    const startLink = vi.fn(() => ok(createLinkInfo({ phase: 'waitingForAccept', mode: 'scan' })))
     await mountDialog('host', createLinkInfo(), { startLink })
     await click(findButton(/^Scan a QR code$/))
     await enterText(textInputs()[0] as HTMLInputElement, 'numen://link?v=1')
@@ -82,7 +82,7 @@ describe('the link dialog', () => {
 
   it('shows the new device and passes the approval on', async () => {
     const link = createLinkInfo({
-      phase: 'confirm_peer',
+      phase: 'confirmPeer',
       peerName: 'Phone',
       peerFingerprint: '1111 2222',
       code: '482913',
@@ -99,7 +99,7 @@ describe('the link dialog', () => {
 
   it('passes the decline on', async () => {
     const link = createLinkInfo({
-      phase: 'confirm_peer',
+      phase: 'confirmPeer',
       peerName: 'Phone',
       peerFingerprint: '1111 2222',
     })
@@ -112,7 +112,7 @@ describe('the link dialog', () => {
 
   it('waits for the code once the new device was approved', async () => {
     const link = createLinkInfo({
-      phase: 'confirm_peer',
+      phase: 'confirmPeer',
       isApproved: true,
       peerName: 'Phone',
       peerFingerprint: '1111 2222',
@@ -124,7 +124,7 @@ describe('the link dialog', () => {
   })
 
   it('sends the code the person typed on the new device', async () => {
-    const link = createLinkInfo({ phase: 'enter_code', role: 'joiner', mode: 'scan', triesLeft: 2 })
+    const link = createLinkInfo({ phase: 'enterCode', role: 'joiner', mode: 'scan', triesLeft: 2 })
     const enterLinkCode = vi.fn(() => ok(undefined))
     const dialog = await mountDialog('joiner', link, { enterLinkCode })
     await click(findButton(/^Show a QR code$/))
@@ -136,7 +136,7 @@ describe('the link dialog', () => {
 
   it('asks the new device to join the account and passes the answer on', async () => {
     const link = createLinkInfo({
-      phase: 'confirm_account',
+      phase: 'confirmAccount',
       role: 'joiner',
       accountFingerprint: '3F2A 91C0',
     })
@@ -149,7 +149,7 @@ describe('the link dialog', () => {
   })
 
   it('says why a link failed', async () => {
-    const link = createLinkInfo({ phase: 'failed', reason: 'too_many_wrong_codes' })
+    const link = createLinkInfo({ phase: 'failed', reason: 'tooManyWrongCodes' })
     const dialog = await mountDialog('host', link)
     await click(findButton(/^Show a QR code$/))
     expect(dialog.get('[role="alert"]').text()).toBe('Too many wrong codes. The link is closed.')

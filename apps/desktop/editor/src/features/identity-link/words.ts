@@ -5,6 +5,7 @@ export const WORDS = {
   deviceJoin: 'Join with a QR code',
   deviceThis: 'This device',
   deviceRevoked: 'Revoked',
+  deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   deviceRevoke: 'Revoke',
   deviceRevokeTitle: 'Revoke this device?',
   deviceRevokeWarning: (name: string) =>
@@ -39,17 +40,17 @@ export const WORDS = {
     switch (reason) {
       case 'declined':
         return 'The new device was declined.'
-      case 'device_has_identity':
+      case 'deviceHasIdentity':
         return 'This device has an identity.'
-      case 'too_many_wrong_codes':
+      case 'tooManyWrongCodes':
         return 'Too many wrong codes. The link is closed.'
-      case 'wrong_code':
+      case 'wrongCode':
         return 'The code was wrong.'
       case 'cancelled':
         return 'The link was cancelled.'
       case 'expired':
         return 'The link ran out of time.'
-      case 'stale_chain':
+      case 'staleChain':
         return 'The account changed while linking. Try again.'
       default:
         return 'The link failed.'

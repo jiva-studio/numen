@@ -29,10 +29,10 @@ const ownFacts = computed<Fact[]>(() =>
     : [],
 )
 const isWaiting = computed(() =>
-  ['waiting_for_peer', 'waiting_for_accept'].includes(props.link.phase),
+  ['waitingForPeer', 'waitingForAccept'].includes(props.link.phase),
 )
 const isShowingQr = computed(
-  () => props.link.phase === 'waiting_for_peer' && props.link.mode === 'show',
+  () => props.link.phase === 'waitingForPeer' && props.link.mode === 'show',
 )
 const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFingerprint : ''))
 </script>
@@ -40,11 +40,11 @@ const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFi
 <template>
   <div class="link-progress">
     <LinkFacts v-if="ownFacts.length > 0" :facts="ownFacts" />
-    <p v-if="link.phase === 'waiting_for_channel'">{{ words.linkPreparing }}</p>
+    <p v-if="link.phase === 'waitingForChannel'">{{ words.linkPreparing }}</p>
     <LinkQrView v-else-if="isShowingQr" :qr-text="link.qrText" :account-fingerprint="hostAccount" />
     <p v-else-if="isWaiting">{{ words.linkWaiting }}</p>
     <LinkPeerView
-      v-else-if="link.phase === 'confirm_peer'"
+      v-else-if="link.phase === 'confirmPeer'"
       :name="link.peerName"
       :fingerprint="link.peerFingerprint"
       :code="link.code"
@@ -53,13 +53,13 @@ const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFi
       @decide="emit('decide', $event)"
     />
     <LinkCodeForm
-      v-else-if="link.phase === 'enter_code'"
+      v-else-if="link.phase === 'enterCode'"
       :tries-left="link.triesLeft"
       :is-busy="isBusy"
       @submit="emit('code', $event)"
     />
     <LinkJoinQuestion
-      v-else-if="link.phase === 'confirm_account' && role === 'joiner'"
+      v-else-if="link.phase === 'confirmAccount' && role === 'joiner'"
       :account="link.accountFingerprint"
       :is-busy="isBusy"
       @answer="emit('join', $event)"
