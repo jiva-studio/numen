@@ -44,7 +44,7 @@ describe('createPluginLoader', () => {
     const getSetting: NonNullable<LoaderHost['getSetting']> = vi.fn(
       (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
     ) as unknown as NonNullable<LoaderHost['getSetting']>
-    const onSettingChange = vi.fn(
+    const watchSetting = vi.fn(
       (pluginId: string, key: string, handler: (val: unknown) => void | Promise<void>) => {
         const compositeKey = `${pluginId}.${key}`
         let activeSet = settingListeners.get(compositeKey)
@@ -95,7 +95,7 @@ describe('createPluginLoader', () => {
                 getSetting(pluginId, key),
               ) as unknown as PluginSettings['get'],
               onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
-                onSettingChange(pluginId, key, handler),
+                watchSetting(pluginId, key, handler),
               ),
               getEditor: vi.fn(() => undefined),
               onEditorChange: vi.fn(() => ({ dispose: vi.fn() })),
@@ -127,7 +127,7 @@ describe('createPluginLoader', () => {
         return parts
       }),
       getSetting,
-      onSettingChange,
+      watchSetting,
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
       triggerSettingChange,
@@ -401,7 +401,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
       getSetting: vi.fn((id: string, key: string) => settings[`${id}.${key}`]),
-      onSettingChange: vi.fn(
+      watchSetting: vi.fn(
         (id: string, _key: string, handler: (value: unknown) => void | Promise<void>) => {
           listeners.set(id, handler)
           return {
@@ -691,7 +691,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.start()
     await loader.trackPlugins(['p'])
 
-    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+    expect(host.watchSetting).toHaveBeenCalledTimes(1)
     await listeners.get('p')?.(false)
     expect(loader.status.isPluginActive('p')).toBe(false)
     await listeners.get('p')?.(true)
@@ -726,7 +726,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.status.startPlugin('dyn')
 
     expect(loader.status.isPluginActive('dyn')).toBe(true)
-    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+    expect(host.watchSetting).toHaveBeenCalledTimes(1)
   })
 
   it('imports a dynamic plugin from its entrypoint url at each activation', async () => {
@@ -886,7 +886,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     await loader.trackPlugins(['tracked.one', 'tracked.one', 'backend.only'])
     expect(loader.status.isPluginActive('tracked.one')).toBe(false)
-    expect(host.onSettingChange).not.toHaveBeenCalled()
+    expect(host.watchSetting).not.toHaveBeenCalled()
 
     await loader.start()
     expect(loader.status.isPluginActive('tracked.one')).toBe(false)

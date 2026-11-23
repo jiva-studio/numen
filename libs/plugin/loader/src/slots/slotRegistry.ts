@@ -66,7 +66,7 @@ interface SlotRegistryDeps {
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly when?: {
-    readonly getValues?: (target: CommandTarget | undefined) => WhenValues
+    readonly getValues?: (target: CommandTarget | undefined) => WhenValues | undefined
     readonly reader?: WhenReader
   }
   readonly requestPlugin?: (pluginId: string) => void

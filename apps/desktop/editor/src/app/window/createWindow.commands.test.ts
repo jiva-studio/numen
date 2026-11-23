@@ -159,7 +159,7 @@ describe('the parts of the window wired together', () => {
     expect(api.plugins.pluginHost.getPluginTexts('p1')).toBeDefined()
     expect(
       await api.plugins.pluginHost
-        .getPluginConnections('p1', () => () => undefined)
+        .getPluginConnections('p1', () => ({ dispose: () => undefined }))
         .listRows?.('llm.complete'),
     ).toStrictEqual([])
 

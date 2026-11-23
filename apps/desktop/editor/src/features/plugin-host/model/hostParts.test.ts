@@ -19,7 +19,7 @@ import {
 import { createHostPort } from './hostPort'
 import {
   createPluginSettingsAccessor,
-  createRowChangeSubscriber,
+  createRowChangeWatcher,
   createWindowPluginStatus,
 } from './pluginSettings'
 import { createNoteKindReader } from './window/createNoteKindReader'
@@ -317,7 +317,7 @@ describe('the search menu, host parts, host port and row change subscriber', () 
     expect(status.state.isEnabled('md.on')).toBe(true)
 
     const onRowChange = vi.fn()
-    createRowChangeSubscriber(rest as never)(onRowChange)
+    createRowChangeWatcher(rest as never)(onRowChange)
     const accessor = createPluginSettingsAccessor(rest as never, vi.fn())
     expect(accessor.getSetting('md.off', 'enabled')).toBe(false)
 
