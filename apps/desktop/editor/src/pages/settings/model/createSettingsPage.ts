@@ -229,7 +229,7 @@ function createInstallationConnections(
       operations: readonly string[],
     ) => {
       const answer = await api.listRowOptions(connectionId, field, options, operations)
-      return answer.ok ? answer : { ok: false as const, error: answer.error.detail }
+      return answer.ok ? answer : { ok: false as const, error: answer.error.message }
     },
     countNotes: () => countNotes(api.listFiles),
   }

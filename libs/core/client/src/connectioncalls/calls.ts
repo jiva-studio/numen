@@ -12,7 +12,7 @@ import {
   type CallFailure,
 } from '@numen/protocol'
 import type { RowOption } from '../connections'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** The calls of ConnectionCallService. */
 export type ConnectionCallRpc = Pick<
@@ -53,7 +53,7 @@ export interface ConnectionCallRequest {
  * has `unavailable`.
  */
 export type ConnectionCallFailureCode =
-  'unavailable' | 'rejected_key' | 'payment_required' | 'rate_limited' | 'invalid_request'
+  'unavailable' | 'rejectedKey' | 'paymentRequired' | 'rateLimited' | 'invalidRequest'
 
 /** One row of a plugin that did not answer: `reason` is the words the person reads, `code` the reason. */
 export interface ConnectionCallRowFailure {
@@ -63,12 +63,10 @@ export interface ConnectionCallRowFailure {
 }
 
 /** Why no row answered a call. */
-export type ConnectionCallErrorCode = 'no_connection' | 'all_failed' | 'stopped'
+export type ConnectionCallErrorCode = 'noConnection' | 'allFailed' | 'stopped'
 
 /** A served refusal of a call, with the reason the core gives and the rows that failed. */
-export interface ConnectionCallFailure {
-  readonly errorCode: ConnectionCallErrorCode
-  readonly detail: string
+export interface ConnectionCallFailure extends Failure<ConnectionCallErrorCode> {
   readonly failures: readonly ConnectionCallRowFailure[]
 }
 
@@ -128,9 +126,9 @@ export interface ConnectionCallClient {
 const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
   switch (code) {
     case CallErrorCode.NO_CONNECTION:
-      return 'no_connection'
+      return 'noConnection'
     case CallErrorCode.ALL_FAILED:
-      return 'all_failed'
+      return 'allFailed'
     case CallErrorCode.STOPPED:
       return 'stopped'
     case CallErrorCode.UNSPECIFIED:
@@ -141,13 +139,13 @@ const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
 const readFailureCode = (code: FailureReason): ConnectionCallFailureCode => {
   switch (code) {
     case FailureReason.REJECTED_KEY:
-      return 'rejected_key'
+      return 'rejectedKey'
     case FailureReason.PAYMENT_REQUIRED:
-      return 'payment_required'
+      return 'paymentRequired'
     case FailureReason.RATE_LIMITED:
-      return 'rate_limited'
+      return 'rateLimited'
     case FailureReason.INVALID_REQUEST:
-      return 'invalid_request'
+      return 'invalidRequest'
     case FailureReason.UNAVAILABLE:
     case FailureReason.UNSPECIFIED:
       return 'unavailable'
@@ -155,8 +153,8 @@ const readFailureCode = (code: FailureReason): ConnectionCallFailureCode => {
 }
 
 const readFailure = (failure: CallFailure): ConnectionCallFailure => ({
-  errorCode: readErrorCode(failure.error),
-  detail: failure.detail,
+  error: readErrorCode(failure.error),
+  message: failure.detail,
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,
