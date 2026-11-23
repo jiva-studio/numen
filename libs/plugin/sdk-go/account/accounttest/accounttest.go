@@ -34,6 +34,8 @@ type Fake struct {
 	failure error
 	signed  int
 	pending *pendingRestore
+
+	beforeCompletion func()
 }
 
 // NewFake starts a host with an identity, serving a plugin of the id, and stops it when the test ends.
@@ -74,12 +76,13 @@ func (f *Fake) CreateIdentity() {
 }
 
 // StartRestore makes the host keep a restore of the recovery words, as the window of a host does. The host has no
-// identity until a call of CompleteRestore finishes the restore. It fails the test for words that are not valid.
+// identity until a call of CompleteRestore finishes the restore: an identity it had is removed. It fails the test for words that are not valid.
 func (f *Fake) StartRestore(words []string) {
 	f.t.Helper()
 	restore := newPendingRestore(f.t, words)
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.record = nil
 	f.pending = restore
 }
 
