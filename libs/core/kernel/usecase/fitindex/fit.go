@@ -1,3 +1,4 @@
+// Package fitindex sets the vector index to the width and recipe of the search source.
 package fitindex
 
 import (

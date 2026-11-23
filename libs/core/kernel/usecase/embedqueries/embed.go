@@ -1,3 +1,4 @@
+// Package embedqueries makes the vectors of search queries and of texts a plugin sends, with the search source in use.
 package embedqueries
 
 import (

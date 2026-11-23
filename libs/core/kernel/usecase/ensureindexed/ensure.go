@@ -1,3 +1,4 @@
+// Package ensureindexed brings a vault into the index on request and reports whether it is indexed, underway or failed.
 package ensureindexed
 
 import (
