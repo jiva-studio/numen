@@ -43,6 +43,14 @@ func NewRunSync(deps RunDeps) *RunSync { return &RunSync{deps: deps} }
 // Execute runs until ctx ends and returns its error. A server that is away raises a warning and the loop waits the
 // same interval again.
 func (u *RunSync) Execute(ctx context.Context) error {
+	err := u.loop(ctx)
+	if ctxErr := ctx.Err(); err != nil && ctxErr != nil {
+		return ctxErr
+	}
+	return err
+}
+
+func (u *RunSync) loop(ctx context.Context) error {
 	if err := u.passAll(ctx); err != nil {
 		return err
 	}
