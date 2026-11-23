@@ -1,4 +1,4 @@
-package trigger_test
+package windowsession_test
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -233,7 +233,7 @@ type scene struct {
 	plugins     *plugins
 	versions    *versions
 	config      map[string]any
-	triggers    *trigger.Triggers
+	triggers    *windowsession.Triggers
 }
 
 func newScene(t *testing.T, files map[string]string, entries ...plugin.TriggerEntry) *scene {
@@ -245,7 +245,7 @@ func newScene(t *testing.T, files map[string]string, entries ...plugin.TriggerEn
 		config:      map[string]any{},
 	}
 	vaultReaders := readers{s.memoryVault}
-	s.triggers = trigger.NewTriggers(trigger.TriggersDeps{
+	s.triggers = windowsession.NewTriggers(windowsession.TriggersDeps{
 		Plugins: s.plugins, Run: s.plugins, Readers: vaultReaders, Types: types{},
 		Versions: s.versions, Config: settingsOf{config: &s.config},
 	})
@@ -485,7 +485,7 @@ func TestATriggerOfAPluginsOwnCommandRunsOnlyWhereTheConditionOfTheCommandIsTrue
 func TestAFrontmatterPassRunsATriggerOncePerBatchOverExactlyTheNotesNamed(t *testing.T) {
 	files := map[string]string{"notes/untouched.md": "# U\n", "scans/a.pdf": "%PDF a"}
 	var named []string
-	for i := range 2*trigger.FrontmatterBatchSize + 1 {
+	for i := range 2*windowsession.FrontmatterBatchSize + 1 {
 		path := fmt.Sprintf("notes/%04d.md", i)
 		files[path] = "---\ntags: [river]\n---\n"
 		named = append(named, path)
@@ -503,8 +503,8 @@ func TestAFrontmatterPassRunsATriggerOncePerBatchOverExactlyTheNotesNamed(t *tes
 	var covered []string
 	for _, one := range ran {
 		paths := strings.Split(strings.TrimPrefix(one, tagger+" tags.read "), ",")
-		if len(paths) > trigger.FrontmatterBatchSize {
-			t.Errorf("one run was given %d notes, more than %d", len(paths), trigger.FrontmatterBatchSize)
+		if len(paths) > windowsession.FrontmatterBatchSize {
+			t.Errorf("one run was given %d notes, more than %d", len(paths), windowsession.FrontmatterBatchSize)
 		}
 		covered = append(covered, paths...)
 	}
@@ -516,7 +516,7 @@ func TestAFrontmatterPassRunsATriggerOncePerBatchOverExactlyTheNotesNamed(t *tes
 func TestAPluginThatCannotBeReachedGetsNoFurtherBatchesInTheFrontmatterPass(t *testing.T) {
 	files := map[string]string{}
 	var named []string
-	for i := range trigger.FrontmatterBatchSize + 1 {
+	for i := range windowsession.FrontmatterBatchSize + 1 {
 		path := fmt.Sprintf("notes/%04d.md", i)
 		files[path] = "# N\n"
 		named = append(named, path)

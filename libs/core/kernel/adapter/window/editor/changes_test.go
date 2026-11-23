@@ -18,8 +18,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
-	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -228,13 +226,14 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 }
 
 func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
-	services := editor.ServicesOf(installation)
-	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
-	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
-	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
-	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
-	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))
+	services := []string{
+		numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName, numenv1connect.FileServiceName,
+		numenv1connect.NoteServiceName, numenv1connect.SearchServiceName,
+	}
+	pages := installation.NewHandler(http.NotFoundHandler(), services...)
+	for _, name := range services {
+		mux.Handle("/"+name+"/", pages)
+	}
 }
 
 // going is one vault with everything a window has behind it, and a client
@@ -337,12 +336,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		editor.PagesOf(installation).Writes.AdmitWrite,
 	)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation).Window)
 	mux := http.NewServeMux()
+	mux.Handle("/"+numenv1connect.SettingsServiceName+"/", installation.NewHandler(http.NotFoundHandler(), numenv1connect.SettingsServiceName))
 	mountQuestionsServices(mux, installation)
 	mountNoteEdit(t, mux, installation, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
-	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

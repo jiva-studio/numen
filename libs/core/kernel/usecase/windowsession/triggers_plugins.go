@@ -1,4 +1,4 @@
-package trigger
+package windowsession
 
 import "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
