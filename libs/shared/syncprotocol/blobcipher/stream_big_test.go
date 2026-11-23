@@ -366,7 +366,7 @@ func TestOpenStreamFrom_ContinuesAtEveryChunkWithTheHeaderOfTheFirstRequest(t *t
 	copy(header[:], stored)
 
 	for index := uint64(1); index < 4; index++ {
-		reader, err := blobcipher.OpenStreamFrom(l.revisionKey, l.fileID, header, index, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, index):]))
+		reader, err := blobcipher.OpenStreamFrom(l.revisionKey, l.fileID, header, index, int64(len(plain)), bytes.NewReader(stored[blobcipher.GetChunkOffset(20, index):]))
 		if err != nil {
 			t.Fatalf("chunk %d: %v", index, err)
 		}
@@ -389,14 +389,14 @@ func TestOpenStreamFrom_RefusesAChunkOfAnotherPositionAndAHeaderOfAnotherKey(t *
 	foreign := l.revisionKey
 	foreign[3] ^= 1
 
-	reader, err := blobcipher.OpenStreamFrom(l.revisionKey, l.fileID, header, 3, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, 2):]))
+	reader, err := blobcipher.OpenStreamFrom(l.revisionKey, l.fileID, header, 3, 3*mebibyte+1, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, 2):]))
 	if err == nil {
 		_, err = io.ReadAll(reader)
 	}
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
 		t.Errorf("a chunk read as another position: error = %v, want ErrCannotOpen", err)
 	}
-	_, err = blobcipher.OpenStreamFrom(foreign, l.fileID, header, 1, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, 1):]))
+	_, err = blobcipher.OpenStreamFrom(foreign, l.fileID, header, 1, 3*mebibyte+1, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, 1):]))
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
 		t.Errorf("another key: error = %v, want ErrCannotOpen", err)
 	}

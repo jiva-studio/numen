@@ -148,3 +148,47 @@ func (c *AccountClient) GetAccountChainByRoot(ctx context.Context, challengeID, 
 	}
 	return response.Msg.GetChain(), response.Msg.GetFound(), nil
 }
+
+// ReserveMultipartBlob reserves quota for a body above syncprotocol.MaxBlobSize and starts a multipart upload.
+func (c *BlobClient) ReserveMultipartBlob(ctx context.Context, vaultID []byte, size, partSize uint64) (*syncv1.ReserveMultipartBlobResponse, error) {
+	response, err := c.rpc.ReserveMultipartBlob(ctx, connect.NewRequest(&syncv1.ReserveMultipartBlobRequest{VaultId: vaultID, Size: size, PartSize: partSize}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg, nil
+}
+
+// GetPartUrls returns one presigned PUT for each part number, in the order of the numbers.
+func (c *BlobClient) GetPartUrls(ctx context.Context, vaultID, blobID []byte, partNumbers []uint32) ([]*syncv1.PartUpload, error) {
+	response, err := c.rpc.GetPartUrls(ctx, connect.NewRequest(&syncv1.GetPartUrlsRequest{VaultId: vaultID, BlobId: blobID, PartNumbers: partNumbers}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg.GetUploads(), nil
+}
+
+// ListParts returns the parts the storage holds of an open upload, sorted by number.
+func (c *BlobClient) ListParts(ctx context.Context, vaultID, blobID []byte) ([]*syncv1.PartInfo, error) {
+	response, err := c.rpc.ListParts(ctx, connect.NewRequest(&syncv1.ListPartsRequest{VaultId: vaultID, BlobId: blobID}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg.GetParts(), nil
+}
+
+// CompleteMultipartBlob joins the parts into the object. Parts that are missing or of the wrong size are
+// syncprotocol.MultipartIncompleteError.
+func (c *BlobClient) CompleteMultipartBlob(ctx context.Context, vaultID, blobID []byte) error {
+	if _, err := c.rpc.CompleteMultipartBlob(ctx, connect.NewRequest(&syncv1.CompleteMultipartBlobRequest{VaultId: vaultID, BlobId: blobID})); err != nil {
+		return syncprotocol.ReadCallError(err)
+	}
+	return nil
+}
+
+// AbortMultipartBlob drops an open upload and frees its quota. A repeat is a success.
+func (c *BlobClient) AbortMultipartBlob(ctx context.Context, vaultID, blobID []byte) error {
+	if _, err := c.rpc.AbortMultipartBlob(ctx, connect.NewRequest(&syncv1.AbortMultipartBlobRequest{VaultId: vaultID, BlobId: blobID})); err != nil {
+		return syncprotocol.ReadCallError(err)
+	}
+	return nil
+}
