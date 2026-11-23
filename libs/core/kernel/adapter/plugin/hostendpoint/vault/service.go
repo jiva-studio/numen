@@ -23,6 +23,7 @@ type (
 	lookupsCalls struct{ *calls }
 	arrangeCalls struct{ *calls }
 	vaultsCalls  struct{ *calls }
+	absentCalls  struct{ *calls }
 )
 
 // router serves the procedures of one service from the handler of each.
@@ -72,6 +73,7 @@ func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect
 	watch, cache := &watchCalls{base}, &cacheCalls{base}
 	lookups, arrange := &lookupsCalls{base}, &arrangeCalls{base}
 	vaults := &vaultsCalls{base}
+	absent := &absentCalls{base}
 
 	vault := newRouter(v1.File_numen_v1_hostvault_proto, numenv1connect.HostVaultServiceName, options)
 	addUnary(vault, numenv1connect.HostVaultServiceGetHostVaultProcedure, "GetHostVault", files.GetHostVault)
@@ -81,6 +83,10 @@ func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect
 	addUnary(vault, numenv1connect.HostVaultServiceUnlockVaultProcedure, "UnlockVault", files.UnlockVault)
 	addUnary(vault, numenv1connect.HostVaultServiceGetParseProblemsProcedure, "GetParseProblems", arrange.GetParseProblems)
 	addUnary(vault, numenv1connect.HostVaultServiceGetVaultProblemsProcedure, "GetVaultProblems", arrange.GetVaultProblems)
+	addUnary(vault, numenv1connect.HostVaultServicePutAbsentFilesProcedure, "PutAbsentFiles", absent.PutAbsentFiles)
+	addUnary(vault, numenv1connect.HostVaultServiceListAbsentFilesProcedure, "ListAbsentFiles", absent.ListAbsentFiles)
+	addUnary(vault, numenv1connect.HostVaultServiceFillFileProcedure, "FillFile", absent.FillFile)
+	addUnary(vault, numenv1connect.HostVaultServiceEvictFileProcedure, "EvictFile", absent.EvictFile)
 	vault.mount(mux)
 
 	list := newRouter(v1.File_numen_v1_vaults_proto, numenv1connect.VaultsServiceName, options)

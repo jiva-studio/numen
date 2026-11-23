@@ -150,6 +150,7 @@ type Access struct {
 	Stores      StoreOpener
 	Cache       CacheStore
 	Locks       Locks
+	Absent      AbsentFiles
 }
 
 // Locks holds the writers of a vault for a plugin, until the plugin releases them or the hold ends.

@@ -26,3 +26,12 @@ func (r Readers) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	}
 	return reader{inner: inner, absent: r.absent, vault: v}, nil
 }
+
+// Wrap returns the inner readers as they are where there is no registry, and the readers that list the
+// registry's files where there is one.
+func Wrap(inner vaultport.VaultReaders, absent vaultport.AbsentFiles) vaultport.VaultReaders {
+	if absent == nil {
+		return inner
+	}
+	return NewReaders(inner, absent)
+}

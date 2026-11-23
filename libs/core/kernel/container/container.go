@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
@@ -61,7 +63,9 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
-	machine            Machine
+	// Absent lists the files the sync of a device left out, and keeps their bytes off the device.
+	Absent  bool
+	machine Machine
 }
 
 // Resources holds the services shared by the parts of one installation.
@@ -81,6 +85,7 @@ type Resources struct {
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
 	restore         *identity.PendingStore
+	absentFiles     vaultport.AbsentFiles
 }
 
 func NewResources() *Resources {
@@ -187,6 +192,7 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	exec = getPluginExecution(exec)
 	settings := settingsOf(c, exec, prefs, res)
 	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	base.Readers, base.AbsentFiles = vaultabsent.Wrap(base.Readers, res.absentFiles), res.absentFiles
 	plan := vaultIndexPlan{
 		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Resolver},
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,

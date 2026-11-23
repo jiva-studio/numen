@@ -66,6 +66,10 @@ func getErrorEntries() []errorEntry {
 		{edit.ErrNotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},
+		{vaultdomain.ErrFileAbsent, v1.ErrorCode_ERROR_CODE_FILE_ABSENT},
+		{vaultdomain.ErrFilePresent, v1.ErrorCode_ERROR_CODE_FILE_PRESENT},
+		{vaultdomain.ErrHashMismatch, v1.ErrorCode_ERROR_CODE_HASH_MISMATCH},
+		{vaultdomain.ErrChanged, v1.ErrorCode_ERROR_CODE_CHANGED},
 	}
 }
 

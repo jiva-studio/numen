@@ -43,7 +43,11 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
 	timer := GetClock(res)
 	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
-	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, windowlogs.NewRecordFunc(record, res.ErrorHandler)))
+	db, err := openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, windowlogs.NewRecordFunc(record, res.ErrorHandler)))
+	if err == nil && c.Absent {
+		res.absentFiles = db.AbsentFiles()
+	}
+	return db, err
 }
 
 // vaultWiring holds the filesystem ports and indexing callbacks of an installation.
@@ -60,6 +64,7 @@ type vaultWiring struct {
 	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*vault.Scan)
 	RecordLog    index.QueryLogFunc
+	AbsentFiles  vaultport.AbsentFiles
 }
 
 func openVaultAccess(paths Paths, timer installationClock, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {

@@ -70,6 +70,9 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	useCases := vaultNotes(vaultDeps, db, index, noteViews{})
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: install.ServiceDir}}
+	storeReaders := func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
+		return stores.Open(v, pluginID)
+	}
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current:    current,
@@ -89,13 +92,12 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Create: file.NewCreateFile(vaultDeps.Writers, index),
 			Index:  file.NewScanFiles(index),
 			Locks:  hold.NewLocks(vaultDeps.Writers, hold.LockHold),
+			Absent: hostvault.NewAbsent(vaultDeps.AbsentFiles, vaultDeps.Readers, vaultDeps.Writers, index, storeReaders),
 		},
 		getPluginLookups(db),
 		arranger,
 		hostvault.Stores{
-			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
-				return stores.Open(v, pluginID)
-			},
+			StoreReaders: storeReaders,
 			StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
 				return stores.OpenWriter(v, pluginID)
 			},

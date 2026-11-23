@@ -78,7 +78,7 @@ func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views no
 	mover := note.NewMove(moveDeps)
 
 	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Admission)
+	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Admission).WithAbsent(c.AbsentFiles)
 	create := note.NewCreate(writers, names, index, now, views.Admission)
 	connecting := note.ConnectionDeps{
 		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,

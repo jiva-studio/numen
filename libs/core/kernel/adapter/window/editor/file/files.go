@@ -73,6 +73,8 @@ func (h *Folders) ListFiles(
 			Type:         convertNoteTypeToWire(listing.Types[one.Path]),
 			TabKind:      listing.TabKinds[one.Path],
 			ModifiedAtMs: modifiedAtMs,
+			IsAbsent:     one.IsAbsent,
+			Provider:     one.Provider,
 		})
 	}
 	return connect.NewResponse(out), nil
