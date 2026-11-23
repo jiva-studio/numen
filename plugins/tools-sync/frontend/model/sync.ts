@@ -22,12 +22,13 @@ export function createSyncState(
   let timer: ReturnType<typeof setTimeout> | undefined
   let isRunning = false
 
-  const update = async (): Promise<void> => {
+  const update = async (): Promise<boolean> => {
     try {
       const status = await client.getStatus()
       phase.value = status.hasIdentity ? 'synced' : 'hidden'
+      return true
     } catch {
-      // The status is asked again at the next poll; the badge keeps what it showed.
+      return false
     }
   }
 

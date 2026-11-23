@@ -177,7 +177,6 @@ export class IdentityDriver {
     }
   }
 
-  /** Activates Buy and takes the page the application opens for the payment: in the browser run the window opens it. */
   private async openPayment(): Promise<Page> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')

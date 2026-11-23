@@ -5,7 +5,9 @@
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
-export type SubscriptionPhase = 'none' | 'active' | 'grace' | 'readOnly' | 'deleted'
+import type { SubscriptionPhase } from '../lib/subscriptionView'
+
+export type { SubscriptionPhase }
 
 /** The phase is empty when the device has no identity. A time is RFC 3339, and empty when the server sent none. */
 export interface SubscriptionResponse {

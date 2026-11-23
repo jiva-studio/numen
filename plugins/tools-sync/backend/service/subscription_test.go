@@ -110,7 +110,7 @@ func TestGetSubscription_ReportsTheActivePhaseWithTheTimesAsRFC3339(t *testing.T
 	periodEnd := w.clock.Now().Add(30 * 24 * time.Hour)
 	want := api.GetSubscriptionResponse{
 		HasIdentity: true, Phase: api.PhaseActive, PeriodEndAt: rfc3339(periodEnd),
-		WritesEndAt: rfc3339(periodEnd.Add(7 * 24 * time.Hour)), DeleteAt: rfc3339(periodEnd.Add(67 * 24 * time.Hour)),
+		WritesEndAt: rfc3339(periodEnd.Add(7 * 24 * time.Hour)), DeleteAt: rfc3339(periodEnd.Add(60 * 24 * time.Hour)),
 	}
 	if got != want {
 		t.Errorf("response = %+v, want %+v", got, want)

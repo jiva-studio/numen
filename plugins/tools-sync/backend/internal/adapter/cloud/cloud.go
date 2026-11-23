@@ -100,7 +100,6 @@ func (c *Cloud) GetBlob(ctx context.Context, url string) ([]byte, error) {
 	return syncprotocol.GetBlob(ctx, c.http, url)
 }
 
-// GetSubscription returns the subscription of the account.
 func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription, error) {
 	return call(ctx, c, func() (syncprotocol.Subscription, error) { return c.subscription.GetSubscription(ctx) })
 }

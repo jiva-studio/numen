@@ -137,7 +137,7 @@
 .subscription__badge {
   margin-inline-start: auto;
   padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius);
   background-color: var(--numen-bubble-bg);
   color: var(--numen-hushed);
   font-weight: 500;

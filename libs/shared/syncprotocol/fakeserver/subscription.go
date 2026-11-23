@@ -39,13 +39,12 @@ func (s *Server) getPhase(account string) (syncv1.SubscriptionPhase, time.Time) 
 		return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE, periodEnd
 	case now.Before(periodEnd.Add(writeGrace)):
 		return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_GRACE, periodEnd
-	case now.Before(periodEnd.Add(writeGrace + retention)):
+	case now.Before(periodEnd.Add(retention)):
 		return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, periodEnd
 	}
 	return syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, periodEnd
 }
 
-// checkWriteAllowed refuses a write of an account whose subscription does not allow one. The caller holds s.mu.
 func (s *Server) checkWriteAllowed(account string) error {
 	switch phase, _ := s.getPhase(account); phase {
 	case syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE, syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_GRACE:
@@ -68,7 +67,7 @@ func (s *Server) GetSubscription(_ context.Context, req *connect.Request[syncv1.
 	if !periodEnd.IsZero() {
 		response.PeriodEndAt = periodEnd.Unix()
 		response.WritesEndAt = periodEnd.Add(writeGrace).Unix()
-		response.DeleteAt = periodEnd.Add(writeGrace + retention).Unix()
+		response.DeleteAt = periodEnd.Add(retention).Unix()
 	}
 	return connect.NewResponse(response), nil
 }
@@ -109,8 +108,6 @@ func (s *Server) servePay(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getPhaseAge returns how long ago the period of an account ended, for each phase the admin path sets. A
-// negative age is an end in the future.
 func getPhaseAge(phase string) (time.Duration, bool) {
 	switch phase {
 	case "active":

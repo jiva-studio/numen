@@ -1,5 +1,6 @@
-import type { SubscriptionPhase } from '../api/subscription'
 import { WORDS as words } from '../words'
+
+export type SubscriptionPhase = 'none' | 'active' | 'grace' | 'readOnly' | 'deleted'
 
 export type SubscriptionStatus = 'loading' | 'ready' | 'unreachable' | 'noIdentity'
 

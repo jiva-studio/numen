@@ -107,7 +107,7 @@ export class SyncDriver {
   ) {}
 
   /** Starts the sync server that sells subscriptions: an account has none until it pays on the page the server serves. */
-  async startSelling(): Promise<void> {
+  async startSellingSubscriptions(): Promise<void> {
     this.extraFlags = ['-subscriptions']
     await this.start()
   }

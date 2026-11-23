@@ -4,14 +4,9 @@
  * this page, then every license declared by the installed plugins with the controls to activate or
  * deactivate this machine.
  */
-import { computed } from 'vue'
 import { SettingsPage } from '@numen/plugin-manager'
-import type {
-  InstallationIdentity,
-  InstallationLicenses,
-  InstallationPlugin,
-} from '../../types'
-import { useLicensesPage } from '../../model/useLicensesPage'
+import type { InstallationIdentity, InstallationLicenses, InstallationPlugin } from '../../types'
+import { useIdentityPage } from '../../model/useIdentityPage'
 import { WORDS as words } from '../../words'
 import LicenseCard from '../licenses/LicenseCard.vue'
 import IdentitySection from './IdentitySection.vue'
@@ -28,8 +23,10 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const page = useLicensesPage(() => props.licenses)
-const views = computed(() => props.plugin.getIdentityViews())
+const page = useIdentityPage(
+  () => props.licenses,
+  () => props.plugin,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -44,13 +41,13 @@ function onBack(): void {
 
       <component
         :is="view.component"
-        v-for="view in views"
+        v-for="view in page.views.value"
         :key="view.pluginId + '/' + view.id"
         :plugin-id="view.pluginId"
       />
 
       <div
-        v-if="page.licenses.value.length === 0 && views.length === 0"
+        v-if="page.licenses.value.length === 0 && page.views.value.length === 0"
         class="identity-page__empty"
       >
         <p class="identity-page__empty-title">{{ words.licensesEmpty }}</p>

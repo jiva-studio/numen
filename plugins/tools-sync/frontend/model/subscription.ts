@@ -1,10 +1,11 @@
 import { computed, onScopeDispose, ref } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
-import { getFailureCode, type SubscriptionClient, type SubscriptionPhase } from '../api/subscription'
+import { getFailureCode, type SubscriptionClient } from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
 import {
   getSubscriptionView,
+  type SubscriptionPhase,
   type SubscriptionDates,
   type SubscriptionStatus,
 } from '../lib/subscriptionView'
@@ -67,7 +68,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
     problem.value = getMessage(failure)
   }
 
-  function stopWaiting(): void {
+  function endPaymentPoll(): void {
     clearTimeout(pollTimer)
     clearTimeout(limitTimer)
     pollTimer = undefined
@@ -75,25 +76,30 @@ export function useSubscription(options: UseSubscriptionOptions) {
     waiting.value = false
   }
 
-  async function poll(): Promise<void> {
+  async function readIfReachable(): Promise<boolean> {
     try {
       await read()
+      return true
     } catch {
-      // The payment may be made while the server is away; the next read tries again.
+      return false
     }
+  }
+
+  async function poll(): Promise<void> {
+    await readIfReachable()
     if (!waiting.value) return
     if (phase.value === 'active') {
-      stopWaiting()
+      endPaymentPoll()
       return
     }
     pollTimer = setTimeout(() => runInBackground(poll(), reportProblem), pollEveryMs)
   }
 
-  function startWaiting(): void {
+  function beginPaymentPoll(): void {
     waiting.value = true
     pollTimer = setTimeout(() => runInBackground(poll(), reportProblem), pollEveryMs)
     limitTimer = setTimeout(() => {
-      stopWaiting()
+      endPaymentPoll()
       problem.value = words.paymentNotSeen
     }, pollLimitMs)
   }
@@ -103,7 +109,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
     problem.value = ''
     try {
       const opened = await openExternal(await client.createCheckout())
-      if (opened.ok) startWaiting()
+      if (opened.ok) beginPaymentPoll()
       else problem.value = opened.error
     } catch (failure) {
       if (getFailureCode(failure) === 'already_exists') await load()
@@ -111,7 +117,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }
   }
 
-  onScopeDispose(stopWaiting)
+  onScopeDispose(endPaymentPoll)
 
   return { status, phase, canBuy, waiting, problem, view, load, buy }
 }

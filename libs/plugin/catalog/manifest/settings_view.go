@@ -17,8 +17,7 @@ var ErrInvalidSettingsView = errors.New("invalid settings view")
 type SettingsView struct {
 	ID    string
 	Title string
-	// Page is empty for the settings of the plugin, or "identity" for the page "Identity and licenses".
-	Page string
+	Page  string
 }
 
 func (m Manifest) listSettingsViewIssues() []error {

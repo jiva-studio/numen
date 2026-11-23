@@ -53,7 +53,7 @@ func newBillingServer(tb testing.TB, clock *testClock, needsSubscription bool) (
 	return server, served.URL
 }
 
-func newBilling(tb testing.TB, needsSubscription bool) *billing {
+func createBillingEnv(tb testing.TB, needsSubscription bool) *billing {
 	tb.Helper()
 	clock := &testClock{now: time.Now()}
 	server, address := newBillingServer(tb, clock, needsSubscription)
@@ -102,7 +102,7 @@ func (b *billing) get(url string) (int, string) {
 	if err != nil {
 		b.tb.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		b.tb.Fatal(err)
@@ -120,7 +120,7 @@ func (b *billing) setPhase(query string) int {
 	if err != nil {
 		b.tb.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	return response.StatusCode
 }
 
@@ -136,7 +136,7 @@ func (b *billing) canAppendCatalogEntry() error {
 
 func TestGetSubscription_IsActiveForEveryAccountWhenTheServerDoesNotNeedASubscription(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, false)
+	b := createBillingEnv(t, false)
 
 	got, err := b.subscription.GetSubscription(t.Context())
 	if err != nil {
@@ -146,7 +146,7 @@ func TestGetSubscription_IsActiveForEveryAccountWhenTheServerDoesNotNeedASubscri
 	if got.Phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE {
 		t.Errorf("phase = %v, want active", got.Phase)
 	}
-	if want := b.clock.Now().Add(30 * day); !got.PeriodEnd.Equal(want) {
+	if want := b.clock.Now().Add(30 * day).Truncate(time.Second); !got.PeriodEnd.Equal(want) {
 		t.Errorf("PeriodEnd = %v, want %v", got.PeriodEnd, want)
 	}
 	if err := b.canAppendCatalogEntry(); err != nil {
@@ -156,7 +156,7 @@ func TestGetSubscription_IsActiveForEveryAccountWhenTheServerDoesNotNeedASubscri
 
 func TestGetSubscription_IsNoneForANewAccountWhenTheServerNeedsASubscription(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 
 	got, err := b.subscription.GetSubscription(t.Context())
 	if err != nil {
@@ -170,7 +170,7 @@ func TestGetSubscription_IsNoneForANewAccountWhenTheServerNeedsASubscription(t *
 
 func TestGetSubscription_WithoutASessionIsUnauthenticated(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	anonymous := syncprotocol.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return "" })
 
 	_, err := anonymous.GetSubscription(t.Context())
@@ -182,7 +182,7 @@ func TestGetSubscription_WithoutASessionIsUnauthenticated(t *testing.T) {
 
 func TestCreateCheckout_ReturnsAPayPageOfTheServer(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 
 	url, err := b.subscription.CreateCheckout(t.Context())
 	if err != nil {
@@ -196,7 +196,7 @@ func TestCreateCheckout_ReturnsAPayPageOfTheServer(t *testing.T) {
 
 func TestPayPage_ActivatesTheSubscriptionForThirtyDays(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	url, err := b.subscription.CreateCheckout(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -211,16 +211,16 @@ func TestPayPage_ActivatesTheSubscriptionForThirtyDays(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	periodEnd := b.clock.Now().Add(30 * day)
+	periodEnd := b.clock.Now().Add(30 * day).Truncate(time.Second)
 	if got.Phase != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE || !got.PeriodEnd.Equal(periodEnd) ||
-		!got.WritesEnd.Equal(periodEnd.Add(7*day)) || !got.DeleteAt.Equal(periodEnd.Add(67*day)) {
-		t.Errorf("subscription = %+v, want active until %v with writes end 7 days and delete 67 days after", got, periodEnd)
+		!got.WritesEnd.Equal(periodEnd.Add(7*day)) || !got.DeleteAt.Equal(periodEnd.Add(60*day)) {
+		t.Errorf("subscription = %+v, want active until %v with writes end 7 days and delete 60 days after", got, periodEnd)
 	}
 }
 
 func TestPayPage_AnswersNotFoundForAnUnknownId(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 
 	status, _ := b.get(b.address + "/pay/unknown")
 
@@ -232,9 +232,9 @@ func TestPayPage_AnswersNotFoundForAnUnknownId(t *testing.T) {
 	}
 }
 
-func TestPayPage_OfAnotherAccountLeavesThisAccountWithoutASubscription(t *testing.T) {
+func TestPayPage_OfAnotherAccountDoesNotActivateThisAccount(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	other := newSecondAccountOn(t, b.address)
 	otherClient := syncprotocol.NewSubscriptionClient(b.address, http.DefaultClient, func() string { return other.token })
 	url, err := otherClient.CreateCheckout(t.Context())
@@ -251,7 +251,7 @@ func TestPayPage_OfAnotherAccountLeavesThisAccountWithoutASubscription(t *testin
 
 func TestCreateCheckout_IsAlreadySubscribedWhileTheSubscriptionIsActive(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	b.pay()
 
 	_, err := b.subscription.CreateCheckout(t.Context())
@@ -264,7 +264,7 @@ func TestCreateCheckout_IsAlreadySubscribedWhileTheSubscriptionIsActive(t *testi
 func TestCreateCheckout_IsOfferedAgainInEveryPhaseThatIsNotActive(t *testing.T) {
 	t.Parallel()
 	for _, phase := range []string{"none", "grace", "read_only", "deleted"} {
-		b := newBilling(t, true)
+		b := createBillingEnv(t, true)
 		b.pay()
 		if status := b.setPhase("phase=" + phase); status != http.StatusNoContent && status != http.StatusOK {
 			t.Fatalf("admin phase %s answered %d", phase, status)
@@ -278,7 +278,7 @@ func TestCreateCheckout_IsOfferedAgainInEveryPhaseThatIsNotActive(t *testing.T) 
 
 func TestSubscription_BelongsToTheAccountAndNotToTheSession(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	second := b.env.account.addDevice(t, "Second")
 	other := newBillingOf(t, b.server, b.clock, b.address, b.env.account, second)
 
@@ -291,7 +291,7 @@ func TestSubscription_BelongsToTheAccountAndNotToTheSession(t *testing.T) {
 
 func TestSubscription_OfOneAccountDoesNotReachAnotherAccount(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	account := newOwnedAccount(t)
 	device := account.addDevice(t, "Other")
 	other := newBillingOf(t, b.server, b.clock, b.address, &account, device)
@@ -305,7 +305,7 @@ func TestSubscription_OfOneAccountDoesNotReachAnotherAccount(t *testing.T) {
 
 func TestWrites_AreRefusedWithoutASubscriptionAndAllowedAfterPayment(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 
 	if err := b.canAppendCatalogEntry(); !isWriteNotAllowed(err) {
 		t.Fatalf("a write without a subscription: error = %v, want ErrWriteNotAllowed", err)
@@ -328,11 +328,11 @@ func TestPhaseArithmetic_FollowsTheBoundariesOfTheGraceAndTheRetention(t *testin
 		"the end of the period":            {after: 30 * day, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_GRACE, canWrite: true},
 		"one hour before the end of grace": {after: 36*day + 23*time.Hour, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_GRACE, canWrite: true},
 		"seven days after the period":      {after: 37 * day, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, canWrite: false},
-		"the last second of the retention": {after: 97*day - time.Second, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, canWrite: false},
-		"the end of the retention":         {after: 97 * day, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, canWrite: false},
-		"one second after the retention":   {after: 97*day + time.Second, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, canWrite: false},
+		"the last second of the retention": {after: 90*day - time.Second, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, canWrite: false},
+		"the end of the retention":         {after: 90 * day, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, canWrite: false},
+		"one second after the retention":   {after: 90*day + time.Second, phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, canWrite: false},
 	} {
-		b := newBilling(t, true)
+		b := createBillingEnv(t, true)
 		b.pay()
 		b.clock.advance(one.after)
 
@@ -361,7 +361,7 @@ func TestAdminSubscription_SetsThePhaseWithTheAgeOfTheEnd(t *testing.T) {
 		"read only": {query: "phase=read_only", phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, periodEnd: -10 * day},
 		"deleted":   {query: "phase=deleted", phase: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, periodEnd: -70 * day},
 	} {
-		b := newBilling(t, true)
+		b := createBillingEnv(t, true)
 
 		if status := b.setPhase(one.query); status >= 300 {
 			t.Fatalf("%s: admin answered %d", name, status)
@@ -371,7 +371,7 @@ func TestAdminSubscription_SetsThePhaseWithTheAgeOfTheEnd(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Phase != one.phase || !got.PeriodEnd.Equal(b.clock.Now().Add(one.periodEnd)) {
+		if got.Phase != one.phase || !got.PeriodEnd.Equal(b.clock.Now().Add(one.periodEnd).Truncate(time.Second)) {
 			t.Errorf("%s: subscription = %+v, want phase %v ending at now %+v", name, got, one.phase, one.periodEnd)
 		}
 	}
@@ -379,7 +379,7 @@ func TestAdminSubscription_SetsThePhaseWithTheAgeOfTheEnd(t *testing.T) {
 
 func TestAdminSubscription_NoneRemovesTheSubscription(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	b.pay()
 
 	if status := b.setPhase("phase=none"); status >= 300 {
@@ -397,7 +397,7 @@ func TestAdminSubscription_NoneRemovesTheSubscription(t *testing.T) {
 
 func TestAdminSubscription_WithoutAnAccountSetsEveryAccount(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	account := newOwnedAccount(t)
 	device := account.addDevice(t, "Other")
 	other := newBillingOf(t, b.server, b.clock, b.address, &account, device)
@@ -411,12 +411,12 @@ func TestAdminSubscription_WithoutAnAccountSetsEveryAccount(t *testing.T) {
 
 func TestAdminSubscription_WithAnAccountSetsOnlyThatAccount(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	account := newOwnedAccount(t)
 	device := account.addDevice(t, "Other")
 	other := newBillingOf(t, b.server, b.clock, b.address, &account, device)
 
-	b.setPhase("phase=read_only&account=" + b.fingerprint())
+	b.setPhase("phase=read_only&account=" + strings.ReplaceAll(b.fingerprint(), " ", "%20"))
 
 	if got := b.phase(); got != syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY {
 		t.Errorf("phase of the named account = %v, want read only", got)
@@ -428,7 +428,7 @@ func TestAdminSubscription_WithAnAccountSetsOnlyThatAccount(t *testing.T) {
 
 func TestAdminSubscription_RefusesAnUnknownPhaseAndAWrongMethod(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 
 	if status := b.setPhase("phase=sleeping"); status != http.StatusBadRequest {
 		t.Errorf("unknown phase answered %d, want 400", status)
@@ -443,7 +443,7 @@ func TestAdminSubscription_RefusesAnUnknownPhaseAndAWrongMethod(t *testing.T) {
 
 func TestWrites_AreRefusedInReadOnlyOnTheCatalogTheRevisionsAndTheBlobs(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	b.pay()
 	vault := b.env.newVault()
 	file := newID(16)
@@ -464,7 +464,7 @@ func TestWrites_AreRefusedInReadOnlyOnTheCatalogTheRevisionsAndTheBlobs(t *testi
 func TestReads_AreAllowedInEveryPhase(t *testing.T) {
 	t.Parallel()
 	for _, phase := range []string{"grace", "read_only", "deleted", "none"} {
-		b := newBilling(t, true)
+		b := createBillingEnv(t, true)
 		b.pay()
 		vault := b.env.newVault()
 		body := []byte("milk")
@@ -487,7 +487,7 @@ func TestReads_AreAllowedInEveryPhase(t *testing.T) {
 
 func TestPayPage_InReadOnlyOpensTheWritesAgain(t *testing.T) {
 	t.Parallel()
-	b := newBilling(t, true)
+	b := createBillingEnv(t, true)
 	b.pay()
 	vault := b.env.newVault()
 	b.setPhase("phase=read_only")

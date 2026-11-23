@@ -76,7 +76,7 @@ describe('createSyncState', () => {
     state.stop()
   })
 
-  it('is hidden again when the identity is gone and shown again when it returns', async () => {
+  it('is hidden again when the identity is removed and shown again when it is restored', async () => {
     let hasIdentity = true
     const state = createSyncState(
       createClient(() => Promise.resolve(createStatus({ hasIdentity }))),

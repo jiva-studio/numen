@@ -476,7 +476,7 @@ describe('the page of a settings view', () => {
 
     const configuration = await core.getSettings()
 
-    expect(configuration.plugins.at(0)?.settingsViews).toStrictEqual([
+    expect(configuration.plugins?.at(0)?.settingsViews).toStrictEqual([
       { id: 'vaults', title: 'Vaults', page: '' },
       { id: 'subscription', title: 'Subscription', page: 'identity' },
     ])

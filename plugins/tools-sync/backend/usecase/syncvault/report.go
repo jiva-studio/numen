@@ -71,8 +71,6 @@ func GetConflictText(count int) string {
 	return fmt.Sprintf("%d notes changed on two computers", count)
 }
 
-// getRefusedText says why the server refused a write: what the subscription of the account means, or that sync
-// needs one when the subscription cannot be read or is active.
 func (r reporter) getRefusedText(ctx context.Context) string {
 	state, err := r.subscription.Execute(ctx)
 	if err == nil {

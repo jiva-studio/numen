@@ -155,7 +155,6 @@ export interface PluginSettingGroupInfo {
 export interface PluginSettingsViewInfo {
   readonly id: string
   readonly title: string
-  /** Empty for the settings form of the plugin, `identity` for the page "Identity and licenses". */
   readonly page?: string | undefined
 }
 

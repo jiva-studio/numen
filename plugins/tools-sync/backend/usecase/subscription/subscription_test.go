@@ -36,7 +36,7 @@ func TestReadSubscription_ReturnsThePhaseAndTheTimesTheServerSent(t *testing.T) 
 		"read only": {wire: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_READ_ONLY, want: domain.PhaseReadOnly},
 		"deleted":   {wire: syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_DELETED, want: domain.PhaseDeleted},
 	} {
-		state := syncprotocol.Subscription{Phase: one.wire, PeriodEnd: periodEnd, WritesEnd: periodEnd.Add(7 * 24 * time.Hour), DeleteAt: periodEnd.Add(67 * 24 * time.Hour)}
+		state := syncprotocol.Subscription{Phase: one.wire, PeriodEnd: periodEnd, WritesEnd: periodEnd.Add(7 * 24 * time.Hour), DeleteAt: periodEnd.Add(60 * 24 * time.Hour)}
 
 		got, err := subscription.NewReadSubscription(subscription.Deps{Subscriptions: server{state: state}}).Execute(t.Context())
 		if err != nil {

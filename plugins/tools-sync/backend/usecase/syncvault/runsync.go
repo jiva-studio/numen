@@ -108,7 +108,6 @@ func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	return u.finish(ctx, err, isConnected)
 }
 
-// pass runs a pass over the vault and returns whether the vault is connected.
 func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 	if _, err := u.deps.State.ReadLink(ctx, id); errors.Is(err, vaultlink.ErrNotConnected) {
 		return false, nil
@@ -116,8 +115,6 @@ func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 	return true, u.deps.Pass.Execute(ctx, id)
 }
 
-// finish settles the warnings of the round. A round that passed over a connected vault reads the subscription
-// once, after the passes, so that the warning of the grace phase outlives the clearing of a pass that went well.
 func (u *RunSync) finish(ctx context.Context, failure error, isConnected bool) error {
 	if err := ctx.Err(); err != nil {
 		return err

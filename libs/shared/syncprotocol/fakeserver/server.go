@@ -39,8 +39,6 @@ type Config struct {
 	SessionTTL time.Duration
 	QuotaBytes uint64
 
-	// NeedsSubscription makes a new account have no subscription, so it may not write until it pays. False makes
-	// every account active, and nothing is refused.
 	NeedsSubscription bool
 }
 

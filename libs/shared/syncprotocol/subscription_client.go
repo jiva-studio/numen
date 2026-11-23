@@ -70,8 +70,7 @@ func (c *SubscriptionClient) CreateCheckout(ctx context.Context) (string, error)
 }
 
 func readSubscriptionError(err error) error {
-	var failure *connect.Error
-	if errors.As(err, &failure) {
+	if failure, ok := errors.AsType[*connect.Error](err); ok {
 		switch failure.Code() {
 		case connect.CodeAlreadyExists:
 			return refusalError{sentinel: ErrAlreadySubscribed, cause: failure}
