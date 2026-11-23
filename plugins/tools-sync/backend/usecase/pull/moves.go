@@ -62,7 +62,8 @@ func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevisio
 	for _, stored := range page {
 		meta, checkErr := r.check(stored)
 		record, isKnown := r.getRecord(stored.GetRevision().GetFileId())
-		if checkErr != nil || !isKnown || stored.GetRevision().GetDeleted() || record.Path == meta.Path || !isMetadataOnly(stored.GetRevision(), record, meta) {
+		if checkErr != nil || !isKnown || stored.GetRevision().GetDeleted() || record.Path == meta.Path ||
+			!isMetadataOnly(stored.GetRevision(), record, meta) || r.isRegressed(stored.GetRevision(), record, true) {
 			continue
 		}
 		group := getFolderMove(record.Path, meta.Path)

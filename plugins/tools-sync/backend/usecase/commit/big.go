@@ -44,7 +44,7 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobId: sent.BlobID, BlobHash: sent.BlobHash[:], BlobSize: sent.BlobSize,
 		EncMeta: sealed.encoded, PathHash: note.HashPath(r.vault.Key, path), ShareRootId: sealed.shareID, Epoch: sealed.epoch,
-		AuthorDeviceSignKey: r.author,
+		AuthorDeviceSignKey: r.author, FileVersion: file.ParentVersion + 1,
 	}
 	if revision.Signature, err = r.deps.Identity.SignAsDevice(ctx, syncprotocol.GetRevisionMessage(revision)); err != nil {
 		return transfer.Outcome{}, err
@@ -63,7 +63,7 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	if outcome.Status == transfer.Committed {
 		outcome.Record = transfer.FileRecord{
 			FileID: fileID, Path: path, BaseHash: file.Stat.Hash, HeadRev: outcome.RevID, Size: file.Stat.Size, ModifiedAt: file.ModifiedAt, Kind: kind,
-			BlobID: sent.BlobID, BlobHash: sent.BlobHash[:], BlobSize: sent.BlobSize, SealedKey: sealedKey,
+			BlobID: sent.BlobID, BlobHash: sent.BlobHash[:], BlobSize: sent.BlobSize, SealedKey: sealedKey, Version: revision.GetFileVersion(),
 		}
 		return outcome, r.deps.Uploads.Forget(ctx, vaultID, fileID)
 	}

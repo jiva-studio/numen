@@ -66,12 +66,13 @@ func (v Vault) GetKey(epoch uint32) ([32]byte, bool) {
 // File is a file to commit. A file the server knows has its FileID and the revision it was changed from. A file up
 // to the small file limit of the note package comes with its Content; a bigger one has Stat and is read in ranges.
 type File struct {
-	FileID     []byte
-	ParentRev  []byte
-	Path       string
-	Content    []byte
-	ModifiedAt int64
-	Stat       *domain.FileStat
+	FileID        []byte
+	ParentRev     []byte
+	ParentVersion uint64
+	Path          string
+	Content       []byte
+	ModifiedAt    int64
+	Stat          *domain.FileStat
 }
 
 // CommitInput is the files to commit to a vault. VaultID names the vault on this device; a note under the folder of
@@ -147,7 +148,7 @@ type PullInput struct {
 
 // NewEmptyRecord returns the record of a file that has none.
 func NewEmptyRecord() FileRecord {
-	return FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil, Size: 0, ModifiedAt: 0, Kind: "", BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil}
+	return FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil, Size: 0, ModifiedAt: 0, Kind: "", BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil, Version: 0}
 }
 
 // UploadInput names the file to send in one body or in parts.
@@ -303,7 +304,8 @@ var (
 
 // FileRecord is what this device knows of a synced file: the file on the server, where it is, the hash both
 // computers last agreed on, the revision that is its head and what the head's blob is, so that a move can be
-// sent without reading the file. SealedKey is the revision key of the head, sealed with the vault key.
+// sent without reading the file. SealedKey is the revision key of the head, sealed with the vault key. Version is the
+// signed version of the head: a revision of the file below it is never taken.
 type FileRecord struct {
 	FileID     []byte `json:"fileId"`
 	Path       string `json:"path"`
@@ -316,4 +318,5 @@ type FileRecord struct {
 	BlobHash   []byte `json:"blobHash"`
 	BlobSize   uint64 `json:"blobSize"`
 	SealedKey  []byte `json:"revKey"`
+	Version    uint64 `json:"version"`
 }
