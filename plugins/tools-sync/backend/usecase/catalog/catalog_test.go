@@ -368,11 +368,13 @@ func TestListRemoteVaults_RefusesACatalogThatIsNotValid(t *testing.T) {
 			return entries
 		},
 		"a wrong previous hash under a valid signature": func(t *testing.T, w *world, entries []*syncv1.CatalogEntry) []*syncv1.CatalogEntry {
+			t.Helper()
 			entries[1].PrevHash = make([]byte, 32)
 			w.first.SignCatalogEntry(t, entries[1])
 			return entries
 		},
 		"an author that is not a device of the account": func(t *testing.T, w *world, entries []*syncv1.CatalogEntry) []*syncv1.CatalogEntry {
+			t.Helper()
 			synctest.NewFirstComputer(t, w.server, w.clock, "Other", synctest.NewWords(t)).SignCatalogEntry(t, entries[1])
 			return entries
 		},

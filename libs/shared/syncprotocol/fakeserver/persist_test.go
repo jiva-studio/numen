@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
-func TestRestore_ReadsWhatSnapshotKept(t *testing.T) {
+func TestRestore_ReadsTheSnapshot(t *testing.T) {
 	first := fakeserver.New(fakeserver.Config{})
 	kept, err := first.Snapshot()
 	if err != nil {

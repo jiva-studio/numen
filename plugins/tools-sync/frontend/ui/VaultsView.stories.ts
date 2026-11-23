@@ -82,7 +82,9 @@ export const ConnectedAndNotConnected: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Synced 5 minutes ago')).toBeVisible()
     await expect(canvas.getByText('Not connected')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Connect as a new synced vault' })).toBeVisible()
+    await expect(
+      canvas.getByRole('button', { name: 'Connect as a new synced vault' }),
+    ).toBeVisible()
   },
 }
 
@@ -105,7 +107,9 @@ export const CopyRefused: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Connect as a new synced vault' }))
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Connect as a new synced vault' }),
+    )
     await expect(await canvas.findByRole('alert')).toHaveTextContent('a copy of a connected vault')
   },
 }

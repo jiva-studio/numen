@@ -2,6 +2,7 @@ package session_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -49,7 +50,9 @@ func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Se
 	go func() { done <- keep.Execute(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-done
+		if err := <-done; !errors.Is(err, context.Canceled) {
+			t.Errorf("Keep ended with %v, want the error of its context", err)
+		}
 	})
 	return keep, server, healthHost
 }
@@ -57,9 +60,9 @@ func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Se
 func TestKeep_GetsTheTokenOfTheSessionItOpened(t *testing.T) {
 	keep, server, _ := newTokenKeep(t, true)
 
-	eventually(t, "a session", func() bool { return len(server.ListSessions()) == 1 })
+	eventually(t, "the token", func() bool { return keep.GetToken() != "" })
 
-	if got := keep.GetToken(); got == "" || got != server.ListSessions()[0].Token {
+	if sessions := server.ListSessions(); len(sessions) != 1 || keep.GetToken() != sessions[0].Token {
 		t.Error("GetToken is not the token of the session the server holds")
 	}
 }

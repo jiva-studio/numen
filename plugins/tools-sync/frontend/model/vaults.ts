@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
+import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
@@ -15,7 +16,7 @@ export interface VaultRow {
 }
 
 export interface UseVaultsOptions {
-  readonly client: VaultsClient
+  readonly client?: VaultsClient
   readonly now: () => Date
 }
 
@@ -47,7 +48,7 @@ const getRow = (vault: Vault, now: Date): VaultRow => ({
 })
 
 export function useVaults(options: UseVaultsOptions) {
-  const { client, now } = options
+  const { client = vaultsClient, now } = options
   const vaults = shallowRef<readonly Vault[]>([])
   const remote = shallowRef<readonly RemoteVault[]>([])
   const status = ref<VaultsStatus>('loading')

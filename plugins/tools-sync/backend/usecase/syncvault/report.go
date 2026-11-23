@@ -37,7 +37,6 @@ func (r reporter) settle(ctx context.Context, err error) error {
 	return err
 }
 
-// report raises the warnings of a pass that went through and clears the ones it no longer needs.
 func (r reporter) report(ctx context.Context, conflicts, previousConflicts, unverified int) error {
 	for _, key := range []string{keyStorageFull, keySubscription} {
 		if err := r.health.Clear(ctx, key); err != nil {

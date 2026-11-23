@@ -62,7 +62,6 @@ func (u *RunSync) Execute(ctx context.Context) error {
 	}
 }
 
-// wait returns when the interval is over or a vault changed.
 func (u *RunSync) wait(ctx context.Context) (domain.VaultID, bool, error) {
 	waitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -73,7 +72,9 @@ func (u *RunSync) wait(ctx context.Context) (domain.VaultID, bool, error) {
 		return "", false, err
 	case id := <-u.deps.Changed:
 		cancel()
-		<-ended
+		if err := <-ended; err != nil && !errors.Is(err, context.Canceled) {
+			return "", false, err
+		}
 		return id, true, ctx.Err()
 	}
 }
@@ -96,7 +97,6 @@ func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	return u.finish(ctx, u.pass(ctx, id))
 }
 
-// pass runs the pass over the vault if it is connected.
 func (u *RunSync) pass(ctx context.Context, id domain.VaultID) error {
 	if _, err := u.deps.State.ReadLink(ctx, id); errors.Is(err, vaultlink.ErrNotConnected) {
 		return nil
@@ -104,8 +104,6 @@ func (u *RunSync) pass(ctx context.Context, id domain.VaultID) error {
 	return u.deps.Pass.Execute(ctx, id)
 }
 
-// finish raises the warning that tells why a pass failed, or clears the warnings of earlier passes. It returns
-// the error of ctx once ctx ends.
 func (u *RunSync) finish(ctx context.Context, failure error) error {
 	if err := ctx.Err(); err != nil {
 		return err

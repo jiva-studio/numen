@@ -6,7 +6,6 @@
 import { onMounted } from 'vue'
 import { Button, getCurrentDate } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
-import { vaultsClient } from '../api/wire'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
 
@@ -18,7 +17,7 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const model = useVaults({
-  client: props.client ?? vaultsClient,
+  client: props.client,
   now: props.now ?? getCurrentDate,
 })
 const { status, error, warning, rows, openFor, remote } = model.state
