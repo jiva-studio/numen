@@ -630,7 +630,7 @@ func TestAWindowRequestIgnoresTheManagerAndTheVaultStaysOrdinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := onList(t, list, out.Msg.GetVault().GetId()).GetManagedBy(); got != "" {
+	if got := onList(t, list.Msg, out.Msg.GetVault().GetId()).GetManagedBy(); got != "" {
 		t.Errorf("the vault on the list has the manager %q, want none", got)
 	}
 }

@@ -34,15 +34,18 @@ const createClient = (setup: Setup): SharesClient => ({
   listReceived: () => Promise.resolve([]),
 })
 
-const render = (setup: Setup) => () => ({
-  components: { ShareDialog },
-  setup: () => ({
-    state: createShareView({ client: createClient(setup), target: TARGET, close: () => undefined }),
-  }),
-  template: '<ShareDialog :state="state" />',
-})
+const createState = (setup: Setup) =>
+  createShareView({ client: createClient(setup), target: TARGET, close: () => undefined })
 
-const meta = { title: 'NumenSync/ShareDialog', component: ShareDialog } satisfies Meta<typeof ShareDialog>
+const meta = {
+  title: 'NumenSync/ShareDialog',
+  component: ShareDialog,
+  render: (args) => ({
+    components: { ShareDialog },
+    setup: () => ({ args }),
+    template: '<ShareDialog v-bind="args" />',
+  }),
+} satisfies Meta<typeof ShareDialog>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -57,7 +60,7 @@ const fillAndShare = async (canvasElement: HTMLElement): Promise<ReturnType<type
 }
 
 export const NotShared: Story = {
-  render: render({}),
+  args: { state: createState({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByRole('textbox', { name: 'Reader code' })).toBeVisible()
@@ -67,14 +70,14 @@ export const NotShared: Story = {
 }
 
 export const Creating: Story = {
-  render: render({ share: { state: 'creating', readers: [] } }),
+  args: { state: createState({ share: { state: 'creating', readers: [] } }) },
   play: async ({ canvasElement }) => {
     await expect(await within(canvasElement).findByText('Preparing the shared folder…')).toBeVisible()
   },
 }
 
 export const InvitationShown: Story = {
-  render: render({}),
+  args: { state: createState({}) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('textbox', { name: 'Invitation' })).toHaveValue(INVITATION)
@@ -83,7 +86,7 @@ export const InvitationShown: Story = {
 }
 
 export const ActiveWithReaders: Story = {
-  render: render({ share: { state: 'active', readers: [anna] } }),
+  args: { state: createState({ share: { state: 'active', readers: [anna] } }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const readers = await canvas.findByRole('list', { name: 'Readers' })
@@ -95,7 +98,7 @@ export const ActiveWithReaders: Story = {
 }
 
 export const FolderInsideSharedFolder: Story = {
-  render: render({ refusal: 'A folder inside a shared folder cannot be shared' }),
+  args: { state: createState({ refusal: 'A folder inside a shared folder cannot be shared' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('A folder inside a shared folder cannot be shared')
@@ -103,7 +106,7 @@ export const FolderInsideSharedFolder: Story = {
 }
 
 export const ReaderNotSignedIn: Story = {
-  render: render({ refusal: 'The reader has not signed in to Numen Sync yet' }),
+  args: { state: createState({ refusal: 'The reader has not signed in to Numen Sync yet' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('has not signed in')
@@ -111,7 +114,7 @@ export const ReaderNotSignedIn: Story = {
 }
 
 export const AnotherIdentity: Story = {
-  render: render({ refusal: 'This person has another identity than before' }),
+  args: { state: createState({ refusal: 'This person has another identity than before' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('another identity')
