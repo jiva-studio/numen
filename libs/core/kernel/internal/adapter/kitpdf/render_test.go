@@ -20,6 +20,7 @@ import (
 )
 
 const fingerprint = "1A2B 3C4D 5E6F 7A8B 9C0D 1E2F 3A4B 5C6D"
+const chainMark = "7-3FA912C077B1"
 
 var (
 	pageObject = regexp.MustCompile(`/Type /Page\b[^s]`)
@@ -40,6 +41,7 @@ func getSampleKit() identitydomain.Kit {
 	return identitydomain.Kit{
 		ID:                 "C0DE",
 		AccountFingerprint: fingerprint,
+		ChainMark:          chainMark,
 		CreatedAt:          time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC),
 		Sheets:             sheets,
 	}
@@ -101,6 +103,7 @@ func TestRender_ShowsTheFingerprintTheRuleAndTheWordsOfEachSheetInOrder(t *testi
 			"Keep each sheet in a different place. Never store the sheets together.",
 			"23 November 2026",
 			"Kept at:",
+			chainMark,
 		} {
 			if !slices.Contains(page, want) {
 				t.Errorf("page %d does not show %q", i+1, want)

@@ -29,6 +29,8 @@ type restoreKit struct {
 	pending  *identity.GetPendingRestore
 	sign     *identity.SignAsRecovery
 	complete *identity.CompleteRestore
+	adopt    *identity.AdoptChain
+	devices  *identity.ListDevices
 	saveKit  *identity.SaveRecoveryKit
 	saver    *fakeKitSaver
 	startKit *identity.StartRestoreFromKit
@@ -51,6 +53,8 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 		pending:  identity.NewGetPendingRestore(deps),
 		sign:     identity.NewSignAsRecovery(deps),
 		complete: identity.NewCompleteRestore(deps),
+		adopt:    identity.NewAdoptChain(deps),
+		devices:  identity.NewListDevices(deps),
 		saveKit:  identity.NewSaveRecoveryKit(deps, saver),
 		startKit: identity.NewStartRestoreFromKit(deps),
 		seal:     identity.NewSealData(deps),
@@ -84,7 +88,7 @@ func TestStartRestore_KeepsAPendingRestoreInMemoryAndWritesNothing(t *testing.T)
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
 
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,7 +129,7 @@ func TestStartRestore_RefusesWordsThatAreNotValidAndNothingIsPending(t *testing.
 		"no word":        nil,
 		"thirteen words": append(getLegalWords(), "legal"),
 	} {
-		err := k.start.Execute(t.Context(), words)
+		err := k.start.Execute(t.Context(), words, "")
 		if !errors.Is(err, identitydomain.ErrInvalidWords) {
 			t.Errorf("%s: error = %v, want ErrInvalidWords", name, err)
 		}
@@ -143,7 +147,7 @@ func TestStartRestore_RefusesWhenTheDeviceHasAnIdentityAndItStaysAsItWas(t *test
 	}
 	before := k.keys.snapshot()
 
-	err := k.start.Execute(t.Context(), getOtherWords())
+	err := k.start.Execute(t.Context(), getOtherWords(), "")
 
 	if !errors.Is(err, identitydomain.ErrIdentityExists) {
 		t.Errorf("error = %v, want ErrIdentityExists", err)
@@ -159,7 +163,7 @@ func TestStartRestore_RefusesWhenTheDeviceHasAnIdentityAndItStaysAsItWas(t *test
 func TestStartRestore_ReplacesAnEarlierPendingRestore(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	first, err := k.pending.Execute(t.Context())
@@ -167,7 +171,7 @@ func TestStartRestore_ReplacesAnEarlierPendingRestore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := k.start.Execute(t.Context(), getOtherWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getOtherWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -195,7 +199,7 @@ func TestSignAsRecovery_RefusesWhenNothingIsPending(t *testing.T) {
 func TestSignAsRecovery_SignsForThePluginWithTheRecoveryKeyOfThePendingWords(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	root := k.getRootSignKey(t, getLegalWords())
@@ -222,7 +226,7 @@ func TestSignAsRecovery_SignsForThePluginWithTheRecoveryKeyOfThePendingWords(t *
 func TestSignAsRecovery_SignsNothingForAnEmptyPluginID(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -239,7 +243,7 @@ func TestCompleteRestore_JoinsTheAccountOfAnotherDeviceAndKeepsItsKeys(t *testin
 		t.Fatal(err)
 	}
 	second := newRestoreKit(t, "Phone")
-	if err := second.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := second.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	pending, err := second.pending.Execute(t.Context())
@@ -278,17 +282,20 @@ func TestCompleteRestore_JoinsTheAccountOfAnotherDeviceAndKeepsItsKeys(t *testin
 	}
 }
 
-func TestCompleteRestore_MakesTheSameKeysToSealAndOpenOnBothDevices(t *testing.T) {
+func TestCompleteRestore_GivesBothDevicesTheSameKeysOnceTheFirstTakesTheChainOfTheRestore(t *testing.T) {
 	t.Parallel()
 	first := newRestoreKit(t, "Desktop")
 	if _, err := first.create.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
 	second := newRestoreKit(t, "Phone")
-	if err := second.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := second.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := second.complete.Execute(t.Context(), syncPlugin, first.getChain(t)); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.adopt.Execute(t.Context(), second.getChain(t)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -319,7 +326,7 @@ func TestCompleteRestore_WithNoChainMakesANewIdentityOfTheWords(t *testing.T) {
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -372,7 +379,7 @@ func TestCompleteRestore_RefusesAChainOfAnotherRootAndWritesNothing(t *testing.T
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,7 +406,7 @@ func TestCompleteRestore_RefusesABrokenChainAndWritesNothing(t *testing.T) {
 		"a changed byte":          changed,
 	} {
 		k := newRestoreKit(t, "Phone")
-		if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 			t.Fatal(err)
 		}
 
@@ -418,7 +425,7 @@ func TestCompleteRestore_ReportsAKeyStoreThatRefusesAndWritesNothing(t *testing.
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	k.keys.setFails = errBroken
@@ -433,7 +440,7 @@ func TestCompleteRestore_ReportsAKeyStoreThatRefusesAndWritesNothing(t *testing.
 func TestCompleteRestore_NeverOverwritesAnIdentityMadeWhileTheRestoreWasPending(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := k.create.Execute(t.Context(), getOtherWords()); err != nil {
@@ -451,7 +458,7 @@ func TestCompleteRestore_NeverOverwritesAnIdentityMadeWhileTheRestoreWasPending(
 func TestCompleteRestore_ClearsThePendingRestoreSoThatSigningIsRefusedAgain(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := k.complete.Execute(t.Context(), syncPlugin, nil); err != nil {
@@ -473,7 +480,7 @@ func TestStartRestore_CompletesAsAnOfflineRestoreWhenNoPluginCompletesItIn30Seco
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -498,7 +505,7 @@ func TestStartRestore_CompletesAsAnOfflineRestoreWhenNoPluginCompletesItIn30Seco
 func TestStartRestore_ADeadlineThatPassesAfterTheRestoreCompletedChangesNothing(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := k.complete.Execute(t.Context(), syncPlugin, nil); err != nil {
@@ -520,11 +527,11 @@ func TestStartRestore_ANewStartMovesTheDeadlineOfTheFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	k.clock.Advance(20 * time.Second)
-	if err := k.start.Execute(t.Context(), getOtherWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getOtherWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -557,7 +564,7 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
 	k.keys.setFails = errors.New("key store is locked")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	k.clock.Advance(restoreFallback)

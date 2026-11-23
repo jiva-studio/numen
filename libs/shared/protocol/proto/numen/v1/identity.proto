@@ -100,6 +100,11 @@ enum IdentityErrorCode {
   IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
   // IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
   IDENTITY_ERROR_CODE_CODE_INVALID = 16;
+  // IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
+  IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 17;
+  // IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
+  // kit: older, or another history, or none. The restore is over; nothing was kept.
+  IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 18;
 }
 
 // IdentityInfo is what a person can see of the identity of this device.
@@ -122,6 +127,9 @@ message GetIdentityRequest {}
 message GetIdentityResponse {
   // identity is unset when this device holds no identity.
   IdentityInfo identity = 1;
+  // error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
+  IdentityErrorCode error = 2;
+  string detail = 3;
 }
 
 message GenerateRecoveryWordsRequest {}
@@ -143,6 +151,9 @@ message CreateIdentityResponse {
 
 message StartRestoreRequest {
   repeated string words = 1 [debug_redact = true];
+  // chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
+  // not contain it.
+  string chain_mark = 2;
 }
 
 message StartRestoreResponse {
@@ -186,6 +197,8 @@ message SaveRecoveryKitResponse {
 
 message StartRestoreFromKitRequest {
   repeated RecoverySheet sheets = 1;
+  // chain_mark is the chain mark printed on the sheets, or empty.
+  string chain_mark = 2;
 }
 
 message StartRestoreFromKitResponse {

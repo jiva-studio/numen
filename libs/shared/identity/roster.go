@@ -47,6 +47,8 @@ func (r *roster) apply(entry Entry) {
 			r.active = slices.Delete(slices.Clone(r.active), i, i+1)
 		}
 		r.epoch = entry.Revoke.Epoch
+	case entry.Kind == KindRotateKeys && entry.Revoke != nil:
+		r.epoch = entry.Revoke.Epoch
 	}
 }
 
@@ -62,6 +64,8 @@ func (r *roster) verify(entry Entry, i int) error {
 		return r.verifyAdd(entry, i)
 	case KindRevokeDevice:
 		return r.verifyRevoke(entry, i)
+	case KindRotateKeys:
+		return r.verifyRotate(entry, i)
 	default:
 		return fmt.Errorf("%w: entry %d has kind %d", ErrMalformed, i, entry.Kind)
 	}
@@ -96,13 +100,27 @@ func (r *roster) verifyRevoke(entry Entry, i int) error {
 	if index < 0 {
 		return fmt.Errorf("%w: entry %d", ErrUnknownDevice, i)
 	}
+	return r.verifyKeys(revoke, slices.Delete(slices.Clone(r.active), index, index+1), i)
+}
+
+func (r *roster) verifyRotate(entry Entry, i int) error {
+	revoke := entry.Revoke
+	if revoke == nil || len(revoke.Device) != 0 {
+		return fmt.Errorf("%w: entry %d is not a rotation", ErrMalformed, i)
+	}
+	if !bytes.Equal(entry.Signer, r.root) {
+		return fmt.Errorf("%w: entry %d is not signed by the recovery key", ErrUnknownSigner, i)
+	}
+	return r.verifyKeys(revoke, r.active, i)
+}
+
+func (r *roster) verifyKeys(revoke *Revoke, remaining []Device, i int) error {
 	if revoke.Epoch != r.epoch+1 {
 		return fmt.Errorf("%w: entry %d raises the epoch to %d", ErrBrokenLink, i, revoke.Epoch)
 	}
 	if len(revoke.WrappedForRecovery.sealed) != wrappedSize || len(revoke.PreviousKeys) != previousKeysSize {
 		return fmt.Errorf("%w: entry %d has keys of the wrong size", ErrMalformed, i)
 	}
-	remaining := slices.Delete(slices.Clone(r.active), index, index+1)
 	if len(revoke.Wrapped) != len(remaining) {
 		return fmt.Errorf("%w: entry %d", ErrWrappedSet, i)
 	}
