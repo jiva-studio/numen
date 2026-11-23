@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -107,5 +108,24 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		s.Fake.ServeHTTP(w, r)
+	}
+}
+
+// SetUsedBytes sets the bytes the fake counts against the quota of every account, as the admin path of the fake does.
+func (s *Server) SetUsedBytes(t *testing.T, bytes uint64) {
+	t.Helper()
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, s.URL+"/admin/usage?bytes="+strconv.FormatUint(bytes, 10), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := response.Body.Close(); err != nil {
+		t.Error(err)
+	}
+	if response.StatusCode >= 300 {
+		t.Fatalf("the usage admin path answered %d", response.StatusCode)
 	}
 }

@@ -12,6 +12,8 @@ const (
 	MethodGetStatus        = "GetStatus"
 	MethodGetSubscription  = "GetSubscription"
 	MethodCreateCheckout   = "CreateCheckout"
+	MethodListPlans        = "ListPlans"
+	MethodChangePlan       = "ChangePlan"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -114,19 +116,49 @@ const (
 type GetSubscriptionRequest struct{}
 
 // GetSubscriptionResponse is the subscription of the account. HasIdentity is false when this device has none;
-// then the server is not asked and Phase is empty. A time is RFC 3339, and empty when the server sent none.
+// then the server is not asked and Phase is empty. A time is RFC 3339, and empty when the server sent none. Plan is the
+// id of the plan, empty while the phase is none; QuotaBytes is 0 then. UsedBytes may be above QuotaBytes.
 type GetSubscriptionResponse struct {
 	HasIdentity bool   `json:"hasIdentity"`
 	Phase       Phase  `json:"phase"`
 	PeriodEndAt string `json:"periodEndAt"`
 	WritesEndAt string `json:"writesEndAt"`
 	DeleteAt    string `json:"deleteAt"`
+	Plan        string `json:"plan"`
+	QuotaBytes  uint64 `json:"quotaBytes"`
+	UsedBytes   uint64 `json:"usedBytes"`
 }
 
-// CreateCheckoutRequest asks for a payment page.
-type CreateCheckoutRequest struct{}
+// CreateCheckoutRequest asks for a payment page for the plan with this id.
+type CreateCheckoutRequest struct {
+	Plan string `json:"plan"`
+}
 
 // CreateCheckoutResponse is the address of the payment page.
 type CreateCheckoutResponse struct {
 	CheckoutURL string `json:"checkoutUrl"`
+}
+
+// ListPlansRequest asks for the plans the sync server sells.
+type ListPlansRequest struct{}
+
+// Plan is a plan of the sync server: its id and how many bytes it holds.
+type Plan struct {
+	ID         string `json:"id"`
+	QuotaBytes uint64 `json:"quotaBytes"`
+}
+
+// ListPlansResponse holds the plans ascending by quota.
+type ListPlansResponse struct {
+	Plans []Plan `json:"plans"`
+}
+
+// ChangePlanRequest asks to move the active subscription to the plan with this id.
+type ChangePlanRequest struct {
+	Plan string `json:"plan"`
+}
+
+// ChangePlanResponse is the subscription after the change.
+type ChangePlanResponse struct {
+	Subscription GetSubscriptionResponse `json:"subscription"`
 }

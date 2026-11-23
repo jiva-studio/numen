@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -192,5 +193,34 @@ func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T
 
 	if len(page.GetChanges()) != 0 || page.GetHasMore() {
 		t.Errorf("changes of a new vault = %v, want none", page)
+	}
+}
+
+func TestCloud_ListsThePlansOfTheServer(t *testing.T) {
+	c, _ := newWorld(t, fakeserver.Config{Plans: []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}}})
+
+	got, err := c.Cloud.ListPlans(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []syncprotocol.Plan{{ID: "tiny", QuotaBytes: 1024}, {ID: "huge", QuotaBytes: 1 << 20}}
+	if !slices.Equal(got, want) {
+		t.Errorf("plans = %+v, want %+v", got, want)
+	}
+}
+
+func TestCloud_SignsInAgainOnceAndReportsAnAccountWithoutASubscriptionOnAPlanChange(t *testing.T) {
+	c, server := newWorld(t, fakeserver.Config{NeedsSubscription: true})
+	before := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure)
+	server.Fake.EndSessions(nil)
+
+	_, err := c.Cloud.ChangePlan(t.Context(), "pro")
+
+	if !errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
+		t.Errorf("error = %v, want ErrNoActiveSubscription", err)
+	}
+	if got := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
+		t.Errorf("sign-ins after the session ended = %d, want 1", got)
 	}
 }

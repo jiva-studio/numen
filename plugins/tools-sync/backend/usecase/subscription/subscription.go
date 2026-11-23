@@ -4,6 +4,7 @@ package subscription
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -59,8 +60,31 @@ type CreateCheckout struct{ deps Deps }
 // NewCreateCheckout returns the use case over the dependencies.
 func NewCreateCheckout(deps Deps) *CreateCheckout { return &CreateCheckout{deps: deps} }
 
-// Execute returns the address of the payment page. An account with an active subscription gets
+// Execute returns the address of the payment page for the plan. An account with an active subscription gets
 // syncprotocol.ErrAlreadySubscribed.
-func (u *CreateCheckout) Execute(ctx context.Context) (string, error) {
-	return u.deps.Subscriptions.CreateCheckout(ctx)
+func (u *CreateCheckout) Execute(ctx context.Context, plan string) (string, error) {
+	return u.deps.Subscriptions.CreateCheckout(ctx, plan)
+}
+
+// ListPlans asks the server for the plans it sells.
+type ListPlans struct{ deps Deps }
+
+// NewListPlans returns the use case over the dependencies.
+func NewListPlans(deps Deps) *ListPlans { return &ListPlans{deps: deps} }
+
+// Execute returns the plans in the order of the server, ascending by quota.
+func (u *ListPlans) Execute(_ context.Context) ([]domain.Plan, error) {
+	return nil, errors.New("not implemented")
+}
+
+// ChangePlan moves the active subscription to another plan.
+type ChangePlan struct{ deps Deps }
+
+// NewChangePlan returns the use case over the dependencies.
+func NewChangePlan(deps Deps) *ChangePlan { return &ChangePlan{deps: deps} }
+
+// Execute returns the subscription after the change. The refusals of the server are returned as it sent them:
+// syncprotocol.ErrNoActiveSubscription, ErrSamePlan, ErrUnknownPlan and ErrBillingUnavailable.
+func (u *ChangePlan) Execute(_ context.Context, _ string) (domain.State, error) {
+	return domain.State{}, errors.New("not implemented")
 }

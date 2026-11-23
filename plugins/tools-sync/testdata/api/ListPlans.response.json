@@ -1,0 +1,7 @@
+{
+  "plans": [
+    { "id": "basic", "quotaBytes": 10737418240 },
+    { "id": "plus", "quotaBytes": 107374182400 },
+    { "id": "pro", "quotaBytes": 268435456000 }
+  ]
+}

@@ -129,5 +129,7 @@ type Clock interface {
 // Subscriptions is the subscription of the account on the server.
 type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)
-	CreateCheckout(ctx context.Context) (string, error)
+	ListPlans(ctx context.Context) ([]syncprotocol.Plan, error)
+	CreateCheckout(ctx context.Context, plan string) (string, error)
+	ChangePlan(ctx context.Context, plan string) (syncprotocol.Subscription, error)
 }

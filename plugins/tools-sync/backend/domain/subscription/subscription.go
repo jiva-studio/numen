@@ -26,9 +26,19 @@ type State struct {
 	PeriodEnd time.Time
 	WritesEnd time.Time
 	DeleteAt  time.Time
+	// PlanID is empty while the phase is none. UsedBytes may be above QuotaBytes.
+	PlanID     string
+	QuotaBytes uint64
+	UsedBytes  uint64
 }
 
 // CanWrite is whether the server takes changes.
 func (s State) CanWrite() bool {
 	return s.Phase == PhaseActive || s.Phase == PhaseGrace
+}
+
+// Plan is a plan the server sells.
+type Plan struct {
+	ID         string
+	QuotaBytes uint64
 }

@@ -105,7 +105,17 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 	return call(ctx, c, func() (syncprotocol.Subscription, error) { return c.subscription.GetSubscription(ctx) })
 }
 
-// CreateCheckout returns the address of a payment page.
-func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
-	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
+// CreateCheckout returns the address of a payment page for the plan.
+func (c *Cloud) CreateCheckout(ctx context.Context, plan string) (string, error) {
+	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx, plan) })
+}
+
+// ListPlans returns the plans the server sells, ascending by quota.
+func (c *Cloud) ListPlans(ctx context.Context) ([]syncprotocol.Plan, error) {
+	return call(ctx, c, func() ([]syncprotocol.Plan, error) { return c.subscription.ListPlans(ctx) })
+}
+
+// ChangePlan moves the active subscription to the plan and returns the subscription after the change.
+func (c *Cloud) ChangePlan(ctx context.Context, plan string) (syncprotocol.Subscription, error) {
+	return call(ctx, c, func() (syncprotocol.Subscription, error) { return c.subscription.ChangePlan(ctx, plan) })
 }

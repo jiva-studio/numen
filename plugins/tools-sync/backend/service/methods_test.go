@@ -15,12 +15,15 @@ func TestGetCode_MapsTheErrorsOfTheSubscriptionMethodsToTheCodesTheFrontendReads
 		err  error
 		want server.ErrorCode
 	}{
-		"server away":         {err: syncprotocol.ErrUnreachable, want: server.CodeUnavailable},
-		"session unreachable": {err: sessiondomain.ErrUnreachable, want: server.CodeUnavailable},
-		"already subscribed":  {err: fmt.Errorf("checkout: %w", syncprotocol.ErrAlreadySubscribed), want: server.CodeAlreadyExists},
-		"billing unavailable": {err: syncprotocol.ErrBillingUnavailable, want: server.CodeFailedPrecondition},
-		"no identity":         {err: sessiondomain.ErrNoIdentity, want: server.CodeFailedPrecondition},
-		"another error":       {err: errors.New("broken"), want: server.CodeInternal},
+		"server away":            {err: syncprotocol.ErrUnreachable, want: server.CodeUnavailable},
+		"session unreachable":    {err: sessiondomain.ErrUnreachable, want: server.CodeUnavailable},
+		"already subscribed":     {err: fmt.Errorf("checkout: %w", syncprotocol.ErrAlreadySubscribed), want: server.CodeAlreadyExists},
+		"billing unavailable":    {err: syncprotocol.ErrBillingUnavailable, want: server.CodeFailedPrecondition},
+		"no identity":            {err: sessiondomain.ErrNoIdentity, want: server.CodeFailedPrecondition},
+		"no active subscription": {err: syncprotocol.ErrNoActiveSubscription, want: server.CodeFailedPrecondition},
+		"same plan":              {err: fmt.Errorf("change: %w", syncprotocol.ErrSamePlan), want: server.CodeAlreadyExists},
+		"unknown plan":           {err: syncprotocol.ErrUnknownPlan, want: server.CodeInvalidArgument},
+		"another error":          {err: errors.New("broken"), want: server.CodeInternal},
 	} {
 		if got := getCode(one.err); got != one.want {
 			t.Errorf("%s: code = %q, want %q", name, got, one.want)

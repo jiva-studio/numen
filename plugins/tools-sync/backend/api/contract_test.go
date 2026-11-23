@@ -20,6 +20,8 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodGetSubscription: {
 			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
 		},
+		api.MethodListPlans:  {Request: func() any { return &api.ListPlansRequest{} }, Response: func() any { return &api.ListPlansResponse{} }},
+		api.MethodChangePlan: {Request: func() any { return &api.ChangePlanRequest{} }, Response: func() any { return &api.ChangePlanResponse{} }},
 		api.MethodCreateCheckout: {
 			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
 		},
@@ -49,7 +51,7 @@ func TestTheValuesOfStateAndMode(t *testing.T) {
 }
 
 func TestTheNamesOfTheSubscriptionMethodsAndPhases(t *testing.T) {
-	if api.MethodGetSubscription != "GetSubscription" || api.MethodCreateCheckout != "CreateCheckout" {
+	if api.MethodGetSubscription != "GetSubscription" || api.MethodCreateCheckout != "CreateCheckout" || api.MethodListPlans != "ListPlans" || api.MethodChangePlan != "ChangePlan" {
 		t.Errorf("methods %q and %q", api.MethodGetSubscription, api.MethodCreateCheckout)
 	}
 	if api.PhaseNone != "none" || api.PhaseActive != "active" || api.PhaseGrace != "grace" || api.PhaseReadOnly != "readOnly" || api.PhaseDeleted != "deleted" {

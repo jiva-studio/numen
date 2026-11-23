@@ -294,14 +294,14 @@ func TestSyncVault_ConvergesAfterTheResponseOfACommitIsLost(t *testing.T) {
 	wantNote(t, p.b, target, "Shopping list.md", "milk")
 }
 
-func TestSyncVault_WarnsWhenTheStorageIsFullAndUploadsNothing(t *testing.T) {
+func TestSyncVault_WarnsThatTheCloudStorageIsFullAndUploadsNothing(t *testing.T) {
 	p := newPair(t, fakeserver.Config{QuotaBytes: 3000})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
 	sync(t, p.a, source)
 
-	if !p.a.HasItem("Sync storage is full") {
-		t.Errorf("health items = %+v, want Sync storage is full", p.a.Health.List())
+	if !p.a.HasItem("Cloud storage is full: changes stay on this device") {
+		t.Errorf("health items = %+v, want the warning that the cloud storage is full", p.a.Health.List())
 	}
 	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 0 {
 		t.Errorf("server holds %d revisions, want none", got)
