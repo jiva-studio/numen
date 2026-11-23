@@ -268,5 +268,5 @@ func (r *recovery) getRecord(fileID []byte) transfer.FileRecord {
 	if at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) }); at >= 0 {
 		return r.records[at]
 	}
-	return transfer.NoRecord()
+	return transfer.NewEmptyRecord()
 }

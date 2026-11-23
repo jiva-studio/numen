@@ -143,7 +143,7 @@ func TestPullChanges_KeepsAFileChangedOnBothComputersAndPlacesNothing(t *testing
 func TestPullChanges_TreatsAFileThatAppearedBeforeItsPlacementAsAConflict(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
-	spy.BeforePlace(func(call synctest.PlaceCall) { p.b.WriteNote(target, call.Path, "written meanwhile") })
+	spy.RunBeforePlace(func(call synctest.PlaceCall) { p.b.WriteNote(target, call.Path, "written meanwhile") })
 	p.push(t, pdf, pdfText, nil)
 
 	result := p.pull(t, trustAll)
@@ -165,7 +165,7 @@ func TestPullChanges_TreatsAFileThatAppearedBeforeItsPlacementAsAConflict(t *tes
 func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenTheHostFindsAnotherHash(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
-	spy.BeforePlace(func(call synctest.PlaceCall) {
+	spy.RunBeforePlace(func(call synctest.PlaceCall) {
 		p.b.Vaults.Store().With(target).WriteFile(call.Name, []byte("tampered"))
 	})
 	p.push(t, pdf, pdfText, nil)

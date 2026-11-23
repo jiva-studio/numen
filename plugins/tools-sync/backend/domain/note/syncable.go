@@ -37,8 +37,8 @@ func IsSyncable(filePath string) bool {
 	return !hasSkippedEnd(lower)
 }
 
-// Kind returns "markdown", "text" or "binary" for the extension of the path.
-func Kind(filePath string) string {
+// GetKind returns "markdown", "text" or "binary" for the extension of the path.
+func GetKind(filePath string) string {
 	extension := strings.ToLower(path.Ext(filePath))
 	switch {
 	case extension == ".md":
@@ -60,8 +60,8 @@ func GetRecordKeyContext(remoteID, fileID []byte) []byte {
 	return slices.Concat([]byte(RecordKeyContext), remoteID, fileID)
 }
 
-// StoredName returns the name of the staged file of a download in the store folder.
-func StoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }
+// GetStoredName returns the name of the staged file of a download in the store folder.
+func GetStoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }
 
 func isSkippedFolder(name string) bool {
 	return slices.Contains([]string{".numen", ".git", ".trash"}, name)

@@ -46,7 +46,7 @@ func NewDownloadFile(deps Deps) *DownloadFile { return &DownloadFile{deps: deps}
 // Execute brings the file down into a staged file of the store folder, checks it against the hash of its blob and
 // its plain hash, and returns the name of the staged file.
 func (u *DownloadFile) Execute(ctx context.Context, in transfer.DownloadInput) (string, error) {
-	r := &run{deps: u.deps, in: in, name: note.StoredName(in.FileID), store: u.deps.Host.Store(in.Vault)}
+	r := &run{deps: u.deps, in: in, name: note.GetStoredName(in.FileID), store: u.deps.Host.Store(in.Vault)}
 	var err error
 	if in.BlobSize <= note.BigFileLimit {
 		err = r.stageWhole(ctx)
@@ -76,7 +76,7 @@ func (u *DownloadFile) Forget(ctx context.Context, vault domain.VaultID, fileID 
 func (u *DownloadFile) Discard(ctx context.Context, vault domain.VaultID, fileID []byte) error {
 	r := &run{deps: u.deps, in: transfer.DownloadInput{
 		Vault: vault, RemoteID: nil, FileID: fileID, Path: "", BlobID: nil, BlobHash: nil, BlobSize: 0, Key: [32]byte{}, Hash: "", Size: 0, HeadRev: nil, Baseline: nil,
-	}, name: note.StoredName(fileID), store: u.deps.Host.Store(vault)}
+	}, name: note.GetStoredName(fileID), store: u.deps.Host.Store(vault)}
 	return r.discard(ctx)
 }
 

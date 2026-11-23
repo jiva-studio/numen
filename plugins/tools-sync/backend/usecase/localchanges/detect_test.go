@@ -14,7 +14,7 @@ import (
 func newRecord(number byte, path, content string) transfer.FileRecord {
 	return transfer.FileRecord{
 		FileID: bytes.Repeat([]byte{number}, 16), Path: path, BaseHash: note.Hash([]byte(content)), HeadRev: []byte{number}, Size: int64(len(content)),
-		ModifiedAt: 0, Kind: note.Kind(path), BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil,
+		ModifiedAt: 0, Kind: note.GetKind(path), BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil,
 	}
 }
 

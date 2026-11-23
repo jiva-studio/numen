@@ -137,7 +137,7 @@ func TestDownloadFile_StagesASmallFileOfAnyKindByItsNameAndDoesNotPlaceIt(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := note.StoredName(stored.GetRevision().GetFileId()); name != want {
+	if want := note.GetStoredName(stored.GetRevision().GetFileId()); name != want {
 		t.Errorf("staged name = %q, want %q", name, want)
 	}
 	if got := w.p.B.ReadStoreFile(t, synctest.SecondVault, name); !bytes.Equal(got, content) {
@@ -173,7 +173,7 @@ func TestDownloadFile_RefusesASmallBlobThatIsNotTheOneItsRevisionNamesAndStagesN
 	if !errors.Is(err, download.ErrIntegrity) {
 		t.Errorf("error = %v, want ErrIntegrity", err)
 	}
-	if _, isThere := w.getStagedSize(t, note.StoredName(stored.GetRevision().GetFileId())); isThere {
+	if _, isThere := w.getStagedSize(t, note.GetStoredName(stored.GetRevision().GetFileId())); isThere {
 		t.Error("a staged file is left after a blob that did not match its hash")
 	}
 }
@@ -296,7 +296,7 @@ func TestDownloadFile_RefusesABigBlobThatDoesNotOpenAndDropsWhatItStaged(t *test
 	if !errors.Is(err, download.ErrIntegrity) {
 		t.Errorf("error = %v, want ErrIntegrity for a blob that is damaged", err)
 	}
-	if _, isThere := w.getStagedSize(t, note.StoredName(stored.GetRevision().GetFileId())); isThere {
+	if _, isThere := w.getStagedSize(t, note.GetStoredName(stored.GetRevision().GetFileId())); isThere {
 		t.Error("a staged file is left after a damaged blob")
 	}
 	if kept := w.readEntries(t); len(kept) != 0 {
@@ -315,7 +315,7 @@ func TestDownloadFile_RefusesABigBlobWhoseHashIsNotTheOneOfItsRevision(t *testin
 	if !errors.Is(err, download.ErrIntegrity) {
 		t.Errorf("error = %v, want ErrIntegrity", err)
 	}
-	if _, isThere := w.getStagedSize(t, note.StoredName(stored.GetRevision().GetFileId())); isThere {
+	if _, isThere := w.getStagedSize(t, note.GetStoredName(stored.GetRevision().GetFileId())); isThere {
 		t.Error("a staged file is left after a blob whose hash differs from its revision")
 	}
 }

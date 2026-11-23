@@ -53,7 +53,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	}
 	gone, fresh := u.split(seen, in.Records)
 	scan := transfer.Scan{}
-	scan.Moves = pairMoves(gone, fresh)
+	scan.Moves = matchMoves(gone, fresh)
 	moved := map[string]bool{}
 	for _, move := range scan.Moves {
 		moved[move.Record.Path] = true
@@ -107,7 +107,7 @@ func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRe
 	return gone, fresh
 }
 
-func pairMoves(gone []transfer.FileRecord, fresh map[string]note.Seen) []transfer.Move {
+func matchMoves(gone []transfer.FileRecord, fresh map[string]note.Seen) []transfer.Move {
 	goneCount, freshCount := map[key]int{}, map[key]int{}
 	for _, record := range gone {
 		goneCount[key{record.BaseHash, record.Size}]++
