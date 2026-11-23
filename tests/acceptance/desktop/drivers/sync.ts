@@ -7,6 +7,7 @@
 import { execFile, spawn, type ChildProcess } from 'node:child_process'
 import { once } from 'node:events'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +21,8 @@ const BINARY = path.join(PLUGIN, 'bin', 'fakesync')
 const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The server lets a session live this long, so the plugin signs in again 2 seconds after it signed in. */
 const SESSION_SECONDS = 62
+/** How often the plugin asks the server for changes, so a scenario waits seconds and not half a minute. */
+const SYNC_INTERVAL_SECONDS = '1'
 /** A protocol version no build of the application implements. */
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
@@ -84,16 +87,53 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
 
 export class SyncDriver {
   private running: RunningSync | undefined
+  private stateDir: string | undefined
+  private listen: string | undefined
 
   constructor(
     private readonly scenario: Scenario,
     private readonly identity: IdentityDriver,
   ) {}
 
-  /** Starts the sync server and tells the plugin its address, before the application starts. */
+  /** Starts the sync server and tells the plugin its address, before the application starts. The server keeps its state in a folder, so it can stop and run again. */
   async start(): Promise<void> {
-    this.running = await startProgram('127.0.0.1:0', [])
-    this.scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.running.address)
+    this.stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-sync-'))
+    holdForRemoval('dir', this.stateDir)
+    this.running = await startProgram('127.0.0.1:0', this.getStateFlags())
+    this.listen = new URL(this.running.address).host
+    this.setPlugin(this.scenario)
+  }
+
+  /** Tells the plugin of a scenario where the sync server is and how often to ask it. */
+  setPlugin(scenario: Scenario): void {
+    scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.requireRunning().address)
+    scenario.setPluginSetting(SYNC_PLUGIN, 'syncIntervalSeconds', SYNC_INTERVAL_SECONDS)
+  }
+
+  /** Ends the sync server and keeps its state and its address, as a server that goes away does. */
+  async pause(): Promise<void> {
+    const running = this.requireRunning()
+    this.stop()
+    await once(running.child, 'exit')
+  }
+
+  /** Runs the sync server again at the address it had, over the state it kept. */
+  async resume(): Promise<void> {
+    if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    this.running = await startProgram(this.listen, this.getStateFlags())
+  }
+
+  /** Reads what the server stores of every blob and expects the text to be in none of it. */
+  async expectNoStoredText(text: string): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/blobs`)
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the list of its blobs`)
+    const stored = Buffer.from(await answer.arrayBuffer())
+    expect(stored.length, 'the server stores no blob yet').toBeGreaterThan(0)
+    expect(stored.includes(Buffer.from(text, 'utf8'))).toBe(false)
+  }
+
+  private getStateFlags(): string[] {
+    return this.stateDir === undefined ? [] : ['-state-dir', this.stateDir]
   }
 
   /** Makes the sync server need a protocol no application implements, where it listened before. */
@@ -102,7 +142,7 @@ export class SyncDriver {
     this.stop()
     await once(previous.child, 'exit')
     const listen = new URL(previous.address).host
-    this.running = await startProgram(listen, ['-protocol', String(NEWER_PROTOCOL)])
+    this.running = await startProgram(listen, [...this.getStateFlags(), '-protocol', String(NEWER_PROTOCOL)])
   }
 
   stop(): void {
@@ -111,6 +151,15 @@ export class SyncDriver {
     if (running === undefined) return
     running.child.kill()
     if (running.child.pid !== undefined) freeFromRemoval('pid', running.child.pid)
+  }
+
+  /** Ends the server for good and removes the folder of its state. */
+  remove(): void {
+    this.stop()
+    if (this.stateDir === undefined) return
+    fs.rmSync(this.stateDir, { recursive: true, force: true })
+    freeFromRemoval('dir', this.stateDir)
+    this.stateDir = undefined
   }
 
   async expectSession(): Promise<void> {

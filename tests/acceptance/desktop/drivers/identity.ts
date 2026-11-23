@@ -129,6 +129,12 @@ export class IdentityDriver {
     await expect((await this.showPage()).getByRole('alert')).toContainText(text)
   }
 
+  /** The recovery words of the last identity this person started. */
+  getWords(): readonly string[] {
+    expect(this.words.length, 'no identity was started before').toBeGreaterThan(0)
+    return this.words
+  }
+
   /** The account fingerprint of the last identity this person created. */
   getAccountFingerprint(): string {
     expect(this.account, 'no identity was created before').not.toBe('')

@@ -13,7 +13,9 @@ import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
 import { IdentityDriver } from './identity.js'
+import { ComputerDriver } from './computer.js'
 import { SyncDriver } from './sync.js'
+import { SyncVaultsDriver } from './sync-vaults.js'
 import { NoteDriver } from './notes.js'
 import { PaletteDriver } from './palette.js'
 import { PlexDriver } from './plex.js'
@@ -53,6 +55,8 @@ export class Person {
   readonly deck: DeckDriver
   readonly identity: IdentityDriver
   readonly sync: SyncDriver
+  readonly syncVaults: SyncVaultsDriver
+  readonly computers: ComputerDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -84,6 +88,8 @@ export class Person {
     this.deck = new DeckDriver(this.scenario, this.tab)
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
+    this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
+    this.computers = new ComputerDriver(this.scenario, viewport, this.identity, this.sync, this.syncVaults)
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */
@@ -100,7 +106,8 @@ export class Person {
   /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
     this.services.stopAll()
-    this.sync.stop()
+    this.sync.remove()
+    await this.computers.remove()
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     try {
       await this.plugin.enableDisabled()

@@ -1,5 +1,11 @@
 import { defineParameterType } from 'playwright-bdd'
 import {
+  parseComputer,
+  parseHolder,
+  parseInside,
+  parseOwnedVault,
+} from '../drivers/computer.js'
+import {
   parseArrow,
   parseExtent,
   parsePlace,
@@ -129,4 +135,28 @@ defineParameterType({
   name: 'presence',
   regexp: /an|no/,
   transformer: (presence: string) => presence === 'an',
+})
+
+defineParameterType({
+  name: 'computer',
+  regexp: /the person|the second computer/,
+  transformer: (computer: string) => parseComputer(computer),
+})
+
+defineParameterType({
+  name: 'owned',
+  regexp: /(?:the|its) vault "[^"]+"/,
+  transformer: (vault: string) => parseOwnedVault(vault),
+})
+
+defineParameterType({
+  name: 'holder',
+  regexp: /the second computer|the vault "[^"]+"/,
+  transformer: (holder: string) => parseHolder(holder),
+})
+
+defineParameterType({
+  name: 'inside',
+  regexp: / in (?:the|its) vault "[^"]+"|/,
+  transformer: (inside: string) => parseInside(inside),
 })

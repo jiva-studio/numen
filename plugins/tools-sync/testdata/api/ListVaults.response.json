@@ -1,0 +1,20 @@
+{
+  "vaults": [
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0P",
+      "name": "Test",
+      "path": "/home/person/Test",
+      "state": "connected",
+      "lastSyncedAt": "2026-11-23T12:00:00Z",
+      "conflictCount": 1
+    },
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0Q",
+      "name": "Copy",
+      "path": "/home/person/Copy",
+      "state": "notConnected",
+      "lastSyncedAt": "",
+      "conflictCount": 0
+    }
+  ]
+}
