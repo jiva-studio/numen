@@ -132,6 +132,7 @@ func NewSecondComputer(t *testing.T, server *Server, clock *Clock, vault string,
 func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Computer {
 	t.Helper()
 	fake := accounttest.NewFake(t, syncprotocol.SignInPluginID)
+	fake.SetClock(clock)
 	healthHost := healthtest.NewHost(t)
 	accountEndpoint, err := hostcall.ReadVars(fake.BuildVars("token"))
 	if err != nil {
