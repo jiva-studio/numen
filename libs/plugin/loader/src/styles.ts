@@ -23,10 +23,6 @@ export function createSheet(text: string, baseURL?: string): CSSStyleSheet | und
   }
 }
 
-/**
- * Adds a sheet to a root until the returned release is called. A root holds a sheet once however
- * many panes adopt it.
- */
 function createSheetAdopter() {
   const adoptions = new WeakMap<StyleRoot, Map<CSSStyleSheet, number>>()
   return (root: StyleRoot, sheet: CSSStyleSheet): (() => void) => {

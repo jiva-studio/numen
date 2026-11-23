@@ -22,13 +22,11 @@ export interface LayoutStartDeps {
   readonly pluginLoader: PluginLoader
   readonly writeMessage: MessageWriter
   readonly layout: ReturnType<typeof createWindowLayout>
-  /** What the core saved: the tab a detach moved to this window, and the tabs the window had open. */
   readonly saved: {
     readonly readDetachedTab: (tabId: string) => Promise<MovedTab | null>
     readonly readOpenTabs: SavedTabsApi['readOpenTabs']
   }
   readonly openDetachedTab: (moved: MovedTab) => void
-  /** Closes the window when the last tab closes; absent where the window is the main one. */
   readonly closeWhenEmpty: (() => Promise<void>) | undefined
 }
 

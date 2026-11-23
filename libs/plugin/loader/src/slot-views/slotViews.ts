@@ -27,7 +27,6 @@ export interface SlotViewRegistryDeps {
  * registered one, and is reactive.
  */
 export interface SlotViewRegistry {
-  /** The stylesheets the views are drawn with, and the loader reads the stylesheets of the plugins into. */
   readonly styles: PluginStyles
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
