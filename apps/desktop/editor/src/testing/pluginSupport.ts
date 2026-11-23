@@ -45,7 +45,7 @@ export interface TestPluginSupportDeps {
   readonly getServices?: () => Partial<PluginServices>
   readonly notices?: NoticeQueue
   readonly getCommandDeclarations?: HostCommands['getCommandDeclarations']
-  readonly handlers?: HostCommands
+  readonly handlers?: Partial<HostCommands>
   readonly slots?: HostParts
 }
 
@@ -65,6 +65,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
   const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
   const services = partialServices as PluginServices
   const named: HostParts = {
+    window: { openExternal: () => Promise.resolve() },
     commands: pickDefinedEntries({
       getCommandDeclarations: deps.getCommandDeclarations,
       reportCommandIssue: deps.reportCommandIssue,

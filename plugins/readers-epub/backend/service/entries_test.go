@@ -27,9 +27,9 @@ func (w *failingResponseWriter) Write([]byte) (int, error) {
 
 func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
 	t.Helper()
-	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
-	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(testsupport.CreateImageEpub(t))})
-	current.Beside(other)
+	current := hosttest.CreateOnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
+	other := hosttest.CreateOnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(testsupport.CreateImageEpub(t))})
+	current.LinkBeside(other)
 	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return current.With(id) })
 	t.Cleanup(reader.Close)
 	mux := http.NewServeMux()

@@ -10,7 +10,7 @@ import (
 // CheckWritable rejects a link whose role is unknown or whose marker cannot be written.
 func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
-		return roleError(link.Role)
+		return newRoleError(link.Role)
 	}
 	if !domain.IsWritableMarker(link.Marker) {
 		return fmt.Errorf("invalid marker %q", link.Marker)
@@ -21,11 +21,11 @@ func CheckWritable(link domain.Link) error {
 // CheckRole rejects a role that is neither empty nor known.
 func CheckRole(role domain.LinkRole) error {
 	if role != "" && !domain.IsKnownRole(role) {
-		return roleError(role)
+		return newRoleError(role)
 	}
 	return nil
 }
 
-func roleError(role domain.LinkRole) error {
+func newRoleError(role domain.LinkRole) error {
 	return fmt.Errorf("invalid role %q: use parent, child, jump, ref or attachment", role)
 }

@@ -62,7 +62,7 @@ export const presets: Presets = {
     if (code) return asFailure(code)
     return asValue({ at: formatFingerprint(answer.at) ?? '', version: parseVersion(answer.at) })
   },
-  curve: async (path, settings) => {
+  getCurve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
       path,
       settings: formatSettings(settings),

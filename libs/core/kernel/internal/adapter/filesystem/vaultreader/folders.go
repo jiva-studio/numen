@@ -22,14 +22,14 @@ const Entries = 4096
 type Folders struct {
 	reader *VaultReader
 
-	beforeRead func(dir string) error
+	checkDir func(dir string) error
 
 	mu      sync.Mutex
 	Indexed map[string]bool
 }
 
 // SetBeforeRead sets what runs on each folder of a walk before its entries are read.
-func (f *Folders) SetBeforeRead(run func(dir string) error) { f.beforeRead = run }
+func (f *Folders) SetBeforeRead(run func(dir string) error) { f.checkDir = run }
 
 func (f *Folders) IsKnownFolder(path string) bool {
 	f.mu.Lock()
@@ -60,7 +60,7 @@ func ReadShape(reader *VaultReader) (*Folders, error) {
 		if !d.IsDir() {
 			return nil
 		}
-		path, inside := reader.relative(p)
+		path, inside := reader.getRelativePath(p)
 		if !inside {
 			return nil
 		}
@@ -105,7 +105,7 @@ func (f *Folders) removeFolder(path string) {
 // nothing. `whole` is set when the disk cannot answer (a deleted folder, a path
 // outside the vault). `walk` is a folder new to the watch; it must not block.
 func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool, walk string) {
-	path, inside := f.reader.relative(absolute)
+	path, inside := f.reader.getRelativePath(absolute)
 	if !inside {
 		return nil, true, ""
 	}
@@ -169,7 +169,7 @@ type underWalk struct {
 }
 
 func (w *underWalk) runBeforeRead(dir string) bool {
-	run := w.folders.beforeRead
+	run := w.folders.checkDir
 	if run == nil {
 		return true
 	}
@@ -196,7 +196,7 @@ func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err erro
 		return fs.SkipAll
 	}
 	reader := w.folders.reader
-	path, inside := reader.relative(p)
+	path, inside := reader.getRelativePath(p)
 	if !inside {
 		return nil
 	}

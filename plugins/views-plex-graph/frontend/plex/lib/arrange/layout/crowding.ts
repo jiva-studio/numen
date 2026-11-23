@@ -1,4 +1,4 @@
-import { lerp } from '../math'
+import { interpolate } from '../math'
 import type { PlexOptions } from '../options'
 
 /** How finely the loosest packing is found, as halvings of the range. */
@@ -15,16 +15,16 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
     ...options,
     nodeSize: {
       ...options.nodeSize,
-      width: lerp(minWidth, options.nodeSize.width, tightness),
+      width: interpolate(minWidth, options.nodeSize.width, tightness),
     },
     focusSize: {
       ...options.focusSize,
-      width: lerp(minWidth, options.focusSize.width, tightness),
+      width: interpolate(minWidth, options.focusSize.width, tightness),
     },
-    gap: lerp(options.gap * squeeze, options.gap, tightness),
-    lineGap: lerp(options.lineGap * squeeze, options.lineGap, tightness),
-    focusGap: lerp(options.focusGap * squeeze, options.focusGap, tightness),
-    room: lerp(options.room * squeeze, options.room, tightness),
+    gap: interpolate(options.gap * squeeze, options.gap, tightness),
+    lineGap: interpolate(options.lineGap * squeeze, options.lineGap, tightness),
+    focusGap: interpolate(options.focusGap * squeeze, options.focusGap, tightness),
+    room: interpolate(options.room * squeeze, options.room, tightness),
   }
 }
 

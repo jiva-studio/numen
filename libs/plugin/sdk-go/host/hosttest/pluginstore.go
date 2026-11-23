@@ -49,8 +49,8 @@ func (s *Store) Refuse(name string, err error) {
 	s.vault.getFolder().errs[name] = err
 }
 
-// File puts a file in the folder, or replaces it, as another program would.
-func (s *Store) File(name string, content []byte) {
+// WriteFile puts a file in the folder, or replaces it, as another program would.
+func (s *Store) WriteFile(name string, content []byte) {
 	s.vault.world.mu.Lock()
 	defer s.vault.world.mu.Unlock()
 	s.vault.getFolder().files[name] = bytes.Clone(content)
@@ -68,7 +68,7 @@ func (s *Store) With(id domain.VaultID) *Store {
 }
 
 func (s *Store) reach(ctx context.Context) (*folder, error) {
-	if err := s.vault.gate(ctx); err != nil {
+	if err := s.vault.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	if err := s.vault.reach(); err != nil {

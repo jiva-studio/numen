@@ -58,11 +58,11 @@ type noteRemoveOutput struct {
 func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	t.Helper()
 	v := hosttest.New(geologyVault)
-	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
-	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
-	v.File("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
-	v.File("Fossils.md", "Shells kept in limestone.\n")
-	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
+	v.WriteFile("Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
+	v.WriteFile("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
+	v.WriteFile("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
+	v.WriteFile("Fossils.md", "Shells kept in limestone.\n")
+	registry, err := service.New(vaultsOf(v)).WithVaultList(v).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -71,7 +71,7 @@ func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 
 func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 	t.Helper()
-	got, ok := v.Content(filePath)
+	got, ok := v.ReadContent(filePath)
 	if !ok {
 		t.Errorf("%s is not in the vault", filePath)
 		return
@@ -83,7 +83,7 @@ func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 
 func requireAbsent(t *testing.T, v *hosttest.Vault, filePath string) {
 	t.Helper()
-	if got, ok := v.Content(filePath); ok {
+	if got, ok := v.ReadContent(filePath); ok {
 		t.Errorf("%s is still in the vault: %q", filePath, got)
 	}
 }
@@ -115,7 +115,7 @@ func TestNoteRenameWithATitleKeyWritesTheTitleAndMovesTheFile(t *testing.T) {
 	if out.Move == nil || out.Move.From != "Rocks/Basalt.md" || out.Move.Path != "Rocks/Flood Basalt.md" {
 		t.Errorf("move = %+v, want from Rocks/Basalt.md to Rocks/Flood Basalt.md", out.Move)
 	}
-	content, ok := v.Content("Rocks/Flood Basalt.md")
+	content, ok := v.ReadContent("Rocks/Flood Basalt.md")
 	if !ok || !strings.Contains(content, "title: Flood Basalt") {
 		t.Errorf("Rocks/Flood Basalt.md contains %q, %v, want the new title key", content, ok)
 	}
@@ -140,7 +140,7 @@ func TestNoteRenameWithoutATitleKeyRenamesByFilename(t *testing.T) {
 
 func TestNoteRenameOntoAnExistingNoteIsRejected(t *testing.T) {
 	v, registry := newGeologyVault(t)
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	requireRejection(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
 	requireContent(t, v, "Rocks/Basalt.md", before)
@@ -207,7 +207,7 @@ func TestNoteMoveMovesEachPathInOrderAndReportsTheOneThatFails(t *testing.T) {
 
 func TestNoteMoveOntoAnExistingFileReportsAnError(t *testing.T) {
 	v, registry := newGeologyVault(t)
-	v.File("Archive/Granite.md", "An older granite note.\n")
+	v.WriteFile("Archive/Granite.md", "An older granite note.\n")
 
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
@@ -339,7 +339,7 @@ func newLimitedBatchRegistry(t *testing.T) (*tools.Registry, *[]int) {
 	t.Helper()
 	v, _ := newGeologyVault(t)
 	counts := &[]int{}
-	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}.vaults()).Registry()
+	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}.vaults()).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -478,7 +478,7 @@ func TestNoteRenameOntoTakenFilenameReturnsPathAndUnchangedNote(t *testing.T) {
 
 func TestNoteRenameToAnEmptyTitleReturnsTheHostError(t *testing.T) {
 	v, registry := newGeologyVault(t)
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	text := getRejectionText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":""}`)
 

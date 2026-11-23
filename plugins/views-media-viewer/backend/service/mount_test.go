@@ -26,7 +26,7 @@ func readFixture[T any](t *testing.T, kind string) T {
 func TestSaveRecordingCreatesTheCapturedBytesInTheVault(t *testing.T) {
 	req := readFixture[api.SaveRequest](t, "request")
 	want := readFixture[api.SaveResponse](t, "response")
-	vault := hosttest.OnDisk(t, req.VaultID, map[string]string{"Talks/First.md": "# First"})
+	vault := hosttest.CreateOnDisk(t, req.VaultID, map[string]string{"Talks/First.md": "# First"})
 	saved, err := saveRecording(t.Context(), vault, req)
 	if err != nil || saved != want {
 		t.Fatalf("save = %+v, %v, want %+v", saved, err, want)

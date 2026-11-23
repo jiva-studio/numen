@@ -12,7 +12,7 @@ export const MENU_INPUT_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown
 
 export interface ScrollGate {
   readonly reset: () => void
-  readonly noteInput: () => void
+  readonly recordInput: () => void
   readonly isUserScroll: () => boolean
 }
 
@@ -22,7 +22,7 @@ export const createScrollGate = (): ScrollGate => {
     reset: () => {
       observed = false
     },
-    noteInput: () => {
+    recordInput: () => {
       observed = true
     },
     isUserScroll: () => observed,

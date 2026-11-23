@@ -386,7 +386,7 @@ describe('the turns of a conversation', () => {
       {
         answer: (_, options) =>
           options?.preferred?.isExclusive
-            ? { end: failWith('all_failed', 'Meadow agent: the program exited') }
+            ? { end: failWith('allFailed', 'Meadow agent: the program exited') }
             : { frames: [say('Orchard counts twelve.')] },
       },
     )

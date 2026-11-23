@@ -96,7 +96,7 @@ func convertError(action string, err error) error {
 
 func getClosedContext(s *server.Server) context.Context {
 	ctx, stop := context.WithCancel(context.Background())
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		stop()
 		return nil
 	})
@@ -123,7 +123,7 @@ func mountAgentSurface(s *server.Server, vaults *Vaults, today ports.Clock) erro
 	if err != nil {
 		return err
 	}
-	registry, err := tasktools.New(vaults, today).Registry()
+	registry, err := tasktools.New(vaults, today).BuildRegistry()
 	if err != nil {
 		return err
 	}
@@ -170,13 +170,13 @@ func startIndex(ctx context.Context, tasks *index.Index, log ports.Log) {
 
 // Mount registers the service on s and starts reading the notes of the vault the host shows.
 func Mount(s *server.Server) error {
-	vault, err := hostadapter.FromEnv()
+	vault, err := hostadapter.NewFromEnv()
 	if err != nil {
 		return err
 	}
 	log := logadapter.Slog{}
 	tasks := todos.NewIndex(vault, vault, vault, index.Persistence{
-		Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore, Log: log,
+		Snapshots: snapshot.New(""), Feed: vault, After: index.StartSystemTimer, Cursors: snapshot.NewCursorStore, Log: log,
 	})
 	lock := ports.NewWriteLock()
 	done := complete.New(vault, vault, tasks, lock)
@@ -188,7 +188,7 @@ func Mount(s *server.Server) error {
 	if err := mountAgentSurface(s, vaults, clock.System{}); err != nil {
 		return err
 	}
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		flushCtx, stop := context.WithTimeout(context.Background(), flushTimeout)
 		defer stop()
 		return tasks.Flush(flushCtx)

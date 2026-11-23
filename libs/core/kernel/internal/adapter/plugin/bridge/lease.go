@@ -96,7 +96,7 @@ func open[C any](
 	if err != nil {
 		return none, nil, ConvertActivationError(pluginID, err)
 	}
-	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
+	interceptor := connect.WithInterceptors(transport.CreateAuthInterceptor(endpoint.Token))
 	client := newClient(transport.GetClient(host, endpoint), transport.GetBaseURL(endpoint), interceptor)
 	return client, &Lease{Host: host, PluginID: pluginID, Token: endpoint.Token, Holder: holder, IsQuestion: isQuestion}, nil
 }

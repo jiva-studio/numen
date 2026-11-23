@@ -1,5 +1,5 @@
 // Stryker disable StringLiteral: interface copy
-import { many, percent, plural } from '@numen/ui'
+import { formatCount, formatPercent, pickPlural } from '@numen/ui'
 import type { BuyFact, LearningFact, MaterialFact } from './facts'
 
 /** A count formatted for display. */
@@ -13,19 +13,19 @@ export const sayAsSentence = (clause: string): string =>
 export const formatBuyFact = (fact: BuyFact): string => {
   switch (fact.kind) {
     case 'daysOff':
-      return `${many(fact.days, 'day')} off`
+      return `${formatCount(fact.days, 'day')} off`
     case 'minutesADay':
-      return `${many(fact.minutes, 'minute')} a day`
+      return `${formatCount(fact.minutes, 'minute')} a day`
     case 'remembered':
-      return `${percent(fact.share)} remembered`
+      return `${formatPercent(fact.share)} remembered`
     case 'cardsASession':
-      return `${many(fact.cards, 'card')} a session`
+      return `${formatCount(fact.cards, 'card')} a session`
     case 'cannotGetThere':
       return `${count(fact.short)} of ${count(fact.cards)} not reachable`
     case 'overdueGone':
-      return `overdue gone in ${many(fact.days, 'day')}`
+      return `overdue gone in ${formatCount(fact.days, 'day')}`
     case 'overdueStays':
-      return `not within ${many(fact.horizon, 'day')}`
+      return `not within ${formatCount(fact.horizon, 'day')}`
   }
 }
 
@@ -33,9 +33,9 @@ export const formatMaterialFact = (fact: MaterialFact): { figure: string; name: 
   const figure = count(fact.count)
   switch (fact.kind) {
     case 'decks':
-      return { figure, name: plural(fact.count, 'deck') }
+      return { figure, name: pickPlural(fact.count, 'deck') }
     case 'cards':
-      return { figure, name: plural(fact.count, 'card') }
+      return { figure, name: pickPlural(fact.count, 'card') }
     case 'overdue':
       return { figure, name: 'overdue' }
     case 'unbegun':
@@ -53,7 +53,7 @@ export const formatLearningFact = (fact: LearningFact): { figure: string; name: 
     case 'daysToLearn':
       return {
         figure: count(fact.days),
-        name: plural(fact.days, 'day to learn it', 'days to learn it'),
+        name: pickPlural(fact.days, 'day to learn it', 'days to learn it'),
       }
     case 'learnedToday':
       return { figure: `${count(fact.learned)} of ${count(fact.cards)}`, name: 'learned today' }

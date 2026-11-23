@@ -128,10 +128,10 @@ func Watch[T any](
 	vaults []domain.Vault,
 	tickers ports.Tickers,
 	count func(context.Context, domain.Vault) T,
-	onCounted func(T) error,
-	onIdle func() error,
+	handleCount func(T) error,
+	handleIdle func() error,
 ) error {
-	if err := onIdle(); err != nil {
+	if err := handleIdle(); err != nil {
 		return err
 	}
 	ctx, stop := context.WithCancel(ctx)
@@ -141,10 +141,10 @@ func Watch[T any](
 	defer repeat.Stop()
 
 	return Forward(Start(ctx, vaults, count), repeat.GetChannel(), func(one T) error {
-		if err := onCounted(one); err != nil {
+		if err := handleCount(one); err != nil {
 			return err
 		}
 		repeat.Reset(Interval)
 		return nil
-	}, onIdle)
+	}, handleIdle)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
-	holder := model.NewHolder(settings.Defaults(), newOpener(engine.NewRuntime(), true, nil))
+	holder := model.NewHolder(settings.NewDefaultConfig(), newOpener(engine.NewRuntime(), true, nil))
 
 	recognizer, err := holder.GetRecognizer(t.Context())
 	if err != nil {

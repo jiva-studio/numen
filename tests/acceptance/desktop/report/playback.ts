@@ -104,7 +104,7 @@ export type Highlight = {
 export const getCursorAt = (inputs: readonly Input[], time: number): Cursor | null => {
   const travelLength = 0.6
   const rippleLength = 0.4
-  const ease = (share: number): number =>
+  const convertShare = (share: number): number =>
     share < 0.5 ? 2 * share * share : 1 - (-2 * share + 2) ** 2 / 2
   const clamp = (share: number): number => Math.min(Math.max(share, 0), 1)
   const isPressing = (input: Input): boolean => input.kind === 'down' || input.kind === 'move'
@@ -114,7 +114,7 @@ export const getCursorAt = (inputs: readonly Input[], time: number): Cursor | nu
     const start = isDragging(from, to) ? from.t : Math.max(from.t, to.t - travelLength)
     if (to.t <= start) return 1
     const share = clamp((time - start) / (to.t - start))
-    return isDragging(from, to) ? share : ease(share)
+    return isDragging(from, to) ? share : convertShare(share)
   }
   const getRipple = (points: readonly Input[]): Ripple | null => {
     const down = points.filter((point) => point.kind === 'down' && point.t <= time).at(-1)
@@ -174,7 +174,7 @@ export const getBadgeAt = (inputs: readonly Input[], time: number): Badge | null
     )
     return [...mods.map((mod) => symbols[mod]), getKeyName(input.key ?? '')].join(' ')
   }
-  const clip = (text: string): string =>
+  const truncateText = (text: string): string =>
     text.length > textLength ? `…${text.slice(1 - textLength)}` : text
   const findGroup = (shown: readonly Input[]): readonly Input[] => {
     let start = shown.length - 1
@@ -192,7 +192,7 @@ export const getBadgeAt = (inputs: readonly Input[], time: number): Badge | null
         last.typed = (input.isAppend ? last.typed : '') + (input.text ?? '')
       else parts.push({ typed: input.text ?? '', label: '' })
     }
-    return parts.map((part) => (part.typed === null ? part.label : `Typing “${clip(part.typed)}”`))
+    return parts.map((part) => (part.typed === null ? part.label : `Typing “${truncateText(part.typed)}”`))
   }
   const shown = inputs.filter(isShown)
   const last = shown.at(-1)

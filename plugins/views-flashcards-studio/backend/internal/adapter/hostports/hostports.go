@@ -19,13 +19,13 @@ const reviewLogSuffix = ".jsonl"
 // Ports is every port the use cases take, answered by one host vault and the plugin's folder of its
 // store.
 type Ports struct {
-	Readers   ports.VaultReaders
-	Writers   ports.VaultWriters
-	Notes     Notes
-	Links     ports.LinkQueries
-	Problems  ports.ProblemQueries
-	Logs      ports.LogStores
-	Schedules func(name string) ports.ScheduleStore
+	Readers          ports.VaultReaders
+	Writers          ports.VaultWriters
+	Notes            Notes
+	Links            ports.LinkQueries
+	Problems         ports.ProblemQueries
+	Logs             ports.LogStores
+	GetScheduleStore func(name string) ports.ScheduleStore
 }
 
 // New returns the ports over the host vault and the plugin's folder. A call on a
@@ -33,23 +33,23 @@ type Ports struct {
 // window that counts all of them.
 func New(vaults func(domain.VaultID) ports.HostVault, store func(domain.VaultID) ports.HostFolder) Ports {
 	return Ports{
-		Readers:   Readers{Vaults: vaults},
-		Writers:   Writers{Vaults: vaults},
-		Notes:     Notes{Vaults: vaults},
-		Links:     Links{Vaults: vaults},
-		Problems:  Problems{Vaults: vaults},
-		Logs:      Logs{Store: store},
-		Schedules: func(name string) ports.ScheduleStore { return Schedules{Vaults: vaults, Name: name} },
+		Readers:          Readers{GetVault: vaults},
+		Writers:          Writers{GetVault: vaults},
+		Notes:            Notes{GetVault: vaults},
+		Links:            Links{GetVault: vaults},
+		Problems:         Problems{GetVault: vaults},
+		Logs:             Logs{Store: store},
+		GetScheduleStore: func(name string) ports.ScheduleStore { return Schedules{GetVault: vaults, Name: name} },
 	}
 }
 
 // Readers opens the files of a vault for reading.
 type Readers struct {
-	Vaults func(domain.VaultID) ports.HostVault
+	GetVault func(domain.VaultID) ports.HostVault
 }
 
 func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
-	return reader{vault: r.Vaults(v.ID).Files}, nil
+	return reader{vault: r.GetVault(v.ID).Files}, nil
 }
 
 type reader struct{ vault host.FileReader }
@@ -66,16 +66,16 @@ func (r reader) Read(ctx context.Context, path string) ([]byte, error) {
 
 // Writers opens the files of a vault for writing.
 type Writers struct {
-	Vaults func(domain.VaultID) ports.HostVault
+	GetVault func(domain.VaultID) ports.HostVault
 }
 
 func (w Writers) Open(v domain.Vault) (ports.VaultWriter, error) {
-	return writer{vault: w.Vaults(v.ID).Writer}, nil
+	return writer{vault: w.GetVault(v.ID).Writer}, nil
 }
 
 // Lock takes the write lock of the vault v and returns the function that releases it.
 func (w Writers) Lock(ctx context.Context, v domain.Vault) (func() error, error) {
-	return w.Vaults(v.ID).Writer.Lock(ctx)
+	return w.GetVault(v.ID).Writer.Lock(ctx)
 }
 
 type writer struct{ vault host.FileWriter }
@@ -101,19 +101,19 @@ func readError(err error) error {
 
 // Notes answers queries about a vault's notes from the index.
 type Notes struct {
-	Vaults func(domain.VaultID) ports.HostVault
+	GetVault func(domain.VaultID) ports.HostVault
 }
 
 func (n Notes) GetNotes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
-	return n.Vaults(id).Notes.GetNotes(ctx, paths)
+	return n.GetVault(id).Notes.GetNotes(ctx, paths)
 }
 
 func (n Notes) GetTypes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
-	return n.Vaults(id).Notes.GetTypes(ctx, paths)
+	return n.GetVault(id).Notes.GetTypes(ctx, paths)
 }
 
-func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
-	return n.Vaults(id).Notes.GetPathsOfType(ctx, noteType)
+func (n Notes) ListPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
+	return n.GetVault(id).Notes.ListPathsOfType(ctx, noteType)
 }
 
 // GetTitle returns the title of the note at path, or "" for an empty path or a note the index does not know.
@@ -130,8 +130,8 @@ func (n Notes) GetTitle(ctx context.Context, id domain.VaultID, path string) str
 
 // GetCardModels lists the notes of the card model type with their titles, by path.
 func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.CardModel, error) {
-	vault := n.Vaults(id).Notes
-	paths, err := vault.GetPathsOfType(ctx, format.TypeCardModel)
+	vault := n.GetVault(id).Notes
+	paths, err := vault.ListPathsOfType(ctx, format.TypeCardModel)
 	if err != nil {
 		return nil, err
 	}
@@ -146,13 +146,13 @@ func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.Ca
 	return out, nil
 }
 
-func (n Notes) GetNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
-	return n.Vaults(id).Notes.GetNamedPaths(ctx, name)
+func (n Notes) ListNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
+	return n.GetVault(id).Notes.ListNamedPaths(ctx, name)
 }
 
 // Has reports whether the index contains the vault.
 func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
-	state, err := n.Vaults(id).Index.EnsureIndexed(ctx)
+	state, err := n.GetVault(id).Index.EnsureIndexed(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
 		return false, nil
 	}
@@ -164,31 +164,31 @@ func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
 
 // Links answers queries about a vault's links from the index.
 type Links struct {
-	Vaults func(domain.VaultID) ports.HostVault
+	GetVault func(domain.VaultID) ports.HostVault
 }
 
-// GetLinks returns the links that the note at from contains.
-func (l Links) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
-	return l.Vaults(id).Links.GetLinks(ctx, from)
+// ListLinks returns the links that the note at from contains.
+func (l Links) ListLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+	return l.GetVault(id).Links.ListLinks(ctx, from)
 }
 
-// GetBacklinks returns the links that point at the note at to.
-func (l Links) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	return l.Vaults(id).Links.GetBacklinks(ctx, to)
+// ListBacklinks returns the links that point at the note at to.
+func (l Links) ListBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+	return l.GetVault(id).Links.ListBacklinks(ctx, to)
 }
 
 // ResolveLinks resolves rawLinks as written in the note at from.
 func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error) {
-	return l.Vaults(id).Links.ResolveLinks(ctx, from, rawLinks)
+	return l.GetVault(id).Links.ResolveLinks(ctx, from, rawLinks)
 }
 
 // Problems answers what parsing a vault's files turned up.
 type Problems struct {
-	Vaults func(domain.VaultID) ports.HostVault
+	GetVault func(domain.VaultID) ports.HostVault
 }
 
-func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
-	return p.Vaults(id).Index.GetParseProblems(ctx)
+func (p Problems) ListParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
+	return p.GetVault(id).Index.ListParseProblems(ctx)
 }
 
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.
@@ -202,15 +202,15 @@ func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 
 type store struct{ folder ports.HostFolder }
 
-func fileOf(run string) string { return run + reviewLogSuffix }
+func buildFileName(run string) string { return run + reviewLogSuffix }
 
 func (s store) ReadLog(ctx context.Context, run string) ([]byte, error) {
-	content, err := s.folder.Read(ctx, fileOf(run))
+	content, err := s.folder.Read(ctx, buildFileName(run))
 	return content, readError(err)
 }
 
 func (s store) AppendLog(ctx context.Context, run string, content []byte) error {
-	return readError(s.folder.Append(ctx, fileOf(run), content))
+	return readError(s.folder.Append(ctx, buildFileName(run), content))
 }
 
 func (s store) ListLogs(ctx context.Context) ([]ports.Entry, error) {
@@ -232,12 +232,12 @@ func (s store) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 // Schedules keeps what was worked out for a vault in the cache the host holds for the plugin, under
 // a name.
 type Schedules struct {
-	Vaults func(domain.VaultID) ports.HostVault
-	Name   string
+	GetVault func(domain.VaultID) ports.HostVault
+	Name     string
 }
 
 func (s Schedules) Read(ctx context.Context, id domain.VaultID) ([]byte, error) {
-	content, found, err := s.Vaults(id).Cache.ReadCache(ctx, s.Name)
+	content, found, err := s.GetVault(id).Cache.ReadCache(ctx, s.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -248,5 +248,5 @@ func (s Schedules) Read(ctx context.Context, id domain.VaultID) ([]byte, error) 
 }
 
 func (s Schedules) Write(ctx context.Context, id domain.VaultID, content []byte) error {
-	return s.Vaults(id).Cache.WriteCache(ctx, s.Name, content)
+	return s.GetVault(id).Cache.WriteCache(ctx, s.Name, content)
 }

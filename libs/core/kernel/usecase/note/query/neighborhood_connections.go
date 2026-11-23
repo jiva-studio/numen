@@ -28,7 +28,7 @@ func (c *linkCache) loadLinks(ctx context.Context, paths []string) error {
 		c.byPath = map[string][]domain.ResolvedLink{}
 	}
 	return loadUnreadLinks(paths, c.byPath, func(missing []string) (map[string][]domain.ResolvedLink, error) {
-		return c.queries.GetLinksOf(ctx, c.vault.ID, missing)
+		return c.queries.ListLinksOf(ctx, c.vault.ID, missing)
 	})
 }
 
@@ -37,7 +37,7 @@ func (c *linkCache) loadBacklinks(ctx context.Context, paths []string) error {
 		c.backlinks = map[string][]domain.ResolvedLink{}
 	}
 	return loadUnreadLinks(paths, c.backlinks, func(missing []string) (map[string][]domain.ResolvedLink, error) {
-		return c.queries.GetBacklinksOf(ctx, c.vault.ID, missing)
+		return c.queries.ListBacklinksOf(ctx, c.vault.ID, missing)
 	})
 }
 

@@ -45,7 +45,7 @@ const setUp = (kind: () => Promise<FileKind | undefined> = async () => undefined
             : { ...one, result: { ok: true as const, value: getItemsFor(one) } },
         )
     }),
-    fileKinds: async (paths) => {
+    readFileKinds: async (paths) => {
       kindReads.push(paths)
       const one = await kind()
       const firstPath = paths[0]
@@ -85,8 +85,8 @@ describe('the item lists of the commands of one menu', () => {
     const { lists, requests, kindReads } = setUp(() => new Promise((done) => (answerKind = done)))
 
     const first = lists.listItems(PROOFREAD, SCAN)
-    const second = lists.fileKinds([SCAN]).then(() => lists.listItems(DELETE_TEXT, SCAN))
-    const third = lists.fileKinds([SCAN])
+    const second = lists.readFileKinds([SCAN]).then(() => lists.listItems(DELETE_TEXT, SCAN))
+    const third = lists.readFileKinds([SCAN])
     await flushPromises()
     expect(requests).toStrictEqual([])
     answerKind({ isNote: false, type: 'note' })
@@ -100,10 +100,10 @@ describe('the item lists of the commands of one menu', () => {
   it('skips sending an item list request when only the file kind was read, and reads empty or multi-path kinds directly', async () => {
     const { lists, requests, kindReads } = setUp(async () => ({ isNote: true, type: 'note' }))
 
-    await lists.fileKinds([SCAN])
+    await lists.readFileKinds([SCAN])
     await flushPromises()
-    await lists.fileKinds([])
-    await lists.fileKinds([SCAN, 'scans/two.png'])
+    await lists.readFileKinds([])
+    await lists.readFileKinds([SCAN, 'scans/two.png'])
 
     expect(requests).toStrictEqual([])
     expect(kindReads).toStrictEqual([[SCAN], [], [SCAN, 'scans/two.png']])

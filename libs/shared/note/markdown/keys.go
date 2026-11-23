@@ -10,8 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Identifier is what the note carries, and whether it carries one.
-func (d *Document) Identifier() (string, bool) {
+// GetIdentifier returns what the note carries, and whether it carries one.
+func (d *Document) GetIdentifier() (string, bool) {
 	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return "", false
@@ -29,9 +29,9 @@ func (d *Document) SetIdentifier(identifier string) error {
 	return d.put("id", &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: identifier})
 }
 
-// Title returns the title declared in the frontmatter and whether it is declared.
+// GetTitle returns the title declared in the frontmatter and whether it is declared.
 // A key with no value is empty, and the note is named by what follows it.
-func (d *Document) Title() (string, bool) {
+func (d *Document) GetTitle() (string, bool) {
 	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return "", false
@@ -102,17 +102,17 @@ type Entry struct {
 	IsVerbatim bool
 }
 
-// EntryNames is the keys of the mapping under one top-level frontmatter key, in
+// ListEntryNames returns the keys of the mapping under one top-level frontmatter key, in
 // the order it holds them. A key that is not there holds none.
 //
 // False is a key holding something other than a mapping. Such a value is the
 // person's whole, and the entries of a mapping are what this writes.
-func (d *Document) EntryNames(key string) ([]string, bool) {
+func (d *Document) ListEntryNames(key string) ([]string, bool) {
 	node, err := d.readMapping()
 	if err != nil {
 		return nil, false
 	}
-	target := d.entries(node, key)
+	target := d.findEntries(node, key)
 	if target == nil {
 		return nil, false
 	}
@@ -123,7 +123,7 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	return out, true
 }
 
-func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
+func (d *Document) findEntries(node *yaml.Node, key string) *yaml.Node {
 	if node == nil {
 		return &yaml.Node{Kind: yaml.MappingNode}
 	}
@@ -150,14 +150,14 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	if err != nil {
 		return err
 	}
-	existing := d.entries(node, key)
+	existing := d.findEntries(node, key)
 	// gomutants:disable-next-line BRANCH_IF reason="pair returns an empty nodePair when given a nil mapping node"
 	if existing == nil {
 		existing = &yaml.Node{Kind: yaml.MappingNode}
 	}
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
-		was := pair(existing, one.Key)
+		was := findPair(existing, one.Key)
 		target := was.value
 		if !one.IsVerbatim {
 			target = &yaml.Node{}

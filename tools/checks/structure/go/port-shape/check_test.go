@@ -23,7 +23,7 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	workspace := load.Workspace(t, "libs/core/kernel")
+	workspace := load.LoadWorkspace(t, "libs/core/kernel")
 	pkgs := load.GetModulePackages(t, workspace, "libs/core/kernel")
 	var found []load.Finding
 	for _, pkg := range pkgs {
@@ -231,5 +231,5 @@ func TestPortsAreIndependentAndPure(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

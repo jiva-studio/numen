@@ -12,11 +12,11 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
 import { NEARER } from '../lib/strip'
-import { frameStory } from '../../fixtures/frame'
+import { decorateFrame } from '../../fixtures/frame'
 
 const meta = {
   title: 'Reading/Reader',
-  decorators: [frameStory],
+  decorators: [decorateFrame],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 

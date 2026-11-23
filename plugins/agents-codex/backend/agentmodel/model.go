@@ -18,7 +18,7 @@ type Model struct {
 func New(id, label string, isPreferred bool, efforts []string, byDefault string) Model {
 	var levels []reasoning.Level
 	for _, effort := range efforts {
-		if level := reasoning.NewLevel(effort); level.Name != "" && !reasoning.Contains(levels, level.Name) {
+		if level := reasoning.NewLevel(effort); level.Name != "" && !reasoning.HasLevel(levels, level.Name) {
 			levels = append(levels, level)
 		}
 	}

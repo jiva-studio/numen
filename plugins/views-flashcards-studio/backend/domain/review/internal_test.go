@@ -27,7 +27,7 @@ func TestTheWindowACardMayBeMovedInside(t *testing.T) {
 		{days: 90, first: 84, last: 96, isOpening: true},
 	} {
 		away := time.Duration(one.days * 24 * float64(time.Hour))
-		first, last, opens := window(away)
+		first, last, opens := computeWindow(away)
 		if opens != one.isOpening {
 			t.Errorf("an interval of %g days opens a window: %t, want %t",
 				one.days, opens, one.isOpening)

@@ -53,7 +53,7 @@ const {
   drop,
   step,
 } = useDrag<InsertionPoint | undefined>({
-  order: () => props.fields,
+  getOrder: () => props.fields,
   nowhere: undefined,
   isMoved: (dragged, lands) => canDropField(props.fields, dragged, lands),
   move: (dragged, lands) => emit('move', dragged, lands),
@@ -67,10 +67,10 @@ const onAdd = (): void => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-const objectionsId = (targetId: string): string =>
+const buildObjectionsId = (targetId: string): string =>
   `${uid}-${encodeURIComponent(targetId)}-objections`
 
-const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
+const getWrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
 </script>
 
 <template>
@@ -88,8 +88,8 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
         :key="row.field"
         :row="row"
         :naming="naming"
-        :objections-id="objectionsId(row.field)"
-        :wrong="wrongWith(row.field)"
+        :objections-id="buildObjectionsId(row.field)"
+        :wrong="getWrongWith(row.field)"
         :is-drop-above="row.field === dropTarget"
         :words="words"
         @drag-over="hover"

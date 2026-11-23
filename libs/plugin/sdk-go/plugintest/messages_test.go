@@ -32,8 +32,8 @@ func createFixtureDir(t *testing.T) string {
 func createPingContracts() map[string]MessageContract {
 	return map[string]MessageContract{
 		"Ping": {
-			Request:  func() any { return &pingRequest{} },
-			Response: func() any { return &pingResponse{} },
+			CreateRequest:  func() any { return &pingRequest{} },
+			CreateResponse: func() any { return &pingResponse{} },
 		},
 	}
 }

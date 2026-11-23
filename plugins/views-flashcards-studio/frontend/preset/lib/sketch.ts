@@ -2,7 +2,7 @@
  * The provisional line drawn while the application computes the actual curve. It
  * is arithmetic over the settings alone.
  */
-import { dayAfter, daysBetween } from '../../lib/day'
+import { addDays, countDays } from '../../lib/day'
 import {
   DEFAULTS,
   NO_CURVE_POINT,
@@ -42,7 +42,7 @@ const MIDDLE = 0.9
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = createGrid(settings, today, within)
   const points = grid.map((value) => estimatePoint(settings, value, grid))
-  const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
+  const days = settings.goal === 'date' ? grid.map((value) => addDays(today, value)) : []
   const value = getGoalValue(settings, today)
   const place = findNearestGridValue(grid, value)
   const now: CurvePoint = { index: place, value, day: days[place] ?? '' }
@@ -69,16 +69,20 @@ const createGrid = (
   if (settings.goal === 'retention') {
     const span = within.retention
     if (span === undefined) return []
-    return ladder(span.min, span.max, (one) => Math.round(one * 1000) / 1000)
+    return buildLadder(span.min, span.max, (one) => Math.round(one * 1000) / 1000)
   }
   if (settings.goal === 'date') {
-    const most = Math.max(daysBetween(today, settings.byDate), 30)
-    return ladder(1, most, Math.round)
+    const most = Math.max(countDays(today, settings.byDate), 30)
+    return buildLadder(1, most, Math.round)
   }
-  return ladder(0, Math.max(settings.minutesADay, LEAST_CEILING), Math.round)
+  return buildLadder(0, Math.max(settings.minutesADay, LEAST_CEILING), Math.round)
 }
 
-const ladder = (least: number, most: number, rounds: (one: number) => number): readonly number[] =>
+const buildLadder = (
+  least: number,
+  most: number,
+  rounds: (one: number) => number,
+): readonly number[] =>
   Array.from({ length: PLACES }, (_, index) =>
     rounds(least + ((most - least) * index) / (PLACES - 1)),
   )

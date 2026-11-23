@@ -64,7 +64,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		countedIDs: make(map[string]bool),
 		coming:     u.schedules.scheduler != nil,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="ReviewCounter does not read Skipped from its internal ReviewLog."
-		log: ReviewLog{Answers: nil, order: nil, Files: nil, Skipped: 0},
+		log: ReviewLog{Answers: nil, getHistory: nil, Files: nil, Skipped: 0},
 	}
 	for _, file := range files {
 		if err := u.countFile(ctx, log, store, file, &run); err != nil {
@@ -73,9 +73,9 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	}
 
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="GetHistory computes the same ordered answers when the memoized function is nil."
-	run.log.order = newHistory(run.log.Answers)
+	run.log.getHistory = newHistory(run.log.Answers)
 	u.remember(ctx, v, run.now)
-	run.out.Streak = review.Streak(u.day, run.out.Days, u.now.Now())
+	run.out.Streak = review.CountStreak(u.day, run.out.Days, u.now.Now())
 
 	// The upcoming cards and the retained cards are both computed from the answers
 	// in the order they were given, so they are requested together.

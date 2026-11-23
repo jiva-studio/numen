@@ -36,7 +36,7 @@ func Mount(s *server.Server) error {
 	root, cancelRoot := context.WithCancel(context.Background())
 	signIn := keeper.New(deps, newServer)
 	s.SetUpdateConfig(func(values map[string]string) { signIn.Configure(root, values[settingServer]) })
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		cancelRoot()
 		signIn.Stop()
 		return nil

@@ -7,6 +7,7 @@ package vault
 
 import (
 	"context"
+
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -15,9 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// Tree moves and imports the files of a vault.
+// Tree imports the files of a vault.
 type Tree struct {
-	Move   Move
 	Import Import
 }
 

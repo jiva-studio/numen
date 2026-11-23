@@ -6,6 +6,7 @@ import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
 import { createEditorTokens } from '@/features/editor-tokens'
+import { closeWindow } from '@/entities/window'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
@@ -58,7 +59,7 @@ function createPluginStarter(deps: PluginStarterDeps) {
   const { rest, declaredCommands } = deps
   return createPluginStart({
     pluginLoader: deps.pluginLoader,
-    getPlugins: () => rest.state.plugins.value,
+    listPlugins: () => rest.state.plugins.value,
     waitForDeclaredCommands: () => declaredCommands.waitForFirstList(),
     writeMessage: deps.writeMessage,
   })
@@ -72,6 +73,7 @@ export interface LayoutStarterDeps {
   readonly vaults: Pick<ReturnType<typeof useVaults>, 'activeVault'>
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
+  readonly closeWhenEmpty: (() => Promise<void>) | undefined
   readonly pluginLoader: PluginLoader
   readonly writeMessage: MessageWriter
 }
@@ -84,11 +86,12 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
     pluginLoader: deps.pluginLoader,
     writeMessage: deps.writeMessage,
     layout: tabParts.layout,
-    isSecondary: tabParts.isSecondary,
-    windowId: tabs.windowId,
-    readDetachedTab: deps.api.tabMove.readDetachedTab,
-    readOpenTabs: deps.api.savedTabs.readOpenTabs,
+    saved: {
+      readDetachedTab: (tabId) => deps.api.tabMove.readDetachedTab(tabs.windowId, tabId),
+      readOpenTabs: deps.api.savedTabs.readOpenTabs,
+    },
     openDetachedTab: tabs.openMovedTab,
+    closeWhenEmpty: deps.closeWhenEmpty,
   })
 }
 
@@ -162,6 +165,9 @@ export function createWindowStart(deps: WindowStartDeps) {
         tabs,
         tabParts,
         pluginLoader,
+        closeWhenEmpty: tabParts.isSecondary
+          ? () => closeWindow(foundation.api.window.frameRuntime)
+          : undefined,
         writeMessage,
       }),
       plugins: createPluginStarter({ pluginLoader, rest, declaredCommands, writeMessage }),

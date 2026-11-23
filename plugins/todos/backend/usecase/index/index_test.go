@@ -92,7 +92,7 @@ type fixture struct {
 func newFixture(notes map[string]string) *fixture {
 	vault := hosttest.New("notes")
 	for path, text := range notes {
-		vault.File(path, text)
+		vault.WriteFile(path, text)
 	}
 	files := newReader(vault)
 	counted := new(parser)
@@ -257,7 +257,7 @@ func TestRefreshReadsAChangedNoteAgainAndNotAnUnchangedOne(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] first", "b.md": "- [ ] second"})
 	f.scan(t)
 
-	f.vault.File("a.md", "- [ ] first changed")
+	f.vault.WriteFile("a.md", "- [ ] first changed")
 	f.refresh(t, "a.md", "b.md")
 
 	if got := []int{f.reader.readsOf("a.md"), f.reader.readsOf("b.md")}; !reflect.DeepEqual(got, []int{2, 1}) {
@@ -276,7 +276,7 @@ func TestANoteWhoseBytesAreTheSameButWhoseModTimeMovedIsNotParsedAgain(t *testin
 	}
 	parsed, revision := f.parser.count(), f.index.GetState().Revision
 
-	f.vault.File("a.md", "- [ ] first")
+	f.vault.WriteFile("a.md", "- [ ] first")
 	f.refresh(t, "a.md")
 
 	if got := f.parser.count(); got != parsed {
@@ -297,7 +297,7 @@ func TestTheRevisionChangesWhenATaskListChangedAndOnlyThen(t *testing.T) {
 		t.Errorf("revision after a refresh with no change = %d, want %d", got, before)
 	}
 
-	f.vault.File("b.md", "- [ ] second\n- [ ] third")
+	f.vault.WriteFile("b.md", "- [ ] second\n- [ ] third")
 	f.refresh(t, "b.md")
 	if got := f.index.GetState().Revision; got <= before {
 		t.Errorf("revision after a change = %d, want more than %d", got, before)
@@ -312,7 +312,7 @@ func TestARenameMovesTheTasksOfANoteAndADeleteDropsThem(t *testing.T) {
 	f.scan(t)
 
 	f.vault.Remove("old.md")
-	f.vault.File("new.md", "- [ ] moved")
+	f.vault.WriteFile("new.md", "- [ ] moved")
 	if err := f.index.Refresh(t.Context(), []string{"new.md"}, []Rename{{From: "old.md", To: "new.md"}}); err != nil {
 		t.Fatal(err)
 	}
@@ -329,8 +329,8 @@ func TestARefreshWithNoPathAndNoRenameChecksTheWholeVault(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] first", "b.md": "- [ ] second"})
 	f.scan(t)
 
-	f.vault.File("a.md", "- [ ] first changed")
-	f.vault.File("c.md", "- [ ] third")
+	f.vault.WriteFile("a.md", "- [ ] first changed")
+	f.vault.WriteFile("c.md", "- [ ] third")
 	f.vault.Remove("b.md")
 	if err := f.index.Refresh(t.Context(), nil, nil); err != nil {
 		t.Fatal(err)
@@ -422,7 +422,7 @@ func TestWatchSendsTheStateAtOnceAndAfterEachChangeOfTheIndex(t *testing.T) {
 		t.Errorf("first state = %+v, want the current one", first)
 	}
 
-	f.vault.File("a.md", "- [ ] first\n- [ ] second")
+	f.vault.WriteFile("a.md", "- [ ] first\n- [ ] second")
 	f.refresh(t, "a.md")
 	if second := next(); second.Revision <= first.Revision {
 		t.Errorf("second state = %+v, want a revision after %d", second, first.Revision)
@@ -457,8 +457,8 @@ func TestListFieldsCountsProjectsAndContextsAndFollowsAddChangeAndRemoveOfANote(
 		t.Errorf("contexts = %v, want %v", formatCounts(got.Contexts), want)
 	}
 
-	f.vault.File("a.md", "- [ ] one +garden\n")
-	f.vault.File("c.md", "- [ ] four +garden @phone\n")
+	f.vault.WriteFile("a.md", "- [ ] one +garden\n")
+	f.vault.WriteFile("c.md", "- [ ] four +garden @phone\n")
 	f.refresh(t, "a.md", "c.md")
 	got = f.index.ListFields()
 	if want := []string{"garden=2", "work=1"}; !reflect.DeepEqual(formatCounts(got.Projects), want) {
@@ -503,7 +503,7 @@ func TestListFieldsDropsTheCountsOfANoteThatIsRenamedAwayAndStaysTheSameWhenItMo
 	f.scan(t)
 
 	f.vault.Remove("old.md")
-	f.vault.File("new.md", "- [ ] moved +home")
+	f.vault.WriteFile("new.md", "- [ ] moved +home")
 	if err := f.index.Refresh(t.Context(), []string{"new.md"}, []Rename{{From: "old.md", To: "new.md"}}); err != nil {
 		t.Fatal(err)
 	}

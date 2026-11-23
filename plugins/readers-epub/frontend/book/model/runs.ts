@@ -92,7 +92,7 @@ const getPlaceInRun = (
   return undefined
 }
 
-const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
+const trimSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
   const first = runs[0]
   const last = runs.at(-1)
   if (!first || !last) return undefined
@@ -103,7 +103,7 @@ const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined 
 }
 
 const createRangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
-  const clipped = clipSpan(runs, span)
+  const clipped = trimSpan(runs, span)
   if (!clipped) return undefined
   const { start, end } = clipped
   const startRun = findRun(runs, start)

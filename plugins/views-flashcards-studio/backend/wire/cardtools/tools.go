@@ -25,7 +25,7 @@ const (
 
 // Tools provides MCP tools for interacting with flashcards.
 type Tools struct {
-	vaults       func(domain.VaultID) host.VaultSelector
+	getVault     func(domain.VaultID) host.VaultSelector
 	cards        cards.UseCases
 	bounded      cards.RenameField
 	deckCards    deckedit.CardUseCases
@@ -34,14 +34,13 @@ type Tools struct {
 
 // New creates a Tools instance. The rename an agent runs is bounded; the one in cards is not.
 func New(
-	vaults func(domain.VaultID) host.VaultSelector, cards cards.UseCases, bounded cards.RenameField,
+	getVault func(domain.VaultID) host.VaultSelector, cards cards.UseCases, bounded cards.RenameField,
 	deckCards deckedit.CardUseCases, deckSections deckedit.SectionUseCases,
 ) *Tools {
-	return &Tools{vaults: vaults, cards: cards, bounded: bounded, deckCards: deckCards, deckSections: deckSections}
+	return &Tools{getVault: getVault, cards: cards, bounded: bounded, deckCards: deckCards, deckSections: deckSections}
 }
 
-// Registry builds the tools registry.
-func (t *Tools) Registry() (*tools.Registry, error) {
+func (t *Tools) BuildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{
 		t.addCardCurrentGet,
@@ -73,7 +72,7 @@ func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
 	if id == "" {
 		return domain.Vault{}, errNoVault
 	}
-	v, err := t.vaults(domain.VaultID(id)).GetVault(ctx)
+	v, err := t.getVault(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
 		return domain.Vault{}, errors.New("the agent vault is not registered in this installation")
 	}

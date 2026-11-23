@@ -99,3 +99,68 @@ func TestCallTraceOfFailedCallRecordsNoSecretAndErrorCode(t *testing.T) {
 		t.Errorf("error = %s, want the error code", got)
 	}
 }
+
+func serveWatchEdits(t *testing.T, gate *Gate, serve func(ctx context.Context) error) numenv1connect.NoteServiceClient {
+	t.Helper()
+	handler := connect.NewServerStreamHandler(
+		numenv1connect.NoteServiceWatchEditsProcedure,
+		func(ctx context.Context, _ *connect.Request[v1.WatchEditsRequest], out *connect.ServerStream[v1.WatchEditsResponse]) error {
+			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
+				return err
+			}
+			return serve(ctx)
+		},
+		gate.CountQuestions(),
+	)
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NoteServiceWatchEditsProcedure, handler)
+	server := httptest.NewUnstartedServer(mux)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.Close)
+	return numenv1connect.NewNoteServiceClient(server.Client(), server.URL)
+}
+
+func TestCloseEndsAnOpenStreamBeforeItReturns(t *testing.T) {
+	var gate Gate
+	ended := make(chan struct{})
+	client := serveWatchEdits(t, &gate, func(ctx context.Context) error {
+		<-ctx.Done()
+		close(ended)
+		return nil
+	})
+	stream, err := client.WatchEdits(t.Context(), connect.NewRequest(&v1.WatchEditsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !stream.Receive() {
+		t.Fatalf("the stream did not open: %v", stream.Err())
+	}
+
+	gate.Close()
+
+	select {
+	case <-ended:
+	default:
+		t.Fatal("Close returned while the stream was still running")
+	}
+}
+
+func TestAStreamOpenedAfterCloseIsRefused(t *testing.T) {
+	var gate Gate
+	client := serveWatchEdits(t, &gate, func(ctx context.Context) error {
+		<-ctx.Done()
+		return nil
+	})
+	gate.Close()
+
+	stream, err := client.WatchEdits(t.Context(), connect.NewRequest(&v1.WatchEditsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for stream.Receive() {
+	}
+	if got := connect.CodeOf(stream.Err()); got != connect.CodeUnavailable {
+		t.Fatalf("code = %v, want %v", got, connect.CodeUnavailable)
+	}
+}

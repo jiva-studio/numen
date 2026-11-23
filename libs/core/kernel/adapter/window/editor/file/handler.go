@@ -3,14 +3,12 @@
 package file
 
 import (
-	"errors"
-
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -24,15 +22,12 @@ type Tree interface {
 	PublishChange(paths ...string)
 }
 
-var (
-	errClosing = broadcast.ErrClosing
-	errNoVault = errors.New("the window has no vault")
-)
+var errClosing = broadcast.ErrClosing
 
 func getShownVault(window Vault) (domain.Vault, error) {
 	v := window.GetCurrentVault()
 	if v.ID == "" {
-		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	return v, nil
 }
@@ -67,7 +62,7 @@ func NewFolders(
 type Changes struct {
 	vault      Vault
 	tree       Tree
-	move       *vaults.MoveFile
+	move       *note.MoveFile
 	remove     *note.RemoveFile
 	emptyTrash *note.EmptyTrash
 }
@@ -75,7 +70,7 @@ type Changes struct {
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
 	window Vault, tree Tree,
-	move *vaults.MoveFile, remove *note.RemoveFile, emptyTrash *note.EmptyTrash,
+	move *note.MoveFile, remove *note.RemoveFile, emptyTrash *note.EmptyTrash,
 ) *Changes {
 	return &Changes{vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash}
 }

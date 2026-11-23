@@ -47,8 +47,8 @@ function getCountdown(one: PluginProcess, now: number): Countdown {
 }
 
 function formatHolder(holder: LeaseHolder): string {
-  const who = holder.who || words.unknownHolder
-  return holder.why ? `${who} · ${holder.why}` : who
+  const requester = holder.requester || words.unknownHolder
+  return holder.reason ? `${requester} · ${holder.reason}` : requester
 }
 
 /** The row of one plugin at the moment `now`, in milliseconds since the Unix epoch. */

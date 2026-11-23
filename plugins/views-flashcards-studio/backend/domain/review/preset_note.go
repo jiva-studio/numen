@@ -36,7 +36,7 @@ type PresetNote struct {
 // CreateDefaultPresetNote returns the preset of a deck scheduled by no preset.
 func CreateDefaultPresetNote() PresetNote {
 	return PresetNote{
-		Path: "", Outcome: edit.Ok, Type: "", Settings: Defaults(), Stops: "", StopsToday: "", Problems: nil,
+		Path: "", Outcome: edit.Ok, Type: "", Settings: NewDefaultPreset(), Stops: "", StopsToday: "", Problems: nil,
 		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 	}
 }

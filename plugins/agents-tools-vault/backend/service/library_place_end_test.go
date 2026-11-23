@@ -22,13 +22,13 @@ const (
 func newRiverLibrary(t *testing.T) *tools.Registry {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(riverTalkPath, talkBytes)
-	vault.File(riverGuidePath, pdfBytes)
+	vault.WriteFile(riverTalkPath, talkBytes)
+	vault.WriteFile(riverGuidePath, pdfBytes)
 
 	texts := hosttest.NewTexts(testVault, readerID)
-	texts.File(riverTalkPath, []byte(talkBytes))
-	texts.File(riverGuidePath, []byte(pdfBytes))
-	putText(t, texts.As(scribeID), scribeID, riverTalkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
+	texts.WriteFile(riverTalkPath, []byte(talkBytes))
+	texts.WriteFile(riverGuidePath, []byte(pdfBytes))
+	putText(t, texts.UsePlugin(scribeID), scribeID, riverTalkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
 		{Text: riverFirst, Selector: `{"t":[12.5,20]}`},
 		{Text: riverSecond, Selector: `{"t":[20]}`},
 	})
@@ -43,7 +43,7 @@ func newRiverLibrary(t *testing.T) *tools.Registry {
 		{Path: riverGuidePath, Text: "The kingfisher dives for minnows.", PlaceLabel: "page 1", Start: 0, Length: 33, Selector: `{"page":1}`},
 	})
 
-	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

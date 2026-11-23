@@ -29,7 +29,7 @@ import (
 )
 
 func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) error {
-	registry, err := vaultRegistry(vaultDeps.RegistryPath)
+	registry, err := openVaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ type installedPlugins interface {
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
-	GetPlugins() []manifest.Discovered
+	ListPlugins() []manifest.Discovered
 }
 
 // pluginResolver supplies the plugin lookups used during host assembly.
@@ -128,8 +128,8 @@ type PluginEndpoints struct {
 	pluginProviders
 }
 
-// AdaptPluginHost connects the process and management roles to their consumers.
-func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
+// CreatePluginHost connects the process and management roles to their consumers.
+func CreatePluginHost(management *PluginManagement, roles *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(management, roles, lender)
 	types := plugin.NewConnectionTypes(management.Registry)
@@ -206,7 +206,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
-		Tools: func() hostendpoint.PluginTools {
+		GetTools: func() hostendpoint.PluginTools {
 			return tools
 		},
 		Health: hostendpoint.HealthUseCases{

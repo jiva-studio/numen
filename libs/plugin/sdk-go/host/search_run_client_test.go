@@ -48,9 +48,9 @@ func (h *runHost) GetSearch(_ context.Context, req *connect.Request[v1.GetSearch
 	}}), nil
 }
 
-func (h *runHost) RemoveSearch(_ context.Context, req *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error) {
+func (h *runHost) DeleteSearch(_ context.Context, req *connect.Request[v1.DeleteSearchRequest]) (*connect.Response[v1.DeleteSearchResponse], error) {
 	h.removed = req.Msg.GetId()
-	return connect.NewResponse(&v1.RemoveSearchResponse{Error: h.code}), nil
+	return connect.NewResponse(&v1.DeleteSearchResponse{Error: h.code}), nil
 }
 
 func (h *runHost) ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error) {
@@ -96,7 +96,7 @@ func TestASearchClientStartsReadsAndRemovesASearch(t *testing.T) {
 	if !whole.IsWholeFile || whole.Score != nil || whole.Title != "Sea" {
 		t.Errorf("whole file %+v", whole)
 	}
-	if err := c.RemoveSearch(ctx, id); err != nil || h.removed != "s1" {
+	if err := c.DeleteSearch(ctx, id); err != nil || h.removed != "s1" {
 		t.Errorf("remove %v, host removed %q", err, h.removed)
 	}
 	functions, err := c.ListSearchFunctions(ctx)

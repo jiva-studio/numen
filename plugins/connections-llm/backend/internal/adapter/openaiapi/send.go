@@ -53,7 +53,7 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 	if err != nil {
 		return connection.NewStopError(connection.ReasonUnavailable)
 	}
-	sent := sentBody(request)
+	sent := readRequestBody(request)
 	started := g.clock.Now()
 	traced := traceCall{path: target.path, key: key, started: started, limit: limit}
 	g.traceRequest(ctx, traced, target.method, call.Options[llm.OptionModel], sent)

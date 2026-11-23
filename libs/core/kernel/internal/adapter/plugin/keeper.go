@@ -53,7 +53,7 @@ func NewKeeper(d KeeperDeps) *Keeper {
 
 // KeepAll keeps every enabled plugin that stays running. It returns at once; the starts run on their own.
 func (k *Keeper) KeepAll(ctx context.Context) {
-	v, release := k.set.view()
+	v, release := k.set.getView()
 	var ids []string
 	for _, p := range v.enabled() {
 		if p.Manifest.Backend.IsPersistent() {
@@ -85,7 +85,7 @@ func (k *Keeper) Drop(_ context.Context, pluginID string) {
 }
 
 func (k *Keeper) isKeepable(pluginID string) bool {
-	v, release := k.set.view()
+	v, release := k.set.getView()
 	defer release()
 	p, ok := v.get(pluginID)
 	return ok && p.Manifest.Backend.IsPersistent() && v.isEnabled(pluginID)

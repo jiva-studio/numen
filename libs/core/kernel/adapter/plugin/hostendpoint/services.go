@@ -66,7 +66,7 @@ type Callers struct {
 	Account      Account
 	Leases       Leases
 	Lent         *Services
-	Tools        func() PluginTools
+	GetTools     func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes

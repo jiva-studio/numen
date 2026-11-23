@@ -24,7 +24,7 @@ func newHost(hint float64) (*hosttest.Search, *hosttest.Vault) {
 	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	vault := hosttest.New("physics")
-	vault.Beside(hosttest.New("chemistry"))
+	vault.LinkBeside(hosttest.New("chemistry"))
 	return search, vault
 }
 
@@ -39,7 +39,7 @@ func setNotes(vault *hosttest.Vault, n int) {
 			vault.Remove(notePath(i))
 			continue
 		}
-		vault.File(notePath(i), fmt.Sprintf("---\ntitle: title %d\n---\n", i-1))
+		vault.WriteFile(notePath(i), fmt.Sprintf("---\ntitle: title %d\n---\n", i-1))
 	}
 }
 

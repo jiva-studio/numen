@@ -32,7 +32,7 @@ export interface PaletteStepsOptions {
 
 /** What choosing in a step reaches: the invocation it makes and the steps it pushes and pops. */
 export interface StepChoiceDeps {
-  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
+  readonly createInvocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly lists: PaletteLists
   readonly text: Ref<string>
   readonly stack: { readonly pushStep: (step: PendingStep) => void; readonly popStep: () => void }
@@ -40,7 +40,7 @@ export interface StepChoiceDeps {
 }
 
 interface StepActionDeps {
-  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
+  readonly createInvocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly pushStep: (step: PendingStep) => void
   readonly popStep: () => void
   readonly lists: PaletteLists
@@ -61,7 +61,7 @@ function resolveSelectionAction(
   if (step.step === 'note') {
     const one = choice.found.find((match) => match.path === choice.item)
     return one
-      ? deps.invocation(step.command.id, {
+      ? deps.createInvocation(step.command.id, {
           ...step.on,
           path: one.path,
           title: one.title || one.path,
@@ -73,7 +73,7 @@ function resolveSelectionAction(
     const one = choice.vaults.find((vault) => vault.id === choice.item)
     if (!one || choice.isAside(one)) return null
     const on = { ...step.on, vault: { id: one.id, name: one.name } }
-    if (!step.command.next) return deps.invocation(step.command.id, on)
+    if (!step.command.next) return deps.createInvocation(step.command.id, on)
     deps.pushStep({ step: step.command.next, command: step.command, on })
   }
   return null
@@ -85,14 +85,14 @@ function resolveInputOrItemAction(
   deps: StepActionDeps,
 ): CommandInvocation | null {
   const name = deps.text.value.trim()
-  if (step.step === 'name') return name ? deps.invocation(step.command.id, step.on, name) : null
+  if (step.step === 'name') return name ? deps.createInvocation(step.command.id, step.on, name) : null
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is naming or choosing.
   if (step.step === 'items') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
     if (!one || one.isDisabled) return null
     if (step.command.next !== 'confirmation')
-      return deps.invocation(step.command.id, step.on, one.id)
+      return deps.createInvocation(step.command.id, step.on, one.id)
     const { id, title, detail } = one
     deps.pushStep({
       step: 'confirmation',
@@ -115,11 +115,11 @@ function resolveConfirmationAction(
       deps.popStep()
       return null
     }
-    return deps.invocation(step.command.id, step.on, step.item?.id)
+    return deps.createInvocation(step.command.id, step.on, step.item?.id)
   }
   const name = deps.text.value.trim()
   return item === step.command.id && name === deps.getStepTitle(step)
-    ? deps.invocation(step.command.id, step.on, name)
+    ? deps.createInvocation(step.command.id, step.on, name)
     : null
 }
 
@@ -148,7 +148,7 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }
-  const made = deps.invocation(step.command.id, step.on)
+  const made = deps.createInvocation(step.command.id, step.on)
   return { ...made, values: { ...made.values, ...values } }
 }
 
@@ -293,7 +293,7 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
 /** Carries out the choice of a row in a step: the invocation it makes, or the step it moves to. */
 export function createStepChoice(deps: StepChoiceDeps) {
   const actionDeps: StepActionDeps = {
-    invocation: deps.invocation,
+    createInvocation: deps.createInvocation,
     lists: deps.lists,
     text: deps.text,
     pushStep: deps.stack.pushStep,

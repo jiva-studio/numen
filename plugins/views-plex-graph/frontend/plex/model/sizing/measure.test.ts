@@ -201,7 +201,7 @@ describe('what a label needs', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    expect(widths()!.label('names')).toBe(5 * PER_CHARACTER)
+    expect(widths()!.measureLabel('names')).toBe(5 * PER_CHARACTER)
   })
 
   it('is measured in the size a label is set at, not a title', () => {
@@ -213,7 +213,7 @@ describe('what a label needs', () => {
     measures.node(node('Domain'))
     expect(context.font).toBe('13px Test Sans, sans-serif')
 
-    measures.label('names')
+    measures.measureLabel('names')
     expect(context.font).toBe('10px Test Sans, sans-serif')
   })
 

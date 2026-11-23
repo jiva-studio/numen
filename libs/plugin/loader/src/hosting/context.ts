@@ -51,7 +51,7 @@ function trackSubscription(subscriptions: SubscriptionList, disposable: Disposab
   }
 }
 
-function nameUnsaved(pluginId: string, flush: () => Promise<void>): () => Promise<void> {
+function wrapUnsavedFlush(pluginId: string, flush: () => Promise<void>): () => Promise<void> {
   return async () => {
     try {
       await flush()
@@ -68,11 +68,11 @@ function createBuffers(pluginId: string, buffers: BufferHost, add: Track): Buffe
       add(
         buffers.track(
           Object.assign(Object.create(open) as FileBuffers, {
-            flush: nameUnsaved(pluginId, open.flush),
+            flush: wrapUnsavedFlush(pluginId, open.flush),
           }),
         ),
       ),
-    addFlushHandler: (handler) => add(buffers.addFlushHandler(nameUnsaved(pluginId, handler))),
+    addFlushHandler: (handler) => add(buffers.addFlushHandler(wrapUnsavedFlush(pluginId, handler))),
   }
 }
 
@@ -81,10 +81,10 @@ function createSettings(pluginId: string, host: PluginContextHost, add: Track): 
     get: <T extends JsonValue = JsonValue>(key: string) =>
       host.settings.getSetting<T>(pluginId, key),
     onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
-      add(host.settings.onSettingChange<T>(pluginId, key, h)),
+      add(host.settings.watchSetting<T>(pluginId, key, h)),
     getEditor: () => host.settings.getEditorSettings(),
     onEditorChange: (h: (settings: EditorSettings) => void) =>
-      add(host.settings.onEditorSettingsChange(pluginId, h)),
+      add(host.settings.watchEditorSettings(pluginId, h)),
   }
 }
 
@@ -105,7 +105,7 @@ function createLicenses(
     },
     onChange: (licenseId: string, handler: (isActive: boolean) => void) => {
       requireDeclaredLicense(target, licenseId)
-      return add(host.settings.onLicenseChange(pluginId, licenseId, handler))
+      return add(host.settings.watchLicense(pluginId, licenseId, handler))
     },
   }
 }
@@ -283,6 +283,11 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
   }
 }
 
+/** The parts a plugin is given, with the list of its subscriptions that only the host reaches. */
+export interface HostedParts extends PluginParts {
+  readonly subscriptions: SubscriptionList
+}
+
 /**
  * The arguments of `activate`: the context the plugin owns (identity, registrations, settings,
  * health) and the services the host lends it (vault, tabs, window, background work, events). Every
@@ -295,7 +300,7 @@ export function createPluginParts(
   pluginId: string,
   host: PluginContextHost,
   manifest?: Manifest | { permissions?: readonly string[] },
-): PluginParts {
+): HostedParts {
   const subscriptions = createSubscriptionList()
   const target: PermissionTarget = { pluginId, manifest }
   const scope: PartsScope = {
@@ -304,5 +309,9 @@ export function createPluginParts(
     add: (d: Disposable) => trackSubscription(subscriptions, d),
     check: (p, op) => checkPermission(target, p, op),
   }
-  return { plugin: createPluginContext(scope, host), host: createHostServices(scope, host) }
+  return {
+    plugin: createPluginContext(scope, host),
+    host: createHostServices(scope, host),
+    subscriptions,
+  }
 }

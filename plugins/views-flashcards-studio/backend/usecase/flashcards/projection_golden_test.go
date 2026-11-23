@@ -246,7 +246,7 @@ type goldenPreset struct {
 func goldenPresets() []goldenPreset {
 	light := map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
 	return []goldenPreset{
-		{"minutes, the defaults", review.Defaults()},
+		{"minutes, the defaults", review.NewDefaultPreset()},
 		{"minutes, a light week", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,

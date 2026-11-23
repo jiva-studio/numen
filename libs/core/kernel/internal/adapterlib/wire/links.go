@@ -18,7 +18,7 @@ func ResolveAddresses(
 	ctx context.Context, resolve LinkResolver, vault domain.VaultID, r *v1.ResolveAddressesRequest,
 ) (*v1.ResolveAddressesResponse, error) {
 	inText, addresses := getTextLinks(r.GetText())
-	requested := append(slices.Clone(r.GetWritten()), addresses...)
+	requested := append(slices.Clone(r.GetAddresses()), addresses...)
 	found, err := resolve.Execute(ctx, vault, r.GetFrom(), requested)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func ResolveAddresses(
 
 	// Results are in request order, and an address requested twice yields one
 	// result.
-	out := &v1.ResolveAddressesResponse{Found: inText}
+	out := &v1.ResolveAddressesResponse{Links: inText}
 	observed := make(map[string]bool, len(found))
 	for _, content := range requested {
 		one, reached := found[content]
@@ -34,11 +34,11 @@ func ResolveAddresses(
 			continue
 		}
 		observed[content] = true
-		resolvedVault, crossed := one.InVault(vault)
-		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:     content,
+		resolvedVault, crossed := one.ResolveVault(vault)
+		out.ResolvedAddresses = append(out.ResolvedAddresses, &v1.ResolvedAddress{
+			Address:     content,
 			Path:        one.To,
-			Vault:       string(resolvedVault),
+			VaultId:     string(resolvedVault),
 			IsCrossed:   crossed,
 			IsAmbiguous: one.IsAmbiguous,
 		})
@@ -51,7 +51,7 @@ func getTextLinks(text string) ([]*v1.TextLink, []string) {
 	var addresses []string
 	isListed := map[string]bool{}
 	isAddressed := map[string]bool{}
-	for _, link := range markdown.WikilinksInText(text) {
+	for _, link := range markdown.FindTextWikilinks(text) {
 		raw := text[link.At:link.To]
 		if isListed[raw] {
 			continue

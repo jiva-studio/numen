@@ -3,7 +3,7 @@ import { defineComponent, h, onUnmounted } from 'vue'
 import { CONVERSATION } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { Manifest } from '@numen/core-client'
-import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from './styles'
+import { createPluginStyles } from './styles'
 import { createViewRegistry, type MountAccess } from './views'
 
 const NO_ACCESS: MountAccess = { inherits: false, permissions: [], requirePerm: () => undefined }
@@ -26,8 +26,10 @@ function createView(name: string, options?: { exposeFocus?: boolean; onUnmount?:
 }
 
 describe('createViewRegistry', () => {
+  const styles = createPluginStyles()
+
   it('draws the declared view into the element with the context passed', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     const unmounted = vi.fn()
     const { component, focused } = createView('chat', { onUnmount: unmounted })
     views.registerView('chat.plugin', { capability: CONVERSATION, component })
@@ -47,7 +49,7 @@ describe('createViewRegistry', () => {
   })
 
   it('leaves the element empty while no plugin declares the capability, and draws once one does', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     const element = document.createElement('section')
     const disposedBeforeRegister = document.createElement('section')
 
@@ -73,7 +75,7 @@ describe('createViewRegistry', () => {
   })
 
   it('takes the view away with the plugin that declared it', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     const declared = views.registerView('chat.plugin', {
       capability: CONVERSATION,
       component: createView('chat').component,
@@ -105,7 +107,7 @@ describe('createViewRegistry', () => {
   })
 
   it('refuses a second plugin the capability another plugin draws, and keeps the first view', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     views.registerView('first.plugin', {
       capability: CONVERSATION,
       component: createView('first').component,
@@ -124,7 +126,7 @@ describe('createViewRegistry', () => {
   })
 
   it('refuses the same plugin to register a capability twice', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     const registration = { capability: CONVERSATION, component: createView('chat').component }
     views.registerView('chat.plugin', registration)
 
@@ -132,7 +134,7 @@ describe('createViewRegistry', () => {
   })
 
   it('accepts another plugin once the one that drew the capability is disposed', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     const first = views.registerView('first.plugin', {
       capability: CONVERSATION,
       component: createView('first').component,
@@ -151,9 +153,9 @@ describe('createViewRegistry', () => {
   })
 
   it('adds the stylesheet link of the declaring plugin before the view', () => {
-    clearPluginStyles()
-    registerPluginStyle('chat.plugin', '/plugin/chat.plugin/dist/styles.css')
-    const views = createViewRegistry()
+    styles.clear()
+    styles.register('chat.plugin', '/plugin/chat.plugin/dist/styles.css')
+    const views = createViewRegistry({ styles })
     views.registerView('chat.plugin', {
       capability: CONVERSATION,
       component: createView('chat').component,
@@ -166,7 +168,7 @@ describe('createViewRegistry', () => {
     expect(link?.rel).toBe('stylesheet')
     expect(link?.getAttribute('href')).toBe('/plugin/chat.plugin/dist/styles.css')
     expect(link?.dataset['pluginId']).toBe('chat.plugin')
-    clearPluginStyles()
+    styles.clear()
   })
 
   it('adopts a constructed stylesheet into the root and releases it on dispose', async () => {
@@ -183,12 +185,12 @@ describe('createViewRegistry', () => {
       configurable: true,
     })
     try {
-      await loadPluginStyle(
+      await styles.load(
         'chat.plugin',
         '/plugin/chat.plugin/dist/styles.css',
         async () => ({ ok: true, text: async () => '.chat {}' }) as unknown as Response,
       )
-      const views = createViewRegistry()
+      const views = createViewRegistry({ styles })
       views.registerView('chat.plugin', {
         capability: CONVERSATION,
         component: createView('chat').component,
@@ -205,14 +207,14 @@ describe('createViewRegistry', () => {
       expect(document.adoptedStyleSheets.length).toBe(0)
       element.remove()
     } finally {
-      clearPluginStyles()
+      styles.clear()
       vi.unstubAllGlobals()
       Reflect.deleteProperty(document, 'adoptedStyleSheets')
     }
   })
 
   it('draws nothing for a capability no declaration names', () => {
-    const views = createViewRegistry()
+    const views = createViewRegistry({ styles })
     views.registerView('chat.plugin', {
       capability: CONVERSATION,
       component: createView('chat').component,
@@ -237,7 +239,7 @@ describe('createViewRegistry', () => {
         if (match(m)) matchedIds.push(m.id)
       }
     })
-    const views = createViewRegistry({ startPluginsOf })
+    const views = createViewRegistry({ styles, startPluginsOf })
     const element = document.createElement('section')
 
     views.mountView(CONVERSATION, element, { focus: 'Note.md' }, NO_ACCESS)

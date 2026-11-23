@@ -17,7 +17,13 @@ import {
   type SlotViewRegistration,
 } from '@numen/plugin-sdk'
 import { activate, TITLE_BAR_VIEW } from './index'
-import { command, commandWithoutIcon, separator, submenu, view } from './testing/entries'
+import {
+  buildCommand,
+  buildCommandWithoutIcon,
+  buildSeparator,
+  submenu,
+  view,
+} from './testing/entries'
 
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
@@ -119,7 +125,10 @@ describe('the commands of the slots', () => {
   it('draws the commands of titleBar.commands as buttons in the order of the slot', async () => {
     const { host, bar } = mountBar()
 
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
+      buildCommand('chart.open'),
+      buildCommand('map.open'),
+    ])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual([
@@ -131,7 +140,7 @@ describe('the commands of the slots', () => {
   it('draws the icon of the command and names the button by its title', async () => {
     const { host, bar } = mountBar()
 
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommand('chart.open')])
     await nextTick()
 
     const button = getButton(bar, 'org.example.tide:chart.open')
@@ -142,7 +151,7 @@ describe('the commands of the slots', () => {
   it('writes the title as the button of a command without an icon', async () => {
     const { host, bar } = mountBar()
 
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [commandWithoutIcon('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommandWithoutIcon('chart.open')])
     await nextTick()
 
     expect(getButton(bar, 'org.example.tide:chart.open').text()).toBe('Open chart.open')
@@ -152,8 +161,8 @@ describe('the commands of the slots', () => {
     const { host, bar } = mountBar({ platform: 'darwin' })
 
     host.ui.slots.setEntries(SLOT.titleBarCommands, [
-      command('chart.open', { shortcut: 'mod+shift+e' }),
-      command('map.open'),
+      buildCommand('chart.open', { shortcut: 'mod+shift+e' }),
+      buildCommand('map.open'),
     ])
     await nextTick()
 
@@ -172,7 +181,7 @@ describe('the commands of the slots', () => {
 
   it('runs the command of a button through the commands of the context, with no target', async () => {
     const { host, bar } = mountBar()
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommand('chart.open')])
     await nextTick()
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
@@ -191,7 +200,7 @@ describe('the commands of the slots', () => {
       attachTo: document.body,
     })
     mounted.push(bar)
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommand('chart.open')])
     await nextTick()
     vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
 
@@ -203,10 +212,13 @@ describe('the commands of the slots', () => {
 
   it('follows a change of the entries of the slot', async () => {
     const { host, bar } = mountBar()
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
+      buildCommand('chart.open'),
+      buildCommand('map.open'),
+    ])
     await nextTick()
 
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommand('map.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual(['org.example.tide:map.open'])
@@ -216,9 +228,9 @@ describe('the commands of the slots', () => {
     const { host, bar } = mountBar()
 
     host.ui.slots.setEntries(SLOT.titleBarCommands, [
-      command('chart.open'),
-      separator(1),
-      command('map.open'),
+      buildCommand('chart.open'),
+      buildSeparator(1),
+      buildCommand('map.open'),
     ])
     await nextTick()
 
@@ -233,7 +245,7 @@ describe('the commands of the slots', () => {
   it('draws a command placed in titleBar.status as a button there', async () => {
     const { host, bar } = mountBar()
 
-    host.ui.slots.setEntries(SLOT.titleBarStatus, [command('log.open')])
+    host.ui.slots.setEntries(SLOT.titleBarStatus, [buildCommand('log.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarStatus)).toStrictEqual(['org.example.tide:log.open'])
@@ -246,7 +258,7 @@ describe('the views of the slots', () => {
 
     host.ui.slots.setEntries(SLOT.titleBarStatus, [
       view('tasks'),
-      command('log.open'),
+      buildCommand('log.open'),
       view('stats'),
     ])
     await nextTick()
@@ -274,7 +286,11 @@ describe('the views of the slots', () => {
 describe('a submenu in a slot', () => {
   const placeSubmenu = async (host: MockHostServices) => {
     host.ui.slots.setEntries(SLOT.titleBarCommands, [
-      submenu('tide.new', [command('chart.create'), separator(1), command('log.create')]),
+      submenu('tide.new', [
+        buildCommand('chart.create'),
+        buildSeparator(1),
+        buildCommand('log.create'),
+      ]),
     ])
     await nextTick()
   }

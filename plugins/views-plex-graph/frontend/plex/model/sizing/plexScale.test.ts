@@ -1,7 +1,7 @@
 /** The plex at another size: what a size carries, and what it leaves alone. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { optionsForType, useTypeSize } from './plexScale'
+import { getOptionsForType, useTypeSize } from './plexScale'
 import { DESIGNED_TYPE, scaleOptions } from './typeScale'
 import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from '../../lib/arrange'
 import { build } from '../../fixtures/build'
@@ -10,11 +10,11 @@ const HALF_AGAIN = 1.5
 
 describe('the size the plex was designed at', () => {
   it('is the size a label is set at with nothing multiplying it', () => {
-    expect(optionsForType(DESIGNED_TYPE)).toStrictEqual(DEFAULT_OPTIONS)
+    expect(getOptionsForType(DESIGNED_TYPE)).toStrictEqual(DEFAULT_OPTIONS)
   })
 
   it('is what a plex that was not measured is drawn at', () => {
-    expect(optionsForType(0)).toStrictEqual(DEFAULT_OPTIONS)
+    expect(getOptionsForType(0)).toStrictEqual(DEFAULT_OPTIONS)
   })
 
   it('places every node where it stood', () => {
@@ -22,7 +22,7 @@ describe('the size the plex was designed at', () => {
     const viewport = { width: 1200, height: 800 }
     const was = arrangePlex(crowd, { options: { viewport } })
     const now = arrangePlex(crowd, {
-      options: { ...optionsForType(DESIGNED_TYPE), viewport },
+      options: { ...getOptionsForType(DESIGNED_TYPE), viewport },
     })
     expect(now).toStrictEqual(was)
   })
@@ -32,7 +32,7 @@ describe('a label half again as large', () => {
   let larger: PlexOptions
 
   beforeEach(() => {
-    larger = optionsForType(DESIGNED_TYPE * HALF_AGAIN)
+    larger = getOptionsForType(DESIGNED_TYPE * HALF_AGAIN)
   })
 
   it('is retained by a box half again as large', () => {
@@ -88,7 +88,7 @@ describe('a label half again as large', () => {
 
   it('carries boxes the caller chose, and not only the ones here', () => {
     const request = { ...DEFAULT_OPTIONS, nodeSize: { width: 200, height: 40 } }
-    expect(optionsForType(DESIGNED_TYPE * HALF_AGAIN, request).nodeSize).toStrictEqual({
+    expect(getOptionsForType(DESIGNED_TYPE * HALF_AGAIN, request).nodeSize).toStrictEqual({
       width: 300,
       height: 60,
     })

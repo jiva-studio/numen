@@ -41,7 +41,7 @@ func (r *ConnectionRows) listAppUses(connectionID string) ([]connection.Use, err
 	if err != nil {
 		return nil, err
 	}
-	if !namesConnection(readRowsJSON(encodeAppRows(stored)), connectionID) {
+	if !hasConnection(readRowsJSON(encodeAppRows(stored)), connectionID) {
 		return nil, nil
 	}
 	return []connection.Use{{

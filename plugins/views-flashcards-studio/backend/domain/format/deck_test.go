@@ -135,7 +135,7 @@ about 46"
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %+v, want two cards of one heading to be two cards", deck.Problems)
 	}
-	got, err := deck.Card("zpqrstvwxy")
+	got, err := deck.FindCard("zpqrstvwxy")
 	if err != nil {
 		t.Fatalf("the second card is not addressed by its card id: %v", err)
 	}

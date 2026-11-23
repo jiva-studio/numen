@@ -15,7 +15,7 @@ const Interval = time.Second
 
 // Moves is where the changes to the files of the vaults are reported.
 type Moves interface {
-	WatchMoves(ctx context.Context) (<-chan host.Move, error)
+	WatchIndexChanges(ctx context.Context) (<-chan host.Move, error)
 }
 
 // UnavailableError is a failure to follow the changes, as against a listener that has gone.
@@ -42,7 +42,7 @@ func WatchTicks(
 func Watch(ctx context.Context, moves Moves, idle <-chan time.Time, invalidate func(), signal func(reload bool) error) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
-	moved, err := moves.WatchMoves(ctx)
+	moved, err := moves.WatchIndexChanges(ctx)
 	if err != nil {
 		return &UnavailableError{Err: err}
 	}

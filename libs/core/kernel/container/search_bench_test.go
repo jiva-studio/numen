@@ -122,7 +122,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 
 	mock := newBenchEmbedder(model)
-	asking := sourcefake.Wrap(mock).Over(search.NewFindNearest(db.ChunkSearch()).Execute)
+	asking := sourcefake.Wrap(mock).UseNearest(search.NewFindNearest(db.ChunkSearch()).Execute)
 	embedderUseCase, err := container.Embed(cfg, db, asking, v)
 	if err != nil {
 		b.Fatal(err)

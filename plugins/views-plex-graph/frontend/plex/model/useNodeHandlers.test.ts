@@ -8,8 +8,8 @@ const createReports = () =>
     show: vi.fn(),
     reach: vi.fn(),
     ask: vi.fn(),
-    menu: vi.fn(),
-    attend: vi.fn(),
+    openMenu: vi.fn(),
+    setAttention: vi.fn(),
   }) satisfies NodeReports
 
 describe('the listeners of a note', () => {
@@ -28,6 +28,6 @@ describe('the listeners of a note', () => {
     getListeners('b').attend(true)
 
     expect(reports.activate).toHaveBeenCalledWith('a')
-    expect(reports.attend).toHaveBeenCalledWith('b', true)
+    expect(reports.setAttention).toHaveBeenCalledWith('b', true)
   })
 })

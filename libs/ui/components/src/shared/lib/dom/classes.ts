@@ -10,6 +10,6 @@ const merge = extendTailwindMerge({
 })
 
 /** One class list out of many, with the last word on a property winning. */
-export function cn(...inputs: ClassValue[]) {
+export function joinClasses(...inputs: ClassValue[]) {
   return merge(clsx(inputs))
 }

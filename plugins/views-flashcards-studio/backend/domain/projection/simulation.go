@@ -150,7 +150,7 @@ func (s Simulation) canReachGoal(p Settings, c Card, open, delta time.Time) bool
 	return s.By.IsLearned(p, c, delta)
 }
 
-func (s Simulation) short(p Settings, cards []Card, unreviewed int, open time.Time) int {
+func (s Simulation) countShort(p Settings, cards []Card, unreviewed int, open time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
@@ -333,7 +333,7 @@ func (s Simulation) Run(
 	falls := createFalls(cards, days, on, base)
 
 	reckoned := s.initLearned(p, cards, &out, open)
-	out.Short = s.short(p, cards, unreviewed, open)
+	out.Short = s.countShort(p, cards, unreviewed, open)
 	daysToLearn := s.getDaysToLearnGoal(p, now)
 
 	d := s.createSimulationDay(simulationSetup{

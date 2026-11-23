@@ -13,7 +13,7 @@ import { getRelationErrorWords } from '@numen/plugin-loader'
 import { createNoteWriter, type NoteMakingApi } from './maker'
 import { getNoteIcon, registerTabKindIcon } from './icons'
 import { createAnsweredApi } from '@/testing/coreAnswers'
-import { writer } from '@/testing/writer'
+import { createWriter } from '@/testing/writer'
 
 /** The calls a note is made through, over the core the test answered last. */
 let making: NoteMakingApi
@@ -47,7 +47,7 @@ function fake({
       },
     },
   })
-  return { notes, requests, ...writer() }
+  return { notes, requests, ...createWriter() }
 }
 
 describe('making an untitled note', () => {
@@ -78,7 +78,7 @@ describe('making an untitled note', () => {
         },
       },
     })
-    const { write, last, messages } = writer()
+    const { write, last, messages } = createWriter()
 
     expect(await createNoteWriter(making, write).createUntitledNote('')).toBe('')
     expect(last()).toContain('Numen is not responding')
@@ -135,7 +135,7 @@ describe('making a note under a name a person gave it', () => {
         },
       },
     })
-    const { write, last, messages } = writer()
+    const { write, last, messages } = createWriter()
 
     expect(
       await createNoteWriter(making, write).createWithTitle('Entropy', 'A.md', 'jump'),

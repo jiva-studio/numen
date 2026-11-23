@@ -214,7 +214,7 @@ func describeStatus(t *testing.T, web *httptest.Server) int {
 func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *testing.T) {
 	setEmptyModelDir(t)
 	hostHealth := healthtest.NewHost(t)
-	handler := newMountedHandler(t, hostHealth.Vars(linkedToken))
+	handler := newMountedHandler(t, hostHealth.BuildVars(linkedToken))
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken)

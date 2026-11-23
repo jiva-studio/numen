@@ -190,7 +190,7 @@ func TestMoveSources_RenamesFilenameTitledNote(t *testing.T) {
 	}
 
 	title, folded, indexed := s.noteName(row)
-	if title != "Hibernation" || folded != domain.FoldName("Hibernation") || indexed != "Hibernation" {
+	if title != "Hibernation" || folded != domain.NormalizeName("Hibernation") || indexed != "Hibernation" {
 		t.Errorf("the note is called %q, folded %q, indexed %q", title, folded, indexed)
 	}
 }
@@ -208,7 +208,7 @@ func TestMoveSources_ExplicitTitleMatchesSanitizedFilename(t *testing.T) {
 	if title != "Heat: a study" || indexed != "Heat: a study" {
 		t.Errorf("the note is called %q, indexed %q", title, indexed)
 	}
-	if folded != domain.FoldName("Heat- a study") {
+	if folded != domain.NormalizeName("Heat- a study") {
 		t.Errorf("the note is reached by %q", folded)
 	}
 }

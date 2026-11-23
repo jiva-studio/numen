@@ -1,6 +1,6 @@
 /** What a deck tab and a card model tab say: what they are called, and what is wrong. */
 // Stryker disable StringLiteral: interface copy
-import { many } from '@numen/ui'
+import { formatCount } from '@numen/ui'
 import { getFileName } from '@numen/plugin-sdk'
 
 export const WORDS = {
@@ -40,7 +40,7 @@ export const WORDS = {
   wrong: 'Problem',
   /** How many cards and decks a field rename reached, shown once the rename completes. */
   renamed: (cards: number, decks: number) =>
-    `Field renamed in ${many(cards, 'card')} across ${many(decks, 'deck')}.`,
+    `Field renamed in ${formatCount(cards, 'card')} across ${formatCount(decks, 'deck')}.`,
   /** A rename requested against a card model that changed on disk since it was read. */
   notRenamed: 'Field not renamed: the file changed on disk.',
   /** The decks the new name did not reach, each keeping the heading it had. */

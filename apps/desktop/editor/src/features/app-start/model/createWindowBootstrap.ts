@@ -31,7 +31,7 @@ export function createWindowBootstrap(deps: WindowBootstrapDeps) {
     writeMessage(`The window did not start cleanly: ${formatError(error)}`, 'error')
 
   let stopEditorTokens = (): void => undefined
-  const started = createAppStart({
+  const appStart = createAppStart({
     loadVaults: () => vaults.loadVaults(),
     startSettings: async () => {
       await settings.start()
@@ -67,5 +67,5 @@ export function createWindowBootstrap(deps: WindowBootstrapDeps) {
     closePlugins: plugins.close,
     reportError,
   })
-  return started
+  return appStart
 }

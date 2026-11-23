@@ -63,7 +63,7 @@ func (p Projection) CountAdmitted() int {
 	return out
 }
 
-func (p Projection) minutesADay(limitDay int) float64 {
+func (p Projection) computeMinutesADay(limitDay int) float64 {
 	var all time.Duration
 	days := 0
 	for i, one := range p.Spent[:limitDay+1] {
@@ -86,11 +86,11 @@ func (p Projection) isAllLearned(day int) bool {
 	return p.Through[day] >= float64(p.ReviewCards-p.Short)/float64(p.ReviewCards)
 }
 
-// Session is the first day of this run that the preset admits: the next session the user
+// FindSession is the first day of this run that the preset admits: the next session the user
 // starts. False means the run admits no day. It is one real day of the run, so the count read
 // from it is the count a session on that day returns; a day the preset does not admit is not a
 // session.
-func (p Projection) Session() (int, bool) {
+func (p Projection) FindSession() (int, bool) {
 	for day, admitted := range p.Admitted {
 		if admitted {
 			return day, true

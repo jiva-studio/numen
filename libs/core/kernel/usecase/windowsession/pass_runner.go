@@ -97,8 +97,8 @@ func (r *PassRunner) startIndexing(
 	}
 	triggerPasses := newTriggerPasses()
 	started := r.passes.Start(ctx, v, rebuild, Reporters{
-		Changed: r.reporter.newChangeReporter(triggerPasses, func(paths []string) { r.reporter.checkTexts(ctx, v, paths) }),
-		Failed:  r.reportFailure,
+		NotifyChanged: r.reporter.newChangeReporter(triggerPasses, func(paths []string) { r.reporter.checkTexts(ctx, v, paths) }),
+		Failed:        r.reportFailure,
 	})
 	if started.Unwatched != nil {
 		r.diag.say("not watching %s: %v\n", v.Name, started.Unwatched)

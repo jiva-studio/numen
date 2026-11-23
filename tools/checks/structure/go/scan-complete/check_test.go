@@ -97,7 +97,7 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkUseCasesImportOnlyDomainAndPorts(t, load.Workspace(t, "libs/core/kernel"))
+	checkUseCasesImportOnlyDomainAndPorts(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 // A pure helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
@@ -109,7 +109,7 @@ func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
+	pkgs := load.GetModulePackages(t, load.LoadWorkspace(t, "libs/core/kernel"), "libs/core/kernel")
 	found, read := getHelperFindings(pkgs, load.CoreImportPath)
 	for _, one := range found {
 		t.Error(one)
@@ -222,5 +222,5 @@ var _ noteport.Reader = (*Reader)(nil)
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

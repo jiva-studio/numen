@@ -13,8 +13,8 @@ type Tool struct {
 	Environment map[string]string
 }
 
-// Defaults is the programs PATH and the host name.
-func Defaults() Config {
+// NewDefaultConfig is the programs PATH and the host name.
+func NewDefaultConfig() Config {
 	// gomutants:disable-next-line RETURN_ZERO reason="explicit nil fields equal zero Config"
 	return Config{
 		Video: Tool{Command: nil, Arguments: nil, Environment: nil},

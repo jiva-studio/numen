@@ -9,10 +9,10 @@ import { placeMenu } from '../items/item'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 
 export interface MenuPlacementOptions {
-  readonly at: () => Position
-  readonly viewport: () => Size | null
-  readonly margin: () => number
-  readonly asking?: () => number
+  readonly getPosition: () => Position
+  readonly getViewport: () => Size | null
+  readonly getMargin: () => number
+  readonly getAskedWidth?: () => number
 }
 
 export interface MenuPlacementState {
@@ -28,29 +28,29 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
 
   /** The area to stay inside. The browser's, unless a caller measures its own. */
   const room = computed<Size>(
-    () => options.viewport() ?? { width: window.innerWidth, height: window.innerHeight },
+    () => options.getViewport() ?? { width: window.innerWidth, height: window.innerHeight },
   )
 
   const placement = computed(() =>
     placeMenu({
-      at: options.at(),
+      at: options.getPosition(),
       size: size.value,
       viewport: room.value,
-      margin: options.margin(),
+      margin: options.getMargin(),
     }),
   )
 
   const getRoom = (): string => {
-    const viewport = options.viewport()
+    const viewport = options.getViewport()
     return viewport
-      ? `${Math.max(viewport.height - 2 * options.margin(), 0)}px`
-      : `calc(100dvh - ${2 * options.margin()}px)`
+      ? `${Math.max(viewport.height - 2 * options.getMargin(), 0)}px`
+      : `calc(100dvh - ${2 * options.getMargin()}px)`
   }
 
   const menuStyle = computed(() => ({
     left: `${placement.value.x}px`,
     top: `${placement.value.y}px`,
-    '--asking': `${options.asking?.() ?? 0}px`,
+    '--asking': `${options.getAskedWidth?.() ?? 0}px`,
     '--opened-width': `${openedWidth.value}px`,
     '--room': getRoom(),
   }))

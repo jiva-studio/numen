@@ -67,7 +67,7 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
  * A relationship that is the same in both directions changes ends when the plex moves along it.
  * Reading those as two edges fades one out while the other fades in, so the line the reader is following disappears.
  */
-export const edgeKey = (edge: PlexEdge): string =>
+export const buildEdgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
 /** What a line is, by the titles of the two notes it joins and the notes its arrowheads point at: "Line from Harbour to Quay, arrow to Quay". */

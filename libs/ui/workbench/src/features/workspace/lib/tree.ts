@@ -23,22 +23,22 @@ export function findNode(root: WorkspaceNode, path: Path): WorkspaceNode | null 
   return node ?? null
 }
 
-export function pathTo(root: WorkspaceNode, id: NodeId): Path | null {
+export function findPath(root: WorkspaceNode, id: NodeId): Path | null {
   if (root.id === id) return []
   if (!isBranch(root)) return null
 
   for (const [i, child] of root.children.entries()) {
-    const below = pathTo(child, id)
+    const below = findPath(child, id)
     if (below) return [i, ...below]
   }
   return null
 }
 
-export function paneById(root: WorkspaceNode, id: NodeId): Pane | null {
+export function findPane(root: WorkspaceNode, id: NodeId): Pane | null {
   return getPanes(root).find((pane) => pane.id === id) ?? null
 }
 
-export function paneWithTab(root: WorkspaceNode, tab: TabId): Pane | null {
+export function findPaneWithTab(root: WorkspaceNode, tab: TabId): Pane | null {
   return getPanes(root).find((pane) => pane.tabs.includes(tab)) ?? null
 }
 

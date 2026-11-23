@@ -204,15 +204,15 @@ func TestToAPIErrorMapsLinkErrors(t *testing.T) {
 	}
 	for _, one := range cases {
 		var failure *server.APIError
-		if !errors.As(toAPIError(one.err), &failure) || failure.Code != one.code {
-			t.Errorf("%v maps to %v, want %s", one.err, toAPIError(one.err), one.code)
+		if !errors.As(buildAPIError(one.err), &failure) || failure.Code != one.code {
+			t.Errorf("%v maps to %v, want %s", one.err, buildAPIError(one.err), one.code)
 		}
 	}
-	if toAPIError(nil) != nil {
+	if buildAPIError(nil) != nil {
 		t.Error("nil maps to an error")
 	}
 	other := errors.New("the disk is full")
-	if !errors.Is(toAPIError(other), other) {
+	if !errors.Is(buildAPIError(other), other) {
 		t.Error("an unmapped error is changed")
 	}
 }

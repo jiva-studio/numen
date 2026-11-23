@@ -5,13 +5,12 @@ package media
 import (
 	"context"
 	"errors"
-	"io/fs"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -27,11 +26,6 @@ type Addresses interface {
 	GetMediaAddress(v domain.Vault, stat domain.FileStat) string
 	GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string
 }
-
-var (
-	errNoVault  = errors.New("the window has no vault")
-	errComingUp = errors.New("the vault is still coming up")
-)
 
 // Handler serves MediaService.
 type Handler struct {
@@ -52,10 +46,7 @@ func (h *Handler) ResolveAddress(
 ) (*connect.Response[v1.ResolveAddressResponse], error) {
 	showing := h.vault.GetCurrentVault()
 	if showing.ID == "" {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
-	}
-	if h.resolveAddress == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+		return nil, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	resolved, err := h.resolveAddress.Execute(ctx, showing, r.Msg.GetAddress())
 	switch {
@@ -64,7 +55,7 @@ func (h *Handler) ResolveAddress(
 	case errors.Is(err, file.ErrNoPluginFiles):
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	case err != nil:
-		return nil, connect.NewError(getListCode(err), err)
+		return nil, wire.NewListError(err)
 	}
 	src := h.addresses.GetMediaAddress(showing, resolved.Stat)
 	if resolved.Address.IsPluginFile() {
@@ -74,15 +65,4 @@ func (h *Handler) ResolveAddress(
 		Src:       src,
 		MediaType: resolved.MediaType,
 	}), nil
-}
-
-func getListCode(err error) connect.Code {
-	switch {
-	case errors.Is(err, vault.ErrOutside):
-		return connect.CodeInvalidArgument
-	case errors.Is(err, fs.ErrNotExist):
-		return connect.CodeNotFound
-	default:
-		return connect.CodeInternal
-	}
 }

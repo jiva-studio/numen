@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
-import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-loader'
+import { CONVERSATION, VAULT_SUMMARY, openExternalUrl } from '@numen/plugin-loader'
 import { createCoreTransport, createMockManifest } from '@numen/core-client/testing'
 import type {
   BackgroundTaskHost,
@@ -35,6 +35,7 @@ const createShellHost = (
   const notices = createNoticeQueue()
   const host = createHost({
     relations: createWindowRelations(clients.notes),
+    openExternal: (href) => openExternalUrl(href, async () => undefined),
     getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
     notices,

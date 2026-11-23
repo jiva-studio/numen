@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { findPendingImages, whenArrived } from './pictures'
+import { findPendingImages, waitForPictures } from './pictures'
 import { PICTURES_WAIT } from './picturesWait'
 
 const picture = (isComplete: boolean): HTMLImageElement => {
@@ -42,7 +42,7 @@ describe('waiting for pictures', () => {
   it('runs once all of them have arrived or failed', () => {
     const [one, other] = [picture(false), picture(false)]
     const run = vi.fn()
-    whenArrived([one, other], run)
+    waitForPictures([one, other], run)
 
     one.dispatchEvent(new Event('load'))
     expect(run).not.toHaveBeenCalled()
@@ -54,7 +54,7 @@ describe('waiting for pictures', () => {
   it('runs after the limit when a picture does not answer, and once', () => {
     const one = picture(false)
     const run = vi.fn()
-    whenArrived([one], run)
+    waitForPictures([one], run)
 
     vi.advanceTimersByTime(PICTURES_WAIT)
     one.dispatchEvent(new Event('load'))

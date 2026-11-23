@@ -12,7 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -21,11 +23,11 @@ import (
 
 func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Handler {
 	fileKinds := file.NewGetFileKinds(readers, nil)
-	choose := file.NewChooseTabKind(tabKinds{}, notesOnly{}, nil)
+	choose := pluginentries.NewTabKindChoice(tabKinds{}.ListTabKinds, notesOnly{}.GetContentType, nil)
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
 			open,
-			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(nil, choose)),
+			file.NewListFolder(file.NewGetFolderEntries(readers, nil), indexnote.NewTabKinds(nil, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
 		filewindow.NewChanges(open, open, nil, nil, nil),
@@ -76,7 +78,7 @@ func TestAListingAnswersWhenEachEntryWasModifiedInMilliseconds(t *testing.T) {
 
 	got := map[string]int64{}
 	for _, one := range answer.Msg.GetEntries() {
-		got[one.GetPath()] = one.GetModifiedAtMs()
+		got[one.GetPath()] = one.GetModifiedUnixMs()
 	}
 	if want := at.UnixMilli(); got["links/tide.md"] != want {
 		t.Errorf("the note was modified at %d, want %d", got["links/tide.md"], want)
@@ -99,7 +101,7 @@ func TestAListingAnswersZeroForAnEntryWithNoModificationTime(t *testing.T) {
 		t.Fatal("the listing is empty")
 	}
 	for _, one := range answer.Msg.GetEntries() {
-		if got := one.GetModifiedAtMs(); got != 0 {
+		if got := one.GetModifiedUnixMs(); got != 0 {
 			t.Errorf("%s was modified at %d, want 0", one.GetPath(), got)
 		}
 	}

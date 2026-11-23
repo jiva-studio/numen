@@ -35,13 +35,13 @@ export const isDay = (day: string): boolean => !Number.isNaN(Date.parse(`${day}T
  * How many days lie between two written days, and none where either is not a
  * day. A day before the other is a count below zero.
  */
-export const daysBetween = (from: string, to: string): number => {
+export const countDays = (from: string, to: string): number => {
   if (!isDay(from) || !isDay(to)) return 0
   return Math.round((getDayNumber(to) - getDayNumber(from)) / DAY)
 }
 
 /** The day that many days after a written one, and itself where it is not a day. */
-export const dayAfter = (from: string, days: number): string => {
+export const addDays = (from: string, days: number): string => {
   if (!isDay(from)) return from
   const date = new Date(getDayNumber(from))
   date.setUTCDate(date.getUTCDate() + days)

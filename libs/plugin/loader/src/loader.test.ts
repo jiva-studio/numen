@@ -4,7 +4,7 @@ import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { LoaderHost, PluginParts } from './host'
-import { getPluginStyle, registerPluginStyle } from './styles'
+import { createPluginStyles } from './styles'
 import { createTestPluginLoader } from './testing/pluginLoader'
 import { parseLifecycleHooks, resolveModule } from './module'
 
@@ -44,7 +44,7 @@ describe('createPluginLoader', () => {
     const getSetting: NonNullable<LoaderHost['getSetting']> = vi.fn(
       (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
     ) as unknown as NonNullable<LoaderHost['getSetting']>
-    const onSettingChange = vi.fn(
+    const watchSetting = vi.fn(
       (pluginId: string, key: string, handler: (val: unknown) => void | Promise<void>) => {
         const compositeKey = `${pluginId}.${key}`
         let activeSet = settingListeners.get(compositeKey)
@@ -95,7 +95,7 @@ describe('createPluginLoader', () => {
                 getSetting(pluginId, key),
               ) as unknown as PluginSettings['get'],
               onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
-                onSettingChange(pluginId, key, handler),
+                watchSetting(pluginId, key, handler),
               ),
               getEditor: vi.fn(() => undefined),
               onEditorChange: vi.fn(() => ({ dispose: vi.fn() })),
@@ -127,7 +127,7 @@ describe('createPluginLoader', () => {
         return parts
       }),
       getSetting,
-      onSettingChange,
+      watchSetting,
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
       triggerSettingChange,
@@ -141,11 +141,13 @@ describe('createPluginLoader', () => {
       text: async () => JSON.stringify({ id: 'x', frontend: {} }),
     }) as Response) as unknown as typeof fetch
 
+  const styles = createPluginStyles()
+
   function createTestLoader(
     host: LoaderHost,
     extra: Partial<Omit<Parameters<typeof createTestPluginLoader>[0], 'host'>> = {},
   ) {
-    return createTestPluginLoader({ host, ...extra })
+    return createTestPluginLoader({ host, styles, ...extra })
   }
 
   it('activates and deactivates plugins with lifecycle hooks', async () => {
@@ -302,7 +304,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: mockFetch as unknown as typeof fetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('dynamic.sample')
@@ -313,7 +315,7 @@ describe('createPluginLoader', () => {
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
-    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/styles.css')
+    expect(styles.getUrl('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/styles.css')
     expect(host.createContext).toHaveBeenCalledWith(
       'dynamic.sample',
       expect.objectContaining({ id: 'dynamic.sample' }),
@@ -323,7 +325,7 @@ describe('createPluginLoader', () => {
     expect(deactivateSuccess).toBe(true)
     expect(deactivated).toBe(true)
 
-    expect(getPluginStyle('dynamic.sample')).toBeUndefined()
+    expect(styles.getUrl('dynamic.sample')).toBeUndefined()
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
   })
 
@@ -335,7 +337,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: frontendManifestFetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('failing.plugin')
@@ -354,7 +356,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: frontendManifestFetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('throwing.plugin')
@@ -391,6 +393,8 @@ describe('createPluginLoader catalog manifests', () => {
 })
 
 describe('createPluginLoader failures, order and toggles', () => {
+  const styles = createPluginStyles()
+
   function createHost(settings: Record<string, unknown> = {}) {
     const listeners = new Map<string, (value: unknown) => void | Promise<void>>()
     const host = {
@@ -401,7 +405,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
       getSetting: vi.fn((id: string, key: string) => settings[`${id}.${key}`]),
-      onSettingChange: vi.fn(
+      watchSetting: vi.fn(
         (id: string, _key: string, handler: (value: unknown) => void | Promise<void>) => {
           listeners.set(id, handler)
           return {
@@ -691,7 +695,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.start()
     await loader.trackPlugins(['p'])
 
-    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+    expect(host.watchSetting).toHaveBeenCalledTimes(1)
     await listeners.get('p')?.(false)
     expect(loader.status.isPluginActive('p')).toBe(false)
     await listeners.get('p')?.(true)
@@ -709,7 +713,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           ok: true,
           text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport: async (url) => {
+      importModule: async (url) => {
         imports.push(url)
         return { activate: () => undefined }
       },
@@ -726,7 +730,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.status.startPlugin('dyn')
 
     expect(loader.status.isPluginActive('dyn')).toBe(true)
-    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+    expect(host.watchSetting).toHaveBeenCalledTimes(1)
   })
 
   it('imports a dynamic plugin from its entrypoint url at each activation', async () => {
@@ -740,7 +744,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
   it('neither imports nor fails a plugin whose manifest has no frontend', async () => {
     const { host } = createHost()
-    const dynamicImport = vi.fn()
+    const importModule = vi.fn()
     const loader = createTestPluginLoader({
       host,
       fetch: (async () =>
@@ -748,10 +752,10 @@ describe('createPluginLoader failures, order and toggles', () => {
           ok: true,
           text: async () => JSON.stringify({ id: 'ocr' }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport,
+      importModule,
     })
     await expect(loader.activation.activatePlugin('ocr')).resolves.toBe(false)
-    expect(dynamicImport).not.toHaveBeenCalled()
+    expect(importModule).not.toHaveBeenCalled()
     expect(loader.status.getPluginFailure('ocr')).toBeUndefined()
   })
 
@@ -790,13 +794,14 @@ describe('createPluginLoader failures, order and toggles', () => {
     const onError = vi.fn()
     const loader = createTestPluginLoader({
       host,
+      styles,
       onError,
       fetch: (async () =>
         ({
           ok: true,
           text: async () => JSON.stringify({ id: 'styled.bad', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport: async () => ({
+      importModule: async () => ({
         activate: () => {
           throw 'string fault'
         },
@@ -804,15 +809,15 @@ describe('createPluginLoader failures, order and toggles', () => {
     })
 
     expect(await loader.activation.activatePlugin('styled.bad')).toBe(false)
-    expect(getPluginStyle('styled.bad')).toBeUndefined()
+    expect(styles.getUrl('styled.bad')).toBeUndefined()
     expect(loader.status.getPluginFailure('styled.bad')).toBe(
       'the plugin threw a string, not an Error',
     )
 
-    registerPluginStyle('never.active', '/plugin/never.active/dist/styles.css')
+    styles.register('never.active', '/plugin/never.active/dist/styles.css')
     loader.registerPluginManifest('never.active', createMockManifest('never.active'))
     expect(await loader.activation.deactivatePlugin('never.active')).toBe(false)
-    expect(getPluginStyle('never.active')).toBeUndefined()
+    expect(styles.getUrl('never.active')).toBeUndefined()
     expect(host.disposePlugin).toHaveBeenCalledWith('never.active')
     await loader.activation.activatePlugin('never.active', { activate: () => undefined })
     expect(host.createContext).toHaveBeenLastCalledWith('never.active', undefined)
@@ -833,7 +838,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           text: async () => JSON.stringify({ id: 'dyn.throw', frontend: {} }),
         } as Response
       }) as unknown as typeof fetch,
-      dynamicImport: async () => ({
+      importModule: async () => ({
         deactivate: () => {
           throw deactivateFault
         },
@@ -881,12 +886,12 @@ describe('createPluginLoader failures, order and toggles', () => {
             ),
         } as Response
       }) as unknown as typeof fetch,
-      dynamicImport: async () => ({ activate: () => undefined }),
+      importModule: async () => ({ activate: () => undefined }),
     })
 
     await loader.trackPlugins(['tracked.one', 'tracked.one', 'backend.only'])
     expect(loader.status.isPluginActive('tracked.one')).toBe(false)
-    expect(host.onSettingChange).not.toHaveBeenCalled()
+    expect(host.watchSetting).not.toHaveBeenCalled()
 
     await loader.start()
     expect(loader.status.isPluginActive('tracked.one')).toBe(false)
@@ -1005,6 +1010,7 @@ describe('parseLifecycleHooks and resolveModule', () => {
       baseUrl: '/plugin',
       fetchFn: vi.fn() as unknown as typeof fetch,
       importFn: vi.fn(),
+      styles: createPluginStyles(),
       manifests: new Map(),
       loaders: new Map(),
     }

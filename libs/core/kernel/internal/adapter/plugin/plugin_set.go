@@ -67,7 +67,7 @@ func NewPluginSet(d PluginSetDeps) *PluginSet {
 // setView reads the set. The set holds its lock for reading until the function view returned is called.
 type setView struct{ set *PluginSet }
 
-func (s *PluginSet) view() (setView, func()) {
+func (s *PluginSet) getView() (setView, func()) {
 	s.mu.RLock()
 	return setView{set: s}, s.mu.RUnlock
 }
@@ -98,7 +98,7 @@ func (v setView) isEnabled(pluginID string) bool {
 	return !p.Manifest.IsOffByDefault
 }
 
-func (v setView) settings(pluginID string) map[string]any {
+func (v setView) getSettings(pluginID string) map[string]any {
 	result := v.set.values.get(pluginID)
 	p, ok := v.set.plugins[pluginID]
 	if ok {
@@ -110,8 +110,8 @@ func (v setView) settings(pluginID string) map[string]any {
 	return result
 }
 
-func (v setView) requirements(p manifest.Discovered) []manifest.DependencyRequirement {
-	return p.Manifest.GetDependencyRequirements(p.Dir, v.settings(p.Manifest.ID))
+func (v setView) getRequirements(p manifest.Discovered) []manifest.DependencyRequirement {
+	return p.Manifest.GetDependencyRequirements(p.Dir, v.getSettings(p.Manifest.ID))
 }
 
 func (v setView) enabled() []manifest.Discovered {
@@ -127,7 +127,7 @@ func (v setView) hasBackend(p manifest.Discovered) bool {
 }
 
 func (s *PluginSet) getKnownPlugin(pluginID string) (manifest.Discovered, bool) {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
 	return v.get(pluginID)
 }
@@ -138,7 +138,7 @@ func (s *PluginSet) getName(pluginID string) string {
 }
 
 func (s *PluginSet) isPluginEnabled(pluginID string) bool {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
 	return v.isEnabled(pluginID)
 }
@@ -149,33 +149,33 @@ func (s *PluginSet) isRegistered(pluginID string) bool {
 }
 
 func (s *PluginSet) getPluginSettings(pluginID string) map[string]any {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
-	return v.settings(pluginID)
+	return v.getSettings(pluginID)
 }
 
 func (s *PluginSet) getRequirementIDs(pluginID string) []string {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
 	p, ok := v.get(pluginID)
 	if !ok {
 		return nil
 	}
 	var ids []string
-	for _, req := range v.requirements(p) {
+	for _, req := range v.getRequirements(p) {
 		ids = append(ids, req.ID)
 	}
 	return ids
 }
 
 func (s *PluginSet) listEnabledPlugins() []manifest.Discovered {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
 	return v.enabled()
 }
 
 func (s *PluginSet) listIDs() []string {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
 	ids := make([]string, 0, len(s.plugins))
 	for _, p := range v.ordered() {
@@ -191,9 +191,9 @@ func (s *PluginSet) isOnDisk(pluginID string) bool {
 }
 
 func (s *PluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
-	v, release := s.view()
+	v, release := s.getView()
 	defer release()
-	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.requirements(p), VaultPath: s.mode.GetVaultPath()}
+	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.getRequirements(p), VaultPath: s.mode.GetVaultPath()}
 	if builtIn, ok := s.builtIns[p.Manifest.ID]; ok && !s.onDisk[p.Manifest.ID] {
 		launch.BuiltIn = &supervision.BuiltIn{Serve: builtIn.serve}
 	}

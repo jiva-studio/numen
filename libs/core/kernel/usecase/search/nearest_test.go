@@ -68,7 +68,7 @@ func TestANearestSearchKeepsAChunkAtTheFloorAndDropsOneBelowIt(t *testing.T) {
 	f := &nearestFake{}
 	f.holdsSimilarity("held", 0.5)
 	holdsEnclosing(f, "held")
-	exact := vector.SimilarityBytes(newVector(+1), f.vectors["held"])
+	exact := vector.ComputeSimilarityBytes(newVector(+1), f.vectors["held"])
 	q := newNearestQuery(10)
 
 	q.Floor = exact
