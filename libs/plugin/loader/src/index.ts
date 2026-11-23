@@ -8,6 +8,8 @@ export {
   DEFAULT_PLUGIN_ENABLED,
   createPluginLoader,
   isPluginEnabledValue,
+  type LoaderStatus,
+  type PluginActivation,
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
@@ -16,6 +18,7 @@ export {
   INTERFACE_WAIT_MS,
   waitWithinInterfaceLimit,
   type PluginStatus,
+  type PluginStatusState,
 } from './loading'
 export {
   adoptSheet,

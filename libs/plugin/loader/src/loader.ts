@@ -319,6 +319,7 @@ function createLoaderRun(deps: PluginLoaderDeps, status: PluginStatus, previous?
   }
 }
 
+/** `startPlugin` starts the plugin once for every caller that asks while its start goes on. */
 export interface PluginActivation {
   readonly loadModule: (id: string) => Promise<PluginModule | undefined>
   readonly readManifest: (id: string) => Promise<Manifest | undefined>
@@ -328,16 +329,15 @@ export interface PluginActivation {
     module?: PluginModule,
     limit?: StartLimit,
   ) => Promise<boolean>
-  /** Starts the plugin once for every caller that asks while its start goes on. */
   readonly startPlugin: (id: string) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
 }
 
+/** `waitForInterface` settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
 export interface LoaderStatus {
   readonly getFailedPlugins: () => { id: string; error: string }[]
   readonly startPlugin: PluginStatus['startPlugin']
   readonly startTabPlugins: PluginStatus['startTabPlugins']
-  /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
   readonly waitForInterface: () => Promise<void>
 }
 

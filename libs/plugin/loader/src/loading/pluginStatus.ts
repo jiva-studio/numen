@@ -27,22 +27,19 @@ export interface PluginStatusState {
   readonly listPlugins: () => string[]
 }
 
+/**
+ * `state` is what the loader keeps and changes; the rest only reads it. `startTabPlugins` starts the
+ * enabled plugins that declare one of the tab kinds, and every enabled plugin that declares a tab
+ * kind where no kinds are given, and waits for them. `findPluginsOf` gives the enabled plugins whose
+ * manifest, as read so far, declares the contribution. `isPluginStarting` is reactive and, before
+ * the plugins are listed, true for every plugin, as none is known to be off yet.
+ */
 export interface PluginStatus {
-  /** What the loader keeps and changes; the rest only reads it. */
   readonly state: PluginStatusState
   readonly startPlugin: (id: string) => Promise<void>
   readonly startPluginsOf: (match: ContributionMatch) => Promise<void>
-  /**
-   * Starts the enabled plugins that declare one of the tab kinds, and every enabled plugin that
-   * declares a tab kind where no kinds are given, and waits for them.
-   */
   readonly startTabPlugins: (kinds?: readonly string[]) => Promise<void>
-  /** The enabled plugins whose manifest, as read so far, declares the contribution. */
   readonly findPluginsOf: (match: ContributionMatch) => string[]
-  /**
-   * Whether the start of the plugin is going on; reactive. Before the plugins are listed every
-   * plugin counts as starting, as none is known to be off yet.
-   */
   readonly isPluginStarting: (id: string) => boolean
   readonly getPluginFailure: (id: string) => string | undefined
 }
