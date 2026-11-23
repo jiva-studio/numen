@@ -40,7 +40,6 @@ func New(
 	return &Tools{getVault: getVault, cards: cards, bounded: bounded, deckCards: deckCards, deckSections: deckSections}
 }
 
-// BuildRegistry builds the tools registry.
 func (t *Tools) BuildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{

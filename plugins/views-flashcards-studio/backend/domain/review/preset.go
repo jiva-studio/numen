@@ -173,7 +173,6 @@ func IsKnownBudgetUnit(u BudgetUnit) bool {
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Min, Max float64 }
 
-// IsWithin reports whether a value is within the bounds.
 func (b Bounds) IsWithin(value float64) bool { return value >= b.Min && value <= b.Max }
 
 // What each setting of a preset may be. A day holds no more minutes than it
