@@ -40,7 +40,7 @@ function createThemeApplier(
   const files = new Map<string, string>()
   let revision = 0
 
-  const fileOf = async (name: string): Promise<string> => {
+  const readThemeFile = async (name: string): Promise<string> => {
     const cached = files.get(name)
     if (cached !== undefined) return cached
     const css = await core.readTheme(name)
@@ -53,7 +53,7 @@ function createThemeApplier(
     const mine = ++revision
     output.writeMode(half)
     try {
-      const css = await fileOf(theme)
+      const css = await readThemeFile(theme)
       if (mine === revision) output.writeTheme(css)
     } catch {
       if (mine === revision) write(words.themeUnreadable, 'error')

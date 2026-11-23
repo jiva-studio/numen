@@ -9,7 +9,7 @@
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { getFailureText, type AppearanceWriter, type Mode, type Sizes } from '../lib/appearance'
-import { HELD, onto, type ScaleKind } from '../lib/appearanceValues'
+import { HELD, replaceSize, type ScaleKind } from '../lib/appearanceValues'
 
 /** What previewing reads, and what it applies. */
 export interface PreviewDeps {
@@ -37,7 +37,7 @@ export function createAppearancePreview(on: PreviewDeps) {
   const shownHalf = computed<Mode>(() => half.value || mode.value)
   const sized = computed<Sizes>(() => {
     const previewed = pendingSize.value
-    return previewed ? onto(settings.value, previewed.which, previewed.size) : settings.value
+    return previewed ? replaceSize(settings.value, previewed.which, previewed.size) : settings.value
   })
 
   const apply = () => {
@@ -46,17 +46,17 @@ export function createAppearancePreview(on: PreviewDeps) {
     )
   }
 
-  const previewTheme = (name: string) => {
+  const showThemePreview = (name: string) => {
     theme.value = name
     apply()
   }
 
-  const previewMode = (value: Mode) => {
+  const showModePreview = (value: Mode) => {
     half.value = value
     apply()
   }
 
-  const previewSize = (which: ScaleKind, size: number) => {
+  const showSizePreview = (which: ScaleKind, size: number) => {
     clearTimeout(hold)
     hold = setTimeout(() => (pendingSize.value = { which, size }), HELD)
   }
@@ -79,7 +79,7 @@ export function createAppearancePreview(on: PreviewDeps) {
 
   return {
     display: { current, half: shownHalf, sized },
-    keyboard: { previewTheme, previewMode, previewSize },
+    keyboard: { showThemePreview, showModePreview, showSizePreview },
     clear,
     restore,
     close,

@@ -15,7 +15,7 @@ it('reports an error when applying a previewed theme rejects', async () => {
     },
   })
 
-  preview.keyboard.previewTheme('mine:sea')
+  preview.keyboard.showThemePreview('mine:sea')
   await Promise.resolve()
 
   expect(messages).toStrictEqual([['apply failed', 'error']])

@@ -26,9 +26,9 @@ function previewAppearance(
   key: string | undefined,
   value: JsonValue,
 ): void {
-  if (key === 'theme' && typeof value === 'string') keyboard.previewTheme(value)
-  else if (key === 'mode' && isMode(value)) keyboard.previewMode(value)
-  else if (isScale(key) && typeof value === 'number') keyboard.previewSize(key, value)
+  if (key === 'theme' && typeof value === 'string') keyboard.showThemePreview(value)
+  else if (key === 'mode' && isMode(value)) keyboard.showModePreview(value)
+  else if (isScale(key) && typeof value === 'number') keyboard.showSizePreview(key, value)
 }
 
 function createWindowPreview(appearance: WindowAppearance): SettingPreview {

@@ -163,7 +163,7 @@ describe('the page as it was served', () => {
     const one = await startWindow()
     const before = [...one.sheet.head.querySelectorAll('style')]
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
@@ -180,7 +180,7 @@ describe('the page as it was served', () => {
     // mode's element and a multiplier on the sizes' element.
     const one = await startWindow({}, ':root { color-scheme: dark; --numen-text-scale: 1.3 }')
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([
@@ -206,7 +206,7 @@ describe('the page as it was served', () => {
     })
     await bareAppearance.start()
 
-    bareAppearance.preview.keyboard.previewTheme('mine:sea')
+    bareAppearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
@@ -217,7 +217,7 @@ describe('the theme the keyboard is standing on', () => {
   it('is applied while active there', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
@@ -227,7 +227,7 @@ describe('the theme the keyboard is standing on', () => {
   it('gives way to the one the settings name once the keyboard remains nowhere', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
     one.appearance.preview.restore()
     await settle()
@@ -240,11 +240,11 @@ describe('the theme the keyboard is standing on', () => {
   it('is read once, however often the keyboard walks back over it', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
-    one.appearance.preview.keyboard.previewTheme('preset:dracula')
+    one.appearance.preview.keyboard.showThemePreview('preset:dracula')
     await settle()
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(one.requests).toStrictEqual(['mine:sea', 'preset:dracula'])
@@ -255,7 +255,7 @@ describe('the theme the keyboard is standing on', () => {
     const one = await startWindow()
     one.failsText('the file is gone')
 
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(one.messages.at(-1)).toStrictEqual({ text: words.themeUnreadable, kind: 'error' })
@@ -265,8 +265,8 @@ describe('the theme the keyboard is standing on', () => {
   it('is the last row the keyboard landed on, whatever order the files are returned in', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewTheme('preset:dracula')
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('preset:dracula')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
@@ -277,7 +277,7 @@ describe('which half of a pair the tokens are read as', () => {
   it('is written into the mode’s element, and leaves the theme where it was', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewMode('dark')
+    one.appearance.preview.keyboard.showModePreview('dark')
     await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
@@ -286,7 +286,7 @@ describe('which half of a pair the tokens are read as', () => {
   it('goes back to what the settings say once the keyboard remains nowhere', async () => {
     const one = await startWindow({ mode: 'light' })
 
-    one.appearance.preview.keyboard.previewMode('dark')
+    one.appearance.preview.keyboard.showModePreview('dark')
     await settle()
     one.appearance.preview.restore()
     await settle()
@@ -299,9 +299,9 @@ describe('the size the keyboard is standing on', () => {
   it('is not drawn while the keyboard is still walking over rows', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.5)
     await settle()
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.75)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.75)
     await settle()
 
     expect(sizes(one.sheet)).toBe(SIZED)
@@ -310,7 +310,7 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once the keyboard has stood on it', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.5)
     await wait()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
@@ -319,9 +319,9 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once, at the row the keyboard came to rest on', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.25)
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
-    one.appearance.preview.keyboard.previewSize('textScale', 1.25)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.25)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.5)
+    one.appearance.preview.keyboard.showSizePreview('textScale', 1.25)
     await wait()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.25; }')
@@ -329,7 +329,7 @@ describe('the size the keyboard is standing on', () => {
 
   it('gives way to the size the settings name once the keyboard remains nowhere', async () => {
     const one = await startWindow()
-    one.appearance.preview.keyboard.previewSize('textScale', 1.5)
+    one.appearance.preview.keyboard.showSizePreview('textScale', 1.5)
     await wait()
 
     one.appearance.preview.restore()
@@ -344,16 +344,16 @@ describe('the size the keyboard is standing on', () => {
       const one = window()
       await one.appearance.start()
 
-      one.appearance.preview.keyboard.previewSize('interfaceScale', 1.25)
+      one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.25)
       await vi.advanceTimersByTimeAsync(100)
-      one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
+      one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.5)
       await vi.advanceTimersByTimeAsync(60)
       expect(one.appearance.preview.display.sized.value.interfaceScale).toBe(1)
 
       await vi.advanceTimersByTimeAsync(100)
       expect(one.appearance.preview.display.sized.value.interfaceScale).toBe(1.5)
 
-      one.appearance.preview.keyboard.previewSize('textScale', 1.75)
+      one.appearance.preview.keyboard.showSizePreview('textScale', 1.75)
       one.appearance.preview.clear()
       await vi.advanceTimersByTimeAsync(200)
       expect(one.appearance.preview.display.sized.value.textScale).toBe(1)
@@ -366,7 +366,7 @@ describe('the size the keyboard is standing on', () => {
   it('keeps the theme and the mode unchanged', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 2)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 2)
     await wait()
 
     expect(getHeadStyles(one.sheet).slice(0, 2)).toStrictEqual([PAIR, SERVED])
@@ -376,7 +376,7 @@ describe('the size the keyboard is standing on', () => {
 describe('the person editing their own theme file', () => {
   it('is followed: the file is read again, and the window applies what the file now says', async () => {
     const one = await startWindow()
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     one.writeTheme('mine:sea', ':root { --numen-surface: #001 }')
@@ -397,7 +397,7 @@ describe('the person editing their own theme file', () => {
 
   it('leaves a theme the folder returned nothing about where it was', async () => {
     const one = await startWindow()
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     await one.changeThemes('mine:tide')
@@ -432,8 +432,8 @@ describe('the person editing their own theme file', () => {
 describe('the settings read again while a row is previewed', () => {
   it('shows what the settings now name, and forgets what the keyboard stood on', async () => {
     const one = await startWindow()
-    one.appearance.preview.keyboard.previewTheme('mine:sea')
-    one.appearance.preview.keyboard.previewSize('textScale', 1.5)
+    one.appearance.preview.keyboard.showThemePreview('mine:sea')
+    one.appearance.preview.keyboard.showSizePreview('textScale', 1.5)
     await wait()
     one.setAppearance({ applied: 'preset:dracula' })
 
@@ -543,7 +543,7 @@ describe('the window before it has received anything', () => {
   it('writes nothing over the page it was served, whatever the keyboard relies on', async () => {
     const { appearance, sheet, reads } = createManualThemes()
 
-    appearance.preview.keyboard.previewTheme('mine:sea')
+    appearance.preview.keyboard.showThemePreview('mine:sea')
     await settle()
 
     expect(reads).toStrictEqual([])
@@ -555,8 +555,8 @@ describe('files that are returned out of order', () => {
   it('leave the theme of the row the keyboard came to rest on', async () => {
     const { appearance, sheet, reads } = createManualThemes()
     await appearance.start()
-    appearance.preview.keyboard.previewTheme('preset:dracula')
-    appearance.preview.keyboard.previewTheme('mine:sea')
+    appearance.preview.keyboard.showThemePreview('preset:dracula')
+    appearance.preview.keyboard.showThemePreview('mine:sea')
 
     reads[1]?.give('SEA')
     await settle()
@@ -569,8 +569,8 @@ describe('files that are returned out of order', () => {
   it('say nothing of a file the keyboard has already left', async () => {
     const { appearance, messages, reads } = createManualThemes()
     await appearance.start()
-    appearance.preview.keyboard.previewTheme('preset:dracula')
-    appearance.preview.keyboard.previewTheme('mine:sea')
+    appearance.preview.keyboard.showThemePreview('preset:dracula')
+    appearance.preview.keyboard.showThemePreview('mine:sea')
 
     reads[1]?.give('SEA')
     await settle()
@@ -586,7 +586,7 @@ describe('the folder when it names a theme that is not applied', () => {
     const { appearance, reads, changeThemes } = createManualThemes()
     await appearance.start()
     await settle()
-    appearance.preview.keyboard.previewTheme('mine:sea')
+    appearance.preview.keyboard.showThemePreview('mine:sea')
 
     await changeThemes('mine:tide')
 
@@ -641,7 +641,7 @@ describe('a window that is closed', () => {
   it('draws no size the keyboard was still standing on', async () => {
     const one = await startWindow()
 
-    one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
+    one.appearance.preview.keyboard.showSizePreview('interfaceScale', 1.5)
     one.appearance.close()
     one.appearance.state.settings.value = { interfaceScale: 1.75, textScale: 1.5 }
     await wait()
