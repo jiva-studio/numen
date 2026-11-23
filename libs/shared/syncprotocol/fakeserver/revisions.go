@@ -249,7 +249,9 @@ func (s *Server) GetChanges(_ context.Context, req *connect.Request[syncv1.GetCh
 	if len(page) > 0 {
 		next = page[len(page)-1].GetSeq()
 	}
-	return connect.NewResponse(&syncv1.GetChangesResponse{Changes: page, NextSeq: next, HasMore: next < vault.seq, HeadSeq: vault.seq}), nil
+	return connect.NewResponse(&syncv1.GetChangesResponse{
+		Changes: page, NextSeq: next, HasMore: next < vault.seq, HeadSeq: vault.seq, RestoreEpochId: s.getEpochID(),
+	}), nil
 }
 
 func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRevision {

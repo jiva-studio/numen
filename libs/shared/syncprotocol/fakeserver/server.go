@@ -70,7 +70,10 @@ type challenge struct {
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
 // the id and the body of every stored blob, raw). The subscription service has the pay page at /pay/ and the admin
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
-// may write when its subscription allows it, and every account does unless the config sets NeedsSubscription.
+// may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The restore
+// service has the admin paths /admin/backup (POST keeps the state), /admin/restore (POST puts the kept state back and
+// announces nothing), /admin/announce (POST issues a restore epoch) and /admin/retention (POST deletes the vaults of every
+// account).
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 
@@ -93,6 +96,7 @@ type Server struct {
 	calls         map[string]int
 	subscriptions map[string]time.Time
 	checkouts     map[string]string
+	restore       restoreState
 }
 
 // New returns the server for the config.
@@ -136,6 +140,10 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	mux.HandleFunc("/admin/backup", s.serveBackup)
+	mux.HandleFunc("/admin/restore", s.serveRestore)
+	mux.HandleFunc("/admin/announce", s.serveAnnounce)
+	mux.HandleFunc("/admin/retention", s.serveRetention)
 	return mux
 }
 

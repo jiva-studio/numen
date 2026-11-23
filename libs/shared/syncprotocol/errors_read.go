@@ -30,12 +30,15 @@ func ReadError(err error) error {
 }
 
 // ReadCallError is ReadError for the calls of a session: it also maps the refusals of the server to ErrWriteNotAllowed,
-// ErrNoVault, ErrVaultExists, QuotaExceededError and BlobNotReadyError, keeping the Connect error where there is one.
+// ErrNoVault, ErrVaultExists, QuotaExceededError, BlobNotReadyError and BlobMissingError, keeping the Connect error where there is one.
 func ReadCallError(err error) error {
 	err = ReadError(err)
 	var failure *connect.Error
 	if !errors.As(err, &failure) {
 		return err
+	}
+	if detailed := readDetail(failure); detailed != nil {
+		return detailed
 	}
 	switch failure.Code() {
 	case connect.CodePermissionDenied:
@@ -45,6 +48,11 @@ func ReadCallError(err error) error {
 	case connect.CodeAlreadyExists:
 		return refusalError{sentinel: ErrVaultExists, cause: failure}
 	}
+	return err
+}
+
+// readDetail maps the typed detail of a refusal to its error and returns nil when no detail is known.
+func readDetail(failure *connect.Error) error {
 	for _, detail := range failure.Details() {
 		value, valueErr := detail.Value()
 		if valueErr != nil {
@@ -55,9 +63,11 @@ func ReadCallError(err error) error {
 			return QuotaExceededError{Used: refusal.GetUsedBytes(), Limit: refusal.GetLimitBytes()}
 		case *syncv1.BlobNotReady:
 			return BlobNotReadyError{Index: refusal.GetRevisionIndex()}
+		case *syncv1.BlobMissing:
+			return BlobMissingError{IDs: refusal.GetBlobIds()}
 		}
 	}
-	return err
+	return nil
 }
 
 // ReadSubscriptionError is ReadError for the calls of the subscription service: it also maps an account that has a

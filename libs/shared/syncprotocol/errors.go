@@ -66,4 +66,4 @@ type BlobMissingError struct {
 
 func (e BlobMissingError) Error() string { return ErrBlobMissing.Error() }
 
-func (e BlobMissingError) Is(target error) bool { return false }
+func (e BlobMissingError) Is(target error) bool { return target == ErrBlobMissing }
