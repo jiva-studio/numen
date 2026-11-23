@@ -28,10 +28,7 @@ type Addresses interface {
 	GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string
 }
 
-var (
-	errNoVault  = errors.New("the window has no vault")
-	errComingUp = errors.New("the vault is still coming up")
-)
+var errNoVault = errors.New("the window has no vault")
 
 // Handler serves MediaService.
 type Handler struct {

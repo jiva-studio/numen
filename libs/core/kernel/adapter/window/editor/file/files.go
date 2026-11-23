@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-var errComingUp = errors.New("the vault is still coming up")
-
 // errTooManyPaths is a filter naming more paths than are answered at once.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
