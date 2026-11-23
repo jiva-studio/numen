@@ -28,8 +28,12 @@ const ownFacts = computed<Fact[]>(() =>
       ]
     : [],
 )
-const isWaiting = computed(() => ['waiting_for_peer', 'waiting_for_accept'].includes(props.link.phase))
-const isShowingQr = computed(() => props.link.phase === 'waiting_for_peer' && props.link.mode === 'show')
+const isWaiting = computed(() =>
+  ['waiting_for_peer', 'waiting_for_accept'].includes(props.link.phase),
+)
+const isShowingQr = computed(
+  () => props.link.phase === 'waiting_for_peer' && props.link.mode === 'show',
+)
 const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFingerprint : ''))
 </script>
 

@@ -104,13 +104,20 @@ export interface DeviceInfo {
   readonly isRevoked: boolean
 }
 
-type Rpc<Name extends keyof Client<typeof IdentityService>> = Pick<Client<typeof IdentityService>, Name>
+type Rpc<Name extends keyof Client<typeof IdentityService>> = Pick<
+  Client<typeof IdentityService>,
+  Name
+>
 
 /** The calls of IdentityService that keep the identity of this device. */
-type AccountRpc = Rpc<'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'startRestore' | 'deleteIdentity'>
+type AccountRpc = Rpc<
+  'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'startRestore' | 'deleteIdentity'
+>
 
 /** The calls of IdentityService that link a device to an account. */
-type LinkRpc = Rpc<'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'>
+type LinkRpc = Rpc<
+  'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'
+>
 
 /** The calls of IdentityService that list the devices of the account and revoke one. */
 type DevicesRpc = Rpc<'listDevices' | 'revokeDevice'>
@@ -182,7 +189,8 @@ const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = 
   [ProtoIdentityErrorCode.CODE_INVALID]: 'code_invalid',
 }
 
-const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined => ERROR_CODES[code]
+const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined =>
+  ERROR_CODES[code]
 
 const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
   [ProtoLinkPhase.WAITING_FOR_CHANNEL]: 'waiting_for_channel',

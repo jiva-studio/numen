@@ -7,7 +7,9 @@ import QrCode from './QrCode.vue'
 const TEXT = 'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBB&s=CCCC'
 const SCALE = 6
 
-const readPixels = (wrapper: ReturnType<typeof mount>): { data: Uint8ClampedArray; side: number } => {
+const readPixels = (
+  wrapper: ReturnType<typeof mount>,
+): { data: Uint8ClampedArray; side: number } => {
   const box = wrapper.get('svg').attributes('viewBox')?.split(' ') ?? []
   const span = Number(box[2])
   const side = span * SCALE
@@ -36,8 +38,12 @@ describe('a QR code', () => {
   })
 
   it('draws another text as another picture', () => {
-    const first = mount(QrCode, { props: { text: TEXT } }).get('path').attributes('d')
-    const second = mount(QrCode, { props: { text: `${TEXT}x` } }).get('path').attributes('d')
+    const first = mount(QrCode, { props: { text: TEXT } })
+      .get('path')
+      .attributes('d')
+    const second = mount(QrCode, { props: { text: `${TEXT}x` } })
+      .get('path')
+      .attributes('d')
     expect(first).not.toBe(second)
   })
 

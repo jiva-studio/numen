@@ -6,7 +6,10 @@ import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo, LinkMode, LinkRole } from '../lib/types'
 
-type AccountClient = Pick<IdentityClient, 'get' | 'generateWords' | 'create' | 'startRestore' | 'delete'>
+type AccountClient = Pick<
+  IdentityClient,
+  'get' | 'generateWords' | 'create' | 'startRestore' | 'delete'
+>
 type LinkClient = Pick<
   IdentityClient,
   'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'
@@ -39,7 +42,8 @@ export const createAccountApi = (identity: AccountClient) => ({
 /** The calls of a link of this device to an account. */
 export const createLinkApi = (identity: LinkClient) => ({
   /** Starts a link of this device: the host that has the account, or the joiner that has none. */
-  startLink: (role: LinkRole, mode: LinkMode, scannedText: string) => identity.startLink(role, mode, scannedText),
+  startLink: (role: LinkRole, mode: LinkMode, scannedText: string) =>
+    identity.startLink(role, mode, scannedText),
 
   /** The link in progress. */
   getLink: () => identity.getLink(),

@@ -27,7 +27,9 @@ describe('a QR scanner', () => {
   })
 
   it('waits while the camera has not answered', () => {
-    const scanner = mount(QrScanner, { props: { camera: () => new Promise<MediaStream>(() => undefined) } })
+    const scanner = mount(QrScanner, {
+      props: { camera: () => new Promise<MediaStream>(() => undefined) },
+    })
     expect(scanner.text()).toContain('Waiting for the camera.')
   })
 

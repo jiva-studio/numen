@@ -24,7 +24,10 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const isScanning = ref(false)
-const { link, problem, isBusy, isChoosing, start, answers } = useLinkSession(() => props.calls, props.role)
+const { link, problem, isBusy, isChoosing, start, answers } = useLinkSession(
+  () => props.calls,
+  props.role,
+)
 
 /* ---------------------------------- Hooks --------------------------------- */
 onMounted(() => dialog.value?.focus())

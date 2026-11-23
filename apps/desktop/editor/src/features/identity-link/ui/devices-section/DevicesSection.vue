@@ -35,7 +35,12 @@ function onClose(): void {
   <section class="devices" :aria-label="words.devices">
     <template v-if="hasIdentity">
       <ul class="devices__list" :aria-label="words.devices">
-        <DeviceRow v-for="device in calls.list.value" :key="device.fingerprint" :device="device" @revoke="asked = $event" />
+        <DeviceRow
+          v-for="device in calls.list.value"
+          :key="device.fingerprint"
+          :device="device"
+          @revoke="asked = $event"
+        />
       </ul>
       <p v-if="problem !== ''" role="alert">{{ problem }}</p>
     </template>
@@ -49,7 +54,12 @@ function onClose(): void {
       </Button>
     </div>
 
-    <LinkDialog v-if="dialogRole !== undefined" :role="dialogRole" :calls="calls.link" @close="onClose" />
+    <LinkDialog
+      v-if="dialogRole !== undefined"
+      :role="dialogRole"
+      :calls="calls.link"
+      @close="onClose"
+    />
     <ConfirmDialog
       v-if="asked !== undefined"
       tone="danger"

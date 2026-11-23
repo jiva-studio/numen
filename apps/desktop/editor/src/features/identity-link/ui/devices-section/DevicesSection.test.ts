@@ -4,11 +4,19 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { DeviceInfo, IdentityClient } from '@numen/core-client'
 import { createIdentityStore } from '@/entities/identity'
 import { click, dispose, findButton, findButtons, findText } from '@/testing/dom'
-import { createDeviceInfo, createIdentityClient, wrapIdentityClient } from '@/testing/identityClient'
+import {
+  createDeviceInfo,
+  createIdentityClient,
+  wrapIdentityClient,
+} from '@/testing/identityClient'
 import DevicesSection from './DevicesSection.vue'
 
 const THIS = createDeviceInfo()
-const OTHER = createDeviceInfo({ name: 'Phone', fingerprint: '1111 2222 3333 4444 5555 6666 7777 8888', isThis: false })
+const OTHER = createDeviceInfo({
+  name: 'Phone',
+  fingerprint: '1111 2222 3333 4444 5555 6666 7777 8888',
+  isThis: false,
+})
 
 let wrapper: VueWrapper | undefined
 afterEach(() => {
@@ -16,10 +24,20 @@ afterEach(() => {
   wrapper = undefined
 })
 
-const mountSection = async (hasIdentity: boolean, devices: readonly DeviceInfo[], overrides: Partial<IdentityClient> = {}) => {
-  const client = createIdentityClient({ listDevices: () => Promise.resolve({ ok: true, value: devices }), ...overrides })
+const mountSection = async (
+  hasIdentity: boolean,
+  devices: readonly DeviceInfo[],
+  overrides: Partial<IdentityClient> = {},
+) => {
+  const client = createIdentityClient({
+    listDevices: () => Promise.resolve({ ok: true, value: devices }),
+    ...overrides,
+  })
   const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
-  wrapper = mount(DevicesSection, { props: { calls: store.devices, hasIdentity }, attachTo: document.body })
+  wrapper = mount(DevicesSection, {
+    props: { calls: store.devices, hasIdentity },
+    attachTo: document.body,
+  })
   await flushPromises()
   return wrapper
 }
@@ -51,7 +69,11 @@ describe('the devices section', () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection(true, [THIS, OTHER], { revokeDevice })
     await click(findButtons(/^Revoke$/)[0] as HTMLElement)
-    expect(findText('Phone will lose access. New notes will not be readable on it. Its files stay on it.')).not.toBeNull()
+    expect(
+      findText(
+        'Phone will lose access. New notes will not be readable on it. Its files stay on it.',
+      ),
+    ).not.toBeNull()
     expect(revokeDevice).not.toHaveBeenCalled()
     await click(findButtons(/^Revoke$/)[1] as HTMLElement)
     expect(revokeDevice).toHaveBeenCalledWith(OTHER.fingerprint)
@@ -66,11 +88,17 @@ describe('the devices section', () => {
   })
 
   it('shows the refusal of a revoke', async () => {
-    const revokeDevice = () => Promise.resolve({ ok: false as const, error: { errorCode: 'revoke_raced' as const, detail: 'x' } })
+    const revokeDevice = () =>
+      Promise.resolve({
+        ok: false as const,
+        error: { errorCode: 'revoke_raced' as const, detail: 'x' },
+      })
     const section = await mountSection(true, [THIS, OTHER], { revokeDevice })
     await click(findButtons(/^Revoke$/)[0] as HTMLElement)
     await click(findButtons(/^Revoke$/)[1] as HTMLElement)
-    expect(section.get('[role="alert"]').text()).toBe('A device was added while you revoked. Check the list.')
+    expect(section.get('[role="alert"]').text()).toBe(
+      'A device was added while you revoked. Check the list.',
+    )
   })
 
   it('offers to link a new device where the device has the account, and not to join', async () => {

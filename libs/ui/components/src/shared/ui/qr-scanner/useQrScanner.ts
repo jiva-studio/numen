@@ -17,7 +17,11 @@ export interface QrScannerEvents {
  * The camera of one scanner and the frames read from it: what it is waiting for, the problem it shows, and a way to
  * ask the camera again after a failure. The stream stops when the scanner unmounts.
  */
-export function useQrScanner(video: Readonly<ShallowRef<HTMLVideoElement | null>>, source: QrScannerSource, emit: QrScannerEvents) {
+export function useQrScanner(
+  video: Readonly<ShallowRef<HTMLVideoElement | null>>,
+  source: QrScannerSource,
+  emit: QrScannerEvents,
+) {
   const status = ref<'waiting' | 'scanning' | 'failed'>('waiting')
   const problem = ref('')
   let stream: MediaStream | undefined

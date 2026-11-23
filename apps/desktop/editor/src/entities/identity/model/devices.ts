@@ -25,7 +25,9 @@ export function createDeviceStore(api: DevicesCalls, notify: MessageWriter) {
   }
 
   /** Runs a call that answers with a refusal or a value and returns the refusal as text. */
-  const ask = async <T>(call: () => Promise<Result<T, IdentityFailure>>): Promise<Result<T, string>> => {
+  const ask = async <T>(
+    call: () => Promise<Result<T, IdentityFailure>>,
+  ): Promise<Result<T, string>> => {
     try {
       const answer = await call()
       return answer.ok ? answer : { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
@@ -52,4 +54,3 @@ export function createDeviceStore(api: DevicesCalls, notify: MessageWriter) {
 
   return { list, load, revoke, link }
 }
-

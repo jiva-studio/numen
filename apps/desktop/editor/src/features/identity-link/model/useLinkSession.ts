@@ -67,5 +67,13 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
     confirmJoin: (isApproved: boolean) => ask(() => getCalls().confirmJoin(isApproved)),
   }
 
-  return { link, problem, isBusy, isChoosing: computed(() => link.value === undefined), start, cancel, answers }
+  return {
+    link,
+    problem,
+    isBusy,
+    isChoosing: computed(() => link.value === undefined),
+    start,
+    cancel,
+    answers,
+  }
 }

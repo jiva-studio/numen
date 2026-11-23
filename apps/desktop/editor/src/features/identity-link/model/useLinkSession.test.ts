@@ -63,7 +63,11 @@ describe('useLinkSession', () => {
 
   it('cancels an active link when the dialog closes', async () => {
     const cancelLink = vi.fn(() => ok(undefined))
-    const { session, wrapper } = mountSession({ startLink: () => ok(createLinkInfo()), getLink: () => ok(createLinkInfo()), cancelLink })
+    const { session, wrapper } = mountSession({
+      startLink: () => ok(createLinkInfo()),
+      getLink: () => ok(createLinkInfo()),
+      cancelLink,
+    })
     await session.start('show')
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(0)
@@ -73,7 +77,11 @@ describe('useLinkSession', () => {
   it('passes the answer of the person on and reads the link again', async () => {
     const decideLink = vi.fn(() => ok(undefined))
     const getLink = vi.fn(() => ok(createLinkInfo({ phase: 'confirm_peer' })))
-    const { session, answers } = mountSession({ startLink: () => ok(createLinkInfo()), getLink, decideLink })
+    const { session, answers } = mountSession({
+      startLink: () => ok(createLinkInfo()),
+      getLink,
+      decideLink,
+    })
     await session.start('show')
     await answers.decide(true)
     expect(decideLink).toHaveBeenCalledWith(true)

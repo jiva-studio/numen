@@ -48,7 +48,8 @@ export const Scanning: Story = {
   },
 }
 
-const LINK_TEXT = 'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
+const LINK_TEXT =
+  'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
 const CELL = 8
 const QUIET = 4
 const REFRESH_MS = 100
@@ -76,7 +77,9 @@ const filmCode = (text: string) => (): Promise<MediaStream> => {
   let isEven = false
   const stream = canvas.captureStream(FRAME_RATE)
   const refresh = setInterval(() => paint((isEven = !isEven)), REFRESH_MS)
-  stream.getTracks().forEach((track) => track.addEventListener('ended', () => clearInterval(refresh)))
+  stream
+    .getTracks()
+    .forEach((track) => track.addEventListener('ended', () => clearInterval(refresh)))
   return Promise.resolve(stream)
 }
 

@@ -11,7 +11,8 @@ export const openMachineCamera: ScannerCamera = () =>
   nav.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
 
 /** Whether this machine can open a camera at all. */
-export const hasCamera = (): boolean => 'mediaDevices' in nav && typeof nav.mediaDevices.getUserMedia === 'function'
+export const hasCamera = (): boolean =>
+  'mediaDevices' in nav && typeof nav.mediaDevices.getUserMedia === 'function'
 
 /** What a person reads when the camera does not open. */
 export const describeCameraFailure = (cause: unknown): string => {

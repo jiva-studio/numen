@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 /**
  * Reads QR codes from the camera at eight frames a second and reports the text of the first valid one it finds.
@@ -10,10 +9,13 @@ import { Button } from '../button'
 import { useQrScanner } from './useQrScanner'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = withDefaults(defineProps<{ camera?: ScannerCamera; accepts?: (text: string) => boolean }>(), {
-  camera: openMachineCamera,
-  accepts: () => true,
-})
+const props = withDefaults(
+  defineProps<{ camera?: ScannerCamera; accepts?: (text: string) => boolean }>(),
+  {
+    camera: openMachineCamera,
+    accepts: () => true,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'scanned', text: string): void
@@ -30,7 +32,9 @@ const { status, problem, retry } = useQrScanner(video, props, emit)
     <video ref="video" class="qr-scanner__video" muted playsinline />
     <p v-if="status === 'waiting'" class="qr-scanner__note">Waiting for the camera.</p>
     <p v-if="problem !== ''" role="alert" class="qr-scanner__note">{{ problem }}</p>
-    <Button v-if="status === 'failed'" variant="outline" size="small" @click="retry">Try again</Button>
+    <Button v-if="status === 'failed'" variant="outline" size="small" @click="retry">
+      Try again
+    </Button>
   </div>
 </template>
 

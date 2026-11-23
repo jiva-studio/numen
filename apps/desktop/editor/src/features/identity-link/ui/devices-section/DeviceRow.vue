@@ -16,7 +16,12 @@ const emit = defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
     <span class="device-row__fingerprint">{{ device.fingerprint }}</span>
     <span v-if="device.isThis" class="device-row__mark">{{ words.deviceThis }}</span>
     <span v-if="device.isRevoked" class="device-row__mark">{{ words.deviceRevoked }}</span>
-    <Button v-if="!device.isThis && !device.isRevoked" type="button" variant="outline" @click="emit('revoke', device)">
+    <Button
+      v-if="!device.isThis && !device.isRevoked"
+      type="button"
+      variant="outline"
+      @click="emit('revoke', device)"
+    >
       {{ words.deviceRevoke }}
     </Button>
   </li>

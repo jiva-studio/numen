@@ -184,7 +184,13 @@ describe('buildIdentityClient link', () => {
     })
     expect(answer).toMatchObject({
       ok: true,
-      value: { phase: 'confirm_peer', mode: 'scan', role: 'host', code: '123456', reason: undefined },
+      value: {
+        phase: 'confirm_peer',
+        mode: 'scan',
+        role: 'host',
+        code: '123456',
+        reason: undefined,
+      },
     })
   })
 
@@ -203,11 +209,15 @@ describe('buildIdentityClient link', () => {
 
   it('reads the refusal of a call that needs a link', async () => {
     const client = createClient({
-      getLink: () => create(GetLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
+      getLink: () =>
+        create(GetLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
       decideLink: () =>
         create(DecideLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
       enterLinkCode: () =>
-        create(EnterLinkCodeResponseSchema, { error: IdentityErrorCode.CODE_INVALID, detail: 'six' }),
+        create(EnterLinkCodeResponseSchema, {
+          error: IdentityErrorCode.CODE_INVALID,
+          detail: 'six',
+        }),
       confirmJoin: () =>
         create(ConfirmJoinResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
       cancelLink: () =>

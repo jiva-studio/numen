@@ -15,10 +15,21 @@ afterEach(() => {
 
 const ok = <T>(value: T) => Promise.resolve({ ok: true as const, value })
 
-const mountDialog = async (role: LinkRole, link: LinkInfo, overrides: Partial<IdentityClient> = {}) => {
-  const client = createIdentityClient({ startLink: () => ok(link), getLink: () => ok(link), ...overrides })
+const mountDialog = async (
+  role: LinkRole,
+  link: LinkInfo,
+  overrides: Partial<IdentityClient> = {},
+) => {
+  const client = createIdentityClient({
+    startLink: () => ok(link),
+    getLink: () => ok(link),
+    ...overrides,
+  })
   const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
-  wrapper = mount(LinkDialog, { props: { role, calls: store.devices.link }, attachTo: document.body })
+  wrapper = mount(LinkDialog, {
+    props: { role, calls: store.devices.link },
+    attachTo: document.body,
+  })
   await flushPromises()
   return wrapper
 }
@@ -57,7 +68,11 @@ describe('the link dialog', () => {
   })
 
   it('shows a refused text and stays on the form', async () => {
-    const startLink = () => Promise.resolve({ ok: false as const, error: { errorCode: 'link_text_invalid' as const, detail: 'x' } })
+    const startLink = () =>
+      Promise.resolve({
+        ok: false as const,
+        error: { errorCode: 'link_text_invalid' as const, detail: 'x' },
+      })
     const dialog = await mountDialog('host', createLinkInfo(), { startLink })
     await click(findButton(/^Scan a QR code$/))
     await enterText(textInputs()[0] as HTMLInputElement, 'nonsense')
@@ -66,7 +81,12 @@ describe('the link dialog', () => {
   })
 
   it('shows the new device and passes the approval on', async () => {
-    const link = createLinkInfo({ phase: 'confirm_peer', peerName: 'Phone', peerFingerprint: '1111 2222', code: '482913' })
+    const link = createLinkInfo({
+      phase: 'confirm_peer',
+      peerName: 'Phone',
+      peerFingerprint: '1111 2222',
+      code: '482913',
+    })
     const decideLink = vi.fn(() => ok(undefined))
     const dialog = await mountDialog('host', link, { decideLink })
     await click(findButton(/^Show a QR code$/))
@@ -78,7 +98,11 @@ describe('the link dialog', () => {
   })
 
   it('passes the decline on', async () => {
-    const link = createLinkInfo({ phase: 'confirm_peer', peerName: 'Phone', peerFingerprint: '1111 2222' })
+    const link = createLinkInfo({
+      phase: 'confirm_peer',
+      peerName: 'Phone',
+      peerFingerprint: '1111 2222',
+    })
     const decideLink = vi.fn(() => ok(undefined))
     await mountDialog('host', link, { decideLink })
     await click(findButton(/^Show a QR code$/))
@@ -87,7 +111,12 @@ describe('the link dialog', () => {
   })
 
   it('waits for the code once the new device was approved', async () => {
-    const link = createLinkInfo({ phase: 'confirm_peer', isApproved: true, peerName: 'Phone', peerFingerprint: '1111 2222' })
+    const link = createLinkInfo({
+      phase: 'confirm_peer',
+      isApproved: true,
+      peerName: 'Phone',
+      peerFingerprint: '1111 2222',
+    })
     const dialog = await mountDialog('host', link)
     await click(findButton(/^Show a QR code$/))
     expect(dialog.text()).toContain('Waiting for the code on the new device.')
@@ -106,7 +135,11 @@ describe('the link dialog', () => {
   })
 
   it('asks the new device to join the account and passes the answer on', async () => {
-    const link = createLinkInfo({ phase: 'confirm_account', role: 'joiner', accountFingerprint: '3F2A 91C0' })
+    const link = createLinkInfo({
+      phase: 'confirm_account',
+      role: 'joiner',
+      accountFingerprint: '3F2A 91C0',
+    })
     const confirmJoin = vi.fn(() => ok(undefined))
     const dialog = await mountDialog('joiner', link, { confirmJoin })
     await click(findButton(/^Show a QR code$/))
