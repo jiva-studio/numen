@@ -83,7 +83,7 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (resto
 		return restore.PullResult{}, fmt.Errorf("open the vault key: %w", err)
 	}
 	r := &run{
-		deps: u.deps, in: in, files: u.deps.Host.Files(in.VaultID), moves: u.deps.Host.Transfers(in.VaultID), remote: remote,
+		deps: u.deps, in: in, files: u.deps.Host.GetFiles(in.VaultID), moves: u.deps.Host.GetTransfers(in.VaultID), remote: remote,
 		key: [32]byte(key), link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, IsReset: false},
 		holdSeq: 0, isHeld: false, next: 0,

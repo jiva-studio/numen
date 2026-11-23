@@ -39,7 +39,7 @@ func NewSealer(revisionKey [32]byte, fileID [16]byte, salt [16]byte, plainSize i
 	if plainSize > maxMultipartSize {
 		return nil, ErrTooLarge
 	}
-	padded := paddedLength(plainSize)
+	padded := computePaddedLength64(plainSize)
 	s := &Sealer{plainSize: plainSize, padded: padded}
 	if s.StoredSize() > maxMultipartSize {
 		return nil, ErrTooLarge

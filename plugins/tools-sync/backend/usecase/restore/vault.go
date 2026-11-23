@@ -84,7 +84,7 @@ func (r *recovery) readHashes(ctx context.Context, found heads) (map[string]stri
 		}
 	}
 	hashes := make(map[string]string, len(paths))
-	files := r.deps.Host.Files(r.id)
+	files := r.deps.Host.GetFiles(r.id)
 	for path := range paths {
 		stat, err := files.StatFile(ctx, path)
 		if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
@@ -171,7 +171,7 @@ func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Actio
 }
 
 func (r *recovery) readFile(ctx context.Context, action domainrestore.Action) (transfer.File, bool, error) {
-	files := r.deps.Host.Files(r.id)
+	files := r.deps.Host.GetFiles(r.id)
 	stat, err := files.StatFile(ctx, action.Path)
 	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
 		return transfer.File{}, false, nil

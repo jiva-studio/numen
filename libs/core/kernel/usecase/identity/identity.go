@@ -70,7 +70,7 @@ func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
 	return record, nil
 }
 
-func identityOf(record identitylib.Record) (identitydomain.Identity, error) {
+func toIdentity(record identitylib.Record) (identitydomain.Identity, error) {
 	own := record.Device.Public()
 	for _, device := range record.Chain.ListDevices() {
 		if string(device.Public.Sign) == string(own.Sign) {
@@ -85,7 +85,7 @@ func identityOf(record identitylib.Record) (identitydomain.Identity, error) {
 	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
 }
 
-func entryName(name string) string {
+func normalizeEntryName(name string) string {
 	name = strings.ToValidUTF8(name, "")
 	name = strings.TrimSpace(strings.Map(func(r rune) rune {
 		if unicode.IsControl(r) {

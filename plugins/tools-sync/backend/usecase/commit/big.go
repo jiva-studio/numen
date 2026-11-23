@@ -43,7 +43,7 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	}
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobId: sent.BlobID, BlobHash: sent.BlobHash[:], BlobSize: sent.BlobSize,
-		EncMeta: sealed, PathHash: note.PathHash(r.vault.Key, path), AuthorDeviceSignKey: r.author,
+		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author,
 	}
 	if revision.Signature, err = r.deps.Identity.SignAsDevice(ctx, syncprotocol.GetRevisionMessage(revision)); err != nil {
 		return transfer.Outcome{}, err

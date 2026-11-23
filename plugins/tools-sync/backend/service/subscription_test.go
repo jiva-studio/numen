@@ -68,7 +68,7 @@ func rfc3339(at time.Time) string { return at.UTC().Format(time.RFC3339) }
 
 func TestGetSubscription_ReportsNoPhaseAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
 	w := newBillingWorld(t)
-	w.c.Fake.NoIdentity()
+	w.c.Fake.RemoveIdentity()
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
@@ -193,7 +193,7 @@ func TestCreateCheckout_ReturnsAlreadySubscribedWhileTheSubscriptionIsActive(t *
 
 func TestCreateCheckout_ReturnsNoIdentityAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
 	w := newBillingWorld(t)
-	w.c.Fake.NoIdentity()
+	w.c.Fake.RemoveIdentity()
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	_, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{})

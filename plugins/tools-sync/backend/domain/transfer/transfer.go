@@ -104,8 +104,8 @@ type Scan struct {
 
 // PullInput is the vault and the check of the author of a revision.
 type PullInput struct {
-	VaultID domain.VaultID
-	Authors func(deviceSignKey []byte) bool
+	VaultID  domain.VaultID
+	IsAuthor func(deviceSignKey []byte) bool
 }
 
 // NoRecord returns the record of a file that has none.

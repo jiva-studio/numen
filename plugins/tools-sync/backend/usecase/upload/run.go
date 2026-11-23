@@ -24,7 +24,7 @@ type run struct {
 }
 
 func (r *run) execute(ctx context.Context) (transfer.UploadResult, error) {
-	source := r.deps.Host.Transfers(r.in.Vault)
+	source := r.deps.Host.GetTransfers(r.in.Vault)
 	r.plain = &plainReader{
 		read: func(start, length int64) (host.ByteRange, error) {
 			return source.ReadBytes(ctx, r.in.Path, start, length)

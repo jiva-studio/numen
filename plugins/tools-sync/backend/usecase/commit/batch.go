@@ -82,7 +82,7 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 	hash := sha256.Sum256(blob)
 	revision := &syncv1.Revision{
 		VaultId: r.vault.ID, FileId: fileID, ParentRev: file.ParentRev, BlobHash: hash[:], BlobSize: uint64(len(blob)),
-		EncMeta: sealed, PathHash: note.PathHash(r.vault.Key, path), AuthorDeviceSignKey: r.author,
+		EncMeta: sealed, PathHash: note.HashPath(r.vault.Key, path), AuthorDeviceSignKey: r.author,
 	}
 	sealedKey, err := r.deps.Crypto.SealData(ctx, note.GetRecordKeyContext(r.vault.ID, fileID), key)
 	if err != nil {

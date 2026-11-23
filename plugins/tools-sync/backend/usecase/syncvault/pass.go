@@ -58,7 +58,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted})
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted})
 	if err != nil {
 		return err
 	}
@@ -322,14 +322,14 @@ func setRecord(records []transfer.FileRecord, record transfer.FileRecord) []tran
 
 func (p *pass) readBody(ctx context.Context, file *transfer.File, size int64) (bool, error) {
 	if size > note.SmallFileLimit {
-		stat, err := p.use.deps.Host.Files(p.id).StatFile(ctx, file.Path)
+		stat, err := p.use.deps.Host.GetFiles(p.id).StatFile(ctx, file.Path)
 		if err != nil {
 			return false, ignoreMissing(err)
 		}
 		file.Stat = &stat
 		return true, nil
 	}
-	part, err := p.use.deps.Host.Transfers(p.id).ReadBytes(ctx, file.Path, 0, note.SmallFileLimit)
+	part, err := p.use.deps.Host.GetTransfers(p.id).ReadBytes(ctx, file.Path, 0, note.SmallFileLimit)
 	if err != nil {
 		return false, ignoreMissing(err)
 	}

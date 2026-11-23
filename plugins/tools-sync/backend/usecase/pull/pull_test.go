@@ -61,7 +61,7 @@ func trustAll([]byte) bool { return true }
 
 func (p *pair) pull(t *testing.T, authors func([]byte) bool) restore.PullResult {
 	t.Helper()
-	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors})
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: authors})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,9 +192,9 @@ func TestPullChanges_SkipsARevisionOfAnAuthorItDoesNotTrust(t *testing.T) {
 func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 	p := newPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
-	p.server.CorruptBlobs(true)
+	p.server.SetBlobCorruption(true)
 
-	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
 
 	if !errors.Is(err, pull.ErrCorruptBlob) {
 		t.Errorf("error = %v, want ErrCorruptBlob", err)
