@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -62,7 +62,7 @@ func (s *sometimes) Open(v domain.Vault) (vaultport.VaultReader, error) {
 type followed struct {
 	vault domain.Vault
 	index *scanIndex
-	moved <-chan vaults.VaultChanges
+	moved <-chan indexing.VaultChanges
 }
 
 func newFollowedVault(t *testing.T, notes map[string]string, watcher *manualWatcher) followed {
@@ -73,15 +73,15 @@ func newFollowedVault(t *testing.T, notes map[string]string, watcher *manualWatc
 		t.Fatal(err)
 	}
 
-	moved := make(chan vaults.VaultChanges, 8)
-	follow := vaults.NewFollow(
+	moved := make(chan indexing.VaultChanges, 8)
+	follow := indexing.NewFollow(
 		watcher,
-		vaults.NewRefreshFrom(vaults.RefreshDeps{
+		indexing.NewRefreshFrom(indexing.RefreshDeps{
 			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
 			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
-			Ledger: vaults.NewLedger(),
+			Ledger: indexing.NewLedger(),
 		}),
-		scanner(vaultreader.Readers{}, db), func(m vaults.VaultChanges) { moved <- m }, nil,
+		scanner(vaultreader.Readers{}, db), func(m indexing.VaultChanges) { moved <- m }, nil,
 	)
 
 	started, err := follow.Begin(t.Context(), v)
@@ -207,12 +207,12 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 
 	reported := make(chan error, 8)
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
-	follow := vaults.NewFollow(
+	follow := indexing.NewFollow(
 		watcher,
-		vaults.NewRefreshFrom(vaults.RefreshDeps{
+		indexing.NewRefreshFrom(indexing.RefreshDeps{
 			Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
-			Ledger: vaults.NewLedger(),
+			Ledger: indexing.NewLedger(),
 		}),
 		scanner(vaultreader.Readers{}, db), nil, func(err error) { reported <- err },
 	)
@@ -242,7 +242,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	t.Parallel()
 	v := vaulttest.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	// No refresh or scan is available: a watch that never starts uses neither.
-	_, err := vaults.NewFollow(failingWatcher{}, vaults.Refresh{}, vaults.Scan{}, nil, nil).Begin(t.Context(), v)
+	_, err := indexing.NewFollow(failingWatcher{}, indexing.Refresh{}, indexing.Scan{}, nil, nil).Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}
@@ -252,14 +252,14 @@ func TestWhatAVaultChangedAsksForAReadWhenAnythingMayHaveChanged(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name    string
-		changes vaults.VaultChanges
+		changes indexing.VaultChanges
 		want    bool
 	}{
-		{"nothing", vaults.VaultChanges{}, false},
-		{"notes only", vaults.VaultChanges{Paths: []string{"Note.md"}}, false},
-		{"one asset", vaults.VaultChanges{Assets: []string{"Book.pdf"}}, true},
-		{"two assets", vaults.VaultChanges{Assets: []string{"A.pdf", "B.pdf"}}, true},
-		{"a reload", vaults.VaultChanges{ShouldReload: true}, true},
+		{"nothing", indexing.VaultChanges{}, false},
+		{"notes only", indexing.VaultChanges{Paths: []string{"Note.md"}}, false},
+		{"one asset", indexing.VaultChanges{Assets: []string{"Book.pdf"}}, true},
+		{"two assets", indexing.VaultChanges{Assets: []string{"A.pdf", "B.pdf"}}, true},
+		{"a reload", indexing.VaultChanges{ShouldReload: true}, true},
 	} {
 		if got := tc.changes.ShouldReadAssets(); got != tc.want {
 			t.Errorf("%s: ShouldReadAssets is %v, want %v", tc.name, got, tc.want)
@@ -272,12 +272,12 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	watcher := newManualWatcher()
 	v := vaulttest.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	db := openIndex(t)
-	follow := vaults.NewFollow(
+	follow := indexing.NewFollow(
 		watcher,
-		vaults.NewRefreshFrom(vaults.RefreshDeps{
+		indexing.NewRefreshFrom(indexing.RefreshDeps{
 			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
 			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
-			Ledger: vaults.NewLedger(),
+			Ledger: indexing.NewLedger(),
 		}),
 		scanner(vaultreader.Readers{}, db), nil, nil,
 	)
@@ -312,16 +312,16 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	}
 
 	reported := make(chan error, 8)
-	moved := make(chan vaults.VaultChanges, 8)
+	moved := make(chan indexing.VaultChanges, 8)
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
-	follow := vaults.NewFollow(
+	follow := indexing.NewFollow(
 		watcher,
-		vaults.NewRefreshFrom(vaults.RefreshDeps{
+		indexing.NewRefreshFrom(indexing.RefreshDeps{
 			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
 			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
-			Ledger: vaults.NewLedger(),
+			Ledger: indexing.NewLedger(),
 		}),
-		scanner(readers, db), func(m vaults.VaultChanges) { moved <- m }, func(err error) { reported <- err },
+		scanner(readers, db), func(m indexing.VaultChanges) { moved <- m }, func(err error) { reported <- err },
 	)
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {

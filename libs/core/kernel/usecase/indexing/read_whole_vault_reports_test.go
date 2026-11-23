@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -118,7 +117,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 	stopErr := errors.New("the notes cannot be taken out")
-	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	notes := indexing.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	notes.Walks = &db.walks
 	making := indexing.NewReadWholeVault(
 		notes,
@@ -288,4 +287,11 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	if !strings.Contains(err.Error(), "library/A Book.epub") {
 		t.Errorf("the source is not named in %v", err)
 	}
+}
+
+func isolateHome(t *testing.T) {
+	t.Helper()
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 }

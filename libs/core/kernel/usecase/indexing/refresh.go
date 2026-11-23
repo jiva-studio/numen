@@ -1,4 +1,4 @@
-package vault
+package indexing
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -28,7 +29,7 @@ import (
 // not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
-	vaults  VaultRepository
+	vaults  indexport.VaultRepository
 	notes   noteport.NoteRepository
 	queries sourceport.RemovalLookup
 	sources sourceport.SourceRepository
@@ -126,7 +127,7 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 // that identifies recently modified notes, the sizes the notes are cut at, and the ledger the refreshes of one index share.
 type RefreshDeps struct {
 	Readers vaultport.VaultReaders
-	Vaults  VaultRepository
+	Vaults  indexport.VaultRepository
 	Notes   noteport.NoteRepository
 	Queries sourceport.RemovalLookup
 	Sources sourceport.SourceRepository

@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
@@ -19,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -37,7 +37,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 
 type scanIndex struct {
 	*index.DB
-	walks vaults.Walks
+	walks indexing.Walks
 }
 
 func openIndex(t *testing.T) *scanIndex {
@@ -67,8 +67,8 @@ func searchNotes(t *testing.T, db *scanIndex, v domain.Vault, query string) []st
 	return out
 }
 
-func scanner(readers vaultport.VaultReaders, db *scanIndex) vaults.Scan {
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+func scanner(readers vaultport.VaultReaders, db *scanIndex) indexing.Scan {
+	scan := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	scan.Walks = &db.walks
 	return scan
 }
@@ -607,7 +607,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	scan.Walks = &db.walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)

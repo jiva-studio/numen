@@ -4,5 +4,5 @@
 //
 // The passes are in this package: the text of the files other than notes is cut into the chunks a search runs over (Index), and the chunks
 // are given their missing vectors, requested from an embedder and stored in the index (Embed). The core reads no file format; a plugin makes
-// the text versions. Cutting is deterministic and keeps no record of its progress: pending work is derived from the data.
+// the text versions. Scan reads the notes of a vault into the index, and VaultOpener and OpenVaults open the vaults of a window around it. Cutting is deterministic and keeps no record of its progress: pending work is derived from the data.
 package indexing

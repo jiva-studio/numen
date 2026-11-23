@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // What these measure against: a scan of an unchanged vault fast enough to run
@@ -36,8 +36,8 @@ func openIndexFor(b *testing.B) *scanIndex {
 	return &scanIndex{DB: db}
 }
 
-func scanFor(db *scanIndex) vaults.Scan {
-	return vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+func scanFor(db *scanIndex) indexing.Scan {
+	return indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 }
 
 // BenchmarkColdScan is the full rebuild: an empty index and every note read,

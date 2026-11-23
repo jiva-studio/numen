@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -39,7 +40,6 @@ import (
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -74,7 +74,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 		return nil, err
 	}
 	queries := db.NoteQueries()
-	target := &testIndex{closer: db, vectors: db.VectorIndex(), ledger: vault.NewLedger()}
+	target := &testIndex{closer: db, vectors: db.VectorIndex(), ledger: indexing.NewLedger()}
 	target.Stores.Vaults, target.Stores.Notes, target.Stores.Maintenance = db.Vaults(), db.Notes(), db.Maintenance()
 	target.NoteQueries.FileStats, target.NoteQueries.Headings, target.NoteQueries.Links = queries, queries, queries
 	target.NoteQueries.LinkBatches = db.NoteQueryReads()
@@ -91,16 +91,16 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 type testIndex struct {
 	closer  io.Closer
 	vectors indexing.VectorIndex
-	walks   vault.Walks
-	ledger  *vault.Ledger
+	walks   indexing.Walks
+	ledger  *indexing.Ledger
 
 	Stores struct {
-		Vaults      vault.VaultRepository
+		Vaults      indexport.VaultRepository
 		Notes       noteport.NoteRepository
-		Maintenance vault.IndexMaintenance
+		Maintenance indexing.IndexMaintenance
 	}
 	NoteQueries struct {
-		FileStats   vault.FileStats
+		FileStats   indexing.FileStats
 		Headings    query.Headings
 		Links       noteport.LinkQueries
 		LinkBatches noteport.LinkBatches
@@ -126,16 +126,16 @@ type testIndex struct {
 
 func (i *testIndex) Close() error { return i.closer.Close() }
 
-func (i *testIndex) Walks() *vault.Walks { return &i.walks }
+func (i *testIndex) Walks() *indexing.Walks { return &i.walks }
 
-func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
+func (i *testIndex) Ledger() *indexing.Ledger { return i.ledger }
 
 func (i *testIndex) VectorIndex() indexing.VectorIndex { return i.vectors }
 
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
 // GetVaultWatcher monitors vaults for external filesystem changes.
-func (w readingParts) GetVaultWatcher() vault.VaultWatcher {
+func (w readingParts) GetVaultWatcher() indexing.VaultWatcher {
 	return vaultwatch.Watcher{Hub: w.watches.GetShared()}
 }
 
@@ -143,28 +143,28 @@ func (w readingParts) cutNotes() chunking.CutNotes {
 	return chunking.NewCutNotes(w.chunks.Get())
 }
 
-func (w readingParts) setNoteCut(scan *vault.Scan) {
+func (w readingParts) setNoteCut(scan *indexing.Scan) {
 	scan.Cut = w.cutNotes()
 	scan.ShouldRecut = w.chunks.Get() > 0
 }
 
-func (w readingParts) scan(db *testIndex, rebuild bool) vault.Scan {
-	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
+func (w readingParts) scan(db *testIndex, rebuild bool) indexing.Scan {
+	scan := indexing.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
 	return scan.Rebuilding(rebuild)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func (w readingParts) GetRefresh(db *testIndex) vault.Refresh {
+func (w readingParts) GetRefresh(db *testIndex) indexing.Refresh {
 	return w.makeRefresh(db, db.Stores.Notes)
 }
 
-func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefreshFrom(vault.RefreshDeps{
+func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) indexing.Refresh {
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: w.GetVaultReaders(), Vaults: db.Stores.Vaults, Notes: notes,
 		Queries: db.Source.RemovalLookup, Sources: db.Source.Sources, Now: clock.System{},
-		Ledger: vault.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 	refresh.Cut = w.cutNotes()
 	refresh.Ledger = db.Ledger()
@@ -173,13 +173,13 @@ func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) 
 
 // OpenVaultWith is how a vault is opened over the readers and the watcher given.
 func (w readingParts) OpenVaultWith(
-	db *testIndex, walkCountingReaders vaultport.VaultReaders, watcher vault.VaultWatcher,
-) *vault.VaultOpener {
-	scan := vault.NewScan(walkCountingReaders, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
+	db *testIndex, walkCountingReaders vaultport.VaultReaders, watcher indexing.VaultWatcher,
+) *indexing.VaultOpener {
+	scan := indexing.NewScan(walkCountingReaders, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
 	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
-	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
+	return indexing.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 
 // ReadWholeVault reads the notes, cuts the file texts and makes the vectors of a vault.

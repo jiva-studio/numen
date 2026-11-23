@@ -1,4 +1,4 @@
-package vault
+package indexing
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -22,7 +23,7 @@ import (
 // a scan the index holds exactly what the scan found.
 type Scan struct {
 	readers     vaultport.VaultReaders
-	vaults      VaultRepository
+	vaults      indexport.VaultRepository
 	notes       noteport.NoteRepository
 	indexedVal  FileStats
 	maintenance IndexMaintenance
@@ -44,7 +45,7 @@ type Scan struct {
 // Maintenance runs only when the walk found a change.
 func NewScan(
 	readers vaultport.VaultReaders,
-	vaults VaultRepository,
+	vaults indexport.VaultRepository,
 	notes noteport.NoteRepository,
 	queries FileStats,
 	maintenance IndexMaintenance,

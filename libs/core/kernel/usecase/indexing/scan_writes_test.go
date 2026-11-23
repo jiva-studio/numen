@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -50,7 +50,7 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 	content := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 
 	content := &groupedWrites{}
 	db := openIndex(t)
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), &groupedWrites{fail: writeErr}, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), &groupedWrites{fail: writeErr}, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if !errors.Is(err, writeErr) {
 		t.Fatalf("error = %v, want the one the index gave", err)
@@ -136,7 +136,7 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), measured, testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), measured, testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

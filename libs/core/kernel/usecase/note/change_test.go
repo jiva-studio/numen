@@ -13,9 +13,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -34,10 +34,10 @@ type changeFixture struct {
 func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
-	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
-		Ledger: vaults.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 
 	return changeFixture{

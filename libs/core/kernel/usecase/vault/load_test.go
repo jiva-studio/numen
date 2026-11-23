@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -53,7 +53,7 @@ func TestLoad(t *testing.T) {
 	}
 	defer testsupport.Close(t, db)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 
 	coldStart := testsupport.GetMachine().Now()
 	res, err := scan.Execute(ctx, v)
@@ -89,7 +89,7 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-func measureUnderLoad(t *testing.T, db *index.DB, v domain.Vault, scan vaults.Scan, query string) {
+func measureUnderLoad(t *testing.T, db *index.DB, v domain.Vault, scan indexing.Scan, query string) {
 	t.Helper()
 	const (
 		readers  = 4

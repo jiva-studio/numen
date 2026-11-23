@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -113,8 +113,8 @@ func (m *scanVault) ReportChanges(context.Context) error {
 	return m.reportErr
 }
 
-func (m *scanVault) scan() vaults.Scan {
-	return vaults.NewScan(scanReaders{m}, m, m, m, m, testsupport.EmptySourceBacklog{})
+func (m *scanVault) scan() indexing.Scan {
+	return indexing.NewScan(scanReaders{m}, m, m, m, m, testsupport.EmptySourceBacklog{})
 }
 
 type scanReaders struct{ vault *scanVault }

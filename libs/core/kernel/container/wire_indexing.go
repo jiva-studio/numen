@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -48,13 +47,13 @@ func cutNotes(c noteChunkPolicy) chunking.CutNotes {
 	return cutter
 }
 
-func setNoteCut(c noteChunkPolicy, scan *vault.Scan) {
+func setNoteCut(c noteChunkPolicy, scan *indexing.Scan) {
 	scan.Cut = cutNotes(c)
 	scan.ShouldRecut = c.Chunks.Get() > 0
 }
 
-func searchScan(c vaultIndexPlan, db *vaultIndex) vault.Scan {
-	scan := vault.NewScan(
+func searchScan(c vaultIndexPlan, db *vaultIndex) indexing.Scan {
+	scan := indexing.NewScan(
 		c.VaultReaders,
 		db.Vaults(),
 		db.Notes(),
@@ -68,7 +67,7 @@ func searchScan(c vaultIndexPlan, db *vaultIndex) vault.Scan {
 }
 
 func readWholeVault(c vaultIndexPlan,
-	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
+	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh indexing.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	fit := indexing.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
 	if err := fit.Execute(ctx, source); err != nil {
@@ -78,7 +77,7 @@ func readWholeVault(c vaultIndexPlan,
 }
 
 func buildReadWholeVault(c vaultIndexPlan,
-	db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
+	db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh indexing.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	refresh.Force = true
 	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(createUnreadableFinder(refresh)).Execute)
@@ -92,7 +91,7 @@ func buildReadWholeVault(c vaultIndexPlan,
 	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed), nil
 }
 
-func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+func createUnreadableFinder(refresh indexing.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
 	return func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
 		result, err := refresh.Execute(ctx, v, paths)
 		return result.Unreadable, err

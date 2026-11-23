@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
@@ -58,7 +59,7 @@ type vaultWiring struct {
 	TextVersions *textVersions
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
-	SetNoteCut   func(*vault.Scan)
+	SetNoteCut   func(*indexing.Scan)
 	RecordLog    index.QueryLogFunc
 }
 

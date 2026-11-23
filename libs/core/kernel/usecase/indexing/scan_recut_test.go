@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -33,12 +33,12 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-func scanAt(db *scanIndex, tokens int) vaults.Scan {
+func scanAt(db *scanIndex, tokens int) indexing.Scan {
 	return scanAtBacklog(db, tokens, db.Sources())
 }
 
-func scanAtBacklog(db *scanIndex, tokens int, backlog sourceport.SourceBacklog) vaults.Scan {
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), backlog)
+func scanAtBacklog(db *scanIndex, tokens int, backlog sourceport.SourceBacklog) indexing.Scan {
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), backlog)
 	scan.Walks = &db.walks
 	scan.Cut = chunking.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
@@ -65,7 +65,7 @@ func getNotesWithOtherChunking(t *testing.T, db *scanIndex, v domain.Vault, toke
 	return paths
 }
 
-func runScan(t *testing.T, scan vaults.Scan, v domain.Vault) vaultreading.ScanResult {
+func runScan(t *testing.T, scan indexing.Scan, v domain.Vault) vaultreading.ScanResult {
 	t.Helper()
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
@@ -168,7 +168,7 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
-	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	old := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	old.Walks = &db.walks
 	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
@@ -194,7 +194,7 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), db.Sources())
+	scan := indexing.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), db.Sources())
 	scan.Walks = &db.walks
 	scan.Cut = chunking.NewCutNotes(512)
 	scan.ShouldRecut = true

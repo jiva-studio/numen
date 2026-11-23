@@ -1,4 +1,4 @@
-package vault
+package indexing
 
 import "context"
 

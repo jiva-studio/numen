@@ -1,4 +1,4 @@
-package vault_test
+package indexing_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -87,11 +87,11 @@ type memClock struct{ w *memWorld }
 
 func (c memClock) Now() time.Time { return c.w.clock() }
 
-func (w *memWorld) refresh() vaults.Refresh {
-	return vaults.NewRefreshFrom(vaults.RefreshDeps{
+func (w *memWorld) refresh() indexing.Refresh {
+	return indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: memReaders{w}, Vaults: memRows{w}, Notes: memNotes{w},
 		Queries: memQueries{w: w}, Sources: memSources{w: w}, Now: memClock{w},
-		Ledger: vaults.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 
 }
@@ -202,7 +202,7 @@ func (s memSources) RemoveSources(_ context.Context, _ domain.VaultID, kind doma
 	return nil
 }
 
-func execute(t *testing.T, refresh vaults.Refresh, paths ...string) vaults.RefreshResult {
+func execute(t *testing.T, refresh indexing.Refresh, paths ...string) indexing.RefreshResult {
 	t.Helper()
 	res, err := refresh.Execute(t.Context(), getMemVault(), paths)
 	if err != nil {
@@ -452,8 +452,8 @@ func TestANoteIsRecentWhileItIsYoungerThanTheGranularity(t *testing.T) {
 		saved int
 	}{
 		"1.5 seconds":         {age: 1500 * time.Millisecond, saved: 1},
-		"just under the step": {age: vaults.TimestampGranularity - time.Nanosecond, saved: 1},
-		"exactly the step":    {age: vaults.TimestampGranularity, saved: 0},
+		"just under the step": {age: indexing.TimestampGranularity - time.Nanosecond, saved: 1},
+		"exactly the step":    {age: indexing.TimestampGranularity, saved: 0},
 		"2.5 seconds":         {age: 2500 * time.Millisecond, saved: 0},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -549,12 +549,12 @@ func TestLedger_EvictsOutOfWindowEntryOnSave(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("A.md", "entropy", getMemBase())
-	w.addNote("B.md", "entropy", getMemBase().Add(vaults.TimestampGranularity))
+	w.addNote("B.md", "entropy", getMemBase().Add(indexing.TimestampGranularity))
 	w.setNow(getMemBase().Add(time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "A.md")
 
-	w.setNow(getMemBase().Add(vaults.TimestampGranularity))
+	w.setNow(getMemBase().Add(indexing.TimestampGranularity))
 	execute(t, refresh, "B.md")
 
 	if n := refresh.Ledger.Len(); n != 1 {
@@ -610,7 +610,7 @@ func TestEveryRecentNoteIsRecordedWhateverTheOthersAre(t *testing.T) {
 	refresh.Force = true
 
 	for run := range 8 {
-		refresh.Ledger = vaults.NewLedger()
+		refresh.Ledger = indexing.NewLedger()
 		execute(t, refresh, paths...)
 		if n := refresh.Ledger.Len(); n != 1 {
 			t.Fatalf("run %d: the ledger holds %d notes, want the recent one", run, n)
