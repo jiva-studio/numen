@@ -81,7 +81,7 @@ export const readPosition = (label: string): number => {
  */
 export const planAnswers = (positions: readonly number[], words: readonly string[], mistake?: string): string[] => {
   const answers = positions.map((position) => {
-    const word = words[position - 1]
+    const word = words.at(position - 1)
     if (word === undefined) throw new Error(`the page asks for the word ${position} of ${words.length}`)
     return word
   })
