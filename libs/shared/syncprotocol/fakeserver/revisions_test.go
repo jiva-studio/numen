@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -279,7 +280,7 @@ func TestCommitRevisions_RefusesABlobOfAnotherSizeThanTheOneReserved(t *testing.
 	vault := e.newVault()
 	body := []byte("milk")
 	upload := e.reserveOnly(vault, 100)
-	putErr := syncprotocol.PutBlob(t.Context(), http.DefaultClient, upload.GetUrl(), body)
+	putErr := syncclient.PutBlob(t.Context(), http.DefaultClient, upload.GetUrl(), body)
 	revision := e.newRevisionOf(vault, newID(16), nil, "milk.md", upload, body)
 
 	_, err := e.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{revision})
@@ -452,7 +453,7 @@ func TestGetBlobUrls_ReturnsALinkOnlyForTheBlobOfACurrentHeadAndTheLinkReadsTheB
 	if downloads[1].GetUrl() != "" || downloads[2].GetUrl() != "" {
 		t.Error("a blob that is not found has an address")
 	}
-	got, err := syncprotocol.GetBlob(t.Context(), http.DefaultClient, downloads[0].GetUrl())
+	got, err := syncclient.GetBlob(t.Context(), http.DefaultClient, downloads[0].GetUrl())
 	if err != nil || !bytes.Equal(got, body) {
 		t.Errorf("body = %q, error = %v, want the uploaded body", got, err)
 	}

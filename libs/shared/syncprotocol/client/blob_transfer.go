@@ -1,4 +1,4 @@
-package syncprotocol
+package client
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 )
 
 // PutBlob uploads the body to a presigned URL with one PUT. It sends no bearer and no protocol version: the
@@ -25,7 +27,7 @@ func PutBlob(ctx context.Context, httpClient *http.Client, url string, body []by
 }
 
 // GetBlob downloads the body from a presigned URL with one GET, with no bearer and no protocol version. It
-// refuses a body larger than MaxBlobSize.
+// refuses a body larger than syncprotocol.MaxBlobSize.
 func GetBlob(ctx context.Context, httpClient *http.Client, url string) (blob []byte, err error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -39,12 +41,12 @@ func GetBlob(ctx context.Context, httpClient *http.Client, url string) (blob []b
 	if err := checkTransferStatus("download", response); err != nil {
 		return nil, err
 	}
-	body, err := io.ReadAll(io.LimitReader(response.Body, MaxBlobSize+1))
+	body, err := io.ReadAll(io.LimitReader(response.Body, syncprotocol.MaxBlobSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("download a blob: %w", err)
 	}
-	if len(body) > MaxBlobSize {
-		return nil, fmt.Errorf("download a blob: the body is larger than %d bytes", MaxBlobSize)
+	if len(body) > syncprotocol.MaxBlobSize {
+		return nil, fmt.Errorf("download a blob: the body is larger than %d bytes", syncprotocol.MaxBlobSize)
 	}
 	return body, nil
 }

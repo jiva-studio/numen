@@ -1,22 +1,17 @@
-package syncprotocol
+// Package client is the Go client of the sync server: the sign-in, catalog, revision, blob and account services and
+// the transfer of a blob over a presigned URL. It reaches the network, so a use case does not import it.
+package client
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
-)
-
-var (
-	// ErrUnauthenticated means the server refused the sign-in.
-	ErrUnauthenticated = errors.New("the sync server refused the sign-in")
-	// ErrUnreachable means the server did not answer in time or was not there.
-	ErrUnreachable = errors.New("the sync server is unreachable")
 )
 
 // Challenge is a challenge the client has checked: its id and the bytes to sign.
@@ -53,7 +48,7 @@ type SignInClient struct {
 func NewSignInClient(address string, httpClient *http.Client, now func() time.Time) *SignInClient {
 	return &SignInClient{
 		address: address, now: now,
-		rpc: syncv1connect.NewSignInServiceClient(httpClient, address, connect.WithInterceptors(NewVersionInterceptor())),
+		rpc: syncv1connect.NewSignInServiceClient(httpClient, address, connect.WithInterceptors(syncprotocol.NewVersionInterceptor())),
 	}
 }
 
@@ -61,24 +56,24 @@ func NewSignInClient(address string, httpClient *http.Client, now func() time.Ti
 // client, expires near the clock and has the sizes of the protocol; any other is an error. A server of
 // another version gives ErrUpdateRequired, one that is not there ErrUnreachable.
 func (c *SignInClient) GetChallenge(ctx context.Context, deviceSignKey []byte) (Challenge, error) {
-	return c.getChallenge(ctx, deviceSignKey, GetSignInMessage)
+	return c.getChallenge(ctx, deviceSignKey, syncprotocol.GetSignInMessage)
 }
 
 // GetChainReadChallenge asks for a challenge of the root key, with the checks of GetChallenge. The message
 // of the challenge is the one the recovery key signs to read the chain of its account.
 func (c *SignInClient) GetChainReadChallenge(ctx context.Context, rootSignKey []byte) (Challenge, error) {
-	return c.getChallenge(ctx, rootSignKey, GetChainReadMessage)
+	return c.getChallenge(ctx, rootSignKey, syncprotocol.GetChainReadMessage)
 }
 
 func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, getMessage func(*syncv1.GetChallengeResponse, []byte, uint32) []byte) (Challenge, error) {
 	response, err := c.rpc.GetChallenge(ctx, connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: deviceSignKey}))
 	if err != nil {
-		return Challenge{}, readError(err)
+		return Challenge{}, syncprotocol.ReadError(err)
 	}
-	if err := CheckChallenge(response.Msg, c.address, c.now()); err != nil {
+	if err := syncprotocol.CheckChallenge(response.Msg, c.address, c.now()); err != nil {
 		return Challenge{}, err
 	}
-	return Challenge{ID: response.Msg.GetChallengeId(), Message: getMessage(response.Msg, deviceSignKey, Version)}, nil
+	return Challenge{ID: response.Msg.GetChallengeId(), Message: getMessage(response.Msg, deviceSignKey, syncprotocol.Version)}, nil
 }
 
 // SignIn sends the proof and returns the session the server opens. A refusal is ErrUnauthenticated.
@@ -87,23 +82,11 @@ func (c *SignInClient) SignIn(ctx context.Context, proof Proof) (Session, error)
 		ChallengeId: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
 	}))
 	if err != nil {
-		return Session{}, readError(err)
+		return Session{}, syncprotocol.ReadError(err)
 	}
 	return Session{
 		Token:              response.Msg.GetSessionToken(),
 		ExpiresAt:          time.Unix(response.Msg.GetExpiresAt(), 0),
 		AccountFingerprint: response.Msg.GetAccountFingerprint(),
 	}, nil
-}
-
-func readError(err error) error {
-	switch {
-	case errors.Is(err, ErrUpdateRequired):
-		return ErrUpdateRequired
-	case connect.CodeOf(err) == connect.CodeUnauthenticated:
-		return ErrUnauthenticated
-	case connect.CodeOf(err) == connect.CodeUnavailable, connect.CodeOf(err) == connect.CodeDeadlineExceeded:
-		return ErrUnreachable
-	}
-	return err
 }

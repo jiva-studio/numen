@@ -77,7 +77,7 @@ func (b *Backend) getVault(ctx context.Context, vault domain.Vault, holders map[
 	}
 	holders[link.RemoteVaultID] = true
 	one.State = api.StateConnected
-	status, err := b.deps.State.ReadStatus(ctx, vault.ID)
+	status, err := b.deps.Progress.ReadStatus(ctx, vault.ID)
 	if err != nil {
 		return one, err
 	}
@@ -146,7 +146,7 @@ func (b *Backend) countConflicts(ctx context.Context) (int, error) {
 	}
 	total := 0
 	for _, vault := range vaults {
-		status, err := b.deps.State.ReadStatus(ctx, vault.ID)
+		status, err := b.deps.Progress.ReadStatus(ctx, vault.ID)
 		if err != nil {
 			return 0, err
 		}
