@@ -3,6 +3,7 @@
  * path reaches a service member the table of permissions does not list.
  */
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
+import type { Failure, Result } from '@numen/result'
 import {
   type BackgroundTaskHost,
   type BufferHost,
@@ -146,6 +147,12 @@ const MEMBERS = SERVICE_PARTS.flatMap((part) =>
   })),
 ).filter((leaf) => leaf.rule.permissions.length > 0)
 
+/** The message of a refusal a member of a result rule answers with. */
+function readDenial(answer: unknown): string {
+  expect(answer).toMatchObject({ ok: false, error: { error: 'permissionDenied' } })
+  return (answer as { error: { message: string } }).error.message
+}
+
 const label = (path: readonly string[]) => path.join('.')
 
 describe('every member of a service that lists a permission', () => {
@@ -157,7 +164,9 @@ describe('every member of a service that lists a permission', () => {
       const missing = member.rule.permissions[0] ?? ''
       const denied = createPluginParts('md.numen.sample', host, MANIFEST([]))
 
-      const failure = member.rule.isAsync
+      const failure = member.rule.mode === 'result'
+        ? await Promise.resolve(call(denied.host, member.path)).then(readDenial)
+        : member.rule.isAsync
         ? await Promise.resolve()
             .then(() => call(denied.host, member.path))
             .catch((error: unknown) => error)
@@ -295,6 +304,16 @@ describe('the services of a plugin context', () => {
     expectTypeOf<Fits<AsyncRule, { peek(): string }>>().toEqualTypeOf<false>()
     expectTypeOf<Fits<AsyncRule, { read(): Promise<string> }>>().toEqualTypeOf<true>()
     expectTypeOf<Fits<SyncRule, { peek(): string }>>().toEqualTypeOf<true>()
+  })
+
+  it('takes the result rule of a member that answers a Result whose failure can be a refusal', () => {
+    type ResultRule = typeof SERVICE_RULES.vault.texts.createEdit
+    type Fits<Rule, Member> = [Rule] extends [RulesOf<Member>[keyof Member]] ? true : false
+    type Denied = Promise<Result<null, Failure<'permissionDenied'>>>
+
+    expectTypeOf<Fits<ResultRule, { open(): Denied }>>().toEqualTypeOf<true>()
+    expectTypeOf<Fits<ResultRule, { open(): Promise<Result<null>> }>>().toEqualTypeOf<false>()
+    expectTypeOf<Fits<ResultRule, { open(): Promise<string> }>>().toEqualTypeOf<false>()
   })
 
   it('rejects, and never throws, from every member whose type returns a promise', async () => {
