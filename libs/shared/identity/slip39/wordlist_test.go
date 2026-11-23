@@ -58,7 +58,7 @@ func TestWordList_HasUniqueFourLetterPrefixes(t *testing.T) {
 	}
 }
 
-func TestNotice_NamesTheLicenceOfTheWordListAndTheVectors(t *testing.T) {
+func TestNotice_NamesTheLicenseOfTheWordListAndTheVectors(t *testing.T) {
 	t.Parallel()
 	raw, err := os.ReadFile("NOTICE")
 	if err != nil {

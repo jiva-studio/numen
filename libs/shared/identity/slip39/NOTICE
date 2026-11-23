@@ -1,6 +1,6 @@
 wordlist.txt and testdata/vectors.json are copied unchanged from
 https://github.com/trezor/python-shamir-mnemonic (commit 1525df19df504b1f69b49179140119959f317f24),
-released under the MIT licence:
+released under the MIT license:
 
 Copyright 2019 SatoshiLabs
 
