@@ -8,17 +8,23 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
-// removal is a file another computer removed, waiting for the guard.
+// removal is a file another computer removed, waiting for the guard. revID and version are of the signed removal.
 type removal struct {
-	record transfer.FileRecord
-	stat   domain.FileStat
-	revID  []byte
+	record  transfer.FileRecord
+	stat    domain.FileStat
+	revID   []byte
+	version uint64
 }
 
 func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, record transfer.FileRecord, isKnown bool) error {
+	version := stored.GetRevision().GetFileVersion()
 	if !isKnown {
+		if version > r.link.GetFloor(stored.GetRevision().GetFileId()) {
+			r.link.AddRetired(vaultlink.RetiredFile{FileID: stored.GetRevision().GetFileId(), Version: version})
+		}
 		return nil
 	}
 	hash, stat, err := r.readLocal(ctx, record.Path)
@@ -28,11 +34,12 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 	switch {
 	case hash == "":
 		r.removeRecord(record.FileID)
+		r.link.AddRetired(vaultlink.RetiredFile{FileID: record.FileID, Version: version})
 	case hash != record.BaseHash:
-		record.HeadRev = stored.GetRevId()
+		record.HeadRev, record.Version = stored.GetRevId(), version
 		r.setRecord(record)
 	default:
-		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId()}, stored.GetSeq())
+		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId(), version: version}, stored.GetSeq())
 	}
 	return nil
 }
@@ -65,17 +72,14 @@ func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error
 		_, err := r.moves.RemoveFile(ctx, one.record.Path, &one.stat)
 		if err == nil || errors.Is(err, host.ErrNotExist) {
 			r.removeRecord(one.record.FileID)
+			r.link.AddRetired(vaultlink.RetiredFile{FileID: one.record.FileID, Version: one.version})
 			return nil
 		}
 		if !errors.Is(err, host.ErrStale) {
 			return err
 		}
 	}
-	if len(one.revID) == 0 {
-		r.removeRecord(one.record.FileID)
-		return nil
-	}
-	one.record.HeadRev = one.revID
+	one.record.HeadRev, one.record.Version = one.revID, one.version
 	if isKept {
 		one.record.BaseHash = ""
 	}

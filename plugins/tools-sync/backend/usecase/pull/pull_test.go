@@ -45,7 +45,7 @@ func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome)
 	t.Helper()
 	file := transfer.File{Path: path, Content: []byte(text)}
 	if previous != nil {
-		file.FileID, file.ParentRev = previous.FileID, previous.RevID
+		file.FileID, file.ParentRev, file.ParentVersion = previous.FileID, previous.RevID, previous.Record.Version
 	}
 	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
 	if err != nil {

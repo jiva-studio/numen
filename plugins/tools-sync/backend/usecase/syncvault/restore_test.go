@@ -421,3 +421,39 @@ func readCatalogCache(t *testing.T, c *synctest.Computer) [][]byte {
 	}
 	return journal.Entries
 }
+
+func TestSyncVault_PinsTheKeyOfTheServerBeforeAnyRestoreIsAnnounced(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+
+	sync(t, p.a, source)
+
+	_, key, err := p.a.Cloud.GetRestoreEpoch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	pinned, err := p.a.State.ReadPin(t.Context(), p.server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(key) == 0 || !bytes.Equal(pinned, key) {
+		t.Errorf("pinned key = %x, want the key of the server %x from the first pass", pinned, key)
+	}
+}
+
+func TestSyncVault_TakesTheNewerTextInsteadOfSendingItsOwnWhenTheServerAnnouncesARestoreItNeverMade(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	sync(t, p.a, source)
+	sync(t, p.b, target)
+	p.a.WriteNote(source, "Shopping list.md", "bread")
+	sync(t, p.a, source)
+	p.a.WriteNote(source, "Shopping list.md", "eggs")
+	sync(t, p.a, source)
+	announce(t, p)
+
+	sync(t, p.b, target)
+
+	wantNote(t, p.b, target, "Shopping list.md", "eggs")
+	wantServerNote(t, p, "Shopping list.md", "eggs")
+}
