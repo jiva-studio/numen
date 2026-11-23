@@ -39,7 +39,7 @@ func restoreServer(t *testing.T, p *pair, kept []byte) {
 
 func announce(t *testing.T, p *pair) []byte {
 	t.Helper()
-	id, err := p.server.Fake.IssueRestoreEpoch()
+	id, err := p.server.Fake.CreateRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}

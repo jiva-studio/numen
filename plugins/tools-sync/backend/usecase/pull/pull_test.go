@@ -257,7 +257,7 @@ func TestPullChanges_ReportsSameWhenTheServerAnnouncedNoRestore(t *testing.T) {
 func TestPullChanges_AppliesNoPageForAnEpochThatThisDeviceHasNotRun(t *testing.T) {
 	p := newPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
-	id, err := p.server.Fake.IssueRestoreEpoch()
+	id, err := p.server.Fake.CreateRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}

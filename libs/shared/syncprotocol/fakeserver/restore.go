@@ -46,9 +46,9 @@ func (s *Server) getEpochID() []byte {
 	return slices.Clone(s.restore.epoch.GetId())
 }
 
-// IssueRestoreEpoch announces a restore: from now on every answer of GetChanges carries the id of the new
+// CreateRestoreEpoch announces a restore: from now on every answer of GetChanges carries the id of the new
 // epoch and GetRestoreEpoch returns it signed. It returns the id.
-func (s *Server) IssueRestoreEpoch() ([]byte, error) {
+func (s *Server) CreateRestoreEpoch() ([]byte, error) {
 	id := make([]byte, 16)
 	if _, err := rand.Read(id); err != nil {
 		return nil, fmt.Errorf("make an epoch id: %w", err)
@@ -136,7 +136,7 @@ func (s *Server) serveRestore(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) serveAnnounce(w http.ResponseWriter, r *http.Request) {
 	s.serveAdminPost(w, r, func() error {
-		_, err := s.IssueRestoreEpoch()
+		_, err := s.CreateRestoreEpoch()
 		return err
 	})
 }
