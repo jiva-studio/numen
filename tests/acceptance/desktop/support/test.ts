@@ -10,7 +10,7 @@ import { createVideoRecorder, isVideoOn } from './video.js'
 export const test = bdd.extend<{ person: Person }>({
   person: async ({ page, viewport }, use, testInfo) => {
     const recorder = isVideoOn() ? createVideoRecorder(testInfo, viewport) : undefined
-    const person = new Person(page, viewport, recorder?.recording, testInfo.tags.includes('@live'))
+    const person = new Person(page, viewport, recorder?.videoRecording, testInfo.tags.includes('@live'))
     try {
       await use(person)
       const log = person.readServerLog()

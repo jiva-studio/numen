@@ -24,7 +24,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 		Paths: container.Paths{IndexPath: pos},
 	}
 
-	page, err := fatalReport{}.page(cfg, container.CheckTextScale("appearance.textScale", 4))
+	page, err := fatalReport{}.buildPage(cfg, container.CheckTextScale("appearance.textScale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 // An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{
+	page, err := fatalReport{}.buildPage(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 	},
 		errors.New("the settings could not be read"))
@@ -59,7 +59,7 @@ func TestError_AdditionalDetails(t *testing.T) {
 
 // A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{
+	page, err := fatalReport{}.buildPage(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 	},
 		errors.New(`<script>alert("x")</script>`))
