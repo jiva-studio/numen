@@ -24,23 +24,19 @@ type pass struct {
 }
 
 func (p *pass) run(ctx context.Context) error {
-	previous, err := p.use.deps.Progress.ReadStatus(ctx, p.id)
-	if err != nil {
-		return err
-	}
 	if err := p.pull(ctx); err != nil {
 		return err
 	}
 	isRetry, err := p.push(ctx)
 	if err != nil {
-		return p.use.reports.settle(ctx, err)
+		return p.use.reports.settle(ctx, p.id, err)
 	}
 	if isRetry {
 		if err := p.pull(ctx); err != nil {
 			return err
 		}
 	}
-	if err := p.use.reports.report(ctx, len(p.conflicts), previous.ConflictCount, p.unverified); err != nil {
+	if err := p.use.reports.report(ctx, p.id, len(p.conflicts), p.unverified); err != nil {
 		return err
 	}
 	return p.use.deps.Progress.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: len(p.conflicts)})
