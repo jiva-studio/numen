@@ -114,7 +114,6 @@ export function formatSize(bytes: number): string {
   return `${Number((bytes / BYTES_IN_GB).toFixed(1))} GB`
 }
 
-/** The price for one period, such as "$5", "$4.99", "€10" or "7 CHF"; empty when the plan has no price. */
 function formatPrice(cents: number, currency: string): string {
   if (cents === 0) return ''
   const units = cents / CENTS_IN_UNIT

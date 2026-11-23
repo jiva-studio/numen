@@ -179,7 +179,7 @@ func TestChangePlan_ReturnsTheSubscriptionAfterTheChange(t *testing.T) {
 	}
 }
 
-func TestChangePlan_ReturnsTheRefusalsOfTheServerUnchanged(t *testing.T) {
+func TestChangePlan_ReturnsServerErrorsUnchanged(t *testing.T) {
 	for _, want := range []error{
 		syncprotocol.ErrNoActiveSubscription, syncprotocol.ErrSamePlan, syncprotocol.ErrUnknownPlan, syncprotocol.ErrBillingUnavailable, syncprotocol.ErrUnreachable,
 	} {

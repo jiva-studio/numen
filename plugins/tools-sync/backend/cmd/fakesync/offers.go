@@ -19,7 +19,7 @@ func readPlans(value string) ([]syncprotocol.Plan, error) {
 		return nil, nil
 	}
 	var plans []syncprotocol.Plan
-	for _, pair := range strings.Split(value, ",") {
+	for _, pair := range strings.SplitSeq(value, ",") {
 		id, size, found := strings.Cut(pair, ":")
 		gigabytes, err := strconv.ParseUint(size, 10, 64)
 		if !found || id == "" || err != nil {
