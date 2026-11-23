@@ -107,7 +107,14 @@ export class Person {
   async removeNotes(): Promise<void> {
     this.services.stopAll()
     this.sync.remove()
-    await this.computers.remove()
+    try {
+      await this.computers.remove()
+    } finally {
+      await this.removeFirstComputer()
+    }
+  }
+
+  private async removeFirstComputer(): Promise<void> {
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     try {
       await this.plugin.enableDisabled()
