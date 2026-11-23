@@ -17,6 +17,30 @@ import { useSetupStage } from './useSetupStage'
 
 type Step = 'idle' | 'setup' | 'restore'
 
+interface RestoreParts {
+  readonly getIdentity: () => InstallationIdentity
+  readonly restoring: ReturnType<typeof useRecoveryProof>
+  readonly call: ReturnType<typeof useIdentityCall>
+  readonly reset: () => void
+}
+
+function createRestore({ getIdentity, restoring, call, reset }: RestoreParts) {
+  return async (): Promise<void> => {
+    if (call.isBusy.value) return
+    const given = restoring.read()
+    if (given === undefined) {
+      call.problem.value = words.kitOneMoreSheet
+      return
+    }
+    const answer = await call.run(() =>
+      'words' in given
+        ? getIdentity().create(given.words)
+        : getIdentity().restoreFromKit(given.sheets),
+    )
+    if (answer.ok) reset()
+  }
+}
+
 export function useIdentitySection(
   getIdentity: () => InstallationIdentity,
   onKept: (recoveryWords: readonly string[]) => void,
@@ -37,9 +61,7 @@ export function useIdentitySection(
     })
   })
 
-  onBeforeUnmount(() => {
-    reset()
-  })
+  onBeforeUnmount(reset)
 
   function reset(): void {
     step.value = 'idle'
@@ -83,20 +105,7 @@ export function useIdentitySection(
     onKept(kept)
   }
 
-  const restore = async (): Promise<void> => {
-    if (isBusy.value) return
-    const given = restoring.read()
-    if (given === undefined) {
-      problem.value = words.kitOneMoreSheet
-      return
-    }
-    const answer = await run(() =>
-      'words' in given
-        ? getIdentity().create(given.words)
-        : getIdentity().restoreFromKit(given.sheets),
-    )
-    if (answer.ok) reset()
-  }
+  const restore = createRestore({ getIdentity, restoring, call, reset })
 
   return {
     identity,
