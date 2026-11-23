@@ -103,6 +103,9 @@ type Leaf =
   | number
   | boolean
 
+/** The failure of a Result, and never for any other type. */
+type FailureOf<T> = T extends { readonly ok: false; readonly error: infer E } ? E : never
+
 /** The failure a refusal answers with where the member answers a Result. */
 type PermissionDenied = Failure<'permissionDenied'>
 
@@ -115,7 +118,7 @@ type PermissionDenied = Failure<'permissionDenied'>
 type RuleOf<M> = M extends (...args: never[]) => infer R
   ? [Extract<R, PromiseLike<Value>>] extends [never]
     ? Rule<'sync' | 'none'>
-    : [PermissionDenied] extends [Extract<Awaited<R>, { readonly ok: false }>['error']]
+    : [PermissionDenied] extends [FailureOf<Awaited<R>>]
       ? Rule<'result' | 'none'>
       : Rule<'async' | 'none'>
   : Rule<'sync' | 'none'>
