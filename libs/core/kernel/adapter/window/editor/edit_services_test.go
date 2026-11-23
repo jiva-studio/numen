@@ -29,11 +29,6 @@ func openWindowIndex(t *testing.T, cfg testInstallation) *index.DB {
 	return db
 }
 
-func newNoteMover(db *index.DB) note.Move {
-	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
-		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
-}
-
 func newNoteMoverFailingToIndex(db *index.DB) note.Move {
 	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock(),
