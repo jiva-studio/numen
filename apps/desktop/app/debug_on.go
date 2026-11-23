@@ -56,8 +56,17 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	if d.FolderFile != "" {
-		opened.SetFolderDialog(debugserve.NewFolderFileDialog(d.FolderFile))
-	}
 	return debugserve.Serve(ctx, container.GetClock(res), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
+}
+
+// getDialog returns the dialog the window chooses folders with: the one over the window, and when the
+// window is served over HTTP, the folder the debug file names or none.
+func (d *DebugOptions) getDialog(window editor.PathDialog) editor.PathDialog {
+	if !d.isServingHTTP() {
+		return window
+	}
+	if d.FolderFile == "" {
+		return nil
+	}
+	return debugserve.NewFolderFileDialog(d.FolderFile)
 }

@@ -107,7 +107,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 	}
 
 	// A frame is what widens, and a script is not: what runs in the window is
-	// what the window served, which is `default-src`.
+	// what the window served.
 	if strings.Contains(response, "script-src") {
 		t.Errorf("the policy names where a script comes from: %q", response)
 	}
@@ -364,7 +364,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	until := make(chan struct{})
 	b := blockingVaults{begun: begun, until: until}
 	api := newBareServices()
-	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil)
+	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil, nil)
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
 	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())

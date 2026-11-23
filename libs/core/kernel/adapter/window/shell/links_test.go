@@ -43,7 +43,7 @@ func (l *linkIndex) ResolveLinks(
 
 func newNoteClient(t *testing.T, index *linkIndex) numenv1connect.NoteServiceClient {
 	t.Helper()
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	garden := func() ([]domain.Vault, error) {
 		return []domain.Vault{{ID: "garden", Name: "Garden", Path: "/vaults/garden"}}, nil
 	}

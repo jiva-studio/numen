@@ -29,7 +29,6 @@ import (
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -52,6 +51,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
@@ -66,7 +66,8 @@ func mountMedia(w *windowRoutes, vaultDeps vaultWiring) {
 	state := w.session
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
 	handler := mediawindow.NewHandler(&state.Runtime, &w.page.Media, resolve)
-	w.Installation.Mount(editor.NewMediaRoute(w.page.Gate, handler))
+	path, served := numenv1connect.NewMediaServiceHandler(handler, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
@@ -90,8 +91,12 @@ func mountText(w *windowRoutes, vaultDeps vaultWiring) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultReaders, change vaultChanging, open *windowsession.OpenVault) {
+func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultReaders, change vaultChanging, open *windowsession.OpenVault, dialog editor.PathDialog) {
 	state := w.session
+	var chooseFolder vaults.FolderChooser
+	if dialog != nil {
+		chooseFolder = picker.NewChooseFolder(dialog)
+	}
 	handler := vaults.NewHandler(
 		&state.Runtime,
 		vault.NewListVaults(ports.Vaults, readers),
@@ -99,10 +104,8 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 		vault.NewRenameVault(ports.Lookup, change.Rename, readers),
 		open,
 		change.Remove,
+		chooseFolder,
 	)
-	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
-	})
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 	path, served = vaults.NewDialogRoute(handler.Dialog, w.page.Gate.CountQuestions())
@@ -138,7 +141,8 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
-	w.Installation.Mount(editor.NewFileRoute(w.page.Gate, handler))
+	path, served := numenv1connect.NewFileServiceHandler(handler, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountWindowState(w *windowRoutes) {
@@ -177,19 +181,21 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windo
 		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.DeleteConnectionSide, &notes.Connect.DeleteConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
-	w.Installation.Mount(editor.NewNoteRoute(w.page.Gate, handler))
+	path, served := numenv1connect.NewNoteServiceHandler(handler, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
 	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) }, settingsadapter.GetAppSettingGroups)
 }
 
-func mountSettings(w *windowRoutes, settingsDeps settingsWiring) {
-	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil)
+func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.PathDialog) {
+	var choosePath *settings.ChoosePluginPath
+	if dialog != nil {
+		choosePath = openChoosePluginPath(settingsDeps, dialog)
+	}
+	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), choosePath)
 	handler := windowsettings.NewHandler(values)
-	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))
-	})
 	path, served := windowsettings.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
@@ -204,7 +210,6 @@ func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
 }
 
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) })
 	host := exec
 	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch, settings.NewRetryPlugin(exec.Runtime.RetryPlugin))
@@ -395,4 +400,9 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 		After: vaultDeps.Clock.After,
 	}
 	return events.Start
+}
+
+func mountTheme(w *windowRoutes, themes numenv1connect.ThemeServiceHandler) {
+	path, served := numenv1connect.NewThemeServiceHandler(themes, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, themes))
 }

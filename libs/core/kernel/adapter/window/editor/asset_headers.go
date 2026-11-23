@@ -3,6 +3,8 @@ package editor
 import (
 	"net/http"
 	"slices"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 )
 
 func listShownTypes() []string {
@@ -24,6 +26,6 @@ func setAssetHeaders(head http.Header, mediaType string) {
 	head.Set("Content-Type", mediaType)
 	if mediaType == "image/svg+xml" {
 		// An SVG opened as a page runs its scripts; as a picture it does not.
-		head.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+		head.Set("Content-Security-Policy", csp.PictureOnlyPolicy())
 	}
 }

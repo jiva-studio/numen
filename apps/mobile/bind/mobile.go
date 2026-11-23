@@ -77,20 +77,24 @@ func (c *Core) Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{Named: filed, Out: os.Stderr})
-	if err != nil {
-		stop()
-		return 0, err
-	}
-
 	// The themes come from the installation. The config has no plugin host, so
 	// the catalog offers the default theme and the person's own. If the themes
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := cfg.SetThemes(execution, preferences, res, opened, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
-		fmt.Fprintln(os.Stderr, "themes:", wrong)
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{
+		Named: filed, Out: os.Stderr,
+		ReportThemes: func(wrong error) {
+			if wrong != nil {
+				fmt.Fprintln(os.Stderr, "themes:", wrong)
+			}
+		},
+	})
+	if err != nil {
+		stop()
+		return 0, err
 	}
+
 	listener, err := listenLocal(ctx)
 	if err != nil {
 		stop()

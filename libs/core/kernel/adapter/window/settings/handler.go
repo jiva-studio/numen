@@ -190,9 +190,6 @@ func newWireCondition(target *manifest.Condition) *v1.PluginSettingCondition {
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-// SetPathChooser sets the native dialog a path setting is chosen with, once the application has one.
-func (h *Values) SetPathChooser(choose *setting.ChoosePluginPath) { h.choosePath = choose }
-
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting
 // and writes the chosen path. A path the setting does not accept returns the reason.
 func (h *Values) ChoosePluginPath(

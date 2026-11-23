@@ -143,17 +143,14 @@ type Runs struct {
 	failures map[domain.VaultID]string
 }
 
-// SetIndexer sets how a vault is brought up to date in the index, and the lifecycle of those runs: they
-// end when ctx does. Without an indexer no vault is claimed.
-func (r *Runs) SetIndexer(ctx context.Context, read IndexVault) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+// NewRuns is the state of a window whose vaults are brought up to date by read, and whose runs end when
+// ctx does. Without read no vault is claimed.
+func NewRuns(ctx context.Context, read IndexVault) *Runs {
+	r := &Runs{indexVault: read}
 	if ctx != nil {
 		r.closing = ctx.Done()
-	} else {
-		r.closing = nil
 	}
-	r.indexVault = read
+	return r
 }
 
 // Clear implements RunState.

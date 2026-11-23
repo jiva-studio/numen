@@ -173,9 +173,8 @@ func onAList(t *testing.T) *onTheList {
 	handler := NewHandler(
 		f,
 		vaults.NewListVaults(registry, readers), vaults.NewAddVault(adding, readers),
-		vaults.NewRenameVault(registry, rename, readers), windowsession.NewOpenVault(registry, f), remove,
+		vaults.NewRenameVault(registry, rename, readers), windowsession.NewOpenVault(registry, f), remove, chooseFolder,
 	)
-	handler.SetFolderChooser(chooseFolder)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
 	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(handler))

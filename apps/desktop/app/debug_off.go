@@ -31,3 +31,7 @@ func (d *DebugOptions) serveHTTP(
 ) error {
 	return nil
 }
+
+func (d *DebugOptions) getDialog(window editor.PathDialog) editor.PathDialog {
+	return window
+}

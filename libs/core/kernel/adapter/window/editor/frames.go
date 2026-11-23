@@ -22,12 +22,6 @@ func (s pageSet) getPolicy(played []string) string {
 	return csp.Sources{Media: played, Frames: frames}.Policy()
 }
 
-func pluginPagePolicy(frames []string) string {
-	return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-		"frame-src " + strings.Join(append([]string{"'self'"}, frames...), " ") +
-		"; object-src 'none'; base-uri 'none'; form-action 'none'"
-}
-
 // pluginPageReferrer is the Referrer-Policy of a file of a plugin's store on the loopback socket. A
 // site that checks which page frames its player is sent the origin of the socket.
 const pluginPageReferrer = "strict-origin-when-cross-origin"
@@ -93,7 +87,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		frames = plugins.GetFrameOrigins(pluginID)
 	}
 	w.Header().Set("Cache-Control", immutable)
-	w.Header().Set("Content-Security-Policy", pluginPagePolicy(frames))
+	w.Header().Set("Content-Security-Policy", csp.PluginPagePolicy(frames))
 	w.Header().Set("Referrer-Policy", pluginPageReferrer)
 	if opened.MediaType != "" {
 		w.Header().Set("Content-Type", opened.MediaType)

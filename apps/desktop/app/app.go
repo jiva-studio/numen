@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -140,14 +141,15 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	displayed, err := openInstallation(ctx, cfg, services, vault, frame)
+	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
+	displayed, err := openInstallation(ctx, cfg, services, container.WindowOpening{
+		Named: vault, Out: os.Stdout, Frame: frame, Scales: scales, Dialog: debugOpts.getDialog(frame),
+		ReportThemes: func(err error) { themes.Report(err, os.Stdout) },
+	})
 	if err != nil {
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation, scales, installation.RecordThemeWarning), os.Stdout)
-
 	installation.Report(notices)
 
 	going := &vaultFlush{flush: installation.FlushPending}
@@ -194,13 +196,13 @@ type shownInstallation struct {
 }
 
 func openInstallation(
-	ctx context.Context, cfg container.Config, services platform.Installation, vault string, frame editor.Frame,
+	ctx context.Context, cfg container.Config, services platform.Installation, opening container.WindowOpening,
 ) (shownInstallation, error) {
 	pages, err := editor.Pages()
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, container.WindowOpening{Named: vault, Out: os.Stdout, Frame: frame})
+	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, opening)
 	if err != nil {
 		return shownInstallation{}, err
 	}
@@ -292,6 +294,7 @@ type windowHooks struct {
 type windowFrame struct {
 	window *application.WebviewWindow
 	opened *editor.Installation
+	dialog *folderdialog.Dialog
 	detach func(tab windowdomain.DetachedTab) error
 }
 
@@ -299,6 +302,22 @@ func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	if f.window != nil {
 		f.window.SetTitle(getWindowTitle(f.opened.GetCurrentVault(), open))
 	}
+}
+
+// ChooseFolder opens the folder dialog over the window, once there is one.
+func (f *windowFrame) ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFolder(ctx, title, startingAt)
+}
+
+// ChooseFile opens the file dialog over the window, once there is one.
+func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFile(ctx, title, startingAt, accept)
 }
 
 func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {
@@ -334,9 +353,8 @@ func connectWindow(
 	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	frame *windowFrame, hooks windowHooks,
 ) {
-	opened.SetFolderDialog(folderdialog.New(window))
 	*frame = windowFrame{
-		window: window, opened: opened,
+		window: window, opened: opened, dialog: folderdialog.New(window),
 		detach: func(tab windowdomain.DetachedTab) error { return detachTab(ctx, app, opened, hooks, tab) },
 	}
 

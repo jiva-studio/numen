@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"sync/atomic"
 
 	"connectrpc.com/connect"
 
@@ -37,9 +36,9 @@ type FolderChooser interface {
 	Execute(ctx context.Context, title, startingAt string) (picker.PickedFolder, error)
 }
 
-// Dialog answers the request for the machine's native folder dialog, once the application has one.
+// Dialog answers the request for the machine's native folder dialog, when the application has one.
 type Dialog struct {
-	chooseFolder atomic.Pointer[FolderChooser]
+	chooseFolder FolderChooser
 }
 
 // Handler answers about the vaults this installation holds.
@@ -53,13 +52,12 @@ type Handler struct {
 	remove Remover
 }
 
-// NewHandler is the handler of the vaults service of one window. The folder dialog is set after,
-// when the application has one.
+// NewHandler is the handler of the vaults service of one window. chooseFolder is nil when the application has no folder dialog.
 func NewHandler(
 	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
-	open *windowsession.OpenVault, remove Remover,
+	open *windowsession.OpenVault, remove Remover, chooseFolder FolderChooser,
 ) *Handler {
-	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
+	return &Handler{Dialog: &Dialog{chooseFolder: chooseFolder}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
 }
 
 // NewRoute is where the vaults service answers: its path and the handler of its calls. Each call
@@ -73,9 +71,6 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 func NewDialogRoute(dialog *Dialog, counted connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewFolderDialogServiceHandler(dialog, counted)
 }
-
-// SetFolderChooser sets the native folder dialog a client may ask for.
-func (s *Dialog) SetFolderChooser(choose FolderChooser) { s.chooseFolder.Store(&choose) }
 
 // ListVaults returns every vault of the installation. The active vault is
 // queried from the window.
@@ -99,11 +94,10 @@ func (s *Dialog) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	choose := s.chooseFolder.Load()
-	if choose == nil {
+	if s.chooseFolder == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDialog)
 	}
-	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
+	selected, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
 	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}

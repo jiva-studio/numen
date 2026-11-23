@@ -63,53 +63,46 @@ type Installation struct {
 	lifecycle Lifecycle
 	imports   Importer
 	pages     pageSet
-	dialogs   []func(dialog PathDialog)
 }
 
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
+// Option sets what a window is put together with besides its state.
+type Option func(*Installation)
+
+// WithThemes sets the themes the window puts on its pages. A window put together without them serves
+// pages with no theme.
+func WithThemes(themes numenv1connect.ThemeServiceHandler) Option {
+	return func(o *Installation) { o.pages.themes = themes }
+}
+
+// WithPlugins sets where the calls for the services plugins serve are forwarded, and where the files
+// of a plugin are read from.
+func WithPlugins(services PluginServices, dir func(id string) (string, bool)) Option {
+	return func(o *Installation) { o.pages.plugins, o.pages.pluginDir = services, dir }
+}
+
 // NewInstallation makes the installation of a window over its state, the lifecycle of what it shows,
-// the import of dropped files and the content types vault files are served as. Nothing is served and no
+// the import of dropped files and the opening of the vault files served as assets. Nothing is served and no
 // vault is open until Start.
-func NewInstallation(page *PageAccess, lifecycle Lifecycle, imports Importer, mediaTypes *file.GetMediaType) *Installation {
-	return &Installation{
+func NewInstallation(page *PageAccess, lifecycle Lifecycle, imports Importer, assets *file.OpenVaultFile, options ...Option) *Installation {
+	o := &Installation{
 		lifecycle: lifecycle,
 		imports:   imports,
-		pages:     pageSet{window: page, mediaTypes: mediaTypes},
+		pages:     pageSet{window: page, assets: assets},
 	}
+	for _, option := range options {
+		option(o)
+	}
+	return o
 }
 
 // Mount adds the services the window answers through.
 func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.routes, routes...) }
 
-// SetThemes sets the themes the window offers and puts on its pages. A window
-// put together without a catalog serves none.
-func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
-
 // GetThemes returns the themes the window offers.
 func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
-
-// SetPlugins sets where the calls for the services plugins serve are forwarded,
-// and where the files of a plugin are read from.
-func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {
-	o.pages.plugins, o.pages.pluginDir = services, dir
-	o.pages.window.Media.playing.Load().setPluginServices(services)
-}
-
-// OnFolderDialog registers what a service does with the native dialog when the
-// application gives one.
-func (o *Installation) OnFolderDialog(bind func(dialog PathDialog)) {
-	o.dialogs = append(o.dialogs, bind)
-}
-
-// SetFolderDialog sets the native file and folder dialog used when a client
-// requests one.
-func (o *Installation) SetFolderDialog(dialog PathDialog) {
-	for _, bind := range o.dialogs {
-		bind(dialog)
-	}
-}
 
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
@@ -155,24 +148,12 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 }
 
 const (
-	// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
-	applyingTheme = "apply theme"
 	// readingTheSettings is the task ID for a settings name that this build reads under another name.
 	// Each message is appended to this ID with its position.
 	readingTheSettings = "read settings"
 	// readingTheFloor is the task ID for a similarity floor that is stored and cannot be read.
 	readingTheFloor = "read search floor"
 )
-
-// RecordThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
-// which says the theme the settings name is found now.
-func (o *Installation) RecordThemeWarning(message string) {
-	if message == "" {
-		o.pages.window.Window.RemoveTask(applyingTheme)
-		return
-	}
-	o.pages.window.Window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
-}
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {

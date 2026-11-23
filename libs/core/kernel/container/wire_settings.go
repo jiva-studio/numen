@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -15,11 +14,13 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -43,12 +44,17 @@ func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences
 	return c
 }
 
-// SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
-// stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func (c Config) SetThemes(exec *PluginExecution, prefs *PluginPreferences, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c, exec, prefs, res), scales, say)
-	inst.SetThemes(service)
-	return err
+// getThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
+// which says the theme the settings name is found now.
+func getThemeWarning(tasks *run.Tasks) func(message string) {
+	return func(message string) {
+		const applyingTheme = "apply theme"
+		if message == "" {
+			tasks.Remove(applyingTheme)
+			return
+		}
+		tasks.Set(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	}
 }
 
 // settingsWiring wires the settings, setting change events and themes of an installation.

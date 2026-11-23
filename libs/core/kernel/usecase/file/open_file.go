@@ -33,6 +33,20 @@ type OpenedFile struct {
 // Execute opens the file when its size and modification time match the given ones, and rejects it
 // with ErrChanged when they differ. A zero modification time means no modification time was supplied.
 func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, named domain.FileStat) (OpenedFile, error) {
+	return u.open(ctx, v, path, func(found domain.FileStat) error {
+		if named.Size != found.Size || getStamp(named.ModTime) != getStamp(found.ModTime) {
+			return ErrChanged
+		}
+		return nil
+	})
+}
+
+// ExecuteLatest opens the file as it is now, with no size or modification time to match.
+func (u *OpenFile) ExecuteLatest(ctx context.Context, v domain.Vault, path string) (OpenedFile, error) {
+	return u.open(ctx, v, path, nil)
+}
+
+func (u *OpenFile) open(ctx context.Context, v domain.Vault, path string, check func(found domain.FileStat) error) (OpenedFile, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return OpenedFile{}, err
@@ -41,8 +55,10 @@ func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, nam
 	if err != nil {
 		return OpenedFile{}, err
 	}
-	if named.Size != found.Size || getStamp(named.ModTime) != getStamp(found.ModTime) {
-		return OpenedFile{}, ErrChanged
+	if check != nil {
+		if err := check(found); err != nil {
+			return OpenedFile{}, err
+		}
 	}
 	// The file is opened by the path the vault reports for it.
 	body, err := reader.Open(ctx, found.Path)
