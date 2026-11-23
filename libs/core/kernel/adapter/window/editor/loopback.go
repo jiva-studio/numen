@@ -155,10 +155,6 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if h.open == nil {
-		refuse(w, errNoVault)
-		return
-	}
 	opened, err := h.open.Execute(r.Context(), h.vaults.GetCurrentVault(), id, targetPath, named)
 	if errors.Is(err, file.ErrNoVaultNamed) {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)

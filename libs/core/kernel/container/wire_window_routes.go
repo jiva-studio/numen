@@ -83,7 +83,7 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 }
 
 func mountText(w *windowRoutes, vaultDeps vaultWiring) {
-	handler := windowtext.NewHandler(&w.session.Runtime, nil)
+	handler := windowtext.NewUnavailable()
 	if text := openFileText(vaultDeps.TextVersions); text != nil {
 		handler = windowtext.NewHandler(&w.session.Runtime, text)
 	}
@@ -188,18 +188,17 @@ func openGetSettings(s settingsWiring) *settings.Get {
 }
 
 func mountSettings(w *windowRoutes, settingsDeps settingsWiring, dialog editor.PathDialog) {
-	var choosePath *settings.ChoosePluginPath
+	choice := windowsettings.NewUnavailablePathChoice()
 	if dialog != nil {
-		choosePath = openChoosePluginPath(settingsDeps, dialog)
+		choice = windowsettings.NewPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	}
-	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), choosePath)
-	handler := windowsettings.NewHandler(values)
+	handler := windowsettings.NewHandler(windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps)), choice)
 	path, served := windowsettings.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
-	folders := windowsettings.NewPluginFolders(nil, nil)
+	folders := windowsettings.NewUnavailablePluginData()
 	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
 		folders = windowsettings.NewPluginFolders(data, &w.session.Runtime)
 	}
