@@ -13,7 +13,7 @@ func enqueueAfter(t *testing.T, q *hosttest.Queue, isUserStarted bool) <-chan ho
 	turns := make(chan host.Turn, 1)
 	queued := make(chan struct{})
 	go func() {
-		turn, err := q.EnqueueWork(t.Context(), host.Work{IsUserStarted: isUserStarted, OnWaiting: func() { close(queued) }})
+		turn, err := q.EnqueueWork(t.Context(), host.Work{IsUserStarted: isUserStarted, NotifyWaiting: func() { close(queued) }})
 		if err == nil {
 			turns <- turn
 		}

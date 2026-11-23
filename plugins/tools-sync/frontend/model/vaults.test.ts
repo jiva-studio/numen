@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { useVaults } from './vaults'
 
-type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
-
 const NOW = new Date('2026-11-23T12:00:00Z')
 
 const createVault = (patch: Partial<Vault> = {}): Vault => ({
@@ -191,7 +189,7 @@ describe('useVaults', () => {
     await model.actions.load()
     client.listVaults.mockResolvedValue({
       vaults: [createVault({ state: 'connected' })],
-    } satisfies ListVaultsResponse)
+    } satisfies Awaited<ReturnType<VaultsClient['listVaults']>>)
 
     await model.actions.connectNew('Test')
 

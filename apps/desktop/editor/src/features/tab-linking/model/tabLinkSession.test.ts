@@ -56,7 +56,7 @@ const toWire = (event: TabLinksEvent) => {
     }
   }
   if (event.sync) return { event: { case: 'sync' as const, value: event.sync } }
-  if (event.movedTab) return { event: { case: 'movedTab' as const, value: event.movedTab } }
+  if (event.tabMove) return { event: { case: 'movedTab' as const, value: event.tabMove } }
   if (event.isHighlighted !== undefined) {
     return { event: { case: 'highlight' as const, value: { isOn: event.isHighlighted } } }
   }
@@ -210,7 +210,7 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).tabs).toStrictEqual([
@@ -368,7 +368,7 @@ describe('reopen', () => {
 describe('stream events for this window', () => {
   it('opens a moved tab and sets the highlight from the stream', async () => {
     const { deps, session } = setup([
-      { movedTab: MOVED_TAB },
+      { tabMove: MOVED_TAB },
       { isHighlighted: true },
       { isHighlighted: false },
     ])
@@ -415,7 +415,7 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      handle: { front: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
+      handle: { getFrontTab: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
@@ -427,7 +427,7 @@ describe('getWindowReport', () => {
   it('returns an empty active tab when no tab is active', () => {
     const windowTabs = {
       tabs: { tabs: computed(() => []), getTab: () => null },
-      handle: { front: () => null },
+      handle: { getFrontTab: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).window).toStrictEqual({

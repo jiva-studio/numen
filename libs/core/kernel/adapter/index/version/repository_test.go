@@ -16,7 +16,7 @@ const vault domain.VaultID = "01VAULT0000000000000000000"
 
 func openRepository(t *testing.T) *version.Repository {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}

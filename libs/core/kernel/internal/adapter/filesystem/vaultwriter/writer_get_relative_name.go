@@ -48,7 +48,7 @@ func (w *VaultWriter) isReachable(path string) bool {
 	if w.isOurs(clean) {
 		return true
 	}
-	if w.ignored.MatchesPath(clean) {
+	if w.ignored.IsMatch(clean) {
 		return false
 	}
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
@@ -66,7 +66,7 @@ func (w *VaultWriter) isWritableNote(path string) bool {
 
 func (w *VaultWriter) isWritableFile(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if w.ignored.MatchesPath(clean) {
+	if w.ignored.IsMatch(clean) {
 		return false
 	}
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {

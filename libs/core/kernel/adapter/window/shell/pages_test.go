@@ -24,7 +24,7 @@ type themeList struct{ applied string }
 func (d themeList) ListThemes(
 	context.Context, *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	return connect.NewResponse(&v1.ListThemesResponse{Applied: d.applied}), nil
+	return connect.NewResponse(&v1.ListThemesResponse{AppliedTheme: d.applied}), nil
 }
 
 func (themeList) ReadTheme(
@@ -48,7 +48,7 @@ func (themeList) WatchThemes(
 // The window uses the installation's themes, so a theme chosen in the editor
 // is applied here as well.
 func TestTheWindowAppliesTheInstallationsThemes(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.Themes = themeList{applied: "Evening"}
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
@@ -59,21 +59,21 @@ func TestTheWindowAppliesTheInstallationsThemes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.GetApplied() != "Evening" {
-		t.Errorf("the window applies %q", out.Msg.GetApplied())
+	if out.Msg.GetAppliedTheme() != "Evening" {
+		t.Errorf("the window applies %q", out.Msg.GetAppliedTheme())
 	}
 }
 
 // A folder of themes that could not be made leaves the window undressed and not unopened: it
 // goes on answering, and asking about themes is what fails.
 func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	window := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	stream, err := window.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}))
+	stream, err := window.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{WindowId: testWindow}))
 	if err != nil {
 		t.Fatalf("a window with no themes answers nothing: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
 // forwarding is plugins serving the services it names.
 type forwarding struct{ serves map[string]bool }
 
-func (f *forwarding) Serves(path string) bool { return f.serves[path] }
+func (f *forwarding) CanServe(path string) bool { return f.serves[path] }
 
 func (f *forwarding) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	if _, err := w.Write([]byte("a plugin")); err != nil {
@@ -178,13 +178,13 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "dist", "index.js"), []byte("export {}"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.Frontends = NewFrontendPlugins(func() []string { return []string{"md.numen.example"} }, func(id string) (string, bool) { return dir, id == "md.numen.example" })
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
-	out, err := plugins.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	out, err := plugins.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,11 +205,13 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 }
 
 func TestAWindowWithNoPluginsListsNone(t *testing.T) {
-	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
+	api := newAPI(t, nil)
+	api.Frontends = NewFrontendPlugins(func() []string { return nil }, func(string) (string, bool) { return "", false })
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	plugins := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
-	out, err := plugins.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	out, err := plugins.ListPlugins(t.Context(), connect.NewRequest(&v1.ListPluginsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

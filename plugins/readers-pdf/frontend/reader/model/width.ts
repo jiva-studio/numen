@@ -9,7 +9,7 @@ import { hasWindow, win } from '@numen/ui'
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
-const pixelRatio = (): number =>
+const getPixelRatio = (): number =>
   !hasWindow() || !Number.isFinite(win.devicePixelRatio) ? 1 : win.devicePixelRatio
 
 const roundUpWidth = (pixels: number): number => Math.ceil(pixels / WIDTH_STEP) * WIDTH_STEP
@@ -23,7 +23,7 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
     const widest = getRow().widths.reduce((most, each) => Math.max(most, each), 0)
-    return roundUpWidth(widest * pixelRatio())
+    return roundUpWidth(widest * getPixelRatio())
   })
 
   const drawnWidth = ref(0)

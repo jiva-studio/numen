@@ -79,9 +79,9 @@ func encode(b [16]byte) string {
 	return string(out)
 }
 
-// Valid reports whether s could have been produced by NewID. It is deliberately
+// IsValid reports whether s could have been produced by NewID. It is deliberately
 // strict: an identifier that is almost right points at a corrupted file.
-func Valid(s string) bool {
+func IsValid(s string) bool {
 	if len(s) != 26 {
 		return false
 	}

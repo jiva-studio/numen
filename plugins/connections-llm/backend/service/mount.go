@@ -82,7 +82,7 @@ func Mount(srv *server.Server) error {
 		})
 	}
 	srv.SetUpdateConfig(built.limits.Configure)
-	srv.OnClose(func() error {
+	srv.AddCloser(func() error {
 		built.gateway.Close()
 		return nil
 	})

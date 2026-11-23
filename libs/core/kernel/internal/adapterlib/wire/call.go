@@ -47,7 +47,7 @@ func NewCallStatusError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	return connect.NewError(connect.CodeInternal, err)
+	return NewInternalError(err)
 }
 
 // ConvertPriorityFromWire returns the priority of a call; an unspecified priority is background.

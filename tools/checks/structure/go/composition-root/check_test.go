@@ -26,9 +26,9 @@ func TestTheCompositionRootIsOnePackage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkCompositionRootIsOnePackage(t, load.Workspace(t, "libs/core/kernel"))
+	checkCompositionRootIsOnePackage(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

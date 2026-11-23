@@ -35,20 +35,20 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 	return out
 }
 
-func (e *lookupsCalls) GetNoteRefs(
-	ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest],
-) (*connect.Response[v1.GetNoteRefsResponse], error) {
+func (e *lookupsCalls) ListNoteRefs(
+	ctx context.Context, req *connect.Request[v1.ListNoteRefsRequest],
+) (*connect.Response[v1.ListNoteRefsResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetNoteRefsResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListNoteRefsResponse{Error: noVault}), nil
 	}
 	target, err := vault.Notes.GetNotes(ctx, req.Msg.GetPaths())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetNoteRefsResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListNoteRefsResponse{Error: code}), err
 	}
 	notes := make([]*v1.Note, 0, len(target))
 	for _, path := range req.Msg.GetPaths() {
@@ -56,106 +56,106 @@ func (e *lookupsCalls) GetNoteRefs(
 			notes = append(notes, &v1.Note{Path: one.Path, Title: one.Title, Identifier: one.ID})
 		}
 	}
-	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
+	return connect.NewResponse(&v1.ListNoteRefsResponse{Notes: notes}), nil
 }
 
-func (e *lookupsCalls) GetNoteTypes(
-	ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest],
-) (*connect.Response[v1.GetNoteTypesResponse], error) {
+func (e *lookupsCalls) ListNoteTypes(
+	ctx context.Context, req *connect.Request[v1.ListNoteTypesRequest],
+) (*connect.Response[v1.ListNoteTypesResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetNoteTypesResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListNoteTypesResponse{Error: noVault}), nil
 	}
 	target, err := vault.Notes.GetTypes(ctx, req.Msg.GetPaths())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetNoteTypesResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListNoteTypesResponse{Error: code}), err
 	}
 	types := make(map[string]string, len(target))
 	for path, one := range target {
 		types[path] = string(one)
 	}
-	return connect.NewResponse(&v1.GetNoteTypesResponse{Types: types}), nil
+	return connect.NewResponse(&v1.ListNoteTypesResponse{Types: types}), nil
 }
 
-func (e *lookupsCalls) GetNamedPaths(
-	ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest],
-) (*connect.Response[v1.GetNamedPathsResponse], error) {
+func (e *lookupsCalls) ListNamedPaths(
+	ctx context.Context, req *connect.Request[v1.ListNamedPathsRequest],
+) (*connect.Response[v1.ListNamedPathsResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetNamedPathsResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListNamedPathsResponse{Error: noVault}), nil
 	}
-	paths, err := vault.Notes.GetNamedPaths(ctx, req.Msg.GetName())
+	paths, err := vault.Notes.ListNamedPaths(ctx, req.Msg.GetName())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetNamedPathsResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListNamedPathsResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetNamedPathsResponse{Paths: paths}), nil
+	return connect.NewResponse(&v1.ListNamedPathsResponse{Paths: paths}), nil
 }
 
-func (e *lookupsCalls) GetPathsOfType(
-	ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest],
-) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
+func (e *lookupsCalls) ListPathsOfType(
+	ctx context.Context, req *connect.Request[v1.ListPathsOfTypeRequest],
+) (*connect.Response[v1.ListPathsOfTypeResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetPathsOfTypeResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListPathsOfTypeResponse{Error: noVault}), nil
 	}
-	paths, err := vault.Notes.GetPathsOfType(ctx, domain.NoteType(req.Msg.GetType()))
+	paths, err := vault.Notes.ListPathsOfType(ctx, domain.NoteType(req.Msg.GetType()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetPathsOfTypeResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListPathsOfTypeResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetPathsOfTypeResponse{Paths: paths}), nil
+	return connect.NewResponse(&v1.ListPathsOfTypeResponse{Paths: paths}), nil
 }
 
-func (e *lookupsCalls) GetLinks(
-	ctx context.Context, req *connect.Request[v1.GetLinksRequest],
-) (*connect.Response[v1.GetLinksResponse], error) {
+func (e *lookupsCalls) ListLinks(
+	ctx context.Context, req *connect.Request[v1.ListLinksRequest],
+) (*connect.Response[v1.ListLinksResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetLinksResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.ListLinksResponse{Error: noVault}), nil
 	}
-	links, err := vault.Links.GetLinks(ctx, req.Msg.GetPath())
+	links, err := vault.Links.ListLinks(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetLinksResponse{Error: code}), err
+		return connect.NewResponse(&v1.ListLinksResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetLinksResponse{Links: writeLinks(links)}), nil
+	return connect.NewResponse(&v1.ListLinksResponse{Links: writeLinks(links)}), nil
 }
 
-func (e *lookupsCalls) GetBacklinks(
-	ctx context.Context, req *connect.Request[v1.GetBacklinksRequest],
-) (*connect.Response[v1.GetBacklinksResponse], error) {
+func (e *lookupsCalls) ListBacklinks(
+	ctx context.Context, req *connect.Request[v1.HostLinkServiceListBacklinksRequest],
+) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetBacklinksResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostLinkServiceListBacklinksResponse{Error: noVault}), nil
 	}
-	links, err := vault.Links.GetBacklinks(ctx, req.Msg.GetPath())
+	links, err := vault.Links.ListBacklinks(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetBacklinksResponse{Error: code}), err
+		return connect.NewResponse(&v1.HostLinkServiceListBacklinksResponse{Error: code}), err
 	}
 	withRoles := writeLinks(links)
 	for i, l := range links {
 		inverse, _ := domain.GetInverseRole(l.Role)
 		withRoles[i].SourceRole = wire.ConvertRoleToWire(inverse)
 	}
-	return connect.NewResponse(&v1.GetBacklinksResponse{Links: withRoles}), nil
+	return connect.NewResponse(&v1.HostLinkServiceListBacklinksResponse{Links: withRoles}), nil
 }
 
 func (e *lookupsCalls) ResolveLinks(

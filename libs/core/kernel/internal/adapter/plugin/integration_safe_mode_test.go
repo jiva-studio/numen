@@ -47,7 +47,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if plugins := management.Registry.GetPlugins(); len(plugins) != 0 {
+	if plugins := management.Registry.ListPlugins(); len(plugins) != 0 {
 		t.Fatalf("expected 0 plugins in safe mode, got %d", len(plugins))
 	}
 

@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
-// NoEndpoint is the endpoint of a plugin that has none.
-func NoEndpoint() transport.Endpoint {
+// CreateNoEndpoint is the endpoint of a plugin that has none.
+func CreateNoEndpoint() transport.Endpoint {
 	return transport.Endpoint{Host: "", Port: 0, Token: ""}
 }
 
@@ -37,7 +37,7 @@ func createRPCShutdown(endpoint transport.Endpoint, client *http.Client, gracePe
 		client := numenv1connect.NewPluginLifecycleServiceClient(
 			client,
 			transport.GetBaseURL(endpoint),
-			connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
+			connect.WithInterceptors(transport.CreateAuthInterceptor(endpoint.Token)),
 		)
 		req := connect.NewRequest(&v1.ShutdownRequest{})
 		_, err := client.Shutdown(rpcCtx, req)

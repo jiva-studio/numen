@@ -62,7 +62,7 @@ func compare(query plugin.SimilarityQuery, chunks []searchpolicy.SampledChunk) (
 		if len(chunk.Vector) != len(query.Vector) {
 			return nil, fmt.Errorf("%w: a passage holds %d dimensions where the query has %d", plugin.ErrInvalidQuery, len(chunk.Vector), len(query.Vector))
 		}
-		row = append(row, vector.SimilarityBytes(query.Vector, chunk.Vector))
+		row = append(row, vector.ComputeSimilarityBytes(query.Vector, chunk.Vector))
 	}
 	return row, nil
 }

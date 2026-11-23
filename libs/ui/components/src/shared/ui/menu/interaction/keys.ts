@@ -33,7 +33,7 @@ export interface MenuKeysState {
   readonly here: Ref<number>
   readonly holdRow: (item: string, row: RowHandle | null) => void
   readonly goTo: (pos: number) => void
-  readonly pointTo: (pos: number) => void
+  readonly highlightRow: (pos: number) => void
   readonly onKey: (event: KeyboardEvent) => void
 }
 
@@ -109,7 +109,7 @@ export function useMenuKeys(
   }
 
   /** The pointer onto an item: it becomes the active row, without scrolling the menu. */
-  const pointTo = (pos: number): void => {
+  const highlightRow = (pos: number): void => {
     here.value = pos
     const item = items()[pos]
     if (item) renderedRows.get(item.id)?.focus({ preventScroll: true })
@@ -142,5 +142,5 @@ export function useMenuKeys(
     }
   }
 
-  return { here, holdRow, goTo, pointTo, onKey }
+  return { here, holdRow, goTo, highlightRow, onKey }
 }

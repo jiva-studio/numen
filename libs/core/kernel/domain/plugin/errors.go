@@ -77,6 +77,6 @@ func (e invalidFocusError) Error() string { return e.err.Error() }
 
 func (e invalidFocusError) Unwrap() []error { return []error{e.err, ErrInvalidFocus} }
 
-// InvalidFocus is err as the rejection of a focus call: it keeps the message and the identity of err
+// CreateInvalidFocus is err as the rejection of a focus call: it keeps the message and the identity of err
 // and is also ErrInvalidFocus.
-func InvalidFocus(err error) error { return invalidFocusError{err: err} }
+func CreateInvalidFocus(err error) error { return invalidFocusError{err: err} }

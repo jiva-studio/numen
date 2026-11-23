@@ -12,22 +12,22 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-// Options are what a client of the host is made with: the token on every call, streaming ones
+// BuildOptions returns what a client of the host is made with: the token on every call, streaming ones
 // included.
-func Options(endpoint hostcall.Endpoint) []connect.ClientOption {
-	return []connect.ClientOption{connect.WithInterceptors(Bearer(endpoint.Token))}
+func BuildOptions(endpoint hostcall.Endpoint) []connect.ClientOption {
+	return []connect.ClientOption{connect.WithInterceptors(NewBearer(endpoint.Token))}
 }
 
-// HTTPClient is what a client of the host sends its calls with.
-func HTTPClient() *http.Client { return http.DefaultClient }
+// GetHTTPClient returns what a client of the host sends its calls with.
+func GetHTTPClient() *http.Client { return http.DefaultClient }
 
 type bearer struct {
 	token string
 }
 
-// Bearer presents the token as the plugin's own on every call, unary or streaming. An empty token
+// NewBearer presents the token as the plugin's own on every call, unary or streaming. An empty token
 // presents none.
-func Bearer(token string) connect.Interceptor {
+func NewBearer(token string) connect.Interceptor {
 	return &bearer{token: token}
 }
 

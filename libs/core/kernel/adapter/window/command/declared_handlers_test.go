@@ -31,7 +31,7 @@ func (handlingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListContributions_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
-	handler := newHandler(newUseCases(handlingPlugins{}, handlingPlugins{}, nil, nil, nil))
+	handler := newHandler(newUseCases(handlingPlugins{}, handlingPlugins{}, nil, nil))
 
 	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {
@@ -64,7 +64,7 @@ func (p commandReadsCounted) ListCommands() []plugin.CommandEntry {
 
 func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	reads := 0
-	commands := newUseCases(commandReadsCounted{reads: &reads}, commandReadsCounted{reads: &reads}, nil, nil, nil)
+	commands := newUseCases(commandReadsCounted{reads: &reads}, commandReadsCounted{reads: &reads}, nil, nil)
 	handler := newHandler(commands.withVersions(&versionItems{}))
 
 	list := listItemsOfOne(t, handler, "org.example.readings", "app:file.createText", "scans/page.png")

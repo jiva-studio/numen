@@ -14,10 +14,10 @@ const setUp = () => {
   scopes.push(scope)
   const gesture = scope.run(() =>
     usePlexGesture({
-      frame: () => frame,
-      options: () => DEFAULT_OPTIONS,
-      relations: () => ['child'],
-      threshold: () => 10,
+      getFrame: () => frame,
+      getOptions: () => DEFAULT_OPTIONS,
+      getRelations: () => ['child'],
+      getThreshold: () => 10,
       commit: vi.fn(),
     }),
   )!

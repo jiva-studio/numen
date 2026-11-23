@@ -86,7 +86,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 }
 
 func TestDSNCarriesEveryPragma(t *testing.T) {
-	got := dsn("/tmp/index.db", settings{synchronous: shipped})
+	got := buildDSN("/tmp/index.db", settings{synchronous: shipped})
 	for _, want := range []string{"foreign_keys%281%29", "busy_timeout%285000%29", "journal_mode%28WAL%29", "synchronous%28NORMAL%29"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("dsn %q is missing %s", got, want)
@@ -217,7 +217,7 @@ func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 // connection, and keeps everything else it is opened with.
 func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
 	ctx := t.Context()
-	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"), Unsynchronized())
+	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"), DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +287,7 @@ func TestFinishedReadersLeaveHalfTheCoresConnected(t *testing.T) {
 
 // A path carrying a query of its own keeps it, and the pragmas join it.
 func TestDSNJoinsAQueryThePathAlreadyCarries(t *testing.T) {
-	got := dsn("file:index.db?mode=rwc", settings{synchronous: shipped})
+	got := buildDSN("file:index.db?mode=rwc", settings{synchronous: shipped})
 	if !strings.HasPrefix(got, "file:index.db?mode=rwc&") || strings.Count(got, "?") != 1 {
 		t.Errorf("dsn %q does not join the query the path carries", got)
 	}

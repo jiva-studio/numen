@@ -21,22 +21,22 @@ var ErrNegativeLimit = errors.New("the limit of results is negative")
 // stages of a query to its results.
 type FindSearchResultsDeps struct {
 	Parser        QueryParser
-	Catalog       func() searchquery.Catalog
+	GetCatalog    func() searchquery.Catalog
 	Clock         machineport.Clock
 	Evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits, generation string) (searchquery.SearchResults, error)
 	FillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
-	Stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
+	RunStages     func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
 	Limits        searchquery.Limits
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser        QueryParser
-	catalog       func() searchquery.Catalog
+	getCatalog    func() searchquery.Catalog
 	clock         machineport.Clock
 	evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits, generation string) (searchquery.SearchResults, error)
 	fillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
-	stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
+	applyStages   func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
 	Limits        searchquery.Limits
 }
 
@@ -46,12 +46,12 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	if limits == (searchquery.Limits{}) {
 		limits = searchquery.DefaultLimits()
 	}
-	catalog := deps.Catalog
+	catalog := deps.GetCatalog
 	if catalog == nil {
 		catalog = searchquery.GetBuiltinCatalog
 	}
 	return &FindSearchResults{
-		parser: deps.Parser, catalog: catalog, clock: deps.Clock, evaluate: deps.Evaluate, fillDocuments: deps.FillDocuments, stages: deps.Stages,
+		parser: deps.Parser, getCatalog: catalog, clock: deps.Clock, evaluate: deps.Evaluate, fillDocuments: deps.FillDocuments, applyStages: deps.RunStages,
 		Limits: limits,
 	}
 }
@@ -97,7 +97,7 @@ func (u *FindSearchResults) runStages(
 	if err := u.fillDocuments(ctx, v, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	return u.stages(ctx, v, q, results, r)
+	return u.applyStages(ctx, v, q, results, r)
 }
 
 func (u *FindSearchResults) getLimit(limit int, hasTop bool) int {
@@ -114,7 +114,7 @@ func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery
 	if err := searchquery.CheckQueryText(text, u.Limits); err != nil {
 		return searchquery.Query{}, err
 	}
-	raw, err := u.parser.ParseQuery(text, u.catalog())
+	raw, err := u.parser.ParseQuery(text, u.getCatalog())
 	if err != nil {
 		return searchquery.Query{}, err
 	}

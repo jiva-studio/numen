@@ -5,7 +5,7 @@ import {
   createEdgeLabel,
   createPointOnCurve,
   getArrow,
-  edgeKey,
+  buildEdgeKey,
   getHeading,
   getLength,
   type EdgeCurve,
@@ -29,8 +29,8 @@ const axisRow = (from: number, control1: number, control2: number, to: number): 
 
 describe('the key of an edge', () => {
   it('is the same whichever end is which', () => {
-    expect(edgeKey({ from: 'a', to: 'b' })).toBe('a b')
-    expect(edgeKey({ from: 'b', to: 'a' })).toBe('a b')
+    expect(buildEdgeKey({ from: 'a', to: 'b' })).toBe('a b')
+    expect(buildEdgeKey({ from: 'b', to: 'a' })).toBe('a b')
   })
 })
 

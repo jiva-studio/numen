@@ -30,14 +30,14 @@ type FileChangeLookup interface {
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
-	GetNamedPaths(ctx context.Context, name string) ([]string, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListNamedPaths(ctx context.Context, name string) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // LinkLookup reads the links between the notes of the vault.
 type LinkLookup interface {
-	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 }
 
@@ -90,7 +90,7 @@ type Arranger interface {
 	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
 	// returns the names of the checks the result covers and the problems they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
-	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
 // LinkEditor edits the frontmatter of the notes of the vault: its links, and its other keys.
@@ -112,7 +112,7 @@ type LinkEditor interface {
 
 // Watch tells of the moves in the vaults of the installation.
 type Watch interface {
-	WatchMoves(ctx context.Context) (<-chan struct{}, error)
+	WatchIndexChanges(ctx context.Context) (<-chan struct{}, error)
 }
 
 // Switch names the vault a call works and the vaults the installation lists.

@@ -35,12 +35,12 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       throw new Error('the review needs the connections and the links of the window it is drawn in')
     }
     const reviewNotices = createNotices(notices)
-    const counts = createVaultCounts(reviewNotices)
-    plugin.identity.subscriptions.push({ dispose: counts.dispose })
-    plugin.register.view(createVaultSummaryView(counts))
+    const vaultCounts = createVaultCounts(reviewNotices)
+    plugin.identity.subscriptions.push({ dispose: vaultCounts.dispose })
+    plugin.register.view(createVaultSummaryView(vaultCounts))
     plugin.register.tabKind(
       createReviewKind({
-        counts,
+        counts: vaultCounts,
         notices: reviewNotices,
         connections,
         relations,
@@ -69,7 +69,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     buffers,
     closeTab,
     writeMessage: workspace.messages.getWriter('preset'),
-    today: () => workspace.window.getToday(),
+    getToday: () => workspace.window.getToday(),
   })
   plugin.register.tabKind(decks.kind)
   plugin.register.tabKind(cardModels.kind)

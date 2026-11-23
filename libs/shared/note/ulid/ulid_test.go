@@ -50,7 +50,7 @@ func TestShapeAndAlphabet(t *testing.T) {
 	if len(id) != 26 {
 		t.Fatalf("len = %d, want 26 (%s)", len(id), id)
 	}
-	if !ulid.Valid(id) {
+	if !ulid.IsValid(id) {
 		t.Fatalf("%s did not validate", id)
 	}
 	// The confusable glyphs are the point of Crockford base32: an identifier
@@ -90,7 +90,7 @@ func TestValidRejectsNearMisses(t *testing.T) {
 		strings.Replace(good, string(good[10]), "I", 1),
 		strings.ToLower(good),
 	} {
-		if ulid.Valid(bad) {
+		if ulid.IsValid(bad) {
 			t.Errorf("%q was accepted", bad)
 		}
 	}
@@ -108,7 +108,7 @@ func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		"too long":   base + "T",
 		"too short":  base[:25],
 	} {
-		if ulid.Valid(s) {
+		if ulid.IsValid(s) {
 			t.Errorf("%s: %q validated", name, s)
 		}
 	}

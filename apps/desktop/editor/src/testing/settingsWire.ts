@@ -122,7 +122,7 @@ const toWirePlugin = (plugin: PluginInfo) => ({
 })
 
 const toWireConfiguration = (answer: Configuration) => ({
-  written: answer.written,
+  settingsJson: answer.written,
   path: answer.path,
   plugins: (answer.plugins ?? []).map(toWirePlugin),
   app: (answer.app ?? []).map(toWireSetting),
@@ -182,20 +182,28 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
       : {}),
     ...(updateSettings
       ? {
-          writeSettings: async (request: { settings: readonly SettingEdit[] }) => {
-            const edits = request.settings.map((one) => ({ at: [...one.at], value: one.value }))
+          writeSettings: async (request: {
+            settings: readonly { keyPath: readonly string[]; value: string }[]
+          }) => {
+            const edits = request.settings.map((one) => ({
+              at: [...one.keyPath],
+              value: one.value,
+            }))
             await updateSettings(edits)
             version += 1n
             written = applyEdits(written, edits)
             writtenAt = version
-            return { written, version }
+            return { settingsJson: written, version }
           },
         }
       : {}),
     ...(watchSettings
       ? {
           watchSettings: async function* (_request: object, context: { signal: AbortSignal }) {
-            for await (const batch of watchSettings(context.signal)) yield { changed: batch }
+            for await (const batch of watchSettings(context.signal))
+              yield {
+                settings: batch.map((one) => ({ keyPath: [...one.at], value: one.value })),
+              }
           },
         }
       : {}),

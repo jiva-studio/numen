@@ -13,7 +13,7 @@ export {
   ARROWHEAD_PATH,
 } from './edges/paths'
 
-export { easeOut, lerp } from './math'
+export { computeEaseOut as easeOut, interpolate as lerp } from './math'
 export {
   DEFAULT_OPTIONS,
   resolveOptions,

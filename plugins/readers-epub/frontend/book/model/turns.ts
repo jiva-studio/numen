@@ -10,8 +10,8 @@ import type { ComputedRef, Ref, ShallowRef } from 'vue'
 import {
   findSpreadAt,
   getSpreadStart,
-  inFront,
-  leftInDocument,
+  findFirstMark,
+  getLeftInDocument,
   createPages,
   type Flow,
   type Mark,
@@ -107,7 +107,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   )
 
   const leftInChapter = computed(() =>
-    leftInDocument(options.flow.value, activeSpread.value, options.marks.value),
+    getLeftInDocument(options.flow.value, activeSpread.value, options.marks.value),
   )
 
   const stand = (spread: number, how: 'smooth' | 'auto') => {
@@ -146,7 +146,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   }
 
   const announce = () => {
-    const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
+    const now = findFirstMark(options.marks.value, options.flow.value, activeSpread.value)
     if (now !== undefined && now !== options.props.at) options.onMove(now)
   }
 
@@ -162,7 +162,7 @@ export function useBookTurns(options: BookTurnsOptions) {
     findSpreadAt(options.marks.value, options.flow.value, pos) === activeSpread.value
   const getKeptOffset = () => {
     if (keptOffset !== undefined && isInFront(keptOffset)) return keptOffset
-    const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
+    const now = findFirstMark(options.marks.value, options.flow.value, activeSpread.value)
     if (now === undefined) return options.props.at
     keptOffset = now
     return now
@@ -173,7 +173,7 @@ export function useBookTurns(options: BookTurnsOptions) {
 
   const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
 
-  const turn = (way: PageNavigationAction): number | undefined => {
+  const navigatePage = (way: PageNavigationAction): number | undefined => {
     const to = goToPage(way, {
       spread: activeSpread.value,
       count: options.spreadCount.value,
@@ -190,6 +190,6 @@ export function useBookTurns(options: BookTurnsOptions) {
 
   return {
     position: { standing: activeSpread, front, leftInChapter },
-    moves: { stand, enterSpread, goTo, getKeptOffset, keepOffset, getSpreadOf, turn },
+    moves: { stand, enterSpread, goTo, getKeptOffset, keepOffset, getSpreadOf, turn: navigatePage },
   }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTask } from '../testing/tasks'
-import { getProgress, orderTasks, summarizeBatch, summarizeTasks } from './summary'
+import { getProgress, sortTasks, summarizeBatch, summarizeTasks } from './summary'
 
 describe('summarizeTasks', () => {
   it('is idle when no task runs and none failed', () => {
@@ -68,11 +68,11 @@ describe('getProgress', () => {
   })
 })
 
-describe('orderTasks', () => {
+describe('sortTasks', () => {
   it('puts the newest task first', () => {
     const tasks = [createTask({ id: 'old' }), createTask({ id: 'mid' }), createTask({ id: 'new' })]
 
-    expect(orderTasks(tasks).map((one) => one.id)).toStrictEqual(['new', 'mid', 'old'])
+    expect(sortTasks(tasks).map((one) => one.id)).toStrictEqual(['new', 'mid', 'old'])
   })
 })
 

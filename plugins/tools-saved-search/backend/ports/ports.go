@@ -13,7 +13,7 @@ import (
 type Search interface {
 	StartSearch(ctx context.Context, start host.SearchStart) (string, error)
 	GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error)
-	RemoveSearch(ctx context.Context, id string) error
+	DeleteSearch(ctx context.Context, id string) error
 	ListSearchFunctions(ctx context.Context) (host.SearchFunctions, error)
 }
 
@@ -28,7 +28,7 @@ type Notes interface {
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	Create(ctx context.Context, path string, content []byte) error
 	Scan(ctx context.Context, paths []string) error
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // Store is the plugin's folder of one vault.

@@ -72,7 +72,7 @@ func (t *Tools) listCardCardModels(ctx context.Context, in cardModelListInput) (
 	res := cardModelListOutput{CardModels: nil, Total: count}
 	for _, s := range cardModels {
 		res.CardModels = append(res.CardModels, CardModel{
-			Path: s.Path, Name: domain.Basename(s.Path), Title: s.Title, Fields: s.Fields,
+			Path: s.Path, Name: domain.GetBasename(s.Path), Title: s.Title, Fields: s.Fields,
 		})
 	}
 	return res, nil
@@ -105,7 +105,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 	if err != nil {
 		return cardModelReadOutput{}, err
 	}
-	s, err := t.cards.Read.CardModel(ctx, v, in.Path)
+	s, err := t.cards.Read.ReadCardModel(ctx, v, in.Path)
 	if err != nil {
 		return cardModelReadOutput{}, err
 	}
@@ -121,7 +121,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 	}
 	title := s.Title
 	if title == "" {
-		title = domain.Basename(in.Path)
+		title = domain.GetBasename(in.Path)
 	}
 	fields := s.Body.Fields
 	if fields == nil {
@@ -132,7 +132,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 		Title:       title,
 		Fields:      fields,
 		Templates:   newTemplates(s.Body.Templates),
-		Fingerprint: fingerprintOf(s.FileStat),
+		Fingerprint: buildFingerprint(s.FileStat),
 	}, nil
 }
 
@@ -190,7 +190,7 @@ func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput
 		Sections:    read.Sections,
 		Total:       read.Total,
 		Problems:    getProblems(read.Problems),
-		Fingerprint: fingerprintOf(read.FileStat),
+		Fingerprint: buildFingerprint(read.FileStat),
 	}
 	for _, card := range read.Cards {
 		res.Cards = append(res.Cards, newCard(card))

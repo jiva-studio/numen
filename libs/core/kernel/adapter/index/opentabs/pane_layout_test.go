@@ -14,7 +14,7 @@ import (
 
 func openObservedRepository(t *testing.T) (*opentabs.Repository, *sql.DB) {
 	t.Helper()
-	db, err := sql.Open("sqlite", indexfile.Path(t))
+	db, err := sql.Open("sqlite", indexfile.GetPath(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -34,19 +34,19 @@ func (c linksCommand) Run(ctx context.Context, term terminal, args []string) err
 
 	r := newReporter(term.out)
 	if len(links.Links) == 0 && len(links.Backlinks) == 0 {
-		r.Println("no links either way")
+		r.WriteLine("no links either way")
 		return r.Err()
 	}
 	if len(links.Links) > 0 {
-		r.Println("points at:")
+		r.WriteLine("points at:")
 		for _, l := range links.Links {
-			r.Printf("  %s\n", describeLink(links.Vault, l))
+			r.WriteFormat("  %s\n", describeLink(links.Vault, l))
 		}
 	}
 	if len(links.Backlinks) > 0 {
-		r.Println("pointed at by:")
+		r.WriteLine("pointed at by:")
 		for _, l := range links.Backlinks {
-			r.Printf("  %-10s %s\n", l.Role, l.From)
+			r.WriteFormat("  %-10s %s\n", l.Role, l.From)
 		}
 	}
 	return r.Err()
@@ -66,7 +66,7 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 	case l.IsAmbiguous:
 		where += "  (several notes answer to that name)"
 	}
-	if vault, crossed := l.InVault(from.ID); crossed {
+	if vault, crossed := l.ResolveVault(from.ID); crossed {
 		where += "  (in another vault: " + string(vault) + ")"
 	}
 	line := fmt.Sprintf("%-10s %s", l.Role, where)

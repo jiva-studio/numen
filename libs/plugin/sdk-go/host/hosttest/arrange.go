@@ -27,7 +27,7 @@ func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.No
 		return host.NoteRename{}, err
 	}
 	title = strings.TrimSpace(title)
-	name, exact, err := notesdomain.Filename(title)
+	name, exact, err := notesdomain.CreateFilename(title)
 	if err != nil {
 		return host.NoteRename{}, err
 	}
@@ -60,7 +60,7 @@ func (v *Vault) writeTitle(notePath, title string, isExact bool) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if _, isTitled := doc.Title(); !isTitled && isExact {
+	if _, isTitled := doc.GetTitle(); !isTitled && isExact {
 		return true, nil
 	}
 	if err := doc.SetTitle(title); err != nil {
@@ -77,7 +77,7 @@ func (v *Vault) writeTitle(notePath, title string, isExact bool) (bool, error) {
 func (v *Vault) MoveNotes(ctx context.Context, paths []string, folder string) ([]host.NoteMove, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	if folder != "" && !isInside(folder) {
@@ -104,7 +104,7 @@ func (v *Vault) MoveNotes(ctx context.Context, paths []string, folder string) ([
 func (v *Vault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	out := make([]host.NoteRemoval, 0, len(paths))
@@ -112,14 +112,14 @@ func (v *Vault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRem
 		one := host.NoteRemoval{Path: notePath}
 		one.Err = v.checkNote(ctx, notePath)
 		if one.Err == nil {
-			one.TrashPath, one.BrokenLinks, one.Err = v.trashNote(notePath)
+			one.TrashPath, one.BrokenLinks, one.Err = v.moveNoteToTrash(notePath)
 		}
 		out = append(out, one)
 	}
 	return out, nil
 }
 
-func (v *Vault) trashNote(notePath string) (string, []string, error) {
+func (v *Vault) moveNoteToTrash(notePath string) (string, []string, error) {
 	backlinks := v.getBacklinks(v.parsed(), notePath)
 	target := path.Join(trashDir, notePath)
 	for attempt := 2; v.isPresent(target); attempt++ {
@@ -175,7 +175,7 @@ func (v *Vault) checkNote(ctx context.Context, notePath string) error {
 }
 
 func (v *Vault) isFolder(folder string) bool {
-	paths, err := v.files.paths()
+	paths, err := v.files.listPaths()
 	if err != nil {
 		return false
 	}

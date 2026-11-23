@@ -37,7 +37,7 @@ func newCompilation(tb testing.TB) wazero.CompilationCache {
 
 func newWorkers(tb testing.TB) *Workers {
 	tb.Helper()
-	workers := NewWorkers(Options{Report: failOnReport(tb), CompilationCache: newCompilation(tb), AfterFunc: nil, Workers: 0, IdleWorkers: 0})
+	workers := NewWorkers(Options{Report: failOnReport(tb), CompilationCache: newCompilation(tb), StartTimer: nil, Workers: 0, IdleWorkers: 0})
 	tb.Cleanup(func() {
 		if err := workers.Close(); err != nil {
 			tb.Error(err)
@@ -73,7 +73,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			defer closeAndCheck(t, doc)
 
 			for i := range doc.pages {
-				response := doc.text(i)
+				response := doc.readText(i)
 				read, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
 					Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc.ref, Index: i}},
 					Mode: requests.GetPageTextStructuredModeChars,
@@ -109,7 +109,7 @@ func whereOn(t *testing.T, workers *Workers, name string, pages ...int) (*Book, 
 	if err != nil {
 		t.Fatal(err)
 	}
-	boxes, err := book.Highlights(workers, raw, pages)
+	boxes, err := book.FindHighlights(workers, raw, pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -425,17 +425,17 @@ func TestHighlightsEmptyPagesOrInvalid(t *testing.T) {
 	}
 
 	// Empty wanted pages
-	boxes, err := book.Highlights(workers, raw, nil)
+	boxes, err := book.FindHighlights(workers, raw, nil)
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights(nil) got %v, err %v; want nil, nil", boxes, err)
 	}
-	boxes, err = book.Highlights(workers, raw, []int{})
+	boxes, err = book.FindHighlights(workers, raw, []int{})
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights([]) got %v, err %v; want nil, nil", boxes, err)
 	}
 
 	// Invalid PDF bytes
-	_, err = book.Highlights(workers, []byte("not a pdf"), []int{0})
+	_, err = book.FindHighlights(workers, []byte("not a pdf"), []int{0})
 	if err == nil {
 		t.Error("expected error for invalid PDF bytes in Highlights")
 	}
@@ -448,7 +448,7 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 	}
 	defer closeAndCheck(t, doc)
 
-	if boxes := doc.words(9999, 0); len(boxes) != 0 {
+	if boxes := doc.findWordBoxes(9999, 0); len(boxes) != 0 {
 		t.Errorf("doc.words(9999) returned %d boxes, want 0", len(boxes))
 	}
 }

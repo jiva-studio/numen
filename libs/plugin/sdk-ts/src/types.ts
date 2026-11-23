@@ -30,7 +30,7 @@ export interface TextRange {
 }
 
 // Result is the discriminated outcome of a fallible operation.
-import type { Result } from '@numen/result'
+import type { Failure, Result } from '@numen/result'
 
 // ReaderRegistration registers a viewer component for files. The manifest declares, under
 // `contributes.readers` with the same id, the content types it opens. The component gets a ReaderTabState as
@@ -215,6 +215,10 @@ export interface Subscriptions {
   readonly length: number
 }
 
+// OpenExternalErrorCode is why an address was not opened: it is not an http or https address, the window
+// could not open it, or the plugin lacks the permission link:open.
+export type OpenExternalErrorCode = 'notWebAddress' | 'openFailed' | 'permissionDenied'
+
 // PluginIdentity is who the plugin is and where it runs.
 export interface PluginIdentity {
   readonly id: string
@@ -224,7 +228,7 @@ export interface PluginIdentity {
   // Opens an http or https address in the system browser. Any other address fails; a plugin without
   // the permission link:open (consent to open external links; it does not restrict requests the
   // plugin makes itself) is refused.
-  openExternal(url: string): Promise<Result<null>>
+  openExternal(url: string): Promise<Result<null, Failure<OpenExternalErrorCode>>>
   hasPermission?(permission: string): boolean
 }
 

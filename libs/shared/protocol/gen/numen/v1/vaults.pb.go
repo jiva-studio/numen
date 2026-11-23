@@ -510,12 +510,12 @@ type RemoveVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to remove, by its identity.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Trash sends the folder to the trash of this machine, where a person
+	// is_folder_trashed sends the folder to the trash of this machine, where a person
 	// deleted. A folder no longer carrying this vault's identity stays where it
 	// is and the vault stays on the list.
-	Trash         bool `protobuf:"varint,2,opt,name=trash,proto3" json:"trash,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsFolderTrashed bool `protobuf:"varint,2,opt,name=is_folder_trashed,json=isFolderTrashed,proto3" json:"is_folder_trashed,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RemoveVaultRequest) Reset() {
@@ -555,9 +555,9 @@ func (x *RemoveVaultRequest) GetId() string {
 	return ""
 }
 
-func (x *RemoveVaultRequest) GetTrash() bool {
+func (x *RemoveVaultRequest) GetIsFolderTrashed() bool {
 	if x != nil {
-		return x.Trash
+		return x.IsFolderTrashed
 	}
 	return false
 }
@@ -755,10 +755,10 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x01R\x05error\x88\x01\x01\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detailB\b\n" +
 	"\x06_vaultB\b\n" +
-	"\x06_error\":\n" +
+	"\x06_error\"P\n" +
 	"\x12RemoveVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05trash\x18\x02 \x01(\bR\x05trash\"\x81\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
+	"\x11is_folder_trashed\x18\x02 \x01(\bR\x0fisFolderTrashed\"\x81\x01\n" +
 	"\x13RemoveVaultResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12\x12\n" +

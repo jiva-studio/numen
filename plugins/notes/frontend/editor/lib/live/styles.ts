@@ -34,7 +34,7 @@ const lines = new Map<string, Decoration>()
 const named = new Map<string, Decoration>()
 
 /** The decoration that puts a class on a whole line. */
-export const line = (name: string) => {
+export const createLineStyle = (name: string) => {
   const decoration = lines.get(name) ?? Decoration.line({ class: name })
   lines.set(name, decoration)
   return decoration

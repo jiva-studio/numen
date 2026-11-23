@@ -55,7 +55,6 @@ const (
 
 // HostStoreServiceClient is a client for the numen.v1.HostStoreService service.
 type HostStoreServiceClient interface {
-	// ReadStoreFile reads a whole file.
 	ReadStoreFile(context.Context, *connect.Request[v1.ReadStoreFileRequest]) (*connect.Response[v1.ReadStoreFileResponse], error)
 	// AppendStoreFile adds to the end of a file, making it when it is not there.
 	// The content lands whole or not at all.
@@ -66,7 +65,7 @@ type HostStoreServiceClient interface {
 	// WriteStoreFile replaces a whole file, making it when it is not there. The
 	// content lands whole or not at all.
 	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
-	// DeleteStoreFile removes a file. A file that is not there is removed.
+	// DeleteStoreFile succeeds for a file that is not there.
 	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
 	// RenameStoreFile moves a file to another name of the folder, replacing what
 	// the other name held. The file lands under the new name whole.
@@ -165,7 +164,6 @@ func (c *hostStoreServiceClient) RenameStoreFile(ctx context.Context, req *conne
 
 // HostStoreServiceHandler is an implementation of the numen.v1.HostStoreService service.
 type HostStoreServiceHandler interface {
-	// ReadStoreFile reads a whole file.
 	ReadStoreFile(context.Context, *connect.Request[v1.ReadStoreFileRequest]) (*connect.Response[v1.ReadStoreFileResponse], error)
 	// AppendStoreFile adds to the end of a file, making it when it is not there.
 	// The content lands whole or not at all.
@@ -176,7 +174,7 @@ type HostStoreServiceHandler interface {
 	// WriteStoreFile replaces a whole file, making it when it is not there. The
 	// content lands whole or not at all.
 	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
-	// DeleteStoreFile removes a file. A file that is not there is removed.
+	// DeleteStoreFile succeeds for a file that is not there.
 	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
 	// RenameStoreFile moves a file to another name of the folder, replacing what
 	// the other name held. The file lands under the new name whole.

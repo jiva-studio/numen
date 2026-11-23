@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { optionsForType } from '../../model/sizing/plexScale'
+import { getOptionsForType } from '../../model/sizing/plexScale'
 import { DESIGNED_TYPE } from '../../model/sizing/typeScale'
 import { graphs } from '../../fixtures/graphs'
 import { build } from '../../fixtures/build'
@@ -259,8 +259,8 @@ describe('a look drawn at twice the text size', () => {
     room: 10,
     routing: { curvature: 0.3 },
   }
-  const designed = optionsForType(DESIGNED_TYPE, resolveOptions(input))
-  const doubled = optionsForType(2 * DESIGNED_TYPE, resolveOptions(input))
+  const designed = getOptionsForType(DESIGNED_TYPE, resolveOptions(input))
+  const doubled = getOptionsForType(2 * DESIGNED_TYPE, resolveOptions(input))
 
   it('doubles the padding and the room', () => {
     expect(doubled.padding.inline).toBeCloseTo(2 * designed.padding.inline, 6)

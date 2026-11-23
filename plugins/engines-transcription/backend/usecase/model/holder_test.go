@@ -36,7 +36,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	} {
 		var got settings.Config
 		var opens, closed int
-		model := NewHolder(settings.Defaults(), func(_ context.Context, cfg settings.Config) (Model, error) {
+		model := NewHolder(settings.NewDefaultConfig(), func(_ context.Context, cfg settings.Config) (Model, error) {
 			opens++
 			got = cfg
 			return quietModel{closed: &closed}, nil
@@ -60,7 +60,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	}
 
 	errOpen := errors.New("open failed")
-	failModels := NewHolder(settings.Defaults(), func(context.Context, settings.Config) (Model, error) {
+	failModels := NewHolder(settings.NewDefaultConfig(), func(context.Context, settings.Config) (Model, error) {
 		return nil, errOpen
 	})
 	if _, err := failModels.GetRecognizer(t.Context()); !errors.Is(err, errOpen) {
@@ -73,7 +73,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 
 func TestTheModelIsNotOpenedBeforeTheFirstRecognizerRequest(t *testing.T) {
 	var opens int
-	models := NewHolder(settings.Defaults(), func(context.Context, settings.Config) (Model, error) {
+	models := NewHolder(settings.NewDefaultConfig(), func(context.Context, settings.Config) (Model, error) {
 		opens++
 		return quietModel{closed: new(int)}, nil
 	})
@@ -87,7 +87,7 @@ func TestTheModelIsNotOpenedBeforeTheFirstRecognizerRequest(t *testing.T) {
 
 func TestAnOpenThatFailedForMissingFilesIsTriedAgainAtTheNextRequest(t *testing.T) {
 	filesArrived := false
-	models := NewHolder(settings.Defaults(), func(context.Context, settings.Config) (Model, error) {
+	models := NewHolder(settings.NewDefaultConfig(), func(context.Context, settings.Config) (Model, error) {
 		if !filesArrived {
 			return nil, errors.New("model encoder.onnx not found")
 		}

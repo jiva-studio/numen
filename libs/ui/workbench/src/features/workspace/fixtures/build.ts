@@ -1,23 +1,23 @@
 /** Workspaces to draw and to test against. */
 import {
   branch,
-  pane,
+  createPane,
   type NodeId,
   type Orientation,
   type Workspace,
   type WorkspaceNode,
 } from '../lib/node'
 import { getPanes } from '../lib/tree'
-import { even } from '../lib/even'
+import { getEvenShares } from '../lib/getEvenShares'
 import type { NodeIdFactory } from '../lib/edit'
 
-export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
+export const createStack = (id: NodeId, ...tabs: string[]): WorkspaceNode => createPane(id, tabs)
 
 const splitBranch = (
   id: NodeId,
   children: readonly WorkspaceNode[],
   sizes?: readonly number[],
-): WorkspaceNode => branch(id, children, sizes ?? even(children.length))
+): WorkspaceNode => branch(id, children, sizes ?? getEvenShares(children.length))
 
 export const createWorkspace = (
   root: WorkspaceNode,
@@ -36,49 +36,53 @@ export function createIdFactory(prefix = 'made'): NodeIdFactory {
 }
 
 /** What the desktop opens with: the plex, and the agent beside it. */
-export const sideBySide = (): Workspace =>
+export const createSideBySide = (): Workspace =>
   createWorkspace(
-    splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]),
+    splitBranch('root', [createStack('main', 'plex'), createStack('aside', 'chat')], [0.72, 0.28]),
   )
 
 /** One stack holding both tabs, of which only one is visible at a time. */
-export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', 'chat'))
+export const createOneStack = (): Workspace => createWorkspace(createStack('main', 'plex', 'chat'))
 
 /** Two stacks, the second with an extra tab, so neither becomes empty. */
 export const withSpare = (): Workspace =>
   createWorkspace(
-    splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]),
+    splitBranch(
+      'root',
+      [createStack('main', 'plex'), createStack('aside', 'chat', 'notes')],
+      [0.7, 0.3],
+    ),
   )
 
 /** Four levels, each turning a quarter from the one above. */
-export const deep = (): Workspace =>
+export const createDeepWorkspace = (): Workspace =>
   createWorkspace(
     splitBranch('root', [
-      stack('a', 'one'),
+      createStack('a', 'one'),
       splitBranch('down', [
-        stack('b', 'two'),
+        createStack('b', 'two'),
         splitBranch('across', [
-          stack('c', 'three'),
-          splitBranch('again', [stack('d', 'four'), stack('e', 'five')]),
+          createStack('c', 'three'),
+          splitBranch('again', [createStack('d', 'four'), createStack('e', 'five')]),
         ]),
       ]),
     ]),
   )
 
 /** A stack with more tabs than a narrow strip can show. */
-export const manyTabs = (): Workspace =>
+export const createManyTabsWorkspace = (): Workspace =>
   createWorkspace(
     splitBranch(
       'root',
       [
-        stack('main', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'),
-        stack('aside', 'chat'),
+        createStack('main', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'),
+        createStack('aside', 'chat'),
       ],
       [0.7, 0.3],
     ),
   )
 
 /** Nothing open. */
-export const empty = (): Workspace => createWorkspace(pane('main', []))
+export const createEmptyWorkspace = (): Workspace => createWorkspace(createPane('main', []))
 
 export { splitBranch as split }

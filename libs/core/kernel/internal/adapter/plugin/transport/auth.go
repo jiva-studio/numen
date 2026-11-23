@@ -6,9 +6,9 @@ import (
 	"connectrpc.com/connect"
 )
 
-// AuthInterceptor presents the plugin's token on every call to it, unary or streaming. An empty
+// CreateAuthInterceptor presents the plugin's token on every call to it, unary or streaming. An empty
 // token presents none.
-func AuthInterceptor(token string) connect.Interceptor {
+func CreateAuthInterceptor(token string) connect.Interceptor {
 	return bearer{token: token}
 }
 

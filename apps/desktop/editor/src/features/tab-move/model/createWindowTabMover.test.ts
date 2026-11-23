@@ -27,7 +27,7 @@ const setup = (asking = false, highlightWindow?: (requests: string[]) => Highlig
     api: api.tabs.tabMove,
     windowId: 'window-a',
     windowTabs: createTestTabs(),
-    notes: { asking: () => asking, flushPending: () => Promise.resolve() },
+    notes: { isAsking: () => asking, flushPending: () => Promise.resolve() },
     closeTab: () => true,
     writeMessage: vi.fn(),
   })
@@ -97,7 +97,7 @@ describe('the tabs of a window', () => {
       api: api.tabs.tabMove,
       windowId: 'window-a',
       windowTabs,
-      notes: { asking: () => false, flushPending: () => Promise.resolve() },
+      notes: { isAsking: () => false, flushPending: () => Promise.resolve() },
       closeTab: () => true,
       writeMessage: vi.fn(),
     })
@@ -126,6 +126,7 @@ describe('the tabs of a window', () => {
       } as never,
       closeTab: () => true,
       acceptMove: async () => ({ ok: true, value: undefined }),
+      focusWindow: async () => undefined,
       writeMessage,
     })
     startMoved({

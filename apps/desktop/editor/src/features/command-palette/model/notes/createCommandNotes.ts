@@ -12,7 +12,7 @@ function isAtPath(windowTab: OpenTab, path: string): boolean {
   return target?.file === path || target?.path === path
 }
 
-function tabMatchesPath(
+function isTabAtPath(
   windowTab: ReturnType<TabsOfWindow['tabs']['getTab']>,
   path: string,
 ): boolean {
@@ -24,7 +24,7 @@ function tabMatchesPath(
 function findActiveTabAt(windowTabs: TabsOfWindow, path: string): string | null {
   if (!path) return null
   for (const tab of windowTabs.tabs.tabs.value) {
-    if (tabMatchesPath(windowTabs.tabs.getTab(tab.id), path)) return tab.id
+    if (isTabAtPath(windowTabs.tabs.getTab(tab.id), path)) return tab.id
   }
   return null
 }
@@ -44,9 +44,9 @@ export function createCommandNotes(reached: Notes, windowTabs: TabsOfWindow): No
       const tab = getTab(id)
       return tab?.kind.address?.getOpenTab?.(tab.state).path ?? id
     },
-    asking: (id: string) => {
+    isAsking: (id: string) => {
       const tab = getTab(id)
-      return reached.asking(id) || (tab?.kind.events?.isAsking?.(tab.state) ?? false)
+      return reached.isAsking(id) || (tab?.kind.events?.isAsking?.(tab.state) ?? false)
     },
     flushPending: async (id: string) => {
       await reached.flushPending(id)

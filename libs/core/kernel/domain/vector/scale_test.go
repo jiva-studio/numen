@@ -46,7 +46,7 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 		const trials = 200
 		for range trials {
 			query, doc := unit(rng, d), unit(rng, d)
-			stored := vector.Bytes(doc)
+			stored := vector.QuantizeBytes(doc)
 			for _, q := range stored {
 				levels += math.Abs(float64(q))
 			}
@@ -82,7 +82,7 @@ func TestQuantizingCostsTheSameAtEveryWidth(t *testing.T) {
 		rng := rand.New(rand.NewPCG(rapid.Uint64().Draw(t, "seed"), 1))
 
 		query, doc := unit(rng, d), unit(rng, d)
-		stored := vector.Bytes(doc)
+		stored := vector.QuantizeBytes(doc)
 		for i, q := range stored {
 			if q == 127 || q == -127 {
 				t.Fatalf("dimension %d of a unit vector of %d reached the scale", i, d)
@@ -100,5 +100,5 @@ func similarity(query []float32, stored []int8) float64 {
 	for i, q := range stored {
 		raw[i] = byte(q)
 	}
-	return vector.SimilarityBytes(query, raw)
+	return vector.ComputeSimilarityBytes(query, raw)
 }

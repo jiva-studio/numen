@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func rejected(reason string) string {
+func buildRejection(reason string) string {
 	return `SELECT 1 FROM "` + strings.ReplaceAll(reason, `"`, `""`) + `"`
 }
 
@@ -19,7 +19,7 @@ func rejected(reason string) string {
 func Read(fsys fs.FS, dir, name string) string {
 	raw, err := fs.ReadFile(fsys, dir+"/"+name+".sql")
 	if err != nil {
-		return rejected("sqlfile: read " + name + ": " + err.Error())
+		return buildRejection("sqlfile: read " + name + ": " + err.Error())
 	}
 	return strings.TrimSpace(string(raw))
 }

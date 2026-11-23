@@ -58,14 +58,14 @@ func (u *FocusFile) Execute(ctx context.Context, v domain.Vault, in FocusFileInp
 
 func checkRanges(in FocusFileInput) error {
 	if in.Path == "" {
-		return plugin.InvalidFocus(fmt.Errorf("path is empty: %w", ErrInvalidRange))
+		return plugin.CreateInvalidFocus(fmt.Errorf("path is empty: %w", ErrInvalidRange))
 	}
 	if len(in.Ranges) > maxRanges {
-		return plugin.InvalidFocus(fmt.Errorf("too many passages: at most %d: %w", maxRanges, ErrInvalidRange))
+		return plugin.CreateInvalidFocus(fmt.Errorf("too many passages: at most %d: %w", maxRanges, ErrInvalidRange))
 	}
 	for _, r := range in.Ranges {
-		if r.Start < 0 || r.Empty() {
-			return plugin.InvalidFocus(fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidRange))
+		if r.Start < 0 || r.IsEmpty() {
+			return plugin.CreateInvalidFocus(fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidRange))
 		}
 	}
 	return nil

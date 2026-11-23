@@ -43,7 +43,7 @@ describe('getting the opening note', () => {
 
 describe('reading a note', () => {
   it('gives the prose and the file it came out of', async () => {
-    const { api, requests } = answerWith({ body: 'One line.\n', at: FILE })
+    const { api, requests } = answerWith({ body: 'One line.\n', fileStat: FILE })
 
     expect(await api.readNote('Kept.md')).toStrictEqual({
       ok: true,
@@ -79,7 +79,7 @@ describe('writing a note', () => {
       {
         path: 'Kept.md',
         body: 'Two lines.\n',
-        baseline: { prose: 'One line.\n', at: FILE },
+        baseline: { prose: 'One line.\n', fileStat: FILE },
       },
     ])
   })

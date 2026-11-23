@@ -902,7 +902,7 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 		"decks/Two.md": deckOf("", 80, 100),
 	})
 
-	target := int(time.Duration(review.Defaults().MinutesADay) *
+	target := int(time.Duration(review.NewDefaultPreset().MinutesADay) *
 		time.Minute / review.GetDefaultCost().New)
 	if got := countQueue(one.sessionAt(t, getToday(), getSaturday())); got != target {
 		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, target)

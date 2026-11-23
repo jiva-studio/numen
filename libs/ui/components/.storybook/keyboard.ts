@@ -30,7 +30,7 @@ const PARTED =
 const HELD = new Set(['textbox', 'combobox', 'searchbox', 'spinbutton', 'slider'])
 
 /** What a screen reader would call this, as far as the DOM alone can say. */
-export const nameOf = (element: Element): string => {
+export const getName = (element: Element): string => {
   const label = element.getAttribute('aria-label')
   if (label?.trim()) return label.trim()
   const by = element.getAttribute('aria-labelledby')
@@ -67,7 +67,7 @@ export const nameOf = (element: Element): string => {
 }
 
 /** Where this stop stands, said so a person can find it in the source. */
-export const whereOf = (element: Element): string => {
+export const getLocation = (element: Element): string => {
   const tag = element.tagName.toLowerCase()
   const role = element.getAttribute('role')
   const cls = (element.getAttribute('class') ?? '')
@@ -78,7 +78,7 @@ export const whereOf = (element: Element): string => {
   return `${tag}${role ? `[role=${role}]` : ''}${cls ? `.${cls}` : ''}`
 }
 
-const displayed = (element: Element): boolean => {
+const isDisplayed = (element: Element): boolean => {
   if (element.getClientRects().length === 0) return false
   const style = getComputedStyle(element)
   return style.visibility !== 'hidden' && Number(style.opacity) > 0.01
@@ -88,17 +88,17 @@ const displayed = (element: Element): boolean => {
 const REACHABLE =
   'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
 
-const elsewhere = (from: Element): boolean =>
+const hasStopElsewhere = (from: Element): boolean =>
   [...document.querySelectorAll(REACHABLE)].some(
     (one) =>
       !from.contains(one) &&
       !one.contains(from) &&
       (one as HTMLElement).tabIndex >= 0 &&
       !one.matches(':disabled') &&
-      displayed(one),
+      isDisplayed(one),
   )
 
-const modal = (element: Element): boolean => element.closest('[aria-modal="true"]') !== null
+const isModal = (element: Element): boolean => element.closest('[aria-modal="true"]') !== null
 
 /**
  * Nothing moves while the census is taken, so a colour read off an element is
@@ -121,24 +121,24 @@ const SETTLING = 500
  */
 const MOVING = '[class*="-enter-active"], [class*="-leave-active"]'
 
-const frame = (): Promise<void> =>
+const waitForFrame = (): Promise<void> =>
   new Promise((wake) => {
     requestAnimationFrame(() => wake())
   })
 
-const moving = (): boolean =>
+const isMoving = (): boolean =>
   document.getAnimations().some((one) => one.playState === 'running') ||
   document.querySelector(MOVING) !== null
 
 /** How many still frames running say the page is done and not between halves. */
 const STILLNESS = 3
 
-const settles = async (): Promise<boolean> => {
+const waitForStill = async (): Promise<boolean> => {
   const until = performance.now() + SETTLING
   let still = 0
   while (still < STILLNESS) {
-    await frame()
-    if (!moving()) {
+    await waitForFrame()
+    if (!isMoving()) {
       still += 1
       continue
     }
@@ -154,7 +154,7 @@ const settles = async (): Promise<boolean> => {
  * the way.
  */
 export async function walk(): Promise<Walk> {
-  const resolved = await settles()
+  const resolved = await waitForStill()
 
   const still = document.createElement('style')
   still.textContent = STILL
@@ -172,7 +172,7 @@ export async function walk(): Promise<Walk> {
    * has left the page, and the element it started on where that one kept it.
    * A field with parts of its own is struck once for each of them.
    */
-  const onward = async (from: Element): Promise<Element | null> => {
+  const moveFocus = async (from: Element): Promise<Element | null> => {
     const strikes = from.matches?.(PARTED) ? PARTS + 1 : 1
     for (let target = 0; target < strikes; target += 1) {
       await userEvent.tab()
@@ -185,10 +185,10 @@ export async function walk(): Promise<Walk> {
 
   let at: Element = document.body
   for (let step = 0; step < FURTHEST; step += 1) {
-    const here = await onward(at)
+    const here = await moveFocus(at)
     if (!here) break
     if (here === at) {
-      if (!modal(here) && elsewhere(here)) trapped = whereOf(here)
+      if (!isModal(here) && hasStopElsewhere(here)) trapped = getLocation(here)
       break
     }
     at = here
@@ -197,9 +197,9 @@ export async function walk(): Promise<Walk> {
     observed.add(here)
 
     stops.push({
-      where: whereOf(here),
-      name: nameOf(here),
-      shown: displayed(here),
+      where: getLocation(here),
+      name: getName(here),
+      shown: isDisplayed(here),
       // The stop itself, or whatever it is drawn inside: a row on its way in
       // carries every control standing on it.
       isMoving: here.closest(MOVING) !== null,

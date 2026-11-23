@@ -20,7 +20,7 @@ func TestAnEmptyOrPartialListIsReturnedAndNotStored(t *testing.T) {
 		"partial": {Options: []modelcalldomain.Option{{Value: "model-1"}}, IsPartial: true},
 	} {
 		s := newOptionsSetup(t)
-		s.world.Provider.ScriptOptions(address, listed)
+		s.world.Provider.SetListedOptions(address, listed)
 
 		first, err := s.listModels(t.Context(), modelcalltest.EmbedOperation)
 		if err != nil || !slices.Equal(first, listed.Options) {

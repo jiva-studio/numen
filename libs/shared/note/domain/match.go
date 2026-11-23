@@ -19,20 +19,20 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 
 	folded := make([]string, len(candidates))
 	for i, c := range candidates {
-		folded[i] = FoldName(c)
+		folded[i] = NormalizeName(c)
 	}
 
 	// A name is written with an extension or without one, and both spellings
 	// name the same file.
 	wanted := []string{name, name + NoteExtension}
 	for _, w := range wanted {
-		if idx := findIndex(folded, FoldName(w)); idx >= 0 {
+		if idx := findIndex(folded, NormalizeName(w)); idx >= 0 {
 			return candidates[idx], false
 		}
 	}
 
 	for _, w := range wanted {
-		relative := FoldName(path.Join(path.Dir(from), w))
+		relative := NormalizeName(path.Join(path.Dir(from), w))
 		if idx := findIndex(folded, relative); idx >= 0 {
 			return candidates[idx], false
 		}

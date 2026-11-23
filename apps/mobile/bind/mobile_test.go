@@ -121,7 +121,7 @@ func TestStartAnswers(t *testing.T) {
 		relations = map[string]int{}
 		var around []any
 		if graphs, hasGraphs := ask("NoteService", "ListRelatedNotes", map[string]any{"paths": []string{graphCenter}})["graphs"]; hasGraphs && graphs != nil {
-			if related, hasRelated := asMap(t, asList(t, graphs)[0])["related"]; hasRelated && related != nil {
+			if related, hasRelated := asMap(t, asList(t, graphs)[0])["relatedNotes"]; hasRelated && related != nil {
 				around = asList(t, related)
 			}
 		}

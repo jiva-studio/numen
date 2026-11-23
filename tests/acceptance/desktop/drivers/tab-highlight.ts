@@ -15,12 +15,12 @@ const readLitText = (): string => {
 /** Checks that the tab of the file shows a highlight, and in a book its text. */
 export const expectTabHighlight = async (host: Host, file: string, text?: string): Promise<void> => {
   const { page } = host
-  const panel = new TabPanel(new TabPanels(host).ofFile(file))
+  const panel = new TabPanel(new TabPanels(host).getByFile(file))
   await expect(panel.panel).toBeVisible()
   if (file.endsWith('.epub') && text !== undefined) {
-    await expect(panel.book()).toBeVisible()
+    await expect(panel.getBook()).toBeVisible()
     await expect.poll(() => page.evaluate(readLitText)).toContain(text)
   } else {
-    await expect(panel.pageHighlight()).toBeVisible()
+    await expect(panel.getPageHighlight()).toBeVisible()
   }
 }

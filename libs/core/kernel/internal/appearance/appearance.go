@@ -46,7 +46,7 @@ func (s Settings) Styles() string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
-	out := buildStyleElement(IsMode, ":root { color-scheme: "+scheme(s.Mode)+"; }")
+	out := buildStyleElement(IsMode, ":root { color-scheme: "+getScheme(s.Mode)+"; }")
 	if s.Theme != "" {
 		out += buildStyleElement(IsTheme, s.Theme)
 	}
@@ -68,10 +68,10 @@ func AddStyles(text []byte, styles string) []byte {
 func buildSizeElement(rendered, set float64) string {
 	var vars []string
 	if rendered > 0 {
-		vars = append(vars, "--numen-interface-scale: "+number(rendered))
+		vars = append(vars, "--numen-interface-scale: "+formatNumber(rendered))
 	}
 	if set > 0 {
-		vars = append(vars, "--numen-text-scale: "+number(set))
+		vars = append(vars, "--numen-text-scale: "+formatNumber(set))
 	}
 	if len(vars) == 0 {
 		return ""
@@ -79,9 +79,9 @@ func buildSizeElement(rendered, set float64) string {
 	return buildStyleElement(IsSizes, ":root { "+strings.Join(vars, "; ")+"; }")
 }
 
-func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
+func formatNumber(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
-func scheme(mode themedomain.ColorScheme) string {
+func getScheme(mode themedomain.ColorScheme) string {
 	switch mode {
 	case themedomain.Light:
 		return "light"

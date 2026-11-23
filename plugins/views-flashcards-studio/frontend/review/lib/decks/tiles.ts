@@ -1,5 +1,5 @@
 /** What the goals of a vault come to today, one tile to a preset. */
-import { percent } from '@numen/ui'
+import { formatPercent } from '@numen/ui'
 
 import { getSpentShare } from './progress'
 import { getGoalWords, getLeftWords } from './words'
@@ -28,7 +28,7 @@ export const getTiles = (presets: readonly Preset[], today: string): Tile[] =>
       one,
       goal: one.paused || (one.settings ? getGoalWords(one.settings, today) : ''),
       wrong: one.wrong,
-      says: isOver ? 'over budget' : percent(isDone),
+      says: isOver ? 'over budget' : formatPercent(isDone),
       left: one.paused ? '' : getLeftWords(one),
       isOver,
       canOpen: !one.paused && one.cards > 0,

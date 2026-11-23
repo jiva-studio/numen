@@ -135,7 +135,7 @@ describe('the command that opens a document chosen as a result', () => {
       vault: { id: 'v', name: 'V' },
       isReady: true,
     }
-    const runs = { canRun: () => true, cannotRun: () => undefined }
+    const runs = { canRun: () => true, reportCannotRun: () => undefined }
 
     expect(open()?.isAvailable(target, runs)).toBe(true)
     expect(open()?.isAvailable({ ...target, tab: 'tab-1', kind: 'reader' }, runs)).toBe(false)

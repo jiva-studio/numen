@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { NOTE_ERROR_CODE, NOTE_LINK_DIRECTION, NOTE_MARKER, NOTE_RELATION, NOTE_ROLE, NoteGraphSchema } from '@numen/core-client'
+import {
+  NOTE_ERROR_CODE,
+  NOTE_LINK_DIRECTION,
+  NOTE_MARKER,
+  NOTE_RELATION,
+  NOTE_ROLE,
+  NoteGraphSchema,
+} from '@numen/core-client'
 import { asFailure, asValue } from '@numen/result'
 import { mapNoteGraph, mapNoteResult, mapWriteResult } from './noteWords'
 
@@ -8,7 +15,7 @@ const file = { path: 'Note.md', size: 12n, mtime: 34n }
 
 describe('mapNoteResult', () => {
   it('carries the body and the file it came out of', () => {
-    expect(mapNoteResult({ body: 'text', at: file })).toEqual(
+    expect(mapNoteResult({ body: 'text', fileStat: file })).toEqual(
       asValue({ body: 'text', at: '12:0: 34 Note.md' }),
     )
   })
@@ -31,7 +38,7 @@ describe('mapWriteResult', () => {
   })
 
   it('maps any other answer as a note result', () => {
-    expect(mapWriteResult({ at: file })).toStrictEqual(
+    expect(mapWriteResult({ fileStat: file })).toStrictEqual(
       asValue({ body: '', at: '12:0: 34 Note.md' }),
     )
   })
@@ -52,7 +59,7 @@ describe('mapNoteGraph', () => {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
-      related: [
+      relatedNotes: [
         {
           note: { path: 'Up.md', title: 'Up' },
           type: 'sheet',
@@ -108,7 +115,7 @@ describe('mapNoteGraph references', () => {
     mapNoteGraph(
       create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
-        related: [
+        relatedNotes: [
           {
             note: { path: 'Cited.md', title: 'Cited' },
             relation: NOTE_RELATION.REFERENCE,
@@ -140,7 +147,7 @@ describe('mapNoteGraph references', () => {
     const [note] = mapNoteGraph(
       create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
-        related: [
+        relatedNotes: [
           {
             note: { path: 'Up.md', title: 'Up' },
             relation: NOTE_RELATION.PARENT,

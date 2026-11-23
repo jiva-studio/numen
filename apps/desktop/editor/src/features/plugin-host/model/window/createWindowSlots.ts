@@ -4,6 +4,7 @@
  * the commands of the plugins read.
  */
 import {
+  NO_SLOTS,
   getWhenValues as buildWhenValues,
   type CommandTarget,
   type HandlerDeclaration,
@@ -49,9 +50,9 @@ interface WindowSlotParts {
       | 'createSlotCommandFinder'
       | 'reportSlotIssue'
       | 'getSlotWhenValues'
+      | 'getSlotLayout'
     >
-  > &
-    Pick<HostSlots, 'getSlotLayout'>
+  >
   readonly commands: Required<
     Pick<HostCommands, 'getWindowValues' | 'getContentTypes' | 'whenReader'>
   >
@@ -90,7 +91,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     slots: {
       getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
       getSlotPoints: () => deps.declaredCommands.contributions.slotPoints.value,
-      ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
+      getSlotLayout: deps.getSlotLayout ?? NO_SLOTS.getSlotLayout,
       createSlotCommandFinder: createFinder,
       reportSlotIssue: deps.writeIssue,
       getSlotWhenValues: getWhenValues,

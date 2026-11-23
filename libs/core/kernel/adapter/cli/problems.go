@@ -37,11 +37,11 @@ func (c problemsCommand) Run(ctx context.Context, term terminal, args []string) 
 	}
 	r := newReporter(term.out)
 	if len(report.Found) == 0 {
-		r.Println("nothing to report")
+		r.WriteLine("nothing to report")
 		return r.Err()
 	}
 	for _, p := range report.Found {
-		r.Printf("%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
+		r.WriteFormat("%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
 	}
 	return r.Err()
 }

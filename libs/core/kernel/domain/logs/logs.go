@@ -82,8 +82,8 @@ func ResolveLevel(word string) Level {
 	return DefaultLevel
 }
 
-// Allows reports whether a log configured at l records an entry of entryLevel.
-func (l Level) Allows(entryLevel Level) bool {
+// CanRecord reports whether a log configured at l records an entry of entryLevel.
+func (l Level) CanRecord(entryLevel Level) bool {
 	threshold := l
 	if threshold < LevelDebug || threshold > LevelError {
 		threshold = DefaultLevel

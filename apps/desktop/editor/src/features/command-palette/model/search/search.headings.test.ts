@@ -46,7 +46,7 @@ const flushPromises = async () => {
 function createHeldVault() {
   const names = createDeferred<readonly NameMatch[]>()
   const results = createDeferred<readonly SearchResult[]>()
-  const core: SearchDeps = { names: () => names.promise, search: () => results.promise }
+  const core: SearchDeps = { searchNames: () => names.promise, search: () => results.promise }
   const palette = useSearch(core, WORDS, { wait: () => Promise.resolve(), getTarget: () => target })
   return { palette, names, results }
 }

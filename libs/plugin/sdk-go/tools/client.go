@@ -192,7 +192,7 @@ type rpcClient struct {
 // NewClient creates a Client reaching the given endpoint.
 func NewClient(endpoint hostcall.Endpoint) Client {
 	return &rpcClient{
-		rpc: numenv1connect.NewPluginToolServiceClient(transport.HTTPClient(), endpoint.BaseURL, transport.Options(endpoint)...),
+		rpc: numenv1connect.NewPluginToolServiceClient(transport.GetHTTPClient(), endpoint.BaseURL, transport.BuildOptions(endpoint)...),
 	}
 }
 

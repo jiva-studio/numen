@@ -3,12 +3,7 @@ import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginUi, PluginVault, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import {
-  clearPluginStyles,
-  loadPluginStyle,
-  registerPluginStyle,
-  unregisterPluginStyle,
-} from '../styles'
+import { createPluginStyles } from '../styles'
 import {
   createDeclaredTabKind,
   isDeclaredTabKind,
@@ -17,6 +12,8 @@ import {
 } from './pluginTabKind'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
+
+const styles = createPluginStyles()
 
 interface Held {
   readonly at: string
@@ -42,7 +39,7 @@ const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTa
   }) as DeclaredTabKindRegistration
 
 const createDeclaredPane = (pluginId: string, component: unknown) =>
-  createDeclaredTabKind(pluginId, declare({ component: component as never })).pane
+  createDeclaredTabKind(pluginId, declare({ component: component as never }), styles).pane
 
 describe('a registration that says what its tabs hold', () => {
   it('is distinguished from one that holds a note', () => {
@@ -51,7 +48,7 @@ describe('a registration that says what its tabs hold', () => {
   })
 
   it('opens its tabs itself, under the identity the window gives them', () => {
-    const kind = createDeclaredTabKind('md.numen.sample', declare())
+    const kind = createDeclaredTabKind('md.numen.sample', declare(), styles)
 
     expect(kind.open('Graph.md', 'target: 1')).toEqual({
       at: 'Graph.md',
@@ -64,10 +61,10 @@ describe('a registration that says what its tabs hold', () => {
 
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
     const getTitle = (state: Held) => state.title
-    const named = createDeclaredTabKind('p', declare({ getTitle }))
-    const plainKind = createDeclaredTabKind('p', declare())
+    const named = createDeclaredTabKind('p', declare({ getTitle }), styles)
+    const plainKind = createDeclaredTabKind('p', declare(), styles)
     const { title: _title, ...untitled } = declare()
-    const bareKind = createDeclaredTabKind('p', untitled)
+    const bareKind = createDeclaredTabKind('p', untitled, styles)
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
     expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
@@ -81,6 +78,7 @@ describe('a registration that says what its tabs hold', () => {
     const kind = createDeclaredTabKind(
       'p',
       declare({ navigate, receiveText, isTool: true, placement }),
+      styles,
     )
 
     expect(kind.address?.navigate).toBe(navigate)
@@ -149,7 +147,7 @@ describe('the pane of a declared kind', () => {
       configurable: true,
     })
     try {
-      await loadPluginStyle(
+      await styles.load(
         'md.numen.sample',
         '/plugin/md.numen.sample/dist/styles.css',
         async () => ({ ok: true, text: async () => '.member {}' }) as unknown as Response,
@@ -163,18 +161,18 @@ describe('the pane of a declared kind', () => {
       view.unmount()
       expect(document.adoptedStyleSheets.length).toBe(0)
     } finally {
-      clearPluginStyles()
+      styles.clear()
       vi.unstubAllGlobals()
       Reflect.deleteProperty(document, 'adoptedStyleSheets')
     }
   })
 
   it('renders the plugin stylesheet next to the component', () => {
-    registerPluginStyle('md.numen.sample', '/plugin/md.numen.sample/dist/styles.css')
+    styles.register('md.numen.sample', '/plugin/md.numen.sample/dist/styles.css')
     const view = mount(createDeclaredPane('md.numen.sample', Pane), {
       props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
     })
-    unregisterPluginStyle('md.numen.sample')
+    styles.unregister('md.numen.sample')
 
     const link = view.find('link[rel="stylesheet"]')
     expect(link.attributes('href')).toBe('/plugin/md.numen.sample/dist/styles.css')

@@ -110,7 +110,7 @@ func newEditorFixture(t *testing.T) editorFixture {
 
 func (e editorFixture) version(t *testing.T) deckedit.DeckVersion {
 	t.Helper()
-	got, err := e.read.Deck(t.Context(), e.vs.first, mammals)
+	got, err := e.read.ReadDeck(t.Context(), e.vs.first, mammals)
 	if err != nil {
 		t.Fatal(err)
 	}

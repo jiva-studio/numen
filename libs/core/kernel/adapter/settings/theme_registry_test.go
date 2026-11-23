@@ -10,7 +10,7 @@ import (
 )
 
 func TestTheThemeRegistryOffersTheThemesAndKnowsNoOtherRegistry(t *testing.T) {
-	registry := settingsadapter.ThemeRegistry(func() []themedomain.Theme {
+	registry := settingsadapter.BuildThemeRegistry(func() []themedomain.Theme {
 		return []themedomain.Theme{{Name: "dusk", Title: "Dusk"}, {Name: "dawn", Title: "Dawn"}}
 	})
 

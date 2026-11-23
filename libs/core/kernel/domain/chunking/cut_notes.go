@@ -12,14 +12,14 @@ import (
 // CutNotes cuts notes into the headings and chunks the index keeps. A zero
 // Sizes and Legibility take the chunking defaults.
 type CutNotes struct {
-	Sizes      Sizes
-	Legibility Legibility
-	Profiles   func(domain.NoteType) (domain.NoteProfile, bool)
+	Sizes       Sizes
+	Legibility  Legibility
+	FindProfile func(domain.NoteType) (domain.NoteProfile, bool)
 }
 
 func (u CutNotes) getProfile(noteType domain.NoteType) domain.NoteProfile {
-	if u.Profiles != nil {
-		if profile, declared := u.Profiles(noteType); declared {
+	if u.FindProfile != nil {
+		if profile, declared := u.FindProfile(noteType); declared {
 			return profile
 		}
 	}
@@ -70,7 +70,7 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 	sizes := u.getSizes()
 	body := n.Body
 
-	out := Chunks(body, getPartStarts(headings), sizes, u.Legibility,
+	out := CutChunks(body, getPartStarts(headings), sizes, u.Legibility,
 		func(c Chunk, isLarge bool) domain.Chunk {
 			text := c.ExtractText(body)
 			if isLarge {
@@ -140,4 +140,30 @@ func isIDWord(word string, pattern *regexp.Regexp) bool {
 	return !strings.ContainsFunc(word, func(r rune) bool {
 		return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '-')
 	})
+}
+
+// CutVersion cuts a version of a note into the chunks the index stores. A large chunk carries the name of the
+// section it begins, and no other chunk does.
+func CutVersion(doc domain.VersionText, sizes Sizes, reads Legibility) []domain.Chunk {
+	return CutChunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c Chunk, isLarge bool) domain.Chunk {
+		out := domain.Chunk{
+			Start:    c.Start,
+			Length:   c.Length,
+			Location: doc.Locate(c.Start),
+			Text:     c.ExtractText(doc.Text),
+		}
+		if isLarge {
+			out.Opens = doc.GetHeadingsAt(c.Start)
+		}
+		return out
+	})
+}
+
+// CountChunks counts the chunks and the small chunks inside them.
+func CountChunks(chunks []domain.Chunk) int {
+	n := len(chunks)
+	for _, c := range chunks {
+		n += len(c.Small)
+	}
+	return n
 }

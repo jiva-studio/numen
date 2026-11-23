@@ -34,7 +34,7 @@ export class NoteDriver {
     const notePath = await this.scenario.getPath(reference, name)
     if (actor === 'the person') {
       await this.scenario.closePalette()
-      await this.getEditor(notePath).typeAtEnd(` ${text}`)
+      await this.getEditor(notePath).enterTextAtEnd(` ${text}`)
     } else if (actor === 'another program') {
       await writeNote(this.scenario.page.request, notePath, `${text}\n`)
     } else {
@@ -55,7 +55,7 @@ export class NoteDriver {
   }
 
   async choose(label: string, reference: string, name: string): Promise<void> {
-    const banner = this.getEditor(await this.scenario.getPath(reference, name)).banner()
+    const banner = this.getEditor(await this.scenario.getPath(reference, name)).getBanner()
     await banner.getByRole('button', { name: label }).click()
   }
 
@@ -72,14 +72,14 @@ export class NoteDriver {
   }
 
   private async showNote(notePath: string): Promise<void> {
-    await this.strip.show(this.strip.noteTab(getTabName(notePath)))
+    await this.strip.show(this.strip.getNoteTab(getTabName(notePath)))
   }
 
   async expectHasText(reference: string, name: string, text: string): Promise<void> {
     const notePath = await this.scenario.getPath(reference, name)
     await this.scenario.closePalette()
     await this.showNote(notePath)
-    await expect(this.getEditor(notePath).panel()).toContainText(text)
+    await expect(this.getEditor(notePath).getPanel()).toContainText(text)
   }
 
   /** The editor is built after the tab opens and puts the cursor on the line once it is: the line is waited for. */
@@ -94,7 +94,7 @@ export class NoteDriver {
 
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
     await expect(
-      this.getEditor(await this.scenario.getPath(reference, name)).panel(),
+      this.getEditor(await this.scenario.getPath(reference, name)).getPanel(),
     ).not.toContainText(text)
   }
 
