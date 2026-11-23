@@ -106,10 +106,10 @@ func TestAVaultThatWillNotOpenIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRead(faulty{inner: vs.ports.Readers, open: errOutOfReach}, vs.queries)
 
-	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
+	if _, err := u.ReadDeck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read a deck = %v, want the vault's error", err)
 	}
-	if _, err := u.CardModel(t.Context(), vs.first, "Animal.md"); !errors.Is(err, errOutOfReach) {
+	if _, err := u.ReadCardModel(t.Context(), vs.first, "Animal.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read a card model = %v, want the vault's error", err)
 	}
 }
@@ -119,13 +119,13 @@ func TestAVaultThatWillNotOpenIsAnError(t *testing.T) {
 func TestADeckWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	reader := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
+	birds, err := reader.ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	u := cards.NewRead(faulty{inner: vs.ports.Readers, stat: map[string]error{"Animal.md": errOutOfReach}}, vs.queries)
-	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
+	if _, err := u.ReadDeck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read the deck = %v, want the card model's error", err)
 	}
 	if _, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
@@ -138,13 +138,13 @@ func TestADeckWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 func TestADeckWhoseLinksCannotBeResolvedIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	reader := cards.NewRead(vs.ports.Readers, vs.queries)
-	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
+	birds, err := reader.ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	u := cards.NewRead(vs.ports.Readers, unanswered{t: t})
-	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
+	if _, err := u.ReadDeck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read the deck = %v, want the index's error", err)
 	}
 	if _, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
@@ -158,7 +158,7 @@ func TestADeckNamingNoCardModelAsksNoLinkQuestion(t *testing.T) {
 	write(t, vs.first, "decks/Bare.md", "---\ntype: deck\n---\n\n## Wren\n\n### Name\n\nWren\n")
 
 	u := cards.NewRead(vs.ports.Readers, unanswered{t: t, isQuiet: true})
-	got, err := u.Deck(t.Context(), vs.first, "decks/Bare.md")
+	got, err := u.ReadDeck(t.Context(), vs.first, "decks/Bare.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestTheOneCardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	}
 
 	u := cards.NewRead(vs.ports.Readers, vs.queries)
-	got, err := u.Deck(t.Context(), vs.first, "decks/Rain.md")
+	got, err := u.ReadDeck(t.Context(), vs.first, "decks/Rain.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -208,7 +208,7 @@ func TestACardNamingACardModelTooLargeToReadIsNotCalledANote(t *testing.T) {
 	}
 
 	got, err := cards.NewRead(vs.ports.Readers, vs.queries).
-		Deck(t.Context(), vs.first, "decks/Birds.md")
+		ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -229,7 +229,7 @@ func TestACardModelNamedTwoWaysIsOpenedOnce(t *testing.T) {
 	links := landing{targets: map[string]string{"Animal": "Animal.md", "Beast": "Animal.md"}}
 	counted := &counting{VaultReaders: vs.ports.Readers}
 
-	got, err := cards.NewRead(counted, links).Deck(t.Context(), vs.first, "decks/Pair.md")
+	got, err := cards.NewRead(counted, links).ReadDeck(t.Context(), vs.first, "decks/Pair.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -248,7 +248,7 @@ func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	raw += strings.Repeat("x", note.MaxBytes-len(raw)-1) + "\n"
 	write(t, vs.first, "Animal.md", raw)
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadCardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -257,7 +257,7 @@ func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	}
 
 	write(t, vs.first, "TitledModel.md", "---\ntype: card-model\ntitle: Custom Title\nfields:\n  - Name\n---\n")
-	titled, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "TitledModel.md")
+	titled, err := cards.NewRead(vs.ports.Readers, nil).ReadCardModel(t.Context(), vs.first, "TitledModel.md")
 	if err != nil {
 		t.Fatalf("read titled: %v", err)
 	}
@@ -270,7 +270,7 @@ func TestACardModelAtTheBoundIsRead(t *testing.T) {
 func TestADeckWhereNothingIsIsMissing(t *testing.T) {
 	vs := newVaults(t)
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Gone.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Gone.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -285,7 +285,7 @@ func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Wrens.sample", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Wrens.sample")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Wrens.sample")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -303,7 +303,7 @@ func TestAPathTheVaultReturnsContainsNothingIsNotReadAsANote(t *testing.T) {
 	vs := newVaults(t)
 
 	nothing := faulty{inner: vs.ports.Readers, stat: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
-	got, err := cards.NewRead(nothing, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	got, err := cards.NewRead(nothing, nil).ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -312,7 +312,7 @@ func TestAPathTheVaultReturnsContainsNothingIsNotReadAsANote(t *testing.T) {
 	}
 
 	nothing.read = map[string]error{"decks/Birds.md": errOutOfReach}
-	if _, err := cards.NewRead(nothing, nil).Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
+	if _, err := cards.NewRead(nothing, nil).ReadDeck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read = %v, want the read's error", err)
 	}
 }
@@ -322,7 +322,7 @@ func TestReadDeck_ReportsNotTextOutcome(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Scan.md", "---\ntype: deck\n---\n\n## Wren \xff\xfe\n\n[[Animal]]\n")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Scan.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Scan.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -339,7 +339,7 @@ func TestADeckWhoseFrontmatterCannotBeReadIsUnreadable(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Broken.md", "---\ntype: [deck\n---\n\n## Wren\n\n[[Animal]]\n")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Broken.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Broken.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -358,7 +358,7 @@ func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -376,7 +376,7 @@ func TestAFileTheVaultPreservesAloneIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/.Hidden.md", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/.Hidden.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/.Hidden.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}

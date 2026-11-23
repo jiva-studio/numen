@@ -3,7 +3,7 @@ import { createCoreTransport } from '@numen/core-client/testing'
 import { createWindowClients } from '@/shared/api/clients'
 import { createPluginLister } from './plugins'
 
-const core = { getPlugins: vi.fn() }
+const core = { listPlugins: vi.fn() }
 
 const listPlugins = createPluginLister(
   createWindowClients(createCoreTransport({ pluginService: core })).pluginService,
@@ -15,7 +15,7 @@ beforeEach(() => {
 
 describe('the installed plugins', () => {
   it('are listed with their identity and name', async () => {
-    core.getPlugins.mockResolvedValue({
+    core.listPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes', version: '1.0.0' }],
     })
 

@@ -58,6 +58,6 @@ func (b Binding) open(openSource func(string) (*Source, error)) (*Source, func()
 	if err != nil {
 		return nil, nil, err
 	}
-	b.Follow(source, source.OnDescriptionChange)
+	b.Follow(source, source.WatchDescription)
 	return source, source.Close, nil
 }

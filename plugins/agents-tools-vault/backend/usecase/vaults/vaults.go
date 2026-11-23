@@ -62,7 +62,7 @@ func (u *UseCase) Get(ctx context.Context, address string) (Info, error) {
 		return Info{}, err
 	}
 	noteCount := 0
-	if paths, err := vault.Notes.GetPathsOfType(ctx, domain.TypeNote); err == nil {
+	if paths, err := vault.Notes.ListPathsOfType(ctx, domain.TypeNote); err == nil {
 		noteCount = len(paths)
 	}
 	return Info{Vault: info, NoteCount: noteCount}, nil

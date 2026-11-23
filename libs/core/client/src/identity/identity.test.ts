@@ -7,7 +7,7 @@ import {
   GetIdentityResponseSchema,
   IdentityErrorCode,
 } from '@numen/protocol'
-import { createIdentityServiceClient } from '../clients'
+import { createIdentityRpc } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createIdentityClient, type IdentityInfo } from './identity'
 
@@ -23,7 +23,7 @@ const INFO = {
 const EXPECTED: IdentityInfo = { ...INFO }
 
 const createClient = (answers: CoreAnswers['identity'] = {}) =>
-  createIdentityClient(createIdentityServiceClient(createCoreTransport({ identity: answers })))
+  createIdentityClient(createIdentityRpc(createCoreTransport({ identity: answers })))
 
 describe('createIdentityClient', () => {
   it('reads the identity of this device', async () => {

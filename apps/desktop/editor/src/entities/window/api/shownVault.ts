@@ -5,5 +5,5 @@ import { WINDOW } from './window'
 export const createShownVaultApi = (windowService: WindowClients['windowService']) => ({
   /** The id of the vault this window shows. */
   getShownVault: async (): Promise<string> =>
-    (await windowService.getCurrentVault({ window: WINDOW })).vault,
+    (await windowService.getCurrentVault({ windowId: WINDOW })).vaultId,
 })

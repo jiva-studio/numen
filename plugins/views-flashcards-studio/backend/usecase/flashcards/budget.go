@@ -34,19 +34,19 @@ type allowance struct {
 
 // budgetInputs is what the daily budgets are calculated from.
 type budgetInputs struct {
-	reads       ports.PresetReads
-	day         review.Day
-	reviewCards []ReviewCard
-	schedules   map[review.CardID]review.Schedule
-	log         ReviewLog
-	delta       review.Scheduler
-	pos         func(retention float64) review.Scheduler
-	now         time.Time
+	reads        ports.PresetReads
+	day          review.Day
+	reviewCards  []ReviewCard
+	schedules    map[review.CardID]review.Schedule
+	log          ReviewLog
+	delta        review.Scheduler
+	getScheduler func(retention float64) review.Scheduler
+	now          time.Time
 }
 
 func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets, error) {
 	reads, day, reviewCards, schedules := in.reads, in.day, in.reviewCards, in.schedules
-	log, delta, pos, now := in.log, in.delta, in.pos, in.now
+	log, delta, pos, now := in.log, in.delta, in.getScheduler, in.now
 	out := &budgets{
 		reviewCardPresets: make(map[review.CardID]string, len(reviewCards)),
 		allowances:        make(map[string]*allowance),
@@ -69,7 +69,7 @@ func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets,
 	out.reviewedCards = review.GetReviewed(day, named, log.Answers)
 
 	out.spentByDeck = review.GetSpentUnder(day, named, log.Answers, survey.in, deckCounts)
-	elapsed := sumSpentByPreset(out.spentByDeck, survey.presetByDeck)
+	elapsed := groupSpentByPreset(out.spentByDeck, survey.presetByDeck)
 
 	costed := review.GetCostUnder(delta, log.Answers, out.reviewCardPresets)
 	for path, p := range survey.settings {
@@ -136,7 +136,7 @@ func readPresetSurvey(
 	return sv, nil
 }
 
-func sumSpentByPreset(
+func groupSpentByPreset(
 	spentByDeck map[string]review.Spent, presetByDeck map[string]string,
 ) map[string]review.Spent {
 	elapsed := make(map[string]review.Spent, len(presetByDeck))
@@ -151,7 +151,7 @@ func sumSpentByPreset(
 	return elapsed
 }
 
-func (b *budgets) charge(share *allowance, reviewCard review.CardID, isNew bool) bool {
+func (b *budgets) applyCharge(share *allowance, reviewCard review.CardID, isNew bool) bool {
 	one, target := b.allowances[b.reviewCardPresets[reviewCard]]
 	if !target || one.admits.IsPaused() {
 		return false
@@ -164,8 +164,8 @@ func (b *budgets) charge(share *allowance, reviewCard review.CardID, isNew bool)
 	if !one.hasCapacity(isNew, counted, cost) || !share.hasCapacity(isNew, counted, cost) {
 		return false
 	}
-	one.spend(isNew, counted, cost)
-	share.spend(isNew, counted, cost)
+	one.recordSpend(isNew, counted, cost)
+	share.recordSpend(isNew, counted, cost)
 	return true
 }
 
@@ -180,7 +180,7 @@ func (a *allowance) hasCapacity(isNew, counted bool, cost time.Duration) bool {
 	return a.admits.Limits.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
 }
 
-func (a *allowance) spend(isNew, counted bool, cost time.Duration) {
+func (a *allowance) recordSpend(isNew, counted bool, cost time.Duration) {
 	if counted {
 		if isNew {
 			a.admits.New--
@@ -236,7 +236,7 @@ func (b *budgets) getAskingBudget(
 		return schedules[a.ID].Due.Compare(schedules[b.ID].Due)
 	})
 
-	allocations := b.spend(dueCards, newCards)
+	allocations := b.recordSpend(dueCards, newCards)
 	var out asking
 	for item, one := range dueCards {
 		if allocations.dueCards[item] && b.isAllowed(one, scope) {
@@ -282,7 +282,7 @@ func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Durati
 		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
 }
 
-func (b *budgets) spend(dueCards, newCards []ReviewCard) budgetAllocation {
+func (b *budgets) recordSpend(dueCards, newCards []ReviewCard) budgetAllocation {
 	out := budgetAllocation{dueCards: make([]bool, len(dueCards)), newCards: make([]bool, len(newCards))}
 	shares := b.collectShares(dueCards, newCards)
 	for _, path := range shares.order {
@@ -290,7 +290,7 @@ func (b *budgets) spend(dueCards, newCards []ReviewCard) budgetAllocation {
 		if !target || one.admits.IsPaused() {
 			continue
 		}
-		b.spendPreset(one, shares.getSortedShares(path), dueCards, newCards, &out)
+		b.computePresetAllocation(one, shares.getSortedShares(path), dueCards, newCards, &out)
 	}
 	return out
 }
@@ -347,12 +347,12 @@ func (b *budgets) collectShares(dueCards, newCards []ReviewCard) *shareRegistry 
 	return shares
 }
 
-func (b *budgets) spendPreset(
+func (b *budgets) computePresetAllocation(
 	one *allowance, decks []*deckShare, dueCards, newCards []ReviewCard, out *budgetAllocation,
 ) {
 	shares := b.divide(one, decks)
 	for i, q := range decks {
-		b.deal(&shares[i], q, dueCards, newCards, out)
+		b.assignCards(&shares[i], q, dueCards, newCards, out)
 	}
 	remaining := make(map[string]int, len(decks))
 	for _, q := range decks {
@@ -367,7 +367,7 @@ func (b *budgets) spendPreset(
 	for _, q := range decks {
 		q.dueIndex, q.newIndex = 0, 0
 		overVal := *one
-		b.deal(&overVal, q, dueCards, newCards, out)
+		b.assignCards(&overVal, q, dueCards, newCards, out)
 	}
 }
 
@@ -398,7 +398,7 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 	return out
 }
 
-func (b *budgets) deal(share *allowance, q *deckShare, dueCards, newCards []ReviewCard, out *budgetAllocation) {
+func (b *budgets) assignCards(share *allowance, q *deckShare, dueCards, newCards []ReviewCard, out *budgetAllocation) {
 	for {
 		q.advancePastOthers(*out)
 		debt, begun := q.dueIndex < len(q.dueCards), q.newIndex < len(q.newCards)
@@ -407,14 +407,14 @@ func (b *budgets) deal(share *allowance, q *deckShare, dueCards, newCards []Revi
 		}
 		// Prioritize debt or new cards according to preset ratio policy.
 		if share.admits.IsNextCardDebt(q.debt, q.begun, debt, begun) {
-			if card := dueCards[q.dueCards[q.dueIndex]]; b.charge(share, card.ID, false) {
+			if card := dueCards[q.dueCards[q.dueIndex]]; b.applyCharge(share, card.ID, false) {
 				out.dueCards[q.dueCards[q.dueIndex]] = true
 				q.debt++
 			}
 			q.dueIndex++
 			continue
 		}
-		if card := newCards[q.newCards[q.newIndex]]; b.charge(share, card.ID, true) {
+		if card := newCards[q.newCards[q.newIndex]]; b.applyCharge(share, card.ID, true) {
 			out.newCards[q.newCards[q.newIndex]] = true
 			q.begun++
 		}

@@ -7,7 +7,7 @@
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
-import { cn, measureRect } from '@numen/ui'
+import { joinClasses, measureRect } from '@numen/ui'
 import { Menu } from '@numen/ui'
 import type { Position } from '@numen/ui'
 import { getFill, getFillPercent, getMenuLevels, type Day } from './week'
@@ -94,7 +94,7 @@ const getFillStyle = (level: number) => {
     orientation="horizontal"
     v-bind="$attrs"
     loop
-    :class="cn('inline-flex items-center gap-1', props.class)"
+    :class="joinClasses('inline-flex items-center gap-1', props.class)"
   >
     <RovingFocusItem v-for="day in days" :key="day.id" as-child>
       <button
@@ -105,7 +105,7 @@ const getFillStyle = (level: number) => {
         :aria-expanded="popoverAnchor?.day === day.id"
         :style="getFillStyle(day.level)"
         :class="
-          cn(
+          joinClasses(
             'rounded-pill inline-flex size-7 shrink-0 items-center justify-center',
             'border-rule border font-sans text-base font-medium',
             'duration-hover ease-numen cursor-pointer transition-[background-color,color]',

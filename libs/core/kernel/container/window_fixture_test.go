@@ -3,8 +3,8 @@ package container_test
 import (
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -16,7 +16,7 @@ type windowVaults struct {
 	db  *container.Index
 }
 
-func (w windowVaults) GetRefresh() vault.Refresh {
+func (w windowVaults) GetRefresh() indexing.Refresh {
 	return container.GetRefresh(w.cfg, w.db)
 }
 

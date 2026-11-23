@@ -23,7 +23,7 @@ func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 
 	// Both rules: one carries the count from day to day and scans the material
 	// only for the requested days; the other scans it every day.
-	interval, recall := review.Defaults(), review.Defaults()
+	interval, recall := review.NewDefaultPreset(), review.NewDefaultPreset()
 	recall.Rule, recall.Retention = review.RuleRetention, 0.9
 	for name, p := range map[string]review.Preset{
 		"an interval": interval, "a chance of recall": recall,
@@ -60,7 +60,7 @@ func TestProjection_ReturnsNoAnswersForNonSchedulingPreset(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeOverdueCards(delta, now, 12)
 	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 5}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, -1)
 
 	got := runProjection(t, run, now, p, pos, 0)
@@ -217,7 +217,7 @@ func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 5)
 	p.Rule, p.Interval = review.RuleInterval, 365
 
@@ -242,7 +242,7 @@ func TestAPresetWithNoMaterialIsThroughIt(t *testing.T) {
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 5,
 	}
 
-	got := runProjection(t, run, now, review.Defaults(), nil, 0)
+	got := runProjection(t, run, now, review.NewDefaultPreset(), nil, 0)
 	if got.ReviewCards != 0 || got.Answered != 0 {
 		t.Fatalf("a preset of no review cards holds %d and answered %d", got.ReviewCards, got.Answered)
 	}
@@ -730,7 +730,7 @@ func TestWhatExistsLearnedToday(t *testing.T) {
 		{review.RuleRetention, 21, 0.95, 2},
 		{review.RuleRetention, 21, 0.99, 0},
 	} {
-		p := review.Defaults()
+		p := review.NewDefaultPreset()
 		p.Goal, p.ReviewsADay, p.NewADay = review.GoalRetention, 9999, 0
 		p.Rule, p.Interval, p.Retention = one.rule, one.interval, one.retention
 
@@ -744,7 +744,7 @@ func TestWhatExistsLearnedToday(t *testing.T) {
 // A review card whose chance of recall equals the target is learned.
 func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Rule, p.Retention = review.RuleRetention, 0.9
 	// A stability at which the chance of recall a day on is the target itself.
 	away := 24 * time.Hour
@@ -778,7 +778,7 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
 	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 365}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.ReviewsADay, p.NewADay = review.GoalRetention, 9999, 50
 	p.Rule, p.Interval = review.RuleInterval, 21
 
@@ -812,7 +812,7 @@ func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30,
 	}
 	reviewCard, schedule := makeSentAway("long", now, 30, 40, 60)
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Rule, p.Interval = review.RuleInterval, 21
 
 	got := runProjection(t, run, now, p, map[review.CardID]review.Schedule{reviewCard: schedule}, 0)
@@ -834,7 +834,7 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 	}
 
 	// A hundred unbegun review cards and a month to learn them in.
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 30)
 	p.Rule, p.Interval = review.RuleInterval, 21
 	retentionPreset := p
@@ -866,7 +866,7 @@ func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	reviewCard, schedule := makeSentAway("long", now, 30, 40, 60)
 	pos := map[review.CardID]review.Schedule{reviewCard: schedule}
 
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 10)
 	p.Rule, p.Interval = review.RuleInterval, 21
 
@@ -903,7 +903,7 @@ func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 7,
 	}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Rule, p.Interval = review.RuleInterval, 21
 
 	if short := runProjection(t, run, now, p, nil, 20).Short; short != 0 {
@@ -921,7 +921,7 @@ func TestProjection_LearnedDayByRule(t *testing.T) {
 	pos := makeLearnedCards(delta, now, 40)
 	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 120}
 
-	preset := review.Defaults()
+	preset := review.NewDefaultPreset()
 	preset.Goal, preset.ReviewsADay, preset.NewADay = review.GoalRetention, 9999, 50
 	preset.Rule, preset.Interval = review.RuleInterval, 21
 
@@ -956,7 +956,7 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	delta := review.NewFSRS()
 	// A day long enough and a budget large enough that nothing but the rule
 	// decides when the one review card is learned.
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.MinutesADay = review.GoalMinutes, int(review.GetMinutesADayBounds().Max)
 	p.NewADay, p.ReviewsADay, p.IsEvenLoad = 1, 1000, false
 	p.Rule = review.RuleInterval
@@ -985,7 +985,7 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 // review card would be presented later than the pace predicted.
 func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 21)
 	p.Rule, p.Interval = review.RuleInterval, 21
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
@@ -1014,7 +1014,7 @@ func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 // surviving days a load they were never paced for, leaving cards unlearned with nothing saying so.
 func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 21)
 	p.Rule, p.Interval = review.RuleInterval, 21
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
@@ -1051,7 +1051,7 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	}
 	pos := map[review.CardID]review.Schedule{{Card: "overdue", Template: "Say it"}: overdue}
 
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1440
 	p.NewADay, p.ReviewsADay = 40, 4000
 	run := reviewRun{
@@ -1090,7 +1090,7 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 	if now.Weekday() != time.Saturday {
 		t.Fatalf("the day the pace is asked on is a %v", now.Weekday())
 	}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 9)
 	p.Rule, p.Retention = review.RuleRetention, 0.9
 
@@ -1206,7 +1206,7 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 29).Truncate(24*time.Hour)
 	p.Rule, p.Interval, p.IsEvenLoad = review.RuleInterval, 21, false
 	p.Load = map[time.Weekday]int{}
@@ -1214,7 +1214,7 @@ func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 		p.Load[day] = 50
 	}
 
-	full := review.Defaults()
+	full := review.NewDefaultPreset()
 	full.Goal, full.By = p.Goal, p.By
 	full.Rule, full.Interval, full.IsEvenLoad = p.Rule, p.Interval, p.IsEvenLoad
 
@@ -1450,7 +1450,7 @@ func TestADaysShowingsAndItsReviewCardsAreTwoCounts(t *testing.T) {
 // slowly as its slowest day and the same figure whichever day it is requested on.
 func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	delta := review.NewFSRS()
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Rule, p.Interval = review.RuleInterval, 21
 	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
 

@@ -399,7 +399,7 @@ func newWorkers(tb testing.TB) *pdf.Workers {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	workers := pdf.NewWorkers(pdf.Options{Report: func(what string, err error) { tb.Errorf("%s: %v", what, err) }, CompilationCache: compilation, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
+	workers := pdf.NewWorkers(pdf.Options{Report: func(what string, err error) { tb.Errorf("%s: %v", what, err) }, CompilationCache: compilation, StartTimer: nil, Workers: 0, IdleWorkers: 0})
 	tb.Cleanup(func() {
 		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(tb.Context()))); err != nil {
 			tb.Error(err)

@@ -23,12 +23,12 @@ func (d *VectorIndex) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe st
 	return res.RowsAffected()
 }
 
-// Compact returns unused pages to the filesystem.
+// Shrink returns unused pages to the filesystem.
 //
 // SQLite reuses a freed page for later rows, so a file that contained twice the
 // vectors retains its size until it is rewritten. VACUUM rewrites the whole file,
 // so it runs only on an explicit full rebuild of the index.
-func (d *VectorIndex) Compact(ctx context.Context) error {
+func (d *VectorIndex) Shrink(ctx context.Context) error {
 	if _, err := sqlwrite.Exec(ctx, d.write, `VACUUM`); err != nil {
 		return fmt.Errorf("give back the space the index no longer holds: %w", err)
 	}
@@ -55,7 +55,7 @@ func (d *VectorIndex) ApplyMinChunkLength(ctx context.Context, length int) (int6
 }
 
 func (d *VectorIndex) deleteShortVectors(ctx context.Context, length int) (removed int64, err error) {
-	err = sqlwrite.InTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
+	err = sqlwrite.RunInTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
 		coarse, err := tx.ExecContext(ctx,
 			`DELETE FROM chunks_vec WHERE chunk_id IN (SELECT id FROM chunks WHERE parent_id IS NOT NULL AND length < ?)`, length)
 		if err != nil {

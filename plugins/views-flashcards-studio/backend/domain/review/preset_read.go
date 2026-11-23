@@ -103,11 +103,11 @@ func readRetention(front map[string]any, p *Preset, problems *[]string) {
 	if !present || raw == nil {
 		return
 	}
-	value, ok := number(raw)
+	value, ok := parseNumber(raw)
 	switch {
 	case !ok:
 		*problems = append(*problems, "retention is not a number")
-	case !GetRetentionBounds().Contains(value):
+	case !GetRetentionBounds().IsWithin(value):
 		*problems = append(*problems, fmt.Sprintf(
 			"retention %g is outside %g to %g", value, GetRetentionBounds().Min, GetRetentionBounds().Max))
 	default:
@@ -129,18 +129,18 @@ func readEvenLoad(front map[string]any, p *Preset, problems *[]string) {
 }
 
 func readDayShare(name string, raw any, p *Preset, daysLen int, problems *[]string) {
-	day, recognized := Weekday(name)
+	day, recognized := ParseWeekday(name)
 	if !recognized {
 		*problems = append(*problems, "the load of "+name+" is not a day of the week")
 		return
 	}
-	share, ok := number(raw)
+	share, ok := parseNumber(raw)
 	switch {
 	case !ok:
 		*problems = append(*problems, "the load of "+name+" is not a number")
 	case share != math.Trunc(share):
 		*problems = append(*problems, "the load of "+name+" is counted in whole per cent")
-	case !GetLoadBounds().Contains(share):
+	case !GetLoadBounds().IsWithin(share):
 		*problems = append(*problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
 			name, share, GetLoadBounds().Min, GetLoadBounds().Max))
 	default:
@@ -176,7 +176,7 @@ func readWeights(front map[string]any, p *Preset, problems *[]string) {
 
 // ReadPreset reads a preset from frontmatter and reports the problems found.
 func ReadPreset(front map[string]any) (Preset, []string) {
-	p := Defaults()
+	p := NewDefaultPreset()
 	var problems []string
 
 	readSchedule(front, &p, &problems)
@@ -186,10 +186,10 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 	return p, problems
 }
 
-// Weekday is the day of the week a preset writes as the name, and whether the name is one.
-func Weekday(name string) (time.Weekday, bool) {
+// ParseWeekday is the day of the week a preset writes as the name, and whether the name is one.
+func ParseWeekday(name string) (time.Weekday, bool) {
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		if DayName(day) == strings.ToLower(strings.TrimSpace(name)) {
+		if GetDayName(day) == strings.ToLower(strings.TrimSpace(name)) {
 			return day, true
 		}
 	}
@@ -197,8 +197,8 @@ func Weekday(name string) (time.Weekday, bool) {
 	return time.Sunday, false
 }
 
-// DayName is how a preset writes a day of the week.
-func DayName(day time.Weekday) string {
+// GetDayName is how a preset writes a day of the week.
+func GetDayName(day time.Weekday) string {
 	return strings.ToLower(day.String()[:3])
 }
 
@@ -209,13 +209,13 @@ func readWholeNumber(
 	if !present || raw == nil {
 		return fallback
 	}
-	value, ok := number(raw)
+	value, ok := parseNumber(raw)
 	switch {
 	case !ok:
 		*problems = append(*problems, key+" is not a number")
 	case value != math.Trunc(value):
 		*problems = append(*problems, key+" is counted in whole numbers")
-	case !bounds.Contains(value):
+	case !bounds.IsWithin(value):
 		*problems = append(*problems, fmt.Sprintf(
 			"%s %g is outside %g to %g", key, value, bounds.Min, bounds.Max))
 	default:
@@ -224,7 +224,7 @@ func readWholeNumber(
 	return fallback
 }
 
-func number(raw any) (float64, bool) {
+func parseNumber(raw any) (float64, bool) {
 	switch value := raw.(type) {
 	case int:
 		return float64(value), true

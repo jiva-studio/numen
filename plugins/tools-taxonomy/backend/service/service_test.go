@@ -23,7 +23,7 @@ func newPlugin(t *testing.T, files map[string]string) plugin {
 	t.Helper()
 	v := hosttest.New("garden")
 	for path, content := range files {
-		v.File(path, content)
+		v.WriteFile(path, content)
 	}
 	app, err := service.NewApp(func(id domain.VaultID) tagcache.Vault {
 		return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id)}
@@ -110,7 +110,7 @@ func TestAFilesChangedEventReadsTheChangedTagsWithoutATrigger(t *testing.T) {
 		t.Fatalf("the first event stored %s", stored)
 	}
 
-	p.vault.File("a.md", "---\ntags: lake\n---\n")
+	p.vault.WriteFile("a.md", "---\ntags: lake\n---\n")
 	p.deliver(t, "onFilesChanged:garden")
 
 	stored := readStoredTags(t, p)

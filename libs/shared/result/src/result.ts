@@ -6,11 +6,8 @@
  * to test and a third state nothing means: an empty value with no error.
  */
 
-/** What went wrong, where a caller names no words of its own. */
-type Failure = string
-
 /** The answer to a call that can fail: what was returned, or why nothing did. */
-export type Result<T, E = Failure> =
+export type Result<T, E = string> =
   { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E }
 
 /** The answer of a call that returned something. */
@@ -18,3 +15,9 @@ export const asValue = <T>(value: T): Result<T, never> => ({ ok: true, value })
 
 /** The answer of a call that did not. */
 export const asFailure = <E>(error: E): Result<never, E> => ({ ok: false, error })
+
+/** A failure a caller can act on: a camelCase code to switch on and the words the person reads. */
+export interface Failure<C extends string = string> {
+  readonly error: C
+  readonly message: string
+}

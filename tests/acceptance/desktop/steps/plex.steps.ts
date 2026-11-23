@@ -15,7 +15,7 @@ Then('the plex places the following notes on the side of the focus note:', async
 })
 
 When('the person rests the pointer on the note titled {string} in the plex', async ({ person }, title: string) => {
-  await person.plex.restPointerOn(title)
+  await person.plex.placePointerOn(title)
 })
 
 Then(

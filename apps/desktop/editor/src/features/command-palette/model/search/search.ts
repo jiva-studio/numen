@@ -55,14 +55,14 @@ export interface SearchOptions {
 interface FillOptions<T> {
   readonly mine: InFlightRequest
   readonly group: SearchGroup
-  readonly question: () => Promise<readonly T[]>
-  readonly into: (found: readonly T[]) => void
+  readonly fetchFound: () => Promise<readonly T[]>
+  readonly storeFound: (found: readonly T[]) => void
   readonly onFailed: (group: SearchGroup) => void
   readonly onDone: (group: SearchGroup) => void
 }
 
 async function fillSearchGroup<T>(options: FillOptions<T>) {
-  const { mine, group, question, into, onFailed, onDone } = options
+  const { mine, group, fetchFound: question, storeFound: into, onFailed, onDone } = options
   try {
     const found = await question()
     if (!mine.isCurrent) return
@@ -214,8 +214,8 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'names',
-      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT, ctx.signal),
-      into: (found) => {
+      fetchFound: () => ctx.core.searchNames(ctx.query, GROUP_RESULT_LIMIT, ctx.signal),
+      storeFound: (found) => {
         state.names.value = found
       },
       onFailed,
@@ -224,8 +224,8 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'text',
-      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT, ctx.signal),
-      into: (found) => {
+      fetchFound: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT, ctx.signal),
+      storeFound: (found) => {
         state.texts.value = found
       },
       onFailed,
@@ -234,8 +234,8 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'meaning',
-      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT, ctx.signal),
-      into: (found) => {
+      fetchFound: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT, ctx.signal),
+      storeFound: (found) => {
         state.meanings.value = found
       },
       onFailed,
@@ -298,8 +298,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const setTyped = async (text: string) => {
     inputValue.value = text
     await debounced.search(text, {
-      blank: drop,
-      pending: wait,
+      handleBlank: drop,
+      markPending: wait,
       run: ask,
     })
   }

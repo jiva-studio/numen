@@ -34,7 +34,7 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 		return err
 	}
 	diagnostics := newReporter(term.errOut)
-	errorHandler := func(err error) { diagnostics.Printf("warning: %v\n", err) }
+	errorHandler := func(err error) { diagnostics.WriteFormat("warning: %v\n", err) }
 	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{ErrorHandler: errorHandler})
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 	results, err := indexed.Query.ExecuteByName(ctx, vaultName, request)
 	if parseError, ok := errors.AsType[*searchquery.ParseError](err); ok {
 		for _, p := range parseError.Problems {
-			diagnostics.Printf("query:%s\n", searchquery.FormatProblem(p))
+			diagnostics.WriteFormat("query:%s\n", searchquery.FormatProblem(p))
 		}
 		return errors.Join(errInvalidQuery, diagnostics.Err())
 	}
@@ -50,10 +50,10 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 		return formatVaultError(err)
 	}
 	for _, warning := range results.Warnings {
-		diagnostics.Printf("warning: %s\n", warning)
+		diagnostics.WriteFormat("warning: %s\n", warning)
 	}
 	for _, report := range results.Reranks {
-		diagnostics.Println(formatRerankReport(report))
+		diagnostics.WriteLine(formatRerankReport(report))
 	}
 	r := newReporter(term.out)
 	printResults(r, results)
@@ -82,16 +82,16 @@ func parseQueryArgs(args []string) (searchquery.Request, string, error) {
 
 func printResults(r *reporter, results searchquery.SearchResults) {
 	if len(results.Results) == 0 {
-		r.Println("nothing found")
+		r.WriteLine("nothing found")
 		return
 	}
 	for _, one := range results.Results {
 		line := fmt.Sprintf("%-5s  %s  %s  %s", formatScore(one.Score), one.Document.Path, one.Document.Kind, getPlace(one))
 		if one.IsWholeFile() {
-			r.Println(line)
+			r.WriteLine(line)
 			continue
 		}
-		r.Printf("%s  meaning %s  words %s\n    %s\n", line, formatScore(one.MeaningScore), formatScore(one.WordScore), getExcerpt(one.Text))
+		r.WriteFormat("%s  meaning %s  words %s\n    %s\n", line, formatScore(one.MeaningScore), formatScore(one.WordScore), getExcerpt(one.Text))
 	}
 }
 

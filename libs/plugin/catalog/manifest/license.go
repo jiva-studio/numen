@@ -43,7 +43,7 @@ type License struct {
 	OfflineGraceDays *int
 }
 
-func knownLicenseProviders() []string {
+func listKnownLicenseProviders() []string {
 	return []string{LicenseProviderCreem, LicenseProviderDodo}
 }
 
@@ -86,8 +86,8 @@ func listLicenseProviderIssues(one License) []error {
 	observed := map[string]bool{}
 	for _, p := range one.Providers {
 		switch {
-		case !slices.Contains(knownLicenseProviders(), p.Provider):
-			issues = append(issues, newLicenseIssue("%q: provider %q is not one of %s", one.ID, p.Provider, strings.Join(knownLicenseProviders(), ", ")))
+		case !slices.Contains(listKnownLicenseProviders(), p.Provider):
+			issues = append(issues, newLicenseIssue("%q: provider %q is not one of %s", one.ID, p.Provider, strings.Join(listKnownLicenseProviders(), ", ")))
 		case observed[p.Provider]:
 			issues = append(issues, newLicenseIssue("%q: provider %q is declared twice", one.ID, p.Provider))
 		}

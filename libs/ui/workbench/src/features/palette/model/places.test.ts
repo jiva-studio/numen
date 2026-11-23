@@ -23,7 +23,7 @@ const group = (
   ...rest,
 })
 
-const setUp = (groups: PaletteGroup[]) => usePalettePlaces({ groups: () => groups })
+const setUp = (groups: PaletteGroup[]) => usePalettePlaces({ getGroups: () => groups })
 
 describe('usePalettePlaces', () => {
   describe('what is read out', () => {

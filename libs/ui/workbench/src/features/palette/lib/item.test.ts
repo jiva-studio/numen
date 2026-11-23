@@ -13,15 +13,15 @@ import {
   canChoose,
   findKeptPlace,
   flatten,
-  orderGroups,
+  arrangeGroups,
   getSteppedIndex,
   canLandOn,
   type PaletteItem,
   type PaletteGroup,
 } from './item'
-import { getActionId, commandKeyChord, getShortcuts, isActionsChord } from './keys'
+import { getActionId, getCommandKeyChord, getShortcuts, isActionsChord } from './keys'
 import { getParts } from './parts'
-import { listId, optionId, placePalette } from './place'
+import { listId, getOptionId, placePalette } from './place'
 import { MANY } from '../fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
@@ -227,12 +227,12 @@ describe('the keystroke that opens the action panel', () => {
   })
 
   it('is retained with the key the keyboard in hand puts alongside the space bar', () => {
-    expect(commandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
-    expect(commandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
+    expect(getCommandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
+    expect(getCommandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
       icons: ['command'],
       letter: 'K',
     })
-    expect(commandKeyChord('Linux x86_64')).toEqual({ icons: ['control'], letter: 'K' })
+    expect(getCommandKeyChord('Linux x86_64')).toEqual({ icons: ['control'], letter: 'K' })
   })
 })
 
@@ -450,7 +450,7 @@ describe('which group remains where', () => {
   it('draws a group holding items once, whether or not it is working or has something to say', () => {
     const busy = group('names', [item('one')], { isWorking: true })
     const textGroup = group('text', [item('two')], { silence: 'nothing' })
-    expect(orderGroups([busy, textGroup]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(arrangeGroups([busy, textGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   const itemGroup = group('names', [item('one')])
@@ -459,16 +459,16 @@ describe('which group remains where', () => {
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
-    expect(orderGroups([itemGroup, also]).map((one) => one.id)).toEqual(['names', 'text'])
-    expect(orderGroups([also, itemGroup]).map((one) => one.id)).toEqual(['text', 'names'])
+    expect(arrangeGroups([itemGroup, also]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(arrangeGroups([also, itemGroup]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
   it('sends a group holding nothing to the foot', () => {
-    expect(orderGroups([empty, itemGroup]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(arrangeGroups([empty, itemGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   it('keeps the groups holding nothing in the order they were offered', () => {
-    expect(orderGroups([empty, itemGroup, alsoEmpty]).map((one) => one.id)).toEqual([
+    expect(arrangeGroups([empty, itemGroup, alsoEmpty]).map((one) => one.id)).toEqual([
       'names',
       'text',
       'meaning',
@@ -477,24 +477,24 @@ describe('which group remains where', () => {
 
   it('draws a group that answered with nothing nowhere', () => {
     const reply = group('text', [])
-    expect(orderGroups([itemGroup, reply]).map((one) => one.id)).toEqual(['names'])
-    expect(orderGroups([reply]).map((one) => one.id)).toEqual([])
+    expect(arrangeGroups([itemGroup, reply]).map((one) => one.id)).toEqual(['names'])
+    expect(arrangeGroups([reply]).map((one) => one.id)).toEqual([])
   })
 
   it('draws a group holding nothing while it is still working', () => {
-    expect(orderGroups([group('meaning', [], { isWorking: true })]).map((one) => one.id)).toEqual([
-      'meaning',
-    ])
+    expect(arrangeGroups([group('meaning', [], { isWorking: true })]).map((one) => one.id)).toEqual(
+      ['meaning'],
+    )
   })
 
   it('draws a group that could not be requested, with what it has to say', () => {
     const noQuery = group('meaning', [], { silence: 'the vault could not answer' })
-    expect(orderGroups([noQuery]).map((one) => one.id)).toEqual(['meaning'])
+    expect(arrangeGroups([noQuery]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
     const groups = [empty, itemGroup, alsoEmpty, group('more', [item('two'), item('three')])]
-    expect(flatten(orderGroups(groups)).map((place) => place.item.id)).toEqual(
+    expect(flatten(arrangeGroups(groups)).map((place) => place.item.id)).toEqual(
       flatten(groups).map((place) => place.item.id),
     )
   })
@@ -549,6 +549,6 @@ describe('where the half of a pair is moved off', () => {
 describe('what the list and its rows are addressed by', () => {
   it('names the list and each row after the id given', () => {
     expect(listId('p1')).toBe('p1-list')
-    expect(optionId('p1', 3)).toBe('p1-option-3')
+    expect(getOptionId('p1', 3)).toBe('p1-option-3')
   })
 })

@@ -50,7 +50,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	failures := supervision.NewFailures(sups, clock, errs, health)
 	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: getCoreClaims()})
 	files := storage.New(errs.Report, set.GetVersion)
-	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, Tools: toolbridge.ListKeptItems(files)})
+	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, GetTools: toolbridge.ListKeptItems(files)})
 	config := plugin.NewConfigPush(plugin.ConfigPushDeps{Set: set, Supervisors: sups, Report: errs.Report, Health: health})
 	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files, config.GetProcessNice)
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)

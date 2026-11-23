@@ -49,7 +49,7 @@ type scene struct {
 func newScene(files map[string]string) *scene {
 	v := hosttest.New(string(vaultID))
 	for path, content := range files {
-		v.File(path, content)
+		v.WriteFile(path, content)
 	}
 	s := &scene{vault: v}
 	s.restart()
@@ -110,7 +110,7 @@ func TestExecuteWritesTheToggledTagsToANoteWithNone(t *testing.T) {
 	if got := s.getTags(t, pier); !slices.Equal(got, []string{"Port", "Sea"}) {
 		t.Errorf("the note has the tags %q, want Port and Sea", got)
 	}
-	if content, _ := s.vault.Content(pier); !strings.Contains(content, "The pier.") {
+	if content, _ := s.vault.ReadContent(pier); !strings.Contains(content, "The pier.") {
 		t.Errorf("the note is %q, want its body kept", content)
 	}
 }
@@ -160,7 +160,7 @@ func TestExecuteRemovesTheKeyWhenNoTagIsLeftAndKeepsTheOtherKeysAndTheBody(t *te
 	if _, hasTags := page.Notes[0].Values[tags.FrontmatterKey]; hasTags || page.Notes[0].Values["type"] != "place" {
 		t.Errorf("the frontmatter is %v, want type kept and tags removed", page.Notes[0].Values)
 	}
-	if content, _ := s.vault.Content(quay); !strings.HasSuffix(content, "---\nThe quay.\n") {
+	if content, _ := s.vault.ReadContent(quay); !strings.HasSuffix(content, "---\nThe quay.\n") {
 		t.Errorf("the note is %q, want its body kept", content)
 	}
 	if len(results) != 1 || len(results[0].Tags) != 0 || results[0].Err != nil {
@@ -253,11 +253,11 @@ func TestExecuteReportsANoteThatIsNotThereAndWritesTheOthers(t *testing.T) {
 
 func TestExecuteWithNoToggleChangesNothing(t *testing.T) {
 	s := newScene(map[string]string{quay: note("tags: [Port]", "The quay.")})
-	before, _ := s.vault.Content(quay)
+	before, _ := s.vault.ReadContent(quay)
 
 	s.execute(t, []string{quay}, nil)
 
-	if after, _ := s.vault.Content(quay); after != before {
+	if after, _ := s.vault.ReadContent(quay); after != before {
 		t.Errorf("the note is %q, want %q as before", after, before)
 	}
 }

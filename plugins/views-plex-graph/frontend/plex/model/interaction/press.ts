@@ -22,7 +22,7 @@ export interface NodePressReport {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
   readonly reach: (pointer: PointerEvent) => void
-  readonly menu: (point: Position, trigger: MenuTrigger) => void
+  readonly openMenu: (point: Position, trigger: MenuTrigger) => void
 }
 
 /** What the press reads off the node it belongs to. */
@@ -87,14 +87,14 @@ export function useNodePress(
     onContextMenu: (event: MouseEvent): void => {
       if (isGhost.value) return
       event.preventDefault()
-      listeners.menu({ x: event.clientX, y: event.clientY }, 'pointer')
+      listeners.openMenu({ x: event.clientX, y: event.clientY }, 'pointer')
     },
 
     onKeyDown: (event: KeyboardEvent): void => {
       handleNodeKey(event, {
         isGhost: isGhost.value,
-        middleOf,
-        onMenu: listeners.menu,
+        getMiddle: middleOf,
+        onMenu: listeners.openMenu,
         onShow: showNode,
         onActivate: activateNode,
       })
@@ -109,7 +109,7 @@ export function useNodePress(
 
 interface KeyPressContext {
   readonly isGhost: boolean
-  readonly middleOf: () => Position | null
+  readonly getMiddle: () => Position | null
   readonly onMenu: (point: Position, trigger: MenuTrigger) => void
   readonly onShow: (hasModifier: boolean) => void
   readonly onActivate: () => void
@@ -119,7 +119,7 @@ function handleNodeKey(event: KeyboardEvent, context: KeyPressContext): void {
   if (isMenuKey(event)) {
     if (context.isGhost) return
     event.preventDefault()
-    const middle = context.middleOf()
+    const middle = context.getMiddle()
     if (middle) context.onMenu(middle, 'keyboard')
     return
   }

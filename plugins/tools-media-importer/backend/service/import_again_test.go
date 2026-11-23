@@ -36,20 +36,20 @@ func TestImportOfAnAddressWhoseLinkNoteMovedOpensTheMovedNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	first := runImport(t, commands, videoAddress)
-	vault, isFake := hosted.Vaults("").Files.(*hosttest.Vault)
+	vault, isFake := hosted.GetVault("").Files.(*hosttest.Vault)
 	if !isFake {
-		t.Fatalf("the vault is %T", hosted.Vaults("").Files)
+		t.Fatalf("the vault is %T", hosted.GetVault("").Files)
 	}
-	content, _ := vault.Content(first.OpenedPath)
+	content, _ := vault.ReadContent(first.OpenedPath)
 	vault.Remove(first.OpenedPath)
-	vault.File("reading/tidal mill.md", content)
+	vault.WriteFile("reading/tidal mill.md", content)
 
 	again := runImport(t, commands, videoAddress)
 
 	if again.OpenedPath != "reading/tidal mill.md" {
 		t.Errorf("Import link of a moved note answered %+v, want reading/tidal mill.md opened", again)
 	}
-	if _, isMade := vault.Content(first.OpenedPath); isMade {
+	if _, isMade := vault.ReadContent(first.OpenedPath); isMade {
 		t.Errorf("Import link made a second note at %s", first.OpenedPath)
 	}
 }

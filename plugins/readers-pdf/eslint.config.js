@@ -15,7 +15,7 @@ const sameSlice = { slice: '{{ from.element.captured.slice }}' }
 const sharedFiles = { file: { categories: 'root-shared' } }
 const sharedParts = { element: { type: ['api', 'lib'] } }
 const otherSlice = { element: { type: 'slice' }, file: { categories: 'public' } }
-const own = (types) => ({ element: { type: types, captured: sameSlice } })
+const selectOwnSlice = (types) => ({ element: { type: types, captured: sameSlice } })
 const slicePolicies = [
   { allow: { to: { module: { origin: ['external', 'core'] } } } },
   { from: { file: { categories: 'root-shared' } }, allow: { to: sharedFiles } },
@@ -46,20 +46,26 @@ const slicePolicies = [
   {
     from: { element: { type: 'slice-ui' } },
     allow: {
-      to: [sharedFiles, sharedParts, own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])],
+      to: [
+        sharedFiles,
+        sharedParts,
+        selectOwnSlice(['slice-ui', 'slice-model', 'slice-api', 'slice-lib']),
+      ],
     },
   },
   {
     from: { element: { type: 'slice-model' } },
-    allow: { to: [sharedFiles, sharedParts, own(['slice-model', 'slice-api', 'slice-lib'])] },
+    allow: {
+      to: [sharedFiles, sharedParts, selectOwnSlice(['slice-model', 'slice-api', 'slice-lib'])],
+    },
   },
   {
     from: { element: { type: 'slice-api' } },
-    allow: { to: [sharedFiles, sharedParts, own(['slice-api', 'slice-lib'])] },
+    allow: { to: [sharedFiles, sharedParts, selectOwnSlice(['slice-api', 'slice-lib'])] },
   },
   {
     from: { element: { type: 'slice-lib' } },
-    allow: { to: [sharedFiles, { element: { type: 'lib' } }, own(['slice-lib'])] },
+    allow: { to: [sharedFiles, { element: { type: 'lib' } }, selectOwnSlice(['slice-lib'])] },
   },
   {
     from: { element: { type: 'slice' } },
@@ -67,7 +73,7 @@ const slicePolicies = [
       to: [
         sharedFiles,
         sharedParts,
-        own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']),
+        selectOwnSlice(['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']),
       ],
     },
   },

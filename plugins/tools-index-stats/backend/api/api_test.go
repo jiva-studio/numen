@@ -11,6 +11,6 @@ const fixtureDir = "../../testdata/api"
 
 func TestMessagesMatchFixtures(t *testing.T) {
 	plugintest.CheckMessageFixtures(t, fixtureDir, map[string]plugintest.MessageContract{
-		MethodGetStats: {Request: func() any { return &GetStatsRequest{} }, Response: func() any { return &Stats{} }},
+		MethodGetStats: {CreateRequest: func() any { return &GetStatsRequest{} }, CreateResponse: func() any { return &Stats{} }},
 	})
 }

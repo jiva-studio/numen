@@ -42,9 +42,9 @@ func (v *switchableVault) Read(ctx context.Context, path string) ([]byte, domain
 
 func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 	raw := testsupport.ReadFixture(t, "tiny.pdf")
-	atlas := hosttest.OnDisk(t, "Atlas", map[string]string{"books/tiny.pdf": string(raw)})
+	atlas := hosttest.CreateOnDisk(t, "Atlas", map[string]string{"books/tiny.pdf": string(raw)})
 	botany := hosttest.New("Botany")
-	atlas.Beside(botany)
+	atlas.LinkBeside(botany)
 	files := &switchableVault{Vault: atlas, active: "Atlas"}
 	vaults := func(id domain.VaultID) extract.Files {
 		if id == "" {
@@ -53,11 +53,11 @@ func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 		return atlas.With(id)
 	}
 	texts := hosttest.NewTexts("Atlas", pluginID)
-	texts.File("books/tiny.pdf", raw)
+	texts.WriteFile("books/tiny.pdf", raw)
 	queue := hosttest.NewQueue()
 	texts.SetStore(pluginID, atlas.Store())
 	writer := testsupport.NewWriter(t, vaults, atlas, texts, queue)
-	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
+	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, NotifyWaiting: nil})
 	if err != nil {
 		t.Fatal(err)
 	}

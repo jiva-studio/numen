@@ -64,7 +64,7 @@ func (h *Host) GetLaunchVars() map[string]string {
 // NewClient returns a client of the plugin that releases its process on this host.
 func (h *Host) NewClient(t *testing.T) *process.Client {
 	t.Helper()
-	endpoint, err := hostcall.FromVars(h.GetLaunchVars())
+	endpoint, err := hostcall.ReadVars(h.GetLaunchVars())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,7 +30,7 @@ const BLANK = {
 export interface CommandPaletteDeps {
   readonly core: CommandsDeps
   readonly words: Words
-  readonly at: () => CommandTarget
+  readonly getTarget: () => CommandTarget
   readonly knows: NoteLookup
   readonly lists: PaletteLists
   readonly runs: RunSupport
@@ -45,26 +45,26 @@ interface PaletteSearchDeps {
   readonly found: Ref<readonly NameMatch[]>
   readonly isWorking: Ref<boolean>
   readonly failureMessage: Ref<string>
-  readonly asking: NamesAsking
+  readonly namesRequest: NamesAsking
 }
 
 function createNamesSearch(deps: PaletteSearchDeps) {
   return (query: string) =>
     deps.debounced.ask(query, {
-      blank: () => {
-        deps.asking.abort()
+      handleBlank: () => {
+        deps.namesRequest.abort()
         deps.found.value = []
         deps.isWorking.value = false
         deps.failureMessage.value = ''
       },
-      pending: () => {
-        deps.asking.abort()
+      markPending: () => {
+        deps.namesRequest.abort()
         deps.isWorking.value = true
         deps.failureMessage.value = ''
       },
       run: async (trimmed, mine) => {
         try {
-          const names = await deps.core.names(trimmed, GROUP_RESULT_LIMIT, deps.asking.start())
+          const names = await deps.core.searchNames(trimmed, GROUP_RESULT_LIMIT, deps.namesRequest.start())
           if (!mine.isCurrent) return
           deps.found.value = names
         } catch {
@@ -94,7 +94,7 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
-      const items = await deps.core.vaults()
+      const items = await deps.core.listVaults()
       if (!mine.isCurrent) return
       deps.known.value = items.vaults
       deps.showing.value = items.showing
@@ -115,14 +115,14 @@ interface NamesAsking {
 }
 
 function createNamesAsking(): NamesAsking {
-  let asking = new AbortController()
+  let controller = new AbortController()
   return {
     start: () => {
-      asking.abort()
-      asking = new AbortController()
-      return asking.signal
+      controller.abort()
+      controller = new AbortController()
+      return controller.signal
     },
-    abort: () => asking.abort(),
+    abort: () => controller.abort(),
   }
 }
 
@@ -136,11 +136,11 @@ function createPaletteState(wait?: Wait) {
   const failureMessage = ref(BLANK.failureMessage)
   const request = latest()
   const debounced = useDebouncedSearch({ guard: request, ...(wait ? { wait } : {}) })
-  const asking = createNamesAsking()
+  const namesRequest = createNamesAsking()
 
   const drop = () => {
     request.cancel()
-    asking.abort()
+    namesRequest.abort()
     found.value = BLANK.found
     recognized.value = BLANK.known
     showing.value = BLANK.showing
@@ -154,7 +154,7 @@ function createPaletteState(wait?: Wait) {
     results: { found, known: recognized, showing, isWorking, failureMessage },
     requests: request,
     debounced,
-    asking,
+    namesRequest,
     drop,
   }
 }
@@ -187,7 +187,7 @@ function createPaletteInvocation(
 /** The state and the steps of one palette, which its three parts are made over. */
 export function createPaletteSession(deps: CommandPaletteDeps) {
   const state = createPaletteState(deps.wait)
-  const on = computed<CommandTarget>(() => deps.at())
+  const on = computed<CommandTarget>(() => deps.getTarget())
   const rows = createRows(deps)
   const invocation = createPaletteInvocation(deps, rows.byId)
 
@@ -201,14 +201,14 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     failureMessage: state.results.failureMessage,
   })
 
-  const previewItem = (item: string) => {
+  const applyItemPreview = (item: string) => {
     // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     const step = stepsRef.current?.here.value
-    if (step?.step === 'items') deps.lists.previewItem(step.command.id, item)
+    if (step?.step === 'items') deps.lists.applyItemPreview(step.command.id, item)
   }
 
   const setOpen = (now: boolean) => {
-    previewItem('')
+    applyItemPreview('')
     state.open.value = now
     state.drop()
     state.typed.value = ''
@@ -217,13 +217,13 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
   }
 
   const stepsRef: { current?: ReturnType<typeof createPaletteSteps> } = {}
-  const steps = createPaletteSteps({
+  const paletteSteps = createPaletteSteps({
     words: deps.words,
     lists: deps.lists,
     knows: deps.knows,
     text: state.typed,
     onDrop: state.drop,
-    onLights: previewItem,
+    onLights: applyItemPreview,
     onLists: () => {
       loadVaults().catch((error: unknown) => {
         state.results.failureMessage.value = formatError(error)
@@ -231,13 +231,13 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     },
     onClose: () => setOpen(false),
   })
-  stepsRef.current = steps
+  stepsRef.current = paletteSteps
   const choose = createStepChoice({
-    invocation,
+    createInvocation: invocation,
     lists: deps.lists,
     text: state.typed,
-    stack: steps.stack,
-    getStepTitle: steps.naming.getStepTitle,
+    stack: paletteSteps.stack,
+    getStepTitle: paletteSteps.naming.getStepTitle,
   })
 
   const searchNames = createNamesSearch({
@@ -247,7 +247,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     found: state.results.found,
     isWorking: state.results.isWorking,
     failureMessage: state.results.failureMessage,
-    asking: state.asking,
+    namesRequest: state.namesRequest,
   })
 
   return {
@@ -256,9 +256,9 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     on,
     rows,
     invocation,
-    steps,
+    steps: paletteSteps,
     choose,
-    handlers: { previewItem, setOpen, searchNames },
+    handlers: { previewItem: applyItemPreview, setOpen, searchNames },
   }
 }
 

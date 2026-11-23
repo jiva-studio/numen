@@ -5,12 +5,12 @@ import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
 import { resolveOptions, type Placement, type PlexOptionsInput } from '../lib/arrange'
 import { clusters } from '../lib/arrange/layout/clusters'
-import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
+import { getOptionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
 import { graphs } from '../fixtures/graphs'
 import { createGraph, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
-import { nameNow } from '../fixtures/titles'
+import { createNowName } from '../fixtures/titles'
 import { ring } from '../fixtures/ring'
 import type { Position } from '../lib/node'
 import type { Clock } from '../model/transition'
@@ -89,7 +89,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
 })
 
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
-  optionsForType(type, resolveOptions(getOptions(a)))
+  getOptionsForType(type, resolveOptions(getOptions(a)))
 
 const range = (min: number, max: number, step = 1, category = 'Layout') => ({
   control: { type: 'range' as const, min, max, step },
@@ -315,7 +315,7 @@ const meta = {
     onBring: fn(),
     onMenu: fn(),
     onDismiss: fn(),
-    naming: nameNow,
+    naming: createNowName,
     dragged: [],
     dropName: (relation: PlexRelation) => `as ${relation}`,
 

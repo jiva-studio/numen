@@ -16,7 +16,7 @@ export interface TagMap {
   getTags(path: string): readonly string[]
   setTags(changed: TagsByPath): void
   beginWrite(): (changed?: TagsByPath) => void
-  whenLoaded(): Promise<void>
+  waitForLoad(): Promise<void>
   stop(): void
 }
 
@@ -47,7 +47,7 @@ const replaceTags = (tags: Map<string, readonly string[]>, whole: TagsByPath): v
 }
 
 /**
- * The map of the tags of the vault: read from GetTagMap on the first read or whenLoaded call, updated
+ * The map of the tags of the vault: read from GetTagMap on the first read or waitForLoad call, updated
  * directly when SetTags writes a note, and refreshed on onVaultChange while a view or effect scope is
  * active. A caller that reads the tags of one path is notified when the tags of that path change and of
  * no other.
@@ -144,7 +144,7 @@ export function createTagMap({ api, events }: TagMapDeps): TagMap {
         applySetTags(changed)
       }
     },
-    whenLoaded: () => (isFresh ? Promise.resolve() : startRead()),
+    waitForLoad: () => (isFresh ? Promise.resolve() : startRead()),
     stop: () => {
       isStopped = true
       needsReload = false

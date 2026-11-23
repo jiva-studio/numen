@@ -19,7 +19,7 @@ type PluginStatus struct {
 }
 
 func (r *Registry) GetPluginStatus(pluginID string) (PluginStatus, bool) {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	if _, ok := v.get(pluginID); !ok {
 		return PluginStatus{}, false
@@ -47,7 +47,7 @@ func (r *Registry) getStatus(v setView, pluginID string) PluginStatus {
 
 // GetPluginStatuses returns statuses for all registered plugins, in the order of their ids.
 func (r *Registry) GetPluginStatuses() []PluginStatus {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	ordered := v.ordered()
 	statuses := make([]PluginStatus, 0, len(ordered)+len(v.listProblems()))
@@ -70,7 +70,7 @@ func (r *Registry) GetPluginStatuses() []PluginStatus {
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
 func (r *Registry) GetPluginInfos() []plugindomain.Info {
-	v, release := r.set.view()
+	v, release := r.set.getView()
 	defer release()
 	enabled := v.enabled()
 	ordered := v.ordered()
@@ -82,7 +82,7 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			Version:        p.Manifest.Version,
 			Description:    p.Manifest.Description,
 			Capabilities:   p.Manifest.Capabilities,
-			Settings:       plugindomain.ListSettings(p.Manifest, v.settings(p.Manifest.ID)),
+			Settings:       plugindomain.ListSettings(p.Manifest, v.getSettings(p.Manifest.ID)),
 			IsActive:       r.sups.IsActive(p.Manifest.ID),
 			Permissions:    p.Manifest.Permissions,
 			HasFrontend:    p.Manifest.HasFrontend(),
@@ -99,10 +99,10 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 
 func (r *Registry) listContributions(m manifest.Manifest) []plugindomain.Contribution {
 	declared := plugindomain.ListContributions(m)
-	if r.tools == nil {
+	if r.getTools == nil {
 		return declared
 	}
-	listed := r.tools(m.ID)
+	listed := r.getTools(m.ID)
 	if len(listed) == 0 {
 		return declared
 	}

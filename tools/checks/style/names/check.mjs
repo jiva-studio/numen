@@ -2,6 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execTool } from '../../../shared/tools.mjs'
+import { findFunctionNames, findPossibleFunctionNames, getNameFault, isGoAccessor } from './function-names.mjs'
 
 const args = process.argv.slice(2)
 
@@ -16,6 +17,7 @@ let filterLang = 'all' // all | ts | go
 let jsonOutPath = ''
 let isFixMode = false
 let isStrictMode = false
+let isUpdateBaseline = false
 let isAddedOnly = false
 let addedBaseRef = ''
 let changedSinceRef = ''
@@ -45,6 +47,8 @@ for (let i = 0; i < args.length; i++) {
       console.error('--changed-since needs a git ref')
       process.exit(2)
     }
+  } else if (arg === '--update-baseline') {
+    isUpdateBaseline = true
   } else if (arg === '--strict') {
     isStrictMode = true
   } else if (arg === '--check') {
@@ -82,11 +86,12 @@ Options:
                         or against <ref> (default HEAD)
   --changed-since <ref> Scan only the files changed since the merge base of <ref> and HEAD; the phrase
                         rules (phrases) count on the lines added since that merge base
+  --update-baseline     Rewrite baseline.txt with the function names that break the function-names rule now
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
   --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
                         filler, long-test-name) as findings, so --check fails on them
   --category <name>     Filter by category:
-                          fake-casts | third-person | bare-state-name | tests | comments |
+                          fake-casts | third-person | bare-state-name | function-names | tests | comments |
                           test-assertions | async | ui-words |
                           prose (Markdown) | ui-strings (strings, manifest.json) | advisory |
                           phrases (test titles and comments)
@@ -276,7 +281,7 @@ const RE_TS_THIRD_PERSON_FUNC = new RegExp(
 
 // Go Regexes
 const RE_GO_THIRD_PERSON_FUNC = new RegExp(
-  `func\\s+(?:\\([^)]+\\)\\s*)?(${BANNED_THIRD_PERSON_FUNCTIONS.join('|')})\\s*\\(`,
+  `func\\s+(?:\\([^)]+\\)\\s*)?(${BANNED_THIRD_PERSON_FUNCTIONS.map((w) => `[${w[0]}${w[0].toUpperCase()}]${w.slice(1)}`).join('|')})\\s*\\(`,
 )
 
 // A function named with a verb and one bare participle or adjective (`getActive`, `createResponded`,
@@ -381,6 +386,7 @@ const findings = {
   fakeTurnCasts: [],
   thirdPersonFunctions: [],
   bareStateFunctions: [],
+  functionNames: [],
   narrativeTestTitles: [],
   anglishComments: [],
   narrativeTestAssertions: [],
@@ -404,6 +410,17 @@ const advisory = {
 let narrativePhrases = []
 
 const isPhraseDiffMode = isStagedOnly || Boolean(changedSinceRef)
+
+// The function names that already broke the function-names rule when it was added, one "file<TAB>name" per line.
+// Findings of the rule count only when they are not in this file, so the rule fails on new names only.
+const BASELINE_PATH = path.join(import.meta.dirname, 'baseline.txt')
+const baselineKeys = new Set(fs.existsSync(BASELINE_PATH) ? fs.readFileSync(BASELINE_PATH, 'utf8').split('\n').filter(Boolean) : [])
+const allFunctionNameFaults = []
+const nameState = { inInterface: false }
+
+function getBaselineKey(item) {
+  return `${item.file}\t${item.func}`
+}
 
 const stats = {
   frontendTotal: 0,
@@ -461,6 +478,7 @@ function scanFile(filePath) {
   const baseName = path.basename(filePath)
   if (path.resolve(filePath) === import.meta.filename || path.resolve(filePath) === path.join(import.meta.dirname, 'check.test.mjs')) return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
+  nameState.inInterface = false
   let content
   try {
     content = fs.readFileSync(filePath, 'utf8')
@@ -548,12 +566,34 @@ function scanFile(filePath) {
   const isDoc = ext === '.md' || ext === '.mdx'
   const isTestFile = /(?:_test\.go|\.test\.[mc]?[jt]sx?|\.stories\.[jt]s)$/.test(baseName)
   let isInFence = false
+  const isStorybook = relPath.split(path.sep).includes('.storybook')
+  // Test fixtures are named for what they build, and words files for the message they hold.
+  const isNameExempt = isTestFile || /\.spec\.[mc]?[jt]sx?$/.test(baseName) || RE_WORDS_FILE.test(baseName)
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const lineNum = i + 1
     const trimmed = line.trim()
     const isCommentLine = trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*') || (!isDoc && trimmed.startsWith('<!--'))
+
+    // 6b. Function names that do not start with a verb or a predicate
+    if (isCode && !isNameExempt && !isCommentLine && shouldCheckCategory('function-names')) {
+      const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
+      const possible = new Set(findPossibleFunctionNames(lineWithoutStrings, isGo))
+      for (const funcName of [...findFunctionNames(lineWithoutStrings, isGo, nameState), ...possible]) {
+        const fault = getNameFault(funcName, isGo)
+        if (!fault || (possible.has(funcName) && fault === 'bare-noun') || (filterWord && filterWord !== funcName)) continue
+        const item = { file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', func: funcName, word: fault, text: trimmed }
+        allFunctionNameFaults.push(item)
+        if (!baselineKeys.has(getBaselineKey(item))) {
+          findings.functionNames.push(item)
+          if (isGo) stats.backendTotal++
+          else stats.frontendTotal++
+        }
+      }
+    }
+
+    if (isStorybook) continue
 
     // 23. Plain prose: Markdown documents, comments, the strings a person reads, and test messages
     if (isDoc) {
@@ -639,9 +679,9 @@ function scanFile(filePath) {
     // 5. Third-person singular function names
     if (isCode && !isCommentLine && shouldCheckCategory('third-person')) {
       const m = isGo ? RE_GO_THIRD_PERSON_FUNC.exec(line) : RE_TS_THIRD_PERSON_FUNC.exec(line)
-      if (m) {
+      if (m && !(isGo && isGoAccessor(line))) {
         const funcName = m[1]
-        if (!filterWord || filterWord === funcName) {
+        if ((!filterWord || filterWord === funcName) && !baselineKeys.has(getBaselineKey({ file: relPath, func: funcName }))) {
           findings.thirdPersonFunctions.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', func: funcName, text: trimmed })
           if (isGo) stats.backendTotal++
           else stats.frontendTotal++
@@ -817,7 +857,7 @@ function getStagedFiles() {
 
 /** Whether a directory name is skipped by the scan. */
 function isIgnoredDir(name) {
-  return (name.startsWith('.') && name !== '.agents') || IGNORED_DIRS.has(name)
+  return (name.startsWith('.') && name !== '.agents' && name !== '.storybook') || IGNORED_DIRS.has(name)
 }
 
 /** The folders git ignores under rootDir, such as built pages, as absolute paths. */
@@ -972,6 +1012,13 @@ if (isPhraseDiffMode) {
   narrativePhrases = narrativePhrases.filter((item) => isOnAddedLine(item, addedLines))
 }
 
+if (isUpdateBaseline) {
+  const keys = [...new Set(allFunctionNameFaults.map(getBaselineKey))].sort()
+  fs.writeFileSync(BASELINE_PATH, keys.length ? keys.join('\n') + '\n' : '')
+  console.log(`baseline.txt: ${keys.length} names`)
+  process.exit(0)
+}
+
 // Compute Aggregates
 const advisoryTotal = Object.values(advisory).reduce((sum, items) => sum + items.length, 0)
 const totalIssues =
@@ -980,6 +1027,7 @@ const totalIssues =
   findings.fakeTurnCasts.length +
   findings.thirdPersonFunctions.length +
   findings.bareStateFunctions.length +
+  findings.functionNames.length +
   findings.narrativeTestTitles.length +
   findings.anglishComments.length +
   findings.narrativeTestAssertions.length +
@@ -1021,6 +1069,7 @@ console.log('-------------------------------------------------------------------
 console.log(`1. Fake Turn casts (as unknown as Turn, voice: 'said')    : ${findings.fakeTurnCasts.length}`)
 console.log(`5. 3rd-person singular functions (carries, reads, names)  : ${findings.thirdPersonFunctions.length}`)
 console.log(`6. Verb and bare participle function names (getActive)  : ${findings.bareStateFunctions.length}`)
+console.log(`6b. Function names without a verb or predicate (Name, Opened)  : ${findings.functionNames.length}`)
 console.log(`7. Narrative test titles (storytelling in tests)          : ${findings.narrativeTestTitles.length}`)
 console.log(`8. Anglish comments (hands back, comes to, stands on)     : ${findings.anglishComments.length}`)
 console.log(`11. Narrative test assertions (stands at, told to)        : ${findings.narrativeTestAssertions.length}`)

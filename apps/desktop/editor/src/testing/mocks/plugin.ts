@@ -3,7 +3,7 @@
  * health, answered to the real clients over the router transport.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { pendingStream } from '../answers'
+import { createPendingStream } from '../answers'
 
 export const pluginAnswers = {
   pluginCommands: {
@@ -18,5 +18,5 @@ export const pluginAnswers = {
     listContributions: () => ({ slots: [], handlers: [], keybindings: [], slotPoints: [] }),
     listContentTypes: () => ({ contentTypeByExtension: {} }),
   },
-  pluginHealth: { watchHealth: pendingStream },
+  pluginHealth: { watchHealth: createPendingStream },
 }

@@ -15,7 +15,7 @@ export function createNotices(host: NoticeHost) {
    * nothing to report, and no notice is raised for it.
    */
   const reportError = (error: unknown) => {
-    const text = sentence(formatFailureMessage(error))
+    const text = createSentence(formatFailureMessage(error))
     if (text) showNotice(text, 'error')
   }
 
@@ -42,7 +42,7 @@ export function createNotices(host: NoticeHost) {
   return { showNotice, reportError, setTasks, setReloadLost }
 }
 
-const sentence = (text: string): string => {
+const createSentence = (text: string): string => {
   if (!text) return ''
   const ended = /[.!?]$/.test(text) ? text : `${text}.`
   return ended.charAt(0).toUpperCase() + ended.slice(1)

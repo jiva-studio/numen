@@ -96,7 +96,7 @@ func normalizeValue(field manifest.ConnectionField, value any) (cleaned any, isS
 	return nil, false, newInvalidError("%q has the type %q, which a connection does not support", field.Key, field.Type)
 }
 
-func toFloat(value any) (float64, bool) {
+func readFloat(value any) (float64, bool) {
 	switch item := value.(type) {
 	case float64:
 		return item, true
@@ -113,7 +113,7 @@ func toFloat(value any) (float64, bool) {
 }
 
 func normalizeNumber(field manifest.ConnectionField, value any) (float64, error) {
-	number, isNumber := toFloat(value)
+	number, isNumber := readFloat(value)
 	if !isNumber {
 		return 0, newInvalidError("%q is a number", field.Key)
 	}

@@ -47,7 +47,7 @@ const open = () => {
       }),
     scheduleDeck: async () => asValue({ at: '', version: 1n }),
     write: async () => asValue({ at: '', version: 1n }),
-    curve: async () => {
+    getCurve: async () => {
       throw new Error('unused')
     },
   }

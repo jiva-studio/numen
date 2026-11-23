@@ -70,7 +70,7 @@ func (r *Repository) RemoveVersion(ctx context.Context, vaultID domain.VaultID, 
 // returns the records it removed.
 func (r *Repository) RemovePluginVersions(ctx context.Context, vaultID domain.VaultID, pluginID string) ([]domain.TextVersion, error) {
 	var removed []domain.TextVersion
-	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		listed, err := scan(tx.QueryContext(ctx, getStatement("list_plugin"), string(vaultID), pluginID))
 		if err != nil {
 			return err
@@ -94,7 +94,7 @@ func (r *Repository) MoveVersions(ctx context.Context, vaultID domain.VaultID, f
 	if from == to {
 		return nil
 	}
-	return sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	return sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		toFirst, toPast := getRangeUnder(to)
 		fromFirst, fromPast := getRangeUnder(from)
 		if _, err := tx.ExecContext(ctx, getStatement("clear_target"),

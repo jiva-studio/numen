@@ -20,7 +20,7 @@ type Client struct {
 
 // NewClient returns a client that presents token on every call, as the host does.
 func NewClient(httpClient *http.Client, baseURL, token string) *Client {
-	return &Client{rpc: numenv1connect.NewSearchFunctionServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)))}
+	return &Client{rpc: numenv1connect.NewSearchFunctionServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.NewBearer(token)))}
 }
 
 // Call is one call of a function: its name, the vault, the generation of the index and the arguments by name,

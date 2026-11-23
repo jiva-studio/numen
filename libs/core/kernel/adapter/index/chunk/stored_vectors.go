@@ -17,7 +17,7 @@ func (q *Search) ListStoredVectors(ctx context.Context, query source.StoredVecto
 	}
 	rows := make([]int64, len(query.Chunks))
 	for i, id := range query.Chunks {
-		if rows[i], err = Row(id); err != nil {
+		if rows[i], err = ParseRow(id); err != nil {
 			return nil, err
 		}
 	}
@@ -34,7 +34,7 @@ func (q *Search) ListStoredVectors(ctx context.Context, query source.StoredVecto
 		if err := found.Scan(&row, &stored); err != nil {
 			return nil, err
 		}
-		out = append(out, source.StoredVector{Chunk: ID(row), Vector: stored})
+		out = append(out, source.StoredVector{Chunk: FormatID(row), Vector: stored})
 	}
 	return out, found.Err()
 }

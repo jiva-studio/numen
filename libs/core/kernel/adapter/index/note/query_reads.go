@@ -32,7 +32,7 @@ func (q *QueryReads) WithCache(cache *Cache) *QueryReads {
 // ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter has the
 // top-level key. A note without frontmatter, or whose frontmatter could not be read, is absent.
 func (q *QueryReads) ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) (_ []searchquery.PropertyEntry, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -141,7 +141,7 @@ func convertNumber(number json.Number) searchquery.PropertyValue {
 // phrase of the heading index, with the path of their note; every heading of the vault when the text has no
 // word.
 func (q *QueryReads) FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) (_ []searchquery.HeadingEntry, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -182,7 +182,7 @@ func hasTokens(ctx context.Context, phrase, text string) (bool, error) {
 }
 
 func (q *QueryReads) CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, nil
 	}

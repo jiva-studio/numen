@@ -83,7 +83,7 @@ export function createMockPluginCatalog(initial: readonly CatalogEntry[] = []): 
       return Promise.resolve(
         entry
           ? asValue({ entry, sourceErrors: [] })
-          : asFailure({ kind: 'not-found', sourceErrors: [] }),
+          : asFailure({ error: 'notFound', message: 'not found', sourceErrors: [] }),
       )
     },
     findByTabKind: (kind) => {
@@ -94,7 +94,7 @@ export function createMockPluginCatalog(initial: readonly CatalogEntry[] = []): 
       return Promise.resolve(
         entry
           ? asValue({ entry, sourceErrors: [] })
-          : asFailure({ kind: 'not-found', sourceErrors: [] }),
+          : asFailure({ error: 'notFound', message: 'not found', sourceErrors: [] }),
       )
     },
     getReadme: () => Promise.resolve(asValue('')),

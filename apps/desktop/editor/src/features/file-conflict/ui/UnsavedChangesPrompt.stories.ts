@@ -25,14 +25,14 @@ const conflict = (path: string): ConflictPrompt => ({
   note: path,
   keep: fn(() => Promise.resolve()),
   take: fn(() => Promise.resolve()),
-  later: fn(),
+  defer: fn(),
 })
 
 const meta = {
   title: 'Window/Unsaved Changes',
   component: UnsavedChangesPrompt,
   parameters: { layout: 'fullscreen' },
-  args: { called: (path: string) => path.split('/').pop() ?? path, words: WORDS },
+  args: { getNoteTitle: (path: string) => path.split('/').pop() ?? path, words: WORDS },
 } satisfies Meta<typeof UnsavedChangesPrompt>
 
 export default meta

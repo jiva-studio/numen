@@ -1,14 +1,14 @@
 /** The orientation of a side, and how a depth changes it. */
 import { describe, expect, it } from 'vitest'
-import { getOrientation, findSideOrientation, orthogonal, type Side } from './node'
+import { getOrientation, findSideOrientation, getCrossOrientation, type Side } from './node'
 
-describe('orthogonal', () => {
+describe('getCrossOrientation', () => {
   it('turns a row into a column', () => {
-    expect(orthogonal('horizontal')).toBe('vertical')
+    expect(getCrossOrientation('horizontal')).toBe('vertical')
   })
 
   it('turns a column into a row', () => {
-    expect(orthogonal('vertical')).toBe('horizontal')
+    expect(getCrossOrientation('vertical')).toBe('horizontal')
   })
 })
 

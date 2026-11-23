@@ -28,8 +28,8 @@ const createPanel = (neighborhood: DeckNeighborhood): NotesPanelState => {
     showPanel: (up) => {
       open.value = up
     },
-    vault: () => 'one',
-    deck: () => 'decks/Words.md',
+    getVault: () => 'one',
+    getDeck: () => 'decks/Words.md',
     getDeckNeighborhood: async () => neighborhood,
     showNotice: () => undefined,
     resolveLinks: async () => [],

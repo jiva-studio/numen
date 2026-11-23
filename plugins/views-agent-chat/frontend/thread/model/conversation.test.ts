@@ -168,7 +168,7 @@ describe('a task that fails', () => {
   it('shows the connection error in a failed turn', async () => {
     const { conversation } = open({
       frames: [],
-      end: failWith('all_failed', 'Orchard agent: the program exited'),
+      end: failWith('allFailed', 'Orchard agent: the program exited'),
     })
 
     await conversation.ask('what is here?')
@@ -183,7 +183,7 @@ describe('a task that fails', () => {
   it('marks the answer failed without saying it again when the answer already ends with it', async () => {
     const { conversation } = open({
       frames: [say('The credit balance is too low.')],
-      end: failWith('all_failed', 'The credit balance is too low.'),
+      end: failWith('allFailed', 'The credit balance is too low.'),
     })
 
     await conversation.ask('what is here?')
@@ -195,7 +195,7 @@ describe('a task that fails', () => {
   })
 
   it('says no agent is set up, and offers the settings, when the plugin has no row', async () => {
-    const { conversation } = open({ frames: [], end: failWith('no_connection', 'no connection') })
+    const { conversation } = open({ frames: [], end: failWith('noConnection', 'no connection') })
 
     await conversation.ask('what is here?')
 

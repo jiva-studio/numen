@@ -12,7 +12,7 @@ export type InsertionPoint = string | null
  * before itself, before nothing, or before a name that is not there leaves the
  * order as it was.
  */
-export function orderNames(
+export function sortNames(
   names: readonly string[],
   dragEntry: string,
   targetPoint: InsertionPoint,
@@ -79,7 +79,7 @@ export const reorderFields = (
   dragEntry: string,
   targetPoint: InsertionPoint,
 ): readonly string[] =>
-  canDropField(fields, dragEntry, targetPoint) ? orderNames(fields, dragEntry, targetPoint) : fields
+  canDropField(fields, dragEntry, targetPoint) ? sortNames(fields, dragEntry, targetPoint) : fields
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'

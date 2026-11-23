@@ -15,7 +15,7 @@ import { toRunTarget } from '@/entities/plugin'
 /** The lists of the steps of the commands the window offers besides the plugin commands. */
 interface WindowLists {
   getStepGroups(command: string, typed: string): readonly StepGroup[]
-  previewItem(command: string, item: string): void
+  applyItemPreview(command: string, item: string): void
 }
 
 type ItemHost = Pick<PluginHost['commands'], 'hasCommandItems' | 'listCommandItems'> | undefined
@@ -133,7 +133,7 @@ export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
   const lists: WindowLists = {
     getStepGroups: (command, typed) =>
       items.getGroups(command, typed) ?? windowLists.getStepGroups(command, typed),
-    previewItem: (command, item) => windowLists.previewItem(command, item),
+    applyItemPreview: (command, item) => windowLists.applyItemPreview(command, item),
   }
   let paletteOpen: Readonly<Ref<boolean>> | undefined
   /** Asks again for the items and the notes each time the palette opens or closes. */

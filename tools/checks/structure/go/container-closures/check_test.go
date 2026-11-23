@@ -76,16 +76,16 @@ func TestTheContainerAssignsNoCapturedVariable(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkTheContainerAssignsNoCapturedVariable(t, load.Workspace(t, "libs/core/kernel"))
+	checkTheContainerAssignsNoCapturedVariable(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 func TestTheContainerDeclaresNoGenericFunction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkTheContainerDeclaresNoGenericFunction(t, load.Workspace(t, "libs/core/kernel"))
+	checkTheContainerDeclaresNoGenericFunction(t, load.LoadWorkspace(t, "libs/core/kernel"))
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

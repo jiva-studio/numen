@@ -49,7 +49,7 @@ func startCore(dir string, errOut io.Writer) (*linkedCore, error) {
 	if err := management.Discovery.RegisterBuiltIn(updater.Manifest, serveLinked(updaterservice.Mount)); err != nil {
 		return nil, err
 	}
-	execution, preferences, endpoints := container.AdaptPluginHost(management, supervision)
+	execution, preferences, endpoints := container.CreatePluginHost(management, supervision)
 	execution.Runtime.SetSafeMode(cfg.SafeMode)
 	shown, err := cfg.EnsureVault(res, root, "numen", false)
 	if err != nil {

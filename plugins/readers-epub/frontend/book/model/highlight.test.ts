@@ -3,7 +3,7 @@
  * takes back out.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, removeHighlight } from './highlight'
 
 const registry = () => {
   const target = new Map<string, Set<unknown>>()
@@ -36,7 +36,7 @@ beforeEach(() => {
 // The module keeps what each book put in it; every book is taken back out so
 // the next test reads a registry nothing was put into before it.
 afterEach(() => {
-  for (const book of books) unhighlight(book)
+  for (const book of books) removeHighlight(book)
 })
 
 describe('the entries the names name', () => {
@@ -97,7 +97,7 @@ describe('what a book took with it when it went', () => {
     highlight(OTHER_HIGHLIGHT, going, [range()])
     highlight(HIGHLIGHT, staying, [range()])
 
-    unhighlight(going)
+    removeHighlight(going)
 
     const renderedHighlight = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
     expect(renderedHighlight.ranges).toHaveLength(1)
@@ -105,7 +105,7 @@ describe('what a book took with it when it went', () => {
   })
 
   it('is nothing, where the book had put nothing anywhere', () => {
-    expect(() => unhighlight({ book: 'never was' })).not.toThrow()
+    expect(() => removeHighlight({ book: 'never was' })).not.toThrow()
   })
 })
 

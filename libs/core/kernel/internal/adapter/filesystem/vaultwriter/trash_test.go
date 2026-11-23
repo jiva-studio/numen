@@ -30,7 +30,7 @@ func TestEmptyTrashDeletesNestedFoldersAndKeepsTheTrash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	undeleted, err := w.EmptyTrash(t.Context())
+	undeleted, err := w.ClearTrash(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestEmptyTrashDeletesNestedFoldersAndKeepsTheTrash(t *testing.T) {
 func TestEmptyTrashWithoutATrashSucceeds(t *testing.T) {
 	w, _ := openWriter(t)
 
-	undeleted, err := w.EmptyTrash(t.Context())
+	undeleted, err := w.ClearTrash(t.Context())
 	if err != nil || len(undeleted) != 0 {
 		t.Errorf("got %v, %v", undeleted, err)
 	}
@@ -69,7 +69,7 @@ func TestEmptyTrashDoesNotFollowALinkOutOfTheTrash(t *testing.T) {
 		t.Skipf("symlinks are not available: %v", err)
 	}
 
-	if _, err := w.EmptyTrash(t.Context()); err != nil {
+	if _, err := w.ClearTrash(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(outside, "Secret.md")); err != nil {
@@ -87,7 +87,7 @@ func TestEmptyTrashRemovesATrashThatIsALinkWithoutWalkingIt(t *testing.T) {
 		t.Skipf("symlinks are not available: %v", err)
 	}
 
-	undeleted, err := w.EmptyTrash(t.Context())
+	undeleted, err := w.ClearTrash(t.Context())
 	if err != nil || len(undeleted) != 0 {
 		t.Fatalf("got %v, %v", undeleted, err)
 	}
@@ -115,7 +115,7 @@ func TestEmptyTrashReportsWhatItCannotDeleteAndGoesOn(t *testing.T) {
 		}
 	})
 
-	undeleted, err := w.EmptyTrash(t.Context())
+	undeleted, err := w.ClearTrash(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -18,15 +18,15 @@ import (
 
 // cutter is the second pass: it cuts the live text of the files that need it into chunks.
 type cutter struct {
-	sources      sourceport.SourceRepository
-	backlog      sourceport.SourceBacklog
-	lookup       sourceport.RemovalLookup
-	sizes        chunking.Sizes
-	legibility   chunking.Legibility
-	isSkipped    func(path string) bool
-	errorHandler window.ErrorHandler
-	readNote     func(ctx context.Context, v domain.Vault, path string) error
-	onProgress   func(vaultreading.IndexResult)
+	sources        sourceport.SourceRepository
+	backlog        SourceBacklog
+	lookup         RemovalLookup
+	sizes          chunking.Sizes
+	legibility     chunking.Legibility
+	isSkipped      func(path string) bool
+	errorHandler   window.ErrorHandler
+	readNote       func(ctx context.Context, v domain.Vault, path string) error
+	notifyProgress func(vaultreading.IndexResult)
 }
 
 func newCutter(u Index, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool) cutter {
@@ -45,7 +45,7 @@ func newCutter(u Index, onProgress func(vaultreading.IndexResult), isSkipped fun
 	}
 	return cutter{
 		sources: u.sources, backlog: u.queries.backlog, lookup: u.queries.lookup, sizes: u.sizes.Resolve(), legibility: u.legibility,
-		isSkipped: isSkipped, errorHandler: errorHandler, readNote: readNote, onProgress: onProgress,
+		isSkipped: isSkipped, errorHandler: errorHandler, readNote: readNote, notifyProgress: onProgress,
 	}
 }
 
@@ -80,7 +80,7 @@ func (u cutter) cut(
 			if err != nil {
 				return err
 			}
-			freshCount, err := u.chunkNewPaths(ctx, v, on, paths, run)
+			freshCount, err := u.cutNewPaths(ctx, v, on, paths, run)
 			if err != nil {
 				return err
 			}
@@ -123,7 +123,7 @@ type cutRun struct {
 	res   *vaultreading.IndexResult
 }
 
-func (u cutter) chunkNewPaths(
+func (u cutter) cutNewPaths(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
@@ -143,14 +143,14 @@ func (u cutter) chunkNewPaths(
 		if err := ctx.Err(); err != nil {
 			return freshCount, err
 		}
-		if err := u.source(ctx, v, on, path, run.sizes, run.res); err != nil {
+		if err := u.readSource(ctx, v, on, path, run.sizes, run.res); err != nil {
 			return freshCount, err
 		}
 	}
 	return freshCount, nil
 }
 
-func (u cutter) source(
+func (u cutter) readSource(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
@@ -159,7 +159,7 @@ func (u cutter) source(
 	res *vaultreading.IndexResult,
 ) error {
 	res.CurrentSource = path
-	u.progress(*res)
+	u.reportProgress(*res)
 
 	ref, isDone, err := u.statTextSource(ctx, v, on, path, sizes, res)
 	if isDone || err != nil {
@@ -191,7 +191,7 @@ func (u cutter) source(
 		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
-	chunks := chunksOf(doc, sizes, u.legibility)
+	chunks := chunking.CutVersion(doc, sizes, u.legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    ref,
@@ -205,8 +205,8 @@ func (u cutter) source(
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++
-	res.Chunks += countChunks(chunks)
-	u.progress(*res)
+	res.Chunks += chunking.CountChunks(chunks)
+	u.reportProgress(*res)
 	return nil
 }
 
@@ -245,37 +245,8 @@ func (u cutter) reportError(err error) {
 	u.errorHandler(err)
 }
 
-func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
-	return chunking.Chunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
-		out := chunkAt(doc, c)
-		// The name of a section is kept on the chunk that begins it, and on that
-		// one only.
-		if isLarge {
-			out.Opens = doc.GetHeadingsAt(c.Start)
-		}
-		return out
-	})
-}
-
-func chunkAt(doc domain.VersionText, c chunking.Chunk) domain.Chunk {
-	return domain.Chunk{
-		Start:    c.Start,
-		Length:   c.Length,
-		Location: doc.Locate(c.Start),
-		Text:     c.ExtractText(doc.Text),
-	}
-}
-
-func countChunks(chunks []domain.Chunk) int {
-	n := len(chunks)
-	for _, c := range chunks {
-		n += len(c.Small)
-	}
-	return n
-}
-
-func (u cutter) progress(res vaultreading.IndexResult) {
-	u.onProgress(res)
+func (u cutter) reportProgress(res vaultreading.IndexResult) {
+	u.notifyProgress(res)
 }
 
 func (u cutter) statTextSource(

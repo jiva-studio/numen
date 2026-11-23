@@ -34,7 +34,7 @@ const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 func newPageHandler(t *testing.T, cfg themeConfig) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
-	files, err := Pages()
+	files, err := CreatePagesHandler()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 	}
 
 	// A frame is what widens, and a script is not: what runs in the window is
-	// what the window served, which is `default-src`.
+	// what the window served.
 	if strings.Contains(response, "script-src") {
 		t.Errorf("the policy names where a script comes from: %q", response)
 	}
@@ -121,7 +121,7 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 	services := newBareServices()
 	vaultHandler := windowvault.NewHandler(services.state, services.state.Notices)
 	vaultPath, vaultServed := windowvault.NewRoute(vaultHandler, services.state.Gate.CountQuestions())
-	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed, vaultHandler))
+	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed))
 	handler := services.NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
@@ -305,7 +305,7 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 // A build that cannot report its theme serves the page as built, and the
 // build's tokens apply.
 func TestPages_ServesUnthemedPageUnchanged(t *testing.T) {
-	files, err := Pages()
+	files, err := CreatePagesHandler()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
@@ -366,7 +366,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	api := newBareServices()
 	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil)
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
-	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
+	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	reply := make(chan struct{})

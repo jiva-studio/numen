@@ -73,7 +73,7 @@ const createGate = () => {
 const createCore = (...answers: Promise<Curve>[]) => {
   const request: Settings[] = []
   const core = {
-    curve: async (_path: string, asking: Settings) => {
+    getCurve: async (_path: string, asking: Settings) => {
       request.push(asking)
       return (await answers.shift()) ?? curve()
     },

@@ -29,14 +29,14 @@ func (c searchCommand) Run(ctx context.Context, term terminal, args []string) er
 	// The same search the window runs. An installation with no model searches by
 	// words alone, which is reported through the error handler.
 	diagnostics := newReporter(term.errOut)
-	errorHandler := func(err error) { diagnostics.Printf("search by words only: %v\n", err) }
+	errorHandler := func(err error) { diagnostics.WriteFormat("search by words only: %v\n", err) }
 	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{ErrorHandler: errorHandler})
 	if err != nil {
 		return err
 	}
 	open := indexed.Search
 	if open.Words != nil {
-		diagnostics.Printf("search by words only: %v\n", open.Words)
+		diagnostics.WriteFormat("search by words only: %v\n", open.Words)
 	}
 
 	found, err := open.Search.ExecuteByName(ctx, args[0], args[1], search.Parameters{})
@@ -45,7 +45,7 @@ func (c searchCommand) Run(ctx context.Context, term terminal, args []string) er
 	}
 	r := newReporter(term.out)
 	if len(found) == 0 {
-		r.Println("nothing found")
+		r.WriteLine("nothing found")
 		return errors.Join(r.Err(), diagnostics.Err())
 	}
 	for _, p := range found {
@@ -53,7 +53,7 @@ func (c searchCommand) Run(ctx context.Context, term terminal, args []string) er
 		if p.PlaceLabel != "" {
 			where += " · " + p.PlaceLabel
 		}
-		r.Printf("%s\n  %s\n", where, getExcerpt(p.Text))
+		r.WriteFormat("%s\n  %s\n", where, getExcerpt(p.Text))
 	}
 	return errors.Join(r.Err(), diagnostics.Err())
 }

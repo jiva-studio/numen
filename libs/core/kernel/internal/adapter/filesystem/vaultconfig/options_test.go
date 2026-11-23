@@ -17,7 +17,7 @@ func TestOptionsKindClassifiesFilesByExtension(t *testing.T) {
 		{"pictures/cover", domain.KindFile},
 	}
 	for _, c := range cases {
-		if kind := (Options{}).Kind(c.name); kind != c.want {
+		if kind := (Options{}).GetKind(c.name); kind != c.want {
 			t.Errorf("%s is %q, want %q", c.name, kind, c.want)
 		}
 	}

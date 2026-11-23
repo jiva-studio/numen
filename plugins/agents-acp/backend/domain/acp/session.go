@@ -165,7 +165,7 @@ func (s *Session) SetModel(ctx context.Context, model string) error {
 
 // SetReasoning makes the agent think at level. A level the agent does not report changes nothing.
 func (s *Session) SetReasoning(ctx context.Context, level string) error {
-	if level == "" || level == s.thoughtCurrent || !containsLevel(s.thoughtLevels, level) {
+	if level == "" || level == s.thoughtCurrent || !hasLevel(s.thoughtLevels, level) {
 		return nil
 	}
 	if _, err := s.call(ctx, methodSetting, map[string]any{keySessionID: s.id, "configId": s.thoughtOption, keyValue: level}, nil); err != nil {

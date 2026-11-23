@@ -123,7 +123,7 @@ func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
 	client, _ := newConnectionClient(t, calls, "token-b")
 
 	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{
-		Operation: "llm.chat", Preferred: &v1.PreferredRow{ConnectionId: "c-meadow", Options: map[string]string{"model": "wren-2"}},
+		Operation: "llm.chat", PreferredRow: &v1.PreferredRow{ConnectionId: "c-meadow", Options: map[string]string{"model": "wren-2"}},
 	})
 
 	preferred := calls.request.Preferred
@@ -137,7 +137,7 @@ func TestACallCarriesAnExclusiveRow(t *testing.T) {
 	client, _ := newConnectionClient(t, calls, "token-b")
 
 	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{
-		Operation: "llm.chat", Preferred: &v1.PreferredRow{ConnectionId: "c-meadow", IsExclusive: true},
+		Operation: "llm.chat", PreferredRow: &v1.PreferredRow{ConnectionId: "c-meadow", IsExclusive: true},
 	})
 
 	preferred := calls.request.Preferred

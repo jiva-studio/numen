@@ -74,7 +74,7 @@ func (c *callers) asCallers() Callers {
 	})
 	return Callers{
 		Identity: c, Leases: c, Lent: lent,
-		Tools: func() PluginTools { return c.tools },
+		GetTools: func() PluginTools { return c.tools },
 	}
 }
 
@@ -179,7 +179,7 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 
 	client := numenv1connect.NewConnectionCallServiceClient(http.DefaultClient,
 		fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
-		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+		connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 	request := &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete", Payload: []byte("u")}
 	got, err := call(t.Context(), client, request)
 	if err != nil || string(got.done) != "ok" {

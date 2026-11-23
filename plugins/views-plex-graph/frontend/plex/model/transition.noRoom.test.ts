@@ -18,7 +18,7 @@ const arrange = (
     usePlexTransition(
       () => graph,
       () => input,
-      { duration: () => 0, clock: stubClock().clock, ...options },
+      { getDuration: () => 0, clock: stubClock().clock, ...options },
     ),
   )
   if (!result) throw new Error('unreachable')

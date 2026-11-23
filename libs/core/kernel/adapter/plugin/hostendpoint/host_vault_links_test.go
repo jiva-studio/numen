@@ -157,7 +157,7 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) HostVa
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 }
 
 func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {

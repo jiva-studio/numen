@@ -42,7 +42,7 @@ const createHost = (
 }
 
 const failure: ConnectionError = {
-  error: 'all_failed',
+  error: 'allFailed',
   message: 'Ollama: unavailable',
   failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'unavailable' }],
 }

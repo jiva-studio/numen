@@ -87,7 +87,7 @@ export const createTabLinksApi = ({
         yield { sync: { groupId, sourceTabId, path, title } }
       } else if (event.case === 'movedTab') {
         const { tab, moveId } = event.value
-        yield tab ? { movedTab: { tab: parseTab(tab), moveId } } : {}
+        yield tab ? { tabMove: { tab: parseTab(tab), moveId } } : {}
       } else if (event.case === 'highlight') {
         yield { isHighlighted: event.value.isOn }
       } else {

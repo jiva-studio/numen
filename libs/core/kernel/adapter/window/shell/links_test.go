@@ -20,11 +20,11 @@ type linkIndex struct {
 	queried []domain.VaultID
 }
 
-func (*linkIndex) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
-func (*linkIndex) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
@@ -43,7 +43,7 @@ func (l *linkIndex) ResolveLinks(
 
 func newNoteClient(t *testing.T, index *linkIndex) numenv1connect.NoteServiceClient {
 	t.Helper()
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	garden := func() ([]domain.Vault, error) {
 		return []domain.Vault{{ID: "garden", Name: "Garden", Path: "/vaults/garden"}}, nil
 	}
@@ -59,22 +59,22 @@ func TestResolveAddressesAnswersInTheNamedVault(t *testing.T) {
 	client := newNoteClient(t, index)
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Vault: "garden",
-		Text:  "Made like [[Compost|compost]], unlike [[Peat]].",
+		VaultId: "garden",
+		Text:    "Made like [[Compost|compost]], unlike [[Peat]].",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var raws []string
-	for _, one := range answer.Msg.GetFound() {
+	for _, one := range answer.Msg.GetLinks() {
 		raws = append(raws, one.GetRaw())
 	}
 	if len(raws) != 2 || raws[0] != "[[Compost|compost]]" || raws[1] != "[[Peat]]" {
 		t.Errorf("found %q", raws)
 	}
-	resolved := answer.Msg.GetResolved()
-	if len(resolved) != 1 || resolved[0].GetWritten() != "name://Compost" || resolved[0].GetPath() != "Compost.md" {
+	resolved := answer.Msg.GetResolvedAddresses()
+	if len(resolved) != 1 || resolved[0].GetAddress() != "name://Compost" || resolved[0].GetPath() != "Compost.md" {
 		t.Errorf("resolved %v", resolved)
 	}
 	if len(index.queried) != 1 || index.queried[0] != "garden" {
@@ -96,7 +96,7 @@ func TestResolveAddressesRejectsAnUnknownVault(t *testing.T) {
 	client := newNoteClient(t, &linkIndex{})
 
 	_, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Vault: "elsewhere", Text: "[[A]]",
+		VaultId: "elsewhere", Text: "[[A]]",
 	}))
 
 	if connect.CodeOf(err) != connect.CodeNotFound {

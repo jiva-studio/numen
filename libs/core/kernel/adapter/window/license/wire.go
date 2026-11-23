@@ -43,8 +43,8 @@ func writeLicense(info license.Info) *v1.LicenseInfo {
 		KeyHint:        info.KeyHint,
 		ActiveProvider: info.ActiveProvider,
 		InstanceName:   info.InstanceName,
-		ExpiresAt:      info.ExpiresAt,
-		VerifiedAt:     info.VerifiedAt,
+		ExpiresUnixMs:  parseUnixMs(info.ExpiresAt),
+		VerifiedUnixMs: parseUnixMs(info.VerifiedAt),
 	}
 }
 
@@ -60,4 +60,12 @@ func writeStatus(status license.Status) v1.LicenseStatus {
 		return v1.LicenseStatus_LICENSE_STATUS_INACTIVE
 	}
 	return v1.LicenseStatus_LICENSE_STATUS_INACTIVE
+}
+
+func parseUnixMs(raw string) int64 {
+	parsed, ok := license.ParseTime(raw)
+	if !ok {
+		return 0
+	}
+	return parsed.UnixMilli()
 }

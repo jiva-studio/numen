@@ -196,10 +196,10 @@ func TestAnOwnedKeyReadsBackAsItWasSaved(t *testing.T) {
 			return
 		}
 
-		if got, target := doc.Title(); got != strings.TrimSpace(title) || !target {
+		if got, target := doc.GetTitle(); got != strings.TrimSpace(title) || !target {
 			t.Fatalf("a note written as %q is called %q", title, got)
 		}
-		if got, targetVal := doc.Identifier(); got != identifier || !targetVal {
+		if got, targetVal := doc.GetIdentifier(); got != identifier || !targetVal {
 			t.Fatalf("a note stamped %q carries %q", identifier, got)
 		}
 		// A key written no names at all is a key the note does not carry.

@@ -38,7 +38,7 @@ func (h *cardsHandler) ListCardModels(ctx context.Context, req *api.ListCardMode
 func (h *cardsHandler) CreateCardModel(ctx context.Context, req *api.CreateCardModelRequest) (*api.CreateCardModelResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = req.Fields
-		return h.cards.Create.CardModel(ctx, showing, in)
+		return h.cards.Create.CreateCardModel(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (h *cardsHandler) CreateCardModel(ctx context.Context, req *api.CreateCardM
 
 func (h *cardsHandler) CreateDeck(ctx context.Context, req *api.CreateDeckRequest) (*api.CreateDeckResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return h.cards.Create.Deck(ctx, showing, in)
+		return h.cards.Create.CreateDeck(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (h *cardsHandler) ReadCardModel(ctx context.Context, req *api.ReadCardModel
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.cards.Read.CardModel(ctx, showing, req.Path)
+	found, err := h.cards.Read.ReadCardModel(ctx, showing, req.Path)
 	return cardwire.NewReadCardModelResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -83,7 +83,7 @@ func (h *cardsHandler) ReadDeck(ctx context.Context, req *api.ReadDeckRequest) (
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.cards.Read.Deck(ctx, showing, req.Path)
+	found, err := h.cards.Read.ReadDeck(ctx, showing, req.Path)
 	return cardwire.NewReadDeckResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -92,11 +92,11 @@ func (h *cardsHandler) WriteDeck(ctx context.Context, req *api.WriteDeckRequest)
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.DeckBody(cardwire.NewDeck(req))
+	body, err := format.BuildDeckBody(cardwire.NewDeck(req))
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	wrote, err := h.cards.Write.Deck(ctx, showing, req.Path, body, filewire.GetStat(req.Baseline))
+	wrote, err := h.cards.Write.WriteDeck(ctx, showing, req.Path, body, filewire.GetStat(req.Baseline))
 	return cardwire.NewWriteDeckResponse(wrote.FileStat, err)
 }
 
@@ -105,11 +105,11 @@ func (h *cardsHandler) WriteCardModel(ctx context.Context, req *api.WriteCardMod
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.CardModelBody(req.Preamble, cardwire.NewTemplates(req.Templates), req.Tail)
+	body, err := format.BuildCardModelBody(req.Preamble, cardwire.NewTemplates(req.Templates), req.Tail)
 	// gomutants:disable-next-line BRANCH_IF reason="CardModelBody normalizes template names to a single heading line."
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.cards.Write.CardModel(ctx, showing, req.Path, body, req.Fields, filewire.GetStat(req.Baseline))
+	pos, err := h.cards.Write.WriteCardModel(ctx, showing, req.Path, body, req.Fields, filewire.GetStat(req.Baseline))
 	return cardwire.NewWriteCardModelResponse(pos, err)
 }
