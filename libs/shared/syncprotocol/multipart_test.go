@@ -57,3 +57,32 @@ func TestCheckReserveMultipart_AllowsOnlySizesAndPartSizesInsideTheLimits(t *tes
 		}
 	}
 }
+
+func TestGetPartSize_KeepsTheDefaultUpToItsLimitAndGrowsInMebibytesAbove(t *testing.T) {
+	t.Parallel()
+	cases := map[string]int64{
+		"just above a single body": syncprotocol.MaxBlobSize + 1,
+		"at the default limit":     int64(syncprotocol.DefaultPartSize) * syncprotocol.MaxParts,
+		"one byte above it":        int64(syncprotocol.DefaultPartSize)*syncprotocol.MaxParts + 1,
+		"one tebibyte":             1 << 40,
+		"the largest object":       syncprotocol.MaxMultipartSize,
+	}
+	for name, size := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			part := syncprotocol.GetPartSize(size)
+			if part%(1<<20) != 0 || part < syncprotocol.DefaultPartSize || part > syncprotocol.MaxPartSize {
+				t.Errorf("GetPartSize(%d) = %d, want a multiple of 1 MiB from the default to the maximum", size, part)
+			}
+			if err := syncprotocol.CheckReserveMultipart(uint64(size), uint64(part)); err != nil {
+				t.Errorf("GetPartSize(%d) = %d is refused: %v", size, part, err)
+			}
+		})
+	}
+	if got := syncprotocol.GetPartSize(int64(syncprotocol.DefaultPartSize) * syncprotocol.MaxParts); got != syncprotocol.DefaultPartSize {
+		t.Errorf("at the default limit the part is %d, want the default", got)
+	}
+	if got := syncprotocol.GetPartSize(int64(syncprotocol.DefaultPartSize)*syncprotocol.MaxParts + 1); got != syncprotocol.DefaultPartSize+1<<20 {
+		t.Errorf("above the default limit the part is %d, want the default plus 1 MiB", got)
+	}
+}
