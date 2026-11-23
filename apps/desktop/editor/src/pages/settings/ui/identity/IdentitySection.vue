@@ -1,39 +1,65 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints and devices when it has one, and otherwise the way
- * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
- * one from its words in a dialog.
+ * The identity of this device: its fingerprints, devices and recovery kit when it has one, and
+ * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of them)
+ * or to restore one in a dialog from its words or from two sheets of a kit.
  */
 import { KeyRound, Plus } from '@lucide/vue'
 import { IslandCard } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
+import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { WORDS as words } from '../../words'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
 import IdentitySetup from './IdentitySetup.vue'
+import RecoveryKitDialog from './RecoveryKitDialog.vue'
+import RecoveryKitRow from './RecoveryKitRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
-const section = useIdentitySection(() => props.identity)
+const kit = useRecoveryKit(() => props.identity)
+const section = useIdentitySection(() => props.identity, kit.actions.hold)
 const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
 const { stage, recoveryWords } = setup
 </script>
 
 <template>
-  <IdentityDetails
-    v-if="current"
-    :info="current"
-    :problem="call.problem.value"
-    :is-busy="call.isBusy.value"
-    :is-asking-delete="deletion.isAskingDelete.value"
-    @ask="deletion.askDelete"
-    @confirm="deletion.confirmDelete"
-    @cancel="deletion.cancelDelete"
-  />
+  <template v-if="current">
+    <IdentityDetails
+      :info="current"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value || kit.call.isBusy.value"
+      :is-asking-delete="deletion.isAskingDelete.value"
+      @ask="deletion.askDelete"
+      @confirm="deletion.confirmDelete"
+      @cancel="deletion.cancelDelete"
+    >
+      <RecoveryKitRow
+        :is-saved="kit.isSaved.value"
+        :problem="kit.isAsking.value ? '' : kit.call.problem.value"
+        :is-busy="kit.call.isBusy.value"
+        @download="kit.actions.download"
+      />
+    </IdentityDetails>
+
+    <RecoveryKitDialog
+      v-if="kit.isAsking.value"
+      :kind="kit.proof.kind.value"
+      :entered="kit.proof.words.entered.value"
+      :texts="kit.proof.sheets.texts.value"
+      :problem="kit.call.problem.value"
+      :is-busy="kit.call.isBusy.value"
+      @change-kind="kit.proof.setKind"
+      @change-word="kit.proof.words.setWord"
+      @change-sheet="kit.proof.setSheet"
+      @download="kit.actions.submit"
+      @cancel="kit.actions.close"
+    />
+  </template>
 
   <IslandCard v-else :title="words.identitySection">
     <template #aside>
@@ -78,10 +104,14 @@ const { stage, recoveryWords } = setup
 
     <IdentityRestoreDialog
       v-if="step === 'restore'"
-      :entered="restoring.entered.value"
+      :kind="restoring.kind.value"
+      :entered="restoring.words.entered.value"
+      :texts="restoring.sheets.texts.value"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
-      @change="restoring.setWord"
+      @change-kind="restoring.setKind"
+      @change="restoring.words.setWord"
+      @change-sheet="restoring.setSheet"
       @restore="actions.restore"
       @cancel="actions.cancel"
     />

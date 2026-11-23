@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The identity of this device as two cards: the account fingerprint with the way to delete the identity,
- * after a confirmation, and the list of devices it is linked to.
+ * The identity of this device as two cards: the account fingerprint, the rows the default slot adds
+ * and the way to delete the identity after a confirmation, and the list of devices it is linked to.
  */
 import { computed } from 'vue'
 import { Trash2 } from '@lucide/vue'
@@ -51,6 +51,7 @@ const date = computed(() => {
     >
       <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
     </SettingRow>
+    <slot />
     <p v-if="problem !== ''" role="alert" class="identity-details__problem">{{ problem }}</p>
   </IslandCard>
 

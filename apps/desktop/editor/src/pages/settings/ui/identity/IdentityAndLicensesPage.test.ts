@@ -1,7 +1,7 @@
 /**
  * The page "Identity and licenses" inside the settings tab: a person sets up an identity in a dialog
- * of two steps (twelve words, then three of them to check), restores it from words and deletes it from this device. The core is
- * replaced by the calls of the installation; the page, its model and the settings tab are real.
+ * of two steps (twelve words, then three of them to check), restores it from words or sheets in a
+ * dialog, saves a recovery kit as a PDF and deletes it from this device. The core is replaced by the calls of the installation; the page, its model and the settings tab are real.
  *
  * Every value here is invented.
  */
@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, type Ref } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { asFailure, asValue, type Result } from '@numen/result'
-import type { IdentityInfo, RecoveryKit } from '@/entities/identity'
+import type { IdentityInfo } from '@/entities/identity'
 import type { LicenseInfo } from '@/entities/license'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
@@ -57,12 +57,6 @@ const SYNC: LicenseInfo = {
 const createSheetWords = (sheet: number): string[] =>
   Array.from({ length: 33 }, (_, index) => `s${sheet}w${index + 1}`)
 
-const KIT: RecoveryKit = {
-  id: '5C21',
-  accountFingerprint: IDENTITY.accountFingerprint,
-  sheets: [createSheetWords(1), createSheetWords(2), createSheetWords(3)],
-}
-
 type KitProof = { words: readonly string[] } | { sheets: readonly (readonly string[])[] }
 type Sheets = readonly (readonly string[])[]
 
@@ -89,8 +83,7 @@ const createPage = async (
   create: (words: readonly string[]) => Promise<Result<IdentityInfo, string>> = () =>
     Promise.resolve(asValue(IDENTITY)),
   kitAnswers: {
-    createKit?: Result<RecoveryKit, string>
-    checkKit?: Result<string, string>
+    saveKit?: Result<boolean, string>
     restoreFromKit?: Result<IdentityInfo, string>
   } = {},
 ) => {
@@ -109,17 +102,13 @@ const createPage = async (
     }),
   }
   const kitCalls = {
-    createKit: vi.fn((_proof: KitProof) => Promise.resolve(kitAnswers.createKit ?? asValue(KIT))),
-    checkKit: vi.fn((_sheets: Sheets) =>
-      Promise.resolve(kitAnswers.checkKit ?? asValue(IDENTITY.accountFingerprint)),
-    ),
+    saveKit: vi.fn((_proof: KitProof) => Promise.resolve(kitAnswers.saveKit ?? asValue(true))),
     restoreFromKit: vi.fn((_sheets: Sheets) => {
       const answer = kitAnswers.restoreFromKit ?? asValue(IDENTITY)
       if (answer.ok) identity.value = answer.value
       return Promise.resolve(answer)
     }),
   }
-  const printer = { print: vi.fn() }
   const installation = createInstallation({
     licenses: {
       list: ref([SYNC]),
@@ -129,7 +118,6 @@ const createPage = async (
       deactivate: vi.fn(() => Promise.resolve(asFailure('Not deactivated.'))),
     },
     identity: { identity, ...calls, ...kitCalls },
-    printer,
   })
   const tab = mount(SettingsTab, {
     props: { state: createSettingsState(installation, { initialSearchQuery: ref('') }) },
@@ -138,7 +126,7 @@ const createPage = async (
   mounted.push(tab)
   await tab.get('button[aria-label="Identity and licenses"]').trigger('click')
   await flushPromises()
-  return { tab, identity, printer, ...calls, ...kitCalls }
+  return { tab, identity, ...calls, ...kitCalls }
 }
 
 type Page = Awaited<ReturnType<typeof createPage>>['tab']
@@ -445,21 +433,37 @@ describe('the page "Identity and licenses"', () => {
   })
 })
 
-const getSheets = (tab: Page) =>
-  tab.findAll('article').map((sheet) => ({
-    label: sheet.attributes('aria-label'),
-    text: sheet.text(),
-    words: sheet.findAll('ol li').map((word) => word.text()),
-  }))
+const SHEET_ONE = createSheetWords(1)
+const SHEET_THREE = createSheetWords(3)
 
 const getSheetField = (tab: Page, number: number) =>
-  tab.get(`textarea[aria-label="Sheet ${number}"]`)
+  getDialog(tab).get(`textarea[aria-label="Sheet ${number}"]`)
 
-const getTypedWords = (tab: Page): string =>
-  tab.get<HTMLTextAreaElement>('textarea[aria-label="Recovery words"]').element.value
+const getDownload = (tab: Page) =>
+  tab
+    .findAll('button')
+    .find((one) => one.text() === 'Download PDF' && one.attributes('type') === 'button')
 
-const getHeadings = (tab: Page): string[] =>
-  tab.findAll('h1, h2, h3, h4, [role="heading"]').map((one) => one.text())
+const pressDownload = async (tab: Page) => {
+  const button = getDownload(tab)
+  if (!button) throw new Error('the page has no button "Download PDF"')
+  await button.trigger('click')
+  await flushPromises()
+}
+
+const submitDialog = async (tab: Page) => {
+  await getDialog(tab).get('button[type="submit"]').trigger('click')
+  await flushPromises()
+}
+
+const chooseSheets = async (tab: Page) => {
+  const choice = getDialog(tab)
+    .findAll('button')
+    .find((one) => one.text() === 'Recovery kit sheets')
+  if (!choice) throw new Error('the dialog offers no sheets')
+  await choice.trigger('click')
+  await flushPromises()
+}
 
 const keepNewIdentity = async (tab: Page) => {
   await startSetup(tab)
@@ -468,232 +472,160 @@ const keepNewIdentity = async (tab: Page) => {
 }
 
 describe('the recovery kit on the page "Identity and licenses"', () => {
-  it('makes the kit with the words of the setup when the identity is kept', async () => {
-    const { tab, createKit } = await createPage()
-    await keepNewIdentity(tab)
-    expect(createKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
-    expect(getHeadings(tab)).toContain('Recovery kit')
-    expect(tab.text()).toContain('Print three sheets. Any two restore your account.')
-    expect(findButton(tab, 'Print')).toBeDefined()
-    expect(findButton(tab, 'Check two sheets')).toBeDefined()
-    expect(findButton(tab, 'Skip for now')).toBeDefined()
-  })
-
-  it('shows three sheets of 33 numbered words', async () => {
-    const { tab } = await createPage()
-    await keepNewIdentity(tab)
-    const sheets = getSheets(tab)
-    expect(sheets.map((sheet) => sheet.label)).toStrictEqual([
-      'Sheet 1 of 3',
-      'Sheet 2 of 3',
-      'Sheet 3 of 3',
-    ])
-    expect(sheets.map((sheet) => sheet.words)).toStrictEqual(KIT.sheets)
-    expect(sheets.every((sheet) => sheet.words.length === 33)).toBe(true)
-    expect(tab.findAll('article ol')).toHaveLength(3)
-  })
-
-  it('writes the kit, the account and the instructions on each sheet', async () => {
-    const { tab } = await createPage()
-    await keepNewIdentity(tab)
-    for (const sheet of getSheets(tab)) {
-      expect(sheet.text).toContain('Numen recovery kit')
-      expect(sheet.text).toContain('Kit 5C21')
-      expect(sheet.text).toContain('Account')
-      expect(sheet.text).toContain(IDENTITY.accountFingerprint)
-      expect(sheet.text).toContain(
-        'Any 2 of the 3 sheets restore your account. One sheet alone shows nothing. Keep each sheet in a different safe place.',
-      )
-      expect(sheet.text).toContain(
-        'Numen cannot restore your account without the words or two sheets.',
-      )
-    }
-  })
-
-  it('sends the kit to the printer once and keeps the sheets', async () => {
-    const { tab, printer, createKit } = await createPage()
-    await keepNewIdentity(tab)
-    await press(tab, 'Print')
-    expect(printer.print).toHaveBeenCalledOnce()
-    expect(getSheets(tab)).toHaveLength(3)
-    expect(createKit).toHaveBeenCalledOnce()
-  })
-
-  it('does not print before the person asks', async () => {
-    const { tab, printer } = await createPage()
-    await keepNewIdentity(tab)
-    expect(printer.print).not.toHaveBeenCalled()
-  })
-
-  it('drops the kit and the words when the person skips it', async () => {
-    const { tab, createKit } = await createPage()
-    await keepNewIdentity(tab)
-    await press(tab, 'Skip for now')
-    expect(getSheets(tab)).toHaveLength(0)
-    expect(getHeadings(tab)).not.toContain('Recovery kit')
-    for (const word of [...RECOVERY_WORDS, ...KIT.sheets.flat()]) {
-      expect(tab.text()).not.toContain(word)
-    }
-    expect(findButton(tab, 'Print recovery kit')).toBeDefined()
-    expect(findButton(tab, 'Check two sheets')).toBeDefined()
-    await press(tab, 'Print recovery kit')
-    expect(createKit).toHaveBeenCalledOnce()
-    expect(getSheets(tab)).toHaveLength(0)
-    expect(getTypedWords(tab)).toBe('')
-  })
-
-  it('makes no kit when the setup is cancelled', async () => {
-    const { tab, createKit } = await createPage()
-    await press(tab, 'Create identity')
-    await press(tab, 'Cancel')
-    expect(createKit).not.toHaveBeenCalled()
-  })
-
-  it('asks for the words or two sheets before it makes a new kit', async () => {
-    const { tab, createKit } = await createPage(IDENTITY)
-    expect(findButton(tab, 'Print recovery kit')).toBeDefined()
-    expect(findButton(tab, 'Check two sheets')).toBeDefined()
-    await press(tab, 'Print recovery kit')
-    expect(createKit).not.toHaveBeenCalled()
-    expect(tab.find('textarea[aria-label="Recovery words"]').exists()).toBe(true)
-    expect(tab.find('textarea[aria-label="Sheet 1"]').exists()).toBe(true)
-    expect(tab.find('textarea[aria-label="Sheet 2"]').exists()).toBe(true)
-    expect(tab.text()).toContain(
-      'Enter the 12 words or two sheets of an earlier kit to print a new kit.',
-    )
-    expect(tab.text()).toContain('A new kit does not cancel an older kit.')
-  })
-
-  it('makes a kit for the words that are typed', async () => {
-    const { tab, createKit } = await createPage(IDENTITY)
-    await press(tab, 'Print recovery kit')
-    await tab
-      .get('textarea[aria-label="Recovery words"]')
-      .setValue(`  ${RECOVERY_WORDS.join('  ').toUpperCase()}\n`)
-    await press(tab, 'Make kit')
-    expect(createKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
-    expect(getSheets(tab).map((sheet) => sheet.words)).toStrictEqual(KIT.sheets)
-  })
-
-  it('makes a kit for two sheets of an earlier kit', async () => {
-    const { tab, createKit } = await createPage(IDENTITY)
-    await press(tab, 'Print recovery kit')
-    await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
-    await getSheetField(tab, 2).setValue(KIT.sheets[2]?.join('\n') ?? '')
-    await press(tab, 'Make kit')
-    expect(createKit).toHaveBeenCalledExactlyOnceWith({ sheets: [KIT.sheets[0], KIT.sheets[2]] })
-    expect(getSheets(tab)).toHaveLength(3)
-  })
-
-  it('shows the refusal and no sheet when the proof is refused', async () => {
-    const { tab } = await createPage(IDENTITY, undefined, {
-      createKit: asFailure('The words belong to another account.'),
-    })
-    await press(tab, 'Print recovery kit')
-    await tab.get('textarea[aria-label="Recovery words"]').setValue(RECOVERY_WORDS.join(' '))
-    await press(tab, 'Make kit')
-    expect(tab.get('[role="alert"]').text()).toBe('The words belong to another account.')
-    expect(getSheets(tab)).toHaveLength(0)
-  })
-
-  it('drops the typed words when the person cancels the proof', async () => {
+  it('is one row of the identity card with a button that downloads a PDF', async () => {
     const { tab } = await createPage(IDENTITY)
-    await press(tab, 'Print recovery kit')
-    await tab.get('textarea[aria-label="Recovery words"]').setValue(RECOVERY_WORDS.join(' '))
-    await press(tab, 'Cancel')
-    expect(tab.find('textarea[aria-label="Recovery words"]').exists()).toBe(false)
-    await press(tab, 'Print recovery kit')
-    expect(getTypedWords(tab)).toBe('')
+    expect(tab.text()).toContain('Recovery kit')
+    expect(tab.text()).toContain(
+      'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
+    )
+    expect(getDownload(tab)).toBeDefined()
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
   })
 
-  it('shows two fields for the sheets and confirms that the sheets fit the account', async () => {
-    const { tab, checkKit } = await createPage(IDENTITY)
-    await press(tab, 'Check two sheets')
-    expect(checkKit).not.toHaveBeenCalled()
-    await getSheetField(tab, 1).setValue(`  ${KIT.sheets[0]?.join(' ').toUpperCase()}\n`)
-    await getSheetField(tab, 2).setValue(KIT.sheets[2]?.join('\n') ?? '')
-    await press(tab, 'Check')
-    expect(checkKit).toHaveBeenCalledExactlyOnceWith([KIT.sheets[0], KIT.sheets[2]])
-    const statuses = tab.findAll('[role="status"]').map((one) => one.text())
-    expect(statuses).toContain('The sheets fit this account.')
-  })
-
-  it('shows a refusal of the check as an alert and no confirmation', async () => {
-    const { tab } = await createPage(IDENTITY, undefined, {
-      checkKit: asFailure('Some sheets are not valid.'),
-    })
-    await press(tab, 'Check two sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
-    await getSheetField(tab, 2).setValue(KIT.sheets[1]?.join(' ') ?? '')
-    await press(tab, 'Check')
-    expect(tab.get('[role="alert"]').text()).toBe('Some sheets are not valid.')
-    expect(tab.text()).not.toContain('The sheets fit this account.')
-  })
-
-  it('sends only the sheets that are typed', async () => {
-    const { tab, checkKit } = await createPage(IDENTITY)
-    await press(tab, 'Check two sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[1]?.join(' ') ?? '')
-    await press(tab, 'Check')
-    expect(checkKit).toHaveBeenCalledExactlyOnceWith([KIT.sheets[1]])
-  })
-
-  it('checks the sheets from the kit step without a new kit', async () => {
-    const { tab, createKit, checkKit } = await createPage()
+  it('saves the kit for the words of the setup without asking again', async () => {
+    const { tab, saveKit } = await createPage()
     await keepNewIdentity(tab)
-    await press(tab, 'Check two sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
-    await getSheetField(tab, 2).setValue(KIT.sheets[1]?.join(' ') ?? '')
-    await press(tab, 'Check')
-    expect(checkKit).toHaveBeenCalledOnce()
-    expect(createKit).toHaveBeenCalledOnce()
+    expect(saveKit).not.toHaveBeenCalled()
+    await pressDownload(tab)
+    expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(tab.get('[role="status"]').text()).toBe('The recovery kit is saved.')
+    for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+  })
+
+  it('asks for the words again once the kit of the setup is saved', async () => {
+    const { tab, saveKit } = await createPage()
+    await keepNewIdentity(tab)
+    await pressDownload(tab)
+    await pressDownload(tab)
+    expect(saveKit).toHaveBeenCalledOnce()
+    expect(getDialog(tab).get('h2').text()).toBe('Download recovery kit')
+  })
+
+  it('keeps the words of the setup when the person closes the save dialog', async () => {
+    const { tab, saveKit } = await createPage(undefined, undefined, { saveKit: asValue(false) })
+    await keepNewIdentity(tab)
+    await pressDownload(tab)
+    await pressDownload(tab)
+    expect(saveKit).toHaveBeenCalledTimes(2)
+    expect(saveKit).toHaveBeenLastCalledWith({ words: RECOVERY_WORDS })
+    expect(tab.find('[role="status"]').exists()).toBe(false)
+  })
+
+  it('asks for the 12 words in a dialog and saves the kit for them', async () => {
+    const { tab, saveKit } = await createPage(IDENTITY)
+    await pressDownload(tab)
+    expect(saveKit).not.toHaveBeenCalled()
+    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await submitDialog(tab)
+    expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(tab.get('[role="status"]').text()).toBe('The recovery kit is saved.')
+  })
+
+  it('saves the kit for two sheets of an earlier kit', async () => {
+    const { tab, saveKit } = await createPage(IDENTITY)
+    await pressDownload(tab)
+    await chooseSheets(tab)
+    await getSheetField(tab, 1).setValue(SHEET_ONE.join(' '))
+    await getSheetField(tab, 2).setValue(SHEET_THREE.join('\n'))
+    await submitDialog(tab)
+    expect(saveKit).toHaveBeenCalledExactlyOnceWith({ sheets: [SHEET_ONE, SHEET_THREE] })
+  })
+
+  it('shows a refusal under the fields and keeps the dialog open', async () => {
+    const { tab } = await createPage(IDENTITY, undefined, {
+      saveKit: asFailure('The words belong to another account.'),
+    })
+    await pressDownload(tab)
+    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await submitDialog(tab)
+    expect(getDialog(tab).get('[role="alert"]').text()).toBe('The words belong to another account.')
+    expect(tab.find('[role="status"]').exists()).toBe(false)
+  })
+
+  it('asks for one more sheet before it calls the core with none', async () => {
+    const { tab, saveKit } = await createPage(IDENTITY)
+    await pressDownload(tab)
+    await chooseSheets(tab)
+    await submitDialog(tab)
+    expect(saveKit).not.toHaveBeenCalled()
+    expect(getDialog(tab).get('[role="alert"]').text()).toBe('One more sheet is needed.')
+  })
+
+  it('drops the typed words when the person cancels the dialog', async () => {
+    const { tab, saveKit } = await createPage(IDENTITY)
+    await pressDownload(tab)
+    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await press(tab, 'Cancel')
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    await pressDownload(tab)
+    expect(
+      getRestoreInputs(tab).every((input) => (input.element as HTMLInputElement).value === ''),
+    ).toBe(true)
+    expect(saveKit).not.toHaveBeenCalled()
+  })
+
+  it('shows no sheet, no print button and no check of sheets', async () => {
+    const { tab } = await createPage()
+    await keepNewIdentity(tab)
+    await pressDownload(tab)
+    expect(tab.findAll('article')).toHaveLength(0)
+    expect(findButton(tab, 'Print')).toBeUndefined()
+    expect(findButton(tab, 'Check two sheets')).toBeUndefined()
+    expect(findButton(tab, 'Skip for now')).toBeUndefined()
   })
 })
 
 describe('the restore from sheets on the page "Identity and licenses"', () => {
-  it('offers the restore from sheets next to the restore from words', async () => {
+  it('offers the sheets in the restore dialog and no header action of its own', async () => {
     const { tab } = await createPage()
-    expect(findButton(tab, 'Restore from sheets')).toBeDefined()
-    expect(findButton(tab, 'Restore')).toBeDefined()
-  })
-
-  it('offers no restore from sheets when the device has an identity', async () => {
-    const { tab } = await createPage(IDENTITY)
     expect(findButton(tab, 'Restore from sheets')).toBeUndefined()
+    await press(tab, 'Restore')
+    await chooseSheets(tab)
+    expect(getSheetField(tab, 1).exists()).toBe(true)
+    expect(getSheetField(tab, 2).exists()).toBe(true)
+    expect(getRestoreInputs(tab)).toHaveLength(0)
   })
 
   it('sends the sheets that are typed and shows the identity', async () => {
-    const { tab, restoreFromKit } = await createPage()
-    await press(tab, 'Restore from sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[1]?.join(' ') ?? '')
-    await getSheetField(tab, 2).setValue(`${KIT.sheets[2]?.join('\n')}\n`)
+    const { tab, restoreFromKit, create } = await createPage()
     await press(tab, 'Restore')
-    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([KIT.sheets[1], KIT.sheets[2]])
+    await chooseSheets(tab)
+    await getSheetField(tab, 1).setValue(` ${SHEET_THREE.join('  ')} `)
+    await getSheetField(tab, 2).setValue(SHEET_ONE.join(' ').toUpperCase())
+    await submitDialog(tab)
+    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([SHEET_THREE, SHEET_ONE])
+    expect(create).not.toHaveBeenCalled()
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-    expect(tab.find('textarea[aria-label="Sheet 1"]').exists()).toBe(false)
-    for (const word of KIT.sheets.flat()) expect(tab.text()).not.toContain(word)
   })
 
   it('sends one sheet when only one is typed and holds no identity after the refusal', async () => {
     const { tab, restoreFromKit, identity } = await createPage(undefined, undefined, {
       restoreFromKit: asFailure('One more sheet is needed.'),
     })
-    await press(tab, 'Restore from sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
     await press(tab, 'Restore')
-    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([KIT.sheets[0]])
-    expect(tab.get('[role="alert"]').text()).toBe('One more sheet is needed.')
+    await chooseSheets(tab)
+    await getSheetField(tab, 2).setValue(SHEET_ONE.join(' '))
+    await submitDialog(tab)
+    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([SHEET_ONE])
+    expect(getDialog(tab).get('[role="alert"]').text()).toBe('One more sheet is needed.')
     expect(identity.value).toBeUndefined()
-    expect(tab.text()).toContain(NO_IDENTITY)
   })
 
   it('drops the typed sheets when the person cancels', async () => {
     const { tab, restoreFromKit } = await createPage()
-    await press(tab, 'Restore from sheets')
-    await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
-    await press(tab, 'Cancel')
+    await press(tab, 'Restore')
+    await chooseSheets(tab)
+    await getSheetField(tab, 1).setValue(SHEET_ONE.join(' '))
+    await getDialog(tab)
+      .findAll('button')
+      .find((one) => one.text() === 'Cancel')
+      ?.trigger('click')
+    await flushPromises()
+    await press(tab, 'Restore')
+    await chooseSheets(tab)
+    expect((getSheetField(tab, 1).element as HTMLTextAreaElement).value).toBe('')
     expect(restoreFromKit).not.toHaveBeenCalled()
-    await press(tab, 'Restore from sheets')
-    expect(getSheetField(tab, 1).element).toHaveProperty('value', '')
   })
 })

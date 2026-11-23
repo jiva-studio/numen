@@ -148,7 +148,7 @@ func (p sheetPage) drawRestore() {
 	p.setFont("Helvetica", "B", 11, ink)
 	p.write(margin, 219, "To restore your account")
 	p.setFont("Helvetica", "", 10, ink)
-	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore from sheets.")
+	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore, then choose Recovery kit sheets.")
 	p.write(margin, 232, "2.  Type the words of any two sheets, one sheet in each field, then choose Restore.")
 }
 

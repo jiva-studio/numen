@@ -131,33 +131,24 @@ export const WORDS = {
   identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',
   identityDeleteConfirm: 'Delete',
   identityDeleteCancel: 'Cancel',
-  identityRestoreSheets: 'Restore from sheets',
-  /** The recovery kit of three sheets on the identity section. */
+  /** The recovery kit of three sheets on the identity section, saved as a PDF. */
   kitTitle: 'Recovery kit',
-  kitIntro: 'Print three sheets. Any two restore your account.',
-  kitGone: 'Without the 12 words or two sheets the account is gone.',
-  kitPrintNew: 'Print recovery kit',
-  kitPrint: 'Print',
-  kitSkip: 'Skip for now',
-  kitDone: 'Done',
-  kitCheck: 'Check two sheets',
-  kitCheckAction: 'Check',
-  kitMake: 'Make kit',
-  kitProofHint: 'Enter the 12 words or two sheets of an earlier kit to print a new kit.',
-  kitOlderStays: 'A new kit does not cancel an older kit.',
-  kitFits: 'The sheets fit this account.',
+  kitDetail:
+    'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
+  kitDownload: 'Download PDF',
+  kitDownloading: 'Saving…',
+  kitSaved: 'The recovery kit is saved.',
+  kitDialogTitle: 'Download recovery kit',
+  kitProofHint:
+    'A new kit needs your 12 recovery words or two sheets of an earlier kit. An earlier kit keeps working.',
   kitOneMoreSheet: 'One more sheet is needed.',
-  kitWordsLabel: 'Recovery words',
-  kitWordsPlaceholder: 'Type the 12 words, separated by spaces',
+  proofChoice: 'Recovery words or kit sheets',
+  proofWords: '12 recovery words',
+  proofSheets: 'Recovery kit sheets',
+  restoreSheetsHint:
+    'Type the words of any two sheets of your recovery kit, one sheet in each field.',
   kitSheetField: (number: number) => `Sheet ${number}`,
   kitSheetPlaceholder: 'Type the 33 words of the sheet, separated by spaces',
-  kitSheetLabel: (number: number) => `Sheet ${number} of 3`,
-  kitSheetKit: (id: string) => `Kit ${id}`,
-  kitSheetTitle: 'Numen recovery kit',
-  kitSheetAccount: 'Account',
-  kitSheetRule:
-    'Any 2 of the 3 sheets restore your account. One sheet alone shows nothing. Keep each sheet in a different safe place.',
-  kitSheetWarning: 'Numen cannot restore your account without the words or two sheets.',
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:

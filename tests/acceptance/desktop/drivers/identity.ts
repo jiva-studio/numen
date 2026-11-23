@@ -1,7 +1,10 @@
 /**
- * The person at the page "Identity and licenses": sets up an identity, prints and checks its recovery kit,
- * restores it from its words or from two sheets and deletes it.
+ * The person at the page "Identity and licenses": sets up an identity, downloads its recovery kit as
+ * a PDF, restores it from its words or from two sheets of the kit and deletes it.
  */
+import fs from 'node:fs'
+import path from 'node:path'
+import zlib from 'node:zlib'
 import { expect, type Locator } from 'playwright/test'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
@@ -12,7 +15,6 @@ const ACCOUNT_FINGERPRINT = 'Account fingerprint'
 const NO_IDENTITY = 'An identity is your Numen account.'
 const SHEETS_IN_KIT = 3
 const WORDS_ON_SHEET = 33
-const KIT_BUTTON = /^(Skip for now|Done)$/
 const MISTAKE_AT = 5
 const OTHER_ACCOUNTS: readonly (readonly string[])[] = [
   'letter advice cage absurd amount doctor acoustic avoid letter advice cage above'.split(' '),
@@ -55,21 +57,32 @@ export const pickOtherWords = (own: readonly string[]): readonly string[] => {
   return other
 }
 
-declare global {
-  interface Window {
-    __numenPrintCalls?: number
+const KIT_FILE = 'Numen recovery kit.pdf'
+
+/**
+ * The text each page of a PDF shows, in the order it is drawn: the strings of the text operators of
+ * each content stream, inflated when it is compressed.
+ */
+export const readPdfPages = (pdf: Buffer): string[][] => {
+  const pages: string[][] = []
+  const text = pdf.toString('latin1')
+  for (const found of text.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+    const raw = Buffer.from(found[1] ?? '', 'latin1')
+    let content: string
+    try {
+      content = zlib.inflateSync(raw).toString('latin1')
+    } catch {
+      content = raw.toString('latin1')
+    }
+    const shown = [...content.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g)].map((one) => one[1] ?? '')
+    if (shown.length > 0) pages.push(shown)
   }
+  return pages
 }
 
-const readPrintCount = (): number => window.__numenPrintCalls ?? 0
-
-const spyOnPrint = (): void => {
-  if (typeof window.__numenPrintCalls === 'number') return
-  window.__numenPrintCalls = 0
-  window.print = () => {
-    window.__numenPrintCalls = (window.__numenPrintCalls ?? 0) + 1
-  }
-}
+/** The words of each sheet of a kit: the strings of a page that are one lower-case word, in order. */
+export const readKitSheets = (pages: readonly (readonly string[])[]): string[][] =>
+  pages.map((page) => page.filter((one) => /^[a-z]+$/.test(one)))
 
 /** The place a field of the confirmation asks for: "Word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
@@ -104,7 +117,8 @@ export class IdentityDriver {
   private words: readonly string[] = []
   private account = ''
   private sheets: readonly (readonly string[])[] = []
-  private printed = 0
+  private downloads = 0
+  private kitFile = ''
 
   constructor(
     private readonly scenario: Scenario,
@@ -183,96 +197,95 @@ export class IdentityDriver {
     await this.start()
     await this.writeWordsDown()
     await this.confirm()
-    const panel = await this.showPage()
-    const leave = panel.getByRole('button', { name: KIT_BUTTON })
-    await expect(leave).toBeVisible()
-    await leave.click()
-    this.account = await this.readAccount(panel)
+    this.account = await this.readAccount(await this.showPage())
   }
 
-  private async closeKit(panel: Locator): Promise<void> {
-    const leave = panel.getByRole('button', { name: KIT_BUTTON })
-    if ((await leave.count()) > 0) await leave.click()
+  /** Makes the save dialog answer with a folder of this world, and returns the file the kit goes to. */
+  private prepareDownload(): string {
+    const folder = path.join(this.scenario.getWorld().root, `downloads-${++this.downloads}`)
+    fs.mkdirSync(folder, { recursive: true })
+    this.scenario.getServer().writeFolderChoice(folder)
+    return path.join(folder, KIT_FILE)
   }
 
-  private async installPrintSpy(): Promise<void> {
-    await this.scenario.page.addInitScript(spyOnPrint)
-    await this.scenario.page.evaluate(spyOnPrint)
+  private async readDownload(file: string): Promise<void> {
+    await expect
+      .poll(() => fs.existsSync(file), { message: `no kit was saved at ${file}` })
+      .toBe(true)
+    this.kitFile = file
+    this.sheets = readKitSheets(readPdfPages(fs.readFileSync(file)))
   }
 
-  private async makeKit(words: readonly string[]): Promise<Locator> {
-    const panel = await this.showPage()
-    await this.closeKit(panel)
-    await panel.getByRole('button', { name: 'Print recovery kit', exact: true }).click()
-    await panel.getByRole('textbox', { name: 'Recovery words', exact: true }).fill(words.join(' '))
-    await panel.getByRole('button', { name: 'Make kit', exact: true }).click()
+  private getKitDialog(panel: Locator): Locator {
+    return panel.getByRole('dialog', { name: 'Download recovery kit' })
+  }
+
+  private getDownloadButton(panel: Locator): Locator {
     return panel
+      .locator('.settings__row', { hasText: 'Recovery kit' })
+      .getByRole('button', { name: 'Download PDF', exact: true })
   }
 
-  private getSheet(panel: Locator, number: number): Locator {
-    return panel.getByLabel(`Sheet ${number} of ${SHEETS_IN_KIT}`, { exact: true })
-  }
-
-  async print(): Promise<void> {
-    await this.installPrintSpy()
-    const panel = await this.makeKit(this.words)
-    const sheets: string[][] = []
-    for (let number = 1; number <= SHEETS_IN_KIT; number += 1) {
-      const items = this.getSheet(panel, number).getByRole('listitem')
-      await expect(items.first()).toBeVisible()
-      sheets.push((await items.allInnerTexts()).map((word) => word.trim()))
-    }
-    this.sheets = sheets
-    await panel.getByRole('button', { name: 'Print', exact: true }).click()
-    this.printed += 1
-  }
-
-  async printWithOtherWords(): Promise<void> {
-    await this.makeKit(pickOtherWords(this.words))
-  }
-
-  async expectSheetCount(count: number): Promise<void> {
+  async download(): Promise<void> {
+    const file = this.prepareDownload()
     const panel = await this.showPage()
-    await expect(panel.getByRole('article')).toHaveCount(count)
-    for (let number = 1; number <= count; number += 1) {
-      await expect(this.getSheet(panel, number).getByRole('listitem')).toHaveCount(WORDS_ON_SHEET)
-    }
+    await this.getDownloadButton(panel).click()
+    await this.readDownload(file)
   }
 
-  async expectPrinted(): Promise<void> {
-    expect(this.printed, 'no kit was sent to the printer by the person').toBeGreaterThan(0)
-    await expect.poll(() => this.scenario.page.evaluate(readPrintCount)).toBe(this.printed)
+  private async downloadWith(words: readonly string[]): Promise<string> {
+    const file = this.prepareDownload()
+    const panel = await this.showPage()
+    await this.getDownloadButton(panel).click()
+    const dialog = this.getKitDialog(panel)
+    await dialog
+      .getByRole('textbox', { name: 'Recovery word 1', exact: true })
+      .fill(words.join(' '))
+    await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click()
+    return file
+  }
+
+  async downloadWithRecoveryWords(): Promise<void> {
+    await this.readDownload(await this.downloadWith(this.words))
+  }
+
+  async downloadWithOtherWords(): Promise<void> {
+    await this.downloadWith(pickOtherWords(this.words))
+  }
+
+  async expectKitSaved(count: number): Promise<void> {
+    expect(this.kitFile, 'no kit was downloaded').not.toBe('')
+    const pdf = fs.readFileSync(this.kitFile)
+    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-')
+    expect(this.sheets).toHaveLength(count)
+    for (const sheet of this.sheets) expect(sheet).toHaveLength(WORDS_ON_SHEET)
+  }
+
+  async expectKitShowsAccount(): Promise<void> {
+    expect(this.account, 'no identity was created before').not.toBe('')
+    const pages = readPdfPages(fs.readFileSync(this.kitFile))
+    expect(pages).toHaveLength(SHEETS_IN_KIT)
+    for (const page of pages) expect(page).toContain(this.account)
   }
 
   private async typeSheets(
-    panel: Locator,
+    dialog: Locator,
     numbers: readonly number[],
     mistakeSheet?: number,
   ): Promise<void> {
     const texts = planSheetTexts(this.sheets, numbers, mistakeSheet)
     for (const [index, text] of texts.entries()) {
-      await panel.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
+      await dialog.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
     }
-  }
-
-  async checkSheets(numbers: string, mistakeSheet?: number): Promise<void> {
-    const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Check two sheets', exact: true }).first().click()
-    await this.typeSheets(panel, readSheetNumbers(numbers), mistakeSheet)
-    await panel.getByRole('button', { name: 'Check', exact: true }).click()
   }
 
   async restoreFromSheets(numbers: string, mistakeSheet?: number): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore from sheets', exact: true }).click()
-    await this.typeSheets(panel, readSheetNumbers(numbers), mistakeSheet)
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
-  }
-
-  async expectSays(text: string): Promise<void> {
-    await expect((await this.showPage()).getByRole('status')).toContainText(text, {
-      ignoreCase: true,
-    })
+    const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
+    await dialog.getByRole('radio', { name: 'Recovery kit sheets', exact: true }).click()
+    await this.typeSheets(dialog, readSheetNumbers(numbers), mistakeSheet)
+    await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
   }
 
   async expectIdentity(has: boolean): Promise<void> {
@@ -284,7 +297,6 @@ export class IdentityDriver {
 
   async delete(): Promise<void> {
     const panel = await this.showPage()
-    await this.closeKit(panel)
     await panel.getByRole('button', { name: 'Delete identity', exact: true }).click()
     await this.scenario.page
       .getByRole('alertdialog')

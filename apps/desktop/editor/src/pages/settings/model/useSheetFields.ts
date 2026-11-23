@@ -1,8 +1,8 @@
 /**
- * The two fields a person types the words of two sheets into, for checking, proving or restoring.
+ * The two fields a person types the words of two sheets into, to prove the account or to restore it.
  */
 import { ref } from 'vue'
-import { splitSheetText } from './useRecoveryKit'
+import { splitWords } from './useRestoreWords'
 
 type Texts = readonly [string, string]
 
@@ -20,7 +20,7 @@ export function useSheetFields() {
 
   /** The sheets that hold text, each as its words. */
   const readSheets = (): string[][] =>
-    texts.value.map((text) => splitSheetText(text)).filter((sheet) => sheet.length > 0)
+    texts.value.map((text) => splitWords(text)).filter((sheet) => sheet.length > 0)
 
   return { texts, setText, clear, readSheets }
 }

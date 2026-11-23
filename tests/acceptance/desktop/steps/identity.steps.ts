@@ -66,36 +66,35 @@ Then('the identity warns about {string}', async ({ person }, text: string) => {
   await person.identity.expectWarning(text)
 })
 
-When('the person prints a recovery kit', async ({ person }) => {
-  await person.identity.print()
+When('the person downloads the recovery kit', async ({ person }) => {
+  await person.identity.download()
 })
 
-When('the person prints a recovery kit with other recovery words', async ({ person }) => {
-  await person.identity.printWithOtherWords()
-})
-
-Then('the kit has {int} sheets', async ({ person }, count: number) => {
-  await person.identity.expectSheetCount(count)
-})
-
-Then('the kit is sent to the printer', async ({ person }) => {
-  await person.identity.expectPrinted()
-})
-
-When('the person checks the sheets {string}', async ({ person }, numbers: string) => {
-  await person.identity.checkSheets(numbers)
+When('the person downloads the recovery kit again with the recovery words', async ({ person }) => {
+  await person.identity.downloadWithRecoveryWords()
 })
 
 When(
-  'the person checks the sheets {string} with a wrong word in the sheet {int}',
-  async ({ person }, numbers: string, sheet: number) => {
-    await person.identity.checkSheets(numbers, sheet)
+  'the person downloads the recovery kit again with other recovery words',
+  async ({ person }) => {
+    await person.identity.downloadWithOtherWords()
   },
 )
 
-When('the person restores the identity from the sheets {string}', async ({ person }, numbers: string) => {
-  await person.identity.restoreFromSheets(numbers)
+Then('the recovery kit is saved as a PDF of {int} sheets', async ({ person }, count: number) => {
+  await person.identity.expectKitSaved(count)
 })
+
+Then('each sheet shows the account fingerprint', async ({ person }) => {
+  await person.identity.expectKitShowsAccount()
+})
+
+When(
+  'the person restores the identity from the sheets {string}',
+  async ({ person }, numbers: string) => {
+    await person.identity.restoreFromSheets(numbers)
+  },
+)
 
 When(
   'the person restores the identity from the sheets {string} with a wrong word in the sheet {int}',
@@ -103,7 +102,3 @@ When(
     await person.identity.restoreFromSheets(numbers, sheet)
   },
 )
-
-Then('the identity says {string}', async ({ person }, text: string) => {
-  await person.identity.expectSays(text)
-})

@@ -1,8 +1,9 @@
-Feature: Print and check a recovery kit
-  A person keeps a printed kit of three sheets. Any two sheets restore the identity.
+Feature: Download a recovery kit
+  A person saves a recovery kit as a PDF of three sheets. Any two sheets restore the account; one
+  sheet alone reveals nothing.
 
   As a person who uses Numen on more than one device
-  I want a printed kit that I can keep in different places
+  I want a kit of three sheets that I can print and keep in different places
   So that I get my account back when I lose all my devices and forget the words
 
   Background:
@@ -10,33 +11,19 @@ Feature: Print and check a recovery kit
     And the application "editor" starts
     And the person creates an identity
 
-  Rule: A kit has three sheets
+  Rule: The kit is a PDF of three sheets
 
-    Scenario: A new kit has 3 sheets
-      When the person prints a recovery kit
-      Then the kit has 3 sheets
+    Scenario: The kit of a new identity downloads at once
+      When the person downloads the recovery kit
+      Then the recovery kit is saved as a PDF of 3 sheets
+      And each sheet shows the account fingerprint
 
-    Scenario: The kit goes to the printer
-      When the person prints a recovery kit
-      Then the kit is sent to the printer
+    Scenario: A later kit asks for the recovery words
+      Given the person downloads the recovery kit
+      When the person downloads the recovery kit again with the recovery words
+      Then the recovery kit is saved as a PDF of 3 sheets
 
-    Scenario: Other words are refused
-      When the person prints a recovery kit with other recovery words
-      Then the identity warns about "words of another account"
-
-  Rule: Two sheets show that the kit works
-
-    Scenario: Two sheets fit the account
-      Given the person prints a recovery kit
-      When the person checks the sheets "1 and 3"
-      Then the identity says "the sheets fit this account"
-
-    Scenario: One sheet is not enough
-      Given the person prints a recovery kit
-      When the person checks the sheets "2"
-      Then the identity warns about "one more sheet"
-
-    Scenario: A sheet with a mistake is refused
-      Given the person prints a recovery kit
-      When the person checks the sheets "1 and 2" with a wrong word in the sheet 2
-      Then the identity warns about "sheets that are not valid"
+    Scenario: Words of another account make no kit
+      Given the person downloads the recovery kit
+      When the person downloads the recovery kit again with other recovery words
+      Then the identity warns about "another account"

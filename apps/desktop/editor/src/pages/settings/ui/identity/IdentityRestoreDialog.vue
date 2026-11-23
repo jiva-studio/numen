@@ -1,17 +1,27 @@
 <script setup lang="ts">
 /**
- * The dialog that restores an identity on this device from its twelve recovery words.
+ * The dialog that restores an identity on this device from its twelve recovery words or from two
+ * sheets of a recovery kit.
  */
 import { Button } from '@numen/ui'
+import type { ProofKind } from '../../model/useRecoveryProof'
 import { WORDS as words } from '../../words'
 import IdentityDialog from './IdentityDialog.vue'
-import RestoreWordInputs from './RestoreWordInputs.vue'
+import RecoveryProofFields from './RecoveryProofFields.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ entered: readonly string[]; problem: string; isBusy: boolean }>()
+defineProps<{
+  kind: ProofKind
+  entered: readonly string[]
+  texts: readonly [string, string]
+  problem: string
+  isBusy: boolean
+}>()
 
 const emit = defineEmits<{
+  (e: 'change-kind', kind: ProofKind): void
   (e: 'change', index: number, value: string): void
+  (e: 'change-sheet', index: number, value: string): void
   (e: 'restore'): void
   (e: 'cancel'): void
 }>()
@@ -23,12 +33,18 @@ const emit = defineEmits<{
     @submit="emit('restore')"
     @cancel="emit('cancel')"
   >
-    <p class="identity-restore__text">{{ words.identityRestoreHint }}</p>
+    <p class="identity-restore__text">
+      {{ kind === 'words' ? words.identityRestoreHint : words.restoreSheetsHint }}
+    </p>
     <div class="identity-restore__words">
-      <RestoreWordInputs
+      <RecoveryProofFields
+        :kind="kind"
         :entered="entered"
+        :texts="texts"
         :is-disabled="isBusy"
-        @change="(index, value) => emit('change', index, value)"
+        @change-kind="(value) => emit('change-kind', value)"
+        @change-word="(index, value) => emit('change', index, value)"
+        @change-sheet="(index, value) => emit('change-sheet', index, value)"
       />
       <p v-if="problem !== ''" role="alert" class="identity-restore__problem">{{ problem }}</p>
     </div>

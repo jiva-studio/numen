@@ -1,10 +1,10 @@
 /**
  * The calls of the identity: reading it, making recovery words, creating it from them or from the
- * sheets of a recovery kit, making and checking a kit, and deleting it from this device.
+ * sheets of a recovery kit, saving a new kit as a PDF, and deleting it from this device.
  */
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
-import type { IdentityFailure, IdentityInfo, KitProof, RecoveryKit } from '../lib/types'
+import type { IdentityFailure, IdentityInfo, KitProof } from '../lib/types'
 
 /** The calls of the identity over `identity`. */
 export const createIdentityApi = (identity: IdentityClient) => ({
@@ -24,13 +24,11 @@ export const createIdentityApi = (identity: IdentityClient) => ({
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),
 
-  /** A new kit of three sheets, once `proof` fits the account of this device. */
-  createKit: (proof: KitProof): Promise<Result<RecoveryKit, IdentityFailure>> =>
-    identity.createKit(proof),
-
-  /** The account fingerprint when two `sheets` fit the account of this device. */
-  checkKit: (sheets: readonly (readonly string[])[]): Promise<Result<string, IdentityFailure>> =>
-    identity.checkKit(sheets),
+  /**
+   * Saves a new kit of three sheets as a PDF where the person chooses, once `proof` fits the account
+   * of this device: true when it was saved, false when no file was chosen.
+   */
+  saveKit: (proof: KitProof): Promise<Result<boolean, IdentityFailure>> => identity.saveKit(proof),
 
   /** Keeps an identity on this device from two `sheets` of a kit. */
   restoreFromKit: (

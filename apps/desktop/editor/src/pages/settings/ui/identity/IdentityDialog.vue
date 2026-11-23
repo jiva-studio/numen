@@ -25,7 +25,7 @@ watch(() => props.step, focusFirst, { flush: 'post' })
 /* -------------------------------- Handlers -------------------------------- */
 function onKeepFocus(event: KeyboardEvent): void {
   const items = Array.from(
-    dialog.value?.querySelectorAll<HTMLElement>('input, button') ?? [],
+    dialog.value?.querySelectorAll<HTMLElement>('input, textarea, button') ?? [],
   ).filter((one) => !one.hasAttribute('disabled'))
   const first = items[0]
   const last = items[items.length - 1]
@@ -41,7 +41,7 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 /* -------------------------------- Helpers --------------------------------- */
 function focusFirst(): void {
-  dialog.value?.querySelector<HTMLElement>('input, button')?.focus()
+  dialog.value?.querySelector<HTMLElement>('input, textarea, button')?.focus()
 }
 </script>
 

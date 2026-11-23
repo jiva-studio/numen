@@ -1,14 +1,13 @@
 /**
  * The account identity of this device: its two fingerprints and the name of the device. No secret
  * key reaches the window; the recovery words and the sheets of a kit cross only in the calls
- * that make or take them.
+ * that take them, and the sheets of a new kit never do: the core saves them as a PDF.
  */
 import type { Client } from '@connectrpc/connect'
 import {
   IdentityErrorCode as ProtoIdentityErrorCode,
   type IdentityInfo as ProtoIdentityInfo,
   type IdentityService,
-  type RecoveryKit as ProtoRecoveryKit,
 } from '@numen/protocol'
 import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
@@ -40,19 +39,11 @@ export type IdentityRpc = Pick<
   | 'generateRecoveryWords'
   | 'createIdentity'
   | 'deleteIdentity'
-  | 'createRecoveryKit'
-  | 'checkRecoveryKit'
+  | 'saveRecoveryKit'
   | 'restoreIdentityFromKit'
 >
 
-/** Three sheets of one recovery kit, each the words of a sheet in order. */
-export interface RecoveryKit {
-  readonly id: string
-  readonly accountFingerprint: string
-  readonly sheets: readonly (readonly string[])[]
-}
-
-/** What proves the account when a kit is made: the 12 words or two sheets of an earlier kit. */
+/** What proves the account when a kit is saved: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
   { readonly words: readonly string[] } | { readonly sheets: readonly (readonly string[])[] }
 
@@ -63,10 +54,11 @@ export interface IdentityClient {
   generateWords(): Promise<readonly string[]>
   create(words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>>
   delete(): Promise<void>
-  /** Makes a new kit of three sheets once the proof fits the account of this device. */
-  createKit(proof: KitProof): Promise<Result<RecoveryKit, IdentityFailure>>
-  /** The account fingerprint when two sheets fit the account of this device. */
-  checkKit(sheets: readonly (readonly string[])[]): Promise<Result<string, IdentityFailure>>
+  /**
+   * Makes a new kit of three sheets once the proof fits the account of this device and saves it as a
+   * PDF where the person chooses. True when it was saved, false when the person chose no file.
+   */
+  saveKit(proof: KitProof): Promise<Result<boolean, IdentityFailure>>
   /** Keeps an identity on this device from two sheets of a kit. */
   restoreFromKit(
     sheets: readonly (readonly string[])[],
@@ -115,14 +107,6 @@ const readAnswer = <T, U>(
   return asValue(read(value))
 }
 
-const readAccount = (fingerprint: string): string => fingerprint
-
-const readKit = (kit: ProtoRecoveryKit): RecoveryKit => ({
-  id: kit.kitId,
-  accountFingerprint: kit.accountFingerprint,
-  sheets: kit.sheets.map((sheet) => [...sheet.words]),
-})
-
 const writeSheets = (sheets: readonly (readonly string[])[]) =>
   sheets.map((words) => ({ words: [...words] }))
 
@@ -149,22 +133,12 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   delete: async () => {
     await rpc.deleteIdentity({})
   },
-  createKit: async (proof) => {
-    const answer = await rpc.createRecoveryKit({ proof: writeProof(proof) })
-    return readAnswer(answer, {
-      value: answer.kit,
-      read: readKit,
-      missing: 'The core returned no kit.',
-    })
-  },
-  checkKit: async (sheets) => {
-    const answer = await rpc.checkRecoveryKit({ sheets: writeSheets(sheets) })
-    const account = answer.accountFingerprint === '' ? undefined : answer.accountFingerprint
-    return readAnswer(answer, {
-      value: account,
-      read: readAccount,
-      missing: 'The core returned no account.',
-    })
+  saveKit: async (proof) => {
+    const answer = await rpc.saveRecoveryKit({ proof: writeProof(proof) })
+    const error = readErrorCode(answer.error)
+    return error === undefined
+      ? asValue(answer.isSaved)
+      : asFailure({ error, message: answer.detail })
   },
   restoreFromKit: async (sheets) => {
     const answer = await rpc.restoreIdentityFromKit({ sheets: writeSheets(sheets) })
