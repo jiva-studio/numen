@@ -65,11 +65,11 @@ func (s *setup) input(t *testing.T, path, headText string, replaced *int) ports.
 	}
 }
 
-func (s *setup) text(path string) (string, bool) { return s.root.Content(path) }
+func (s *setup) text(path string) (string, bool) { return s.root.ReadContent(path) }
 
 func TestResolve_WritesTheHeadOverTheNoteAndKeepsTheLocalTextInACopy(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
+	s.root.WriteFile(list, "eggs")
 	var replaced int
 
 	outcome, err := s.res.Resolve(t.Context(), s.input(t, list, "bread", &replaced))
@@ -90,7 +90,7 @@ func TestResolve_WritesTheHeadOverTheNoteAndKeepsTheLocalTextInACopy(t *testing.
 
 func TestResolve_WritesTheCopyBeforeTheHeadReplacesTheNote(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
+	s.root.WriteFile(list, "eggs")
 	in := s.input(t, list, "bread", new(int))
 	replace := in.Head.Replace
 	var copyBefore string
@@ -110,7 +110,7 @@ func TestResolve_WritesTheCopyBeforeTheHeadReplacesTheNote(t *testing.T) {
 
 func TestResolve_ReplacesTheNoteWithTheBaselineOfTheLocalStat(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
+	s.root.WriteFile(list, "eggs")
 	in := s.input(t, list, "bread", new(int))
 	var baseline domain.FileStat
 	replace := in.Head.Replace
@@ -130,7 +130,7 @@ func TestResolve_ReplacesTheNoteWithTheBaselineOfTheLocalStat(t *testing.T) {
 
 func TestResolve_FailsWhenTheCopyCannotBeCreated(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
+	s.root.WriteFile(list, "eggs")
 	s.root.RefuseWriting(listCopy, host.ErrStale)
 	var replaced int
 
@@ -146,8 +146,8 @@ func TestResolve_FailsWhenTheCopyCannotBeCreated(t *testing.T) {
 
 func TestResolve_NumbersTheCopyWhenTheNameIsTakenByOtherText(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
-	s.root.File(listCopy, "milk")
+	s.root.WriteFile(list, "eggs")
+	s.root.WriteFile(listCopy, "milk")
 
 	outcome, err := s.res.Resolve(t.Context(), s.input(t, list, "bread", new(int)))
 
@@ -164,8 +164,8 @@ func TestResolve_NumbersTheCopyWhenTheNameIsTakenByOtherText(t *testing.T) {
 
 func TestResolve_ReusesACopyOfTheSameTextAfterACrash(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
-	s.root.File(listCopy, "eggs")
+	s.root.WriteFile(list, "eggs")
+	s.root.WriteFile(listCopy, "eggs")
 
 	outcome, err := s.res.Resolve(t.Context(), s.input(t, list, "bread", new(int)))
 
@@ -182,7 +182,7 @@ func TestResolve_ReusesACopyOfTheSameTextAfterACrash(t *testing.T) {
 
 func TestResolve_WritesTheHeadOverAnotherKindOfFileAndMakesNoCopy(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(pdf, "edited here")
+	s.root.WriteFile(pdf, "edited here")
 	in := s.input(t, pdf, "edited there", new(int))
 
 	outcome, err := s.res.Resolve(t.Context(), in)
@@ -203,7 +203,7 @@ func TestResolve_WritesTheHeadOverAnotherKindOfFileAndMakesNoCopy(t *testing.T) 
 
 func TestResolve_ReplacesAFileWithTheBaselineOfTheLocalStat(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(pdf, "edited here")
+	s.root.WriteFile(pdf, "edited here")
 	in := s.input(t, pdf, "edited there", new(int))
 	var baseline domain.FileStat
 	in.Head.Replace = func(_ context.Context, got domain.FileStat) error {
@@ -222,7 +222,7 @@ func TestResolve_ReplacesAFileWithTheBaselineOfTheLocalStat(t *testing.T) {
 
 func TestResolve_LogsOneLineWithThePathAndBothHashesForAFileThatIsNotANote(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(pdf, "edited here")
+	s.root.WriteFile(pdf, "edited here")
 	in := s.input(t, pdf, "edited there", new(int))
 
 	if _, err := s.res.Resolve(t.Context(), in); err != nil {
@@ -237,7 +237,7 @@ func TestResolve_LogsOneLineWithThePathAndBothHashesForAFileThatIsNotANote(t *te
 
 func TestResolve_ReturnsTheErrorOfTheHeadAndKeepsTheLocalFileOfAnotherKind(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(pdf, "edited here")
+	s.root.WriteFile(pdf, "edited here")
 	in := s.input(t, pdf, "edited there", new(int))
 	refused := errors.New("the host refuses the file")
 	in.Head.Replace = func(context.Context, domain.FileStat) error { return refused }
@@ -254,7 +254,7 @@ func TestResolve_ReturnsTheErrorOfTheHeadAndKeepsTheLocalFileOfAnotherKind(t *te
 
 func TestResolve_NamesTheCopyOfANoteInAFolderInItsFolder(t *testing.T) {
 	s := newSetup(t)
-	s.root.File("Daily/Monday.md", "tea")
+	s.root.WriteFile("Daily/Monday.md", "tea")
 
 	outcome, err := s.res.Resolve(t.Context(), s.input(t, "Daily/Monday.md", "rice", new(int)))
 
@@ -268,7 +268,7 @@ func TestResolve_NamesTheCopyOfANoteInAFolderInItsFolder(t *testing.T) {
 
 func TestResolve_UsesTheDayOfTheInput(t *testing.T) {
 	s := newSetup(t)
-	s.root.File(list, "eggs")
+	s.root.WriteFile(list, "eggs")
 	in := s.input(t, list, "bread", new(int))
 	in.Day = time.Date(2027, time.January, 5, 8, 0, 0, 0, time.UTC)
 
