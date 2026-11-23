@@ -423,7 +423,7 @@ describe('the work behind the window', () => {
     expect(initialListed).toStrictEqual([])
     await flushPromises()
 
-    expect(wire.requestedTasks).toMatchObject([{ window: 'desktop.flashcards' }])
+    expect(wire.requestedTasks).toMatchObject([{ windowId: 'desktop.flashcards' }])
     expect(shell?.notices.notices.value).toMatchObject([
       {
         text: 'lost touch with numen — the window keeps trying',
