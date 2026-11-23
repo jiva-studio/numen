@@ -49,7 +49,7 @@ func (h *Connections) GetConnection(
 	}
 	found, err := h.getConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.GetConnectionResponse{Connection: wire.ConvertConnectionToWire(found)}), nil
 }
@@ -183,7 +183,7 @@ func (h *Links) ListBacklinks(
 	}
 	found, err := h.getBacklinks.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListBacklinksResponse{}
 	for _, b := range found {

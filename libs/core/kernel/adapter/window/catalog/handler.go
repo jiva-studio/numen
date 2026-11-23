@@ -60,7 +60,7 @@ func (h *Handler) GetCatalogReadme(
 		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.GetCatalogReadmeResponse{Text: string(text)}), nil
 }
@@ -75,7 +75,7 @@ func (h *Handler) ListCatalog(
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	if err != nil && len(listing.Errors) == 0 {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	entries := make([]*v1.CatalogEntry, 0, len(listing.Entries))
 	for _, one := range listing.Entries {
@@ -97,7 +97,7 @@ func (h *Handler) GetCatalogEntry(
 		return connect.NewResponse(&v1.GetCatalogEntryResponse{Error: newWireErrorCode(err), SourceErrors: sourceErrors}), nil
 	}
 	if err != nil && len(sourceErrors) == 0 {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.GetCatalogEntryResponse{Entry: newWireEntry(entry), SourceErrors: sourceErrors}), nil
 }
@@ -116,7 +116,7 @@ func (h *Handler) FindCatalogEntryByTabKind(
 		return connect.NewResponse(&v1.FindCatalogEntryByTabKindResponse{Error: newWireErrorCode(err), SourceErrors: sourceErrors}), nil
 	}
 	if err != nil && len(sourceErrors) == 0 {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.FindCatalogEntryByTabKindResponse{Entry: newWireEntry(entry), SourceErrors: sourceErrors}), nil
 }

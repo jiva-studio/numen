@@ -77,7 +77,7 @@ func (s *Service) ReadTheme(
 ) (*connect.Response[v1.ReadThemeResponse], error) {
 	text, err := s.readTheme.Execute(req.Msg.GetName())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil
 }

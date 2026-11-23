@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -66,7 +67,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		return
 	}
 	if errors.Is(err, file.ErrNoPluginFiles) {
-		refuse(w, errNoVault)
+		refuse(w, wire.ErrNoVault)
 		return
 	}
 	if err != nil {

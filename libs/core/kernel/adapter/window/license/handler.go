@@ -5,7 +5,6 @@ package license
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"connectrpc.com/connect"
 
@@ -41,7 +40,7 @@ func (h *Handler) ListLicenses(
 ) (*connect.Response[v1.ListLicensesResponse], error) {
 	entries, err := h.licenses.List.Execute(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.ListLicensesResponse{
 		Licenses: writeLicenses(entries),
@@ -60,7 +59,7 @@ func (h *Handler) ActivateLicense(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.ActivateLicenseResponse{
 			Error:  code,
@@ -82,7 +81,7 @@ func (h *Handler) DeactivateLicense(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.DeactivateLicenseResponse{
 			Error:  code,
@@ -109,7 +108,7 @@ func (h *Handler) WatchLicenses(
 }
 
 func getDetail(err error) string {
-	sentinels := []error{
+	return wire.GetErrorDetail(err,
 		license.ErrNotFound,
 		license.ErrInvalidKey,
 		license.ErrActivationLimitReached,
@@ -118,13 +117,7 @@ func getDetail(err error) string {
 		license.ErrProductMismatch,
 		license.ErrProviderUnavailable,
 		license.ErrKeyStore,
-	}
-	for _, sentinel := range sentinels {
-		if errors.Is(err, sentinel) {
-			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
-		}
-	}
-	return err.Error()
+	)
 }
 
 func getErrorCode(err error) (v1.LicenseErrorCode, bool) {

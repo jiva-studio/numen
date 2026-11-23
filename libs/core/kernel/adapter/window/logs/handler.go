@@ -52,7 +52,7 @@ func (h *Handler) GetLogLevel(_ context.Context, _ *connect.Request[v1.GetLogLev
 
 func (h *Handler) SetLogLevel(_ context.Context, req *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error) {
 	if err := h.setLevel(wire.ReadLogLevel(req.Msg.GetLevel())); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.SetLogLevelResponse{}), nil
 }
@@ -74,7 +74,7 @@ func (h *Handler) WriteLog(
 		if errors.Is(err, domainlogs.ErrEmptyMessage) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.WriteLogResponse{}), nil
 }
