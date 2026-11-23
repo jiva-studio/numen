@@ -31,6 +31,8 @@ const RETENTION_DAYS = 60
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
 const SETTLE_MS = 3_000
+/** An address nothing listens on, for a computer that is offline. */
+const AWAY_ADDRESS = 'http://127.0.0.1:1'
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */
 const PLUGINS: Readonly<Partial<Record<string, { readonly id: string; readonly backend: string }>>> = {
@@ -117,6 +119,7 @@ export class SyncDriver {
     const phase = getSubscriptionPhase(daysAgo)
     const answer = await fetch(`${this.requireRunning().address}/admin/subscription?phase=${phase}`, { method: 'POST' })
     if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the end of the subscription`)
+    if (phase === 'deleted') await this.postAdmin('/admin/retention', 'the deletion of the vaults')
   }
 
   /** Starts the sync server and tells the plugin its address, before the application starts. The server keeps its state in a folder, so it can stop and run again. */
@@ -132,6 +135,31 @@ export class SyncDriver {
   setPlugin(scenario: Scenario): void {
     scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.requireRunning().address)
     scenario.setPluginSetting(SYNC_PLUGIN, 'syncIntervalSeconds', SYNC_INTERVAL_SECONDS)
+  }
+
+  /** Tells the plugin of a scenario that the sync server is away: its address answers nobody. */
+  setPluginAway(scenario: Scenario): void {
+    scenario.setPluginSetting(SYNC_PLUGIN, 'server', AWAY_ADDRESS)
+  }
+
+  /** Keeps a copy of everything the server holds now, as the operator's backup does. */
+  async makeBackup(): Promise<void> {
+    await this.postAdmin('/admin/backup', 'the backup')
+  }
+
+  /** Puts the server back to the copy of the backup: what it received after is gone, and the computers are not told. */
+  async restoreFromBackup(): Promise<void> {
+    await this.postAdmin('/admin/restore', 'the restore')
+  }
+
+  /** Tells the computers that the server was restored. */
+  async announceRestore(): Promise<void> {
+    await this.postAdmin('/admin/announce', 'the announcement of the restore')
+  }
+
+  private async postAdmin(path: string, what: string): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}${path}`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to ${what}`)
   }
 
   /** Ends the sync server and keeps its state and its address, as a server that goes away does. */

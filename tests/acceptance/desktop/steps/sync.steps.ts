@@ -146,3 +146,39 @@ Then('the page does not offer to buy the subscription', async ({ person }) => {
 Then('the page says {string}', async ({ person }, text: string) => {
   await person.identity.expectPageSays(text)
 })
+
+When('the operator makes a backup of the sync server', async ({ person }) => {
+  await person.sync.makeBackup()
+})
+
+When('the operator restores the sync server from the backup', async ({ person }) => {
+  await person.sync.restoreFromBackup()
+})
+
+When('the operator announces the restore', async ({ person }) => {
+  await person.sync.announceRestore()
+})
+
+When('{computer} goes offline', ({ person }, computer: ComputerName) => {
+  person.computers.goOffline(computer)
+})
+
+When('{computer} goes online', ({ person }, computer: ComputerName) => {
+  person.computers.goOnline(computer)
+})
+
+When('{computer} removes the note {string} in {owned}', ({ person }, computer: ComputerName, title: string, vault: string) => {
+  person.computers.removeNote(computer, title, vault)
+})
+
+When('the person buys the subscription again', async ({ person }) => {
+  await person.identity.buy()
+})
+
+Then('the synced vault {string} holds the note {string} with the text {string}', async ({ person }, synced: string, title: string, text: string) => {
+  await person.computers.expectHeld(synced, title, text)
+})
+
+Then('the synced vault {string} does not hold the note {string}', async ({ person }, synced: string, title: string) => {
+  await person.computers.expectHeld(synced, title, undefined)
+})
