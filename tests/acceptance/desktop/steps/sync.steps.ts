@@ -116,7 +116,7 @@ Then('{computer} does not have the file {string} in {owned}', async ({ person },
 })
 
 When('{computer} is the first to reach the sync server', ({ person }, computer: ComputerName) => {
-  person.computers.leadToServer(computer)
+  person.computers.holdOtherComputers(computer)
 })
 
 Then(
