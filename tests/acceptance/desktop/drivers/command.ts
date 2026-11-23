@@ -24,7 +24,7 @@ export class CommandDriver {
   ) {}
 
   async run(label: string, target: CommandTarget, table: readonly (readonly string[])[]): Promise<void> {
-    this.scenario.noteAction()
+    this.scenario.countAction()
     const rows = parseArguments(table)
     const folders = rows.filter(([key]) => key === FOLDER_ROW)
     const asked = rows.filter(([key]) => key !== FOLDER_ROW)
