@@ -2,6 +2,7 @@ package syncprotocol
 
 import (
 	"context"
+	"net/http"
 
 	"connectrpc.com/connect"
 )
@@ -9,14 +10,14 @@ import (
 type bearerInterceptor struct{ token func() string }
 
 // NewBearerInterceptor returns the client interceptor that sends the token of the session as a bearer in every
-// request. It reads the token again for each request; an empty token sends no header.
+// request. It reads the token again for each request; an empty token sends no header, and removes one the request already carries.
 func NewBearerInterceptor(token func() string) connect.Interceptor {
 	return bearerInterceptor{token: token}
 }
 
 func (i bearerInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		i.setHeader(req.Header().Set)
+		i.setHeader(req.Header())
 		return next(ctx, req)
 	}
 }
@@ -24,7 +25,7 @@ func (i bearerInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 func (i bearerInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
 	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
 		conn := next(ctx, spec)
-		i.setHeader(conn.RequestHeader().Set)
+		i.setHeader(conn.RequestHeader())
 		return conn
 	}
 }
@@ -33,8 +34,9 @@ func (bearerInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc)
 	return next
 }
 
-func (i bearerInterceptor) setHeader(set func(key, value string)) {
+func (i bearerInterceptor) setHeader(header http.Header) {
+	header.Del("Authorization")
 	if token := i.token(); token != "" {
-		set("Authorization", "Bearer "+token)
+		header.Set("Authorization", "Bearer "+token)
 	}
 }
