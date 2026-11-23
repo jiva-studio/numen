@@ -101,7 +101,7 @@ When(
 )
 
 When('{computer} writes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.computers.writeFile(computer, filePath, vault)
+  person.files.writeFile(computer, filePath, undefined, vault)
 })
 
 Then(
@@ -167,20 +167,20 @@ When('{computer} changes the file {string} in {owned}', ({ person }, computer: C
   person.files.changeFile(computer, filePath, vault)
 })
 
-When('{computer} moves the file {string} to {string} in {owned}', ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
-  person.files.moveEntry(computer, 'file', from, to, vault)
+When('{computer} moves the file {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  await person.files.moveEntry(computer, 'file', from, to, vault)
 })
 
-When('{computer} moves the folder {string} to {string} in {owned}', ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
-  person.files.moveEntry(computer, 'folder', from, to, vault)
+When('{computer} moves the folder {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  await person.files.moveEntry(computer, 'folder', from, to, vault)
 })
 
-When('{computer} removes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.removeEntry(computer, 'file', filePath, vault)
+When('{computer} removes the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.removeEntry(computer, 'file', filePath, vault)
 })
 
-When('{computer} removes the folder {string} in {owned}', ({ person }, computer: ComputerName, folder: string, vault: string) => {
-  person.files.removeEntry(computer, 'folder', folder, vault)
+When('{computer} removes the folder {string} in {owned}', async ({ person }, computer: ComputerName, folder: string, vault: string) => {
+  await person.files.removeEntry(computer, 'folder', folder, vault)
 })
 
 Then(

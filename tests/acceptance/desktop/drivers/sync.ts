@@ -23,6 +23,8 @@ const SYNC_PLUGIN = 'md.numen.tools.sync'
 const SESSION_SECONDS = 62
 /** How often the plugin asks the server for changes, so a scenario waits seconds and not half a minute. */
 const SYNC_INTERVAL_SECONDS = '1'
+/** How long the plugin watches a removed file before it sends the removal, so a scenario waits a second and not a minute. */
+const REMOVAL_DELAY_SECONDS = '1'
 /** A subscription that ended fewer days ago than this is in the grace period; the server allows writes then. */
 const GRACE_DAYS = 7
 /** A subscription that ended this many days ago or more is deleted. */
@@ -132,6 +134,7 @@ export class SyncDriver {
   setPlugin(scenario: Scenario): void {
     scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.requireRunning().address)
     scenario.setPluginSetting(SYNC_PLUGIN, 'syncIntervalSeconds', SYNC_INTERVAL_SECONDS)
+    scenario.setPluginSetting(SYNC_PLUGIN, 'removalDelaySeconds', REMOVAL_DELAY_SECONDS)
   }
 
   /** Ends the sync server and keeps its state and its address, as a server that goes away does. */
@@ -141,9 +144,20 @@ export class SyncDriver {
     await once(running.child, 'exit')
   }
 
-  /** Runs the sync server again at the address it had, over the state it kept. */
+  /** Makes the sync server end itself once it received (the parts of a file going up) or sent (the body of a blob going down) this many bytes after this call. */
+  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
+    const call = direction === 'received' ? 'stop-after-bytes' : 'stop-after-download-bytes'
+    const answer = await fetch(`${this.requireRunning().address}/admin/${call}?n=${bytes}`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the break of the connection`)
+  }
+
+  /** Runs the sync server again at the address it had, over the state it kept; a server that is still to break is waited for first. */
   async resume(): Promise<void> {
     if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    const previous = this.running
+    if (previous !== undefined && previous.child.exitCode === null && previous.child.signalCode === null) {
+      await once(previous.child, 'exit')
+    }
     this.running = await startProgram(this.listen, this.getStateFlags())
   }
 
