@@ -453,7 +453,6 @@ const pressDownload = async (tab: Page) => {
   await flushPromises()
 }
 
-/** The texts of the live status regions of the window, where a toast shows. */
 const readToasts = (): string[] =>
   [...document.body.querySelectorAll('[role="status"]')]
     .map((one) => one.textContent?.trim() ?? '')

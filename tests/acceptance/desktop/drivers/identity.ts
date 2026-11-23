@@ -200,7 +200,6 @@ export class IdentityDriver {
     this.account = await this.readAccount(await this.showPage())
   }
 
-  /** Makes the save dialog answer with a folder of this world, and returns the file the kit goes to. */
   private prepareDownload(): string {
     const folder = path.join(this.scenario.getWorld().root, `downloads-${++this.downloads}`)
     fs.mkdirSync(folder, { recursive: true })

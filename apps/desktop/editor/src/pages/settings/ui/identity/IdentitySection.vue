@@ -59,7 +59,7 @@ const { stage, recoveryWords } = setup
       @cancel="kit.actions.close"
     />
 
-    <Toast :text="kit.isSaved.value ? words.kitSaved : ''" @close="kit.actions.dismissSaved" />
+    <Toast :text="kit.isSaved.value ? words.kitSaved : ''" />
   </template>
 
   <IslandCard v-else :title="words.identitySection">
