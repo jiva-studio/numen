@@ -154,10 +154,8 @@ func (c Chain) GetWrappedFor(device ed25519.PublicKey) (WrappedAccountKeys, bool
 		if c.entries[i].Kind != KindRevokeDevice || c.entries[i].Revoke == nil {
 			continue
 		}
-		for _, wrap := range c.entries[i].Revoke.Wrapped {
-			if bytes.Equal(wrap.Device, device) {
-				return wrap.Wrapped, true
-			}
+		if wrapped, ok := c.entries[i].Revoke.getWrapFor(device); ok {
+			return wrapped, true
 		}
 	}
 	return WrappedAccountKeys{}, false
@@ -169,13 +167,18 @@ func (c Chain) OpenKeyHistory(current AccountKeys) (AccountKeys, error) {
 	if current.BoxPublicKey() != c.AccountBoxKey() {
 		return AccountKeys{}, fmt.Errorf("%w: the keys are not those of the latest epoch", ErrUnwrap)
 	}
+	return c.openHistoryFrom(current, c.Epoch())
+}
+
+// openHistoryFrom opens the history below epoch with the keys of that epoch.
+func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, error) {
 	keys := current
-	keys.epoch = c.Epoch()
+	keys.epoch = epoch
 	keys.earlier = make(map[uint32][32]byte)
 	kek := current.kek
 	for i := len(c.entries) - 1; i > 0; i-- {
 		revoke := c.entries[i].Revoke
-		if c.entries[i].Kind != KindRevokeDevice || revoke == nil {
+		if c.entries[i].Kind != KindRevokeDevice || revoke == nil || revoke.Epoch > epoch {
 			continue
 		}
 		previous, err := openPreviousKeys(kek, revoke.Epoch, revoke.PreviousKeys)
@@ -186,6 +189,35 @@ func (c Chain) OpenKeyHistory(current AccountKeys) (AccountKeys, error) {
 		kek = previous
 	}
 	return keys, nil
+}
+
+// heldEpoch returns the epoch of the keys wrapped for the device: the epoch it was added in, or the last revoke that wrapped for it.
+func (c Chain) heldEpoch(sign ed25519.PublicKey) uint32 {
+	var epoch, held uint32
+	for _, entry := range c.entries[min(1, len(c.entries)):] {
+		switch {
+		case entry.Kind == KindAddDevice && entry.AddDevice != nil && bytes.Equal(entry.AddDevice.Device.Sign, sign):
+			held = epoch
+		case entry.Kind == KindRevokeDevice && entry.Revoke != nil:
+			if bytes.Equal(entry.Revoke.Device, sign) {
+				return held
+			}
+			epoch = entry.Revoke.Epoch
+			if _, ok := entry.Revoke.getWrapFor(sign); ok {
+				held = epoch
+			}
+		}
+	}
+	return held
+}
+
+func (r *Revoke) getWrapFor(sign ed25519.PublicKey) (WrappedAccountKeys, bool) {
+	for _, wrap := range r.Wrapped {
+		if bytes.Equal(wrap.Device, sign) {
+			return wrap.Wrapped, true
+		}
+	}
+	return WrappedAccountKeys{}, false
 }
 
 // RevokedSince returns the signing keys revoked by the entries after the prefix.

@@ -2,7 +2,6 @@ package identity
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -18,8 +17,8 @@ func NewCreateIdentity(d Deps) *CreateIdentity { return &CreateIdentity{deps: d}
 // Execute parses the words (ErrInvalidWords wrapping the library error), refuses when the key store
 // holds an entry of the identity (ErrIdentityExists, even when it does not parse), derives the
 // recovery key, makes new account keys and a device key, builds the chain (genesis and this device,
-// signed by the recovery key), wraps the account keys for the device and writes the record in one
-// SetKey. The words and the entropy are dropped when Execute returns.
+// signed by the recovery key), wraps the account keys for the device, writes the chain file and then
+// the record with one SetKey. The words and the entropy are dropped when Execute returns.
 func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identitydomain.Identity, error) {
 	recovery, err := identitylib.ParseRecoveryWords(words)
 	if err != nil {
@@ -28,15 +27,14 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := checkAbsent(ctx, u.deps); err != nil {
 		return identitydomain.Identity{}, err
 	}
-	record, err := u.buildRecord(recovery)
+	state, err := u.buildState(recovery)
 	if err != nil {
 		return identitydomain.Identity{}, err
 	}
-	value := base64.RawURLEncoding.EncodeToString(record.Bytes())
-	if err := u.deps.keys.SetKey(ctx, keyName, value); err != nil {
-		return identitydomain.Identity{}, fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
+	if err := u.deps.writeNewState(ctx, state.Record, state.Chain); err != nil {
+		return identitydomain.Identity{}, err
 	}
-	return identityOf(record)
+	return identityOf(state)
 }
 
 func checkAbsent(ctx context.Context, deps Deps) error {
@@ -50,35 +48,35 @@ func checkAbsent(ctx context.Context, deps Deps) error {
 	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
 }
 
-func (u *CreateIdentity) buildRecord(recovery identitylib.RecoveryWords) (identitylib.Record, error) {
+func (u *CreateIdentity) buildState(recovery identitylib.RecoveryWords) (identitylib.State, error) {
 	root, err := recovery.DeriveRecoveryKey()
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	device, err := identitylib.NewDeviceKey(u.deps.random)
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
-	return buildNewRecord(u.deps, root, device)
+	return buildNewState(u.deps, root, device)
 }
 
-func buildNewRecord(deps Deps, root identitylib.RecoveryKey, device identitylib.DeviceKey) (identitylib.Record, error) {
+func buildNewState(deps Deps, root identitylib.RecoveryKey, device identitylib.DeviceKey) (identitylib.State, error) {
 	account, err := identitylib.NewAccountKeys(deps.random)
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	now := deps.clock.Now()
 	chain, err := identitylib.NewChain(root, account, now)
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	chain, err = chain.AppendDevice(root, device.Public(), entryName(deps.names.GetInstanceName()), now)
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	wrapped, err := account.WrapForDevice(device.Public())
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
-	return identitylib.Record{Device: device, Wrapped: wrapped, Chain: chain}, nil
+	return identitylib.NewState(identitylib.Record{Device: device, Wrapped: wrapped}, chain)
 }

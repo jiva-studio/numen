@@ -17,14 +17,16 @@ type Account struct {
 	names   DeviceName
 	clock   Clock
 	pending *PendingStore
+	chains  ChainStore
+	links   *LinkStore
 }
 
-// NewAccount returns the operations over the key store that keys returns at each call.
-func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock Clock, pending *PendingStore) *Account {
+// NewAccount returns the operations over the key store that keys returns at each call, the chain file and the link in progress.
+func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock Clock, pending *PendingStore, chains ChainStore, links *LinkStore) *Account {
 	if pending == nil {
 		pending = NewPendingStore()
 	}
-	return &Account{keys: keys, names: names, clock: clock, pending: pending}
+	return &Account{keys: keys, names: names, clock: clock, pending: pending, chains: chains, links: links}
 }
 
 // SignAsDevice signs message with the device key under the plugin id.
@@ -47,10 +49,10 @@ func (a *Account) GetPublicIdentity(ctx context.Context) (identitydomain.Public,
 
 func (a *Account) open() (Deps, error) {
 	store := a.keys()
-	if store == nil {
+	if store == nil || a.chains == nil {
 		return Deps{}, errNoKeyStore
 	}
-	return NewDeps(store, a.names, a.clock).WithPending(a.pending), nil
+	return NewDeps(store, a.names, a.clock).WithPending(a.pending).WithChains(a.chains).WithLinks(a.links), nil
 }
 
 // SealData seals plain for the plugin with the account keys of this device.

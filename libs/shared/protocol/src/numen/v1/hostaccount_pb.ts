@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostaccount.proto.
  */
 export const file_numen_v1_hostaccount: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QifAoZR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRIXCg9kZXZpY2Vfc2lnbl9rZXkYAyABKAwSDQoFY2hhaW4YBCABKAwiMQoPU2VhbERhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDQoFcGxhaW4YAiABKAwiIgoQU2VhbERhdGFSZXNwb25zZRIOCgZzZWFsZWQYASABKAwiMgoPT3BlbkRhdGFSZXF1ZXN0Eg8KB2NvbnRleHQYASABKAwSDgoGc2VhbGVkGAIgASgMIiEKEE9wZW5EYXRhUmVzcG9uc2USDQoFcGxhaW4YASABKAwiGgoYR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0Il8KGUdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USEgoKaXNfcGVuZGluZxgBIAEoCBIVCg1yb290X3NpZ25fa2V5GAIgASgMEhcKD2RldmljZV9zaWduX2tleRgDIAEoDCIoChVTaWduQXNSZWNvdmVyeVJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCIrChZTaWduQXNSZWNvdmVyeVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCInChZDb21wbGV0ZVJlc3RvcmVSZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhkKF0NvbXBsZXRlUmVzdG9yZVJlc3BvbnNlMtIEChJIb3N0QWNjb3VudFNlcnZpY2USTQoMU2lnbkFzRGV2aWNlEh0ubnVtZW4udjEuU2lnbkFzRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlc3BvbnNlElwKEUdldFB1YmxpY0lkZW50aXR5EiIubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0UHVibGljSWRlbnRpdHlSZXNwb25zZRJBCghTZWFsRGF0YRIZLm51bWVuLnYxLlNlYWxEYXRhUmVxdWVzdBoaLm51bWVuLnYxLlNlYWxEYXRhUmVzcG9uc2USQQoIT3BlbkRhdGESGS5udW1lbi52MS5PcGVuRGF0YVJlcXVlc3QaGi5udW1lbi52MS5PcGVuRGF0YVJlc3BvbnNlElwKEUdldFBlbmRpbmdSZXN0b3JlEiIubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXF1ZXN0GiMubnVtZW4udjEuR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRJTCg5TaWduQXNSZWNvdmVyeRIfLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVxdWVzdBogLm51bWVuLnYxLlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USVgoPQ29tcGxldGVSZXN0b3JlEiAubnVtZW4udjEuQ29tcGxldGVSZXN0b3JlUmVxdWVzdBohLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChpudW1lbi92MS9ob3N0YWNjb3VudC5wcm90bxIIbnVtZW4udjEiJgoTU2lnbkFzRGV2aWNlUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIikKFFNpZ25Bc0RldmljZVJlc3BvbnNlEhEKCXNpZ25hdHVyZRgBIAEoDCIaChhHZXRQdWJsaWNJZGVudGl0eVJlcXVlc3QiuQEKGUdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USGwoTYWNjb3VudF9maW5nZXJwcmludBgBIAEoCRIaChJkZXZpY2VfZmluZ2VycHJpbnQYAiABKAkSFwoPZGV2aWNlX3NpZ25fa2V5GAMgASgMEg0KBWNoYWluGAQgASgMEhEKCWtleV9lcG9jaBgFIAEoDRIUCgxjaGFpbl9sZW5ndGgYBiABKA0SEgoKaXNfcmV2b2tlZBgHIAEoCCIxCg9TZWFsRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBINCgVwbGFpbhgCIAEoDCIiChBTZWFsRGF0YVJlc3BvbnNlEg4KBnNlYWxlZBgBIAEoDCIyCg9PcGVuRGF0YVJlcXVlc3QSDwoHY29udGV4dBgBIAEoDBIOCgZzZWFsZWQYAiABKAwiIQoQT3BlbkRhdGFSZXNwb25zZRINCgVwbGFpbhgBIAEoDCIaChhHZXRQZW5kaW5nUmVzdG9yZVJlcXVlc3QiXwoZR2V0UGVuZGluZ1Jlc3RvcmVSZXNwb25zZRISCgppc19wZW5kaW5nGAEgASgIEhUKDXJvb3Rfc2lnbl9rZXkYAiABKAwSFwoPZGV2aWNlX3NpZ25fa2V5GAMgASgMIigKFVNpZ25Bc1JlY292ZXJ5UmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIisKFlNpZ25Bc1JlY292ZXJ5UmVzcG9uc2USEQoJc2lnbmF0dXJlGAEgASgMIicKFkNvbXBsZXRlUmVzdG9yZVJlcXVlc3QSDQoFY2hhaW4YASABKAwiGQoXQ29tcGxldGVSZXN0b3JlUmVzcG9uc2UiQQoSR2V0TGlua1dvcmtSZXF1ZXN0EhUKDXNpbmNlX3ZlcnNpb24YASABKAQSFAoMd2FpdF9zZWNvbmRzGAIgASgNIpkBChNHZXRMaW5rV29ya1Jlc3BvbnNlEg8KB3ZlcnNpb24YASABKAQSEQoJaXNfYWN0aXZlGAIgASgIEhUKDXdhbnRzX2NoYW5uZWwYAyABKAgSEgoKY2hhbm5lbF9pZBgEIAEoDBIOCgZzZXJ2ZXIYBSABKAkSEAoIb3V0Ym91bmQYBiADKAwSEQoJaXNfY2xvc2VkGAcgASgIIisKFVNldExpbmtDaGFubmVsUmVxdWVzdBISCgpjaGFubmVsX2lkGAEgASgMIhgKFlNldExpbmtDaGFubmVsUmVzcG9uc2UiJQoVUHV0TGlua0luYm91bmRSZXF1ZXN0EgwKBGJsb2IYASABKAwiGAoWUHV0TGlua0luYm91bmRSZXNwb25zZSIYChZHZXRDaGFpblB1Ymxpc2hSZXF1ZXN0IjwKF0dldENoYWluUHVibGlzaFJlc3BvbnNlEhIKCmlzX3BlbmRpbmcYASABKAgSDQoFY2hhaW4YAiABKAwiPAoYUHV0Q2hhaW5QdWJsaXNoZWRSZXF1ZXN0EhAKCGFjY2VwdGVkGAEgASgIEg4KBmxhdGVzdBgCIAEoDCIbChlQdXRDaGFpblB1Ymxpc2hlZFJlc3BvbnNlIiIKEUFkb3B0Q2hhaW5SZXF1ZXN0Eg0KBWNoYWluGAEgASgMIhQKEkFkb3B0Q2hhaW5SZXNwb25zZTLHCAoSSG9zdEFjY291bnRTZXJ2aWNlEk0KDFNpZ25Bc0RldmljZRIdLm51bWVuLnYxLlNpZ25Bc0RldmljZVJlcXVlc3QaHi5udW1lbi52MS5TaWduQXNEZXZpY2VSZXNwb25zZRJcChFHZXRQdWJsaWNJZGVudGl0eRIiLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVxdWVzdBojLm51bWVuLnYxLkdldFB1YmxpY0lkZW50aXR5UmVzcG9uc2USQQoIU2VhbERhdGESGS5udW1lbi52MS5TZWFsRGF0YVJlcXVlc3QaGi5udW1lbi52MS5TZWFsRGF0YVJlc3BvbnNlEkEKCE9wZW5EYXRhEhkubnVtZW4udjEuT3BlbkRhdGFSZXF1ZXN0GhoubnVtZW4udjEuT3BlbkRhdGFSZXNwb25zZRJcChFHZXRQZW5kaW5nUmVzdG9yZRIiLm51bWVuLnYxLkdldFBlbmRpbmdSZXN0b3JlUmVxdWVzdBojLm51bWVuLnYxLkdldFBlbmRpbmdSZXN0b3JlUmVzcG9uc2USUwoOU2lnbkFzUmVjb3ZlcnkSHy5udW1lbi52MS5TaWduQXNSZWNvdmVyeVJlcXVlc3QaIC5udW1lbi52MS5TaWduQXNSZWNvdmVyeVJlc3BvbnNlElYKD0NvbXBsZXRlUmVzdG9yZRIgLm51bWVuLnYxLkNvbXBsZXRlUmVzdG9yZVJlcXVlc3QaIS5udW1lbi52MS5Db21wbGV0ZVJlc3RvcmVSZXNwb25zZRJKCgtHZXRMaW5rV29yaxIcLm51bWVuLnYxLkdldExpbmtXb3JrUmVxdWVzdBodLm51bWVuLnYxLkdldExpbmtXb3JrUmVzcG9uc2USUwoOU2V0TGlua0NoYW5uZWwSHy5udW1lbi52MS5TZXRMaW5rQ2hhbm5lbFJlcXVlc3QaIC5udW1lbi52MS5TZXRMaW5rQ2hhbm5lbFJlc3BvbnNlElMKDlB1dExpbmtJbmJvdW5kEh8ubnVtZW4udjEuUHV0TGlua0luYm91bmRSZXF1ZXN0GiAubnVtZW4udjEuUHV0TGlua0luYm91bmRSZXNwb25zZRJWCg9HZXRDaGFpblB1Ymxpc2gSIC5udW1lbi52MS5HZXRDaGFpblB1Ymxpc2hSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q2hhaW5QdWJsaXNoUmVzcG9uc2USXAoRUHV0Q2hhaW5QdWJsaXNoZWQSIi5udW1lbi52MS5QdXRDaGFpblB1Ymxpc2hlZFJlcXVlc3QaIy5udW1lbi52MS5QdXRDaGFpblB1Ymxpc2hlZFJlc3BvbnNlEkcKCkFkb3B0Q2hhaW4SGy5udW1lbi52MS5BZG9wdENoYWluUmVxdWVzdBocLm51bWVuLnYxLkFkb3B0Q2hhaW5SZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.SignAsDeviceRequest
@@ -92,6 +92,27 @@ export type GetPublicIdentityResponse = Message<"numen.v1.GetPublicIdentityRespo
    * @generated from field: bytes chain = 4;
    */
   chain: Uint8Array;
+
+  /**
+   * key_epoch is the epoch of the account keys of this device, 0 until a device is revoked.
+   *
+   * @generated from field: uint32 key_epoch = 5;
+   */
+  keyEpoch: number;
+
+  /**
+   * chain_length is the number of entries of chain.
+   *
+   * @generated from field: uint32 chain_length = 6;
+   */
+  chainLength: number;
+
+  /**
+   * is_revoked is true when the account revoked this device.
+   *
+   * @generated from field: bool is_revoked = 7;
+   */
+  isRevoked: boolean;
 };
 
 /**
@@ -298,6 +319,249 @@ export const CompleteRestoreResponseSchema: GenMessage<CompleteRestoreResponse> 
   messageDesc(file_numen_v1_hostaccount, 13);
 
 /**
+ * @generated from message numen.v1.GetLinkWorkRequest
+ */
+export type GetLinkWorkRequest = Message<"numen.v1.GetLinkWorkRequest"> & {
+  /**
+   * @generated from field: uint64 since_version = 1;
+   */
+  sinceVersion: bigint;
+
+  /**
+   * wait_seconds is at most 20.
+   *
+   * @generated from field: uint32 wait_seconds = 2;
+   */
+  waitSeconds: number;
+};
+
+/**
+ * Describes the message numen.v1.GetLinkWorkRequest.
+ * Use `create(GetLinkWorkRequestSchema)` to create a new message.
+ */
+export const GetLinkWorkRequestSchema: GenMessage<GetLinkWorkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 14);
+
+/**
+ * @generated from message numen.v1.GetLinkWorkResponse
+ */
+export type GetLinkWorkResponse = Message<"numen.v1.GetLinkWorkResponse"> & {
+  /**
+   * @generated from field: uint64 version = 1;
+   */
+  version: bigint;
+
+  /**
+   * @generated from field: bool is_active = 2;
+   */
+  isActive: boolean;
+
+  /**
+   * wants_channel is true when the displayer waits for a channel id from the relay.
+   *
+   * @generated from field: bool wants_channel = 3;
+   */
+  wantsChannel: boolean;
+
+  /**
+   * channel_id is 16 bytes once known.
+   *
+   * @generated from field: bytes channel_id = 4;
+   */
+  channelId: Uint8Array;
+
+  /**
+   * server is the origin from the QR code, empty for the default server.
+   *
+   * @generated from field: string server = 5;
+   */
+  server: string;
+
+  /**
+   * outbound holds the blobs to post to the other side, in order, until a call names a later version.
+   *
+   * @generated from field: repeated bytes outbound = 6;
+   */
+  outbound: Uint8Array[];
+
+  /**
+   * is_closed is true when the link ended: close the channel.
+   *
+   * @generated from field: bool is_closed = 7;
+   */
+  isClosed: boolean;
+};
+
+/**
+ * Describes the message numen.v1.GetLinkWorkResponse.
+ * Use `create(GetLinkWorkResponseSchema)` to create a new message.
+ */
+export const GetLinkWorkResponseSchema: GenMessage<GetLinkWorkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 15);
+
+/**
+ * @generated from message numen.v1.SetLinkChannelRequest
+ */
+export type SetLinkChannelRequest = Message<"numen.v1.SetLinkChannelRequest"> & {
+  /**
+   * @generated from field: bytes channel_id = 1;
+   */
+  channelId: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.SetLinkChannelRequest.
+ * Use `create(SetLinkChannelRequestSchema)` to create a new message.
+ */
+export const SetLinkChannelRequestSchema: GenMessage<SetLinkChannelRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 16);
+
+/**
+ * @generated from message numen.v1.SetLinkChannelResponse
+ */
+export type SetLinkChannelResponse = Message<"numen.v1.SetLinkChannelResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.SetLinkChannelResponse.
+ * Use `create(SetLinkChannelResponseSchema)` to create a new message.
+ */
+export const SetLinkChannelResponseSchema: GenMessage<SetLinkChannelResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 17);
+
+/**
+ * @generated from message numen.v1.PutLinkInboundRequest
+ */
+export type PutLinkInboundRequest = Message<"numen.v1.PutLinkInboundRequest"> & {
+  /**
+   * @generated from field: bytes blob = 1;
+   */
+  blob: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.PutLinkInboundRequest.
+ * Use `create(PutLinkInboundRequestSchema)` to create a new message.
+ */
+export const PutLinkInboundRequestSchema: GenMessage<PutLinkInboundRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 18);
+
+/**
+ * @generated from message numen.v1.PutLinkInboundResponse
+ */
+export type PutLinkInboundResponse = Message<"numen.v1.PutLinkInboundResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.PutLinkInboundResponse.
+ * Use `create(PutLinkInboundResponseSchema)` to create a new message.
+ */
+export const PutLinkInboundResponseSchema: GenMessage<PutLinkInboundResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 19);
+
+/**
+ * @generated from message numen.v1.GetChainPublishRequest
+ */
+export type GetChainPublishRequest = Message<"numen.v1.GetChainPublishRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetChainPublishRequest.
+ * Use `create(GetChainPublishRequestSchema)` to create a new message.
+ */
+export const GetChainPublishRequestSchema: GenMessage<GetChainPublishRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 20);
+
+/**
+ * @generated from message numen.v1.GetChainPublishResponse
+ */
+export type GetChainPublishResponse = Message<"numen.v1.GetChainPublishResponse"> & {
+  /**
+   * @generated from field: bool is_pending = 1;
+   */
+  isPending: boolean;
+
+  /**
+   * @generated from field: bytes chain = 2;
+   */
+  chain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.GetChainPublishResponse.
+ * Use `create(GetChainPublishResponseSchema)` to create a new message.
+ */
+export const GetChainPublishResponseSchema: GenMessage<GetChainPublishResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 21);
+
+/**
+ * @generated from message numen.v1.PutChainPublishedRequest
+ */
+export type PutChainPublishedRequest = Message<"numen.v1.PutChainPublishedRequest"> & {
+  /**
+   * @generated from field: bool accepted = 1;
+   */
+  accepted: boolean;
+
+  /**
+   * latest is the chain the server holds, set when it did not accept the chain because another device appended first.
+   *
+   * @generated from field: bytes latest = 2;
+   */
+  latest: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.PutChainPublishedRequest.
+ * Use `create(PutChainPublishedRequestSchema)` to create a new message.
+ */
+export const PutChainPublishedRequestSchema: GenMessage<PutChainPublishedRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 22);
+
+/**
+ * @generated from message numen.v1.PutChainPublishedResponse
+ */
+export type PutChainPublishedResponse = Message<"numen.v1.PutChainPublishedResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.PutChainPublishedResponse.
+ * Use `create(PutChainPublishedResponseSchema)` to create a new message.
+ */
+export const PutChainPublishedResponseSchema: GenMessage<PutChainPublishedResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 23);
+
+/**
+ * @generated from message numen.v1.AdoptChainRequest
+ */
+export type AdoptChainRequest = Message<"numen.v1.AdoptChainRequest"> & {
+  /**
+   * @generated from field: bytes chain = 1;
+   */
+  chain: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.AdoptChainRequest.
+ * Use `create(AdoptChainRequestSchema)` to create a new message.
+ */
+export const AdoptChainRequestSchema: GenMessage<AdoptChainRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 24);
+
+/**
+ * @generated from message numen.v1.AdoptChainResponse
+ */
+export type AdoptChainResponse = Message<"numen.v1.AdoptChainResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.AdoptChainResponse.
+ * Use `create(AdoptChainResponseSchema)` to create a new message.
+ */
+export const AdoptChainResponseSchema: GenMessage<AdoptChainResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostaccount, 25);
+
+/**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
  * by its token, and every call needs the permission identity. No call returns or accepts a secret key.
  *
@@ -383,6 +647,70 @@ export const HostAccountService: GenService<{
     methodKind: "unary";
     input: typeof CompleteRestoreRequestSchema;
     output: typeof CompleteRestoreResponseSchema;
+  },
+  /**
+   * GetLinkWork returns what the courier of a link carries: the channel to make or use, the blobs to post to
+   * the other side and whether the link ended. It returns at once when the version differs from since_version,
+   * otherwise after wait_seconds (at most 20) or the next change.
+   *
+   * @generated from rpc numen.v1.HostAccountService.GetLinkWork
+   */
+  getLinkWork: {
+    methodKind: "unary";
+    input: typeof GetLinkWorkRequestSchema;
+    output: typeof GetLinkWorkResponseSchema;
+  },
+  /**
+   * SetLinkChannel gives the link the channel the courier made on the relay, 16 bytes.
+   *
+   * @generated from rpc numen.v1.HostAccountService.SetLinkChannel
+   */
+  setLinkChannel: {
+    methodKind: "unary";
+    input: typeof SetLinkChannelRequestSchema;
+    output: typeof SetLinkChannelResponseSchema;
+  },
+  /**
+   * PutLinkInbound hands the core a blob the other side posted. No link answers FAILED_PRECONDITION with the
+   * reason NO_LINK.
+   *
+   * @generated from rpc numen.v1.HostAccountService.PutLinkInbound
+   */
+  putLinkInbound: {
+    methodKind: "unary";
+    input: typeof PutLinkInboundRequestSchema;
+    output: typeof PutLinkInboundResponseSchema;
+  },
+  /**
+   * GetChainPublish returns the chain the core waits to have accepted by the server.
+   *
+   * @generated from rpc numen.v1.HostAccountService.GetChainPublish
+   */
+  getChainPublish: {
+    methodKind: "unary";
+    input: typeof GetChainPublishRequestSchema;
+    output: typeof GetChainPublishResponseSchema;
+  },
+  /**
+   * PutChainPublished tells the core the answer of the server to the chain it published.
+   *
+   * @generated from rpc numen.v1.HostAccountService.PutChainPublished
+   */
+  putChainPublished: {
+    methodKind: "unary";
+    input: typeof PutChainPublishedRequestSchema;
+    output: typeof PutChainPublishedResponseSchema;
+  },
+  /**
+   * AdoptChain gives the core a chain the server holds. A chain that does not parse or does not extend the chain
+   * of this device answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+   *
+   * @generated from rpc numen.v1.HostAccountService.AdoptChain
+   */
+  adoptChain: {
+    methodKind: "unary";
+    input: typeof AdoptChainRequestSchema;
+    output: typeof AdoptChainResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostaccount, 0);

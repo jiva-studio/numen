@@ -26,9 +26,9 @@ func readAccountKeys(ctx context.Context, deps Deps, pluginID string) (identityl
 	if pluginID == "" {
 		return identitylib.AccountKeys{}, errNoPluginID
 	}
-	record, err := readExistingRecord(ctx, deps)
+	state, err := deps.readState(ctx)
 	if err != nil {
 		return identitylib.AccountKeys{}, err
 	}
-	return record.Device.UnwrapAccountKeys(record.Wrapped)
+	return state.OpenAccountKeys()
 }

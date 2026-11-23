@@ -68,10 +68,12 @@ type Config struct {
 type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
-	ErrorHandler  window.ErrorHandler
-	Now           installationClock
-	Chunks        *note.ChunkTokens
-	TextReaders   textport.Readers
+	// ChainStore keeps the device chain next to the key store; an installation with a key store and no chain store has no identity.
+	ChainStore   identity.ChainStore
+	ErrorHandler window.ErrorHandler
+	Now          installationClock
+	Chunks       *note.ChunkTokens
+	TextReaders  textport.Readers
 
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub
@@ -81,6 +83,7 @@ type Resources struct {
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
 	restore         *identity.PendingStore
+	links           *identity.LinkStore
 }
 
 func NewResources() *Resources {
@@ -93,6 +96,7 @@ func NewResources() *Resources {
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
 		restore:       identity.NewPendingStore(),
+		links:         identity.NewLinkStore(),
 	}
 }
 
@@ -233,5 +237,7 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,
+		ChainStore:      res.ChainStore,
+		Links:           res.links,
 	}
 }

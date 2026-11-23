@@ -18,6 +18,8 @@ const (
 
 var errDataSize = errors.New("the data to seal has at most 32 KiB")
 
+var errLinkSize = errors.New("a link call carries 1 to 262144 bytes, a channel 16")
+
 func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, error) {
 	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
 	if err != nil {

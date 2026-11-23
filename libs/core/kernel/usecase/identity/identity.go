@@ -39,11 +39,13 @@ type Deps struct {
 	clock   Clock
 	random  io.Reader
 	pending *PendingStore
+	chains  ChainStore
+	links   *LinkStore
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
-	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, pending: NewPendingStore()}
+	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, pending: NewPendingStore(), links: NewLinkStore()}
 }
 
 // WithPending returns the deps over another pending restore, so the use cases of a window and of the plugins share one.
@@ -68,21 +70,6 @@ func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
 		return identitylib.Record{}, fmt.Errorf("%w: the record is not valid: %w", identitylib.ErrMalformed, err)
 	}
 	return record, nil
-}
-
-func identityOf(record identitylib.Record) (identitydomain.Identity, error) {
-	own := record.Device.Public()
-	for _, device := range record.Chain.ListDevices() {
-		if string(device.Public.Sign) == string(own.Sign) {
-			return identitydomain.Identity{
-				AccountFingerprint: record.Chain.Root().Fingerprint().String(),
-				DeviceFingerprint:  own.Fingerprint().String(),
-				DeviceName:         device.Name,
-				DeviceAddedAt:      time.Unix(device.AddedAt.Unix(), 0).UTC(),
-			}, nil
-		}
-	}
-	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
 }
 
 func entryName(name string) string {
@@ -111,4 +98,22 @@ func readExistingRecord(ctx context.Context, deps Deps) (identitylib.Record, err
 		return identitylib.Record{}, identitydomain.ErrNoIdentity
 	}
 	return record, err
+}
+
+// WithChains returns the deps over the chain file of this device.
+func (d Deps) WithChains(chains ChainStore) Deps {
+	d.chains = chains
+	return d
+}
+
+// WithLinks returns the deps over another link in progress, so the use cases of a window and of the plugins share one.
+func (d Deps) WithLinks(links *LinkStore) Deps {
+	if links != nil {
+		d.links = links
+	}
+	return d
+}
+
+func encodeRecord(record identitylib.Record) string {
+	return base64.RawURLEncoding.EncodeToString(record.Bytes())
 }

@@ -3,7 +3,6 @@ package identity
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -40,40 +39,39 @@ func completeRestore(ctx context.Context, deps Deps, restore *pendingRestore, ch
 	if err := checkAbsent(ctx, deps); err != nil {
 		return err
 	}
-	record, err := buildRestoredRecord(deps, restore, chainBytes)
+	state, err := buildRestoredState(deps, restore, chainBytes)
 	if err != nil {
 		return err
 	}
-	value := base64.RawURLEncoding.EncodeToString(record.Bytes())
-	if err := deps.keys.SetKey(ctx, keyName, value); err != nil {
-		return fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
+	if err := deps.writeNewState(ctx, state.Record, state.Chain); err != nil {
+		return err
 	}
 	deps.pending.clearLocked()
 	return nil
 }
 
-func buildRestoredRecord(deps Deps, restore *pendingRestore, chainBytes []byte) (identitylib.Record, error) {
+func buildRestoredState(deps Deps, restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
 	if len(chainBytes) == 0 {
-		return buildNewRecord(deps, restore.recovery, restore.device)
+		return buildNewState(deps, restore.recovery, restore.device)
 	}
 	chain, err := identitylib.ParseChain(chainBytes)
 	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
-		return identitylib.Record{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
+		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
 	}
 	account, err := restore.recovery.UnwrapAccountKeys(chain.WrappedForRecovery())
 	if err != nil {
-		return identitylib.Record{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
 	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), entryName(deps.names.GetInstanceName()), deps.clock.Now())
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
 	wrapped, err := account.WrapForDevice(restore.device.Public())
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitylib.State{}, err
 	}
-	return identitylib.Record{Device: restore.device, Wrapped: wrapped, Chain: chain}, nil
+	return identitylib.NewState(identitylib.Record{Device: restore.device, Wrapped: wrapped}, chain)
 }

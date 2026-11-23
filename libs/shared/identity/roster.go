@@ -133,3 +133,13 @@ func (c Chain) IsKnownDevice(sign ed25519.PublicKey) bool {
 	_, ok := state.known[string(sign)]
 	return ok
 }
+
+// IsSignedSince reports whether an entry after the prefix was signed by the key.
+func (c Chain) IsSignedSince(prefix Chain, sign ed25519.PublicKey) bool {
+	for i := len(prefix.entries); i < len(c.entries); i++ {
+		if bytes.Equal(c.entries[i].Signer, sign) {
+			return true
+		}
+	}
+	return false
+}

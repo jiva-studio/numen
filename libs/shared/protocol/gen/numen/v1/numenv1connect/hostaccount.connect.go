@@ -54,6 +54,24 @@ const (
 	// HostAccountServiceCompleteRestoreProcedure is the fully-qualified name of the
 	// HostAccountService's CompleteRestore RPC.
 	HostAccountServiceCompleteRestoreProcedure = "/numen.v1.HostAccountService/CompleteRestore"
+	// HostAccountServiceGetLinkWorkProcedure is the fully-qualified name of the HostAccountService's
+	// GetLinkWork RPC.
+	HostAccountServiceGetLinkWorkProcedure = "/numen.v1.HostAccountService/GetLinkWork"
+	// HostAccountServiceSetLinkChannelProcedure is the fully-qualified name of the HostAccountService's
+	// SetLinkChannel RPC.
+	HostAccountServiceSetLinkChannelProcedure = "/numen.v1.HostAccountService/SetLinkChannel"
+	// HostAccountServicePutLinkInboundProcedure is the fully-qualified name of the HostAccountService's
+	// PutLinkInbound RPC.
+	HostAccountServicePutLinkInboundProcedure = "/numen.v1.HostAccountService/PutLinkInbound"
+	// HostAccountServiceGetChainPublishProcedure is the fully-qualified name of the
+	// HostAccountService's GetChainPublish RPC.
+	HostAccountServiceGetChainPublishProcedure = "/numen.v1.HostAccountService/GetChainPublish"
+	// HostAccountServicePutChainPublishedProcedure is the fully-qualified name of the
+	// HostAccountService's PutChainPublished RPC.
+	HostAccountServicePutChainPublishedProcedure = "/numen.v1.HostAccountService/PutChainPublished"
+	// HostAccountServiceAdoptChainProcedure is the fully-qualified name of the HostAccountService's
+	// AdoptChain RPC.
+	HostAccountServiceAdoptChainProcedure = "/numen.v1.HostAccountService/AdoptChain"
 )
 
 // HostAccountServiceClient is a client for the numen.v1.HostAccountService service.
@@ -79,6 +97,22 @@ type HostAccountServiceClient interface {
 	// with no chain when the server has no such account. A chain that does not verify or does not belong to
 	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
 	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
+	// GetLinkWork returns what the courier of a link carries: the channel to make or use, the blobs to post to
+	// the other side and whether the link ended. It returns at once when the version differs from since_version,
+	// otherwise after wait_seconds (at most 20) or the next change.
+	GetLinkWork(context.Context, *connect.Request[v1.GetLinkWorkRequest]) (*connect.Response[v1.GetLinkWorkResponse], error)
+	// SetLinkChannel gives the link the channel the courier made on the relay, 16 bytes.
+	SetLinkChannel(context.Context, *connect.Request[v1.SetLinkChannelRequest]) (*connect.Response[v1.SetLinkChannelResponse], error)
+	// PutLinkInbound hands the core a blob the other side posted. No link answers FAILED_PRECONDITION with the
+	// reason NO_LINK.
+	PutLinkInbound(context.Context, *connect.Request[v1.PutLinkInboundRequest]) (*connect.Response[v1.PutLinkInboundResponse], error)
+	// GetChainPublish returns the chain the core waits to have accepted by the server.
+	GetChainPublish(context.Context, *connect.Request[v1.GetChainPublishRequest]) (*connect.Response[v1.GetChainPublishResponse], error)
+	// PutChainPublished tells the core the answer of the server to the chain it published.
+	PutChainPublished(context.Context, *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error)
+	// AdoptChain gives the core a chain the server holds. A chain that does not parse or does not extend the chain
+	// of this device answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+	AdoptChain(context.Context, *connect.Request[v1.AdoptChainRequest]) (*connect.Response[v1.AdoptChainResponse], error)
 }
 
 // NewHostAccountServiceClient constructs a client for the numen.v1.HostAccountService service. By
@@ -134,6 +168,42 @@ func NewHostAccountServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
 			connect.WithClientOptions(opts...),
 		),
+		getLinkWork: connect.NewClient[v1.GetLinkWorkRequest, v1.GetLinkWorkResponse](
+			httpClient,
+			baseURL+HostAccountServiceGetLinkWorkProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("GetLinkWork")),
+			connect.WithClientOptions(opts...),
+		),
+		setLinkChannel: connect.NewClient[v1.SetLinkChannelRequest, v1.SetLinkChannelResponse](
+			httpClient,
+			baseURL+HostAccountServiceSetLinkChannelProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("SetLinkChannel")),
+			connect.WithClientOptions(opts...),
+		),
+		putLinkInbound: connect.NewClient[v1.PutLinkInboundRequest, v1.PutLinkInboundResponse](
+			httpClient,
+			baseURL+HostAccountServicePutLinkInboundProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("PutLinkInbound")),
+			connect.WithClientOptions(opts...),
+		),
+		getChainPublish: connect.NewClient[v1.GetChainPublishRequest, v1.GetChainPublishResponse](
+			httpClient,
+			baseURL+HostAccountServiceGetChainPublishProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("GetChainPublish")),
+			connect.WithClientOptions(opts...),
+		),
+		putChainPublished: connect.NewClient[v1.PutChainPublishedRequest, v1.PutChainPublishedResponse](
+			httpClient,
+			baseURL+HostAccountServicePutChainPublishedProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("PutChainPublished")),
+			connect.WithClientOptions(opts...),
+		),
+		adoptChain: connect.NewClient[v1.AdoptChainRequest, v1.AdoptChainResponse](
+			httpClient,
+			baseURL+HostAccountServiceAdoptChainProcedure,
+			connect.WithSchema(hostAccountServiceMethods.ByName("AdoptChain")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -146,6 +216,12 @@ type hostAccountServiceClient struct {
 	getPendingRestore *connect.Client[v1.GetPendingRestoreRequest, v1.GetPendingRestoreResponse]
 	signAsRecovery    *connect.Client[v1.SignAsRecoveryRequest, v1.SignAsRecoveryResponse]
 	completeRestore   *connect.Client[v1.CompleteRestoreRequest, v1.CompleteRestoreResponse]
+	getLinkWork       *connect.Client[v1.GetLinkWorkRequest, v1.GetLinkWorkResponse]
+	setLinkChannel    *connect.Client[v1.SetLinkChannelRequest, v1.SetLinkChannelResponse]
+	putLinkInbound    *connect.Client[v1.PutLinkInboundRequest, v1.PutLinkInboundResponse]
+	getChainPublish   *connect.Client[v1.GetChainPublishRequest, v1.GetChainPublishResponse]
+	putChainPublished *connect.Client[v1.PutChainPublishedRequest, v1.PutChainPublishedResponse]
+	adoptChain        *connect.Client[v1.AdoptChainRequest, v1.AdoptChainResponse]
 }
 
 // SignAsDevice calls numen.v1.HostAccountService.SignAsDevice.
@@ -183,6 +259,36 @@ func (c *hostAccountServiceClient) CompleteRestore(ctx context.Context, req *con
 	return c.completeRestore.CallUnary(ctx, req)
 }
 
+// GetLinkWork calls numen.v1.HostAccountService.GetLinkWork.
+func (c *hostAccountServiceClient) GetLinkWork(ctx context.Context, req *connect.Request[v1.GetLinkWorkRequest]) (*connect.Response[v1.GetLinkWorkResponse], error) {
+	return c.getLinkWork.CallUnary(ctx, req)
+}
+
+// SetLinkChannel calls numen.v1.HostAccountService.SetLinkChannel.
+func (c *hostAccountServiceClient) SetLinkChannel(ctx context.Context, req *connect.Request[v1.SetLinkChannelRequest]) (*connect.Response[v1.SetLinkChannelResponse], error) {
+	return c.setLinkChannel.CallUnary(ctx, req)
+}
+
+// PutLinkInbound calls numen.v1.HostAccountService.PutLinkInbound.
+func (c *hostAccountServiceClient) PutLinkInbound(ctx context.Context, req *connect.Request[v1.PutLinkInboundRequest]) (*connect.Response[v1.PutLinkInboundResponse], error) {
+	return c.putLinkInbound.CallUnary(ctx, req)
+}
+
+// GetChainPublish calls numen.v1.HostAccountService.GetChainPublish.
+func (c *hostAccountServiceClient) GetChainPublish(ctx context.Context, req *connect.Request[v1.GetChainPublishRequest]) (*connect.Response[v1.GetChainPublishResponse], error) {
+	return c.getChainPublish.CallUnary(ctx, req)
+}
+
+// PutChainPublished calls numen.v1.HostAccountService.PutChainPublished.
+func (c *hostAccountServiceClient) PutChainPublished(ctx context.Context, req *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error) {
+	return c.putChainPublished.CallUnary(ctx, req)
+}
+
+// AdoptChain calls numen.v1.HostAccountService.AdoptChain.
+func (c *hostAccountServiceClient) AdoptChain(ctx context.Context, req *connect.Request[v1.AdoptChainRequest]) (*connect.Response[v1.AdoptChainResponse], error) {
+	return c.adoptChain.CallUnary(ctx, req)
+}
+
 // HostAccountServiceHandler is an implementation of the numen.v1.HostAccountService service.
 type HostAccountServiceHandler interface {
 	// SignAsDevice signs the message with the key of this device. The signed bytes are
@@ -206,6 +312,22 @@ type HostAccountServiceHandler interface {
 	// with no chain when the server has no such account. A chain that does not verify or does not belong to
 	// the words answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
 	CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error)
+	// GetLinkWork returns what the courier of a link carries: the channel to make or use, the blobs to post to
+	// the other side and whether the link ended. It returns at once when the version differs from since_version,
+	// otherwise after wait_seconds (at most 20) or the next change.
+	GetLinkWork(context.Context, *connect.Request[v1.GetLinkWorkRequest]) (*connect.Response[v1.GetLinkWorkResponse], error)
+	// SetLinkChannel gives the link the channel the courier made on the relay, 16 bytes.
+	SetLinkChannel(context.Context, *connect.Request[v1.SetLinkChannelRequest]) (*connect.Response[v1.SetLinkChannelResponse], error)
+	// PutLinkInbound hands the core a blob the other side posted. No link answers FAILED_PRECONDITION with the
+	// reason NO_LINK.
+	PutLinkInbound(context.Context, *connect.Request[v1.PutLinkInboundRequest]) (*connect.Response[v1.PutLinkInboundResponse], error)
+	// GetChainPublish returns the chain the core waits to have accepted by the server.
+	GetChainPublish(context.Context, *connect.Request[v1.GetChainPublishRequest]) (*connect.Response[v1.GetChainPublishResponse], error)
+	// PutChainPublished tells the core the answer of the server to the chain it published.
+	PutChainPublished(context.Context, *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error)
+	// AdoptChain gives the core a chain the server holds. A chain that does not parse or does not extend the chain
+	// of this device answers INVALID_ARGUMENT with the reason INVALID_CHAIN.
+	AdoptChain(context.Context, *connect.Request[v1.AdoptChainRequest]) (*connect.Response[v1.AdoptChainResponse], error)
 }
 
 // NewHostAccountServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -257,6 +379,42 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 		connect.WithSchema(hostAccountServiceMethods.ByName("CompleteRestore")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostAccountServiceGetLinkWorkHandler := connect.NewUnaryHandler(
+		HostAccountServiceGetLinkWorkProcedure,
+		svc.GetLinkWork,
+		connect.WithSchema(hostAccountServiceMethods.ByName("GetLinkWork")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceSetLinkChannelHandler := connect.NewUnaryHandler(
+		HostAccountServiceSetLinkChannelProcedure,
+		svc.SetLinkChannel,
+		connect.WithSchema(hostAccountServiceMethods.ByName("SetLinkChannel")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServicePutLinkInboundHandler := connect.NewUnaryHandler(
+		HostAccountServicePutLinkInboundProcedure,
+		svc.PutLinkInbound,
+		connect.WithSchema(hostAccountServiceMethods.ByName("PutLinkInbound")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceGetChainPublishHandler := connect.NewUnaryHandler(
+		HostAccountServiceGetChainPublishProcedure,
+		svc.GetChainPublish,
+		connect.WithSchema(hostAccountServiceMethods.ByName("GetChainPublish")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServicePutChainPublishedHandler := connect.NewUnaryHandler(
+		HostAccountServicePutChainPublishedProcedure,
+		svc.PutChainPublished,
+		connect.WithSchema(hostAccountServiceMethods.ByName("PutChainPublished")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostAccountServiceAdoptChainHandler := connect.NewUnaryHandler(
+		HostAccountServiceAdoptChainProcedure,
+		svc.AdoptChain,
+		connect.WithSchema(hostAccountServiceMethods.ByName("AdoptChain")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostAccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostAccountServiceSignAsDeviceProcedure:
@@ -273,6 +431,18 @@ func NewHostAccountServiceHandler(svc HostAccountServiceHandler, opts ...connect
 			hostAccountServiceSignAsRecoveryHandler.ServeHTTP(w, r)
 		case HostAccountServiceCompleteRestoreProcedure:
 			hostAccountServiceCompleteRestoreHandler.ServeHTTP(w, r)
+		case HostAccountServiceGetLinkWorkProcedure:
+			hostAccountServiceGetLinkWorkHandler.ServeHTTP(w, r)
+		case HostAccountServiceSetLinkChannelProcedure:
+			hostAccountServiceSetLinkChannelHandler.ServeHTTP(w, r)
+		case HostAccountServicePutLinkInboundProcedure:
+			hostAccountServicePutLinkInboundHandler.ServeHTTP(w, r)
+		case HostAccountServiceGetChainPublishProcedure:
+			hostAccountServiceGetChainPublishHandler.ServeHTTP(w, r)
+		case HostAccountServicePutChainPublishedProcedure:
+			hostAccountServicePutChainPublishedHandler.ServeHTTP(w, r)
+		case HostAccountServiceAdoptChainProcedure:
+			hostAccountServiceAdoptChainHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -308,4 +478,28 @@ func (UnimplementedHostAccountServiceHandler) SignAsRecovery(context.Context, *c
 
 func (UnimplementedHostAccountServiceHandler) CompleteRestore(context.Context, *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.CompleteRestore is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) GetLinkWork(context.Context, *connect.Request[v1.GetLinkWorkRequest]) (*connect.Response[v1.GetLinkWorkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.GetLinkWork is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) SetLinkChannel(context.Context, *connect.Request[v1.SetLinkChannelRequest]) (*connect.Response[v1.SetLinkChannelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.SetLinkChannel is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) PutLinkInbound(context.Context, *connect.Request[v1.PutLinkInboundRequest]) (*connect.Response[v1.PutLinkInboundResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.PutLinkInbound is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) GetChainPublish(context.Context, *connect.Request[v1.GetChainPublishRequest]) (*connect.Response[v1.GetChainPublishResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.GetChainPublish is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) PutChainPublished(context.Context, *connect.Request[v1.PutChainPublishedRequest]) (*connect.Response[v1.PutChainPublishedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.PutChainPublished is not implemented"))
+}
+
+func (UnimplementedHostAccountServiceHandler) AdoptChain(context.Context, *connect.Request[v1.AdoptChainRequest]) (*connect.Response[v1.AdoptChainResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostAccountService.AdoptChain is not implemented"))
 }

@@ -65,3 +65,16 @@ func (s State) Adopt(next Chain) (State, error) {
 	}
 	return State{Record: record, Chain: next, Status: status}, nil
 }
+
+// KeyEpoch returns the epoch of the account keys this device holds: the epoch of the chain for an active device, the last
+// epoch it was given for a revoked one.
+func (s State) KeyEpoch() uint32 { return s.Chain.heldEpoch(s.Record.Device.SignerKey()) }
+
+// OpenAccountKeys unwraps the account keys of the record and loads the key encryption key of every epoch before theirs.
+func (s State) OpenAccountKeys() (AccountKeys, error) {
+	keys, err := s.Record.Device.UnwrapAccountKeys(s.Record.Wrapped)
+	if err != nil {
+		return AccountKeys{}, err
+	}
+	return s.Chain.openHistoryFrom(keys, s.KeyEpoch())
+}

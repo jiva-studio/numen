@@ -18,6 +18,8 @@ var (
 	ErrRevokeRaced = errors.New("a device was added while the revoke was made")
 	// ErrNoChain means this device holds no chain file.
 	ErrNoChain = errors.New("this device has no chain file")
+	// ErrDeviceRevoked means the account revoked this device, which no link or revoke can start from.
+	ErrDeviceRevoked = errors.New("this device was revoked")
 )
 
 type LinkRole string
@@ -59,6 +61,7 @@ const (
 	LinkReasonStaleChain        LinkReason = "stale_chain"
 	LinkReasonCancelled         LinkReason = "cancelled"
 	LinkReasonExpired           LinkReason = "expired"
+	LinkReasonInvalid           LinkReason = "invalid"
 )
 
 // Link is what a window shows of the link in progress. It holds no key; Code is set for the host in
@@ -69,6 +72,9 @@ type Link struct {
 	Role               LinkRole
 	QRText             string
 	Code               string
+	DeviceName         string
+	DeviceFingerprint  string
+	IsApproved         bool
 	PeerName           string
 	PeerFingerprint    string
 	AccountFingerprint string

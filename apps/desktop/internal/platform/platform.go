@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/identityfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -57,6 +58,7 @@ func NewPluginServices(target string) Installation {
 	dirs := getPluginsDirs()
 	res := container.NewResources()
 	res.KeyStore = getKeyStore()
+	res.ChainStore = getChainStore()
 	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
@@ -73,6 +75,15 @@ func reportPluginFailure(stage string, err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "numen: %s: %v\n", stage, err)
 	}
+}
+
+// getChainStore keeps the device chain in the folder of the key store file.
+func getChainStore() *identityfile.Chain {
+	path, err := settings.Path()
+	if err != nil {
+		return identityfile.Open(os.TempDir())
+	}
+	return identityfile.Open(filepath.Dir(path))
 }
 
 func getKeyStore() *keychain.Store {

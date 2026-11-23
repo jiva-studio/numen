@@ -22,6 +22,7 @@ const (
 	noPendingRestoreReason = "NO_PENDING_RESTORE"
 	invalidChainReason     = "INVALID_CHAIN"
 	identityExistsReason   = "IDENTITY_EXISTS"
+	noLinkReason           = "NO_LINK"
 )
 
 var (
@@ -79,6 +80,9 @@ func (e *accountEndpoint) GetPublicIdentity(
 		DeviceFingerprint:  public.DeviceFingerprint,
 		DeviceSignKey:      public.DeviceSignKey,
 		Chain:              public.Chain,
+		KeyEpoch:           public.KeyEpoch,
+		ChainLength:        uint32(public.ChainLength),
+		IsRevoked:          public.IsRevoked,
 	}), nil
 }
 
@@ -95,6 +99,7 @@ func getAccountRefusals() []accountRefusal {
 		{identitydomain.ErrNoPendingRestore, connect.CodeFailedPrecondition, noPendingRestoreReason},
 		{identitydomain.ErrInvalidChain, connect.CodeInvalidArgument, invalidChainReason},
 		{identitydomain.ErrIdentityExists, connect.CodeFailedPrecondition, identityExistsReason},
+		{identitydomain.ErrNoLink, connect.CodeFailedPrecondition, noLinkReason},
 	}
 }
 

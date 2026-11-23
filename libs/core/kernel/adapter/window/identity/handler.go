@@ -22,6 +22,8 @@ type UseCases struct {
 	Create        *identity.CreateIdentity
 	Delete        *identity.DeleteIdentity
 	StartRestore  *identity.StartRestore
+	Link          LinkUseCases
+	Account       AccountUseCases
 }
 
 // Handler serves IdentityService over the identity use cases.
@@ -111,6 +113,8 @@ func writeIdentity(found identitydomain.Identity) *v1.IdentityInfo {
 		DeviceFingerprint:  found.DeviceFingerprint,
 		DeviceName:         found.DeviceName,
 		DeviceAddedAt:      found.DeviceAddedAt.UTC().Format(time.RFC3339),
+		IsRevoked:          found.IsRevoked,
+		KeyEpoch:           found.KeyEpoch,
 	}
 }
 
@@ -137,5 +141,5 @@ func getErrorCode(err error) (v1.IdentityErrorCode, bool) {
 	case errors.Is(err, identitydomain.ErrKeyStore):
 		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED, true
 	}
-	return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, false
+	return getLinkErrorCode(err)
 }
