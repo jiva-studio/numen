@@ -5,10 +5,10 @@ import (
 	"crypto/rand"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account/accounttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -42,11 +42,11 @@ func newFirstDevice(tb testing.TB) firstDevice {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err := identity.NewChain(root, keys, time.Now())
+	chain, err := identity.NewChain(root, keys, clock.System{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}
-	chain, err = chain.AppendDevice(root, device.Public(), "Desktop", time.Now())
+	chain, err = chain.AppendDevice(root, device.Public(), "Desktop", clock.System{}.Now())
 	if err != nil {
 		tb.Fatal(err)
 	}

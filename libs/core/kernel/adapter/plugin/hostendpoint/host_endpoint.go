@@ -126,7 +126,7 @@ func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
 
 func (e *Endpoint) Authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
-	pluginID, recognized := e.callers.Identity.GetPluginIDByToken(token)
+	pluginID, recognized := e.callers.Activation.GetPluginIDByToken(token)
 	if !found || !recognized {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
 	}
@@ -138,7 +138,7 @@ func (e *Endpoint) Authorize(header, permission string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := e.callers.Identity.CheckPluginPermission(pluginID, permission); err != nil {
+	if err := e.callers.Activation.CheckPluginPermission(pluginID, permission); err != nil {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil
