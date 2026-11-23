@@ -59,7 +59,7 @@ func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome)
 
 func trustAll([]byte) bool { return true }
 
-func (p *pair) pull(t *testing.T, authors func([]byte) bool) transfer.PullResult {
+func (p *pair) pull(t *testing.T, authors func([]byte) bool) restore.PullResult {
 	t.Helper()
 	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors})
 	if err != nil {

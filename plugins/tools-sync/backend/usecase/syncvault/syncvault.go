@@ -75,7 +75,7 @@ type Sweeper interface {
 
 // Puller brings the changes of the server into the vault.
 type Puller interface {
-	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
+	Execute(ctx context.Context, in transfer.PullInput) (restore.PullResult, error)
 }
 
 // Scanner lists the notes that changed on this device.

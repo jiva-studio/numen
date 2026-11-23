@@ -208,3 +208,15 @@ func planUnknown(head Head, local map[string]string) Action {
 	}
 	return action
 }
+
+// PullResult is the files written, the files left as they were because both computers changed them, the number
+// of revisions skipped because their author or their content could not be verified, whether the server asked for
+// a full comparison.
+type PullResult struct {
+	Verdict    Verdict
+	EpochID    []byte
+	Applied    []string
+	Conflicts  []string
+	Unverified int
+	IsReset    bool
+}

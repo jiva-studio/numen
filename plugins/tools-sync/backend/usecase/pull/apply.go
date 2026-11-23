@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -34,7 +35,7 @@ type run struct {
 	key     [32]byte
 	link    vaultlink.Link
 	records []transfer.FileRecord
-	result  transfer.PullResult
+	result  restore.PullResult
 	holdSeq uint64
 	isHeld  bool
 	next    uint64

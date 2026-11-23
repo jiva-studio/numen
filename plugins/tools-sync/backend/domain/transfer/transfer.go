@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
 // CommitStatus is how the server took a file.
@@ -107,18 +106,6 @@ type Scan struct {
 type PullInput struct {
 	VaultID domain.VaultID
 	Authors func(deviceSignKey []byte) bool
-}
-
-// PullResult is the files written, the files left as they were because both computers changed them, the number
-// of revisions skipped because their author or their content could not be verified, whether the server asked for
-// a full comparison.
-type PullResult struct {
-	Verdict    restore.Verdict
-	EpochID    []byte
-	Applied    []string
-	Conflicts  []string
-	Unverified int
-	IsReset    bool
 }
 
 // NoRecord returns the record of a file that has none.
