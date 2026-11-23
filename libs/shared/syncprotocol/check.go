@@ -79,7 +79,7 @@ func checkBlobRevision(revision *syncv1.Revision) error {
 	if err != nil {
 		return err
 	}
-	if revision.GetBlobSize() == 0 || revision.GetBlobSize() > MaxBlobSize {
+	if revision.GetBlobSize() == 0 || revision.GetBlobSize() > MaxMultipartSize {
 		return fmt.Errorf("%w: blob_size is %d", ErrInvalidRevision, revision.GetBlobSize())
 	}
 	if len(revision.GetEncMeta()) == 0 {
