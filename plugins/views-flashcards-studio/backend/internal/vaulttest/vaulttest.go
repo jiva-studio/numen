@@ -52,7 +52,7 @@ type Env struct {
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
 	host := hosttest.OnDisk(tb, createVaultName(tb), notes)
-	return NewEnv(host)
+	return BuildEnv(host)
 }
 
 func createVaultName(tb testing.TB) string {
@@ -61,8 +61,8 @@ func createVaultName(tb testing.TB) string {
 	return "vault-" + filepath.Base(filepath.Dir(own)) + "-" + filepath.Base(own)
 }
 
-// NewEnv is the ports over a vault the test made.
-func NewEnv(host *hosttest.Vault) Env {
+// BuildEnv is the ports over a vault the test made.
+func BuildEnv(host *hosttest.Vault) Env {
 	ports := hostports.New(NewVaults(host), NewFolders(host))
 	return Env{
 		Host:    host,

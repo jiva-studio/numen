@@ -64,7 +64,7 @@ func (u Read) ReadDeck(ctx context.Context, v domain.Vault, path string) (format
 			Preamble: "",
 			Tail:     "",
 			Sections: nil,
-			Cards:    nil, Problems: []format.Problem{format.NewFileProblem(
+			Cards:    nil, Problems: []format.Problem{format.BuildFileProblem(
 				format.FaultTooLarge,
 				fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, format.MaxDeckBytes),
 			)}}
@@ -148,7 +148,7 @@ func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.P
 		if !ordinary[card.CardModelLink] {
 			continue
 		}
-		out = append(out, format.NewCardProblem(item, format.FaultNotACardModel,
+		out = append(out, format.BuildCardProblem(item, format.FaultNotACardModel,
 			card.CardModelLink+" is a note and not a card model, so this card is shown by no template"))
 	}
 	return out

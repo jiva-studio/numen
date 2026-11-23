@@ -74,7 +74,7 @@ func (r *cardModelReader) validateTemplatePlaceholders(pos int, template CardTem
 		if r.declared[name] {
 			continue
 		}
-		problem := newTemplateProblem(pos, FaultPlaceholder, "this template places "+name+", which the card model does not declare")
+		problem := buildTemplateProblem(pos, FaultPlaceholder, "this template places "+name+", which the card model does not declare")
 		problem.Field = name
 		r.cardModel.Problems = append(r.cardModel.Problems, problem)
 	}
@@ -86,7 +86,7 @@ func (r *cardModelReader) validateTemplate(pos int, has map[string]bool, templat
 		if has[frontHeading] {
 			missing = backHeading
 		}
-		r.cardModel.Problems = append(r.cardModel.Problems, newTemplateProblem(pos, FaultTemplateSide,
+		r.cardModel.Problems = append(r.cardModel.Problems, buildTemplateProblem(pos, FaultTemplateSide,
 			"this template has no "+missing+", and lays out nothing"))
 		return
 	}
@@ -188,7 +188,7 @@ func readFields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 		switch {
 		case observed[name]:
-			problems = append(problems, newFieldProblem(name, FaultTwoFields,
+			problems = append(problems, buildFieldProblem(name, FaultTwoFields,
 				"two fields are called "+name+", and the first stands"))
 		default:
 			observed[name] = true
@@ -196,7 +196,7 @@ func readFields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 	}
 	if len(out) == 0 {
-		problems = append(problems, NewFileProblem(FaultNoFields,
+		problems = append(problems, BuildFileProblem(FaultNoFields,
 			"this card model declares no field, so a card cut by it has nothing to be named by"))
 	}
 	return out, problems

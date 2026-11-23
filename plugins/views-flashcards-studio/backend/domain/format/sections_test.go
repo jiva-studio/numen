@@ -42,7 +42,7 @@ func TestOnCardFilesAProblemAgainstOneCard(t *testing.T) {
 	if NoPosition != -1 {
 		t.Fatalf("NoPosition = %d, want -1", NoPosition)
 	}
-	got := NewCardProblem(3, FaultDuplicateCardID, "detail")
+	got := BuildCardProblem(3, FaultDuplicateCardID, "detail")
 	want := Problem{
 		Fault: FaultDuplicateCardID, Card: 3, Template: NoPosition, Detail: "detail",
 	}
