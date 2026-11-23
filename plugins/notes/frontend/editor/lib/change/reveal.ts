@@ -12,7 +12,7 @@ export interface Reveal {
  */
 const PACE = 220
 
-const boundaries = (text: string): number[] => {
+const findBoundaries = (text: string): number[] => {
   const words = /\S+\s*/g
   const ends: number[] = []
   for (let found = words.exec(text); found; found = words.exec(text)) {
@@ -28,7 +28,7 @@ const boundaries = (text: string): number[] => {
  * with none of it still arriving.
  */
 export const createReveal = (text: string, part: number): Reveal => {
-  const ends = boundaries(text)
+  const ends = findBoundaries(text)
   const steps = ends.length + 1
   const stepIndex = Math.max(0, Math.min(steps, Math.floor(part * steps)))
   if (stepIndex === 0) return { visibleLength: 0, fading: 0 }
@@ -39,7 +39,7 @@ export const createReveal = (text: string, part: number): Reveal => {
   }
 }
 
-export const getDuration = (text: string) => (boundaries(text).length + 1) * PACE
+export const getDuration = (text: string) => (findBoundaries(text).length + 1) * PACE
 
 /** How far the showing of the text has got. */
 export const setReveal = StateEffect.define<Reveal>()

@@ -64,7 +64,7 @@ const pendingThread = computed(() =>
 
 const ghost = computed(() =>
   getReachGhost(props.gesture?.outcome.value ?? null, props.gesture?.at.value ?? null, {
-    relationName: props.relationName,
+    getRelationName: props.relationName,
     nodeSize: fieldSize.value,
   }),
 )

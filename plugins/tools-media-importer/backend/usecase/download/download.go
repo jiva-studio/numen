@@ -31,7 +31,7 @@ func (f *Downloader) CanHandle(address string) bool {
 	return false
 }
 
-func (f *Downloader) providerFor(pos string) (Provider, error) {
+func (f *Downloader) findProvider(pos string) (Provider, error) {
 	for _, one := range f.providers {
 		if one.CanHandle(pos) {
 			return one, nil
@@ -40,8 +40,8 @@ func (f *Downloader) providerFor(pos string) (Provider, error) {
 	return nil, fmt.Errorf("%s: %w", pos, ErrNoTool)
 }
 
-func (f *Downloader) playerFor(pos string) (Player, error) {
-	delta, err := f.providerFor(pos)
+func (f *Downloader) findPlayer(pos string) (Player, error) {
+	delta, err := f.findProvider(pos)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (f *Downloader) playerFor(pos string) (Player, error) {
 
 // GetDownloadModel returns tool identity for the address.
 func (f *Downloader) GetDownloadModel(address string) fetch.Model {
-	delta, err := f.providerFor(address)
+	delta, err := f.findProvider(address)
 	if err != nil {
 		return fetch.Model{Tool: "", Version: "", Producer: ""}
 	}
@@ -62,7 +62,7 @@ func (f *Downloader) GetDownloadModel(address string) fetch.Model {
 }
 
 func (f *Downloader) GetMetadata(ctx context.Context, address string) (fetch.Metadata, error) {
-	delta, err := f.providerFor(address)
+	delta, err := f.findProvider(address)
 	if err != nil {
 		return fetch.Metadata{}, err
 	}
@@ -71,7 +71,7 @@ func (f *Downloader) GetMetadata(ctx context.Context, address string) (fetch.Met
 
 // GetText returns published words or cues.
 func (f *Downloader) GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error) {
-	delta, err := f.providerFor(address)
+	delta, err := f.findProvider(address)
 	if err != nil {
 		return fetch.Text{}, err
 	}
@@ -80,7 +80,7 @@ func (f *Downloader) GetText(ctx context.Context, address string, want fetch.Pre
 
 // Download brings media bytes into the writer.
 func (f *Downloader) Download(ctx context.Context, address string, media fetch.Media, into io.Writer) (fetch.Copy, error) {
-	plays, err := f.playerFor(address)
+	plays, err := f.findPlayer(address)
 	if err != nil {
 		return fetch.Copy{}, err
 	}
@@ -146,7 +146,7 @@ func getLastLine(response string) string {
 
 // CanCopy reports whether the provider of the address copies what is published there.
 func (f *Downloader) CanCopy(address string) bool {
-	_, err := f.playerFor(address)
+	_, err := f.findPlayer(address)
 	return err == nil
 }
 

@@ -1,7 +1,7 @@
 import type { Task } from '../types'
 
 /** The task the note holds now: the one with the same raw text nearest to the stored line. */
-export function freshTaskLine(
+export function createTaskLine(
   fresh: readonly Task[],
   target: Pick<Task, 'line' | 'raw'>,
 ): Task | undefined {

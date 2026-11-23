@@ -62,7 +62,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 func mountClients(
 	s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue,
 ) (*extract.Follower, error) {
-	workers := pdfworkers.New(clock.AfterFunc)
+	workers := pdfworkers.New(clock.StartTimer)
 	s.SetUpdateConfig(func(values map[string]string) { pdfworkers.Configure(workers, values) })
 	reader := document.NewReader(
 		func(id domain.VaultID) host.FileReader { return files.With(id) },

@@ -7,7 +7,7 @@ import {
   clampZoom,
   getPagesWithin,
   getCurrentPage,
-  row,
+  buildRow,
   getTurnTarget,
   getFitZoom,
   getAnchor,
@@ -28,14 +28,14 @@ const book = (pages: number): Page[] =>
 
 describe('the row a document makes', () => {
   it('draws a whole page in the viewport', () => {
-    const stripLayout = row(book(4), VIEWPORT, 1)
+    const stripLayout = buildRow(book(4), VIEWPORT, 1)
 
     expect(stripLayout.height).toBeLessThanOrEqual(VIEWPORT.height)
     expect(stripLayout.widths[0]).toBe(Math.round((stripLayout.height * 612) / 792))
   })
 
   it('puts every page after the one before it, with a gap', () => {
-    const stripLayout = row(book(4), VIEWPORT, 1)
+    const stripLayout = buildRow(book(4), VIEWPORT, 1)
 
     expect(stripLayout.starts[0]).toBe(GAP)
     for (let page = 1; page < 4; page++) {
@@ -54,7 +54,7 @@ describe('the row a document makes', () => {
       { width: 1224, height: 792 },
       { width: 612, height: 792 },
     ]
-    const stripLayout = row(pages, VIEWPORT, 1)
+    const stripLayout = buildRow(pages, VIEWPORT, 1)
 
     // Within a pixel: each width is rounded on its own.
     expect(stripLayout.widths[1]).toBeCloseTo(stripLayout.widths[0]! * 2, -0.5)
@@ -65,7 +65,7 @@ describe('the row a document makes', () => {
     // A page the document could not measure is still laid out, and the
     // pages after it keep their positions. A page with zero width would be a
     // row that jumps once its size is known.
-    const stripLayout = row(
+    const stripLayout = buildRow(
       [
         { width: 612, height: 792 },
         { width: 0, height: 0 },
@@ -91,21 +91,21 @@ describe('the row a document makes', () => {
     ]
 
     it.each(broken)('takes the first page size when it has %s', (_, page) => {
-      const stripLayout = row([landscapePage, page], VIEWPORT, 1)
+      const stripLayout = buildRow([landscapePage, page], VIEWPORT, 1)
 
       expect(stripLayout.widths).toEqual([getWidth(landscapePage), getWidth(landscapePage)])
     })
 
     it.each(broken)('takes an upright page when the first page has %s too', (_, page) => {
-      const stripLayout = row([page, page], VIEWPORT, 1)
+      const stripLayout = buildRow([page, page], VIEWPORT, 1)
 
       expect(stripLayout.widths).toEqual([upright, upright])
     })
   })
 
   it('draws the pages larger when it is zoomed', () => {
-    const one = row(book(4), VIEWPORT, 1)
-    const two = row(book(4), VIEWPORT, 2)
+    const one = buildRow(book(4), VIEWPORT, 1)
+    const two = buildRow(book(4), VIEWPORT, 2)
 
     expect(two.height).toBeGreaterThan(one.height)
     expect(two.widths[0]).toBeGreaterThan(one.widths[0]!)
@@ -115,7 +115,7 @@ describe('the row a document makes', () => {
 
 describe('which pages are drawn', () => {
   it('draws the pages in the viewport and a little either side', () => {
-    const stripLayout = row(book(500), VIEWPORT, 1)
+    const stripLayout = buildRow(book(500), VIEWPORT, 1)
 
     const visiblePages = getPagesWithin(stripLayout, VIEWPORT, 0)
 
@@ -127,7 +127,7 @@ describe('which pages are drawn', () => {
   })
 
   it('draws around wherever the row has been scrolled to', () => {
-    const stripLayout = row(book(500), VIEWPORT, 1)
+    const stripLayout = buildRow(book(500), VIEWPORT, 1)
     const targetPage = 300
 
     const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
@@ -138,7 +138,7 @@ describe('which pages are drawn', () => {
   })
 
   it('pre-renders previous page for reverse navigation', () => {
-    const stripLayout = row(book(500), VIEWPORT, 1)
+    const stripLayout = buildRow(book(500), VIEWPORT, 1)
     const targetPage = 300
 
     const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
@@ -161,13 +161,13 @@ describe('which pages are drawn', () => {
   })
 
   it('draws nothing for a document with no pages', () => {
-    expect(getPagesWithin(row([], VIEWPORT, 1), VIEWPORT, 0)).toEqual([])
+    expect(getPagesWithin(buildRow([], VIEWPORT, 1), VIEWPORT, 0)).toEqual([])
   })
 })
 
 describe('which page is in front', () => {
   it('is the one under the middle of the viewport', () => {
-    const stripLayout = row(book(20), VIEWPORT, 1)
+    const stripLayout = buildRow(book(20), VIEWPORT, 1)
 
     // A page scrolled halfway off is not the one being read: the middle of the
     // viewport is over the page after it.
@@ -180,13 +180,13 @@ describe('which page is in front', () => {
   })
 
   it('is the last page at the end of the row', () => {
-    const stripLayout = row(book(20), VIEWPORT, 1)
+    const stripLayout = buildRow(book(20), VIEWPORT, 1)
 
     expect(getCurrentPage(stripLayout, VIEWPORT, stripLayout.length)).toBe(19)
   })
 
   it('is the first page at the beginning of the row', () => {
-    const stripLayout = row(book(20), VIEWPORT, 1)
+    const stripLayout = buildRow(book(20), VIEWPORT, 1)
 
     expect(getCurrentPage(stripLayout, VIEWPORT, 0)).toBe(0)
   })
@@ -194,19 +194,19 @@ describe('which page is in front', () => {
 
 describe('where the row remains', () => {
   it('puts the page requested for against the left edge', () => {
-    const stripLayout = row(book(20), VIEWPORT, 1)
+    const stripLayout = buildRow(book(20), VIEWPORT, 1)
 
     expect(findPageScroll(stripLayout, 5)).toBe(stripLayout.starts[5]! - GAP)
   })
 
   it('says nothing about a page the document does not have', () => {
-    const stripLayout = row(book(4), VIEWPORT, 1)
+    const stripLayout = buildRow(book(4), VIEWPORT, 1)
 
     expect(findPageScroll(stripLayout, 9)).toBeUndefined()
   })
 
   it('holds the scroll inside the row, so the last page stops at the end of it', () => {
-    const stripLayout = row(book(20), VIEWPORT, 1)
+    const stripLayout = buildRow(book(20), VIEWPORT, 1)
 
     expect(getScrollTarget(stripLayout, VIEWPORT, 0)).toBe(0)
     expect(getScrollTarget(stripLayout, VIEWPORT, 19)).toBe(stripLayout.length - VIEWPORT.width)
@@ -215,7 +215,7 @@ describe('where the row remains', () => {
 
   it('centers a page narrower than half the viewport', () => {
     const broadViewport: Size = { width: 1600, height: 800 }
-    const stripLayout = row(book(20), broadViewport, 1)
+    const stripLayout = buildRow(book(20), broadViewport, 1)
     const target = getScrollTarget(stripLayout, broadViewport, 5)!
 
     const center = target + broadViewport.width / 2
@@ -224,12 +224,12 @@ describe('where the row remains', () => {
   })
 
   it('scrolls nowhere for a page the row does not hold', () => {
-    expect(getScrollTarget(row(book(4), VIEWPORT, 1), VIEWPORT, 9)).toBeUndefined()
+    expect(getScrollTarget(buildRow(book(4), VIEWPORT, 1), VIEWPORT, 9)).toBeUndefined()
   })
   it('scrolls to the start of a row shorter than the viewport', () => {
     expect(
       getScrollTarget(
-        row(book(1), { width: 4000, height: 800 }, 1),
+        buildRow(book(1), { width: 4000, height: 800 }, 1),
         { width: 4000, height: 800 },
         0,
       ),
@@ -248,7 +248,7 @@ describe('the current page after a scroll to a page', () => {
 
   it('is the page scrolled to, in every viewport width', () => {
     for (const viewport of VIEWPORTS) {
-      const stripLayout = row(book(40), viewport, 1)
+      const stripLayout = buildRow(book(40), viewport, 1)
       const furthest = stripLayout.length - viewport.width
       for (let page = 0; page < 40; page++) {
         const target = getScrollTarget(stripLayout, viewport, page)!
@@ -266,11 +266,11 @@ describe('the current page after a scroll to a page', () => {
     const before: Size = { width: 1400, height: 800 }
     const after: Size = { width: 1400, height: 760 }
     const page = getCurrentPage(
-      row(book(40), before, 1),
+      buildRow(book(40), before, 1),
       before,
-      getScrollTarget(row(book(40), before, 1), before, 12)!,
+      getScrollTarget(buildRow(book(40), before, 1), before, 12)!,
     )
-    const afterLayout = row(book(40), after, 1)
+    const afterLayout = buildRow(book(40), after, 1)
 
     expect(getCurrentPage(afterLayout, after, getScrollTarget(afterLayout, after, page)!)).toBe(
       page,
@@ -278,7 +278,7 @@ describe('the current page after a scroll to a page', () => {
   })
 
   it('is one page on either side of a border, and changes exactly at it', () => {
-    const stripLayout = row(book(40), VIEWPORT, 1)
+    const stripLayout = buildRow(book(40), VIEWPORT, 1)
     const border = stripLayout.starts[12]! - VIEWPORT.width / 2
 
     expect(getCurrentPage(stripLayout, VIEWPORT, border - 1)).toBe(11)
@@ -309,7 +309,7 @@ describe('a viewport nothing has been measured in', () => {
   it('makes no row at all', () => {
     // Until something has been measured there is no width to draw a page at,
     // and a page drawn at a made-up one is a page drawn and thrown away.
-    const stripLayout = row(book(8), { width: 0, height: 0 }, 1)
+    const stripLayout = buildRow(book(8), { width: 0, height: 0 }, 1)
 
     expect(stripLayout.height).toBe(0)
     expect(stripLayout.starts).toEqual([])
@@ -319,7 +319,7 @@ describe('a viewport nothing has been measured in', () => {
   })
 
   it('makes no row in a viewport too short to stand a page in', () => {
-    const stripLayout = row(book(8), { width: 900, height: 2 * GAP }, 1)
+    const stripLayout = buildRow(book(8), { width: 900, height: 2 * GAP }, 1)
 
     expect(stripLayout.starts).toEqual([])
     expect(stripLayout.widths).toEqual([])
@@ -358,13 +358,13 @@ describe('the zoom a document opens at', () => {
     const landscape: Size = { width: 1600, height: 800 }
     const zoom = getFitZoom('width', book(4), landscape)
 
-    expect(row(book(4), landscape, zoom).widths[0]).toBeCloseTo(landscape.width - 2 * GAP, -1)
+    expect(buildRow(book(4), landscape, zoom).widths[0]).toBeCloseTo(landscape.width - 2 * GAP, -1)
   })
 
   it('draws the first page at its printed size for the 100% fit', () => {
     const zoom = getFitZoom('100%', book(4), VIEWPORT)
 
-    expect(row(book(4), VIEWPORT, zoom).height).toBe(Math.round((792 * 96) / 72))
+    expect(buildRow(book(4), VIEWPORT, zoom).height).toBe(Math.round((792 * 96) / 72))
   })
 
   it('draws the page smaller than a whole page in a viewport narrower than it', () => {
@@ -372,7 +372,7 @@ describe('the zoom a document opens at', () => {
     const zoom = getFitZoom('width', book(4), narrow)
 
     expect(zoom).toBeLessThan(FURTHEST)
-    expect(row(book(4), narrow, zoom).widths[0]).toBeCloseTo(narrow.width - 2 * GAP, -1)
+    expect(buildRow(book(4), narrow, zoom).widths[0]).toBeCloseTo(narrow.width - 2 * GAP, -1)
   })
 
   it('never draws the page closer than the closest zoom', () => {
@@ -392,7 +392,7 @@ describe('the point kept under the center line of the viewport', () => {
   ]
 
   it('is a page and a share of its width', () => {
-    const before = row(pages, viewport, 1)
+    const before = buildRow(pages, viewport, 1)
     const center = before.starts[1]! + before.widths[1]! / 4
 
     const anchor = getAnchor(before, viewport, center - viewport.width / 2)
@@ -402,12 +402,12 @@ describe('the point kept under the center line of the viewport', () => {
   })
 
   it('is nothing in a row with no pages', () => {
-    expect(getAnchor(row([], viewport, 1), viewport, 0)).toBeUndefined()
+    expect(getAnchor(buildRow([], viewport, 1), viewport, 0)).toBeUndefined()
   })
 
   it('stays under the center line when every page is wider', () => {
-    const before = row(pages, viewport, 1)
-    const after = row(pages, viewport, 2)
+    const before = buildRow(pages, viewport, 1)
+    const after = buildRow(pages, viewport, 2)
     const offset = before.starts[1]! + before.widths[1]! / 4 - viewport.width / 2
     const anchor = getAnchor(before, viewport, offset)!
 
@@ -418,7 +418,7 @@ describe('the point kept under the center line of the viewport', () => {
   })
 
   it('is clamped to the row', () => {
-    const after = row(pages, viewport, 1)
+    const after = buildRow(pages, viewport, 1)
 
     expect(getAnchorScroll(after, viewport, { page: 1, fraction: 5 })).toBe(
       Math.max(after.length - viewport.width, 0),
@@ -428,8 +428,8 @@ describe('the point kept under the center line of the viewport', () => {
   })
 
   it('keeps the share of the page height under the center line across', () => {
-    const before = row(pages, viewport, 1)
-    const after = row(pages, viewport, 2)
+    const before = buildRow(pages, viewport, 1)
+    const after = buildRow(pages, viewport, 2)
     const share = getAcrossShare(
       before,
       viewport,
@@ -439,14 +439,14 @@ describe('the point kept under the center line of the viewport', () => {
     const to = getAcrossScroll(after, viewport, share)
 
     expect((to + viewport.height / 2 - GAP) / after.height).toBeCloseTo(0.5, 1)
-    expect(getAcrossShare(row(pages, { width: 400, height: 0 }, 1), viewport, 0)).toBe(0.5)
+    expect(getAcrossShare(buildRow(pages, { width: 400, height: 0 }, 1), viewport, 0)).toBe(0.5)
   })
 })
 
 describe('the pages requested at the settled width', () => {
   it('are fewer than the pages drawn, with a smaller margin', () => {
     const viewport = { width: 400, height: 300 }
-    const long = row(
+    const long = buildRow(
       Array.from({ length: 40 }, () => ({ width: 100, height: 200 })),
       viewport,
       1,

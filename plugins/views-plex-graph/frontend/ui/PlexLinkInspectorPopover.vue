@@ -10,7 +10,7 @@ import type { Connection } from '@numen/plugin-sdk'
 import type { LinkInspectorRequest } from '../types'
 import {
   addReverseSide,
-  cycleDirection,
+  rotateDirection,
   getNextDirection,
   getRows,
   isConnectionEmpty,
@@ -68,7 +68,7 @@ function onKeyDown(event: KeyboardEvent) {
 }
 
 function onCycleDirection(key: SideKey) {
-  draft.value = cycleDirection(draft.value, key)
+  draft.value = rotateDirection(draft.value, key)
 }
 
 function onLabelChanged(key: SideKey, label: string) {

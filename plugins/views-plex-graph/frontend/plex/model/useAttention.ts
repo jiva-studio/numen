@@ -12,7 +12,7 @@ export interface Attention {
 export function useAttention(frame: () => PlexFrame) {
   const attention = reactive<Attention>({ node: null })
 
-  const attend = (id: string, isAttended: boolean) => {
+  const setAttention = (id: string, isAttended: boolean) => {
     if (isAttended) attention.node = id
     else if (attention.node === id) attention.node = null
   }
@@ -22,5 +22,5 @@ export function useAttention(frame: () => PlexFrame) {
     if (id !== null && !next.nodes.some((node) => node.id === id)) attention.node = null
   })
 
-  return { attention, attend }
+  return { attention, setAttention }
 }

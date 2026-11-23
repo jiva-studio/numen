@@ -78,7 +78,7 @@ func TestReadBookEntryAfterCloseIsUnavailable(t *testing.T) {
 func TestToAPIErrorReturnsAnotherFailureAsItIs(t *testing.T) {
 	failure := errors.New("disk on fire")
 
-	if got := ToAPIError(failure); !errors.Is(got, failure) {
+	if got := BuildAPIError(failure); !errors.Is(got, failure) {
 		t.Errorf("ToAPIError = %v, want the failure itself", got)
 	}
 }

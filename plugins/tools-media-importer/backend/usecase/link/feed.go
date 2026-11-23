@@ -41,7 +41,7 @@ type feedRun struct {
 // every link note when the automatic download was turned on after the first settings, and from the
 // cursor of the feed otherwise.
 func (l *Links) Configure(ctx context.Context, update func()) {
-	wasAutomatic := l.settings().IsTextDownloadAutomatic
+	wasAutomatic := l.getSettings().IsTextDownloadAutomatic
 	update()
 	l.mu.Lock()
 	wasConfigured := l.feed.isConfigured
@@ -111,10 +111,10 @@ func (l *Links) FetchMissingTexts(ctx context.Context) error {
 }
 
 func (l *Links) fetchMissingTexts(ctx context.Context, isReview bool) error {
-	if !l.settings().IsTextDownloadAutomatic {
+	if !l.getSettings().IsTextDownloadAutomatic {
 		return nil
 	}
-	shown, err := l.host.Vaults("").Files.GetVault(ctx)
+	shown, err := l.host.GetVault("").Files.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {
 		return nil
 	}

@@ -56,7 +56,7 @@ func NewWorkers(tb testing.TB) *pdf.Workers {
 	}
 	workers := pdf.NewWorkers(pdf.Options{
 		Report: func(what string, err error) { tb.Errorf("%s: %v", what, err) }, CompilationCache: compilation,
-		AfterFunc: nil, Workers: 0, IdleWorkers: 0,
+		StartTimer: nil, Workers: 0, IdleWorkers: 0,
 	})
 	tb.Cleanup(func() {
 		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(tb.Context()))); err != nil {
@@ -80,8 +80,8 @@ func ReadFixture(tb testing.TB, name string) []byte {
 	return raw
 }
 
-// FilesOf returns the vaults of vault as the files the writer reads.
-func FilesOf(vault *hosttest.Vault) func(domain.VaultID) extract.Files {
+// NewFiles returns the vaults of vault as the files the writer reads.
+func NewFiles(vault *hosttest.Vault) func(domain.VaultID) extract.Files {
 	return func(id domain.VaultID) extract.Files { return vault.With(id) }
 }
 
@@ -113,7 +113,7 @@ func NewVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *extrac
 	texts := hosttest.NewTexts("vault", PluginID)
 	texts.File(name, raw)
 	texts.SetStore(PluginID, files.Store())
-	return texts, NewWriter(t, FilesOf(files), files, texts, hosttest.NewQueue()), raw
+	return texts, NewWriter(t, NewFiles(files), files, texts, hosttest.NewQueue()), raw
 }
 
 // CreateText writes the text layer of the file req names and waits for it.
@@ -165,7 +165,7 @@ func NewFollowedVault(t *testing.T, files map[string][]byte) FollowedVault {
 		texts.File(name, raw)
 	}
 	texts.SetStore(PluginID, vault.Store())
-	return FollowedVault{Vault: vault, Texts: texts, Writer: NewWriter(t, FilesOf(vault), vault, texts, hosttest.NewQueue())}
+	return FollowedVault{Vault: vault, Texts: texts, Writer: NewWriter(t, NewFiles(vault), vault, texts, hosttest.NewQueue())}
 }
 
 // Add puts a file in the vault, as another window would.

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
-import { easeOut } from './math'
+import { computeEaseOut } from './math'
 import { MIDDLE } from './edges/positions'
 import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge'
 import type { PlexFrame } from '../frame'
@@ -483,18 +483,18 @@ describe('a line whose ends swap', () => {
 
 describe('the easing', () => {
   it('starts and ends where it should', () => {
-    expect(easeOut(0)).toBe(0)
-    expect(easeOut(1)).toBe(1)
+    expect(computeEaseOut(0)).toBe(0)
+    expect(computeEaseOut(1)).toBe(1)
   })
 
   it('covers most of the distance early, so the end is the slow part', () => {
-    expect(easeOut(0.5)).toBeGreaterThan(0.75)
-    expect(easeOut(0.9)).toBeGreaterThan(0.99)
+    expect(computeEaseOut(0.5)).toBeGreaterThan(0.75)
+    expect(computeEaseOut(0.9)).toBeGreaterThan(0.99)
   })
 
   it('never goes backwards', () => {
     for (let t = 0; t < 1; t += 0.05) {
-      expect(easeOut(t + 0.05)).toBeGreaterThanOrEqual(easeOut(t))
+      expect(computeEaseOut(t + 0.05)).toBeGreaterThanOrEqual(computeEaseOut(t))
     }
   })
 })

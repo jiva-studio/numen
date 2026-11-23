@@ -102,7 +102,7 @@ func (i *Index) Scan(ctx context.Context) error {
 	if _, err := i.visit(ctx, paths, i.readNote); err != nil {
 		return err
 	}
-	known := toSet(paths)
+	known := createSet(paths)
 	i.mu.Lock()
 	for path := range i.entries {
 		if _, isKnown := known[path]; !isKnown {
@@ -213,7 +213,7 @@ func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
 	i.mu.Unlock()
 	listing := PathListing{Paths: []string{}, IsReady: isReady}
 	for path, tasks := range copies {
-		if filter.Matches(tasks, f, today) {
+		if filter.IsMatch(tasks, f, today) {
 			listing.Paths = append(listing.Paths, path)
 		}
 	}
@@ -233,7 +233,7 @@ func (i *Index) MatchPaths(today string, f filter.Filter, asked []string) PathLi
 	i.mu.Unlock()
 	listing := PathListing{Paths: []string{}, IsReady: isReady}
 	for n, path := range asked {
-		if filter.Matches(copies[n], f, today) {
+		if filter.IsMatch(copies[n], f, today) {
 			listing.Paths = append(listing.Paths, path)
 		}
 	}
@@ -357,7 +357,7 @@ func (i *Index) checkAll(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	known := toSet(paths)
+	known := createSet(paths)
 	i.mu.Lock()
 	isChanged := false
 	for path := range i.entries {
@@ -373,7 +373,7 @@ func (i *Index) checkAll(ctx context.Context) error {
 	return i.refreshAllTags(ctx)
 }
 
-func toSet(paths []string) map[string]struct{} {
+func createSet(paths []string) map[string]struct{} {
 	set := make(map[string]struct{}, len(paths))
 	for _, path := range paths {
 		set[path] = struct{}{}

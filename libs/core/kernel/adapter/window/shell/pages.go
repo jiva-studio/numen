@@ -16,9 +16,9 @@ var pages embed.FS
 
 func getPolicy() string { return csp.Sources{Images: []string{"data:"}}.Policy() }
 
-// Pages is the interface itself, built by `make interface` and embedded in the
+// CreatePagesHandler is the interface itself, built by `make interface` and embedded in the
 // binary. A binary built without it reports that.
-func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
+func CreatePagesHandler() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // NewHandler is everything this window answers: the window itself, its themes, the calls its plugin
 // views make through their connections, the list of vaults, where the links of a text land, its
@@ -80,10 +80,10 @@ func (a *API) serveOther(w http.ResponseWriter, r *http.Request, files http.Hand
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		// The shell runs no plugin backend: the route serves only the files of a plugin folder.
-		if !wire.ServePluginFile(w, r, a.Frontends.directory) {
+		if !wire.ServePluginFile(w, r, a.Frontends.getPluginDir) {
 			http.Error(w, "plugin file not found", http.StatusNotFound)
 		}
-	case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
+	case a.PluginServices != nil && a.PluginServices.CanServe(r.URL.Path):
 		a.PluginServices.ServeHTTP(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, a.Themes, files)

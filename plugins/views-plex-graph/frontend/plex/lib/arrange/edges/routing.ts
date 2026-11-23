@@ -95,7 +95,7 @@ function getRun(a: PlacedNode, b: PlacedNode, isVertical: boolean): number {
     : Math.abs(b.x - a.x) - (a.width + b.width) / 2
 }
 
-function straightBetween(
+function buildStraightCurve(
   first: PlacedNode,
   second: PlacedNode,
   isVertical: boolean,
@@ -116,7 +116,7 @@ function straightBetween(
   }
 }
 
-function bowBetween(
+function buildBowCurve(
   first: PlacedNode,
   second: PlacedNode,
   isColumn: boolean,
@@ -144,7 +144,7 @@ function bowBetween(
   }
 }
 
-function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
+function buildCurve(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
   const isVertical = isVerticalRun(from, to, routing)
   const run = getRun(from, to, isVertical)
   const isBowed =
@@ -157,8 +157,8 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
   const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
   const axisEdge = isBowed
-    ? bowBetween(first, second, isVertical, routing)
-    : straightBetween(first, second, isVertical, routing)
+    ? buildBowCurve(first, second, isVertical, routing)
+    : buildStraightCurve(first, second, isVertical, routing)
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.
@@ -212,7 +212,7 @@ export function routeEdge(
   const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const opacity = 'tuning' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
-  const curve = curveBetween(from, to, routingOptions)
+  const curve = buildCurve(from, to, routingOptions)
 
   return {
     ...edge,

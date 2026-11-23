@@ -28,9 +28,9 @@ func (t *Tools) open(ctx context.Context) (*call, error) {
 	if id == "" {
 		return nil, errNoVault
 	}
-	c := &call{tools: t, current: domain.VaultID(id), vault: t.vaults(domain.VaultID(id)), texts: Library{Versions: nil, Texts: nil, Search: nil, Queries: nil}}
-	if t.library != nil {
-		c.texts = t.library(c.current)
+	c := &call{tools: t, current: domain.VaultID(id), vault: t.getVault(domain.VaultID(id)), texts: Library{Versions: nil, Texts: nil, Search: nil, Queries: nil}}
+	if t.getLibrary != nil {
+		c.texts = t.getLibrary(c.current)
 	}
 	return c, nil
 }
@@ -57,7 +57,7 @@ func (c *call) createLibrary() *library.UseCase {
 
 func (c *call) createVaults() *vaults.UseCase {
 	open := func(id domain.VaultID) vaults.Vault {
-		vault := c.tools.vaults(id)
+		vault := c.tools.getVault(id)
 		return vaults.Vault{Selector: vault.Selector, Notes: vault.Notes}
 	}
 	return vaults.New(c.current, c.tools.list, open)

@@ -133,7 +133,7 @@ func (s *Services) pages() pageSet {
 		routes = append(routes, NewRoute(path, served, s.Themes))
 	}
 	routes = append(routes, s.Extra...)
-	return pageSet{window: s.state.PageAccess, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir, assets: s.server.open}
+	return pageSet{window: s.state.PageAccess, routes: routes, themes: s.Themes, plugins: s.PluginServices, getPluginDir: s.getPluginDir, assets: s.server.open}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
