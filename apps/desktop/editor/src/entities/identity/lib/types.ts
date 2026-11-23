@@ -12,10 +12,10 @@ export interface IdentityInfo {
 }
 
 /** Why creating the identity was refused. */
-export type IdentityErrorCode = 'invalid_words' | 'identity_exists' | 'key_store_failed'
+export type IdentityErrorCode = 'invalidWords' | 'identityExists' | 'keyStoreFailed'
 
 /** A served refusal with the reason the core gives. */
 export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
+  readonly error: IdentityErrorCode
+  readonly message: string
 }

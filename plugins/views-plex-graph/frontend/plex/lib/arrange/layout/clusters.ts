@@ -29,7 +29,7 @@ import {
   listCells,
   listColumnCounts,
   scoreBlock,
-  sumScores,
+  computeTotalScore,
   type Block,
   type BlockShape,
   type Grid,
@@ -94,7 +94,7 @@ function createBlocks(
   })
 }
 
-function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape {
+function buildAcrossBlockShape(block: Block, columns: number, grid: Grid): BlockShape {
   const { width, height } = getBlockSize(block, columns, grid)
   const [minY, maxY] =
     block.side === 'down'
@@ -104,9 +104,9 @@ function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape
 }
 
 /** The position of a side block of one block: centered on the row of the focus, ending over the children block, or starting under the parents block. */
-type Standing = 'center' | 'up' | 'down'
+type Facing = 'center' | 'up' | 'down'
 
-const STANDINGS: readonly Standing[] = ['center', 'up', 'down']
+const STANDINGS: readonly Facing[] = ['center', 'up', 'down']
 
 interface Span {
   readonly width: number
@@ -114,7 +114,7 @@ interface Span {
   readonly maxY: number
 }
 
-function getSideSpan(block: Block, columns: number, standing: Standing, grid: Grid): Span {
+function getSideSpan(block: Block, columns: number, standing: Facing, grid: Grid): Span {
   const { width, height } = getBlockSize(block, columns, grid)
   const edgeBelow = grid.reach.bottom - grid.lineGap
   const edgeAbove = grid.reach.top - grid.lineGap
@@ -142,7 +142,7 @@ function getNearX({ minY, maxY }: Span, acrossShapes: readonly BlockShape[], gri
   return near
 }
 
-function shapeSideBlock(block: Block, columns: number, span: Span, near: number): BlockShape {
+function buildSideBlockShape(block: Block, columns: number, span: Span, near: number): BlockShape {
   const [minX, maxX] =
     block.side === 'left' ? [-near - span.width, -near] : [near, near + span.width]
   return { columns, minX, maxX, minY: span.minY, maxY: span.maxY }
@@ -161,7 +161,7 @@ interface AcrossChoice {
 }
 
 function chooseAcross(block: Block, columns: number, grid: Grid): AcrossChoice {
-  const shape = shapeAcrossBlock(block, columns, grid)
+  const shape = buildAcrossBlockShape(block, columns, grid)
   const score = { ...scoreBlock(block, shape, grid), excess: Math.max(0, columns - ACROSS_COLUMNS) }
   return { columns, block, shape, score }
 }
@@ -191,7 +191,7 @@ interface SideOption {
 function createPart(
   block: Block,
   columns: number,
-  standing: Standing,
+  standing: Facing,
   { grid, cache }: { readonly grid: Grid; readonly cache: ScoreCache },
 ): SidePart {
   const { side, half, members, cell } = block
@@ -235,7 +235,7 @@ function scorePart(part: SidePart, near: number, grid: Grid): Score {
   if (cached) return cached
   const score = scoreBlock(
     part.block,
-    shapeSideBlock(part.block, part.columns, part.span, near),
+    buildSideBlockShape(part.block, part.columns, part.span, near),
     grid,
   )
   part.scores.set(near, score)
@@ -259,7 +259,7 @@ function chooseSide(
     let near = grid.reach.x
     for (const part of option.parts) near = Math.max(near, getNearX(part.span, acrossShapes, grid))
     const scores = option.parts.map((part) => scorePart(part, near, grid))
-    const score = { ...sumScores(scores), joined: option.joined }
+    const score = { ...computeTotalScore(scores), joined: option.joined }
     // A cell inside holds its note, while a note can lie inside a cell that is not: one block that holds less than all
     // of the side could hold fewer notes than the halves do.
     if (option.joined > 0 && score.inside < option.parts[0]!.block.members.length) continue
@@ -303,7 +303,7 @@ function planBlocks(
       for (const option of acrossChoices[index]!) choose(index + 1, [...chosen, option])
       return
     }
-    const bound = sumScores([...chosen.map((one) => one.score), ...sideBounds])
+    const bound = computeTotalScore([...chosen.map((one) => one.score), ...sideBounds])
     if (!isWinning(bound, chosen)) return
     const shapes = chosen.map((one) => one.shape)
     const sideChoices = sides.flatMap((options) => chooseSide(options, shapes, grid) ?? [])
@@ -312,7 +312,7 @@ function planBlocks(
       ...sideChoices.flatMap((choice) => choice.scores),
     ]
     const joined = sideChoices.reduce((total, choice) => total + choice.option.joined, 0)
-    const score = { ...sumScores(scores), joined }
+    const score = { ...computeTotalScore(scores), joined }
     if (isWinning(score, chosen)) best = { across: [...chosen], sides: sideChoices, score }
   }
   choose(0, [])
@@ -322,7 +322,7 @@ function planBlocks(
     ...best.sides.flatMap(({ option, near }) =>
       option.parts.map(({ block, columns, span }) => ({
         block,
-        cells: listCells(block, shapeSideBlock(block, columns, span, near), grid),
+        cells: listCells(block, buildSideBlockShape(block, columns, span, near), grid),
       })),
     ),
   ]
@@ -341,8 +341,8 @@ function placeGrid(
       { width: context.width(node), height: context.options.nodeSize.height },
       room(node),
     )
-  const blocks = createBlocks(nodesByRelation, context.options, getSize)
-  if (blocks.length === 0) return []
+  const sideBlocks = createBlocks(nodesByRelation, context.options, getSize)
+  if (sideBlocks.length === 0) return []
   const grid = createGrid(focus, context.room(focus), context.options)
   const orders = new Map(
     RELATION_NAMES.flatMap((relation) =>
@@ -354,7 +354,7 @@ function placeGrid(
     cache = new Map()
     scoreCaches.set(context.options, cache)
   }
-  const plans = planBlocks(blocks, { grid, cache, isFitFirst: context.isFitFirst === true })
+  const plans = planBlocks(sideBlocks, { grid, cache, isFitFirst: context.isFitFirst === true })
   const placed = new Map<string, PlacedNode>()
   for (const { block, cells } of plans) {
     block.members.forEach((node, index) => {

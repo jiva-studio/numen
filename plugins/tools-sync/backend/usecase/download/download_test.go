@@ -329,7 +329,7 @@ func TestDownloadFile_SweepDeletesTheStagedFilesNoDownloadNamesAndNothingElse(t 
 	if err := store.Write(t.Context(), "0badc0de.part", []byte("left behind")); err != nil {
 		t.Fatal(err)
 	}
-	w.p.B.Vaults.Store().With(synctest.SecondVault).File("notes.json", []byte("{}"))
+	w.p.B.Vaults.Store().With(synctest.SecondVault).WriteFile("notes.json", []byte("{}"))
 
 	if err := w.use.Sweep(t.Context(), synctest.SecondVault); err != nil {
 		t.Fatal(err)

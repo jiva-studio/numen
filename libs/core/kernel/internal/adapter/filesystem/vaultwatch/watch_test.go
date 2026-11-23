@@ -323,7 +323,7 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	moved, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.File(t.Context(), pos)
+	moved, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchFile(t.Context(), pos)
 	if err != nil {
 		t.Fatal(err)
 	}

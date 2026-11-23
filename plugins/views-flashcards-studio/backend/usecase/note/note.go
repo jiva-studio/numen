@@ -73,11 +73,11 @@ func NewShowLinks(links ports.LinkQueries) ShowLinks { return ShowLinks{links: l
 
 // Execute returns both halves of what the note is joined to.
 func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (format.NoteLinks, error) {
-	links, err := u.links.GetLinks(ctx, v.ID, path)
+	links, err := u.links.ListLinks(ctx, v.ID, path)
 	if err != nil {
 		return format.NoteLinks{}, err
 	}
-	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
+	backlinks, err := u.links.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return format.NoteLinks{}, err
 	}

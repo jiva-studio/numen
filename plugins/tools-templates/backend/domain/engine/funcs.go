@@ -99,7 +99,7 @@ func (p *pass) registerField(kind, label string, options []string, fallback stri
 	return fallback, nil
 }
 
-func (p *pass) timeOrNow(given []time.Time) time.Time {
+func (p *pass) getTimeOrNow(given []time.Time) time.Time {
 	if len(given) == 0 {
 		return p.data.Now
 	}
@@ -109,39 +109,39 @@ func (p *pass) timeOrNow(given []time.Time) time.Time {
 func getFuncs(p *pass) Funcs {
 	return template.FuncMap{
 		"date": func(layout string, at ...time.Time) string {
-			return formatTime(p.timeOrNow(at), layout, defaultDateFormat)
+			return formatTime(p.getTimeOrNow(at), layout, defaultDateFormat)
 		},
 		"time": func(layout string, at ...time.Time) string {
-			return formatTime(p.timeOrNow(at), layout, defaultTimeFormat)
+			return formatTime(p.getTimeOrNow(at), layout, defaultTimeFormat)
 		},
-		"addDays":   func(days int, at ...time.Time) time.Time { return p.timeOrNow(at).AddDate(0, 0, days) },
-		"addMonths": func(months int, at ...time.Time) time.Time { return p.timeOrNow(at).AddDate(0, months, 0) },
-		"weekday":   func(at ...time.Time) string { return p.timeOrNow(at).Weekday().String() },
+		"addDays":   func(days int, at ...time.Time) time.Time { return p.getTimeOrNow(at).AddDate(0, 0, days) },
+		"addMonths": func(months int, at ...time.Time) time.Time { return p.getTimeOrNow(at).AddDate(0, months, 0) },
+		"weekday":   func(at ...time.Time) string { return p.getTimeOrNow(at).Weekday().String() },
 		"upper":     strings.ToUpper,
 		"lower":     strings.ToLower,
-		"slug":      slug,
-		"title":     capitalize,
-		"default":   fallback,
+		"slug":      buildSlug,
+		"title":     convertFirstToUpper,
+		"default":   selectFallback,
 		"trunc":     truncate,
 		"join":      join,
 		"split":     func(separator, text string) []string { return strings.Split(text, separator) },
 		"replace":   replace,
 		"trim":      strings.TrimSpace,
-		"call":      disabled,
-		"html":      disabled,
-		"js":        disabled,
-		"printf":    disabled,
-		"print":     disabled,
-		"println":   disabled,
+		"call":      failDisabled,
+		"html":      failDisabled,
+		"js":        failDisabled,
+		"printf":    failDisabled,
+		"print":     failDisabled,
+		"println":   failDisabled,
 		"yaml":      quoteYAML,
 		"uuid":      p.newID,
 		tickName:    p.tick,
 		enterName:   p.enter,
 		leaveName:   p.leave,
-		"dict":      dict,
+		"dict":      buildDict,
 		"list":      func(items ...any) []any { return items },
 		"prompt": func(label string, defaults ...string) (string, error) {
-			return p.registerField(KindText, label, []string{}, firstOrEmpty(defaults))
+			return p.registerField(KindText, label, []string{}, getFirstOrEmpty(defaults))
 		},
 		"select": func(label string, options ...string) (string, error) {
 			if len(options) == 0 {
@@ -157,16 +157,16 @@ const (
 	defaultTimeFormat = "HH:mm"
 )
 
-func disabled(...any) (string, error) { return "", errDisabled }
+func failDisabled(...any) (string, error) { return "", errDisabled }
 
-func firstOrEmpty(items []string) string {
+func getFirstOrEmpty(items []string) string {
 	if len(items) == 0 {
 		return ""
 	}
 	return items[0]
 }
 
-func slug(text string) string {
+func buildSlug(text string) string {
 	var out strings.Builder
 	isBreak := false
 	for _, r := range strings.ToLower(text) {
@@ -183,7 +183,7 @@ func slug(text string) string {
 	return out.String()
 }
 
-func capitalize(text string) string {
+func convertFirstToUpper(text string) string {
 	var out strings.Builder
 	isStart := true
 	for _, r := range text {
@@ -196,7 +196,7 @@ func capitalize(text string) string {
 	return out.String()
 }
 
-func fallback(replacement, value any) any {
+func selectFallback(replacement, value any) any {
 	if isEmpty(value) {
 		return replacement
 	}
@@ -253,7 +253,7 @@ func join(separator string, items any) (string, error) {
 	return strings.Join(parts, separator), nil
 }
 
-func dict(pairs ...any) (map[string]any, error) {
+func buildDict(pairs ...any) (map[string]any, error) {
 	if len(pairs)%2 != 0 {
 		return nil, errOddDict
 	}

@@ -295,7 +295,7 @@ func TestATypedNoteIsANoteInEveryOtherWay(t *testing.T) {
 	                            AND n.identifier = '01HQXMAMMALS'`, getFirstVault().ID); got != 1 {
 		t.Error("the sample's row does not carry its title and its identifier")
 	}
-	links, err := db.NoteQueries().GetLinks(t.Context(), getFirstVault().ID, "samples/mammals.md")
+	links, err := db.NoteQueries().ListLinks(t.Context(), getFirstVault().ID, "samples/mammals.md")
 	if err != nil {
 		t.Fatal(err)
 	}

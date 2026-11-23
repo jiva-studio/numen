@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { clock } from '../lib/duration'
+import { formatClock } from '../lib/duration'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -12,7 +12,7 @@ const props = defineProps<{
 <template>
   <div class="media-recorder__meter">
     <div class="media-recorder__timer">
-      {{ clock(props.elapsedMs) }}
+      {{ formatClock(props.elapsedMs) }}
     </div>
 
     <div class="media-recorder__waveform" aria-label="Microphone input meter">

@@ -13,8 +13,8 @@ import (
 
 func newWindowVault() *windowtest.Window {
 	vault := hosttest.New("marsh")
-	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
-	vault.File("library/Birds.pdf", "%PDF-1.7\n\x00\x01binary body")
+	vault.WriteFile("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
+	vault.WriteFile("library/Birds.pdf", "%PDF-1.7\n\x00\x01binary body")
 	return windowtest.NewWindow(vault)
 }
 

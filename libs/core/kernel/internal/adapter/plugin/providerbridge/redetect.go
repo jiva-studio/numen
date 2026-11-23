@@ -46,12 +46,12 @@ func (p *redetectingProvider) Call(
 		return sendErr
 	})
 	if err != nil && sendErr == nil && ctx.Err() == nil {
-		p.redetectIfUnavailable(call.ConnectionID, err)
+		p.retryDetectionIfUnavailable(call.ConnectionID, err)
 	}
 	return done, err
 }
 
-func (p *redetectingProvider) redetectIfUnavailable(connectionID string, err error) {
+func (p *redetectingProvider) retryDetectionIfUnavailable(connectionID string, err error) {
 	if connection.IsDetected(connectionID) && isUnavailable(err) {
 		p.detect(p.pluginID)
 	}

@@ -30,8 +30,8 @@ func (r *reporter) Print(a ...any) {
 	}
 }
 
-// Printf writes a formatted string as fmt.Fprintf does.
-func (r *reporter) Printf(format string, a ...any) {
+// WriteFormat writes a formatted string as fmt.Fprintf does.
+func (r *reporter) WriteFormat(format string, a ...any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.err == nil {
@@ -39,8 +39,8 @@ func (r *reporter) Printf(format string, a ...any) {
 	}
 }
 
-// Println writes its operands and a newline as fmt.Fprintln does.
-func (r *reporter) Println(a ...any) {
+// WriteLine writes its operands and a newline as fmt.Fprintln does.
+func (r *reporter) WriteLine(a ...any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.err == nil {

@@ -34,7 +34,7 @@ export class PaletteDriver {
   async answer(rows: readonly (readonly [string, string])[]): Promise<void> {
     for (const [index, [key, value]] of rows.entries()) {
       const ask = await this.waitForAsk(key)
-      if (await this.palette.multipleList().isVisible()) {
+      if (await this.palette.getMultipleList().isVisible()) {
         await this.toggleItem(value)
         if (rows[index + 1]?.[0] !== key) await this.scenario.page.keyboard.press('Escape')
       } else {
@@ -49,8 +49,8 @@ export class PaletteDriver {
     for (const { list, row, isDisabled } of parsePaletteRows(rows)) {
       await this.waitForAsk(list)
       const pattern = new RegExp('^' + escapeRegExp(row) + '$')
-      const isMultiple = await this.palette.multipleList().isVisible()
-      const option = isMultiple ? this.palette.optionNamed(pattern) : this.palette.rowNamed(pattern)
+      const isMultiple = await this.palette.getMultipleList().isVisible()
+      const option = isMultiple ? this.palette.getOptionNamed(pattern) : this.palette.getRowNamed(pattern)
       await expect(option.first(), `the list "${list}" has no row "${row}"`).toBeVisible()
       if (isDisabled) await expect(option.first()).toHaveAttribute('aria-disabled', 'true')
       else await expect(option.first()).not.toHaveAttribute('aria-disabled', 'true')
@@ -59,20 +59,20 @@ export class PaletteDriver {
 
   /** Types the words into the field of the open palette. */
   async writeInField(text: string): Promise<void> {
-    this.scenario.noteAction()
-    const field = this.palette.field()
+    this.scenario.countAction()
+    const field = this.palette.getField()
     await expect(field).toBeVisible()
     await field.fill(text)
   }
 
   /** The open palette lists the command under its name as many times as the count says. */
   async expectCommandCount(label: string, count: number): Promise<void> {
-    await expect(this.palette.rowNamed(new RegExp('^' + escapeRegExp(label) + '$'))).toHaveCount(count)
+    await expect(this.palette.getRowNamed(new RegExp('^' + escapeRegExp(label) + '$'))).toHaveCount(count)
   }
 
   private async readAsk(): Promise<Ask | undefined> {
-    if (await this.palette.treeField().isVisible()) return { placeholder: 'Name', groups: [], isInTree: true }
-    const field = this.palette.field()
+    if (await this.palette.getTreeField().isVisible()) return { placeholder: 'Name', groups: [], isInTree: true }
+    const field = this.palette.getField()
     if (!(await field.isVisible())) return undefined
     const placeholder = (await field.getAttribute('placeholder')) ?? ''
     if (placeholder === COMMAND_PLACEHOLDER) return undefined
@@ -101,13 +101,13 @@ export class PaletteDriver {
   private async give(ask: Ask, key: string, value: string): Promise<void> {
     const { page } = this.scenario
     if (ask.isInTree) {
-      const field = this.palette.treeField()
+      const field = this.palette.getTreeField()
       await field.fill(value)
       await field.press('Enter')
       await expect(field).toBeHidden()
       return
     }
-    const field = this.palette.field()
+    const field = this.palette.getField()
     if (ask.placeholder === CONFIRM_PLACEHOLDER) {
       await this.pickRow(value, false)
       return
@@ -124,14 +124,14 @@ export class PaletteDriver {
   }
 
   private async toggleItem(value: string): Promise<void> {
-    await this.palette.field().fill(value)
+    await this.palette.getField().fill(value)
     const name = escapeRegExp(value)
-    const item = this.palette.optionNamed(new RegExp(`^(Create )?${name}$`))
+    const item = this.palette.getOptionNamed(new RegExp(`^(Create )?${name}$`))
     await expect(item, `the list has no row "${value}" and no row to create it`).toHaveCount(1)
     const before = await item.getAttribute('aria-checked')
     await item.click()
     if (before === null) {
-      await expect(this.palette.optionNamed(new RegExp(`^${name}$`))).toHaveAttribute('aria-checked', 'true')
+      await expect(this.palette.getOptionNamed(new RegExp(`^${name}$`))).toHaveAttribute('aria-checked', 'true')
     } else {
       await expect(item).not.toHaveAttribute('aria-checked', before)
     }
@@ -139,7 +139,7 @@ export class PaletteDriver {
 
   private async pickRow(value: string, isExact: boolean): Promise<void> {
     const pattern = new RegExp(`^${escapeRegExp(value)}${isExact ? '$' : ''}`)
-    const rows = this.palette.rowNamed(pattern)
+    const rows = this.palette.getRowNamed(pattern)
     await expect(rows.first(), `the palette lists no row named "${value}"`).toBeVisible()
     if ((await rows.count()) > 1) throw new Error(`more than one row of the palette is named "${value}": write more of the name`)
     await rows.first().click()

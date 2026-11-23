@@ -57,7 +57,7 @@ export const byDoubleClick: ShowStrategy = {
 }
 
 /** Two taps, counted here. Milliseconds, if the wait is to be another. */
-export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
+export const createDoubleTapStrategy = (within: number = TAP): ShowStrategy => ({
   isDoubleClick: false,
   listeners: (site) => {
     const first = ref<{ timer: number; x: number; y: number } | null>(null)

@@ -128,7 +128,7 @@ func (u *Texts) GetTextRange(ctx context.Context, v domain.Vault, path string, i
 	if length > 0 && length < size-rangeStart {
 		rangeEnd = rangeStart + length
 	}
-	rangeStart, raw := textdomain.WholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
+	rangeStart, raw := textdomain.TrimToWholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
 	return plugin.TextRange{Segments: version.GetSegmentsIn(rangeStart, rangeStart+len(raw)), Start: rangeStart, Size: size}, nil
 }
 

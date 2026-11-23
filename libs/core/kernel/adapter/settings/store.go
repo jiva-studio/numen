@@ -124,7 +124,7 @@ func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, ver
 		return "", 0, err
 	}
 	into := DefaultFile()
-	version, err = s.files.SaveVersioned(path, &into, toWrites(entries)...)
+	version, err = s.files.SaveVersioned(path, &into, convertWrites(entries)...)
 	if err != nil {
 		return "", 0, err
 	}
@@ -141,7 +141,7 @@ func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, ver
 	return content, version, nil
 }
 
-func toWrites(entries []settingsdomain.Setting) []Setting {
+func convertWrites(entries []settingsdomain.Setting) []Setting {
 	writes := make([]Setting, 0, len(entries))
 	for _, one := range entries {
 		writes = append(writes, Setting{At: one.Path, Written: json.RawMessage(one.JSON)})
@@ -156,7 +156,7 @@ func (s *Store) Write(entries []settingsdomain.Setting) error {
 		return err
 	}
 	into := DefaultFile()
-	err = s.files.Save(path, &into, toWrites(entries)...)
+	err = s.files.Save(path, &into, convertWrites(entries)...)
 	if err == nil {
 		s.files.setLogLevel(into.LogLevel())
 	}

@@ -118,19 +118,19 @@ func (e *filesCalls) GetHostVault(
 	return connect.NewResponse(&v1.GetHostVaultResponse{Path: v.Path, Id: string(v.ID), Name: v.Name}), nil
 }
 
-func (e *filesCalls) EnsureVaultIndexed(
-	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
-) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+func (e *filesCalls) IndexVault(
+	ctx context.Context, req *connect.Request[v1.IndexVaultRequest],
+) (*connect.Response[v1.IndexVaultResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
-		func(code v1.ErrorCode) *v1.EnsureVaultIndexedResponse {
-			return &v1.EnsureVaultIndexedResponse{Error: code}
+		func(code v1.ErrorCode) *v1.IndexVaultResponse {
+			return &v1.IndexVaultResponse{Error: code}
 		},
-		func(vault *Access) (*v1.EnsureVaultIndexedResponse, error) {
+		func(vault *Access) (*v1.IndexVaultResponse, error) {
 			state, err := vault.Switch.EnsureIndexed(ctx)
 			if err != nil {
 				return nil, err
 			}
-			out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
+			out := &v1.IndexVaultResponse{Reason: state.Reason}
 			switch state.Status {
 			case plugin.Indexed:
 				out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED

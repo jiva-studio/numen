@@ -90,7 +90,7 @@ func (u List) Execute(ctx context.Context, v domain.Vault) ([]Summary, error) {
 	if u.notes == nil {
 		return nil, ErrNoPresets
 	}
-	paths, err := u.notes.GetPathsOfType(ctx, v.ID, format.TypePreset)
+	paths, err := u.notes.ListPathsOfType(ctx, v.ID, format.TypePreset)
 	if err != nil {
 		return nil, fmt.Errorf("the presets of %s: %w", v.ID, err)
 	}
@@ -164,9 +164,9 @@ func (u OpenReads) Execute() ports.PresetReads {
 // scheduled by the defaults.
 func (r *Reads) HasLinks() bool { return r.links != nil }
 
-// GetBacklinks returns the links that point at the note at path.
-func (r *Reads) GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error) {
-	return r.links.GetBacklinks(ctx, vault, path)
+// ListBacklinks returns the links that point at the note at path.
+func (r *Reads) ListBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+	return r.links.ListBacklinks(ctx, vault, path)
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
@@ -189,7 +189,7 @@ func (r *Reads) getSchedulingPreset(
 	if r.links == nil {
 		return review.CreateDefaultPresetNote(), nil
 	}
-	links, err := r.links.GetLinks(ctx, v.ID, deck)
+	links, err := r.links.ListLinks(ctx, v.ID, deck)
 	if err != nil {
 		return review.PresetNote{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
@@ -244,7 +244,7 @@ func (r *Reads) readRolelessProblems(ctx context.Context, v domain.Vault, deck s
 		return nil, nil
 	}
 	if r.parseProblems == nil {
-		noted, err := r.problems.GetParseProblems(ctx, v.ID)
+		noted, err := r.problems.ListParseProblems(ctx, v.ID)
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}
@@ -300,7 +300,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (review.
 }
 
 func (u Read) readPreset(ctx context.Context, v domain.Vault, path string) (review.PresetNote, error) {
-	out := review.PresetNote{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
+	out := review.PresetNote{Path: path, Outcome: "", Type: "", Settings: review.NewDefaultPreset(), Stops: "", StopsToday: "", Problems: nil,
 		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)

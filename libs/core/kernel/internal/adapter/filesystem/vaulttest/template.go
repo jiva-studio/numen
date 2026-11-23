@@ -26,8 +26,8 @@ func NewTemplate(build func(ctx context.Context, path string) error) *Template {
 	return &Template{build: build}
 }
 
-// Path is a copy of the template under the test's own temporary folder.
-func (t *Template) Path(tb testing.TB) string {
+// GetPath is a copy of the template under the test's own temporary folder.
+func (t *Template) GetPath(tb testing.TB) string {
 	tb.Helper()
 	path := filepath.Join(tb.TempDir(), "index.db")
 	t.CopyTo(tb, path)

@@ -46,7 +46,7 @@ export function usePaletteInput(deps: PaletteInputDeps) {
         },
   )
 
-  function type(text: string): void {
+  function enterText(text: string): void {
     if (commands.palette.open.value) {
       runInBackground(commands.palette.setTyped(text), reportFailure)
       return
@@ -81,5 +81,5 @@ export function usePaletteInput(deps: PaletteInputDeps) {
     if (commands.palette.open.value && commands.navigation.goBack()) search.setOpen(true)
   }
 
-  return { field, type, choose, dismiss, goBack }
+  return { field, type: enterText, choose, dismiss, goBack }
 }

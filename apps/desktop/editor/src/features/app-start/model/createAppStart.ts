@@ -30,7 +30,7 @@ async function startPluginsWithinLimit(deps: StartDeps): Promise<void> {
   await waitWithinInterfaceLimit(interfaceStarted)
 }
 
-async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
+async function runWithinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<never>((_, reject) => {
     timer = setTimeout(
@@ -63,11 +63,11 @@ export function createAppStart(deps: StartDeps, stepLimitMs: number = STEP_LIMIT
     const mine = ++attempt
     failure.value = ''
     try {
-      await withinLimit('The vault list', deps.loadVaults(), stepLimitMs)
-      await withinLimit('The settings request', deps.startSettings(), stepLimitMs)
+      await runWithinLimit('The vault list', deps.loadVaults(), stepLimitMs)
+      await runWithinLimit('The settings request', deps.startSettings(), stepLimitMs)
       await startPluginsWithinLimit(deps)
       isStarted.value = true
-      await withinLimit('The tab restore', deps.startLayout(), stepLimitMs)
+      await runWithinLimit('The tab restore', deps.startLayout(), stepLimitMs)
     } catch (error) {
       isStarted.value = true
       if (mine === attempt) failure.value = error instanceof Error ? error.message : String(error)

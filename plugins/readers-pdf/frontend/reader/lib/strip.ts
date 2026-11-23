@@ -76,7 +76,7 @@ export interface Row {
  * Laying out the row with no sizes would place every page at one position and shift when the sizes arrive.
  * A viewport with no height forms no row: with no measured size there is no width to draw a page at.
  */
-export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
+export function buildRow(pages: readonly Page[], viewport: Size, zoom: number): Row {
   const height = Math.round((viewport.height - 2 * GAP) * zoom)
   if (height <= 0) return { height: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []

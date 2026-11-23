@@ -75,7 +75,7 @@ func TestDrivenAdaptersCallATechnology(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }
 
 // The libraries that frame the wire are no technology a call reaches outside the process through.

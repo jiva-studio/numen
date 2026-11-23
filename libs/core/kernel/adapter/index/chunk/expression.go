@@ -5,12 +5,12 @@ import (
 	"unicode"
 )
 
-// Expression converts user-typed text into an FTS5 query.
+// BuildExpression converts user-typed text into an FTS5 query.
 // Every word is quoted into a literal and joined by implicit AND, so FTS5
 // operators are unavailable: AND, OR and NEAR are searched as words. Unquoted,
 // "state-function" parses as a column reference and "C++" as a syntax error.
 // `growing` gives the last word a prefix mark; a finished query matches exactly.
-func Expression(typed string, growing bool) string {
+func BuildExpression(typed string, growing bool) string {
 	var out strings.Builder
 	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,STATEMENT_REMOVE reason="Grow sets capacity only; the mutated values are 1, 3 and 5, and the expression is the same at any size"
 	out.Grow(2*len(typed) + 4)

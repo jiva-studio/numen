@@ -71,5 +71,5 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(load.Main(m))
+	os.Exit(load.RunTests(m))
 }

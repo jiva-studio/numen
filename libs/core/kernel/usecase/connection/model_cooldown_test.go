@@ -15,7 +15,7 @@ func TestTheTimeoutsAreTheDecidedOnes(t *testing.T) {
 	}
 }
 
-func callsToFirst(s *setup) int { return len(s.world.Provider.CallsTo(addressOne)) }
+func callsToFirst(s *setup) int { return len(s.world.Provider.ListCallsTo(addressOne)) }
 
 func TestARowSetAsideIsSkippedFor60SecondsWhenTheServiceGaveNoWait(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
@@ -97,14 +97,14 @@ func TestACooldownIsTrackedPerConnection(t *testing.T) {
 	if err == nil || err.Error() != "First: rate limited; Second: rate limited" {
 		t.Errorf("err = %v", err)
 	}
-	if got := len(s.world.Provider.CallsTo(addressTwo)); got != 2 {
+	if got := len(s.world.Provider.ListCallsTo(addressTwo)); got != 2 {
 		t.Errorf("the second row was called %d times, want 2", got)
 	}
 }
 
 func TestACooldownIsSharedByEveryPluginThatUsesTheConnection(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Rows.Set("md.example.other-consumer", modelcalltest.CompleteOperation, modelcalltest.Row(s.one, "m"))
+	s.world.Rows.Set("md.example.other-consumer", modelcalltest.CompleteOperation, modelcalltest.CreateRow(s.one, "m"))
 	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 	s.attempt(t)
 
@@ -186,19 +186,19 @@ func TestARejectedKeyOfADetectedConnectionIsSetAsideForTheDefaultCooldown(t *tes
 	const addressKite = "https://kite.test/v1"
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	kite := s.world.AddDetected("Kite", addressKite)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(kite, "m"), modelcalltest.Row(s.two, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.CreateRow(kite, "m"), modelcalltest.CreateRow(s.two, "m"))
 	s.world.Provider.Fail(addressKite, tryNext(connectiondomain.FailureReasonRejectedKey, 0))
 	s.attempt(t)
 
 	s.world.Clock.Advance(59 * time.Second)
 	s.attempt(t)
-	if got := len(s.world.Provider.CallsTo(addressKite)); got != 1 {
+	if got := len(s.world.Provider.ListCallsTo(addressKite)); got != 1 {
 		t.Fatalf("Kite was called %d times within 59 s, want 1", got)
 	}
 
 	s.world.Clock.Advance(2 * time.Second)
 	s.attempt(t)
-	if got := len(s.world.Provider.CallsTo(addressKite)); got != 2 {
+	if got := len(s.world.Provider.ListCallsTo(addressKite)); got != 2 {
 		t.Errorf("Kite was called %d times after 61 s, want 2: a detected connection cannot be edited", got)
 	}
 }

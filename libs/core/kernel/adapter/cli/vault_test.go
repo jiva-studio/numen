@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -212,7 +212,7 @@ func TestVaultCommand_ReturnsIndexError(t *testing.T) {
 		b := s.trash(nil)
 
 		out, err := s.runBrokenVault(func(v *vaultParts) {
-			v.rows = func(context.Context) (vault.VaultRepository, func() error, error) { return nil, nil, errRefused }
+			v.rows = func(context.Context) (indexport.VaultRepository, func() error, error) { return nil, nil, errRefused }
 		}, args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%v answered %v", args, err)
@@ -239,7 +239,7 @@ func TestVaultRemove_IndexErrorKeepsListAndFolder(t *testing.T) {
 	for _, args := range [][]string{{"vault", "remove", "first"}, {"vault", "erase", "first", "--yes"}} {
 		out, err := s.runBrokenVault(func(v *vaultParts) {
 			open := v.rows
-			v.rows = func(ctx context.Context) (vault.VaultRepository, func() error, error) {
+			v.rows = func(ctx context.Context) (indexport.VaultRepository, func() error, error) {
 				rows, closeRows, err := open(ctx)
 				if err != nil {
 					return rows, closeRows, err
@@ -260,7 +260,7 @@ func TestVaultRemove_IndexErrorKeepsListAndFolder(t *testing.T) {
 }
 
 // refusingToForget is the rows of an index that cannot take a vault out.
-type refusingToForget struct{ vault.VaultRepository }
+type refusingToForget struct{ indexport.VaultRepository }
 
 func (refusingToForget) Unregister(context.Context, domain.VaultID) error { return errRefused }
 

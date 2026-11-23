@@ -47,8 +47,8 @@ func newTwoVaults(t *testing.T) (*hosttest.Vault, *hosttest.Vault, *tools.Regist
 	t.Helper()
 	geology, registry := newGeologyVault(t)
 	garden := hosttest.New(gardenID)
-	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
-	geology.Beside(garden)
+	garden.WriteFile("Beds.md", "# Beds\nRaised beds of oak.")
+	geology.LinkBeside(garden)
 	if _, err := garden.RenameVault(t.Context(), gardenID, gardenName); err != nil {
 		t.Fatalf("name the garden vault: %v", err)
 	}
@@ -235,7 +235,7 @@ func TestVaultOpenOfAnUnknownVaultIsRejected(t *testing.T) {
 
 func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
 	geology := hosttest.New(geologyVault)
-	registry, err := service.New(vaultsOf(geology)).Registry()
+	registry, err := service.New(vaultsOf(geology)).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

@@ -10,7 +10,7 @@ type UseCases struct {
 // Referring lists and resolves the links of notes.
 type Referring struct {
 	Links        ShowLinks
-	Backlinks    GetBacklinks
+	Backlinks    ListBacklinks
 	ResolveLinks *ResolveLinks
 }
 

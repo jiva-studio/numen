@@ -49,7 +49,7 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 	count := file.NewCountFiles(vaultreader.Readers{})
 	stores := derivedfile.PluginStores{}
 	return NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return v, true }},
+		Session{GetCurrent: func() (domain.Vault, bool) { return v, true }},
 		Files{Stat: stat, Bytes: file.NewReadBytes(vaultreader.Readers{}, stat)},
 		Writer{
 			Index:  scan,

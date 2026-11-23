@@ -256,7 +256,7 @@ func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
 	f := newFiles(map[string]string{"Sample.md": "---\ntype: sample\n---\n\n# Sample\n"})
 	e := editing(f)
 
-	_, err := e.PointAt(t.Context(), getVault(), "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
+	_, err := e.SetLink(t.Context(), getVault(), "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
 
 	if err != nil || !strings.Contains(f.content["Sample.md"], "Slow") {
 		t.Errorf("got %v and the note %q", err, f.content["Sample.md"])
@@ -265,7 +265,7 @@ func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
 
 type names map[string][]string
 
-func (n names) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
+func (n names) ListNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
 	return n[name], nil
 }
 
@@ -313,7 +313,7 @@ func TestWriteIndexesNoteAfterCallerCancels(t *testing.T) {
 
 type failingNames struct{ err error }
 
-func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
+func (f failingNames) ListNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, f.err
 }
 
@@ -348,13 +348,13 @@ func TestPointAtValidationAndRemoval(t *testing.T) {
 	f := newFiles(map[string]string{"Sample.md": "---\ntype: sample\nlinks:\n  - to: Slow\n    role: ref\n    type: preset\n---\n\n# Sample\n"})
 	e := editing(f)
 
-	if _, err := e.PointAt(t.Context(), getVault(), "Sample.md", "", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef); err == nil {
+	if _, err := e.SetLink(t.Context(), getVault(), "Sample.md", "", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef); err == nil {
 		t.Error("expected error for empty link type")
 	}
-	if _, err := e.PointAt(t.Context(), getVault(), "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, "invalid-role"); err == nil {
+	if _, err := e.SetLink(t.Context(), getVault(), "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, "invalid-role"); err == nil {
 		t.Error("expected error for invalid role")
 	}
-	if _, err := e.PointAt(t.Context(), getVault(), "Sample.md", "preset", domain.Address{}, ""); err != nil {
+	if _, err := e.SetLink(t.Context(), getVault(), "Sample.md", "preset", domain.Address{}, ""); err != nil {
 		t.Errorf("removing link failed: %v", err)
 	}
 	if strings.Contains(f.content["Sample.md"], "Slow") {

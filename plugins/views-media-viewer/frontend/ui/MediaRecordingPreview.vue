@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { clock } from '../lib/duration'
+import { formatClock } from '../lib/duration'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -80,10 +80,10 @@ function onSaveRecording() {
         <Play v-else class="media-recorder__icon" />
       </button>
 
-      <span class="media-recorder__time">{{ clock(previewPosition) }}</span>
+      <span class="media-recorder__time">{{ formatClock(previewPosition) }}</span>
       <span class="media-recorder__time-divider">/</span>
       <span class="media-recorder__time">
-        {{ clock(previewDuration || props.elapsedMs) }}
+        {{ formatClock(previewDuration || props.elapsedMs) }}
       </span>
 
       <button

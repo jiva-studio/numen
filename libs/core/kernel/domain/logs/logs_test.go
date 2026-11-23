@@ -40,16 +40,16 @@ func TestParseAndResolveLevel(t *testing.T) {
 }
 
 func TestLevelAllowsHigherOrEqualSeverity(t *testing.T) {
-	if !logs.LevelInfo.Allows(logs.LevelInfo) || !logs.LevelInfo.Allows(logs.LevelWarning) || !logs.LevelInfo.Allows(logs.LevelError) {
+	if !logs.LevelInfo.CanRecord(logs.LevelInfo) || !logs.LevelInfo.CanRecord(logs.LevelWarning) || !logs.LevelInfo.CanRecord(logs.LevelError) {
 		t.Error("LevelInfo should allow info, warning and error")
 	}
-	if logs.LevelInfo.Allows(logs.LevelDebug) {
+	if logs.LevelInfo.CanRecord(logs.LevelDebug) {
 		t.Error("LevelInfo should not allow debug")
 	}
-	if !logs.LevelDebug.Allows(logs.LevelDebug) {
+	if !logs.LevelDebug.CanRecord(logs.LevelDebug) {
 		t.Error("LevelDebug should allow debug")
 	}
-	if logs.LevelError.Allows(logs.LevelWarning) {
+	if logs.LevelError.CanRecord(logs.LevelWarning) {
 		t.Error("LevelError should not allow warning")
 	}
 }

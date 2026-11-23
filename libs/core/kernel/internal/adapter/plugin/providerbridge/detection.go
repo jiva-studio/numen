@@ -42,14 +42,14 @@ type Detection struct {
 	source connectionport.ProviderSource
 	clock  machineport.Clock
 
-	mu       sync.Mutex
-	answers  map[string]answer
-	askedAt  map[string]time.Time
-	running  map[string]chan struct{}
-	files    DetectionFiles
-	loaded   map[string]bool
-	onChange func()
-	report   func(error)
+	mu           sync.Mutex
+	answers      map[string]answer
+	askedAt      map[string]time.Time
+	running      map[string]chan struct{}
+	files        DetectionFiles
+	loaded       map[string]bool
+	handleChange func()
+	report       func(error)
 
 	writeMu sync.Mutex
 }
@@ -59,7 +59,7 @@ type Detection struct {
 func NewDetection(types connectionport.Types, source connectionport.ProviderSource, clock machineport.Clock) *Detection {
 	return &Detection{
 		types: types, source: source, clock: clock, answers: map[string]answer{}, askedAt: map[string]time.Time{},
-		running: map[string]chan struct{}{}, loaded: map[string]bool{}, onChange: func() {}, report: func(error) {},
+		running: map[string]chan struct{}{}, loaded: map[string]bool{}, handleChange: func() {}, report: func(error) {},
 	}
 }
 
@@ -73,10 +73,10 @@ func (d *Detection) SetFiles(files DetectionFiles) {
 
 // Follow sets what runs after an answer changed the detected connections, and what receives the failures of
 // a provider and of the store file; it replaces what was set before.
-func (d *Detection) Follow(onChange func(), report func(error)) {
+func (d *Detection) Follow(handleChange func(), report func(error)) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.onChange, d.report = onChange, report
+	d.handleChange, d.report = handleChange, report
 }
 
 // ListDetected returns the connections the providers last reported for the available types, in the order of
@@ -126,7 +126,7 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 		return
 	}
 	defer d.end(pluginID, done)
-	onChange, report := d.getFollowers()
+	handleChange, report := d.getFollowers()
 	types := d.listDetectingTypes(pluginID)
 	if len(types) == 0 {
 		return
@@ -152,7 +152,7 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 		if err := d.writeStoreFile(pluginID); err != nil {
 			report(fmt.Errorf("keep the detected connections: %w", err))
 		}
-		onChange()
+		handleChange()
 	}
 }
 
@@ -205,10 +205,10 @@ func (d *Detection) end(pluginID string, done chan struct{}) {
 	close(done)
 }
 
-func (d *Detection) getFollowers() (onChange func(), report func(error)) {
+func (d *Detection) getFollowers() (handleChange func(), report func(error)) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return d.onChange, d.report
+	return d.handleChange, d.report
 }
 
 func (d *Detection) listDetectingTypes(pluginID string) []connection.Type {

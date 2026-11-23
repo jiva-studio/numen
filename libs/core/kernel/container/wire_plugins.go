@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -29,7 +28,7 @@ import (
 )
 
 func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) error {
-	registry, err := vaultRegistry(vaultDeps.RegistryPath)
+	registry, err := openVaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
@@ -42,7 +41,7 @@ type installedPlugins interface {
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
-	GetPlugins() []manifest.Discovered
+	ListPlugins() []manifest.Discovered
 }
 
 // pluginResolver supplies the plugin lookups used during host assembly.
@@ -128,8 +127,8 @@ type PluginEndpoints struct {
 	pluginProviders
 }
 
-// AdaptPluginHost connects the process and management roles to their consumers.
-func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
+// CreatePluginHost connects the process and management roles to their consumers.
+func CreatePluginHost(management *PluginManagement, roles *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(management, roles, lender)
 	types := plugin.NewConnectionTypes(management.Registry)
@@ -165,7 +164,8 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: management.Settings, Stopper: management.Teardown, Failures: roles.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: roles.Health, Keeper: management.Keeper,
+			Health: roles.Health,
+			Keeper: management.Keeper,
 		}).Execute,
 		Views: pluginViews{
 			Types: types, Operations: types,
@@ -173,9 +173,7 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(roles, cacheRoot, dataRoot, func(modelsDir string) supervision.Dependencies {
-				return newDependencyRegistry(roles.Clock, roles.Services.Observe, modelsDir)
-			})
+			setPluginStorage(roles, cacheRoot, dataRoot)
 			detection.SetFiles(roles.Storage)
 		},
 		RefreshDependencies: func() {
@@ -206,7 +204,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Activation:   management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
-		Tools: func() hostendpoint.PluginTools {
+		GetTools: func() hostendpoint.PluginTools {
 			return tools
 		},
 		Health: hostendpoint.HealthUseCases{

@@ -61,7 +61,7 @@ func (a *fakeNoteVault) GetNotes(_ context.Context, paths []string) (map[string]
 	out := map[string]domain.NoteRef{}
 	for _, one := range paths {
 		if _, found := a.files[one]; found {
-			out[one] = domain.NoteRef{Path: one, Title: domain.Basename(one), ID: "01JRIVER" + domain.Basename(one)}
+			out[one] = domain.NoteRef{Path: one, Title: domain.GetBasename(one), ID: "01JRIVER" + domain.GetBasename(one)}
 		}
 	}
 	return out, nil
@@ -213,7 +213,7 @@ func newArrangeClient(
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 	return client, vault, hostCallers
 }
 
@@ -311,13 +311,13 @@ func TestVaultListChangesAreServedWithVaultManage(t *testing.T) {
 
 func TestVaultChecksNeedVaultRead(t *testing.T) {
 	denied, _, _ := newArrangeClient(t, nil)
-	_, err := denied.GetVaultProblems(t.Context(), connect.NewRequest(&v1.GetVaultProblemsRequest{}))
+	_, err := denied.ListVaultProblems(t.Context(), connect.NewRequest(&v1.ListVaultProblemsRequest{}))
 	if !isDenied(err) {
 		t.Errorf("the checks without vault:read returned %v, want permission denied", err)
 	}
 
 	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
-	res, err := client.GetVaultProblems(t.Context(), connect.NewRequest(&v1.GetVaultProblemsRequest{Checks: []string{"ambiguous", "dangling"}}))
+	res, err := client.ListVaultProblems(t.Context(), connect.NewRequest(&v1.ListVaultProblemsRequest{Checks: []string{"ambiguous", "dangling"}}))
 	if err != nil {
 		t.Fatalf("the checks with vault:read returned %v", err)
 	}
@@ -351,8 +351,8 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 		res.Msg.GetNameSource() != v1.NameSource_NAME_SOURCE_FILENAME {
 		t.Errorf("the rename returned %v", res.Msg)
 	}
-	moved := res.Msg.GetMoved()
-	if moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" || !slices.Equal(moved.GetRepaired(), []string{"Deltas.md"}) {
+	moved := res.Msg.GetMoveResult()
+	if moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" || !slices.Equal(moved.GetRepairedNotes(), []string{"Deltas.md"}) {
 		t.Errorf("the move came out as %v", moved)
 	}
 
@@ -453,7 +453,7 @@ func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
 func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
 
-	res, err := client.GetNoteRefs(t.Context(), connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"Danube.md"}}))
+	res, err := client.ListNoteRefs(t.Context(), connect.NewRequest(&v1.ListNoteRefsRequest{Paths: []string{"Danube.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -587,7 +587,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
-			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 
 			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 			if err != nil {
@@ -597,8 +597,8 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			if res.Msg.GetError() != c.want {
 				t.Errorf("the rejected rename returned %v, want error %s", res.Msg, c.want)
 			}
-			if res.Msg.GetMoved() != nil {
-				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMoved())
+			if res.Msg.GetMoveResult() != nil {
+				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMoveResult())
 			}
 		})
 	}
@@ -729,7 +729,7 @@ func newEscapingPathClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
 	return client, vault
 }
 
@@ -825,7 +825,7 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	if res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
 		t.Errorf("the rename returned %v, want Donau.md with no error", res.Msg)
 	}
-	if moved := res.Msg.GetMoved(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
+	if moved := res.Msg.GetMoveResult(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }

@@ -49,7 +49,7 @@ const createLoader = (
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!
       return new Response(String(url).endsWith('.css') ? '' : JSON.stringify(MANIFESTS[id]))
     }) as unknown as typeof fetch,
-    dynamicImport: async (url: string) => {
+    importModule: async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => url.includes(`/${one}/`))!
       log.push(`read ${id}`)
       await new Promise((resolve) => setTimeout(resolve, delays[id] ?? 0))
@@ -181,7 +181,7 @@ it('keeps a module import from a closed window out of the restarted window', asy
   const loader = createTestPluginLoader({
     host: createHost(),
     fetch: async () => new Response(JSON.stringify(MANIFESTS[BAR])),
-    dynamicImport: vi
+    importModule: vi
       .fn()
       .mockImplementationOnce(async () => {
         loading.settle()
@@ -221,7 +221,7 @@ it('waits for the new window slots as soon as a restart is requested', async () 
   const loader = createTestPluginLoader({
     host: createHost(),
     fetch: async () => new Response(JSON.stringify(MANIFESTS[BAR])),
-    dynamicImport: async () => {
+    importModule: async () => {
       loading.settle()
       await finish.promise
       return {}

@@ -28,7 +28,7 @@ export const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteR
     createPreset: rejectUnused,
     scheduleDeck: rejectUnused,
     getDeckPreset: rejectUnused,
-    curve: rejectUnused,
+    getCurve: rejectUnused,
     write: async (_path: string, _settings: Settings, target: string) => {
       based.push(target)
       return (await answers.shift()) ?? { ok: true, value: { at: 'v-last', version: 99n } }

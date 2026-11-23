@@ -108,7 +108,7 @@ func TestACanceledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 	select {
-	case <-fake.Aborted():
+	case <-fake.GetAbortSignal():
 	case <-time.After(5 * time.Second):
 		t.Fatal("the request to the service was not ended")
 	}

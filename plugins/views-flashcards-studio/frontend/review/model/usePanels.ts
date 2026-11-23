@@ -17,8 +17,8 @@ import type { ReviewCard } from '../lib/card/cards'
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {
   readonly connections: ConnectionHost
-  readonly card: () => ReviewCard | null
-  readonly vault: () => string
+  readonly getCard: () => ReviewCard | null
+  readonly getVault: () => string
   readonly showNotice: (text: string) => void
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
 }
@@ -51,8 +51,8 @@ export const usePanels = (deps: PanelsDeps) => {
 
   const agentPanel = useAgentPanel({
     connections: deps.connections,
-    card: deps.card,
-    vault: deps.vault,
+    getCard: deps.getCard,
+    getVault: deps.getVault,
     open: () => showing.value === 'asking',
     // A panel put away takes the window back to the card only when the window is
     // on it: a card answered with the reading up ends the conversation, and the
@@ -69,8 +69,8 @@ export const usePanels = (deps: PanelsDeps) => {
       if (open) showing.value = 'reading'
       else if (showing.value === 'reading') showing.value = 'here'
     },
-    vault: deps.vault,
-    deck: () => deps.card()?.address.deck ?? '',
+    getVault: deps.getVault,
+    getDeck: () => deps.getCard()?.address.deck ?? '',
     getDeckNeighborhood,
     showNotice: deps.showNotice,
     resolveLinks: deps.resolveLinks,

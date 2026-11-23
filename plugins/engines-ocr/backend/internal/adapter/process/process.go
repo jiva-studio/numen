@@ -24,7 +24,7 @@ func (Process) IsMockML() bool {
 
 // GetConfig returns the default configuration with the folder and the runtime the environment names.
 func (Process) GetConfig() settings.Config {
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
 		cfg.Dir = dir
 	} else if modelsDir := os.Getenv(envModelsDir); modelsDir != "" {

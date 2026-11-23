@@ -41,7 +41,7 @@ func (d *Document) block() (block, error) {
 	if err != nil {
 		return block{}, err
 	}
-	start, end, found := d.span(node, "links")
+	start, end, found := d.findSpan(node, "links")
 	if !found {
 		return block{indent: "  "}, nil
 	}
@@ -64,7 +64,7 @@ func (d *Document) block() (block, error) {
 }
 
 func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string) {
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	var entries []entry
 	var indent string
 	for i, item := range items.Content {
@@ -76,7 +76,7 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 		if i+1 < len(items.Content) {
 			linked = items.Content[i+1].Line - 1
 		} else {
-			linked = offsetLine(lines, end) - 1
+			linked = findLine(lines, end) - 1
 		}
 		last := min(
 			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to linked leaves last unchanged"
@@ -125,7 +125,7 @@ func (d *Document) AddLink(add domain.Link) error {
 		if err != nil {
 			return err
 		}
-		d.splice(e.start, e.end, rendered)
+		d.replaceRange(e.start, e.end, rendered)
 		return nil
 	}
 
@@ -152,7 +152,7 @@ func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
 	for i, e := range slices.Backward(found) {
 
 		if i > 0 {
-			d.splice(e.start, e.end, nil)
+			d.replaceRange(e.start, e.end, nil)
 			continue
 		}
 		next := link
@@ -162,7 +162,7 @@ func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
 		if err != nil {
 			return err
 		}
-		d.splice(e.start, e.end, rendered)
+		d.replaceRange(e.start, e.end, rendered)
 	}
 	return nil
 }
@@ -211,7 +211,7 @@ func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 			keptCount++
 			continue
 		}
-		d.splice(e.start, e.end, nil)
+		d.replaceRange(e.start, e.end, nil)
 		removed++
 	}
 	if removed > 0 && keptCount == 0 {
@@ -243,7 +243,7 @@ func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to 
 	for idx, c := range slices.Backward(carrying) {
 		e := b.entries[c]
 		if idx > 0 || to.Value == "" {
-			d.splice(e.start, e.end, nil)
+			d.replaceRange(e.start, e.end, nil)
 			continue
 		}
 		next := e.link
@@ -253,7 +253,7 @@ func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to 
 		if err != nil {
 			return err
 		}
-		d.splice(e.start, e.end, rendered)
+		d.replaceRange(e.start, e.end, rendered)
 	}
 	return nil
 }
@@ -267,7 +267,7 @@ func (d *Document) appendEntry(b block, l domain.Link) error {
 	if !b.isFound {
 		return d.set("links", append([]byte("links:"+d.eol), rendered...))
 	}
-	d.splice(b.end, b.end, rendered)
+	d.replaceRange(b.end, b.end, rendered)
 	return nil
 }
 
@@ -361,7 +361,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		return 0, err
 	}
 	for _, e := range edits {
-		d.splice(e.start, e.end, e.rendered)
+		d.replaceRange(e.start, e.end, e.rendered)
 	}
 	return len(edits), nil
 }
@@ -391,16 +391,16 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 		if e.address == nil {
 			continue
 		}
-		start, end, ok := d.scalarSpan(e.address)
+		start, end, ok := d.findScalarSpan(e.address)
 		if !ok {
 			continue
 		}
-		content, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
+		content, err := encodeScalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
 		// gomutants:disable-next-line BRANCH_IF reason="scalarLike encodes a scalar string to bytes.Buffer and cannot fail"
 		if err != nil {
 			return moved, err
 		}
-		d.splice(start, end, []byte(content))
+		d.replaceRange(start, end, []byte(content))
 		moved++
 	}
 	return moved, nil

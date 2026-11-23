@@ -54,7 +54,7 @@ func Pick(levels []Level, requested string) string {
 	return ""
 }
 
-// Contains reports whether levels hold the level of the name.
-func Contains(levels []Level, name string) bool {
+// HasLevel reports whether levels hold the level of the name.
+func HasLevel(levels []Level, name string) bool {
 	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
 }

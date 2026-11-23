@@ -136,7 +136,16 @@ describe("the rule on lengths", () => {
 
 describe("the rule on the window chrome", () => {
   const lint = async (file, code) => {
-    const { results } = await stylelint.lint({ code, codeFilename: path.join(REPO_ROOT, file), config, configBasedir: REPO_ROOT });
+    const { results } = await stylelint.lint({
+      code,
+      codeFilename: path.join(REPO_ROOT, file),
+      config: {
+        ...config,
+        rules: { ...config.rules, "numen/known-token": [true, { root: REPO_ROOT }] },
+        overrides: config.overrides.map((one) => (one.rules?.["numen/chrome-fixed-size"] ? { ...one, rules: { "numen/chrome-fixed-size": [true, { ...one.rules["numen/chrome-fixed-size"][1], root: REPO_ROOT }] } } : one)),
+      },
+      configBasedir: REPO_ROOT,
+    });
     return results[0].warnings.map((one) => one.rule);
   };
   const rejected = ["numen/chrome-fixed-size"];

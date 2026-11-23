@@ -146,7 +146,7 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 			t.Errorf("chunk %d still holds %x", id, got[:2])
 		}
 	}
-	if got, recorded, err := coarseRecipe(t.Context(), db.write); err != nil || !recorded || got != testRecipe {
+	if got, recorded, err := readCoarseRecipe(t.Context(), db.write); err != nil || !recorded || got != testRecipe {
 		t.Errorf("recorded recipe = %q, %v, %v", got, recorded, err)
 	}
 }
@@ -171,7 +171,7 @@ func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 
 func TestAFreshIndexContainsTheRecipeTableAndNoRecipe(t *testing.T) {
 	db := openDB(t)
-	if _, recorded, err := coarseRecipe(t.Context(), db.write); err != nil || recorded {
+	if _, recorded, err := readCoarseRecipe(t.Context(), db.write); err != nil || recorded {
 		t.Errorf("a fresh index records %v, %v", recorded, err)
 	}
 }

@@ -40,8 +40,8 @@ func (t ContentType) IsMask() bool {
 	return strings.HasSuffix(string(t), "/*")
 }
 
-// Matches reports whether the type is the given one or a mask that covers it.
-func (t ContentType) Matches(other ContentType) bool {
+// IsMatch reports whether the type is the given one or a mask that covers it.
+func (t ContentType) IsMatch(other ContentType) bool {
 	switch {
 	case t == AnyContentType:
 		return true
@@ -90,7 +90,7 @@ type ContentHandler struct {
 func ChooseHandler(of ContentType, candidates []ContentHandler) (ContentHandler, bool) {
 	var matching []ContentHandler
 	for _, one := range candidates {
-		if one.Rank == RankDefault && one.Type.Matches(of) {
+		if one.Rank == RankDefault && one.Type.IsMatch(of) {
 			matching = append(matching, one)
 		}
 	}

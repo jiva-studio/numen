@@ -26,8 +26,8 @@ const panel = (more: { deck?: string; failure?: boolean } = {}) => {
     showPanel: (up) => {
       open.value = up
     },
-    vault: () => 'one',
-    deck: () => deck.value,
+    getVault: () => 'one',
+    getDeck: () => deck.value,
     getDeckNeighborhood: async (vault, of) => {
       request.push({ vault, deck: of })
       if (more.failure) throw new Error('out of reach')
@@ -106,8 +106,8 @@ describe('what is read belongs to the deck', () => {
       showPanel: (up) => {
         open.value = up
       },
-      vault: () => 'one',
-      deck: () => deck.value,
+      getVault: () => 'one',
+      getDeck: () => deck.value,
       getDeckNeighborhood: async (_vault, of) =>
         new Promise((then) =>
           pendingCallbacks.push(() => then({ notes: [createNeighbor({ path: of })], unread: 0 })),
@@ -139,8 +139,8 @@ describe('what is read belongs to the deck', () => {
       showPanel: (up) => {
         open.value = up
       },
-      vault: () => 'one',
-      deck: () => deck.value,
+      getVault: () => 'one',
+      getDeck: () => deck.value,
       getDeckNeighborhood: async (_vault, of) =>
         new Promise((then) =>
           pendingCallbacks.push(() => then({ notes: [createNeighbor({ path: of })], unread: 0 })),
@@ -214,8 +214,8 @@ describe('the asking', () => {
     const target = useNotesPanel({
       open: () => true,
       showPanel: () => undefined,
-      vault: () => 'one',
-      deck: () => deck.value,
+      getVault: () => 'one',
+      getDeck: () => deck.value,
       getDeckNeighborhood: (_vault, of) =>
         new Promise((then, fail) =>
           pendingRequests.push({
@@ -294,8 +294,8 @@ describe('the links of a note read in the panel', () => {
     const target = useNotesPanel({
       open: () => true,
       showPanel: () => undefined,
-      vault: () => 'one',
-      deck: () => 'decks/Words.md',
+      getVault: () => 'one',
+      getDeck: () => 'decks/Words.md',
       getDeckNeighborhood: async () => ({ notes: [createNeighbor({ body })], unread: 0 }),
       showNotice: () => undefined,
       resolveLinks: async (text) => {
@@ -329,8 +329,8 @@ describe('the links of a note read in the panel', () => {
     const target = useNotesPanel({
       open: () => true,
       showPanel: () => undefined,
-      vault: () => 'one',
-      deck: () => 'decks/Words.md',
+      getVault: () => 'one',
+      getDeck: () => 'decks/Words.md',
       getDeckNeighborhood: async () => ({ notes: [createNeighbor()], unread: 0 }),
       showNotice: () => undefined,
       resolveLinks: async () => [{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }],

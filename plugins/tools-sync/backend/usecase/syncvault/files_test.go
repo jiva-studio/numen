@@ -532,7 +532,7 @@ func TestSyncVault_DeletesAStagedFileNoDownloadNamesAtTheStartOfAPassEvenWhenThe
 	sync(t, p.a, source)
 	p.afterDelay()
 	sync(t, p.a, source)
-	p.a.Vaults.Store().With(source).File("0badc0de.part", []byte("left behind"))
+	p.a.Vaults.Store().With(source).WriteFile("0badc0de.part", []byte("left behind"))
 
 	sync(t, p.a, source)
 

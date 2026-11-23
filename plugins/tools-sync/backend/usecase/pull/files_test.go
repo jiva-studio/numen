@@ -125,7 +125,9 @@ func TestPullChanges_ReplacesAFileThatEqualsItsBaseWithABaselineOfWhatItSaw(t *t
 func TestPullChanges_RaisesTheIntegrityItemAndStopsThePositionBeforeTheFileWhenTheHostFindsAnotherHash(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
-	spy.BeforePlace(func(call synctest.PlaceCall) { p.b.Vaults.Store().With(target).File(call.Name, []byte("tampered")) })
+	spy.BeforePlace(func(call synctest.PlaceCall) {
+		p.b.Vaults.Store().With(target).WriteFile(call.Name, []byte("tampered"))
+	})
 	p.push(t, pdf, pdfText, nil)
 	head := p.a.ReadChanges(t, p.vault.ID)[0]
 
@@ -165,7 +167,7 @@ func TestPullChanges_RaisesTheIntegrityItemForABlobThatIsNotTheOneOfItsRevision(
 
 func TestPullChanges_DeletesAStagedFileNoDownloadNamesAtItsStart(t *testing.T) {
 	p := newPair(t)
-	p.b.Vaults.Store().With(target).File("0badc0de.part", []byte("left behind"))
+	p.b.Vaults.Store().With(target).WriteFile("0badc0de.part", []byte("left behind"))
 
 	p.pull(t, trustAll)
 

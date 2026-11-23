@@ -47,7 +47,7 @@ const objections = useObjection(
 )
 
 /** The message for a name that cannot be used, empty while it can. */
-const says = useObjectionMessage(objections, () => props.words.templateObjection)
+const says = useObjectionMessage(objections, () => props.words.describeTemplateObjection)
 </script>
 
 <template>

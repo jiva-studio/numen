@@ -17,7 +17,7 @@ const setup = () => {
   const writeMessage = vi.fn()
   const start = createPluginStart({
     pluginLoader: pluginLoader as unknown as PluginLoader,
-    getPlugins: () => plugins.value,
+    listPlugins: () => plugins.value,
     waitForDeclaredCommands: () => Promise.resolve(),
     writeMessage,
   })

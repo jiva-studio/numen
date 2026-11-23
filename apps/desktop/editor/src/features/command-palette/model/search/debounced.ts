@@ -21,9 +21,9 @@ export interface DebouncedSearchOptions {
 /** What a typed text evaluates to. */
 export interface DebouncedSearchSteps {
   /** The text holds nothing to ask. */
-  blank(): void
+  handleBlank(): void
   /** The text will be searched once the pause ends. */
-  pending?(): void
+  markPending?(): void
   /** The pause ended with this text still the latest. */
   run(query: string, mine: InFlightRequest): Promise<void>
 }
@@ -38,8 +38,8 @@ export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const search = async (text: string, steps: DebouncedSearchSteps): Promise<void> => {
     const mine = guard.acquireRequest()
     const query = text.trim()
-    if (!query) return steps.blank()
-    steps.pending?.()
+    if (!query) return steps.handleBlank()
+    steps.markPending?.()
     await wait(SEARCH_DEBOUNCE_MS)
     if (!mine.isCurrent) return
     await steps.run(query, mine)

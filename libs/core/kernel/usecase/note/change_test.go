@@ -13,9 +13,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -34,10 +34,10 @@ type changeFixture struct {
 func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
-	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+	refresh := indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
-		Ledger: vaults.NewLedger(),
+		Ledger: indexing.NewLedger(),
 	})
 
 	return changeFixture{
@@ -213,7 +213,7 @@ func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
 		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
 	}
-	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 
 	// The note answers to the name it is filed under now, wherever a link
 	// naming it is written.
-	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -440,7 +440,7 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
+	pos, err := c.newEditLinks().SetLink(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
 		To: domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, Role: domain.RoleRef})
 	if err != nil {
 		t.Fatal(err)

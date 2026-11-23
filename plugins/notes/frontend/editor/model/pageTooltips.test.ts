@@ -4,7 +4,7 @@ import { EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { theme } from '../lib/config/theme'
 import { StyleModule } from 'style-mod'
-import { pageTooltips } from './pageTooltips'
+import { createPageTooltips } from './pageTooltips'
 
 const views: EditorView[] = []
 
@@ -20,7 +20,7 @@ function open(parent: HTMLElement): EditorView {
       doc: 'one',
       extensions: [
         theme,
-        pageTooltips(),
+        createPageTooltips(),
         autocompletion(),
         EditorState.languageData.of(() => [{ autocomplete: source }]),
       ],

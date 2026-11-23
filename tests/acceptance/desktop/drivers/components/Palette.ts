@@ -6,7 +6,7 @@ export class Palette {
   constructor(private readonly host: Host) {}
 
   /** The field the palette is typed into, found by its marker. */
-  field(): Locator {
+  getField(): Locator {
     return this.host.page.locator('input[data-palette="field"]').first()
   }
 
@@ -16,37 +16,37 @@ export class Palette {
   }
 
   /** The text field that asks for a name inside the file tree. */
-  treeField(): Locator {
+  getTreeField(): Locator {
     return this.host.page.getByRole('tree').getByRole('textbox')
   }
 
   /** The command the open palette has taken, shown before its question. */
-  crumb(): Locator {
+  getCrumb(): Locator {
     return this.host.page.locator('[data-palette="crumb"]')
   }
 
   /** The name cell of the rows whose name matches the pattern. */
-  nameCell(pattern: RegExp): Locator {
+  getNameCell(pattern: RegExp): Locator {
     return this.host.page.locator('[data-palette="name"]', { hasText: pattern })
   }
 
   /** All rows of the open palette. */
-  rows(): Locator {
+  getRows(): Locator {
     return this.host.page.getByRole('option')
   }
 
   /** The rows whose name matches the pattern. */
-  rowNamed(pattern: RegExp): Locator {
-    return this.rows().filter({ has: this.nameCell(pattern) })
+  getRowNamed(pattern: RegExp): Locator {
+    return this.getRows().filter({ has: this.getNameCell(pattern) })
   }
 
   /** The row whose accessible name matches the pattern. */
-  optionNamed(name: RegExp): Locator {
+  getOptionNamed(name: RegExp): Locator {
     return this.host.page.getByRole('option', { name })
   }
 
   /** The list of several items the palette asks for, which checks its rows. */
-  multipleList(): Locator {
+  getMultipleList(): Locator {
     return this.host.page.locator(
       '[data-palette="panel"] [role="listbox"][aria-multiselectable="true"]',
     )
@@ -61,17 +61,17 @@ export class Palette {
   }
 
   /** The groups of the open list that have not answered yet. */
-  busyGroups(): Locator {
+  getBusyGroups(): Locator {
     return this.host.page.getByRole('listbox').locator('[role="group"][aria-busy="true"]')
   }
 
   /** Closes the palette or the search when it is open, as it covers the window and takes the clicks. */
   async close(): Promise<void> {
-    const field = this.field()
-    for (let attempt = 0; attempt < 3 && (await field.isVisible()); attempt += 1) {
+    const getField = this.getField()
+    for (let attempt = 0; attempt < 3 && (await getField.isVisible()); attempt += 1) {
       await this.host.page.keyboard.press('Escape')
       await this.host.page.waitForTimeout(100)
     }
-    await expect(field).toBeHidden()
+    await expect(getField).toBeHidden()
   }
 }

@@ -29,7 +29,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 				pdf.Options{
 					Report:           func(what string, err error) { t.Errorf("%s: %v", what, err) },
 					CompilationCache: nil,
-					AfterFunc:        nil,
+					StartTimer:       nil,
 					Workers:          0,
 					IdleWorkers:      0,
 				},

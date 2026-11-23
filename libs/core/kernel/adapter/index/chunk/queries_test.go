@@ -59,7 +59,7 @@ func seedVector(seed byte) []float32 {
 }
 
 func seedBytes(seed byte) []byte {
-	q := vector.Bytes(vector.Normalize(seedVector(seed)))
+	q := vector.QuantizeBytes(vector.Normalize(seedVector(seed)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -224,11 +224,11 @@ func closed(t *testing.T) chunkQueries {
 
 func TestAChunkIdentifierIsTheDecimalOfItsRow(t *testing.T) {
 	for _, row := range []int64{0, 7, 10, 19, 4611686018427387905, math.MaxInt64} {
-		id := chunk.ID(row)
+		id := chunk.FormatID(row)
 		if string(id) != strconv.FormatInt(row, 10) {
 			t.Errorf("row %d is spelled %q", row, id)
 		}
-		back, err := chunk.Row(id)
+		back, err := chunk.ParseRow(id)
 		if err != nil || back != row {
 			t.Errorf("%q names row %d, %v; want %d", id, back, err, row)
 		}
@@ -237,7 +237,7 @@ func TestAChunkIdentifierIsTheDecimalOfItsRow(t *testing.T) {
 
 func TestAnIdentifierThatIsNotDecimalNamesNoChunk(t *testing.T) {
 	for _, id := range []domain.ChunkID{"", "seven", "1a", "0x10", "9223372036854775808", "1 2"} {
-		row, err := chunk.Row(id)
+		row, err := chunk.ParseRow(id)
 		if err == nil {
 			t.Errorf("%q names row %d", id, row)
 			continue
@@ -394,7 +394,7 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 			p.FileHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.PlaceLabel != "chapter 4" {
 			t.Errorf("a hit is %+v, want the large chunk of the book at 100 for 100 in chapter 4", p)
 		}
-		row, err := chunk.Row(p.ChunkID)
+		row, err := chunk.ParseRow(p.ChunkID)
 		if err != nil || row <= 0 {
 			t.Errorf("a hit is named %q: %d, %v", p.ChunkID, row, err)
 		}
@@ -939,7 +939,7 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	}
 }
 
-func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
+func TestAWalkOfUnembeddedChunksInPagesVisitsGetDistinctPaths(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century + 1, large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)

@@ -10,11 +10,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/text"
 )
 
-// Markup reads one spine document again, as elements and not as text.
+// ParseMarkup reads one spine document again, as elements and not as text.
 //
 // A document the book was not read from is not one to ask for: what a book holds
 // beside its spine is not part of it.
-func (b *Book) Markup(docPath string) (*Markup, error) {
+func (b *Book) ParseMarkup(docPath string) (*Markup, error) {
 	doc, ok := b.documents[docPath]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)

@@ -18,7 +18,7 @@ import (
 func TestPdfServerVaultBoundary(t *testing.T) {
 	outsideDir := t.TempDir()
 
-	files := hosttest.OnDisk(t, "vault", map[string]string{
+	files := hosttest.CreateOnDisk(t, "vault", map[string]string{
 		"inside.pdf": "%PDF-1.4 dummy",
 		"a..b.pdf":   "%PDF-1.4 dummy",
 	})

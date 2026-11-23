@@ -15,9 +15,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
-// Package bundles the files a plugin ships (manifest.json, bin, dist and the theme stylesheets the
+// BuildPackage bundles the files a plugin ships (manifest.json, bin, dist and the theme stylesheets the
 // manifest declares) into a distributable zip archive.
-func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
+func BuildPackage(targetPath, outArchive string, stdout io.Writer) (string, error) {
 	manifestPath, pluginDir, err := resolveManifestPath(targetPath)
 	if err != nil {
 		return "", err

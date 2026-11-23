@@ -37,7 +37,7 @@ type trashLinks struct {
 	requested *[]string
 }
 
-func (l trashLinks) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (l trashLinks) ListBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	*l.requested = append(*l.requested, to)
 	return l.pointing[to], l.err
 }

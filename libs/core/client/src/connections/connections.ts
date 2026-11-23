@@ -12,7 +12,7 @@ import {
   type ProviderConnection,
   type ProviderConnectionType,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '@numen/result'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** A value a field of a connection holds. */
 export type ConnectionValue = string | number | boolean
@@ -112,19 +112,16 @@ export interface ConnectionChange extends Omit<ConnectionDraft, 'typeId'> {
 
 /** Why the core did not do what a call asked. */
 export type ConnectionErrorCode =
-  | 'not_found'
-  | 'name_taken'
-  | 'invalid_field'
-  | 'type_unavailable'
-  | 'key_store_failed'
-  | 'stale_revision'
-  | 'provider_unavailable'
+  | 'notFound'
+  | 'nameTaken'
+  | 'invalidField'
+  | 'typeUnavailable'
+  | 'keyStoreFailed'
+  | 'staleRevision'
+  | 'providerUnavailable'
 
 /** A served refusal with the reason the core gives. */
-export interface ConnectionFailure {
-  readonly errorCode: ConnectionErrorCode
-  readonly detail: string
-}
+export type ConnectionFailure = Failure<ConnectionErrorCode>
 
 /** The calls of ProviderConnectionService the connections are managed through. */
 export type ConnectionRpc = Pick<
@@ -267,19 +264,19 @@ const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode |
     case ProviderConnectionErrorCode.UNSPECIFIED:
       return undefined
     case ProviderConnectionErrorCode.NOT_FOUND:
-      return 'not_found'
+      return 'notFound'
     case ProviderConnectionErrorCode.NAME_TAKEN:
-      return 'name_taken'
+      return 'nameTaken'
     case ProviderConnectionErrorCode.INVALID_FIELD:
-      return 'invalid_field'
+      return 'invalidField'
     case ProviderConnectionErrorCode.TYPE_UNAVAILABLE:
-      return 'type_unavailable'
+      return 'typeUnavailable'
     case ProviderConnectionErrorCode.KEY_STORE_FAILED:
-      return 'key_store_failed'
+      return 'keyStoreFailed'
     case ProviderConnectionErrorCode.STALE_REVISION:
-      return 'stale_revision'
+      return 'staleRevision'
     case ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE:
-      return 'provider_unavailable'
+      return 'providerUnavailable'
   }
 }
 
@@ -287,8 +284,8 @@ const readFailure = (
   code: ProviderConnectionErrorCode,
   detail: string,
 ): ConnectionFailure | undefined => {
-  const errorCode = readErrorCode(code)
-  return errorCode === undefined ? undefined : { errorCode, detail }
+  const error = readErrorCode(code)
+  return error === undefined ? undefined : { error, message: detail }
 }
 
 const readAnswer = (answer: {
@@ -299,7 +296,7 @@ const readAnswer = (answer: {
   const failure = readFailure(answer.error, answer.detail)
   if (failure) return asFailure(failure)
   if (answer.connection === undefined) {
-    return asFailure({ errorCode: 'not_found', detail: 'The core returned no connection.' })
+    return asFailure({ error: 'notFound', message: 'The core returned no connection.' })
   }
   return asValue(readConnection(answer.connection))
 }

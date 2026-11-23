@@ -2,8 +2,8 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // vaultIndex is an open index database with the state that the vaults read into it share. Each use case
@@ -11,7 +11,7 @@ import (
 type vaultIndex struct {
 	*index.DB
 	File     string
-	Walks    vault.Walks
-	Ledger   *vault.Ledger
+	Walks    indexing.Walks
+	Ledger   *indexing.Ledger
 	Versions textversion.VersionStores
 }

@@ -62,7 +62,7 @@ const passed = computed(() => Object.keys(slots) as BranchSlotName[])
       @choose="workspace.choose"
       @close="workspace.close"
       @press="workspace.startTabPress"
-      @menu="workspace.menu"
+      @menu="workspace.openMenu"
       @show="workspace.show"
       @claim="workspace.claim(node.id)"
     >

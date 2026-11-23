@@ -98,7 +98,7 @@ func (c addVaultCommand) Run(_ context.Context, term terminal, args []string) er
 	}
 
 	r := newReporter(term.out)
-	r.Printf("added %s\n  path %s\n  id   %s\n", v.Name, v.Path, v.ID)
+	r.WriteFormat("added %s\n  path %s\n  id   %s\n", v.Name, v.Path, v.ID)
 	return r.Err()
 }
 
@@ -125,7 +125,7 @@ func (c listVaultsCommand) Run(_ context.Context, term terminal, _ []string) err
 	}
 	r := newReporter(term.out)
 	if len(recognized) == 0 {
-		r.Println("no vaults yet — add one with: numen-cli vault add <path>")
+		r.WriteLine("no vaults yet — add one with: numen-cli vault add <path>")
 		return r.Err()
 	}
 	for _, one := range recognized {
@@ -137,7 +137,7 @@ func (c listVaultsCommand) Run(_ context.Context, term terminal, _ []string) err
 		if one.IsMissing {
 			there = "?"
 		}
-		r.Printf("%s%s %-20s %s\n  %s\n",
+		r.WriteFormat("%s%s %-20s %s\n  %s\n",
 			last, there, one.Vault.Name, one.Vault.ID, one.Vault.Path)
 	}
 	return r.Err()
@@ -167,7 +167,7 @@ func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []strin
 		return err
 	}
 	r := newReporter(term.out)
-	r.Printf("renamed %s to %s\n  the folder is still %s\n", renamed.PreviousName, renamed.Vault.Name, renamed.Vault.Path)
+	r.WriteFormat("renamed %s to %s\n  the folder is still %s\n", renamed.PreviousName, renamed.Vault.Name, renamed.Vault.Path)
 	return r.Err()
 }
 
@@ -195,7 +195,7 @@ func (c removeVaultCommand) Run(ctx context.Context, term terminal, args []strin
 		return err
 	}
 	r := newReporter(term.out)
-	r.Printf("forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
+	r.WriteFormat("forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
 		v.Name, v.Path)
 	return r.Err()
 }
@@ -251,13 +251,13 @@ func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string
 		went = fmt.Sprintf("%s went to the trash", res.Vault.Path)
 	}
 	r := newReporter(term.out)
-	r.Printf("erased %s\n  %s\n", res.Vault.Name, went)
+	r.WriteFormat("erased %s\n  %s\n", res.Vault.Name, went)
 	return r.Err()
 }
 
 func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
 	r := newReporter(out)
-	r.Printf("erase %s?\n  %s goes to the trash\n"+
+	r.WriteFormat("erase %s?\n  %s goes to the trash\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
 	if err := r.Err(); err != nil {
 		return false, err
@@ -292,6 +292,6 @@ func (c openVaultCommand) Run(_ context.Context, term terminal, args []string) e
 		return err
 	}
 	r := newReporter(term.out)
-	r.Printf("the next window opens %s\n  path %s\n", v.Name, v.Path)
+	r.WriteFormat("the next window opens %s\n  path %s\n", v.Name, v.Path)
 	return r.Err()
 }

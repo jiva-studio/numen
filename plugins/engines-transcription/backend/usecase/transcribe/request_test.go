@@ -165,11 +165,11 @@ func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFi
 	t.Helper()
 	s := &requestFixture{scene: newScene(t), ended: map[string]bool{}}
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
-	chemistry.File(chemistryLecture, chemistrySound)
+	s.vault.LinkBeside(chemistry)
+	chemistry.WriteFile(chemistryLecture, chemistrySound)
 	chemTexts := s.texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
-	chemTexts.File(chemistryLecture, []byte(chemistrySound))
+	chemTexts.WriteFile(chemistryLecture, []byte(chemistrySound))
 	s.chemistry = chemistry
 	s.chemTexts = chemTexts
 
@@ -453,7 +453,7 @@ func (s *requestFixture) putProofread(t *testing.T, source domain.TextVersion) d
 	if source != (domain.TextVersion{}) {
 		params.Source, params.InputHash = source.GetID(), source.TextHash
 	}
-	version, err := s.texts.As(proofreaderPluginID).PutVersion(t.Context(), params)
+	version, err := s.texts.UsePlugin(proofreaderPluginID).PutVersion(t.Context(), params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,8 +545,8 @@ func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
 
 func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	s := newRequestFixture(t)
-	s.chemistry.File(lecture, lectureSound)
-	s.chemTexts.File(lecture, []byte(lectureSound))
+	s.chemistry.WriteFile(lecture, lectureSound)
+	s.chemTexts.WriteFile(lecture, []byte(lectureSound))
 	s.putTranscript(t, false)
 	close(s.blocking.release)
 
@@ -683,7 +683,7 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 
 func TestTranscriptCreateRejectsNonRecording(t *testing.T) {
 	s := newRequestFixture(t)
-	s.vault.File("notes/plan.md", "# Plan\nRecord the lecture on tides.\n")
+	s.vault.WriteFile("notes/plan.md", "# Plan\nRecord the lecture on tides.\n")
 
 	_, err := s.requestWithin(t, "Lectures", "notes/plan.md")
 
@@ -969,7 +969,7 @@ func TestBackgroundStartSkipsUnchangedFailedRecording(t *testing.T) {
 func TestBackgroundStartRetriesChangedFailedRecording(t *testing.T) {
 	s := newRequestFixture(t)
 	s.runFailingInBackground(t)
-	s.vault.File(lecture, lectureSound+" edited")
+	s.vault.WriteFile(lecture, lectureSound+" edited")
 
 	if _, err := s.transcriber.StartInBackground(t.Context(), "", lecture); err != nil {
 		t.Fatal(err)

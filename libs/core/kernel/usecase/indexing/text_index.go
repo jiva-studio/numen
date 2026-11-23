@@ -44,8 +44,8 @@ type IndexDeps struct {
 	Readers vaultport.VaultReaders
 	Sources sourceport.SourceRepository
 	Records SourceRecords
-	Backlog sourceport.SourceBacklog
-	Lookup  sourceport.RemovalLookup
+	Backlog SourceBacklog
+	Lookup  RemovalLookup
 	Texts   textport.Readers
 
 	Sizes              chunking.Sizes
@@ -112,7 +112,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vault
 	if err != nil {
 		return res, err
 	}
-	return res, newCutter(u, nil, nil).source(ctx, v, on, path, u.sizes.Resolve(), &res)
+	return res, newCutter(u, nil, nil).readSource(ctx, v, on, path, u.sizes.Resolve(), &res)
 }
 
 // openVault is one vault as a cut reads it: its files and the text versions of them.

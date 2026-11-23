@@ -15,9 +15,9 @@ import (
 func openConnectionRepository(c settingsWiring) *settingsadapter.ConnectionRepository {
 	return settingsadapter.NewConnectionRepository(
 		c.SettingsFiles,
-		func() (string, error) { return settingsSettingsFile(c) },
-		func() (settingsadapter.File, error) { return readCheckedSettings(c) },
-		func() { refreshSettingEvents(c) },
+		func() (string, error) { return getSettingsFile(c) },
+		func() (settingsadapter.File, error) { return createSettingsStore(c).ReadCheckedFile() },
+		func() { getFeed(c).Refresh() },
 	)
 }
 
@@ -26,12 +26,12 @@ func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDe
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
 		Detected:    openDetection(install, exec, settingsDeps, vaultDeps),
-		Plugins:     s.Infos.GetPluginInfos,
+		ListPlugins: s.Infos.GetPluginInfos,
 		Declared:    getDeclarations(s),
-		ReadStored:  settingsStore(s).ReadUncheckedFile,
+		ReadStored:  createSettingsStore(s).ReadUncheckedFile,
 		Write:       getSettingsWriter(s),
 		Refresh:     install.Configuration.Refresh,
-		Report:      s.ErrorHandler,
+		Report:      s.HandleError,
 	})
 }
 
@@ -53,7 +53,7 @@ func openDetection(install pluginInstall, exec *PluginExecution, settingsDeps se
 		source := providerbridge.NewQuestionSource(exec.Runtime.Activator)
 		return providerbridge.NewDetection(settingsDeps.ConnectionTypes, source, vaultDeps.Clock)
 	}
-	detection.Follow(func() { refreshSettingEvents(settingsDeps) }, settingsDeps.ErrorHandler)
+	detection.Follow(func() { getFeed(settingsDeps).Refresh() }, settingsDeps.HandleError)
 	return detection
 }
 
@@ -69,13 +69,9 @@ func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settin
 		},
 		Reads: windowconnection.Reads{
 			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connection.OperationTitles](install.OperationTitles, none.OperationTitles{})),
-			RowOptions: openRowOptions(install, exec, deps),
+			RowOptions: windowconnection.NewRowOptions(openRowOptions(install, exec, deps)),
 		},
 	}
-}
-
-func openModelCalls(install pluginInstall, settingsDeps settingsWiring) connectionport.ModelCalls {
-	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 }
 
 func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices connection.ReportSetAside) {
@@ -98,13 +94,6 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 			l.RowLists = lists
 		}
 	})
-}
-
-func getConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
-	if prefs == nil || endpoints == nil {
-		return nil
-	}
-	return getForwardedCalls(prefs.Views.Types, endpoints.Endpoint)
 }
 
 func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Services) connectionport.ModelCalls {

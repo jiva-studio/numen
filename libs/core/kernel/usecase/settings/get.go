@@ -19,32 +19,32 @@ type Current struct {
 
 // Get reads every setting, the plugins and the settings the app declares.
 type Get struct {
-	read    func() (settingsdomain.Snapshot, error)
-	plugins func() []plugin.Info
-	app     func() []plugin.Setting
-	groups  func() []manifest.SettingGroup
+	read            func() (settingsdomain.Snapshot, error)
+	listPlugins     func() []plugin.Info
+	listAppSettings func() []plugin.Setting
+	listGroups      func() []manifest.SettingGroup
 }
 
 func NewGet(
 	read func() (settingsdomain.Snapshot, error),
-	plugins func() []plugin.Info,
-	app func() []plugin.Setting,
-	groups func() []manifest.SettingGroup,
+	listPlugins func() []plugin.Info,
+	listAppSettings func() []plugin.Setting,
+	listGroups func() []manifest.SettingGroup,
 ) *Get {
-	if plugins == nil {
-		plugins = func() []plugin.Info { return nil }
+	if listPlugins == nil {
+		listPlugins = func() []plugin.Info { return nil }
 	}
-	if app == nil {
-		app = func() []plugin.Setting { return nil }
+	if listAppSettings == nil {
+		listAppSettings = func() []plugin.Setting { return nil }
 	}
-	if groups == nil {
-		groups = func() []manifest.SettingGroup { return nil }
+	if listGroups == nil {
+		listGroups = func() []manifest.SettingGroup { return nil }
 	}
 	return &Get{
-		read:    read,
-		plugins: plugins,
-		app:     app,
-		groups:  groups,
+		read:            read,
+		listPlugins:     listPlugins,
+		listAppSettings: listAppSettings,
+		listGroups:      listGroups,
 	}
 }
 
@@ -53,14 +53,14 @@ func (u *Get) Execute() (Current, error) {
 	if err != nil {
 		return Current{}, err
 	}
-	pluginInfos := u.plugins()
-	app := u.app()
+	pluginInfos := u.listPlugins()
+	app := u.listAppSettings()
 	return Current{
 		Written:   snapshot.Content,
 		Version:   snapshot.Version,
 		Path:      snapshot.Path,
 		Plugins:   pluginInfos,
 		App:       app,
-		AppGroups: u.groups(),
+		AppGroups: u.listGroups(),
 	}, nil
 }

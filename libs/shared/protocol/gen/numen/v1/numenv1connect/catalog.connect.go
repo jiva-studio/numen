@@ -51,9 +51,7 @@ const (
 type CatalogServiceClient interface {
 	// ListCatalog lists the entries of every source, one for each plugin id.
 	ListCatalog(context.Context, *connect.Request[v1.ListCatalogRequest]) (*connect.Response[v1.ListCatalogResponse], error)
-	// GetCatalogEntry returns the entry of one plugin.
 	GetCatalogEntry(context.Context, *connect.Request[v1.GetCatalogEntryRequest]) (*connect.Response[v1.GetCatalogEntryResponse], error)
-	// FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
 	FindCatalogEntryByTabKind(context.Context, *connect.Request[v1.FindCatalogEntryByTabKindRequest]) (*connect.Response[v1.FindCatalogEntryByTabKindResponse], error)
 	// GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
 	// enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin
@@ -131,9 +129,7 @@ func (c *catalogServiceClient) GetCatalogReadme(ctx context.Context, req *connec
 type CatalogServiceHandler interface {
 	// ListCatalog lists the entries of every source, one for each plugin id.
 	ListCatalog(context.Context, *connect.Request[v1.ListCatalogRequest]) (*connect.Response[v1.ListCatalogResponse], error)
-	// GetCatalogEntry returns the entry of one plugin.
 	GetCatalogEntry(context.Context, *connect.Request[v1.GetCatalogEntryRequest]) (*connect.Response[v1.GetCatalogEntryResponse], error)
-	// FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
 	FindCatalogEntryByTabKind(context.Context, *connect.Request[v1.FindCatalogEntryByTabKindRequest]) (*connect.Response[v1.FindCatalogEntryByTabKindResponse], error)
 	// GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
 	// enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin

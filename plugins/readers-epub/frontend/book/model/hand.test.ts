@@ -26,7 +26,7 @@ const setUp = (edge = 0) => {
   const hand = useBookPointer({
     area: areaRef,
     paper: paperRef,
-    turn,
+    navigatePage: turn,
     getEdge: () => edge,
   })
   return { area, areaRef, paper, paperRef, turn, hand }

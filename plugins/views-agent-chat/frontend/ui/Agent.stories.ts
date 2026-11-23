@@ -10,12 +10,12 @@ import { expect, userEvent, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
 import type { Turn } from '../types'
-import { frameStory } from '../fixtures/frame'
+import { decorateFrame } from '../fixtures/frame'
 import { LONG, MULTILINE, RUSSIAN } from '../fixtures/prose'
 
 const meta = {
   title: 'Chat/Agent',
-  decorators: [frameStory],
+  decorators: [decorateFrame],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 

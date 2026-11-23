@@ -125,7 +125,7 @@ func newAccountHost(t *testing.T) accountHost {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return accountHost{operations: operations, callers: fake, client: func(token string) numenv1connect.HostAccountServiceClient {
-		return numenv1connect.NewHostAccountServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+		return numenv1connect.NewHostAccountServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 	}}
 }
 

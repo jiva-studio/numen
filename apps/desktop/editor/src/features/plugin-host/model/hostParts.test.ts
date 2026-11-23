@@ -19,7 +19,7 @@ import {
 import { createHostPort } from './hostPort'
 import {
   createPluginSettingsAccessor,
-  createRowChangeSubscriber,
+  createRowChangeWatcher,
   createWindowPluginStatus,
 } from './pluginSettings'
 import { createNoteKindReader } from './window/createNoteKindReader'
@@ -169,7 +169,7 @@ describe('the facts of the window the conditions read', () => {
 describe('the kind of the note at a path', () => {
   it('is its type and properties, and no type where the vault files none', async () => {
     const read = createNoteKindReader({
-      fileKinds: (paths: readonly string[]) =>
+      readFileKinds: (paths: readonly string[]) =>
         Promise.resolve(
           new Map(
             paths.includes('talk.md')
@@ -317,7 +317,7 @@ describe('the search menu, host parts, host port and row change subscriber', () 
     expect(status.state.isEnabled('md.on')).toBe(true)
 
     const onRowChange = vi.fn()
-    createRowChangeSubscriber(rest as never)(onRowChange)
+    createRowChangeWatcher(rest as never)(onRowChange)
     const accessor = createPluginSettingsAccessor(rest as never, vi.fn())
     expect(accessor.getSetting('md.off', 'enabled')).toBe(false)
 

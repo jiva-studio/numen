@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/vue3-vite'
-import { faults } from './reach'
+import { findFaults } from './reach'
 
 /**
  * The story a corpus proves its own walk against, and what the walk must find
@@ -42,7 +42,7 @@ export const reachCheck =
         `the keyboard walk found ${found.stops.length} stops in ${proof.story}, where it must find ${proof.stops}`,
       )
 
-    const wrong = faults(found, Boolean(transcriptText?.keeps))
+    const wrong = findFaults(found, Boolean(transcriptText?.keeps))
     if (wrong.length)
       throw new Error(`${context.id}: ${wrong.join('; ')}${found.settled ? '' : ` — ${RESTLESS}`}`)
   }

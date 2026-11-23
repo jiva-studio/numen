@@ -14,14 +14,14 @@ describe('the scroll gate', () => {
   it('takes a scroll after input as the person’s', () => {
     const gate = createScrollGate()
     gate.reset()
-    gate.noteInput()
+    gate.recordInput()
     expect(gate.isUserScroll()).toBe(true)
   })
 
   it('forgets the input of an earlier opening when reset', () => {
     const gate = createScrollGate()
     gate.reset()
-    gate.noteInput()
+    gate.recordInput()
     gate.reset()
     expect(gate.isUserScroll()).toBe(false)
   })

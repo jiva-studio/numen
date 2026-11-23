@@ -25,7 +25,7 @@ func TestFenceDetectionIsTheSameForCRLFAndLF(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			crlf := strings.ReplaceAll(lf, "\n", "\r\n")
 
-			lfHeadings, crlfHeadings := headings([]byte(lf)), headings([]byte(crlf))
+			lfHeadings, crlfHeadings := findHeadings([]byte(lf)), findHeadings([]byte(crlf))
 			if len(lfHeadings) != len(crlfHeadings) {
 				t.Fatalf("LF has %d headings, CRLF has %d", len(lfHeadings), len(crlfHeadings))
 			}
@@ -36,7 +36,7 @@ func TestFenceDetectionIsTheSameForCRLFAndLF(t *testing.T) {
 					t.Errorf("heading %d differs: %+v and %+v", i, lfHeadings[i], crlfHeadings[i])
 				}
 			}
-			if got, want := bodyLinks([]byte(crlf)), bodyLinks([]byte(lf)); !reflect.DeepEqual(got, want) {
+			if got, want := getBodyLinks([]byte(crlf)), getBodyLinks([]byte(lf)); !reflect.DeepEqual(got, want) {
 				t.Errorf("CRLF links %v, LF links %v", got, want)
 			}
 		})
@@ -59,10 +59,10 @@ func TestHeadingsAndLinksSkipWhatAFenceContains(t *testing.T) {
 	}
 	for _, c := range cases {
 		var gotHeadings, gotLinks []string
-		for _, h := range headings([]byte(c.body)) {
+		for _, h := range findHeadings([]byte(c.body)) {
 			gotHeadings = append(gotHeadings, h.Text)
 		}
-		for _, l := range bodyLinks([]byte(c.body)) {
+		for _, l := range getBodyLinks([]byte(c.body)) {
 			gotLinks = append(gotLinks, l.Target.String())
 		}
 		if !reflect.DeepEqual(gotHeadings, c.headings) {
