@@ -213,7 +213,7 @@ export class IdentityDriver {
   }
 
   /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buy(): Promise<void> {
+  async startPurchase(): Promise<void> {
     const payment = await this.openPayment()
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
