@@ -110,7 +110,7 @@ func readBook(doc *document) (book *Book, err error) {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="readBook releases the worker and closes the document on return"
 	defer func() { err = errors.Join(err, doc.Close()) }()
 
-	book = &Book{Title: doc.readTitle(), Text: "", Pages: nil, Parts: nil, Structure: ""}
+	book = &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
 
 	var text strings.Builder
 	pages := min(doc.pages, mostPages)

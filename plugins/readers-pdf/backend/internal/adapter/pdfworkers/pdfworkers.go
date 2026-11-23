@@ -39,7 +39,7 @@ func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
 		Report: ReportError,
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
 		CompilationCache: newCompilationCache(),
-		StartTimer:        afterFunc,
+		StartTimer:       afterFunc,
 		Workers:          threads,
 		IdleWorkers:      threads,
 	})

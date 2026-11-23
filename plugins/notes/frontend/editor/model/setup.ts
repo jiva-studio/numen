@@ -174,7 +174,8 @@ const saveKeyBinding: KeyBinding = {
 }
 
 /** Markdown, which is what a document naming no language is written in. */
-export const createProseExtension = (): Extension => markdown({ extensions: GFM, codeLanguages: LANGUAGES })
+export const createProseExtension = (): Extension =>
+  markdown({ extensions: GFM, codeLanguages: LANGUAGES })
 
 /** One whole document of code: how it reads, and the face it is set in. */
 export const createCodeExtension = (support: Extension): Extension => [support, monospaced]

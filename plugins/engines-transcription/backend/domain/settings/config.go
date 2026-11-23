@@ -36,12 +36,12 @@ type ParakeetModel struct {
 // silero-vad.
 func NewDefaultConfig() Config {
 	return Config{
-		Runtime:  "",
-		Dir:      "",
-		Threads:  0,
-		Workers:  0,
+		Runtime:        "",
+		Dir:            "",
+		Threads:        0,
+		Workers:        0,
 		ReportProgress: nil,
-		Model:    GetModels()[0],
+		Model:          GetModels()[0],
 		Segmenter: SegmenterModel{
 			Name:      "silero-vad",
 			Repo:      segmenterDefault,

@@ -142,7 +142,8 @@ const addScores = (first: Score, second: Score): Score => ({
   distance: first.distance + second.distance,
 })
 
-export const computeTotalScore = (scores: readonly Score[]): Score => scores.reduce(addScores, NO_SCORE)
+export const computeTotalScore = (scores: readonly Score[]): Score =>
+  scores.reduce(addScores, NO_SCORE)
 
 function getMaxColumns(block: Block, grid: Grid): number {
   const { gap, reach, window } = grid

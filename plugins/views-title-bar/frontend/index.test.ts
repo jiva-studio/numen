@@ -17,7 +17,13 @@ import {
   type SlotViewRegistration,
 } from '@numen/plugin-sdk'
 import { activate, TITLE_BAR_VIEW } from './index'
-import { createCommand, createCommandWithoutIcon, createSeparator, submenu, view } from './testing/entries'
+import {
+  createCommand,
+  createCommandWithoutIcon,
+  createSeparator,
+  submenu,
+  view,
+} from './testing/entries'
 
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
@@ -119,7 +125,10 @@ describe('the commands of the slots', () => {
   it('draws the commands of titleBar.commands as buttons in the order of the slot', async () => {
     const { host, bar } = mountBar()
 
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [createCommand('chart.open'), createCommand('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
+      createCommand('chart.open'),
+      createCommand('map.open'),
+    ])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual([
@@ -203,7 +212,10 @@ describe('the commands of the slots', () => {
 
   it('follows a change of the entries of the slot', async () => {
     const { host, bar } = mountBar()
-    host.ui.slots.setEntries(SLOT.titleBarCommands, [createCommand('chart.open'), createCommand('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
+      createCommand('chart.open'),
+      createCommand('map.open'),
+    ])
     await nextTick()
 
     host.ui.slots.setEntries(SLOT.titleBarCommands, [createCommand('map.open')])
@@ -274,7 +286,11 @@ describe('the views of the slots', () => {
 describe('a submenu in a slot', () => {
   const placeSubmenu = async (host: MockHostServices) => {
     host.ui.slots.setEntries(SLOT.titleBarCommands, [
-      submenu('tide.new', [createCommand('chart.create'), createSeparator(1), createCommand('log.create')]),
+      submenu('tide.new', [
+        createCommand('chart.create'),
+        createSeparator(1),
+        createCommand('log.create'),
+      ]),
     ])
     await nextTick()
   }

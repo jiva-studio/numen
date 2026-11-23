@@ -12,7 +12,7 @@ import {
   type Flow,
   type Mark,
 } from './spread'
-import { countColumns } from './columnCount'
+import { countAllColumns } from './columnCount'
 import { NARROWEST, getColumnWidth, countSpreads, getColumn, getSpread } from './columnGrid'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
@@ -50,8 +50,12 @@ describe('countColumns', () => {
   })
 
   it('calculates column width subtracting gap', () => {
-    expect(getColumnWidth({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(WIDE / 2 - GAP)
-    expect(getColumnWidth({ contentWidth: 0, width: NARROW, gap: GAP, columns: 1 })).toBe(NARROW - GAP)
+    expect(getColumnWidth({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(
+      WIDE / 2 - GAP,
+    )
+    expect(getColumnWidth({ contentWidth: 0, width: NARROW, gap: GAP, columns: 1 })).toBe(
+      NARROW - GAP,
+    )
   })
 })
 
@@ -124,8 +128,8 @@ describe('countFilledColumns', () => {
 
 describe('countSpreads and columnsInAll', () => {
   it('calculates total column count from content width', () => {
-    expect(countColumns(createFlow(WIDE, 2, 10))).toBe(10)
-    expect(countColumns(createFlow(NARROW, 1, 7))).toBe(7)
+    expect(countAllColumns(createFlow(WIDE, 2, 10))).toBe(10)
+    expect(countAllColumns(createFlow(NARROW, 1, 7))).toBe(7)
   })
 
   it('converts columns to spreads based on columns per spread', () => {
@@ -147,7 +151,7 @@ describe('countSpreads and columnsInAll', () => {
 
   it('returns zero for empty content', () => {
     expect(countSpreads({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
-    expect(countColumns({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
+    expect(countAllColumns({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
   })
 
   it('returns one spread for single-line content', () => {
@@ -343,7 +347,7 @@ describe('createPages', () => {
       x: column * (getColumnWidth(flow) + GAP),
     }))
 
-  const marks = createMarks(countColumns(flow))
+  const marks = createMarks(countAllColumns(flow))
   const here = marks.length
   const perColumn = (document.end - document.start) / here
   const before = Math.round((document.start - book.start) / perColumn)
@@ -432,7 +436,7 @@ describe('zero columns layout', () => {
   })
 
   it('evaluates to zero columns and zero spreads when dimensions are zero', () => {
-    expect(countColumns({ contentWidth: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
+    expect(countAllColumns({ contentWidth: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
     expect(countSpreads({ contentWidth: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
   })
 })

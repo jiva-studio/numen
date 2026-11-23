@@ -58,20 +58,20 @@ type Settings struct {
 // Dependencies are the notes of the vaults, the runner of the searches, the settings at the time of a call,
 // the clock that stamps the id of a new note and the entropy of its random bits.
 type Dependencies struct {
-	Open     func(id domain.VaultID) ports.Notes
-	Runner   Runner
+	Open        func(id domain.VaultID) ports.Notes
+	Runner      Runner
 	GetSettings func() Settings
-	Clock    ports.Clock
-	Entropy  ports.Entropy
+	Clock       ports.Clock
+	Entropy     ports.Entropy
 }
 
 // UseCase writes saved search notes.
 type UseCase struct {
-	open     func(id domain.VaultID) ports.Notes
-	runner   Runner
+	open        func(id domain.VaultID) ports.Notes
+	runner      Runner
 	getSettings func() Settings
-	clock    ports.Clock
-	entropy  ports.Entropy
+	clock       ports.Clock
+	entropy     ports.Entropy
 }
 
 // New returns the use case over the dependencies.

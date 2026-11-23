@@ -11,7 +11,7 @@ import (
 func TestADetectionAnswerReleasesTheProcess(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	host := processtest.NewHost(t)
-	caller := llmtest.NewReleasingCaller(newTestAgent(t, nil).BuildProvider(), connection.Call{Type: "claude-code"}, host.NewClient(t))
+	caller := llmtest.NewReleasingCaller(newTestAgent(t, nil).Provider(), connection.Call{Type: "claude-code"}, host.NewClient(t))
 
 	frames, err := caller.Call(t.Context(), connection.OperationDetected, nil, connection.PriorityInteractive)
 	if err != nil {

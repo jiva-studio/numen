@@ -110,7 +110,11 @@ export function getSpreadStart(flow: Flow, spread: number): number {
 /**
  * Returns the byte offset of the first mark in a spread, or undefined if empty.
  */
-export function findFirstMark(marks: readonly Mark[], flow: Flow, spread: number): number | undefined {
+export function findFirstMark(
+  marks: readonly Mark[],
+  flow: Flow,
+  spread: number,
+): number | undefined {
   for (const mark of marks) {
     if (getSpread(flow, mark.x) === spread) return mark.at
   }

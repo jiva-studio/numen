@@ -60,9 +60,9 @@ type Folder interface {
 // the text is stored in, the text versions it is reported to, the queue it runs in, and the documents
 // it reads pages of.
 type Host struct {
-	GetVault    func(domain.VaultID) Files
+	GetVault  func(domain.VaultID) Files
 	Store     func(domain.VaultID) Folder
-	GetTexts     func(domain.VaultID) host.TextVersions
+	GetTexts  func(domain.VaultID) host.TextVersions
 	Queue     host.Queue
 	Documents Documents
 	Report    func(what string, err error)

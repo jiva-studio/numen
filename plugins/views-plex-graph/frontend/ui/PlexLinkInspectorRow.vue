@@ -30,7 +30,10 @@ const labelFieldId = useId()
 const directionWords = computed(() => {
   const getDirectionName = (direction: LinkDirection) =>
     words.direction[direction](props.firstTitle, props.secondTitle)
-  return words.directionButton(getDirectionName(props.direction), getDirectionName(props.nextDirection))
+  return words.directionButton(
+    getDirectionName(props.direction),
+    getDirectionName(props.nextDirection),
+  )
 })
 
 /* -------------------------------- Handlers -------------------------------- */

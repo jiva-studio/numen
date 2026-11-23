@@ -54,9 +54,9 @@ func (a *App) Mount(s *server.Server) error {
 	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML, fetch), env)
 	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }
 	auto, err := mount(s, recognition.Host{
-		GetVault:    func(id domain.VaultID) recognition.Files { return vault.With(id) },
+		GetVault:  func(id domain.VaultID) recognition.Files { return vault.With(id) },
 		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
-		GetTexts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		GetTexts:  func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:     queue,
 		Documents: document.NewCachedReader(),
 		Report:    env.ReportError,

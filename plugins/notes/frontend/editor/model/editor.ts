@@ -66,14 +66,19 @@ export function useEditor(options: EditorStateOptions) {
   let view: EditorView | null = null
   let lastEmitted: string | null = null
 
-  const readSoftWrap = () => (options.shouldSoftWrap ? options.shouldSoftWrap() : options.props.softWrap)
+  const readSoftWrap = () =>
+    options.shouldSoftWrap ? options.shouldSoftWrap() : options.props.softWrap
   const readLineNumbers = () =>
     options.shouldShowLineNumbers ? options.shouldShowLineNumbers() : options.props.lineNumbers
   const readTabSize = () => (options.getTabSize ? options.getTabSize() : options.props.tabSize)
 
   function setLanguage(name: string, support: LanguageSupport | null): void {
     if (!view || name !== options.props.language) return
-    view.dispatch({ effects: languageCompartment.reconfigure(support ? createCodeExtension(support) : createProseExtension()) })
+    view.dispatch({
+      effects: languageCompartment.reconfigure(
+        support ? createCodeExtension(support) : createProseExtension(),
+      ),
+    })
   }
 
   /** Loads the language pack of the name; a pack that fails to load leaves the document plain. */
@@ -137,7 +142,10 @@ export function useEditor(options: EditorStateOptions) {
 
   watch(
     () => options.props.isLive,
-    (on) => view?.dispatch({ effects: previewCompartment.reconfigure(createPreviewExtension(on ?? true)) }),
+    (on) =>
+      view?.dispatch({
+        effects: previewCompartment.reconfigure(createPreviewExtension(on ?? true)),
+      }),
   )
 
   watch(

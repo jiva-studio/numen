@@ -48,7 +48,9 @@ export const SUMMARY: Summary = {
 
 const ok = <T>(value: T): Result<T, ApiError> => ({ ok: true, value })
 
-export const createTask = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'text'>): Task => ({
+export const createTask = (
+  overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'text'>,
+): Task => ({
   proseLine: overrides.line,
   raw: `- [ ] ${overrides.text}`,
   status: 'open',

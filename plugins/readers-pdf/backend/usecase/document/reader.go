@@ -24,9 +24,9 @@ var ErrClose = errors.New("close pdf")
 // Reader reads files from the vault a call names, on the workers, and text versions from the same
 // vault.
 type Reader struct {
-	getFiles   func(domain.VaultID) host.FileReader
-	getTexts   func(domain.VaultID) LiveTexts
-	workers *pdf.Workers
+	getFiles func(domain.VaultID) host.FileReader
+	getTexts func(domain.VaultID) LiveTexts
+	workers  *pdf.Workers
 }
 
 // NewReader returns a Reader that reads files from vaults on the workers, and text versions from

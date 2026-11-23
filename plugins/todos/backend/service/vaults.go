@@ -20,8 +20,8 @@ var (
 // keeps, and refuses a call that names another vault or none.
 type Vaults struct {
 	getShownVault func(ctx context.Context) (domain.VaultID, error)
-	tasks *index.Index
-	scope tasktools.Scope
+	tasks         *index.Index
+	scope         tasktools.Scope
 }
 
 // NewVaults returns the vaults of the index; shown tells which vault the index holds.

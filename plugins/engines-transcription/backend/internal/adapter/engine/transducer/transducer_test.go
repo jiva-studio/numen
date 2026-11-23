@@ -58,8 +58,8 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
 	visited := 0
 	response, err := Decoder{
-		Frames:    4,
-		Blank:     blank,
+		Frames:       4,
+		Blank:        blank,
 		RunEncoder:   func(int, []float32) []float32 { visited++; return nil },
 		RunPredictor: func(int) ([]float32, error) { return nil, nil },
 		RunJoint: func([]float32, []float32) ([]float32, error) {
@@ -79,8 +79,8 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 
 func TestDecode_ErrorsOnNarrowJoiner(t *testing.T) {
 	_, err := Decoder{
-		Frames:    1,
-		Blank:     8192,
+		Frames:       1,
+		Blank:        8192,
 		RunEncoder:   func(int, []float32) []float32 { return nil },
 		RunPredictor: func(int) ([]float32, error) { return nil, nil },
 		RunJoint: func([]float32, []float32) ([]float32, error) {
@@ -95,8 +95,8 @@ func TestDecode_ErrorsOnNarrowJoiner(t *testing.T) {
 func TestDecode_ErrorsOnJoinerWithoutStepScores(t *testing.T) {
 	const blank = 3
 	_, err := Decoder{
-		Frames:    1,
-		Blank:     blank,
+		Frames:       1,
+		Blank:        blank,
 		RunEncoder:   func(int, []float32) []float32 { return nil },
 		RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
 		RunJoint: func([]float32, []float32) ([]float32, error) {
@@ -129,9 +129,9 @@ func TestDecodeErrors(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		_, err := Decoder{
-			Frames:    2,
-			Blank:     blank,
-			Encoded:   1,
+			Frames:       2,
+			Blank:        blank,
+			Encoded:      1,
 			RunEncoder:   func(int, []float32) []float32 { return nil },
 			RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
 			RunJoint: func(_, _ []float32) ([]float32, error) {
@@ -145,9 +145,9 @@ func TestDecodeErrors(t *testing.T) {
 
 	t.Run("predictor error during decoding", func(t *testing.T) {
 		_, err := Decoder{
-			Frames:  2,
-			Blank:   blank,
-			Encoded: 1,
+			Frames:     2,
+			Blank:      blank,
+			Encoded:    1,
 			RunEncoder: func(int, []float32) []float32 { return nil },
 			RunPredictor: func(token int) ([]float32, error) {
 				if token == 1 {
@@ -166,9 +166,9 @@ func TestDecodeErrors(t *testing.T) {
 
 	t.Run("joiner error", func(t *testing.T) {
 		_, err := Decoder{
-			Frames:    2,
-			Blank:     blank,
-			Encoded:   1,
+			Frames:       2,
+			Blank:        blank,
+			Encoded:      1,
 			RunEncoder:   func(int, []float32) []float32 { return nil },
 			RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
 			RunJoint: func(_, _ []float32) ([]float32, error) {

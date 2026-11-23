@@ -16,12 +16,12 @@ const SettingAutomatic = "recognizeAutomatically"
 // onFilesChanged event of the vault, and over the shown vault when the setting is first read on and
 // when it is turned on.
 type Automatic struct {
-	follower *Follower
-	getShownVault    func(ctx context.Context) (domain.VaultID, error)
-	report   func(what string, err error)
-	isOn     atomic.Bool
-	closing  chan struct{}
-	wg       sync.WaitGroup
+	follower      *Follower
+	getShownVault func(ctx context.Context) (domain.VaultID, error)
+	report        func(what string, err error)
+	isOn          atomic.Bool
+	closing       chan struct{}
+	wg            sync.WaitGroup
 }
 
 // NewAutomatic returns the automatic runs of the follower, over the vault shown reads when the setting

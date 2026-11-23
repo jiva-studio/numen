@@ -50,9 +50,9 @@ type ProbeResult struct {
 // Host is the part of the host the floors work through: the search index, the notes of the vault and
 // the records the plugin keeps in its own folder.
 type Host struct {
-	Search func(domain.VaultID) Search
+	Search   func(domain.VaultID) Search
 	GetVault func(domain.VaultID) host.NoteLookup
-	Store  func(domain.VaultID) Records
+	Store    func(domain.VaultID) Records
 }
 
 // Search is the calls the floors make on the search of one vault, each through the narrow interface it needs.

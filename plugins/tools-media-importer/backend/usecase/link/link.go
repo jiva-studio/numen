@@ -89,9 +89,9 @@ type Texts interface {
 // creates.
 type Host struct {
 	PluginID string
-	GetVault   func(domain.VaultID) Vault
+	GetVault func(domain.VaultID) Vault
 	Store    func(domain.VaultID) Folder
-	GetTexts    func(domain.VaultID) Texts
+	GetTexts func(domain.VaultID) Texts
 	Queue    host.Queue
 	Entropy  ports.Entropy
 	Clock    Clock
@@ -100,10 +100,10 @@ type Host struct {
 
 // Links fetches for the links of the vault the host shows.
 type Links struct {
-	host     Host
+	host        Host
 	getFetcher  func() ports.Fetcher
 	getSettings func() fetch.Settings
-	clock    Clock
+	clock       Clock
 
 	closing   chan struct{}
 	closeOnce sync.Once

@@ -6,7 +6,7 @@ import type { Flow } from './spread'
  * rounded once: a trailing gap adds no column, and nothing drifts over a long
  * document.
  */
-export function countColumns(flow: Flow): number {
+export function countAllColumns(flow: Flow): number {
   const pitch = getColumnPitch(flow)
   if (pitch <= 0 || flow.contentWidth <= 0) return 0
   return Math.max(1, Math.round(flow.contentWidth / pitch))

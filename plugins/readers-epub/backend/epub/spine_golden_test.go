@@ -65,7 +65,7 @@ func TestABookIsReadAsTheGoldenReturnsItIs(t *testing.T) {
 func formatGolden(book *epub.Book) string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "title\t%s\ntier\t%s\nlayout\t%s\ndirection\t%s\nbytes\t%d\npage\t%d\npages\t%d\n",
-		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.GetPageBytes(), book.CountPages())
+		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.PageBytes(), book.PageCount())
 	out.WriteString("\ndocuments\n")
 	for _, doc := range book.Documents {
 		fmt.Fprintf(&out, "\t%d\t%d\t%v\t%s\n", doc.Offset, doc.Length, doc.IsLinear, doc.Path)
@@ -85,7 +85,7 @@ func formatGolden(book *epub.Book) string {
 // A change meaning to move the markup moves this file with it, under -update,
 // and the diff is what it moved.
 func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
-	got := seamMarkup(t).RenderHTML() + "\n"
+	got := seamMarkup(t).HTML() + "\n"
 	if isUpdating() {
 		if err := os.WriteFile(spineCorpus, []byte(got), 0o644); err != nil {
 			t.Fatal(err)
@@ -106,7 +106,7 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))
 	markup := seamMarkup(t)
 
-	runs := offsets(t, parseHTML(t, markup.RenderHTML()))
+	runs := offsets(t, parseHTML(t, markup.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the corpus says no offsets")
 	}
@@ -132,7 +132,7 @@ func TestAPictureIsNamedByTheEntryItIsGeneratedFrom(t *testing.T) {
 	book := read(t, seamBook(t))
 	markup := seamMarkup(t)
 
-	named := pictures(parseHTML(t, markup.RenderHTML()))
+	named := pictures(parseHTML(t, markup.HTML()))
 	if len(named) == 0 {
 		t.Fatal("the document draws no picture")
 	}
@@ -154,7 +154,7 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 	}
 
 	var within, down, away int
-	for _, found := range elements(parseHTML(t, seamMarkup(t).RenderHTML()), "a") {
+	for _, found := range elements(parseHTML(t, seamMarkup(t).HTML()), "a") {
 		href := getAttribute(found, "href")
 		target, fragment, _ := strings.Cut(href, "#")
 		switch {

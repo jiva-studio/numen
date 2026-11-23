@@ -32,7 +32,11 @@ const FILES = createCommand('files', {
   icon: FolderTree,
   shortcut: 'mod+shift+e',
 })
-const PLEX = createCommand('plex', { title: 'Open plex graph', icon: Waypoints, shortcut: 'mod+shift+x' })
+const PLEX = createCommand('plex', {
+  title: 'Open plex graph',
+  icon: Waypoints,
+  shortcut: 'mod+shift+x',
+})
 const NEW_NOTE = createCommand('note', { title: 'Create note', icon: FilePlus })
 const SEARCH = createCommand('search', { title: 'Search vault', icon: Search })
 const SETTINGS = createCommand('settings', { title: 'Open settings', icon: Settings })

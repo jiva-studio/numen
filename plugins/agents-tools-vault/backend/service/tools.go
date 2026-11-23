@@ -14,11 +14,11 @@ var errNoVault = errors.New("the call names no vault")
 
 // Tools builds the registry of the vault tools.
 type Tools struct {
-	getVault    func(domain.VaultID) Vault
-	getLibrary   func(domain.VaultID) Library
-	functions host.SearchFunctions
-	getSearchFunctions    func(ctx context.Context) (host.SearchFunctions, error)
-	list      ports.VaultList
+	getVault           func(domain.VaultID) Vault
+	getLibrary         func(domain.VaultID) Library
+	functions          host.SearchFunctions
+	getSearchFunctions func(ctx context.Context) (host.SearchFunctions, error)
+	list               ports.VaultList
 }
 
 // Vault is the calls the tools make on one vault, each through the narrow interface it needs.

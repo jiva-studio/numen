@@ -45,17 +45,17 @@ type Dependencies struct {
 // keeps the last good results and records the time and the reason, stale, so it is tried again after the
 // cooldown; a failure of the host returns its error. A run the core reports stale stays stale.
 type Runner struct {
-	open     func(id domain.VaultID) Vault
-	tasks    ports.Tasks
-	log      ports.Log
+	open        func(id domain.VaultID) Vault
+	tasks       ports.Tasks
+	log         ports.Log
 	getSettings func() Settings
-	clock    ports.Clock
-	vaults   *vaultLocks
-	records  *sync.Mutex
-	watchers *watchers
-	timers   *timers
-	edits    *edits
-	started  *sync.WaitGroup
+	clock       ports.Clock
+	vaults      *vaultLocks
+	records     *sync.Mutex
+	watchers    *watchers
+	timers      *timers
+	edits       *edits
+	started     *sync.WaitGroup
 }
 
 // New returns a runner over the dependencies, with the settings at the time of each run.

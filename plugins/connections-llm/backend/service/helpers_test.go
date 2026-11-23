@@ -98,17 +98,17 @@ func (s *testService) Configure(values map[string]string) {
 }
 
 func (s *testService) Complete(ctx context.Context, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
-	return llmtest.Complete(ctx, s.built.provider.buildProvider(), call, request)
+	return llmtest.Complete(ctx, s.built.provider.roles(), call, request)
 }
 
 func (s *testService) Chat(
 	ctx context.Context, call connection.Call, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
 ) (*llm.ChatFinish, error) {
-	return llmtest.Chat(ctx, s.built.provider.buildProvider(), call, request, send)
+	return llmtest.Chat(ctx, s.built.provider.roles(), call, request, send)
 }
 
 func (s *testService) Embed(ctx context.Context, call connection.Call, texts []string) ([][]float32, error) {
-	result, err := llmtest.Embed(ctx, s.built.provider.buildProvider(), call, &llm.EmbedRequest{Texts: texts})
+	result, err := llmtest.Embed(ctx, s.built.provider.roles(), call, &llm.EmbedRequest{Texts: texts})
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +120,11 @@ func (s *testService) Embed(ctx context.Context, call connection.Call, texts []s
 }
 
 func (s *testService) Rerank(ctx context.Context, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {
-	return llmtest.Rerank(ctx, s.built.provider.buildProvider(), call, request)
+	return llmtest.Rerank(ctx, s.built.provider.roles(), call, request)
 }
 
 func (s *testService) GetProfile(ctx context.Context, call connection.Call) (*llm.Profile, error) {
-	return llmtest.GetProfile(ctx, s.built.provider.buildProvider(), call)
+	return llmtest.GetProfile(ctx, s.built.provider.roles(), call)
 }
 
 // ListModels and ListReasoningLevels answer numen.v1.Options, a message of the core protocol a plugin does

@@ -20,9 +20,9 @@ type VaultReader interface {
 
 // Host is what the plugin works through the host.
 type Host struct {
-	GetVault         func(domain.VaultID) VaultReader
+	GetVault       func(domain.VaultID) VaultReader
 	Store          func(domain.VaultID) transcribe.Folder
-	GetTexts          func(domain.VaultID) host.TextVersions
+	GetTexts       func(domain.VaultID) host.TextVersions
 	Queue          host.Queue
 	FetchModelFile func(context.Context, string, string) (string, error)
 }
@@ -33,9 +33,9 @@ func Open(endpoint hostcall.Endpoint) Host {
 	store := host.NewStoreClient(endpoint)
 	texts := host.NewTextClient(endpoint)
 	return Host{
-		GetVault:         func(id domain.VaultID) VaultReader { return client.With(id) },
+		GetVault:       func(id domain.VaultID) VaultReader { return client.With(id) },
 		Store:          func(id domain.VaultID) transcribe.Folder { return store.With(id) },
-		GetTexts:          func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		GetTexts:       func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:          host.NewQueueClient(endpoint),
 		FetchModelFile: host.NewDependencyClient(endpoint).FetchModelFile,
 	}

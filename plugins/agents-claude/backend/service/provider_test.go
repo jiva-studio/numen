@@ -57,7 +57,7 @@ func TestCompleteReturnsTheAnswerOfClaude(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", answerScript))
 	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
 
-	result, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("fix this"))
+	result, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("fix this"))
 
 	if err != nil || result.GetText() != "fixed" {
 		t.Errorf("Complete = %q, %v, want %q", result.GetText(), err, "fixed")
@@ -68,7 +68,7 @@ func TestCompleteStartsClaudeWithTheModelTheInstructionsAndNoTool(t *testing.T) 
 	dir := t.TempDir()
 	svc := newClaude(t, nil, writeScript(t, "claude", recordArgs(dir)+textEvent))
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(map[string]string{llm.OptionModel: "opus"}), &llm.CompleteRequest{
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(map[string]string{llm.OptionModel: "opus"}), &llm.CompleteRequest{
 		Messages: []*llm.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
@@ -95,7 +95,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	dir := t.TempDir()
 	svc := newClaude(t, nil, writeScript(t, "claude", recordArgs(dir)+textEvent))
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), &llm.CompleteRequest{
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), &llm.CompleteRequest{
 		Messages: []*llm.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
@@ -127,7 +127,7 @@ func TestACompleteCallLetsClaudeWriteNothing(t *testing.T) {
 	}
 	svc := newClaude(t, nil, script)
 
-	if _, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("write a file")); err != nil {
+	if _, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("write a file")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -144,7 +144,7 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 		"system only":  {Messages: []*llm.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []*llm.Message{{Role: "tool", Text: "x"}}},
 	} {
-		_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), request)
+		_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), request)
 		if !connection.IsStop(err) {
 			t.Errorf("%s: Complete = %v, want a stop", name, err)
 		}
@@ -155,7 +155,7 @@ func TestAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	svc := newTestAgent(t, nil)
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext || !hasReason(err, connection.ReasonUnavailable) {
 		t.Fatalf("Complete = %v, want try the next as unavailable", err)
@@ -165,7 +165,7 @@ func TestAMissingClaudeIsUnreachable(t *testing.T) {
 func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", "cat > /dev/null\necho 'not signed in as sk-secret' >&2\nexit 2\n"))
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Fatalf("Complete = %v, want a stop", err)
@@ -178,7 +178,7 @@ func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
 func TestAnEmptyAnswerIsAStop(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", "cat > /dev/null\nprintf '%s\\n' '{\"type\":\"result\",\"is_error\":false}'\n"))
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Errorf("Complete = %v, want a stop", err)
@@ -189,7 +189,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", "sleep 30\n"))
 	svc.settings.Apply(map[string]string{"requestTimeout": "0.2"})
 
-	_, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext || !hasReason(err, connection.ReasonUnavailable) {
 		t.Fatalf("Complete = %v, want try the next as unavailable", err)
@@ -201,7 +201,7 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := llmtest.Complete(ctx, svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(ctx, svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
@@ -302,7 +302,7 @@ func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 }
 
 func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
-	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).BuildProvider()))
+	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).Provider()))
 	want := []string{acp.OperationTask, connection.OperationDetected, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
@@ -442,7 +442,7 @@ func TestCompleteReturnsAnErrorWhenThePluginStopsAfterSomeText(t *testing.T) {
 	}
 	done := make(chan outcome, 1)
 	go func() {
-		result, err := llmtest.Complete(t.Context(), svc.BuildProvider(), completeCall(nil), userMessage("hi"))
+		result, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 		done <- outcome{result: result, err: err}
 	}()
 	deadline := time.After(20 * time.Second)

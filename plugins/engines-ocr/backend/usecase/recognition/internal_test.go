@@ -600,9 +600,9 @@ func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
 	rVaultErr, err := New(
 		Host{
 			Documents: pictures{},
-			GetVault:    func(id domain.VaultID) Files { return failingVaultFiles{Files: v.With(id), vaultErr: vaultErr} },
+			GetVault:  func(id domain.VaultID) Files { return failingVaultFiles{Files: v.With(id), vaultErr: vaultErr} },
 			Store:     foldersOf(v.Store()),
-			GetTexts:     versionsOf(texts),
+			GetTexts:  versionsOf(texts),
 			Queue:     &stubQueue{},
 		},
 		func(context.Context) (ports.Recognizer, error) { return &stubRecognizer{}, nil },
@@ -624,9 +624,9 @@ func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
 	rStartReportErr, err := New(
 		Host{
 			Documents: pictures{},
-			GetVault:    func(id domain.VaultID) Files { return v.With(id) },
+			GetVault:  func(id domain.VaultID) Files { return v.With(id) },
 			Store:     foldersOf(v.Store()),
-			GetTexts:     versionsOf(texts),
+			GetTexts:  versionsOf(texts),
 			Queue:     &stubQueue{reportErr: reportErr, reportErrAt: 1},
 		},
 		func(context.Context) (ports.Recognizer, error) { return &stubRecognizer{}, nil },
@@ -649,9 +649,9 @@ func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
 	rBg, err := New(
 		Host{
 			Documents: pictures{},
-			GetVault:    func(id domain.VaultID) Files { return v.With(id) },
+			GetVault:  func(id domain.VaultID) Files { return v.With(id) },
 			Store:     foldersOf(v.Store()),
-			GetTexts:     versionsOf(texts),
+			GetTexts:  versionsOf(texts),
 			Queue:     &stubQueue{},
 			Report: func(what string, err error) {
 				reportedWhat = what

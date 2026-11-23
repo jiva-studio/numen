@@ -14,16 +14,16 @@ import (
 func TestThePagesABookIsRead(t *testing.T) {
 	book := read(t, tinyBook(t, nil))
 
-	if book.CountPages() < 1 {
-		t.Fatalf("pages = %d, want the page a person is looking at", book.CountPages())
+	if book.PageCount() < 1 {
+		t.Fatalf("pages = %d, want the page a person is looking at", book.PageCount())
 	}
 	if got := book.FindPage(0); got != 1 {
 		t.Errorf("the first byte is on page %d", got)
 	}
-	if got := book.FindPage(len(book.Text) - 1); got != book.CountPages() {
-		t.Errorf("the last byte is on page %d of %d", got, book.CountPages())
+	if got := book.FindPage(len(book.Text) - 1); got != book.PageCount() {
+		t.Errorf("the last byte is on page %d of %d", got, book.PageCount())
 	}
-	for page := 1; page <= book.CountPages(); page++ {
+	for page := 1; page <= book.PageCount(); page++ {
 		pos := book.GetPageStart(page)
 		if pos < 0 || pos > len(book.Text) {
 			t.Fatalf("page %d begins at %d in %d bytes of text", page, pos, len(book.Text))
@@ -34,8 +34,8 @@ func TestThePagesABookIsRead(t *testing.T) {
 	}
 	// An offset outside the text is still answered, because a caller holding a
 	// stale offset is shown a page and not a panic.
-	if got := book.FindPage(len(book.Text) * 2); got != book.CountPages() {
-		t.Errorf("an offset past the text is on page %d of %d", got, book.CountPages())
+	if got := book.FindPage(len(book.Text) * 2); got != book.PageCount() {
+		t.Errorf("an offset past the text is on page %d of %d", got, book.PageCount())
 	}
 }
 
@@ -50,16 +50,16 @@ func TestAPageIsThatManyLetters(t *testing.T) {
 	}
 
 	latin, cyrillic := content("a"), content("б")
-	if latin.CountPages() != cyrillic.CountPages() {
+	if latin.PageCount() != cyrillic.PageCount() {
 		t.Errorf("twenty thousand letters are %d pages in Latin and %d in Cyrillic",
-			latin.CountPages(), cyrillic.CountPages())
+			latin.PageCount(), cyrillic.PageCount())
 	}
-	if got := latin.CountPages(); got < 15 || got > 25 {
+	if got := latin.PageCount(); got < 15 || got > 25 {
 		t.Errorf("twenty thousand letters are %d pages, want about twenty", got)
 	}
 	// A page opened in the middle of a letter is a page of broken text, and an
 	// offset that names no place in the book.
-	for page := 1; page <= cyrillic.CountPages(); page++ {
+	for page := 1; page <= cyrillic.PageCount(); page++ {
 		pos := cyrillic.GetPageStart(page)
 		if r, _ := utf8.DecodeRuneInString(cyrillic.Text[pos:]); r == utf8.RuneError {
 			t.Fatalf("page %d begins at %d, in the middle of a letter", page, pos)
@@ -80,13 +80,13 @@ func textOfBytes(n int) *epub.Book {
 
 // A book whose text has not been measured is read a page of 1024 letters at a time.
 func TestAPageOfUnmeasuredTextIsAKibibyte(t *testing.T) {
-	if got := textOfBytes(0).GetPageBytes(); got != 1024 {
+	if got := textOfBytes(0).PageBytes(); got != 1024 {
 		t.Errorf("a page is %d bytes, want 1024", got)
 	}
 
 	counts := map[int]int{0: 1, 1: 1, 1023: 1, 1024: 1, 1025: 2, 2048: 2, 2049: 3}
 	for size, want := range counts {
-		if got := textOfBytes(size).CountPages(); got != want {
+		if got := textOfBytes(size).PageCount(); got != want {
 			t.Errorf("%d bytes are %d pages, want %d", size, got, want)
 		}
 	}
@@ -112,10 +112,10 @@ func TestAPageOfABookWithoutTextIsAKibibyte(t *testing.T) {
 	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 		"OEBPS/one.xhtml": "<html><body></body></html>",
 	}))
-	if got := book.GetPageBytes(); got != 1024 {
+	if got := book.PageBytes(); got != 1024 {
 		t.Errorf("a page is %d bytes, want 1024", got)
 	}
-	if got := book.CountPages(); got != 1 {
+	if got := book.PageCount(); got != 1 {
 		t.Errorf("a book without text is %d pages, want 1", got)
 	}
 }
@@ -140,11 +140,11 @@ func TestAPageBeginsAtTheFirstLetterAtOrAfterItsMeasure(t *testing.T) {
 			book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 				"OEBPS/one.xhtml": "<html><body><p>" + body + "</p></body></html>",
 			}))
-			if got := book.GetPageBytes(); got != script.bytes {
+			if got := book.PageBytes(); got != script.bytes {
 				t.Fatalf("a page is %d bytes, want %d", got, script.bytes)
 			}
-			for page := 1; page <= book.CountPages(); page++ {
-				measure := (page - 1) * book.GetPageBytes()
+			for page := 1; page <= book.PageCount(); page++ {
+				measure := (page - 1) * book.PageBytes()
 				pos := book.GetPageStart(page)
 				if pos < measure || pos-measure >= utf8.UTFMax {
 					t.Fatalf("page %d begins at %d, measure %d", page, pos, measure)

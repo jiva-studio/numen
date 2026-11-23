@@ -75,9 +75,9 @@ func (m *Methods) FindOffset(ctx context.Context, req api.FindOffsetRequest) (ap
 func BuildGetBookResponse(book *epub.Book) api.GetBookResponse {
 	res := api.GetBookResponse{
 		Title:        book.Title,
-		PageCount:    book.CountPages(),
+		PageCount:    book.PageCount(),
 		TextBytes:    len(book.Text),
-		PageBytes:    book.GetPageBytes(),
+		PageBytes:    book.PageBytes(),
 		Documents:    []api.SpineDocument{},
 		Parts:        []api.BookPart{},
 		PrintedPages: []api.PrintedPage{},

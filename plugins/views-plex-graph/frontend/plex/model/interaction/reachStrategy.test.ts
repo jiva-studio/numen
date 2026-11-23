@@ -9,7 +9,9 @@ const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as Poin
 function createPressedStrategy(after?: number) {
   const reach = vi.fn<Parameters<ReachStrategy['listeners']>[0]['reach']>()
   const scope = effectScope()
-  const listeners = scope.run(() => createLongPressStrategy(after).listeners({ ready: () => true, reach }))!
+  const listeners = scope.run(() =>
+    createLongPressStrategy(after).listeners({ ready: () => true, reach }),
+  )!
   listeners['pointerdown']!(touch())
   return { reach, scope }
 }

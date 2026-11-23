@@ -13,20 +13,37 @@ const TASKS = {
   overdue: {
     tasks: [
       createTask({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' }),
-      createTask({ path: 'Daily/2026-11-12.md', line: 3, text: 'call the bank', due: '2026-11-12' }),
+      createTask({
+        path: 'Daily/2026-11-12.md',
+        line: 3,
+        text: 'call the bank',
+        due: '2026-11-12',
+      }),
     ],
     total: 7,
     revision: 4,
   },
   today: {
-    tasks: [createTask({ path: 'Daily/2026-11-14.md', line: 2, text: 'write the report', due: TODAY })],
+    tasks: [
+      createTask({ path: 'Daily/2026-11-14.md', line: 2, text: 'write the report', due: TODAY }),
+    ],
     total: 1,
     revision: 4,
   },
   nextSevenDays: {
     tasks: [
-      createTask({ path: 'Daily/2026-11-15.md', line: 5, text: 'plan the trip', due: '2026-11-15' }),
-      createTask({ path: 'Daily/2026-11-20.md', line: 1, text: 'send the form', due: '2026-11-20' }),
+      createTask({
+        path: 'Daily/2026-11-15.md',
+        line: 5,
+        text: 'plan the trip',
+        due: '2026-11-15',
+      }),
+      createTask({
+        path: 'Daily/2026-11-20.md',
+        line: 1,
+        text: 'send the form',
+        due: '2026-11-20',
+      }),
     ],
     total: 2,
     revision: 4,
@@ -301,7 +318,11 @@ describe('the groups of the todos popover', () => {
           total: 2,
           revision: 1,
         },
-        none: { tasks: [createTask({ path: 'a.md', line: 5, text: 'floating' })], total: 1, revision: 1 },
+        none: {
+          tasks: [createTask({ path: 'a.md', line: 5, text: 'floating' })],
+          total: 1,
+          revision: 1,
+        },
       },
     })
     const { wrapper: view } = draw(
@@ -409,7 +430,12 @@ describe('ticking a task in the todos popover', () => {
         ...TASKS,
         overdue: {
           tasks: [
-            createTask({ path: 'Home.md', line: 1, text: 'water the plants', recurrence: 'rec:1w' }),
+            createTask({
+              path: 'Home.md',
+              line: 1,
+              text: 'water the plants',
+              recurrence: 'rec:1w',
+            }),
           ],
           total: 1,
           revision: 4,

@@ -112,7 +112,12 @@ describe('the buttons of plugins', () => {
   const PRESSED_MARKS = ['aria-pressed', 'aria-checked', 'data-pressed', 'data-active']
 
   it('draw no pressed state before or after a press', async () => {
-    const commands = [createCommand('chart.open'), createCommand('map.open'), createSeparator(1), createCommand('log.open')]
+    const commands = [
+      createCommand('chart.open'),
+      createCommand('map.open'),
+      createSeparator(1),
+      createCommand('log.open'),
+    ]
     const wrapper = mountBar({ commands })
     const before = wrapper.find('[data-title-bar]').html()
 

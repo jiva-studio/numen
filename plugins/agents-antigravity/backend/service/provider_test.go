@@ -43,7 +43,7 @@ func userMessage(text string) *llm.CompleteRequest {
 
 func complete(t *testing.T, svc *agent, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
 	t.Helper()
-	return llmtest.Complete(t.Context(), svc.BuildProvider(), call, request)
+	return llmtest.Complete(t.Context(), svc.Provider(), call, request)
 }
 
 func TestCompleteReturnsTheAnswerOfAntigravity(t *testing.T) {
@@ -202,7 +202,7 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := llmtest.Complete(ctx, svc.BuildProvider(), agentCall(nil), userMessage("hi"))
+	_, err := llmtest.Complete(ctx, svc.Provider(), agentCall(nil), userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
@@ -261,7 +261,7 @@ func TestListingTheModelsOfAMissingAntigravityIsUnreachable(t *testing.T) {
 }
 
 func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
-	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).BuildProvider()))
+	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).Provider()))
 	want := []string{acp.OperationTask, connection.OperationDetected, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)

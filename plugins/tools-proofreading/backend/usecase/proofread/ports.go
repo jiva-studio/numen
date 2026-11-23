@@ -11,9 +11,9 @@ import (
 // Host provides the host services a proofreading uses: the store folder for corrected texts, the
 // text versions it reads and reports, and the queue it runs in.
 type Host struct {
-	Store func(domain.VaultID) host.StoreWriter
+	Store    func(domain.VaultID) host.StoreWriter
 	GetTexts func(domain.VaultID) Texts
-	Queue host.Queue
+	Queue    host.Queue
 }
 
 // Texts is the text versions of a vault: listed, read and reported.

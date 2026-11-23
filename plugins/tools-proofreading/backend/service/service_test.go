@@ -54,9 +54,9 @@ func newScene(t *testing.T) *scene {
 		return &llm.CompleteResult{Text: s.script(request.GetMessages()[1].GetText())}, nil
 	}
 	s.host = proofread.Host{
-		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		Store:    func(id domain.VaultID) host.StoreWriter { return store.With(id) },
 		GetTexts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
-		Queue: s.queue,
+		Queue:    s.queue,
 	}
 	s.run = newProofreading(s.host, complete, s.settings)
 	return s

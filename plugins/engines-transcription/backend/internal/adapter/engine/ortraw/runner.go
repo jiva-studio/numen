@@ -13,7 +13,7 @@ import (
 // Runner holds the entry points of the runtime a Graph is run through, resolved by Bind from the
 // library the runtime opens.
 type Runner struct {
-	mu     sync.Mutex
+	mu  sync.Mutex
 	run func(
 		session, runOptions, inputNames, inputValues, inputCount, outputNames, outputCount, outputValues uintptr,
 	) uintptr

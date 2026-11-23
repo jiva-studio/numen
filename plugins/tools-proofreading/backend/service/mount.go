@@ -23,9 +23,9 @@ func openHostAt(endpoint hostcall.Endpoint) proofread.Host {
 	store := host.NewStoreClient(endpoint)
 	texts := host.NewTextClient(endpoint)
 	return proofread.Host{
-		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		Store:    func(id domain.VaultID) host.StoreWriter { return store.With(id) },
 		GetTexts: func(id domain.VaultID) proofread.Texts { return texts.With(id) },
-		Queue: host.NewQueueClient(endpoint),
+		Queue:    host.NewQueueClient(endpoint),
 	}
 }
 

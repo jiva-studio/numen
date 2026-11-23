@@ -26,7 +26,7 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	page := rendered.RenderHTML()
+	page := rendered.HTML()
 
 	for _, content := range []string{"<script", "alert(1)</", "alert(2)</"} {
 		if strings.Contains(page, content) {
@@ -68,7 +68,7 @@ func TestEveryRunOfTextReturnsWhereItExists(t *testing.T) {
 		t.Fatalf("markup: %v", err)
 	}
 
-	runs := offsets(t, parseHTML(t, rendered.RenderHTML()))
+	runs := offsets(t, parseHTML(t, rendered.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the markup says no offsets")
 	}

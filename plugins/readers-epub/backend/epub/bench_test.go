@@ -78,7 +78,7 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		_ = rendered.RenderHTML()
+		_ = rendered.HTML()
 	}
 }
 
@@ -93,6 +93,6 @@ func BenchmarkCountingThePages(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		_ = book.CountPages()
+		_ = book.PageCount()
 	}
 }

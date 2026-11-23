@@ -26,7 +26,12 @@ const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 const Sketch = () => h('em', 'sketch')
 
-const createCommand = (pluginId: string, id: string, title: string, icon?: Component): SlotCommand => ({
+const createCommand = (
+  pluginId: string,
+  id: string,
+  title: string,
+  icon?: Component,
+): SlotCommand => ({
   kind: 'command',
   key: `${pluginId}/command/${id}`,
   pluginId,

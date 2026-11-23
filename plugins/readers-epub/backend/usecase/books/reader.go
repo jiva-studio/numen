@@ -36,8 +36,8 @@ type Reader struct {
 func NewReader(vaults func(domain.VaultID) host.FileReader) *Reader {
 	return &Reader{
 		getVault: vaults,
-		books:  newBookCache(),
-		mu:     sync.Mutex{},
+		books:    newBookCache(),
+		mu:       sync.Mutex{},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="placedBook starts with nil book so size and mtime are ignored until populated"
 		placed: placedBook{key: "", size: 0, mtime: 0, book: nil},
 	}
@@ -79,7 +79,7 @@ func (s *Reader) ReadBookMarkup(ctx context.Context, path, document string) (str
 		return "", newError(KindNotFound, fmt.Sprintf("read document markup %s: %v", document, err))
 	}
 
-	return rendered.RenderHTML(), nil
+	return rendered.HTML(), nil
 }
 
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive. A baseline that does not name

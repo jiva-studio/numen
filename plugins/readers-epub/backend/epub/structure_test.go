@@ -350,11 +350,11 @@ func TestTheMarkupIsSavedIntoOneAllocation(t *testing.T) {
 	for i := range runs {
 		markup.Nodes = append(markup.Nodes, epub.Node{Offset: i, Text: strings.Repeat("a", width)})
 	}
-	if got := len(markup.RenderHTML()); got <= markup.Length || got >= 2*markup.Length {
+	if got := len(markup.HTML()); got <= markup.Length || got >= 2*markup.Length {
 		t.Fatalf("the page is %d bytes for a text of %d: the fixture does not fit between one and two times it", got, markup.Length)
 	}
 
-	if got := testing.AllocsPerRun(10, func() { _ = markup.RenderHTML() }); got > 1 {
+	if got := testing.AllocsPerRun(10, func() { _ = markup.HTML() }); got > 1 {
 		t.Errorf("the page took %v allocations, want the one that holds it", got)
 	}
 }

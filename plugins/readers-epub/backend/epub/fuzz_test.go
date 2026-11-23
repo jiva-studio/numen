@@ -326,7 +326,7 @@ func FuzzMarkup(f *testing.F) {
 
 func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Markup) {
 	t.Helper()
-	root := parseHTML(t, markup.RenderHTML())
+	root := parseHTML(t, markup.HTML())
 	for _, name := range []string{
 		"script", "style", "link", "meta", "iframe", "frame", "object", "embed",
 		"form", "input", "button", "base", "svg", "math", "template",

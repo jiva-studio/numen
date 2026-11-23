@@ -17,8 +17,8 @@ import (
 // the vault with the identity, and the empty identity is the vault the window shows. A nil field means
 // the host offers none.
 type Host struct {
-	GetFiles  func(vault domain.VaultID) host.FileReader
-	Window host.Window
+	GetFiles func(vault domain.VaultID) host.FileReader
+	Window   host.Window
 }
 
 // RegisterTools registers all window interaction and edit preview tools on the given registry. The tab

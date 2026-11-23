@@ -34,7 +34,9 @@ export function useLift(site: LiftSite) {
     const group = site.group()
     const active = group?.ownerDocument.activeElement
     const hasFocus =
-      !!active && active !== group && !!(group?.contains(active) || site.getLifted()?.contains(active))
+      !!active &&
+      active !== group &&
+      !!(group?.contains(active) || site.getLifted()?.contains(active))
     if (!hasFocus) return
     group?.focus()
     await nextTick()

@@ -29,12 +29,12 @@ const batchSize = 16
 // Transcriber transcribes the recordings requested by the user, one at a time through the core's queue,
 // and reports each as a task and as a timed text version that grows as the transcript is written.
 type Transcriber struct {
-	files   Files
-	getFolder  func(domain.VaultID) Folder
-	getTexts   func(domain.VaultID) host.TextVersions
-	queue   host.Queue
-	engines Engines
-	report  func(what string, err error)
+	files     Files
+	getFolder func(domain.VaultID) Folder
+	getTexts  func(domain.VaultID) host.TextVersions
+	queue     host.Queue
+	engines   Engines
+	report    func(what string, err error)
 
 	closing   chan struct{}
 	closeOnce sync.Once

@@ -120,7 +120,7 @@ func getFuncs(p *pass) Funcs {
 		"upper":     strings.ToUpper,
 		"lower":     strings.ToLower,
 		"slug":      buildSlug,
-		"title":     formatCapitalized,
+		"title":     convertFirstToUpper,
 		"default":   selectFallback,
 		"trunc":     truncate,
 		"join":      join,
@@ -183,7 +183,7 @@ func buildSlug(text string) string {
 	return out.String()
 }
 
-func formatCapitalized(text string) string {
+func convertFirstToUpper(text string) string {
 	var out strings.Builder
 	isStart := true
 	for _, r := range text {

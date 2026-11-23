@@ -44,7 +44,7 @@ type Workers struct {
 	open        int
 	isWarmed    bool
 	release     Timer
-	startTimer   func(time.Duration, func()) Timer
+	startTimer  func(time.Duration, func()) Timer
 	idleRelease time.Duration
 	compilation wazero.CompilationCache
 	report      func(what string, err error)
@@ -57,7 +57,7 @@ type Workers struct {
 type Options struct {
 	Report           func(what string, err error)
 	CompilationCache wazero.CompilationCache
-	StartTimer        func(time.Duration, func()) Timer
+	StartTimer       func(time.Duration, func()) Timer
 	Workers          int
 	IdleWorkers      int
 }
@@ -369,7 +369,7 @@ func (d *document) Close() error {
 	return err
 }
 
-func (d *document) readTitle() string {
+func (d *document) title() string {
 	meta, err := d.worker.FPDF_GetMetaText(&requests.FPDF_GetMetaText{Document: d.ref, Tag: "Title"})
 	if err != nil {
 		return ""

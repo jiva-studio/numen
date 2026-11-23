@@ -137,11 +137,11 @@ func checkBook(t *testing.T, book *epub.Book) {
 func checkPages(t *testing.T, book *epub.Book) {
 	t.Helper()
 
-	for page := 1; page <= book.CountPages(); page++ {
+	for page := 1; page <= book.PageCount(); page++ {
 		pos := book.GetPageStart(page)
 		if r, _ := utf8.DecodeRuneInString(book.Text[pos:]); r == utf8.RuneError {
 			t.Fatalf("page %d of %d begins at %d, in the middle of a letter",
-				page, book.CountPages(), pos)
+				page, book.PageCount(), pos)
 		}
 		if got := book.FindPage(pos); got != page {
 			t.Fatalf("page %d begins at %d, which is on page %d", page, pos, got)

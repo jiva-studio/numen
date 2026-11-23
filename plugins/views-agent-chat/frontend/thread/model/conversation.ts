@@ -59,7 +59,10 @@ export function useConversation(options: ConversationOptions): Conversation {
     if (!question || isAnswerPending.value) return
     put({ id: nextId(), voice: 'prompt', text: question })
 
-    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking, createId: nextId }, nextId())
+    const work = createWorkLine(
+      { put, drop, paths, waitWords: words.thinking, createId: nextId },
+      nextId(),
+    )
     work.setWaiting(true)
     const flight = startFlight(work.clear)
     const answer = createAnswer({ put, drop, createId: nextId }, paint)

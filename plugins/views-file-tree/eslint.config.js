@@ -46,12 +46,18 @@ const slicePolicies = [
   {
     from: { element: { type: 'slice-ui' } },
     allow: {
-      to: [sharedFiles, sharedParts, selectOwnSlice(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])],
+      to: [
+        sharedFiles,
+        sharedParts,
+        selectOwnSlice(['slice-ui', 'slice-model', 'slice-api', 'slice-lib']),
+      ],
     },
   },
   {
     from: { element: { type: 'slice-model' } },
-    allow: { to: [sharedFiles, sharedParts, selectOwnSlice(['slice-model', 'slice-api', 'slice-lib'])] },
+    allow: {
+      to: [sharedFiles, sharedParts, selectOwnSlice(['slice-model', 'slice-api', 'slice-lib'])],
+    },
   },
   {
     from: { element: { type: 'slice-api' } },

@@ -23,7 +23,7 @@ func BenchmarkCropRegion(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for b.Loop() {
-		crop, _ := cropToRegion(page, rect, margin)
+		crop, _ := trimToRegion(page, rect, margin)
 		_ = crop
 	}
 }
@@ -38,9 +38,9 @@ func BenchmarkRecognizePage(b *testing.B) {
 		}
 		return &Recognizer{
 			findRegions: partsOf(rects...),
-			body:   map[string]bool{"text": true},
-			head:   map[string]int{},
-			margin: 10,
+			body:        map[string]bool{"text": true},
+			head:        map[string]int{},
+			margin:      10,
 			read: func(image.Image) ([]read.RecResult, error) {
 				time.Sleep(1 * time.Millisecond)
 				return []read.RecResult{
@@ -91,8 +91,8 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
-		body:   map[string]bool{"text": true},
-		head:   map[string]int{},
+		body:        map[string]bool{"text": true},
+		head:        map[string]int{},
 		read: func(image.Image) ([]read.RecResult, error) {
 			return nil, broken
 		},
@@ -109,8 +109,8 @@ func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
-		body:   map[string]bool{"text": true},
-		head:   map[string]int{},
+		body:        map[string]bool{"text": true},
+		head:        map[string]int{},
 		read: func(image.Image) ([]read.RecResult, error) {
 			if request.Add(1) == 1 {
 				return nil, errors.New("the first part")
@@ -176,8 +176,8 @@ func TestRecognizeContextCanceled(t *testing.T) {
 
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
-		body:   map[string]bool{"text": true},
-		head:   map[string]int{},
+		body:        map[string]bool{"text": true},
+		head:        map[string]int{},
 		read: func(image.Image) ([]read.RecResult, error) {
 			return []read.RecResult{{Text: "text", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
 		},
@@ -206,7 +206,7 @@ func TestCropRegionStartsAtTheOrigin(t *testing.T) {
 	rect := image.Rect(50, 60, 200, 300)
 	margin := 10
 
-	crop, corner := cropToRegion(page, rect, margin)
+	crop, corner := trimToRegion(page, rect, margin)
 	if crop == nil {
 		t.Fatal("crop returned nil")
 	}
@@ -227,7 +227,7 @@ func TestCropRegionFallback(t *testing.T) {
 	rect := image.Rect(50, 60, 200, 300)
 	margin := 10
 
-	crop, corner := cropToRegion(page, rect, margin)
+	crop, corner := trimToRegion(page, rect, margin)
 	if crop == nil {
 		t.Fatal("crop returned nil")
 	}
@@ -244,7 +244,7 @@ func TestCropRegionEmpty(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 100, 100))
 	rect := image.Rect(200, 200, 300, 300)
 
-	crop, corner := cropToRegion(page, rect, 0)
+	crop, corner := trimToRegion(page, rect, 0)
 	if crop != nil || corner != (image.Point{}) {
 		t.Errorf("empty crop returned %v, %v; want nil, (0,0)", crop, corner)
 	}
@@ -264,8 +264,8 @@ func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
 	broken := errors.New("the layout model is gone")
 	r := &Recognizer{
 		findRegions: func(image.Image) ([]Region, error) { return nil, broken },
-		body:   map[string]bool{"text": true},
-		read:   oneLine("what the page says"),
+		body:        map[string]bool{"text": true},
+		read:        oneLine("what the page says"),
 	}
 
 	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -311,7 +311,7 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	var request []image.Image
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(700, 900, 800, 950), image.Rect(10, 10, 590, 400)),
-		body:   map[string]bool{"text": true},
+		body:        map[string]bool{"text": true},
 		read: func(img image.Image) ([]read.RecResult, error) {
 			mu.Lock()
 			request = append(request, img)
@@ -337,8 +337,8 @@ func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	cancel()
 	r := &Recognizer{
 		findRegions: labeled(Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
-		body:   map[string]bool{"text": true},
-		read:   oneLine("never asked"),
+		body:        map[string]bool{"text": true},
+		read:        oneLine("never asked"),
 	}
 
 	blocks, err := r.Recognize(ctx, image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -350,7 +350,7 @@ func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 func TestABoxIsAddressedFromThePage(t *testing.T) {
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(50, 60, 590, 400)),
-		body:   map[string]bool{"text": true},
+		body:        map[string]bool{"text": true},
 		read: func(image.Image) ([]read.RecResult, error) {
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{3, 5, 40, 70}}}, nil
 		},
@@ -372,8 +372,8 @@ func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 	broken := errors.New("the session is gone")
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(10, 10, 590, 400)),
-		body:   map[string]bool{"text": true},
-		read:   func(image.Image) ([]read.RecResult, error) { return nil, broken },
+		body:        map[string]bool{"text": true},
+		read:        func(image.Image) ([]read.RecResult, error) { return nil, broken },
 	}
 
 	if _, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800))); !errors.Is(err, broken) {
@@ -384,8 +384,8 @@ func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
 	r := &Recognizer{
 		findRegions: partsOf(image.Rect(10, 10, 590, 400)),
-		body:   map[string]bool{"text": true},
-		read:   func(image.Image) ([]read.RecResult, error) { return nil, nil },
+		body:        map[string]bool{"text": true},
+		read:        func(image.Image) ([]read.RecResult, error) { return nil, nil },
 	}
 
 	blocks, err := r.Recognize(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))

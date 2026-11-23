@@ -124,11 +124,11 @@ func (a *App) getParts() (*parts, error) {
 func (a *App) newParts(hosts Hosts) *parts {
 	runner := refresh.New(refresh.Dependencies{Open: hosts.Open, Tasks: hosts.Tasks, Log: logging.Log{}}, a.settings.GetSettings, a.clock)
 	notes := savedsearch.New(savedsearch.Dependencies{
-		Open:     func(id domain.VaultID) ports.Notes { return hosts.Open(id).Notes },
-		Runner:   runner,
+		Open:        func(id domain.VaultID) ports.Notes { return hosts.Open(id).Notes },
+		Runner:      runner,
 		GetSettings: a.getNoteSettings,
-		Clock:    a.clock,
-		Entropy:  random.Entropy{},
+		Clock:       a.clock,
+		Entropy:     random.Entropy{},
 	})
 	return &parts{hosts: hosts, runner: runner, notes: notes}
 }

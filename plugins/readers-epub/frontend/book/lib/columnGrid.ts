@@ -1,4 +1,4 @@
-import { countColumns } from './columnCount'
+import { countAllColumns } from './columnCount'
 import { getColumnPitch } from './columnPitch'
 import type { Flow } from './spread'
 
@@ -29,7 +29,7 @@ export function getColumn(flow: Flow, x: number): number {
 
 /** How many countSpreads the text evaluates to. */
 export function countSpreads(flow: Flow): number {
-  const all = countColumns(flow)
+  const all = countAllColumns(flow)
   return all === 0 ? 0 : Math.ceil(all / flow.columns)
 }
 

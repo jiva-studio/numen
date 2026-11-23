@@ -31,10 +31,10 @@ type Files interface {
 // written as background work in the host's queue.
 type Writer struct {
 	getVault func(domain.VaultID) Files
-	getTexts  func(domain.VaultID) host.TextVersions
-	store  func(domain.VaultID) host.StoreWriter
-	queue  host.Queue
-	report func(what string, err error)
+	getTexts func(domain.VaultID) host.TextVersions
+	store    func(domain.VaultID) host.StoreWriter
+	queue    host.Queue
+	report   func(what string, err error)
 
 	wg sync.WaitGroup
 

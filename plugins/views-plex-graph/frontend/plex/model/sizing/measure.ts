@@ -168,7 +168,10 @@ function getLabelType(context: CanvasRenderingContext2D, font: string): LabelTyp
   }
 }
 
-function createWidthMeasurer(context: CanvasRenderingContext2D, font: string): (text: string) => number {
+function createWidthMeasurer(
+  context: CanvasRenderingContext2D,
+  font: string,
+): (text: string) => number {
   const widths = new Map<string, number>()
 
   return (text) => {

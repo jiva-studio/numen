@@ -5,7 +5,11 @@
  */
 import { EXPANSION_DELAY } from './sizing/expansion'
 import { byHandle, createLongPressStrategy, type ReachStrategy } from './interaction/reachStrategy'
-import { byDoubleClick, createDoubleTapStrategy, type ShowStrategy } from './interaction/destination'
+import {
+  byDoubleClick,
+  createDoubleTapStrategy,
+  type ShowStrategy,
+} from './interaction/destination'
 import { browserClock, nav, type Clock } from '@numen/ui'
 
 export interface PlexBehavior {

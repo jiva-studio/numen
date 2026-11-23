@@ -54,9 +54,9 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(talkPath, []byte("the recording"))
 	s.texts.SetStore(pluginID, s.store)
 	s.run = New(Host{
-		Store: func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
+		Store:    func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
 		GetTexts: func(id domain.VaultID) Texts { return s.texts.With(id) },
-		Queue: s.queue,
+		Queue:    s.queue,
 	}, GetProofreadKinds(), s.model.ask, func() settings.Config { return s.config })
 	return s
 }

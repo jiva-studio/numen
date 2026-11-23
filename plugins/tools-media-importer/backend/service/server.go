@@ -41,11 +41,11 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 			on := store.With(id)
 			return link.Folder{Files: on, Writer: on}
 		},
-		GetTexts:   func(id domain.VaultID) link.Texts { return texts.With(id) },
-		Queue:   host.NewQueueClient(endpoint),
-		Clock:   clock.System{},
-		Entropy: random.Entropy{},
-		Report:  process.Runner{}.ReportError,
+		GetTexts: func(id domain.VaultID) link.Texts { return texts.With(id) },
+		Queue:    host.NewQueueClient(endpoint),
+		Clock:    clock.System{},
+		Entropy:  random.Entropy{},
+		Report:   process.Runner{}.ReportError,
 	}
 }
 

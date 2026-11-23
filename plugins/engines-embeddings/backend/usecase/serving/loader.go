@@ -12,8 +12,8 @@ import (
 // loaderPorts is what the loader asks of the machine. Opened runs once for each loaded model, with the
 // lock held.
 type loaderPorts[S any] struct {
-	Open   func(ctx context.Context, spec S) (ports.Embedder, error)
-	Report func(what string, err error)
+	Open         func(ctx context.Context, spec S) (ports.Embedder, error)
+	Report       func(what string, err error)
 	NotifyOpened func(emb ports.Embedder)
 }
 

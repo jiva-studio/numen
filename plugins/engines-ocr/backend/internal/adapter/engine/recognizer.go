@@ -21,15 +21,15 @@ type Model = scan.Model
 
 // Recognizer executes OCR recognition models on images.
 type Recognizer struct {
-	shape  *Layout
-	lines  *paddle.Engine
+	shape       *Layout
+	lines       *paddle.Engine
 	findRegions func(image.Image) ([]Region, error)
-	read   func(image.Image) ([]read.RecResult, error)
-	body   map[string]bool
-	head   map[string]int
-	margin int
-	jobs   int
-	model  Model
+	read        func(image.Image) ([]read.RecResult, error)
+	body        map[string]bool
+	head        map[string]int
+	margin      int
+	jobs        int
+	model       Model
 }
 
 // Open loads the layout and PaddleOCR recognition models through the library.
@@ -80,14 +80,14 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch
 	}
 
 	return &Recognizer{
-		shape:  layout,
-		lines:  lines,
+		shape:       layout,
+		lines:       lines,
 		findRegions: layout.FindRegions,
-		read:   lines.RunOCR,
-		body:   createSet(cfg.Regions.GetBody()),
-		head:   getDepths(cfg.Regions.GetHead()),
-		margin: cfg.Layout.GetMargin(),
-		jobs:   cfg.GetJobs(),
+		read:        lines.RunOCR,
+		body:        createSet(cfg.Regions.GetBody()),
+		head:        getDepths(cfg.Regions.GetHead()),
+		margin:      cfg.Layout.GetMargin(),
+		jobs:        cfg.GetJobs(),
 		model: Model{
 			Layout:     getModelName(found.layout),
 			Recognizer: getModelName(found.recognize),
@@ -169,7 +169,7 @@ func (r *Recognizer) getTargets(page image.Image, regions []Region) []recognizeT
 		if !r.body[region.Label] {
 			continue
 		}
-		crop, corner := cropToRegion(page, region.Rect, r.margin)
+		crop, corner := trimToRegion(page, region.Rect, r.margin)
 		if crop == nil {
 			continue
 		}
@@ -209,7 +209,7 @@ func (r *Recognizer) makeBlock(t recognizeTarget, found []read.RecResult) (Block
 	}, true
 }
 
-func cropToRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
+func trimToRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		// gomutants:disable-next-line RETURN_ZERO reason="image.Point{X: 0, Y: 0} is the zero value of image.Point."

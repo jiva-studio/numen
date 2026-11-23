@@ -31,9 +31,9 @@ func getFollowedEvents() []string {
 // changed. A moved book keeps its text, which the host moves with it, and a removed one takes it
 // away. A book that has a text made from its content as it is gets none again.
 type Follower struct {
-	writer *Writer
-	getFeed  func(domain.VaultID) Feed
-	report func(what string, err error)
+	writer  *Writer
+	getFeed func(domain.VaultID) Feed
+	report  func(what string, err error)
 
 	wg sync.WaitGroup
 

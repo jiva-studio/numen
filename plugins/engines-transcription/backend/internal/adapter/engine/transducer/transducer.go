@@ -10,9 +10,9 @@ import (
 // and per-frame access), the predictor (output after a token) and the joiner
 // (combines both).
 type Decoder struct {
-	Frames    int
-	Blank     int
-	Encoded   int
+	Frames       int
+	Blank        int
+	Encoded      int
 	RunEncoder   func(pos int, frame []float32) []float32
 	RunPredictor func(token int) ([]float32, error)
 	RunJoint     func(frame, predicted []float32) ([]float32, error)

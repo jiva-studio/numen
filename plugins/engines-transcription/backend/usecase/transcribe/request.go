@@ -35,7 +35,7 @@ type Outcome struct {
 // already there.
 type Requests struct {
 	transcriber *Transcriber
-	getVault      func(domain.VaultID) Vault
+	getVault    func(domain.VaultID) Vault
 }
 
 // NewRequests returns the requests over the transcriber, which check the requested recordings

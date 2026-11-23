@@ -71,7 +71,7 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		GetVault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
+		Store:    foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}

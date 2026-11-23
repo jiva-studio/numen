@@ -11,7 +11,7 @@ import (
 func TestADetectionAnswerReleasesTheProcess(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	host := processtest.NewHost(t)
-	caller := llmtest.NewReleasingCaller(newTestServer(t, nil).BuildProvider(), connection.Call{Type: "codex"}, host.NewClient(t))
+	caller := llmtest.NewReleasingCaller(newTestServer(t, nil).Provider(), connection.Call{Type: "codex"}, host.NewClient(t))
 
 	frames, err := caller.Call(t.Context(), connection.OperationDetected, nil, connection.PriorityInteractive)
 	if err != nil {
