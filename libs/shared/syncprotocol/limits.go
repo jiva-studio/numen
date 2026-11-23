@@ -2,7 +2,7 @@ package syncprotocol
 
 const (
 	MaxBlobSize       = 64 << 20
-	MaxBatchRevisions = 500
+	MaxBatchRevisions = 5000
 	MaxReserveBlobs   = 100
 	MaxBlobURLs       = 100
 	MaxEncSize        = 16 << 10

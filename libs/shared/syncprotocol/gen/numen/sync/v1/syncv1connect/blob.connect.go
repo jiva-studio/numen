@@ -38,6 +38,19 @@ const (
 	BlobServiceReserveBlobsProcedure = "/numen.sync.v1.BlobService/ReserveBlobs"
 	// BlobServiceGetBlobUrlsProcedure is the fully-qualified name of the BlobService's GetBlobUrls RPC.
 	BlobServiceGetBlobUrlsProcedure = "/numen.sync.v1.BlobService/GetBlobUrls"
+	// BlobServiceReserveMultipartBlobProcedure is the fully-qualified name of the BlobService's
+	// ReserveMultipartBlob RPC.
+	BlobServiceReserveMultipartBlobProcedure = "/numen.sync.v1.BlobService/ReserveMultipartBlob"
+	// BlobServiceGetPartUrlsProcedure is the fully-qualified name of the BlobService's GetPartUrls RPC.
+	BlobServiceGetPartUrlsProcedure = "/numen.sync.v1.BlobService/GetPartUrls"
+	// BlobServiceListPartsProcedure is the fully-qualified name of the BlobService's ListParts RPC.
+	BlobServiceListPartsProcedure = "/numen.sync.v1.BlobService/ListParts"
+	// BlobServiceCompleteMultipartBlobProcedure is the fully-qualified name of the BlobService's
+	// CompleteMultipartBlob RPC.
+	BlobServiceCompleteMultipartBlobProcedure = "/numen.sync.v1.BlobService/CompleteMultipartBlob"
+	// BlobServiceAbortMultipartBlobProcedure is the fully-qualified name of the BlobService's
+	// AbortMultipartBlob RPC.
+	BlobServiceAbortMultipartBlobProcedure = "/numen.sync.v1.BlobService/AbortMultipartBlob"
 )
 
 // BlobServiceClient is a client for the numen.sync.v1.BlobService service.
@@ -46,6 +59,11 @@ type BlobServiceClient interface {
 	ReserveBlobs(context.Context, *connect.Request[v1.ReserveBlobsRequest]) (*connect.Response[v1.ReserveBlobsResponse], error)
 	// GetBlobUrls returns presigned GETs for the blobs of current heads.
 	GetBlobUrls(context.Context, *connect.Request[v1.GetBlobUrlsRequest]) (*connect.Response[v1.GetBlobUrlsResponse], error)
+	ReserveMultipartBlob(context.Context, *connect.Request[v1.ReserveMultipartBlobRequest]) (*connect.Response[v1.ReserveMultipartBlobResponse], error)
+	GetPartUrls(context.Context, *connect.Request[v1.GetPartUrlsRequest]) (*connect.Response[v1.GetPartUrlsResponse], error)
+	ListParts(context.Context, *connect.Request[v1.ListPartsRequest]) (*connect.Response[v1.ListPartsResponse], error)
+	CompleteMultipartBlob(context.Context, *connect.Request[v1.CompleteMultipartBlobRequest]) (*connect.Response[v1.CompleteMultipartBlobResponse], error)
+	AbortMultipartBlob(context.Context, *connect.Request[v1.AbortMultipartBlobRequest]) (*connect.Response[v1.AbortMultipartBlobResponse], error)
 }
 
 // NewBlobServiceClient constructs a client for the numen.sync.v1.BlobService service. By default,
@@ -71,13 +89,48 @@ func NewBlobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(blobServiceMethods.ByName("GetBlobUrls")),
 			connect.WithClientOptions(opts...),
 		),
+		reserveMultipartBlob: connect.NewClient[v1.ReserveMultipartBlobRequest, v1.ReserveMultipartBlobResponse](
+			httpClient,
+			baseURL+BlobServiceReserveMultipartBlobProcedure,
+			connect.WithSchema(blobServiceMethods.ByName("ReserveMultipartBlob")),
+			connect.WithClientOptions(opts...),
+		),
+		getPartUrls: connect.NewClient[v1.GetPartUrlsRequest, v1.GetPartUrlsResponse](
+			httpClient,
+			baseURL+BlobServiceGetPartUrlsProcedure,
+			connect.WithSchema(blobServiceMethods.ByName("GetPartUrls")),
+			connect.WithClientOptions(opts...),
+		),
+		listParts: connect.NewClient[v1.ListPartsRequest, v1.ListPartsResponse](
+			httpClient,
+			baseURL+BlobServiceListPartsProcedure,
+			connect.WithSchema(blobServiceMethods.ByName("ListParts")),
+			connect.WithClientOptions(opts...),
+		),
+		completeMultipartBlob: connect.NewClient[v1.CompleteMultipartBlobRequest, v1.CompleteMultipartBlobResponse](
+			httpClient,
+			baseURL+BlobServiceCompleteMultipartBlobProcedure,
+			connect.WithSchema(blobServiceMethods.ByName("CompleteMultipartBlob")),
+			connect.WithClientOptions(opts...),
+		),
+		abortMultipartBlob: connect.NewClient[v1.AbortMultipartBlobRequest, v1.AbortMultipartBlobResponse](
+			httpClient,
+			baseURL+BlobServiceAbortMultipartBlobProcedure,
+			connect.WithSchema(blobServiceMethods.ByName("AbortMultipartBlob")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // blobServiceClient implements BlobServiceClient.
 type blobServiceClient struct {
-	reserveBlobs *connect.Client[v1.ReserveBlobsRequest, v1.ReserveBlobsResponse]
-	getBlobUrls  *connect.Client[v1.GetBlobUrlsRequest, v1.GetBlobUrlsResponse]
+	reserveBlobs          *connect.Client[v1.ReserveBlobsRequest, v1.ReserveBlobsResponse]
+	getBlobUrls           *connect.Client[v1.GetBlobUrlsRequest, v1.GetBlobUrlsResponse]
+	reserveMultipartBlob  *connect.Client[v1.ReserveMultipartBlobRequest, v1.ReserveMultipartBlobResponse]
+	getPartUrls           *connect.Client[v1.GetPartUrlsRequest, v1.GetPartUrlsResponse]
+	listParts             *connect.Client[v1.ListPartsRequest, v1.ListPartsResponse]
+	completeMultipartBlob *connect.Client[v1.CompleteMultipartBlobRequest, v1.CompleteMultipartBlobResponse]
+	abortMultipartBlob    *connect.Client[v1.AbortMultipartBlobRequest, v1.AbortMultipartBlobResponse]
 }
 
 // ReserveBlobs calls numen.sync.v1.BlobService.ReserveBlobs.
@@ -90,12 +143,42 @@ func (c *blobServiceClient) GetBlobUrls(ctx context.Context, req *connect.Reques
 	return c.getBlobUrls.CallUnary(ctx, req)
 }
 
+// ReserveMultipartBlob calls numen.sync.v1.BlobService.ReserveMultipartBlob.
+func (c *blobServiceClient) ReserveMultipartBlob(ctx context.Context, req *connect.Request[v1.ReserveMultipartBlobRequest]) (*connect.Response[v1.ReserveMultipartBlobResponse], error) {
+	return c.reserveMultipartBlob.CallUnary(ctx, req)
+}
+
+// GetPartUrls calls numen.sync.v1.BlobService.GetPartUrls.
+func (c *blobServiceClient) GetPartUrls(ctx context.Context, req *connect.Request[v1.GetPartUrlsRequest]) (*connect.Response[v1.GetPartUrlsResponse], error) {
+	return c.getPartUrls.CallUnary(ctx, req)
+}
+
+// ListParts calls numen.sync.v1.BlobService.ListParts.
+func (c *blobServiceClient) ListParts(ctx context.Context, req *connect.Request[v1.ListPartsRequest]) (*connect.Response[v1.ListPartsResponse], error) {
+	return c.listParts.CallUnary(ctx, req)
+}
+
+// CompleteMultipartBlob calls numen.sync.v1.BlobService.CompleteMultipartBlob.
+func (c *blobServiceClient) CompleteMultipartBlob(ctx context.Context, req *connect.Request[v1.CompleteMultipartBlobRequest]) (*connect.Response[v1.CompleteMultipartBlobResponse], error) {
+	return c.completeMultipartBlob.CallUnary(ctx, req)
+}
+
+// AbortMultipartBlob calls numen.sync.v1.BlobService.AbortMultipartBlob.
+func (c *blobServiceClient) AbortMultipartBlob(ctx context.Context, req *connect.Request[v1.AbortMultipartBlobRequest]) (*connect.Response[v1.AbortMultipartBlobResponse], error) {
+	return c.abortMultipartBlob.CallUnary(ctx, req)
+}
+
 // BlobServiceHandler is an implementation of the numen.sync.v1.BlobService service.
 type BlobServiceHandler interface {
 	// ReserveBlobs declares the sizes of bodies, reserves quota, and returns one presigned PUT for each.
 	ReserveBlobs(context.Context, *connect.Request[v1.ReserveBlobsRequest]) (*connect.Response[v1.ReserveBlobsResponse], error)
 	// GetBlobUrls returns presigned GETs for the blobs of current heads.
 	GetBlobUrls(context.Context, *connect.Request[v1.GetBlobUrlsRequest]) (*connect.Response[v1.GetBlobUrlsResponse], error)
+	ReserveMultipartBlob(context.Context, *connect.Request[v1.ReserveMultipartBlobRequest]) (*connect.Response[v1.ReserveMultipartBlobResponse], error)
+	GetPartUrls(context.Context, *connect.Request[v1.GetPartUrlsRequest]) (*connect.Response[v1.GetPartUrlsResponse], error)
+	ListParts(context.Context, *connect.Request[v1.ListPartsRequest]) (*connect.Response[v1.ListPartsResponse], error)
+	CompleteMultipartBlob(context.Context, *connect.Request[v1.CompleteMultipartBlobRequest]) (*connect.Response[v1.CompleteMultipartBlobResponse], error)
+	AbortMultipartBlob(context.Context, *connect.Request[v1.AbortMultipartBlobRequest]) (*connect.Response[v1.AbortMultipartBlobResponse], error)
 }
 
 // NewBlobServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -117,12 +200,52 @@ func NewBlobServiceHandler(svc BlobServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(blobServiceMethods.ByName("GetBlobUrls")),
 		connect.WithHandlerOptions(opts...),
 	)
+	blobServiceReserveMultipartBlobHandler := connect.NewUnaryHandler(
+		BlobServiceReserveMultipartBlobProcedure,
+		svc.ReserveMultipartBlob,
+		connect.WithSchema(blobServiceMethods.ByName("ReserveMultipartBlob")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blobServiceGetPartUrlsHandler := connect.NewUnaryHandler(
+		BlobServiceGetPartUrlsProcedure,
+		svc.GetPartUrls,
+		connect.WithSchema(blobServiceMethods.ByName("GetPartUrls")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blobServiceListPartsHandler := connect.NewUnaryHandler(
+		BlobServiceListPartsProcedure,
+		svc.ListParts,
+		connect.WithSchema(blobServiceMethods.ByName("ListParts")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blobServiceCompleteMultipartBlobHandler := connect.NewUnaryHandler(
+		BlobServiceCompleteMultipartBlobProcedure,
+		svc.CompleteMultipartBlob,
+		connect.WithSchema(blobServiceMethods.ByName("CompleteMultipartBlob")),
+		connect.WithHandlerOptions(opts...),
+	)
+	blobServiceAbortMultipartBlobHandler := connect.NewUnaryHandler(
+		BlobServiceAbortMultipartBlobProcedure,
+		svc.AbortMultipartBlob,
+		connect.WithSchema(blobServiceMethods.ByName("AbortMultipartBlob")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.BlobService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BlobServiceReserveBlobsProcedure:
 			blobServiceReserveBlobsHandler.ServeHTTP(w, r)
 		case BlobServiceGetBlobUrlsProcedure:
 			blobServiceGetBlobUrlsHandler.ServeHTTP(w, r)
+		case BlobServiceReserveMultipartBlobProcedure:
+			blobServiceReserveMultipartBlobHandler.ServeHTTP(w, r)
+		case BlobServiceGetPartUrlsProcedure:
+			blobServiceGetPartUrlsHandler.ServeHTTP(w, r)
+		case BlobServiceListPartsProcedure:
+			blobServiceListPartsHandler.ServeHTTP(w, r)
+		case BlobServiceCompleteMultipartBlobProcedure:
+			blobServiceCompleteMultipartBlobHandler.ServeHTTP(w, r)
+		case BlobServiceAbortMultipartBlobProcedure:
+			blobServiceAbortMultipartBlobHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -138,4 +261,24 @@ func (UnimplementedBlobServiceHandler) ReserveBlobs(context.Context, *connect.Re
 
 func (UnimplementedBlobServiceHandler) GetBlobUrls(context.Context, *connect.Request[v1.GetBlobUrlsRequest]) (*connect.Response[v1.GetBlobUrlsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.GetBlobUrls is not implemented"))
+}
+
+func (UnimplementedBlobServiceHandler) ReserveMultipartBlob(context.Context, *connect.Request[v1.ReserveMultipartBlobRequest]) (*connect.Response[v1.ReserveMultipartBlobResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.ReserveMultipartBlob is not implemented"))
+}
+
+func (UnimplementedBlobServiceHandler) GetPartUrls(context.Context, *connect.Request[v1.GetPartUrlsRequest]) (*connect.Response[v1.GetPartUrlsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.GetPartUrls is not implemented"))
+}
+
+func (UnimplementedBlobServiceHandler) ListParts(context.Context, *connect.Request[v1.ListPartsRequest]) (*connect.Response[v1.ListPartsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.ListParts is not implemented"))
+}
+
+func (UnimplementedBlobServiceHandler) CompleteMultipartBlob(context.Context, *connect.Request[v1.CompleteMultipartBlobRequest]) (*connect.Response[v1.CompleteMultipartBlobResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.CompleteMultipartBlob is not implemented"))
+}
+
+func (UnimplementedBlobServiceHandler) AbortMultipartBlob(context.Context, *connect.Request[v1.AbortMultipartBlobRequest]) (*connect.Response[v1.AbortMultipartBlobResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.BlobService.AbortMultipartBlob is not implemented"))
 }

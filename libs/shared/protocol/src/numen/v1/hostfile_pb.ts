@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostfile.proto.
  */
 export const file_numen_v1_hostfile: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0ZmlsZS5wcm90bxIIbnVtZW4udjEiHwoPU3RhdEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiWAoQU3RhdEZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIgCgRzdGF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiTgoPUmVhZEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAMSEwoGbGVuZ3RoGAMgASgDSACIAQFCCQoHX2xlbmd0aCJ4ChBSZWFkRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSIAoEc3RhdBgDIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Eg0KBXN0YXJ0GAQgASgDIlcKEFdyaXRlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiWQoRV3JpdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IjIKEUNyZWF0ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHY29udGVudBgCIAEoDCI4ChJDcmVhdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIQoQU2NhbkZpbGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI3ChFTY2FuRmlsZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSIwChBGaWxlQ2hhbmdlQ3Vyc29yEg8KB2ZlZWRfaWQYASABKAkSCwoDc2VxGAIgASgDImIKFkxpc3RGaWxlQ2hhbmdlc1JlcXVlc3QSKQoFc2luY2UYASABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yEg4KBmV2ZW50cxgCIAMoCRINCgVsaW1pdBgDIAEoBSKyAQoXTGlzdEZpbGVDaGFuZ2VzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJQoHY2hhbmdlcxgCIAMoCzIULm51bWVuLnYxLkZpbGVDaGFuZ2USKAoEbmV4dBgDIAEoCzIaLm51bWVuLnYxLkZpbGVDaGFuZ2VDdXJzb3ISEAoIaXNfcmVzZXQYBCABKAgSEAoIaGFzX21vcmUYBSABKAgidAoKRmlsZUNoYW5nZRIRCglzb3VyY2VfaWQYASABKAMSDAoEcGF0aBgCIAEoCRINCgVldmVudBgDIAEoCRILCgNzZXEYBCABKAMSDAoEaGFzaBgFIAEoCRIMCgRzaXplGAYgASgDEg0KBW10aW1lGAcgASgDMsQDCg9Ib3N0RmlsZVNlcnZpY2USQQoIU3RhdEZpbGUSGS5udW1lbi52MS5TdGF0RmlsZVJlcXVlc3QaGi5udW1lbi52MS5TdGF0RmlsZVJlc3BvbnNlEkEKCFJlYWRGaWxlEhkubnVtZW4udjEuUmVhZEZpbGVSZXF1ZXN0GhoubnVtZW4udjEuUmVhZEZpbGVSZXNwb25zZRJECglXcml0ZUZpbGUSGi5udW1lbi52MS5Xcml0ZUZpbGVSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVGaWxlUmVzcG9uc2USRwoKQ3JlYXRlRmlsZRIbLm51bWVuLnYxLkNyZWF0ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRmlsZVJlc3BvbnNlEkQKCVNjYW5GaWxlcxIaLm51bWVuLnYxLlNjYW5GaWxlc1JlcXVlc3QaGy5udW1lbi52MS5TY2FuRmlsZXNSZXNwb25zZRJWCg9MaXN0RmlsZUNoYW5nZXMSIC5udW1lbi52MS5MaXN0RmlsZUNoYW5nZXNSZXF1ZXN0GiEubnVtZW4udjEuTGlzdEZpbGVDaGFuZ2VzUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9ob3N0ZmlsZS5wcm90bxIIbnVtZW4udjEiHwoPU3RhdEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiWAoQU3RhdEZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIgCgRzdGF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiTgoPUmVhZEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAMSEwoGbGVuZ3RoGAMgASgDSACIAQFCCQoHX2xlbmd0aCJ4ChBSZWFkRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSIAoEc3RhdBgDIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Eg0KBXN0YXJ0GAQgASgDIlcKEFdyaXRlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiWQoRV3JpdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IjIKEUNyZWF0ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHY29udGVudBgCIAEoDCI4ChJDcmVhdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIQoQU2NhbkZpbGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI3ChFTY2FuRmlsZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSIwChBGaWxlQ2hhbmdlQ3Vyc29yEg8KB2ZlZWRfaWQYASABKAkSCwoDc2VxGAIgASgDImIKFkxpc3RGaWxlQ2hhbmdlc1JlcXVlc3QSKQoFc2luY2UYASABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yEg4KBmV2ZW50cxgCIAMoCRINCgVsaW1pdBgDIAEoBSKyAQoXTGlzdEZpbGVDaGFuZ2VzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJQoHY2hhbmdlcxgCIAMoCzIULm51bWVuLnYxLkZpbGVDaGFuZ2USKAoEbmV4dBgDIAEoCzIaLm51bWVuLnYxLkZpbGVDaGFuZ2VDdXJzb3ISEAoIaXNfcmVzZXQYBCABKAgSEAoIaGFzX21vcmUYBSABKAgidAoKRmlsZUNoYW5nZRIRCglzb3VyY2VfaWQYASABKAMSDAoEcGF0aBgCIAEoCRINCgVldmVudBgDIAEoCRILCgNzZXEYBCABKAMSDAoEaGFzaBgFIAEoCRIMCgRzaXplGAYgASgDEg0KBW10aW1lGAcgASgDInIKHkhvc3RGaWxlU2VydmljZU1vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEikKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXRIAIgBAUILCglfYmFzZWxpbmUiWgofSG9zdEZpbGVTZXJ2aWNlTW92ZUZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRITCgttb3ZlZF9jb3VudBgCIAEoBSJoCiBIb3N0RmlsZVNlcnZpY2VSZW1vdmVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEikKCGJhc2VsaW5lGAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXRIAIgBAUILCglfYmFzZWxpbmUiXgohSG9zdEZpbGVTZXJ2aWNlUmVtb3ZlRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhUKDXJlbW92ZWRfY291bnQYAiABKAUiQwoUUmVhZEZpbGVSYW5nZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoAxIOCgZsZW5ndGgYAyABKAMibgoVUmVhZEZpbGVSYW5nZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSIAoEc3RhdBgDIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0In0KEFBsYWNlRmlsZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEhUKDWV4cGVjdGVkX2hhc2gYAyABKAkSKQoIYmFzZWxpbmUYBCABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgAiAEBQgsKCV9iYXNlbGluZSJZChFQbGFjZUZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIgCgRzdGF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQypAYKD0hvc3RGaWxlU2VydmljZRJBCghTdGF0RmlsZRIZLm51bWVuLnYxLlN0YXRGaWxlUmVxdWVzdBoaLm51bWVuLnYxLlN0YXRGaWxlUmVzcG9uc2USQQoIUmVhZEZpbGUSGS5udW1lbi52MS5SZWFkRmlsZVJlcXVlc3QaGi5udW1lbi52MS5SZWFkRmlsZVJlc3BvbnNlEkQKCVdyaXRlRmlsZRIaLm51bWVuLnYxLldyaXRlRmlsZVJlcXVlc3QaGy5udW1lbi52MS5Xcml0ZUZpbGVSZXNwb25zZRJHCgpDcmVhdGVGaWxlEhsubnVtZW4udjEuQ3JlYXRlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5DcmVhdGVGaWxlUmVzcG9uc2USRAoJU2NhbkZpbGVzEhoubnVtZW4udjEuU2NhbkZpbGVzUmVxdWVzdBobLm51bWVuLnYxLlNjYW5GaWxlc1Jlc3BvbnNlElYKD0xpc3RGaWxlQ2hhbmdlcxIgLm51bWVuLnYxLkxpc3RGaWxlQ2hhbmdlc1JlcXVlc3QaIS5udW1lbi52MS5MaXN0RmlsZUNoYW5nZXNSZXNwb25zZRJfCghNb3ZlRmlsZRIoLm51bWVuLnYxLkhvc3RGaWxlU2VydmljZU1vdmVGaWxlUmVxdWVzdBopLm51bWVuLnYxLkhvc3RGaWxlU2VydmljZU1vdmVGaWxlUmVzcG9uc2USZQoKUmVtb3ZlRmlsZRIqLm51bWVuLnYxLkhvc3RGaWxlU2VydmljZVJlbW92ZUZpbGVSZXF1ZXN0GisubnVtZW4udjEuSG9zdEZpbGVTZXJ2aWNlUmVtb3ZlRmlsZVJlc3BvbnNlElAKDVJlYWRGaWxlUmFuZ2USHi5udW1lbi52MS5SZWFkRmlsZVJhbmdlUmVxdWVzdBofLm51bWVuLnYxLlJlYWRGaWxlUmFuZ2VSZXNwb25zZRJECglQbGFjZUZpbGUSGi5udW1lbi52MS5QbGFjZUZpbGVSZXF1ZXN0GhsubnVtZW4udjEuUGxhY2VGaWxlUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.StatFileRequest
@@ -418,6 +418,243 @@ export const FileChangeSchema: GenMessage<FileChange> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostfile, 13);
 
 /**
+ * HostFileServiceMoveFileRequest names a file or folder and where it goes. The links to a
+ * note that moved are repaired as for a move in the window.
+ *
+ * @generated from message numen.v1.HostFileServiceMoveFileRequest
+ */
+export type HostFileServiceMoveFileRequest = Message<"numen.v1.HostFileServiceMoveFileRequest"> & {
+  /**
+   * @generated from field: string from = 1;
+   */
+  from: string;
+
+  /**
+   * @generated from field: string to = 2;
+   */
+  to: string;
+
+  /**
+   * baseline is what the file was when the caller last saw it. Set, from names
+   * a file and the file changed since: CONFLICT. Not allowed for a folder.
+   *
+   * @generated from field: optional numen.v1.FileStat baseline = 3;
+   */
+  baseline?: FileStat | undefined;
+};
+
+/**
+ * Describes the message numen.v1.HostFileServiceMoveFileRequest.
+ * Use `create(HostFileServiceMoveFileRequestSchema)` to create a new message.
+ */
+export const HostFileServiceMoveFileRequestSchema: GenMessage<HostFileServiceMoveFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 14);
+
+/**
+ * @generated from message numen.v1.HostFileServiceMoveFileResponse
+ */
+export type HostFileServiceMoveFileResponse = Message<"numen.v1.HostFileServiceMoveFileResponse"> & {
+  /**
+   * NOT_FOUND (from), ALREADY_EXISTS (to), OUTSIDE_VAULT, CONFLICT, LOCKED.
+   *
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * The number of files under to now: 1 for a file.
+   *
+   * @generated from field: int32 moved_count = 2;
+   */
+  movedCount: number;
+};
+
+/**
+ * Describes the message numen.v1.HostFileServiceMoveFileResponse.
+ * Use `create(HostFileServiceMoveFileResponseSchema)` to create a new message.
+ */
+export const HostFileServiceMoveFileResponseSchema: GenMessage<HostFileServiceMoveFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 15);
+
+/**
+ * @generated from message numen.v1.HostFileServiceRemoveFileRequest
+ */
+export type HostFileServiceRemoveFileRequest = Message<"numen.v1.HostFileServiceRemoveFileRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * baseline is as for MoveFile; not allowed for a folder.
+   *
+   * @generated from field: optional numen.v1.FileStat baseline = 2;
+   */
+  baseline?: FileStat | undefined;
+};
+
+/**
+ * Describes the message numen.v1.HostFileServiceRemoveFileRequest.
+ * Use `create(HostFileServiceRemoveFileRequestSchema)` to create a new message.
+ */
+export const HostFileServiceRemoveFileRequestSchema: GenMessage<HostFileServiceRemoveFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 16);
+
+/**
+ * @generated from message numen.v1.HostFileServiceRemoveFileResponse
+ */
+export type HostFileServiceRemoveFileResponse = Message<"numen.v1.HostFileServiceRemoveFileResponse"> & {
+  /**
+   * NOT_FOUND, OUTSIDE_VAULT, CONFLICT, LOCKED.
+   *
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * @generated from field: int32 removed_count = 2;
+   */
+  removedCount: number;
+};
+
+/**
+ * Describes the message numen.v1.HostFileServiceRemoveFileResponse.
+ * Use `create(HostFileServiceRemoveFileResponseSchema)` to create a new message.
+ */
+export const HostFileServiceRemoveFileResponseSchema: GenMessage<HostFileServiceRemoveFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 17);
+
+/**
+ * ReadFileRangeRequest asks for start, then at most length bytes, 1 to
+ * 4194304. A range past the end returns the bytes that are there; start at or
+ * past the end returns none.
+ *
+ * @generated from message numen.v1.ReadFileRangeRequest
+ */
+export type ReadFileRangeRequest = Message<"numen.v1.ReadFileRangeRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 start = 2;
+   */
+  start: bigint;
+
+  /**
+   * @generated from field: int64 length = 3;
+   */
+  length: bigint;
+};
+
+/**
+ * Describes the message numen.v1.ReadFileRangeRequest.
+ * Use `create(ReadFileRangeRequestSchema)` to create a new message.
+ */
+export const ReadFileRangeRequestSchema: GenMessage<ReadFileRangeRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 18);
+
+/**
+ * @generated from message numen.v1.ReadFileRangeResponse
+ */
+export type ReadFileRangeResponse = Message<"numen.v1.ReadFileRangeResponse"> & {
+  /**
+   * NOT_FOUND (also a folder), OUTSIDE_VAULT, INVALID_RANGE.
+   *
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * @generated from field: bytes content = 2;
+   */
+  content: Uint8Array;
+
+  /**
+   * What the file was when it was read, with its hash.
+   *
+   * @generated from field: numen.v1.FileStat stat = 3;
+   */
+  stat?: FileStat | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ReadFileRangeResponse.
+ * Use `create(ReadFileRangeResponseSchema)` to create a new message.
+ */
+export const ReadFileRangeResponseSchema: GenMessage<ReadFileRangeResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 19);
+
+/**
+ * @generated from message numen.v1.PlaceFileRequest
+ */
+export type PlaceFileRequest = Message<"numen.v1.PlaceFileRequest"> & {
+  /**
+   * A store file name as in HostStoreService.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * The SHA-256 of the staged content, lowercase hex. The host hashes the
+   * file and refuses another content.
+   *
+   * @generated from field: string expected_hash = 3;
+   */
+  expectedHash: string;
+
+  /**
+   * baseline is the file at path as the caller last saw it. Unset: the path
+   * must be free (ALREADY_EXISTS otherwise). Set: the file must be unchanged
+   * (CONFLICT otherwise) and is replaced.
+   *
+   * @generated from field: optional numen.v1.FileStat baseline = 4;
+   */
+  baseline?: FileStat | undefined;
+};
+
+/**
+ * Describes the message numen.v1.PlaceFileRequest.
+ * Use `create(PlaceFileRequestSchema)` to create a new message.
+ */
+export const PlaceFileRequestSchema: GenMessage<PlaceFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 20);
+
+/**
+ * @generated from message numen.v1.PlaceFileResponse
+ */
+export type PlaceFileResponse = Message<"numen.v1.PlaceFileResponse"> & {
+  /**
+   * NOT_FOUND (staged file), ALREADY_EXISTS, CONFLICT, HASH_MISMATCH,
+   * OUTSIDE_VAULT, LOCKED.
+   *
+   * @generated from field: numen.v1.ErrorCode error = 1;
+   */
+  error: ErrorCode;
+
+  /**
+   * The placed file, with its hash.
+   *
+   * @generated from field: numen.v1.FileStat stat = 2;
+   */
+  stat?: FileStat | undefined;
+};
+
+/**
+ * Describes the message numen.v1.PlaceFileResponse.
+ * Use `create(PlaceFileResponseSchema)` to create a new message.
+ */
+export const PlaceFileResponseSchema: GenMessage<PlaceFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostfile, 21);
+
+/**
  * HostFileService is the files of the vault, as a plugin reads and writes them
  * through the host, so the index, the watcher, the file stats and the trash
  * stay up to date with what the plugin did.
@@ -499,6 +736,49 @@ export const HostFileService: GenService<{
     methodKind: "unary";
     input: typeof ListFileChangesRequestSchema;
     output: typeof ListFileChangesResponseSchema;
+  },
+  /**
+   * MoveFile files a file of any kind, or a folder with everything under it,
+   * somewhere else in the vault. It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostFileService.MoveFile
+   */
+  moveFile: {
+    methodKind: "unary";
+    input: typeof HostFileServiceMoveFileRequestSchema;
+    output: typeof HostFileServiceMoveFileResponseSchema;
+  },
+  /**
+   * RemoveFile moves a file, or a folder with everything under it, to the
+   * trash of the vault. Nothing is destroyed. It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostFileService.RemoveFile
+   */
+  removeFile: {
+    methodKind: "unary";
+    input: typeof HostFileServiceRemoveFileRequestSchema;
+    output: typeof HostFileServiceRemoveFileResponseSchema;
+  },
+  /**
+   * ReadFileRange reads bytes of any file as they are. It needs vault:read.
+   *
+   * @generated from rpc numen.v1.HostFileService.ReadFileRange
+   */
+  readFileRange: {
+    methodKind: "unary";
+    input: typeof ReadFileRangeRequestSchema;
+    output: typeof ReadFileRangeResponseSchema;
+  },
+  /**
+   * PlaceFile moves a file of the plugin's own store folder to a path of the
+   * vault in one atomic rename. It needs vault:write.
+   *
+   * @generated from rpc numen.v1.HostFileService.PlaceFile
+   */
+  placeFile: {
+    methodKind: "unary";
+    input: typeof PlaceFileRequestSchema;
+    output: typeof PlaceFileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostfile, 0);
