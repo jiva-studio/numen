@@ -269,3 +269,8 @@ func checkRole(role domain.LinkRole) error {
 	}
 	return nil
 }
+
+// AddManagedVault is AddVault for a vault that only this plugin writes. The plugin needs the permission vault:manage.
+func (c *Client) AddManagedVault(_ context.Context, _, _, _ string) (domain.Vault, error) {
+	return domain.Vault{}, errors.New("not implemented")
+}

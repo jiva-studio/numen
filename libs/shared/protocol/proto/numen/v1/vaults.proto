@@ -92,6 +92,9 @@ message Vault {
   // Set when nothing is at the path. The vault stays on the list, and the
   // folder is found again if it returns.
   bool is_missing = 4;
+
+  // managed_by is the id of the plugin that alone writes this vault; empty for a vault anyone may write.
+  string managed_by = 5;
 }
 
 message ListVaultsRequest {}
@@ -109,6 +112,10 @@ message AddVaultRequest {
   // What to call the vault. Empty takes the folder's own name, and a name
   // another vault has gets a number appended.
   string name = 2;
+
+  // managed_by makes the vault one that only the plugin with this id writes. It is honored on the host endpoint only,
+  // where it must equal the id of the plugin of the token and the plugin needs vault:manage; a window request ignores it.
+  string managed_by = 3;
 }
 
 message AddVaultResponse {

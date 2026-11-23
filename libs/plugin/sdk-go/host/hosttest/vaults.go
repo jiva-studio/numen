@@ -270,3 +270,8 @@ func (v *Vault) find(id domain.VaultID) *Vault {
 	}
 	return &Vault{unknown: true, world: v.world}
 }
+
+// AddManagedVault is AddVault for a vault that only the plugin with the id managedBy writes.
+func (v *Vault) AddManagedVault(_ context.Context, _, _, _ string) (domain.Vault, error) {
+	return domain.Vault{}, errors.New("not implemented")
+}

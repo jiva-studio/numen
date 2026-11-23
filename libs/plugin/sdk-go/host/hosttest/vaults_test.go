@@ -120,3 +120,37 @@ func TestAddVaultOfFolderInsideVaultReturnsTheCoreText(t *testing.T) {
 		t.Errorf("AddVault of /vaults/Physics/optics returned %q, want %q", err.Error(), want)
 	}
 }
+
+func TestAddManagedVaultJoinsTheListWithItsManager(t *testing.T) {
+	physics := hosttest.New("Physics")
+
+	added, err := physics.AddManagedVault(t.Context(), "/shared/Food", "Food", "md.numen.tools.sync")
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed, err := physics.GetVaultList(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if added.ManagedBy != "md.numen.tools.sync" {
+		t.Errorf("added = %+v, want the manager set", added)
+	}
+	managed := 0
+	for _, entry := range listed {
+		if entry.ManagedBy == "md.numen.tools.sync" {
+			managed++
+		}
+	}
+	if managed != 1 || len(listed) != 2 {
+		t.Errorf("list = %+v, want two vaults and one managed by the plugin", listed)
+	}
+}
+
+func TestAddManagedVaultRefusesAFolderInsideAnotherVault(t *testing.T) {
+	physics := hosttest.New("Physics")
+
+	if _, err := physics.AddManagedVault(t.Context(), "/vaults/Physics/inner", "inner", "md.numen.tools.sync"); !errors.Is(err, host.ErrVaultOverlaps) {
+		t.Errorf("error = %v, want ErrVaultOverlaps", err)
+	}
+}
