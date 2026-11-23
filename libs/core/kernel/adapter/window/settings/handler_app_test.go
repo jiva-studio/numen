@@ -11,7 +11,6 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
@@ -26,7 +25,7 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 			}
 		},
 		func() []manifest.SettingGroup { return []manifest.SettingGroup{{ID: "look", Title: "Look"}} },
-	), nil, nil), numenv1connect.UnimplementedSettingsServiceHandler{})
+	), nil, nil), NewUnavailablePathChoice())
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
