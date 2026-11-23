@@ -33,7 +33,6 @@ Feature: Connect a vault to Numen Sync
       Given the person connects the vault "Test" as a new synced vault
       When the person renames the vault "Test" to "Work"
       Then the sync settings list the synced vault "Work"
-      And the sync settings list the synced vault "Work"
 
   Rule: A copy of a connected vault is not connected twice
 

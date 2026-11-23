@@ -50,8 +50,8 @@ test("a library that reaches an application or a plugin is reported", () => {
   assert.match(found[0].symbol, /outside libs/);
 });
 
-test("the plugin SDK family may reach the atomic file library, the notes library, the protocol and the rerank messages", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/shared/atomicfile", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"]);
+test("the plugin SDK family may reach the atomic file library, the identity library, the notes library, the protocol and the rerank messages", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/shared/atomicfile", "libs/shared/identity", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"]);
   const libraries = [
     library("libs/shared/note"),
     library("libs/shared/protocol"),
@@ -156,11 +156,13 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("every shared library row is a leaf", () => {
+test("every shared library row reaches only shared libraries", () => {
   const shared = Object.entries(LIBRARY_DEPENDENCIES).filter(([family]) => family.startsWith("libs/shared/"));
   assert.ok(shared.length > 0);
   for (const [family, allowed] of shared) {
-    assert.deepEqual(allowed, [], `${family} may reach a library of this repository`);
+    for (const reached of allowed) {
+      assert.ok(reached.startsWith("libs/shared/"), `${family} may reach ${reached}`);
+    }
   }
 });
 

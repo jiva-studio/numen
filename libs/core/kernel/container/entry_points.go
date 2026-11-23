@@ -47,12 +47,12 @@ func (s windowStartup) connect(
 	exec *PluginExecution,
 	vaultDeps vaultWiring,
 	opened *windowRoutes,
-	access windowPluginAccess,
 ) (*editor.Installation, error) {
 	if !s.isEditor {
 		return opened.Installation, nil
 	}
 	state := opened.session
+	access := opened.plugins
 	exec.Runtime.pluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	hooks := pluginVaultHooks{WriteWake: access.writeWake, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, s.ports, s.db, state.GetShownVault, hooks); err != nil {
