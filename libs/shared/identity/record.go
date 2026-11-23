@@ -1,26 +1,24 @@
 package identity
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 )
 
-const recordVersion = 0x01
+const recordVersion = 0x02
 
-// Record is what one device keeps in its key store, written and deleted whole.
+// Record is what one device keeps in its key store, written and deleted whole: the device seed and the account keys wrapped for it.
+// The chain is kept next to it in a file, see State.
 type Record struct {
 	Device  DeviceKey
 	Wrapped WrappedAccountKeys
-	Chain   Chain
 }
 
 func (r Record) Bytes() []byte {
 	out := []byte{recordVersion}
 	out = append(out, r.Device.seed[:]...)
 	out = binary.AppendUvarint(out, uint64(len(r.Wrapped.sealed)))
-	out = append(out, r.Wrapped.sealed...)
-	return append(out, r.Chain.Bytes()...)
+	return append(out, r.Wrapped.sealed...)
 }
 
 func ParseRecord(b []byte) (Record, error) {
@@ -34,26 +32,16 @@ func ParseRecord(b []byte) (Record, error) {
 	if r.err != nil {
 		return Record{}, r.err
 	}
+	if !r.done() {
+		return Record{}, fmt.Errorf("%w: bytes after the record", ErrMalformed)
+	}
 	device, err := newDeviceKey(seed)
 	if err != nil {
 		return Record{}, err
 	}
-	record := Record{Device: device}
 	wrapped, err := ParseWrappedAccountKeys(sealed)
 	if err != nil {
 		return Record{}, err
 	}
-	record.Wrapped = wrapped
-	chain, err := ParseChain(r.b)
-	if err != nil {
-		return Record{}, err
-	}
-	record.Chain = chain
-	own := record.Device.SignerKey()
-	for _, device := range chain.ListDevices() {
-		if bytes.Equal(device.Public.Sign, own) {
-			return record, nil
-		}
-	}
-	return Record{}, fmt.Errorf("%w: the device of the record is not in its chain", ErrMalformed)
+	return Record{Device: device, Wrapped: wrapped}, nil
 }

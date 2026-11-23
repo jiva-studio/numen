@@ -108,6 +108,8 @@ type AccountKeys struct {
 	box       [32]byte
 	kek       [32]byte
 	boxPublic [32]byte
+	epoch     uint32
+	earlier   map[uint32][32]byte
 }
 
 func NewAccountKeys(random io.Reader) (AccountKeys, error) {
