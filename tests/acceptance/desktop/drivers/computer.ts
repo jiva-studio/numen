@@ -7,7 +7,7 @@ import { ApplicationDriver } from './application.js'
 import { IdentityDriver } from './identity.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
-import { SyncDriver } from './sync.js'
+import type { SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 /** The vault of the second computer: a scenario names it, and the computer has no other. */
@@ -51,6 +51,13 @@ export const parseInside = (text: string): string | undefined => {
 /** The path of a note a scenario names by its title. */
 export const getNotePath = (title: string): string => `${title}.md`
 
+/** What the first computer keeps of the person's account and vaults. */
+interface FirstComputer {
+  readonly identity: IdentityDriver
+  readonly sync: SyncDriver
+  readonly vaults: SyncVaultsDriver
+}
+
 interface SecondComputer {
   readonly scenario: Scenario
   readonly vaults: SyncVaultsDriver
@@ -62,9 +69,7 @@ export class ComputerDriver {
   constructor(
     private readonly first: Scenario,
     private readonly viewport: ViewportSize | null,
-    private readonly identity: IdentityDriver,
-    private readonly sync: SyncDriver,
-    private readonly firstVaults: SyncVaultsDriver,
+    private readonly owner: FirstComputer,
   ) {}
 
   private requireSecond(): SecondComputer {
@@ -77,15 +82,15 @@ export class ComputerDriver {
   }
 
   private getVaults(computer: ComputerName): SyncVaultsDriver {
-    return computer === 'first' ? this.firstVaults : this.requireSecond().vaults
+    return computer === 'first' ? this.owner.vaults : this.requireSecond().vaults
   }
 
   /** Starts a second application over a vault of its own and restores the identity of the person in it from the recovery words. */
   async restoreIdentity(): Promise<void> {
-    const words = this.identity.getWords()
+    const words = this.owner.identity.getWords()
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(SECOND_VAULT)
-    this.sync.setPlugin(scenario)
+    this.owner.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)

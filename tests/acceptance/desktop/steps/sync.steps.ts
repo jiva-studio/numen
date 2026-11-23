@@ -99,12 +99,12 @@ Then('the sync settings of the second computer show the vault {string} as connec
 
 When(
   '{computer} writes the note {string} with the text {string} in {owned}',
-  async ({ person }, computer: ComputerName, title: string, text: string, vault: string) => {
+  ({ person }, computer: ComputerName, title: string, text: string, vault: string) => {
     person.computers.writeNote(computer, title, text, vault)
   },
 )
 
-When('{computer} writes the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+When('{computer} writes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   person.computers.writeFile(computer, filePath, vault)
 })
 
