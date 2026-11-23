@@ -1,3 +1,5 @@
+import { nav } from './dom'
+
 /** Opens the camera of a device. The scanner asks the machine for one unless a caller gives its own. */
 export type ScannerCamera = () => Promise<MediaStream>
 
@@ -6,10 +8,10 @@ export const FRAMES_PER_SECOND = 8
 
 /** Opens the camera that faces away from the person. */
 export const openMachineCamera: ScannerCamera = () =>
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  nav.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
 
 /** Whether this machine can open a camera at all. */
-export const hasCamera = (): boolean => typeof navigator.mediaDevices?.getUserMedia === 'function'
+export const hasCamera = (): boolean => 'mediaDevices' in nav && typeof nav.mediaDevices.getUserMedia === 'function'
 
 /** What a person reads when the camera does not open. */
 export const describeCameraFailure = (cause: unknown): string => {

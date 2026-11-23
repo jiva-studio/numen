@@ -14,7 +14,7 @@ export { QrCode } from './shared/ui/qr-code'
 
 /** The camera read for the QR code of a link. */
 export { QrScanner } from './shared/ui/qr-scanner'
-export { hasCamera, type ScannerCamera } from './shared/lib/camera/camera'
+export { hasCamera, type ScannerCamera } from './shared/api/camera'
 
 /** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'

@@ -8,10 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -41,7 +39,7 @@ func NewCourier(deps Deps) *Courier { return &Courier{deps: deps} }
 // messages of the other side.
 type channelState struct {
 	id        []byte
-	side      syncclient.LinkSide
+	side      ports.LinkSide
 	isClosed  bool
 	stopWaits context.CancelFunc
 }
@@ -83,7 +81,7 @@ func stopWaits(current *channelState) {
 	}
 }
 
-func (u *Courier) carry(ctx context.Context, work account.LinkWork, created *[]byte, current *channelState) bool {
+func (u *Courier) carry(ctx context.Context, work ports.LinkWork, created *[]byte, current *channelState) bool {
 	if work.WantsChannel && len(work.ChannelID) == 0 {
 		return u.makeChannel(ctx, created)
 	}
@@ -104,18 +102,18 @@ func (u *Courier) carry(ctx context.Context, work account.LinkWork, created *[]b
 	return true
 }
 
-func getSide(id, created []byte) syncclient.LinkSide {
+func getSide(id, created []byte) ports.LinkSide {
 	if bytes.Equal(id, created) {
-		return syncclient.LinkSideDisplayer
+		return ports.LinkSideDisplayer
 	}
-	return syncclient.LinkSideScanner
+	return ports.LinkSideScanner
 }
 
-func getOtherSide(side syncclient.LinkSide) syncclient.LinkSide {
-	if side == syncclient.LinkSideDisplayer {
-		return syncclient.LinkSideScanner
+func getOtherSide(side ports.LinkSide) ports.LinkSide {
+	if side == ports.LinkSideDisplayer {
+		return ports.LinkSideScanner
 	}
-	return syncclient.LinkSideDisplayer
+	return ports.LinkSideDisplayer
 }
 
 func (u *Courier) makeChannel(ctx context.Context, created *[]byte) bool {
@@ -176,7 +174,7 @@ func (u *Courier) startWaits(ctx context.Context, current *channelState) {
 	started.Wait()
 }
 
-func (u *Courier) readInbound(ctx context.Context, id []byte, side syncclient.LinkSide) {
+func (u *Courier) readInbound(ctx context.Context, id []byte, side ports.LinkSide) {
 	var after uint32
 	for ctx.Err() == nil {
 		answer, err := u.deps.Relay.WaitMessages(ctx, id, side, after, inboundWait)

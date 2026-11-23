@@ -4,14 +4,10 @@
  * Reads QR codes from the camera at eight frames a second and reports the text of the first valid one it finds.
  * The stream stops when the scanner unmounts. The decoder is plain JavaScript, so no worker and no wasm is needed.
  */
-import jsQR from 'jsqr'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import {
-  describeCameraFailure,
-  FRAMES_PER_SECOND,
-  openMachineCamera,
-  type ScannerCamera,
-} from '@/shared/lib/camera/camera'
+import { useTemplateRef } from 'vue'
+import { openMachineCamera, type ScannerCamera } from '@/shared/api/camera'
+import { Button } from '../button'
+import { useQrScanner } from './useQrScanner'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(defineProps<{ camera?: ScannerCamera; accepts?: (text: string) => boolean }>(), {
@@ -25,62 +21,8 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const video = ref<HTMLVideoElement | null>(null)
-const status = ref<'waiting' | 'scanning' | 'failed'>('waiting')
-const problem = ref('')
-let stream: MediaStream | undefined
-let timer: ReturnType<typeof setInterval> | undefined
-let rejected = ''
-
-/* -------------------------------- Handlers -------------------------------- */
-function readFrame(): void {
-  const view = video.value
-  if (view === null || view.videoWidth === 0) return
-  const canvas = document.createElement('canvas')
-  canvas.width = view.videoWidth
-  canvas.height = view.videoHeight
-  const drawing = canvas.getContext('2d', { willReadFrequently: true })
-  if (drawing === null) return
-  drawing.drawImage(view, 0, 0)
-  const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
-  const found = jsQR(pixels.data, pixels.width, pixels.height)
-  if (found === null) return
-  if (!props.accepts(found.data)) {
-    if (found.data === rejected) return
-    rejected = found.data
-    problem.value = 'This code is not a link of Numen.'
-    emit('failed', problem.value)
-    return
-  }
-  stop()
-  emit('scanned', found.data)
-}
-
-function stop(): void {
-  if (timer !== undefined) clearInterval(timer)
-  timer = undefined
-  stream?.getTracks().forEach((track) => track.stop())
-  stream = undefined
-}
-
-async function start(): Promise<void> {
-  try {
-    stream = await props.camera()
-  } catch (cause) {
-    status.value = 'failed'
-    problem.value = describeCameraFailure(cause)
-    emit('failed', problem.value)
-    return
-  }
-  if (video.value === null) return stop()
-  video.value.srcObject = stream
-  await video.value.play().catch(() => undefined)
-  status.value = 'scanning'
-  timer = setInterval(readFrame, 1000 / FRAMES_PER_SECOND)
-}
-
-onMounted(start)
-onBeforeUnmount(stop)
+const video = useTemplateRef<HTMLVideoElement>('video')
+const { status, problem, retry } = useQrScanner(video, props, emit)
 </script>
 
 <template>
@@ -88,6 +30,7 @@ onBeforeUnmount(stop)
     <video ref="video" class="qr-scanner__video" muted playsinline />
     <p v-if="status === 'waiting'" class="qr-scanner__note">Waiting for the camera.</p>
     <p v-if="problem !== ''" role="alert" class="qr-scanner__note">{{ problem }}</p>
+    <Button v-if="status === 'failed'" variant="outline" size="small" @click="retry">Try again</Button>
   </div>
 </template>
 
@@ -103,7 +46,7 @@ onBeforeUnmount(stop)
   width: 100%;
   max-width: 22rem;
   border-radius: 0.5rem;
-  background: var(--numen-surface-sunken, #000);
+  background: var(--numen-raised);
 }
 
 .qr-scanner__note {

@@ -5,6 +5,7 @@
  */
 import { computed } from 'vue'
 import { encode } from 'uqr'
+import { getQrPath } from '@/shared/lib/qr/qrPath'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<{ text: string; size?: number; label?: string }>(), {
@@ -15,25 +16,11 @@ const props = withDefaults(defineProps<{ text: string; size?: number; label?: st
 /* --------------------------------- State ---------------------------------- */
 const QUIET_ZONE = 2
 
-const modules = computed(() => encode(props.text, { ecc: 'M', border: 0 }))
+const modules = computed(() => encode(props.text, { ecc: 'M', border: 0 }).data)
 const span = computed(() => modules.value.length + 2 * QUIET_ZONE)
 
-/** The dark squares as one path, a row of runs at a time. */
-const path = computed(() => {
-  const parts: string[] = []
-  modules.value.forEach((row, y) => {
-    let start = -1
-    row.forEach((isDark, x) => {
-      if (isDark && start < 0) start = x
-      if ((!isDark || x === row.length - 1) && start >= 0) {
-        const end = isDark ? x + 1 : x
-        parts.push(`M${start + QUIET_ZONE} ${y + QUIET_ZONE}h${end - start}v1h${start - end}z`)
-        start = -1
-      }
-    })
-  })
-  return parts.join('')
-})
+/** The dark squares as one path. */
+const path = computed(() => getQrPath(modules.value, QUIET_ZONE))
 </script>
 
 <template>

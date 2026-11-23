@@ -135,6 +135,19 @@ type Subscriptions interface {
 	CreateCheckout(ctx context.Context) (string, error)
 }
 
+// LinkWork is what the core of this device wants carried for its pending link.
+type LinkWork = account.LinkWork
+
+// LinkSide is the end of a link channel a message goes to or is read by.
+type LinkSide = syncclient.LinkSide
+
+const (
+	// LinkSideDisplayer is the device that shows the QR code.
+	LinkSideDisplayer = syncclient.LinkSideDisplayer
+	// LinkSideScanner is the device that reads it.
+	LinkSideScanner = syncclient.LinkSideScanner
+)
+
 // LinkCore is the pending link of the core of this device, as a courier carries it.
 type LinkCore interface {
 	GetLinkWork(ctx context.Context, sinceVersion uint64, wait time.Duration) (account.LinkWork, error)

@@ -3,7 +3,7 @@
  * a camera gives.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { encode } from 'uqr'
 import QrScanner from './QrScanner.vue'
 
@@ -55,7 +55,7 @@ const REFRESH_MS = 100
 const FRAME_RATE = 8
 
 const filmCode = (text: string) => (): Promise<MediaStream> => {
-  const modules = encode(text, { ecc: 'M', border: 0 })
+  const { data: modules } = encode(text, { ecc: 'M', border: 0 })
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = (modules.length + 2 * QUIET) * CELL
   const drawing = canvas.getContext('2d')
@@ -85,7 +85,7 @@ export const ReadsALink: Story = {
   args: { camera: filmCode(LINK_TEXT), onScanned: fn(), onFailed: fn() },
   play: async ({ args }) => {
     await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
-    expect(args.onFailed).not.toHaveBeenCalled()
+    await expect(args.onFailed).not.toHaveBeenCalled()
   },
 }
 
@@ -99,8 +99,30 @@ export const ShowsAnInvalidCode: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const alert = await within(canvasElement).findByRole('alert', undefined, { timeout: 10_000 })
-    expect(alert).toHaveTextContent('This code is not a link of Numen.')
-    expect(args.onFailed).toHaveBeenCalledWith('This code is not a link of Numen.')
-    expect(args.onScanned).not.toHaveBeenCalled()
+    await expect(alert).toHaveTextContent('This code is not a link of Numen.')
+    await expect(args.onFailed).toHaveBeenCalledWith('This code is not a link of Numen.')
+    await expect(args.onScanned).not.toHaveBeenCalled()
+  },
+}
+
+/** The first answer of the camera is no, the person asks again and the camera films the QR code of a link. */
+export const TriesAgainAfterAFailure: Story = {
+  args: {
+    camera: (() => {
+      let isFirst = true
+      return () => {
+        if (!isFirst) return filmCode(LINK_TEXT)()
+        isFirst = false
+        return Promise.reject(new DOMException('no', 'NotAllowedError'))
+      }
+    })(),
+    onScanned: fn(),
+    onFailed: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const retry = await within(canvasElement).findByRole('button', { name: 'Try again' })
+    await expect(args.onFailed).toHaveBeenCalledWith('The camera is not allowed.')
+    await userEvent.click(retry)
+    await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
   },
 }

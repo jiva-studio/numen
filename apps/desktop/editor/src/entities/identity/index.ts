@@ -7,6 +7,5 @@ export type {
   LinkInfo,
   LinkMode,
   LinkPhase,
-  LinkReason,
   LinkRole,
 } from './lib/types'
