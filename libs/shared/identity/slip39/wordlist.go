@@ -8,12 +8,12 @@ import (
 //go:embed wordlist.txt
 var wordListText string
 
-func wordList() []string {
+func listWords() []string {
 	return strings.Split(strings.TrimSuffix(wordListText, "\n"), "\n")
 }
 
-func wordIndex() map[string]int {
-	list := wordList()
+func indexWords() map[string]int {
+	list := listWords()
 	index := make(map[string]int, len(list))
 	for i, word := range list {
 		index[word] = i
