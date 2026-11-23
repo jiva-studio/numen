@@ -9,3 +9,10 @@ const (
 	DefaultPageSize   = 200
 	MaxPageSize       = 1000
 )
+
+const (
+	MaxLinkMessage   = 256 << 10
+	LinkWaitMax      = 20
+	MaxChainBytes    = 192 << 10
+	MaxActiveDevices = 32
+)
