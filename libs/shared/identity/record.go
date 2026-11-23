@@ -49,6 +49,13 @@ func ParseRecord(b []byte) (Record, error) {
 		return Record{}, err
 	}
 	record.Chain = chain
+	opened, err := record.Device.UnwrapAccountKeys(wrapped)
+	if err != nil {
+		return Record{}, fmt.Errorf("%w: the wrapped account keys do not open for the device: %w", ErrMalformed, err)
+	}
+	if opened.BoxPublicKey() != chain.AccountBoxKey() {
+		return Record{}, fmt.Errorf("%w: the wrapped account keys are not the account of the chain", ErrMalformed)
+	}
 	own := record.Device.SignerKey()
 	for _, device := range chain.ListDevices() {
 		if bytes.Equal(device.Public.Sign, own) {

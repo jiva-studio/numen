@@ -293,3 +293,11 @@ func TestParseChain_RejectsNoEntriesAndTruncatedBytes(t *testing.T) {
 		}
 	}
 }
+
+func TestAppendDevice_RefusesADeviceWithoutASigningKey(t *testing.T) {
+	t.Parallel()
+	a := newChain(t)
+	if _, err := a.chain.AppendDevice(a.recovery, identity.DevicePublicKey{}, "Laptop", epoch().Add(time.Hour)); !errors.Is(err, identity.ErrMalformed) {
+		t.Errorf("error = %v, want ErrMalformed", err)
+	}
+}

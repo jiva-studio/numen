@@ -149,6 +149,9 @@ func verifyAddDevice(entry Entry, i int, root ed25519.PublicKey, known map[strin
 	if err := checkDeviceName(entry.AddDevice.Name); err != nil {
 		return err
 	}
+	if len(entry.AddDevice.Device.Sign) != ed25519.PublicKeySize {
+		return fmt.Errorf("%w: entry %d has a device signing key of %d bytes", ErrMalformed, i, len(entry.AddDevice.Device.Sign))
+	}
 	added := string(entry.AddDevice.Device.Sign)
 	if _, ok := known[added]; ok || bytes.Equal(entry.AddDevice.Device.Sign, root) {
 		return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)
