@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	healthKey   = "link-needs-server"
-	healthText  = "Linking needs the sync server"
-	workWait    = 20 * time.Second
-	retryAfter  = time.Second
-	inboundWait = 10 * time.Second
+	healthKey       = "link-needs-server"
+	healthText      = "Linking needs the sync server"
+	healthOtherKey  = "link-other-server"
+	healthOtherText = "The QR code is for another sync server"
+	workWait        = 20 * time.Second
+	retryAfter      = time.Second
+	inboundWait     = 10 * time.Second
 )
 
 // Deps are what the courier needs.
@@ -27,6 +29,8 @@ type Deps struct {
 	Relay  ports.Relay
 	Health ports.Health
 	Clock  ports.Clock
+	// Server is the address of the sync server this device is set to; a link whose QR code names another server is not carried.
+	Server string
 }
 
 // Courier runs for as long as the plugin does.
@@ -85,6 +89,10 @@ func stopWaits(current *channelState) {
 }
 
 func (u *Courier) carry(ctx context.Context, work ports.LinkWork, created *[]byte, current *channelState) bool {
+	if work.Server != "" && !syncprotocol.IsSameAddress(work.Server, u.deps.Server) {
+		u.reportOtherServer(ctx)
+		return true
+	}
 	if work.WantsChannel && len(work.ChannelID) == 0 {
 		return u.makeChannel(ctx, created)
 	}
@@ -207,6 +215,13 @@ func (u *Courier) report(ctx context.Context) {
 	if u.deps.Health.Report(ctx, item) == nil {
 		u.isRaised = true
 	}
+}
+
+func (u *Courier) reportOtherServer(ctx context.Context) {
+	_ = u.deps.Health.Report(ctx, health.Item{
+		Key: healthOtherKey, Severity: health.Warning, Text: healthOtherText,
+		Detail: "Numen does not send a link to any server but the one this device is set to.",
+	})
 }
 
 func (u *Courier) clear(ctx context.Context) {

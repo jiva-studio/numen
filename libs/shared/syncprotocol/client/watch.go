@@ -25,7 +25,7 @@ type WatchClient struct {
 // NewWatchClient returns the client of the server at address. token returns the session token and is read when
 // the stream opens.
 func NewWatchClient(address string, httpClient *http.Client, token func() string) *WatchClient {
-	return &WatchClient{rpc: syncv1connect.NewWatchServiceClient(httpClient, address, newClientOptions(token))}
+	return &WatchClient{rpc: syncv1connect.NewWatchServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // WatchStream is an open stream of change hints whose Started message was read.

@@ -324,6 +324,9 @@ func (r *pullRun) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
 	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
 		return note.Meta{}, false
 	}
+	if note.CheckRemotePath(meta.Path) != nil {
+		return note.Meta{}, false
+	}
 	return meta, true
 }
 

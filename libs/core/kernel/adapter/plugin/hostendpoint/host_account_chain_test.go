@@ -137,7 +137,7 @@ func newRevokeSetup(t *testing.T) *revokeSetup {
 	account := identity.NewAccount(func() pluginport.KeyStore { return keys }, deviceNames{}, clock, progress, chains)
 	fake := newCallers()
 	fake.confined = true
-	fake.granted = []string{manifest.PermissionIdentity}
+	fake.granted = []string{manifest.PermissionIdentity, manifest.PermissionIdentityLink}
 	endpoint := &Endpoint{callers: fake.asCallers()}
 	calls := AccountCalls{Chain: identity.NewAccountLink(account)}
 	mux := http.NewServeMux()

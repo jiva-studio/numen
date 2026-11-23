@@ -11,6 +11,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"net/netip"
 	"net/url"
 	"slices"
 	"strings"
@@ -88,7 +89,7 @@ func checkLinkServer(server string) error {
 		return nil
 	}
 	origin, err := url.Parse(server)
-	if err != nil || (origin.Scheme != "https" && origin.Scheme != "http") || origin.Host == "" ||
+	if err != nil || !isLinkScheme(origin) || origin.Host == "" ||
 		origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" || origin.Opaque != "" {
 		return fmt.Errorf("%w: server", ErrLinkPayload)
 	}
@@ -278,4 +279,13 @@ func (c *LinkChannel) openHello(msg []byte) error {
 		return ErrLinkAuth
 	}
 	return nil
+}
+
+func isLinkScheme(origin *url.URL) bool {
+	if origin.Scheme == "https" {
+		return true
+	}
+	host := origin.Hostname()
+	ip, err := netip.ParseAddr(host)
+	return origin.Scheme == "http" && (host == "localhost" || (err == nil && ip.IsLoopback()))
 }

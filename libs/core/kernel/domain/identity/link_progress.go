@@ -59,7 +59,7 @@ func (p LinkProgress) GetLink() Link {
 	if p.Mode == LinkModeShow && !p.IsEnded() {
 		link.QRText = p.QRText
 	}
-	if p.Role == LinkRoleHost && p.Mode == LinkModeScan && p.Phase == LinkPhaseConfirmPeer {
+	if p.Role == LinkRoleHost && p.Phase == LinkPhaseConfirmPeer {
 		link.Code = p.Code
 		link.TriesLeft = p.TriesLeft
 	}

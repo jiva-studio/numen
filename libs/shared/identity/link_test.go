@@ -110,17 +110,19 @@ func TestParseLinkPayload_RefusesWhatIsNotAVersionOneLink(t *testing.T) {
 		return headOf
 	}
 	cases := map[string]string{
-		"empty":            "",
-		"another scheme":   strings.Replace(good, "numen://", "https://", 1),
-		"another version":  strings.Replace(good, "v=1", "v=2", 1),
-		"no version":       strings.Replace(good, "v=1&", "", 1),
-		"extra field":      good + "&x=1",
-		"short secret":     before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 15)),
-		"long secret":      before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 17)),
-		"short channel":    strings.Replace(good, "c="+enc.EncodeToString(payload.Channel[:]), "c="+enc.EncodeToString(make([]byte, 15)), 1),
-		"not base64":       before("&k=") + "&k=!!!&s=" + enc.EncodeToString(payload.Secret[:]),
-		"server not http":  good + "&h=ftp://sync.example.org",
-		"server with path": good + "&h=https://sync.example.org/path",
+		"empty":                                  "",
+		"another scheme":                         strings.Replace(good, "numen://", "https://", 1),
+		"another version":                        strings.Replace(good, "v=1", "v=2", 1),
+		"no version":                             strings.Replace(good, "v=1&", "", 1),
+		"extra field":                            good + "&x=1",
+		"short secret":                           before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 15)),
+		"long secret":                            before("&s=") + "&s=" + enc.EncodeToString(make([]byte, 17)),
+		"short channel":                          strings.Replace(good, "c="+enc.EncodeToString(payload.Channel[:]), "c="+enc.EncodeToString(make([]byte, 15)), 1),
+		"not base64":                             before("&k=") + "&k=!!!&s=" + enc.EncodeToString(payload.Secret[:]),
+		"server not http":                        good + "&h=ftp://sync.example.org",
+		"server with path":                       good + "&h=https://sync.example.org/path",
+		"server plain http":                      good + "&h=http://sync.example.org",
+		"server plain http on a private address": good + "&h=http://192.168.1.20:8080",
 	}
 	for name, text := range cases {
 		if _, err := identity.ParseLinkPayload(text); !errors.Is(err, identity.ErrLinkPayload) {

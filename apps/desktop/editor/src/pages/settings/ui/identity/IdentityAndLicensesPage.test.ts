@@ -518,7 +518,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Recovery kit')
     expect(tab.text()).toContain(
-      'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
+      'Keep each sheet in a different place. Any two of three restore your account; one sheet alone is useless.',
     )
     expect(getDownload(tab)).toBeDefined()
     expect(tab.find('[role="dialog"]').exists()).toBe(false)

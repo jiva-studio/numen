@@ -17,9 +17,9 @@ func NewDecideLink(d Deps) *DecideLink {
 	return &DecideLink{links: d.progress.links, host: d.getHost()}
 }
 
-// Execute declines the new device, or approves it. After an approval in mode show the chain that lists the device goes to the server; in mode
-// scan the new device is asked for the code first. It returns ErrNoLink when no new device waits for an answer.
-func (u *DecideLink) Execute(ctx context.Context, approve bool) error {
+// Execute declines the new device, or approves it. After an approval the new device is asked for the code the host shows,
+// in either mode, and only the right code sends the chain that lists the device to the server. It returns ErrNoLink when no new device waits for an answer.
+func (u *DecideLink) Execute(_ context.Context, approve bool) error {
 	store, release := u.links.hold()
 	defer release()
 	store.expireLocked(u.host.clock.Now())
@@ -31,9 +31,6 @@ func (u *DecideLink) Execute(ctx context.Context, approve bool) error {
 		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonDeclined, 0))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonDeclined)
 		return nil
-	}
-	if link.progress.Mode == identitydomain.LinkModeShow {
-		return u.host.publishLocked(ctx, store, link)
 	}
 	link.progress.IsApproved = true
 	store.sendLocked(link, encodeAccept(true))

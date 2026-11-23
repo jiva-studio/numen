@@ -97,7 +97,8 @@ func TestRender_ShowsTheFingerprintTheRuleAndTheWordsOfEachSheetInOrder(t *testi
 		for _, want := range []string{
 			"Numen recovery kit",
 			fingerprint,
-			"Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.",
+			"Any 2 of 3 sheets restore your account. One sheet alone is useless.",
+			"Keep each sheet in a different place. Never store the sheets together.",
 			"23 November 2026",
 			"Kept at:",
 		} {

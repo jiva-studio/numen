@@ -139,9 +139,9 @@ func (p sheetPage) drawRule() {
 	p.pdf.SetFillColor(shade.r, shade.g, shade.b)
 	p.pdf.RoundedRect(margin, top, right-margin, 17, 2, "1234", "F")
 	p.setFont("Helvetica", "B", 11, ink)
-	p.write(margin+5, top+7, "Any 2 of 3 sheets restore your account. One sheet alone reveals nothing.")
+	p.write(margin+5, top+7, "Any 2 of 3 sheets restore your account. One sheet alone is useless.")
 	p.setFont("Helvetica", "", 9, hushed)
-	p.write(margin+5, top+12.5, "Keep each sheet in a different place, so one lost or found sheet is never enough.")
+	p.write(margin+5, top+12.5, "Keep each sheet in a different place. Never store the sheets together.")
 }
 
 func (p sheetPage) drawRestore() {

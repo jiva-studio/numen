@@ -30,6 +30,9 @@ func OpenRevision(vaultKey [32]byte, stored *syncv1.StoredRevision, isTrusted fu
 	if meta.Path, err = NormalizePath(meta.Path); err != nil {
 		return Meta{}, ErrUnverified
 	}
+	if CheckRemotePath(meta.Path) != nil {
+		return Meta{}, ErrUnverified
+	}
 	return meta, nil
 }
 

@@ -20,7 +20,7 @@ const (
 )
 
 func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
-	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentityLink); err != nil {
 		return nil, err
 	}
 	link := e.calls.Link
@@ -31,7 +31,7 @@ func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
 }
 
 func (e *accountEndpoint) getChainOf(header http.Header) (AccountChain, error) {
-	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentityLink); err != nil {
 		return nil, err
 	}
 	chain := e.calls.Chain

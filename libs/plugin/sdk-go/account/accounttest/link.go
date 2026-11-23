@@ -33,6 +33,7 @@ type fakeLink struct {
 	inbound      chan []byte
 	changed      chan struct{}
 	pending      *identity.Chain
+	server       string
 }
 
 func newFakeLink() *fakeLink {
@@ -57,6 +58,21 @@ func (f *Fake) ShowLink() error {
 		return errors.New("a link is already in progress")
 	}
 	f.link = newFakeLink()
+	f.link.bump()
+	return nil
+}
+
+// ScanLink makes the host start a link in mode scan over the channel, as a QR code that names the server would.
+func (f *Fake) ScanLink(channel []byte, server string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.link != nil && !f.link.isClosed {
+		return errors.New("a link is already in progress")
+	}
+	f.link = newFakeLink()
+	f.link.wantsChannel = false
+	f.link.channel = append([]byte(nil), channel...)
+	f.link.server = server
 	f.link.bump()
 	return nil
 }
@@ -210,7 +226,7 @@ func (f *Fake) readWork(since uint64) (*v1.GetLinkWorkResponse, <-chan struct{})
 	link.outbound = kept
 	response := &v1.GetLinkWorkResponse{
 		Version: link.version, IsActive: !link.isClosed || len(kept) > 0, WantsChannel: link.wantsChannel,
-		ChannelId: link.channel, IsClosed: link.isClosed,
+		ChannelId: link.channel, IsClosed: link.isClosed, Server: link.server,
 	}
 	for _, blob := range kept {
 		response.Outbound = append(response.Outbound, blob.body)
