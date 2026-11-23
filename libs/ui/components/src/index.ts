@@ -9,6 +9,12 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
+/** A text drawn as a QR code. */
+export { QrCode } from './shared/ui/qr-code'
+
+/** The camera read for the QR code of a link. */
+export { QrScanner, type ScannerCamera } from './shared/ui/qr-scanner'
+
 /** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
 

@@ -7,6 +7,7 @@ import { Button } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
+import DevicesSection from './DevicesSection.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
 import IdentitySetup from './IdentitySetup.vue'
@@ -39,6 +40,7 @@ const {
       @confirm="deletion.confirmDelete"
       @cancel="deletion.cancelDelete"
     />
+    <DevicesSection v-if="current && !current.isRevoked" :identity="identity" :has-identity="true" />
 
     <template v-else>
       <div class="identity-section__empty">
@@ -47,6 +49,8 @@ const {
           {{ words.identityNoneDetail }}
         </p>
       </div>
+      <DevicesSection v-if="step === 'idle'" :identity="identity" :has-identity="false" />
+
 
       <div v-if="step === 'idle'" class="identity-section__actions">
         <Button

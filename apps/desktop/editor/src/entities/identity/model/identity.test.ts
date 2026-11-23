@@ -9,6 +9,8 @@ import { createIdentityStore } from './identity'
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
 const asStarted = (): Result<undefined, IdentityFailure> => ({ ok: true, value: undefined })
+const asRefusal = (errorCode: IdentityFailure['errorCode']): Result<never, IdentityFailure> =>
+  asFailure({ errorCode, detail: 'refused' })
 
 const WORDS = [
   'legal',
@@ -30,6 +32,8 @@ const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityIn
   deviceFingerprint: 'AAAA BBBB CCCC DDDD 0000 1111 2222 3333',
   deviceName: 'Laptop',
   deviceAddedAt: '2026-11-22T12:00:00Z',
+  isRevoked: false,
+  keyEpoch: 0,
   ...overrides,
 })
 
@@ -39,6 +43,14 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
   create: () => Promise.resolve(asValue(createSampleIdentity())),
   startRestore: () => Promise.resolve(asStarted()),
   delete: () => Promise.resolve(),
+  startLink: () => Promise.resolve(asRefusal('no_link')),
+  getLink: () => Promise.resolve(asRefusal('no_link')),
+  decideLink: () => Promise.resolve(asStarted()),
+  enterLinkCode: () => Promise.resolve(asStarted()),
+  confirmJoin: () => Promise.resolve(asStarted()),
+  cancelLink: () => Promise.resolve(asStarted()),
+  listDevices: () => Promise.resolve(asValue([])),
+  revokeDevice: () => Promise.resolve(asStarted()),
   ...overrides,
 })
 
@@ -286,5 +298,78 @@ describe('the identity store restoring from words', () => {
 
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
+  })
+})
+
+describe('the devices and the link of the identity store', () => {
+  const DEVICES = [
+    { name: 'Laptop', fingerprint: 'A', addedAt: 'x', isThis: true, isRevoked: false },
+    { name: 'Phone', fingerprint: 'B', addedAt: 'y', isThis: false, isRevoked: true },
+  ]
+
+  it('loads the devices of the account', async () => {
+    const { store } = createStore(
+      createClient({ listDevices: () => Promise.resolve(asValue(DEVICES)) }),
+    )
+    await store.loadDevices()
+    expect(store.devices.value).toStrictEqual(DEVICES)
+  })
+
+  it('reads the list again after a revoke, also when the revoke was refused', async () => {
+    let listed = 0
+    const { store } = createStore(
+      createClient({
+        listDevices: () => {
+          listed += 1
+          return Promise.resolve(asValue(DEVICES))
+        },
+        revokeDevice: () => Promise.resolve(asRefusal('revoke_raced')),
+      }),
+    )
+    const answer = await store.revoke('B')
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: 'A device was added while you revoked. Check the list.',
+    })
+    expect(listed).toBe(1)
+  })
+
+  it('words the refusal of a revoke of this device', async () => {
+    const { store } = createStore(
+      createClient({ revokeDevice: () => Promise.resolve(asRefusal('not_allowed_this_device')) }),
+    )
+    expect(await store.revoke('A')).toStrictEqual({
+      ok: false,
+      error: 'This device cannot revoke itself.',
+    })
+  })
+
+  it('passes the answers of the person to the core', async () => {
+    const sent: string[] = []
+    const { store } = createStore(
+      createClient({
+        decideLink: (approve) => {
+          sent.push(`decide ${approve}`)
+          return Promise.resolve(asStarted())
+        },
+        enterLinkCode: (code) => {
+          sent.push(`code ${code}`)
+          return Promise.resolve(asStarted())
+        },
+      }),
+    )
+    await store.link.decide(true)
+    await store.link.enterCode('123456')
+    expect(sent).toStrictEqual(['decide true', 'code 123456'])
+  })
+
+  it('words a refused link text', async () => {
+    const { store } = createStore(
+      createClient({ startLink: () => Promise.resolve(asRefusal('link_text_invalid')) }),
+    )
+    expect(await store.link.start('host', 'scan', 'x')).toStrictEqual({
+      ok: false,
+      error: 'This text is not the link of a QR code.',
+    })
   })
 })

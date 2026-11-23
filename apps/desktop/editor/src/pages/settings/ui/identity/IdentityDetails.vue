@@ -27,9 +27,12 @@ const emit = defineEmits<{
       <span class="identity-details__fingerprint">{{ info.deviceFingerprint }}</span>
     </dd>
   </dl>
+  <p v-if="info.isRevoked" role="alert" class="identity-details__revoked">
+    {{ words.deviceRevokedNotice }}
+  </p>
   <div class="identity-details__actions">
     <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-      {{ words.identityDelete }}
+      {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
     </Button>
   </div>
   <ConfirmDialog

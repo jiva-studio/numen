@@ -112,6 +112,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     create: fn(() => Promise.resolve(asFailure('Not kept.'))),
     restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
     delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
+    ...createInertDevices(),
   },
   licenses: overrides.licenses ?? {
     list: ref([]),
@@ -152,3 +153,21 @@ export const createSettingsState = (
   markedSetting: ref(null),
   ...overrides,
 })
+
+/** The devices and the link of an identity that does nothing: no device, and every call refused. */
+export function createInertDevices() {
+  const refused = () => Promise.resolve(asFailure('Not done.'))
+  return {
+    devices: ref([]),
+    loadDevices: fn(() => Promise.resolve()),
+    revoke: fn(refused),
+    link: {
+      start: fn(refused),
+      get: fn(refused),
+      decide: fn(refused),
+      enterCode: fn(refused),
+      confirmJoin: fn(refused),
+      cancel: fn(refused),
+    },
+  }
+}

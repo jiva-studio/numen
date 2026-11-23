@@ -253,6 +253,10 @@ function createInstallationLicenses(licenses: LicenseStore) {
 function createInstallationIdentity(identity: IdentityStore) {
   return {
     identity: identity.identity,
+    devices: identity.devices,
+    loadDevices: () => identity.loadDevices(),
+    revoke: (fingerprint: string) => identity.revoke(fingerprint),
+    link: identity.link,
     load: () => identity.load(),
     generateWords: () => identity.generateWords(),
     create: (words: readonly string[]) => identity.create(words),

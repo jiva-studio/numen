@@ -15,6 +15,18 @@ export const IDENTITY_WORDS = {
         return 'This device already has an identity.'
       case 'key_store_failed':
         return 'The identity could not be saved. Check the system keychain.'
+      case 'last_device':
+        return 'The last device of the account cannot be revoked.'
+      case 'revoke_raced':
+        return 'A device was added while you revoked. Check the list.'
+      case 'not_allowed_this_device':
+        return 'This device cannot revoke itself.'
+      case 'link_text_invalid':
+        return 'This text is not the link of a QR code.'
+      case 'link_active':
+        return 'Another link is in progress.'
+      case 'code_invalid':
+        return 'The code has six digits.'
       default:
         return failure.detail
     }

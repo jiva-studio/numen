@@ -11,7 +11,11 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { asFailure, asValue, type Result } from '@numen/result'
 import type { IdentityInfo } from '@/entities/identity'
 import type { LicenseInfo } from '@/entities/license'
-import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
+import {
+  createInertDevices,
+  createInstallation,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
@@ -35,6 +39,8 @@ const IDENTITY: IdentityInfo = {
   deviceFingerprint: 'AAAA BBBB CCCC DDDD 0000 1111 2222 3333',
   deviceName: 'Laptop',
   deviceAddedAt: '2026-11-22T12:00:00Z',
+  isRevoked: false,
+  keyEpoch: 0,
 }
 
 const SYNC: LicenseInfo = {
@@ -102,7 +108,7 @@ const createPage = async (
       activate: vi.fn(() => Promise.resolve(asFailure('Not activated.'))),
       deactivate: vi.fn(() => Promise.resolve(asFailure('Not deactivated.'))),
     },
-    identity: { identity, ...calls },
+    identity: { identity, ...calls, ...createInertDevices() },
   })
   const tab = mount(SettingsTab, {
     props: { state: createSettingsState(installation, { initialSearchQuery: ref('') }) },

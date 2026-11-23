@@ -1,21 +1,28 @@
 /**
  * What the identity of this device is, as the window holds it: two fingerprints and the name of the
- * device. No key and no recovery word is part of it.
+ * device, the link of a device to the account and the devices of the account. No key and no recovery
+ * word is part of it.
  */
+import type {
+  DeviceInfo,
+  IdentityErrorCode,
+  IdentityFailure,
+  IdentityInfo,
+  LinkInfo,
+  LinkMode,
+  LinkPhase,
+  LinkReason,
+  LinkRole,
+} from '@numen/core-client'
 
-/** What a person can see of the identity of this device. */
-export interface IdentityInfo {
-  readonly accountFingerprint: string
-  readonly deviceFingerprint: string
-  readonly deviceName: string
-  readonly deviceAddedAt: string
-}
-
-/** Why creating the identity was refused. */
-export type IdentityErrorCode = 'invalid_words' | 'identity_exists' | 'key_store_failed'
-
-/** A served refusal with the reason the core gives. */
-export interface IdentityFailure {
-  readonly errorCode: IdentityErrorCode
-  readonly detail: string
+export type {
+  DeviceInfo,
+  IdentityErrorCode,
+  IdentityFailure,
+  IdentityInfo,
+  LinkInfo,
+  LinkMode,
+  LinkPhase,
+  LinkReason,
+  LinkRole,
 }
