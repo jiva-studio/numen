@@ -37,6 +37,7 @@ import { createTestContextHost, type ContextHostParts } from '../../testing/cont
 interface Rule {
   readonly permissions: readonly string[]
   readonly isAsync: boolean
+  readonly isResult: boolean
   readonly reason: string
 }
 
@@ -147,7 +148,6 @@ const MEMBERS = SERVICE_PARTS.flatMap((part) =>
   })),
 ).filter((leaf) => leaf.rule.permissions.length > 0)
 
-/** The message of a refusal a member of a result rule answers with. */
 function readDenial(answer: unknown): string {
   expect(answer).toMatchObject({ ok: false, error: { error: 'permissionDenied' } })
   return (answer as { error: { message: string } }).error.message
@@ -164,7 +164,7 @@ describe('every member of a service that lists a permission', () => {
       const missing = member.rule.permissions[0] ?? ''
       const denied = createPluginParts('md.numen.sample', host, MANIFEST([]))
 
-      const failure = member.rule.mode === 'result'
+      const failure = member.rule.isResult
         ? await Promise.resolve(call(denied.host, member.path)).then(readDenial)
         : member.rule.isAsync
         ? await Promise.resolve()

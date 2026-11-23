@@ -48,7 +48,7 @@ function guardMember(
         try {
           requireAll(rule, { operation, args }, check)
         } catch (error) {
-          if (rule.mode === 'result') return Promise.resolve(denyPermission(error))
+          if (rule.isResult) return Promise.resolve(denyPermission(error))
           if (rule.isAsync) return Promise.reject(error)
           throw error
         }

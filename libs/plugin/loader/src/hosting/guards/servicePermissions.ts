@@ -63,6 +63,10 @@ export class Rule<M extends Mode = Mode> {
   get isAsync(): boolean {
     return this.mode === 'async'
   }
+
+  get isResult(): boolean {
+    return this.mode === 'result'
+  }
 }
 
 function requirePermissions(...permissions: string[]): Rule<'sync'> {
