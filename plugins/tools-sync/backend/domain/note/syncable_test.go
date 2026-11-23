@@ -70,8 +70,8 @@ func TestKind_NamesMarkdownTextAndBinaryByExtension(t *testing.T) {
 		"no-extension":         note.KindBinary,
 		"Papers/Report.pdf.md": note.KindMarkdown,
 	} {
-		if got := note.Kind(path); got != want {
-			t.Errorf("Kind(%q) = %q, want %q", path, got, want)
+		if got := note.GetKind(path); got != want {
+			t.Errorf("GetKind(%q) = %q, want %q", path, got, want)
 		}
 	}
 }

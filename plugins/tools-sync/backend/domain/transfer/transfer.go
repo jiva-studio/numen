@@ -118,8 +118,8 @@ type PullResult struct {
 	IsReset    bool
 }
 
-// NoRecord returns the record of a file that has none.
-func NoRecord() FileRecord {
+// NewEmptyRecord returns the record of a file that has none.
+func NewEmptyRecord() FileRecord {
 	return FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil, Size: 0, ModifiedAt: 0, Kind: "", BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil}
 }
 

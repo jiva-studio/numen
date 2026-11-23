@@ -59,10 +59,10 @@ func (r *run) getOffset(at *position) int64 {
 	if at.next == 0 {
 		return 0
 	}
-	return blobcipher.GetChunkOffset(chunkLog2(at.header), at.next)
+	return blobcipher.GetChunkOffset(getChunkLog2(at.header), at.next)
 }
 
-func chunkLog2(header [56]byte) byte {
+func getChunkLog2(header [56]byte) byte {
 	parsed, err := blobcipher.ParseHeader(header[:])
 	if err != nil {
 		return 0
@@ -99,7 +99,7 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 		return nil, false, err
 	}
 	staged := slices.IndexFunc(files, func(f host.StoreFile) bool { return f.Name == kept.StagedName })
-	wantSize := int64(kept.NextChunk)<<chunkLog2([56]byte(kept.Header)) - lengthPrefix
+	wantSize := int64(kept.NextChunk)<<getChunkLog2([56]byte(kept.Header)) - lengthPrefix
 	if staged < 0 || files[staged].Size != wantSize {
 		return nil, false, nil
 	}
@@ -136,7 +136,7 @@ func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at 
 	buffer := make([]byte, 1<<20+lengthPrefix)
 	total := int64(0)
 	if at.next > 0 {
-		total = int64(at.next)<<chunkLog2(at.header) - lengthPrefix
+		total = int64(at.next)<<getChunkLog2(at.header) - lengthPrefix
 	}
 	for {
 		n, err := plain.Read(buffer)

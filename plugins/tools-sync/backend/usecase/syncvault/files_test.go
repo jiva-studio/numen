@@ -303,7 +303,7 @@ func TestSyncVault_AChangeBeatsARemovalThatArrivesBetweenThePullAndThePush(t *te
 	sync(t, p.b, target)
 	p.b.WriteNote(target, pdf, pdfText+" edited there")
 	var tombstone []byte
-	p.server.AfterNext("/GetChanges", func() {
+	p.server.RunAfterNext("/GetChanges", func() {
 		records, err := p.a.State.ReadRecords(t.Context(), source)
 		if err != nil {
 			t.Error(err)
@@ -336,7 +336,7 @@ func TestSyncVault_AChangeBeatsARemovalTheServerPrunedAsANewRevisionOfTheSameFil
 	sync(t, p.b, target)
 	fileID := p.heads(t)[0].GetRevision().GetFileId()
 	p.b.WriteNote(target, pdf, pdfText+" edited there")
-	p.server.AfterNext("/GetChanges", func() {
+	p.server.RunAfterNext("/GetChanges", func() {
 		records, err := p.a.State.ReadRecords(t.Context(), source)
 		if err != nil {
 			t.Error(err)
