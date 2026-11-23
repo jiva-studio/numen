@@ -1,6 +1,6 @@
 import type { Disposable } from '@numen/plugin-sdk'
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
-import type { PluginContextHost } from '../hosting'
+import type { PluginContextHost } from '../hosting/contextHostTypes'
 
 /** The parts a test replaces; every other member of a part does nothing. */
 export interface ContextHostParts {
