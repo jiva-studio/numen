@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
@@ -118,7 +119,7 @@ func TestCommitRevisions_UploadsNoPlainText(t *testing.T) {
 	s.run(t, transfer.File{Path: "Shopping list.md", Content: []byte("milk and bread and eggs")})
 
 	revision := s.read(t)[0].GetRevision()
-	wire, err := fakeserver.EncodeMessage(revision)
+	wire, err := wiretest.EncodeMessage(revision)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -44,7 +44,7 @@ func NewRunSync(deps RunDeps) *RunSync { return &RunSync{deps: deps} }
 // same interval again.
 func (u *RunSync) Execute(ctx context.Context) error {
 	err := u.loop(ctx)
-	if ctxErr := ctx.Err(); err != nil && ctxErr != nil {
+	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
 	return err
