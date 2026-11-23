@@ -19,11 +19,11 @@ import (
 // answering is a host that serves a few calls and records the callers.
 type answering struct {
 	unimplementedHost
-	code         v1.HostVaultErrorCode
+	code         v1.ErrorCode
 	authHeader   string
 	unlocked     string
 	named        string
-	baselines    []*v1.HostFileStat
+	baselines    []*v1.FileStat
 	watchFailure error
 }
 
@@ -31,7 +31,7 @@ func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFile
 	a.authHeader = req.Header().Get("Authorization")
 	return connect.NewResponse(&v1.StatFileResponse{
 		Error: a.code,
-		Stat:  &v1.HostFileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
+		Stat:  &v1.FileStat{Path: req.Msg.GetPath(), Size: 7, Mtime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
 	}), nil
 }
 
@@ -47,13 +47,13 @@ func (a *answering) ListVaults(context.Context, *connect.Request[v1.ListVaultsRe
 	return connect.NewResponse(&v1.ListVaultsResponse{Vaults: []*v1.Vault{{Id: "a", Name: "A", Path: "/a"}, {Id: "b", Name: "B", Path: "/b"}}}), nil
 }
 
-func (a *answering) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	return connect.NewResponse(&v1.EnsureVaultIndexedResponse{State: v1.HostIndexState_HOST_INDEX_STATE_FAILED, Reason: "disk"}), nil
+func (a *answering) IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error) {
+	return connect.NewResponse(&v1.IndexVaultResponse{State: v1.HostIndexState_HOST_INDEX_STATE_FAILED, Reason: "disk"}), nil
 }
 
-func (a *answering) WatchMoves(ctx context.Context, _ *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse]) error {
+func (a *answering) WatchIndexChanges(ctx context.Context, _ *connect.Request[v1.WatchIndexChangesRequest], stream *connect.ServerStream[v1.WatchIndexChangesResponse]) error {
 	for range 2 {
-		if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+		if err := stream.Send(&v1.WatchIndexChangesResponse{}); err != nil {
 			return err
 		}
 		if a.watchFailure != nil {
@@ -69,8 +69,8 @@ func (a *answering) WriteFile(_ context.Context, req *connect.Request[v1.WriteFi
 	return connect.NewResponse(&v1.WriteFileResponse{Error: a.code}), nil
 }
 
-func (a *answering) GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {
-	return connect.NewResponse(&v1.GetLinksResponse{Links: []*v1.HostLink{{
+func (a *answering) ListLinks(context.Context, *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error) {
+	return connect.NewResponse(&v1.ListLinksResponse{Links: []*v1.HostLink{{
 		From: "a.md", To: "b.md", ToVault: "v", LinkType: "cites", TargetScheme: "name", TargetValue: "B", Label: "see", IsAmbiguous: true,
 	}}}), nil
 }
@@ -103,14 +103,14 @@ func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 }
 
 func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
-	cases := map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:       host.ErrNoVault,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:  host.ErrOutside,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:         host.ErrLockedByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
+	cases := map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:       host.ErrNoVault,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT:  host.ErrOutside,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:       host.ErrStale,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
+		v1.ErrorCode_ERROR_CODE_LOCKED:         host.ErrLockedByAnother,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
 	}
 	for code, want := range cases {
 		_, err := clientTo(t, &answering{code: code}).StatFile(t.Context(), "n.md")
@@ -121,12 +121,12 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 }
 
 func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
-	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT}
+	a := &answering{code: v1.ErrorCode_ERROR_CODE_CONFLICT}
 	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
 
 	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)
 
-	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetModTime() != baseline.ModTime.UnixNano() {
+	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetMtime() != baseline.ModTime.UnixNano() {
 		t.Errorf("got %v and %v", err, a.baselines)
 	}
 }
@@ -153,7 +153,7 @@ func TestAWriteWithTheZeroBaselineSendsNoBaseline(t *testing.T) {
 }
 
 func TestGetLink_PreservesHostFields(t *testing.T) {
-	links, err := clientTo(t, &answering{}).GetLinks(t.Context(), "a.md")
+	links, err := clientTo(t, &answering{}).ListLinks(t.Context(), "a.md")
 
 	want := domain.ResolvedLink{
 		Link:        domain.Link{Target: domain.Address{Scheme: "name", Value: "B"}, Type: "cites", Label: "see"},
@@ -222,7 +222,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	moves, err := clientTo(t, &answering{}).WatchMoves(ctx)
+	moves, err := clientTo(t, &answering{}).WatchIndexChanges(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +237,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 
 func TestAWatchOfMovesThatFailsSendsTheFailureLast(t *testing.T) {
 	failure := connect.NewError(connect.CodeUnavailable, errors.New("host gone"))
-	moves, err := clientTo(t, &answering{watchFailure: failure}).WatchMoves(t.Context())
+	moves, err := clientTo(t, &answering{watchFailure: failure}).WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

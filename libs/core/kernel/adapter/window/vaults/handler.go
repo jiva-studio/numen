@@ -103,7 +103,7 @@ func (s *Dialog) ChooseFolder(
 	if choose == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDialog)
 	}
-	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	selected, err := (*choose).Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
 	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -157,7 +157,7 @@ func (s *Handler) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	err := s.remove.Execute(ctx, r.Msg.GetId(), s.window.GetCurrentVault().ID, r.Msg.GetTrash())
+	err := s.remove.Execute(ctx, r.Msg.GetId(), s.window.GetCurrentVault().ID, r.Msg.GetIsFolderTrashed())
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {

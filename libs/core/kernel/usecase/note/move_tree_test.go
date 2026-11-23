@@ -1,4 +1,4 @@
-package vault_test
+package note_test
 
 import (
 	"context"
@@ -56,11 +56,11 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 	}
 }
 
-func (f filing) move() vaults.Move { return f.newMove(true) }
+func (f filing) move() tree { return f.newMove(true) }
 
-func (f filing) moveApart() vaults.Move { return f.newMove(false) }
+func (f filing) moveApart() tree { return f.newMove(false) }
 
-func (f filing) newMove(preserved naming.SyncTitleAndFilename) vaults.Move {
+func (f filing) newMove(preserved naming.SyncTitleAndFilename) tree {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: f.db.NoteQueries(), Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
@@ -70,15 +70,12 @@ func (f filing) newMove(preserved naming.SyncTitleAndFilename) vaults.Move {
 			return nil
 		},
 	})
-	return vaults.NewMove(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.NoteQueries(), f.db.Sources(), f.db.Sources(), notes,
-	)
+	return tree{note.NewMoveFile(notes, f.db.Sources(), nil, indexedAlways{})}
 }
 
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.NoteQueries().GetLinks(t.Context(), f.vault.ID, in)
+	found, err := f.db.NoteQueries().ListLinks(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -135,8 +135,8 @@ func TestQueueClientReportsAndFinishesTasks(t *testing.T) {
 		t.Fatalf("the host received %d tasks, want 1", len(q.reported))
 	}
 	got := q.reported[0]
-	if got.GetId() != "a.mp3" || got.GetTitle() != "Transcribing" || got.GetAbout() != "a.mp3" || got.GetDone() != 4 ||
-		got.GetTotal() != 60 || got.GetUnit() != v1.Unit_UNIT_SECONDS || !got.GetIsUserStarted() {
+	if got.GetId() != "a.mp3" || got.GetTitle() != "Transcribing" || got.GetDetail() != "a.mp3" || got.GetCompletedCount() != 4 ||
+		got.GetTotalCount() != 60 || got.GetUnit() != v1.Unit_UNIT_SECONDS || !got.GetIsUserStarted() {
 		t.Errorf("the host received %v", got)
 	}
 	if len(q.finished) != 1 || q.finished[0] != "a.mp3" {

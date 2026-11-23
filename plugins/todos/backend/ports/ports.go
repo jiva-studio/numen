@@ -20,7 +20,7 @@ type FileReader interface {
 
 // NoteLister is the one call of host.NoteLookup that the index makes.
 type NoteLister interface {
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // Frontmatter reads the frontmatter of the notes of the vault.

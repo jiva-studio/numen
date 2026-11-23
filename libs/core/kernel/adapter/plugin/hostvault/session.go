@@ -82,8 +82,8 @@ func (s *Session) EnsureIndexed(ctx context.Context) (plugin.IndexState, error) 
 	return s.IndexState(ctx, v)
 }
 
-// WatchMoves reports each time the window moves.
-func (s *Session) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
+// WatchIndexChanges reports each time the window moves.
+func (s *Session) WatchIndexChanges(ctx context.Context) (<-chan struct{}, error) {
 	if s.Moved == nil {
 		return nil, fmt.Errorf("watch moves: %w", domain.ErrUnavailable)
 	}

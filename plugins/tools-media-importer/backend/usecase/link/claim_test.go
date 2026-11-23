@@ -171,11 +171,11 @@ func (v *hookVault) Scan(ctx context.Context, paths []string) error {
 	return v.Vault.Scan(ctx, paths)
 }
 
-func (v *hookVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (v *hookVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	if v.getPathsErr != nil {
 		return nil, v.getPathsErr
 	}
-	return v.Vault.GetPathsOfType(ctx, noteType)
+	return v.Vault.ListPathsOfType(ctx, noteType)
 }
 
 type hookQueue struct {

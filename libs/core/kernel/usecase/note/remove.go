@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -27,9 +26,9 @@ const TrashDir = ".trash"
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
-	writers   vaultport.FileMovers
+	writers   FileMovers
 	links     noteport.LinkQueries
-	queries   sourceport.SourcesUnder
+	queries   SourcesUnder
 	filer     VersionMover
 	index     edit.IndexUpdater
 	admission vaultport.WriteAdmission
@@ -37,7 +36,7 @@ type Remove struct {
 
 // NewRemove builds the use case that moves a note into the trash.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer VersionMover,
+	writers FileMovers, links noteport.LinkQueries, queries SourcesUnder, filer VersionMover,
 	index edit.IndexUpdater, admission vaultport.WriteAdmission,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), admission: admission}
@@ -113,7 +112,7 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.links.GetBacklinks(ctx, v.ID, source.Path)
+		links, err := u.links.ListBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +142,7 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	pointing, err := u.links.GetBacklinks(ctx, v.ID, path)
+	pointing, err := u.links.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}

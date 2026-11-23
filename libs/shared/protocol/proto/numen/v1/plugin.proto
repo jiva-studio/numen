@@ -16,28 +16,18 @@ service PluginLifecycleService {
 message PingRequest {}
 
 message PingResponse {
-  string status = 1;
-  int32 protocol = 2;
+  int32 protocol = 1;
 }
 
-message ShutdownRequest {
-  int32 timeout_seconds = 1;
-}
+message ShutdownRequest {}
 
-message ShutdownResponse {
-  bool success = 1;
-}
+message ShutdownResponse {}
 
 message ConfigureRequest {
-  string plugin_id = 1;
-  string configuration_json = 2;
-  map<string, string> values = 3;
+  map<string, string> values = 1;
 }
 
-message ConfigureResponse {
-  bool success = 1;
-  string error = 2;
-}
+message ConfigureResponse {}
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
 message PluginSetting {
@@ -86,7 +76,6 @@ message PluginSetting {
   bool discover = 24;
   // The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 26;
-  reserved 22;
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -101,7 +90,6 @@ message PluginSettingOption {
   string when = 4;
 }
 
-// PluginSettingOptions is one list of options.
 message PluginSettingOptions {
   repeated PluginSettingOption options = 1;
 }
@@ -145,7 +133,6 @@ message PluginInfo {
   bool is_off_by_default = 16;
   // The islands the settings page draws the settings in, in the order they are shown.
   repeated PluginSettingGroup setting_groups = 17;
-  reserved 10;
 }
 
 // PluginContribution is one section of a plugin's manifest and the entries it declares, in the
@@ -231,7 +218,7 @@ message PluginReader {
 
 // PluginService lists the plugins the application has.
 service PluginService {
-  rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
 }
 
 // PluginProcessService is the processes of the plugins, as a window shows and starts them.
@@ -246,16 +233,15 @@ service PluginProcessService {
   rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 }
 
-message GetPluginsRequest {}
+message ListPluginsRequest {}
 
-message GetPluginsResponse {
+message ListPluginsResponse {
   repeated PluginInfo plugins = 1;
 }
 
 message WatchPluginProcessesRequest {}
 
 message RetryPluginRequest {
-  // The plugin, by its id.
   string plugin_id = 1;
 }
 
@@ -273,7 +259,6 @@ message WatchPluginProcessesResponse {
   int64 time_unix_ms = 2;
 }
 
-// PluginProcess is the process of one plugin that runs.
 message PluginProcess {
   string plugin_id = 1;
 
@@ -318,10 +303,10 @@ message PluginProcess {
 message PluginLeaseHolder {
   // Who took the lease: a part of Numen such as "Search" or "Indexing", or the
   // name of the plugin or of the connection that asked.
-  string who = 1;
+  string requester = 1;
 
   // What the lease is for, in a few plain words.
-  string why = 2;
+  string reason = 2;
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
@@ -338,13 +323,13 @@ message DeliverEventRequest {
 
 message DeliverEventResponse {
   PluginEventErrorCode error = 1;
-  string reason = 2;
+  string detail = 2;
 }
 
 // value means it did not.
 enum PluginEventErrorCode {
   PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;
 
-  // The plugin's event handler answered an error, which reason carries.
-  PLUGIN_EVENT_ERROR_CODE_REFUSED = 1;
+  // The plugin's event handler answered an error, which detail carries.
+  PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED = 1;
 }

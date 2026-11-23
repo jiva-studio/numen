@@ -115,7 +115,7 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   if (error && error !== 'ERROR_CODE_NOT_FOUND') {
     throw new Error(`RemoveFile ${notePath} refused: ${JSON.stringify(answer)}`)
   }
-  const trashed = answer['trashed']
+  const trashed = answer['trashPath']
   if (typeof trashed !== 'string' || !trashed) return
   try {
     fs.rmSync(path.join(getVaultPath(), trashed), { recursive: true, force: true })
@@ -125,8 +125,8 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
 }
 
 const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
-  const answer = await callRPC(request, 'NoteService/ResolveAddresses', { written: [notePath] })
-  const resolved = (answer['resolved'] as { path?: string }[] | undefined) ?? []
+  const answer = await callRPC(request, 'NoteService/ResolveAddresses', { addresses: [notePath] })
+  const resolved = (answer['resolvedAddresses'] as { path?: string }[] | undefined) ?? []
   return resolved.some((one) => one.path === notePath)
 }
 
@@ -244,13 +244,13 @@ export const writeSetting = async (
   value: JsonValue | undefined,
 ): Promise<void> => {
   await callRPC(request, 'SettingsService/WriteSettings', {
-    settings: [{ at: keyPath, value: JSON.stringify(value) }],
+    settings: [{ keyPath, value: JSON.stringify(value) }],
   })
 }
 
 const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
-    String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
+    String((await callRPC(request, 'SettingsService/GetSettings', {}))['settingsJson'] ?? '{}'),
   ) as JsonObject
 
 /** The values stored under an owner of numen.json: `app` or a plugin id. */

@@ -17,7 +17,7 @@ export type SourceReader = (
  * The target of a command issued against one tab: the note the tab represents,
  * and the file a run is issued against. A kind with neither returns an empty target.
  */
-export interface TabTarget {
+interface TabTarget {
   readonly path?: string
   readonly title?: string
   readonly file?: string

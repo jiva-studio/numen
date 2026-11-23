@@ -518,7 +518,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.NoteQueries().ListNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}

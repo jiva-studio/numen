@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/textsegment.proto.
  */
 export const file_numen_v1_textsegment: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS90ZXh0c2VnbWVudC5wcm90bxIIbnVtZW4udjEiPgoLVGV4dFNlZ21lbnQSDAoEdGV4dBgBIAEoCRIPCgdoZWFkaW5nGAIgASgJEhAKCHNlbGVjdG9yGAMgASgJKqcBCg1UZXh0RXJyb3JDb2RlEh8KG1RFWFRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhsKF1RFWFRfRVJST1JfQ09ERV9NSVNTSU5HEAESHAoYVEVYVF9FUlJPUl9DT0RFX05PX1ZBVUxUEAISGwoXVEVYVF9FUlJPUl9DT0RFX0lOVkFMSUQQAxIdChlURVhUX0VSUk9SX0NPREVfTk9UX09XTkVSEARCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChpudW1lbi92MS90ZXh0c2VnbWVudC5wcm90bxIIbnVtZW4udjEiPgoLVGV4dFNlZ21lbnQSDAoEdGV4dBgBIAEoCRIPCgdoZWFkaW5nGAIgASgJEhAKCHNlbGVjdG9yGAMgASgJKqkBCg1UZXh0RXJyb3JDb2RlEh8KG1RFWFRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfRk9VTkQQARIcChhURVhUX0VSUk9SX0NPREVfTk9fVkFVTFQQAhIbChdURVhUX0VSUk9SX0NPREVfSU5WQUxJRBADEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfT1dORVIQBEJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * TextSegment is one segment of a text. A version file holds one segment per
@@ -62,11 +62,11 @@ export enum TextErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
+   * TEXT_ERROR_CODE_NOT_FOUND is a file, a version or a key that does not exist.
    *
-   * @generated from enum value: TEXT_ERROR_CODE_MISSING = 1;
+   * @generated from enum value: TEXT_ERROR_CODE_NOT_FOUND = 1;
    */
-  MISSING = 1,
+  NOT_FOUND = 1,
 
   /**
    * TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.

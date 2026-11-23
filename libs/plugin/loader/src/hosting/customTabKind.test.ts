@@ -4,12 +4,7 @@ import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createBufferedNoteState, isNoteEditorKind } from './customTabBuffer'
-import {
-  createCustomTabKind,
-  createPluginPaneWrapper,
-  createReaderTabKind,
-  pickCustomTabParts,
-} from './customTabKind'
+import { createCustomTabKind, createReaderTabKind, pickCustomTabParts } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import {
   attachPluginRoot,
@@ -25,6 +20,9 @@ import type { PluginContext, ReaderHandle, TabKindRegistration } from '@numen/pl
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 import { createTestHostDeps, type TestHostDeps } from '../testing/hostDeps'
+
+const createPluginPaneWrapper = (pluginId: string, component: TabKindRegistration['component']) =>
+  createCustomTabKind(pluginId, pickCustomTabParts({ kind: 'test.kind', component })).pane
 
 /** The deps of a custom tab kind written flat, with the context of its plugin and whether it edits notes. */
 type FlatTabKindDeps = TestHostDeps & {

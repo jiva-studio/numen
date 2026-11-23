@@ -566,12 +566,12 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
-				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+				WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, targetOffset string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetOffset).
-				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{WindowId: wire.Editor}))
 			return err
 		},
 	}
@@ -643,15 +643,15 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != adapterSettings.DefaultTheme {
-		t.Errorf("applied %q", answer.Msg.GetApplied())
+	if answer.Msg.GetAppliedTheme() != adapterSettings.DefaultTheme {
+		t.Errorf("applied %q", answer.Msg.GetAppliedTheme())
 	}
 	if len(answer.Msg.GetThemes()) == 0 {
 		t.Error("no themes")
 	}
 
 	text, err := client.ReadTheme(t.Context(),
-		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetApplied()}))
+		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetAppliedTheme()}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -701,8 +701,8 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
-		t.Errorf("applied %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+	if answer.Msg.GetAppliedTheme() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
+		t.Errorf("applied %q, read as %v", answer.Msg.GetAppliedTheme(), answer.Msg.GetMode())
 	}
 }
 

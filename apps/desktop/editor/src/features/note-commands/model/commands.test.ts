@@ -84,7 +84,7 @@ const createWindow = (answers: Answers = {}) => {
     }),
     removeFile: (request: { path: string }) => {
       actions.push(`remove ${request.path}`)
-      return answers.remove ?? { trashed: '.trash/Ontology.md', dangling: [] }
+      return answers.remove ?? { trashPath: '.trash/Ontology.md', danglingNotes: [] }
     },
   })
   const deps = {
@@ -444,10 +444,10 @@ describe('a note renamed', () => {
         path: 'physics/Entropy.md',
         title: 'Entropy',
         nameSource: NAME_SOURCE.FILENAME,
-        moved: {
+        moveResult: {
           from: 'physics/Ontology.md',
           to: 'physics/Entropy.md',
-          repaired: ['Notes.md', 'Order.md'],
+          repairedNotes: ['Notes.md', 'Order.md'],
         },
       },
     })
@@ -515,7 +515,7 @@ describe('a note removed', () => {
 
   it('says the notes that link to nothing now', async () => {
     const one = createWindow({
-      remove: { trashed: '.trash/Ontology.md', dangling: ['Order.md', 'Notes.md'] },
+      remove: { trashPath: '.trash/Ontology.md', danglingNotes: ['Order.md', 'Notes.md'] },
     })
 
     await one.carry(invoke('app:file.remove', front()))
@@ -611,7 +611,7 @@ describe('several files removed at once', () => {
   })
 
   it('says the notes that link to nothing now, each of them once', async () => {
-    const one = createWindow({ remove: { trashed: '', dangling: ['Order.md'] } })
+    const one = createWindow({ remove: { trashPath: '', danglingNotes: ['Order.md'] } })
 
     await one.carry(invoke('app:file.remove', both))
 

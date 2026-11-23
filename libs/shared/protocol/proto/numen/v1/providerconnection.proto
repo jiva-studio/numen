@@ -107,7 +107,6 @@ message ProviderConnectionUse {
   string plugin_name = 2;
   // operations are the operations the setting of rows is used for, such as "llm.chat".
   repeated string operations = 4;
-  reserved 3;
 }
 
 message ListProviderConnectionTypesRequest {}

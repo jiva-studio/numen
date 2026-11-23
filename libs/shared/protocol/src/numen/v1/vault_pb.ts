@@ -5,17 +5,19 @@
 //
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
-// file.proto, its notes note.proto and its text search.proto, and where the
+// file.proto, its notes note.proto and its text search.proto.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { MoveResult } from "./file_pb.js";
+import { file_numen_v1_file } from "./file_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiXQoVR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIcCgRzY2FuGAQgASgLMg4ubnVtZW4udjEuU2NhbiI8CgRTY2FuEhAKCGlzX3JlYWR5GAEgASgIEg0KBWVycm9yGAIgASgJEhMKC3dhdGNoX2Vycm9yGAMgASgJIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJyChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZRIVCg12ZXJzaW9uX3BhdGhzGAQgAygJIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCTLAAQoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwAUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiXQoVR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIcCgRzY2FuGAQgASgLMg4ubnVtZW4udjEuU2NhbiI8CgRTY2FuEhAKCGlzX3JlYWR5GAEgASgIEg0KBWVycm9yGAIgASgJEhMKC3dhdGNoX2Vycm9yGAMgASgJIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCKCAQoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIaChJpc19yZWxvYWRfcmVxdWlyZWQYAiABKAgSIwoFbW92ZXMYAyADKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0EhUKDXZlcnNpb25fcGF0aHMYBCADKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -137,17 +139,17 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
    * Set when the vault has to be read again and not followed — more
    * changed at once than could be reported.
    *
-   * @generated from field: bool reload = 2;
+   * @generated from field: bool is_reload_required = 2;
    */
-  reload: boolean;
+  isReloadRequired: boolean;
 
   /**
    * The notes that were renamed by this application, each by where it was and
    * where it now is. A client showing one of them follows it there.
    *
-   * @generated from field: repeated numen.v1.Move renamed = 3;
+   * @generated from field: repeated numen.v1.MoveResult moves = 3;
    */
-  renamed: Move[];
+  moves: MoveResult[];
 
   /**
    * Paths of the files whose text versions changed: a version was made or
@@ -164,35 +166,6 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
  */
 export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 4);
-
-/**
- * Move is a note that is no longer where it was. The bytes do not change on the
- * way, so this says nothing about what the note holds.
- *
- * @generated from message numen.v1.Move
- */
-export type Move = Message<"numen.v1.Move"> & {
-  /**
-   * Where the note was filed.
-   *
-   * @generated from field: string from = 1;
-   */
-  from: string;
-
-  /**
-   * Where it is filed now.
-   *
-   * @generated from field: string to = 2;
-   */
-  to: string;
-};
-
-/**
- * Describes the message numen.v1.Move.
- * Use `create(MoveSchema)` to create a new message.
- */
-export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

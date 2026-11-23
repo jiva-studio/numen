@@ -138,7 +138,7 @@ func (l *Links) fetchMissingTexts(ctx context.Context, isReview bool) error {
 			return l.fetchMissingTextsAt(ctx, vault.Files, paths)
 		},
 		func(ctx context.Context) error {
-			paths, err := vault.Files.GetPathsOfType(ctx, NoteType)
+			paths, err := vault.Files.ListPathsOfType(ctx, NoteType)
 			if err != nil {
 				return err
 			}

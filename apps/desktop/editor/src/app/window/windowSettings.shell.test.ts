@@ -27,7 +27,7 @@ const DUSK = {
       isPinned: false,
     },
   ],
-  applied: 'plugin:md.example.themes/dusk',
+  appliedTheme: 'plugin:md.example.themes/dusk',
   mode: THEME_MODE.DARK,
   interfaceScale: 1.4,
   textScale: 1.2,

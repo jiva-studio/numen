@@ -42,7 +42,7 @@ type installedPlugins interface {
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
-	GetPlugins() []manifest.Discovered
+	ListPlugins() []manifest.Discovered
 }
 
 // pluginResolver supplies the plugin lookups used during host assembly.

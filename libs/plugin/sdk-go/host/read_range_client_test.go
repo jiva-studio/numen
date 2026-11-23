@@ -22,7 +22,7 @@ import (
 // code when it is set, and records the request.
 type rangeReading struct {
 	unimplementedHost
-	code    v1.HostVaultErrorCode
+	code    v1.ErrorCode
 	request *v1.ReadFileRequest
 }
 
@@ -33,7 +33,7 @@ func (r *rangeReading) ReadFile(_ context.Context, req *connect.Request[v1.ReadF
 	}
 	return connect.NewResponse(&v1.ReadFileResponse{
 		Content: []byte("ice moves slowly"), Start: 12,
-		Stat: &v1.HostFileStat{Path: "Glaciers.md", Size: 5000, ModTime: 7000, IsNote: true},
+		Stat: &v1.FileStat{Path: "Glaciers.md", Size: 5000, Mtime: 7000, IsNote: true},
 	}), nil
 }
 
@@ -76,10 +76,10 @@ func TestTheClientSendsALengthOfZeroAsSet(t *testing.T) {
 }
 
 func TestClientReturnsTheErrorOfARejectedRange(t *testing.T) {
-	for code, want := range map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:  host.ErrNotText,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:  host.ErrNoVault,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NOT_TEXT:  host.ErrNotText,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:  host.ErrNoVault,
 	} {
 		_, err := rangeClient(t, &rangeReading{code: code}).ReadRange(t.Context(), "Moraine.bin", 0, 100)
 		if !errors.Is(err, want) {

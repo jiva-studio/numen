@@ -26,7 +26,7 @@ const words = {
 }
 
 const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
-  written: text,
+  settingsJson: text,
   path: '/numen.json',
   plugins: [],
   app: [],
@@ -40,9 +40,9 @@ const createStore = (text: string, failure: string | null = null) => {
     settingsService: {
       getSettings: () => answerWith(text),
       writeSettings: (request) => {
-        requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
+        requests.push(request.settings.map((one) => ({ at: one.keyPath, value: one.value })))
         if (failure) throw createLostConnection(failure)
-        return { written: '{}', version: 1n }
+        return { settingsJson: '{}', version: 1n }
       },
     },
   })
@@ -232,7 +232,7 @@ describe('a setting written', () => {
           return answerWith('{"appearance":{"keep":1}}')
         },
         writeSettings: () => ({
-          written: '{"appearance":{"keep":1,"mode":"dark"},"other":{"nested":"ok"}}',
+          settingsJson: '{"appearance":{"keep":1,"mode":"dark"},"other":{"nested":"ok"}}',
           version: 2n,
         }),
       },
@@ -259,7 +259,7 @@ describe('a setting written', () => {
       settingsService: {
         getSettings: () => answerWith('{}', { app: [scale] }),
         writeSettings: () => ({
-          written: '{"app":{"appearance":{"interfaceScale":1.2}}}',
+          settingsJson: '{"app":{"appearance":{"interfaceScale":1.2}}}',
           version: 2n,
         }),
       },
@@ -288,7 +288,7 @@ describe('a setting written', () => {
     settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => answerWith('{}'),
-        writeSettings: () => ({ written: 'not JSON at all', version: 1n }),
+        writeSettings: () => ({ settingsJson: 'not JSON at all', version: 1n }),
       },
     })
     const notify = vi.fn()
@@ -350,7 +350,7 @@ describe('a setting written while the vault is read', () => {
           if (failWrites) throw createLostConnection('failed')
           file = `{"app":{"naming":{"syncTitleAndFilename":${request.settings[0]?.value}}}}`
           version += 1n
-          return { written: file, version }
+          return { settingsJson: file, version }
         },
       },
     })

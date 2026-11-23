@@ -50,7 +50,7 @@ import type { PluginHostDeps } from './types'
 import { pickDeclaredParts, type DeclaredParts } from './pluginTabKind'
 import { createBufferedNoteState } from './customTabBuffer'
 
-export function createPluginPaneWrapper(
+function createPluginPaneWrapper(
   pluginId: string,
   rawComponent: PluginComponentSource,
   getContext?: () => PluginContext | undefined,

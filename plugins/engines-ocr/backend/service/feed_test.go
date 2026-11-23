@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/feed"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
@@ -54,7 +55,7 @@ func TestAFilesChangedEventRecognizesNothingWhileTheSettingIsOff(t *testing.T) {
 	auto := s.newAutomatic(t)
 
 	s.deliver(t, auto, "onFilesChanged:Physics")
-	s.deliver(t, auto, "onIndexChanged:Physics")
+	s.deliver(t, auto, hosttest.GetIndexChangedEvent("Physics"))
 
 	s.checkNoRun(t)
 }

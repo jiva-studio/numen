@@ -390,7 +390,7 @@ func (newerProtocolLifecycle) Ping(
 	_ context.Context,
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: manifest.ProtocolVersion + 1}), nil
+	return connect.NewResponse(&v1.PingResponse{Protocol: manifest.ProtocolVersion + 1}), nil
 }
 
 func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {

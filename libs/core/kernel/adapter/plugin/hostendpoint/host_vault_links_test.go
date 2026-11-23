@@ -135,7 +135,7 @@ func (l *linkingVault) RemoveLinks(_ context.Context, from string, to domain.Add
 	return l.write(from)
 }
 
-func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat {
+func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.FileStat {
 	t.Helper()
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -195,13 +195,13 @@ func TestLinkEditsWithoutAVaultReturnNoVault(t *testing.T) {
 	updated, updateErr := client.UpdateLinks(ctx, connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{From: "Deltas.md", To: "Danube"}))
 	removed, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{From: "Deltas.md", To: "Danube"}))
 
-	if addErr != nil || added.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT || len(added.Msg.GetResults()) != 0 {
+	if addErr != nil || added.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT || len(added.Msg.GetResults()) != 0 {
 		t.Errorf("AddLinks returned %v (%v), want NO_VAULT and no results", added, addErr)
 	}
-	if updateErr != nil || updated.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
+	if updateErr != nil || updated.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("UpdateLinks returned %v (%v), want NO_VAULT", updated, updateErr)
 	}
-	if removeErr != nil || removed.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
+	if removeErr != nil || removed.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("RemoveLinks returned %v (%v), want NO_VAULT", removed, removeErr)
 	}
 }
@@ -252,7 +252,7 @@ func TestAddLinksSendsOneCallAndReturnsOneResultPerLink(t *testing.T) {
 			t.Errorf("result %d is %v, want the file stat of %s after the write and no error", i, r, from)
 		}
 	}
-	if results[0].GetStat().GetModTime() != results[2].GetStat().GetModTime() {
+	if results[0].GetStat().GetMtime() != results[2].GetStat().GetMtime() {
 		t.Errorf("the two links of Danube.md returned the file stats %v and %v, want the one write", results[0].GetStat(), results[2].GetStat())
 	}
 }
@@ -278,7 +278,7 @@ func TestAddLinksOverStaleBaselineReturnsConflictAndWritesOthers(t *testing.T) {
 		t.Fatalf("AddLinks returned error %v with %d results, want 3 results", res.Msg.GetError(), len(results))
 	}
 	for _, i := range []int{0, 2} {
-		if r := results[i]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || r.GetStat() != nil ||
+		if r := results[i]; r.GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT || r.GetStat() != nil ||
 			!strings.Contains(r.GetDetail(), "Danube.md") {
 			t.Errorf("result %d is %v, want CONFLICT with the core's text and no file stat", i, r)
 		}
@@ -293,13 +293,13 @@ func TestAddLinksToMissingNoteReturnsNotFoundWithTheDetail(t *testing.T) {
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 
 	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
-		{From: "Volga.md", Baseline: &v1.HostFileStat{Path: "Volga.md", Size: 8, ModTime: time.Unix(0, 100).UnixNano()}, To: "Danube", Role: v1.Role_ROLE_JUMP},
+		{From: "Volga.md", Baseline: &v1.FileStat{Path: "Volga.md", Size: 8, Mtime: time.Unix(0, 100).UnixNano()}, To: "Danube", Role: v1.Role_ROLE_JUMP},
 	}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if r := res.Msg.GetResults(); len(r) != 1 || r[0].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND ||
+	if r := res.Msg.GetResults(); len(r) != 1 || r[0].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND ||
 		!strings.Contains(r[0].GetDetail(), "Volga.md") {
 		t.Errorf("AddLinks returned %v, want one result NOT_FOUND naming Volga.md", res.Msg)
 	}
@@ -360,11 +360,11 @@ func TestUpdateLinksPassesTheChangeAndReturnsTheFileStat(t *testing.T) {
 	wantChange := domain.Link{Role: domain.RoleJump, Type: "outflow", Label: "flows from", Why: "the delta is the mouth of the river"}
 	if got.from != "Deltas.md" || got.to != (domain.Address{Scheme: domain.SchemeName, Value: "Danube"}) ||
 		got.change.Role != wantChange.Role || got.change.Type != wantChange.Type || got.change.Label != wantChange.Label || got.change.Why != wantChange.Why ||
-		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetModTime() {
+		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetMtime() {
 		t.Errorf("the update was sent to the vault as %+v, want Deltas.md to name://Danube with %+v over the baseline %v", got, wantChange, baseline)
 	}
 	if res.Msg.GetError() != 0 || res.Msg.GetDetail() != "" || res.Msg.GetStat().GetPath() != "Deltas.md" ||
-		res.Msg.GetStat().GetModTime() == baseline.GetModTime() {
+		res.Msg.GetStat().GetMtime() == baseline.GetMtime() {
 		t.Errorf("UpdateLinks returned %v, want the file stat of Deltas.md after the write", res.Msg)
 	}
 }
@@ -373,7 +373,7 @@ func TestUpdateLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 	outdated := vault.readBaseline(t, "Deltas.md")
-	outdated.ModTime++
+	outdated.Mtime++
 
 	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: outdated, Label: "flows from",
@@ -382,7 +382,7 @@ func TestUpdateLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
 		t.Errorf("UpdateLinks over a stale baseline returned %v, want CONFLICT with the core's text", res.Msg)
 	}
 }
@@ -398,7 +398,7 @@ func TestUpdateLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
 		t.Errorf("UpdateLinks of a missing link returned %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }
@@ -420,7 +420,7 @@ func TestRemoveLinksPassesTheRoleAndReturnsTheFileStat(t *testing.T) {
 	}
 	got := vault.removals[0]
 	if got.from != "Deltas.md" || got.to != (domain.Address{Scheme: domain.SchemeName, Value: "Danube"}) || got.role != domain.RoleParent ||
-		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetModTime() {
+		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetMtime() {
 		t.Errorf("the removal was sent to the vault as %+v, want Deltas.md to name://Danube of role parent", got)
 	}
 	if res.Msg.GetError() != 0 || res.Msg.GetDetail() != "" || res.Msg.GetStat().GetPath() != "Deltas.md" {
@@ -457,7 +457,7 @@ func TestRemoveLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
 		t.Errorf("RemoveLinks over a stale baseline returned %v, want CONFLICT with the core's text", res.Msg)
 	}
 }
@@ -473,7 +473,7 @@ func TestRemoveLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
 		t.Errorf("RemoveLinks of a missing link returned %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }

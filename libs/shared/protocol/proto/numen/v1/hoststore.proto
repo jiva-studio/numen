@@ -14,7 +14,6 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // Numen-Vault works the vault of that identity; without it a call works the
 // vault the host is showing.
 service HostStoreService {
-  // ReadStoreFile reads a whole file.
   rpc ReadStoreFile(ReadStoreFileRequest) returns (ReadStoreFileResponse);
 
   // AppendStoreFile adds to the end of a file, making it when it is not there.
@@ -29,7 +28,7 @@ service HostStoreService {
   // content lands whole or not at all.
   rpc WriteStoreFile(WriteStoreFileRequest) returns (WriteStoreFileResponse);
 
-  // DeleteStoreFile removes a file. A file that is not there is removed.
+  // DeleteStoreFile succeeds for a file that is not there.
   rpc DeleteStoreFile(DeleteStoreFileRequest) returns (DeleteStoreFileResponse);
 
   // RenameStoreFile moves a file to another name of the folder, replacing what
@@ -37,7 +36,7 @@ service HostStoreService {
   rpc RenameStoreFile(RenameStoreFileRequest) returns (RenameStoreFileResponse);
 }
 
-// HostStoreErrorCode is why a call on the plugin's folder was refused. The
+// HostStoreErrorCode is why a call on the plugin's folder failed. The
 // zero value means it was not.
 enum HostStoreErrorCode {
   HOST_STORE_ERROR_CODE_UNSPECIFIED = 0;
@@ -46,10 +45,10 @@ enum HostStoreErrorCode {
   HOST_STORE_ERROR_CODE_NO_VAULT = 1;
 
   // The file is not there.
-  HOST_STORE_ERROR_CODE_MISSING = 2;
+  HOST_STORE_ERROR_CODE_NOT_FOUND = 2;
 
   // The name is not a file of the plugin's folder.
-  HOST_STORE_ERROR_CODE_OUTSIDE = 3;
+  HOST_STORE_ERROR_CODE_OUTSIDE_VAULT = 3;
 
   // Another program holds the file.
   HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER = 4;

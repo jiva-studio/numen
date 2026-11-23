@@ -16,7 +16,7 @@ import (
 // connectionFailure is why a connection write did not land, as the schema
 // carries it.
 type connectionFailure struct {
-	code      *v1.ErrorCode
+	code      v1.ErrorCode
 	isInvalid bool
 	isCycle   bool
 }
@@ -36,7 +36,7 @@ func failureOf(err error) (connectionFailure, error) {
 	if !ok {
 		return connectionFailure{}, connect.NewError(wire.GetCode(err), err)
 	}
-	return connectionFailure{code: &reason}, nil
+	return connectionFailure{code: reason}, nil
 }
 
 // GetConnection answers the relationship between two notes as a whole.
@@ -76,47 +76,47 @@ func (h *Connections) SaveConnection(
 	}), nil
 }
 
-// RemoveSide removes the record one note writes about another.
-func (h *Connections) RemoveSide(
-	ctx context.Context, r *connect.Request[v1.RemoveSideRequest],
-) (*connect.Response[v1.RemoveSideResponse], error) {
+// DeleteConnectionSide removes the record one note writes about another.
+func (h *Connections) DeleteConnectionSide(
+	ctx context.Context, r *connect.Request[v1.DeleteConnectionSideRequest],
+) (*connect.Response[v1.DeleteConnectionSideResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	failure, err := failureOf(h.removeSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
+	failure, err := failureOf(h.deleteConnectionSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
 	}
 	if failure.isInvalid || failure.isCycle {
 		return nil, connect.NewError(connect.CodeInvalidArgument, domain.ErrInvalidConnection)
 	}
-	return connect.NewResponse(&v1.RemoveSideResponse{Error: failure.code}), nil
+	return connect.NewResponse(&v1.DeleteConnectionSideResponse{Error: failure.code}), nil
 }
 
-// RemoveConnection removes the records two notes write about each other.
-func (h *Connections) RemoveConnection(
-	ctx context.Context, r *connect.Request[v1.RemoveConnectionRequest],
-) (*connect.Response[v1.RemoveConnectionResponse], error) {
+// DeleteConnection removes the records two notes write about each other.
+func (h *Connections) DeleteConnection(
+	ctx context.Context, r *connect.Request[v1.DeleteConnectionRequest],
+) (*connect.Response[v1.DeleteConnectionResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
 	failure, err := failureOf(
-		h.removeConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType()))
+		h.deleteConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
 	}
 	if failure.isInvalid || failure.isCycle {
 		return nil, connect.NewError(connect.CodeInvalidArgument, domain.ErrInvalidConnection)
 	}
-	return connect.NewResponse(&v1.RemoveConnectionResponse{Error: failure.code}), nil
+	return connect.NewResponse(&v1.DeleteConnectionResponse{Error: failure.code}), nil
 }
 
-// JoinNotes makes one note write a record about another.
-func (h *Connections) JoinNotes(
-	ctx context.Context, r *connect.Request[v1.JoinNotesRequest],
-) (*connect.Response[v1.JoinNotesResponse], error) {
+// CreateConnectionSide makes one note write a record about another.
+func (h *Connections) CreateConnectionSide(
+	ctx context.Context, r *connect.Request[v1.CreateConnectionSideRequest],
+) (*connect.Response[v1.CreateConnectionSideResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (h *Connections) JoinNotes(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.JoinNotesResponse{
+	return connect.NewResponse(&v1.CreateConnectionSideResponse{
 		Error: failure.code, IsInvalid: failure.isInvalid, IsCycle: failure.isCycle,
 	}), nil
 }
@@ -170,7 +170,7 @@ func (h *Links) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.CreateRelatedNoteResponse{Error: &reason}), nil
+	return connect.NewResponse(&v1.CreateRelatedNoteResponse{Error: reason}), nil
 }
 
 // ListBacklinks answers the links written in other notes that point at a note.

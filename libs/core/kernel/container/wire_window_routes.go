@@ -56,7 +56,7 @@ import (
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
-		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.GetPlugins)
+		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.ListPlugins)
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served, handler))
 	}
@@ -125,7 +125,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, moving *vault.Move, placing *notePlacing) {
+func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing) {
 	state := w.session
 	readers := vaultDeps.Readers
 	folders := filewindow.NewFolders(
@@ -134,7 +134,7 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 		file.NewListFileKinds(kinds.files, kinds.choice),
 		file.NewCreateFolder(vaultDeps.Writers, w.page.Writes.AdmitWrite),
 	)
-	moveFile := vault.NewMoveFile(moving, w.page.Writes.AdmitWrite, w.page.Writes)
+	moveFile := note.NewMoveFile(placing.Move, db.Sources(), w.page.Writes.AdmitWrite, w.page.Writes)
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
@@ -174,7 +174,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windo
 		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes.IsIndexOutdated,
 	)
 	connections := notewindow.NewConnections(
-		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.DeleteConnectionSide, &notes.Connect.DeleteConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	w.Installation.Mount(editor.NewNoteRoute(w.page.Gate, handler))

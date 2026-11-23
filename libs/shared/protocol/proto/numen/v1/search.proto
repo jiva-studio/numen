@@ -51,11 +51,11 @@ message SearchNamesRequest {
 message SearchNamesResponse {
   // The names that matched, best first, with a note's own title before a
   // heading inside one.
-  repeated NameMatch found = 1;
+  repeated NameMatch matches = 1;
 }
 
-// NameMatch is one name that matched, and the note it stands for. A note's own
-// title matched when there is no heading here; otherwise the note is what the
+// NameMatch is one name that matched, and the note it stands for. When no
+// heading is set, the note's own title matched.
 message NameMatch {
   Note note = 1;
 
@@ -119,7 +119,7 @@ message CancelSearchResponse {}
 
 message SearchTextResponse {
   // The search results that answer, best first, one per source.
-  repeated SearchResult found = 1;
+  repeated SearchResult results = 1;
 }
 
 // SearchResult is what a search returns: the text around a hit, and where it came
@@ -164,8 +164,6 @@ message SearchResult {
   // where none holds, and for a source that is not a note.
   string tab_kind = 11;
 
-  reserved 12, 13, 14, 15;
-  reserved "chunk_id", "similarity", "word_score", "whole_text";
 
   // note, pdf, epub, audio, video, image or file. Set by HostSearchService.GetSearch.
   string kind = 16;

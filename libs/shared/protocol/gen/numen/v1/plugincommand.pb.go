@@ -432,7 +432,6 @@ func (x *PluginCommand) GetWarns() *ManifestCommandWarns {
 	return nil
 }
 
-// CommandArgument is one argument a command takes.
 type CommandArgument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -953,7 +952,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xc8\x02\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xc2\x02\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -964,8 +963,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	" \x01(\tR\x04when\x12\x1b\n" +
 	"\thas_items\x18\v \x01(\bR\bhasItems\x12:\n" +
 	"\aanswers\x18\f \x01(\v2 .numen.v1.ManifestCommandAnswersR\aanswers\x124\n" +
-	"\x05warns\x18\r \x01(\v2\x1e.numen.v1.ManifestCommandWarnsR\x05warnsJ\x04\b\t\x10\n" +
-	"\"\\\n" +
+	"\x05warns\x18\r \x01(\v2\x1e.numen.v1.ManifestCommandWarnsR\x05warns\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +

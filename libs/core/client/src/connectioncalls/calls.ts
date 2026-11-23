@@ -177,7 +177,7 @@ const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
   preferred === undefined
     ? {}
     : {
-        preferred: {
+        preferredRow: {
           connectionId: preferred.connectionId,
           options: { ...preferred.options },
           isExclusive: preferred.isExclusive === true,

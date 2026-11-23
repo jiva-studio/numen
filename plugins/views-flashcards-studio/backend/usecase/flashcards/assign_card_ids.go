@@ -41,7 +41,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 	if u.notes == nil {
 		return AssignCardIDsResult{Unwritten: nil}, nil
 	}
-	paths, err := u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	paths, err := u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 	if err != nil {
 		return AssignCardIDsResult{}, err
 	}

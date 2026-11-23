@@ -32,7 +32,7 @@ func (f *going) watchSettings(t *testing.T) *watcher {
 	one := &watcher{stream: stream, next: make(chan []*v1.Setting, 16)}
 	go func() {
 		for stream.Receive() {
-			one.next <- stream.Msg().GetChanged()
+			one.next <- stream.Msg().GetSettings()
 		}
 		close(one.next)
 	}()
@@ -67,7 +67,7 @@ func (w *watcher) expectNothing(t *testing.T) {
 
 func expectWire(t *testing.T, changed []*v1.Setting, path []string, value string) {
 	t.Helper()
-	if len(changed) != 1 || !slices.Equal(changed[0].GetAt(), path) || changed[0].GetValue() != value {
+	if len(changed) != 1 || !slices.Equal(changed[0].GetKeyPath(), path) || changed[0].GetValue() != value {
 		t.Errorf("the change is %v, want %v set to %s", changed, path, value)
 	}
 }
@@ -77,7 +77,7 @@ func TestAWriteFromOneWindowReachesTheStreamOfEveryWindowOnce(t *testing.T) {
 	writer, other := f.watchSettings(t), f.watchSettings(t)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
-		Settings: []*v1.Setting{{At: []string{"app", "appearance", "mode"}, Value: `"dark"`}},
+		Settings: []*v1.Setting{{KeyPath: []string{"app", "appearance", "mode"}, Value: `"dark"`}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestAWriteTheSettingsRejectReachesNoStream(t *testing.T) {
 	one := f.watchSettings(t)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
-		Settings: []*v1.Setting{{At: []string{"md.numen.nobody", "mistyped"}, Value: `"x"`}},
+		Settings: []*v1.Setting{{KeyPath: []string{"md.numen.nobody", "mistyped"}, Value: `"x"`}},
 	}))
 	if err == nil {
 		t.Fatal("a key nobody declares was written")

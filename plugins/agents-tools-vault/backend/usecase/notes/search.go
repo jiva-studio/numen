@@ -47,11 +47,11 @@ func (u *UseCase) Search(ctx context.Context, text string, limitGiven int) ([]Se
 }
 
 func (u *UseCase) findPaths(ctx context.Context) ([]string, error) {
-	paths, err := u.lookup.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := u.lookup.ListPathsOfType(ctx, domain.TypeNote)
 	if err == nil && len(paths) > 0 {
 		return paths, nil
 	}
-	return u.lookup.GetPathsOfType(ctx, "")
+	return u.lookup.ListPathsOfType(ctx, "")
 }
 
 func (u *UseCase) score(ctx context.Context, query notescore.Query, paths []string, refs map[string]domain.NoteRef) ([]SearchMatch, error) {

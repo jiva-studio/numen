@@ -44,8 +44,8 @@ func (v currentVault) Scan(ctx context.Context, paths []string) error {
 	return v.current.Load().Scan(ctx, paths)
 }
 
-func (v currentVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	return v.current.Load().GetPathsOfType(ctx, noteType)
+func (v currentVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	return v.current.Load().ListPathsOfType(ctx, noteType)
 }
 
 // currentStore is the plugin's store of the vault the host shows, switched with it.

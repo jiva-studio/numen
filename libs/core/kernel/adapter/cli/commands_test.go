@@ -50,11 +50,11 @@ func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
 // failingLinkQueries answers every question about links with an error.
 type failingLinkQueries struct{}
 
-func (failingLinkQueries) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (failingLinkQueries) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
@@ -200,7 +200,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 // fixedProblemQueries answers the two stored questions with what the test wrote down.
 type fixedProblemQueries struct{ parse, unreadable []domain.VaultProblem }
 
-func (p fixedProblemQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (p fixedProblemQueries) ListParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.parse, nil
 }
 

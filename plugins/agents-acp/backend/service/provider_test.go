@@ -300,7 +300,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	mountedWeb := httptest.NewServer(srv)
 	defer mountedWeb.Close()
 	mountedLifecycle := servertest.NewLifecycleClient(http.DefaultClient, mountedWeb.URL, "tok")
-	if _, err := mountedLifecycle.Configure(t.Context(), map[string]string{"requestTimeout": "45"}); err != nil {
+	if err := mountedLifecycle.Configure(t.Context(), map[string]string{"requestTimeout": "45"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := svc.settings.RequestTimeout(); got != 45*time.Second {
@@ -340,7 +340,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, "tok")
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{}); err != nil {
+	if err := lifecycle.Configure(t.Context(), map[string]string{}); err != nil {
 		t.Fatal(err)
 	}
 

@@ -53,7 +53,7 @@ func TestMoveCanceledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 		t.Fatalf("the move returned error %v with %d entries, want no call error and %d entries", res.Msg.GetError(), len(moves), len(paths))
 	}
 	for i, entry := range moves {
-		if entry.GetMove().GetFrom() != paths[i] || entry.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED {
+		if entry.GetMove().GetFrom() != paths[i] || entry.GetError() != v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED {
 			t.Errorf("entry %d is %v, want %s as not attempted", i, entry, paths[i])
 		}
 	}

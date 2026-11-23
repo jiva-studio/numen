@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL5AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEgoKaW5wdXRfaGFzaBgHIAEoCRIRCgl0ZXh0X2hhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgLIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSK0AQoVUHV0VGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEgwKBGtpbmQYBCABKAkSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiJwoXTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKEAQoYTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEicKCHZlcnNpb25zGAEgAygLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SFwoPbGl2ZV92ZXJzaW9uX2lkGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSJyCg9SZWFkVGV4dFJlcXVlc3QSDAoEcGF0aBgBIAEoCRISCgp2ZXJzaW9uX2lkGAIgASgJEg4KBmN1cnNvchgDIAEoCRINCgVzdGFydBgEIAEoAxITCgZsZW5ndGgYBSABKANIAIgBAUIJCgdfbGVuZ3RoIpUBChBSZWFkVGV4dFJlc3BvbnNlEicKCHNlZ21lbnRzGAEgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlEg0KBXN0YXJ0GAQgASgDEgwKBHNpemUYBSABKAMyhAIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USWQoQTGlzdFRleHRWZXJzaW9ucxIhLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEkEKCFJlYWRUZXh0EhkubnVtZW4udjEuUmVhZFRleHRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZFRleHRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textsegment]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL5AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEgoKaW5wdXRfaGFzaBgHIAEoCRIRCgl0ZXh0X2hhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgLIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSK0AQoVUHV0VGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEgwKBGtpbmQYBCABKAkSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiJwoXTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKEAQoYTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEicKCHZlcnNpb25zGAEgAygLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SFwoPbGl2ZV92ZXJzaW9uX2lkGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSJ2Cg9SZWFkVGV4dFJlcXVlc3QSDAoEcGF0aBgBIAEoCRISCgp2ZXJzaW9uX2lkGAIgASgJEhIKCnBhZ2VfdG9rZW4YAyABKAkSDQoFc3RhcnQYBCABKAMSEwoGbGVuZ3RoGAUgASgDSACIAQFCCQoHX2xlbmd0aCKZAQoQUmVhZFRleHRSZXNwb25zZRInCghzZWdtZW50cxgBIAMoCzIVLm51bWVuLnYxLlRleHRTZWdtZW50EhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUSDQoFc3RhcnQYBCABKAMSDAoEc2l6ZRgFIAEoAzKEAgoPSG9zdFRleHRTZXJ2aWNlElMKDlB1dFRleHRWZXJzaW9uEh8ubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXF1ZXN0GiAubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXNwb25zZRJZChBMaXN0VGV4dFZlcnNpb25zEiEubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USQQoIUmVhZFRleHQSGS5udW1lbi52MS5SZWFkVGV4dFJlcXVlc3QaGi5udW1lbi52MS5SZWFkVGV4dFJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_textsegment]);
 
 /**
  * TextSourceProperty is a frontmatter property of a note that a text version
@@ -253,12 +253,12 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   versionId: string;
 
   /**
-   * cursor is the next_cursor of the page before, and empty for the first. Not
+   * page_token is the next_page_token of the page before, and empty for the first. Not
    * used with a length.
    *
-   * @generated from field: string cursor = 3;
+   * @generated from field: string page_token = 3;
    */
-  cursor: string;
+  pageToken: string;
 
   /**
    * The start of a ranged read in the whole text, in bytes.
@@ -271,7 +271,7 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
    * Set: read the range from start of this many bytes, zero to the end,
    * truncated at whole characters, as the segments it covers, each truncated to
    * the range. Unset:
-   * read one page by cursor.
+   * read one page by page_token.
    *
    * @generated from field: optional int64 length = 5;
    */
@@ -295,11 +295,11 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
   segments: TextSegment[];
 
   /**
-   * next_cursor is empty on the last page.
+   * next_page_token is empty on the last page.
    *
-   * @generated from field: string next_cursor = 2;
+   * @generated from field: string next_page_token = 2;
    */
-  nextCursor: string;
+  nextPageToken: string;
 
   /**
    * @generated from field: numen.v1.TextErrorCode error = 3;

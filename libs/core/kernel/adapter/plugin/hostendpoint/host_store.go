@@ -79,9 +79,9 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 	case errors.Is(err, vaultdomain.ErrLockedByAnother):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER, nil
 	case errors.Is(err, vaultdomain.ErrOutside):
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE, nil
+		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT, nil
 	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING, nil
+		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }

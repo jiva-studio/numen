@@ -63,7 +63,7 @@ func failText(code v1.TextErrorCode) error {
 	switch code {
 	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.TextErrorCode_TEXT_ERROR_CODE_MISSING:
+	case v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
 	case v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
@@ -106,14 +106,14 @@ func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing
 }
 
 func (c *TextClient) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error) {
-	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), Cursor: cursor}))
+	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), PageToken: cursor}))
 	if err != nil {
 		return TextPage{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
 		return TextPage{}, err
 	}
-	return TextPage{Segments: readTextSegments(res.Msg.GetSegments()), NextCursor: res.Msg.GetNextCursor()}, nil
+	return TextPage{Segments: readTextSegments(res.Msg.GetSegments()), NextCursor: res.Msg.GetNextPageToken()}, nil
 }
 
 func readTextVersion(v *v1.TextVersion) domain.TextVersion {

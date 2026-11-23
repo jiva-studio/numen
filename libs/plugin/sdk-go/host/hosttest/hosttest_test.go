@@ -74,7 +74,7 @@ func TestAMoveIsReportedToTheWatch(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	v := hosttest.New("Physics")
-	moves, err := v.WatchMoves(ctx)
+	moves, err := v.WatchIndexChanges(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	forms, err := v.GetPathsOfType(ctx, "form")
+	forms, err := v.ListPathsOfType(ctx, "form")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestANameReachesTheNearestNoteAndReturnsWhenSeveralAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := v.GetNamedPaths(ctx, "entropy")
+	named, err := v.ListNamedPaths(ctx, "entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,15 +141,15 @@ func TestALinkIsABacklinkOnlyWhereItResolves(t *testing.T) {
 	v.File("Other/Target.md", "# Another target\n")
 	v.File("Source.md", "---\nlinks:\n  - to: Target\n    role: ref\n---\n\nbody\n")
 
-	backlinks, err := v.GetBacklinks(ctx, "Target.md")
+	backlinks, err := v.ListBacklinks(ctx, "Target.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	away, err := v.GetBacklinks(ctx, "Other/Target.md")
+	away, err := v.ListBacklinks(ctx, "Other/Target.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	forward, err := v.GetLinks(ctx, "Source.md")
+	forward, err := v.ListLinks(ctx, "Source.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,12 +217,12 @@ func TestHostTest_IndexSeesExternalFileOnlyAfterScan(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	before, err := v.GetPathsOfType(ctx, "sample")
+	before, err := v.ListPathsOfType(ctx, "sample")
 	if err != nil {
 		t.Fatal(err)
 	}
 	scanErr := v.Scan(ctx, []string{"B.md"})
-	after, err := v.GetPathsOfType(ctx, "sample")
+	after, err := v.ListPathsOfType(ctx, "sample")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
 
 	_, statErr := v.StatFile(ctx, "samples/.Hidden.md")
 	_, missing := v.StatFile(ctx, "samples/Nothing.md")
-	samples, err := v.GetPathsOfType(ctx, "sample")
+	samples, err := v.ListPathsOfType(ctx, "sample")
 	if err != nil {
 		t.Fatal(err)
 	}

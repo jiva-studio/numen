@@ -918,9 +918,9 @@ type lookups struct {
 	looks map[string]int
 }
 
-func (a lookups) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (a lookups) ListLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	a.looks[from]++
-	return a.LinkQueries.GetLinks(ctx, vaultID, from)
+	return a.LinkQueries.ListLinks(ctx, vaultID, from)
 }
 
 // Counting a vault reads it once: every deck is opened once and queried once

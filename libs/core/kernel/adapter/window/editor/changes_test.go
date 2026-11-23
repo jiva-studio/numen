@@ -509,7 +509,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +519,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	if !stream.Receive() {
 		t.Fatalf("the stream never opened: %v", stream.Err())
 	}
-	if stream.Msg().GetFlush() {
+	if stream.Msg().GetIsFlushRequired() {
 		t.Fatal("the stream opened by asking for a flush")
 	}
 
@@ -527,7 +527,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	go func() {
 		defer close(flushed)
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			// Page behavior: it writes the content only it holds, then reports
@@ -540,10 +540,10 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_WRITTEN,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -587,7 +587,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -636,7 +636,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	stream, err := f.canvas.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -645,7 +645,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 		hangUp()
 		t.Fatalf("the stream never opened: %v", stream.Err())
 	}
-	if stream.Msg().GetFlush() {
+	if stream.Msg().GetIsFlushRequired() {
 		hangUp()
 		t.Fatal("the stream opened by asking for a flush")
 	}
@@ -655,7 +655,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 		defer close(p.question)
 		defer testsupport.Close(t, stream)
 		for stream.Receive() {
-			if stream.Msg().GetFlush() {
+			if stream.Msg().GetIsFlushRequired() {
 				p.question <- stream.Msg().GetToken()
 			}
 		}
@@ -680,10 +680,10 @@ func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 }
 
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
-	_, err := p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
-		Window: wire.Editor,
-		Token:  token,
-		Result: response,
+	_, err := p.f.canvas.ReportPendingWork(context.Background(), connect.NewRequest(&v1.ReportPendingWorkRequest{
+		WindowId: wire.Editor,
+		Token:    token,
+		Result:   response,
 	}))
 	if err != nil {
 		p.mu.Lock()
@@ -899,8 +899,8 @@ func getSetting(t *testing.T, f *going, pos ...string) any {
 		t.Fatal(err)
 	}
 	var target any
-	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
-		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
+	if err := json.Unmarshal([]byte(response.Msg.GetSettingsJson()), &target); err != nil {
+		t.Fatalf("the settings read out as %q: %v", response.Msg.GetSettingsJson(), err)
 	}
 	for _, step := range pos {
 		section, is := target.(map[string]any)
@@ -926,8 +926,8 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	}
 
 	var target map[string]any
-	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
-		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
+	if err := json.Unmarshal([]byte(response.Msg.GetSettingsJson()), &target); err != nil {
+		t.Fatalf("the settings read out as %q: %v", response.Msg.GetSettingsJson(), err)
 	}
 	if _, exists := target["app"]; !exists {
 		t.Errorf("the settings read out as %v", target)
@@ -940,7 +940,7 @@ func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
+			{KeyPath: []string{"app", "appearance", "mode"}, Value: `"dark"`},
 		},
 	}))
 	if err != nil {
@@ -951,8 +951,8 @@ func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(response.Msg.GetWritten(), `"mode":"dark"`) {
-		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
+	if !strings.Contains(response.Msg.GetSettingsJson(), `"mode":"dark"`) {
+		t.Errorf("the settings read out as %s", response.Msg.GetSettingsJson())
 	}
 }
 
@@ -978,7 +978,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			_, err = f.configuring.WriteSettings(
 				t.Context(),
 				connect.NewRequest(&v1.WriteSettingsRequest{
-					Settings: []*v1.Setting{{At: one.posVal, Value: one.value}},
+					Settings: []*v1.Setting{{KeyPath: one.posVal, Value: one.value}},
 				}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -990,8 +990,8 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if now.Msg.GetWritten() != was.Msg.GetWritten() {
-				t.Errorf("the settings read out as %s", now.Msg.GetWritten())
+			if now.Msg.GetSettingsJson() != was.Msg.GetSettingsJson() {
+				t.Errorf("the settings read out as %s", now.Msg.GetSettingsJson())
 			}
 		})
 	}
@@ -1004,8 +1004,8 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
-			{At: []string{"app", "appearance", "textScale"}, Value: `5`},
+			{KeyPath: []string{"app", "appearance", "mode"}, Value: `"dark"`},
+			{KeyPath: []string{"app", "appearance", "textScale"}, Value: `5`},
 		},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -1016,8 +1016,8 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(response.Msg.GetWritten(), `"mode":"dark"`) {
-		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
+	if strings.Contains(response.Msg.GetSettingsJson(), `"mode":"dark"`) {
+		t.Errorf("the settings read out as %s", response.Msg.GetSettingsJson())
 	}
 }
 
@@ -1033,7 +1033,7 @@ func isSyncing(t *testing.T, f *going) bool {
 func writeSetting(t *testing.T, f *going, value string, path ...string) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
-		Settings: []*v1.Setting{{At: path, Value: value}},
+		Settings: []*v1.Setting{{KeyPath: path, Value: value}},
 	}))
 	return err
 }
@@ -1102,7 +1102,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetMatches()
 	if len(found) == 0 {
 		t.Fatal("a word still being typed found no name")
 	}
@@ -1128,7 +1128,7 @@ func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetMatches()
 	if len(found) != 1 {
 		t.Fatalf("%d answers, want the one heading: %+v", len(found), found)
 	}
@@ -1154,7 +1154,7 @@ func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	}
 
 	types := map[string]string{}
-	for _, one := range answer.Msg.GetFound() {
+	for _, one := range answer.Msg.GetMatches() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{
@@ -1182,7 +1182,7 @@ func TestAResultReturnsWhichOfFourItsNoteIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetResults()
 	if len(found) == 0 {
 		t.Fatal("nothing found")
 	}
@@ -1210,7 +1210,7 @@ func TestAResultReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 			t.Fatal(err)
 		}
 		clear(kinds)
-		for _, one := range answer.Msg.GetFound() {
+		for _, one := range answer.Msg.GetResults() {
 			kinds[one.GetPath()] = one.GetNote() != nil
 		}
 		if _, target := kinds["library/A Book.epub"]; target {
@@ -1244,7 +1244,7 @@ func TestSearchText_EachModeAnswersSeparately(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(words.Msg.GetFound()) == 0 {
+	if len(words.Msg.GetResults()) == 0 {
 		t.Fatal("the words half found nothing for a word that is written")
 	}
 
@@ -1254,7 +1254,7 @@ func TestSearchText_EachModeAnswersSeparately(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(meaning.Msg.GetFound()); got != 0 {
+	if got := len(meaning.Msg.GetResults()); got != 0 {
 		t.Errorf("the meaning half answered %d times with no model set", got)
 	}
 }
@@ -1271,7 +1271,7 @@ func TestAResultReturnsWhichNoteItCameOutOf(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetResults()
 	if len(found) == 0 {
 		t.Fatal("nothing found")
 	}
@@ -1301,7 +1301,7 @@ func TestAResultReturnsWhereInItsSourceItExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetResults()
 	if len(found) == 0 {
 		t.Fatal("nothing found")
 	}
@@ -1328,7 +1328,7 @@ func TestSearchNames_HonorsLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(answer.Msg.GetFound()); got != 2 {
+	if got := len(answer.Msg.GetMatches()); got != 2 {
 		t.Errorf("%d answers for a limit of 2", got)
 	}
 }
@@ -1341,7 +1341,7 @@ func TestSearchText_BlankQueryReturnsNothing(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%q: %v", query, err)
 		}
-		if got := len(answer.Msg.GetFound()); got != 0 {
+		if got := len(answer.Msg.GetResults()); got != 0 {
 			t.Errorf("%q was answered with %d passages", query, got)
 		}
 	}
@@ -1402,7 +1402,7 @@ func TestRelatedNotesReturnWhichOfThreeEachNoteIs(t *testing.T) {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
 	types := map[string]string{}
-	for _, one := range graphOf(t, center.Msg).GetRelated() {
+	for _, one := range graphOf(t, center.Msg).GetRelatedNotes() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{

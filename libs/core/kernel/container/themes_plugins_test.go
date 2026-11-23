@@ -162,8 +162,8 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 
-	if err != nil || answer.Msg.GetApplied() != "preset:numen" {
-		t.Errorf("applied = %q, error = %v", answer.Msg.GetApplied(), err)
+	if err != nil || answer.Msg.GetAppliedTheme() != "preset:numen" {
+		t.Errorf("applied = %q, error = %v", answer.Msg.GetAppliedTheme(), err)
 	}
 	if len(said) == 0 || !strings.Contains(said[len(said)-1], name) {
 		t.Errorf("said %v", said)

@@ -37,7 +37,7 @@ type configurable struct {
 func (configurable) Configure(
 	_ context.Context, _ *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
-	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ConfigureResponse{}), nil
 }
 
 func openConfigurableEmbedder(t *testing.T) (*pluginhost.Host, *sourcebridge.Source, *mockSourceServer, *atomic.Int32) {

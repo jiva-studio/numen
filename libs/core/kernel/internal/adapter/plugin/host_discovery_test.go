@@ -174,7 +174,7 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	}
 	wg.Wait()
 
-	if plugins := management.Registry.GetPlugins(); len(plugins) != 1 {
+	if plugins := management.Registry.ListPlugins(); len(plugins) != 1 {
 		t.Fatalf("expected one plugin, got %d", len(plugins))
 	}
 }

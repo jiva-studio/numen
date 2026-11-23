@@ -569,7 +569,6 @@ func (x *DetectedConnection) GetPath() string {
 	return ""
 }
 
-// ProviderServiceCallResponse is one frame of a call.
 type ProviderServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Frame:

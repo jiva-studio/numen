@@ -15,7 +15,7 @@ type moves struct {
 	err     error
 }
 
-func (m moves) WatchMoves(context.Context) (<-chan host.Move, error) { return m.channel, m.err }
+func (m moves) WatchIndexChanges(context.Context) (<-chan host.Move, error) { return m.channel, m.err }
 
 func TestWatchSignalsNothingChangedAtOnceAndAReloadOnEachMove(t *testing.T) {
 	channel := make(chan host.Move, 2)

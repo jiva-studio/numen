@@ -49,10 +49,10 @@ const UNREADABLE_FIXTURE = 'corrupted.pdf'
 
 const readTasks = (
   baseURL: string,
-): Promise<{ title?: string; about?: string; error?: string }[]> =>
+): Promise<{ title?: string; detail?: string; failureReason?: string }[]> =>
   new Promise((resolve, reject) => {
     const origin = new URL(baseURL)
-    const json = Buffer.from(JSON.stringify({ window: 'editor' }))
+    const json = Buffer.from(JSON.stringify({ windowId: 'editor' }))
     const header = Buffer.alloc(5)
     header.writeUInt32BE(json.length, 1)
     const call = https.request(
@@ -72,8 +72,8 @@ const readTasks = (
           call.destroy()
           const message = JSON.parse(received.subarray(5, 5 + received.readUInt32BE(1)).toString())
           resolve(
-            (message as { tasks?: { title?: string; about?: string; error?: string }[] }).tasks ??
-              [],
+            (message as { tasks?: { title?: string; detail?: string; failureReason?: string }[] })
+              .tasks ?? [],
           )
         })
         answer.on('error', reject)
@@ -85,8 +85,8 @@ const readTasks = (
 
 const readFailedTasks = async (baseURL: string): Promise<string[]> =>
   (await readTasks(baseURL))
-    .filter((one) => one.error)
-    .map((one) => [one.title, one.about, one.error].filter(Boolean).join(': '))
+    .filter((one) => one.failureReason)
+    .map((one) => [one.title, one.detail, one.failureReason].filter(Boolean).join(': '))
     .filter((text) => !text.includes(UNREADABLE_FIXTURE))
 
 export const test = base.extend<{ isFreshTabs: void; hasNoFailedTask: void }>({

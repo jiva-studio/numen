@@ -63,13 +63,13 @@ func readFrontmatterWrites(notes []*v1.NoteFrontmatterWrite) ([]plugin.Frontmatt
 	return writes, nil
 }
 
-func writeFrontmatterResults(ctx context.Context, written []plugin.FrontmatterWritten) ([]*v1.NoteFrontmatterWritten, v1.HostVaultErrorCode, error) {
+func writeFrontmatterResults(ctx context.Context, written []plugin.FrontmatterWritten) ([]*v1.NoteFrontmatterWritten, v1.ErrorCode, error) {
 	results := make([]*v1.NoteFrontmatterWritten, len(written))
 	// The results already hold the cancellation of ctx: the notes not written are ErrNotAttempted.
 	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range written {
 		if errors.Is(one.Err, plugin.ErrNotAttempted) {
-			results[i] = &v1.NoteFrontmatterWritten{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
+			results[i] = &v1.NoteFrontmatterWritten{Error: v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
 			continue
 		}
 		entry, code, err := writeLinkEdit(resultCtx, one.Stat, one.Err)

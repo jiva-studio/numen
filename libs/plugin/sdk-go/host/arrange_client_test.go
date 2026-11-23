@@ -22,7 +22,7 @@ import (
 type fakeArrangeHost struct {
 	unimplementedHost
 	mu           sync.Mutex
-	noteError    v1.HostVaultErrorCode
+	noteError    v1.ErrorCode
 	vaultsError  v1.VaultsErrorCode
 	vaultsDetail string
 	requests     []string
@@ -49,7 +49,7 @@ func (a *fakeArrangeHost) RenameNote(
 	}
 	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
-		Move: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
+		MoveResult: &v1.MoveResult{From: "Danube.md", To: "Donau.md", RepairedNotes: []string{"Deltas.md"}, DanglingNotes: []string{"Estuaries.md"}},
 	}), nil
 }
 
@@ -58,10 +58,10 @@ func (a *fakeArrangeHost) MoveNotes(
 ) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	a.record("move " + req.Msg.GetFolder())
 	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
-		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
-		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
-		{Move: &v1.MoveResult{From: "Deltas.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", RepairedNotes: []string{"Deltas.md"}}},
+		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
+		{Move: &v1.MoveResult{From: "Deltas.md"}, Error: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
 	}}), nil
 }
 
@@ -71,15 +71,15 @@ func (a *fakeArrangeHost) RemoveNotes(
 	a.record("remove " + req.Msg.GetPaths()[0])
 	return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
-		{Path: "Rivers", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
-		{Path: "Nowhere.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		{Path: "Rivers", Error: v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
+		{Path: "Nowhere.md", Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 	}}), nil
 }
 
-func (a *fakeArrangeHost) GetVaultProblems(
-	_ context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
-) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	return connect.NewResponse(&v1.GetVaultProblemsResponse{
+func (a *fakeArrangeHost) ListVaultProblems(
+	_ context.Context, req *connect.Request[v1.ListVaultProblemsRequest],
+) (*connect.Response[v1.ListVaultProblemsResponse], error) {
+	return connect.NewResponse(&v1.ListVaultProblemsResponse{
 		Checks: req.Msg.GetChecks(),
 		Problems: []*v1.HostVaultProblem{{
 			Path: "Deltas.md", Check: "ambiguous", Detail: "Danube matches two notes",
@@ -88,14 +88,14 @@ func (a *fakeArrangeHost) GetVaultProblems(
 	}), nil
 }
 
-func (a *fakeArrangeHost) GetNoteRefs(
-	_ context.Context, req *connect.Request[v1.GetNoteRefsRequest],
-) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	notes := make([]*v1.HostNoteRef, 0, len(req.Msg.GetPaths()))
+func (a *fakeArrangeHost) ListNoteRefs(
+	_ context.Context, req *connect.Request[v1.ListNoteRefsRequest],
+) (*connect.Response[v1.ListNoteRefsResponse], error) {
+	notes := make([]*v1.Note, 0, len(req.Msg.GetPaths()))
 	for _, one := range req.Msg.GetPaths() {
-		notes = append(notes, &v1.HostNoteRef{Path: one, Title: "Danube", Id: "01JRIVERDANUBE"})
+		notes = append(notes, &v1.Note{Path: one, Title: "Danube", Identifier: "01JRIVERDANUBE"})
 	}
-	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
+	return connect.NewResponse(&v1.ListNoteRefsResponse{Notes: notes}), nil
 }
 
 func (a *fakeArrangeHost) ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
@@ -170,12 +170,12 @@ func TestTheClientRenamesANoteAndReadsTheMove(t *testing.T) {
 }
 
 func TestClientReturnsTheErrorCodeOfARejectedRename(t *testing.T) {
-	for code, want := range map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:       host.ErrStale,
+		v1.ErrorCode_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
 	} {
 		_, err := newFakeArrangeClient(t, &fakeArrangeHost{noteError: code}).RenameNote(t.Context(), "Danube.md", "Donau")
 		if !errors.Is(err, want) {

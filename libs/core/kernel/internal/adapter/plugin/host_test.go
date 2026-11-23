@@ -108,7 +108,7 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	plugins := host.Management.Registry.GetPlugins()
+	plugins := host.Management.Registry.ListPlugins()
 	if len(plugins) != 1 {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
@@ -462,7 +462,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 		t.Fatalf("fast plugin expected port %d, got %d", fastPort, fastEndpoint.Port)
 	}
 
-	plugins := host.Management.Registry.GetPlugins()
+	plugins := host.Management.Registry.ListPlugins()
 	if len(plugins) != 2 {
 		t.Fatalf("expected 2 plugins, got %d", len(plugins))
 	}
@@ -631,23 +631,21 @@ type testLifecycleHandler struct {
 	wiretest.PluginLifecycle
 	mu             sync.Mutex
 	shutdownCalled bool
-	timeoutSecs    int32
 	onShutdown     func()
 }
 
 func (h *testLifecycleHandler) Shutdown(
 	_ context.Context,
-	req *connect.Request[v1.ShutdownRequest],
+	_ *connect.Request[v1.ShutdownRequest],
 ) (*connect.Response[v1.ShutdownResponse], error) {
 	h.mu.Lock()
 	h.shutdownCalled = true
-	h.timeoutSecs = req.Msg.GetTimeoutSeconds()
 	onShutdown := h.onShutdown
 	h.mu.Unlock()
 	if onShutdown != nil {
 		onShutdown()
 	}
-	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ShutdownResponse{}), nil
 }
 
 func (h *testLifecycleHandler) isShutdownCalled() bool {
@@ -1097,7 +1095,7 @@ func TestHost_ListsPluginsInIDOrder(t *testing.T) {
 	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}
 	for range 20 {
 		var items, infos, statuses []string
-		for _, p := range host.Management.Registry.GetPlugins() {
+		for _, p := range host.Management.Registry.ListPlugins() {
 			items = append(items, p.Manifest.ID)
 		}
 		for _, info := range host.Management.Registry.GetPluginInfos() {

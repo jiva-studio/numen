@@ -74,6 +74,6 @@ export const createPluginTexts = (client: TextClient, pluginId: string): VaultTe
     if (answer.version !== undefined && answer.error === TEXT_ERROR_CODE.UNSPECIFIED) {
       return { ok: true, value: readVersion(answer.version) }
     }
-    return { ok: false, error: answer.error === TEXT_ERROR_CODE.MISSING ? 'missing' : 'invalid' }
+    return { ok: false, error: answer.error === TEXT_ERROR_CODE.NOT_FOUND ? 'missing' : 'invalid' }
   },
 })

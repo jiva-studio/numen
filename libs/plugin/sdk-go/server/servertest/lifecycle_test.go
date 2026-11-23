@@ -31,13 +31,13 @@ func TestLifecycleClient_CallsThePluginOverTheWire(t *testing.T) {
 	})
 	client := NewLifecycleClient(web.Client(), web.URL, lakeToken)
 
-	status, protocol, err := client.Ping(t.Context())
-	if err != nil || status != "ok" || protocol != server.ProtocolVersion {
-		t.Fatalf("Ping = %q, %d, %v", status, protocol, err)
+	protocol, err := client.Ping(t.Context())
+	if err != nil || protocol != server.ProtocolVersion {
+		t.Fatalf("Ping = %d, %v", protocol, err)
 	}
-	accepted, err := client.Configure(t.Context(), map[string]string{"model": "small"})
-	if err != nil || !accepted || configured["model"] != "small" {
-		t.Fatalf("Configure = %v, %v, configured %v", accepted, err, configured)
+	err = client.Configure(t.Context(), map[string]string{"model": "small"})
+	if err != nil || configured["model"] != "small" {
+		t.Fatalf("Configure = %v, configured %v", err, configured)
 	}
 }
 
@@ -48,11 +48,11 @@ func TestLifecycleClient_ReturnsTheErrorsOfThePlugin(t *testing.T) {
 	})
 	client := NewLifecycleClient(web.Client(), web.URL, lakeToken)
 
-	if ok, err := client.Configure(t.Context(), map[string]string{"a": "b"}); err == nil || ok {
-		t.Fatalf("Configure = %v, %v, want an error", ok, err)
+	if err := client.Configure(t.Context(), map[string]string{"a": "b"}); err == nil {
+		t.Fatal("Configure succeeded, want an error")
 	}
 	web.Close()
-	if _, _, err := client.Ping(t.Context()); err == nil {
+	if _, err := client.Ping(t.Context()); err == nil {
 		t.Fatal("Ping of a stopped plugin succeeded")
 	}
 }

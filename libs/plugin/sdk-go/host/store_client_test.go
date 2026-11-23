@@ -43,7 +43,7 @@ func (h *storeHost) ReadStoreFile(_ context.Context, req *connect.Request[v1.Rea
 	}
 	content, there := h.files[req.Msg.GetName()]
 	if !there {
-		return connect.NewResponse(&v1.ReadStoreFileResponse{Error: v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING}), nil
+		return connect.NewResponse(&v1.ReadStoreFileResponse{Error: v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND}), nil
 	}
 	return connect.NewResponse(&v1.ReadStoreFileResponse{Content: content}), nil
 }
@@ -117,8 +117,8 @@ func TestAStoreClientAppendsReadsAndLists(t *testing.T) {
 func TestEachCodeOfTheStoreIsItsOwnError(t *testing.T) {
 	cases := map[v1.HostStoreErrorCode]error{
 		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT:          host.ErrNoVault,
-		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING:           host.ErrNotExist,
-		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE:           host.ErrOutside,
+		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND:         host.ErrNotExist,
+		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT:     host.ErrOutside,
 		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER: host.ErrLockedByAnother,
 	}
 	for code, want := range cases {
@@ -180,7 +180,7 @@ func TestStoreClientWriteAndDelete(t *testing.T) {
 	if _, err := store.Read(ctx, "a.json"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("a deleted file was read: %v", err)
 	}
-	h.code = v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE
+	h.code = v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT
 	if err := store.Delete(ctx, "../a"); !errors.Is(err, host.ErrOutside) {
 		t.Errorf("a refused delete answered %v", err)
 	}

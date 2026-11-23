@@ -40,8 +40,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
             keyHint: '••••-814A',
             activeProvider: 'creem',
             instanceName: 'workstation',
-            expiresAt: '2026-12-31T00:00:00Z',
-            verifiedAt: '2026-11-18T12:00:00Z',
+            expiresUnixMs: 1798675200000n,
+            verifiedUnixMs: 1795003200000n,
           },
         ],
       }),
@@ -120,8 +120,8 @@ describe('createLicenseClient', () => {
         keyHint: '••••-814A',
         activeProvider: 'creem',
         instanceName: 'workstation',
-        expiresAt: '2026-12-31T00:00:00Z',
-        verifiedAt: '2026-11-18T12:00:00Z',
+        expiresUnixMs: 1798675200000,
+        verifiedUnixMs: 1795003200000,
       },
     ])
   })

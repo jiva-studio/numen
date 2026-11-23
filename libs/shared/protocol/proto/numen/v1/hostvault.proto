@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // HostVaultService is the vault itself, as a plugin works it: which vault the
@@ -18,83 +20,30 @@ service HostVaultService {
   // with the vault unset.
   rpc GetHostVault(GetHostVaultRequest) returns (GetHostVaultResponse);
 
-  // EnsureVaultIndexed brings the vault into the index when it is not there yet,
-  // and says where that stands. The work goes on after the call returns, and the
-  // caller asks again once WatchMoves tells it something moved.
-  rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
+  // IndexVault starts indexing the vault when it is not indexed yet, and returns the
+  // indexing state. Indexing continues after the call returns; the caller calls
+  // again after WatchIndexChanges reports a change.
+  rpc IndexVault(IndexVaultRequest) returns (IndexVaultResponse);
 
   // LockVault holds the vault's writers to one caller until UnlockVault, or
   // until the plugin stops. A caller that finds it held waits for it.
   rpc LockVault(LockVaultRequest) returns (LockVaultResponse);
 
-  // UnlockVault lets the writers go.
+  // UnlockVault releases the lock taken by LockVault.
   rpc UnlockVault(UnlockVaultRequest) returns (UnlockVaultResponse);
 
-  // GetParseProblems lists what parsing each file of the vault turned up.
-  rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
+  // ListParseProblems lists what parsing each file of the vault turned up.
+  rpc ListParseProblems(ListParseProblemsRequest) returns (ListParseProblemsResponse);
 
-  // GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+  // ListVaultProblems runs the named checks of the vault (parse, frontmatter,
   // ambiguous, dangling), or every check that is not opt-in when none is named.
   // It needs vault:read.
-  rpc GetVaultProblems(GetVaultProblemsRequest) returns (GetVaultProblemsResponse);
+  rpc ListVaultProblems(ListVaultProblemsRequest) returns (ListVaultProblemsResponse);
 
-  // WatchMoves tells that something moved in some vault of the installation,
-  // until the caller disconnects. It says nothing of what moved. The first message is
-  // sent at once, so that the caller knows the watch is on.
-  rpc WatchMoves(WatchMovesRequest) returns (stream WatchMovesResponse);
-}
-
-// means it was not.
-enum HostVaultErrorCode {
-  HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The host is showing no vault.
-  HOST_VAULT_ERROR_CODE_NO_VAULT = 1;
-
-  // The file or the note is not there.
-  HOST_VAULT_ERROR_CODE_NOT_FOUND = 2;
-
-  // The path is outside the vault or names no file.
-  HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT = 3;
-
-  // The file changed since the file stat given.
-  HOST_VAULT_ERROR_CODE_CONFLICT = 4;
-
-  // A file is already there.
-  HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
-
-  // Another program holds the file.
-  HOST_VAULT_ERROR_CODE_LOCKED = 6;
-
-  // The path is not a note this vault holds.
-  HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
-
-  reserved 9 to 11;
-
-  // The file is not valid note text.
-  HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
-
-  // The file exceeds the maximum note size.
-  HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
-
-  // The prose opens with a frontmatter delimiter, so writing it would put a
-  // second block inside the first.
-  HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE = 14;
-
-  // The frontmatter cannot be read, so the note can be neither read nor
-  // written.
-  HOST_VAULT_ERROR_CODE_UNREADABLE = 15;
-
-  // The title is invalid: it is empty after sanitising, spans lines, or parses
-  // as markup.
-  HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
-
-  // The change of a note failed for a reason with no code of its own; the
-  // detail of that note contains the core's error text.
-  HOST_VAULT_ERROR_CODE_INTERNAL = 17;
-
-  // The call was cancelled before this note was changed: the note is as it was.
-  HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED = 18;
+  // WatchIndexChanges streams a message when any vault of the installation changes,
+  // until the caller disconnects. A message does not say what changed. The first
+  // message is sent at once, to confirm the watch is active.
+  rpc WatchIndexChanges(WatchIndexChangesRequest) returns (stream WatchIndexChangesResponse);
 }
 
 enum HostIndexState {
@@ -107,22 +56,22 @@ enum HostIndexState {
   HOST_INDEX_STATE_FAILED = 3;
 }
 
-message EnsureVaultIndexedRequest {}
+message IndexVaultRequest {}
 
-message EnsureVaultIndexedResponse {
-  HostVaultErrorCode error = 1;
+message IndexVaultResponse {
+  ErrorCode error = 1;
   HostIndexState state = 2;
   string reason = 3;
 }
 
-message WatchMovesRequest {}
+message WatchIndexChangesRequest {}
 
-message WatchMovesResponse {}
+message WatchIndexChangesResponse {}
 
 message GetHostVaultRequest {}
 
 message GetHostVaultResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The folder the vault is, on this machine.
   string path = 2;
   string id = 3;
@@ -132,7 +81,7 @@ message GetHostVaultResponse {
 message LockVaultRequest {}
 
 message LockVaultResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The lock to return to UnlockVault.
   string lock = 2;
 }
@@ -143,7 +92,7 @@ message UnlockVaultRequest {
 
 message UnlockVaultResponse {}
 
-message GetParseProblemsRequest {}
+message ListParseProblemsRequest {}
 
 // HostParseProblem is something parsing a file turned up.
 message HostParseProblem {
@@ -151,12 +100,12 @@ message HostParseProblem {
   string detail = 2;
 }
 
-message GetParseProblemsResponse {
-  HostVaultErrorCode error = 1;
+message ListParseProblemsResponse {
+  ErrorCode error = 1;
   repeated HostParseProblem problems = 2;
 }
 
-message GetVaultProblemsRequest {
+message ListVaultProblemsRequest {
   // The checks to run. Empty runs every check that is not opt-in.
   repeated string checks = 1;
 }
@@ -175,8 +124,8 @@ message HostVaultProblem {
   repeated string candidates = 6;
 }
 
-message GetVaultProblemsResponse {
-  HostVaultErrorCode error = 1;
+message ListVaultProblemsResponse {
+  ErrorCode error = 1;
   repeated HostVaultProblem problems = 2;
   // The checks this result covers.
   repeated string checks = 3;

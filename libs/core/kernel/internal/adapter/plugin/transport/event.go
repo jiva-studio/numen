@@ -36,7 +36,7 @@ func DeliverPluginEvent(ctx context.Context, httpClient *http.Client, endpoint E
 		}
 		return err
 	}
-	return ConvertEventRefusal(resp.Msg.GetError(), resp.Msg.GetReason())
+	return ConvertEventRefusal(resp.Msg.GetError(), resp.Msg.GetDetail())
 }
 
 // ConvertEventRefusal returns the error that a plugin's response to an event represents, nil when the plugin accepted the event.
@@ -44,7 +44,7 @@ func ConvertEventRefusal(code v1.PluginEventErrorCode, reason string) error {
 	switch code {
 	case v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED:
+	case v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED:
 		return fmt.Errorf("%w: %s", ErrEventRefused, reason)
 	}
 	return fmt.Errorf("%w with unknown code %d: %s", ErrEventRefused, code, reason)

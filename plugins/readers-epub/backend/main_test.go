@@ -25,14 +25,6 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 	life := server.NewLifecycleServer(shutdownTrigger)
 
 	ctx := t.Context()
-	status, err := life.CheckStatus(ctx)
-	if err != nil {
-		t.Fatalf("unexpected ping error: %v", err)
-	}
-	if status != "ok" {
-		t.Fatalf("expected status 'ok', got %q", status)
-	}
-
 	shutOk, err := life.RequestShutdown(ctx)
 	if err != nil {
 		t.Fatalf("unexpected shutdown error: %v", err)

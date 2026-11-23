@@ -157,7 +157,7 @@ func TestTheVaultTheWindowShowsIsNamed(t *testing.T) {
 	}
 	disk.setCurrent(nil)
 	res, err = client.GetHostVault(t.Context(), connect.NewRequest(&v1.GetHostVaultRequest{}))
-	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
+	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("a host showing none answered %v (%v)", res.Msg, err)
 	}
 }
@@ -174,7 +174,7 @@ func TestAReadFileReturnsItsContentAndFingerprint(t *testing.T) {
 		t.Errorf("the file came back as %v", res.Msg)
 	}
 	missing, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "nothing.md"}))
-	if err != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if err != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a file that is not there was answered %v (%v)", missing.Msg, err)
 	}
 }
@@ -196,7 +196,7 @@ func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetStat(),
 	}))
 
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT {
+	if err != nil || second.Msg.GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a write over what moved was answered %v (%v)", second.Msg, err)
 	}
 	got, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
@@ -217,7 +217,7 @@ func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	}
 	second, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
 
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
+	if err != nil || second.Msg.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a file made over one was answered %v (%v)", second.Msg, err)
 	}
 }
@@ -322,7 +322,7 @@ func TestTheIndexStateOfAVaultIsAnswered(t *testing.T) {
 	for status, want := range cases {
 		disk.setState(plugin.IndexState{Status: status, Reason: "why"})
 
-		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
+		res, err := client.IndexVault(t.Context(), connect.NewRequest(&v1.IndexVaultRequest{}))
 
 		if err != nil || res.Msg.GetState() != want || res.Msg.GetReason() != "why" {
 			t.Errorf("status %v was answered %v (%v)", status, res.Msg, err)
@@ -332,7 +332,7 @@ func TestTheIndexStateOfAVaultIsAnswered(t *testing.T) {
 
 func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	disk, client := newDiskVaults(t, nil)
-	stream, err := client.WatchMoves(t.Context(), connect.NewRequest(&v1.WatchMovesRequest{}))
+	stream, err := client.WatchIndexChanges(t.Context(), connect.NewRequest(&v1.WatchIndexChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

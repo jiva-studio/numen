@@ -39,7 +39,7 @@ func (u *UseCase) List(ctx context.Context, folderName string, limitGiven, offse
 	if err != nil {
 		return NotePage{}, err
 	}
-	paths, err := u.lookup.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := u.lookup.ListPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
 		return NotePage{}, err
 	}
@@ -109,7 +109,7 @@ func (u *UseCase) ResolveName(ctx context.Context, name string) ([]string, error
 	if strings.TrimSpace(name) == "" {
 		return nil, errors.New("name is required")
 	}
-	paths, err := u.lookup.GetNamedPaths(ctx, name)
+	paths, err := u.lookup.ListNamedPaths(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("%s cannot be resolved: %w", name, err)
 	}

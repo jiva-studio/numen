@@ -13,7 +13,7 @@ type Headings interface {
 
 // NamedPaths finds the paths of the notes that share one name.
 type NamedPaths interface {
-	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	ListNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // OpeningNote finds the note a vault opens on, if it has one.

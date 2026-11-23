@@ -265,7 +265,7 @@ func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
 
 type names map[string][]string
 
-func (n names) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
+func (n names) ListNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
 	return n[name], nil
 }
 
@@ -313,7 +313,7 @@ func TestWriteIndexesNoteAfterCallerCancels(t *testing.T) {
 
 type failingNames struct{ err error }
 
-func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
+func (f failingNames) ListNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, f.err
 }
 

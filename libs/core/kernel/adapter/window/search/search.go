@@ -63,7 +63,7 @@ func (h *Handler) SearchNames(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	tabKinds := found.TabKinds
-	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found.Matches))}
+	out := &v1.SearchNamesResponse{Matches: make([]*v1.NameMatch, 0, len(found.Matches))}
 	for _, m := range found.Matches {
 		titled := &v1.NameMatch{
 			Note:    &v1.Note{Path: m.Path, Title: m.Title},
@@ -74,7 +74,7 @@ func (h *Handler) SearchNames(
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
 		}
-		out.Found = append(out.Found, titled)
+		out.Matches = append(out.Matches, titled)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -110,7 +110,7 @@ func (h *Handler) SearchText(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.SearchTextResponse{Found: make([]*v1.SearchResult, 0, len(found.Results))}
+	out := &v1.SearchTextResponse{Results: make([]*v1.SearchResult, 0, len(found.Results))}
 	for _, p := range found.Results {
 		text, pos := search.CutSnippet(p.Text, p.MatchOffset, query)
 		result := &v1.SearchResult{
@@ -128,7 +128,7 @@ func (h *Handler) SearchText(
 			result.Type = convertNoteTypeToWire(found.Types[p.Path])
 			result.TabKind = found.TabKinds[p.Path]
 		}
-		out.Found = append(out.Found, result)
+		out.Results = append(out.Results, result)
 	}
 	return connect.NewResponse(out), nil
 }

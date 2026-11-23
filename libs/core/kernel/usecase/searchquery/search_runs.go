@@ -29,7 +29,7 @@ type Deps struct {
 type SearchRuns struct {
 	Start     *StartSearch
 	Get       *GetSearch
-	Remove    *RemoveSearch
+	Remove    *DeleteSearch
 	Functions *ListSearchFunctions
 }
 
@@ -42,7 +42,7 @@ func NewSearchRuns(deps Deps) SearchRuns {
 			slots: deps.Slots, maxResults: deps.MaxResults,
 		},
 		Get:       &GetSearch{kept: kept, generations: deps.Generations},
-		Remove:    &RemoveSearch{kept: kept},
+		Remove:    &DeleteSearch{kept: kept},
 		Functions: &ListSearchFunctions{catalog: deps.Catalog},
 	}
 }

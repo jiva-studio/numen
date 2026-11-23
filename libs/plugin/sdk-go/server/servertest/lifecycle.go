@@ -23,20 +23,17 @@ func NewLifecycleClient(httpClient *http.Client, baseURL, token string) *Lifecyc
 	return &LifecycleClient{rpc: rpc}
 }
 
-// Ping asks the plugin for its status and protocol version.
-func (c *LifecycleClient) Ping(ctx context.Context) (status string, protocol int32, err error) {
+// Ping asks the plugin for its protocol version.
+func (c *LifecycleClient) Ping(ctx context.Context) (int32, error) {
 	res, err := c.rpc.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
-		return "", 0, err
+		return 0, err
 	}
-	return res.Msg.GetStatus(), res.Msg.GetProtocol(), nil
+	return res.Msg.GetProtocol(), nil
 }
 
-// Configure sends the configuration values to the plugin and reports whether it accepted them.
-func (c *LifecycleClient) Configure(ctx context.Context, values map[string]string) (bool, error) {
-	res, err := c.rpc.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{Values: values}))
-	if err != nil {
-		return false, err
-	}
-	return res.Msg.GetSuccess(), nil
+// Configure sends the configuration values to the plugin.
+func (c *LifecycleClient) Configure(ctx context.Context, values map[string]string) error {
+	_, err := c.rpc.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{Values: values}))
+	return err
 }

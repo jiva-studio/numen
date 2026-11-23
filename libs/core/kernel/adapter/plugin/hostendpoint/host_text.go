@@ -64,7 +64,7 @@ func answerText(ctx context.Context, err error) (v1.TextErrorCode, error) {
 	}
 	switch {
 	case errors.Is(err, text.ErrNoText):
-		return v1.TextErrorCode_TEXT_ERROR_CODE_MISSING, nil
+		return v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND, nil
 	case errors.Is(err, text.ErrInvalidVersion):
 		return v1.TextErrorCode_TEXT_ERROR_CODE_INVALID, nil
 	case errors.Is(err, text.ErrNotTextPlugin):
@@ -137,13 +137,13 @@ func (e *textEndpoint) ReadText(
 	if req.Msg.Length != nil {
 		return serveTextRange(ctx, call, req.Msg)
 	}
-	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
+	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetPageToken())
 	code, err := answerText(ctx, err)
 	if err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{
-		Error: code, Segments: writeSegments(page.Segments), NextCursor: page.NextCursor,
+		Error: code, Segments: writeSegments(page.Segments), NextPageToken: page.NextCursor,
 	}), nil
 }
 

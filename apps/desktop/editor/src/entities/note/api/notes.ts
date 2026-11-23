@@ -2,9 +2,9 @@
  * The calls of the note service: the notes of the vault, what is written in them, and what they
  * are joined to.
  */
-import { findErrorCode, isStaleAnswer } from '@numen/core-client'
+import { findErrorCode, isStaleAnswer, resolveTextLinks } from '@numen/core-client'
 import { asFailure, asValue } from '@numen/result'
-import { resolveTextLinks, type TextLink } from '@numen/plugin-loader'
+import type { TextLink } from '@numen/plugin-loader'
 import type { WindowClients } from '@/shared/api/clients'
 import { mapMoveResult, mapRange } from '@/shared/api/wire'
 import type { CreateResult } from '@/shared/model/fileTypes'
@@ -118,7 +118,7 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
         path: answer.path,
         title: answer.title,
         hasFrontmatter: writes[answer.nameSource],
-        moved: answer.moved ? mapMoveResult(answer.moved) : null,
+        moved: answer.moveResult ? mapMoveResult(answer.moveResult) : null,
       })
     },
 

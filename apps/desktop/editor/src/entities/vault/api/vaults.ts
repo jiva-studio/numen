@@ -60,12 +60,13 @@ export const createVaults = (
 ): Vaults => ({
   list: async () => (await vaultsService.listVaults({})).vaults.map(mapVault),
   choose: async (title) => {
-    const answer = await folderDialog.chooseFolder({ title, startingAt: '' })
+    const answer = await folderDialog.chooseFolder({ title, startFolder: '' })
     return answer.isChosen ? answer.path : ''
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
   rename: async (id, called) =>
     mapVaultResult(await vaultsService.renameVault({ id, name: called })),
-  remove: async (id, trash) => mapNoValue(await vaultsService.removeVault({ id, trash })),
+  remove: async (id, trash) =>
+    mapNoValue(await vaultsService.removeVault({ id, isFolderTrashed: trash })),
   open: async (id) => mapNoValue(await vaultsService.openVault({ id })),
 })

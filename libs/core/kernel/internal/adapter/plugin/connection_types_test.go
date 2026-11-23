@@ -12,7 +12,7 @@ type fakeConnectionHost struct {
 	enabled map[string]bool
 }
 
-func (h fakeConnectionHost) GetPlugins() []manifest.Discovered { return h.plugins }
+func (h fakeConnectionHost) ListPlugins() []manifest.Discovered { return h.plugins }
 
 func (h fakeConnectionHost) GetPlugin(id string) (manifest.Discovered, bool) {
 	for _, one := range h.plugins {

@@ -66,13 +66,13 @@ func (h *Folders) ListFiles(
 			modifiedAtMs = one.ModTime.UnixMilli()
 		}
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:         one.Path,
-			Name:         one.Name,
-			IsFolder:     one.IsFolder,
-			IsNote:       one.Kind == domain.KindNote,
-			Type:         convertNoteTypeToWire(listing.Types[one.Path]),
-			TabKind:      listing.TabKinds[one.Path],
-			ModifiedAtMs: modifiedAtMs,
+			Path:           one.Path,
+			Name:           one.Name,
+			IsFolder:       one.IsFolder,
+			IsNote:         one.Kind == domain.KindNote,
+			Type:           convertNoteTypeToWire(listing.Types[one.Path]),
+			TabKind:        listing.TabKinds[one.Path],
+			ModifiedUnixMs: modifiedAtMs,
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -141,7 +141,7 @@ func (h *Folders) CreateFolder(
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Error = &reason
+		out.Error = reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -160,13 +160,13 @@ func (h *Changes) MoveFile(
 	}
 	out := &v1.MoveFileResponse{IsIndexOutdated: isIndexOutdated}
 	if moved.IsMoved {
-		out.Moved = newMoveResult(moved)
+		out.MoveResult = newMoveResult(moved)
 	}
 	if err != nil && !isIndexOutdated {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
-			out.Error = &reason
+			out.Error = reason
 		case !moved.IsMoved:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -211,14 +211,14 @@ func (h *Changes) RemoveFile(
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: reason}), nil
 	}
 	// The watcher reports only the paths the vault holds a source for. The removal is
 	// published here, so the tree drops the row whatever it held.
 	h.tree.PublishChange(removed.Path)
 	return connect.NewResponse(&v1.RemoveFileResponse{
-		Trashed:         removed.Trashed,
-		Dangling:        removed.Dangling,
+		TrashPath:       removed.Trashed,
+		DanglingNotes:   removed.Dangling,
 		IsIndexOutdated: indexOutdated,
 	}), nil
 }
@@ -243,13 +243,13 @@ func (h *Changes) EmptyTrash(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	h.tree.PublishChange(note.TrashDir)
-	return connect.NewResponse(&v1.EmptyTrashResponse{Undeleted: undeleted}), nil
+	return connect.NewResponse(&v1.EmptyTrashResponse{FailedPaths: undeleted}), nil
 }
 
 func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
-		Repaired: moved.Repaired, Dangling: moved.Dangling,
+		RepairedNotes: moved.Repaired, DanglingNotes: moved.Dangling,
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -61,7 +60,7 @@ func vaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watche
 type noteViews struct {
 	Moves     note.TellMove
 	Admission vaultport.WriteAdmission
-	Follow    indexport.IndexFollow
+	Follow    note.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
@@ -104,11 +103,11 @@ func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views no
 			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
 		},
 		Connect: noteConnecting{
-			SaveConnection:   note.NewSaveConnection(connecting),
-			RemoveSide:       note.NewRemoveSide(connecting),
-			RemoveConnection: note.NewRemoveConnection(connecting),
-			Join:             note.NewJoin(connecting),
-			CreateInRelation: note.NewCreateInRelation(create, names),
+			SaveConnection:       note.NewSaveConnection(connecting),
+			DeleteConnectionSide: note.NewDeleteConnectionSide(connecting),
+			DeleteConnection:     note.NewDeleteConnection(connecting),
+			Join:                 note.NewJoin(connecting),
+			CreateInRelation:     note.NewCreateInRelation(create, names),
 		},
 	}
 }
@@ -118,7 +117,7 @@ func vaultQueries(db *vaultIndex) query.UseCases {
 	return query.UseCases{
 		Refer: query.Referring{
 			Links:        query.NewShowLinks(links),
-			Backlinks:    query.NewGetBacklinks(links),
+			Backlinks:    query.NewListBacklinks(links),
 			ResolveLinks: query.NewResolveLinks(links),
 		},
 		Browse: query.Browsing{

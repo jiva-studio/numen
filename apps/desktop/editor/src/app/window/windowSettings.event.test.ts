@@ -108,7 +108,7 @@ const THEME = {
     const mode = app['appearance']?.['mode'] as string | undefined
     return {
       themes: [],
-      applied: 'preset:numen',
+      appliedTheme: 'preset:numen',
       mode: MODES[mode ?? 'system'] ?? THEME_MODE.SYSTEM,
       interfaceScale: 1,
       textScale: 1,

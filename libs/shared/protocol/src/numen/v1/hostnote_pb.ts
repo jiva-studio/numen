@@ -6,94 +6,63 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { MoveResult } from "./file_pb.js";
 import { file_numen_v1_file } from "./file_pb.js";
-import type { FileChangeCursor, HostFileStat } from "./hostfile_pb.js";
+import type { FileChangeCursor } from "./hostfile_pb.js";
 import { file_numen_v1_hostfile } from "./hostfile_pb.js";
-import type { HostVaultErrorCode } from "./hostvault_pb.js";
-import { file_numen_v1_hostvault } from "./hostvault_pb.js";
-import type { NameSource } from "./note_pb.js";
+import type { NameSource, Note } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
+import type { ErrorCode, FileStat } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostnote.proto.
  */
 export const file_numen_v1_hostnote: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0bm90ZS5wcm90bxIIbnVtZW4udjEiNgoLSG9zdE5vdGVSZWYSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIKCgJpZBgDIAEoCSIjChJHZXROb3RlUmVmc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiaAoTR2V0Tm90ZVJlZnNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIkCgVub3RlcxgCIAMoCzIVLm51bWVuLnYxLkhvc3ROb3RlUmVmIiQKE0dldE5vdGVUeXBlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiqwEKFEdldE5vdGVUeXBlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjgKBXR5cGVzGAIgAygLMikubnVtZW4udjEuR2V0Tm90ZVR5cGVzUmVzcG9uc2UuVHlwZXNFbnRyeRosCgpUeXBlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiJAoUR2V0TmFtZWRQYXRoc1JlcXVlc3QSDAoEbmFtZRgBIAEoCSJTChVHZXROYW1lZFBhdGhzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDQoFcGF0aHMYAiADKAkiJQoVR2V0UGF0aHNPZlR5cGVSZXF1ZXN0EgwKBHR5cGUYASABKAkiVAoWR2V0UGF0aHNPZlR5cGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRINCgVwYXRocxgCIAMoCSJcChZSZWFkRnJvbnRtYXR0ZXJSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJEgwKBGtleXMYAiADKAkSEQoJcGFnZV9zaXplGAMgASgFEhIKCnBhZ2VfdG9rZW4YBCABKAkitQEKF1JlYWRGcm9udG1hdHRlclJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEigKBW5vdGVzGAIgAygLMhkubnVtZW4udjEuTm90ZUZyb250bWF0dGVyEhcKD25leHRfcGFnZV90b2tlbhgDIAEoCRIqCgZjdXJzb3IYBCABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yIkgKF1dyaXRlRnJvbnRtYXR0ZXJSZXF1ZXN0Ei0KBW5vdGVzGAEgAygLMh4ubnVtZW4udjEuTm90ZUZyb250bWF0dGVyV3JpdGUiXgoUTm90ZUZyb250bWF0dGVyV3JpdGUSDAoEcGF0aBgBIAEoCRIOCgZ2YWx1ZXMYAiABKAwSKAoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQiegoYV3JpdGVGcm9udG1hdHRlclJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjEKB3Jlc3VsdHMYAiADKAsyIC5udW1lbi52MS5Ob3RlRnJvbnRtYXR0ZXJXcml0dGVuInsKFk5vdGVGcm9udG1hdHRlcldyaXR0ZW4SJAoEc3RhdBgBIAEoCzIWLm51bWVuLnYxLkhvc3RGaWxlU3RhdBIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoPTm90ZUZyb250bWF0dGVyEgwKBHBhdGgYASABKAkSDgoGdmFsdWVzGAIgASgMEhEKCXNvdXJjZV9pZBgDIAEoAyI/CiBIb3N0Tm90ZVNlcnZpY2VSZW5hbWVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJItoBCiFIb3N0Tm90ZVNlcnZpY2VSZW5hbWVOb3RlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCRIpCgtuYW1lX3NvdXJjZRgEIAEoDjIULm51bWVuLnYxLk5hbWVTb3VyY2USJwoEbW92ZRgFIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIOCgZkZXRhaWwYBiABKAlCBwoFX21vdmUiQAofSG9zdE5vdGVTZXJ2aWNlTW92ZU5vdGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCRIOCgZmb2xkZXIYAiABKAkibwoMSG9zdE5vdGVNb3ZlEiIKBG1vdmUYASABKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0EisKBWVycm9yGAIgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJ2CiBIb3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIlCgVtb3ZlcxgCIAMoCzIWLm51bWVuLnYxLkhvc3ROb3RlTW92ZSIyCiFIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkihgEKD0hvc3ROb3RlUmVtb3ZhbBIMCgRwYXRoGAEgASgJEhIKCnRyYXNoX3BhdGgYAiABKAkSFAoMYnJva2VuX2xpbmtzGAMgAygJEisKBWVycm9yGAQgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg4KBmRldGFpbBgFIAEoCSJ+CiJIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEisKCHJlbW92YWxzGAIgAygLMhkubnVtZW4udjEuSG9zdE5vdGVSZW1vdmFsMrsGCg9Ib3N0Tm90ZVNlcnZpY2USSgoLR2V0Tm90ZVJlZnMSHC5udW1lbi52MS5HZXROb3RlUmVmc1JlcXVlc3QaHS5udW1lbi52MS5HZXROb3RlUmVmc1Jlc3BvbnNlEk0KDEdldE5vdGVUeXBlcxIdLm51bWVuLnYxLkdldE5vdGVUeXBlc1JlcXVlc3QaHi5udW1lbi52MS5HZXROb3RlVHlwZXNSZXNwb25zZRJQCg1HZXROYW1lZFBhdGhzEh4ubnVtZW4udjEuR2V0TmFtZWRQYXRoc1JlcXVlc3QaHy5udW1lbi52MS5HZXROYW1lZFBhdGhzUmVzcG9uc2USUwoOR2V0UGF0aHNPZlR5cGUSHy5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlcXVlc3QaIC5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlc3BvbnNlElYKD1JlYWRGcm9udG1hdHRlchIgLm51bWVuLnYxLlJlYWRGcm9udG1hdHRlclJlcXVlc3QaIS5udW1lbi52MS5SZWFkRnJvbnRtYXR0ZXJSZXNwb25zZRJZChBXcml0ZUZyb250bWF0dGVyEiEubnVtZW4udjEuV3JpdGVGcm9udG1hdHRlclJlcXVlc3QaIi5udW1lbi52MS5Xcml0ZUZyb250bWF0dGVyUmVzcG9uc2USZQoKUmVuYW1lTm90ZRIqLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbmFtZU5vdGVSZXF1ZXN0GisubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlc3BvbnNlEmIKCU1vdmVOb3RlcxIpLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZU1vdmVOb3Rlc1JlcXVlc3QaKi5udW1lbi52MS5Ib3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRJoCgtSZW1vdmVOb3RlcxIrLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVxdWVzdBosLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_hostfile, file_numen_v1_hostvault, file_numen_v1_note]);
+  fileDesc("ChdudW1lbi92MS9ob3N0bm90ZS5wcm90bxIIbnVtZW4udjEiJAoTTGlzdE5vdGVSZWZzUmVxdWVzdBINCgVwYXRocxgBIAMoCSJZChRMaXN0Tm90ZVJlZnNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIdCgVub3RlcxgCIAMoCzIOLm51bWVuLnYxLk5vdGUiJQoUTGlzdE5vdGVUeXBlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkipAEKFUxpc3ROb3RlVHlwZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRI5CgV0eXBlcxgCIAMoCzIqLm51bWVuLnYxLkxpc3ROb3RlVHlwZXNSZXNwb25zZS5UeXBlc0VudHJ5GiwKClR5cGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASIlChVMaXN0TmFtZWRQYXRoc1JlcXVlc3QSDAoEbmFtZRgBIAEoCSJLChZMaXN0TmFtZWRQYXRoc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg0KBXBhdGhzGAIgAygJIiYKFkxpc3RQYXRoc09mVHlwZVJlcXVlc3QSDAoEdHlwZRgBIAEoCSJMChdMaXN0UGF0aHNPZlR5cGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRINCgVwYXRocxgCIAMoCSJcChZSZWFkRnJvbnRtYXR0ZXJSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJEgwKBGtleXMYAiADKAkSEQoJcGFnZV9zaXplGAMgASgFEhIKCnBhZ2VfdG9rZW4YBCABKAkirAEKF1JlYWRGcm9udG1hdHRlclJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEigKBW5vdGVzGAIgAygLMhkubnVtZW4udjEuTm90ZUZyb250bWF0dGVyEhcKD25leHRfcGFnZV90b2tlbhgDIAEoCRIqCgZjdXJzb3IYBCABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yIkgKF1dyaXRlRnJvbnRtYXR0ZXJSZXF1ZXN0Ei0KBW5vdGVzGAEgAygLMh4ubnVtZW4udjEuTm90ZUZyb250bWF0dGVyV3JpdGUiWgoUTm90ZUZyb250bWF0dGVyV3JpdGUSDAoEcGF0aBgBIAEoCRIOCgZ2YWx1ZXMYAiABKAwSJAoIYmFzZWxpbmUYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdCJxChhXcml0ZUZyb250bWF0dGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSMQoHcmVzdWx0cxgCIAMoCzIgLm51bWVuLnYxLk5vdGVGcm9udG1hdHRlcldyaXR0ZW4ibgoWTm90ZUZyb250bWF0dGVyV3JpdHRlbhIgCgRzdGF0GAEgASgLMhIubnVtZW4udjEuRmlsZVN0YXQSIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIkIKD05vdGVGcm9udG1hdHRlchIMCgRwYXRoGAEgASgJEg4KBnZhbHVlcxgCIAEoDBIRCglzb3VyY2VfaWQYAyABKAMiPwogSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSLfAQohSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSKQoLbmFtZV9zb3VyY2UYBCABKA4yFC5udW1lbi52MS5OYW1lU291cmNlEi4KC21vdmVfcmVzdWx0GAUgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEg4KBmRldGFpbBgGIAEoCUIOCgxfbW92ZV9yZXN1bHQiQAofSG9zdE5vdGVTZXJ2aWNlTW92ZU5vdGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCRIOCgZmb2xkZXIYAiABKAkiZgoMSG9zdE5vdGVNb3ZlEiIKBG1vdmUYASABKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0EiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJtCiBIb3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIlCgVtb3ZlcxgCIAMoCzIWLm51bWVuLnYxLkhvc3ROb3RlTW92ZSIyCiFIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkifQoPSG9zdE5vdGVSZW1vdmFsEgwKBHBhdGgYASABKAkSEgoKdHJhc2hfcGF0aBgCIAEoCRIUCgxicm9rZW5fbGlua3MYAyADKAkSIgoFZXJyb3IYBCABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAUgASgJInUKIkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSKwoIcmVtb3ZhbHMYAiADKAsyGS5udW1lbi52MS5Ib3N0Tm90ZVJlbW92YWwyxwYKD0hvc3ROb3RlU2VydmljZRJNCgxMaXN0Tm90ZVJlZnMSHS5udW1lbi52MS5MaXN0Tm90ZVJlZnNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdE5vdGVSZWZzUmVzcG9uc2USUAoNTGlzdE5vdGVUeXBlcxIeLm51bWVuLnYxLkxpc3ROb3RlVHlwZXNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdE5vdGVUeXBlc1Jlc3BvbnNlElMKDkxpc3ROYW1lZFBhdGhzEh8ubnVtZW4udjEuTGlzdE5hbWVkUGF0aHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdE5hbWVkUGF0aHNSZXNwb25zZRJWCg9MaXN0UGF0aHNPZlR5cGUSIC5udW1lbi52MS5MaXN0UGF0aHNPZlR5cGVSZXF1ZXN0GiEubnVtZW4udjEuTGlzdFBhdGhzT2ZUeXBlUmVzcG9uc2USVgoPUmVhZEZyb250bWF0dGVyEiAubnVtZW4udjEuUmVhZEZyb250bWF0dGVyUmVxdWVzdBohLm51bWVuLnYxLlJlYWRGcm9udG1hdHRlclJlc3BvbnNlElkKEFdyaXRlRnJvbnRtYXR0ZXISIS5udW1lbi52MS5Xcml0ZUZyb250bWF0dGVyUmVxdWVzdBoiLm51bWVuLnYxLldyaXRlRnJvbnRtYXR0ZXJSZXNwb25zZRJlCgpSZW5hbWVOb3RlEioubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlcXVlc3QaKy5udW1lbi52MS5Ib3N0Tm90ZVNlcnZpY2VSZW5hbWVOb3RlUmVzcG9uc2USYgoJTW92ZU5vdGVzEikubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlTW92ZU5vdGVzUmVxdWVzdBoqLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZU1vdmVOb3Rlc1Jlc3BvbnNlEmgKC1JlbW92ZU5vdGVzEisubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVtb3ZlTm90ZXNSZXF1ZXN0GiwubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVtb3ZlTm90ZXNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_file, file_numen_v1_hostfile, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
- * HostNoteRef is a note: at its current position and what it is called.
- *
- * @generated from message numen.v1.HostNoteRef
+ * @generated from message numen.v1.ListNoteRefsRequest
  */
-export type HostNoteRef = Message<"numen.v1.HostNoteRef"> & {
+export type ListNoteRefsRequest = Message<"numen.v1.ListNoteRefsRequest"> & {
   /**
-   * @generated from field: string path = 1;
+   * @generated from field: repeated string paths = 1;
    */
-  path: string;
-
-  /**
-   * @generated from field: string title = 2;
-   */
-  title: string;
-
-  /**
-   * The identifier written in the note's frontmatter, empty when it has none.
-   *
-   * @generated from field: string id = 3;
-   */
-  id: string;
+  paths: string[];
 };
 
 /**
- * Describes the message numen.v1.HostNoteRef.
- * Use `create(HostNoteRefSchema)` to create a new message.
+ * Describes the message numen.v1.ListNoteRefsRequest.
+ * Use `create(ListNoteRefsRequestSchema)` to create a new message.
  */
-export const HostNoteRefSchema: GenMessage<HostNoteRef> = /*@__PURE__*/
+export const ListNoteRefsRequestSchema: GenMessage<ListNoteRefsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostnote, 0);
 
 /**
- * @generated from message numen.v1.GetNoteRefsRequest
+ * @generated from message numen.v1.ListNoteRefsResponse
  */
-export type GetNoteRefsRequest = Message<"numen.v1.GetNoteRefsRequest"> & {
+export type ListNoteRefsResponse = Message<"numen.v1.ListNoteRefsResponse"> & {
   /**
-   * @generated from field: repeated string paths = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  paths: string[];
+  error: ErrorCode;
+
+  /**
+   * @generated from field: repeated numen.v1.Note notes = 2;
+   */
+  notes: Note[];
 };
 
 /**
- * Describes the message numen.v1.GetNoteRefsRequest.
- * Use `create(GetNoteRefsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListNoteRefsResponse.
+ * Use `create(ListNoteRefsResponseSchema)` to create a new message.
  */
-export const GetNoteRefsRequestSchema: GenMessage<GetNoteRefsRequest> = /*@__PURE__*/
+export const ListNoteRefsResponseSchema: GenMessage<ListNoteRefsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostnote, 1);
 
 /**
- * @generated from message numen.v1.GetNoteRefsResponse
+ * @generated from message numen.v1.ListNoteTypesRequest
  */
-export type GetNoteRefsResponse = Message<"numen.v1.GetNoteRefsResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
-   */
-  error: HostVaultErrorCode;
-
-  /**
-   * @generated from field: repeated numen.v1.HostNoteRef notes = 2;
-   */
-  notes: HostNoteRef[];
-};
-
-/**
- * Describes the message numen.v1.GetNoteRefsResponse.
- * Use `create(GetNoteRefsResponseSchema)` to create a new message.
- */
-export const GetNoteRefsResponseSchema: GenMessage<GetNoteRefsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 2);
-
-/**
- * @generated from message numen.v1.GetNoteTypesRequest
- */
-export type GetNoteTypesRequest = Message<"numen.v1.GetNoteTypesRequest"> & {
+export type ListNoteTypesRequest = Message<"numen.v1.ListNoteTypesRequest"> & {
   /**
    * @generated from field: repeated string paths = 1;
    */
@@ -101,20 +70,20 @@ export type GetNoteTypesRequest = Message<"numen.v1.GetNoteTypesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.GetNoteTypesRequest.
- * Use `create(GetNoteTypesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListNoteTypesRequest.
+ * Use `create(ListNoteTypesRequestSchema)` to create a new message.
  */
-export const GetNoteTypesRequestSchema: GenMessage<GetNoteTypesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 3);
+export const ListNoteTypesRequestSchema: GenMessage<ListNoteTypesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 2);
 
 /**
- * @generated from message numen.v1.GetNoteTypesResponse
+ * @generated from message numen.v1.ListNoteTypesResponse
  */
-export type GetNoteTypesResponse = Message<"numen.v1.GetNoteTypesResponse"> & {
+export type ListNoteTypesResponse = Message<"numen.v1.ListNoteTypesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The type of each note, by its path. A path with no note is left out.
@@ -125,16 +94,16 @@ export type GetNoteTypesResponse = Message<"numen.v1.GetNoteTypesResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.GetNoteTypesResponse.
- * Use `create(GetNoteTypesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListNoteTypesResponse.
+ * Use `create(ListNoteTypesResponseSchema)` to create a new message.
  */
-export const GetNoteTypesResponseSchema: GenMessage<GetNoteTypesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 4);
+export const ListNoteTypesResponseSchema: GenMessage<ListNoteTypesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 3);
 
 /**
- * @generated from message numen.v1.GetNamedPathsRequest
+ * @generated from message numen.v1.ListNamedPathsRequest
  */
-export type GetNamedPathsRequest = Message<"numen.v1.GetNamedPathsRequest"> & {
+export type ListNamedPathsRequest = Message<"numen.v1.ListNamedPathsRequest"> & {
   /**
    * @generated from field: string name = 1;
    */
@@ -142,20 +111,20 @@ export type GetNamedPathsRequest = Message<"numen.v1.GetNamedPathsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.GetNamedPathsRequest.
- * Use `create(GetNamedPathsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListNamedPathsRequest.
+ * Use `create(ListNamedPathsRequestSchema)` to create a new message.
  */
-export const GetNamedPathsRequestSchema: GenMessage<GetNamedPathsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 5);
+export const ListNamedPathsRequestSchema: GenMessage<ListNamedPathsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 4);
 
 /**
- * @generated from message numen.v1.GetNamedPathsResponse
+ * @generated from message numen.v1.ListNamedPathsResponse
  */
-export type GetNamedPathsResponse = Message<"numen.v1.GetNamedPathsResponse"> & {
+export type ListNamedPathsResponse = Message<"numen.v1.ListNamedPathsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated string paths = 2;
@@ -164,16 +133,16 @@ export type GetNamedPathsResponse = Message<"numen.v1.GetNamedPathsResponse"> & 
 };
 
 /**
- * Describes the message numen.v1.GetNamedPathsResponse.
- * Use `create(GetNamedPathsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListNamedPathsResponse.
+ * Use `create(ListNamedPathsResponseSchema)` to create a new message.
  */
-export const GetNamedPathsResponseSchema: GenMessage<GetNamedPathsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 6);
+export const ListNamedPathsResponseSchema: GenMessage<ListNamedPathsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 5);
 
 /**
- * @generated from message numen.v1.GetPathsOfTypeRequest
+ * @generated from message numen.v1.ListPathsOfTypeRequest
  */
-export type GetPathsOfTypeRequest = Message<"numen.v1.GetPathsOfTypeRequest"> & {
+export type ListPathsOfTypeRequest = Message<"numen.v1.ListPathsOfTypeRequest"> & {
   /**
    * @generated from field: string type = 1;
    */
@@ -181,20 +150,20 @@ export type GetPathsOfTypeRequest = Message<"numen.v1.GetPathsOfTypeRequest"> & 
 };
 
 /**
- * Describes the message numen.v1.GetPathsOfTypeRequest.
- * Use `create(GetPathsOfTypeRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListPathsOfTypeRequest.
+ * Use `create(ListPathsOfTypeRequestSchema)` to create a new message.
  */
-export const GetPathsOfTypeRequestSchema: GenMessage<GetPathsOfTypeRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 7);
+export const ListPathsOfTypeRequestSchema: GenMessage<ListPathsOfTypeRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 6);
 
 /**
- * @generated from message numen.v1.GetPathsOfTypeResponse
+ * @generated from message numen.v1.ListPathsOfTypeResponse
  */
-export type GetPathsOfTypeResponse = Message<"numen.v1.GetPathsOfTypeResponse"> & {
+export type ListPathsOfTypeResponse = Message<"numen.v1.ListPathsOfTypeResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated string paths = 2;
@@ -203,11 +172,11 @@ export type GetPathsOfTypeResponse = Message<"numen.v1.GetPathsOfTypeResponse"> 
 };
 
 /**
- * Describes the message numen.v1.GetPathsOfTypeResponse.
- * Use `create(GetPathsOfTypeResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListPathsOfTypeResponse.
+ * Use `create(ListPathsOfTypeResponseSchema)` to create a new message.
  */
-export const GetPathsOfTypeResponseSchema: GenMessage<GetPathsOfTypeResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 8);
+export const ListPathsOfTypeResponseSchema: GenMessage<ListPathsOfTypeResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostnote, 7);
 
 /**
  * @generated from message numen.v1.ReadFrontmatterRequest
@@ -248,16 +217,16 @@ export type ReadFrontmatterRequest = Message<"numen.v1.ReadFrontmatterRequest"> 
  * Use `create(ReadFrontmatterRequestSchema)` to create a new message.
  */
 export const ReadFrontmatterRequestSchema: GenMessage<ReadFrontmatterRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 9);
+  messageDesc(file_numen_v1_hostnote, 8);
 
 /**
  * @generated from message numen.v1.ReadFrontmatterResponse
  */
 export type ReadFrontmatterResponse = Message<"numen.v1.ReadFrontmatterResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.NoteFrontmatter notes = 2;
@@ -286,7 +255,7 @@ export type ReadFrontmatterResponse = Message<"numen.v1.ReadFrontmatterResponse"
  * Use `create(ReadFrontmatterResponseSchema)` to create a new message.
  */
 export const ReadFrontmatterResponseSchema: GenMessage<ReadFrontmatterResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 10);
+  messageDesc(file_numen_v1_hostnote, 9);
 
 /**
  * @generated from message numen.v1.WriteFrontmatterRequest
@@ -303,7 +272,7 @@ export type WriteFrontmatterRequest = Message<"numen.v1.WriteFrontmatterRequest"
  * Use `create(WriteFrontmatterRequestSchema)` to create a new message.
  */
 export const WriteFrontmatterRequestSchema: GenMessage<WriteFrontmatterRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 11);
+  messageDesc(file_numen_v1_hostnote, 10);
 
 /**
  * @generated from message numen.v1.NoteFrontmatterWrite
@@ -325,9 +294,9 @@ export type NoteFrontmatterWrite = Message<"numen.v1.NoteFrontmatterWrite"> & {
    * baseline is the file state the caller read; a note changed since is left
    * unchanged (stale).
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 };
 
 /**
@@ -335,16 +304,16 @@ export type NoteFrontmatterWrite = Message<"numen.v1.NoteFrontmatterWrite"> & {
  * Use `create(NoteFrontmatterWriteSchema)` to create a new message.
  */
 export const NoteFrontmatterWriteSchema: GenMessage<NoteFrontmatterWrite> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 12);
+  messageDesc(file_numen_v1_hostnote, 11);
 
 /**
  * @generated from message numen.v1.WriteFrontmatterResponse
  */
 export type WriteFrontmatterResponse = Message<"numen.v1.WriteFrontmatterResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One result per note, in the order of the request.
@@ -359,7 +328,7 @@ export type WriteFrontmatterResponse = Message<"numen.v1.WriteFrontmatterRespons
  * Use `create(WriteFrontmatterResponseSchema)` to create a new message.
  */
 export const WriteFrontmatterResponseSchema: GenMessage<WriteFrontmatterResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 13);
+  messageDesc(file_numen_v1_hostnote, 12);
 
 /**
  * @generated from message numen.v1.NoteFrontmatterWritten
@@ -368,14 +337,14 @@ export type NoteFrontmatterWritten = Message<"numen.v1.NoteFrontmatterWritten"> 
   /**
    * The note after the write; unset when nothing was written.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 1;
+   * @generated from field: numen.v1.FileStat stat = 1;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -388,11 +357,9 @@ export type NoteFrontmatterWritten = Message<"numen.v1.NoteFrontmatterWritten"> 
  * Use `create(NoteFrontmatterWrittenSchema)` to create a new message.
  */
 export const NoteFrontmatterWrittenSchema: GenMessage<NoteFrontmatterWritten> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 14);
+  messageDesc(file_numen_v1_hostnote, 13);
 
 /**
- * NoteFrontmatter is the frontmatter of one note.
- *
  * @generated from message numen.v1.NoteFrontmatter
  */
 export type NoteFrontmatter = Message<"numen.v1.NoteFrontmatter"> & {
@@ -422,18 +389,22 @@ export type NoteFrontmatter = Message<"numen.v1.NoteFrontmatter"> & {
  * Use `create(NoteFrontmatterSchema)` to create a new message.
  */
 export const NoteFrontmatterSchema: GenMessage<NoteFrontmatter> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 15);
+  messageDesc(file_numen_v1_hostnote, 14);
 
 /**
  * @generated from message numen.v1.HostNoteServiceRenameNoteRequest
  */
 export type HostNoteServiceRenameNoteRequest = Message<"numen.v1.HostNoteServiceRenameNoteRequest"> & {
   /**
+   * The note to rename.
+   *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
+   * What the note is called from now on. The file is named after it.
+   *
    * @generated from field: string title = 2;
    */
   title: string;
@@ -444,48 +415,47 @@ export type HostNoteServiceRenameNoteRequest = Message<"numen.v1.HostNoteService
  * Use `create(HostNoteServiceRenameNoteRequestSchema)` to create a new message.
  */
 export const HostNoteServiceRenameNoteRequestSchema: GenMessage<HostNoteServiceRenameNoteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 16);
+  messageDesc(file_numen_v1_hostnote, 15);
 
 /**
  * @generated from message numen.v1.HostNoteServiceRenameNoteResponse
  */
 export type HostNoteServiceRenameNoteResponse = Message<"numen.v1.HostNoteServiceRenameNoteResponse"> & {
   /**
-   * Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
-   * ALREADY_EXISTS, CONFLICT and the other per-note codes.
-   *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
-   * The path of the note after the rename.
+   * Where the note is filed after the rename.
    *
    * @generated from field: string path = 2;
    */
   path: string;
 
   /**
+   * What the note is called.
+   *
    * @generated from field: string title = 3;
    */
   title: string;
 
   /**
-   * Where the title is kept: the frontmatter or the filename.
+   * Which of the three names the note, and so which the rename brought into line.
    *
    * @generated from field: numen.v1.NameSource name_source = 4;
    */
   nameSource: NameSource;
 
   /**
-   * Unset when the file kept its path.
+   * What the file did. Absent when it kept its position.
    *
-   * @generated from field: optional numen.v1.MoveResult move = 5;
+   * @generated from field: optional numen.v1.MoveResult move_result = 5;
    */
-  move?: MoveResult | undefined;
+  moveResult?: MoveResult | undefined;
 
   /**
-   * The core's error text where the note was not renamed, empty on success.
+   * The text of the error where it carries more than the code does.
    *
    * @generated from field: string detail = 6;
    */
@@ -497,7 +467,7 @@ export type HostNoteServiceRenameNoteResponse = Message<"numen.v1.HostNoteServic
  * Use `create(HostNoteServiceRenameNoteResponseSchema)` to create a new message.
  */
 export const HostNoteServiceRenameNoteResponseSchema: GenMessage<HostNoteServiceRenameNoteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 17);
+  messageDesc(file_numen_v1_hostnote, 16);
 
 /**
  * @generated from message numen.v1.HostNoteServiceMoveNotesRequest
@@ -523,7 +493,7 @@ export type HostNoteServiceMoveNotesRequest = Message<"numen.v1.HostNoteServiceM
  * Use `create(HostNoteServiceMoveNotesRequestSchema)` to create a new message.
  */
 export const HostNoteServiceMoveNotesRequestSchema: GenMessage<HostNoteServiceMoveNotesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 18);
+  messageDesc(file_numen_v1_hostnote, 17);
 
 /**
  * HostNoteMove is the outcome of moving one note.
@@ -541,9 +511,9 @@ export type HostNoteMove = Message<"numen.v1.HostNoteMove"> & {
   /**
    * Why this note did not move.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The core's error text where this note did not move, empty on success.
@@ -558,16 +528,16 @@ export type HostNoteMove = Message<"numen.v1.HostNoteMove"> & {
  * Use `create(HostNoteMoveSchema)` to create a new message.
  */
 export const HostNoteMoveSchema: GenMessage<HostNoteMove> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 19);
+  messageDesc(file_numen_v1_hostnote, 18);
 
 /**
  * @generated from message numen.v1.HostNoteServiceMoveNotesResponse
  */
 export type HostNoteServiceMoveNotesResponse = Message<"numen.v1.HostNoteServiceMoveNotesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One per path, in the order of the request.
@@ -582,7 +552,7 @@ export type HostNoteServiceMoveNotesResponse = Message<"numen.v1.HostNoteService
  * Use `create(HostNoteServiceMoveNotesResponseSchema)` to create a new message.
  */
 export const HostNoteServiceMoveNotesResponseSchema: GenMessage<HostNoteServiceMoveNotesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 20);
+  messageDesc(file_numen_v1_hostnote, 19);
 
 /**
  * @generated from message numen.v1.HostNoteServiceRemoveNotesRequest
@@ -601,7 +571,7 @@ export type HostNoteServiceRemoveNotesRequest = Message<"numen.v1.HostNoteServic
  * Use `create(HostNoteServiceRemoveNotesRequestSchema)` to create a new message.
  */
 export const HostNoteServiceRemoveNotesRequestSchema: GenMessage<HostNoteServiceRemoveNotesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 21);
+  messageDesc(file_numen_v1_hostnote, 20);
 
 /**
  * HostNoteRemoval is the outcome of removing one note.
@@ -632,9 +602,9 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
    * Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
    * file that is not a note, or INTERNAL.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 4;
+   * @generated from field: numen.v1.ErrorCode error = 4;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The core's error text where this note was not removed, empty on success.
@@ -649,16 +619,16 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
  * Use `create(HostNoteRemovalSchema)` to create a new message.
  */
 export const HostNoteRemovalSchema: GenMessage<HostNoteRemoval> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 22);
+  messageDesc(file_numen_v1_hostnote, 21);
 
 /**
  * @generated from message numen.v1.HostNoteServiceRemoveNotesResponse
  */
 export type HostNoteServiceRemoveNotesResponse = Message<"numen.v1.HostNoteServiceRemoveNotesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One per path, in the order of the request.
@@ -673,7 +643,7 @@ export type HostNoteServiceRemoveNotesResponse = Message<"numen.v1.HostNoteServi
  * Use `create(HostNoteServiceRemoveNotesResponseSchema)` to create a new message.
  */
 export const HostNoteServiceRemoveNotesResponseSchema: GenMessage<HostNoteServiceRemoveNotesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostnote, 23);
+  messageDesc(file_numen_v1_hostnote, 22);
 
 /**
  * HostNoteService is the notes of the vault, as a plugin looks them up and
@@ -692,45 +662,43 @@ export const HostNoteServiceRemoveNotesResponseSchema: GenMessage<HostNoteServic
  */
 export const HostNoteService: GenService<{
   /**
-   * GetNoteRefs names the notes at the paths given, and leaves out a path with
+   * ListNoteRefs names the notes at the paths given, and leaves out a path with
    * no note.
    *
-   * @generated from rpc numen.v1.HostNoteService.GetNoteRefs
+   * @generated from rpc numen.v1.HostNoteService.ListNoteRefs
    */
-  getNoteRefs: {
+  listNoteRefs: {
     methodKind: "unary";
-    input: typeof GetNoteRefsRequestSchema;
-    output: typeof GetNoteRefsResponseSchema;
+    input: typeof ListNoteRefsRequestSchema;
+    output: typeof ListNoteRefsResponseSchema;
   },
   /**
-   * GetNoteTypes says what type each note at the paths given is.
+   * ListNoteTypes says what type each note at the paths given is.
    *
-   * @generated from rpc numen.v1.HostNoteService.GetNoteTypes
+   * @generated from rpc numen.v1.HostNoteService.ListNoteTypes
    */
-  getNoteTypes: {
+  listNoteTypes: {
     methodKind: "unary";
-    input: typeof GetNoteTypesRequestSchema;
-    output: typeof GetNoteTypesResponseSchema;
+    input: typeof ListNoteTypesRequestSchema;
+    output: typeof ListNoteTypesResponseSchema;
   },
   /**
-   * GetNamedPaths lists the notes filed under a name.
+   * ListNamedPaths lists the notes filed under a name.
    *
-   * @generated from rpc numen.v1.HostNoteService.GetNamedPaths
+   * @generated from rpc numen.v1.HostNoteService.ListNamedPaths
    */
-  getNamedPaths: {
+  listNamedPaths: {
     methodKind: "unary";
-    input: typeof GetNamedPathsRequestSchema;
-    output: typeof GetNamedPathsResponseSchema;
+    input: typeof ListNamedPathsRequestSchema;
+    output: typeof ListNamedPathsResponseSchema;
   },
   /**
-   * GetPathsOfType lists the notes of a type.
-   *
-   * @generated from rpc numen.v1.HostNoteService.GetPathsOfType
+   * @generated from rpc numen.v1.HostNoteService.ListPathsOfType
    */
-  getPathsOfType: {
+  listPathsOfType: {
     methodKind: "unary";
-    input: typeof GetPathsOfTypeRequestSchema;
-    output: typeof GetPathsOfTypeResponseSchema;
+    input: typeof ListPathsOfTypeRequestSchema;
+    output: typeof ListPathsOfTypeResponseSchema;
   },
   /**
    * ReadFrontmatter returns the frontmatter of notes as the index holds it, in

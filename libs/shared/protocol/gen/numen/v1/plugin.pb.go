@@ -152,19 +152,19 @@ type PluginEventErrorCode int32
 
 const (
 	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED PluginEventErrorCode = 0
-	// The plugin's event handler answered an error, which reason carries.
-	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED PluginEventErrorCode = 1
+	// The plugin's event handler answered an error, which detail carries.
+	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED PluginEventErrorCode = 1
 )
 
 // Enum value maps for PluginEventErrorCode.
 var (
 	PluginEventErrorCode_name = map[int32]string{
 		0: "PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED",
-		1: "PLUGIN_EVENT_ERROR_CODE_REFUSED",
+		1: "PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED",
 	}
 	PluginEventErrorCode_value = map[string]int32{
-		"PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED": 0,
-		"PLUGIN_EVENT_ERROR_CODE_REFUSED":     1,
+		"PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED":    0,
+		"PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED": 1,
 	}
 )
 
@@ -233,8 +233,7 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 
 type PingResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	Protocol      int32                  `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	Protocol      int32                  `protobuf:"varint,1,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,13 +268,6 @@ func (*PingResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PingResponse) GetStatus() string {
-	if x != nil {
-		return x.Status
-	}
-	return ""
-}
-
 func (x *PingResponse) GetProtocol() int32 {
 	if x != nil {
 		return x.Protocol
@@ -284,10 +276,9 @@ func (x *PingResponse) GetProtocol() int32 {
 }
 
 type ShutdownRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	TimeoutSeconds int32                  `protobuf:"varint,1,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ShutdownRequest) Reset() {
@@ -320,16 +311,8 @@ func (*ShutdownRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ShutdownRequest) GetTimeoutSeconds() int32 {
-	if x != nil {
-		return x.TimeoutSeconds
-	}
-	return 0
-}
-
 type ShutdownResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -364,20 +347,11 @@ func (*ShutdownResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ShutdownResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
 type ConfigureRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	PluginId          string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	ConfigurationJson string                 `protobuf:"bytes,2,opt,name=configuration_json,json=configurationJson,proto3" json:"configuration_json,omitempty"`
-	Values            map[string]string      `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Values        map[string]string      `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConfigureRequest) Reset() {
@@ -410,20 +384,6 @@ func (*ConfigureRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ConfigureRequest) GetPluginId() string {
-	if x != nil {
-		return x.PluginId
-	}
-	return ""
-}
-
-func (x *ConfigureRequest) GetConfigurationJson() string {
-	if x != nil {
-		return x.ConfigurationJson
-	}
-	return ""
-}
-
 func (x *ConfigureRequest) GetValues() map[string]string {
 	if x != nil {
 		return x.Values
@@ -433,8 +393,6 @@ func (x *ConfigureRequest) GetValues() map[string]string {
 
 type ConfigureResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -467,20 +425,6 @@ func (x *ConfigureResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ConfigureResponse.ProtoReflect.Descriptor instead.
 func (*ConfigureResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ConfigureResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *ConfigureResponse) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
 }
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
@@ -806,7 +750,6 @@ func (x *PluginSettingOption) GetWhen() string {
 	return ""
 }
 
-// PluginSettingOptions is one list of options.
 type PluginSettingOptions struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Options       []*PluginSettingOption `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
@@ -1408,26 +1351,26 @@ func (x *PluginReader) GetExtensions() []string {
 	return nil
 }
 
-type GetPluginsRequest struct {
+type ListPluginsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetPluginsRequest) Reset() {
-	*x = GetPluginsRequest{}
+func (x *ListPluginsRequest) Reset() {
+	*x = ListPluginsRequest{}
 	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetPluginsRequest) String() string {
+func (x *ListPluginsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetPluginsRequest) ProtoMessage() {}
+func (*ListPluginsRequest) ProtoMessage() {}
 
-func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
+func (x *ListPluginsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1439,32 +1382,32 @@ func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetPluginsRequest.ProtoReflect.Descriptor instead.
-func (*GetPluginsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListPluginsRequest.ProtoReflect.Descriptor instead.
+func (*ListPluginsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{17}
 }
 
-type GetPluginsResponse struct {
+type ListPluginsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Plugins       []*PluginInfo          `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetPluginsResponse) Reset() {
-	*x = GetPluginsResponse{}
+func (x *ListPluginsResponse) Reset() {
+	*x = ListPluginsResponse{}
 	mi := &file_numen_v1_plugin_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetPluginsResponse) String() string {
+func (x *ListPluginsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetPluginsResponse) ProtoMessage() {}
+func (*ListPluginsResponse) ProtoMessage() {}
 
-func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
+func (x *ListPluginsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_plugin_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1476,12 +1419,12 @@ func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetPluginsResponse.ProtoReflect.Descriptor instead.
-func (*GetPluginsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListPluginsResponse.ProtoReflect.Descriptor instead.
+func (*ListPluginsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *GetPluginsResponse) GetPlugins() []*PluginInfo {
+func (x *ListPluginsResponse) GetPlugins() []*PluginInfo {
 	if x != nil {
 		return x.Plugins
 	}
@@ -1525,9 +1468,8 @@ func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
 }
 
 type RetryPluginRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin, by its id.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1669,7 +1611,6 @@ func (x *WatchPluginProcessesResponse) GetTimeUnixMs() int64 {
 	return 0
 }
 
-// PluginProcess is the process of one plugin that runs.
 type PluginProcess struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
@@ -1815,9 +1756,9 @@ type PluginLeaseHolder struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Who took the lease: a part of Numen such as "Search" or "Indexing", or the
 	// name of the plugin or of the connection that asked.
-	Who string `protobuf:"bytes,1,opt,name=who,proto3" json:"who,omitempty"`
+	Requester string `protobuf:"bytes,1,opt,name=requester,proto3" json:"requester,omitempty"`
 	// What the lease is for, in a few plain words.
-	Why           string `protobuf:"bytes,2,opt,name=why,proto3" json:"why,omitempty"`
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1852,16 +1793,16 @@ func (*PluginLeaseHolder) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *PluginLeaseHolder) GetWho() string {
+func (x *PluginLeaseHolder) GetRequester() string {
 	if x != nil {
-		return x.Who
+		return x.Requester
 	}
 	return ""
 }
 
-func (x *PluginLeaseHolder) GetWhy() string {
+func (x *PluginLeaseHolder) GetReason() string {
 	if x != nil {
-		return x.Why
+		return x.Reason
 	}
 	return ""
 }
@@ -1914,7 +1855,7 @@ func (x *DeliverEventRequest) GetEvent() string {
 type DeliverEventResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         PluginEventErrorCode   `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.PluginEventErrorCode" json:"error,omitempty"`
-	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1956,9 +1897,9 @@ func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
 	return PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *DeliverEventResponse) GetReason() string {
+func (x *DeliverEventResponse) GetDetail() string {
 	if x != nil {
-		return x.Reason
+		return x.Detail
 	}
 	return ""
 }
@@ -1968,24 +1909,17 @@ var File_numen_v1_plugin_proto protoreflect.FileDescriptor
 const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\"\r\n" +
-	"\vPingRequest\"B\n" +
-	"\fPingResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1a\n" +
-	"\bprotocol\x18\x02 \x01(\x05R\bprotocol\":\n" +
-	"\x0fShutdownRequest\x12'\n" +
-	"\x0ftimeout_seconds\x18\x01 \x01(\x05R\x0etimeoutSeconds\",\n" +
-	"\x10ShutdownResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xd9\x01\n" +
-	"\x10ConfigureRequest\x12\x1b\n" +
-	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12-\n" +
-	"\x12configuration_json\x18\x02 \x01(\tR\x11configurationJson\x12>\n" +
-	"\x06values\x18\x03 \x03(\v2&.numen.v1.ConfigureRequest.ValuesEntryR\x06values\x1a9\n" +
+	"\vPingRequest\"*\n" +
+	"\fPingResponse\x12\x1a\n" +
+	"\bprotocol\x18\x01 \x01(\x05R\bprotocol\"\x11\n" +
+	"\x0fShutdownRequest\"\x12\n" +
+	"\x10ShutdownResponse\"\x8d\x01\n" +
+	"\x10ConfigureRequest\x12>\n" +
+	"\x06values\x18\x01 \x03(\v2&.numen.v1.ConfigureRequest.ValuesEntryR\x06values\x1a9\n" +
 	"\vValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
-	"\x11ConfigureResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xb1\x06\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x13\n" +
+	"\x11ConfigureResponse\"\xab\x06\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -2018,7 +1952,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05group\x18\x1a \x01(\tR\x05groupB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_stepJ\x04\b\x16\x10\x17\"m\n" +
+	"\x05_step\"m\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -2034,7 +1968,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.numen.v1.PluginSettingOptionsR\x05value:\x028\x01\"B\n" +
 	"\x16PluginSettingCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xf9\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xf3\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2052,8 +1986,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"hasBackend\x12B\n" +
 	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributions\x12)\n" +
 	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefault\x12C\n" +
-	"\x0esetting_groups\x18\x11 \x03(\v2\x1c.numen.v1.PluginSettingGroupR\rsettingGroupsJ\x04\b\n" +
-	"\x10\v\"\x82\x01\n" +
+	"\x0esetting_groups\x18\x11 \x03(\v2\x1c.numen.v1.PluginSettingGroupR\rsettingGroups\"\x82\x01\n" +
 	"\x12PluginContribution\x124\n" +
 	"\x04kind\x18\x01 \x01(\x0e2 .numen.v1.PluginContributionKindR\x04kind\x126\n" +
 	"\x05items\x18\x02 \x03(\v2 .numen.v1.PluginContributionItemR\x05items\"X\n" +
@@ -2071,9 +2004,9 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +
 	"extensions\x18\x02 \x03(\tR\n" +
-	"extensions\"\x13\n" +
-	"\x11GetPluginsRequest\"D\n" +
-	"\x12GetPluginsResponse\x12.\n" +
+	"extensions\"\x14\n" +
+	"\x12ListPluginsRequest\"E\n" +
+	"\x13ListPluginsResponse\x12.\n" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
 	"\x1bWatchPluginProcessesRequest\"1\n" +
 	"\x12RetryPluginRequest\x12\x1b\n" +
@@ -2100,15 +2033,15 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"started_by\x18\n" +
 	" \x01(\v2\x1b.numen.v1.PluginLeaseHolderR\tstartedBy\x125\n" +
-	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"7\n" +
-	"\x11PluginLeaseHolder\x12\x10\n" +
-	"\x03who\x18\x01 \x01(\tR\x03who\x12\x10\n" +
-	"\x03why\x18\x02 \x01(\tR\x03why\"+\n" +
+	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"I\n" +
+	"\x11PluginLeaseHolder\x12\x1c\n" +
+	"\trequester\x18\x01 \x01(\tR\trequester\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"+\n" +
 	"\x13DeliverEventRequest\x12\x14\n" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\xd3\b\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail*\xd3\b\n" +
 	"\x16PluginContributionKind\x12(\n" +
 	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
 	"!PLUGIN_CONTRIBUTION_KIND_COMMANDS\x10\x01\x12(\n" +
@@ -2136,17 +2069,16 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15\x12-\n" +
 	")PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS\x10\x17\x12\"\n" +
 	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18\x12.\n" +
-	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*d\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*k\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
-	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
-	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +
+	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12*\n" +
+	"&PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED\x10\x012\xd8\x01\n" +
 	"\x16PluginLifecycleService\x125\n" +
 	"\x04Ping\x12\x15.numen.v1.PingRequest\x1a\x16.numen.v1.PingResponse\x12A\n" +
 	"\bShutdown\x12\x19.numen.v1.ShutdownRequest\x1a\x1a.numen.v1.ShutdownResponse\x12D\n" +
-	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2X\n" +
-	"\rPluginService\x12G\n" +
-	"\n" +
-	"GetPlugins\x12\x1b.numen.v1.GetPluginsRequest\x1a\x1c.numen.v1.GetPluginsResponse2\xcb\x01\n" +
+	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2[\n" +
+	"\rPluginService\x12J\n" +
+	"\vListPlugins\x12\x1c.numen.v1.ListPluginsRequest\x1a\x1d.numen.v1.ListPluginsResponse2\xcb\x01\n" +
 	"\x14PluginProcessService\x12g\n" +
 	"\x14WatchPluginProcesses\x12%.numen.v1.WatchPluginProcessesRequest\x1a&.numen.v1.WatchPluginProcessesResponse0\x01\x12J\n" +
 	"\vRetryPlugin\x12\x1c.numen.v1.RetryPluginRequest\x1a\x1d.numen.v1.RetryPluginResponse2c\n" +
@@ -2187,8 +2119,8 @@ var file_numen_v1_plugin_proto_goTypes = []any{
 	(*PluginSettingGroup)(nil),           // 16: numen.v1.PluginSettingGroup
 	(*PluginSettingsView)(nil),           // 17: numen.v1.PluginSettingsView
 	(*PluginReader)(nil),                 // 18: numen.v1.PluginReader
-	(*GetPluginsRequest)(nil),            // 19: numen.v1.GetPluginsRequest
-	(*GetPluginsResponse)(nil),           // 20: numen.v1.GetPluginsResponse
+	(*ListPluginsRequest)(nil),           // 19: numen.v1.ListPluginsRequest
+	(*ListPluginsResponse)(nil),          // 20: numen.v1.ListPluginsResponse
 	(*WatchPluginProcessesRequest)(nil),  // 21: numen.v1.WatchPluginProcessesRequest
 	(*RetryPluginRequest)(nil),           // 22: numen.v1.RetryPluginRequest
 	(*RetryPluginResponse)(nil),          // 23: numen.v1.RetryPluginResponse
@@ -2216,7 +2148,7 @@ var file_numen_v1_plugin_proto_depIdxs = []int32{
 	16, // 11: numen.v1.PluginInfo.setting_groups:type_name -> numen.v1.PluginSettingGroup
 	0,  // 12: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
 	15, // 13: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
-	13, // 14: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	13, // 14: numen.v1.ListPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
 	25, // 15: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
 	31, // 16: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
 	26, // 17: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
@@ -2226,14 +2158,14 @@ var file_numen_v1_plugin_proto_depIdxs = []int32{
 	2,  // 21: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
 	4,  // 22: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
 	6,  // 23: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	19, // 24: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	19, // 24: numen.v1.PluginService.ListPlugins:input_type -> numen.v1.ListPluginsRequest
 	21, // 25: numen.v1.PluginProcessService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
 	22, // 26: numen.v1.PluginProcessService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
 	27, // 27: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
 	3,  // 28: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
 	5,  // 29: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
 	7,  // 30: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	20, // 31: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	20, // 31: numen.v1.PluginService.ListPlugins:output_type -> numen.v1.ListPluginsResponse
 	24, // 32: numen.v1.PluginProcessService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
 	23, // 33: numen.v1.PluginProcessService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
 	28, // 34: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse

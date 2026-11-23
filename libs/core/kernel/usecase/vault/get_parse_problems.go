@@ -7,19 +7,19 @@ import (
 )
 
 type parseProblems interface {
-	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
-// GetParseProblems lists what the scan found while parsing the notes of a vault.
-type GetParseProblems struct {
+// ListParseProblems lists what the scan found while parsing the notes of a vault.
+type ListParseProblems struct {
 	queries parseProblems
 }
 
-func NewGetParseProblems(queries parseProblems) *GetParseProblems {
-	return &GetParseProblems{queries: queries}
+func NewListParseProblems(queries parseProblems) *ListParseProblems {
+	return &ListParseProblems{queries: queries}
 }
 
 // Execute returns the problems the index recorded for the vault when it parsed each file.
-func (u *GetParseProblems) Execute(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	return u.queries.GetParseProblems(ctx, v.ID)
+func (u *ListParseProblems) Execute(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+	return u.queries.ListParseProblems(ctx, v.ID)
 }

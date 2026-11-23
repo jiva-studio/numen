@@ -70,7 +70,7 @@ func mustAskRelated(t *testing.T, client questions, path string, depth uint32) *
 
 func itemsRelatedTo(msg *v1.NoteGraph, relatedTo string) []string {
 	var out []string
-	for _, r := range msg.GetRelated() {
+	for _, r := range msg.GetRelatedNotes() {
 		if r.GetRelatedTo() == relatedTo {
 			out = append(out, r.GetRelation().String()+" "+r.GetNote().GetPath())
 		}
@@ -86,10 +86,10 @@ func TestDepthZeroAndOneAnswerAlikeWithNoItemOfDepthTwo(t *testing.T) {
 	one := mustAskRelated(t, client, "Entropy.md", 1)
 
 	for name, got := range map[string]*v1.NoteGraph{"depth 0": none, "depth 1": one} {
-		if len(got.GetRelated()) != 6 {
-			t.Errorf("%s: %d related notes, want 6", name, len(got.GetRelated()))
+		if len(got.GetRelatedNotes()) != 6 {
+			t.Errorf("%s: %d related notes, want 6", name, len(got.GetRelatedNotes()))
 		}
-		for _, r := range got.GetRelated() {
+		for _, r := range got.GetRelatedNotes() {
 			if r.GetRelatedTo() != "" {
 				t.Errorf("%s: %s is related to %s", name, r.GetNote().GetPath(), r.GetRelatedTo())
 			}
@@ -125,7 +125,7 @@ func TestASiblingHasItsOwnRelatedNotesAndNoSiblings(t *testing.T) {
 	if want := []string{"RELATION_CHILD Lens.md", "RELATION_PARENT Physics.md"}; !slices.Equal(itemsRelatedTo(got, "Optics.md"), want) {
 		t.Errorf("related to Optics: %v, want %v", itemsRelatedTo(got, "Optics.md"), want)
 	}
-	for _, r := range got.GetRelated() {
+	for _, r := range got.GetRelatedNotes() {
 		if r.GetRelatedTo() != "" && r.GetRelation() == v1.Relation_RELATION_SIBLING {
 			t.Errorf("%s is a sibling item of %s", r.GetNote().GetPath(), r.GetRelatedTo())
 		}
@@ -137,7 +137,7 @@ func TestTheFocusIsNeverAnItemAndANoteBelongsToEachNoteItIsRelatedTo(t *testing.
 
 	got := mustAskRelated(t, client, "Entropy.md", 2)
 
-	for _, r := range got.GetRelated() {
+	for _, r := range got.GetRelatedNotes() {
 		if r.GetNote().GetPath() == "Entropy.md" {
 			t.Errorf("the focus is an item related to %q", r.GetRelatedTo())
 		}
@@ -176,7 +176,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocus(t *testing.T) {
 	got := mustAskRelated(t, client, "Entropy.md", 2)
 
 	firstItem := -1
-	for i, r := range got.GetRelated() {
+	for i, r := range got.GetRelatedNotes() {
 		if r.GetRelatedTo() != "" && firstItem < 0 {
 			firstItem = i
 		}
@@ -188,7 +188,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocus(t *testing.T) {
 		t.Fatal("no item of depth 2")
 	}
 	var groups []string
-	for _, r := range got.GetRelated()[firstItem:] {
+	for _, r := range got.GetRelatedNotes()[firstItem:] {
 		if len(groups) == 0 || groups[len(groups)-1] != r.GetRelatedTo() {
 			if slices.Contains(groups, r.GetRelatedTo()) {
 				t.Errorf("the items of %s are not one group", r.GetRelatedTo())
@@ -225,7 +225,7 @@ func TestAnItemOfDepthTwoCarriesTheTypeAndTabKindItHasAsAFocus(t *testing.T) {
 	asFocus := mustAskRelated(t, client, "Gauge.md", 1)
 
 	var item *v1.RelatedNote
-	for _, r := range two.GetRelated() {
+	for _, r := range two.GetRelatedNotes() {
 		if r.GetNote().GetPath() == "Gauge.md" && r.GetRelatedTo() == "Heat.md" {
 			item = r
 		}
@@ -296,7 +296,7 @@ func TestAnUnknownPathHasAnEmptyGraphAndTheOtherGraphsAreWhole(t *testing.T) {
 	if len(got.GetGraphs()) != 3 {
 		t.Fatalf("%d graphs for 3 paths", len(got.GetGraphs()))
 	}
-	if gone := got.GetGraphs()[1]; gone.GetFocus().GetPath() != "" || len(gone.GetRelated()) != 0 {
+	if gone := got.GetGraphs()[1]; gone.GetFocus().GetPath() != "" || len(gone.GetRelatedNotes()) != 0 {
 		t.Errorf("the graph of an unknown note is %v, want an empty graph", gone)
 	}
 	if got.GetGraphs()[0].GetFocus().GetPath() != "Entropy.md" || got.GetGraphs()[2].GetFocus().GetPath() != "Heat.md" {

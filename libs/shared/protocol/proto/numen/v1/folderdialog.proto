@@ -18,7 +18,7 @@ message ChooseFolderRequest {
 
   // The folder the dialog opens in. Empty opens wherever this machine opens a
   // dialog that received nothing.
-  string starting_at = 2;
+  string start_folder = 2;
 }
 
 message ChooseFolderResponse {

@@ -2,9 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/hostfile.proto";
-import "numen/v1/hostvault.proto";
 import "numen/v1/note.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -20,11 +19,11 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostLinkService {
-  // GetLinks lists the links written in a note, with what each reaches now.
-  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+  // ListLinks lists the links written in a note, with what each reaches now.
+  rpc ListLinks(ListLinksRequest) returns (ListLinksResponse);
 
-  // GetBacklinks lists the links that reach a note.
-  rpc GetBacklinks(GetBacklinksRequest) returns (GetBacklinksResponse);
+  // ListBacklinks lists the links that reach a note.
+  rpc ListBacklinks(HostLinkServiceListBacklinksRequest) returns (HostLinkServiceListBacklinksResponse);
 
   // ResolveLinks says what each link written in a note reaches now.
   rpc ResolveLinks(ResolveLinksRequest) returns (ResolveLinksResponse);
@@ -74,21 +73,21 @@ message HostLink {
   Role source_role = 12;
 }
 
-message GetLinksRequest {
+message ListLinksRequest {
   string path = 1;
 }
 
-message GetLinksResponse {
-  HostVaultErrorCode error = 1;
+message ListLinksResponse {
+  ErrorCode error = 1;
   repeated HostLink links = 2;
 }
 
-message GetBacklinksRequest {
+message HostLinkServiceListBacklinksRequest {
   string path = 1;
 }
 
-message GetBacklinksResponse {
-  HostVaultErrorCode error = 1;
+message HostLinkServiceListBacklinksResponse {
+  ErrorCode error = 1;
   repeated HostLink links = 2;
 }
 
@@ -100,7 +99,7 @@ message ResolveLinksRequest {
 }
 
 message ResolveLinksResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // What each link reaches, by how it was written.
   map<string, HostLink> links = 2;
 }
@@ -110,7 +109,7 @@ message HostLinkAddition {
   // The note the link is written in.
   string from = 1;
   // The note as the caller read it.
-  HostFileStat baseline = 2;
+  FileStat baseline = 2;
   // The target as written, e.g. "Rivers" or "note://01H...".
   string to = 3;
   Role role = 4;
@@ -128,16 +127,16 @@ message HostLinkServiceAddLinksRequest {
 // HostLinkAdded is the outcome of writing one link.
 message HostLinkAdded {
   // The note after the write; unset when nothing was written.
-  HostFileStat stat = 1;
+  FileStat stat = 1;
   // Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
   // NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
-  HostVaultErrorCode error = 2;
+  ErrorCode error = 2;
   // The core's error text where the link was not written, empty on success.
   string detail = 3;
 }
 
 message HostLinkServiceAddLinksResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // One per link, in the order of the request.
   repeated HostLinkAdded results = 2;
 }
@@ -148,7 +147,7 @@ message HostLinkServiceUpdateLinksRequest {
   // The target as written.
   string to = 2;
   // The note as the caller read it.
-  HostFileStat baseline = 3;
+  FileStat baseline = 3;
   Role role = 4;
   string type = 5;
   string label = 6;
@@ -156,9 +155,9 @@ message HostLinkServiceUpdateLinksRequest {
 }
 
 message HostLinkServiceUpdateLinksResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The note after the write.
-  HostFileStat stat = 2;
+  FileStat stat = 2;
   // The core's error text where nothing was written, empty on success.
   string detail = 3;
 }
@@ -169,16 +168,16 @@ message HostLinkServiceRemoveLinksRequest {
   // The target as written.
   string to = 2;
   // The note as the caller read it.
-  HostFileStat baseline = 3;
+  FileStat baseline = 3;
   // Only the links of this role. ROLE_UNSPECIFIED removes the links of every
   // role.
   Role role = 4;
 }
 
 message HostLinkServiceRemoveLinksResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The note after the write.
-  HostFileStat stat = 2;
+  FileStat stat = 2;
   // The core's error text where nothing was written, empty on success.
   string detail = 3;
 }

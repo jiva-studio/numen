@@ -156,9 +156,9 @@ func readSearchState(s *v1.SearchState) SearchState {
 	}
 }
 
-// RemoveSearch cancels a running search the plugin started and forgets it.
-func (c *SearchClient) RemoveSearch(ctx context.Context, id string) error {
-	res, err := c.rpc.RemoveSearch(ctx, newSearchRequest(c, &v1.RemoveSearchRequest{Id: id}))
+// DeleteSearch cancels a running search the plugin started and forgets it.
+func (c *SearchClient) DeleteSearch(ctx context.Context, id string) error {
+	res, err := c.rpc.DeleteSearch(ctx, newSearchRequest(c, &v1.DeleteSearchRequest{Id: id}))
 	if err != nil {
 		return readSearchCallError(err)
 	}

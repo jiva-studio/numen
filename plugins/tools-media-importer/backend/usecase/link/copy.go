@@ -175,7 +175,7 @@ func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 
 func (l *Links) listMediaAddresses(ctx context.Context, link Link) (map[string]bool, error) {
 	vault := l.getVault(link)
-	paths, err := vault.Files.GetPathsOfType(ctx, NoteType)
+	paths, err := vault.Files.ListPathsOfType(ctx, NoteType)
 	if err != nil {
 		return nil, err
 	}
