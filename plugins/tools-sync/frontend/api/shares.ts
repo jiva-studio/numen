@@ -66,17 +66,24 @@ interface AddedReader {
   readonly fingerprint: string
 }
 
-export interface SharesClient {
-  getReaderCode(): Promise<ReaderCode>
+/** The calls of the owner of a folder: the share of the folder and the readers of it. */
+export interface FolderSharesClient {
   readReaderCode(code: string): Promise<ReaderCodeInfo>
   getShare(request: FolderRequest): Promise<Share>
   addReader(request: AddReaderRequest): Promise<AddedReader>
   removeReader(request: RemoveReaderRequest): Promise<void>
   stopShare(request: FolderRequest): Promise<void>
+}
+
+/** The calls of a reader: the code of this account, the invitation and the folders received. */
+export interface ReceivedSharesClient {
+  getReaderCode(): Promise<ReaderCode>
   readInvitation(text: string): Promise<InvitationInfo>
   acceptInvitation(text: string): Promise<void>
   listReceived(): Promise<readonly ReceivedShare[]>
 }
+
+export type SharesClient = FolderSharesClient & ReceivedSharesClient
 
 type Empty = Record<string, never>
 
@@ -84,40 +91,38 @@ const createFailure = (error: ApiError): Error => new Error(error.message)
 
 type Call = <Req, Res>(method: string, request: Req) => Promise<Res>
 
-const createReaderCalls = (call: Call): Pick<SharesClient, 'getReaderCode' | 'readReaderCode'> => ({
-  getReaderCode: () => call<Empty, ReaderCode>('GetReaderCode', {}),
-  readReaderCode: (code) => call<{ code: string }, ReaderCodeInfo>('ReadReaderCode', { code }),
-})
-
-const createFolderCalls = (
-  call: Call,
-): Pick<SharesClient, 'getShare' | 'addReader' | 'removeReader' | 'stopShare'> => ({
-  getShare: (request) => call<FolderRequest, Share>('GetShare', request),
-  addReader: (request) => call<AddReaderRequest, AddedReader>('AddReader', request),
-  removeReader: async (request) => {
-    await call<RemoveReaderRequest, Empty>('RemoveReader', request)
-  },
-  stopShare: async (request) => {
-    await call<FolderRequest, Empty>('StopShare', request)
-  },
-})
-
-const createReceivedCalls = (
-  call: Call,
-): Pick<SharesClient, 'readInvitation' | 'acceptInvitation' | 'listReceived'> => ({
-  readInvitation: (text) => call<{ text: string }, InvitationInfo>('ReadInvitation', { text }),
-  acceptInvitation: async (text) => {
-    await call<{ text: string }, Empty>('AcceptInvitation', { text })
-  },
-  listReceived: async () => (await call<Empty, { shares: readonly ReceivedShare[] }>('ListReceived', {})).shares,
-})
-
-export function createSharesClient(api: Api): SharesClient {
-  async function call<Req, Res>(method: string, request: Req): Promise<Res> {
+const createCall =
+  (api: Api): Call =>
+  async <Req, Res>(method: string, request: Req): Promise<Res> => {
     const result = await api.call<Req, Res>(method, request)
     if (!result.ok) throw createFailure(result.error)
     return result.value
   }
 
-  return { ...createReaderCalls(call), ...createFolderCalls(call), ...createReceivedCalls(call) }
+export function createFolderSharesClient(api: Api): FolderSharesClient {
+  const call = createCall(api)
+  return {
+    readReaderCode: (code) => call<{ code: string }, ReaderCodeInfo>('ReadReaderCode', { code }),
+    getShare: (request) => call<FolderRequest, Share>('GetShare', request),
+    addReader: (request) => call<AddReaderRequest, AddedReader>('AddReader', request),
+    removeReader: async (request) => {
+      await call<RemoveReaderRequest, Empty>('RemoveReader', request)
+    },
+    stopShare: async (request) => {
+      await call<FolderRequest, Empty>('StopShare', request)
+    },
+  }
+}
+
+export function createReceivedSharesClient(api: Api): ReceivedSharesClient {
+  const call = createCall(api)
+  return {
+    getReaderCode: () => call<Empty, ReaderCode>('GetReaderCode', {}),
+    readInvitation: (text) => call<{ text: string }, InvitationInfo>('ReadInvitation', { text }),
+    acceptInvitation: async (text) => {
+      await call<{ text: string }, Empty>('AcceptInvitation', { text })
+    },
+    listReceived: async () =>
+      (await call<Empty, { shares: readonly ReceivedShare[] }>('ListReceived', {})).shares,
+  }
 }

@@ -1,5 +1,5 @@
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
-import { sharesClient, vaultsClient } from './api/wire'
+import { folderSharesClient, vaultsClient } from './api/wire'
 import { createShareView, type ShareView } from './model/shares'
 import { createSyncState } from './model/sync'
 import { createSubscriptionView } from './ui/subscriptionView'
@@ -27,7 +27,7 @@ const registerShare = (plugin: PluginContext, host: HostServices): void => {
     getTitle: (state) => words.shareFolderTitle(state.target.folder),
     open: (folder, id) => {
       const view = createShareView({
-        client: sharesClient,
+        client: folderSharesClient,
         target: { vaultId: host.vault.vaults?.getState().current?.id ?? '', folder },
         close: () => host.tabs.close(id),
       })

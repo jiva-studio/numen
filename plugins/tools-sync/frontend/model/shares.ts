@@ -3,10 +3,11 @@ import type {
   ReceivedShare,
   ReceivedState,
   Share,
-  SharesClient,
+  FolderSharesClient,
+  ReceivedSharesClient,
   ShareReader,
 } from '../api/shares'
-import { sharesClient } from '../api/wire'
+import { folderSharesClient, receivedSharesClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import { getErrorMessage } from './vaults'
 
@@ -89,7 +90,7 @@ function createReadField<Info>(read: (text: string) => Promise<Info>) {
 }
 
 export interface ShareViewOptions {
-  readonly client?: SharesClient | undefined
+  readonly client?: FolderSharesClient | undefined
   readonly target: ShareTarget
   readonly close: () => void
   readonly refreshMs?: number
@@ -99,7 +100,7 @@ const EMPTY_SHARE: Share = { state: 'notShared', readers: [] }
 
 /** What the dialog "Share..." of a folder holds: the share, the code being read and the invitation given. */
 export function createShareView(options: ShareViewOptions) {
-  const { client = sharesClient, target, close, refreshMs = REFRESH_MS } = options
+  const { client = folderSharesClient, target, close, refreshMs = REFRESH_MS } = options
   const share = ref<Share>(EMPTY_SHARE)
   const label = ref('')
   const invitation = ref('')
@@ -191,13 +192,13 @@ export function createShareView(options: ShareViewOptions) {
 export type ShareView = ReturnType<typeof createShareView>
 
 export interface ReceivedViewOptions {
-  readonly client?: SharesClient | undefined
+  readonly client?: ReceivedSharesClient | undefined
   readonly refreshMs?: number
 }
 
 /** What the page "Shares" holds: the code of this account, the invitation being received and the shares received. */
 export function createReceivedView(options: ReceivedViewOptions = {}) {
-  const { client = sharesClient, refreshMs = REFRESH_MS } = options
+  const { client = receivedSharesClient, refreshMs = REFRESH_MS } = options
   const code = ref('')
   const fingerprint = ref('')
   const error = ref('')
