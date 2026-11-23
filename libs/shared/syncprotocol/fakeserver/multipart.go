@@ -183,21 +183,21 @@ func (s *Server) CompleteMultipartBlob(_ context.Context, req *connect.Request[s
 }
 
 func listIncomplete(row *blobRow) *syncv1.MultipartIncomplete {
-	incomplete := &syncv1.MultipartIncomplete{}
+	var missing, wrongSize []uint32
 	for number := uint32(1); number <= row.multipart.partCount; number++ {
 		size, held := row.multipart.parts[number]
 		switch {
-		case !held && len(incomplete.Missing) < maxListedNumber:
-			incomplete.Missing = append(incomplete.Missing, number)
+		case !held && len(missing) < maxListedNumber:
+			missing = append(missing, number)
 		case !held:
-		case size != row.multipart.getPartSize(number, row.size) && len(incomplete.WrongSize) < maxListedNumber:
-			incomplete.WrongSize = append(incomplete.WrongSize, number)
+		case size != row.multipart.getPartSize(number, row.size) && len(wrongSize) < maxListedNumber:
+			wrongSize = append(wrongSize, number)
 		}
 	}
-	if len(incomplete.Missing) == 0 && len(incomplete.WrongSize) == 0 {
+	if len(missing) == 0 && len(wrongSize) == 0 {
 		return nil
 	}
-	return incomplete
+	return &syncv1.MultipartIncomplete{Missing: missing, WrongSize: wrongSize}
 }
 
 func (s *Server) joinParts(id string, row *blobRow) error {
