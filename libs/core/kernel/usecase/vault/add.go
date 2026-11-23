@@ -86,10 +86,8 @@ func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if found && existing.Path != root {
-		if err := u.checkNotCopy(id, root, existing.Path); err != nil {
-			return domain.Vault{}, err
-		}
+	if err := u.checkNotCopy(id, root, existing, found); err != nil {
+		return domain.Vault{}, err
 	}
 
 	v := domain.Vault{ID: id, Name: name, Path: root, ManagedBy: getManager(existing, found, managedBy)}
@@ -118,7 +116,11 @@ func (u Add) checkNew(root, managedBy string) error {
 	return nil
 }
 
-func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
+func (u Add) checkNotCopy(id domain.VaultID, root string, existing domain.Vault, found bool) error {
+	if !found || existing.Path == root {
+		return nil
+	}
+	oldPath := existing.Path
 	stillThere, carriesIt, err := u.identity.GetVaultID(oldPath)
 	if err != nil {
 		return err

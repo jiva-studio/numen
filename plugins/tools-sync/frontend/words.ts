@@ -33,6 +33,7 @@ export const WORDS = {
   stateNotConnected: 'Not connected',
   stateConnected: 'Connected',
   stateCopy: 'a copy of a connected vault',
+  stateReceived: 'Shared with you',
   noIdentity: 'No identity on this device',
   syncedJustNow: 'Synced less than a minute ago',
   syncedMinutesAgo: (count: number): string =>

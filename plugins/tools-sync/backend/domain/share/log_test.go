@@ -200,7 +200,7 @@ func mustPrev(entry *syncv1.ShareLogEntry) []byte {
 	return id[:]
 }
 
-func TestFollower_StopsAfterTheEntryThatRemovedTheReader(t *testing.T) {
+func TestFollower_EndsTheShareAtTheRemovalAndFollowsTheLogOn(t *testing.T) {
 	w := newWorld(t)
 	w.keys = append(w.keys, newKey(3))
 	previous, err := share.SealPreviousKey(rand.Reader, w.keys[2], w.keys[1], getLogShareID(), 2)
@@ -217,8 +217,8 @@ func TestFollower_StopsAfterTheEntryThatRemovedTheReader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !position.IsEnded || position.IsActive || position.Version != 4 {
-		t.Errorf("position = %+v, want ended at version 4, the entry that removed the reader", position)
+	if !position.IsEnded || position.IsActive || position.Version != 5 {
+		t.Errorf("position = %+v, want ended, at version 5 of the log that goes on after the removal", position)
 	}
 	if _, ok := position.Keys.Get(2); ok {
 		t.Error("the removed reader holds the key of the epoch that started with its removal")

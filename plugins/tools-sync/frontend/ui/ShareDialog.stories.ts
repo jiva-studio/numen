@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import type { SharesClient, Share } from '../api/shares'
+import type { SharesClient, Share, ShareReader } from '../api/shares'
 import { createShareView } from '../model/shares'
 import ShareDialog from './ShareDialog.vue'
 import '../styles.css'
@@ -10,7 +10,7 @@ const CODE = 'numen-reader-1.abc'
 const FINGERPRINT = 'CCCC DDDD EEEE'
 const INVITATION = 'numen-invitation-1.xyz'
 
-const anna = { label: 'Anna', fingerprint: FINGERPRINT, state: 'active' }
+const anna: ShareReader = { label: 'Anna', fingerprint: FINGERPRINT, state: 'active' }
 
 interface Setup {
   readonly share?: Share

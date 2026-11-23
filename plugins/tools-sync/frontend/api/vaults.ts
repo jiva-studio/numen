@@ -7,7 +7,7 @@ import type { Api, ApiError } from '@numen/plugin-sdk'
 
 export const SERVICE = 'md.numen.tools.sync'
 
-export type VaultState = 'notConnected' | 'connected' | 'copy'
+export type VaultState = 'notConnected' | 'connected' | 'copy' | 'received'
 
 export interface Vault {
   readonly id: string

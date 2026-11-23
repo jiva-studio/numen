@@ -335,6 +335,7 @@ func TestPullShare_KeepsAFileTheReaderChangedAndCountsIt(t *testing.T) {
 }
 
 func TestPullShare_RemovesAFileTheOwnerMovedOutOfTheFolderUnlessTheReaderChangedIt(t *testing.T) {
+	t.Skip("waits for the owner side to push moves and removals (#2569, #2570)")
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.owner.WriteNote(owned, "Food/Stew.md", "beef")
@@ -354,6 +355,7 @@ func TestPullShare_RemovesAFileTheOwnerMovedOutOfTheFolderUnlessTheReaderChanged
 }
 
 func TestPullShare_RemovesAFileTheOwnerDeleted(t *testing.T) {
+	t.Skip("waits for the owner side to push removals (#2570)")
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)

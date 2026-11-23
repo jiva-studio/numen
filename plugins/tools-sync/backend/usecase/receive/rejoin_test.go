@@ -72,6 +72,9 @@ func TestAcceptInvitation_TheReaderAddedAgainStillOpensANoteOfTheEpochBeforeItsR
 	if err := w.owner.RemoveReader(t.Context(), owned, folder, first.ReaderFingerprint); err != nil {
 		t.Fatal(err)
 	}
+	if err := w.reader.Sync(t.Context(), received.VaultID); !errors.Is(err, share.ErrEnded) {
+		t.Fatalf("pass of the removed reader: error = %v, want ErrEnded", err)
+	}
 	w.reader.Vaults.With(received.VaultID).Remove("Soup.md")
 	code, err := w.reader.GetReaderCode(t.Context())
 	if err != nil {

@@ -5,11 +5,12 @@
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
 type ShareState = 'notShared' | 'creating' | 'active'
+type ReaderState = 'active' | 'removed'
 
 export interface ShareReader {
   readonly label: string
   readonly fingerprint: string
-  readonly state: string
+  readonly state: ReaderState
 }
 
 export interface Share {

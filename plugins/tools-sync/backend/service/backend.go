@@ -26,9 +26,10 @@ const (
 
 // Backend answers the methods of the settings view.
 type Backend struct {
-	deps    syncvault.Deps
-	catalog catalog.Deps
-	shares  *sharewire.Shares
+	deps     syncvault.Deps
+	catalog  catalog.Deps
+	shares   *sharewire.Shares
+	received *sharewire.Received
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -39,7 +40,8 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
 			Random: deps.Random,
 		},
-		shares: sharewire.New(deps),
+		shares:   sharewire.New(deps),
+		received: sharewire.NewReceived(deps),
 	}
 }
 

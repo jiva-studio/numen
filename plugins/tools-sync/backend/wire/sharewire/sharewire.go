@@ -30,30 +30,42 @@ func NewReceiveDeps(deps syncvault.Deps) receive.Deps {
 	}
 }
 
-// Shares answers the methods of the settings view about sharing and receiving.
+// Shares answers the methods of the settings view about the folders this account shares.
 type Shares struct {
+	get    *share.GetShare
+	add    *share.ShareFolder
+	remove *share.RemoveReader
+	stop   *share.StopShare
+}
+
+// New returns the methods over the dependencies of a pass.
+func New(deps syncvault.Deps) *Shares {
+	sharing := NewShareDeps(deps)
+	return &Shares{
+		get: share.NewGetShare(sharing), add: share.NewShareFolder(sharing),
+		remove: share.NewRemoveReader(sharing), stop: share.NewStopShare(sharing),
+	}
+}
+
+// Received answers the methods of the settings view about the folders other people share with this account.
+type Received struct {
 	code    *receive.GetReaderCode
-	get     *share.GetShare
-	add     *share.ShareFolder
-	remove  *share.RemoveReader
-	stop    *share.StopShare
 	read    *receive.ReadInvitation
 	accept  *receive.AcceptInvitation
 	listing *receive.ListReceived
 }
 
-// New returns the methods over the dependencies of a pass.
-func New(deps syncvault.Deps) *Shares {
-	sharing, receiving := NewShareDeps(deps), NewReceiveDeps(deps)
-	return &Shares{
-		code: receive.NewGetReaderCode(receiving), get: share.NewGetShare(sharing), add: share.NewShareFolder(sharing),
-		remove: share.NewRemoveReader(sharing), stop: share.NewStopShare(sharing), read: receive.NewReadInvitation(receiving),
+// NewReceived returns the methods over the dependencies of a pass.
+func NewReceived(deps syncvault.Deps) *Received {
+	receiving := NewReceiveDeps(deps)
+	return &Received{
+		code: receive.NewGetReaderCode(receiving), read: receive.NewReadInvitation(receiving),
 		accept: receive.NewAcceptInvitation(receiving), listing: receive.NewListReceived(receiving),
 	}
 }
 
 // GetReaderCode returns the code of this account and its fingerprint.
-func (s *Shares) GetReaderCode(ctx context.Context, _ api.GetReaderCodeRequest) (api.GetReaderCodeResponse, error) {
+func (s *Received) GetReaderCode(ctx context.Context, _ api.GetReaderCodeRequest) (api.GetReaderCodeResponse, error) {
 	code, err := s.code.Execute(ctx)
 	if err != nil {
 		return api.GetReaderCodeResponse{}, err
@@ -62,7 +74,7 @@ func (s *Shares) GetReaderCode(ctx context.Context, _ api.GetReaderCodeRequest) 
 }
 
 // ReadReaderCode returns the account fingerprint of the reader a code names.
-func (s *Shares) ReadReaderCode(_ context.Context, request api.ReadReaderCodeRequest) (api.ReadReaderCodeResponse, error) {
+func (s *Received) ReadReaderCode(_ context.Context, request api.ReadReaderCodeRequest) (api.ReadReaderCodeResponse, error) {
 	chain, err := domainshare.ParseReaderCode(request.Code)
 	if err != nil {
 		return api.ReadReaderCodeResponse{}, err
@@ -104,7 +116,7 @@ func (s *Shares) StopShare(ctx context.Context, request api.StopShareRequest) (a
 }
 
 // ReadInvitation shows what an invitation offers.
-func (s *Shares) ReadInvitation(ctx context.Context, request api.ReadInvitationRequest) (api.ReadInvitationResponse, error) {
+func (s *Received) ReadInvitation(ctx context.Context, request api.ReadInvitationRequest) (api.ReadInvitationResponse, error) {
 	preview, err := s.read.Execute(ctx, request.Text)
 	if err != nil {
 		return api.ReadInvitationResponse{}, err
@@ -116,12 +128,12 @@ func (s *Shares) ReadInvitation(ctx context.Context, request api.ReadInvitationR
 }
 
 // AcceptInvitation receives the folder of an invitation as a vault.
-func (s *Shares) AcceptInvitation(ctx context.Context, request api.AcceptInvitationRequest) (api.AcceptInvitationResponse, error) {
+func (s *Received) AcceptInvitation(ctx context.Context, request api.AcceptInvitationRequest) (api.AcceptInvitationResponse, error) {
 	_, err := s.accept.Execute(ctx, request.Text)
 	return api.AcceptInvitationResponse{}, err
 }
 
-func (s *Shares) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {
+func (s *Received) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {
 	received, err := s.listing.Execute(ctx)
 	if err != nil {
 		return api.ListReceivedResponse{}, err

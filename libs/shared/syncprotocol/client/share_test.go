@@ -60,7 +60,11 @@ func (s *shareStub) GetShareLog(_ context.Context, req *connect.Request[syncv1.G
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.requests = append(s.requests, proto.Clone(req.Msg).(*syncv1.GetShareLogRequest))
+	copied, isRequest := proto.Clone(req.Msg).(*syncv1.GetShareLogRequest)
+	if !isRequest {
+		return nil, connect.NewError(connect.CodeInternal, errors.New("the clone is not a share log request"))
+	}
+	s.requests = append(s.requests, copied)
 	page := s.pages[len(s.requests)-1]
 	return connect.NewResponse(&syncv1.GetShareLogResponse{Entries: page, HasMore: len(s.requests) < len(s.pages), OwnerChain: []byte("chain of the owner")}), nil
 }

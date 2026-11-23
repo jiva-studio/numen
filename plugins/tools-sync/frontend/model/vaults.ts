@@ -26,6 +26,7 @@ const STATE_LABELS: Record<VaultState, string> = {
   notConnected: words.stateNotConnected,
   connected: words.stateConnected,
   copy: words.stateCopy,
+  received: words.stateReceived,
 }
 
 export const getErrorMessage = (error: unknown): string =>
