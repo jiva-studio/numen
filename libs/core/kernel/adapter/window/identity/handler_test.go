@@ -63,10 +63,13 @@ func (names) GetInstanceName() string { return "Laptop" }
 func newHandler(keys *keyStore) *windowidentity.Handler {
 	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
 	return windowidentity.NewHandler(windowidentity.UseCases{
-		Get:           identity.NewGetIdentity(deps),
-		GenerateWords: identity.NewGenerateRecoveryWords(deps),
-		Create:        identity.NewCreateIdentity(deps),
-		Delete:        identity.NewDeleteIdentity(deps),
+		Get:            identity.NewGetIdentity(deps),
+		GenerateWords:  identity.NewGenerateRecoveryWords(deps),
+		Create:         identity.NewCreateIdentity(deps),
+		Delete:         identity.NewDeleteIdentity(deps),
+		CreateKit:      identity.NewCreateRecoveryKit(deps),
+		CheckKit:       identity.NewCheckRecoveryKit(deps),
+		RestoreFromKit: identity.NewRestoreIdentityFromKit(deps),
 	})
 }
 

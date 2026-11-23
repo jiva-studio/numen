@@ -39,8 +39,9 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	t.Parallel()
 	keys := memoryKeys{}
 	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
-	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil {
-		t.Fatalf("openIdentityUseCases() = %+v, want all four use cases", use)
+	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil ||
+		use.CreateKit == nil || use.CheckKit == nil || use.RestoreFromKit == nil {
+		t.Fatalf("openIdentityUseCases() = %+v, want all seven use cases", use)
 	}
 	words, err := use.GenerateWords.Execute(t.Context())
 	if err != nil {
@@ -55,5 +56,44 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	}
 	if created.DeviceName == "" {
 		t.Error("the device has no name: the licensing adapter is not wired as the name of the device")
+	}
+}
+
+func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t *testing.T) {
+	t.Parallel()
+	keys := memoryKeys{}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
+	if use == nil {
+		t.Fatal("openIdentityUseCases() = nil")
+	}
+	words, err := use.GenerateWords.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := use.Create.Execute(t.Context(), words)
+	if err != nil {
+		t.Fatal(err)
+	}
+	made, err := use.CreateKit.Execute(t.Context(), words, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(made.Sheets) != 3 {
+		t.Fatalf("kit has %d sheets, want 3", len(made.Sheets))
+	}
+	sheets := [][]string{made.Sheets[2].Words, made.Sheets[0].Words}
+	fits, err := use.CheckKit.Execute(t.Context(), sheets)
+	if err != nil || fits != created.AccountFingerprint {
+		t.Fatalf("CheckKit() = %q, %v; want %q", fits, err, created.AccountFingerprint)
+	}
+	if err := use.Delete.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := use.RestoreFromKit.Execute(t.Context(), sheets)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if restored.AccountFingerprint != created.AccountFingerprint {
+		t.Errorf("restored account = %q, want %q", restored.AccountFingerprint, created.AccountFingerprint)
 	}
 }

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
+  CheckRecoveryKitResponseSchema,
   CreateIdentityResponseSchema,
+  CreateRecoveryKitResponseSchema,
   DeleteIdentityResponseSchema,
   GenerateRecoveryWordsResponseSchema,
   GetIdentityResponseSchema,
   IdentityErrorCode,
+  RestoreIdentityFromKitResponseSchema,
 } from '@numen/protocol'
 import { createIdentityServiceClient } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
@@ -91,5 +94,142 @@ describe('createIdentityClient', () => {
     })
     await client.delete()
     expect(calls).toBe(1)
+  })
+})
+
+const SHEET_ONE = ['academic', 'acid', 'acne', 'acquire']
+const SHEET_TWO = ['actress', 'adapt', 'adequate', 'adjust']
+const SHEET_THREE = ['admit', 'adorn', 'adult', 'advance']
+
+const KIT = {
+  kitId: '5C21',
+  accountFingerprint: INFO.accountFingerprint,
+  sheets: [{ words: SHEET_ONE }, { words: SHEET_TWO }, { words: SHEET_THREE }],
+}
+
+describe('createIdentityClient recovery kit', () => {
+  it('sends the words as the proof and reads the kit', async () => {
+    let sent: unknown
+    const client = createClient({
+      createRecoveryKit: (request) => {
+        sent = request.proof
+        return create(CreateRecoveryKitResponseSchema, { kit: KIT })
+      },
+    })
+    const answer = await client.createKit({ words: WORDS })
+    expect(answer).toStrictEqual({
+      ok: true,
+      value: {
+        id: '5C21',
+        accountFingerprint: INFO.accountFingerprint,
+        sheets: [SHEET_ONE, SHEET_TWO, SHEET_THREE],
+      },
+    })
+    expect(sent).toMatchObject({ case: 'words', value: { words: WORDS } })
+  })
+
+  it('sends two sheets as the proof', async () => {
+    let sent: unknown
+    const client = createClient({
+      createRecoveryKit: (request) => {
+        sent = request.proof
+        return create(CreateRecoveryKitResponseSchema, { kit: KIT })
+      },
+    })
+    await client.createKit({ sheets: [SHEET_ONE, SHEET_TWO] })
+    expect(sent).toMatchObject({
+      case: 'sheets',
+      value: { sheets: [{ words: SHEET_ONE }, { words: SHEET_TWO }] },
+    })
+  })
+
+  it('reads each served error code of a kit as a failure', async () => {
+    const codes: Array<[IdentityErrorCode, string]> = [
+      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
+      [IdentityErrorCode.INVALID_SHEETS, 'invalid_sheets'],
+      [IdentityErrorCode.NOT_ENOUGH_SHEETS, 'not_enough_sheets'],
+      [IdentityErrorCode.OTHER_ACCOUNT, 'other_account'],
+      [IdentityErrorCode.NO_IDENTITY, 'no_identity'],
+    ]
+    for (const [code, expected] of codes) {
+      const client = createClient({
+        createRecoveryKit: () =>
+          create(CreateRecoveryKitResponseSchema, { error: code, detail: 'refused' }),
+      })
+      expect(await client.createKit({ words: WORDS })).toStrictEqual({
+        ok: false,
+        error: { errorCode: expected, detail: 'refused' },
+      })
+    }
+  })
+
+  it('fails when the core answers neither a kit nor an error', async () => {
+    const client = createClient({
+      createRecoveryKit: () => create(CreateRecoveryKitResponseSchema, {}),
+    })
+    expect((await client.createKit({ words: WORDS })).ok).toBe(false)
+  })
+
+  it('sends the sheets to check and reads the account fingerprint', async () => {
+    let sent: readonly string[][] = []
+    const client = createClient({
+      checkRecoveryKit: (request) => {
+        sent = request.sheets.map((sheet) => [...sheet.words])
+        return create(CheckRecoveryKitResponseSchema, {
+          accountFingerprint: INFO.accountFingerprint,
+        })
+      },
+    })
+    expect(await client.checkKit([SHEET_ONE, SHEET_THREE])).toStrictEqual({
+      ok: true,
+      value: INFO.accountFingerprint,
+    })
+    expect(sent).toStrictEqual([SHEET_ONE, SHEET_THREE])
+  })
+
+  it('reads a refused check as a failure with the detail', async () => {
+    const client = createClient({
+      checkRecoveryKit: () =>
+        create(CheckRecoveryKitResponseSchema, {
+          error: IdentityErrorCode.INVALID_SHEETS,
+          detail: 'sheet 2 is not valid',
+        }),
+    })
+    expect(await client.checkKit([SHEET_ONE, SHEET_TWO])).toStrictEqual({
+      ok: false,
+      error: { errorCode: 'invalid_sheets', detail: 'sheet 2 is not valid' },
+    })
+  })
+
+  it('sends the sheets to restore and reads the identity', async () => {
+    let sent: readonly string[][] = []
+    const client = createClient({
+      restoreIdentityFromKit: (request) => {
+        sent = request.sheets.map((sheet) => [...sheet.words])
+        return create(RestoreIdentityFromKitResponseSchema, { identity: INFO })
+      },
+    })
+    expect(await client.restoreFromKit([SHEET_TWO, SHEET_THREE])).toStrictEqual({
+      ok: true,
+      value: EXPECTED,
+    })
+    expect(sent).toStrictEqual([SHEET_TWO, SHEET_THREE])
+  })
+
+  it('reads a refused restore as a failure and an empty answer as a failure', async () => {
+    const refused = createClient({
+      restoreIdentityFromKit: () =>
+        create(RestoreIdentityFromKitResponseSchema, {
+          error: IdentityErrorCode.NOT_ENOUGH_SHEETS,
+        }),
+    })
+    expect(await refused.restoreFromKit([SHEET_ONE])).toMatchObject({
+      ok: false,
+      error: { errorCode: 'not_enough_sheets' },
+    })
+    const empty = createClient({
+      restoreIdentityFromKit: () => create(RestoreIdentityFromKitResponseSchema, {}),
+    })
+    expect((await empty.restoreFromKit([SHEET_ONE, SHEET_TWO])).ok).toBe(false)
   })
 })

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
-import type { IdentityFailure, IdentityInfo } from '../lib/types'
+import type { IdentityFailure, IdentityInfo, RecoveryKit } from '../lib/types'
 import { createIdentityApi } from '../api/identity'
 import { IDENTITY_WORDS } from '../words'
 import { createIdentityStore } from './identity'
@@ -32,11 +32,24 @@ const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityIn
   ...overrides,
 })
 
+const createSampleKit = (): RecoveryKit => ({
+  id: '5C21',
+  accountFingerprint: createSampleIdentity().accountFingerprint,
+  sheets: [
+    ['academic', 'acid'],
+    ['acne', 'acquire'],
+    ['actress', 'adapt'],
+  ],
+})
+
 const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({
   get: () => Promise.resolve(undefined),
   generateWords: () => Promise.resolve(WORDS),
   create: () => Promise.resolve(asValue(createSampleIdentity())),
   delete: () => Promise.resolve(),
+  createKit: () => Promise.resolve(asValue(createSampleKit())),
+  checkKit: () => Promise.resolve(asValue(createSampleIdentity().accountFingerprint)),
+  restoreFromKit: () => Promise.resolve(asValue(createSampleIdentity())),
   ...overrides,
 })
 
@@ -178,5 +191,138 @@ describe('the identity store', () => {
     const answer = await store.delete()
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
+})
+
+describe('the identity store and the recovery kit', () => {
+  const SHEETS = [
+    ['academic', 'acid'],
+    ['acne', 'acquire'],
+  ]
+
+  it('gives the kit for the words and holds no kit and no change of identity', async () => {
+    const createKit = vi.fn(() => Promise.resolve(asValue(createSampleKit())))
+    const { store } = createStore(createClient({ createKit }))
+    const answer = await store.createKit({ words: WORDS })
+    expect(answer).toStrictEqual({ ok: true, value: createSampleKit() })
+    expect(createKit).toHaveBeenCalledExactlyOnceWith({ words: WORDS })
+    expect(store.identity.value).toBeUndefined()
+    expect(Object.keys(store)).not.toContain('kit')
+  })
+
+  it('gives the kit for two sheets of an earlier kit', async () => {
+    const createKit = vi.fn(() => Promise.resolve(asValue(createSampleKit())))
+    const { store } = createStore(createClient({ createKit }))
+    await store.createKit({ sheets: SHEETS })
+    expect(createKit).toHaveBeenCalledExactlyOnceWith({ sheets: SHEETS })
+  })
+
+  it('says that words of another account are not those of this account', async () => {
+    const { store } = createStore(
+      createClient({
+        createKit: () => Promise.resolve(asFailure({ errorCode: 'other_account', detail: '' })),
+      }),
+    )
+    expect(await store.createKit({ words: WORDS })).toStrictEqual({
+      ok: false,
+      error: 'These are words of another account.',
+    })
+  })
+
+  it('says that sheets of another account are not those of this account', async () => {
+    const { store } = createStore(
+      createClient({
+        createKit: () => Promise.resolve(asFailure({ errorCode: 'other_account', detail: '' })),
+      }),
+    )
+    expect(await store.createKit({ sheets: SHEETS })).toStrictEqual({
+      ok: false,
+      error: 'These are sheets of another account.',
+    })
+  })
+
+  it('says that words are not valid when the kit is made for words that are not', async () => {
+    const { store } = createStore(
+      createClient({
+        createKit: () => Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: '' })),
+      }),
+    )
+    expect(await store.createKit({ words: WORDS })).toStrictEqual({
+      ok: false,
+      error: 'Some words are not valid.',
+    })
+  })
+
+  it('gives the fingerprint of the account when two sheets fit', async () => {
+    const checkKit = vi.fn(() =>
+      Promise.resolve(asValue(createSampleIdentity().accountFingerprint)),
+    )
+    const { store } = createStore(createClient({ checkKit }))
+    expect(await store.checkKit(SHEETS)).toStrictEqual({
+      ok: true,
+      value: createSampleIdentity().accountFingerprint,
+    })
+    expect(checkKit).toHaveBeenCalledExactlyOnceWith(SHEETS)
+  })
+
+  it('says what is wrong with the sheets in the words of the page', async () => {
+    const texts: Array<[IdentityFailure['errorCode'], string]> = [
+      ['not_enough_sheets', 'One more sheet is needed.'],
+      ['invalid_sheets', 'These are sheets that are not valid.'],
+      ['other_account', 'These are sheets of another account.'],
+    ]
+    for (const [errorCode, text] of texts) {
+      const { store } = createStore(
+        createClient({
+          checkKit: () => Promise.resolve(asFailure({ errorCode, detail: 'sheet 2 is not valid' })),
+        }),
+      )
+      expect(await store.checkKit(SHEETS)).toStrictEqual({ ok: false, error: text })
+    }
+  })
+
+  it('describes the failures of a kit with words of their own', () => {
+    const texts = (
+      ['invalid_sheets', 'not_enough_sheets', 'other_account', 'no_identity'] as const
+    ).map((errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }))
+    expect(new Set(texts).size).toBe(4)
+    expect(texts.every((text) => text !== '')).toBe(true)
+  })
+
+  it('reads a failed kit call as a text', async () => {
+    const { store } = createStore(
+      createClient({
+        createKit: () => Promise.reject(new Error('offline')),
+        checkKit: () => Promise.reject(new Error('offline')),
+        restoreFromKit: () => Promise.reject(new Error('offline')),
+      }),
+    )
+    expect((await store.createKit({ words: WORDS })).ok).toBe(false)
+    expect((await store.checkKit(SHEETS)).ok).toBe(false)
+    expect((await store.restoreFromKit(SHEETS)).ok).toBe(false)
+    expect(store.identity.value).toBeUndefined()
+  })
+
+  it('holds the identity after it is restored from two sheets', async () => {
+    const restoreFromKit = vi.fn(() => Promise.resolve(asValue(createSampleIdentity())))
+    const { store } = createStore(createClient({ restoreFromKit }))
+    const answer = await store.restoreFromKit(SHEETS)
+    expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
+    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS)
+    expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
+
+  it('holds no identity when the sheets are refused', async () => {
+    const { store } = createStore(
+      createClient({
+        restoreFromKit: () =>
+          Promise.resolve(asFailure({ errorCode: 'not_enough_sheets', detail: '' })),
+      }),
+    )
+    expect(await store.restoreFromKit(SHEETS.slice(0, 1))).toStrictEqual({
+      ok: false,
+      error: 'One more sheet is needed.',
+    })
+    expect(store.identity.value).toBeUndefined()
   })
 })
