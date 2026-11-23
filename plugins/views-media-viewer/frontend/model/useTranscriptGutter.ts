@@ -34,7 +34,7 @@ export function useTranscriptGutter(
     following,
     (isFollowing, wasFollowing) => {
       if (isFollowing && !wasFollowing && !isPlaying.value && !typing.value) {
-        times.centerCurrent()
+        times.scrollToCurrent()
       }
     },
     { flush: 'post' },

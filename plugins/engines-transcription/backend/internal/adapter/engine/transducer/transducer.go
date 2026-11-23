@@ -13,9 +13,9 @@ type Decoder struct {
 	Frames    int
 	Blank     int
 	Encoded   int
-	Encoder   func(pos int, frame []float32) []float32
-	Predictor func(token int) ([]float32, error)
-	Joint     func(frame, predicted []float32) ([]float32, error)
+	RunEncoder   func(pos int, frame []float32) []float32
+	RunPredictor func(token int) ([]float32, error)
+	RunJoint     func(frame, predicted []float32) ([]float32, error)
 }
 
 // Decode reads the frames from first to last and returns the tokens they carry.
@@ -25,7 +25,7 @@ type Decoder struct {
 // by one.
 func (d Decoder) Decode(ctx context.Context) ([]int, error) {
 	// The predictor starts from the blank token: no token has been emitted yet.
-	upto, err := d.Predictor(d.Blank)
+	upto, err := d.RunPredictor(d.Blank)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +39,13 @@ func (d Decoder) Decode(ctx context.Context) ([]int, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		selected, err := d.choose(d.Encoder(pos, frame), upto)
+		selected, err := d.choose(d.RunEncoder(pos, frame), upto)
 		if err != nil {
 			return nil, err
 		}
 		if selected.token != d.Blank {
 			tokens = append(tokens, selected.token)
-			if upto, err = d.Predictor(selected.token); err != nil {
+			if upto, err = d.RunPredictor(selected.token); err != nil {
 				return nil, err
 			}
 			tokensInFrame++
@@ -66,7 +66,7 @@ type choice struct {
 }
 
 func (d Decoder) choose(frame, upto []float32) (choice, error) {
-	scores, err := d.Joint(frame, upto)
+	scores, err := d.RunJoint(frame, upto)
 	if err != nil {
 		return choice{}, err
 	}

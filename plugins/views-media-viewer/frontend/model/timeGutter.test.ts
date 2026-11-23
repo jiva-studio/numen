@@ -529,7 +529,7 @@ describe('the view following the line being returned', () => {
     times.show({ ...TIMED, current: 1, isFollowing: false })
     const observed = recordEffects(view)
 
-    times.centerCurrent()
+    times.scrollToCurrent()
 
     expect(observed).toHaveLength(1)
     const target = observed[0]?.[0] as unknown as { value: { y: string } }

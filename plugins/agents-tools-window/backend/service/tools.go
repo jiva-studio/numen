@@ -17,7 +17,7 @@ import (
 // the vault with the identity, and the empty identity is the vault the window shows. A nil field means
 // the host offers none.
 type Host struct {
-	Files  func(vault domain.VaultID) host.FileReader
+	GetFiles  func(vault domain.VaultID) host.FileReader
 	Window host.Window
 }
 
@@ -25,7 +25,7 @@ type Host struct {
 // list gives a tab no place when its reader reported none or reported a place in another shape.
 func RegisterTools(registry *tools.Registry, on Host) error {
 	control := window.NewControl(on.Window)
-	creator := editpreview.NewCreator(newPreviewFiles(on.Files))
+	creator := editpreview.NewCreator(newPreviewFiles(on.GetFiles))
 	for _, add := range []func(*tools.Registry) error{
 		func(r *tools.Registry) error { return addWindowTabList(r, control) },
 		func(r *tools.Registry) error { return addWindowTabActivate(r, control) },

@@ -21,7 +21,7 @@ func connectHost(endpoint hostcall.Endpoint, err error) Host {
 	}
 	client := host.NewClient(endpoint)
 	files := func(vault domain.VaultID) host.FileReader { return client.With(vault) }
-	return Host{Files: files, Window: client}
+	return Host{GetFiles: files, Window: client}
 }
 
 func mount(s *server.Server, registry *tools.Registry, on Host) error {

@@ -12,7 +12,7 @@ type Config struct {
 	Recognize      RecognizerModel                      `json:"recognize"`
 	Regions        RegionKinds                          `json:"regions"`
 	Compute        Compute                              `json:"-"`
-	Progress       func(what string, done, total int64) `json:"-"`
+	ReportProgress       func(what string, done, total int64) `json:"-"`
 }
 
 // Region labels the layout model assigns.
@@ -59,8 +59,8 @@ type RegionKinds struct {
 	Head []string `json:"head"`
 }
 
-// Defaults returns default recognition configuration using remote models.
-func Defaults() Config {
+// NewDefaultConfig returns default recognition configuration using remote models.
+func NewDefaultConfig() Config {
 	return Config{
 		Runtime:        "",
 		Dir:            "",
@@ -76,7 +76,7 @@ func Defaults() Config {
 		},
 		Regions:  RegionKinds{Body: nil, Head: nil},
 		Compute:  Compute{Threads: 0, Jobs: 0},
-		Progress: nil,
+		ReportProgress: nil,
 	}
 }
 

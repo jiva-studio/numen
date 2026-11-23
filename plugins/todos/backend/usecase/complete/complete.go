@@ -111,7 +111,7 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 	}
 	line := req.Line
 	if req.IsProseLine {
-		hidden, err := todo.FrontmatterLines(raw)
+		hidden, err := todo.CountFrontmatterLines(raw)
 		if errors.Is(err, todo.ErrUnreadable) {
 			return refuse(RefusalUnreadable), nil
 		}

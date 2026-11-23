@@ -46,7 +46,7 @@ const getSpanLength = (span: Span): number => span.to - span.from
  * The tightest line goes first: a line barely longer than its words has one place to put them, and a roomy one takes what is left.
  * Where nothing measured the words there is no extent to keep clear of, and every title keeps its position.
  */
-export function separateTitles(
+export function placeTitles(
   edges: readonly PlacedEdge[],
   nodes: readonly PlacedNode[],
   routing: Routing,
@@ -67,11 +67,11 @@ export function separateTitles(
     })
     const ends = (edge.arrows?.length ? routing.tuning.arrowClearance : 0) / metrics.arc
     const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
-    const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
+    const clear = edge.titles.length > 1 ? trimToHalf(open, title.anchor) : open
 
     const found = settle(clear, title.words, {
       metrics,
-      width,
+      measureWidth: width,
       target: title.anchor,
     })
     // A title of a pair keeps the reading of its record; the one title of a line reads the readable way along the line, wherever it is set.
@@ -138,7 +138,7 @@ function sortTightestFirst(
  */
 interface SettleOptions {
   readonly metrics: TitleMetrics
-  readonly width: (label: string) => number
+  readonly measureWidth: (label: string) => number
   readonly target: number
 }
 
@@ -147,7 +147,7 @@ function settle(
   words: string,
   options: SettleOptions,
 ): { words: string; at: number; extent: number } | null {
-  const { metrics, width, target } = options
+  const { metrics, measureWidth: width, target } = options
   const whole = findNearestPlace(clear, metrics.extent / 2 / metrics.arc, target)
   if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
@@ -199,7 +199,7 @@ function clearSpans(
   return spans
 }
 
-function clipToHalf(spans: readonly Span[], anchor: number): Span[] {
+function trimToHalf(spans: readonly Span[], anchor: number): Span[] {
   const [low, high] = anchor < MIDDLE ? [0, MIDDLE] : [MIDDLE, 1]
   return spans
     .map((span) => ({ from: Math.max(span.from, low), to: Math.min(span.to, high) }))

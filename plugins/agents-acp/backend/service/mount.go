@@ -39,7 +39,7 @@ func mountMachine(s *server.Server, on machine) error {
 
 func mount(s *server.Server, agent *agentServer) error {
 	s.SetUpdateConfig(agent.settings.Apply)
-	connection.Mount(s, agent.Provider())
+	connection.Mount(s, agent.BuildProvider())
 	stopChecks := ticker.Start(idleCheck, func() error { return agent.tasks.CloseIdle(context.Background()) })
 	s.OnClose(func() error {
 		return errors.Join(stopChecks(), agent.tasks.Close(context.Background()))

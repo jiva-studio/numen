@@ -31,7 +31,7 @@ import {
   rectangularSelection,
 } from '@codemirror/view'
 import { follow } from '../lib/extensions/follow'
-import { pageTooltips } from './pageTooltips'
+import { createPageTooltips } from './pageTooltips'
 import { escapeKeyBinding, restoreTabCapture, tabCapture, tabKeyBinding } from './tabCapture'
 import {
   pendingChange,
@@ -71,7 +71,7 @@ export interface Settings {
   readonly tabSize?: number | undefined
 }
 
-export const preview = (isOn: boolean): Extension =>
+export const createPreviewExtension = (isOn: boolean): Extension =>
   isOn ? [wholeLines, live, follow] : [sourceWikilinks]
 
 export const showChange = (change: EditorChange | null): Extension => pendingChange.of(change)
@@ -174,10 +174,10 @@ const saveKeyBinding: KeyBinding = {
 }
 
 /** Markdown, which is what a document naming no language is written in. */
-export const prose = (): Extension => markdown({ extensions: GFM, codeLanguages: LANGUAGES })
+export const createProseExtension = (): Extension => markdown({ extensions: GFM, codeLanguages: LANGUAGES })
 
 /** One whole document of code: how it reads, and the face it is set in. */
-export const code = (support: Extension): Extension => [support, monospaced]
+export const createCodeExtension = (support: Extension): Extension => [support, monospaced]
 
 const getLayout = (settings: Settings): Extension[] => [
   wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
@@ -196,20 +196,20 @@ export const setup = (settings: Settings = {}): Extension => [
   drawSelection(),
   highlightActiveLine(),
   rectangularSelection(),
-  pageTooltips(),
+  createPageTooltips(),
   bracketMatching({ renderMatch: renderBracketMatch }),
   ...getLayout(settings),
   tabCapture,
   restoreTabCapture,
   keymap.of([saveKeyBinding, escapeKeyBinding, ...defaultKeymap, ...historyKeymap, tabKeyBinding]),
-  languageCompartment.of(prose()),
+  languageCompartment.of(createProseExtension()),
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
   getAccessibility(settings),
   changeMarks,
   createPacePlugin(browserClock),
-  previewCompartment.of(preview(settings.isLivePreview ?? true)),
+  previewCompartment.of(createPreviewExtension(settings.isLivePreview ?? true)),
   editableCompartment.of(createEditableExtension(!settings.readonly)),
   changeCompartment.of(showChange(settings.change ?? null)),
   extensionsCompartment.of(settings.extensions ?? []),

@@ -55,7 +55,7 @@ func newScene(t *testing.T) *scene {
 	}
 	s.host = proofread.Host{
 		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
-		Texts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
+		GetTexts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
 		Queue: s.queue,
 	}
 	s.run = newProofreading(s.host, complete, s.settings)
@@ -242,9 +242,9 @@ func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *
 func TestMountAndHostValidation(t *testing.T) {
 	s := newScene(t)
 	for _, incomplete := range []proofread.Host{
-		{Texts: s.host.Texts, Queue: s.host.Queue},
+		{GetTexts: s.host.GetTexts, Queue: s.host.Queue},
 		{Store: s.host.Store, Queue: s.host.Queue},
-		{Store: s.host.Store, Texts: s.host.Texts},
+		{Store: s.host.Store, GetTexts: s.host.GetTexts},
 	} {
 		if err := mount(server.New(), incomplete, failWith(connection.ErrNoConnection)); !errors.Is(err, errIncompleteHost) {
 			t.Errorf("incomplete host got %v, want %v", err, errIncompleteHost)
@@ -256,7 +256,7 @@ func TestMountAndHostValidation(t *testing.T) {
 	}
 
 	opened := openHostAt(hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "tok"})
-	if opened.Store("v") == nil || opened.Texts("v") == nil || opened.Queue == nil {
+	if opened.Store("v") == nil || opened.GetTexts("v") == nil || opened.Queue == nil {
 		t.Errorf("openHostAt returned nil field: %+v", opened)
 	}
 

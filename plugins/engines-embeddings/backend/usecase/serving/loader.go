@@ -14,7 +14,7 @@ import (
 type loaderPorts[S any] struct {
 	Open   func(ctx context.Context, spec S) (ports.Embedder, error)
 	Report func(what string, err error)
-	Opened func(emb ports.Embedder)
+	NotifyOpened func(emb ports.Embedder)
 }
 
 // modelLoader holds the loaded model and the load in progress. It shares the lock of its owner: the owner
@@ -107,7 +107,7 @@ func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error) {
 		return
 	}
 	l.embedder = emb
-	l.ports.Opened(emb)
+	l.ports.NotifyOpened(emb)
 	op.emb = emb
 }
 

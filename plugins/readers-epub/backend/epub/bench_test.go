@@ -74,11 +74,11 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		rendered, err := book.Markup(pos)
+		rendered, err := book.ParseMarkup(pos)
 		if err != nil {
 			b.Fatal(err)
 		}
-		_ = rendered.HTML()
+		_ = rendered.RenderHTML()
 	}
 }
 
@@ -93,6 +93,6 @@ func BenchmarkCountingThePages(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		_ = book.PageCount()
+		_ = book.CountPages()
 	}
 }

@@ -17,7 +17,7 @@ type provider struct {
 	models     *models.Models
 }
 
-func (p *provider) roles() connection.Provider {
+func (p *provider) buildProvider() connection.Provider {
 	return llm.Provide(nil, llm.Roles{
 		Completer: p.completion, Chatter: p.completion, Embedder: p.embedding, Reranker: reranker{reranking: p.reranking}, Profiler: p.embedding,
 		Models: p.models, Reasoning: p.models,

@@ -116,7 +116,7 @@ func (s *Server) newLoader() *modelLoader[modelSpec] {
 			return spec.open(ctx, spec.info, spec.local)
 		},
 		Report: s.report,
-		Opened: func(emb ports.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
+		NotifyOpened: func(emb ports.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
 	})
 }
 

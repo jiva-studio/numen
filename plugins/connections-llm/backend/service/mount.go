@@ -86,6 +86,6 @@ func Mount(srv *server.Server) error {
 		built.gateway.Close()
 		return nil
 	})
-	connection.Mount(srv, built.provider.roles())
+	connection.Mount(srv, built.provider.buildProvider())
 	return nil
 }

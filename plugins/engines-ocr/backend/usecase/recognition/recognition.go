@@ -60,9 +60,9 @@ type Folder interface {
 // the text is stored in, the text versions it is reported to, the queue it runs in, and the documents
 // it reads pages of.
 type Host struct {
-	Vaults    func(domain.VaultID) Files
+	GetVault    func(domain.VaultID) Files
 	Store     func(domain.VaultID) Folder
-	Texts     func(domain.VaultID) host.TextVersions
+	GetTexts     func(domain.VaultID) host.TextVersions
 	Queue     host.Queue
 	Documents Documents
 	Report    func(what string, err error)
@@ -83,7 +83,7 @@ type Recognition struct {
 // New returns the recognition through the host, with the function that opens the recognizer when a
 // page is first read.
 func New(h Host, open func(ctx context.Context) (ports.Recognizer, error)) (*Recognition, error) {
-	if h.Vaults == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || h.Documents == nil || open == nil {
+	if h.GetVault == nil || h.Store == nil || h.GetTexts == nil || h.Queue == nil || h.Documents == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue, the documents and a recognizer")
 	}
 	return &Recognition{
@@ -177,7 +177,7 @@ func (r *Recognition) GetVaultID(ctx context.Context, vault domain.VaultID) (dom
 	if vault != "" {
 		return vault, nil
 	}
-	shown, err := r.host.Vaults("").GetVault(ctx)
+	shown, err := r.host.GetVault("").GetVault(ctx)
 	if err != nil {
 		return "", fmt.Errorf("get the shown vault: %w", err)
 	}
@@ -193,7 +193,7 @@ func getRunKey(vault domain.VaultID, filePath string) string {
 // made from it. A recognition writes VersionKey only once it is complete. The host keeps live only a
 // version whose chain matches the file as it is now. An empty vault ID means the vault the host shows.
 func (r *Recognition) FindLiveDerivedVersion(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
-	listing, err := r.host.Texts(vault).ListVersions(ctx, filePath)
+	listing, err := r.host.GetTexts(vault).ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
@@ -226,7 +226,7 @@ func newTask(req Request) host.Task {
 }
 
 func (r *Recognition) runRecognition(ctx context.Context, req Request, release func()) (Result, error) {
-	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store(req.Vault), texts: r.host.Texts(req.Vault)}
+	on := reach{vault: r.host.GetVault(req.Vault), store: r.host.Store(req.Vault), texts: r.host.GetTexts(req.Vault)}
 	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
 	release()
@@ -253,7 +253,7 @@ func GetTaskID(vault domain.VaultID, filePath string) string {
 
 // StatFile returns the metadata of a file of a vault. An empty vault ID means the vault the host shows.
 func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
-	return r.host.Vaults(vault).StatFile(ctx, filePath)
+	return r.host.GetVault(vault).StatFile(ctx, filePath)
 }
 
 func isMissing(ctx context.Context, vault host.FileReader, filePath string) bool {

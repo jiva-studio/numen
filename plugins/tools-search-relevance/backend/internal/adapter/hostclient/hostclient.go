@@ -25,7 +25,7 @@ func OpenFromEnv(newRecords func(relevance.Folder) relevance.Records) (relevance
 				on := search.With(id)
 				return relevance.Search{Index: on, Policy: on}
 			},
-			Vaults: notes,
+			GetVault: notes,
 			Store:  func(id domain.VaultID) relevance.Records { return newRecords(store.With(id)) },
 		},
 		Queue: host.NewQueueClient(endpoint),

@@ -22,11 +22,11 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 		</body></html>`,
 		"OEBPS/plate.png": "\x89PNG\r\n\x1a\n",
 	}))
-	rendered, err := book.Markup("OEBPS/one.xhtml")
+	rendered, err := book.ParseMarkup("OEBPS/one.xhtml")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
-	page := rendered.HTML()
+	page := rendered.RenderHTML()
 
 	for _, content := range []string{"<script", "alert(1)</", "alert(2)</"} {
 		if strings.Contains(page, content) {
@@ -63,12 +63,12 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 // them from it and counts none itself.
 func TestEveryRunOfTextReturnsWhereItExists(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
-	rendered, err := book.Markup(secondDoc)
+	rendered, err := book.ParseMarkup(secondDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
 
-	runs := offsets(t, parseHTML(t, rendered.HTML()))
+	runs := offsets(t, parseHTML(t, rendered.RenderHTML()))
 	if len(runs) == 0 {
 		t.Fatal("the markup says no offsets")
 	}
@@ -95,7 +95,7 @@ func TestAnEntryOfTheArchive(t *testing.T) {
 		"OEBPS/notes.xhtml": `<html><body><p>Beside the spine</p></body></html>`,
 	}))
 
-	raw, err := book.Entry("OEBPS/plate.png")
+	raw, err := book.ReadEntry("OEBPS/plate.png")
 	if err != nil {
 		t.Fatalf("the picture the book draws: %v", err)
 	}
@@ -104,11 +104,11 @@ func TestAnEntryOfTheArchive(t *testing.T) {
 	}
 	// Every entry is answered for, whatever the spine names: what a picture is
 	// filed under is the archive's business.
-	if _, err := book.Entry("OEBPS/notes.xhtml"); err != nil {
+	if _, err := book.ReadEntry("OEBPS/notes.xhtml"); err != nil {
 		t.Errorf("an entry beside the spine: %v", err)
 	}
 	for _, name := range []string{"", "OEBPS/gone.png", "../outside.png"} {
-		if _, err := book.Entry(name); err == nil {
+		if _, err := book.ReadEntry(name); err == nil {
 			t.Errorf("%q was answered with bytes", name)
 		}
 	}

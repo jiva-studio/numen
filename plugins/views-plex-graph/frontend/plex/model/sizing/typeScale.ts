@@ -7,7 +7,7 @@ import type { PlexOptions, Size } from '../../lib/arrange'
  */
 export const DESIGNED_TYPE = 13
 
-const larger = (size: Size, delta: number): Size => ({
+const growSize = (size: Size, delta: number): Size => ({
   width: size.width * delta,
   height: size.height * delta,
 })
@@ -20,8 +20,8 @@ const larger = (size: Size, delta: number): Size => ({
  */
 export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions => ({
   ...options,
-  focusSize: larger(options.focusSize, delta),
-  nodeSize: larger(options.nodeSize, delta),
+  focusSize: growSize(options.focusSize, delta),
+  nodeSize: growSize(options.nodeSize, delta),
   padding: { inline: options.padding.inline * delta, block: options.padding.block * delta },
   room: options.room * delta,
   minWidth: options.minWidth * delta,

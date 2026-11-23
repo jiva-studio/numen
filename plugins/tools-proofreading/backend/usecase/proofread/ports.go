@@ -12,7 +12,7 @@ import (
 // text versions it reads and reports, and the queue it runs in.
 type Host struct {
 	Store func(domain.VaultID) host.StoreWriter
-	Texts func(domain.VaultID) Texts
+	GetTexts func(domain.VaultID) Texts
 	Queue host.Queue
 }
 

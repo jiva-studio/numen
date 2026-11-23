@@ -1,7 +1,7 @@
 /** Reaching out by resting a finger: how long the rest lasts. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { byLongPress, type ReachStrategy } from './reachStrategy'
+import { createLongPressStrategy, type ReachStrategy } from './reachStrategy'
 import { LONG_PRESS_DELAY } from './longPress'
 
 const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as PointerEvent
@@ -9,7 +9,7 @@ const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as Poin
 function createPressedStrategy(after?: number) {
   const reach = vi.fn<Parameters<ReachStrategy['listeners']>[0]['reach']>()
   const scope = effectScope()
-  const listeners = scope.run(() => byLongPress(after).listeners({ ready: () => true, reach }))!
+  const listeners = scope.run(() => createLongPressStrategy(after).listeners({ ready: () => true, reach }))!
   listeners['pointerdown']!(touch())
   return { reach, scope }
 }

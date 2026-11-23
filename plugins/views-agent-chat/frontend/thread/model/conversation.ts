@@ -59,10 +59,10 @@ export function useConversation(options: ConversationOptions): Conversation {
     if (!question || isAnswerPending.value) return
     put({ id: nextId(), voice: 'prompt', text: question })
 
-    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking, nextId }, nextId())
+    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking, createId: nextId }, nextId())
     work.setWaiting(true)
     const flight = startFlight(work.clear)
-    const answer = createAnswer({ put, drop, nextId }, paint)
+    const answer = createAnswer({ put, drop, createId: nextId }, paint)
     const plan = createPlanTurn(put, nextId)
 
     try {
@@ -199,14 +199,14 @@ function useConversationTurns() {
     turns.value = turns.value.filter((turn) => turn.id !== id)
   }
 
-  const nextId = () => {
+  const createId = () => {
     while (turns.value.some((turn) => turn.id === `${next}`)) {
       next += 1
     }
     return `${next++}`
   }
 
-  return { turns, paths, put: saveTurn, drop, nextId }
+  return { turns, paths, put: saveTurn, drop, nextId: createId }
 }
 
 /** The answer in progress: what aborts it and what clears its work line. */

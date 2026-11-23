@@ -3,7 +3,7 @@ package settings
 import "testing"
 
 func TestParseRecognizerSettingsIgnoresAResolutionThatIsNotPositive(t *testing.T) {
-	current := Defaults().Recognize
+	current := NewDefaultConfig().Recognize
 	for _, dpi := range []string{"-100", "0", "not-a-number", ""} {
 		if got := ParseRecognizerSettings(current, map[string]string{"dpi": dpi}); got.DPI != current.DPI {
 			t.Errorf("a resolution of %q set it to %d", dpi, got.DPI)
@@ -12,10 +12,10 @@ func TestParseRecognizerSettingsIgnoresAResolutionThatIsNotPositive(t *testing.T
 }
 
 func TestParseRecognizerSettingsReadsAPositiveResolution(t *testing.T) {
-	if got := ParseRecognizerSettings(Defaults().Recognize, map[string]string{"dpi": "1"}); got.DPI != 1 {
+	if got := ParseRecognizerSettings(NewDefaultConfig().Recognize, map[string]string{"dpi": "1"}); got.DPI != 1 {
 		t.Errorf("resolution %d, want 1", got.DPI)
 	}
-	if got := ParseRecognizerSettings(Defaults().Recognize, map[string]string{"dpi": "450"}); got.DPI != 450 {
+	if got := ParseRecognizerSettings(NewDefaultConfig().Recognize, map[string]string{"dpi": "450"}); got.DPI != 450 {
 		t.Errorf("resolution %d, want 450", got.DPI)
 	}
 }
@@ -31,7 +31,7 @@ func TestParseRecognizerSettingsAndFindRecognizerModels(t *testing.T) {
 		t.Fatalf("FindRecognizer(unknown-model) = (%q, %v), want (\"\", false)", addr, ok)
 	}
 
-	gotCustom := ParseRecognizerSettings(Defaults().Recognize, map[string]string{
+	gotCustom := ParseRecognizerSettings(NewDefaultConfig().Recognize, map[string]string{
 		"model":           RecognizerCustom,
 		"customModelPath": "/tmp/model.onnx",
 		"customDictPath":  "/tmp/dict.txt",
@@ -40,8 +40,8 @@ func TestParseRecognizerSettingsAndFindRecognizerModels(t *testing.T) {
 		t.Fatalf("ParseRecognizerSettings(custom) = %+v", gotCustom)
 	}
 
-	gotPinned := ParseRecognizerSettings(Defaults().Recognize, map[string]string{"model": "pp-ocrv5-latin"})
-	if gotPinned.Name == "" || gotPinned.Name == RecognizerCustom || gotPinned.Name == Defaults().Recognize.Name {
+	gotPinned := ParseRecognizerSettings(NewDefaultConfig().Recognize, map[string]string{"model": "pp-ocrv5-latin"})
+	if gotPinned.Name == "" || gotPinned.Name == RecognizerCustom || gotPinned.Name == NewDefaultConfig().Recognize.Name {
 		t.Fatalf("ParseRecognizerSettings(pp-ocrv5-latin) = %+v", gotPinned)
 	}
 }

@@ -14,7 +14,7 @@ const usePlexTransition = (
   input: () => ArrangeInput | undefined,
   duration: () => number,
   clock?: Clock,
-) => baseUsePlexTransition(graph, input, clock !== undefined ? { duration, clock } : { duration })
+) => baseUsePlexTransition(graph, input, clock !== undefined ? { getDuration: duration, clock } : { getDuration: duration })
 
 function inScope<T>(build: () => T): T {
   const scope = effectScope()

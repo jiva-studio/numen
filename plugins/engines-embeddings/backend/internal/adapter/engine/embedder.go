@@ -368,7 +368,7 @@ func (e *Embedder) readVectors(target *ort.Value, rows, seq int, mask []int64) (
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %v", e.name, len(flat), out)
 	}
-	return pool(e.pooling, tokenOutput{flat: flat, mask: mask, rows: rows, seq: seq, dimensions: e.dimensions}, e.isNormalized)
+	return computePool(e.pooling, tokenOutput{flat: flat, mask: mask, rows: rows, seq: seq, dimensions: e.dimensions}, e.isNormalized)
 }
 
 func splitRows(flat []float32, rows, dimensions int, isNormalized bool) ([][]float32, error) {

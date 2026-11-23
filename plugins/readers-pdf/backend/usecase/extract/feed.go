@@ -32,7 +32,7 @@ func getFollowedEvents() []string {
 // it away. A file that has a text layer made from its content as it is gets none again.
 type Follower struct {
 	writer *Writer
-	feeds  func(domain.VaultID) Feed
+	getFeed  func(domain.VaultID) Feed
 	report func(what string, err error)
 
 	wg sync.WaitGroup
@@ -52,7 +52,7 @@ type run struct {
 // receives the failures of the background work.
 func NewFollower(writer *Writer, feeds func(domain.VaultID) Feed, report func(what string, err error)) *Follower {
 	return &Follower{
-		writer: writer, feeds: feeds, report: report,
+		writer: writer, getFeed: feeds, report: report,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, runs: map[domain.VaultID]*run{},
 	}
 }
@@ -112,7 +112,7 @@ func (f *Follower) Close() {
 // Follow writes the text layers of the changes of the feed of the vault after its cursor, and returns
 // when they are written. On a reset of the feed it reads every file the vault holds.
 func (f *Follower) Follow(ctx context.Context, vault domain.VaultID) error {
-	feed := f.feeds(vault)
+	feed := f.getFeed(vault)
 	from := changes.Source{Feed: feed.Changes, Store: feed.Store, CursorFile: CursorFile}
 	return changes.Follow(ctx, from, getFollowedEvents(),
 		func(ctx context.Context, batch []host.FileChange) error { return f.apply(ctx, vault, batch) },

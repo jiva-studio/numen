@@ -137,13 +137,13 @@ func checkBook(t *testing.T, book *epub.Book) {
 func checkPages(t *testing.T, book *epub.Book) {
 	t.Helper()
 
-	for page := 1; page <= book.PageCount(); page++ {
-		pos := book.PageStart(page)
+	for page := 1; page <= book.CountPages(); page++ {
+		pos := book.GetPageStart(page)
 		if r, _ := utf8.DecodeRuneInString(book.Text[pos:]); r == utf8.RuneError {
 			t.Fatalf("page %d of %d begins at %d, in the middle of a letter",
-				page, book.PageCount(), pos)
+				page, book.CountPages(), pos)
 		}
-		if got := book.PageOf(pos); got != page {
+		if got := book.FindPage(pos); got != page {
 			t.Fatalf("page %d begins at %d, which is on page %d", page, pos, got)
 		}
 	}
@@ -153,7 +153,7 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	t.Helper()
 
 	for _, doc := range book.Documents {
-		rendered, err := book.Markup(doc.Path)
+		rendered, err := book.ParseMarkup(doc.Path)
 		if err != nil {
 			t.Fatalf("markup of %s: %v", doc.Path, err)
 		}

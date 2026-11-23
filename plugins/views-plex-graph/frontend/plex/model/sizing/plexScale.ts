@@ -11,7 +11,7 @@ import { DEFAULT_OPTIONS, type PlexOptions } from '../../lib/arrange'
 import { DESIGNED_TYPE, scaleOptions } from './typeScale'
 
 /** A plex drawn to hold a label set at this size. */
-export const optionsForType = (type: number, options: PlexOptions = DEFAULT_OPTIONS): PlexOptions =>
+export const getOptionsForType = (type: number, options: PlexOptions = DEFAULT_OPTIONS): PlexOptions =>
   scaleOptions(options, type > 0 ? type / DESIGNED_TYPE : 1)
 
 /** A box one em on a side, set in the type a node's label is set in. */

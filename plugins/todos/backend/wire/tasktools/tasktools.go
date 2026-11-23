@@ -64,8 +64,8 @@ func (t *Tools) getScope(ctx context.Context) (Scope, error) {
 	return t.vaults.GetScope(ctx, tools.GetVault(ctx))
 }
 
-// Registry builds the registry of the five tools.
-func (t *Tools) Registry() (*tools.Registry, error) {
+// BuildRegistry builds the registry of the five tools.
+func (t *Tools) BuildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{t.addTaskList, t.addTaskAdd, t.addTaskSetDone, t.addTaskEdit, t.addTaskRemove} {
 		if err := add(registry); err != nil {
@@ -94,7 +94,7 @@ func encodeTask(task todo.Task) TaskOutput {
 	}
 }
 
-func refusalError(refusal complete.Refusal) error {
+func newRefusalError(refusal complete.Refusal) error {
 	switch refusal {
 	case complete.RefusalNotFound:
 		return errors.New("the line is no longer that task; list the tasks again")

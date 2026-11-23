@@ -19,14 +19,14 @@ var (
 // Vaults gives a tool or a query function the index of the vault the window shows, the one the plugin
 // keeps, and refuses a call that names another vault or none.
 type Vaults struct {
-	shown func(ctx context.Context) (domain.VaultID, error)
+	getShownVault func(ctx context.Context) (domain.VaultID, error)
 	tasks *index.Index
 	scope tasktools.Scope
 }
 
 // NewVaults returns the vaults of the index; shown tells which vault the index holds.
 func NewVaults(shown func(ctx context.Context) (domain.VaultID, error), tasks *index.Index, scope tasktools.Scope) *Vaults {
-	return &Vaults{shown: shown, tasks: tasks, scope: scope}
+	return &Vaults{getShownVault: shown, tasks: tasks, scope: scope}
 }
 
 // GetScope returns the tasks, the editor and the tick of the vault.
@@ -49,7 +49,7 @@ func (v *Vaults) check(ctx context.Context, vaultID string) error {
 	if vaultID == "" {
 		return errNoVault
 	}
-	shown, err := v.shown(ctx)
+	shown, err := v.getShownVault(ctx)
 	if err != nil {
 		return convertError("read the shown vault", err)
 	}

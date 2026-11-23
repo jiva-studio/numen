@@ -16,7 +16,7 @@ type Config struct {
 	Model     ParakeetModel  `json:"model"`
 	Segmenter SegmenterModel `json:"segmenter"`
 
-	Progress func(what string, done, total int64) `json:"-"`
+	ReportProgress func(what string, done, total int64) `json:"-"`
 }
 
 // ParakeetModel turns speech into words. It is exported as three graphs and the
@@ -32,15 +32,15 @@ type ParakeetModel struct {
 	Tokens  string `json:"tokens"`
 }
 
-// Defaults listen with parakeet-tdt-0.6b-v3 and find the speech with
+// NewDefaultConfig listen with parakeet-tdt-0.6b-v3 and find the speech with
 // silero-vad.
-func Defaults() Config {
+func NewDefaultConfig() Config {
 	return Config{
 		Runtime:  "",
 		Dir:      "",
 		Threads:  0,
 		Workers:  0,
-		Progress: nil,
+		ReportProgress: nil,
 		Model:    GetModels()[0],
 		Segmenter: SegmenterModel{
 			Name:      "silero-vad",

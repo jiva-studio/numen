@@ -20,9 +20,9 @@ type VaultReader interface {
 
 // Host is what the plugin works through the host.
 type Host struct {
-	Vaults         func(domain.VaultID) VaultReader
+	GetVault         func(domain.VaultID) VaultReader
 	Store          func(domain.VaultID) transcribe.Folder
-	Texts          func(domain.VaultID) host.TextVersions
+	GetTexts          func(domain.VaultID) host.TextVersions
 	Queue          host.Queue
 	FetchModelFile func(context.Context, string, string) (string, error)
 }
@@ -33,9 +33,9 @@ func Open(endpoint hostcall.Endpoint) Host {
 	store := host.NewStoreClient(endpoint)
 	texts := host.NewTextClient(endpoint)
 	return Host{
-		Vaults:         func(id domain.VaultID) VaultReader { return client.With(id) },
+		GetVault:         func(id domain.VaultID) VaultReader { return client.With(id) },
 		Store:          func(id domain.VaultID) transcribe.Folder { return store.With(id) },
-		Texts:          func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		GetTexts:          func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:          host.NewQueueClient(endpoint),
 		FetchModelFile: host.NewDependencyClient(endpoint).FetchModelFile,
 	}
@@ -43,19 +43,19 @@ func Open(endpoint hostcall.Endpoint) Host {
 
 // Files reads the recordings of the vaults through the host.
 type Files struct {
-	vaults func(domain.VaultID) VaultReader
+	getVault func(domain.VaultID) VaultReader
 }
 
 func NewFiles(vaults func(domain.VaultID) VaultReader) Files {
-	return Files{vaults: vaults}
+	return Files{getVault: vaults}
 }
 
 func (f Files) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
-	raw, _, err := f.vaults(vault).Read(ctx, path)
+	raw, _, err := f.getVault(vault).Read(ctx, path)
 	return raw, err
 }
 
 func (f Files) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
-	shown, err := f.vaults("").GetVault(ctx)
+	shown, err := f.getVault("").GetVault(ctx)
 	return shown.ID, err
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestTheProviderServesEveryOperationOfTheContract(t *testing.T) {
-	provider := newTestService(t).built.provider.roles()
+	provider := newTestService(t).built.provider.buildProvider()
 	for _, operation := range []string{
 		llm.OperationComplete, llm.OperationChat, llm.OperationEmbed, llm.OperationProfile, llm.OperationModels, llm.OperationReasoning,
 		llm.OperationRerank,

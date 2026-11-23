@@ -19,9 +19,9 @@ func isAlone(key string) bool {
 	return false
 }
 
-// HTML is the document as the markup a window draws it from, every run of text wrapped in a span carrying its offset.
+// RenderHTML is the document as the markup a window draws it from, every run of text wrapped in a span carrying its offset.
 // It goes into a page unescaped, so the text and every attribute value is escaped here: escaping is the last thing between a book and the window's DOM.
-func (m *Markup) HTML() string {
+func (m *Markup) RenderHTML() string {
 	var out strings.Builder
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Grow sets capacity only; the page is the same at any size"
 	out.Grow(2 * m.Length)

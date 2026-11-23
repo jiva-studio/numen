@@ -13,7 +13,7 @@ import (
 func TestAListOfModelsReleasesTheProcess(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey, IsLabeled: true, Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini"}}})
 	host := processtest.NewHost(t)
-	provider := newTestService(t).built.provider.roles()
+	provider := newTestService(t).built.provider.buildProvider()
 	caller := llmtest.NewReleasingCaller(provider, newCall("openrouter", address, testKey, ""), host.NewClient(t))
 
 	frames, err := caller.Call(t.Context(), llm.OperationModels, nil, connection.PriorityInteractive)
@@ -32,7 +32,7 @@ func TestAListOfModelsReleasesTheProcess(t *testing.T) {
 func TestAChatKeepsTheProcess(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey, IsLabeled: true, Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini"}}})
 	host := processtest.NewHost(t)
-	provider := newTestService(t).built.provider.roles()
+	provider := newTestService(t).built.provider.buildProvider()
 	caller := llmtest.NewReleasingCaller(provider, newCall("openrouter", address, testKey, "openai/gpt-4o-mini"), host.NewClient(t))
 
 	if _, err := llm.Complete(t.Context(), caller, &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: "name a river"}}}, connection.PriorityInteractive); err != nil {

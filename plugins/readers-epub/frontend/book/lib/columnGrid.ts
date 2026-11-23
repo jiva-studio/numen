@@ -1,5 +1,5 @@
-import { columnsInAll } from './columnCount'
-import { columnPitch } from './columnPitch'
+import { countColumns } from './columnCount'
+import { getColumnPitch } from './columnPitch'
 import type { Flow } from './spread'
 
 /**
@@ -11,8 +11,8 @@ import type { Flow } from './spread'
 export const NARROWEST = 448
 
 /** How wide one column is set: its share of the area, less the gap it keeps. */
-export function columnWidth(flow: Flow): number {
-  return Math.max(columnPitch(flow) - flow.gap, 0)
+export function getColumnWidth(flow: Flow): number {
+  return Math.max(getColumnPitch(flow) - flow.gap, 0)
 }
 
 /**
@@ -22,20 +22,20 @@ export function columnWidth(flow: Flow): number {
  * of its own column is compared against that half gap.
  */
 export function getColumn(flow: Flow, x: number): number {
-  const pitch = columnPitch(flow)
+  const pitch = getColumnPitch(flow)
   if (pitch <= 0) return 0
   return Math.max(Math.floor(x / pitch), 0)
 }
 
 /** How many countSpreads the text evaluates to. */
 export function countSpreads(flow: Flow): number {
-  const all = columnsInAll(flow)
+  const all = countColumns(flow)
   return all === 0 ? 0 : Math.ceil(all / flow.columns)
 }
 
 /** Which spread a place along the columns falls in. */
 export function getSpread(flow: Flow, x: number): number {
-  if (columnWidth(flow) <= 0) return 0
+  if (getColumnWidth(flow) <= 0) return 0
   const last = Math.max(countSpreads(flow) - 1, 0)
   return Math.min(Math.floor(getColumn(flow, x) / flow.columns), last)
 }

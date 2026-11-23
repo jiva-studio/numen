@@ -99,8 +99,8 @@ func (u *UseCase) Start(ctx context.Context, in StartRequest) (Output, error) {
 	return writeOutput(state), nil
 }
 
-// Results returns the state of a query and one page of its results, waiting for a running query.
-func (u *UseCase) Results(ctx context.Context, in ResultsRequest) (Output, error) {
+// GetResults returns the state of a query and one page of its results, waiting for a running query.
+func (u *UseCase) GetResults(ctx context.Context, in ResultsRequest) (Output, error) {
 	if u.runner == nil {
 		return Output{}, errNoQueries
 	}

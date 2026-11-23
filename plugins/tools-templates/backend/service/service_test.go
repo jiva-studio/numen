@@ -80,7 +80,7 @@ func createNote(t *testing.T, web *testWeb, template, folder string) (int, []byt
 func createNoteAs(t *testing.T, web *testWeb, template, folder, name string) (int, []byte) {
 	t.Helper()
 	content, _ := web.vault.Content(template)
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.Etag(content)})
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.ComputeEtag(content)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func createNoteWith(t *testing.T, web *testWeb, template, folder string, values 
 	t.Helper()
 	content, _ := web.vault.Content(template)
 	name := strings.TrimSuffix(pathpkg.Base(template), ".md")
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)})
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.ComputeEtag(content)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,7 +330,7 @@ func TestAnswerWithTheNoteWhenItCannotBeIndexed(t *testing.T) {
 	vault.File("Templates/Meeting.md", meeting)
 	useCase := newnote.NewCreateFromTemplate(unindexed{vault}, new(clocktest.Fake), ulid.NewGenerator(rand.Reader), func() mask.Set { return mask.Parse("") })
 
-	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Name: "Meeting", Values: nil, Etag: newnote.Etag(meeting)})
+	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Name: "Meeting", Values: nil, Etag: newnote.ComputeEtag(meeting)})
 
 	if err != nil || got.Path != "work/Meeting.md" || !strings.Contains(got.Warning, "not indexed") || !strings.Contains(got.Warning, "index is down") {
 		t.Errorf("CreateNote = %+v, %v", got, err)

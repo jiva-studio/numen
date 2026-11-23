@@ -20,7 +20,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	s.SetUpdateConfig(built.settings.Apply)
-	connection.Mount(s, built.Provider())
+	connection.Mount(s, built.BuildProvider())
 	s.OnClose(built.tasks.Close)
 	return nil
 }

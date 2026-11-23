@@ -110,7 +110,7 @@ func readBook(doc *document) (book *Book, err error) {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="readBook releases the worker and closes the document on return"
 	defer func() { err = errors.Join(err, doc.Close()) }()
 
-	book = &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
+	book = &Book{Title: doc.readTitle(), Text: "", Pages: nil, Parts: nil, Structure: ""}
 
 	var text strings.Builder
 	pages := min(doc.pages, mostPages)
@@ -123,7 +123,7 @@ func readBook(doc *document) (book *Book, err error) {
 		starts = append(starts, text.Len())
 		book.Pages = append(book.Pages, Page{Offset: text.Len()})
 
-		page := doc.text(i)
+		page := doc.readText(i)
 		if page == "" {
 			continue
 		}
@@ -137,7 +137,7 @@ func readBook(doc *document) (book *Book, err error) {
 	book.Text = text.String()
 
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="document structure requires at least minimumParts entries"
-	if named := doc.outline(starts); len(named) >= minimumParts {
+	if named := doc.buildOutline(starts); len(named) >= minimumParts {
 		book.Parts, book.Structure = named, FromOutline
 	} else {
 		book.Structure = FromNothing

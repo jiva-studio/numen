@@ -18,30 +18,30 @@ func computePageBytes(text string) int {
 	return lettersPerPage * len(text) / letters
 }
 
-// PageCount is the number of pages in the book. A book with no text has one page.
-func (b *Book) PageCount() int {
-	size := b.PageBytes()
+// CountPages is the number of pages in the book. A book with no text has one page.
+func (b *Book) CountPages() int {
+	size := b.GetPageBytes()
 	return max(1, (len(b.Text)+size-1)/size)
 }
 
-// PageOf is the page an offset falls on.
-func (b *Book) PageOf(offset int) int {
-	return min(max(1, offset/b.PageBytes()+1), b.PageCount())
+// FindPage is the page an offset falls on.
+func (b *Book) FindPage(offset int) int {
+	return min(max(1, offset/b.GetPageBytes()+1), b.CountPages())
 }
 
-// PageStart is where a page begins in the text. A page begins at a letter, and
+// GetPageStart is where a page begins in the text. A page begins at a letter, and
 // a letter is several bytes in most of the scripts a book is written in.
-func (b *Book) PageStart(page int) int {
-	pos := min(max(0, (page-1)*b.PageBytes()), len(b.Text))
+func (b *Book) GetPageStart(page int) int {
+	pos := min(max(0, (page-1)*b.GetPageBytes()), len(b.Text))
 	for pos < len(b.Text) && !utf8.RuneStart(b.Text[pos]) {
 		pos++
 	}
 	return pos
 }
 
-// PageBytes is the number of bytes of this book's text on one page. Every page
+// GetPageBytes is the number of bytes of this book's text on one page. Every page
 // count of this book uses this number.
-func (b *Book) PageBytes() int {
+func (b *Book) GetPageBytes() int {
 	if b.pageBytes == 0 {
 		return lettersPerPage
 	}

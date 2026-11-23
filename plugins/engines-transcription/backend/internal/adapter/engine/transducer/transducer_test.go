@@ -28,15 +28,15 @@ func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 		Frames:  4,
 		Blank:   blank,
 		Encoded: 1,
-		Encoder: func(pos int, dst []float32) []float32 {
+		RunEncoder: func(pos int, dst []float32) []float32 {
 			dst[0] = float32(pos)
 			return dst
 		},
-		Predictor: func(token int) ([]float32, error) {
+		RunPredictor: func(token int) ([]float32, error) {
 			request = append(request, token)
 			return []float32{float32(token)}, nil
 		},
-		Joint: func(frame, _ []float32) ([]float32, error) {
+		RunJoint: func(frame, _ []float32) ([]float32, error) {
 			return named[int(frame[0])], nil
 		},
 	}.Decode(t.Context())
@@ -60,9 +60,9 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	response, err := Decoder{
 		Frames:    4,
 		Blank:     blank,
-		Encoder:   func(int, []float32) []float32 { visited++; return nil },
-		Predictor: func(int) ([]float32, error) { return nil, nil },
-		Joint: func([]float32, []float32) ([]float32, error) {
+		RunEncoder:   func(int, []float32) []float32 { visited++; return nil },
+		RunPredictor: func(int) ([]float32, error) { return nil, nil },
+		RunJoint: func([]float32, []float32) ([]float32, error) {
 			return answer(blank, blank, 0, steps), nil
 		},
 	}.Decode(t.Context())
@@ -81,9 +81,9 @@ func TestDecode_ErrorsOnNarrowJoiner(t *testing.T) {
 	_, err := Decoder{
 		Frames:    1,
 		Blank:     8192,
-		Encoder:   func(int, []float32) []float32 { return nil },
-		Predictor: func(int) ([]float32, error) { return nil, nil },
-		Joint: func([]float32, []float32) ([]float32, error) {
+		RunEncoder:   func(int, []float32) []float32 { return nil },
+		RunPredictor: func(int) ([]float32, error) { return nil, nil },
+		RunJoint: func([]float32, []float32) ([]float32, error) {
 			return make([]float32, 16), nil
 		},
 	}.Decode(t.Context())
@@ -97,9 +97,9 @@ func TestDecode_ErrorsOnJoinerWithoutStepScores(t *testing.T) {
 	_, err := Decoder{
 		Frames:    1,
 		Blank:     blank,
-		Encoder:   func(int, []float32) []float32 { return nil },
-		Predictor: func(int) ([]float32, error) { return []float32{0}, nil },
-		Joint: func([]float32, []float32) ([]float32, error) {
+		RunEncoder:   func(int, []float32) []float32 { return nil },
+		RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		RunJoint: func([]float32, []float32) ([]float32, error) {
 			return make([]float32, blank+1), nil
 		},
 	}.Decode(t.Context())
@@ -116,7 +116,7 @@ func TestDecodeErrors(t *testing.T) {
 	t.Run("initial predictor error", func(t *testing.T) {
 		_, err := Decoder{
 			Blank: blank,
-			Predictor: func(int) ([]float32, error) {
+			RunPredictor: func(int) ([]float32, error) {
 				return nil, errBoom
 			},
 		}.Decode(t.Context())
@@ -132,9 +132,9 @@ func TestDecodeErrors(t *testing.T) {
 			Frames:    2,
 			Blank:     blank,
 			Encoded:   1,
-			Encoder:   func(int, []float32) []float32 { return nil },
-			Predictor: func(int) ([]float32, error) { return []float32{0}, nil },
-			Joint: func(_, _ []float32) ([]float32, error) {
+			RunEncoder:   func(int, []float32) []float32 { return nil },
+			RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
+			RunJoint: func(_, _ []float32) ([]float32, error) {
 				return answer(blank, 1, 1, steps), nil
 			},
 		}.Decode(ctx)
@@ -148,14 +148,14 @@ func TestDecodeErrors(t *testing.T) {
 			Frames:  2,
 			Blank:   blank,
 			Encoded: 1,
-			Encoder: func(int, []float32) []float32 { return nil },
-			Predictor: func(token int) ([]float32, error) {
+			RunEncoder: func(int, []float32) []float32 { return nil },
+			RunPredictor: func(token int) ([]float32, error) {
 				if token == 1 {
 					return nil, errBoom
 				}
 				return []float32{0}, nil
 			},
-			Joint: func(_, _ []float32) ([]float32, error) {
+			RunJoint: func(_, _ []float32) ([]float32, error) {
 				return answer(blank, 1, 1, steps), nil
 			},
 		}.Decode(t.Context())
@@ -169,9 +169,9 @@ func TestDecodeErrors(t *testing.T) {
 			Frames:    2,
 			Blank:     blank,
 			Encoded:   1,
-			Encoder:   func(int, []float32) []float32 { return nil },
-			Predictor: func(int) ([]float32, error) { return []float32{0}, nil },
-			Joint: func(_, _ []float32) ([]float32, error) {
+			RunEncoder:   func(int, []float32) []float32 { return nil },
+			RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
+			RunJoint: func(_, _ []float32) ([]float32, error) {
 				return nil, errBoom
 			},
 		}.Decode(t.Context())
@@ -190,12 +190,12 @@ func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 		Frames:  3,
 		Blank:   blank,
 		Encoded: 1,
-		Encoder: func(pos int, dst []float32) []float32 {
+		RunEncoder: func(pos int, dst []float32) []float32 {
 			dst[0] = float32(pos)
 			return dst
 		},
-		Predictor: func(int) ([]float32, error) { return []float32{0}, nil },
-		Joint: func(frame, _ []float32) ([]float32, error) {
+		RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		RunJoint: func(frame, _ []float32) ([]float32, error) {
 			offset := int(frame[0])
 			callsPerFrame[offset]++
 			if offset < 2 {
@@ -232,12 +232,12 @@ func TestDecodeBlankWithStepAdvancesByStep(t *testing.T) {
 		Frames:  4,
 		Blank:   blank,
 		Encoded: 1,
-		Encoder: func(pos int, dst []float32) []float32 {
+		RunEncoder: func(pos int, dst []float32) []float32 {
 			visited = append(visited, pos)
 			return dst
 		},
-		Predictor: func(int) ([]float32, error) { return []float32{0}, nil },
-		Joint: func(_, _ []float32) ([]float32, error) {
+		RunPredictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		RunJoint: func(_, _ []float32) ([]float32, error) {
 			return answer(blank, blank, 2, steps), nil
 		},
 	}.Decode(t.Context())
@@ -254,7 +254,7 @@ func TestDecodeBlankWithStepAdvancesByStep(t *testing.T) {
 func TestChooseSeparatesTokenAndStepScores(t *testing.T) {
 	d := Decoder{
 		Blank: 1,
-		Joint: func(_, _ []float32) ([]float32, error) {
+		RunJoint: func(_, _ []float32) ([]float32, error) {
 			return []float32{0, 0, 10, 0}, nil
 		},
 	}
@@ -271,7 +271,7 @@ func TestChooseSeparatesTokenAndStepScores(t *testing.T) {
 
 	dMin := Decoder{
 		Blank: 1,
-		Joint: func(_, _ []float32) ([]float32, error) {
+		RunJoint: func(_, _ []float32) ([]float32, error) {
 			return []float32{0, 1, 5}, nil
 		},
 	}
@@ -312,16 +312,16 @@ func BenchmarkTransducerDecode(b *testing.B) {
 			Frames:  frames,
 			Blank:   blank,
 			Encoded: encoded,
-			Encoder: func(pos int, dst []float32) []float32 {
+			RunEncoder: func(pos int, dst []float32) []float32 {
 				for c := range dst {
 					dst[c] = data[c*frames+pos]
 				}
 				return dst
 			},
-			Predictor: func(_ int) ([]float32, error) {
+			RunPredictor: func(_ int) ([]float32, error) {
 				return nil, nil
 			},
-			Joint: func(_, _ []float32) ([]float32, error) {
+			RunJoint: func(_, _ []float32) ([]float32, error) {
 				return scores, nil
 			},
 		}.Decode(ctx)

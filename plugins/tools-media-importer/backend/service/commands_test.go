@@ -33,9 +33,9 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host, *queue
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
-		Vaults:   vaultsOf(vault),
+		GetVault:   vaultsOf(vault),
 		Store:    foldersOf(vault),
-		Texts:    textsOf(texts),
+		GetTexts:    textsOf(texts),
 		Queue:    tasks,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy:  random.Entropy{},
@@ -210,9 +210,9 @@ func TestCommandErrorPaths(t *testing.T) {
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
-		Vaults:   vaultsOf(vault),
+		GetVault:   vaultsOf(vault),
 		Store:    func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} },
-		Texts:    textsOf(texts),
+		GetTexts:    textsOf(texts),
 		Queue:    tasks,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy:  random.Entropy{},
@@ -291,9 +291,9 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	queue := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
-		Vaults:   vaultsOf(vault),
+		GetVault:   vaultsOf(vault),
 		Store:    foldersOf(vault),
-		Texts:    textsOf(texts),
+		GetTexts:    textsOf(texts),
 		Queue:    queue,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy:  random.Entropy{},

@@ -10,7 +10,7 @@ import (
 
 func TestADetectionAnswerReleasesTheProcess(t *testing.T) {
 	host := processtest.NewHost(t)
-	caller := llmtest.NewReleasingCaller(newTestServer(t).Provider(), connection.Call{Type: "acp"}, host.NewClient(t))
+	caller := llmtest.NewReleasingCaller(newTestServer(t).BuildProvider(), connection.Call{Type: "acp"}, host.NewClient(t))
 
 	frames, err := caller.Call(t.Context(), connection.OperationDetected, nil, connection.PriorityInteractive)
 	if err != nil {

@@ -33,8 +33,8 @@ const Kind domain.TextKind = "book-text"
 // it begins at. The text and its offsets are the ones the reader sets the book with. Each text is
 // written as background work in the host's queue.
 type Writer struct {
-	vaults func(domain.VaultID) Vault
-	texts  func(domain.VaultID) host.TextVersions
+	getVault func(domain.VaultID) Vault
+	getTexts  func(domain.VaultID) host.TextVersions
 	store  func(domain.VaultID) host.StoreWriter
 	queue  host.Queue
 	report func(what string, err error)
@@ -57,11 +57,11 @@ type Request struct {
 // NewWriter is the texts of the books read through vaults, written into store and reported to
 // texts, each written in a turn of queue. report receives the failures of the background work.
 func NewWriter(
-	vaults func(domain.VaultID) Vault, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue,
+	getVault func(domain.VaultID) Vault, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue,
 	report func(what string, err error),
 ) *Writer {
 	return &Writer{
-		vaults: vaults, texts: texts, store: store, queue: queue, report: report,
+		getVault: getVault, getTexts: texts, store: store, queue: queue, report: report,
 		wg:       sync.WaitGroup{},
 		mu:       sync.Mutex{},
 		isClosed: false,
@@ -138,7 +138,7 @@ func (s *Writer) readBook(ctx context.Context, files host.FileReader, path strin
 // again.
 func (s *Writer) CreateText(ctx context.Context, req Request) error {
 	if req.Vault == "" {
-		shown, err := s.vaults("").GetVault(ctx)
+		shown, err := s.getVault("").GetVault(ctx)
 		if err != nil {
 			return fmt.Errorf("get the shown vault: %w", err)
 		}
@@ -204,7 +204,7 @@ func (s *Writer) putText(ctx context.Context, req Request, task host.Task) (err 
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.vaults(req.Vault), s.texts(req.Vault), s.store(req.Vault)
+	files, texts, store := s.getVault(req.Vault), s.getTexts(req.Vault), s.store(req.Vault)
 	read, err := s.readBook(ctx, files, req.Path)
 	if isUnreadable(err) {
 		return nil
@@ -252,11 +252,11 @@ func (s *Writer) WriteMissingText(ctx context.Context, req Request) error {
 }
 
 func (s *Writer) isTextMade(ctx context.Context, req Request) (bool, error) {
-	raw, _, err := s.vaults(req.Vault).Read(ctx, req.Path)
+	raw, _, err := s.getVault(req.Vault).Read(ctx, req.Path)
 	if err != nil {
 		return false, err
 	}
-	listing, err := s.texts(req.Vault).ListVersions(ctx, req.Path)
+	listing, err := s.getTexts(req.Vault).ListVersions(ctx, req.Path)
 	if err != nil {
 		return false, err
 	}

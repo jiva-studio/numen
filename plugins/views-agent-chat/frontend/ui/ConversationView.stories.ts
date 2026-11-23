@@ -5,7 +5,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import ConversationView from './ConversationView.vue'
-import { frameStory } from '../fixtures/frame'
+import { decorateFrame } from '../fixtures/frame'
 import { byWholeText, createAgentConnections, failWith, say } from '../fixtures'
 
 const { host: connections } = createAgentConnections((request) => ({
@@ -19,7 +19,7 @@ const { host: noAgent } = createAgentConnections({
 const meta = {
   title: 'Agent/Conversation view',
   component: ConversationView,
-  decorators: [frameStory],
+  decorators: [decorateFrame],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta<typeof ConversationView>
 

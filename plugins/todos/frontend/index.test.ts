@@ -14,7 +14,7 @@ import {
   refuse,
   settle,
   SUMMARY,
-  task,
+  createTask,
   type FakeInit,
 } from './testing/fakeApi'
 import { WORDS } from './words'
@@ -28,7 +28,7 @@ const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
     tasks: {
       overdue: {
         tasks: [
-          task({
+          createTask({
             path: 'Projects/Home.md',
             line: 7,
             proseLine: 4,
@@ -138,7 +138,7 @@ describe('the todos frontend', () => {
 
     fake.setTasks({
       any: {
-        tasks: [task({ path: 'Projects/Home.md', line: 7, proseLine: 4, text: 'fix the tap' })],
+        tasks: [createTask({ path: 'Projects/Home.md', line: 7, proseLine: 4, text: 'fix the tap' })],
         total: 1,
         revision: 2,
       },
@@ -170,7 +170,7 @@ describe('the todos frontend', () => {
 
   it('opens on the line the note holds the task on now, after reading the note again', async () => {
     const { context, fake, open } = setup()
-    const tap = (line: number) => task({ path: 'Projects/Home.md', line, text: 'fix the tap' })
+    const tap = (line: number) => createTask({ path: 'Projects/Home.md', line, text: 'fix the tap' })
     fake.push({ revision: 1, isReady: true })
     await settle()
     view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
@@ -233,7 +233,7 @@ describe('the todos frontend', () => {
     await settle()
     fake.setTasks({
       any: {
-        tasks: [task({ path: 'Projects/Home.md', line: 7, proseLine: 0, text: 'fix the tap' })],
+        tasks: [createTask({ path: 'Projects/Home.md', line: 7, proseLine: 0, text: 'fix the tap' })],
         total: 1,
         revision: 2,
       },
@@ -344,7 +344,7 @@ describe('the todos frontend', () => {
     })
     fake.setTasks({
       today: {
-        tasks: [task({ path: 'Daily.md', line: 2, text: 'water the plants', due: TODAY })],
+        tasks: [createTask({ path: 'Daily.md', line: 2, text: 'water the plants', due: TODAY })],
         total: 1,
         revision: 2,
       },

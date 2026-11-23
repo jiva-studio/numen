@@ -12,7 +12,7 @@ import (
 )
 
 func suggestName(ctx context.Context, vault Vault, folder, template string) (string, error) {
-	stem := checkedName(getName(template))
+	stem := validateName(getName(template))
 	if stem == "" {
 		return "", nil
 	}
@@ -32,7 +32,7 @@ func suggestName(ctx context.Context, vault Vault, folder, template string) (str
 	return "", nil
 }
 
-func checkedName(name string) string {
+func validateName(name string) string {
 	reduced, _, err := domain.Filename(name)
 	if err != nil {
 		return ""

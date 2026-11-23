@@ -89,9 +89,9 @@ type Texts interface {
 // creates.
 type Host struct {
 	PluginID string
-	Vaults   func(domain.VaultID) Vault
+	GetVault   func(domain.VaultID) Vault
 	Store    func(domain.VaultID) Folder
-	Texts    func(domain.VaultID) Texts
+	GetTexts    func(domain.VaultID) Texts
 	Queue    host.Queue
 	Entropy  ports.Entropy
 	Clock    Clock
@@ -101,8 +101,8 @@ type Host struct {
 // Links fetches for the links of the vault the host shows.
 type Links struct {
 	host     Host
-	fetcher  func() ports.Fetcher
-	settings func() fetch.Settings
+	getFetcher  func() ports.Fetcher
+	getSettings func() fetch.Settings
 	clock    Clock
 
 	closing   chan struct{}
@@ -118,7 +118,7 @@ type Links struct {
 // evaluated on every fetch, so a changed setting applies to the next one.
 func New(h Host, fetcher func() ports.Fetcher, settings func() fetch.Settings) *Links {
 	return &Links{
-		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
+		host: h, getFetcher: fetcher, getSettings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, running: map[string]chan struct{}{}, feed: feedRun{isRunning: false, isAgain: false, isReview: false, isConfigured: false},
 	}
@@ -156,7 +156,7 @@ type Link struct {
 
 // Read is the link at a path of the vault the host shows.
 func (l *Links) Read(ctx context.Context, path string) (Link, error) {
-	return readLink(ctx, l.host.Vaults("").Files, path)
+	return readLink(ctx, l.host.GetVault("").Files, path)
 }
 
 func readLink(ctx context.Context, vault Files, path string) (Link, error) {
@@ -314,7 +314,7 @@ func (l *Links) findByAddress(ctx context.Context, vault Files, parsed address.U
 	return Link{}, false, nil
 }
 
-func (l *Links) getVaultByID(vault domain.VaultID) Vault { return l.host.Vaults(vault) }
+func (l *Links) getVaultByID(vault domain.VaultID) Vault { return l.host.GetVault(vault) }
 
 func (l *Links) getStoreByID(vault domain.VaultID) Folder { return l.host.Store(vault) }
 
@@ -348,7 +348,7 @@ func (l *Links) getVault(link Link) Vault { return l.getVaultByID(link.Vault) }
 
 func (l *Links) getStore(link Link) Folder { return l.getStoreByID(link.Vault) }
 
-func (l *Links) getTexts(link Link) Texts { return l.host.Texts(link.Vault) }
+func (l *Links) getTexts(link Link) Texts { return l.host.GetTexts(link.Vault) }
 
 func newLinkIn(ctx context.Context, vault Files, path string, parsed address.URL, raw []byte) (Link, error) {
 	v, err := vault.GetVault(ctx)

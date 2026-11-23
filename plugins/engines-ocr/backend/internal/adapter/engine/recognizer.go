@@ -23,7 +23,7 @@ type Model = scan.Model
 type Recognizer struct {
 	shape  *Layout
 	lines  *paddle.Engine
-	layout func(image.Image) ([]Region, error)
+	findRegions func(image.Image) ([]Region, error)
 	read   func(image.Image) ([]read.RecResult, error)
 	body   map[string]bool
 	head   map[string]int
@@ -57,7 +57,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(found.recognize, cfg.Recognize)
+	classes, dict, err := loadAlphabet(found.recognize, cfg.Recognize)
 	if err != nil {
 		return nil, errors.Join(err, layout.Close())
 	}
@@ -82,15 +82,15 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch
 	return &Recognizer{
 		shape:  layout,
 		lines:  lines,
-		layout: layout.Regions,
+		findRegions: layout.FindRegions,
 		read:   lines.RunOCR,
-		body:   toSet(cfg.Regions.GetBody()),
+		body:   createSet(cfg.Regions.GetBody()),
 		head:   getDepths(cfg.Regions.GetHead()),
 		margin: cfg.Layout.GetMargin(),
 		jobs:   cfg.GetJobs(),
 		model: Model{
-			Layout:     name(found.layout),
-			Recognizer: name(found.recognize),
+			Layout:     getModelName(found.layout),
+			Recognizer: getModelName(found.recognize),
 			DPI:        cfg.Recognize.GetDPI(),
 			From:       found.from,
 		},
@@ -113,7 +113,7 @@ func (r *Recognizer) Close() error {
 
 // Recognize extracts layout regions and text lines from a page image.
 func (r *Recognizer) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
-	regions, err := r.layout(page)
+	regions, err := r.findRegions(page)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (r *Recognizer) getTargets(page image.Image, regions []Region) []recognizeT
 		if !r.body[region.Label] {
 			continue
 		}
-		crop, corner := cropRegion(page, region.Rect, r.margin)
+		crop, corner := cropToRegion(page, region.Rect, r.margin)
 		if crop == nil {
 			continue
 		}
@@ -209,7 +209,7 @@ func (r *Recognizer) makeBlock(t recognizeTarget, found []read.RecResult) (Block
 	}, true
 }
 
-func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
+func cropToRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		// gomutants:disable-next-line RETURN_ZERO reason="image.Point{X: 0, Y: 0} is the zero value of image.Point."
@@ -228,7 +228,7 @@ func getDepths(names []string) map[string]int {
 	return out
 }
 
-func toSet(names []string) map[string]bool {
+func createSet(names []string) map[string]bool {
 	out := make(map[string]bool, len(names))
 	for _, n := range names {
 		out[n] = true

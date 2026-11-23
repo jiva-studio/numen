@@ -28,9 +28,9 @@ const emit = defineEmits<{
 const tip = useTooltip()
 const labelFieldId = useId()
 const directionWords = computed(() => {
-  const name = (direction: LinkDirection) =>
+  const getDirectionName = (direction: LinkDirection) =>
     words.direction[direction](props.firstTitle, props.secondTitle)
-  return words.directionButton(name(props.direction), name(props.nextDirection))
+  return words.directionButton(getDirectionName(props.direction), getDirectionName(props.nextDirection))
 })
 
 /* -------------------------------- Handlers -------------------------------- */

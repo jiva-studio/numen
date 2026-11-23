@@ -29,25 +29,25 @@ func NewMethods(reader *books.Reader) *Methods {
 func (m *Methods) GetBook(ctx context.Context, req api.GetBookRequest) (api.GetBookResponse, error) {
 	book, err := m.reader.GetBook(ctx, req.Path)
 	if err != nil {
-		return api.GetBookResponse{}, ToAPIError(err)
+		return api.GetBookResponse{}, BuildAPIError(err)
 	}
-	return ToGetBookResponse(book), nil
+	return BuildGetBookResponse(book), nil
 }
 
 // ReadBookMarkup answers the rendered HTML of a document of a book's spine.
 func (m *Methods) ReadBookMarkup(ctx context.Context, req api.ReadBookMarkupRequest) (api.ReadBookMarkupResponse, error) {
 	markup, err := m.reader.ReadBookMarkup(ctx, req.Path, req.Document)
 	if err != nil {
-		return api.ReadBookMarkupResponse{}, ToAPIError(err)
+		return api.ReadBookMarkupResponse{}, BuildAPIError(err)
 	}
 	return api.ReadBookMarkupResponse{Markup: markup}, nil
 }
 
 // ReadBookEntry answers the bytes of one entry of a book's archive.
 func (m *Methods) ReadBookEntry(ctx context.Context, req api.ReadBookEntryRequest) (api.ReadBookEntryResponse, error) {
-	body, err := m.reader.ReadBookEntry(ctx, req.Path, req.Entry, ToBaseline(req.Baseline))
+	body, err := m.reader.ReadBookEntry(ctx, req.Path, req.Entry, BuildBaseline(req.Baseline))
 	if err != nil {
-		return api.ReadBookEntryResponse{}, ToAPIError(err)
+		return api.ReadBookEntryResponse{}, BuildAPIError(err)
 	}
 	return api.ReadBookEntryResponse{Body: body}, nil
 }
@@ -56,7 +56,7 @@ func (m *Methods) ReadBookEntry(ctx context.Context, req api.ReadBookEntryReques
 func (m *Methods) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfiResponse, error) {
 	place, err := m.reader.GetCfi(ctx, req.Path, req.Offset)
 	if err != nil {
-		return api.GetCfiResponse{}, ToAPIError(err)
+		return api.GetCfiResponse{}, BuildAPIError(err)
 	}
 	return api.GetCfiResponse{Cfi: place}, nil
 }
@@ -65,19 +65,19 @@ func (m *Methods) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfi
 func (m *Methods) FindOffset(ctx context.Context, req api.FindOffsetRequest) (api.FindOffsetResponse, error) {
 	offset, err := m.reader.FindOffset(ctx, req.Path, req.Cfi)
 	if err != nil {
-		return api.FindOffsetResponse{}, ToAPIError(err)
+		return api.FindOffsetResponse{}, BuildAPIError(err)
 	}
 	return api.FindOffsetResponse{Offset: offset}, nil
 }
 
-// ToGetBookResponse returns the metadata of book and at most mostListed of its documents, parts and
+// BuildGetBookResponse returns the metadata of book and at most mostListed of its documents, parts and
 // printed pages each.
-func ToGetBookResponse(book *epub.Book) api.GetBookResponse {
+func BuildGetBookResponse(book *epub.Book) api.GetBookResponse {
 	res := api.GetBookResponse{
 		Title:        book.Title,
-		PageCount:    book.PageCount(),
+		PageCount:    book.CountPages(),
 		TextBytes:    len(book.Text),
-		PageBytes:    book.PageBytes(),
+		PageBytes:    book.GetPageBytes(),
 		Documents:    []api.SpineDocument{},
 		Parts:        []api.BookPart{},
 		PrintedPages: []api.PrintedPage{},
@@ -102,17 +102,17 @@ func ToGetBookResponse(book *epub.Book) api.GetBookResponse {
 	return res
 }
 
-// ToBaseline returns the size and time of stat, and nil for no stat.
-func ToBaseline(stat *api.FileStat) *books.Baseline {
+// BuildBaseline returns the size and time of stat, and nil for no stat.
+func BuildBaseline(stat *api.FileStat) *books.Baseline {
 	if stat == nil {
 		return nil
 	}
 	return &books.Baseline{Size: stat.Size, Mtime: stat.Mtime}
 }
 
-// ToAPIError returns the API error of a failure of the books use case, with the failure's text as its
+// BuildAPIError returns the API error of a failure of the books use case, with the failure's text as its
 // message. A failure of another kind is returned as it is.
-func ToAPIError(err error) error {
+func BuildAPIError(err error) error {
 	failure, ok := errors.AsType[*books.Error](err)
 	if !ok {
 		return err

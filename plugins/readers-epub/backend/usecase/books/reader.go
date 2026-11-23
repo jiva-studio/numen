@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Reader) readBookFile(ctx context.Context, path string) ([]byte, error) {
-	raw, _, err := s.vaults(getVault(ctx)).Read(ctx, path)
+	raw, _, err := s.getVault(getVault(ctx)).Read(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)
 	}
@@ -24,7 +24,7 @@ func (s *Reader) readBookFile(ctx context.Context, path string) ([]byte, error) 
 // Reader implements the book methods of the md.numen.readers.epub service. Each call works the vault its
 // context names with WithVault.
 type Reader struct {
-	vaults func(domain.VaultID) host.FileReader
+	getVault func(domain.VaultID) host.FileReader
 
 	books *bookCache
 
@@ -35,7 +35,7 @@ type Reader struct {
 // NewReader returns a Reader that reads the vault of a request through vaults.
 func NewReader(vaults func(domain.VaultID) host.FileReader) *Reader {
 	return &Reader{
-		vaults: vaults,
+		getVault: vaults,
 		books:  newBookCache(),
 		mu:     sync.Mutex{},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="placedBook starts with nil book so size and mtime are ignored until populated"
@@ -74,12 +74,12 @@ func (s *Reader) ReadBookMarkup(ctx context.Context, path, document string) (str
 		return "", newError(KindInvalidArgument, fmt.Sprintf("parse epub %s: %v", path, err))
 	}
 
-	rendered, err := book.Markup(document)
+	rendered, err := book.ParseMarkup(document)
 	if err != nil {
 		return "", newError(KindNotFound, fmt.Sprintf("read document markup %s: %v", document, err))
 	}
 
-	return rendered.HTML(), nil
+	return rendered.RenderHTML(), nil
 }
 
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive. A baseline that does not name
@@ -91,7 +91,7 @@ func (s *Reader) ReadBookEntry(ctx context.Context, path, entry string, baseline
 	if entry == "" {
 		return nil, newError(KindInvalidArgument, "entry required")
 	}
-	files := s.vaults(getVault(ctx))
+	files := s.getVault(getVault(ctx))
 	book, err := s.books.acquire(ctx, files, getVault(ctx), path)
 	if err != nil {
 		if errors.Is(err, errCacheClosed) {
@@ -106,7 +106,7 @@ func (s *Reader) ReadBookEntry(ctx context.Context, path, entry string, baseline
 	if baseline != nil && !isStatOf(*baseline, book.size, book.mtime) {
 		return nil, newError(KindFailedPrecondition, fmt.Sprintf("read book %s: the file changed", path))
 	}
-	body, err := book.archive.Entry(entry)
+	body, err := book.archive.ReadEntry(entry)
 	if err != nil {
 		return nil, newError(KindNotFound, err.Error())
 	}

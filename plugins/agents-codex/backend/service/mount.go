@@ -24,7 +24,7 @@ func Mount(s *server.Server) error {
 
 func mount(s *server.Server, a *agentServer) error {
 	s.SetUpdateConfig(a.settings.Apply)
-	connection.Mount(s, a.Provider())
+	connection.Mount(s, a.BuildProvider())
 	s.OnClose(a.tasks.Close)
 	return nil
 }

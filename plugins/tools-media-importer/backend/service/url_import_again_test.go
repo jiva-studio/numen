@@ -70,8 +70,8 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(webpage.New()), release: release}, fetchErr: fetchErr}
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
-		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
+		GetVault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
+		Store:  foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}
@@ -79,7 +79,7 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 		func() ports.Fetcher { return sites },
 		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	registry, err := NewTools(links).Registry()
+	registry, err := NewTools(links).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

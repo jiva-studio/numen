@@ -40,7 +40,7 @@ export function admitNodes(
     if (outside.size === 0) break
     admitted = cutBeforeOutside(admitted, outside)
   }
-  return refill(
+  return fillCells(
     admitted,
     requested,
     (nodesByRelation) => findOutside(nodesByRelation, lay, isInside).size === 0,
@@ -60,7 +60,7 @@ function findOutside(
 }
 
 /** Adds the removed notes back, one note of each relation in turn, while `isAccepted` accepts the set. */
-export function refill(
+export function fillCells(
   admitted: NodesByRelation,
   requested: NodesByRelation,
   isAccepted: (nodesByRelation: NodesByRelation) => boolean,

@@ -255,7 +255,7 @@ func taskCall(options map[string]string) connection.Call {
 
 func runTask(ctx context.Context, svc *agent, call connection.Call, request *acp.TaskRequest) ([]string, *acp.TaskDone, error) {
 	var frames []string
-	done, err := acptest.RunTask(ctx, svc.Provider(), call, request, func(frame *acp.TaskFrame) error {
+	done, err := acptest.RunTask(ctx, svc.BuildProvider(), call, request, func(frame *acp.TaskFrame) error {
 		frames = append(frames, describeFrame(frame))
 		return nil
 	})

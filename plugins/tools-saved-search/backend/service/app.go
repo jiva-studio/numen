@@ -126,7 +126,7 @@ func (a *App) newParts(hosts Hosts) *parts {
 	notes := savedsearch.New(savedsearch.Dependencies{
 		Open:     func(id domain.VaultID) ports.Notes { return hosts.Open(id).Notes },
 		Runner:   runner,
-		Settings: a.getNoteSettings,
+		GetSettings: a.getNoteSettings,
 		Clock:    a.clock,
 		Entropy:  random.Entropy{},
 	})

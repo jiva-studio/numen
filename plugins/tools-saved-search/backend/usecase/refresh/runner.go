@@ -48,7 +48,7 @@ type Runner struct {
 	open     func(id domain.VaultID) Vault
 	tasks    ports.Tasks
 	log      ports.Log
-	settings func() Settings
+	getSettings func() Settings
 	clock    ports.Clock
 	vaults   *vaultLocks
 	records  *sync.Mutex
@@ -61,7 +61,7 @@ type Runner struct {
 // New returns a runner over the dependencies, with the settings at the time of each run.
 func New(dependencies Dependencies, settings func() Settings, clock ports.Clock) *Runner {
 	return &Runner{
-		open: dependencies.Open, tasks: dependencies.Tasks, log: dependencies.Log, settings: settings, clock: clock,
+		open: dependencies.Open, tasks: dependencies.Tasks, log: dependencies.Log, getSettings: settings, clock: clock,
 		vaults: newVaultLocks(), records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(), edits: newEdits(),
 		started: &sync.WaitGroup{},
 	}

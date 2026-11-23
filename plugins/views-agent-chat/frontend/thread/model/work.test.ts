@@ -8,7 +8,7 @@ const create = () => {
   const paths = new Map<string, string>()
   let next = 0
   const nextId = () => `call-${next++}`
-  const line = createWorkLine({ put: sendTurn, drop, paths, waitWords: 'Working', nextId }, 'wait')
+  const line = createWorkLine({ put: sendTurn, drop, paths, waitWords: 'Working', createId: nextId }, 'wait')
   return { line, put: sendTurn, drop, paths }
 }
 

@@ -24,7 +24,7 @@ func openHostAt(endpoint hostcall.Endpoint) proofread.Host {
 	texts := host.NewTextClient(endpoint)
 	return proofread.Host{
 		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
-		Texts: func(id domain.VaultID) proofread.Texts { return texts.With(id) },
+		GetTexts: func(id domain.VaultID) proofread.Texts { return texts.With(id) },
 		Queue: host.NewQueueClient(endpoint),
 	}
 }
@@ -51,7 +51,7 @@ func Mount(s *server.Server) error {
 var errIncompleteHost = errors.New("proofreading needs the store, the texts and the queue of the host")
 
 func mount(s *server.Server, h proofread.Host, complete model.Completer) error {
-	if h.Store == nil || h.Texts == nil || h.Queue == nil {
+	if h.Store == nil || h.GetTexts == nil || h.Queue == nil {
 		return errIncompleteHost
 	}
 	current := settings.NewStore()
