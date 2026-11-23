@@ -49,7 +49,7 @@ func TestAServerEndsTheSessionOfARevokedDeviceAndRefusesItsSignIn(t *testing.T) 
 	}
 	err := p.second.SignIn(t.Context())
 
-	if _, isRevoked := errors.AsType[domain.DeviceRevokedError](err); !isRevoked {
+	if revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](err); !isRevoked || len(revoked.Chain) == 0 {
 		t.Errorf("sign-in error = %v, want the refusal that carries the chain", err)
 	}
 }
@@ -62,7 +62,14 @@ func TestKeep_RevokedDeviceRaisesItemAndPassesServerChainToCore(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 
-	go func() { _ = keep.Execute(ctx) }()
+	done := make(chan error, 1)
+	go func() { done <- keep.Execute(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; !errors.Is(err, context.Canceled) {
+			t.Errorf("keep ended with %v, want the cancel of its context", err)
+		}
+	})
 
 	eventually(t, "the item that says the device was revoked", func() bool { return p.second.HasItemKey("device-revoked") })
 	eventually(t, "the core marking the device revoked", func() bool { return p.second.Fake.Public().IsRevoked })

@@ -167,10 +167,13 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 		return 0
 	}
 	what := newSignInFailedConcern()
+	revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](cause)
 	switch {
-	case isRevoked(cause):
+	case isRevoked:
 		what = newRevokedConcern()
-		u.adopt(ctx, cause)
+		if u.adopt(ctx, revoked) != nil {
+			what = newSignInFailedConcern()
+		}
 	case errors.Is(cause, domain.ErrNoIdentity):
 		what = newNoIdentityConcern()
 	case errors.Is(cause, domain.ErrUpdateRequired):
@@ -194,14 +197,9 @@ func (u *Keep) clear(ctx context.Context) {
 	}
 }
 
-func isRevoked(cause error) bool {
-	_, ok := errors.AsType[domain.DeviceRevokedError](cause)
-	return ok
-}
-
-func (u *Keep) adopt(ctx context.Context, cause error) {
-	revoked, ok := errors.AsType[domain.DeviceRevokedError](cause)
-	if ok && u.deps.Chains != nil {
-		_ = u.deps.Chains.AdoptChain(ctx, revoked.Chain)
+func (u *Keep) adopt(ctx context.Context, revoked domain.DeviceRevokedError) error {
+	if u.deps.Chains == nil {
+		return nil
 	}
+	return u.deps.Chains.AdoptChain(ctx, revoked.Chain)
 }

@@ -30,10 +30,13 @@ type Deps struct {
 }
 
 // Courier runs for as long as the plugin does.
-type Courier struct{ deps Deps }
+type Courier struct {
+	deps     Deps
+	isRaised bool
+}
 
 // NewCourier returns the courier over the dependencies.
-func NewCourier(deps Deps) *Courier { return &Courier{deps: deps} }
+func NewCourier(deps Deps) *Courier { return &Courier{deps: deps, isRaised: false} }
 
 // channelState is the channel the courier works on: whether it made it, which side it is, and the reader of the
 // messages of the other side.
@@ -200,7 +203,14 @@ func (u *Courier) readInbound(ctx context.Context, id []byte, side ports.LinkSid
 }
 
 func (u *Courier) report(ctx context.Context) {
-	_ = u.deps.Health.Report(ctx, health.Item{Key: healthKey, Severity: health.Warning, Text: healthText})
+	item := health.Item{Key: healthKey, Severity: health.Warning, Text: healthText}
+	if u.deps.Health.Report(ctx, item) == nil {
+		u.isRaised = true
+	}
 }
 
-func (u *Courier) clear(ctx context.Context) { _ = u.deps.Health.Clear(ctx, healthKey) }
+func (u *Courier) clear(ctx context.Context) {
+	if u.isRaised && u.deps.Health.Clear(ctx, healthKey) == nil {
+		u.isRaised = false
+	}
+}

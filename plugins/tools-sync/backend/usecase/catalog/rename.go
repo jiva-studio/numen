@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -63,9 +64,9 @@ func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]va
 	if err != nil {
 		return nil, err
 	}
-	for i := len(entries) - 1; i >= 0; i-- {
-		if bytes.Equal(entries[i].GetVaultId(), remoteID) {
-			body, err := u.reader.openBody(ctx, entries[i])
+	for _, entry := range slices.Backward(entries) {
+		if bytes.Equal(entry.GetVaultId(), remoteID) {
+			body, err := u.reader.openBody(ctx, entry)
 			return body.Keys, err
 		}
 	}

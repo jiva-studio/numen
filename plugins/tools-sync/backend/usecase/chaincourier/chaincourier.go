@@ -85,15 +85,16 @@ func NewLoop(deps Deps, clock ports.Clock) *Loop {
 	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock}
 }
 
-// Execute runs until ctx ends and returns its error. A failed round is tried again at the next one.
+// Execute runs until ctx ends and returns its error with the failures of the last round. A failed round is tried again at the next one.
 func (u *Loop) Execute(ctx context.Context) error {
 	for round := 0; ; round++ {
-		_, _ = u.publish.Execute(ctx)
+		_, published := u.publish.Execute(ctx)
+		var adopted error
 		if round%adoptEvery == 0 {
-			_, _ = u.adopt.Execute(ctx)
+			_, adopted = u.adopt.Execute(ctx)
 		}
 		if err := u.clock.Wait(ctx, publishInterval); err != nil {
-			return err
+			return errors.Join(err, published, adopted)
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -134,9 +135,9 @@ func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []v
 }
 
 func getLastEntry(entries []*syncv1.CatalogEntry, vaultID []byte) *syncv1.CatalogEntry {
-	for i := len(entries) - 1; i >= 0; i-- {
-		if bytes.Equal(entries[i].GetVaultId(), vaultID) {
-			return entries[i]
+	for _, entry := range slices.Backward(entries) {
+		if bytes.Equal(entry.GetVaultId(), vaultID) {
+			return entry
 		}
 	}
 	return nil
@@ -210,9 +211,9 @@ func NewLoop(deps Deps, clock ports.Clock) *Loop {
 // Execute runs until ctx ends and returns its error. A failed round is tried again at the next one.
 func (u *Loop) Execute(ctx context.Context) error {
 	for {
-		_, _ = u.rotate.Execute(ctx)
+		_, failure := u.rotate.Execute(ctx)
 		if err := u.clock.Wait(ctx, roundInterval); err != nil {
-			return err
+			return errors.Join(err, failure)
 		}
 	}
 }
