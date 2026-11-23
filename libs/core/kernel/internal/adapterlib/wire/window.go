@@ -62,7 +62,7 @@ func (w *Window) WatchTasks(
 		return out.Send(&v1.WatchTasksResponse{})
 	}
 
-	return RunWatch(ctx, out, ResendInterval, ResendLast, func(ctx context.Context, send func(*v1.WatchTasksResponse) error) error {
+	return RunWatch(ctx, out, ResendInterval, GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchTasksResponse) error) error {
 		watch := w.Tasks.Watch(ctx)
 		for {
 			select {

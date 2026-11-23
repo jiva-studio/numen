@@ -13,13 +13,13 @@ import (
 //
 // The context of a request ends when the window closes, not when a page reloads, so a gone client is
 // noticed only through a failed write. While run sends nothing for interval, RunWatch sends the message
-// keepalive returns, given the last message sent, or an empty message when keepalive is nil. A failed
+// makeKeepalive returns, given the last message sent, or an empty message when makeKeepalive is nil. A failed
 // keepalive ends the watch with that failure. No write reaches the stream once RunWatch has returned.
 func RunWatch[Res any](
 	ctx context.Context,
 	out *connect.ServerStream[Res],
 	interval time.Duration,
-	keepalive func(last *Res) *Res,
+	makeKeepalive func(last *Res) *Res,
 	run func(ctx context.Context, send func(*Res) error) error,
 ) error {
 	watching, stop := context.WithCancel(ctx)
@@ -58,7 +58,7 @@ func RunWatch[Res any](
 			case <-watching.Done():
 				return
 			case <-repeat.C:
-				if err := beat(&mu, &hasSent, &last, keepalive, out.Send); err != nil {
+				if err := sendKeepalive(&mu, &hasSent, &last, makeKeepalive, out.Send); err != nil {
 					mu.Lock()
 					gone = err
 					mu.Unlock()
@@ -77,8 +77,8 @@ func RunWatch[Res any](
 	return err
 }
 
-func beat[Res any](
-	mu *sync.Mutex, hasSent *bool, last **Res, keepalive func(*Res) *Res, send func(*Res) error,
+func sendKeepalive[Res any](
+	mu *sync.Mutex, hasSent *bool, last **Res, makeKeepalive func(*Res) *Res, send func(*Res) error,
 ) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -86,15 +86,15 @@ func beat[Res any](
 		*hasSent = false
 		return nil
 	}
-	if keepalive == nil {
+	if makeKeepalive == nil {
 		return send(new(Res))
 	}
-	return send(keepalive(*last))
+	return send(makeKeepalive(*last))
 }
 
-// ResendLast is the keepalive of a watch whose every message holds the whole state: the last message
+// GetLastOrEmpty is the keepalive of a watch whose every message holds the whole state: the last message
 // again, or an empty one where none was sent.
-func ResendLast[Res any](last *Res) *Res {
+func GetLastOrEmpty[Res any](last *Res) *Res {
 	if last == nil {
 		return new(Res)
 	}

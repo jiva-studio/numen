@@ -87,7 +87,7 @@ func (h *Handler) ClearHealth(
 func (h *Handler) WatchHealth(
 	ctx context.Context, _ *connect.Request[v1.WatchHealthRequest], out *connect.ServerStream[v1.WatchHealthResponse],
 ) error {
-	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.ResendLast, func(ctx context.Context, send func(*v1.WatchHealthResponse) error) error {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchHealthResponse) error) error {
 		watch := h.items.Watch(ctx)
 		for {
 			select {

@@ -52,7 +52,7 @@ func TestAQuietWatchSendsAnEmptyMessageAsKeepalive(t *testing.T) {
 }
 
 func TestAQuietWatchOfTheWholeStateSendsTheStateAgain(t *testing.T) {
-	stream := openLicenses(t, ResendLast, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
+	stream := openLicenses(t, GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
 		if err := send(&v1.WatchLicensesResponse{Licenses: []*v1.LicenseInfo{{Id: "harbor"}}}); err != nil {
 			return err
 		}

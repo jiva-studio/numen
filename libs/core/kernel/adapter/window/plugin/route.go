@@ -74,7 +74,7 @@ func (h *Handler) RetryPlugin(
 func (h *Handler) WatchPluginProcesses(
 	ctx context.Context, _ *connect.Request[v1.WatchPluginProcessesRequest], out *connect.ServerStream[v1.WatchPluginProcessesResponse],
 ) error {
-	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.ResendLast, func(ctx context.Context, send func(*v1.WatchPluginProcessesResponse) error) error {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchPluginProcessesResponse) error) error {
 		watch := h.processes.Execute(ctx)
 		for {
 			select {

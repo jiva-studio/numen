@@ -113,7 +113,7 @@ func (h *Handler) WatchLicenses(
 	if h.licenses.Watch == nil {
 		return out.Send(&v1.WatchLicensesResponse{})
 	}
-	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.ResendLast, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, wire.GetLastOrEmpty, func(ctx context.Context, send func(*v1.WatchLicensesResponse) error) error {
 		return h.licenses.Watch.Execute(ctx, func(entries []license.Info) error {
 			return send(&v1.WatchLicensesResponse{Licenses: writeLicenses(entries)})
 		})
