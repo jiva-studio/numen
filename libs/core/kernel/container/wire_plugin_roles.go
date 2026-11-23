@@ -92,11 +92,11 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	}, processHost
 }
 
-func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newRegistry func(modelsDir string) supervision.Dependencies) {
+func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string) {
 	roles.Storage.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := roles.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
-		roles.Dependencies.Replace(newRegistry(models))
+		roles.Dependencies.Replace(newDependencyRegistry(roles.Clock, roles.Services.Observe, models))
 	}
 }
