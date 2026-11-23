@@ -54,7 +54,7 @@ export interface ThemeSource {
 }
 
 /** What a follower reads of the window it follows for. */
-export interface FollowerDeps {
+interface FollowerDeps {
   isOpen(): boolean
   setLost(message: string): void
   wait(ms: number): Promise<void>

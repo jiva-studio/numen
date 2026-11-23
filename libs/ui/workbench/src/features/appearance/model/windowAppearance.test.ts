@@ -7,11 +7,32 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ThemeAppearance as Appearance, ThemeClient } from '@numen/core-client'
-import { createAppearanceOutput } from '@numen/workbench'
-import { createWindowAppearance } from './theme'
+import { createAppearanceOutput } from '../api/appearanceOutput'
+import type { CreateFollower, ThemeSource, ThemeState } from '../lib/appearance'
+import { createWindowAppearance as create } from './windowAppearance'
 
-type Themes = Pick<ThemeClient, 'getAppearance' | 'readTheme' | 'watchThemes'>
+type Themes = ThemeSource
+type Appearance = ThemeState
+
+/** Follows a stream the way the window's follower does: resumed after a wait, and lost while it is down. */
+const createFollower: CreateFollower = (deps) => async (stream, each) => {
+  while (deps.isOpen()) {
+    try {
+      for await (const item of stream()) {
+        if (!deps.isOpen()) return
+        await each(item)
+        deps.setLost('')
+      }
+    } catch {
+      if (deps.isOpen()) deps.setLost('lost touch')
+    }
+    if (!deps.isOpen()) return
+    await deps.wait(1000)
+  }
+}
+
+const createWindowAppearance = (deps: Omit<Parameters<typeof create>[0], 'createFollower'>) =>
+  create({ ...deps, createFollower })
 
 const words = { unlisted: 'Themes unavailable', themeUnreadable: 'Theme unreadable' }
 
@@ -62,7 +83,6 @@ const APPEARANCE: Appearance = {
   applied: 'preset:numen',
   mode: 'system',
   sizes: { interfaceScale: 1, textScale: 1 },
-  bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
 }
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
