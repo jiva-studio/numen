@@ -23,7 +23,7 @@ export function addListener<E>(
 
 /** Hands a plugin's failure to the host's reporter, under the id of the plugin. */
 export function reportError(deps: ErrorReport, pluginId: string, error: unknown): void {
-  deps.window.onError?.(pluginId, error)
+  deps.window.onError(pluginId, error)
 }
 
 /** Calls every listener with the event; a listener that fails is reported and the rest still run. */
@@ -67,8 +67,8 @@ export function requestPluginStart(
   deps: Pick<PluginHostDeps, 'plugins' | 'window'>,
   pluginId: string,
 ): void {
-  const startPlugin = deps.plugins?.startPlugin
-  if (!startPlugin || deps.plugins.isPluginFailed?.(pluginId)) return
+  const { startPlugin, isPluginFailed } = deps.plugins
+  if (isPluginFailed(pluginId)) return
   // The draw that asks may be inside a computed value, which must not change state as it is read.
   queueMicrotask(() => {
     startPlugin(pluginId).catch((error: unknown) => reportError(deps, pluginId, error))

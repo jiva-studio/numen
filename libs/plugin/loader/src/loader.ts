@@ -82,8 +82,8 @@ function createSettingSubscriptions(deps: ListenerDeps) {
   const subscriptions = new Map<string, Disposable>()
   return {
     listen: (id: string) => {
-      if (subscriptions.has(id) || !deps.host.onSettingChange) return
-      const sub = deps.host.onSettingChange<boolean>(id, 'enabled', async (enabled) => {
+      if (subscriptions.has(id) || !deps.host.watchSetting) return
+      const sub = deps.host.watchSetting<boolean>(id, 'enabled', async (enabled) => {
         if (isPluginEnabledValue(enabled)) await deps.activate(id)
         else await deps.deactivate(id)
       })

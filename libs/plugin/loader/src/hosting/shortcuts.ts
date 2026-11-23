@@ -28,11 +28,11 @@ export interface ShortcutParts {
 
 function getContext(deps: HostDeps, target: CommandTarget | undefined): WhenValues {
   return (
-    deps.slots?.getSlotWhenValues?.(target) ??
+    deps.slots.getSlotWhenValues(target) ??
     getWhenValues({
-      window: deps.commands.getWindowValues?.(),
+      window: deps.commands.getWindowValues(),
       target,
-      contentTypes: deps.commands.getContentTypes?.() ?? {},
+      contentTypes: deps.commands.getContentTypes(),
     })
   )
 }
@@ -57,7 +57,7 @@ export function createShortcutHandler(parts: ShortcutParts) {
     const canRun = (binding: Keybinding): boolean => {
       if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) return true
       if (isSharedCommand(binding.command)) {
-        return (deps.commands.getHandlerDeclarations?.() ?? []).some(
+        return (deps.commands.getHandlerDeclarations() ?? []).some(
           (one) => one.command === binding.command,
         )
       }

@@ -27,22 +27,12 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
-import {
-  createUiServiceBridge,
-  createVaultServiceBridge,
-  createWorkServiceBridge,
-} from './bridge/services'
-import {
-  createSettingBridge,
-  createTabBridge,
-  createViewBridge,
-  type SharedRegistries,
-} from './bridge/contextHosts'
+import { createUiServiceBridge, createWorkServiceBridge } from './bridge/services'
+import { createSettingBridge, createViewBridge, type SharedRegistries } from './bridge/contextHosts'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
   HostDeps,
-  HostSlots,
   PluginContextHost,
   PluginHostDeps,
 } from './types'
@@ -102,8 +92,6 @@ function createRegistrationBridge(
   }
 }
 
-const NO_SLOTS: HostSlots = {}
-
 function createHostContextBridge(
   deps: PluginHostDeps,
   registry: HostRegistry,
@@ -114,8 +102,8 @@ function createHostContextBridge(
     views: createViewBridge(shared),
     settings: createSettingBridge(deps),
     events: createEventBridge(deps, registry),
-    tabs: createTabBridge(deps),
-    vault: createVaultServiceBridge(deps),
+    tabs: deps.tabs,
+    vault: deps.vault,
     ui: createUiServiceBridge(deps, {
       slots: shared.slots,
       manifests: registry.plugins.manifests,
@@ -140,8 +128,7 @@ const hasDeclaredSettingsViews = (
   { plugins }: Pick<PluginHostDeps, 'plugins'>,
   pluginId: string,
 ): boolean =>
-  (plugins?.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
-    .length > 0
+  plugins.findPluginsOf((one) => one.id === pluginId && one.settingsViews.length > 0).length > 0
 
 function createRegisteredApi(
   deps: Pick<PluginHostDeps, 'plugins' | 'window'>,
@@ -172,9 +159,9 @@ function createKeybindingApi({
   slots,
 }: Pick<HostDeps, 'window' | 'commands' | 'slots'>) {
   const keybindings = createKeybindingRegistry({
-    isMac: () => window.app?.platform === 'darwin',
+    isMac: () => window.app.platform === 'darwin',
     whenReader: commands.whenReader,
-    report: (owner, message) => slots?.reportSlotIssue?.(owner, message, 'warning'),
+    report: (owner, message) => slots.reportSlotIssue(owner, message, 'warning'),
   })
   keybindings.register(APP_COMMAND_OWNER, APP_KEYBINDINGS)
   const owners = new Set<string>()
@@ -245,39 +232,37 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
       keybindings.unregisterAllKeybindings()
     },
     getSetting: contextHost.settings.getSetting,
-    onSettingChange: contextHost.settings.onSettingChange,
+    watchSetting: contextHost.settings.watchSetting,
   }
 }
 
 export function createPluginHost(windowDeps: PluginHostDeps) {
-  const whenReader = windowDeps.commands?.whenReader ?? createWhenReader()
+  const whenReader = windowDeps.commands.whenReader ?? createWhenReader()
   const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
-  const { slots: slotDeps = NO_SLOTS } = deps
+  const { slots: slotDeps } = deps
   const registry = createHostRegistry()
-  const slotViews = createSlotViewRegistry(
-    slotDeps.reportViewIssue ? { reportIssue: slotDeps.reportViewIssue } : {},
-  )
+  const slotViews = createSlotViewRegistry({ reportIssue: slotDeps.reportViewIssue })
   const keybindings = createKeybindingApi(deps)
   const commands = createCommandApi(deps, registry, keybindings.registry)
-  const findSlotCommand = slotDeps.createSlotCommandFinder?.({
+  const findSlotCommand = slotDeps.createSlotCommandFinder({
     getPluginCommands: commands.getPaletteCommands,
     hasPluginItems: commands.hasKnownItems,
   })
   const readSlotEntries = () =>
-    slotDeps.getSlotEntries?.(registry.plugins.contextManifests?.value ?? new Map())
+    slotDeps.getSlotEntries(registry.plugins.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
     drawers: {
       getPoints: () =>
-        slotDeps.getSlotPoints?.(registry.plugins.contextManifests?.value ?? new Map()),
-      ...(slotDeps.getSlotLayout ? { getLayout: slotDeps.getSlotLayout } : {}),
+        slotDeps.getSlotPoints(registry.plugins.contextManifests?.value ?? new Map()),
+      getLayout: slotDeps.getSlotLayout,
     },
-    findCommand: (command, target) => findSlotCommand?.(command, target),
+    findCommand: findSlotCommand,
     findView: slotViews.findView,
-    ...(slotDeps.reportSlotIssue ? { reportIssue: slotDeps.reportSlotIssue } : {}),
+    reportIssue: slotDeps.reportSlotIssue,
     when: {
-      ...(slotDeps.getSlotWhenValues ? { getValues: slotDeps.getSlotWhenValues } : {}),
+      getValues: slotDeps.getSlotWhenValues,
       reader: whenReader,
     },
     requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),

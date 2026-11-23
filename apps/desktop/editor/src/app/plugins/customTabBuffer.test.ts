@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
-import { createCustomTabKind, pickCustomTabParts } from '@numen/plugin-loader'
+import {
+  createCustomTabKind,
+  pickCustomTabParts,
+  NO_KINDS,
+  NO_VAULT,
+  NO_WINDOW,
+} from '@numen/plugin-loader'
 import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
@@ -55,8 +61,9 @@ function openNoteTab(path: string) {
     'md.numen.notes',
     pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
     {
-      window: { target: 'desktop.editor' },
-      kinds: { registerKind: () => () => undefined, getNoteBuffer: () => notes },
+      window: { ...NO_WINDOW, target: 'desktop.editor' },
+      kinds: { ...NO_KINDS, registerKind: () => () => undefined, getNoteBuffer: () => notes },
+      vault: NO_VAULT,
       isNoteEditor: true,
     },
   )
