@@ -11,7 +11,7 @@ const LABEL = 'Label'
 const INVITATION = 'Invitation'
 const READERS = 'Readers'
 const STOP = 'Stop sharing'
-/** The plugin makes the share, rewraps the files and adds the reader within a few passes. */
+/** The share is made and the reader is added within a few passes of the plugin. */
 const SHARE_LIMIT_MS = 30_000
 
 export interface GivenInvitation {
