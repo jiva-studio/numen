@@ -59,6 +59,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
         type="button"
         variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startRestore('restore')"
       >
@@ -69,6 +70,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
         type="button"
         variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startRestore('restoreSheets')"
       >
@@ -79,6 +81,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
         type="button"
         variant="ghost"
         size="small"
+        class="identity-section__action"
         :disabled="call.isBusy.value"
         @click="actions.startSetup"
       >
@@ -140,6 +143,12 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
   flex-direction: column;
   gap: 0.75rem;
   padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
+}
+
+/* As tall as the card title's line, so the header keeps the height it has with a text aside. */
+.identity-section__action {
+  block-size: calc(var(--numen-text-2) * var(--numen-line-height));
+  padding-block: 0;
 }
 
 .identity-section__detail,
