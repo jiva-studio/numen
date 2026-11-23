@@ -373,7 +373,7 @@ func mountTheme(w *windowRoutes, themes *theme.Service) {
 	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
-func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring, res *Resources) {
-	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, res))
+func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring, res *Resources, dialog editor.PathDialog) {
+	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, res, dialog))
 	w.Installation.Mount(editor.NewRoute(windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())))
 }

@@ -1,110 +1,70 @@
 /**
- * The recovery kit on the identity section: the kit of three sheets while it is shown and the proof
- * asked for before a later kit. The kit and the proof live in this state only; closing the step or
- * leaving the page drops them.
+ * The recovery kit of the identity of this device: its download as a PDF. Right after the identity is
+ * created its words are held here, so the first download asks for nothing; any other download asks
+ * for the 12 words or two sheets of an earlier kit in a dialog. The core makes the sheets and saves
+ * them; none of them reaches this state. Leaving the page drops the held words and the proof.
  */
-import { onBeforeUnmount, ref, shallowRef, type Ref } from 'vue'
-import type { RecoveryKit } from '@/entities/identity'
-import type { Printer } from '@/pages/settings/api/print'
+import { onBeforeUnmount, ref, shallowRef } from 'vue'
+import type { KitProof } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
-import type { useIdentityCall } from './useIdentityCall'
-import { useKitCheck } from './useKitCheck'
+import { useIdentityCall } from './useIdentityCall'
+import { useRecoveryProof } from './useRecoveryProof'
 
-type Step = 'closed' | 'proof' | 'shown'
-
-interface SheetFields {
-  readonly texts: Readonly<Ref<readonly [string, string]>>
-  setText(index: number, value: string): void
-  readSheets(): string[][]
-  clear(): void
-}
-
-/** The words of a sheet or of the recovery words as typed: whole words, lower-cased. */
-export const splitSheetText = (text: string): string[] =>
-  text
-    .split(/\s+/)
-    .filter((word) => word !== '')
-    .map((word) => word.toLowerCase())
-
-export function useRecoveryKit(
-  getIdentity: () => InstallationIdentity,
-  getPrinter: () => Printer,
-  call: ReturnType<typeof useIdentityCall>,
-  fields: SheetFields,
-) {
-  const { problem, run } = call
-  const checking = useKitCheck(getIdentity, call, fields)
-  const step = ref<Step>('closed')
-  const kit = shallowRef<RecoveryKit | undefined>(undefined)
-  const wordsText = ref('')
-  const isFirst = ref(false)
+export function useRecoveryKit(getIdentity: () => InstallationIdentity) {
+  const call = useIdentityCall()
+  const { problem, isBusy, run } = call
+  const proof = useRecoveryProof(problem)
+  const isAsking = ref(false)
+  const isSaved = ref(false)
+  const held = shallowRef<readonly string[]>([])
 
   onBeforeUnmount(() => {
+    held.value = []
     close()
   })
 
   function close(): void {
-    step.value = 'closed'
-    kit.value = undefined
-    wordsText.value = ''
-    checking.reset()
-    fields.clear()
+    isAsking.value = false
+    proof.clear()
     problem.value = ''
   }
 
-  const show = (made: RecoveryKit, first: boolean): void => {
-    close()
-    kit.value = made
-    isFirst.value = first
-    step.value = 'shown'
+  /** Holds the words of an identity just created for the first download. */
+  const hold = (recoveryWords: readonly string[]): void => {
+    held.value = recoveryWords
   }
 
-  const showAfterSetup = async (recoveryWords: readonly string[]): Promise<void> => {
+  const save = async (given: KitProof): Promise<void> => {
+    isSaved.value = false
+    const answer = await run(() => getIdentity().saveKit(given))
+    if (!answer.ok) return
+    isSaved.value = answer.value
+    if (!answer.value) return
+    held.value = []
     close()
-    const answer = await run(() => getIdentity().createKit({ words: recoveryWords }))
-    if (answer.ok) show(answer.value, true)
   }
 
-  const openProof = (): void => {
+  const download = async (): Promise<void> => {
+    if (isBusy.value) return
+    if (held.value.length > 0) {
+      await save({ words: held.value })
+      return
+    }
     close()
-    step.value = 'proof'
+    isSaved.value = false
+    isAsking.value = true
   }
 
-  const makeKit = async (): Promise<void> => {
-    const typed = splitSheetText(wordsText.value)
-    const sheets = fields.readSheets()
-    if (typed.length === 0 && sheets.length === 0) {
+  const submit = async (): Promise<void> => {
+    if (isBusy.value) return
+    const given = proof.read()
+    if (given === undefined) {
       problem.value = words.kitOneMoreSheet
       return
     }
-    const proof = typed.length > 0 ? { words: typed } : { sheets }
-    const answer = await run(() => getIdentity().createKit(proof))
-    if (answer.ok) show(answer.value, false)
+    await save(given)
   }
 
-  const print = (): void => {
-    getPrinter().print()
-  }
-
-  const setWordsText = (value: string): void => {
-    wordsText.value = value
-    problem.value = ''
-  }
-
-  const setSheetText = (index: number, value: string): void => {
-    fields.setText(index, value)
-    problem.value = ''
-    checking.forget()
-  }
-
-  return {
-    step,
-    kit,
-    wordsText,
-    isFirst,
-    checking,
-    actions: { showAfterSetup, openProof, makeKit, print, close },
-    edit: { setWordsText, setSheetText },
-  }
+  return { call, proof, isAsking, isSaved, actions: { hold, download, submit, close } }
 }

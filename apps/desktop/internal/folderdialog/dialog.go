@@ -98,11 +98,7 @@ func (d *Dialog) ChooseFile(_ context.Context, title, startingAt string, accept 
 		CanChooseFiles(true).
 		SetTitle(title)
 	if len(accept) > 0 {
-		patterns := make([]string, 0, len(accept))
-		for _, extension := range accept {
-			patterns = append(patterns, "*"+extension)
-		}
-		dialog.AddFilter(strings.Join(accept, ", "), strings.Join(patterns, ";"))
+		dialog.AddFilter(getFilter(accept))
 	}
 	if startingAt != "" {
 		dialog.SetDirectory(startingAt)
@@ -113,4 +109,43 @@ func (d *Dialog) ChooseFile(_ context.Context, title, startingAt string, accept 
 		return "", false, err
 	}
 	return selected, selected != "", nil
+}
+
+// ChooseSaveFile returns the file the user chose to save to, and false when the user closed the
+// dialog. The dialog proposes name in the folder it opens at, and shows the files whose extension is
+// one of accept.
+func (d *Dialog) ChooseSaveFile(_ context.Context, title, name string, accept []string) (string, bool, error) {
+	if !hasSchemas() {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	if !d.tryAcquire() {
+		return "", false, machine.ErrChoosing
+	}
+	defer d.release()
+
+	dialog := application.Get().Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
+		Title:                title,
+		Filename:             name,
+		CanCreateDirectories: true,
+		Window:               d.window,
+	})
+	if len(accept) > 0 {
+		dialog.AddFilter(getFilter(accept))
+	}
+
+	selected, err := dialog.PromptForSingleSelection()
+	if err != nil {
+		return "", false, err
+	}
+	return selected, selected != "", nil
+}
+
+// getFilter returns the name and the pattern of a filter that shows the files with one of the
+// extensions.
+func getFilter(accept []string) (string, string) {
+	patterns := make([]string, 0, len(accept))
+	for _, extension := range accept {
+		patterns = append(patterns, "*"+extension)
+	}
+	return strings.Join(accept, ", "), strings.Join(patterns, ";")
 }

@@ -60,11 +60,23 @@ type names struct{}
 
 func (names) GetInstanceName() string { return "Laptop" }
 
+func getNoon() *testsupport.ManualClock {
+	return testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC))
+}
+
 func newHandler(keys *keyStore) *windowidentity.Handler {
-	return newHandlerAt(keys, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
+	return newHandlerOf(keys, &kitSaver{}, getNoon())
 }
 
 func newHandlerAt(keys *keyStore, clock *testsupport.ManualClock) *windowidentity.Handler {
+	return newHandlerOf(keys, &kitSaver{}, clock)
+}
+
+func newHandlerWith(keys *keyStore, saver identity.KitSaver) *windowidentity.Handler {
+	return newHandlerOf(keys, saver, getNoon())
+}
+
+func newHandlerOf(keys *keyStore, saver identity.KitSaver, clock *testsupport.ManualClock) *windowidentity.Handler {
 	deps := identity.NewDeps(keys, names{}, clock).WithChains(&chainFile{})
 	return windowidentity.NewHandler(windowidentity.UseCases{
 		Identity: windowidentity.IdentityUseCases{
@@ -75,8 +87,7 @@ func newHandlerAt(keys *keyStore, clock *testsupport.ManualClock) *windowidentit
 			StartRestore:  identity.NewStartRestore(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Create:  identity.NewCreateRecoveryKit(deps),
-			Check:   identity.NewCheckRecoveryKit(deps),
+			Save:    identity.NewSaveRecoveryKit(deps, saver),
 			Restore: identity.NewStartRestoreFromKit(deps),
 		},
 	})

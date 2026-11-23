@@ -28,7 +28,6 @@ import {
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
-import { createPrinter } from '@/pages/settings/api/print'
 import { getIdentityViews } from '../lib/settingsViews'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
@@ -265,8 +264,7 @@ function createInstallationIdentity(identity: IdentityStore) {
     create: (words: readonly string[]) => identity.create(words),
     restore: (words: readonly string[]) => identity.restore(words),
     delete: () => identity.delete(),
-    createKit: (proof: KitProof) => identity.createKit(proof),
-    checkKit: (sheets: readonly (readonly string[])[]) => identity.checkKit(sheets),
+    saveKit: (proof: KitProof) => identity.saveKit(proof),
     restoreFromKit: (sheets: readonly (readonly string[])[]) => identity.restoreFromKit(sheets),
   }
 }
@@ -282,7 +280,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
     identity: createInstallationIdentity(deps.identity),
-    printer: createPrinter(),
   }
 }
 

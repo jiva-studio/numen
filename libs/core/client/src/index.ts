@@ -118,7 +118,6 @@ export {
 export {
   type IdentityInfo,
   type IdentityFailure,
-  type RecoveryKit,
   type KitProof,
   type LinkInfo,
   type IdentityClient,

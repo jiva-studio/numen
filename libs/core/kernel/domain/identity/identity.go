@@ -59,14 +59,15 @@ type PendingRestore struct {
 	DeviceSignKey []byte
 }
 
-// Kit is three sheets of one recovery kit for the account of this device.
+// Kit is three sheets of one recovery kit for the account of this device, made at CreatedAt.
 type Kit struct {
 	ID                 string
 	AccountFingerprint string
+	CreatedAt          time.Time
 	Sheets             []Sheet
 }
 
-// Sheet is one printed sheet of a kit.
+// Sheet is one sheet of a kit: its number and its 33 words.
 type Sheet struct {
 	Number int
 	Words  []string

@@ -36,22 +36,23 @@ type kit struct {
 	create   *identity.CreateIdentity
 	delete   *identity.DeleteIdentity
 
-	createKit *identity.CreateRecoveryKit
-	checkKit  *identity.CheckRecoveryKit
+	saveKit *identity.SaveRecoveryKit
+	saver   *fakeKitSaver
 }
 
 func newKit(name string) kit {
 	keys, chains := newFakeKeyStore(), &fakeChainStore{}
+	saver := &fakeKitSaver{}
 	deps := identity.NewDeps(keys, fakeNames{name: name}, testsupport.NewClockAt(getNow())).WithChains(chains)
 	return kit{
-		keys:      keys,
-		chains:    chains,
-		get:       identity.NewGetIdentity(deps),
-		generate:  identity.NewGenerateRecoveryWords(deps),
-		create:    identity.NewCreateIdentity(deps),
-		delete:    identity.NewDeleteIdentity(deps),
-		createKit: identity.NewCreateRecoveryKit(deps),
-		checkKit:  identity.NewCheckRecoveryKit(deps),
+		keys:     keys,
+		chains:   chains,
+		get:      identity.NewGetIdentity(deps),
+		generate: identity.NewGenerateRecoveryWords(deps),
+		create:   identity.NewCreateIdentity(deps),
+		delete:   identity.NewDeleteIdentity(deps),
+		saveKit:  identity.NewSaveRecoveryKit(deps, saver),
+		saver:    saver,
 	}
 }
 

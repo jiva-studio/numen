@@ -20,19 +20,20 @@ func getOtherWords() []string {
 }
 
 type restoreKit struct {
-	keys      *fakeKeyStore
-	clock     *testsupport.ManualClock
-	get       *identity.GetIdentity
-	create    *identity.CreateIdentity
-	public    *identity.GetPublicIdentity
-	start     *identity.StartRestore
-	pending   *identity.GetPendingRestore
-	sign      *identity.SignAsRecovery
-	complete  *identity.CompleteRestore
-	createKit *identity.CreateRecoveryKit
-	startKit  *identity.StartRestoreFromKit
-	seal      *identity.SealData
-	open      *identity.OpenData
+	keys     *fakeKeyStore
+	clock    *testsupport.ManualClock
+	get      *identity.GetIdentity
+	create   *identity.CreateIdentity
+	public   *identity.GetPublicIdentity
+	start    *identity.StartRestore
+	pending  *identity.GetPendingRestore
+	sign     *identity.SignAsRecovery
+	complete *identity.CompleteRestore
+	saveKit  *identity.SaveRecoveryKit
+	saver    *fakeKitSaver
+	startKit *identity.StartRestoreFromKit
+	seal     *identity.SealData
+	open     *identity.OpenData
 }
 
 func newRestoreKit(tb testing.TB, name string) restoreKit {
@@ -40,19 +41,20 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	keys := newFakeKeyStore()
 	clock := testsupport.NewClockAt(getNow())
 	deps := identity.NewDeps(keys, fakeNames{name: name}, clock).WithChains(&fakeChainStore{})
+	saver := &fakeKitSaver{}
 	return restoreKit{
-		keys: keys, clock: clock,
-		get:       identity.NewGetIdentity(deps),
-		create:    identity.NewCreateIdentity(deps),
-		public:    identity.NewGetPublicIdentity(deps),
-		start:     identity.NewStartRestore(deps),
-		pending:   identity.NewGetPendingRestore(deps),
-		sign:      identity.NewSignAsRecovery(deps),
-		complete:  identity.NewCompleteRestore(deps),
-		createKit: identity.NewCreateRecoveryKit(deps),
-		startKit:  identity.NewStartRestoreFromKit(deps),
-		seal:      identity.NewSealData(deps),
-		open:      identity.NewOpenData(deps),
+		keys: keys, clock: clock, saver: saver,
+		get:      identity.NewGetIdentity(deps),
+		create:   identity.NewCreateIdentity(deps),
+		public:   identity.NewGetPublicIdentity(deps),
+		start:    identity.NewStartRestore(deps),
+		pending:  identity.NewGetPendingRestore(deps),
+		sign:     identity.NewSignAsRecovery(deps),
+		complete: identity.NewCompleteRestore(deps),
+		saveKit:  identity.NewSaveRecoveryKit(deps, saver),
+		startKit: identity.NewStartRestoreFromKit(deps),
+		seal:     identity.NewSealData(deps),
+		open:     identity.NewOpenData(deps),
 	}
 }
 
@@ -536,4 +538,17 @@ func TestStartRestore_ANewStartMovesTheDeadlineOfTheFallback(t *testing.T) {
 		got, err := k.get.Execute(t.Context())
 		return err == nil && got.AccountFingerprint == expected.AccountFingerprint
 	})
+}
+
+// kitOf saves a kit for the words and returns the kit the saver was given.
+func (k restoreKit) kitOf(tb testing.TB, words []string) identitydomain.Kit {
+	tb.Helper()
+	if isSaved, err := k.saveKit.Execute(tb.Context(), words, nil); err != nil || !isSaved {
+		tb.Fatalf("save recovery kit: %v, %v", isSaved, err)
+	}
+	made, ok := k.saver.getLast()
+	if !ok {
+		tb.Fatal("no kit reached the saver")
+	}
+	return made
 }

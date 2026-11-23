@@ -64,7 +64,6 @@ const {
           :identity="installation.identity"
           :licenses="installation.licenses"
           :plugin="installation.plugin"
-          :printer="installation.printer"
           @back="goBack"
         />
         <PluginDetail

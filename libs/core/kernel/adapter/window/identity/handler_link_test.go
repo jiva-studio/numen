@@ -25,8 +25,7 @@ func newLinkHandler() *windowidentity.Handler {
 			StartRestore:  identity.NewStartRestore(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Create:  identity.NewCreateRecoveryKit(deps),
-			Check:   identity.NewCheckRecoveryKit(deps),
+			Save:    identity.NewSaveRecoveryKit(deps, &kitSaver{}),
 			Restore: identity.NewStartRestoreFromKit(deps),
 		},
 		Link: windowidentity.LinkUseCases{

@@ -17,7 +17,6 @@ export type InstallationOverrides = Flat<
     Partial<Installation['connections']['edits']> & {
       readonly licenses?: Installation['licenses']
       readonly identity?: Installation['identity']
-      readonly printer?: Installation['printer']
     }
 >
 
@@ -113,12 +112,10 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     create: fn(() => Promise.resolve(asFailure('Not kept.'))),
     restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
     delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
-    createKit: fn(() => Promise.resolve(asFailure('No kit.'))),
-    checkKit: fn(() => Promise.resolve(asFailure('Not checked.'))),
+    saveKit: fn(() => Promise.resolve(asFailure('Not saved.'))),
     restoreFromKit: fn(() => Promise.resolve(asFailure('Not restored.'))),
     devices: createInertDevices(),
   },
-  printer: overrides.printer ?? { print: fn() },
   licenses: overrides.licenses ?? {
     list: ref([]),
     load: fn(() => Promise.resolve()),

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 /**
- * The identity of this device as two cards: the account fingerprint with the way to delete the identity,
- * after a confirmation, and the list of the devices of the account with the link of a new one and the revoke of
- * another. A revoked device shows only itself.
+ * The identity of this device as two cards: the account fingerprint, the rows the default slot adds
+ * and the way to delete the identity after a confirmation, and the list of the devices of the account
+ * with the link of a new one and the revoke of another. A revoked device shows only itself.
  */
 import { computed } from 'vue'
-import { Button, IslandCard } from '@numen/ui'
+import { Trash2 } from '@lucide/vue'
+import { IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
 import { DevicesSection, type DeviceCalls } from '@/features/identity-link'
 import { WORDS as words } from '../../words'
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import SettingRow from '../setting-row/SettingRow.vue'
+import CardAction from './CardAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -48,6 +50,12 @@ const count = computed(() =>
 
 <template>
   <IslandCard :title="words.identitySection">
+    <template #aside>
+      <CardAction :is-disabled="isBusy" @click="emit('ask')">
+        <Trash2 :size="14" aria-hidden="true" />
+        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
+      </CardAction>
+    </template>
     <SettingRow
       class="identity-details__fact"
       at="identity-account"
@@ -56,15 +64,7 @@ const count = computed(() =>
     >
       <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
     </SettingRow>
-    <SettingRow
-      at="identity-remove"
-      :name="words.identityRemoveName"
-      :detail="words.identityRemoveDetail"
-    >
-      <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
-      </Button>
-    </SettingRow>
+    <slot />
     <p v-if="info.isRevoked" role="alert" class="identity-details__revoked">
       {{ words.deviceRevokedNotice }}
     </p>

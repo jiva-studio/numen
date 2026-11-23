@@ -33,14 +33,7 @@ export type IdentityErrorCode =
   | 'unknownDevice'
   | 'codeInvalid'
 
-/** Three sheets of one recovery kit, each the words of a sheet in order. */
-export interface RecoveryKit {
-  readonly id: string
-  readonly accountFingerprint: string
-  readonly sheets: readonly (readonly string[])[]
-}
-
-/** What proves the account when a kit is made: the 12 words or two sheets of an earlier kit. */
+/** What proves the account when a kit is saved: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
   { readonly words: readonly string[] } | { readonly sheets: readonly (readonly string[])[] }
 

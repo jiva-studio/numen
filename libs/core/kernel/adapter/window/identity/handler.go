@@ -1,6 +1,6 @@
 // Package identity serves a window's IdentityService: reading the identity of this device, making
-// recovery words and recovery kits, creating the identity from words or sheets and deleting it. No key
-// reaches the window.
+// recovery words, saving recovery kits, creating the identity from words or sheets and deleting it. No
+// key reaches the window, and no sheet of a new kit does.
 package identity
 
 import (
@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/identity/slip39"
@@ -41,10 +42,9 @@ type IdentityUseCases struct {
 	StartRestore  *identity.StartRestore
 }
 
-// KitUseCases are the use cases that make, check and restore from a recovery kit.
+// KitUseCases are the use cases that save a recovery kit and restore from one.
 type KitUseCases struct {
-	Create  *identity.CreateRecoveryKit
-	Check   *identity.CheckRecoveryKit
+	Save    *identity.SaveRecoveryKit
 	Restore *identity.StartRestoreFromKit
 }
 
@@ -140,46 +140,30 @@ func writeIdentity(found identitydomain.Identity) *v1.IdentityInfo {
 	}
 }
 
-// CreateRecoveryKit makes a kit of three sheets for the account of this device once the caller has
-// proved the account. It keeps nothing.
-func (h *Handler) CreateRecoveryKit(
+// SaveRecoveryKit makes a kit of three sheets for the account of this device once the caller has
+// proved the account, and saves it in the file the person chooses. It keeps nothing and answers no
+// sheet. A machine that shows no save dialog answers Unavailable.
+func (h *Handler) SaveRecoveryKit(
 	ctx context.Context,
-	r *connect.Request[v1.CreateRecoveryKitRequest],
-) (*connect.Response[v1.CreateRecoveryKitResponse], error) {
+	r *connect.Request[v1.SaveRecoveryKitRequest],
+) (*connect.Response[v1.SaveRecoveryKitResponse], error) {
 	words := r.Msg.GetWords().GetWords()
 	sheets := readSheets(r.Msg.GetSheets().GetSheets())
 	if len(words) == 0 && len(sheets) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoProof)
 	}
-	made, err := h.identity.Kit.Create.Execute(ctx, words, sheets)
+	isSaved, err := h.identity.Kit.Save.Execute(ctx, words, sheets)
+	if errors.Is(err, machine.ErrNoFolderDialog) || errors.Is(err, machine.ErrChoosing) {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.CreateRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.SaveRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
 	}
-	return connect.NewResponse(&v1.CreateRecoveryKitResponse{Kit: writeKit(made)}), nil
-}
-
-// CheckRecoveryKit reports whether the sheets restore the account of this device.
-func (h *Handler) CheckRecoveryKit(
-	ctx context.Context,
-	r *connect.Request[v1.CheckRecoveryKitRequest],
-) (*connect.Response[v1.CheckRecoveryKitResponse], error) {
-	sheets := readSheets(r.Msg.GetSheets())
-	if len(sheets) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
-	}
-	fingerprint, err := h.identity.Kit.Check.Execute(ctx, sheets)
-	if err != nil {
-		code, served := getErrorCode(err)
-		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.CheckRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
-	}
-	return connect.NewResponse(&v1.CheckRecoveryKitResponse{AccountFingerprint: fingerprint}), nil
+	return connect.NewResponse(&v1.SaveRecoveryKitResponse{IsSaved: isSaved}), nil
 }
 
 // StartRestoreFromKit starts to restore the account of the sheets on this device.
@@ -207,14 +191,6 @@ func readSheets(sheets []*v1.RecoverySheet) [][]string {
 		out[i] = sheet.GetWords()
 	}
 	return out
-}
-
-func writeKit(made identitydomain.Kit) *v1.RecoveryKit {
-	sheets := make([]*v1.RecoverySheet, len(made.Sheets))
-	for i, sheet := range made.Sheets {
-		sheets[i] = &v1.RecoverySheet{Words: sheet.Words}
-	}
-	return &v1.RecoveryKit{KitId: made.ID, AccountFingerprint: made.AccountFingerprint, Sheets: sheets}
 }
 
 func getDetail(err error) string {

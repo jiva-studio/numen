@@ -14,5 +14,4 @@ export type {
   LinkMode,
   LinkPhase,
   LinkRole,
-  RecoveryKit,
 } from './lib/types'

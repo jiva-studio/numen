@@ -1,18 +1,11 @@
 /**
- * The calls of the identity: reading it, making recovery words, creating it from them, restoring it from them or from the
- * sheets of a recovery kit, making and checking a kit, and deleting it from this device; the link of a device; the
- * devices of the account.
+ * The calls of the identity: reading it, making recovery words, creating it from them, restoring it
+ * from them or from the sheets of a recovery kit, saving a new kit as a PDF, and deleting it from this
+ * device; the link of a device; the devices of the account.
  */
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
-import type {
-  IdentityFailure,
-  IdentityInfo,
-  KitProof,
-  LinkMode,
-  LinkRole,
-  RecoveryKit,
-} from '../lib/types'
+import type { IdentityFailure, IdentityInfo, KitProof, LinkMode, LinkRole } from '../lib/types'
 
 type AccountClient = Pick<
   IdentityClient,
@@ -21,8 +14,7 @@ type AccountClient = Pick<
   | 'create'
   | 'startRestore'
   | 'delete'
-  | 'createKit'
-  | 'checkKit'
+  | 'saveKit'
   | 'startRestoreFromKit'
 >
 type LinkClient = Pick<
@@ -53,13 +45,11 @@ export const createAccountApi = (identity: AccountClient) => ({
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),
 
-  /** A new kit of three sheets, once `proof` fits the account of this device. */
-  createKit: (proof: KitProof): Promise<Result<RecoveryKit, IdentityFailure>> =>
-    identity.createKit(proof),
-
-  /** The account fingerprint when two `sheets` fit the account of this device. */
-  checkKit: (sheets: readonly (readonly string[])[]): Promise<Result<string, IdentityFailure>> =>
-    identity.checkKit(sheets),
+  /**
+   * Saves a new kit of three sheets as a PDF where the person chooses, once `proof` fits the account
+   * of this device: true when it was saved, false when no file was chosen.
+   */
+  saveKit: (proof: KitProof): Promise<Result<boolean, IdentityFailure>> => identity.saveKit(proof),
 
   /** Starts to restore the account of two `sheets` of a kit; the core completes it in the background. */
   startRestoreFromKit: (
