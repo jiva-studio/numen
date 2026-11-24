@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/device"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
@@ -29,11 +30,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/invitewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/settingswire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -136,7 +140,12 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		},
 		Entries: p.state,
 	}
-	backend := NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithDownloads(downloadwire.New(fetching)).WithAccountData(accountdata.Deps{
+	hub := shareinvite.NewHub()
+	invites := shareinvite.Deps{
+		Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Identity: p.identity, Device: device.Host{},
+		Sharing: sharewire.NewShareDeps(deps), Receiving: sharewire.NewReceiveDeps(deps), Random: deps.Random, Server: address, Hub: hub,
+	}
+	backend := NewBackend(deps).WithInvites(invitewire.New(invites)).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithDownloads(downloadwire.New(fetching)).WithAccountData(accountdata.Deps{
 		Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep,
 	})
 	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
@@ -149,7 +158,8 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
-		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
+		"share-invite": shareinvite.NewCourier(hub).Execute,
+		"rotate":       rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
 	}
 	if !r.isForeground.IsOn() {
 		loopsOf["sync"] = loop.Execute

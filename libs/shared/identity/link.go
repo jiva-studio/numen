@@ -25,6 +25,8 @@ const (
 	labelLinkMessage  = "numen/v1/link/msg"
 	labelLinkToDisp   = "numen/v1/link/s2d"
 	labelLinkToScan   = "numen/v1/link/d2s"
+	labelLinkCode     = "numen/v1/link/code"
+	linkCodeDigits    = 1_000_000
 	linkKeySize       = 32
 	linkSecretSize    = 16
 	linkCounterSize   = 8
@@ -189,6 +191,7 @@ func (s *LinkScanner) Accept(reply []byte) (*LinkChannel, error) {
 type LinkChannel struct {
 	send, receive       cipher.AEAD
 	transcript          [32]byte
+	code                string
 	sendCount, recvNext uint64
 }
 
@@ -221,11 +224,27 @@ func newLinkChannel(private *ecdh.PrivateKey, peer *ecdh.PublicKey, p LinkPayloa
 	if err != nil {
 		return nil, err
 	}
-	if isScanner {
-		return &LinkChannel{send: toDisplayer, receive: toScanner, transcript: transcript}, nil
+	code, err := newLinkCode(pseudo, transcript)
+	if err != nil {
+		return nil, err
 	}
-	return &LinkChannel{send: toScanner, receive: toDisplayer, transcript: transcript}, nil
+	if isScanner {
+		return &LinkChannel{send: toDisplayer, receive: toScanner, transcript: transcript, code: code}, nil
+	}
+	return &LinkChannel{send: toScanner, receive: toDisplayer, transcript: transcript, code: code}, nil
 }
+
+func newLinkCode(pseudo []byte, transcript [32]byte) (string, error) {
+	raw, err := hkdf.Expand(sha256.New, pseudo, labelLinkCode+string(transcript[:]), 8)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", binary.BigEndian.Uint64(raw)%linkCodeDigits), nil
+}
+
+// Code returns the six digits both sides of a link derive from the keys of the link. Two sides that hold different
+// keys, as when a relay stands between them, show different codes.
+func (c *LinkChannel) Code() string { return c.code }
 
 func newLinkAEAD(pseudo []byte, label string, transcript [32]byte) (cipher.AEAD, error) {
 	key, err := hkdf.Expand(sha256.New, pseudo, label+string(transcript[:]), linkKeySize)

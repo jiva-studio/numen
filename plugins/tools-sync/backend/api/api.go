@@ -6,34 +6,38 @@ const Service = "md.numen.tools.sync"
 
 // The methods of the service.
 const (
-	MethodListVaults          = "ListVaults"
-	MethodListRemoteVaults    = "ListRemoteVaults"
-	MethodConnectVault        = "ConnectVault"
-	MethodPreviewConnect      = "PreviewConnect"
-	MethodGetStatus           = "GetStatus"
-	MethodGetSubscription     = "GetSubscription"
-	MethodCreateCheckout      = "CreateCheckout"
-	MethodListPlans           = "ListPlans"
-	MethodChangePlan          = "ChangePlan"
-	MethodCreatePortalSession = "CreatePortalSession"
-	MethodGetAccountState     = "GetAccountState"
-	MethodDeleteCloudData     = "DeleteCloudData"
-	MethodRestoreAccount      = "RestoreAccount"
-	MethodExportAccountData   = "ExportAccountData"
-	MethodGetReaderCode       = "GetReaderCode"
-	MethodReadReaderCode      = "ReadReaderCode"
-	MethodGetShare            = "GetShare"
-	MethodAddReader           = "AddReader"
-	MethodRemoveReader        = "RemoveReader"
-	MethodStopShare           = "StopShare"
-	MethodReadInvitation      = "ReadInvitation"
-	MethodAcceptInvitation    = "AcceptInvitation"
-	MethodListReceived        = "ListReceived"
-	MethodFetchFile           = "FetchFile"
-	MethodDropDownload        = "DropDownload"
-	MethodGetDownloads        = "GetDownloads"
-	MethodSuspend             = "Suspend"
-	MethodResume              = "Resume"
+	MethodListVaults               = "ListVaults"
+	MethodListRemoteVaults         = "ListRemoteVaults"
+	MethodConnectVault             = "ConnectVault"
+	MethodPreviewConnect           = "PreviewConnect"
+	MethodGetStatus                = "GetStatus"
+	MethodGetSubscription          = "GetSubscription"
+	MethodCreateCheckout           = "CreateCheckout"
+	MethodListPlans                = "ListPlans"
+	MethodChangePlan               = "ChangePlan"
+	MethodCreatePortalSession      = "CreatePortalSession"
+	MethodGetAccountState          = "GetAccountState"
+	MethodDeleteCloudData          = "DeleteCloudData"
+	MethodRestoreAccount           = "RestoreAccount"
+	MethodExportAccountData        = "ExportAccountData"
+	MethodGetShare                 = "GetShare"
+	MethodRemoveReader             = "RemoveReader"
+	MethodStopShare                = "StopShare"
+	MethodListReceived             = "ListReceived"
+	MethodStartShareInvitation     = "StartShareInvitation"
+	MethodListShareInvitations     = "ListShareInvitations"
+	MethodRevokeShareInvitation    = "RevokeShareInvitation"
+	MethodListShareRequests        = "ListShareRequests"
+	MethodApproveShareRequest      = "ApproveShareRequest"
+	MethodDeclineShareRequest      = "DeclineShareRequest"
+	MethodPreviewShareInvitation   = "PreviewShareInvitation"
+	MethodAcceptShareInvitation    = "AcceptShareInvitation"
+	MethodGetShareInvitationStatus = "GetShareInvitationStatus"
+	MethodFetchFile                = "FetchFile"
+	MethodDropDownload             = "DropDownload"
+	MethodGetDownloads             = "GetDownloads"
+	MethodSuspend                  = "Suspend"
+	MethodResume                   = "Resume"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -293,27 +297,6 @@ type ResolveDeletionsRequest struct {
 // ResolveDeletionsResponse is the answer to a choice that was taken.
 type ResolveDeletionsResponse struct{}
 
-// GetReaderCodeRequest asks for the code this account gives the owner of a share.
-type GetReaderCodeRequest struct{}
-
-// GetReaderCodeResponse is the reader code and the fingerprint of this account, which the two people compare.
-type GetReaderCodeResponse struct {
-	Code        string `json:"code"`
-	Fingerprint string `json:"fingerprint"`
-}
-
-// ReadReaderCodeRequest holds a reader code a person pasted.
-type ReadReaderCodeRequest struct {
-	Code string `json:"code"`
-}
-
-// ReadReaderCodeResponse is the account fingerprint of the reader the code names. Label is the name the owner gave
-// that reader before, empty for a person not shared with.
-type ReadReaderCodeResponse struct {
-	Fingerprint string `json:"fingerprint"`
-	Label       string `json:"label,omitempty"`
-}
-
 // ShareState is how a folder stands to sharing.
 type ShareState string
 
@@ -355,22 +338,6 @@ type GetShareResponse struct {
 	Error   string        `json:"error,omitempty"`
 }
 
-// AddReaderRequest shares the folder with the person of the code, and makes the share first when the folder has none.
-// ConfirmChange says the owner accepts a label that another person had before.
-type AddReaderRequest struct {
-	VaultID       string `json:"vaultId"`
-	Folder        string `json:"folder"`
-	Code          string `json:"code"`
-	Label         string `json:"label"`
-	ConfirmChange bool   `json:"confirmChange,omitempty"`
-}
-
-// AddReaderResponse is the invitation to send the reader and the account fingerprint of the reader.
-type AddReaderResponse struct {
-	Invitation  string `json:"invitation"`
-	Fingerprint string `json:"fingerprint"`
-}
-
 // RemoveReaderRequest removes the reader with the account fingerprint from a folder.
 type RemoveReaderRequest struct {
 	VaultID     string `json:"vaultId"`
@@ -388,27 +355,6 @@ type StopShareRequest struct {
 }
 
 type StopShareResponse struct{}
-
-// ReadInvitationRequest holds an invitation a person pasted.
-type ReadInvitationRequest struct {
-	Text string `json:"text"`
-}
-
-// ReadInvitationResponse is what an invitation offers: the name of the vault it makes and the fingerprint of the owner.
-type ReadInvitationResponse struct {
-	ShareName        string `json:"shareName"`
-	OwnerFingerprint string `json:"ownerFingerprint"`
-	IsForThisAccount bool   `json:"isForThisAccount"`
-	AlreadyReceived  bool   `json:"alreadyReceived"`
-}
-
-// AcceptInvitationRequest holds the invitation to receive.
-type AcceptInvitationRequest struct {
-	Text string `json:"text"`
-}
-
-// AcceptInvitationResponse is the answer to an invitation that was received; the vault is in ListReceived.
-type AcceptInvitationResponse struct{}
 
 // ReceivedState is how a received share stands.
 type ReceivedState string
@@ -470,4 +416,141 @@ type ExportAccountDataRequest struct{}
 // ExportAccountDataResponse is the JSON document of what the server holds of the account, as text.
 type ExportAccountDataResponse struct {
 	Document string `json:"document"`
+}
+
+// StartShareInvitationRequest makes the link a folder is shared by.
+type StartShareInvitationRequest struct {
+	VaultID string `json:"vaultId"`
+	Folder  string `json:"folder"`
+}
+
+// StartShareInvitationResponse is the link to copy and send, and when it stops working (RFC 3339). The link works once,
+// for 24 hours at most. ID names the link in ListShareInvitations and RevokeShareInvitation.
+type StartShareInvitationResponse struct {
+	ID        string `json:"id"`
+	Link      string `json:"link"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+// ListShareInvitationsRequest asks for the links of this computer that work still.
+type ListShareInvitationsRequest struct{}
+
+// ShareInvitation is a link that works still. IsRequested says a person joined it and waits for an answer, which
+// ListShareRequests lists.
+type ShareInvitation struct {
+	ID          string `json:"id"`
+	Folder      string `json:"folder"`
+	ExpiresAt   string `json:"expiresAt"`
+	IsRequested bool   `json:"isRequested"`
+}
+
+// ListShareInvitationsResponse is the links that were not used up, revoked or expired.
+type ListShareInvitationsResponse struct {
+	Invitations []ShareInvitation `json:"invitations"`
+}
+
+// RevokeShareInvitationRequest makes a link stop working.
+type RevokeShareInvitationRequest struct {
+	ID string `json:"id"`
+}
+
+// RevokeShareInvitationResponse is the answer to a link that was revoked.
+type RevokeShareInvitationResponse struct{}
+
+// ListShareRequestsRequest asks for the people who wait for this person to answer.
+type ListShareRequestsRequest struct{}
+
+// ShareRequest is a device that wants to read a folder, with the name it announced and the fingerprint of its account. Code is the confirmation code the person sees too; the owner
+// allows the request only when the two match.
+type ShareRequest struct {
+	RequestID   string `json:"requestId"`
+	VaultID     string `json:"vaultId"`
+	Folder      string `json:"folder"`
+	DeviceName  string `json:"deviceName"`
+	Fingerprint string `json:"fingerprint"`
+	Code        string `json:"code"`
+}
+
+// ListShareRequestsResponse is the requests that wait. The plugin reports the health item share.requestWaiting while
+// there is one.
+type ListShareRequestsResponse struct {
+	Requests []ShareRequest `json:"requests"`
+}
+
+// ApproveShareRequestRequest lets a person read the folder.
+type ApproveShareRequestRequest struct {
+	RequestID string `json:"requestId"`
+}
+
+// ApproveShareRequestResponse is the answer to a request that was approved: the person is a reader of the folder.
+type ApproveShareRequestResponse struct{}
+
+// DeclineShareRequestRequest refuses a person.
+type DeclineShareRequestRequest struct {
+	RequestID string `json:"requestId"`
+}
+
+// DeclineShareRequestResponse is the answer to a request that was declined.
+type DeclineShareRequestResponse struct{}
+
+// PreviewShareInvitationRequest holds a link a person pasted.
+type PreviewShareInvitationRequest struct {
+	Link string `json:"link"`
+}
+
+// PreviewShareInvitationResponse is what a link tells before it is accepted: the folder, the fingerprint of the owner
+// account and the moment the link stops working. IsReadOnly is always true: a shared folder is read-only for the person.
+type PreviewShareInvitationResponse struct {
+	Folder           string `json:"folder"`
+	OwnerFingerprint string `json:"ownerFingerprint"`
+	ExpiresAt        string `json:"expiresAt"`
+	IsReadOnly       bool   `json:"isReadOnly"`
+}
+
+// AcceptShareInvitationRequest sends the owner of a link a request to read the folder. DeviceName is the name of this computer the owner sees; empty makes the backend use the host name.
+type AcceptShareInvitationRequest struct {
+	Link       string `json:"link"`
+	DeviceName string `json:"deviceName"`
+}
+
+// AcceptShareInvitationResponse is the request that was sent; GetShareInvitationStatus follows it.
+type AcceptShareInvitationResponse struct {
+	RequestID        string `json:"requestId"`
+	Folder           string `json:"folder"`
+	OwnerFingerprint string `json:"ownerFingerprint"`
+}
+
+// ShareRequestPhase is how a request of this computer stands.
+type ShareRequestPhase string
+
+const (
+	// ShareRequestConnecting has no answer from the owner yet; no code shows.
+	ShareRequestConnecting ShareRequestPhase = "connecting"
+	// ShareRequestWaiting shows the code and waits for the owner to allow.
+	ShareRequestWaiting ShareRequestPhase = "waiting"
+	// ShareRequestReceived is allowed; the folder is in ListReceived.
+	ShareRequestReceived ShareRequestPhase = "received"
+	// ShareRequestDeclined was refused by the owner.
+	ShareRequestDeclined ShareRequestPhase = "declined"
+	// ShareRequestUsed is a link another person used before.
+	ShareRequestUsed ShareRequestPhase = "used"
+	// ShareRequestExpired is a link that stopped working before the owner answered.
+	ShareRequestExpired ShareRequestPhase = "expired"
+	// ShareRequestFailed ended on an error, in Error.
+	ShareRequestFailed ShareRequestPhase = "failed"
+)
+
+// GetShareInvitationStatusRequest names a request AcceptShareInvitation sent.
+type GetShareInvitationStatusRequest struct {
+	RequestID string `json:"requestId"`
+}
+
+// GetShareInvitationStatusResponse is how a request stands. Code is set from the phase waiting on.
+type GetShareInvitationStatusResponse struct {
+	Phase            ShareRequestPhase `json:"phase"`
+	Code             string            `json:"code,omitempty"`
+	Folder           string            `json:"folder"`
+	OwnerFingerprint string            `json:"ownerFingerprint"`
+	ExpiresAt        string            `json:"expiresAt"`
+	Error            string            `json:"error,omitempty"`
 }

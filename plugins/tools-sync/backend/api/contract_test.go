@@ -34,25 +34,37 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodCreateCheckout: {
 			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
-		api.MethodGetReaderCode: {
-			CreateRequest: func() any { return &api.GetReaderCodeRequest{} }, CreateResponse: func() any { return &api.GetReaderCodeResponse{} },
-		},
-		api.MethodReadReaderCode: {
-			CreateRequest: func() any { return &api.ReadReaderCodeRequest{} }, CreateResponse: func() any { return &api.ReadReaderCodeResponse{} },
-		},
 		api.MethodGetShare: {CreateRequest: func() any { return &api.GetShareRequest{} }, CreateResponse: func() any { return &api.GetShareResponse{} }},
-		api.MethodAddReader: {
-			CreateRequest: func() any { return &api.AddReaderRequest{} }, CreateResponse: func() any { return &api.AddReaderResponse{} },
-		},
 		api.MethodRemoveReader: {
 			CreateRequest: func() any { return &api.RemoveReaderRequest{} }, CreateResponse: func() any { return &api.RemoveReaderResponse{} },
 		},
 		api.MethodStopShare: {CreateRequest: func() any { return &api.StopShareRequest{} }, CreateResponse: func() any { return &api.StopShareResponse{} }},
-		api.MethodReadInvitation: {
-			CreateRequest: func() any { return &api.ReadInvitationRequest{} }, CreateResponse: func() any { return &api.ReadInvitationResponse{} },
+		api.MethodStartShareInvitation: {
+			CreateRequest: func() any { return &api.StartShareInvitationRequest{} }, CreateResponse: func() any { return &api.StartShareInvitationResponse{} },
 		},
-		api.MethodAcceptInvitation: {
-			CreateRequest: func() any { return &api.AcceptInvitationRequest{} }, CreateResponse: func() any { return &api.AcceptInvitationResponse{} },
+		api.MethodListShareInvitations: {
+			CreateRequest: func() any { return &api.ListShareInvitationsRequest{} }, CreateResponse: func() any { return &api.ListShareInvitationsResponse{} },
+		},
+		api.MethodRevokeShareInvitation: {
+			CreateRequest: func() any { return &api.RevokeShareInvitationRequest{} }, CreateResponse: func() any { return &api.RevokeShareInvitationResponse{} },
+		},
+		api.MethodListShareRequests: {
+			CreateRequest: func() any { return &api.ListShareRequestsRequest{} }, CreateResponse: func() any { return &api.ListShareRequestsResponse{} },
+		},
+		api.MethodApproveShareRequest: {
+			CreateRequest: func() any { return &api.ApproveShareRequestRequest{} }, CreateResponse: func() any { return &api.ApproveShareRequestResponse{} },
+		},
+		api.MethodDeclineShareRequest: {
+			CreateRequest: func() any { return &api.DeclineShareRequestRequest{} }, CreateResponse: func() any { return &api.DeclineShareRequestResponse{} },
+		},
+		api.MethodPreviewShareInvitation: {
+			CreateRequest: func() any { return &api.PreviewShareInvitationRequest{} }, CreateResponse: func() any { return &api.PreviewShareInvitationResponse{} },
+		},
+		api.MethodAcceptShareInvitation: {
+			CreateRequest: func() any { return &api.AcceptShareInvitationRequest{} }, CreateResponse: func() any { return &api.AcceptShareInvitationResponse{} },
+		},
+		api.MethodGetShareInvitationStatus: {
+			CreateRequest: func() any { return &api.GetShareInvitationStatusRequest{} }, CreateResponse: func() any { return &api.GetShareInvitationStatusResponse{} },
 		},
 		api.MethodGetAccountState: {
 			CreateRequest: func() any { return &api.GetAccountStateRequest{} }, CreateResponse: func() any { return &api.GetAccountStateResponse{} },
@@ -111,9 +123,13 @@ func TestTheNameOfTheMethodThatAnswersPausedRemovalsAndTheirDirections(t *testin
 
 func TestTheNamesOfTheSharingMethodsAndTheirStates(t *testing.T) {
 	methods := map[string]string{
-		api.MethodGetReaderCode: "GetReaderCode", api.MethodReadReaderCode: "ReadReaderCode", api.MethodGetShare: "GetShare",
-		api.MethodAddReader: "AddReader", api.MethodRemoveReader: "RemoveReader", api.MethodStopShare: "StopShare",
-		api.MethodReadInvitation: "ReadInvitation", api.MethodAcceptInvitation: "AcceptInvitation", api.MethodListReceived: "ListReceived",
+		api.MethodGetShare:     "GetShare",
+		api.MethodRemoveReader: "RemoveReader", api.MethodStopShare: "StopShare",
+		api.MethodListReceived: "ListReceived", api.MethodStartShareInvitation: "StartShareInvitation",
+		api.MethodListShareInvitations: "ListShareInvitations", api.MethodRevokeShareInvitation: "RevokeShareInvitation",
+		api.MethodListShareRequests: "ListShareRequests", api.MethodApproveShareRequest: "ApproveShareRequest",
+		api.MethodDeclineShareRequest: "DeclineShareRequest", api.MethodPreviewShareInvitation: "PreviewShareInvitation",
+		api.MethodAcceptShareInvitation: "AcceptShareInvitation", api.MethodGetShareInvitationStatus: "GetShareInvitationStatus",
 	}
 	for got, want := range methods {
 		if got != want {

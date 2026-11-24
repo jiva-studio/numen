@@ -65,3 +65,8 @@ type Approvals interface {
 	WriteApproval(ctx context.Context, id domain.VaultID, approval transfer.Approval) error
 	DeleteApproval(ctx context.Context, id domain.VaultID) error
 }
+
+// Device is the computer the plugin runs on.
+type Device interface {
+	GetName() string
+}

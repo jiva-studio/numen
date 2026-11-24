@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/accountwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/invitewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/subscriptionwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/vaultwire"
@@ -23,6 +24,7 @@ type Backend struct {
 	*downloadwire.Downloads
 	*sharewire.Shares
 	*sharewire.Received
+	*invitewire.Invites
 	*subscriptionwire.Subscription
 	*accountwire.Account
 }
@@ -31,7 +33,7 @@ type Backend struct {
 func NewBackend(deps syncvault.Deps) *Backend {
 	headsDeps := heads.Deps{Catalog: deps.Catalog, Chain: deps.Chain, Revisions: deps.Revisions, Crypto: deps.Crypto, Identity: deps.Identity}
 	return &Backend{
-		life: nil, Downloads: nil,
+		life: nil, Downloads: nil, Invites: nil,
 		Vaults:       vaultwire.New(deps, heads.New(headsDeps)),
 		Shares:       sharewire.New(deps),
 		Received:     sharewire.NewReceived(deps),
@@ -55,5 +57,11 @@ func (b *Backend) WithDeletions(pending ports.PausedStore, resolve *deletions.Re
 // WithDownloads gives the backend the methods of the downloads of absent files.
 func (b *Backend) WithDownloads(downloads *downloadwire.Downloads) *Backend {
 	b.Downloads = downloads
+	return b
+}
+
+// WithInvites gives the backend the methods of sharing a folder by a link.
+func (b *Backend) WithInvites(invites *invitewire.Invites) *Backend {
+	b.Invites = invites
 	return b
 }

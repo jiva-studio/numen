@@ -55,6 +55,7 @@ func mountMethods(service *server.API, r *runtime) {
 		return handle(r, func(b *Backend) (api.ExportAccountDataResponse, error) { return b.ExportAccountData(ctx, request) })
 	})
 	mountShareMethods(service, r)
+	mountInviteMethods(service, r)
 	server.Handle(service, api.MethodSuspend, func(ctx context.Context, request api.SuspendRequest) (api.SuspendResponse, error) {
 		return handle(r, func(b *Backend) (api.SuspendResponse, error) { return b.Suspend(ctx, request) })
 	})

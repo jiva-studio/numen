@@ -45,3 +45,20 @@ var (
 	// ErrNotShared means the folder has no share to change.
 	ErrNotShared = errors.New("the folder is not shared")
 )
+
+var (
+	// ErrBadLink means a text is not a link a folder is shared by, or it was cut or changed.
+	ErrBadLink = errors.New("this is not a share link, or it is damaged")
+	// ErrLinkExpired means the link stopped working: it is older than its lifetime or the sharer closed it.
+	ErrLinkExpired = errors.New("this share link has expired")
+	// ErrLinkOtherServer means the link is for another sync server than the one this computer is set to.
+	ErrLinkOtherServer = errors.New("this share link is for another sync server")
+	// ErrLinkUsed means another person used the link before.
+	ErrLinkUsed = errors.New("this share link was used by another person")
+	// ErrUnknownRequest means no request to read a folder has that id, or it was answered or expired.
+	ErrUnknownRequest = errors.New("this request does not exist any more")
+	// ErrLinkDeclined means the sharer declined the request.
+	ErrLinkDeclined = errors.New("the owner declined the request")
+	// ErrLinkMismatch means what the sharer sent is not what the link promised: another fingerprint than the link names.
+	ErrLinkMismatch = errors.New("the answer does not match the link")
+)

@@ -405,3 +405,23 @@ func TestLinkChannel_RefusesAMessageOfAnotherLink(t *testing.T) {
 		t.Errorf("error = %v, want ErrLinkAuth", err)
 	}
 }
+
+func TestLinkChannel_CodeIsTheSameOnBothSidesAndSixDigits(t *testing.T) {
+	t.Parallel()
+	displayer, scanner := newPair(t).connect(t)
+
+	if displayer.Code() != scanner.Code() || len(displayer.Code()) != 6 {
+		t.Errorf("codes = %q and %q, want the same six digits", displayer.Code(), scanner.Code())
+	}
+}
+
+func TestLinkChannel_CodeDiffersWhenAnotherKeyStandsBetweenTheSides(t *testing.T) {
+	t.Parallel()
+	one, other := newPair(t), newPair(t)
+	displayer, _ := one.connect(t)
+	_, scanner := other.connect(t)
+
+	if displayer.Code() == scanner.Code() {
+		t.Errorf("code = %q on both sides of two different links, want different codes", displayer.Code())
+	}
+}
