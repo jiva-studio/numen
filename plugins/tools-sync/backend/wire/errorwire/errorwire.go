@@ -54,6 +54,7 @@ func getRefusals() []error {
 		share.ErrWholeVault, share.ErrInsideShare, share.ErrHoldsShare, share.ErrNotConnected, share.ErrReceivedVault,
 		share.ErrReceivedNotSynced, share.ErrOwnIdentity, share.ErrAlreadyReader, share.ErrChangedIdentity, share.ErrReaderNotAdded,
 		share.ErrNotForThisAccount, share.ErrAlreadyReceived, share.ErrOwnerChanged, share.ErrEnded, share.ErrDamagedLog, share.ErrNotReady,
+		share.ErrReceivedStop, share.ErrNotReceived,
 		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack, share.ErrBadLink, share.ErrLinkExpired, share.ErrLinkOtherServer,
 		share.ErrLinkUsed, share.ErrUnknownRequest, share.ErrLinkDeclined, share.ErrLinkMismatch,
 	}

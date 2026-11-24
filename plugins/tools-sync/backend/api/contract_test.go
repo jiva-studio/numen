@@ -82,6 +82,10 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodListReceived: {
 			CreateRequest: func() any { return &api.ListReceivedRequest{} }, CreateResponse: func() any { return &api.ListReceivedResponse{} },
 		},
+		api.MethodLeaveShare: {CreateRequest: func() any { return &api.LeaveShareRequest{} }, CreateResponse: func() any { return &api.LeaveShareResponse{} }},
+		api.MethodStopSyncingVault: {
+			CreateRequest: func() any { return &api.StopSyncingVaultRequest{} }, CreateResponse: func() any { return &api.StopSyncingVaultResponse{} },
+		},
 	}
 }
 

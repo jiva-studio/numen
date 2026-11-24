@@ -147,3 +147,16 @@ func (s *State) ReadShareStates(ctx context.Context, id domain.VaultID) ([]share
 func (s *State) WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error {
 	return s.write(ctx, id, sharesFile, sharesDocument{Shares: states})
 }
+
+// ForgetVault deletes the files of the vault in its store folder that belong to the vault itself, its link last, so a
+// failure in between leaves a vault that is still linked. The pinned keys and the journals of the account stay.
+func (s *State) ForgetVault(ctx context.Context, id domain.VaultID) error {
+	for _, name := range []string{
+		recordsFile, statusFile, sightingsFile, uploadsFile, downloadsFile, pendingFile, answerFile, absencesFile, linkFile,
+	} {
+		if err := s.delete(ctx, id, name); err != nil {
+			return err
+		}
+	}
+	return nil
+}

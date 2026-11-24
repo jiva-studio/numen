@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/unlink"
 )
 
 // NewShareDeps returns the dependencies of the use cases of sharing over those of a pass.
@@ -53,12 +54,15 @@ func New(deps syncvault.Deps) *Shares {
 // Received answers the methods of the settings view about the folders other people share with this account.
 type Received struct {
 	listing *receive.ListReceived
+	leave   *unlink.Leave
 }
 
 // NewReceived returns the methods over the dependencies of a pass.
 func NewReceived(deps syncvault.Deps) *Received {
 	receiving := NewReceiveDeps(deps)
-	return &Received{listing: receive.NewListReceived(receiving)}
+	return &Received{
+		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults}),
+	}
 }
 
 // GetShare returns the sharing of a folder.
@@ -77,6 +81,11 @@ func (s *Shares) RemoveReader(ctx context.Context, request api.RemoveReaderReque
 // StopShare stops sharing the folder.
 func (s *Shares) StopShare(ctx context.Context, request api.StopShareRequest) (api.StopShareResponse, error) {
 	return api.StopShareResponse{}, s.stop.Execute(ctx, domain.VaultID(request.VaultID), request.Folder)
+}
+
+// LeaveShare stops pulling a received share and forgets it on this device; its files stay.
+func (s *Received) LeaveShare(ctx context.Context, request api.LeaveShareRequest) (api.LeaveShareResponse, error) {
+	return api.LeaveShareResponse{}, s.leave.Execute(ctx, domain.VaultID(request.VaultID))
 }
 
 func (s *Received) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {

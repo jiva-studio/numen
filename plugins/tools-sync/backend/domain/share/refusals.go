@@ -62,3 +62,10 @@ var (
 	// ErrLinkMismatch means what the sharer sent is not what the link promised: another fingerprint than the link names.
 	ErrLinkMismatch = errors.New("the answer does not match the link")
 )
+
+var (
+	// ErrReceivedStop means a shared vault is left, not stopped.
+	ErrReceivedStop = errors.New("this folder is shared with you; leave it instead")
+	// ErrNotReceived means the vault is not a folder another person shares with this account.
+	ErrNotReceived = errors.New("this folder is not shared with you")
+)

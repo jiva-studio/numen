@@ -42,3 +42,8 @@ func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.clie
 func (v *Vaults) AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error) {
 	return v.client.AddManagedVault(ctx, path, name, managedBy)
 }
+
+// RemoveVault takes the vault off the list of the installation and returns its folder, which stays on the disk.
+func (v *Vaults) RemoveVault(ctx context.Context, id domain.VaultID) (string, error) {
+	return v.client.RemoveVault(ctx, id)
+}

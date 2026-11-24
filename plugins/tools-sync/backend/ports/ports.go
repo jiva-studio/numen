@@ -330,6 +330,13 @@ type Box interface {
 // VaultList adds a vault to the vaults of the installation.
 type VaultList interface {
 	AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error)
+	RemoveVault(ctx context.Context, id domain.VaultID) (string, error)
+}
+
+// Forgetter drops everything Numen Sync keeps of one vault in its store folder, the link included, and leaves the
+// files of the vault alone.
+type Forgetter interface {
+	ForgetVault(ctx context.Context, id domain.VaultID) error
 }
 
 // ReceivedFolder is the folder made for a received share and the name of its vault.

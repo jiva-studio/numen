@@ -23,6 +23,9 @@ func mountShareMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodListReceived, func(ctx context.Context, request api.ListReceivedRequest) (api.ListReceivedResponse, error) {
 		return handle(r, func(b *Backend) (api.ListReceivedResponse, error) { return b.ListReceived(ctx, request) })
 	})
+	server.Handle(service, api.MethodLeaveShare, func(ctx context.Context, request api.LeaveShareRequest) (api.LeaveShareResponse, error) {
+		return handle(r, func(b *Backend) (api.LeaveShareResponse, error) { return b.LeaveShare(ctx, request) })
+	})
 }
 
 func mountInviteMethods(service *server.API, r *runtime) {

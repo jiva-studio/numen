@@ -259,7 +259,7 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, Notes: c.Notes, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
 		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
-		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders,
+		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders, Forget: c.State,
 	}
 }
 

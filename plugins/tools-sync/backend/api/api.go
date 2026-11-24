@@ -25,6 +25,8 @@ const (
 	MethodRemoveReader             = "RemoveReader"
 	MethodStopShare                = "StopShare"
 	MethodListReceived             = "ListReceived"
+	MethodLeaveShare               = "LeaveShare"
+	MethodStopSyncingVault         = "StopSyncingVault"
 	MethodStartShareInvitation     = "StartShareInvitation"
 	MethodListShareInvitations     = "ListShareInvitations"
 	MethodRevokeShareInvitation    = "RevokeShareInvitation"
@@ -401,6 +403,22 @@ type ReceivedShare struct {
 type ListReceivedResponse struct {
 	Shares []ReceivedShare `json:"shares"`
 }
+
+// LeaveShareRequest asks to leave the received share held by a vault. The files stay on this device.
+type LeaveShareRequest struct {
+	VaultID string `json:"vaultId"`
+}
+
+// LeaveShareResponse is the answer to a share that was left.
+type LeaveShareResponse struct{}
+
+// StopSyncingVaultRequest asks to stop syncing a vault on this device. The files and the synced vault on the server stay.
+type StopSyncingVaultRequest struct {
+	VaultID string `json:"vaultId"`
+}
+
+// StopSyncingVaultResponse is the answer to a vault that stopped syncing.
+type StopSyncingVaultResponse struct{}
 
 // GetAccountStateRequest asks whether the account is being deleted on the server.
 type GetAccountStateRequest struct{}
