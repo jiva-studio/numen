@@ -13,6 +13,7 @@
   box-sizing: border-box;
   height: var(--bar-height);
   min-height: var(--bar-height);
+  padding-top: var(--numen-window-edge);
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
@@ -32,7 +33,6 @@
    columns keep clear of them with padding. */
 .title-bar__start {
   position: relative;
-  top: var(--numen-window-edge);
   display: grid;
   grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
   align-items: center;
