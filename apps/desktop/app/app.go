@@ -172,6 +172,7 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	}
 
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
+	enableMediaCapture(app)
 	app.Menu.SetApplicationMenu(makeApplicationMenu())
 	window = makeWindow(app, installation)
 	tracker.addWindow()
