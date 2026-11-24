@@ -169,6 +169,7 @@ export const WORDS = {
   done: 'Done',
   invitationValidity: 'Valid for 24 hours, works once.',
   copyLinkButton: 'Copy link',
+  preparing: 'Preparing the invitation…',
   waitingForPerson: 'Waiting for the person to open the link',
   wantsToRead: (name: string, folder: string): string => `${name} wants to read ${folder}.`,
   confirmationCode: (code: string): string => `Code ${code}`,
