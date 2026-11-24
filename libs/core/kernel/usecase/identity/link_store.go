@@ -46,9 +46,12 @@ type linkStore struct {
 	changed chan struct{}
 	current *pendingLink
 	revoke  *pendingRevoke
+	signal  *changeSignal
 }
 
-func newLinkStore() *linkStore { return &linkStore{changed: make(chan struct{})} }
+func newLinkStore(signal *changeSignal) *linkStore {
+	return &linkStore{changed: make(chan struct{}), signal: signal}
+}
 
 func (s *linkStore) hold() (*linkStore, func()) {
 	s.mu.Lock()
@@ -59,6 +62,7 @@ func (s *linkStore) bumpLocked() uint64 {
 	s.version++
 	close(s.changed)
 	s.changed = make(chan struct{})
+	s.signal.notify()
 	return s.version
 }
 

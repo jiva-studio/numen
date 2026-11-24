@@ -59,6 +59,7 @@ type Activation struct {
 	failures   *supervision.Failures
 	config     configPusher
 	clock      machineport.Clock
+	requires   *Requirements
 
 	startMu     sync.Mutex
 	handleStart func(pluginID string)
@@ -68,22 +69,23 @@ type Activation struct {
 // the gate against a scan, the mode of the host, the supervisors and the processes of the plugins, their failures, the push
 // of the configuration and the clock.
 type ActivationDeps struct {
-	Set         activationPlugins
-	Enablement  PluginEnablement
-	Scan        startHold
-	Mode        hostState
-	Supervisors *supervision.Supervisors
-	Processes   *supervision.Processes
-	Failures    *supervision.Failures
-	Config      configPusher
-	Clock       machineport.Clock
+	Set          activationPlugins
+	Enablement   PluginEnablement
+	Scan         startHold
+	Mode         hostState
+	Supervisors  *supervision.Supervisors
+	Processes    *supervision.Processes
+	Failures     *supervision.Failures
+	Config       configPusher
+	Clock        machineport.Clock
+	Requirements *Requirements
 }
 
 // NewActivation creates the activation of the plugins with none running.
 func NewActivation(d ActivationDeps) *Activation {
 	return &Activation{
 		set: d.Set, enablement: d.Enablement, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, processes: d.Processes,
-		failures: d.Failures, config: d.Config, clock: d.Clock,
+		failures: d.Failures, config: d.Config, clock: d.Clock, requires: d.Requirements,
 	}
 }
 
@@ -185,7 +187,7 @@ func createQuestionLease(holder plugindomain.Holder) lifecycle.Lease {
 	return lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: holder}
 }
 
-func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *lifecycle.Supervisor, error) {
+func (a *Activation) prepareSupervisor(ctx context.Context, pluginID string) (manifest.Discovered, *lifecycle.Supervisor, error) {
 	if a.mode.IsClosed() {
 		return manifest.Discovered{}, nil, errHostClosed
 	}
@@ -210,6 +212,11 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 	release()
 	if !hasBackend {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.WithoutBackend}
+	}
+	if unmet := a.requires.GetUnmet(ctx, p.Manifest.Backend); unmet != "" {
+		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{
+			PluginID: pluginID, Reason: plugindomain.RequirementUnmet, Err: fmt.Errorf("it requires %s", unmet),
+		}
 	}
 
 	return p, sup, nil
@@ -308,7 +315,7 @@ func (a *Activation) ensureActiveDuringDiscovery(
 	defer a.scan.releaseStart()
 
 	for {
-		p, sup, err := a.prepareSupervisor(pluginID)
+		p, sup, err := a.prepareSupervisor(ctx, pluginID)
 		if err != nil {
 			return supervision.CreateNoEndpoint(), err
 		}

@@ -75,6 +75,7 @@ var errSafeMode = errors.New("numen is running in safe mode")
 func NewPluginHost(indexPath string, res *Resources, report func(error), target string, dirs ...string) (*PluginExecution, *PluginPreferences, *PluginEndpoints, error) {
 	management, supervision := NewPluginRoles(GetClock(res), target, dirs...)
 	supervision.Account = openAccount(res)
+	requireAccount(management, supervision.Account)
 	err := InitializePluginRoles(indexPath, res, management, supervision, report)
 	exec, prefs, endpoints := CreatePluginHost(management, supervision)
 	return exec, prefs, endpoints, err

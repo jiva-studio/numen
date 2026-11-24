@@ -36,9 +36,10 @@ type restoreReader interface {
 type pendingStore struct {
 	mu      sync.Mutex
 	current *pendingRestore
+	signal  *changeSignal
 }
 
-func newPendingStore() *pendingStore { return &pendingStore{} }
+func newPendingStore(signal *changeSignal) *pendingStore { return &pendingStore{signal: signal} }
 
 func (s *pendingStore) hold() (*pendingStore, func()) {
 	s.mu.Lock()
@@ -50,6 +51,7 @@ func (s *pendingStore) replace(next *pendingRestore) {
 	defer s.mu.Unlock()
 	s.clearLocked()
 	s.current = next
+	s.signal.notify()
 }
 
 func (s *pendingStore) clearLocked() {
@@ -87,6 +89,7 @@ func (s *pendingStore) refuseLocked(restore *pendingRestore, reason error) {
 	restore.recovery = identitylib.RecoveryKey{}
 	restore.device = identitylib.DeviceKey{}
 	restore.refusal = reason
+	s.signal.notify()
 }
 
 func (s *pendingStore) expire(restore *pendingRestore) {
@@ -96,5 +99,6 @@ func (s *pendingStore) expire(restore *pendingRestore) {
 		s.clearLocked()
 		restore.recovery = identitylib.RecoveryKey{}
 		restore.device = identitylib.DeviceKey{}
+		s.signal.notify()
 	}
 }

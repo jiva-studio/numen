@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newPersistentHolder() plugindomain.Holder {
@@ -24,28 +26,35 @@ type heldStarter interface {
 // the start that brought the process up has returned. A start has the activation limit; one that fails is not
 // repeated by the keeper until the next exit, use or enabling.
 type Keeper struct {
-	set     pluginViews
-	mode    hostState
-	sups    *supervision.Supervisors
-	starter heldStarter
+	set      pluginViews
+	mode     hostState
+	sups     *supervision.Supervisors
+	starter  heldStarter
+	requires *Requirements
+	stopper  pluginStopper
 
-	mu       sync.Mutex
-	kept     map[string]struct{}
-	starting map[string]bool
+	mu           sync.Mutex
+	kept         map[string]struct{}
+	starting     map[string]bool
+	refreshing   bool
+	refreshAgain bool
 }
 
 // KeeperDeps are what a Keeper reads the plugins from and starts them with.
 type KeeperDeps struct {
-	Set         pluginViews
-	Mode        hostState
-	Supervisors *supervision.Supervisors
-	Activation  *Activation
+	Set          pluginViews
+	Mode         hostState
+	Supervisors  *supervision.Supervisors
+	Activation   *Activation
+	Requirements *Requirements
+	Stopper      pluginStopper
+	Report       func(error)
 }
 
 // NewKeeper creates a keeper that keeps no plugin and takes the exits of the processes from the supervisors.
 func NewKeeper(d KeeperDeps) *Keeper {
 	k := &Keeper{
-		set: d.Set, mode: d.Mode, sups: d.Supervisors, starter: d.Activation,
+		set: d.Set, mode: d.Mode, sups: d.Supervisors, starter: d.Activation, requires: d.Requirements, stopper: d.Stopper, report: d.Report,
 		kept: make(map[string]struct{}), starting: make(map[string]bool),
 	}
 	d.Supervisors.Exits.Set(k.restartAfterExit)
@@ -89,7 +98,7 @@ func (k *Keeper) isKeepable(pluginID string) bool {
 	v, release := k.set.getView()
 	defer release()
 	p, ok := v.get(pluginID)
-	return ok && p.Manifest.Backend.IsPersistent() && v.isEnabled(pluginID)
+	return ok && p.Manifest.Backend.IsPersistent() && v.isEnabled(pluginID) && k.requires.GetUnmet(context.Background(), p.Manifest.Backend) == ""
 }
 
 func (k *Keeper) isKept(pluginID string) bool {
@@ -127,6 +136,10 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 		// until the next exit, use or enabling.
 		return
 	}
+	if !k.isKeepable(pluginID) {
+		k.Drop(ctx, pluginID)
+		k.stop(ctx, pluginID)
+	}
 }
 
 func (k *Keeper) beginStart(pluginID string) bool {
@@ -160,4 +173,58 @@ func (k *Keeper) isHolding(pluginID string) bool {
 		return false
 	}
 	return slices.Contains(usage.Holders, newPersistentHolder())
+}
+
+// Refresh matches the processes of the plugins that require a condition of the host to it: a plugin whose
+// requirements hold is kept where it stays running, and one whose requirements do not hold is not kept and its process
+// is stopped. It returns at once; calls that come while a refresh runs make it run once more.
+func (k *Keeper) Refresh(ctx context.Context) {
+	k.mu.Lock()
+	if k.refreshing {
+		k.refreshAgain = true
+		k.mu.Unlock()
+		return
+	}
+	k.refreshing = true
+	k.mu.Unlock()
+	go k.runRefresh(context.WithoutCancel(ctx))
+}
+
+func (k *Keeper) runRefresh(ctx context.Context) {
+	for {
+		k.refreshOnce(ctx)
+		k.mu.Lock()
+		if !k.refreshAgain {
+			k.refreshing = false
+			k.mu.Unlock()
+			return
+		}
+		k.refreshAgain = false
+		k.mu.Unlock()
+	}
+}
+
+func (k *Keeper) refreshOnce(ctx context.Context) {
+	v, release := k.set.getView()
+	var demanding []manifest.Discovered
+	for _, p := range v.enabled() {
+		if len(p.Manifest.Backend.Requires) > 0 {
+			demanding = append(demanding, p)
+		}
+	}
+	release()
+	for _, p := range demanding {
+		if k.requires.GetUnmet(ctx, p.Manifest.Backend) == "" {
+			k.Keep(ctx, p.Manifest.ID)
+			continue
+		}
+		k.Drop(ctx, p.Manifest.ID)
+		k.stop(ctx, p.Manifest.ID)
+	}
+}
+
+func (k *Keeper) stop(ctx context.Context, pluginID string) {
+	if err := k.stopper.StopPlugin(ctx, pluginID); err != nil {
+		k.report(fmt.Errorf("stop plugin %s: %w", pluginID, err))
+	}
 }

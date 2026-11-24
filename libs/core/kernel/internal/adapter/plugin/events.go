@@ -30,6 +30,7 @@ type Events struct {
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	bus       *eventbus.Bus
+	requires  *Requirements
 
 	mu        sync.Mutex
 	fileTypes map[string][]domain.FileType
@@ -38,17 +39,18 @@ type Events struct {
 // EventsDeps are what Events reads and starts, the clock that times the event bus, and where the failures of the
 // deliveries that run after an event was emitted are reported.
 type EventsDeps struct {
-	Set         pluginViews
-	Mode        safeModeReader
-	Supervisors *supervision.Supervisors
-	Activation  pluginActivator
-	Clock       machineport.Clock
-	Report      func(error)
+	Set          pluginViews
+	Mode         safeModeReader
+	Supervisors  *supervision.Supervisors
+	Activation   pluginActivator
+	Clock        machineport.Clock
+	Report       func(error)
+	Requirements *Requirements
 }
 
 // NewEvents creates the events and the bus that debounces and throttles them.
 func NewEvents(d EventsDeps) *Events {
-	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, fileTypes: map[string][]domain.FileType{}}
+	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, requires: d.Requirements, fileTypes: map[string][]domain.FileType{}}
 	e.bus = eventbus.New(e, d.Clock, 50*time.Millisecond, 250*time.Millisecond, d.Report)
 	return e
 }
@@ -106,7 +108,7 @@ func (e *Events) listActivatedBy(event string) []string {
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {
-		if p.Manifest.IsActivatedBy(event) && (!isFiltered || p.Manifest.IsTakingFileTypes(types)) {
+		if p.Manifest.IsActivatedBy(event) && (!isFiltered || p.Manifest.IsTakingFileTypes(types)) && e.requires.GetUnmet(context.Background(), p.Manifest.Backend) == "" {
 			candidates = append(candidates, p.Manifest.ID)
 		}
 	}

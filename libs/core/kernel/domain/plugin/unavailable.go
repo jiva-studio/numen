@@ -14,6 +14,8 @@ const (
 	Failed
 	// WithoutBackend is a plugin that declares no backend, so there is nothing to start.
 	WithoutBackend
+	// RequirementUnmet is a plugin whose manifest requires a condition of the host that does not hold, so it is not started.
+	RequirementUnmet
 )
 
 // UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
@@ -39,6 +41,8 @@ func (e *UnavailableError) Error() string {
 		response = subject + " is disabled"
 	case WithoutBackend:
 		response = subject + " has no backend"
+	case RequirementUnmet:
+		response = subject + " is not started"
 	default:
 		response = subject + " failed to start"
 	}

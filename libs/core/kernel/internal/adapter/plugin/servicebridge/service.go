@@ -96,16 +96,13 @@ func getHopHeaders() []string {
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	found, serves := p.services.ResolveService(GetService(r.URL.Path))
 	if !serves {
-		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
+		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound.String(), "no plugin serves this service"))
 		return
 	}
 	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), found.Manifest.ID), plugin.GetCallTitle(r.URL.Path))
 	endpoint, err := p.activator.EnsureActive(r.Context(), found.Manifest.ID, holder)
 	if err != nil {
-		code := connect.CodeUnavailable
-		if errors.Is(err, context.Canceled) {
-			code = connect.CodeCanceled
-		}
+		code := getActivationCode(err)
 		p.reportError(writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error()))
 		return
 	}
@@ -114,7 +111,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+r.URL.RequestURI(), r.Body)
 	if err != nil {
-		p.reportError(writeConnectError(w, http.StatusBadRequest, connect.CodeInvalidArgument, err.Error()))
+		p.reportError(writeConnectError(w, http.StatusBadRequest, connect.CodeInvalidArgument.String(), err.Error()))
 		return
 	}
 	copyHeaders(out.Header, r.Header)
@@ -125,7 +122,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	res, err := transport.GetClient(p.activator, endpoint).Do(out)
 	if err != nil {
-		p.reportError(writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable, err.Error()))
+		p.reportError(writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable.String(), err.Error()))
 		return
 	}
 	defer p.closeResponse(res)
@@ -165,11 +162,26 @@ func streamBody(w http.ResponseWriter, body io.Reader) error {
 	}
 }
 
-func writeConnectError(w http.ResponseWriter, status int, code connect.Code, message string) error {
+func writeConnectError(w http.ResponseWriter, status int, code, message string) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(map[string]string{"code": code.String(), "message": message}); err != nil {
+	if err := json.NewEncoder(w).Encode(map[string]string{"code": code, "message": message}); err != nil {
 		return fmt.Errorf("write error response: %w", err)
 	}
 	return nil
+}
+
+// RequirementUnmetCode is the code of the failure a call gets while the plugin it is for does not start because a
+// condition its manifest requires does not hold.
+const RequirementUnmetCode = "requirement_unmet"
+
+func getActivationCode(err error) string {
+	var unavailable *plugin.UnavailableError
+	switch {
+	case errors.Is(err, context.Canceled):
+		return connect.CodeCanceled.String()
+	case errors.As(err, &unavailable) && unavailable.Reason == plugin.RequirementUnmet:
+		return RequirementUnmetCode
+	}
+	return connect.CodeUnavailable.String()
 }

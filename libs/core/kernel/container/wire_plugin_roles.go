@@ -26,6 +26,7 @@ type PluginManagement struct {
 	Events       *plugin.Events
 	Mode         *plugin.Mode
 	Keeper       *plugin.Keeper
+	Requirements *plugin.Requirements
 }
 
 // PluginSupervision owns the process, storage and service dependencies of the plugin runtime.
@@ -61,12 +62,13 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
 	evictor := supervision.NewEvictor(stopper)
 	scan := plugin.NewScanGate()
+	requirements := plugin.NewRequirements()
 	activation := plugin.NewActivation(plugin.ActivationDeps{
 		Set: set, Enablement: registry, Scan: scan, Mode: mode, Supervisors: sups, Processes: processes, Failures: failures,
-		Config: config, Clock: clock,
+		Config: config, Clock: clock, Requirements: requirements,
 	})
 	events := plugin.NewEvents(plugin.EventsDeps{
-		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Clock: clock, Report: errs.Report,
+		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Clock: clock, Report: errs.Report, Requirements: requirements,
 	})
 	listeners := plugin.NewListeners(plugin.ListenersDeps{
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
@@ -94,7 +96,10 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 		ContentTypes: plugin.NewContentTypes(plugin.ContentTypesDeps{Set: set, Lookup: readers}),
 		Events:       events,
 		Mode:         mode,
-		Keeper:       plugin.NewKeeper(plugin.KeeperDeps{Set: set, Mode: mode, Supervisors: sups, Activation: activation}),
+		Requirements: requirements,
+		Keeper: plugin.NewKeeper(plugin.KeeperDeps{
+			Set: set, Mode: mode, Supervisors: sups, Activation: activation, Requirements: requirements, Stopper: stopper, Report: errs.Report,
+		}),
 	}, processHost
 }
 

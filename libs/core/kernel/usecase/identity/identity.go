@@ -68,6 +68,9 @@ func (d Deps) WithCreateLock(lock CreateGate) Deps {
 func (d Deps) WithProgress(progress *Progress) Deps {
 	if progress != nil {
 		d.progress = progress
+		if d.records.keys != nil {
+			d.records.keys = watchedKeys{KeyStore: d.records.keys, signal: progress.changes}
+		}
 		d.createLock = progress.gate
 	}
 	return d
