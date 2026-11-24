@@ -3,7 +3,6 @@ package hostendpoint
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -120,14 +119,8 @@ func (e *accountEndpoint) PutChainPublished(
 	}
 	// A revoke the core ended because the device to revoke added a device meanwhile is the answer to the courier, not a failure of it.
 	err = chain.PutChainPublished(ctx, req.Msg.GetAccepted(), req.Msg.GetLatest())
-	switch {
-	case errors.Is(err, identitydomain.ErrRevokeRaced):
-		slog.WarnContext(ctx, "the server did not take the chain and the revoke ended", "accepted", false, "error", err)
-	case err != nil:
-		slog.WarnContext(ctx, "could not take the answer of the server to the chain", "accepted", req.Msg.GetAccepted(), "error", err)
+	if err != nil && !errors.Is(err, identitydomain.ErrRevokeRaced) {
 		return nil, getAccountError(err)
-	default:
-		slog.InfoContext(ctx, "the server answered to the chain", "accepted", req.Msg.GetAccepted())
 	}
 	return connect.NewResponse(&v1.PutChainPublishedResponse{}), nil
 }

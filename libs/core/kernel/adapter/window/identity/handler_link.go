@@ -3,7 +3,6 @@ package identity
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"time"
 
 	"connectrpc.com/connect"
@@ -101,14 +100,7 @@ func (h *Handler) RevokeDevice(
 	ctx context.Context,
 	r *connect.Request[v1.RevokeDeviceRequest],
 ) (*connect.Response[v1.RevokeDeviceResponse], error) {
-	fingerprint := r.Msg.GetFingerprint()
-	err := h.identity.Account.Revoke.Execute(ctx, fingerprint)
-	if err != nil {
-		slog.WarnContext(ctx, "could not revoke the device", "fingerprint", fingerprint, "error", err)
-	} else {
-		slog.InfoContext(ctx, "the device waits to be revoked on the server", "fingerprint", fingerprint)
-	}
-	code, detail, err := serveLinkCall(err)
+	code, detail, err := serveLinkCall(h.identity.Account.Revoke.Execute(ctx, r.Msg.GetFingerprint()))
 	return connect.NewResponse(&v1.RevokeDeviceResponse{Error: code, Detail: detail}), err
 }
 
