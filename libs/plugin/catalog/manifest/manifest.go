@@ -382,7 +382,7 @@ func (m Manifest) listIdentityIssues() []error {
 }
 
 func (m Manifest) listEntrypointIssues() []error {
-	if m.Backend != (Backend{}) && strings.TrimSpace(m.Backend.Entrypoint) == "" {
+	if m.Backend.isDeclared() && strings.TrimSpace(m.Backend.Entrypoint) == "" {
 		return []error{fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidBackend)}
 	}
 	return nil
@@ -399,7 +399,7 @@ func (m Manifest) HasFrontend() bool {
 }
 
 func (m Manifest) listBackendlessIssues() []error {
-	if m.Backend != (Backend{}) {
+	if m.Backend.isDeclared() {
 		return nil
 	}
 	fields := []struct {
@@ -579,4 +579,8 @@ func (b Backend) listRequirementIssues() []error {
 		}
 	}
 	return issues
+}
+
+func (b Backend) isDeclared() bool {
+	return b.Entrypoint != "" || b.IdleStopSeconds != 0 || b.Lifecycle != "" || len(b.Requires) > 0
 }
