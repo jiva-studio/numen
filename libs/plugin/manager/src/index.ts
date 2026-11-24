@@ -7,6 +7,7 @@ export { default as NavigationRow } from './NavigationRow.vue'
 export { default as SettingsPage } from './SettingsPage.vue'
 export { default as PluginSettingsCard } from './PluginSettingsCard.vue'
 export type { PluginDetailProps } from './PluginDetail.types'
+export type { ContributedTab } from './tabs'
 export {
   createManagedPlugins,
   isInstalled,

@@ -1,8 +1,17 @@
 /** The tabs of a plugin page and the moves between them by the keyboard. */
 import { PLUGIN_WORDS as words } from './words'
 
-/** A tab of a plugin page. */
-export type PluginTabId = keyof typeof words.pluginTabs
+/** A tab the page has of its own. */
+export type BuiltInPluginTabId = keyof typeof words.pluginTabs
+
+/** A tab of a plugin page: a built-in one or the id of a tab the plugin contributes. */
+export type PluginTabId = string
+
+/** A tab a plugin contributes to its page. */
+export interface ContributedTab {
+  readonly id: string
+  readonly title: string
+}
 
 /** One tab with its label. */
 export interface PluginTab {
@@ -18,24 +27,36 @@ export const getPanelElementId = (base: string, id: PluginTabId): string => `${b
 
 const STEPS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowLeft: -1 }
 
-const isTabId = (id: string): id is PluginTabId => id in words.pluginTabs
+const isTabId = (id: string): id is BuiltInPluginTabId => id in words.pluginTabs
 
 /** What decides which tabs a plugin page has. */
 export interface PluginTabsFacts {
   readonly hasSettings: boolean
   readonly hasSlots?: boolean
   readonly hasData: boolean
+  readonly contributed?: readonly ContributedTab[]
 }
 
-/** The tabs of a plugin page in their order; Settings only with settings, Slots only with slot entries, Data only with data or a failed delete. */
-export const getPluginTabs = (facts: PluginTabsFacts): readonly PluginTab[] =>
-  Object.entries(words.pluginTabs).flatMap(([id, text]) => {
-    if (!isTabId(id)) return []
-    if (id === 'settings' && !facts.hasSettings) return []
-    if (id === 'slots' && !facts.hasSlots) return []
-    if (id === 'data' && !facts.hasData) return []
-    return [{ id, text }]
-  })
+const isShown = (id: BuiltInPluginTabId, facts: PluginTabsFacts): boolean => {
+  if (id === 'settings') return facts.hasSettings
+  if (id === 'slots') return facts.hasSlots === true
+  if (id === 'data') return facts.hasData
+  return true
+}
+
+/**
+ * The tabs of a plugin page in their order; Settings only with settings, Slots only with slot
+ * entries, Data only with data or a failed delete. The tabs the plugin contributes follow Settings,
+ * or come first where there is none.
+ */
+export const getPluginTabs = (facts: PluginTabsFacts): readonly PluginTab[] => {
+  const contributed = (facts.contributed ?? []).map((one) => ({ id: one.id, text: one.title }))
+  const own = Object.entries(words.pluginTabs).flatMap(([id, text]) =>
+    isTabId(id) && isShown(id, facts) ? [{ id, text }] : [],
+  )
+  const at = own[0]?.id === 'settings' ? 1 : 0
+  return [...own.slice(0, at), ...contributed, ...own.slice(at)]
+}
 
 /** The tab a plugin page opens on: Settings where it has settings, else About. */
 export const getFirstPluginTab = (hasSettings: boolean): PluginTabId =>

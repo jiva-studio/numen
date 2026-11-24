@@ -3,7 +3,7 @@
  * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
  * the state and the enabled switch or the install button, the header, the failure of a suspended
  * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), Slots (only where views are placed in its slots), About,
- * Contributes and Data. The application draws the card or the islands of the settings in the `settings` slot and the sections under them in `sections`;
+ * Contributes and Data; the tabs the plugin contributes follow Settings and their panels are the `tab` slot. The application draws the card or the islands of the settings in the `settings` slot and the sections under them in `sections`;
  * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
 import { computed, ref, watch, type VNode } from 'vue'
@@ -37,6 +37,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
   settings?(): VNode[]
+  /** The panel of a tab the plugin contributes, drawn by the application. */
+  tab?(props: { id: string }): VNode[]
   /** The islands of the Slots tab, drawn by the application. */
   slots?(): VNode[]
   /** Sections of the settings tab under the card of the settings, drawn by the application. */
@@ -64,9 +66,13 @@ const tabs = computed(() =>
     hasSettings: hasSettingsTab.value,
     hasSlots: props.hasSlots === true,
     hasData: props.dataFileCount > 0 || props.problem !== '',
+    contributed: props.contributedTabs,
   }),
 )
 const activeTab = ref(getFirstPluginTab(hasSettingsTab.value))
+const isContributed = computed(() =>
+  (props.contributedTabs ?? []).some((one) => one.id === activeTab.value),
+)
 const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -160,6 +166,7 @@ function onRunAction(key: string): void {
       <slot v-if="activeTab === 'settings' && props.hasSettings" name="settings" />
       <slot v-if="activeTab === 'settings'" name="sections" />
       <slot v-if="activeTab === 'slots'" name="slots" />
+      <slot v-if="isContributed" name="tab" :id="activeTab" />
 
       <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />

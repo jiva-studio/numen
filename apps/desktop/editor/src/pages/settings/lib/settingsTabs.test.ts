@@ -1,23 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_TAB, getViewTab, listSettingsTabs } from './settingsTabs'
+import { DEFAULT_TAB, getViewTab } from './settingsTabs'
 import { getRegisteredViews } from './settingsViews'
-
-describe('listSettingsTabs', () => {
-  it('lists only the default tab for a plugin that declares none', () => {
-    expect(listSettingsTabs({}, 'Settings')).toStrictEqual([{ id: DEFAULT_TAB, text: 'Settings' }])
-  })
-
-  it('puts the default tab before the declared ones', () => {
-    const tabs = listSettingsTabs({ settingsTabs: [{ id: 'sync', title: 'Sync' }] }, 'Settings')
-
-    expect(tabs.map((one) => one.id)).toStrictEqual(['settings', 'sync'])
-  })
-})
+import { hasPluginSettings } from './pluginSettings'
+import { createPluginInfo } from '../testing/installation'
 
 describe('getViewTab', () => {
   it('puts a view that names no tab in the default tab', () => {
     expect(getViewTab({ id: 'a', title: 'A' })).toBe(DEFAULT_TAB)
     expect(getViewTab({ id: 'a', title: 'A', tab: '' })).toBe(DEFAULT_TAB)
+  })
+})
+
+describe('hasPluginSettings with views of a contributed tab', () => {
+  it('is false where every view sits in a contributed tab', () => {
+    const plugin = createPluginInfo('a.b', 'B', {
+      settingsViews: [{ id: 'vaults', title: 'Vaults', tab: 'sync' }],
+    })
+
+    expect(hasPluginSettings(plugin)).toBe(false)
+  })
+
+  it('is true for a view with no tab', () => {
+    const plugin = createPluginInfo('a.b', 'B', { settingsViews: [{ id: 'v', title: 'V' }] })
+
+    expect(hasPluginSettings(plugin)).toBe(true)
   })
 })
 

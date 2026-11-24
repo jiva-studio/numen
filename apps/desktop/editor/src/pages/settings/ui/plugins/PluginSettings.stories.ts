@@ -1,9 +1,9 @@
 /**
- * The settings page of a plugin that declares tabs: the strip shows over the views, each view is a
- * card of its own, and the default tab holds the plain rows.
+ * The Settings tab of a plugin page: the views that name no tab stand as cards of their own above
+ * the card of the rows.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import { defineComponent, ref } from 'vue'
 import { IslandCard } from '@numen/ui'
 import PluginSettings from './PluginSettings.vue'
@@ -27,11 +27,7 @@ const draw = (overrides: Partial<PluginInfo>) => {
   const plugin = createPluginInfo('sample.sync', 'Sample sync', overrides)
   const installation = createInstallation({
     plugins: ref([plugin]),
-    getSettingsViews: () =>
-      new Map([
-        ['vaults', { component: createView('Synced vaults') }],
-        ['shares', { component: createView('Shared folders') }],
-      ]),
+    getSettingsViews: () => new Map([['vaults', { component: createView('Synced vaults') }]]),
   })
   return {
     components: { PluginSettings },
@@ -52,35 +48,12 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** One tab: no strip, the views stand as cards above the card of the rows. */
-export const SingleTab: Story = {
+/** A view with no tab stands as a card above the card of the rows. */
+export const WithView: Story = {
   render: () => draw({ ...PLAIN, settingsViews: [{ id: 'vaults', title: 'Synced vaults' }] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.queryByRole('radiogroup')).toBeNull()
     await expect(canvas.getByText('Synced vaults')).toBeVisible()
     await expect(canvas.getByText('Server')).toBeVisible()
-  },
-}
-
-/** Two tabs: the default tab holds the rows, the declared tab holds its views as separate cards. */
-export const WithTabs: Story = {
-  render: () =>
-    draw({
-      ...PLAIN,
-      settingsTabs: [{ id: 'sync', title: 'Sync' }],
-      settingsViews: [
-        { id: 'vaults', title: 'Synced vaults', tab: 'sync' },
-        { id: 'shares', title: 'Shared folders', tab: 'sync' },
-      ],
-    }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('radio', { name: 'Settings' })).toBeChecked()
-    await expect(canvas.getByText('Server')).toBeVisible()
-    await userEvent.click(canvas.getByRole('radio', { name: 'Sync' }))
-    await expect(canvas.getByText('Synced vaults')).toBeVisible()
-    await expect(canvas.getByText('Shared folders')).toBeVisible()
-    await expect(canvas.queryByText('Server')).toBeNull()
   },
 }

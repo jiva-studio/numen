@@ -45,7 +45,7 @@ const mountSettings = (overrides: Partial<PluginInfo>) => {
 const views = (wrapper: ReturnType<typeof mountSettings>) =>
   wrapper.findAll('.view').map((one) => one.attributes('data-view'))
 
-const TABS = {
+const PAGE = {
   settingsTabs: [{ id: 'sync', title: 'Sync' }],
   settingsViews: [
     { id: 'vaults', title: 'Vaults', tab: 'sync' },
@@ -55,53 +55,19 @@ const TABS = {
   settings: [toggle],
 }
 
-describe('the tabs of the settings page of a plugin', () => {
-  it('shows no tab strip for a plugin that declares no tab', () => {
-    const wrapper = mountSettings({
-      settingsViews: [{ id: 'vaults', title: 'Vaults' }],
-      settings: [toggle],
-    })
-
-    expect(wrapper.find('[data-testid="plugin-settings-tabs"]').exists()).toBe(false)
-    expect(views(wrapper)).toStrictEqual(['vaults'])
+describe('the Settings tab of a plugin page', () => {
+  it('draws the views that name no tab and leaves the views of a contributed tab out', () => {
+    expect(views(mountSettings(PAGE))).toStrictEqual(['plain'])
   })
 
-  it('shows the default tab first and the declared tabs after it', () => {
-    const wrapper = mountSettings(TABS)
+  it('draws no strip of tabs of its own', () => {
+    const wrapper = mountSettings(PAGE)
 
-    const labels = wrapper.findAll('[role="radio"]').map((one) => one.text())
-
-    expect(labels).toStrictEqual(['Settings', 'Sync'])
-  })
-
-  it('holds the plain rows and the views without a tab in the default tab', () => {
-    const wrapper = mountSettings(TABS)
-
-    expect(views(wrapper)).toStrictEqual(['plain'])
-    expect(wrapper.text()).toContain('Switched')
-  })
-
-  it('draws the views of a declared tab and not the plain rows after the tab is chosen', async () => {
-    const wrapper = mountSettings(TABS)
-
-    await wrapper.findAll('[role="radio"]')[1]?.trigger('click')
-
-    expect(views(wrapper)).toStrictEqual(['vaults', 'shares'])
-    expect(wrapper.text()).not.toContain('Switched')
-  })
-
-  it('draws the views as cards of their own, with no card around them', async () => {
-    const wrapper = mountSettings(TABS)
-    await wrapper.findAll('[role="radio"]')[1]?.trigger('click')
-
-    const drawn = wrapper.findAll('.view')
-
-    expect(drawn).toHaveLength(2)
-    for (const one of drawn) expect(one.element.closest('.settings-card')).toBeNull()
+    expect(wrapper.find('[role="tablist"], [role="radiogroup"]').exists()).toBe(false)
   })
 
   it('keeps the plain rows in a card of their own, apart from the views', () => {
-    const wrapper = mountSettings(TABS)
+    const wrapper = mountSettings(PAGE)
 
     const rows = wrapper.get('.settings-card')
 
@@ -110,10 +76,7 @@ describe('the tabs of the settings page of a plugin', () => {
   })
 
   it('shows no card for the plain rows when the plugin has none', () => {
-    const wrapper = mountSettings({
-      settingsViews: TABS.settingsViews,
-      settingsTabs: TABS.settingsTabs,
-    })
+    const wrapper = mountSettings({ ...PAGE, settings: [] })
 
     expect(wrapper.find('.settings-card').exists()).toBe(false)
   })

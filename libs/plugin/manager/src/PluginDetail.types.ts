@@ -1,4 +1,5 @@
 import type { PluginHealth } from './pluginInfo'
+import type { ContributedTab } from './tabs'
 import type { ManagedPlugin } from './plugins'
 
 /**
@@ -15,6 +16,7 @@ export interface PluginDetailProps {
   readonly canInstall: boolean
   readonly hasSettings: boolean
   readonly hasSlots?: boolean
+  readonly contributedTabs?: readonly ContributedTab[]
   readonly health?: readonly PluginHealth[]
   readonly isApple?: boolean
 }

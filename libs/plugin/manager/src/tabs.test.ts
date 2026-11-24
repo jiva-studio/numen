@@ -69,3 +69,32 @@ describe('the Slots tab', () => {
     )
   })
 })
+
+describe('the tabs a plugin contributes', () => {
+  const contributed = [{ id: 'sync', title: 'Sync' }]
+
+  it('follow Settings and come before Slots, About, Contributes and Data', () => {
+    expect(
+      getPluginTabs({ hasSettings: true, hasSlots: true, hasData: true, contributed }).map(
+        (one) => one.text,
+      ),
+    ).toStrictEqual(['Settings', 'Sync', 'Slots', 'About', 'Contributes', 'Data'])
+  })
+
+  it('come first where the plugin has no Settings tab', () => {
+    expect(
+      getPluginTabs({ hasSettings: false, hasData: false, contributed }).map((one) => one.id),
+    ).toStrictEqual(['sync', 'about', 'contributions'])
+  })
+
+  it('leave the tabs of a plugin that contributes none as they were', () => {
+    expect(
+      getPluginTabs({ hasSettings: true, hasData: false, contributed: [] }).map((one) => one.id),
+    ).toStrictEqual(['settings', 'about', 'contributions'])
+  })
+
+  it('get element ids from their own id', () => {
+    expect(getTabElementId('plugin-a', 'sync')).toBe('plugin-a-tab-sync')
+    expect(getPanelElementId('plugin-a', 'sync')).toBe('plugin-a-panel-sync')
+  })
+})
