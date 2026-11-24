@@ -21,6 +21,7 @@ import (
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
@@ -134,8 +135,11 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	}))
 	loopsOf := map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute,
-		"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
-		"chain":  chaincourier.NewLoop(chaincourier.Deps{Identity: p.identity, Core: p.client, Chain: cloudSide}, p.clock).Execute,
+		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
+		"chain": chaincourier.NewLoop(chaincourier.Deps{
+			Identity: p.identity, Core: p.client, Chain: cloudSide,
+			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
+		}, p.clock).Execute,
 		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
 	}
 	if !r.isForeground.IsOn() {

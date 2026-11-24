@@ -32,6 +32,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
@@ -348,7 +349,14 @@ func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 
 // ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
-	return chaincourier.Deps{Identity: c.Account, Core: c.Client, Chain: c.Cloud}
+	return chaincourier.Deps{
+		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Endorse: endorse.NewEndorse(c.EndorseDeps()),
+	}
+}
+
+// EndorseDeps are the dependencies of the endorsement of the heads of a device that is revoked.
+func (c *Computer) EndorseDeps() endorse.Deps {
+	return endorse.Deps{Identity: c.Account, Host: c.Host, State: c.State, Revisions: c.Cloud}
 }
 
 // LinkDeps are the dependencies of the courier of a link over the relay of the server.
