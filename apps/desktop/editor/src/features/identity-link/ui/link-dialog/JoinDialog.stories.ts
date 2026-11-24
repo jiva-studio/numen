@@ -174,8 +174,8 @@ export const AskedToJoin: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await submitText(canvas, QR_TEXT)
-    await expect(await canvas.findByText('Join account 3F2A 91C0?')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Join' }))
+    await expect(await canvas.findByText('Use account 3F2A 91C0 on this device?')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Use account' }))
     await expect(args.calls.confirmJoin).toHaveBeenCalledWith(true)
   },
 }

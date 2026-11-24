@@ -22,7 +22,7 @@ export const WORDS = {
   linkDecline: "Don't link",
   linkCodeField: 'Enter the code shown on your other device',
   linkCodeConfirm: 'Confirm',
-  linkJoin: 'Join',
+  linkJoin: 'Use account',
   linkCancel: 'Cancel',
   linkClose: 'Close',
   linkJoinTitle: 'Use existing account',
@@ -61,7 +61,7 @@ export const WORDS = {
   linkCompare: 'Compare this fingerprint with the one the new device shows.',
   linkWaitingCode: 'Waiting for the code on the new device.',
   linkTriesLeft: (count: number) => `${count} tries left.`,
-  linkJoinQuestion: (account: string) => `Join account ${account}?`,
+  linkJoinQuestion: (account: string) => `Use account ${account} on this device?`,
   linkReason: (reason: string | undefined): string => {
     switch (reason) {
       case 'declined':
