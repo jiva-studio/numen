@@ -5,33 +5,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/stopafter"
 )
 
-// stopAfter counts the bytes of one direction since the admin call that armed it.
-type stopAfter struct {
-	isArmed bool
-	left    int64
-}
-
-func (a *stopAfter) start(bytes int64) {
-	a.isArmed, a.left = true, bytes
-}
-
-func (a *stopAfter) take(bytes int64) (allowed int64, isEnd bool) {
-	if !a.isArmed {
-		return bytes, false
-	}
-	if bytes < a.left {
-		a.left -= bytes
-		return bytes, false
-	}
-	allowed = a.left
-	a.isArmed, a.left = false, 0
-	return allowed, true
-}
-
 func (s *Server) countReceivedBytes(bytes int64) {
-	if _, isEnd := s.stopUpload.take(bytes); isEnd {
+	if _, isEnd := s.stopUpload.Take(bytes); isEnd {
 		s.requestStop()
 	}
 }
@@ -42,7 +21,7 @@ func (s *Server) requestStop() {
 	}
 }
 
-func (s *Server) serveStopAfter(direction *stopAfter) http.HandlerFunc {
+func (s *Server) serveStopAfter(direction *stopafter.Limit) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -54,7 +33,7 @@ func (s *Server) serveStopAfter(direction *stopAfter) http.HandlerFunc {
 			return
 		}
 		s.mu.Lock()
-		direction.start(bytes)
+		direction.Start(bytes)
 		s.mu.Unlock()
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -79,7 +58,7 @@ func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, bod
 		w.Header().Set("Content-Range", "bytes "+strconv.FormatInt(from, 10)+"-"+strconv.Itoa(len(body)-1)+"/"+strconv.Itoa(len(body)))
 	}
 	s.mu.Lock()
-	allowed, isEnd := s.stopDownload.take(int64(len(rest)))
+	allowed, isEnd := s.stopDownload.Take(int64(len(rest)))
 	s.logDownload(id, from, allowed)
 	s.mu.Unlock()
 	w.WriteHeader(status)

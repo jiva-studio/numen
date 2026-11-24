@@ -90,7 +90,7 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "kit.pdf")
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), nil, saveDialog{path: path})
+	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, saveDialog{path: path})
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -113,7 +113,7 @@ func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T
 
 func TestOpenIdentityUseCases_SavesNoKitWithoutADialog(t *testing.T) {
 	t.Parallel()
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), nil, nil)
+	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -155,7 +155,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 		t.Fatal(err)
 	}
 	saver := &kitSaver{}
-	save := identity.NewSaveRecoveryKit(identity.NewDeps(keys, names{}, clock), saver)
+	save := identity.NewSaveRecoveryKit(identity.NewDeps(keys, names{}, clock).WithProgress(res.progress).WithChains(res.ChainStore), saver)
 	if _, err := save.Execute(t.Context(), words, nil); err != nil {
 		t.Fatal(err)
 	}

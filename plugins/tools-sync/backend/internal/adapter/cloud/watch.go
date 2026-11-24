@@ -38,11 +38,11 @@ type watch struct {
 
 func newWatch(stream *syncclient.WatchStream) *watch {
 	w := &watch{stream: stream, events: make(chan watchResult), stop: make(chan struct{}), done: make(chan struct{}), closeOnce: sync.Once{}}
-	go w.pump()
+	go w.forwardEvents()
 	return w
 }
 
-func (w *watch) pump() {
+func (w *watch) forwardEvents() {
 	defer close(w.done)
 	defer close(w.events)
 	for {

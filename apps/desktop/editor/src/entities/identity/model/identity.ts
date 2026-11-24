@@ -14,6 +14,36 @@ import { createDeviceStore } from './devices'
 
 const RESTORE_POLL_MS = 1000
 
+const waitForIdentity = async (api: IdentityApi): Promise<IdentityInfo> => {
+  for (;;) {
+    await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
+    const found = await api.account.getIdentity().catch(() => undefined)
+    if (found !== undefined) return found
+  }
+}
+
+const attempt = async <T>(call: () => Promise<T>): Promise<Result<T, string>> => {
+  try {
+    return { ok: true, value: await call() }
+  } catch (caughtError) {
+    return { ok: false, error: formatError(caughtError) }
+  }
+}
+
+const settle = async <T>(
+  call: () => Promise<Result<T, IdentityFailure>>,
+  proves: 'words' | 'sheets',
+): Promise<Result<T, string>> => {
+  try {
+    const answer = await call()
+    return answer.ok
+      ? answer
+      : { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error, proves) }
+  } catch (caughtError) {
+    return { ok: false, error: formatError(caughtError) }
+  }
+}
+
 export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const identity = shallowRef<IdentityInfo | undefined>(undefined)
   const guard = createRequestGuard()
@@ -35,13 +65,8 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  const generateWords = async (): Promise<Result<readonly string[], string>> => {
-    try {
-      return { ok: true, value: await api.account.generateWords() }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
-  }
+  const generateWords = (): Promise<Result<readonly string[], string>> =>
+    attempt(() => api.account.generateWords())
 
   const create = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
@@ -56,68 +81,30 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  const waitForIdentity = async (): Promise<IdentityInfo> => {
-    for (;;) {
-      await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-      const found = await api.account.getIdentity().catch(() => undefined)
-      if (found !== undefined) return found
-    }
-  }
-
-  const restore = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
-    try {
-      const started = await api.account.startRestore(words)
-      if (!started.ok) {
-        return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
-      }
-      const found = await waitForIdentity()
+  const restore = async (proof: KitProof): Promise<Result<IdentityInfo, string>> => {
+    const started = await settle(
+      () =>
+        'words' in proof
+          ? api.account.startRestore(proof.words)
+          : api.account.startRestoreFromKit(proof.sheets),
+      'words' in proof ? 'words' : 'sheets',
+    )
+    if (!started.ok) return started
+    return attempt(async () => {
+      const found = await waitForIdentity(api)
       identity.value = found
-      return { ok: true, value: found }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
+      return found
+    })
   }
 
-  const remove = async (): Promise<Result<void, string>> => {
-    try {
+  const remove = (): Promise<Result<void, string>> =>
+    attempt(async () => {
       await api.account.deleteIdentity()
       identity.value = undefined
-      return { ok: true, value: undefined }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
-  }
-
-  const settle = async <T>(
-    call: () => Promise<Result<T, IdentityFailure>>,
-    proves: 'words' | 'sheets',
-  ): Promise<Result<T, string>> => {
-    try {
-      const answer = await call()
-      return answer.ok
-        ? answer
-        : { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error, proves) }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
-  }
+    })
 
   const saveKit = (proof: KitProof): Promise<Result<boolean, string>> =>
     settle(() => api.account.saveKit(proof), 'words' in proof ? 'words' : 'sheets')
-
-  const restoreFromKit = async (
-    sheets: readonly (readonly string[])[],
-  ): Promise<Result<IdentityInfo, string>> => {
-    const started = await settle(() => api.account.startRestoreFromKit(sheets), 'sheets')
-    if (!started.ok) return started
-    try {
-      const found = await waitForIdentity()
-      identity.value = found
-      return { ok: true, value: found }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
-  }
 
   const devices = createDeviceStore(api, notify)
 
@@ -130,7 +117,6 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     restore,
     delete: remove,
     saveKit,
-    restoreFromKit,
   }
 }
 

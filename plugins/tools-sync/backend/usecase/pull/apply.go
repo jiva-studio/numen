@@ -29,7 +29,7 @@ var errBlobMissing = errors.New("the server has no blob for a revision")
 
 type run struct {
 	deps    Deps
-	in      transfer.PullInput
+	in      ports.PullInput
 	files   ports.Files
 	moves   ports.Transfers
 	remote  []byte
@@ -134,7 +134,7 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 
 var errUnknownShare = errors.New("the revision belongs to a share this device does not know")
 
-func (r *run) checkShared(stored *syncv1.StoredRevision) (note.Meta, error) {
+func (r *run) checkSharedRevision(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
 	root, isFound := share.FindRootByID(r.in.Shares, rev.GetShareRootId())
 	if !isFound {
@@ -164,7 +164,7 @@ func (r *run) checkShared(stored *syncv1.StoredRevision) (note.Meta, error) {
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
 	if len(rev.GetShareRootId()) > 0 {
-		return r.checkShared(stored)
+		return r.checkSharedRevision(stored)
 	}
 	key, isKnown := r.getKey(rev.GetEpoch())
 	if !isKnown && !rev.GetDeleted() {

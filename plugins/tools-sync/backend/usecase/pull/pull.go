@@ -64,7 +64,7 @@ func NewPullChanges(deps Deps) *PullChanges { return &PullChanges{deps: deps} }
 // Execute applies every change after the position kept in the link, unless the server announced a restore this device
 // has not run or went back to an earlier state: then it applies nothing and the result says which. The position stops before the first file
 // that is left as it was, so the next pull reads it again.
-func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (restore.PullResult, error) {
+func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.PullResult, error) {
 	link, err := u.deps.State.ReadLink(ctx, in.VaultID)
 	if err != nil {
 		return restore.PullResult{}, err

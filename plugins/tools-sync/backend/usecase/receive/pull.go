@@ -3,7 +3,6 @@ package receive
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -14,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
@@ -163,6 +161,9 @@ func (r *pullRun) followLog(ctx context.Context) error {
 		return err
 	}
 	if entries, err = domainshare.ListEntriesAfter(entries, received.ServerVersion, headID); err != nil {
+		return err
+	}
+	if err := refuseShorterChain(received.OwnerChain, chain); err != nil {
 		return err
 	}
 	if r.authors, err = trust.NewAuthors(received.OwnerChain, chain); err != nil {
@@ -341,7 +342,7 @@ func (r *pullRun) place(ctx context.Context, stored *syncv1.StoredRevision) erro
 	record, isKnown := r.getRecord(rev.GetFileId())
 	switch note.Decide(local, record.BaseHash, meta.Hash) {
 	case note.Adopt:
-		r.setRecord(transfer.FileRecord{FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId()})
+		r.setRecord(newPulledRecord(rev.GetFileId(), meta.Path, meta.Hash, stored.GetRevId()))
 		return r.retire(ctx, record, isKnown, meta.Path, stored.GetSeq())
 	case note.Download:
 		return r.download(ctx, stored, meta, stat, local == "")
@@ -389,7 +390,7 @@ func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
 }
 
 func (r *pullRun) moveToTrash(ctx context.Context, path string) error {
-	removals, err := r.deps.Host.GetRemover(r.id).RemoveNotes(ctx, []string{path})
+	removals, err := r.deps.Host.GetNotes(r.id).RemoveNotes(ctx, []string{path})
 	if err != nil {
 		return err
 	}
@@ -415,7 +416,7 @@ func (r *pullRun) readLocal(ctx context.Context, path string) (string, domain.Fi
 func (r *pullRun) getRecord(fileID []byte) (transfer.FileRecord, bool) {
 	at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
 	if at < 0 {
-		return transfer.FileRecord{FileID: nil, Path: "", BaseHash: "", HeadRev: nil}, false
+		return transfer.NewEmptyRecord(), false
 	}
 	return r.records[at], true
 }
@@ -433,68 +434,8 @@ func (r *pullRun) removeRecord(fileID []byte) {
 	r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
 }
 
-func (r *pullRun) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
-	rev := stored.GetRevision()
-	plain, err := r.fetch(ctx, rev, meta)
-	if limited, isLimited := errors.AsType[syncprotocol.RateLimitedError](err); isLimited {
-		r.hold(stored.GetSeq())
-		return fmt.Errorf("%w: retry after %s", errRateLimited, limited.RetryAfter)
-	}
-	if err != nil {
-		return err
-	}
-	previous, isKnown := r.getRecord(rev.GetFileId())
-	r.setRecord(transfer.FileRecord{FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId()})
-	if err := r.deps.Records.WriteRecords(ctx, r.id, r.records); err != nil {
-		return err
-	}
-	err = r.write(ctx, meta.Path, plain, stat, isAbsent)
-	if err == nil {
-		r.result.Applied = append(r.result.Applied, meta.Path)
-		return r.retire(ctx, previous, isKnown, meta.Path, stored.GetSeq())
-	}
-	if isKnown {
-		r.setRecord(previous)
-	} else {
-		r.removeRecord(rev.GetFileId())
-	}
-	if saveErr := r.deps.Records.WriteRecords(ctx, r.id, r.records); saveErr != nil {
-		return saveErr
-	}
-	if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
-		r.addConflict(meta.Path, stored.GetSeq())
-		return nil
-	}
-	return err
-}
-
-func (r *pullRun) write(ctx context.Context, path string, plain []byte, stat domain.FileStat, isAbsent bool) error {
-	if isAbsent {
-		return r.files.Create(ctx, path, plain)
-	}
-	_, err := r.files.Write(ctx, path, plain, stat)
-	return err
-}
-
-func (r *pullRun) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Meta) ([]byte, error) {
-	downloads, err := r.deps.Shares.GetShareBlobUrls(ctx, r.shareID, [][]byte{rev.GetBlobId()})
-	if err != nil {
-		return nil, err
-	}
-	if len(downloads) != 1 || !downloads[0].GetFound() {
-		return nil, errBlobMissing
-	}
-	blob, err := r.deps.Blobs.GetBlob(ctx, downloads[0].GetUrl())
-	if err != nil {
-		return nil, err
-	}
-	sum := sha256.Sum256(blob)
-	if !bytes.Equal(sum[:], rev.GetBlobHash()) {
-		return nil, fmt.Errorf("%w: its hash differs", errCorruptBlob)
-	}
-	plain, err := blobcipher.Open([32]byte(meta.Key), [16]byte(rev.GetFileId()), blob)
-	if err != nil || note.Hash(plain) != meta.Hash {
-		return nil, fmt.Errorf("%w: it does not open to the note", errCorruptBlob)
-	}
-	return plain, nil
+func newPulledRecord(fileID []byte, path, baseHash string, headRev []byte) transfer.FileRecord {
+	record := transfer.NewEmptyRecord()
+	record.FileID, record.Path, record.BaseHash, record.HeadRev = fileID, path, baseHash, headRev
+	return record
 }

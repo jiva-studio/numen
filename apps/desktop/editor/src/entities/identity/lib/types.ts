@@ -33,7 +33,7 @@ export type IdentityErrorCode =
   | 'unknownDevice'
   | 'codeInvalid'
 
-/** What proves the account when a kit is saved: the 12 words or two sheets of an earlier kit. */
+/** What proves the account when a kit is saved or the identity is restored: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
   { readonly words: readonly string[] } | { readonly sheets: readonly (readonly string[])[] }
 

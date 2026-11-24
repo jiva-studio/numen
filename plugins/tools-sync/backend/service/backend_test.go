@@ -208,7 +208,7 @@ func newJoiningWorld(t *testing.T) (*world, *service.Backend, string) {
 func TestPreviewConnect_CountsTheNotesWithAnotherTextOnEachSide(t *testing.T) {
 	_, backend, remoteID := newJoiningWorld(t)
 
-	response, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID})
+	response, err := backend.GetConnectPreview(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID})
 
 	if err != nil {
 		t.Fatal(err)
@@ -221,7 +221,7 @@ func TestPreviewConnect_CountsTheNotesWithAnotherTextOnEachSide(t *testing.T) {
 func TestPreviewConnect_DoesNotConnectTheVault(t *testing.T) {
 	_, backend, remoteID := newJoiningWorld(t)
 
-	if _, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID}); err != nil {
+	if _, err := backend.GetConnectPreview(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: remoteID}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -233,7 +233,7 @@ func TestPreviewConnect_DoesNotConnectTheVault(t *testing.T) {
 func TestPreviewConnect_RefusesAnIdThatIsNotAnId(t *testing.T) {
 	_, backend, _ := newJoiningWorld(t)
 
-	_, err := backend.PreviewConnect(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: "not an id"})
+	_, err := backend.GetConnectPreview(t.Context(), api.PreviewConnectRequest{VaultID: "Copy", RemoteID: "not an id"})
 
 	if err == nil {
 		t.Error("PreviewConnect of a bad id succeeded, want an error")

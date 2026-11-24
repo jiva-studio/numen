@@ -1,21 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Toast } from '.'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   text: string
+  durationMs: number
+  onClose: () => void
 }
 
 const meta: Meta<Knobs> = {
   title: 'Controls/Toast',
   parameters: { layout: 'fullscreen' },
-  argTypes: { text: { control: 'text' } },
-  args: { text: 'Recovery kit saved' },
+  argTypes: { text: { control: 'text' }, durationMs: { control: 'number' } },
+  args: { text: 'Recovery kit saved', durationMs: 600_000, onClose: fn() },
   render: (args) => ({
     components: { Toast },
     setup: () => ({ args }),
-    template: `<Toast :text="args.text" :duration-ms="600000" />`,
+    template: `<Toast :text="args.text" :duration-ms="args.durationMs" @close="args.onClose" />`,
   }),
 }
 
@@ -51,5 +53,14 @@ export const Empty: Story = {
   args: { text: '' },
   play: async () => {
     await expect(within(document.body).getByRole('status')).toHaveTextContent('')
+  },
+}
+
+/** The toast asks to be closed once its duration has passed, also while the person goes on working. */
+export const AsksToBeClosed: Story = {
+  args: { durationMs: 300 },
+  play: async ({ args }) => {
+    await userEvent.tab()
+    await waitFor(() => expect(args.onClose).toHaveBeenCalledTimes(1))
   },
 }
