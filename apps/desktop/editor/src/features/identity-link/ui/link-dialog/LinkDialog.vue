@@ -24,12 +24,13 @@ const props = defineProps<{
   calls: LinkCalls
   findCamera?: () => Promise<boolean>
   camera?: ScannerCamera
+  stallMs?: number
 }>()
 
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const session = useLinkSession(() => props.calls, props.role)
+const session = useLinkSession(() => props.calls, props.role, props.stallMs)
 const draft = { text: ref(''), code: ref(''), isScanning: ref(props.role === 'joiner') }
 const view = computed(() =>
   getLinkView({

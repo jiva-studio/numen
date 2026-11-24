@@ -28,7 +28,7 @@ const render = (args: Knobs) => ({
     return { args, proof, onRestore, onCancel }
   },
   template: `
-    <div class="numen" style="block-size:34rem;background:var(--numen-surface)">
+    <div class="numen" style="position:relative;contain:strict;inline-size:48rem;block-size:34rem;background:var(--numen-surface)">
       <IdentityRestoreDialog
         :text="proof.text.value"
         :reading="proof.reading.value"
@@ -43,7 +43,7 @@ const render = (args: Knobs) => ({
 })
 
 const meta: Meta<Knobs> = {
-  title: 'Window/Restore identity',
+  title: 'Window/Identity/Restore',
   component: IdentityRestoreDialog,
   parameters: { layout: 'fullscreen' },
   argTypes: { problem: { control: 'text' }, isBusy: { control: 'boolean' } },

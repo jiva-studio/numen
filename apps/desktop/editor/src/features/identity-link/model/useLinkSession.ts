@@ -13,9 +13,14 @@ import { isEnded } from '../lib/phases'
 import type { LinkCalls } from '../lib/types'
 
 const POLL_MS = 500
-const STALL_POLLS = 30
+const STALL_MS = 15_000
 
-export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
+export function useLinkSession(
+  getCalls: () => LinkCalls,
+  role: LinkRole,
+  stallMs = STALL_MS,
+) {
+  const stallPolls = Math.ceil(stallMs / POLL_MS)
   const link = ref<LinkInfo | undefined>(undefined)
   const problem = ref('')
   const isBusy = ref(false)
@@ -45,7 +50,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
     if (!answer.ok) return
     link.value = answer.value
     waits = answer.value.phase === 'waitingForChannel' ? waits + 1 : 0
-    if (waits >= STALL_POLLS) stall()
+    if (waits >= stallPolls) stall()
     if (isEnded(answer.value)) stopPoll()
   }
 
