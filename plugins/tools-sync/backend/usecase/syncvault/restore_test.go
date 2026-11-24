@@ -346,6 +346,23 @@ func TestSyncVault_DeletesNoNoteWhenTheVaultIsUnknownWhileTheSubscriptionIsActiv
 	wantServerNote(t, p, "Shopping list.md", "milk")
 }
 
+func TestSyncVault_DeletesNoLocalNoteWhenTheVaultIsCreatedAgainAfterTheAccountDataWasDeleted(t *testing.T) {
+	p := newSubscribedPair(t)
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	p.a.WriteNote(source, "Chores.md", "dishes")
+	sync(t, p.a, source)
+	if err := p.server.Fake.DeleteAccountData(); err != nil {
+		t.Fatal(err)
+	}
+
+	sync(t, p.a, source)
+
+	wantNote(t, p.a, source, "Shopping list.md", "milk")
+	wantNote(t, p.a, source, "Chores.md", "dishes")
+	wantServerNote(t, p, "Shopping list.md", "milk")
+	wantServerNote(t, p, "Chores.md", "dishes")
+}
+
 func TestSyncVault_KeepsACachedCatalogLongerThanTheLogOfARolledBackServer(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	kept := backup(t, p)

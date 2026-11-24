@@ -51,13 +51,13 @@ type State interface {
 	ports.Records
 }
 
-// RecoverAccount requires an announcement that a known root key vouches for, signs in again with the chain of this device and sends the catalog entries the server lost.
+// RecoverAccount requires an announcement that a known root key vouches for, unless the server holds no catalog entry at all, signs in again with the chain of this device and sends the catalog entries the server lost.
 type RecoverAccount struct{ deps Deps }
 
 // NewRecoverAccount returns the use case over the dependencies.
 func NewRecoverAccount(deps Deps) *RecoverAccount { return &RecoverAccount{deps: deps} }
 
-// Execute returns ErrEpochUntrusted for a missing, forged or expired announcement and ErrDiverged for a log that differs from
+// Execute returns ErrEpochUntrusted for a missing announcement of a server that holds catalog entries, a forged or an expired one and ErrDiverged for a log that differs from
 // the copy, and sends nothing in either case.
 func (u *RecoverAccount) Execute(ctx context.Context) error {
 	epoch, _, err := u.deps.Epochs.GetRestoreEpoch(ctx)
@@ -65,12 +65,25 @@ func (u *RecoverAccount) Execute(ctx context.Context) error {
 		return err
 	}
 	if epoch == nil {
-		return fmt.Errorf("%w: the server announced no restore", ErrEpochUntrusted)
+		if err := u.requireEmptyCatalog(ctx); err != nil {
+			return err
+		}
 	}
 	if err := u.deps.Chain.SendAccountChain(ctx); err != nil {
 		return err
 	}
 	return u.replayCatalog(ctx)
+}
+
+func (u *RecoverAccount) requireEmptyCatalog(ctx context.Context) error {
+	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
+	if err != nil {
+		return err
+	}
+	if len(entries) > 0 {
+		return fmt.Errorf("%w: the server announced no restore", ErrEpochUntrusted)
+	}
+	return nil
 }
 
 func (u *RecoverAccount) replayCatalog(ctx context.Context) error {

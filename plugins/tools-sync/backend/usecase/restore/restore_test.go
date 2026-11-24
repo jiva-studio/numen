@@ -138,6 +138,24 @@ func TestRecoverAccount_RefusesAServerThatAnnouncedNoRestore(t *testing.T) {
 	}
 }
 
+func TestRecoverAccount_SendsTheCatalogAgainToAServerThatLostTheAccountDataAndAnnouncedNoRestore(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	if err := p.server.Fake.DeleteAccountData(); err != nil {
+		t.Fatal(err)
+	}
+
+	err := usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(p.a.ReadCatalog(t)); got != 1 {
+		t.Errorf("server holds %d catalog entries, want the one of the cache again", got)
+	}
+}
+
 func TestRecoverAccount_StopsWhenTheLogOfTheServerDiffersFromTheCache(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
