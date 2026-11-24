@@ -48,7 +48,7 @@ type Story = StoryObj<typeof meta>
 export const Choose: Story = {
   args: { client: createClient([vault('Plain', 'notConnected')]) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByLabelText('Vault in the cloud')).toBeVisible()
     await expect(canvas.getByLabelText('Vault on this device')).toBeVisible()
   },
@@ -58,7 +58,7 @@ export const NoVaultOnDevice: Story = {
   args: { client: createClient([vault('Work', 'connected')]) },
   play: async ({ canvasElement }) => {
     await expect(
-      await within(canvasElement).findByText(
+      await within(canvasElement.ownerDocument.body).findByText(
         'Every vault on this device is synced. Create an empty vault first.',
       ),
     ).toBeVisible()
@@ -68,7 +68,7 @@ export const NoVaultOnDevice: Story = {
 export const Asks: Story = {
   args: { client: createClient([vault('Plain', 'notConnected')], 2) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(await canvas.findByRole('button', { name: 'Get vault' }))
     await expect(
       await canvas.findByText('2 notes differ from the vault in the cloud. Get it anyway?'),

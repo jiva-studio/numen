@@ -230,7 +230,7 @@ describe('useSubscription following the account and the server', () => {
     expect(subscription.offers.buyOffers.value).toHaveLength(3)
   })
 
-  it('says which server it could not reach and follows the setting', async () => {
+  it('says the server is not available and follows the setting', async () => {
     const client = createClient([createResponse()])
     client.getSubscription.mockRejectedValue(unreachable())
     let notify: (value: string) => void = () => undefined
@@ -243,13 +243,13 @@ describe('useSubscription following the account and the server', () => {
     }
     const { subscription } = mountSubscription(client, createOpen(), { settings })
     await subscription.session.load()
-    expect(subscription.summary.view.value.text).toContain('https://sync.numen.md')
+    expect(subscription.summary.view.value.text).toBe('The sync server is not available.')
 
     notify('http://127.0.0.1:8787')
     await vi.advanceTimersByTimeAsync(0)
 
     expect(subscription.session.server.value).toBe('http://127.0.0.1:8787')
-    expect(subscription.summary.view.value.text).toContain('http://127.0.0.1:8787')
+    expect(subscription.summary.view.value.text).toBe('The sync server is not available.')
   })
 
   it('reads again at once when the server setting changes', async () => {

@@ -129,7 +129,7 @@ describe('the sync plugin frontend', () => {
     expect(wrapper.find('.sync-badge__label').text()).toBe(WORDS.syncedLabel)
   })
 
-  it('says which sync server it could not reach, opens the settings of the plugin, and recovers when the server answers', async () => {
+  it('says the sync server is not available, opens the settings of the plugin, and recovers when the server answers', async () => {
     const stub = stubServer({ hasIdentity: true })
     let isUp = false
     const answer = stub.getMockImplementation()
@@ -148,7 +148,7 @@ describe('the sync plugin frontend', () => {
     const wrapper = mount(card?.component as never)
     await vi.advanceTimersByTimeAsync(0)
     await flushPromises()
-    expect(wrapper.text()).toContain('https://sync.numen.md')
+    expect(wrapper.text()).toContain('The sync server is not available.')
 
     await wrapper
       .findAll('button')

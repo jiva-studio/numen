@@ -12,6 +12,8 @@ const ACCOUNT = '0123456789abcdef0123456789abcdef'
 const DELETE_AT = '2026-11-30T12:00:00Z'
 const EXPORT_DOCUMENT = '{"account":"0123456789abcdef0123456789abcdef","vaults":[]}'
 
+const PLANS = [{ id: 'plus', name: 'Plus', quotaBytes: 100 * 2 ** 30, priceCents: 1500, currency: 'USD' }]
+
 const ACTIVE: SubscriptionResponse = {
   hasIdentity: true,
   phase: 'active',
@@ -65,7 +67,7 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
     getSubscription: vi.fn<SubscriptionClient['getSubscription']>(() =>
       Promise.resolve(subscription),
     ),
-    listPlans: vi.fn<SubscriptionClient['listPlans']>(() => Promise.resolve([])),
+    listPlans: vi.fn<SubscriptionClient['listPlans']>(() => Promise.resolve(PLANS)),
     changePlan: vi.fn<SubscriptionClient['changePlan']>(() => Promise.resolve(subscription)),
     createCheckout: vi.fn<SubscriptionClient['createCheckout']>(() => Promise.resolve('')),
     createPortalSession: vi.fn<SubscriptionClient['createPortalSession']>(() =>

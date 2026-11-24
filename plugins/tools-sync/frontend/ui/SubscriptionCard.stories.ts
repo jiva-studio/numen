@@ -157,7 +157,6 @@ export const Unreachable: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('The sync server is not available.')).toBeVisible()
-    await expect(await canvas.findByText(/https:\/\/sync\.numen\.md/)).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Open the settings' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
@@ -281,7 +280,10 @@ export const EndedWithPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Plus, 100 GB, $15 / month')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'More actions' })).toBeNull()
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByRole('menuitem', { name: 'Manage subscription' })).toBeVisible()
+    await expect(page.queryByRole('menuitem', { name: 'Change plan' })).toBeNull()
   },
 }
 

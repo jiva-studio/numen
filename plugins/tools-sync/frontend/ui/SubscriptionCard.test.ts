@@ -376,7 +376,7 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).not.toContain('Create an identity')
   })
 
-  it('says which server it could not reach and opens the settings from the card', async () => {
+  it('says the server is not available and opens the settings from the card', async () => {
     const client = createClient(() =>
       Promise.reject(
         Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
@@ -396,8 +396,7 @@ describe('SubscriptionCard', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('https://sync.numen.md')
-    expect(wrapper.text()).toContain('Start the server, or change the address in the settings.')
+    expect(wrapper.text()).toContain('The sync server is not available.')
     expect(wrapper.text()).not.toContain('30 seconds')
     await wrapper
       .findAll('button')
