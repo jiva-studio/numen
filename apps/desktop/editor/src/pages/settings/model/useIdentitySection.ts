@@ -81,7 +81,7 @@ export function useIdentitySection(
     }
     const kept = setup.recoveryWords.value
     const answer = await run(() => getIdentity().create(kept))
-    if (!answer.ok || started !== generation) return
+    if (!answer.ok) return
     reset()
     onKept(kept)
   }
@@ -102,8 +102,6 @@ export function useIdentitySection(
     actions: {
       startSetup,
       startRestore,
-      showCheck: setup.showCheck,
-      showWords: setup.showWords,
       cancel: reset,
       setEntered,
       keep,

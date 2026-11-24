@@ -93,6 +93,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     if (!started.ok) return started
     return attempt(async () => {
       const found = await waitForIdentity(api)
+      guard.acquireRequest()
       identity.value = found
       return found
     })

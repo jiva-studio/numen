@@ -8,7 +8,7 @@ const WORD_COUNT = 12
 
 const createEmptyWords = (): readonly string[] => Array.from({ length: WORD_COUNT }, () => '')
 
-const splitWords = (text: string): string[] =>
+export const splitWords = (text: string): string[] =>
   text
     .split(/\s+/)
     .filter((word) => word !== '')

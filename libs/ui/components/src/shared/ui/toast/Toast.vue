@@ -1,32 +1,26 @@
 <script setup lang="ts">
 /**
  * A short message at the bottom of the window that goes away by itself: it says that something the
- * person did is done. An empty text shows nothing. Each new text is shown for the whole duration,
- * then the toast asks to be closed.
+ * person did is done. An empty text shows nothing. Each new text is shown for the whole duration.
  */
-import { useExpiry } from '@/shared/model/useExpiry'
+import { useExpiringText } from '@/shared/model/useExpiringText'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<{ text: string; durationMs?: number }>(), {
   durationMs: 4000,
 })
 
-const emit = defineEmits<{
-  (event: 'close'): void
-}>()
-
-/* --------------------------------- Hooks ---------------------------------- */
-useExpiry(
+/* --------------------------------- State ---------------------------------- */
+const shown = useExpiringText(
   () => props.text,
   () => props.durationMs,
-  () => emit('close'),
 )
 </script>
 
 <template>
   <Teleport to="body">
     <div class="toast-region numen" role="status" aria-live="polite">
-      <p v-if="text !== ''" :key="text" class="toast">{{ text }}</p>
+      <p v-if="shown !== ''" :key="shown" class="toast">{{ shown }}</p>
     </div>
   </Teleport>
 </template>
