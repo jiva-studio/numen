@@ -16,6 +16,7 @@ const (
 	retryAfterFailure    = 30 * time.Second
 	renewBeforeExpiry    = 60 * time.Second
 	shortestRenewal      = 5 * time.Second
+	hostCallTimeout      = 30 * time.Second
 )
 
 // Identity is the identity of this device, which the host keeps.
@@ -169,7 +170,9 @@ func (u *Keep) GetToken() string {
 }
 
 func (u *Keep) open(ctx context.Context, restore bool) (domain.Session, error) {
-	public, err := u.deps.Identity.GetPublicIdentity(ctx)
+	identityCtx, cancelIdentity := context.WithTimeout(ctx, hostCallTimeout)
+	public, err := u.deps.Identity.GetPublicIdentity(identityCtx)
+	cancelIdentity()
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -177,7 +180,9 @@ func (u *Keep) open(ctx context.Context, restore bool) (domain.Session, error) {
 	if err != nil {
 		return domain.Session{}, err
 	}
-	signature, err := u.deps.Identity.SignAsDevice(ctx, challenge.Message)
+	signCtx, cancelSign := context.WithTimeout(ctx, hostCallTimeout)
+	signature, err := u.deps.Identity.SignAsDevice(signCtx, challenge.Message)
+	cancelSign()
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -222,15 +227,24 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	if u.raised == what.key {
 		return what.retry
 	}
-	u.clear(ctx)
-	if u.deps.Health.Report(ctx, health.Item{Key: what.key, Severity: health.Warning, Text: what.text}) == nil {
+	if u.clear(ctx); u.raised != "" {
+		return what.retry
+	}
+	reportCtx, cancel := context.WithTimeout(ctx, hostCallTimeout)
+	defer cancel()
+	if u.deps.Health.Report(reportCtx, health.Item{Key: what.key, Severity: health.Warning, Text: what.text}) == nil {
 		u.raised = what.key
 	}
 	return what.retry
 }
 
 func (u *Keep) clear(ctx context.Context) {
-	if u.raised != "" && u.deps.Health.Clear(ctx, u.raised) == nil {
+	if u.raised == "" {
+		return
+	}
+	clearCtx, cancel := context.WithTimeout(ctx, hostCallTimeout)
+	defer cancel()
+	if u.deps.Health.Clear(clearCtx, u.raised) == nil {
 		u.raised = ""
 	}
 }

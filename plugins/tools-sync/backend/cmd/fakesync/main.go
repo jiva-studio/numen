@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -94,13 +95,16 @@ func load(fake *fakeserver.Server, path string) error {
 
 func main() {
 	address := flag.String("addr", "127.0.0.1:0", "address to listen on")
-	protocol := flag.Uint("protocol", 0, "protocol version the server needs; 0 is the version of this build")
+	protocol := flag.Uint64("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
 	plansFlag := flag.String("plans", "", "plans the server sells as id:GB pairs, such as basic:10,plus:100; empty sells basic, plus and pro")
 	heartbeat := flag.Duration("heartbeat", syncprotocol.WatchHeartbeat, "silence after which a stream of change hints sends a heartbeat")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
+	if *protocol > math.MaxUint32 {
+		log.Fatalf("-protocol %d does not fit in 32 bits", *protocol)
+	}
 	plans, err := readPlans(*plansFlag)
 	if err != nil {
 		log.Fatal(err)

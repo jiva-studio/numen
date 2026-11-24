@@ -24,8 +24,8 @@ Feature: Numen Sync signs in
 
     Scenario: Numen Sync does not sign in without an identity
       When the application "editor" starts
-      Then the sync server has no session
-      And the plugin "Numen Sync" warns about "No identity on this device"
+      Then the plugin "Numen Sync" warns about "No identity on this device"
+      And the sync server has no session
 
     Scenario: Numen Sync signs in after the identity is created
       Given the application "editor" starts
@@ -38,8 +38,8 @@ Feature: Numen Sync signs in
       Given the person creates an identity
       And the sync server needs a newer protocol
       When the application "editor" starts
-      Then the sync server has no session
-      And the plugin "Numen Sync" warns about "Update Numen"
+      Then the plugin "Numen Sync" warns about "Update Numen"
+      And the sync server has no session
 
   Rule: A session ends when the server ends it
 

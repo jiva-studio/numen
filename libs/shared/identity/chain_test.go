@@ -345,6 +345,9 @@ func TestIsExtensionOf(t *testing.T) {
 				t.Errorf("IsExtensionOf() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
 func TestAppendDevice_RefusesADeviceWithoutASigningKey(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)

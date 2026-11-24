@@ -40,6 +40,10 @@ func (c versionStreamConn) Receive(message any) error {
 	return readUpdateRequired(c.StreamingClientConn.Receive(message))
 }
 
+func (c versionStreamConn) CloseResponse() error {
+	return readUpdateRequired(c.StreamingClientConn.CloseResponse())
+}
+
 func (versionClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return next
 }
