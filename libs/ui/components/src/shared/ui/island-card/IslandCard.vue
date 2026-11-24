@@ -1,40 +1,13 @@
 <script setup lang="ts">
 /** A titled group: a card whose tinted header holds the title and may carry an aside at its right, with the rows below it. The body pads like a card of settings rows. The aside shows the labels of its actions while they fit, then only their icons, then only a "..." menu. */
-import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { useTemplateRef } from 'vue'
+
+import { useHeaderFit } from '../../model/useHeaderFit'
 
 defineProps<{ title: string }>()
 
-const LEVELS = ['full', 'icons', 'menu'] as const
 const header = useTemplateRef<HTMLElement>('header')
-const level = ref<(typeof LEVELS)[number]>('full')
-let watcher: ResizeObserver | undefined
-
-/** The header is crowded when its content spills over it or a label shows an ellipsis. */
-function isCrowded(element: HTMLElement): boolean {
-  if (element.scrollWidth > element.clientWidth) return true
-  return [...element.querySelectorAll<HTMLElement>('.card-action__label')].some(
-    (label) => label.scrollWidth > label.clientWidth,
-  )
-}
-
-async function fit(): Promise<void> {
-  const element = header.value
-  if (element === null) return
-  for (const next of LEVELS) {
-    level.value = next
-    await nextTick()
-    if (!isCrowded(element)) return
-  }
-}
-
-onMounted(() => {
-  fit().catch(() => undefined)
-  if (typeof ResizeObserver === 'undefined' || header.value === null) return
-  watcher = new ResizeObserver(() => fit().catch(() => undefined))
-  watcher.observe(header.value)
-})
-
-onBeforeUnmount(() => watcher?.disconnect())
+const level = useHeaderFit(header)
 </script>
 
 <template>
