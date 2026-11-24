@@ -45,9 +45,6 @@ const thisDevice = computed<DeviceInfo>(() => ({
   isThis: true,
   isRevoked: false,
 }))
-const count = computed(() =>
-  props.info.isRevoked ? 1 : Math.max(props.devices.list.value.length, 1),
-)
 </script>
 
 <template>
@@ -83,7 +80,6 @@ const count = computed(() =>
         <Link :size="14" aria-hidden="true" />
         {{ words.identityLinkDevice }}
       </CardAction>
-      {{ words.identityDeviceCount(count) }}
     </template>
     <DevicesSection
       v-if="!info.isRevoked"
@@ -141,15 +137,7 @@ const count = computed(() =>
   padding: 0 1rem 0.75rem;
 }
 
-.identity-details__current,
-.identity-details__current:hover {
-  background-color: var(--settings-hover-bg);
-}
-
 .identity-details__badge {
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--numen-radius-tight);
-  background-color: var(--settings-hover-bg);
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);
   white-space: nowrap;

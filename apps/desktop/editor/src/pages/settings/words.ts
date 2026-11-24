@@ -126,7 +126,6 @@ export const WORDS = {
   identityAccountDetail: 'Compare it when you link a device',
   identityThisDevice: 'This device',
   identityDevices: 'Devices',
-  identityDeviceCount: (count: number) => (count === 1 ? '1 device' : `${count} devices`),
   identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   identityDelete: 'Delete identity',
   identityDeleteTitle: 'Delete the identity from this device?',

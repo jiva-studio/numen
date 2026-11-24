@@ -23,7 +23,7 @@ const date = computed(() => {
 </script>
 
 <template>
-  <li class="device-row" :class="{ 'device-row--this': device.isThis }">
+  <li class="device-row">
     <NavigationRow
       category="device"
       is-static
@@ -50,11 +50,6 @@ const date = computed(() => {
 </template>
 
 <style scoped>
-.device-row--this :deep(.navigation-row),
-.device-row--this :deep(.navigation-row:hover) {
-  background-color: var(--settings-hover-bg);
-}
-
 .device-row__fingerprint {
   font-family: var(--numen-font-mono);
   font-size: var(--numen-text-2);
@@ -64,9 +59,6 @@ const date = computed(() => {
 }
 
 .device-row__badge {
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--numen-radius-tight);
-  background-color: var(--settings-hover-bg);
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);
   white-space: nowrap;

@@ -251,7 +251,7 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text().match(/November 22, 2026/g)).toHaveLength(1)
     expect(tab.text()).not.toContain('Created')
     expect(tab.text()).toContain('Devices')
-    expect(tab.text()).toContain('1 device')
+    expect(tab.text()).not.toMatch(/\d+ devices?/)
     expect(tab.text()).toContain(IDENTITY.deviceFingerprint)
     expect(findButton(tab, 'Create identity')).toBeUndefined()
   })
