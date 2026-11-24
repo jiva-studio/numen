@@ -51,3 +51,29 @@ message GetCatalogResponse {
   repeated CatalogEntry entries = 1;
   bool has_more = 2;
 }
+
+message VaultUsage {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+  // used_bytes is the stored (padded) size of the reserved and committed blobs of the vault.
+  uint64 used_bytes = 2;
+}
+
+message GetVaultUsageRequest {}
+
+message GetVaultUsageResponse {
+  // vaults are all the vaults the server stores for the account, ordered by vault_id.
+  repeated VaultUsage vaults = 1;
+}
+
+message DeleteVaultRequest {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+}
+
+message DeleteVaultResponse {
+  // deleted is true when the call removed the vault and false when the server stored no such vault of the account.
+  bool deleted = 1;
+  // freed_bytes is what the call gave back to the quota, 0 when deleted is false.
+  uint64 freed_bytes = 2;
+}
