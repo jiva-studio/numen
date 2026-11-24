@@ -1,5 +1,5 @@
 import type { Transport } from '@connectrpc/connect'
-import { createFileClient, createVaultClient } from '@numen/core-client'
+import { createFileRpc, createVaultRpc } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { Core } from '../lib/core'
 
@@ -47,8 +47,8 @@ export function createFileApi(
   transport: Transport,
   sync?: SyncEndpoint,
 ): Pick<Core, 'listFiles' | 'fetchFile' | 'dropDownload'> {
-  const files = createFileClient(transport)
-  const vault = createVaultClient(transport)
+  const files = createFileRpc(transport)
+  const vault = createVaultRpc(transport)
   const callPlugin = async (method: 'FetchFile' | 'DropDownload', path: string) => {
     if (!sync) return { ok: false as const, error: 'The sync is not on this phone' }
     return callSync(sync, (await vault.getVaultState({})).id, method, path)
