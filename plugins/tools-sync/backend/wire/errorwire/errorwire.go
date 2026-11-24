@@ -39,19 +39,6 @@ func GetCode(err error) server.ErrorCode {
 	return server.CodeInternal
 }
 
-// GetWarning returns the text a failed download or removal of a download shows as a warning, and nothing for another error.
-func GetWarning(err error) string {
-	switch {
-	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):
-		return "Could not reach the sync server"
-	case errors.Is(err, fetchfile.ErrBlobMissing):
-		return "Could not download the file"
-	case errors.Is(err, host.ErrChanged):
-		return "The file has changes that are not sent"
-	}
-	return ""
-}
-
 // GetText returns the text of the error an API method reports; a refusal of a share starts with a capital.
 func GetText(err error) string {
 	refusal := findRefusal(err)

@@ -394,7 +394,7 @@ func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
 }
 
 func (r *pullRun) moveToTrash(ctx context.Context, path string) error {
-	removals, err := r.deps.Host.GetNotes(r.id).RemoveNotes(ctx, []string{path})
+	removals, err := r.deps.Notes.GetNotes(r.id).RemoveNotes(ctx, []string{path})
 	if err != nil {
 		return err
 	}

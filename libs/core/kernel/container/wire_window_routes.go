@@ -213,7 +213,7 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 	if res == nil {
 		return nil
 	}
-	record := openRecordLog(indexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, GetClock(res))
+	record := openRecordLog(indexPath, getLogEntries(res), res.settings.files.GetLogLevel, GetClock(res))
 	return windowlogs.NewRecordFunc(record, res.ErrorHandler)
 }
 

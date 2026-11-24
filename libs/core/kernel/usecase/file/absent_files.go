@@ -20,6 +20,21 @@ type StoreFiles interface {
 	Open(ctx context.Context, name string) (io.ReadCloser, error)
 }
 
+// StoreOpener opens a file outside the vault by its name, with its size.
+type StoreOpener interface {
+	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
+}
+
+type openedStoreFiles struct{ opener StoreOpener }
+
+// NewStoreFiles returns the store files that the opener opens.
+func NewStoreFiles(opener StoreOpener) StoreFiles { return openedStoreFiles{opener: opener} }
+
+func (s openedStoreFiles) Open(ctx context.Context, name string) (io.ReadCloser, error) {
+	opened, _, err := s.opener.Open(ctx, name)
+	return opened, err
+}
+
 // EvictWriters opens a vault for deleting the bytes of its files.
 type EvictWriters interface {
 	OpenFileMover(v domain.Vault) (vaultport.FileMover, error)

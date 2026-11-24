@@ -11,11 +11,14 @@ import (
 )
 
 // CompleteRestore finishes the pending restore with the chain a sync plugin read from its server.
-type CompleteRestore struct{ completion restoreCompletion }
+type CompleteRestore struct {
+	completion restoreCompletion
+	pending    restoreReader
+}
 
 // NewCompleteRestore returns the use case that completes a restore.
 func NewCompleteRestore(d Deps) *CompleteRestore {
-	return &CompleteRestore{completion: d.getCompletion()}
+	return &CompleteRestore{completion: d.getCompletion(), pending: d.progress.pending}
 }
 
 // Execute joins the account of chainBytes: the chain must verify, have the root of the pending words and contain the chain mark of the
@@ -29,7 +32,7 @@ func (u *CompleteRestore) Execute(ctx context.Context, pluginID string, chainByt
 	if pluginID == "" {
 		return errNoPluginID
 	}
-	restore := u.completion.restores.read()
+	restore := u.pending.read()
 	if restore == nil {
 		return identitydomain.ErrNoPendingRestore
 	}

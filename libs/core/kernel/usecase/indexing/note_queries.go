@@ -7,6 +7,4 @@ import (
 )
 
 // VaultSummaries counts what the index holds of one vault.
-type VaultSummaries interface {
-	GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error)
-}
+type VaultSummaries interface{ GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) }

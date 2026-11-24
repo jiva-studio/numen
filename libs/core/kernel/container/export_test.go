@@ -76,7 +76,7 @@ func (c TestInstallation) SubscribeSettingChanges() (<-chan []settingsdomain.Set
 
 // SubscribeAppliedPluginSettings reports when the host finishes applying a settings batch.
 func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, func()) {
-	return c.Resources.pluginChanges.Subscribe()
+	return c.Resources.settings.pluginChanges.Subscribe()
 }
 
 func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher indexing.VaultWatcher) *indexing.VaultOpener {
@@ -138,7 +138,7 @@ func GetSettingsWriter(c TestInstallation) func(entries []settingsdomain.Setting
 
 // UnsubscribeHost stops the settings subscription of the plugin host before a test ends.
 func UnsubscribeHost(c TestInstallation) {
-	c.Resources.subscribedHosts.Unsubscribe(c.Preferences.Configuration)
+	c.Resources.settings.subscribedHosts.Unsubscribe(c.Preferences.Configuration)
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {

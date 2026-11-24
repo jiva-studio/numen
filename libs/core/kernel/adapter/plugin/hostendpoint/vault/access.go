@@ -152,6 +152,12 @@ type CacheStore interface {
 	WriteCache(ctx context.Context, pluginID, name string, content []byte) error
 }
 
+// Storage is what the host keeps for a plugin in the vault: its store folder and its cache.
+type Storage struct {
+	Stores StoreOpener
+	Cache  CacheStore
+}
+
 // Access is the open vault as the host exposes it to a plugin: its files, the index data of its
 // notes and links, the plugin's folder in its store, and the cache the installation keeps for a plugin.
 // Each handler uses the capabilities it needs.
@@ -168,8 +174,7 @@ type Access struct {
 	LinkEditor  LinkEditor
 	Watch       Watch
 	Switch      Switch
-	Stores      StoreOpener
-	Cache       CacheStore
+	Storage     Storage
 	Locks       Locks
 	Absent      AbsentFiles
 }

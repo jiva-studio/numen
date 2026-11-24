@@ -46,6 +46,7 @@ type Deps struct {
 	Crypto        ports.Crypto
 	Identity      ports.Identity
 	Host          ports.Host
+	Notes         ports.NoteHost
 	State         State
 	Progress      Progress
 	Health        ports.Health
@@ -191,7 +192,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	if _, err := u.deps.Host.GetNotes(id).EnsureIndexed(ctx); err != nil {
+	if _, err := u.deps.Notes.GetNotes(id).EnsureIndexed(ctx); err != nil {
 		return err
 	}
 	shares, err := u.steps.Shares.Execute(ctx, id)

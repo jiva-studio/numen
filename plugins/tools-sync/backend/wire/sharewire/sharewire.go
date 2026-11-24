@@ -26,7 +26,7 @@ func NewShareDeps(deps syncvault.Deps) share.Deps {
 func NewReceiveDeps(deps syncvault.Deps) receive.Deps {
 	return receive.Deps{
 		Shares: deps.Shares, Blobs: deps.Blobs, Crypto: deps.Crypto, Box: deps.Box, Identity: deps.Identity, Host: deps.Host,
-		Links: deps.State, Records: deps.State, Statuses: deps.Progress, Vaults: deps.Vaults, Folders: deps.Folders, Clock: deps.Clock,
+		Notes: deps.Notes, Links: deps.State, Records: deps.State, Statuses: deps.Progress, Vaults: deps.Vaults, Folders: deps.Folders, Clock: deps.Clock,
 	}
 }
 

@@ -30,6 +30,7 @@ type Deps struct {
 	Box      ports.Box
 	Identity ports.Identity
 	Host     ports.Host
+	Notes    ports.NoteHost
 	Links    ports.Links
 	Records  ports.Records
 	Statuses ports.Statuses

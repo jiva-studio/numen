@@ -90,7 +90,8 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "kit.pdf")
-	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, saveDialog{path: path})
+	res := &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), res, saveDialog{path: path})
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}

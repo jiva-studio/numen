@@ -42,7 +42,7 @@ func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (vau
 	if vault == nil {
 		return nil, noStoreVault, nil
 	}
-	store, err := vault.Stores.OpenStore(pluginID)
+	store, err := vault.Storage.Stores.OpenStore(pluginID)
 	if err != nil {
 		code, err := answerStore(ctx, err)
 		return nil, code, err
@@ -58,7 +58,7 @@ func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (vau
 	if vault == nil {
 		return nil, noStoreVault, nil
 	}
-	store, err := vault.Stores.OpenStoreWriter(pluginID)
+	store, err := vault.Storage.Stores.OpenStoreWriter(pluginID)
 	if err != nil {
 		code, err := answerStore(ctx, err)
 		return nil, code, err

@@ -5,6 +5,7 @@ package identity
 // windows and of the plugins of one installation share one.
 type Progress struct {
 	restores restoreHold
+	pending  restoreReader
 	links    linkHold
 	created  generatedWords
 	gate     CreateGate
@@ -12,7 +13,8 @@ type Progress struct {
 
 // NewProgress returns a progress with no restore, no link and no revoke.
 func NewProgress() *Progress {
-	return &Progress{restores: newPendingStore(), links: newLinkStore(), gate: NewCreateGate()}
+	store := newPendingStore()
+	return &Progress{restores: store, pending: store, links: newLinkStore(), gate: NewCreateGate()}
 }
 
 // GetCreateGate returns the gate that serializes the check for an absent identity and the write of one over every use case of this progress.

@@ -99,6 +99,9 @@ type Store interface {
 // Absent is the files of one vault that the device lists and does not hold.
 type Absent interface{ host.AbsentFiles }
 
+// NoteHost is the notes of the vaults of the installation.
+type NoteHost interface{ GetNotes(id domain.VaultID) Notes }
+
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
@@ -106,7 +109,6 @@ type Host interface {
 	GetAbsent(id domain.VaultID) Absent
 	GetTransfers(id domain.VaultID) Transfers
 	Store(id domain.VaultID) Store
-	GetNotes(id domain.VaultID) Notes
 }
 
 // Links keeps the link of each vault.

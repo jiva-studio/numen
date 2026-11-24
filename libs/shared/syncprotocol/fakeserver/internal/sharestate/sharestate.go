@@ -4,6 +4,7 @@ package sharestate
 import (
 	"bytes"
 
+	"github.com/jiva-studio/numen/libs/shared/identity"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -64,4 +65,64 @@ func (sh *State) ListActiveMembers() []*Member {
 		}
 	}
 	return active
+}
+
+// HasSealsFor reports whether the entry holds one seal for each active member except the skipped one, and no other.
+func (sh *State) HasSealsFor(entry *syncv1.ShareLogEntry, skipped *Member) bool {
+	wanted := map[string]bool{}
+	for _, reader := range sh.ListActiveMembers() {
+		if reader != skipped {
+			wanted[string(reader.Root)] = true
+		}
+	}
+	if len(entry.GetSeals()) != len(wanted) {
+		return false
+	}
+	for _, seal := range entry.GetSeals() {
+		if !wanted[string(seal.GetReaderRootSignKey())] {
+			return false
+		}
+		delete(wanted, string(seal.GetReaderRootSignKey()))
+	}
+	return true
+}
+
+// GetRemoveReaderProblem returns why the entry is not a removal of a reader of the share, or an empty string.
+func (sh *State) GetRemoveReaderProblem(entry *syncv1.ShareLogEntry) string {
+	subject := sh.FindMemberByRoot(entry.GetSubjectRootSignKey())
+	switch {
+	case entry.GetEpoch() != sh.Epoch+1:
+		return "a removal is the next epoch"
+	case subject == nil || !subject.IsActive():
+		return "the subject is not a reader"
+	case !sh.HasSealsFor(entry, subject):
+		return "a removal has a seal for each remaining reader"
+	}
+	return ""
+}
+
+// Apply appends the entry to the log and changes the epoch, the members and the closing as the entry says.
+func (sh *State) Apply(entry *syncv1.ShareLogEntry) {
+	version := entry.GetVersion()
+	sh.Log = append(sh.Log, entry)
+	sh.Epoch = entry.GetEpoch()
+	switch entry.GetKind() {
+	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
+		root := entry.GetSubjectRootSignKey()
+		account := identity.RecoveryPublicKey{Sign: root}.Fingerprint().String()
+		if member := sh.FindMemberByRoot(root); member != nil {
+			member.Added, member.Removed = version, 0
+			return
+		}
+		sh.Members = append(sh.Members, &Member{Account: account, Root: bytes.Clone(root), Added: version})
+	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
+		sh.FindMemberByRoot(entry.GetSubjectRootSignKey()).Removed = version
+	case syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE:
+		for _, member := range sh.ListActiveMembers() {
+			member.Removed = version
+		}
+		sh.IsClosed = true
+	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE,
+		syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UNSPECIFIED:
+	}
 }

@@ -9,12 +9,12 @@ import (
 
 type GetIdentity struct {
 	records  records
-	restores restoreHold
+	restores restoreReader
 }
 
 // NewGetIdentity returns the use case that reads the identity of this device.
 func NewGetIdentity(d Deps) *GetIdentity {
-	return &GetIdentity{records: d.records, restores: d.progress.restores}
+	return &GetIdentity{records: d.records, restores: d.progress.pending}
 }
 
 // Execute returns the identity of this device, or identity.ErrNoIdentity when the key store holds no

@@ -16,15 +16,20 @@ type pendingRestore struct {
 	refusal   error
 }
 
-// restoreHold is the restore that waits for the account chain of a sync plugin: replace, isCurrent, read and expire take the
+// restoreHold changes the restore that waits for the account chain of a sync plugin: replace, isCurrent and expire take the
 // lock of the store themselves, and hold waits for the lock and returns the store with the function that gives it back.
 type restoreHold interface {
 	replace(next *pendingRestore)
 	isCurrent(restore *pendingRestore) bool
-	read() *pendingRestore
-	readRefusal() error
 	expire(restore *pendingRestore)
 	hold() (*pendingStore, func())
+}
+
+// restoreReader reads the restore that waits for the account chain of a sync plugin; read and readRefusal take the lock of the
+// store themselves.
+type restoreReader interface {
+	read() *pendingRestore
+	readRefusal() error
 }
 
 // pendingStore keeps the one restore that waits for the account chain of a sync plugin. Its keys stay in memory.

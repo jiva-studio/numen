@@ -69,7 +69,7 @@ func (s *Server) extendShare(account string, entry *syncv1.ShareLogEntry) (*conn
 	if err := s.checkShareKind(share, entry); err != nil {
 		return nil, err
 	}
-	applyShareEntry(share, entry)
+	share.Apply(entry)
 	return connect.NewResponse(&syncv1.AppendShareLogEntryResponse{Committed: true, Head: entry}), nil
 }
 
@@ -91,9 +91,9 @@ func (s *Server) checkShareKind(share *sharestate.State, entry *syncv1.ShareLogE
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
 		return s.checkAddReader(share, entry)
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
-		problem = getRemoveReaderProblem(share, entry)
+		problem = share.GetRemoveReaderProblem(entry)
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE:
-		if entry.GetEpoch() != share.Epoch+1 || !hasSealsFor(entry, share.ListActiveMembers(), nil) {
+		if entry.GetEpoch() != share.Epoch+1 || !share.HasSealsFor(entry, nil) {
 			problem = "a rotation is the next epoch with a seal for each reader"
 		}
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE,
@@ -106,19 +106,6 @@ func (s *Server) checkShareKind(share *sharestate.State, entry *syncv1.ShareLogE
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%w: %s", errInvalidEntry, problem))
 	}
 	return nil
-}
-
-func getRemoveReaderProblem(share *sharestate.State, entry *syncv1.ShareLogEntry) string {
-	subject := share.FindMemberByRoot(entry.GetSubjectRootSignKey())
-	switch {
-	case entry.GetEpoch() != share.Epoch+1:
-		return "a removal is the next epoch"
-	case subject == nil || !subject.IsActive():
-		return "the subject is not a reader"
-	case !hasSealsFor(entry, share.ListActiveMembers(), subject):
-		return "a removal has a seal for each remaining reader"
-	}
-	return ""
 }
 
 func (s *Server) checkAddReader(share *sharestate.State, entry *syncv1.ShareLogEntry) error {
@@ -143,50 +130,6 @@ func (s *Server) checkAddReader(share *sharestate.State, entry *syncv1.ShareLogE
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%w: %s", errInvalidEntry, problem))
 	}
 	return nil
-}
-
-func hasSealsFor(entry *syncv1.ShareLogEntry, readers []*sharestate.Member, skipped *sharestate.Member) bool {
-	wanted := map[string]bool{}
-	for _, reader := range readers {
-		if reader != skipped {
-			wanted[string(reader.Root)] = true
-		}
-	}
-	if len(entry.GetSeals()) != len(wanted) {
-		return false
-	}
-	for _, seal := range entry.GetSeals() {
-		if !wanted[string(seal.GetReaderRootSignKey())] {
-			return false
-		}
-		delete(wanted, string(seal.GetReaderRootSignKey()))
-	}
-	return true
-}
-
-func applyShareEntry(share *sharestate.State, entry *syncv1.ShareLogEntry) {
-	version := entry.GetVersion()
-	share.Log = append(share.Log, entry)
-	share.Epoch = entry.GetEpoch()
-	switch entry.GetKind() {
-	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
-		root := entry.GetSubjectRootSignKey()
-		account := identity.RecoveryPublicKey{Sign: root}.Fingerprint().String()
-		if member := share.FindMemberByRoot(root); member != nil {
-			member.Added, member.Removed = version, 0
-			return
-		}
-		share.Members = append(share.Members, &sharestate.Member{Account: account, Root: bytes.Clone(root), Added: version})
-	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
-		share.FindMemberByRoot(entry.GetSubjectRootSignKey()).Removed = version
-	case syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE:
-		for _, member := range share.ListActiveMembers() {
-			member.Removed = version
-		}
-		share.IsClosed = true
-	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE,
-		syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UNSPECIFIED:
-	}
 }
 
 func (s *Server) ListShares(_ context.Context, req *connect.Request[syncv1.ListSharesRequest]) (*connect.Response[syncv1.ListSharesResponse], error) {

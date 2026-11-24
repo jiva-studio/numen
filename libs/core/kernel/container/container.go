@@ -78,30 +78,37 @@ type Resources struct {
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vaultLocks      *vaultwriter.Locks
-	watches         *vaultwatch.Hub
-	settingsFiles   *settingsadapter.Files
-	settingEvents   *settingevents.Events
+	vaultLocks   *vaultwriter.Locks
+	watches      *vaultwatch.Hub
+	settings     settingsResources
+	logEntries   *logsusecase.Entries
+	progress     *identity.Progress
+	identityLock identity.CreateGate
+	absentFiles  vaultport.AbsentFiles
+}
+
+type settingsResources struct {
+	files           *settingsadapter.Files
+	events          *settingevents.Events
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
-	logEntries      *logsusecase.Entries
-	progress        *identity.Progress
-	identityLock    identity.CreateGate
-	absentFiles     vaultport.AbsentFiles
 }
 
 func NewResources() *Resources {
 	progress := identity.NewProgress()
 	return &Resources{
-		Chunks:        &note.ChunkTokens{},
-		vaultLocks:    vaultwriter.NewLocks(),
-		watches:       vaultwatch.NewHub(),
-		settingsFiles: settingsadapter.NewFiles(),
-		settingEvents: settingevents.New(),
-		pluginChanges: &settingsusecase.PluginChanges{},
-		logEntries:    logsusecase.NewEntries(),
-		progress:      progress,
-		identityLock:  progress.GetCreateGate(),
+		Chunks:     &note.ChunkTokens{},
+		vaultLocks: vaultwriter.NewLocks(),
+		watches:    vaultwatch.NewHub(),
+		settings: settingsResources{
+			files:           settingsadapter.NewFiles(),
+			events:          settingevents.New(),
+			pluginChanges:   &settingsusecase.PluginChanges{},
+			subscribedHosts: settingsusecase.HostSubscriptions{},
+		},
+		logEntries:   logsusecase.NewEntries(),
+		progress:     progress,
+		identityLock: progress.GetCreateGate(),
 	}
 }
 
@@ -170,9 +177,9 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
 		Watches:         res.watches,
-		SettingsFiles:   res.settingsFiles,
-		SettingEvents:   res.settingEvents,
-		PluginChanges:   res.pluginChanges,
+		SettingsFiles:   res.settings.files,
+		SettingEvents:   res.settings.events,
+		PluginChanges:   res.settings.pluginChanges,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
