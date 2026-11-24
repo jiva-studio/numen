@@ -146,8 +146,14 @@ type Receiver interface {
 	Execute(ctx context.Context, id domain.VaultID) (restore.PullResult, error)
 }
 
+// Registrar registers a vault as a new synced vault with a fresh key.
+type Registrar interface {
+	Execute(ctx context.Context, id domain.VaultID) error
+}
+
 // Steps are the use cases a pass runs.
 type Steps struct {
+	Register       Registrar
 	Rename         Renamer
 	Sweep          Sweeper
 	Pull           Puller
@@ -226,13 +232,16 @@ func (u *SyncVault) getAuthors(ctx context.Context) (trust.Authors, error) {
 	return trust.NewAuthors(own.Chain, stored)
 }
 
-// dropForeign forgets the registration of a vault whose key another identity sealed, so the vault is not synced any
-// more and can be synced again, and tells the person in one plain item.
+// dropForeign forgets the registration of a vault whose key another identity sealed, registers the vault again with a fresh key
+// so the next pass uploads it, and tells the person in one plain item.
 func (u *SyncVault) dropForeign(ctx context.Context, id domain.VaultID, isForeign bool, err error) error {
 	if !isForeign {
 		return err
 	}
 	if err := u.deps.Forget.ForgetVault(ctx, id); err != nil {
+		return err
+	}
+	if err := u.steps.Register.Execute(ctx, id); err != nil {
 		return err
 	}
 	return u.reports.raise(ctx, getKey(keyOtherIdentity, id), textOtherIdentity)

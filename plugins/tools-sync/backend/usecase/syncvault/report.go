@@ -28,7 +28,7 @@ const (
 	textWentBack       = "The sync server went back to an earlier state"
 	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
 	textDiverged       = "The sync server holds another history than this computer"
-	textOtherIdentity  = "This vault was synced with another identity. Sync it again to use the current one."
+	textOtherIdentity  = "This vault was synced with another identity, so it is synced again with the current one."
 )
 
 type reporter struct {
@@ -68,6 +68,9 @@ func (r reporter) report(ctx context.Context, id hostdomain.VaultID, found tally
 		return err
 	}
 	if err := r.health.Clear(ctx, getKey(keyStorageFull, id)); err != nil {
+		return err
+	}
+	if err := r.health.Clear(ctx, getKey(keyOtherIdentity, id)); err != nil {
 		return err
 	}
 	if err := r.toggle(ctx, getKey(keyConflicts, id), found.conflicts, GetConflictText(found.conflicts)); err != nil {

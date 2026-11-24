@@ -352,40 +352,30 @@ func sealKeyForAnotherIdentity(t *testing.T, c *synctest.Computer, id domain.Vau
 	}
 }
 
-func TestSyncVault_AVaultWhoseKeyBelongsToAnotherIdentityBecomesNotSynced(t *testing.T) {
+func TestSyncVault_AVaultWhoseKeyBelongsToAnotherIdentityIsRegisteredAgainAndUploads(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
+	old := p.a.Link(t, source).RemoteVaultID
 	sealKeyForAnotherIdentity(t, p.a, source)
+	p.a.WriteNote(source, "a.md", "kept")
 
 	if err := p.a.Sync(t.Context(), source); err != nil {
 		t.Fatalf("pass over the vault: %v", err)
 	}
+	sync(t, p.a, source)
 
-	if _, err := p.a.State.ReadLink(t.Context(), source); !errors.Is(err, syncvault.ErrNotConnected) {
-		t.Errorf("link after the pass: error = %v, want the vault not connected", err)
+	if got := p.a.Link(t, source).RemoteVaultID; got == old {
+		t.Error("the vault kept its old registration")
 	}
-	if !p.a.HasItem("This vault was synced with another identity. Sync it again to use the current one.") {
-		t.Error("the person is not told the vault was synced with another identity")
+	p.a.GetVaultKey(t, source)
+	if len(p.a.ReadFileRows(t, source)) == 0 {
+		t.Error("the note was not uploaded after the vault was registered again")
+	}
+	if p.a.HasItem("This vault was synced with another identity, so it is synced again with the current one.") {
+		t.Error("the item stays after a pass that succeeded")
 	}
 }
 
 func TestConnectVault_SyncThisVaultRegistersAgainWithAFreshKey(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	sealKeyForAnotherIdentity(t, p.a, source)
-	if err := p.a.Sync(t.Context(), source); err != nil {
-		t.Fatal(err)
-	}
-
-	p.a.Connect(t, source)
-
-	if err := p.a.Sync(t.Context(), source); err != nil {
-		t.Fatalf("pass after syncing again: %v", err)
-	}
-	if p.a.HasItem("This vault was synced with another identity. Sync it again to use the current one.") {
-		t.Error("the item stays after the vault was registered again")
-	}
-}
-
-func TestConnectVault_SyncThisVaultRegistersAgainWhenTheOldKeyIsStillThere(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	old := p.a.Link(t, source).RemoteVaultID
 	sealKeyForAnotherIdentity(t, p.a, source)

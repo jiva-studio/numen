@@ -2,8 +2,10 @@
 package syncwire
 
 import (
+	"context"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
@@ -78,6 +80,10 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 	recoverAccount := restore.NewRecoverAccount(recovery)
 	sharing := sharewire.NewShareDeps(deps.Deps)
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
+		Register: registerAgain{connect: catalog.NewConnectVault(catalog.Deps{
+			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
+			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random,
+		})},
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
 			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random,
@@ -101,4 +107,11 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 		Rewrap:         share.NewRewrapFolder(sharing),
 		Receive:        receive.NewPullShare(sharewire.NewReceiveDeps(deps.Deps)),
 	})
+}
+
+// registerAgain registers a vault as a new synced vault with a fresh key.
+type registerAgain struct{ connect *catalog.ConnectVault }
+
+func (r registerAgain) Execute(ctx context.Context, id domain.VaultID) error {
+	return r.connect.Execute(ctx, catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""})
 }
