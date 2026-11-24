@@ -15,6 +15,7 @@ export interface SubscriptionSessionOptions {
   readonly openExternal: PluginContext['identity']['openExternal']
   readonly refreshMs?: Readonly<Record<'noIdentity' | 'ready' | 'unreachable', number>> | undefined
   readonly settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
+  readonly isPaused?: (() => boolean) | undefined
 }
 
 /**
@@ -44,6 +45,7 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
   }
 
   async function refresh(): Promise<void> {
+    if (options.isPaused?.() === true) return
     const before = account.status.value
     try {
       await read()

@@ -41,7 +41,7 @@ const LONG_DATE = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
-function formatDate(time: string): string {
+export function formatDate(time: string): string {
   const at = Date.parse(time)
   return Number.isNaN(at) ? '' : LONG_DATE.format(at)
 }

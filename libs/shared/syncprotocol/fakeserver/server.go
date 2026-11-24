@@ -124,6 +124,7 @@ type Server struct {
 	stop          func()
 	links         *linkrelay.Relay
 	shares        map[string]*sharestate.State
+	deleting      map[string]time.Time
 }
 
 // New returns the server for the config.
@@ -134,7 +135,7 @@ func New(cfg Config) *Server {
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
 		store: bodystore.New(cfg.BodyDir), stop: cfg.Stop, streams: streams.New(cfg.Heartbeat),
-		shares: map[string]*sharestate.State{},
+		shares: map[string]*sharestate.State{}, deleting: map[string]time.Time{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -269,6 +270,9 @@ func (s *Server) openSession(req *syncv1.SignInRequest) (Session, error) {
 	chain, ok := s.checkProof(pending, req)
 	if !ok {
 		return Session{}, newFailedSignIn()
+	}
+	if err := s.applyDeletion(chain.Root().Fingerprint().String(), req.GetRestoreAccount()); err != nil {
+		return Session{}, err
 	}
 	head, ok := s.mergeChain(chain)
 	if !ok {

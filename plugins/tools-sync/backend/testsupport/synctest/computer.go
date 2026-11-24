@@ -65,7 +65,6 @@ func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(
 // Transfers returns what the host does with the bytes of the files of the vault.
 func (h Host) GetTransfers(id domain.VaultID) ports.Transfers { return h.Root.With(id) }
 
-
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
 type Computer struct {
@@ -180,7 +179,7 @@ func (c *Computer) SignIn(ctx context.Context) error {
 		return err
 	}
 	opened, err := c.Sessions.SignIn(ctx, domainsession.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
+		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain, RestoreAccount: false,
 	})
 	if err != nil {
 		return err

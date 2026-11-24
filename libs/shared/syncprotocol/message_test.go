@@ -83,3 +83,23 @@ func TestVersion_IsTwo(t *testing.T) {
 		t.Errorf("HeaderVersion = %q", syncprotocol.HeaderVersion)
 	}
 }
+
+func TestGetAccountDeleteMessage_UsesItsOwnLabelSoASignInSignatureNeverDeletes(t *testing.T) {
+	t.Parallel()
+	challenge := newChallenge()
+	key := bytes.Repeat([]byte{3}, 32)
+
+	deleting := syncprotocol.GetAccountDeleteMessage(challenge, key, 1)
+	signingIn := syncprotocol.GetSignInMessage(challenge, key, 1)
+
+	if !bytes.HasPrefix(deleting, append([]byte("numen-sync/account-delete/v1"), 0)) {
+		t.Errorf("message = %q, want the label numen-sync/account-delete/v1 first", deleting)
+	}
+	if bytes.Equal(deleting, signingIn) {
+		t.Error("the delete message equals the sign-in message")
+	}
+	tail := len("numen-sync/account-delete/v1")
+	if !bytes.Equal(deleting[tail:], signingIn[len("numen-sync/sign-in/v1"):]) {
+		t.Error("the delete message differs from the sign-in message after the label")
+	}
+}

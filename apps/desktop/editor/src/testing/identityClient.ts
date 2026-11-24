@@ -15,7 +15,10 @@ const asRefused = (): Result<never, IdentityFailure> => ({
   error: { error: 'noLink', message: 'No link.' },
 })
 
-export const createIdentityClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({
+/** The calls of the identity client of the core, flat: a test overrides the calls it needs. */
+export type IdentityCalls = IdentityClient['account'] & IdentityClient['link'] & IdentityClient['devices']
+
+export const createIdentityClient = (overrides: Partial<IdentityCalls> = {}): IdentityCalls => ({
   get: () => Promise.resolve(undefined),
   generateWords: () => Promise.resolve([]),
   create: () => Promise.resolve(asRefused()),
@@ -62,7 +65,7 @@ export const createDeviceInfo = (overrides: Partial<DeviceInfo> = {}): DeviceInf
 })
 
 /** The calls of the identity over a client of the core. */
-export const wrapIdentityClient = (client: IdentityClient): IdentityApi => ({
+export const wrapIdentityClient = (client: IdentityCalls): IdentityApi => ({
   account: createAccountApi(client),
   link: createDeviceLinkApi(client),
   devices: createDevicesApi(client),

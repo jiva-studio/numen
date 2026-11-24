@@ -96,7 +96,6 @@ func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.inner.GetNo
 // Store returns the store folder of the plugin in the vault.
 func (h *SpyHost) Store(id domain.VaultID) ports.Store { return h.inner.Store(id) }
 
-
 // Transfers returns what the host does with the bytes of the files of the vault, written down.
 func (h *SpyHost) GetTransfers(id domain.VaultID) ports.Transfers {
 	return &spyTransfers{spy: h, inner: h.inner.GetTransfers(id)}

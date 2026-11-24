@@ -3,6 +3,7 @@
  */
 import { createApi } from '@numen/plugin-sdk'
 import { createFolderSharesClient, createReceivedSharesClient } from './shares'
+import { createAccountClient } from './account'
 import { createSubscriptionClient } from './subscription'
 import { createVaultsClient, SERVICE } from './vaults'
 
@@ -10,3 +11,4 @@ export const vaultsClient = createVaultsClient(createApi(SERVICE))
 export const subscriptionClient = createSubscriptionClient(createApi(SERVICE))
 export const folderSharesClient = createFolderSharesClient(createApi(SERVICE))
 export const readerSharesClient = createReceivedSharesClient(createApi(SERVICE))
+export const accountClient = createAccountClient(createApi(SERVICE))

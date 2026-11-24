@@ -23,10 +23,11 @@ type Challenge struct {
 // Proof is what answers a challenge: the signature over its message, with the key and the chain that
 // vouch for the device.
 type Proof struct {
-	ChallengeID   []byte
-	DeviceSignKey []byte
-	Signature     []byte
-	Chain         []byte
+	ChallengeID    []byte
+	DeviceSignKey  []byte
+	Signature      []byte
+	Chain          []byte
+	RestoreAccount bool
 }
 
 // Session is the session the server opened for a sign-in.
@@ -65,6 +66,12 @@ func (c *SignInClient) GetChainReadChallenge(ctx context.Context, rootSignKey []
 	return c.getChallenge(ctx, rootSignKey, syncprotocol.GetChainReadMessage)
 }
 
+// GetAccountDeleteChallenge runs the checks of GetChallenge. A signature over its message deletes the account and
+// never signs in.
+func (c *SignInClient) GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (Challenge, error) {
+	return c.getChallenge(ctx, deviceSignKey, syncprotocol.GetAccountDeleteMessage)
+}
+
 func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, getMessage func(*syncv1.GetChallengeResponse, []byte, uint32) []byte) (Challenge, error) {
 	response, err := c.rpc.GetChallenge(ctx, connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: deviceSignKey}))
 	if err != nil {
@@ -79,7 +86,7 @@ func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, g
 // SignIn sends the proof and returns the session the server opens. A refusal is ErrUnauthenticated.
 func (c *SignInClient) SignIn(ctx context.Context, proof Proof) (Session, error) {
 	response, err := c.rpc.SignIn(ctx, connect.NewRequest(&syncv1.SignInRequest{
-		ChallengeId: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
+		ChallengeId: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain, RestoreAccount: proof.RestoreAccount,
 	}))
 	if err != nil {
 		return Session{}, syncprotocol.ReadError(err)

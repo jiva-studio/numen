@@ -310,3 +310,48 @@ func TestKeep_StopsWhenItsContextEnds(t *testing.T) {
 		t.Fatal("Execute did not return after its context ended")
 	}
 }
+
+func TestKeep_DeletingAccountRaisesItemAndNeverRestoresByItself(t *testing.T) {
+	p := newDeletingPair(t)
+	keep := session.NewKeep(session.Deps{
+		Identity: p.second.Account, Server: p.second.Sessions, Health: p.second.NewHealth(), Clock: p.second.Clock,
+	})
+	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
+
+	done := make(chan error, 1)
+	go func() { done <- keep.Execute(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
+
+	eventually(t, "the item that says the account is being deleted", func() bool { return p.second.HasItemKey("account-deleting") })
+	if _, isDeleting := keep.GetDeletion(); !isDeleting {
+		t.Error("the sign-in does not know the account is deleting")
+	}
+	if keep.GetToken() != "" {
+		t.Error("the sign-in holds a token of a deleting account")
+	}
+	if err := p.second.SignIn(t.Context()); err == nil {
+		t.Error("another sign-in without a restore opened a session of a deleting account")
+	}
+}
+
+func TestKeep_RestoreCancelsTheDeletionAndClearsTheItem(t *testing.T) {
+	p := newDeletingPair(t)
+	keep := session.NewKeep(session.Deps{
+		Identity: p.second.Account, Server: p.second.Sessions, Health: p.second.NewHealth(), Clock: p.second.Clock,
+	})
+	if err := keep.Refresh(t.Context()); err == nil {
+		t.Fatal("sign-in to a deleting account opened a session")
+	}
+
+	if err := keep.Restore(t.Context()); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+
+	if _, isDeleting := keep.GetDeletion(); isDeleting || keep.GetToken() == "" {
+		t.Errorf("deleting = %v, token empty = %v, want a signed-in account that is not deleting", isDeleting, keep.GetToken() == "")
+	}
+}

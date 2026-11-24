@@ -15,9 +15,11 @@ import (
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/accountwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/subscriptionwire"
 )
@@ -36,6 +38,7 @@ type Backend struct {
 	*sharewire.Shares
 	*sharewire.Received
 	*subscriptionwire.Subscription
+	*accountwire.Account
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -51,7 +54,14 @@ func NewBackend(deps syncvault.Deps) *Backend {
 		Shares:       sharewire.New(deps),
 		Received:     sharewire.NewReceived(deps),
 		Subscription: subscriptionwire.New(deps),
+		Account:      accountwire.New(),
 	}
+}
+
+// WithAccountData gives the backend the deletion, the restore and the export of the account.
+func (b *Backend) WithAccountData(deps accountdata.Deps) *Backend {
+	b.Use(deps)
+	return b
 }
 
 // ListVaults lists every vault of the installation with its state.

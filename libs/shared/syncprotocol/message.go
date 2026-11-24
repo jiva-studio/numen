@@ -11,6 +11,7 @@ import (
 const (
 	signInLabel         = "numen-sync/sign-in/v1"
 	chainReadLabel      = "numen-sync/chain-read/v1"
+	accountDeleteLabel  = "numen-sync/account-delete/v1"
 	challengeIDSize     = 16
 	challengeNonceSize  = 32
 	maxChallengeSkewSec = 120
@@ -26,6 +27,12 @@ func GetSignInMessage(challenge *syncv1.GetChallengeResponse, deviceSignKey []by
 // GetSignInMessage under the label numen-sync/chain-read/v1, with the root key in place of the device key.
 func GetChainReadMessage(challenge *syncv1.GetChallengeResponse, rootSignKey []byte, version uint32) []byte {
 	return getChallengeMessage(chainReadLabel, challenge, rootSignKey, version)
+}
+
+// GetAccountDeleteMessage returns the bytes a device signs to delete its account: the layout of GetSignInMessage under
+// the label numen-sync/account-delete/v1, so a signature made to sign in never deletes.
+func GetAccountDeleteMessage(challenge *syncv1.GetChallengeResponse, deviceSignKey []byte, version uint32) []byte {
+	return getChallengeMessage(accountDeleteLabel, challenge, deviceSignKey, version)
 }
 
 func getChallengeMessage(label string, challenge *syncv1.GetChallengeResponse, deviceSignKey []byte, version uint32) []byte {

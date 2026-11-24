@@ -85,6 +85,10 @@ func newRevokedConcern() concern {
 	return concern{"device-revoked", "This device was revoked", retryAfterFailure}
 }
 
+func newAccountDeletingConcern() concern {
+	return concern{"account-deleting", "Your cloud data is being deleted", retryAfterFailure}
+}
+
 func newSignInFailedConcern() concern {
 	return concern{"sign-in-failed", "Could not sign in", retryAfterFailure}
 }
@@ -95,12 +99,16 @@ type Keep struct {
 	deps   Deps
 	raised string
 
-	mu    sync.Mutex
-	token string
+	mu         sync.Mutex
+	token      string
+	deleteAt   time.Time
+	isDeleting bool
 }
 
 // NewKeep returns the use case over the dependencies.
-func NewKeep(deps Deps) *Keep { return &Keep{deps: deps, raised: "", mu: sync.Mutex{}, token: ""} }
+func NewKeep(deps Deps) *Keep {
+	return &Keep{deps: deps, raised: "", mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
+}
 
 // Execute runs until ctx ends and returns its error.
 func (u *Keep) Execute(ctx context.Context) error {
@@ -116,7 +124,7 @@ func (u *Keep) Execute(ctx context.Context) error {
 }
 
 func (u *Keep) signIn(ctx context.Context) time.Duration {
-	current, err := u.open(ctx)
+	current, err := u.open(ctx, false)
 	if err != nil {
 		return u.raise(ctx, err)
 	}
@@ -126,8 +134,31 @@ func (u *Keep) signIn(ctx context.Context) time.Duration {
 
 // Refresh signs in once more and returns why it could not.
 func (u *Keep) Refresh(ctx context.Context) error {
-	_, err := u.open(ctx)
+	_, err := u.open(ctx, false)
 	return err
+}
+
+// Restore signs in with the request to cancel the deletion of the account, and clears the warning of the deletion.
+func (u *Keep) Restore(ctx context.Context) error {
+	if _, err := u.open(ctx, true); err != nil {
+		return err
+	}
+	u.clear(ctx)
+	return nil
+}
+
+// GetDeletion returns when the server deletes the account for good, and false when the last sign-in found it not deleting.
+func (u *Keep) GetDeletion() (time.Time, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.deleteAt, u.isDeleting
+}
+
+// SetDeletion records that the account is deleting, for the person who just asked for it.
+func (u *Keep) SetDeletion(deleteAt time.Time) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.deleteAt, u.isDeleting, u.token = deleteAt, true, ""
 }
 
 // GetToken returns the token of the session, empty before the first sign-in.
@@ -137,7 +168,7 @@ func (u *Keep) GetToken() string {
 	return u.token
 }
 
-func (u *Keep) open(ctx context.Context) (domain.Session, error) {
+func (u *Keep) open(ctx context.Context, restore bool) (domain.Session, error) {
 	public, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
 		return domain.Session{}, err
@@ -151,13 +182,17 @@ func (u *Keep) open(ctx context.Context) (domain.Session, error) {
 		return domain.Session{}, err
 	}
 	current, err := u.deps.Server.SignIn(ctx, domain.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
+		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain, RestoreAccount: restore,
 	})
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if deleting, isDeleting := errors.AsType[domain.AccountDeletingError](err); isDeleting {
+		u.deleteAt, u.isDeleting, u.token = deleting.DeleteAt, true, ""
+	}
 	if err != nil {
 		return domain.Session{}, err
 	}
-	u.mu.Lock()
-	defer u.mu.Unlock()
+	u.deleteAt, u.isDeleting = time.Time{}, false
 	u.token = current.Token
 	return current, nil
 }
@@ -168,12 +203,15 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	}
 	what := newSignInFailedConcern()
 	revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](cause)
+	isDeleting := errors.Is(cause, domain.AccountDeletingError{DeleteAt: time.Time{}})
 	switch {
 	case isRevoked:
 		what = newRevokedConcern()
 		if u.adopt(ctx, revoked) != nil {
 			what = newSignInFailedConcern()
 		}
+	case isDeleting:
+		what = newAccountDeletingConcern()
 	case errors.Is(cause, domain.ErrNoIdentity):
 		what = newNoIdentityConcern()
 	case errors.Is(cause, domain.ErrUpdateRequired):

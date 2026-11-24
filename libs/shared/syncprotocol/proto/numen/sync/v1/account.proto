@@ -19,6 +19,18 @@ service AccountService {
   // does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
   // sessions of the revoked device in the same step. It needs the session bearer.
   rpc AppendChain(AppendChainRequest) returns (AppendChainResponse);
+
+  // DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
+  // key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
+  // the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
+  // account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
+  // row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
+  // A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+  // ExportAccount returns what the server holds of the account of the session, as one JSON document. It needs the
+  // session bearer.
+  rpc ExportAccount(ExportAccountRequest) returns (ExportAccountResponse);
 }
 
 message GetAccountChainRequest {}
@@ -66,4 +78,24 @@ message ChainStale {
 message DeviceRevoked {
   // chain is the stored chain.
   bytes chain = 1;
+}
+
+message DeleteAccountRequest {
+  // challenge_id is the id of a challenge asked with the device key of the session as device_sign_key.
+  bytes challenge_id = 1;
+  // signature is 64 bytes over syncprotocol.GetAccountDeleteMessage, by the device key of the session.
+  bytes signature = 2;
+}
+
+message DeleteAccountResponse {
+  // delete_at is the Unix time in seconds after which the server deletes the account for good.
+  int64 delete_at = 1;
+}
+
+message ExportAccountRequest {}
+
+message ExportAccountResponse {
+  // document is a UTF-8 JSON document that lists the device chain, the devices, the vaults, the metadata and sizes
+  // of the revisions, and the plan and payment references of the account. It holds no key and no text of a note.
+  bytes document = 1;
 }

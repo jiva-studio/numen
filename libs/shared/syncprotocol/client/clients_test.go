@@ -111,6 +111,20 @@ func (s *stubServer) GetAccountChain(_ context.Context, req *connect.Request[syn
 	return connect.NewResponse(&syncv1.GetAccountChainResponse{Chain: s.chain}), nil
 }
 
+func (s *stubServer) DeleteAccount(_ context.Context, req *connect.Request[syncv1.DeleteAccountRequest]) (*connect.Response[syncv1.DeleteAccountResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&syncv1.DeleteAccountResponse{DeleteAt: 1_800_000_000}), nil
+}
+
+func (s *stubServer) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest]) (*connect.Response[syncv1.ExportAccountResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&syncv1.ExportAccountResponse{Document: []byte(`{"vaults":[]}`)}), nil
+}
+
 func (s *stubServer) GetAccountChainByRoot(_ context.Context, req *connect.Request[syncv1.GetAccountChainByRootRequest]) (*connect.Response[syncv1.GetAccountChainByRootResponse], error) {
 	if err := s.record(req.Header()); err != nil {
 		return nil, err
@@ -159,6 +173,8 @@ func (c stubCalls) callAll(ctx context.Context) map[string]error {
 	_, errs["GetBlobUrls"] = c.blob.GetBlobUrls(ctx, vault, [][]byte{bytes.Repeat([]byte{4}, 16)})
 	_, errs["GetAccountChain"] = c.account.GetAccountChain(ctx)
 	_, _, errs["GetAccountChainByRoot"] = c.account.GetAccountChainByRoot(ctx, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{8}, 64))
+	_, errs["DeleteAccount"] = c.account.DeleteAccount(ctx, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64))
+	_, errs["ExportAccount"] = c.account.ExportAccount(ctx)
 	return errs
 }
 
@@ -173,8 +189,8 @@ func TestEveryClientSendsTheVersionAndTheBearerOfTheTokenInEachRequest(t *testin
 	}
 
 	calls := stub.calls()
-	if len(calls) != 8 {
-		t.Fatalf("the server saw %d requests, want 8", len(calls))
+	if len(calls) != 10 {
+		t.Fatalf("the server saw %d requests, want 10", len(calls))
 	}
 	for i, header := range calls {
 		if got := header.Get("Authorization"); got != "Bearer token-of-the-session" {
@@ -403,5 +419,37 @@ func TestACallToAServerThatIsNotThereIsUnreachable(t *testing.T) {
 
 	if !errors.Is(err, syncprotocol.ErrUnreachable) {
 		t.Errorf("error = %v, want ErrUnreachable", err)
+	}
+}
+
+func TestDeleteAccountReturnsTheTimeTheServerDeletesTheAccountAndExportAccountTheDocument(t *testing.T) {
+	t.Parallel()
+	_, address := serveStub(t, syncprotocol.Version)
+	account := syncclient.NewAccountClient(address, http.DefaultClient, func() string { return "token" })
+
+	deleteAt, err := account.DeleteAccount(t.Context(), bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64))
+	if err != nil || deleteAt.Unix() != 1_800_000_000 {
+		t.Errorf("delete at = %v, error = %v, want 1800000000", deleteAt, err)
+	}
+	document, err := account.ExportAccount(t.Context())
+	if err != nil || string(document) != `{"vaults":[]}` {
+		t.Errorf("document = %q, error = %v, want the JSON of the server", document, err)
+	}
+}
+
+func TestSignInOfADeletingAccountIsAnAccountDeletingErrorWithTheDate(t *testing.T) {
+	t.Parallel()
+	failure := connect.NewError(connect.CodeUnauthenticated, errors.New("sign-in failed"))
+	detail, err := connect.NewErrorDetail(&syncv1.AccountDeleting{DeleteAt: 1_800_000_000})
+	if err != nil {
+		t.Fatal(err)
+	}
+	failure.AddDetail(detail)
+
+	got := syncprotocol.ReadError(failure)
+
+	deleting, ok := errors.AsType[syncprotocol.AccountDeletingError](got)
+	if !ok || deleting.DeleteAt.Unix() != 1_800_000_000 {
+		t.Errorf("error = %v, want AccountDeletingError at 1800000000", got)
 	}
 }

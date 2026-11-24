@@ -1,4 +1,4 @@
-package service
+package errorwire
 
 import (
 	"errors"
@@ -22,11 +22,12 @@ func TestGetCode_MapsTheErrorsOfTheSubscriptionMethodsToTheCodesTheFrontendReads
 		"billing unavailable":    {err: syncprotocol.ErrBillingUnavailable, want: server.CodeFailedPrecondition},
 		"no identity":            {err: sessiondomain.ErrNoIdentity, want: server.CodeFailedPrecondition},
 		"no active subscription": {err: syncprotocol.ErrNoActiveSubscription, want: server.CodeFailedPrecondition},
+		"account deleting":       {err: sessiondomain.AccountDeletingError{}, want: server.CodeFailedPrecondition},
 		"same plan":              {err: fmt.Errorf("change: %w", syncprotocol.ErrSamePlan), want: server.CodeAlreadyExists},
 		"unknown plan":           {err: syncprotocol.ErrUnknownPlan, want: server.CodeInvalidArgument},
 		"another error":          {err: errors.New("broken"), want: server.CodeInternal},
 	} {
-		if got := getCode(one.err); got != one.want {
+		if got := GetCode(one.err); got != one.want {
 			t.Errorf("%s: code = %q, want %q", name, got, one.want)
 		}
 	}
@@ -47,10 +48,10 @@ func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 		"changed identity":      {err: share.ErrChangedIdentity, wantCode: server.CodeFailedPrecondition, wantText: "This person has another identity than before"},
 		"refused by the server": {err: share.ErrReaderNotAdded, wantCode: server.CodeFailedPrecondition, wantText: "The reader could not be added; the reader may not have signed in to Numen Sync yet"},
 	} {
-		if got := getCode(one.err); got != one.wantCode {
+		if got := GetCode(one.err); got != one.wantCode {
 			t.Errorf("%s: code = %q, want %q", name, got, one.wantCode)
 		}
-		if got := getText(one.err); got != one.wantText {
+		if got := GetText(one.err); got != one.wantText {
 			t.Errorf("%s: text = %q, want %q", name, got, one.wantText)
 		}
 	}

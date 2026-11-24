@@ -458,3 +458,32 @@
 .shares__name {
   font-weight: 600;
 }
+
+.subscription__delete {
+  display: grid;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}
+
+.subscription__delete p {
+  margin: 0;
+}
+
+.subscription__field {
+  display: grid;
+  gap: calc(var(--numen-chrome-unit) / 4);
+}
+
+.subscription__input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding: calc(var(--numen-chrome-unit) / 2);
+  background: var(--numen-surface);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-chrome-radius);
+  color: var(--numen-ink);
+  font: inherit;
+}
+
+.subscription__input[aria-invalid='true'] {
+  border-color: var(--numen-alarm);
+}
