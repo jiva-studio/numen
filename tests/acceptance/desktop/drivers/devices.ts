@@ -1,6 +1,6 @@
 /**
  * The person at the devices of the page "Identity and licenses" of one computer: the list of devices, the dialog that
- * links a new device by a QR code, the page that joins an account by a QR code, and the revoke of a device.
+ * shows the QR code that links a new device, the dialog that joins an account by a QR code, and the revoke of a device.
  */
 import { expect, type Locator } from 'playwright/test'
 import { decodeQr } from './qr.js'
@@ -12,10 +12,9 @@ const PAGE = 'Identity and licenses'
 const LIST = 'Devices'
 const LINK_NEW = 'Link a new device'
 const JOIN_WITH_QR = 'Join with a QR code'
-const SHOW_INSTEAD = 'Show a QR code instead'
-const SCAN_INSTEAD = 'Scan a QR code instead'
+const PASTE_INSTEAD = 'Paste the link instead'
 const QR_IMAGE = 'QR code'
-const PASTE_FIELD = 'Paste the link text'
+const PASTE_FIELD = 'Link from the other device'
 const USE_LINK = 'Use link'
 const LINK_THIS = 'Link this device'
 const DECLINE = 'Decline'
@@ -69,22 +68,18 @@ export class DevicesDriver {
     return (await value.innerText()).trim()
   }
 
-  /** A device that has the account shows its QR code when the dialog opens; to scan it switches. */
-  private async openLinkDialog(isScanning: boolean): Promise<Locator> {
+  /** A device that has the account shows its QR code when the dialog opens. */
+  private async openLinkDialog(): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: LINK_NEW, exact: true }).click()
-    const dialog = this.getDialog()
-    if (isScanning) await dialog.getByRole('button', { name: SCAN_INSTEAD, exact: true }).click()
-    return dialog
+    return this.getDialog()
   }
 
-  /** A new device scans when the dialog opens; to show its own QR code it switches. */
-  private async openJoinDialog(isShowing: boolean): Promise<Locator> {
+  /** A new device scans when the dialog opens. */
+  private async openJoinDialog(): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: JOIN_WITH_QR, exact: true }).click()
-    const dialog = this.getDialog()
-    if (isShowing) await dialog.getByRole('button', { name: SHOW_INSTEAD, exact: true }).click()
-    return dialog
+    return this.getDialog()
   }
 
   /** Expects the page of this computer to offer no way to join an account: it has one already. */
@@ -102,27 +97,18 @@ export class DevicesDriver {
 
   /** Shows the QR code of a device that has the account and returns the text the picture holds. */
   async showQrToLink(): Promise<string> {
-    return this.readQr(await this.openLinkDialog(false))
+    return this.readQr(await this.openLinkDialog())
   }
 
-  /** Shows the QR code of a device that joins an account and returns the text the picture holds. */
-  async showQrToJoin(): Promise<string> {
-    return this.readQr(await this.openJoinDialog(true))
-  }
-
-  private async paste(dialog: Locator, text: string): Promise<void> {
-    await dialog.getByRole('textbox', { name: PASTE_FIELD }).fill(text)
-    await dialog.getByRole('button', { name: USE_LINK, exact: true }).click()
-  }
-
-  /** A device that has the account reads the QR code of a new device: the desktop takes the text by paste. */
-  async scanToLink(text: string): Promise<void> {
-    await this.paste(await this.openLinkDialog(true), text)
-  }
-
-  /** A new device reads the QR code of a device that has the account. */
+  /** A new device reads the QR code of a device that has the account: the desktop takes the link by paste. */
   async scanToJoin(text: string): Promise<void> {
-    await this.paste(await this.openJoinDialog(false), text)
+    const dialog = await this.openJoinDialog()
+    const reveal = dialog.getByRole('button', { name: PASTE_INSTEAD, exact: true })
+    const field = dialog.getByRole('textbox', { name: PASTE_FIELD })
+    await expect(reveal.or(field).first()).toBeVisible({ timeout: STEP_LIMIT_MS })
+    if (await reveal.isVisible()) await reveal.click()
+    await field.fill(text)
+    await dialog.getByRole('button', { name: USE_LINK, exact: true }).click()
   }
 
   async approve(): Promise<void> {

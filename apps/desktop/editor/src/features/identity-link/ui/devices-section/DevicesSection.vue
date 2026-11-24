@@ -47,7 +47,6 @@ function onClose(): void {
 
     <LinkDialog
       v-if="isLinking"
-      role="host"
       :calls="calls.link"
       @close="onClose"
     />

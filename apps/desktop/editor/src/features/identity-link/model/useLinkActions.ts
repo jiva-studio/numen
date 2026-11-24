@@ -7,7 +7,6 @@ import type { useLinkSession } from './useLinkSession'
 export interface LinkDraft {
   text: Ref<string>
   code: Ref<string>
-  isScanning: Ref<boolean>
 }
 
 const ignore = (): void => undefined
@@ -49,19 +48,9 @@ export function useLinkActions(
     if (view.value === 'account') run(session.answers.confirmJoin(false))
   }
 
-  function switchWay(): void {
-    if (view.value === 'scan') {
-      draft.isScanning.value = false
-      run(session.start('show'))
-      return
-    }
-    run(session.leave())
-    draft.isScanning.value = true
-  }
-
   function scan(text: string): void {
     run(session.start('scan', text))
   }
 
-  return { submit, decline, switchWay, scan }
+  return { submit, decline, scan }
 }

@@ -103,7 +103,7 @@ describe('the devices section', () => {
 
   it('draws the link dialog of a host when it is asked to link', async () => {
     const section = await mountSection([THIS], {}, true)
-    expect(section.get('[role="dialog"] h2').text()).toBe('Link a new device to your account')
+    expect(section.get('[role="dialog"] h2').text()).toBe('Link a device')
   })
 
   it('draws no link dialog and no link button of its own', async () => {

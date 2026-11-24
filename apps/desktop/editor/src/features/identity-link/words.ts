@@ -11,14 +11,13 @@ export const WORDS = {
   deviceRevokeWarning: (name: string) =>
     `${name} will lose access. New notes will not be readable on it. Its files stay on it.`,
   deviceRevokeCancel: 'Cancel',
-  account: 'Account fingerprint',
-  linkNoCamera: 'No camera found: paste the code from the other device.',
-  linkCameraFailed: (reason: string) => `${reason} Paste the code from the other device.`,
+  linkNoCamera: 'No camera found. Paste the link from the other device.',
+  linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,
   linkQr: 'QR code',
-  linkPaste: 'Paste the link text',
+  linkPaste: 'Link from the other device',
+  linkPasteInstead: 'Paste the link instead',
   linkUse: 'Use link',
-  linkText: 'Link text',
-  linkCopy: 'Copy',
+  linkCopy: 'Copy link',
   linkCopied: 'Copied',
   linkApprove: 'Link this device',
   linkDecline: 'Decline',
@@ -27,38 +26,16 @@ export const WORDS = {
   linkJoin: 'Join',
   linkCancel: 'Cancel',
   linkClose: 'Close',
-  linkJoinTitle: 'Join your account on this device',
-  linkHostTitle: 'Link a new device to your account',
-  linkJoinHint:
-    'This device has no account yet. Link it to the account of your other device. The 12 recovery words are not needed.',
-  linkHostHint: 'Add a new device to your account. The 12 recovery words are not needed.',
-  linkSteps: (role: 'host' | 'joiner', mode: 'show' | 'scan'): readonly string[] => {
-    const check =
-      role === 'host'
-        ? 'Check the name and fingerprint of the new device here, press Link this device, then type the confirmation code shown here on the new device.'
-        : 'The other device shows a confirmation code after you link: type it on this device.'
-    if (role === 'host') {
-      return [
-        'On the new device open Settings, Identity and choose Join with a QR code.',
-        mode === 'show'
-          ? 'Scan this QR code with its camera, or paste the link text there.'
-          : 'It shows a QR code: scan it with the camera of this device, or paste its link text below.',
-        check,
-      ]
-    }
-    return [
-      'On your other device open Settings, Identity and choose Link a new device.',
-      mode === 'show'
-        ? 'Choose Scan a QR code there and point its camera at this QR code, or paste the link text there.'
-        : 'It shows a QR code: scan it with the camera of this device, or paste its link text below.',
-      check,
-    ]
-  },
-  linkScanInstead: 'Scan a QR code instead',
-  linkShowInstead: 'Show a QR code instead',
+  linkJoinTitle: 'Join account',
+  linkHostTitle: 'Link a device',
+  linkJoinHint: 'Scan the QR code on your other device.',
+  linkHostSteps: [
+    'On the new device open Settings, Identity, Join with a QR code.',
+    'Scan this QR code with its camera.',
+    'Type the code shown here on the new device.',
+  ],
   linkCheckingCamera: 'Checking the camera',
   linkCheckingCameraDetail: 'Numen asks the system for the camera. Allow it if you are asked.',
-  linkPointCamera: 'Point the camera at the QR code on your other device',
   linkPreparingTitle: 'Preparing the link',
   linkPreparingDetail: 'Waiting for the Numen Sync server. This takes a few seconds.',
   linkStalledTitle: 'The link did not start',

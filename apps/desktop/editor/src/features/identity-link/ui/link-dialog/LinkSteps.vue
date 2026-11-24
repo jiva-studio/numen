@@ -17,7 +17,6 @@ defineProps<{ steps: readonly string[] }>()
   flex-direction: column;
   gap: 0.5rem;
   margin: 0;
-  line-height: 1.4;
   padding: 0;
   list-style: none;
   counter-reset: step;
@@ -31,9 +30,8 @@ defineProps<{ steps: readonly string[] }>()
 }
 
 .link-steps__step::before {
-  content: counter(step);
+  content: counter(step) '.';
   color: var(--numen-hushed);
   font-variant-numeric: tabular-nums;
-  text-align: end;
 }
 </style>

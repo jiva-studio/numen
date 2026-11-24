@@ -1,5 +1,5 @@
 /**
- * The dialog of a device that has the account and links a new one, in the area of a tab: it shows its QR code at once,
+ * The dialog of a device that has the account and links a new one: it shows its QR code at once,
  * says what it waits for, shows the new device with the confirmation code in large digits, and ends in a clear state.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -25,9 +25,7 @@ const meta: Meta<Knobs> = {
     template: `
       <WindowFrame>
         <LinkDialog
-          role="host"
           :calls="args.calls"
-          :find-camera="() => Promise.resolve(false)"
           :stall-ms="args.stallMs"
           @close="args.onClose"
         />
@@ -49,27 +47,25 @@ const peer = (overrides: Parameters<typeof createInfo>[0] = {}) =>
     ...overrides,
   })
 
-/** The QR code, its text, the steps and what is waited for. */
+/** The QR code, the steps, the Copy link button and what is waited for. */
 export const ShowingQr: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByRole('dialog', { name: 'Link a new device to your account' }),
+      await canvas.findByRole('dialog', { name: 'Link a device' }),
     ).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
-    await expect(canvas.getByRole('textbox', { name: 'Link text' })).toHaveValue(QR_TEXT)
     await expect(canvas.getByText('Waiting for the other device to scan')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Scan a QR code instead' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Copy link' })).toBeVisible()
   },
 }
 
-/** The server has not made the channel yet: a spinner and what is happening. */
+/** The server has not made the channel yet: the box of the QR code holds a spinner and the line says what happens. */
 export const Preparing: Story = {
   args: { calls: createCalls(createInfo({ phase: 'waitingForChannel', qrText: '' })) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Preparing the link')).toBeVisible()
-    await expect(canvas.getByText(/This takes a few seconds/)).toBeVisible()
   },
 }
 
@@ -98,17 +94,6 @@ export const Refused: Story = {
   },
 }
 
-/** This device scans the code of the other one: the camera is not on this machine, so the field is. */
-export const Scanning: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Scan a QR code instead' }))
-    await expect(
-      await canvas.findByText('No camera found: paste the code from the other device.'),
-    ).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Show a QR code instead' })).toBeVisible()
-  },
-}
 
 /** The new device is asked about with its name, its fingerprint and the code to type on it. */
 export const NewDeviceAsked: Story = {

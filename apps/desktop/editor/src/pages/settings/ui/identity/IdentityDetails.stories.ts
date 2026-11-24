@@ -128,7 +128,7 @@ export const Linking: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Link a new device' }))
     await expect(
-      await canvas.findByRole('dialog', { name: 'Link a new device to your account' }),
+      await canvas.findByRole('dialog', { name: 'Link a device' }),
     ).toBeVisible()
     await expect(await canvas.findByText('Preparing the link')).toBeVisible()
   },

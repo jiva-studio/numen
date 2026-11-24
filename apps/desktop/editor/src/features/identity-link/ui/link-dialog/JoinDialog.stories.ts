@@ -1,12 +1,12 @@
 /**
- * The dialog of a new device that joins an account, in the area of a tab: it opens the camera for the QR code of the
- * other device, offers the pasted link text, and walks through the waiting, the code and the end.
+ * The dialog of a new device that joins an account, : it opens the camera for the QR code of the
+ * other device, offers a pasted link on request, and walks through the waiting, the code and the end.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { ScannerCamera } from '@numen/ui'
 import type { LinkCalls } from '../../lib/types'
-import LinkDialog from './LinkDialog.vue'
+import JoinDialog from './JoinDialog.vue'
 import {
   createCalls,
   createInfo,
@@ -26,7 +26,7 @@ interface Knobs {
 
 const meta: Meta<Knobs> = {
   title: 'Window/Identity/Join dialog',
-  component: LinkDialog,
+  component: JoinDialog,
   parameters: { layout: 'fullscreen' },
   args: {
     calls: createCalls(createInfo({ role: 'joiner', phase: 'waitingForAccept', mode: 'scan' })),
@@ -36,12 +36,11 @@ const meta: Meta<Knobs> = {
     onClose: fn(),
   },
   render: (args) => ({
-    components: { LinkDialog, WindowFrame },
+    components: { JoinDialog, WindowFrame },
     setup: () => ({ args }),
     template: `
       <WindowFrame>
-        <LinkDialog
-          role="joiner"
+        <JoinDialog
           :calls="args.calls"
           :find-camera="args.findCamera"
           :stall-ms="args.stallMs"
@@ -60,7 +59,9 @@ const joiner = (overrides: Parameters<typeof createInfo>[0] = {}) =>
   createInfo({ role: 'joiner', mode: 'scan', accountFingerprint: '', ...overrides })
 
 const submitText = async (canvas: ReturnType<typeof within>, text: string) => {
-  await userEvent.click(await canvas.findByRole('textbox', { name: 'Paste the link text' }))
+  const reveal = canvas.queryByRole('button', { name: 'Paste the link instead' })
+  if (reveal) await userEvent.click(reveal)
+  await userEvent.click(await canvas.findByRole('textbox', { name: 'Link from the other device' }))
   await userEvent.paste(text)
   await userEvent.click(canvas.getByRole('button', { name: 'Use link' }))
 }
@@ -70,7 +71,7 @@ export const CheckingCamera: Story = {
   args: { findCamera: () => new Promise<boolean>(() => undefined) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dialog = canvas.getByRole('dialog', { name: 'Join your account on this device' })
+    const dialog = canvas.getByRole('dialog', { name: 'Join account' })
     await expect(dialog).toBeVisible()
     await expect(canvas.getByText('Checking the camera')).toBeVisible()
   },
@@ -90,7 +91,7 @@ export const CameraReady: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('Point the camera at the QR code on your other device'),
+      await canvas.findByText('Scan the QR code on your other device.'),
     ).toBeVisible()
     await waitFor(() => expect(args.calls.start).toHaveBeenCalledWith('joiner', 'scan', QR_TEXT), {
       timeout: 10_000,
@@ -103,7 +104,7 @@ export const NoCamera: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('No camera found: paste the code from the other device.'),
+      await canvas.findByText('No camera found. Paste the link from the other device.'),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Use link' })).toBeDisabled()
   },
@@ -118,7 +119,7 @@ export const CameraDenied: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('The camera is not allowed. Paste the code from the other device.'),
+      await canvas.findByText('The camera is not allowed. Paste the link from the other device.'),
     ).toBeVisible()
   },
 }
@@ -139,45 +140,6 @@ export const Refused: Story = {
     const canvas = within(canvasElement)
     await submitText(canvas, 'nonsense')
     await expect(await canvas.findByRole('alert')).toHaveTextContent('not the link of a QR code')
-  },
-}
-
-/** This device shows its own QR code, and waits for the channel of the server. */
-export const Preparing: Story = {
-  args: { calls: createCalls(joiner({ mode: 'show', phase: 'waitingForChannel', qrText: '' })) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Show a QR code instead' }))
-    await expect(await canvas.findByText('Preparing the link')).toBeVisible()
-    await expect(canvas.getByText(/Waiting for the Numen Sync server/)).toBeVisible()
-  },
-}
-
-/** The server does not answer: the link is given up with the cause and Try again. */
-export const Timeout: Story = {
-  args: {
-    stallMs: 1000,
-    calls: createCalls(joiner({ mode: 'show', phase: 'waitingForChannel', qrText: '' })),
-  },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Show a QR code instead' }))
-    await expect(
-      await canvas.findByText(/Numen Sync cannot reach the server/, undefined, { timeout: 8000 }),
-    ).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Try again' }))
-    await waitFor(() => expect(args.calls.start).toHaveBeenCalledTimes(2))
-  },
-}
-
-/** This device shows its QR code and the other device is asked to scan it. */
-export const ShowingQr: Story = {
-  args: { calls: createCalls(joiner({ mode: 'show', phase: 'waitingForPeer' })) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Show a QR code instead' }))
-    await expect(await canvas.findByRole('img', { name: 'QR code' })).toBeVisible()
-    await expect(canvas.getByText('Device fingerprint')).toBeVisible()
   },
 }
 
@@ -237,5 +199,29 @@ export const Failed: Story = {
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('The new device was declined.')
     await expect(canvas.getByRole('button', { name: 'Try again' })).toBeVisible()
+  },
+}
+
+/** The link is sent and the server has not made the channel yet. */
+export const Preparing: Story = {
+  args: { calls: createCalls(joiner({ phase: 'waitingForChannel', qrText: '' })) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await submitText(canvas, QR_TEXT)
+    await expect(await canvas.findByText('Preparing the link')).toBeVisible()
+  },
+}
+
+/** The server does not answer: the link is given up with the cause and Try again. */
+export const Timeout: Story = {
+  args: { stallMs: 1000, calls: createCalls(joiner({ phase: 'waitingForChannel', qrText: '' })) },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await submitText(canvas, QR_TEXT)
+    await expect(
+      await canvas.findByText(/Numen Sync cannot reach the server/, undefined, { timeout: 8000 }),
+    ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(args.calls.start).toHaveBeenCalledTimes(2))
   },
 }

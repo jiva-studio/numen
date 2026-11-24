@@ -11,7 +11,7 @@ import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { WORDS as words } from '../../words'
-import { LinkDialog } from '@/features/identity-link'
+import { JoinDialog } from '@/features/identity-link'
 import { KeyFileHost } from '@/features/key-file'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
@@ -81,9 +81,8 @@ const isJoining = ref(false)
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
       <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
-      <LinkDialog
+      <JoinDialog
         v-if="isJoining && step === 'idle'"
-        role="joiner"
         :calls="identity.devices.link"
         @close="isJoining = false"
       />

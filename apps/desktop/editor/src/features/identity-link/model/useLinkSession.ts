@@ -73,13 +73,6 @@ export function useLinkSession(
     timer = setInterval(() => runInBackground(poll(), () => undefined), POLL_MS)
   }
 
-  const leave = async (): Promise<void> => {
-    await cancel()
-    link.value = undefined
-    isStalled.value = false
-    problem.value = ''
-  }
-
   const ask = async (call: () => Promise<Result<unknown, string>>): Promise<void> => {
     isBusy.value = true
     const answer = await call()
@@ -108,7 +101,6 @@ export function useLinkSession(
     isStalled: computed(() => isStalled.value),
     start,
     retry: () => start(lastMode, lastText),
-    leave,
     answers,
   }
 }

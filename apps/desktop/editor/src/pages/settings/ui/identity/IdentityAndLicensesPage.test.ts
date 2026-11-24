@@ -238,7 +238,7 @@ describe('the page "Identity and licenses"', () => {
   it('opens the join dialog from the header', async () => {
     const { tab } = await createPage()
     await press(tab, 'Join with a QR code')
-    expect(getDialog(tab).text()).toContain('Join with a QR code')
+    expect(getDialog(tab).text()).toContain('Join account')
   })
 
   it('shows the account fingerprint and the linked device when the device has an identity', async () => {

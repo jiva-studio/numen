@@ -1,16 +1,11 @@
-import type { ComputerName } from '../drivers/computer.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 When('the person shows the QR code to link a new device', async ({ person }) => {
   await person.computers.showQrToLink()
 })
 
-When('the second computer shows the QR code to join an account', async ({ person }) => {
-  await person.computers.showQrToJoin()
-})
-
-When('{computer} scans the QR code', async ({ person }, computer: ComputerName) => {
-  await person.computers.scan(computer)
+When('the second computer scans the QR code', async ({ person }) => {
+  await person.computers.scan()
 })
 
 When('the person approves the new device', async ({ person }) => {

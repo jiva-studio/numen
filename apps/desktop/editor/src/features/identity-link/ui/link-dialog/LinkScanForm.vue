@@ -1,75 +1,72 @@
 <script setup lang="ts">
 /**
- * Takes the text of the QR code of the other device: from the camera where the machine has one, and always from a
- * field to paste it into. It says when the camera is being checked, when it is ready and why it is not used.
+ * What a new device scans with: the camera in a box of the size it keeps while the camera is checked, and, once
+ * the person asks for it or the machine has no camera, a field to paste the link of the other device into.
  */
-import { hasCamera, QrScanner, type ScannerCamera } from '@numen/ui'
-import { useLinkScan } from '../../model/useLinkScan'
+import { QrScanner, type ScannerCamera } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import LinkField from './LinkField.vue'
 import LinkStatus from './LinkStatus.vue'
-import LinkSteps from './LinkSteps.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = withDefaults(
-  defineProps<{
-    modelValue: string
-    problem: string
-    steps: readonly string[]
-    findCamera?: () => Promise<boolean>
-    camera?: ScannerCamera
-  }>(),
-  { findCamera: hasCamera },
-)
+defineProps<{
+  modelValue: string
+  problem: string
+  phase: 'checking' | 'camera' | 'paste'
+  notice: string
+  isPasting: boolean
+  camera?: ScannerCamera
+}>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', text: string): void
   (e: 'scanned', text: string): void
+  (e: 'unavailable', reason: string): void
 }>()
-
-/* --------------------------------- State ---------------------------------- */
-const { phase, notice, setUnavailable } = useLinkScan(props.findCamera)
 </script>
 
 <template>
   <div class="link-scan">
-    <LinkSteps :steps="steps" />
-    <LinkStatus
-      v-if="phase === 'checking'"
-      :title="words.linkCheckingCamera"
-      :detail="words.linkCheckingCameraDetail"
-    />
-    <div v-else-if="phase === 'camera'" class="link-scan__camera">
+    <div v-if="phase !== 'paste'" class="link-scan__stage">
+      <LinkStatus
+        v-if="phase === 'checking'"
+        :title="words.linkCheckingCamera"
+        :detail="words.linkCheckingCameraDetail"
+      />
       <QrScanner
+        v-else
         v-bind="camera === undefined ? {} : { camera }"
         @scanned="emit('scanned', $event)"
-        @unavailable="setUnavailable"
+        @unavailable="emit('unavailable', $event)"
       />
-      <p class="link-scan__point">{{ words.linkPointCamera }}</p>
     </div>
     <p v-else role="status" class="link-scan__notice">{{ notice }}</p>
     <LinkField
+      v-if="isPasting || phase === 'paste'"
       :model-value="modelValue"
       :label="words.linkPaste"
       is-mono
       @update:model-value="emit('update:modelValue', $event)"
     />
-    <p class="link-scan__problem" :role="problem === '' ? undefined : 'alert'">{{ problem }}</p>
+    <p v-if="problem !== ''" role="alert" class="link-scan__problem">{{ problem }}</p>
   </div>
 </template>
 
 <style scoped>
-.link-scan,
-.link-scan__camera {
+.link-scan {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.link-scan__point {
-  margin: 0;
-  color: var(--numen-hushed);
-  text-align: center;
+.link-scan__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  max-inline-size: 22rem;
+  margin-inline: auto;
+  aspect-ratio: 4 / 3;
 }
 
 .link-scan__notice {
@@ -78,7 +75,6 @@ const { phase, notice, setUnavailable } = useLinkScan(props.findCamera)
 }
 
 .link-scan__problem {
-  min-block-size: calc(1em * var(--numen-line-height));
   margin: 0;
   color: var(--numen-alarm);
 }

@@ -115,7 +115,7 @@ interface SecondComputer {
 export class ComputerDriver {
   private second: SecondComputer | undefined
   private checker: SecondComputer | undefined
-  private shownQr: { readonly from: ComputerName; readonly text: string } | undefined
+  private shownQr: string | undefined
   private secondFingerprint: string | undefined
 
   constructor(
@@ -197,26 +197,17 @@ export class ComputerDriver {
 
   private requireQr(): string {
     if (this.shownQr === undefined) throw new Error('no QR code was shown: begin with a step that shows one')
-    return this.shownQr.text
+    return this.shownQr
   }
 
   /** The device of the person that has the account shows a QR code. */
   async showQrToLink(): Promise<void> {
-    this.shownQr = { from: 'first', text: await this.owner.devices.showQrToLink() }
+    this.shownQr = await this.owner.devices.showQrToLink()
   }
 
-  /** A new second computer shows a QR code to join the account. */
-  async showQrToJoin(): Promise<void> {
-    const second = await this.ensureSecond()
-    this.shownQr = { from: 'second', text: await second.devices.showQrToJoin() }
-  }
-
-  /** A computer reads the QR code that the other one shows. */
-  async scan(computer: ComputerName): Promise<void> {
-    const text = this.requireQr()
-    if (this.shownQr?.from === computer) throw new Error('a computer cannot scan the QR code it shows itself')
-    if (computer === 'first') await this.owner.devices.scanToLink(text)
-    else await (await this.ensureSecond()).devices.scanToJoin(text)
+  /** The second computer reads the QR code that the first one shows. */
+  async scan(): Promise<void> {
+    await (await this.ensureSecond()).devices.scanToJoin(this.requireQr())
   }
 
   async approve(): Promise<void> {
@@ -287,7 +278,7 @@ export class ComputerDriver {
     const second = await this.ensureSecond()
     if (await second.devices.isRevoked()) await this.deleteSecondIdentity()
     await this.showQrToLink()
-    await this.scan('second')
+    await this.scan()
     await this.approve()
     await this.enterCode()
     await this.expectSecondHasAccount()

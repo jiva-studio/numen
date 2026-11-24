@@ -1,103 +1,68 @@
 <script setup lang="ts">
 /**
- * The dialog that links a device to the account by a QR code, with the steps written on it. A device that has the
- * account shows its QR code at once and asks about the new device that scans it; a new device opens its camera to
- * scan the QR code of the other device, or shows its own. The device that has the account then shows a confirmation
- * code, and the new device asks for it and for the answer to join the account. Escape closes it, and closing it
- * cancels the link.
+ * The dialog of a device that has the account: it shows its QR code at once for the new device to scan, with three
+ * steps and a button that copies the link for a device without a camera. The new device then asks to join, and this
+ * dialog shows its name and the confirmation code to type on it. Escape closes it, and closing it cancels the link.
  */
 import { computed, ref } from 'vue'
-import { Dialog, type ScannerCamera } from '@numen/ui'
-import type { LinkRole } from '@/entities/identity'
+import { Dialog } from '@numen/ui'
 import { getLinkView } from '../../lib/phases'
 import type { LinkCalls } from '../../lib/types'
+import { useCopyText } from '../../model/useCopyText'
 import { useLinkActions } from '../../model/useLinkActions'
 import { useLinkSession } from '../../model/useLinkSession'
 import { WORDS as words } from '../../words'
 import LinkActions from './LinkActions.vue'
 import LinkProgress from './LinkProgress.vue'
-import LinkScanForm from './LinkScanForm.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  role: LinkRole
-  calls: LinkCalls
-  findCamera?: () => Promise<boolean>
-  camera?: ScannerCamera
-  stallMs?: number
-}>()
+const props = defineProps<{ calls: LinkCalls; stallMs?: number }>()
 
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const session = useLinkSession(() => props.calls, props.role, props.stallMs)
-const draft = { text: ref(''), code: ref(''), isScanning: ref(props.role === 'joiner') }
+const session = useLinkSession(() => props.calls, 'host', props.stallMs)
+const code = ref('')
 const view = computed(() =>
   getLinkView({
     link: session.link.value,
-    role: props.role,
-    isScanning: draft.isScanning.value,
+    role: 'host',
+    isScanning: false,
     isStalled: session.isStalled.value,
     hasProblem: session.problem.value !== '',
   }),
 )
-const actions = useLinkActions(session, draft, view)
-const steps = computed(() =>
-  words.linkSteps(props.role, view.value === 'scan' ? 'scan' : (session.link.value?.mode ?? 'show')),
-)
-const switchLabel = computed(() => {
-  if (view.value === 'scan') return words.linkShowInstead
-  return view.value === 'qr' ? words.linkScanInstead : ''
-})
-const isCompact = computed(() => view.value === 'qr' || view.value === 'preparing')
-const hint = computed(() => {
-  if (isCompact.value) return ''
-  return props.role === 'host' ? words.linkHostHint : words.linkJoinHint
-})
-const hasInput = computed(() =>
-  view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
+const actions = useLinkActions(session, { text: ref(''), code }, view)
+const { isCopied, copy } = useCopyText(() => session.link.value?.qrText ?? '')
+const extra = computed(() =>
+  view.value === 'qr' || view.value === 'preparing'
+    ? {
+        label: isCopied.value ? words.linkCopied : words.linkCopy,
+        isDisabled: (session.link.value?.qrText ?? '') === '',
+      }
+    : undefined,
 )
 </script>
 
 <template>
-  <Dialog
-    is-form
-    :label="role === 'host' ? words.linkHostTitle : words.linkJoinTitle"
-    :hint="hint"
-    :size="isCompact ? 'lg' : 'md'"
-    :step="view"
-    @submit="actions.submit"
-    @cancel="emit('close')"
-  >
-    <LinkScanForm
-      v-if="view === 'scan'"
-      v-model="draft.text.value"
-      :problem="session.problem.value"
-      :steps="steps"
-      v-bind="{
-        ...(findCamera === undefined ? {} : { findCamera }),
-        ...(camera === undefined ? {} : { camera }),
-      }"
-      @scanned="actions.scan"
-    />
+  <Dialog is-form :label="words.linkHostTitle" size="md" :step="view" @submit="actions.submit" @cancel="emit('close')">
     <LinkProgress
-      v-else
-      v-model:code="draft.code.value"
+      v-model:code="code"
       :view="view"
       :link="session.link.value"
-      :role="role"
+      role="host"
       :problem="session.problem.value"
-      :steps="steps"
     />
     <template #actions>
       <LinkActions
         :view="view"
         :is-busy="session.isBusy.value"
-        :has-input="hasInput"
-        :switch-label="switchLabel"
+        :has-input="false"
+        :is-pasting="false"
+        v-bind="extra === undefined ? {} : { extra }"
         @close="emit('close')"
         @decline="actions.decline"
-        @switch="actions.switchWay"
+        @extra="copy"
       />
     </template>
   </Dialog>

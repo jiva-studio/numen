@@ -11,7 +11,6 @@ import LinkFacts from './LinkFacts.vue'
 import LinkPeerView from './LinkPeerView.vue'
 import LinkQrView from './LinkQrView.vue'
 import LinkStatus from './LinkStatus.vue'
-import LinkSteps from './LinkSteps.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -19,7 +18,6 @@ const props = defineProps<{
   link: LinkInfo | undefined
   role: LinkRole
   problem: string
-  steps: readonly string[]
   code: string
 }>()
 
@@ -34,16 +32,16 @@ const ownFacts = computed<Fact[]>(() =>
       ]
     : [],
 )
-const isOwnShown = computed(() => ['qr', 'waiting', 'code', 'account'].includes(props.view))
+const isQrShown = computed(() => props.role === 'host' && (props.view === 'qr' || props.view === 'preparing'))
+const isOwnShown = computed(() => ['waiting', 'code', 'account'].includes(props.view))
 </script>
 
 <template>
   <div class="link-progress">
-    <LinkSteps v-if="view === 'preparing'" :steps="steps" />
-    <LinkFacts v-if="isOwnShown && view !== 'qr' && ownFacts.length > 0" :facts="ownFacts" />
-
+    <LinkFacts v-if="isOwnShown && ownFacts.length > 0" :facts="ownFacts" />
+    <LinkQrView v-if="isQrShown" :qr-text="link?.qrText ?? ''" />
     <LinkStatus
-      v-if="view === 'preparing'"
+      v-else-if="view === 'preparing'"
       :title="words.linkPreparingTitle"
       :detail="words.linkPreparingDetail"
     />
@@ -56,13 +54,6 @@ const isOwnShown = computed(() => ['qr', 'waiting', 'code', 'account'].includes(
       v-else-if="view === 'refused'"
       :heading="words.linkRefusedTitle"
       :message="problem"
-    />
-    <LinkQrView
-      v-else-if="view === 'qr' && link"
-      :qr-text="link.qrText"
-      :account-fingerprint="role === 'host' ? link.accountFingerprint : ''"
-      :steps="steps"
-      :facts="ownFacts"
     />
     <LinkStatus
       v-else-if="view === 'waiting'"
