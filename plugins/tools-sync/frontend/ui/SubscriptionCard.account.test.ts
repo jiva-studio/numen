@@ -1,7 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asValue, type PluginContext } from '@numen/plugin-sdk'
-import type { AccountClient, AccountStateResponse } from '../api/account'
+import type { AccountClient } from '../api/account'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -21,6 +21,8 @@ const ACTIVE: SubscriptionResponse = {
   quotaBytes: 100 * 2 ** 30,
   usedBytes: 2 ** 30,
 }
+
+type AccountStateResponse = Awaited<ReturnType<AccountClient['getAccountState']>>
 
 const createState = (patch: Partial<AccountStateResponse> = {}): AccountStateResponse => ({
   hasIdentity: true,
@@ -159,7 +161,7 @@ describe('SubscriptionCard account actions', () => {
     expect(getDialogText()).not.toContain('Your subscription is cancelled now')
   })
 
-  it('deletes nothing and tells under the field that the typed text is not the account name', async () => {
+  it('deletes nothing and shows under the field that the typed text is not the account name', async () => {
     const { accountClient } = await render(createState())
     await press('Delete cloud data')
 

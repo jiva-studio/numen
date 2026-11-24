@@ -83,9 +83,7 @@ func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.Ex
 	return connect.NewResponse(&syncv1.ExportAccountResponse{Document: document}), nil
 }
 
-// openDeleting decides a sign-in to account while it may be deleting. It returns a refusal when the account is
-// deleting and the request does not restore it, and forgets the account when its time ran out.
-func (s *Server) openDeleting(account string, restore bool) error {
+func (s *Server) applyDeletion(account string, restore bool) error {
 	deleteAt, isDeleting := s.deleting[account]
 	if !isDeleting {
 		return nil

@@ -27,7 +27,6 @@ type Proof struct {
 	DeviceSignKey []byte
 	Signature     []byte
 	Chain         []byte
-	// RestoreAccount asks to cancel the deletion of an account that is deleting.
 	RestoreAccount bool
 }
 
@@ -67,8 +66,8 @@ func (c *SignInClient) GetChainReadChallenge(ctx context.Context, rootSignKey []
 	return c.getChallenge(ctx, rootSignKey, syncprotocol.GetChainReadMessage)
 }
 
-// GetAccountDeleteChallenge asks for a challenge of the device key, with the checks of GetChallenge. The message of the
-// challenge is the one the device signs to delete its account.
+// GetAccountDeleteChallenge runs the checks of GetChallenge. A signature over its message deletes the account and
+// never signs in.
 func (c *SignInClient) GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (Challenge, error) {
 	return c.getChallenge(ctx, deviceSignKey, syncprotocol.GetAccountDeleteMessage)
 }

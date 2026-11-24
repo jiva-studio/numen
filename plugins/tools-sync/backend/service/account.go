@@ -24,8 +24,8 @@ func (b *Backend) getAccountDeps() (accountdata.Deps, error) {
 
 var errNoAccountData = errors.New("the account cannot be changed here")
 
-// GetAccountState tells whether the account is being deleted and when the server deletes it. A device with no identity
-// gets an empty answer.
+// GetAccountState returns whether the account is being deleted and when the server deletes it. A device with no
+// identity gets an empty answer.
 func (b *Backend) GetAccountState(ctx context.Context, _ api.GetAccountStateRequest) (api.GetAccountStateResponse, error) {
 	deps, err := b.getAccountDeps()
 	if err != nil {

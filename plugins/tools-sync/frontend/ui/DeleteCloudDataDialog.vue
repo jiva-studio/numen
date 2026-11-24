@@ -2,8 +2,8 @@
 /**
  * The question the card asks before it deletes the cloud data of the account: what is deleted, how long the
  * server keeps it, what stays on the devices, that an active subscription is cancelled, and the account
- * fingerprint the person types to confirm. A text that is not the fingerprint is told under the field and
- * deletes nothing.
+ * fingerprint the person types to confirm. A text that is not the fingerprint shows an error under the field
+ * and deletes nothing.
  */
 import { ref } from 'vue'
 import { ConfirmDialog } from '@numen/ui'

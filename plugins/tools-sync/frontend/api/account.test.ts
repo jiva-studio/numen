@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { SERVICE } from './vaults'
-import { createAccountClient, type AccountStateResponse } from './account'
+import { createAccountClient, type AccountClient } from './account'
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -31,8 +31,8 @@ const createClient = (respond: () => Response) => {
 const answer = (body: unknown): Response => Response.json(body)
 
 describe('the fixtures of the account methods', () => {
-  it('reads the GetAccountState fixture as AccountStateResponse', () => {
-    const response: AccountStateResponse = {
+  it('reads the GetAccountState fixture as an account state', () => {
+    const response: Awaited<ReturnType<AccountClient['getAccountState']>> = {
       hasIdentity: true,
       account: '0123456789abcdef0123456789abcdef',
       isDeleting: true,

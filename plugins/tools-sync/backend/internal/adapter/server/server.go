@@ -90,8 +90,8 @@ func (s *Server) GetAccountChainByRoot(ctx context.Context, challengeID, rootSig
 	return chain, found, readError(err)
 }
 
-// GetAccountDeleteChallenge asks for a challenge of the device key, with the checks of GetChallenge. Its message is the
-// one the device signs to delete its account.
+// GetAccountDeleteChallenge runs the checks of GetChallenge. A signature over its message deletes the account and
+// never signs in.
 func (s *Server) GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (session.Challenge, error) {
 	challenge, err := s.client.GetAccountDeleteChallenge(ctx, deviceSignKey)
 	if err != nil {

@@ -75,7 +75,7 @@ func TestDeleteAccount_EndsTheSessionsAndRefusesTheNextSignInWithTheDateOfTheDel
 	if !ok || !deleting.DeleteAt.Equal(deleteAt) {
 		t.Errorf("sign-in error = %v, want AccountDeletingError at %v", deleting, deleteAt)
 	}
-	if got := time.Until(deleteAt); got < fakeserver.DeletionGrace-time.Minute || got > fakeserver.DeletionGrace {
+	if got := deleteAt.Sub(machineClock{}.Now()); got < fakeserver.DeletionGrace-time.Minute || got > fakeserver.DeletionGrace {
 		t.Errorf("the deletion is in %v, want the grace of %v", got, fakeserver.DeletionGrace)
 	}
 }
@@ -107,7 +107,7 @@ func TestDeleteAccount_AfterARestoreStartsANewGraceAndNeverAnEarlierDate(t *test
 		t.Fatal(err)
 	}
 
-	second, err := e.deleteAccount(e.signDelete)
+	second, err := newEnvOn(t, e.address, e.account, e.device).deleteAccount(e.signDelete)
 
 	if err != nil || second.Before(first) {
 		t.Errorf("second deletion at %v, error %v, want a date not before %v", second, err, first)

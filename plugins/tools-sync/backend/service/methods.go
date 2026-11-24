@@ -104,8 +104,7 @@ func getRefusals() []error {
 }
 
 func isAccountDeleting(err error) bool {
-	_, isDeleting := errors.AsType[sessiondomain.AccountDeletingError](err)
-	return isDeleting
+	return errors.Is(err, sessiondomain.AccountDeletingError{})
 }
 
 func isRefusal(err error) bool { return findRefusal(err) != nil }

@@ -30,6 +30,12 @@ type AccountDeletingError struct{ DeleteAt time.Time }
 
 func (AccountDeletingError) Error() string { return "the account is being deleted" }
 
+// Is matches any AccountDeletingError, whatever its DeleteAt.
+func (AccountDeletingError) Is(target error) bool {
+	_, isDeleting := target.(AccountDeletingError)
+	return isDeleting
+}
+
 // Identity is what is public of the identity of this device.
 type Identity struct {
 	AccountFingerprint string
@@ -52,7 +58,6 @@ type Proof struct {
 	DeviceSignKey []byte
 	Signature     []byte
 	Chain         []byte
-	// RestoreAccount asks the server to cancel the deletion of the account.
 	RestoreAccount bool
 }
 

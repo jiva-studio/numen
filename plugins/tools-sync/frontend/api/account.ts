@@ -8,7 +8,7 @@ import type { Api, ApiError } from '@numen/plugin-sdk'
  * The account fingerprint is the name of the account, which the person types to confirm a deletion. The time is
  * RFC 3339 and empty unless the account is being deleted. A device with no identity has neither.
  */
-export interface AccountStateResponse {
+interface AccountStateResponse {
   readonly hasIdentity: boolean
   readonly account: string
   readonly isDeleting: boolean

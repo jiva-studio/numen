@@ -265,7 +265,7 @@ func (s *Server) openSession(req *syncv1.SignInRequest) (Session, error) {
 	if !ok {
 		return Session{}, newFailedSignIn()
 	}
-	if err := s.openDeleting(chain.Root().Fingerprint().String(), req.GetRestoreAccount()); err != nil {
+	if err := s.applyDeletion(chain.Root().Fingerprint().String(), req.GetRestoreAccount()); err != nil {
 		return Session{}, err
 	}
 	head, ok := s.mergeChain(chain)

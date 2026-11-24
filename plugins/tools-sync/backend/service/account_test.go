@@ -35,12 +35,12 @@ func TestDeleteCloudData_StartsTheDeletionAndTheServerRefusesTheNextSignIn(t *te
 	if want := rfc3339(w.clock.Now().Add(fakeserver.DeletionGrace)); answer.DeleteAt != want {
 		t.Errorf("deleteAt = %q, want %q: seven days from now", answer.DeleteAt, want)
 	}
-	if _, isDeleting := errors.AsType[sessiondomain.AccountDeletingError](w.c.SignIn(t.Context())); !isDeleting {
+	if !errors.Is(w.c.SignIn(t.Context()), sessiondomain.AccountDeletingError{}) {
 		t.Error("the sign-in of a device of a deleting account was not refused as deleting")
 	}
 }
 
-func TestDeleteCloudData_LeavesTheNotesOfTheVaultsOnThisDevice(t *testing.T) {
+func TestDeleteCloudData_KeepsTheNotesOfTheVaultsOnThisDevice(t *testing.T) {
 	backend, w := newAccountBackend(t)
 	w.c.Connect(t, "Test")
 	w.c.WriteNote("Test", "a.md", "# Plan")
@@ -68,7 +68,7 @@ func TestDeleteCloudData_AsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
 	}
 }
 
-func TestGetAccountState_SaysDeletingWithTheDateOnceTheDeletionStarted(t *testing.T) {
+func TestGetAccountState_ReturnsDeletingWithTheDateOnceTheDeletionStarted(t *testing.T) {
 	backend, _ := newAccountBackend(t)
 	before, err := backend.GetAccountState(t.Context(), api.GetAccountStateRequest{})
 	if err != nil || !before.HasIdentity || before.IsDeleting || before.Account == "" {
@@ -177,7 +177,7 @@ func TestGetSubscription_FailsAsDeletingForADeletingAccount(t *testing.T) {
 
 	_, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
 
-	if _, isDeleting := errors.AsType[sessiondomain.AccountDeletingError](err); !isDeleting && !errors.Is(err, syncprotocol.ErrUnauthenticated) {
+	if !errors.Is(err, sessiondomain.AccountDeletingError{}) && !errors.Is(err, syncprotocol.ErrUnauthenticated) {
 		t.Errorf("error = %v, want the refusal of a deleting account", err)
 	}
 }
