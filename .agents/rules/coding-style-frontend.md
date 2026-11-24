@@ -134,6 +134,7 @@ function formatValue(val: string) { ... }
 - **`theme.css` defines Tailwind's names from the tokens, never the reverse**, so `bg-surface` and `var(--numen-surface)` resolve to one value.
 - **Text on a ground is readable on it: 4.5:1 for text, 3:1 for large text and for marks.** Text on the accent takes `--numen-accent-ink`, never the inherited colour, `--numen-surface` or a dimmed `opacity`; a hover moves a ground away from its text, not toward it. A person chooses the token pairs in the theme files; no story or test measures a ratio.
 - **No `dark:` variant anywhere in the module**, including in a component copied in from the shadcn-vue registry — the tokens are `light-dark()` pairs and `color-scheme` chooses.
+- **Rows of a card have no divider lines; spacing separates them.**
 - **The root's font size is the interface multiplier.** What scales with the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
 - **One `Tooltip` from `@numen/ui` serves every hint.** Native HTML `title` attributes are forbidden in `.vue` templates, and elements whose text is already visible on screen carry no tooltip.
 - A component copied in from the registry is edited when it is copied in: its palette, its `dark:` variants and its types are maintained in this module from then on, because the copied source belongs to this module.

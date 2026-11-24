@@ -74,7 +74,6 @@
 .sync-card__group {
   margin: 0;
   padding-block: 0.75rem 0;
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
   font-size: var(--numen-chrome-text-2);
   font-weight: 600;
 }
@@ -170,7 +169,6 @@
   flex-direction: column;
   gap: 0.25rem;
   padding-block-start: 0.5rem;
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .share-people__title {
@@ -229,6 +227,7 @@
 
 .subscription .island-card__body {
   position: relative;
+  padding-block: 0;
 }
 
 .subscription__waiting {
@@ -267,10 +266,6 @@
   box-sizing: border-box;
   min-block-size: calc(3.25 * var(--numen-chrome-unit));
   padding-block: var(--row-pad);
-}
-
-.subscription__row + .subscription__row {
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .subscription__offer {

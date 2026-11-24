@@ -160,7 +160,6 @@ function scrollIntoView(): void {
   box-sizing: border-box;
   min-block-size: var(--settings-row-min);
   padding-block: var(--settings-row-pad);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .settings__info {
@@ -219,10 +218,6 @@ function scrollIntoView(): void {
 .settings__mark {
   flex: none;
   color: var(--numen-alarm);
-}
-
-.settings__row:last-child {
-  border-block-end: none;
 }
 
 .settings__label {

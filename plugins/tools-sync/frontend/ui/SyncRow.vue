@@ -29,10 +29,6 @@ defineProps<{ name: string }>()
   padding-block: 0.75rem;
 }
 
-.sync-row + .sync-row {
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-}
-
 .sync-row__label {
   display: flex;
   flex-direction: column;
