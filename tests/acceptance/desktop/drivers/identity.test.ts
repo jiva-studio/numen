@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import zlib from 'node:zlib'
 import {
-  formatDay,
-  getChoosePattern,
-  getPlanItemPattern,
-  getPlanLinePattern,
   pickOtherWords,
   planAnswers,
   planSheetTexts,
@@ -12,7 +8,8 @@ import {
   readPdfPages,
   readPosition,
   readSheetNumbers,
-} from './identity.js'
+} from './identity-kit.js'
+import { formatDay, getChoosePattern, getPlanItemPattern, getPlanLinePattern } from './subscription.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 

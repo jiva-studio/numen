@@ -96,7 +96,7 @@ export const ReadsALink: Story = {
 export const ShowsAnInvalidCode: Story = {
   args: {
     camera: filmCode('https://example.org/menu'),
-    accepts: (text: string) => text.startsWith('numen://link'),
+    isAccepted: (text: string) => text.startsWith('numen://link'),
     onScanned: fn(),
     onFailed: fn(),
   },

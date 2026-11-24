@@ -51,7 +51,7 @@ func (p *pair) pushMany(t *testing.T, folder string, count int) []transfer.Outco
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("%s/File %d.pdf", folder, i+1), Content: []byte(fmt.Sprintf("file %d", i+1))}
 	}
-	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: files})
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{Vault: p.vault, Files: files})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -465,7 +465,7 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 	trip := synctest.NewSource("Videos/Trip.bin", bigSize, 1, synctest.GetStart().Add(-time.Hour))
 	p.a.Spy().Serve(trip)
 	stat := trip.GetStat()
-	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{
 		VaultID: source, Vault: p.vault, Files: []transfer.File{{Path: trip.GetPath(), ModifiedAt: stat.ModTime.UnixNano(), Stat: &stat}},
 	})
 	if err != nil || outcomes[0].Status != transfer.Committed {
@@ -484,7 +484,7 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 		Entries: p.b.State, Host: p.b.Host, Digests: wired.Digests,
 	})
 
-	result, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
+	result, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll})
 
 	if err != nil {
 		t.Fatal(err)

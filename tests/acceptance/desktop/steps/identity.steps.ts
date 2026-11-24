@@ -75,18 +75,18 @@ When('the person downloads the recovery kit again with the recovery words', asyn
 })
 
 When(
-  'the person downloads the recovery kit again with other recovery words',
+  'the person downloads the recovery kit of another account',
   async ({ person }) => {
     await person.identity.downloadWithOtherWords()
   },
 )
 
-Then('the recovery kit is saved as a PDF of {int} sheets', async ({ person }, count: number) => {
-  await person.identity.expectKitSaved(count)
+Then('the recovery kit is saved as a PDF of {int} sheets', ({ person }, count: number) => {
+  person.identity.expectKitSaved(count)
 })
 
-Then('each sheet shows the account fingerprint', async ({ person }) => {
-  await person.identity.expectKitShowsAccount()
+Then('each sheet shows the account fingerprint', ({ person }) => {
+  person.identity.expectKitShowsAccount()
 })
 
 When(

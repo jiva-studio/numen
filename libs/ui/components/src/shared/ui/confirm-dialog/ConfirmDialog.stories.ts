@@ -3,12 +3,14 @@
  * in a browser by `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import ConfirmDialog from './ConfirmDialog.vue'
 
 interface Knobs {
   text: string
   tone: 'danger' | 'default'
+  onConfirm: () => void
+  onCancel: () => void
 }
 
 const meta: Meta<Knobs> = {
@@ -19,11 +21,11 @@ const meta: Meta<Knobs> = {
     text: { control: 'text' },
     tone: { control: 'inline-radio', options: ['danger', 'default'] },
   },
-  args: { text: 'Delete the page? It is removed from this machine.', tone: 'danger' },
+  args: { text: 'Delete the page? It is removed from this machine.', tone: 'danger', onConfirm: fn(), onCancel: fn() },
   render: (args) => ({
     components: { ConfirmDialog },
     setup: () => ({ args }),
-    template: `<ConfirmDialog :text="args.text" :tone="args.tone" label="Delete page" confirm-text="Delete" cancel-text="Cancel" />`,
+    template: `<ConfirmDialog :text="args.text" :tone="args.tone" label="Delete page" confirm-text="Delete" cancel-text="Cancel" @confirm="args.onConfirm" @cancel="args.onCancel" />`,
   }),
 }
 
@@ -52,3 +54,23 @@ export const FarTooLong: Story = {
 
 /** A question in another script. */
 export const OtherScripts: Story = { args: { text: 'Удалить заметку? Её не вернуть.' } }
+
+/** The person confirms: the dialog says so once and does not say cancel. */
+export const Confirms: Story = {
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Delete' }))
+    await expect(args.onConfirm).toHaveBeenCalledTimes(1)
+    await expect(args.onCancel).not.toHaveBeenCalled()
+  },
+}
+
+/** The person cancels with the button, and again with the Escape key. */
+export const Cancels: Story = {
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Cancel' }))
+    await expect(args.onCancel).toHaveBeenCalledTimes(1)
+    await userEvent.keyboard('{Escape}')
+    await expect(args.onCancel).toHaveBeenCalledTimes(2)
+    await expect(args.onConfirm).not.toHaveBeenCalled()
+  },
+}

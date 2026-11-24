@@ -14,6 +14,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
@@ -40,7 +41,7 @@ func newWorld(t *testing.T) *world {
 
 func (w *world) publish(t *testing.T, file transfer.File) (*syncv1.StoredRevision, synctest.Meta) {
 	t.Helper()
-	outcomes, err := commit.NewCommitRevisions(w.p.A.CommitDeps()).Execute(t.Context(), transfer.CommitInput{VaultID: synctest.FirstVault, Vault: w.vault, Files: []transfer.File{file}})
+	outcomes, err := commit.NewCommitRevisions(w.p.A.CommitDeps()).Execute(t.Context(), ports.CommitInput{VaultID: synctest.FirstVault, Vault: w.vault, Files: []transfer.File{file}})
 	if err != nil {
 		t.Fatal(err)
 	}

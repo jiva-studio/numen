@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/sharestate"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -23,7 +24,7 @@ type batch struct {
 	revs    []*syncv1.Revision
 	ids     [][32]byte
 	heads   []*syncv1.StoredRevision
-	shares  map[string]*shareState
+	shares  map[string]*sharestate.State
 }
 
 func (b *batch) isApplied(i int) bool {
@@ -62,7 +63,7 @@ func (s *Server) newBatch(account string, req *syncv1.CommitRevisionsRequest) (*
 		return nil, err
 	}
 	if err := s.checkAuthors(account, req.GetRevisions()); err != nil {
-		return nil, asInvalid(err)
+		return nil, wrapInvalid(err)
 	}
 	if err := checkEpochs(vault, req.GetRevisions()); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -225,7 +226,7 @@ func (s *Server) applyBatch(b *batch) *syncv1.CommitRevisionsResponse {
 	for _, i := range fresh {
 		stored[i] = s.storeRevision(b, i)
 	}
-	s.streams.announce(b.account, b.vaultID, b.vault.seq)
+	s.streams.Announce(b.account, b.vaultID, b.vault.seq)
 	return &syncv1.CommitRevisionsResponse{Committed: true, Seq: b.vault.seq, Revisions: stored}
 }
 
@@ -344,9 +345,8 @@ func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// checkEpochs refuses a revision of the vault whose key epoch is below the newest one; a revision of a share carries the
-// epoch of the share and is checked against the share instead.
 func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
+	// A revision of a share carries the epoch of the share and is not compared with the vault epoch.
 	var highest uint32
 	for _, stored := range vault.files {
 		if len(stored.GetRevision().GetShareRootId()) == 0 {
@@ -361,7 +361,7 @@ func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 	return nil
 }
 
-func asInvalid(err error) error {
+func wrapInvalid(err error) error {
 	if refused, ok := errors.AsType[*connect.Error](err); ok {
 		return refused
 	}
@@ -374,7 +374,7 @@ func (s *Server) checkShares(b *batch) error {
 			continue
 		}
 		share, found := s.shares[string(rev.GetShareRootId())]
-		if !found || share.vault != b.vaultID || share.account != b.account || share.isClosed {
+		if !found || share.Vault != b.vaultID || share.Account != b.account || share.IsClosed {
 			return fmt.Errorf("%w: the share of a revision is not an open share of the vault", errInvalidRevision)
 		}
 	}
@@ -386,11 +386,11 @@ func (b *batch) getShareConflict(rev *syncv1.Revision) *syncv1.Conflict {
 		return nil
 	}
 	share := b.shares[string(rev.GetShareRootId())]
-	if rev.GetEpoch() == share.epoch {
+	if rev.GetEpoch() == share.Epoch {
 		return nil
 	}
 	return &syncv1.Conflict{
-		FileId: rev.GetFileId(), Kind: syncv1.ConflictKind_CONFLICT_KIND_SHARE_EPOCH, Head: b.vault.files[string(rev.GetFileId())], ShareEpoch: share.epoch,
+		FileId: rev.GetFileId(), Kind: syncv1.ConflictKind_CONFLICT_KIND_SHARE_EPOCH, Head: b.vault.files[string(rev.GetFileId())], ShareEpoch: share.Epoch,
 	}
 }
 
@@ -406,12 +406,12 @@ func (s *Server) recordShareExit(b *batch, i int) {
 		return
 	}
 	if share, found := s.shares[string(old.GetShareRootId())]; found {
-		share.exits[string(old.GetFileId())] = b.vault.seq
+		share.Exits[string(old.GetFileId())] = b.vault.seq
 	}
 }
 
 func (s *Server) clearShareExit(rev *syncv1.Revision) {
 	if share, found := s.shares[string(rev.GetShareRootId())]; found {
-		delete(share.exits, string(rev.GetFileId()))
+		delete(share.Exits, string(rev.GetFileId()))
 	}
 }

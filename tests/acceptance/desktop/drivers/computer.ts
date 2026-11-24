@@ -6,6 +6,7 @@ import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
+import { SubscriptionDriver } from './subscription.js'
 import { makeWrongCode } from './link.js'
 import { DEFAULT_VAULT } from './rules.js'
 import { Scenario } from './scenario.js'
@@ -84,6 +85,7 @@ export const findConflictCopies = (files: readonly { path: string; text: string 
 /** What the first computer keeps of the person's account and vaults. */
 interface FirstComputer {
   readonly identity: IdentityDriver
+  readonly subscription: SubscriptionDriver
   readonly sync: SyncDriver
   readonly vaults: SyncVaultsDriver
   readonly settings: SettingsDriver
@@ -93,6 +95,7 @@ interface FirstComputer {
 interface SecondComputer {
   readonly scenario: Scenario
   readonly identity: IdentityDriver
+  readonly subscription: SubscriptionDriver
   readonly vaults: SyncVaultsDriver
   readonly settings: SettingsDriver
   readonly devices: DevicesDriver
@@ -137,6 +140,7 @@ export class ComputerDriver {
     const started = {
       scenario,
       identity: new IdentityDriver(scenario, settings),
+      subscription: new SubscriptionDriver(scenario, settings),
       vaults: new SyncVaultsDriver(scenario, settings),
       devices: new DevicesDriver(scenario, settings),
       settings,
@@ -359,7 +363,7 @@ export class ComputerDriver {
   }
 
   /** Makes the other computer reach the sync server only after this one sent its changes. */
-  leadToServer(computer: ComputerName): void {
+  connectToServer(computer: ComputerName): void {
     this.owner.sync.holdOthers(this.getScenario(computer))
   }
 
@@ -388,18 +392,18 @@ export class ComputerDriver {
   }
 
   async expectSubscription(computer: ComputerName, text: string): Promise<void> {
-    const identity = computer === 'first' ? this.owner.identity : this.requireSecond().identity
-    await identity.expectSubscription(text)
+    const subscription = computer === 'first' ? this.owner.subscription : this.requireSecond().subscription
+    await subscription.expectSubscription(text)
   }
 
   async expectPlan(computer: ComputerName, name: string, gigabytes: number): Promise<void> {
-    const identity = computer === 'first' ? this.owner.identity : this.requireSecond().identity
-    await identity.expectPlan(name, gigabytes)
+    const subscription = computer === 'first' ? this.owner.subscription : this.requireSecond().subscription
+    await subscription.expectPlan(name, gigabytes)
   }
 
   async expectActive(computer: ComputerName): Promise<void> {
-    const identity = computer === 'first' ? this.owner.identity : this.requireSecond().identity
-    await identity.expectActive()
+    const subscription = computer === 'first' ? this.owner.subscription : this.requireSecond().subscription
+    await subscription.expectActive()
   }
 
   removeNote(computer: ComputerName, title: string, vault: string): void {

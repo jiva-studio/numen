@@ -4,7 +4,7 @@ package identity
 // sync plugin, and the link and the revoke that wait for the other device and the server. The use cases of the
 // windows and of the plugins of one installation share one.
 type Progress struct {
-	restores *pendingStore
+	restores restoreHold
 	links    linkHold
 }
 

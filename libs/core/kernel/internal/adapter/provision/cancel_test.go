@@ -227,8 +227,12 @@ func TestAJoiningCallerReceivesTheReplayBeforeTheLaterStatuses(t *testing.T) {
 	}()
 	<-replayed
 	close(release)
-	<-leader
-	<-joined
+	if err := <-leader; err != nil {
+		t.Errorf("the leading caller failed: %v", err)
+	}
+	if err := <-joined; err != nil {
+		t.Errorf("the joining caller failed: %v", err)
+	}
 
 	mu.Lock()
 	defer mu.Unlock()

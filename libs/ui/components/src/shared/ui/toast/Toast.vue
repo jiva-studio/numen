@@ -4,7 +4,7 @@
  * person did is done. An empty text shows nothing. Each new text is shown for the whole duration,
  * then the toast asks to be closed.
  */
-import { onBeforeUnmount, watch } from 'vue'
+import { useExpiry } from '@/shared/model/useExpiry'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<{ text: string; durationMs?: number }>(), {
@@ -15,20 +15,12 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
-/* --------------------------------- State ---------------------------------- */
-let timer: ReturnType<typeof setTimeout> | undefined
-
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
+useExpiry(
   () => props.text,
-  (text) => {
-    clearTimeout(timer)
-    if (text !== '') timer = setTimeout(() => emit('close'), props.durationMs)
-  },
-  { immediate: true },
+  () => props.durationMs,
+  () => emit('close'),
 )
-
-onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>

@@ -1,7 +1,6 @@
 /** The person who shares folders with readers: the dialog of the owner, the pages of the readers and the messages the owner receives. */
 import { expect } from 'playwright/test'
 import type { IdentityDriver } from './identity.js'
-import type { Scenario } from './scenario.js'
 import type { ShareDriver, GivenInvitation } from './share.js'
 import type { ReaderName, SharedReaderDriver } from './shared-reader.js'
 
@@ -14,7 +13,6 @@ export class SharingDriver {
     private readonly share: ShareDriver,
     private readonly readers: SharedReaderDriver,
     private readonly identity: IdentityDriver,
-    private readonly scenario: Scenario,
   ) {}
 
   /**
@@ -51,10 +49,5 @@ export class SharingDriver {
   async expectTold(text: string): Promise<void> {
     if (this.refusal !== undefined) expect(this.refusal).toContain(text)
     else await this.share.expectTold(text)
-  }
-
-  /** Moves a file of the vault the way a program that is not Numen does. */
-  moveFile(from: string, to: string, vault: string): void {
-    this.scenario.getWorld().moveFile(this.scenario.getVault(vault), from, to)
   }
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
@@ -47,7 +48,7 @@ func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome)
 	if previous != nil {
 		file.FileID, file.ParentRev = previous.FileID, previous.RevID
 	}
-	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +62,7 @@ func trustAll([]byte) bool { return true }
 
 func (p *pair) pull(t *testing.T, authors func([]byte) bool) restore.PullResult {
 	t.Helper()
-	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: authors})
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: authors})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +174,7 @@ func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 	p.push(t, "Shopping list.md", "milk", nil)
 	p.server.SetBlobCorruption(true)
 
-	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll})
 
 	if !errors.Is(err, pull.ErrCorruptBlob) {
 		t.Errorf("error = %v, want ErrCorruptBlob", err)
@@ -192,7 +193,7 @@ func TestPullChanges_ReadsEveryPageOfChanges(t *testing.T) {
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
 	}
-	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: files}); err != nil {
+	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{Vault: p.vault, Files: files}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -236,7 +237,7 @@ func TestPullChanges_ReportsSameWhenTheServerAnnouncedNoRestore(t *testing.T) {
 func TestPullChanges_AppliesNoPageForAnEpochThatThisDeviceHasNotRun(t *testing.T) {
 	p := newPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
-	id, err := p.server.Fake.IssueRestoreEpoch()
+	id, err := p.server.Fake.AnnounceRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}
