@@ -111,7 +111,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := made.Execute(t.Context(), v); err != nil {
+	if _, err := made.EmbedWithProgress(t.Context(), v, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := unembeddedTo(t, db, v, model); got != 0 {
