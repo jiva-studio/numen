@@ -338,8 +338,6 @@ func (u *GetShare) Execute(ctx context.Context, id domain.VaultID, folder string
 	return Overview{State: root.GetState(), Readers: root.Readers}, nil
 }
 
-// getShareName returns the body a reader sees of the share: the last segment of the folder, and for the whole vault
-// the name of the vault.
 func (b base) getShareName(ctx context.Context, id domain.VaultID, folder string) (domainshare.Body, error) {
 	if domainshare.NormalizeFolder(folder) != "" {
 		return domainshare.Body{Name: domainshare.GetShareName(folder)}, nil

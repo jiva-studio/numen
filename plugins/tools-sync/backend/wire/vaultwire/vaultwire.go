@@ -30,16 +30,32 @@ const (
 	keyConflicts  = "conflicts"
 )
 
-// Vaults answers the methods about the vaults.
+// Vaults answers the methods about the vaults, as the three parts below.
 type Vaults struct {
+	*Listing
+	*Connections
+	*Removals
+}
+
+// Listing answers the methods about the state of the vaults of the installation.
+type Listing struct {
+	deps    syncvault.Deps
+	pending ports.PausedStore
+	resolve *deletions.ResolveDeletions
+}
+
+// Connections answers the methods about connecting a vault to a synced vault.
+type Connections struct {
 	deps    syncvault.Deps
 	catalog catalog.Deps
 	connect *catalog.ConnectVault
 	heads   ports.Heads
-	pending ports.PausedStore
-	resolve *deletions.ResolveDeletions
-	stop    *unlink.StopSyncing
-	delete  *catalog.DeleteCloudVault
+}
+
+// Removals answers the methods that end the sync of a vault or delete a synced vault.
+type Removals struct {
+	stop   *unlink.StopSyncing
+	delete *catalog.DeleteCloudVault
 }
 
 // New returns the methods over the dependencies of a pass and the heads of a synced vault.
@@ -50,18 +66,23 @@ func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 		Random: deps.Random,
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
-	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil, delete: deleting,
-		stop: unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting}),
+	return &Vaults{
+		Listing:     &Listing{deps: deps, pending: nil, resolve: nil},
+		Connections: &Connections{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads},
+		Removals: &Removals{
+			stop:   unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting}),
+			delete: deleting,
+		},
 	}
 }
 
 // SetDeletions gives the methods the answer to the pause before many removals.
-func (v *Vaults) SetDeletions(pending ports.PausedStore, resolve *deletions.ResolveDeletions) {
+func (v *Listing) SetDeletions(pending ports.PausedStore, resolve *deletions.ResolveDeletions) {
 	v.pending, v.resolve = pending, resolve
 }
 
 // ListVaults lists every vault of the installation with its state.
-func (v *Vaults) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.ListVaultsResponse, error) {
+func (v *Listing) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.ListVaultsResponse, error) {
 	vaults, err := v.deps.Host.GetVaults(ctx)
 	if err != nil {
 		return api.ListVaultsResponse{Vaults: nil}, err
@@ -81,7 +102,7 @@ func (v *Vaults) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.L
 	return api.ListVaultsResponse{Vaults: listed}, nil
 }
 
-func (v *Vaults) getVault(ctx context.Context, vault domain.Vault, holders map[string]bool) (api.Vault, error) {
+func (v *Listing) getVault(ctx context.Context, vault domain.Vault, holders map[string]bool) (api.Vault, error) {
 	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil, RemoteID: ""}
 	link, err := v.deps.State.ReadLink(ctx, vault.ID)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
@@ -113,7 +134,7 @@ func (v *Vaults) getVault(ctx context.Context, vault domain.Vault, holders map[s
 	return one, err
 }
 
-func (v *Vaults) getPausedRemovals(ctx context.Context, id domain.VaultID) (*api.PausedDeletions, error) {
+func (v *Listing) getPausedRemovals(ctx context.Context, id domain.VaultID) (*api.PausedDeletions, error) {
 	if v.pending == nil {
 		return nil, nil
 	}
@@ -125,7 +146,7 @@ func (v *Vaults) getPausedRemovals(ctx context.Context, id domain.VaultID) (*api
 }
 
 // ResolveDeletions takes the answer of the person to the removals of a vault that wait for it.
-func (v *Vaults) ResolveDeletions(ctx context.Context, request api.ResolveDeletionsRequest) (api.ResolveDeletionsResponse, error) {
+func (v *Listing) ResolveDeletions(ctx context.Context, request api.ResolveDeletionsRequest) (api.ResolveDeletionsResponse, error) {
 	if v.resolve == nil {
 		return api.ResolveDeletionsResponse{}, deletions.ErrNothingPending
 	}
@@ -134,17 +155,17 @@ func (v *Vaults) ResolveDeletions(ctx context.Context, request api.ResolveDeleti
 }
 
 // StopSyncingVault ends the sync of the vault on this device. Its files and its synced vault on the server stay.
-func (v *Vaults) StopSyncingVault(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
+func (v *Removals) StopSyncingVault(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
 	return api.StopSyncingVaultResponse{}, v.stop.Execute(ctx, domain.VaultID(request.VaultID), request.DeleteCloudCopy)
 }
 
 // DeleteCloudVault deletes a synced vault of the account from the cloud. The files of the vaults that were synced stay.
-func (v *Vaults) DeleteCloudVault(ctx context.Context, request api.DeleteCloudVaultRequest) (api.DeleteCloudVaultResponse, error) {
+func (v *Removals) DeleteCloudVault(ctx context.Context, request api.DeleteCloudVaultRequest) (api.DeleteCloudVaultResponse, error) {
 	return api.DeleteCloudVaultResponse{}, v.delete.Execute(ctx, request.RemoteID)
 }
 
 // ListRemoteVaults lists the synced vaults of the account.
-func (v *Vaults) ListRemoteVaults(ctx context.Context, _ api.ListRemoteVaultsRequest) (api.ListRemoteVaultsResponse, error) {
+func (v *Connections) ListRemoteVaults(ctx context.Context, _ api.ListRemoteVaultsRequest) (api.ListRemoteVaultsResponse, error) {
 	remote, err := catalog.NewListRemoteVaults(v.catalog).Execute(ctx)
 	if err != nil {
 		return api.ListRemoteVaultsResponse{Vaults: nil}, err
@@ -157,7 +178,7 @@ func (v *Vaults) ListRemoteVaults(ctx context.Context, _ api.ListRemoteVaultsReq
 }
 
 // ConnectVault connects a vault of the installation to a synced vault, or to a new one.
-func (v *Vaults) ConnectVault(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
+func (v *Connections) ConnectVault(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
 	input := catalog.ConnectInput{VaultID: domain.VaultID(request.VaultID), Mode: 0, RemoteID: request.RemoteID}
 	switch request.Mode {
 	case api.ModeNew:
@@ -172,7 +193,7 @@ func (v *Vaults) ConnectVault(ctx context.Context, request api.ConnectVaultReque
 }
 
 // GetConnectPreview counts the notes of a vault that have another text than the note at the same path of a synced vault.
-func (v *Vaults) GetConnectPreview(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
+func (v *Connections) GetConnectPreview(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
 	if !vaultlink.IsRemoteID(request.RemoteID) {
 		return api.PreviewConnectResponse{}, catalog.ErrUnknownRemoteVault
 	}
@@ -185,7 +206,7 @@ func (v *Vaults) GetConnectPreview(ctx context.Context, request api.PreviewConne
 }
 
 // GetStatus returns whether this device has an identity, whether the server answers and what warns.
-func (v *Vaults) GetStatus(ctx context.Context, _ api.GetStatusRequest) (api.GetStatusResponse, error) {
+func (v *Listing) GetStatus(ctx context.Context, _ api.GetStatusRequest) (api.GetStatusResponse, error) {
 	status := api.GetStatusResponse{HasIdentity: true, IsReachable: false, Items: nil}
 	_, err := v.deps.Identity.GetPublicIdentity(ctx)
 	if errors.Is(err, sessiondomain.ErrNoIdentity) {
@@ -208,7 +229,7 @@ func (v *Vaults) GetStatus(ctx context.Context, _ api.GetStatusRequest) (api.Get
 	return status, nil
 }
 
-func (v *Vaults) countConflicts(ctx context.Context) (int, error) {
+func (v *Listing) countConflicts(ctx context.Context) (int, error) {
 	vaults, err := v.deps.Host.GetVaults(ctx)
 	if err != nil {
 		return 0, err

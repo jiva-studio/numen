@@ -3,6 +3,7 @@ package chaincourier_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -183,7 +184,11 @@ func TestLoop_ShowsAFailedPublishAndClearsItWhenTheServerIsBack(t *testing.T) {
 	current.GoOffline()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go func() { _ = chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx) }()
+	go func() {
+		if err := chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
 
 	current.Clock.AwaitWait(t)
 	items := current.Health.List()
@@ -205,7 +210,11 @@ func TestLoop_ClearsTheFailureAnEarlierRunLeftWhenNothingIsPending(t *testing.T)
 	}
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go func() { _ = chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx) }()
+	go func() {
+		if err := chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
 
 	synctest.WaitUntil(t, "the stale failure is cleared", func() bool { return len(current.Health.List()) == 0 })
 }

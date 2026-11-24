@@ -40,7 +40,6 @@ type RunDeps struct {
 	Warn     Warner
 	Interval func() time.Duration
 	Changed  <-chan domain.VaultID
-	// Describe is the plain text of an error for the person; Report writes the failure of a pass to the log.
 	Describe func(err error) string
 	Report   func(ctx context.Context, vault domain.VaultID, err error)
 }
@@ -131,7 +130,6 @@ func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	return u.finish(ctx, u.pick(ctx, []failure{{vault: named, err: err}}), isConnected)
 }
 
-// pick logs every failure of the pass and returns the one the health item tells of: a server that is away first.
 func (u *RunSync) pick(ctx context.Context, failed []failure) *failure {
 	var picked *failure
 	for i := range failed {

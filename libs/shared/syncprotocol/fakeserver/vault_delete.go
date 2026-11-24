@@ -27,7 +27,6 @@ func (s *Server) GetVaultUsage(_ context.Context, req *connect.Request[syncv1.Ge
 	return connect.NewResponse(&syncv1.GetVaultUsageResponse{Vaults: usage}), nil
 }
 
-// getVaultBytes counts the reserved and committed blobs, as used does.
 func (s *Server) getVaultBytes(account, vault string) uint64 {
 	var total uint64
 	for _, row := range s.blobs {

@@ -32,7 +32,7 @@ func (u *DeleteCloudVault) Execute(ctx context.Context, remoteID string) error {
 	if err != nil {
 		return ErrUnknownRemoteVault
 	}
-	linked, err := u.readLinked(ctx, remoteID)
+	linked, err := u.listLinkedVaults(ctx, remoteID)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (u *DeleteCloudVault) Execute(ctx context.Context, remoteID string) error {
 	return nil
 }
 
-func (u *DeleteCloudVault) readLinked(ctx context.Context, remoteID string) ([]domain.VaultID, error) {
+func (u *DeleteCloudVault) listLinkedVaults(ctx context.Context, remoteID string) ([]domain.VaultID, error) {
 	links, err := u.reader.readLinks(ctx)
 	if err != nil {
 		return nil, err

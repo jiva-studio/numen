@@ -169,7 +169,9 @@ func TestRunSync_NamesTheVaultAndTheReasonOfAFailedPassAndClearsThemOnSuccess(t 
 	go func() { done <- syncvault.NewRunSync(deps).Execute(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-done
+		if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
 	})
 
 	synctest.WaitUntil(t, "the item of the failed vault", func() bool { return p.a.HasItem("Could not sync the vault «" + string(source) + "»") })

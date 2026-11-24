@@ -78,11 +78,9 @@ func (s *State) WritePin(ctx context.Context, address string, key []byte) error 
 			kept++
 		}
 	}
-	return checkKept(kept)
+	return checkAnyKept(kept)
 }
 
-// writeCopy writes the copy of the account state in the vault. A vault whose folder is gone keeps no copy, and
-// that is no failure of the others.
 func (s *State) writeCopy(ctx context.Context, id domain.VaultID, name string, value any) (bool, error) {
 	err := s.write(ctx, id, name, value)
 	if errors.Is(err, host.ErrNotExist) {
@@ -91,7 +89,7 @@ func (s *State) writeCopy(ctx context.Context, id domain.VaultID, name string, v
 	return err == nil, err
 }
 
-func checkKept(kept int) error {
+func checkAnyKept(kept int) error {
 	if kept == 0 {
 		return errNoVault
 	}
@@ -136,7 +134,7 @@ func (s *State) WriteJournal(ctx context.Context, journal restore.Journal) error
 			kept++
 		}
 	}
-	return checkKept(kept)
+	return checkAnyKept(kept)
 }
 
 var errNoVault = vaultlink.ErrNoVaults

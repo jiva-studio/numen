@@ -144,7 +144,6 @@ func listRequests(hub *Hub) []Request {
 	return requests
 }
 
-// getLabel returns what the sharer reads as the folder of the offer: its path, and for the whole vault the vault name.
 func (o *offer) getLabel() string {
 	if o.folder == "" {
 		return o.name

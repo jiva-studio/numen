@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -82,8 +81,7 @@ type Resources struct {
 
 	vaultLocks    *vaultwriter.Locks
 	watches       *vaultwatch.Hub
-	settings      *settingsadapter.Files
-	settingEvents *settingevents.Events
+	settings      settingsadapter.Shared
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
 	progress      *identity.Progress
@@ -95,8 +93,7 @@ func NewResources() *Resources {
 		Chunks:        &note.ChunkTokens{},
 		vaultLocks:    vaultwriter.NewLocks(),
 		watches:       vaultwatch.NewHub(),
-		settings:      settingsadapter.NewFiles(),
-		settingEvents: settingevents.New(),
+		settings:      settingsadapter.NewShared(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
@@ -175,8 +172,8 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
 		Watches:         res.watches,
-		SettingsFiles:   res.settings,
-		SettingEvents:   res.settingEvents,
+		SettingsFiles:   res.settings.Files,
+		SettingEvents:   res.settings.Events,
 		PluginChanges:   &res.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,

@@ -406,7 +406,7 @@ func (goneFolderLinks) WriteLink(context.Context, domain.VaultID, vaultlink.Link
 	return fmt.Errorf("write link.json: %w", host.ErrNotExist)
 }
 
-func TestConnectVault_NamesTheVaultWhoseFolderIsGone(t *testing.T) {
+func TestConnectVault_NamesMissingFolder(t *testing.T) {
 	w := newWorld(t)
 	deps := w.first.CatalogDeps()
 	deps.State = goneFolderLinks{Links: deps.State}

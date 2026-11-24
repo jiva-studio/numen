@@ -65,7 +65,7 @@ func TestGetVaultUsage_ListsOnlyTheVaultsOfTheAccount(t *testing.T) {
 	}
 }
 
-func TestDeleteVault_RemovesTheVaultAndGivesItsBytesBack(t *testing.T) {
+func TestDeleteVault_FreesBytes(t *testing.T) {
 	t.Parallel()
 	b := createBillingEnv(t, false)
 	e := b.env
@@ -104,7 +104,7 @@ func TestDeleteVault_RefusesAReserveAndACommitAfterTheDelete(t *testing.T) {
 	}
 }
 
-func TestDeleteVault_AnswersNotDeletedForAVaultThatIsGoneOrNotOfTheAccount(t *testing.T) {
+func TestDeleteVault_ReportsNotDeletedForUnknownVault(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)
 	vault := e.newVault()

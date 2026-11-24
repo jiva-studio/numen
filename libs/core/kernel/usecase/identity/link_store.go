@@ -102,7 +102,7 @@ func (l *pendingLink) isEnded() bool { return l.progress.IsEnded() }
 type versionClock interface {
 	bump() uint64
 	getVersion() uint64
-	getChanged() <-chan struct{}
+	getChangeSignal() <-chan struct{}
 }
 
 type versionTicker struct {
@@ -119,4 +119,4 @@ func (t *versionTicker) bump() uint64 {
 
 func (t *versionTicker) getVersion() uint64 { return t.version }
 
-func (t *versionTicker) getChanged() <-chan struct{} { return t.changed }
+func (t *versionTicker) getChangeSignal() <-chan struct{} { return t.changed }

@@ -48,7 +48,7 @@ func (r *Requirements) GetUnmet(ctx context.Context, backend manifest.Backend) s
 	return ""
 }
 
-// Presence tells whether this device has an identity or is on the way to one.
+// Presence reports whether this device has an identity or is on the way to one.
 type Presence interface {
 	IsPresent(ctx context.Context) bool
 }

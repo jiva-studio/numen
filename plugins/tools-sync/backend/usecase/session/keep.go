@@ -258,7 +258,6 @@ func (u *Keep) adopt(ctx context.Context, revoked domain.DeviceRevokedError) err
 	return u.deps.Chains.AdoptChain(ctx, revoked.Chain)
 }
 
-// clearLeft clears, once, the items an earlier run of the plugin raised: the host keeps them across a restart, and this run does not know them.
 func (u *Keep) clearLeft(ctx context.Context) {
 	if u.isClean {
 		return

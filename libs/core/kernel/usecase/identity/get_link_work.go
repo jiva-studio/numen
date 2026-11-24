@@ -48,8 +48,8 @@ func (u *GetLinkWork) read(sinceVersion uint64) (identitydomain.LinkWork, <-chan
 	store.expireLocked(u.clock.Now())
 	link := store.current
 	if link == nil {
-		return identitydomain.LinkWork{Version: store.ticker.getVersion()}, store.ticker.getChanged()
+		return identitydomain.LinkWork{Version: store.ticker.getVersion()}, store.ticker.getChangeSignal()
 	}
 	link.outbox.Acknowledge(sinceVersion)
-	return link.outbox.GetWork(store.ticker.getVersion()), store.ticker.getChanged()
+	return link.outbox.GetWork(store.ticker.getVersion()), store.ticker.getChangeSignal()
 }

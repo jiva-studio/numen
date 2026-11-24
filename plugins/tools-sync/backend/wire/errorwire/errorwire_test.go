@@ -45,9 +45,10 @@ func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 		wantCode server.ErrorCode
 		wantText string
 	}{
-		"own identity":          {err: fmt.Errorf("add: %w", share.ErrOwnIdentity), wantCode: server.CodeFailedPrecondition, wantText: "That is your own identity"},
-		"inside a share":        {err: share.ErrInsideShare, wantCode: server.CodeFailedPrecondition, wantText: "A folder inside a shared folder cannot be shared"},
-		"a share in the way":    {err: fmt.Errorf("share: %w", share.NestingError{Kind: share.ErrHoldsShare, Folder: "", Shared: "Recipes"}), wantCode: server.CodeFailedPrecondition, wantText: "The vault cannot be shared while its folder «Recipes» is shared"},
+		"own identity":   {err: fmt.Errorf("add: %w", share.ErrOwnIdentity), wantCode: server.CodeFailedPrecondition, wantText: "That is your own identity"},
+		"inside a share": {err: share.ErrInsideShare, wantCode: server.CodeFailedPrecondition, wantText: "A folder inside a shared folder cannot be shared"},
+		"a share in the way": {err: fmt.Errorf("share: %w", share.NestingError{Kind: share.ErrHoldsShare, Folder: "", Shared: "Recipes"}),
+			wantCode: server.CodeFailedPrecondition, wantText: "The vault cannot be shared while its folder «Recipes» is shared"},
 		"share ended":           {err: share.ErrEnded, wantCode: server.CodeFailedPrecondition, wantText: "The owner ended this share"},
 		"not a code":            {err: fmt.Errorf("%w: base64", share.ErrBadCode), wantCode: server.CodeInvalidArgument, wantText: "This is not a reader code or an invitation."},
 		"no such share":         {err: share.ErrUnknownShare, wantCode: server.CodeNotFound, wantText: "This share does not exist or is not meant for you."},
@@ -76,7 +77,7 @@ func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *tes
 		"a Go chain":       fmt.Errorf("sync vault 3f9a: %w", fmt.Errorf("pass: %w", errors.New("internal error"))),
 	} {
 		logged.Reset()
-		code, text := Describe(context.Background(), "connect-vault", err)
+		code, text := Describe(t.Context(), "connect-vault", err)
 		if text != GenericText || code != server.CodeInternal {
 			t.Errorf("%s: got %q %q, want the generic text", name, code, text)
 		}
@@ -86,15 +87,15 @@ func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *tes
 	}
 }
 
-func TestDescribe_KeepsAWrappedFileNameAwayFromThePersonAndSaysWhatToDo(t *testing.T) {
+func TestDescribe_HidesFileNames(t *testing.T) {
 	wrapped := fmt.Errorf("write journal-catalog.json: %w", host.ErrNotExist)
-	_, text := Describe(context.Background(), "connect-vault", wrapped)
+	_, text := Describe(t.Context(), "connect-vault", wrapped)
 	if strings.Contains(text, "journal-catalog.json") || strings.Contains(text, "file does not exist") {
 		t.Errorf("text = %q, want no file name and no Go text", text)
 	}
 }
 
-func TestDescribe_GivesTheFailuresOfAFirstSyncPlainTexts(t *testing.T) {
+func TestDescribe_ExplainsFirstSyncFailures(t *testing.T) {
 	for name, one := range map[string]struct {
 		err  error
 		want string
@@ -110,7 +111,7 @@ func TestDescribe_GivesTheFailuresOfAFirstSyncPlainTexts(t *testing.T) {
 		"no identity": {err: sessiondomain.ErrNoIdentity, want: "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
 		"no server":   {err: sessiondomain.ErrNoServer, want: "No sync server is set. Enter the server address in the settings of Numen Sync."},
 	} {
-		code, text := Describe(context.Background(), "connect-vault", one.err)
+		code, text := Describe(t.Context(), "connect-vault", one.err)
 		if text != one.want {
 			t.Errorf("%s: text = %q, want %q", name, text, one.want)
 		}

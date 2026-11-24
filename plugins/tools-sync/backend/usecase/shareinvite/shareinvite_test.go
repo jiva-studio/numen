@@ -296,8 +296,8 @@ func TestApprove_ShareTheWholeVaultWhenTheFolderIsEmpty(t *testing.T) {
 	id := join(t, readerDeps, started.Link, "Anna laptop")
 	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
 	requests := w.waitRequest(t, 1)
-	if requests[0].Folder != string(owned) {
-		t.Errorf("request folder = %q, want the vault name", requests[0].Folder)
+	if requests[0].Label != string(owned) {
+		t.Errorf("request label = %q, want the vault name", requests[0].Label)
 	}
 
 	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID); err != nil {

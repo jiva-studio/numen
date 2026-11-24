@@ -318,7 +318,7 @@ func TestParseInvitation_RefusesATextThatIsNotAnInvitationOrIsTooShort(t *testin
 	}
 }
 
-func TestGetRelativePath_TheVaultRootHoldsEveryFile(t *testing.T) {
+func TestGetRelativePath_ReturnsEveryFileForRoot(t *testing.T) {
 	t.Parallel()
 	for _, root := range []string{"", ".", "/"} {
 		got, ok := share.GetRelativePath(root, "Food/Soup.md")

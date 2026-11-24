@@ -5,14 +5,22 @@ import (
 	"time"
 )
 
+type pluginTeardown interface {
+	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
+}
+
+type pluginKeeper interface {
+	KeepAll(ctx context.Context)
+}
+
 // Lifecycle stops the plugins when the host shuts down and starts the ones that stay running.
 type Lifecycle struct {
-	teardown *Teardown
-	keeper   *Keeper
+	teardown pluginTeardown
+	keeper   pluginKeeper
 }
 
 // NewLifecycle creates a lifecycle from the teardown and the keeper of the plugins.
-func NewLifecycle(teardown *Teardown, keeper *Keeper) Lifecycle {
+func NewLifecycle(teardown pluginTeardown, keeper pluginKeeper) Lifecycle {
 	return Lifecycle{teardown: teardown, keeper: keeper}
 }
 
