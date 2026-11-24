@@ -35,7 +35,7 @@ Paying again at any point before the deletion brings sync back.
 
 ## Sharing a folder by a link
 
-You can let another person read one folder of a synced vault. They read it; they cannot change it, and nothing else of your vault reaches them. Both of you need Numen Sync with the same sync server, and you must stay online until they have pasted the link.
+You can let another person read one folder of a synced vault, or the whole vault: right-click the vault itself to share all of it. A folder cannot be shared while its folder or the vault is shared, and the vault cannot be shared while one of its folders is shared; the message names the share in the way. They read it; they cannot change it, and nothing else of your vault reaches them. Both of you need Numen Sync with the same sync server, and you must stay online until they have pasted the link.
 
 1. **Make the link.** Right-click the folder, choose **Share**, and copy the link. It works once and stops working after 24 hours at most; the sync server may end it sooner (today after about 10 minutes), and you can revoke it before.
 2. **Send it, and let them paste it.** The other person chooses **Accept a shared folder...** and pastes the link. Both of your screens show a six-digit code.
