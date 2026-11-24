@@ -12,8 +12,8 @@ const PAGE = 'Identity and licenses'
 const LIST = 'Devices'
 const LINK_NEW = 'Link a new device'
 const JOIN_WITH_QR = 'Join with a QR code'
-const SHOW_QR = 'Show a QR code'
-const SCAN_QR = 'Scan a QR code'
+const SHOW_INSTEAD = 'Show a QR code instead'
+const SCAN_INSTEAD = 'Scan a QR code instead'
 const QR_IMAGE = 'QR code'
 const PASTE_FIELD = 'Paste the link text'
 const USE_LINK = 'Use link'
@@ -69,19 +69,21 @@ export class DevicesDriver {
     return (await value.innerText()).trim()
   }
 
-  private async openLinkDialog(choice: string): Promise<Locator> {
+  /** A device that has the account shows its QR code when the dialog opens; to scan it switches. */
+  private async openLinkDialog(isScanning: boolean): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: LINK_NEW, exact: true }).click()
     const dialog = this.getDialog()
-    await dialog.getByRole('button', { name: choice, exact: true }).click()
+    if (isScanning) await dialog.getByRole('button', { name: SCAN_INSTEAD, exact: true }).click()
     return dialog
   }
 
-  private async openJoinDialog(choice: string): Promise<Locator> {
+  /** A new device scans when the dialog opens; to show its own QR code it switches. */
+  private async openJoinDialog(isShowing: boolean): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: JOIN_WITH_QR, exact: true }).click()
     const dialog = this.getDialog()
-    await dialog.getByRole('button', { name: choice, exact: true }).click()
+    if (isShowing) await dialog.getByRole('button', { name: SHOW_INSTEAD, exact: true }).click()
     return dialog
   }
 
@@ -100,12 +102,12 @@ export class DevicesDriver {
 
   /** Shows the QR code of a device that has the account and returns the text the picture holds. */
   async showQrToLink(): Promise<string> {
-    return this.readQr(await this.openLinkDialog(SHOW_QR))
+    return this.readQr(await this.openLinkDialog(false))
   }
 
   /** Shows the QR code of a device that joins an account and returns the text the picture holds. */
   async showQrToJoin(): Promise<string> {
-    return this.readQr(await this.openJoinDialog(SHOW_QR))
+    return this.readQr(await this.openJoinDialog(true))
   }
 
   private async paste(dialog: Locator, text: string): Promise<void> {
@@ -115,12 +117,12 @@ export class DevicesDriver {
 
   /** A device that has the account reads the QR code of a new device: the desktop takes the text by paste. */
   async scanToLink(text: string): Promise<void> {
-    await this.paste(await this.openLinkDialog(SCAN_QR), text)
+    await this.paste(await this.openLinkDialog(true), text)
   }
 
   /** A new device reads the QR code of a device that has the account. */
   async scanToJoin(text: string): Promise<void> {
-    await this.paste(await this.openJoinDialog(SCAN_QR), text)
+    await this.paste(await this.openJoinDialog(false), text)
   }
 
   async approve(): Promise<void> {
@@ -147,7 +149,9 @@ export class DevicesDriver {
 
   /** The six digits the device that has the account shows when it scanned the QR code of a new device. */
   async readConfirmationCode(): Promise<string> {
-    return readCode(await this.readValue(this.getDialog(), CONFIRMATION_CODE))
+    const code = this.getDialog().getByLabel(CONFIRMATION_CODE)
+    await expect(code).toBeVisible({ timeout: STEP_LIMIT_MS })
+    return readCode((await code.innerText()).replace(/\s/g, ''))
   }
 
   /** Types the code where the page takes one; a link that was closed shows an alert and takes none, so nothing is typed. */

@@ -97,6 +97,7 @@ export const WORDS = {
   identityCreate: 'Create identity',
   identityRestore: 'Restore',
   identityJoin: 'Join with a QR code',
+  identityLinkDevice: 'Link a new device',
   identitySetupTitle: 'Recovery words',
   identityWriteDown: 'Write the 12 words down in order. We show them once.',
   identityNobodyRecovers:

@@ -27,6 +27,7 @@ afterEach(() => {
 const mountSection = async (
   devices: readonly DeviceInfo[],
   overrides: Partial<IdentityCalls> = {},
+  isLinking = false,
 ) => {
   const client = createIdentityClient({
     listDevices: () => Promise.resolve({ ok: true, value: devices }),
@@ -34,7 +35,7 @@ const mountSection = async (
   })
   const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
   wrapper = mount(DevicesSection, {
-    props: { calls: store.devices },
+    props: { calls: store.devices, isLinking },
     attachTo: document.body,
   })
   await flushPromises()
@@ -100,9 +101,14 @@ describe('the devices section', () => {
     )
   })
 
-  it('offers to link a new device and not to join', async () => {
+  it('draws the link dialog of a host when it is asked to link', async () => {
+    const section = await mountSection([THIS], {}, true)
+    expect(section.get('[role="dialog"] h2').text()).toBe('Link a new device to your account')
+  })
+
+  it('draws no link dialog and no link button of its own', async () => {
     const section = await mountSection([THIS])
-    expect(section.text()).toContain('Link a new device')
-    expect(section.text()).not.toContain('Join with a QR code')
+    expect(section.find('[role="dialog"]').exists()).toBe(false)
+    expect(section.text()).not.toContain('Link a new device')
   })
 })

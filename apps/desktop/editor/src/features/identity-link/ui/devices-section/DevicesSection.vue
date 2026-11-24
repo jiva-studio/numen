@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * The devices of the account: a list with the fingerprint of each (this device alone until the list arrives), the
- * way to link a new device by a QR code, and the revoke of a device after a question.
+ * dialog that links a new device by a QR code when `isLinking` is set, and the revoke of a device after a question.
  * Each device that is not this one has a Revoke button; this one has none.
  */
-import { computed, ref } from 'vue'
-import { Button, ConfirmDialog } from '@numen/ui'
+import { computed } from 'vue'
+import { ConfirmDialog } from '@numen/ui'
 import type { DeviceInfo } from '@/entities/identity'
 import type { DeviceCalls } from '../../model/types'
 import { useDevices } from '../../model/useDevices'
@@ -14,10 +14,11 @@ import { LinkDialog } from '../link-dialog'
 import DeviceRow from './DeviceRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ calls: DeviceCalls; current?: DeviceInfo }>()
+const props = defineProps<{ calls: DeviceCalls; current?: DeviceInfo; isLinking: boolean }>()
+
+const emit = defineEmits<{ (e: 'update:isLinking', value: boolean): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isLinking = ref(false)
 const { asked, problem, refresh, confirmRevoke } = useDevices(() => props.calls)
 const shown = computed(() => {
   const listed = props.calls.list.value
@@ -27,7 +28,7 @@ const shown = computed(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose(): void {
-  isLinking.value = false
+  emit('update:isLinking', false)
   refresh()
 }
 </script>
@@ -43,12 +44,6 @@ function onClose(): void {
       />
     </ul>
     <p v-if="problem !== ''" role="alert" class="devices__problem">{{ problem }}</p>
-
-    <div class="devices__actions">
-      <Button type="button" variant="outline" @click="isLinking = true">
-        {{ words.deviceLinkNew }}
-      </Button>
-    </div>
 
     <LinkDialog
       v-if="isLinking"
@@ -82,13 +77,6 @@ function onClose(): void {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.devices__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 
 .devices__problem {

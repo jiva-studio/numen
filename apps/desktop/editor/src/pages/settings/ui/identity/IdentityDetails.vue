@@ -4,8 +4,8 @@
  * and the way to delete the identity after a confirmation, and the list of the devices of the account
  * with the link of a new one and the revoke of another. A revoked device shows only itself.
  */
-import { computed } from 'vue'
-import { Trash2 } from '@lucide/vue'
+import { computed, ref } from 'vue'
+import { Download, Link, Trash2 } from '@lucide/vue'
 import { ConfirmDialog, IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
@@ -21,15 +21,18 @@ const props = defineProps<{
   problem: string
   isBusy: boolean
   isAskingDelete: boolean
+  isKitBusy: boolean
 }>()
 
 const emit = defineEmits<{
+  (e: 'download'): void
   (e: 'ask'): void
   (e: 'confirm'): void
   (e: 'cancel'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const isLinking = ref(false)
 const date = computed(() => {
   const added = new Date(props.info.deviceAddedAt)
   if (Number.isNaN(added.getTime())) return ''
@@ -50,6 +53,10 @@ const count = computed(() =>
 <template>
   <IslandCard :title="words.identitySection">
     <template #aside>
+      <CardAction :is-disabled="isBusy || isKitBusy" @click="emit('download')">
+        <Download :size="14" aria-hidden="true" />
+        {{ isKitBusy ? words.kitDownloading : words.kitDownload }}
+      </CardAction>
       <CardAction :is-disabled="isBusy" @click="emit('ask')">
         <Trash2 :size="14" aria-hidden="true" />
         {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
@@ -71,8 +78,19 @@ const count = computed(() =>
   </IslandCard>
 
   <IslandCard class="identity-details__devices" :title="words.identityDevices">
-    <template #aside>{{ words.identityDeviceCount(count) }}</template>
-    <DevicesSection v-if="!info.isRevoked" :calls="devices" :current="thisDevice" />
+    <template #aside>
+      <CardAction v-if="!info.isRevoked" is-primary @click="isLinking = true">
+        <Link :size="14" aria-hidden="true" />
+        {{ words.identityLinkDevice }}
+      </CardAction>
+      {{ words.identityDeviceCount(count) }}
+    </template>
+    <DevicesSection
+      v-if="!info.isRevoked"
+      v-model:is-linking="isLinking"
+      :calls="devices"
+      :current="thisDevice"
+    />
     <NavigationRow
       v-else
       class="identity-details__current"
@@ -119,7 +137,6 @@ const count = computed(() =>
   padding: 0;
 }
 
-.identity-details__devices :deep(.devices__actions),
 .identity-details__devices :deep(.devices__problem) {
   padding: 0 1rem 0.75rem;
 }
