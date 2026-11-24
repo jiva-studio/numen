@@ -13,7 +13,7 @@ import {
   createRefusal,
   filmCode,
   QR_TEXT,
-  TabFrame,
+  WindowFrame,
 } from './linkStory'
 
 interface Knobs {
@@ -36,10 +36,10 @@ const meta: Meta<Knobs> = {
     onClose: fn(),
   },
   render: (args) => ({
-    components: { LinkDialog, TabFrame },
+    components: { LinkDialog, WindowFrame },
     setup: () => ({ args }),
     template: `
-      <TabFrame>
+      <WindowFrame>
         <LinkDialog
           role="joiner"
           :calls="args.calls"
@@ -48,7 +48,7 @@ const meta: Meta<Knobs> = {
           v-bind="args.camera ? { camera: args.camera } : {}"
           @close="args.onClose"
         />
-      </TabFrame>
+      </WindowFrame>
     `,
   }),
 }

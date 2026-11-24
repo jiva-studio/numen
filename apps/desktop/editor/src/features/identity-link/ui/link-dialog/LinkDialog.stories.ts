@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { LinkCalls } from '../../lib/types'
 import LinkDialog from './LinkDialog.vue'
-import { createCalls, createInfo, createRefusal, QR_TEXT, TabFrame } from './linkStory'
+import { createCalls, createInfo, createRefusal, QR_TEXT, WindowFrame } from './linkStory'
 
 interface Knobs {
   calls: LinkCalls
@@ -20,10 +20,10 @@ const meta: Meta<Knobs> = {
   parameters: { layout: 'fullscreen' },
   args: { calls: createCalls(createInfo()), stallMs: 15_000, onClose: fn() },
   render: (args) => ({
-    components: { LinkDialog, TabFrame },
+    components: { LinkDialog, WindowFrame },
     setup: () => ({ args }),
     template: `
-      <TabFrame>
+      <WindowFrame>
         <LinkDialog
           role="host"
           :calls="args.calls"
@@ -31,7 +31,7 @@ const meta: Meta<Knobs> = {
           :stall-ms="args.stallMs"
           @close="args.onClose"
         />
-      </TabFrame>
+      </WindowFrame>
     `,
   }),
 }
