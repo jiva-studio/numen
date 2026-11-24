@@ -148,7 +148,7 @@ export class DevicesDriver {
   /** Expects the page of a new device to ask whether to join the identity with this fingerprint, and answers Join where answer is set. */
   async expectAskedToJoin(account: string, answer: boolean): Promise<void> {
     const dialog = this.getDialog()
-    await expect(dialog.getByText(`Use existing identity ${account}?`)).toBeVisible({ timeout: STEP_LIMIT_MS })
+    await expect(dialog.getByText(`Use identity ${account} on this device?`)).toBeVisible({ timeout: STEP_LIMIT_MS })
     if (answer) await dialog.getByRole('button', { name: JOIN, exact: true }).click()
   }
 
