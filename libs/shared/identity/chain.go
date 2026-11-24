@@ -246,7 +246,6 @@ func checkDeviceName(name string) error {
 	return nil
 }
 
-// getForkIndex returns the index of the first entry where the two chains differ, or -1 when one is a prefix of the other.
 func (c Chain) getForkIndex(other Chain) int {
 	for i := range min(len(c.entries), len(other.entries)) {
 		if hashEntry(c.entries[i]) != hashEntry(other.entries[i]) {

@@ -10,8 +10,6 @@ import (
 
 const keyEpochRoot = "tools-sync/epoch-root"
 
-// readEpochRoots returns the root keys that vouch for the restore epochs of the server at address: the ones of the
-// build, and the key of the setting only for a server other than the default one.
 func (r *runtime) readEpochRoots(address string) []ed25519.PublicKey {
 	roots, err := epochtrust.GetRoots(address, r.epochRoot.Get())
 	if r.parts.health == nil {

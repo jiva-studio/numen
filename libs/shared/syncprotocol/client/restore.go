@@ -29,7 +29,7 @@ func NewRestoreClient(address string, httpClient *http.Client, token func() stri
 }
 
 // GetRestoreEpoch returns the current epoch, nil before the first restore, and the epoch key of the server. The
-// key comes back only when a root key signed its certificate, the certificate is valid now and the epoch is
+// key is returned only when a root key signed its certificate, the certificate is valid now and the epoch is
 // signed by that key. Otherwise the error wraps epochtrust.ErrUntrusted and nothing the server sent is used.
 func (c *RestoreClient) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []byte, error) {
 	response, err := c.rpc.GetRestoreEpoch(ctx, connect.NewRequest(&syncv1.GetRestoreEpochRequest{}))

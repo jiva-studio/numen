@@ -60,7 +60,6 @@ type running struct {
 	failed []error
 }
 
-// record keeps a failure of the loop or of a pass that is not a server away or a stop.
 func (r *running) record(err error) {
 	if isIgnored(err) {
 		return
@@ -116,7 +115,6 @@ func (u *Lifecycle) Suspend(ctx context.Context) error {
 	return errors.Join(stopped, u.flush(context.WithoutCancel(ctx)))
 }
 
-// flush passes over every connected vault and gives up when Grace has gone.
 func (u *Lifecycle) flush(ctx context.Context) error {
 	ids, err := u.getConnectedIDs(ctx)
 	if err != nil {
@@ -163,13 +161,11 @@ func (u *Lifecycle) getConnectedIDs(ctx context.Context) ([]domain.VaultID, erro
 	return ids, nil
 }
 
-// isIgnored is true for no failure, a stop and a server away: the loop reports a server away.
 func isIgnored(err error) bool {
 	return err == nil || errors.Is(err, context.Canceled) || errors.Is(err, syncprotocol.ErrUnreachable) ||
 		errors.Is(err, sessiondomain.ErrUnreachable)
 }
 
-// joinFailures returns the failures of the passes that isIgnored does not name.
 func joinFailures(failures <-chan error) error {
 	var joined []error
 	for err := range failures {

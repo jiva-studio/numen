@@ -20,7 +20,7 @@ func (g *generatedWords) put(words []string) {
 	g.words = slices.Clone(words)
 }
 
-func (g *generatedWords) matches(words []string) bool {
+func (g *generatedWords) hasSameWords(words []string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if len(g.words) == 0 || len(words) != len(g.words) {

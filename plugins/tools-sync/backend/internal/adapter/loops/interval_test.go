@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 )
 
-func TestAnIntervalTooLongForADurationTakesTheFallback(t *testing.T) {
+func TestInterval_TooLongForDurationUsesFallback(t *testing.T) {
 	interval := loops.NewInterval(30)
 
 	interval.Set("9223372037")
@@ -17,7 +17,7 @@ func TestAnIntervalTooLongForADurationTakesTheFallback(t *testing.T) {
 	}
 }
 
-func TestAnIntervalOfSecondsIsKept(t *testing.T) {
+func TestInterval_OfSecondsIsUsed(t *testing.T) {
 	interval := loops.NewInterval(30)
 
 	interval.Set("90")

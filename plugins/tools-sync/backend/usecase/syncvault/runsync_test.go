@@ -112,7 +112,7 @@ func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
 	}
 }
 
-func TestRunSync_AChangedVaultDoesNotPutOffThePassOverEveryVault(t *testing.T) {
+func TestRunSync_AChangedVaultDoesNotDelayThePassOverEveryVault(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	changed := make(chan domain.VaultID, 1)
 	startRun(t, p.a, changed)

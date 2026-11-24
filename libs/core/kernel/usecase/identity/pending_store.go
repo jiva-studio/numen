@@ -60,7 +60,6 @@ func (s *pendingStore) isCurrent(restore *pendingRestore) bool {
 	return s.current == restore && s.current.refusal == nil
 }
 
-// read returns the current restore to compare it with the store later; its keys are read only while hold holds the lock.
 func (s *pendingStore) read() *pendingRestore {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -62,7 +62,6 @@ func (h Host) GetFiles(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
 func (h Host) GetNotes(id domain.VaultID) ports.Notes { return h.Root.With(id) }
 
-// GetAbsent returns the absent files of the vault.
 func (h Host) GetAbsent(id domain.VaultID) ports.Absent { return h.Root.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
@@ -386,8 +385,8 @@ func (c *Computer) ReceiveDeps() receive.Deps {
 	}
 }
 
-// DistrustServer makes this computer trust no root key, as a build without an embedded root does.
-func (c *Computer) DistrustServer() {
+// ClearRoots makes this computer trust no root key, as a build without an embedded root does.
+func (c *Computer) ClearRoots() {
 	c.Roots = nil
 	c.Cloud = c.NewCloud(c.Server.URL, c.SignIn)
 }

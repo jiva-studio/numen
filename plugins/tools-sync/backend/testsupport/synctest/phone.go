@@ -40,9 +40,9 @@ func (c *Computer) DropDeps() dropdownload.Deps {
 	return dropdownload.Deps{Host: c.Host, State: c.State}
 }
 
-// LifecycleDeps are the dependencies of the lifecycle: the loop over the vaults at the interval, and the stream
+// GetLifecycleDeps are the dependencies of the lifecycle: the loop over the vaults at the interval, and the stream
 // the test gives.
-func (c *Computer) LifecycleDeps(interval time.Duration, stream lifecycle.Stream, changed <-chan domain.VaultID) lifecycle.Deps {
+func (c *Computer) GetLifecycleDeps(interval time.Duration, stream lifecycle.Stream, changed <-chan domain.VaultID) lifecycle.Deps {
 	return lifecycle.Deps{
 		Pass: c.NewSyncVault(), Loop: syncRunner{c: c, interval: interval, changed: changed}, Stream: stream,
 		Host: c.Host, State: c.State, Clock: c.Clock,
@@ -114,16 +114,16 @@ func NewPhoneWorld(t *testing.T) *PhoneWorld {
 	return &PhoneWorld{Server: server, Clock: clock, Computer: computer, Phone: phone}
 }
 
-// ComputerSync runs a pass of the computer.
-func (w *PhoneWorld) ComputerSync(t *testing.T) {
+// SyncComputer runs a pass of the computer.
+func (w *PhoneWorld) SyncComputer(t *testing.T) {
 	t.Helper()
 	if err := w.Computer.Sync(t.Context(), ComputerVault); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// PhoneSync runs a pass of the phone.
-func (w *PhoneWorld) PhoneSync(t *testing.T) {
+// SyncPhone runs a pass of the phone.
+func (w *PhoneWorld) SyncPhone(t *testing.T) {
 	t.Helper()
 	if err := w.Phone.Sync(t.Context(), PhoneVault); err != nil {
 		t.Fatal(err)
@@ -144,8 +144,8 @@ func (w *PhoneWorld) WriteGuide(t *testing.T, path string) string {
 	t.Helper()
 	content := w.Computer.WriteFileOfSize(ComputerVault, path, 5<<20)
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
-	w.PhoneSync(t)
+	w.SyncComputer(t)
+	w.SyncPhone(t)
 	return content
 }
 
@@ -176,8 +176,8 @@ func (s *Stream) CountOpen() int { return int(s.open.Load()) }
 // CountOpened returns how many streams were opened in all.
 func (s *Stream) CountOpened() int { return int(s.opened.Load()) }
 
-// Hint tells every open stream that the vault changed on the server.
-func (s *Stream) Hint(id domain.VaultID) {
+// SendHint tells every open stream that the vault changed on the server.
+func (s *Stream) SendHint(id domain.VaultID) {
 	s.mu.Lock()
 	calls := append([]func(domain.VaultID){}, s.hints...)
 	s.mu.Unlock()

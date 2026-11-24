@@ -21,7 +21,7 @@ const (
 )
 
 func newLifecycle(w *synctest.PhoneWorld, s *synctest.Stream) *lifecycle.Lifecycle {
-	return lifecycle.NewLifecycle(w.Phone.LifecycleDeps(30*time.Second, s, make(chan domain.VaultID)))
+	return lifecycle.NewLifecycle(w.Phone.GetLifecycleDeps(30*time.Second, s, make(chan domain.VaultID)))
 }
 
 func suspendAfter(t *testing.T, life *lifecycle.Lifecycle) {
@@ -42,9 +42,9 @@ func TestAPhoneGetsANoteWithItsText(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.Computer.WriteNote(synctest.ComputerVault, listPath, "milk")
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 
-	w.PhoneSync(t)
+	w.SyncPhone(t)
 
 	if !hasPhoneNote(w, listPath, "milk") {
 		t.Error("the phone has no note with the text milk")
@@ -68,9 +68,9 @@ func TestAPhoneDropsAFileDeletedOnTheComputerFromItsList(t *testing.T) {
 	w.WriteGuide(t, guidePath)
 	w.Computer.Vaults.With(synctest.ComputerVault).Remove(guidePath)
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 
-	w.PhoneSync(t)
+	w.SyncPhone(t)
 
 	if w.Phone.IsAbsent(t, synctest.PhoneVault, guidePath) {
 		t.Error("the phone still lists a deleted file")
@@ -135,8 +135,8 @@ func TestTheVaultKeepsAFileAfterItsDownloadIsRemovedOnThePhone(t *testing.T) {
 	}
 	w.Clock.Advance(time.Minute)
 
-	w.PhoneSync(t)
-	w.ComputerSync(t)
+	w.SyncPhone(t)
+	w.SyncComputer(t)
 
 	if !hasComputerNote(w, guidePath, want) {
 		t.Error("the computer lost the file after the phone removed its download")
@@ -181,8 +181,8 @@ func TestDeletingAFileOnThePhoneRemovesItFromTheVault(t *testing.T) {
 	w.Phone.Vaults.With(synctest.PhoneVault).Remove(guidePath)
 	w.Clock.Advance(time.Minute)
 
-	w.PhoneSync(t)
-	w.ComputerSync(t)
+	w.SyncPhone(t)
+	w.SyncComputer(t)
 
 	if _, ok := w.Computer.ReadNote(synctest.ComputerVault, guidePath); ok {
 		t.Error("the computer still has a file the phone deleted")
@@ -195,8 +195,8 @@ func TestDeletingAnAbsentFileOnThePhoneRemovesItFromTheVault(t *testing.T) {
 	w.Phone.Vaults.With(synctest.PhoneVault).Remove(guidePath)
 	w.Clock.Advance(time.Minute)
 
-	w.PhoneSync(t)
-	w.ComputerSync(t)
+	w.SyncPhone(t)
+	w.SyncComputer(t)
 
 	if _, ok := w.Computer.ReadNote(synctest.ComputerVault, guidePath); ok {
 		t.Error("the computer still has a file the phone deleted")
@@ -217,9 +217,9 @@ func TestANoteCreatedOnTheComputerArrivesWhileTheApplicationIsOpenOnThePhone(t *
 	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 	w.Computer.WriteNote(synctest.ComputerVault, listPath, "milk")
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 
-	s.Hint(synctest.PhoneVault)
+	s.SendHint(synctest.PhoneVault)
 
 	synctest.WaitUntil(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
 }
@@ -228,7 +228,7 @@ func TestANoteCreatedWhileTheApplicationIsClosedArrivesWhenItOpens(t *testing.T)
 	w := synctest.NewPhoneWorld(t)
 	w.Computer.WriteNote(synctest.ComputerVault, listPath, "milk")
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 	life := newLifecycle(w, &synctest.Stream{})
 
 	if err := life.Resume(t.Context()); err != nil {
@@ -294,7 +294,7 @@ func TestANoteIsSentWhenTheApplicationIsSuspended(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 	if !hasComputerNote(w, listPath, "bread") {
 		t.Error("the computer has no note with the text bread")
 	}
@@ -310,8 +310,8 @@ func TestANoteCreatedWithoutTheNetworkIsSentLater(t *testing.T) {
 	}
 	w.Server.SetDown(false)
 
-	w.PhoneSync(t)
-	w.ComputerSync(t)
+	w.SyncPhone(t)
+	w.SyncComputer(t)
 
 	if !hasComputerNote(w, listPath, "eggs") {
 		t.Error("the computer has no note with the text eggs")

@@ -268,7 +268,7 @@ func (f failingSource) GetPassphrase(context.Context) (string, error) {
 	return "", f.err
 }
 
-func TestACancelledPassphrasePromptLeavesAPlaintextFileUnchangedOnSetKey(t *testing.T) {
+func TestSetKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
@@ -288,7 +288,7 @@ func TestACancelledPassphrasePromptLeavesAPlaintextFileUnchangedOnSetKey(t *test
 	}
 }
 
-func TestACancelledPassphrasePromptLeavesAPlaintextFileUnchangedOnDeleteKey(t *testing.T) {
+func TestDeleteKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	plain := newTestStore(dir)

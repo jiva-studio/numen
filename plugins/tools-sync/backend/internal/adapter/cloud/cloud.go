@@ -22,11 +22,8 @@ type Config struct {
 	Token   func() string
 	Refresh func(ctx context.Context) error
 	Stream  *http.Client
-	// Storage moves the blobs over presigned addresses; a nil Storage uses HTTP.
 	Storage *http.Client
-	// Roots are the keys that may sign the certificate of the epoch key of the server; with none, every restore announcement is ignored.
 	Roots []ed25519.PublicKey
-	// Now is the clock the certificate is checked against; nil is the system clock.
 	Now func() time.Time
 }
 

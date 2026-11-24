@@ -57,8 +57,6 @@ func serveRestoreStub(tb testing.TB, response *syncv1.GetRestoreEpochResponse, r
 	return stub, syncclient.NewRestoreClient(server.URL, http.DefaultClient, func() string { return "token-of-the-session" }, roots, func() time.Time { return testNow })
 }
 
-// newEpochOf returns the response of a server whose epoch key (seed epochSeed) holds a certificate of the root with
-// the seed 1, and the root key.
 func newEpochOf(tb testing.TB, epochSeed byte) (*syncv1.GetRestoreEpochResponse, ed25519.PrivateKey, ed25519.PublicKey) {
 	tb.Helper()
 	root, rootPublic := newRoot(tb, 1)

@@ -43,8 +43,6 @@ func (r *run) getListedHash(ctx context.Context, filePath string) (string, error
 	return hash, nil
 }
 
-// list lists the file of the head as absent instead of downloading it, and evicts the bytes a downloaded
-// file holds.
 func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, previous transfer.FileRecord, local string, isListed, isKnown bool) error {
 	absent := r.deps.Host.GetAbsent(r.in.VaultID)
 	if local != "" && !isListed {

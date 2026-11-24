@@ -416,7 +416,7 @@ func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLo
 	sync(t, p.a, source)
 	restoreServer(t, p, kept)
 	announce(t, p)
-	p.a.DistrustServer()
+	p.a.ClearRoots()
 	commits := countCommits(p)
 
 	sync(t, p.a, source)

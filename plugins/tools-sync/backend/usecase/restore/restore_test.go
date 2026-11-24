@@ -136,7 +136,7 @@ func TestRecoverAccount_RefusesAKeyThatIsNotThePinnedOneAndSendsNothing(t *testi
 	}
 	p.a.Connect(t, source)
 	p.restoreAndAnnounce(t, kept)
-	p.a.DistrustServer()
+	p.a.ClearRoots()
 
 	err = usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context())
 

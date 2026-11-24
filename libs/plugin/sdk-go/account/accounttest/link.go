@@ -39,7 +39,6 @@ func newFakeLink() *fakeLink {
 	return &fakeLink{wantsChannel: true, inbound: make(chan []byte, 64), changed: make(chan struct{})}
 }
 
-// setLink replaces the link and wakes the courier that waits on the one it replaces or on none.
 func (f *Fake) setLink(l *fakeLink) {
 	if f.link != nil {
 		close(f.link.changed)
@@ -177,7 +176,6 @@ func (f *Fake) RevokeDevice(deviceSignKey []byte) error {
 	return f.RevokeDeviceAt(deviceSignKey, f.now())
 }
 
-// RevokeDeviceAt revokes the device as RevokeDevice does, with the entry signed at the given time.
 func (f *Fake) RevokeDeviceAt(deviceSignKey []byte, at time.Time) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -45,7 +45,7 @@ func TestDropDownload_IsNoDeleteForThePass(t *testing.T) {
 	}
 	w.Clock.Advance(time.Minute)
 
-	w.PhoneSync(t)
+	w.SyncPhone(t)
 
 	changes := w.Phone.ReadChanges(t, remote)
 	if len(changes) != before {
@@ -56,7 +56,7 @@ func TestDropDownload_IsNoDeleteForThePass(t *testing.T) {
 			t.Error("the server holds a deletion of the file after a removed download")
 		}
 	}
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 	if _, ok := w.Computer.ReadNote(synctest.ComputerVault, guidePath); !ok {
 		t.Error("the computer lost the file after the phone removed its download")
 	}

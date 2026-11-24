@@ -29,7 +29,6 @@ type Deps struct {
 	Relay  ports.Relay
 	Health ports.Health
 	Clock  ports.Clock
-	// Server is the address of the sync server this device is set to; a link whose QR code names another server is not carried.
 	Server string
 }
 

@@ -13,7 +13,7 @@ import (
 const interval = 30 * time.Second
 
 func newLifecycle(w *synctest.PhoneWorld, s *synctest.Stream) *lifecycle.Lifecycle {
-	return lifecycle.NewLifecycle(w.Phone.LifecycleDeps(interval, s, make(chan domain.VaultID)))
+	return lifecycle.NewLifecycle(w.Phone.GetLifecycleDeps(interval, s, make(chan domain.VaultID)))
 }
 
 func TestResume_RunsAPassAtOnceAndOpensTheStream(t *testing.T) {
@@ -21,7 +21,7 @@ func TestResume_RunsAPassAtOnceAndOpensTheStream(t *testing.T) {
 	s := &synctest.Stream{}
 	w.Computer.WriteNote(synctest.ComputerVault, "Shopping list.md", "milk")
 	w.Clock.Advance(time.Minute)
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 	resume := newLifecycle(w, s)
 
 	if err := resume.Resume(t.Context()); err != nil {
@@ -130,7 +130,7 @@ func TestSuspend_SendsTheNoteCreatedOnThePhoneBeforeItStops(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w.ComputerSync(t)
+	w.SyncComputer(t)
 	if text, ok := w.Computer.ReadNote(synctest.ComputerVault, "Shopping list.md"); !ok || text != "bread" {
 		t.Errorf("note on the computer = %q (there: %v), want bread", text, ok)
 	}
@@ -150,7 +150,7 @@ func (p slowPass) Execute(ctx context.Context, _ domain.VaultID) error {
 
 func TestSuspend_StopsAfterTheGraceWhenThePassDoesNotEnd(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	deps := w.Phone.LifecycleDeps(interval, &synctest.Stream{}, make(chan domain.VaultID))
+	deps := w.Phone.GetLifecycleDeps(interval, &synctest.Stream{}, make(chan domain.VaultID))
 	pass := slowPass{started: make(chan struct{}, 1)}
 	deps.Pass = pass
 	life := lifecycle.NewLifecycle(deps)
@@ -185,7 +185,7 @@ func TestResume_SendsTheNoteCreatedWhileTheApplicationWasClosed(t *testing.T) {
 	})
 
 	synctest.WaitUntil(t, "the note on the computer", func() bool {
-		w.ComputerSync(t)
+		w.SyncComputer(t)
 		text, ok := w.Computer.ReadNote(synctest.ComputerVault, "Shopping list.md")
 		return ok && text == "eggs"
 	})

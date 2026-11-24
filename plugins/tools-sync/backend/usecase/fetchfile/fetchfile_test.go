@@ -14,8 +14,6 @@ import (
 
 const guidePath = "Books/Guide.pdf"
 
-// countRanges is how many requests of fetchfile.RangeSize bytes the stored blob of the guide takes: the 5 MiB of
-// the file are stored padded to whole chunks, with a header and a tag for each chunk.
 func countRanges(t *testing.T, w *synctest.PhoneWorld) int {
 	t.Helper()
 	stored := w.Phone.ReadChanges(t, w.Phone.GetRemoteID(t, synctest.PhoneVault))
@@ -50,7 +48,7 @@ func TestFetchFile_ProducesNoChangeForThePassToSend(t *testing.T) {
 	}
 	w.Clock.Advance(time.Minute)
 
-	w.PhoneSync(t)
+	w.SyncPhone(t)
 
 	after := w.Phone.ReadChanges(t, w.Phone.GetRemoteID(t, synctest.PhoneVault))
 	if len(after) != before {

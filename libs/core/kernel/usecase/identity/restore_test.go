@@ -593,7 +593,7 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 	}
 }
 
-func TestCompleteRestore_ConcurrentCreateLeavesOneIdentity(t *testing.T) {
+func TestCompleteRestore_ConcurrentCreateResultsInOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
 	other := identity.NewSeededCreate(k.deps)

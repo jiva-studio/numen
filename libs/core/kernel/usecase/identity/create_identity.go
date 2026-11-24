@@ -40,7 +40,7 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := u.records.checkAbsent(ctx); err != nil {
 		return identitydomain.Identity{}, err
 	}
-	if !u.created.matches(words) {
+	if !u.created.hasSameWords(words) {
 		return identitydomain.Identity{}, fmt.Errorf("%w: these are not the words the core made", identitydomain.ErrInvalidWords)
 	}
 	state, err := u.buildState(recovery)
