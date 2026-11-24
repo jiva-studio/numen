@@ -441,7 +441,7 @@ func TestSyncVault_PinsTheKeyOfTheServerBeforeAnyRestoreIsAnnounced(t *testing.T
 	}
 }
 
-func TestSyncVault_TakesTheNewerTextInsteadOfSendingItsOwnWhenTheServerAnnouncesARestoreItNeverMade(t *testing.T) {
+func TestSyncVault_AppliesNewerTextInsteadOfSendingItsOwnWhenServerAnnouncesRestoreItNeverMade(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)

@@ -70,7 +70,7 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 		return nil
 	}
 	if (isKnown || !rev.GetDeleted()) && r.isRegressed(rev, record, isKnown) {
-		r.noteRollback(meta, rev)
+		r.recordRollback(meta, rev)
 		return nil
 	}
 	if rev.GetDeleted() {
@@ -134,7 +134,7 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 
 var errUnknownShare = errors.New("the revision belongs to a share this device does not know")
 
-func (r *run) checkShared(stored *syncv1.StoredRevision) (note.Meta, error) {
+func (r *run) checkShareRevision(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
 	root, isFound := share.FindRootByID(r.in.Shares, rev.GetShareRootId())
 	if !isFound {
@@ -164,7 +164,7 @@ func (r *run) checkShared(stored *syncv1.StoredRevision) (note.Meta, error) {
 func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
 	if len(rev.GetShareRootId()) > 0 {
-		return r.checkShared(stored)
+		return r.checkShareRevision(stored)
 	}
 	key, isKnown := r.getKey(rev.GetEpoch())
 	if !isKnown && !rev.GetDeleted() {
@@ -341,8 +341,6 @@ func (r *run) getKey(epoch uint32) ([32]byte, bool) {
 	return [32]byte(r.keys[at].Key), true
 }
 
-// isRegressed reports whether the revision is not newer than what this device holds of its file: the version of the
-// head it keeps, or the version at which it saw the file removed.
 func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKnown bool) bool {
 	floor := r.link.GetFloor(rev.GetFileId())
 	if isKnown {
@@ -351,7 +349,7 @@ func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKn
 	return rev.GetFileVersion() <= floor
 }
 
-func (r *run) noteRollback(meta note.Meta, rev *syncv1.Revision) {
+func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) {
 	text := meta.Path
 	if rev.GetDeleted() {
 		text = fmt.Sprintf("%x", rev.GetFileId())

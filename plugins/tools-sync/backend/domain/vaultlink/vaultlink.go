@@ -274,7 +274,7 @@ func (l *Link) AddRetired(one RetiredFile) {
 
 // GetFloor returns the highest signed version at which this device saw the file removed, or 0 for a file it never saw
 // removed. A revision of the file at or below it is older than the removal.
-func (l Link) GetFloor(fileID []byte) uint64 {
+func (l *Link) GetFloor(fileID []byte) uint64 {
 	var floor uint64
 	for _, one := range l.Removed {
 		if bytes.Equal(one.FileID, fileID) {

@@ -28,7 +28,7 @@ func (s *serving) GetChanges(ctx context.Context, vaultID []byte, since uint64, 
 
 func (p *pair) pullServing(t *testing.T, changes ...*syncv1.StoredRevision) {
 	t.Helper()
-	real, err := p.a.Cloud.GetChanges(t.Context(), p.vault.ID, 0, 0)
+	live, err := p.a.Cloud.GetChanges(t.Context(), p.vault.ID, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func (p *pair) pullServing(t *testing.T, changes ...*syncv1.StoredRevision) {
 	deps.Revisions = &serving{
 		Revisions: deps.Revisions,
 		page: &syncv1.GetChangesResponse{
-			Changes: changes, NextSeq: real.GetHeadSeq() + 1, HeadSeq: real.GetHeadSeq() + 1, RestoreEpochId: real.GetRestoreEpochId(),
+			Changes: changes, NextSeq: live.GetHeadSeq() + 1, HeadSeq: live.GetHeadSeq() + 1, RestoreEpochId: live.GetRestoreEpochId(),
 		},
 	}
 	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {
@@ -101,7 +101,7 @@ func TestPullChanges_KeepsTheNoteWhenTheServerServesAnOlderRemovalAgain(t *testi
 	}
 }
 
-func TestPullChanges_TakesARevisionThatContinuesTheFile(t *testing.T) {
+func TestPullChanges_AppliesRevisionThatContinuesFile(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, "Shopping list.md", "milk", nil)
 	p.pull(t, trustAll)

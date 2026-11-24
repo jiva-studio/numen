@@ -48,7 +48,7 @@ func TestPlanRecovery_SendsAHeadOnTopOfTheRecordedOneWhenItsBodyIsMissing(t *tes
 	wantAction(t, got, restore.Send, 1)
 }
 
-func TestPlanRecovery_LeavesAHeadWithAHigherVersionToThePullEvenWhenTheLocalNoteWasEdited(t *testing.T) {
+func TestPlanRecovery_SkipsHeadWithHigherVersionEvenWhenLocalNoteWasEdited(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
 	records := []restore.Known{record(1, "a.md", milk, 7)}
@@ -62,7 +62,7 @@ func TestPlanRecovery_LeavesAHeadWithAHigherVersionToThePullEvenWhenTheLocalNote
 	wantAction(t, got, restore.Keep, 1)
 }
 
-func TestPlanRecovery_LeavesAHeadWithAHigherVersionToThePullWhenTheNoteIsRemovedLocally(t *testing.T) {
+func TestPlanRecovery_SkipsHeadWithHigherVersionWhenNoteIsRemovedLocally(t *testing.T) {
 	t.Parallel()
 	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 7)}
 	records[0].Version = 3

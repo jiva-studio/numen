@@ -208,9 +208,6 @@ func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool
 	return action
 }
 
-// isNewer reports whether the head of the server is a later revision of the file than the one this device recorded.
-// Such a head is left to the ordinary pull, which brings it down or meets a local edit with a conflict: a recovery never
-// commits a local file over it.
 func isNewer(head Head, record Known) bool {
 	return head.Version > record.Version || (len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev))
 }
