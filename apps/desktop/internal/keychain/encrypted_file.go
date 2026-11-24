@@ -35,8 +35,8 @@ type kdfParams struct {
 	threads   uint8
 }
 
-// getDefaultKDFParams returns the cost that follows RFC 9106 with at least 64 MiB of memory.
 func getDefaultKDFParams() kdfParams {
+	// RFC 9106 asks for at least 64 MiB of memory.
 	return kdfParams{memoryKiB: 64 * 1024, time: 3, threads: 1}
 }
 
