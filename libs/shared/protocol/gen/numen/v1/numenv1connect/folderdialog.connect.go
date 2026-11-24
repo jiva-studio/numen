@@ -36,6 +36,9 @@ const (
 	// FolderDialogServiceChooseFolderProcedure is the fully-qualified name of the FolderDialogService's
 	// ChooseFolder RPC.
 	FolderDialogServiceChooseFolderProcedure = "/numen.v1.FolderDialogService/ChooseFolder"
+	// FolderDialogServiceSaveTextFileProcedure is the fully-qualified name of the FolderDialogService's
+	// SaveTextFile RPC.
+	FolderDialogServiceSaveTextFileProcedure = "/numen.v1.FolderDialogService/SaveTextFile"
 )
 
 // FolderDialogServiceClient is a client for the numen.v1.FolderDialogService service.
@@ -44,6 +47,9 @@ type FolderDialogServiceClient interface {
 	// and answers with the folder they chose. A person who closes the dialog has
 	// chosen nothing, and the answer says so.
 	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
+	// SaveTextFile puts this machine's own save dialog in front of the person and writes the text to
+	// the file they chose. A person who closes the dialog has saved nothing, and the answer says so.
+	SaveTextFile(context.Context, *connect.Request[v1.SaveTextFileRequest]) (*connect.Response[v1.SaveTextFileResponse], error)
 }
 
 // NewFolderDialogServiceClient constructs a client for the numen.v1.FolderDialogService service. By
@@ -63,17 +69,29 @@ func NewFolderDialogServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(folderDialogServiceMethods.ByName("ChooseFolder")),
 			connect.WithClientOptions(opts...),
 		),
+		saveTextFile: connect.NewClient[v1.SaveTextFileRequest, v1.SaveTextFileResponse](
+			httpClient,
+			baseURL+FolderDialogServiceSaveTextFileProcedure,
+			connect.WithSchema(folderDialogServiceMethods.ByName("SaveTextFile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // folderDialogServiceClient implements FolderDialogServiceClient.
 type folderDialogServiceClient struct {
 	chooseFolder *connect.Client[v1.ChooseFolderRequest, v1.ChooseFolderResponse]
+	saveTextFile *connect.Client[v1.SaveTextFileRequest, v1.SaveTextFileResponse]
 }
 
 // ChooseFolder calls numen.v1.FolderDialogService.ChooseFolder.
 func (c *folderDialogServiceClient) ChooseFolder(ctx context.Context, req *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
 	return c.chooseFolder.CallUnary(ctx, req)
+}
+
+// SaveTextFile calls numen.v1.FolderDialogService.SaveTextFile.
+func (c *folderDialogServiceClient) SaveTextFile(ctx context.Context, req *connect.Request[v1.SaveTextFileRequest]) (*connect.Response[v1.SaveTextFileResponse], error) {
+	return c.saveTextFile.CallUnary(ctx, req)
 }
 
 // FolderDialogServiceHandler is an implementation of the numen.v1.FolderDialogService service.
@@ -82,6 +100,9 @@ type FolderDialogServiceHandler interface {
 	// and answers with the folder they chose. A person who closes the dialog has
 	// chosen nothing, and the answer says so.
 	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
+	// SaveTextFile puts this machine's own save dialog in front of the person and writes the text to
+	// the file they chose. A person who closes the dialog has saved nothing, and the answer says so.
+	SaveTextFile(context.Context, *connect.Request[v1.SaveTextFileRequest]) (*connect.Response[v1.SaveTextFileResponse], error)
 }
 
 // NewFolderDialogServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -97,10 +118,18 @@ func NewFolderDialogServiceHandler(svc FolderDialogServiceHandler, opts ...conne
 		connect.WithSchema(folderDialogServiceMethods.ByName("ChooseFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
+	folderDialogServiceSaveTextFileHandler := connect.NewUnaryHandler(
+		FolderDialogServiceSaveTextFileProcedure,
+		svc.SaveTextFile,
+		connect.WithSchema(folderDialogServiceMethods.ByName("SaveTextFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FolderDialogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FolderDialogServiceChooseFolderProcedure:
 			folderDialogServiceChooseFolderHandler.ServeHTTP(w, r)
+		case FolderDialogServiceSaveTextFileProcedure:
+			folderDialogServiceSaveTextFileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -112,4 +141,8 @@ type UnimplementedFolderDialogServiceHandler struct{}
 
 func (UnimplementedFolderDialogServiceHandler) ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FolderDialogService.ChooseFolder is not implemented"))
+}
+
+func (UnimplementedFolderDialogServiceHandler) SaveTextFile(context.Context, *connect.Request[v1.SaveTextFileRequest]) (*connect.Response[v1.SaveTextFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FolderDialogService.SaveTextFile is not implemented"))
 }
