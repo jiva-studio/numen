@@ -34,7 +34,7 @@ func newPassphraseStore(dir string, source PassphraseSource) *Store {
 	return store
 }
 
-func TestAKeyIsRefusedBeforeTheAppChoosesHowTheFileIsKept(t *testing.T) {
+func TestSetKeyFailsBeforeAFileModeIsChosen(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	store := NewStore(dir, waitOnTimer)
@@ -49,7 +49,7 @@ func TestAKeyIsRefusedBeforeTheAppChoosesHowTheFileIsKept(t *testing.T) {
 	}
 }
 
-func TestAKeyKeptWithAPassphraseComesBackFromANewStore(t *testing.T) {
+func TestAPassphraseFileIsReadByANewStore(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	if err := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne}).SetKey(t.Context(), entryName, seedValue); err != nil {
@@ -63,7 +63,7 @@ func TestAKeyKeptWithAPassphraseComesBackFromANewStore(t *testing.T) {
 	}
 }
 
-func TestTheEncryptedFileHoldsNeitherTheSeedNorTheEntryName(t *testing.T) {
+func TestTheEncryptedFileContainsNeitherTheSeedNorTheEntryName(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	if err := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne}).SetKey(t.Context(), entryName, seedValue); err != nil {
@@ -139,8 +139,8 @@ func TestAChangedBodyDoesNotOpenTheFile(t *testing.T) {
 	}
 }
 
-func TestTheHeaderOfAWrittenFileCarriesTheDefaultCost(t *testing.T) {
-	raw, err := encryptEntries(map[string]string{}, passphraseOne, defaultKDFParams)
+func TestTheEncryptedHeaderHasTheDefaultCost(t *testing.T) {
+	raw, err := encryptEntries(map[string]string{}, passphraseOne, getDefaultKDFParams())
 	if err != nil {
 		t.Fatal(err)
 	}

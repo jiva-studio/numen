@@ -124,7 +124,7 @@ func (s *Store) forgetPassphrase() {
 
 func (s *Store) getKDFParams() kdfParams {
 	if s.kdf == (kdfParams{}) {
-		return defaultKDFParams
+		return getDefaultKDFParams()
 	}
 	return s.kdf
 }

@@ -45,6 +45,7 @@ func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
 	if withDir == nil {
 		t.Fatal("expected non-nil key store when settings path is available")
 	}
+	withDir.UsePlaintextFile()
 	if err := withDir.SetKey(t.Context(), "test-key", "test-val"); err != nil {
 		t.Fatalf("SetKey with configured fallback dir failed: %v", err)
 	}
