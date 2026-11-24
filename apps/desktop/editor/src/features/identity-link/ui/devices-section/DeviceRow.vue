@@ -4,22 +4,18 @@
  * one. Every row has the same columns; the actions column holds a "..." menu with Remove on another
  * device and stays empty on this one.
  */
-import { computed, ref, useTemplateRef } from 'vue'
-import { Ellipsis } from '@lucide/vue'
-import { Button, Menu, type MenuItem } from '@numen/ui'
+import { computed } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
+import DeviceActions from './DeviceActions.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ device: DeviceInfo }>()
 
-const emit = defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
+defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const trigger = useTemplateRef<InstanceType<typeof Button>>('trigger')
-const anchor = ref<{ x: number; y: number; wide: number } | null>(null)
-
 const date = computed(() => {
   const added = new Date(props.device.addedAt)
   if (Number.isNaN(added.getTime())) return ''
@@ -27,31 +23,6 @@ const date = computed(() => {
 })
 
 const hasActions = computed(() => !props.device.isThis && !props.device.isRevoked)
-const items: readonly MenuItem[] = [{ id: 'revoke', text: words.deviceRevoke }]
-
-const getTrigger = (): HTMLElement | null => {
-  const element: unknown = trigger.value?.$el
-  return element instanceof HTMLElement ? element : null
-}
-
-/* -------------------------------- Handlers -------------------------------- */
-function onToggle(): void {
-  if (anchor.value !== null) {
-    onClose()
-    return
-  }
-  const box = getTrigger()?.getBoundingClientRect()
-  if (box !== undefined) anchor.value = { x: box.left, y: box.bottom, wide: box.width }
-}
-
-function onClose(): void {
-  anchor.value = null
-}
-
-function onChoose(): void {
-  onClose()
-  emit('revoke', props.device)
-}
 </script>
 
 <template>
@@ -68,34 +39,10 @@ function onChoose(): void {
       <template #trail>
         <span class="device-row__fingerprint">{{ device.fingerprint }}</span>
         <span class="device-row__actions">
-          <Button
-            v-if="hasActions"
-            ref="trigger"
-            type="button"
-            variant="ghost"
-            size="icon-small"
-            :aria-label="words.deviceMore(device.name)"
-            aria-haspopup="menu"
-            :aria-expanded="anchor !== null"
-            @click="onToggle"
-          >
-            <Ellipsis :size="16" aria-hidden="true" />
-          </Button>
+          <DeviceActions v-if="hasActions" :device="device" @revoke="$emit('revoke', $event)" />
         </span>
       </template>
     </NavigationRow>
-    <Menu
-      v-if="anchor"
-      :items="items"
-      :at="{ x: anchor.x, y: anchor.y }"
-      :asking="anchor.wide"
-      :from="getTrigger()"
-      :name="words.deviceMore(device.name)"
-      is-open
-      trigger="keyboard"
-      @choose="onChoose"
-      @dismiss="onClose"
-    />
   </li>
 </template>
 

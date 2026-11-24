@@ -6,7 +6,8 @@
  */
 import { computed, ref } from 'vue'
 import { Keyboard, KeyRound, Plus, QrCode, RotateCcw, ScanQrCode } from '@lucide/vue'
-import { CardActions, IslandCard, Toast, type CardActionItem } from '@numen/ui'
+import { CardActions, IslandCard, Toast, runInBackground, type CardActionItem } from '@numen/ui'
+import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
@@ -69,7 +70,7 @@ const noneActions = computed<readonly CardActionItem[]>(() => {
 function onChooseNone(id: string): void {
   if (id === 'restore-words' || id === 'restore-sheets' || id === 'restore-typed') actions.startRestore(id)
   else if (id === 'join') isJoining.value = true
-  else actions.startSetup()
+  else runInBackground(actions.startSetup(), (caught) => (call.problem.value = formatError(caught)))
 }
 </script>
 

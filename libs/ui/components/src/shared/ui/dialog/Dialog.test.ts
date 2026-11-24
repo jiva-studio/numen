@@ -63,7 +63,7 @@ describe('Dialog', () => {
 })
 
 describe('Dialog host', () => {
-  const mountHosted = () => {
+  const mountDialogInHost = () => {
     const host = document.createElement('main')
     document.body.append(host)
     const Root = defineComponent({
@@ -77,7 +77,7 @@ describe('Dialog host', () => {
   }
 
   it('draws into the host element when one is provided', () => {
-    const { host } = mountHosted()
+    const { host } = mountDialogInHost()
     expect(host.querySelector('[role="dialog"]')).not.toBeNull()
     expect(document.body.querySelector(':scope > [data-slot="dialog-backdrop"]')).toBeNull()
   })

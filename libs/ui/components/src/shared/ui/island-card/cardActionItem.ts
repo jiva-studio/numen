@@ -16,8 +16,6 @@ export interface CardActionItem {
   readonly icon: Component
   readonly isPrimary?: boolean
   readonly isDisabled?: boolean
-  /** The label stays beside the icon at every width of the card. */
   readonly isLabelKept?: boolean
-  /** The action opens a menu of these choices, and pressing one emits the id of the choice. */
   readonly choices?: readonly CardActionChoice[]
 }

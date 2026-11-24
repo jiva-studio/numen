@@ -80,6 +80,8 @@ describe('an action with choices', () => {
     expect(items.map((one) => one.textContent?.trim())).toEqual(['From 12 words', 'Type sheets'])
     ;(items[1] as HTMLElement).click()
     await actions.vm.$nextTick()
+    await actions.vm.$nextTick()
+    expect(document.activeElement).toBe(actions.get('button[aria-label="Restore"]').element)
 
     expect(actions.emitted('choose')).toEqual([['typed']])
     actions.unmount()

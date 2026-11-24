@@ -11,7 +11,7 @@ import { createVaultsClient, SERVICE } from './vaults'
 export const vaultsClient = createVaultsClient(createApi(SERVICE))
 export const subscriptionClient = createSubscriptionClient(createApi(SERVICE))
 export const folderSharesClient = createFolderSharesClient(createApi(SERVICE))
-export const incomingSharesClient = createReceivedSharesClient(createApi(SERVICE))
+export const shareInboxClient = createReceivedSharesClient(createApi(SERVICE))
 export const shareInvitationClient = createShareInvitationClient(createApi(SERVICE))
 export const acceptInvitationClient = createAcceptInvitationClient(createApi(SERVICE))
 export const accountClient = createAccountClient(createApi(SERVICE))

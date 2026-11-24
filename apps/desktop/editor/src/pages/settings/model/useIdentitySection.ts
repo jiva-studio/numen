@@ -28,7 +28,13 @@ export function useIdentitySection(
   const setup = useSetupStage(problem)
   const confirmation = useWordsConfirmation(setup.recoveryWords)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
-  const restore = useRestoreSources(getIdentity, run, problem, () => isBusy.value, () => reset())
+  const restore = useRestoreSources({
+    getIdentity,
+    run,
+    problem,
+    isBusy: () => isBusy.value,
+    onRestored: () => reset(),
+  })
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {

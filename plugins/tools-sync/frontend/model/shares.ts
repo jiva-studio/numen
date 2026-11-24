@@ -6,7 +6,7 @@ import type {
   ReceivedState,
   SharedFolder,
 } from '../api/shares'
-import { folderSharesClient, incomingSharesClient } from '../api/wire'
+import { folderSharesClient, shareInboxClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import { getShortFingerprint } from '../lib/fingerprint'
 import { createPoller } from './polling'
@@ -74,7 +74,7 @@ export interface SharesViewOptions {
 
 /** What the page "Shared folders" holds: the folders this account shares with their devices, and the folders shared with it. */
 export function createSharesView(options: SharesViewOptions = {}) {
-  const { given = folderSharesClient, received = incomingSharesClient } = options
+  const { given = folderSharesClient, received = shareInboxClient } = options
   const gives = ref<readonly GivenRow[]>([])
   const receives = ref<readonly ReceivedRow[]>([])
   const error = ref('')

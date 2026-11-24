@@ -14,14 +14,13 @@ defineProps<{ stages: readonly Stage[] }>()
 <template>
   <ol class="stage-list numen">
     <li
-      v-for="(stage, at) in stages"
+      v-for="stage in stages"
       :key="stage.id"
       class="stage-list__row"
       :class="`stage-list__row--${stage.state}`"
       :aria-current="stage.state === 'active' ? 'step' : undefined"
       :data-state="stage.state"
     >
-      <span class="stage-list__number">{{ at + 1 }}</span>
       <span class="stage-list__marker" aria-hidden="true">
         <Check v-if="stage.state === 'done'" :size="14" />
         <Spinner v-else-if="stage.state === 'active'" />
@@ -45,7 +44,7 @@ defineProps<{ stages: readonly Stage[] }>()
 
 .stage-list__row {
   display: grid;
-  grid-template-columns: 1rem 1rem minmax(0, 1fr) auto;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
   color: var(--numen-hushed);
@@ -58,11 +57,6 @@ defineProps<{ stages: readonly Stage[] }>()
 
 .stage-list__row--active .stage-list__label {
   font-weight: 600;
-}
-
-.stage-list__number {
-  font-variant-numeric: tabular-nums;
-  text-align: end;
 }
 
 .stage-list__marker {

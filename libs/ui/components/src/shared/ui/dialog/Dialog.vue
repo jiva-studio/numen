@@ -82,7 +82,7 @@ function focusFirst(): void {
 </script>
 
 <template>
-  <Teleport :to="host ?? 'body'" :disabled="host === null">
+  <Teleport :to="host ?? 'body'">
     <div
       data-slot="dialog-backdrop"
       class="dialog-backdrop"

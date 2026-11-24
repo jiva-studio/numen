@@ -1,5 +1,5 @@
 import type { HostServices, PluginContext } from '@numen/plugin-sdk'
-import { incomingSharesClient, vaultsClient } from '../api/wire'
+import { shareInboxClient, vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import EndSyncDialog from './EndSyncDialog.vue'
 
@@ -19,7 +19,7 @@ export const registerUnsync = (plugin: PluginContext, host: HostServices, id: st
     const end = (): Promise<void> =>
       kind === 'stop'
         ? vaultsClient.stopSyncingVault({ vaultId })
-        : incomingSharesClient.leaveShare({ vaultId })
+        : shareInboxClient.leaveShare({ vaultId })
     const dialog = dialogs.open({
       component: EndSyncDialog,
       props: {

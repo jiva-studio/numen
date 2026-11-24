@@ -4,7 +4,7 @@
  * narrows (unless the item keeps its label), and in a card too narrow for the icons the secondary ones
  * move into a "..." menu. An item with choices is a menu button: it stays in the header and opens its choices.
  */
-import { computed, ref, useTemplateRef, type Component } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, type Component } from 'vue'
 import { Ellipsis } from '@lucide/vue'
 import { measureRect } from '@/shared/api/dom'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -69,7 +69,7 @@ function getChoiceIcon(id: string): Component | undefined {
 
 function onChooseChoice(id: string): void {
   choice.value = null
-  emit('choose', id)
+  void nextTick(() => emit('choose', id))
 }
 
 function onClose(): void {

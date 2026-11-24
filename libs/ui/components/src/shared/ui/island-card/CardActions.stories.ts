@@ -4,7 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { KeyRound, Plus, QrCode } from '@lucide/vue'
-import { expect, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import CardActions from './CardActions.vue'
 import IslandCard from './IslandCard.vue'
 import type { CardActionItem } from './cardActionItem'
@@ -26,14 +26,15 @@ const ITEMS: readonly CardActionItem[] = [
 const meta: Meta = {
   title: 'Controls/IslandCard/Actions',
   component: CardActions,
-  render: (_args, { parameters }) => ({
+  args: { onChoose: fn() },
+  render: (args, { parameters }) => ({
     components: { CardActions, IslandCard },
-    setup: () => ({ items: ITEMS, width: parameters.cardWidth as string }),
+    setup: () => ({ items: ITEMS, width: parameters.cardWidth as string, onChoose: args['onChoose'] }),
     template: `
       <div class="numen" style="padding:1rem;background:var(--numen-surface)">
         <div :style="{ inlineSize: width }">
           <IslandCard title="Identity">
-            <template #aside><CardActions :items="items" more-label="More actions" /></template>
+            <template #aside><CardActions :items="items" more-label="More actions" @choose="onChoose" /></template>
             <p style="margin:0">Rows</p>
           </IslandCard>
         </div>
@@ -75,5 +76,15 @@ export const Narrowest: Story = {
     await expect(canvas.getByRole('button', { name: 'Restore' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'More actions' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Create' })).toBeVisible()
+  },
+}
+
+/** A press on an action gives the id of the action. */
+export const Choosing: Story = {
+  parameters: { cardWidth: '60rem' },
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Create' }))
+
+    await expect(args['onChoose']).toHaveBeenCalledWith('create')
   },
 }

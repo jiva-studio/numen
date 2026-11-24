@@ -87,8 +87,10 @@ export const InsideContent: Story = {
   play: async ({ canvasElement }) => {
     const content = canvasElement.querySelector('[data-slot="content"]')
     await expect(content).toContainElement(getDialog())
-    const bar = canvasElement.querySelector('[data-slot="title-bar"]')!.getBoundingClientRect()
-    const backdrop = canvasElement.querySelector('[data-slot="dialog-backdrop"]')!.getBoundingClientRect()
-    await expect(backdrop.top).toBeGreaterThanOrEqual(bar.bottom)
+    const backdrop = canvasElement.querySelector('[data-slot="dialog-backdrop"]')
+    await expect(content).toContainElement(backdrop as HTMLElement)
+    await expect(canvasElement.querySelector('[data-slot="title-bar"]')).not.toContainElement(
+      backdrop as HTMLElement,
+    )
   },
 }

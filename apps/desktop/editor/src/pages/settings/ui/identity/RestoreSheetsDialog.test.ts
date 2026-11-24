@@ -13,14 +13,13 @@ const makeCode = (kit: string, sheet: number, prefix: string): string =>
 // The camera is the outer edge: the stand-in only reports what a camera would scan.
 const camera = defineComponent({
   name: 'QrScanner',
-  props: ['continuous'],
+  props: { continuous: Boolean },
   emits: ['scanned', 'unavailable'],
   template: '<div class="camera" />',
 })
 
 const mounted: VueWrapper[] = []
 
-// The dialog is drawn into the body of the document, outside the wrapper.
 const getBody = () => new DOMWrapper(document.body)
 
 afterEach(() => {
@@ -142,7 +141,6 @@ describe('the restore from sheets dialog', () => {
     await scan(makeCode('C0DE', 2, 'b'))
     expect(getBody().get('[role=alert]').text()).toBe('The sheets belong to another account.')
     expect(getBody().findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
-    problem.value = ''
     await scan(makeCode('C0DE', 3, 'c'))
     expect(getBody().find('[role=alert]').exists()).toBe(false)
     expect(getBody().findAll('.stage-list__detail').map((one) => one.text())).toStrictEqual(['Sheet 3', '', ''])

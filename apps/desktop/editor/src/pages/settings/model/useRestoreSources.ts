@@ -14,13 +14,16 @@ import { useTypedSheets } from './useTypedSheets'
 
 type Run = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
 
-export function useRestoreSources(
-  getIdentity: () => InstallationIdentity,
-  run: Run,
-  problem: Ref<string>,
-  isBusy: () => boolean,
-  onRestored: () => void,
-) {
+interface RestoreSourcesOptions {
+  getIdentity: () => InstallationIdentity
+  run: Run
+  problem: Ref<string>
+  isBusy: () => boolean
+  onRestored: () => void
+}
+
+export function useRestoreSources(options: RestoreSourcesOptions) {
+  const { getIdentity, run, problem, isBusy, onRestored } = options
   const words = useRecoveryProof(problem, readWordsOnly)
   const typed = useTypedSheets(problem)
   const identityRestore = createIdentityRestore(getIdentity, run, words.read)

@@ -136,7 +136,7 @@ describe('a continuous QR scanner', () => {
     expect(stop).not.toHaveBeenCalled()
   })
 
-  it('reports a code held in front of the camera once', async () => {
+  it('reports a code that stays in view once', async () => {
     const { scanner } = await open(true)
     decode.mockReturnValue('first')
     await frames(10)

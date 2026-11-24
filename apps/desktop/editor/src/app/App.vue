@@ -6,19 +6,15 @@
  * sees of it, and the binding between the two.
  */
 import { useTemplateRef } from 'vue'
-import { WorkspaceLayout } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator, provideDialogHost } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
+import AppContent from './AppContent.vue'
 import CoreFailureNotice from './CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { PluginDialogs } from '@/features/plugin-host'
-import { TabLinkIndicator } from '@/features/tab-linking'
-import { WelcomeScreen } from '@/pages/welcome'
-import { BootstrapFailure } from '@/features/app-start'
-import { getUserAgent } from './window/getUserAgent'
 import type { WindowParts } from './window/createWindow'
 import { WORDS as words } from '@/shared/ui/words'
 import { WINDOW_WORDS } from './window/words'
@@ -38,23 +34,16 @@ const unsaved = {
   later: words.later,
 }
 
-const { tabs, tabParts, vault, getTarget, palettes, views, tabMenu, bootstrap } = props.parts
-const { windowTabs, tabLinks, tabOpeners } = tabs
+const { tabs, vault, getTarget, palettes, views, bootstrap } = props.parts
+const { tabOpeners } = tabs
 const { isHighlighted } = tabs.linkSession
-const { layout } = windowTabs.panes
-const { detachTab } = tabParts.moves
-const { getTabIcon } = tabParts.openTabs
-const { isReady: isLayoutReady } = tabParts.layout
-const { openCurrentVault } = tabParts
 const { commands, search } = palettes.palette
-const { runCommand, runChoice } = palettes.palette.runs
+const { runChoice } = palettes.palette.runs
 const { commandDeps, picker, dialogs } = palettes
-const { pluginWays } = palettes.pluginPalette
-const { pluginHost, titleBarView, statusBarView, windowEdge } = views
+const { pluginHost, titleBarView, statusBarView } = views
 const { fileFlush, getTitle } = vault.editing
 const { failure } = vault.window.health
-const { vaultList } = vault.vaults
-const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstrap
+const { isStarted } = bootstrap
 
 /** Dialogs are drawn into the content between the title bar and the status bar, and cover only it. */
 const content = useTemplateRef<HTMLElement>('content')
@@ -72,69 +61,7 @@ provideDialogHost(content)
     <CoreFailureNotice :failure="failure" />
 
     <div ref="content" class="content">
-      <WorkspaceLayout
-        v-model="layout"
-        class="fill"
-        :tabs="windowTabs.tabs.tabs.value"
-        :window-edge="windowEdge"
-        :tab-menu="tabMenu.menu.value"
-        @close="windowTabs.panes.closeTab"
-        @show="windowTabs.panes.onTabShown"
-        @tab-context-menu="tabMenu.open"
-        @tab-menu-choose="tabMenu.choose"
-        @tab-menu-dismiss="tabMenu.dismiss"
-        @tab-menu-highlight="tabMenu.highlight"
-        @tear-off="detachTab"
-      >
-        <template #tab-menu-icon="{ id }">
-          <component
-            :is="tabMenu.getIcon(id)"
-            v-if="tabMenu.getIcon(id)"
-            class="tab-menu-icon"
-            aria-hidden="true"
-          />
-        </template>
-
-        <template #icon="{ id }">
-          <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
-          <TabLinkIndicator
-            :is-linked="tabLinks.getGroupOf(id) !== null"
-            :color-index="tabLinks.getGroupOf(id)?.colorIndex"
-          />
-        </template>
-
-        <template #tab="{ id }">
-          <component
-            :is="windowTabs.tabs.getTab(id)!.kind.pane"
-            v-if="windowTabs.tabs.getTab(id)"
-            :state="windowTabs.tabs.getTab(id)!.state"
-          />
-
-          <div v-else />
-        </template>
-
-        <template #silence>
-          <BootstrapFailure
-            v-if="bootstrapFailure"
-            :message="bootstrapFailure"
-            @retry="retryBootstrap"
-          />
-          <WelcomeScreen
-            v-else-if="isLayoutReady || !vaultList.showing"
-            :vault-list="vaultList"
-            :tabs="windowTabs.tabs.tabs.value"
-            :commands="commands"
-            :search="search"
-            :doing="commandDeps"
-            :get-target="getTarget"
-            :plugin-ways="pluginWays"
-            :run-command="runCommand"
-            :open-current-vault="openCurrentVault"
-            :agent="getUserAgent()"
-          />
-          <div v-else />
-        </template>
-      </WorkspaceLayout>
+      <AppContent :parts="parts" />
     </div>
 
     <SlotViewHost :view="statusBarView" :styles="pluginHost.slotViews.styles" />
@@ -188,25 +115,5 @@ main.is-highlighted::after {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-}
-
-.fill {
-  flex: 1;
-  min-height: 0;
-}
-
-.tab-menu-icon {
-  --size: 0.875rem;
-  inline-size: var(--size);
-  block-size: var(--size);
-  stroke-width: 1.75;
-}
-
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.tab-icon {
-  inline-size: 100%;
-  block-size: 100%;
-  stroke-width: 1.75;
-  opacity: 0.75;
 }
 </style>

@@ -440,7 +440,7 @@
 
 .share-code {
   margin: 0;
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
   font-size: var(--numen-title-size);
   font-weight: 600;
   letter-spacing: 0.1em;

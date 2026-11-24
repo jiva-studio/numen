@@ -12,7 +12,7 @@ export function getRestoreStages(
 ): Stage[] {
   const sheets = hasFailed ? [undefined, undefined] : slots
   const next = sheets.findIndex((sheet) => sheet === undefined)
-  const stateOf = (at: number): StageState => {
+  const getStageState = (at: number): StageState => {
     if (sheets[at] !== undefined) return 'done'
     return at === next ? 'active' : 'pending'
   }
@@ -21,7 +21,7 @@ export function getRestoreStages(
     return {
       id: `sheet-${at + 1}`,
       label: words.restoreSheetSlot(at + 1),
-      state: stateOf(at),
+      state: getStageState(at),
       ...(sheet === undefined ? {} : { detail: words.restoreSheetNumber(sheet) }),
     }
   })

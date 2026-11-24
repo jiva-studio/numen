@@ -156,7 +156,6 @@ const createPage = async (
 
 type Page = Awaited<ReturnType<typeof createPage>>['tab']
 
-// The dialogs are drawn into the body of the document, outside the tab.
 const getBody = (tab: Page) => new DOMWrapper(tab.element.ownerDocument.body)
 
 const hasDialog = (tab: Page): boolean => getBody(tab).find('[role="dialog"]').exists()

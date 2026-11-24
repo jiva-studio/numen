@@ -92,8 +92,8 @@ function onSubmit(): void {
 
 .key-file-choice__legend {
   position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
   overflow: hidden;
   clip-path: inset(50%);
 }
