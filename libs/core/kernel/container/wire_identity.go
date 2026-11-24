@@ -7,10 +7,10 @@ import (
 )
 
 func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowidentity.UseCases {
-	if install.KeyStore == nil {
+	if install.Keys.Store == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithCreateLock(install.IdentityLock)
+	deps := identity.NewDeps(install.Keys.Store, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithCreateLock(install.Keys.CreateLock)
 	return &windowidentity.UseCases{
 		Get:           identity.NewGetIdentity(deps),
 		GenerateWords: identity.NewGenerateRecoveryWords(deps),

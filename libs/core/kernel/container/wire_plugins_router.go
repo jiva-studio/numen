@@ -3,10 +3,10 @@ package container
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
@@ -47,8 +47,7 @@ type pluginInstall struct {
 	SafeMode        bool
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
-	KeyStore        pluginport.KeyStore
-	IdentityLock    *sync.Mutex
+	Keys            identity.SharedKeys
 }
 
 func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {

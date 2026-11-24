@@ -37,6 +37,13 @@ type Deps struct {
 	createLock *sync.Mutex
 }
 
+// SharedKeys is the key store of an installation with the lock that serializes the creation of an identity
+// over it. The windows of the installation share one value.
+type SharedKeys struct {
+	Store      pluginport.KeyStore
+	CreateLock *sync.Mutex
+}
+
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.Clock) Deps {
 	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, createLock: &sync.Mutex{}}

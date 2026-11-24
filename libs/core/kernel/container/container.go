@@ -8,6 +8,7 @@ package container
 import (
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
@@ -233,7 +234,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		KeyStore:        res.KeyStore,
-		IdentityLock:    res.identityLock,
+		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: res.identityLock},
 	}
 }

@@ -39,7 +39,7 @@ func openConnectionDeps(install pluginInstall, exec *PluginExecution, settingsDe
 	if settingsDeps.ConnectionTypes == nil {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.KeyStore,
+	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.Keys.Store,
 		openConnectionRows(install, exec, settingsDeps, vaultDeps), openDetection(install, exec, settingsDeps, vaultDeps))
 	if options := openRowOptions(install, exec, deps); options != nil {
 		deps = deps.AddOptionLists(options)
