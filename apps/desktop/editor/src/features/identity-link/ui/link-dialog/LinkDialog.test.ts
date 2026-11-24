@@ -37,7 +37,7 @@ describe('the dialog that links a new device', () => {
     expect(dialog.get('h2').text()).toBe('Link a device')
     expect(dialog.findAll('ol li')).toHaveLength(3)
     expect(dialog.get('svg[role="img"]').attributes('aria-label')).toBe('QR code')
-    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing identity')
+    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing')
     expect(dialog.find('[role="status"]').exists()).toBe(false)
   })
 

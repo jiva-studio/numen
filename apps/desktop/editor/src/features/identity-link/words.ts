@@ -2,7 +2,7 @@
 export const WORDS = {
   devices: 'Devices',
   deviceLinkNew: 'Link a new device',
-  deviceJoin: 'Use existing identity',
+  deviceJoin: 'Use existing',
   deviceThis: 'This device',
   deviceMore: (name: string) => `More actions for ${name}`,
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
@@ -25,11 +25,11 @@ export const WORDS = {
   linkJoin: 'Use identity',
   linkCancel: 'Cancel',
   linkClose: 'Close',
-  linkJoinTitle: 'Use existing identity',
+  linkJoinTitle: 'Use existing',
   linkHostTitle: 'Link a device',
   linkJoinHint: 'Scan the code shown on your other device.',
   linkHostSteps: [
-    'On the other device, choose Use existing identity.',
+    'On the other device, choose Use existing.',
     'Scan this code.',
     'Type the code shown here on the other device.',
   ],

@@ -69,7 +69,7 @@ export const CheckingCamera: Story = {
   args: { findCamera: () => new Promise<boolean>(() => undefined) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dialog = canvas.getByRole('dialog', { name: 'Use existing identity' })
+    const dialog = canvas.getByRole('dialog', { name: 'Use existing' })
     await expect(dialog).toBeVisible()
     await expect(canvas.getByText('Checking the camera')).toBeVisible()
   },

@@ -246,15 +246,15 @@ describe('the page "Identity and licenses"', () => {
 
   it('shows the join by a QR code in the header with restore and create, and create keeps its text', async () => {
     const { tab } = await createPage()
-    const header = findButton(tab, 'Use existing identity')?.element.parentElement
+    const header = findButton(tab, 'Use existing')?.element.parentElement
     expect(header?.contains(findButton(tab, 'Restore')?.element ?? null)).toBe(true)
     expect(header?.contains(findButton(tab, 'Create identity')?.element ?? null)).toBe(true)
   })
 
   it('opens the join dialog from the header', async () => {
     const { tab } = await createPage()
-    await press(tab, 'Use existing identity')
-    expect(getDialog(tab).text()).toContain('Use existing identity')
+    await press(tab, 'Use existing')
+    expect(getDialog(tab).text()).toContain('Use existing')
   })
 
   it('shows the identity fingerprint and the linked device when the device has an identity', async () => {
