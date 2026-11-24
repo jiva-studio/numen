@@ -1,7 +1,7 @@
 /**
  * The two searches of the palette, asked of the core and read into the palette's own types.
  */
-import { getNames, SEARCH_MODE, type SearchModeCode } from '@numen/core-client'
+import { getCodesByWord, SEARCH_MODE, type SearchModeCode } from '@numen/core-client'
 import type { Selector } from '@numen/plugin-loader'
 import type { WindowClients } from '@/shared/api/clients'
 import { mapNoteType, mapRange } from '@/shared/api/wire'
@@ -16,7 +16,7 @@ const queryModes: Record<SearchModeCode, SearchMode | null> = {
   [SEARCH_MODE.NAMES]: 'names',
 }
 
-const modes = getNames<SearchMode, SearchModeCode>(queryModes)
+const modes = getCodesByWord<SearchMode, SearchModeCode>(queryModes)
 
 const parseSelector = (json: string): Selector | null => {
   try {

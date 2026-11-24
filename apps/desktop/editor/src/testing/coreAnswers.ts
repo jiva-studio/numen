@@ -24,7 +24,7 @@ export const createTestTransports = (transport: Transport): WindowTransports => 
   keepalive: transport,
 })
 
-/** The transports of a window whose core answers as `answers` say; a call left out is refused. */
+/** The transports of a window whose core answers as `answers` say; a call left out is rejected. */
 export const createAnsweredTransports = (answers: CoreAnswers): WindowTransports =>
   createTestTransports(createCoreTransport(answers))
 

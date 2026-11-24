@@ -5,14 +5,14 @@
  * shows what the source held a moment ago, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createFollower } from './stream'
-import { AGAIN, LOST } from './streamRetry'
+import { createStreamReader } from './stream'
+import { RETRY_DELAY_MS, CONNECTION_LOST_MESSAGE } from './streamRetry'
 
 const window = (streams = 3) => {
   const waits: number[] = []
   const missing: string[] = []
   let acquiredCount = 0
-  const follows = createFollower({
+  const follows = createStreamReader({
     isOpen: () => acquiredCount <= streams,
     setLost: (response) => missing.push(response),
     wait: async (ms) => {
@@ -38,7 +38,7 @@ describe('a stream that ends', () => {
     })
 
     expect(received.length).toBeGreaterThanOrEqual(2)
-    expect(one.waits).toStrictEqual([AGAIN, AGAIN, AGAIN])
+    expect(one.waits).toStrictEqual([RETRY_DELAY_MS, RETRY_DELAY_MS, RETRY_DELAY_MS])
   })
 
   it('waits as long as it was configured to', async () => {
@@ -58,7 +58,7 @@ describe('a stream that fails', () => {
       throw new Error('connection lost')
     }, vi.fn())
 
-    expect(one.lost[0]).toBe(LOST)
+    expect(one.lost[0]).toBe(CONNECTION_LOST_MESSAGE)
   })
 
   it('keeps the loss through failed retries and clears it after handling the first recovered item', async () => {
@@ -75,15 +75,15 @@ describe('a stream that fails', () => {
       },
     )
 
-    expect(observed).toEqual([[LOST], [LOST, '']])
-    expect(one.lost).toEqual([LOST, ''])
+    expect(observed).toEqual([[CONNECTION_LOST_MESSAGE], [CONNECTION_LOST_MESSAGE, '']])
+    expect(one.lost).toEqual([CONNECTION_LOST_MESSAGE, ''])
   })
 
   it('keeps the loss while another subscription is disconnected', async () => {
     let open = true
     const reports: string[] = []
     const retries: (() => void)[] = []
-    const follow = createFollower({
+    const follow = createStreamReader({
       isOpen: () => open,
       setLost: (text) => reports.push(text),
       wait: () => new Promise((resolve) => retries.push(resolve)),
@@ -99,10 +99,10 @@ describe('a stream that fails', () => {
     await vi.waitFor(() => expect(retries).toHaveLength(2))
     retries[0]!()
     await vi.waitFor(() => expect(retries).toHaveLength(3))
-    expect(reports).toEqual([LOST])
+    expect(reports).toEqual([CONNECTION_LOST_MESSAGE])
     retries[1]!()
     await vi.waitFor(() => expect(retries).toHaveLength(4))
-    expect(reports).toEqual([LOST, ''])
+    expect(reports).toEqual([CONNECTION_LOST_MESSAGE, ''])
     open = false
     retries.slice(2).forEach((resume) => resume())
     await Promise.all(subscriptions)
@@ -118,13 +118,13 @@ describe('a stream that fails', () => {
     })
 
     expect(reply).toBeGreaterThanOrEqual(2)
-    expect(one.lost[0]).toBe(LOST)
+    expect(one.lost[0]).toBe(CONNECTION_LOST_MESSAGE)
   })
 })
 
 describe('a window that has closed', () => {
   it('follows nothing, and waits for nothing', async () => {
-    const closed = createFollower({
+    const closed = createStreamReader({
       isOpen: () => false,
       setLost: vi.fn(),
       wait: () => Promise.resolve(),
@@ -141,7 +141,7 @@ describe('a window that has closed', () => {
   it('drops what arrives after it closed', async () => {
     let open = true
     const received: string[] = []
-    const follows = createFollower({
+    const follows = createStreamReader({
       isOpen: () => open,
       setLost: vi.fn(),
       wait: () => Promise.resolve(),
@@ -160,7 +160,7 @@ describe('what a follower holds for one reading of a stream', () => {
   it('is release when the stream ends, before it is taken up again', async () => {
     const order: string[] = []
     let acquiredCount = 0
-    const follows = createFollower({
+    const follows = createStreamReader({
       isOpen: () => acquiredCount <= 2,
       setLost: vi.fn(),
       wait: async () => {
@@ -180,7 +180,7 @@ describe('what a follower holds for one reading of a stream', () => {
   it('is release when the stream fails, the same way', async () => {
     const order: string[] = []
     let acquiredCount = 0
-    const follows = createFollower({
+    const follows = createStreamReader({
       isOpen: () => acquiredCount < 1,
       setLost: () => {
         order.push('lost')
@@ -207,7 +207,7 @@ describe('a window that closes while a stream is read', () => {
     let open = true
     const waits: number[] = []
     const resets: number[] = []
-    const follows = createFollower({
+    const follows = createStreamReader({
       isOpen: () => open,
       setLost: vi.fn(),
       wait: (ms) => {
@@ -232,7 +232,7 @@ describe('a window that closes while a stream is read', () => {
     const missing: string[] = []
     const waits: number[] = []
     const resets: number[] = []
-    const follows = createFollower({
+    const follows = createStreamReader({
       isOpen: () => open,
       setLost: (response) => missing.push(response),
       wait: (ms) => {

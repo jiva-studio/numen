@@ -1,24 +1,12 @@
-/**
- * A stream followed for as long as the window is open.
- *
- * The stream ends when the core stops or the connection drops, and it is
- * resumed after a delay. A window that stopped following would look identical
- * to one that is up to date, so the lost connection is reported until the
- * stream resumes.
- */
-import { AGAIN, LOST } from './streamRetry'
+import { CONNECTION_LOST_MESSAGE, RETRY_DELAY_MS } from './streamRetry'
 
-/** What following a stream reads of the window it is following for. */
 export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
   isOpen(): boolean
   /** Reports the lost connection, until the stream resumes. */
   setLost(message: string): void
   wait(ms: number): Promise<void>
-  /**
-   * What the follower releases when a stream ends: whatever it holds answers
-   * to that reading of the stream alone.
-   */
+  /** Releases what the reader of a stream holds when the stream ends. */
   reset?(): void
 }
 
@@ -33,13 +21,17 @@ async function readStream<T>(
   }
 }
 
-export function createFollower(deps: StreamDeps) {
+/**
+ * Reads a stream for as long as the window is open and resumes it after `retryDelayMs` when it ends.
+ * The loss is reported through `setLost` until the stream delivers again.
+ */
+export function createStreamReader(deps: StreamDeps) {
   const disconnected = new Set<symbol>()
 
   return async function follow<T>(
     stream: () => AsyncIterable<T>,
     each: (item: T) => void | Promise<void>,
-    again = AGAIN,
+    retryDelayMs = RETRY_DELAY_MS,
   ): Promise<void> {
     const subscription = Symbol()
     const deliver = async (item: T) => {
@@ -50,7 +42,7 @@ export function createFollower(deps: StreamDeps) {
     }
     const reportLoss = () => {
       if (!deps.isOpen()) return
-      if (disconnected.size === 0) deps.setLost(LOST)
+      if (disconnected.size === 0) deps.setLost(CONNECTION_LOST_MESSAGE)
       disconnected.add(subscription)
     }
     try {
@@ -58,7 +50,7 @@ export function createFollower(deps: StreamDeps) {
         await readStream(stream, deliver, () => deps.isOpen()).catch(reportLoss)
         if (!deps.isOpen()) return
         deps.reset?.()
-        await deps.wait(again)
+        await deps.wait(retryDelayMs)
       }
     } finally {
       disconnected.delete(subscription)

@@ -1,4 +1,4 @@
-import { createFollower } from '@/shared/api/stream'
+import { createStreamReader } from '@/shared/api/stream'
 import type { SettingsApi } from '../api/settings'
 import type { SettingEdit } from '../lib/configuration'
 
@@ -18,7 +18,7 @@ export function createChangeFollower(deps: {
   const abortController = new AbortController()
   let isOpen = true
   let isResumed = false
-  const follower = createFollower({
+  const follower = createStreamReader({
     isOpen: () => isOpen,
     // The stream of the themes reports the lost connection.
     setLost: () => undefined,

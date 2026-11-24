@@ -5,7 +5,7 @@ import {
   NOTE_MARKER,
   NOTE_ROLE,
   findErrorCode,
-  getNames,
+  getCodesByWord,
   type NoteMarkerCode,
   type NoteRoleCode,
 } from '@numen/core-client'
@@ -30,7 +30,7 @@ const calledRole: Record<NoteRoleCode, LinkRole | null> = {
 }
 
 /** The role of a link, as named in the schema. */
-export const roleCodes = getNames<LinkRole, NoteRoleCode>(calledRole)
+export const roleCodes = getCodesByWord<LinkRole, NoteRoleCode>(calledRole)
 
 /** What a link draws at its target, as named in the window. */
 const calledMarker: Record<NoteMarkerCode, LinkMarker | null> = {
@@ -39,7 +39,7 @@ const calledMarker: Record<NoteMarkerCode, LinkMarker | null> = {
 }
 
 /** What a link draws at its target, as named in the schema. */
-const markerCodes = getNames<LinkMarker, NoteMarkerCode>(calledMarker)
+const markerCodes = getCodesByWord<LinkMarker, NoteMarkerCode>(calledMarker)
 
 const connectionRoles: Record<ConnectionRole, true> = { parent: true, child: true, jump: true }
 

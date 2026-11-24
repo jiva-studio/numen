@@ -232,7 +232,7 @@ export const AddDialogOfAnAgent: Story = {
   },
 }
 
-/** Saving without a required value is refused in the dialog. */
+/** Saving without a required value is rejected in the dialog. */
 export const RequiredValueIsAsked: Story = {
   render: render([], [SERVICE]),
   play: async ({ canvasElement }) => {

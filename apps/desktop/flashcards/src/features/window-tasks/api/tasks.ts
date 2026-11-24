@@ -14,4 +14,4 @@ export const createTaskApi = (windowService: WindowClients['windowService']) => 
 
 export type TaskApi = ReturnType<typeof createTaskApi>
 
-export { createFollower } from '@numen/core-client'
+export { createStreamReader } from '@numen/core-client'

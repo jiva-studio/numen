@@ -1,11 +1,10 @@
 /**
  * The runs of the commands the plugins declare, over a core that answers none of them, for a test
- * that runs no command or expects a run to be refused.
+ * that runs no command or expects a run to be rejected.
  */
 import { createAnsweredApi } from './coreAnswers'
 
-const { runDeclaredCommand, listDeclaredItemLists } =
-  createAnsweredApi({}).plugins.declaredCommands
+const { runDeclaredCommand, listDeclaredItemLists } = createAnsweredApi({}).plugins.declaredCommands
 
 export const UNANSWERED_RUNS = {
   run: runDeclaredCommand,

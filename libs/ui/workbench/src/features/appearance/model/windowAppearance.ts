@@ -13,7 +13,7 @@ import {
   type AppearanceOutput,
   type AppearanceWords,
   type AppearanceWriter,
-  type CreateFollower,
+  type CreateStreamReader,
   type Mode,
   type Sizes,
   type Theme,
@@ -26,7 +26,7 @@ type Themes = ThemeSource
 
 interface WindowAppearanceDeps {
   core: Themes
-  createFollower: CreateFollower
+  createStreamReader: CreateStreamReader
   words: AppearanceWords
   write: AppearanceWriter
   output: AppearanceOutput
@@ -101,7 +101,7 @@ function createAppearanceLoader(deps: LoaderDeps) {
 
 function createThemeWatcher(deps: {
   core: WindowAppearanceDeps['core']
-  createFollower: CreateFollower
+  createStreamReader: CreateStreamReader
   files: Map<string, string>
   preview: ReturnType<typeof createAppearancePreview>
   applyAppearance: () => Promise<void>
@@ -112,7 +112,7 @@ function createThemeWatcher(deps: {
   let open = true
   const abortController = new AbortController()
   const getChoice = () => `${deps.state.applied.value} ${deps.state.mode.value}`
-  const follows = deps.createFollower({
+  const follows = deps.createStreamReader({
     isOpen: () => open,
     setLost: (removed) => {
       deps.state.lost.value = removed
@@ -154,7 +154,7 @@ function initAppearanceState() {
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, createFollower, words, write, output, wait = sleep } = deps
+  const { core, createStreamReader, words, write, output, wait = sleep } = deps
   const state = initAppearanceState()
   const { files, applyTheme } = createThemeApplier(deps, state.applied)
 
@@ -184,7 +184,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   const watcher = createThemeWatcher({
     core,
-    createFollower,
+    createStreamReader,
     files,
     preview,
     applyAppearance,
@@ -211,7 +211,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     },
     start: async () => {
       await loadAppearance(true)
-      // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
+      // Stryker disable next-line ArrowFunction: createStreamReader handles stream errors internally.
       watcher.follow().catch((error: unknown) => write(getFailureText(error), 'error'))
     },
     close: () => {

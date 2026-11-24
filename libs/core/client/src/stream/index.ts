@@ -1,1 +1,1 @@
-export { createFollower } from './stream'
+export { createStreamReader } from './stream'
