@@ -57,7 +57,7 @@ describe('a QR scanner', () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => new Promise<MediaStream>(() => undefined) },
     })
-    expect(scanner.get('video').exists()).toBe(true)
+    expect(scanner.find('video').exists()).toBe(true)
     expect(scanner.get('[role="status"]').element.parentElement).toBe(scanner.element)
     expect(scanner.text()).not.toContain('Waiting for the camera')
   })
