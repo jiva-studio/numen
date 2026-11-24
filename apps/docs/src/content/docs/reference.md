@@ -232,9 +232,10 @@ The settings of the plugin Numen Sync.
 | --- | --- | --- |
 | `server` | text | address of the server this device signs in to. |
 | `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
-| `syncOnlyWhileOpen` | yes or no | stops the sync when the app leaves the screen and starts it when it returns. |
 | `removalDelaySeconds` | a number | how long a removed file is watched before the removal is sent. |
+| `epochRootKey` | text | 64 hex digits. The key vouches for the restore announcements of that server and never counts for the default server. |
 | `receivedFolder` | text | where the folders shared with you are kept. Empty means Numen Shared in your home folder. |
+| `syncOnlyWhileOpen` | yes or no | stops the sync when the app leaves the screen and starts it when it returns. |
 
 ### `md.numen.tools.templates`
 
