@@ -117,9 +117,8 @@ export const WORDS = {
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
   identityRestoreTitle: 'Restore identity',
-  identityRestoreHint:
-    'Scan the QR of two sheets of your recovery kit, or type the 12 words or the words of two sheets.',
-  identityRestoreAction: 'Restore the account',
+  identityRestoreHint: 'Scan a recovery sheet or type its words.',
+  identityRestoreAction: 'Restore',
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
   identityAccount: 'Account fingerprint',
@@ -160,7 +159,8 @@ export const WORDS = {
   /** Scanning the QR codes of kit sheets in the restore. */
   scanAction: 'Scan QR',
   scanStop: 'Type words',
-  scanProgress: (count: number) => `${count} of 2 sheets scanned`,
+  scanProgress: (count: number) =>
+    count < 2 ? `Sheet ${count} of 2 scanned. Scan ${2 - count} more.` : 'Both sheets scanned.',
   scanNotSheet: 'This is not a code of a Numen recovery kit.',
   scanOtherKit: 'This sheet is from another kit. Scan a sheet of the same kit.',
   scanRepeated: (sheet: number) => `Sheet ${sheet} is scanned already. Scan another sheet.`,

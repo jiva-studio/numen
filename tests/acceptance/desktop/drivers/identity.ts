@@ -209,7 +209,7 @@ export class IdentityDriver {
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
     const dialog = this.getRestoreDialog(panel)
     await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(text)
-    const restore = dialog.getByRole('button', { name: 'Restore the account', exact: true })
+    const restore = dialog.getByRole('button', { name: 'Restore', exact: true })
     if (await restore.isEnabled()) await restore.click()
   }
 
