@@ -25,12 +25,6 @@
       },
       {
         "slot": "fileTree.context",
-        "command": "vault.stopSync",
-        "group": "6-sync",
-        "when": "target.isRoot"
-      },
-      {
-        "slot": "fileTree.context",
         "command": "share.open",
         "group": "6-sync",
         "when": "target.isFolder && !target.isRoot"
