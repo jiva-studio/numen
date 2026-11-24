@@ -65,14 +65,14 @@ func (u *Endorse) Execute(ctx context.Context, revoked [][]byte) error {
 		if err != nil {
 			return err
 		}
-		if err := u.endorseVault(ctx, remote, own.DeviceSignKey, revoked); err != nil {
+		if err := u.confirmVault(ctx, remote, own.DeviceSignKey, revoked); err != nil {
 			return fmt.Errorf("endorse the vault %s: %w", vault.ID, err)
 		}
 	}
 	return nil
 }
 
-func (u *Endorse) endorseVault(ctx context.Context, remote, own []byte, revoked [][]byte) error {
+func (u *Endorse) confirmVault(ctx context.Context, remote, own []byte, revoked [][]byte) error {
 	for range maxRounds {
 		stored, err := u.listHeads(ctx, remote, revoked)
 		if err != nil || len(stored) == 0 {

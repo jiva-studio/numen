@@ -60,7 +60,6 @@ func (a *account) revokePhone(t *testing.T) {
 	}
 }
 
-// publishWithoutEndorsing puts the revoke on the server as a client that does not endorse would.
 func (a *account) publishWithoutEndorsing(t *testing.T) {
 	t.Helper()
 	pending, err := a.laptop.Client.GetChainPublish(t.Context())

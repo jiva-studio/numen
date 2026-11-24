@@ -42,7 +42,7 @@ func (u *Publish) Execute(ctx context.Context) (bool, error) {
 	if err != nil || !pending.IsPending {
 		return false, err
 	}
-	if err := u.endorse(ctx, pending.Chain); err != nil {
+	if err := u.confirmRevoked(ctx, pending.Chain); err != nil {
 		return false, err
 	}
 	_, err = u.deps.Chain.AppendChain(ctx, pending.Chain)
@@ -55,9 +55,7 @@ func (u *Publish) Execute(ctx context.Context) (bool, error) {
 	return true, u.deps.Core.PutChainPublished(ctx, true, nil)
 }
 
-// endorse has the devices the pending chain revokes endorsed before the server learns of the revoke: once the chain is on the server
-// nothing that those devices wrote counts any more.
-func (u *Publish) endorse(ctx context.Context, pending []byte) error {
+func (u *Publish) confirmRevoked(ctx context.Context, pending []byte) error {
 	chain, err := identity.ParseChain(pending)
 	if err != nil {
 		return err
