@@ -37,14 +37,13 @@ type FolderChooser interface {
 	Execute(ctx context.Context, title, startingAt string) (picker.PickedFolder, error)
 }
 
-// Dialog answers the request for the machine's native folder dialog, when the application has one.
+// Dialog answers the request for the machine's native folder dialog.
 type Dialog struct {
 	chooseFolder FolderChooser
 }
 
 // Handler answers about the vaults this installation holds.
 type Handler struct {
-	*Dialog
 	window Window
 	list   *vaults.ListVaults
 	add    *vaults.AddVault
@@ -53,19 +52,11 @@ type Handler struct {
 	remove Remover
 }
 
-// NewHandler is the handler of the vaults service of one window. It has no folder dialog until WithFolderChooser.
 func NewHandler(
 	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
 	open *windowsession.OpenVault, remove Remover,
 ) *Handler {
-	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
-}
-
-// WithFolderChooser returns the handler answering the folder dialog request with the native folder dialog.
-func (s *Handler) WithFolderChooser(choose FolderChooser) *Handler {
-	chosen := *s
-	chosen.Dialog = &Dialog{chooseFolder: choose}
-	return &chosen
+	return &Handler{window: current, list: list, add: add, rename: rename, open: open, remove: remove}
 }
 
 // NewRoute is where the vaults service answers: its path and the handler of its calls. Each call
@@ -75,9 +66,9 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 }
 
 // NewDialogRoute is where the folder dialog service answers: its path and the handler of its calls. Each call
-// goes through counted.
-func NewDialogRoute(dialog *Dialog, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewFolderDialogServiceHandler(dialog, counted)
+// goes through counted. A build with no native folder dialog does not mount it, and a client gets Unimplemented.
+func NewDialogRoute(choose FolderChooser, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: choose}, counted)
 }
 
 // ListVaults returns every vault of the installation. The active vault is
@@ -102,9 +93,6 @@ func (s *Dialog) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	if s.chooseFolder == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDialog)
-	}
 	selected, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartFolder())
 	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
@@ -115,9 +103,6 @@ func (s *Dialog) ChooseFolder(
 	// A closed dialog is a valid response with IsChosen false.
 	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
 }
-
-// errNoDialog is what a build with no native folder dialog answers.
-var errNoDialog = errors.New("this build has no folder dialog")
 
 // AddVault turns a folder into a vault on the list. A name another vault has
 // gets a number appended, and is not an error here.

@@ -1,7 +1,7 @@
 /**
  * Structured application logs, as the frontends of the plugins watch and write them.
  */
-import { createFollower, createLogClient } from '@numen/core-client'
+import { createStreamReader, createLogClient } from '@numen/core-client'
 import type { LogHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { WindowClients } from '@/shared/api/clients'
@@ -22,7 +22,7 @@ export const createLogHost = (
     setLevel: (level) => logClient.setLogLevel(level),
     watch: (handler) => {
       const listening = new AbortController()
-      const follower = createFollower({
+      const follower = createStreamReader({
         isOpen: () => !listening.signal.aborted,
         setLost: () => undefined,
         wait,

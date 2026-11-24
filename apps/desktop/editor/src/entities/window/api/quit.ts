@@ -1,13 +1,13 @@
 /**
  * The window quitting: the request to write what is pending, and the report that it is written.
  */
-import { FLUSH_RESULT, getNames, type FlushResultCode } from '@numen/core-client'
+import { FLUSH_RESULT, getCodesByWord, type FlushResultCode } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
 import type { FlushOutcome, QuitRequest } from '../lib/quit'
 import { WINDOW } from './window'
 
 /** What a client has left, as the schema names it. */
-const flushResults = getNames<FlushOutcome, FlushResultCode>({
+const flushResults = getCodesByWord<FlushOutcome, FlushResultCode>({
   [FLUSH_RESULT.UNSPECIFIED]: null,
   [FLUSH_RESULT.NOTHING]: 'nothing',
   [FLUSH_RESULT.WRITTEN]: 'written',

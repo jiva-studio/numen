@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { createFollower, TASK_UNIT } from '@numen/core-client'
+import { createStreamReader, TASK_UNIT } from '@numen/core-client'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import {
   createEditStream,
@@ -114,7 +114,11 @@ interface WindowStreamsDeps extends ReturnType<typeof answer> {
 }
 
 const createWindowStreams = (deps: WindowStreamsDeps) => {
-  const follows = createFollower({ isOpen: deps.isOpen, setLost: deps.setLost, wait: deps.wait })
+  const follows = createStreamReader({
+    isOpen: deps.isOpen,
+    setLost: deps.setLost,
+    wait: deps.wait,
+  })
   return {
     follow: createVaultStream({
       ...deps,
@@ -429,7 +433,7 @@ describe('following the tasks', () => {
     }
     const followHealth = createHealthStream({
       watchPluginHealth: () => yielding([healthItem]),
-      follower: createFollower({
+      follower: createStreamReader({
         isOpen: () => open,
         setLost: vi.fn(),
         wait: async () => {

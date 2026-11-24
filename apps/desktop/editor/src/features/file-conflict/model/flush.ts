@@ -7,7 +7,7 @@
  * unwritten too, so a quit never reports text written that no handler confirmed.
  */
 import { shallowRef, type Ref } from 'vue'
-import { createFollower } from '@/shared/api/stream'
+import { createStreamReader } from '@/shared/api/stream'
 
 /** Outcome of a flush: everything written, or a user decision pending. */
 type FlushResult = 'written' | 'unsaved'
@@ -185,7 +185,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
     return () => handlers.delete(one)
   }
 
-  const follower = createFollower({
+  const follower = createStreamReader({
     isOpen: () => open,
     // The quit stream reports no connection status.
     setLost: () => undefined,

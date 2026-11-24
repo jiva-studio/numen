@@ -174,10 +174,10 @@ func onAList(t *testing.T) *onTheList {
 		f,
 		vaults.NewListVaults(registry, readers), vaults.NewAddVault(adding, readers),
 		vaults.NewRenameVault(registry, rename, readers), windowsession.NewOpenVault(registry, f), remove,
-	).WithFolderChooser(chooseFolder)
+	)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
-	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(handler))
+	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: chooseFolder}))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -631,5 +631,20 @@ func TestAWindowRequestIgnoresTheManagerAndTheVaultStaysOrdinary(t *testing.T) {
 	}
 	if got := onList(t, list.Msg, out.Msg.GetVault().GetId()).GetManagedBy(); got != "" {
 		t.Errorf("the vault on the list has the manager %q, want none", got)
+	}
+}
+
+func TestAnInstallationWithNoFolderDialogAnswersUnimplemented(t *testing.T) {
+	f := onAList(t)
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewVaultsServiceHandler(NewHandler(f, nil, nil, nil, nil, nil)))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	dialogs := numenv1connect.NewFolderDialogServiceClient(server.Client(), server.URL)
+
+	_, err := dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
+
+	if connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Errorf("the folder dialog answered %v, want %v", connect.CodeOf(err), connect.CodeUnimplemented)
 	}
 }

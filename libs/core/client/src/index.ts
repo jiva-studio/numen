@@ -143,7 +143,11 @@ export {
   createOriginTransport,
   type Transport,
 } from './transport'
-export { getNames, PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from './settings'
+export {
+  getCodesByWord,
+  PLUGIN_CONTRIBUTION_KIND,
+  type PluginContributionKindValue,
+} from './settings'
 export {
   createThemeClient,
   type ThemeMode,
@@ -191,4 +195,4 @@ export {
   type LogWrite,
 } from './logs'
 export { findErrorCode, isStaleAnswer, parseFingerprint, ERRORS, getKnownErrorCode } from './errors'
-export { createFollower } from './stream'
+export { createStreamReader } from './stream'

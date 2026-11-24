@@ -9,34 +9,24 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
-/** A text drawn as a QR code. */
 export { QrCode } from './shared/ui/qr-code'
 
-/** The camera read for the QR code of a link. */
 export { QrScanner } from './shared/ui/qr-scanner'
 export { hasCamera, type ScannerCamera } from './shared/api/camera'
 
-/** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
 
-/** A box that is ticked or not, with an optional label beside it. */
-
-/** One value along a track, moved by a handle. */
 export { Slider } from './shared/ui/slider'
 
-/** Two to four choices side by side, one of them chosen. */
 export { SegmentedControl } from './shared/ui/segmented'
 
-/** One choice out of a list, taken from a menu the machine draws. */
 export { Select } from './shared/ui/select'
 
-/** One search line over a list of rows in one frame, drawn in the window or as a popup. */
 export { SearchableList, SearchableListPopup } from './shared/ui/searchable-list'
 export type { ListItem } from './shared/ui/searchable-list'
 
-/** Whether a key was pressed into something being written in. */
 export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, getKeyChord } from './shared/ui/key-cap'
@@ -48,30 +38,22 @@ export {
   type RequestGuard,
 } from './shared/lib/async/requestGuard'
 
-/** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
 
-/** Rethrows a rejection of a background task as an uncaught error. */
 export { reportFailure } from './shared/api/report'
 
 export { Spinner } from './shared/ui/spinner'
 
-/** A short message at the bottom of the window that goes away by itself. */
 export { Toast } from './shared/ui/toast'
 
-/** A Lucide icon drawn by the name a manifest gives it. */
 export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { ErrorState } from './shared/ui/error-state'
 export { IslandCard } from './shared/ui/island-card'
 
-/** A question over the window answered with one of two buttons. */
 export { ConfirmDialog } from './shared/ui/confirm-dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
-/** A link that leads out of the application, and the window held against it. */
-
-/** Numbers as they are read out, which both windows read the same way. */
 export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
@@ -79,7 +61,6 @@ export type { LinkPiece } from './shared/lib/text/marks'
 
 export type { TextRange } from './shared/lib/text/textRange'
 
-/** The size, space and position a component outside this module uses for its layout. */
 export type { Position, Size } from './shared/lib/math/geometry'
 export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
@@ -101,13 +82,10 @@ export {
 } from './shared/api/dom'
 export { joinClasses } from './shared/lib/dom/classes'
 
-/** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
 export { stepTo } from './shared/lib/dom/roving'
 
-/** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
 
-/** A label for a hovered item, placed beside the box it describes. */
 export { Tooltip, useTooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
