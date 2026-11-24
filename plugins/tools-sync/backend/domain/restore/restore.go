@@ -192,6 +192,11 @@ func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool
 	if isUsable && isHeadKept(head, record, isLocal) {
 		return action
 	}
+	return planChange(action, head, record, isFound, hash, isLocal)
+}
+
+func planChange(action Action, head Head, record Known, isFound bool, hash string, isLocal bool) Action {
+	isUsable := isFound && !head.IsBlobMissing
 	action.ParentVersion = max(head.Version, record.Version)
 	switch {
 	case isUsable && isLocal && isSameContent(head, hash):

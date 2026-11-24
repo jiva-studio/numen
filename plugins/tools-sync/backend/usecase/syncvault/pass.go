@@ -58,6 +58,10 @@ func (p *pass) run(ctx context.Context) error {
 			return err
 		}
 	}
+	return p.finish(ctx, previous)
+}
+
+func (p *pass) finish(ctx context.Context, previous ports.Status) error {
 	conflicts := len(p.conflicts) + p.resolved
 	found := tally{conflicts: conflicts, previousConflicts: previous.ConflictCount, unverified: p.unverified, clashes: len(p.clashes)}
 	if err := p.use.reports.report(ctx, found); err != nil {
