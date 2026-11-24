@@ -1,6 +1,7 @@
 package kitpdf
 
 import (
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"strings"
 	"testing"
 )
@@ -23,13 +24,15 @@ func getLongText() string {
 	for i := range words {
 		words[i] = strings.Repeat(string(rune('a'+i%26)), 8)
 	}
-	return getSheetText(words)
+	return getSheetText("C0DE", identitydomain.Sheet{Number: 2, Words: words})
 }
 
-func TestGetSheetText_JoinsTheWordsWithSingleSpaces(t *testing.T) {
+func TestGetSheetText_IsAVersionedLinkOfTheKitTheSheetAndItsWords(t *testing.T) {
 	t.Parallel()
-	if got := getSheetText([]string{"alpha", "beta", "gamma"}); got != "alpha beta gamma" {
-		t.Fatalf("the sheet text is %q", got)
+	sheet := identitydomain.Sheet{Number: 3, Words: []string{"alpha", "beta", "gamma"}}
+	want := "numen://recover?v=1&kit=C0DE&sheet=3&words=alpha+beta+gamma"
+	if got := getSheetText("C0DE", sheet); got != want {
+		t.Fatalf("the sheet text is %q, want %q", got, want)
 	}
 }
 

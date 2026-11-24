@@ -16,7 +16,7 @@ const (
 	pageWidth  = 210.0
 	margin     = 20.0
 	right      = pageWidth - margin
-	gridTop    = 70.0
+	gridTop    = 40.0
 	gridRows   = 11
 	gridRowH   = 9.0
 	gridPad    = 2.5
@@ -46,7 +46,7 @@ func Render(kit identitydomain.Kit) ([]byte, error) {
 	pdf.SetModificationDate(kit.CreatedAt)
 	page := sheetPage{pdf: pdf, toCodePage: pdf.UnicodeTranslatorFromDescriptor(""), kit: kit}
 	for _, sheet := range kit.Sheets {
-		matrix, err := getQRMatrix(getSheetText(sheet.Words))
+		matrix, err := getQRMatrix(getSheetText(kit.ID, sheet))
 		if err != nil {
 			return nil, err
 		}
@@ -67,15 +67,9 @@ type sheetPage struct {
 
 func (p sheetPage) draw(sheet identitydomain.Sheet, matrix [][]bool) {
 	p.pdf.AddPage()
-	of := fmt.Sprintf("Sheet %d of %d", sheet.Number, len(p.kit.Sheets))
-	p.drawHeader(of)
-	p.drawFacts()
-	p.drawWords(sheet.Words, of)
-	p.drawRule()
-	p.drawRestore()
+	p.drawHeader(fmt.Sprintf("Sheet %d of %d", sheet.Number, len(p.kit.Sheets)))
+	p.drawWords(sheet.Words)
 	p.drawQR(matrix)
-	p.drawKeptAt()
-	p.drawFooter(of)
 }
 
 func (p sheetPage) setFont(family, style string, size float64, c color) {
@@ -101,30 +95,10 @@ func (p sheetPage) drawHeader(of string) {
 	p.write(margin, 26, "Numen recovery kit")
 	p.setFont("Helvetica", "", 11, hushed)
 	p.writeRight(right, 26, of)
-	p.setFont("Helvetica", "", 9, hushed)
-	p.write(margin, 32, "A paper key to your Numen account. Keep it offline, in a safe place.")
-	p.drawLine(37)
+	p.drawLine(32)
 }
 
-func (p sheetPage) drawFacts() {
-	const label, value = 44.0, 50.5
-	p.setFont("Helvetica", "B", 7, hushed)
-	p.write(margin, label, "ACCOUNT FINGERPRINT")
-	p.write(130, label, "KIT")
-	p.write(152, label, "CREATED")
-	p.setFont("Courier", "B", 11, ink)
-	p.write(margin, value, p.kit.AccountFingerprint)
-	p.write(130, value, p.kit.ID)
-	p.setFont("Helvetica", "", 10, ink)
-	p.write(152, value, p.kit.CreatedAt.Format("2 January 2006"))
-	p.drawLine(56)
-}
-
-func (p sheetPage) drawWords(words []string, of string) {
-	p.setFont("Helvetica", "B", 11, ink)
-	p.write(margin, 65, "Recovery words")
-	p.setFont("Helvetica", "", 9, hushed)
-	p.writeRight(right, 65, fmt.Sprintf("%s · %d words", of, len(words)))
+func (p sheetPage) drawWords(words []string) {
 	height := gridRows*gridRowH + 2*gridPad
 	p.pdf.SetFillColor(shade.getRed(), shade.getGreen(), shade.getBlue())
 	for row := 1; row < gridRows; row += 2 {
@@ -143,50 +117,10 @@ func (p sheetPage) drawWords(words []string, of string) {
 	}
 }
 
-func (p sheetPage) drawRule() {
-	const top = 189.0
-	p.pdf.SetFillColor(shade.getRed(), shade.getGreen(), shade.getBlue())
-	p.pdf.RoundedRect(margin, top, right-margin, 17, 2, "1234", "F")
-	p.setFont("Helvetica", "B", 11, ink)
-	p.write(margin+5, top+7, "Any 2 of 3 sheets restore your account. One sheet alone is useless.")
-	p.setFont("Helvetica", "", 9, hushed)
-	p.write(margin+5, top+12.5, "Keep each sheet in a different place. Never store the sheets together.")
-}
-
-func (p sheetPage) drawRestore() {
-	const indent = margin + 7
-	p.setFont("Helvetica", "B", 11, ink)
-	p.write(margin, 219, "To restore your account")
-	p.setFont("Helvetica", "", 10, ink)
-	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore,")
-	p.write(indent, 231.5, "then choose Recovery kit.")
-	p.write(margin, 237, "2.  Type the words of any two sheets, one sheet in each field,")
-	p.write(indent, 242.5, "then choose Restore.")
-	p.write(margin, 248, "3.  In the field Chain mark, type the mark below. A server")
-	p.write(indent, 253.5, "that went back in time is refused.")
-	p.setFont("Courier", "B", 11, ink)
-	p.write(indent, 260.5, p.kit.ChainMark)
-}
-
 func (p sheetPage) drawQR(matrix [][]bool) {
-	const top = 209.0
-	drawQR(p.pdf, matrix, right-qrSide, top)
-	p.setFont("Helvetica", "", 8, hushed)
-	p.writeRight(right, top+qrSide+3.5, "Scan this sheet to restore")
-}
-
-func (p sheetPage) drawKeptAt() {
-	const y = 268.0
-	p.setFont("Helvetica", "B", 10, ink)
-	p.write(margin, y, "Kept at:")
-	p.pdf.SetDrawColor(hushed.getRed(), hushed.getGreen(), hushed.getBlue())
-	p.pdf.SetLineWidth(0.2)
-	p.pdf.Line(margin+17, y+0.8, right, y+0.8)
-}
-
-func (p sheetPage) drawFooter(of string) {
-	p.drawLine(277)
-	p.setFont("Helvetica", "", 8, hushed)
-	p.write(margin, 282, "Numen cannot restore your account without the 12 recovery words or two sheets of a kit.")
-	p.writeRight(right, 282, fmt.Sprintf("Kit %s · %s", p.kit.ID, of))
+	const top = 160.0
+	drawQR(p.pdf, matrix, margin, top)
+	p.setFont("Helvetica", "", 10, ink)
+	p.write(margin+qrSide+6, top+qrSide/2-2, "To restore, scan this code in Numen under")
+	p.write(margin+qrSide+6, top+qrSide/2+3, "Settings, Restore. Any 2 of 3 sheets are enough.")
 }
