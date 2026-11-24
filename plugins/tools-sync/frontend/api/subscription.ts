@@ -5,6 +5,8 @@
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
+import { REQUIREMENT_UNMET } from './call'
+
 import type { SubscriptionPhase } from '../lib/subscriptionView'
 
 /**
@@ -66,18 +68,37 @@ interface SubscriptionFailure extends Error {
   readonly code: string
 }
 
+const NO_IDENTITY: SubscriptionResponse = {
+  hasIdentity: false,
+  phase: '',
+  periodEndAt: '',
+  writesEndAt: '',
+  deleteAt: '',
+  plan: '',
+  quotaBytes: 0,
+  usedBytes: 0,
+}
+
 const createFailure = (error: ApiError): SubscriptionFailure =>
   Object.assign(new Error(error.message), { code: error.code })
 
 export function createSubscriptionClient(api: Api): SubscriptionClient {
-  async function call<Req extends object, Res>(method: string, request: Req): Promise<Res> {
+  async function call<Req extends object, Res>(
+    method: string,
+    request: Req,
+    ifNoIdentity?: Res,
+  ): Promise<Res> {
     const result = await api.call<Req, Res>(method, request)
+    if (!result.ok && ifNoIdentity !== undefined && result.error.code === REQUIREMENT_UNMET) {
+      return ifNoIdentity
+    }
     if (!result.ok) throw createFailure(result.error)
     return result.value
   }
 
   return {
-    getSubscription: () => call<Record<string, never>, SubscriptionResponse>('GetSubscription', {}),
+    getSubscription: () =>
+      call<Record<string, never>, SubscriptionResponse>('GetSubscription', {}, NO_IDENTITY),
     listPlans: async () =>
       (await call<Record<string, never>, ListPlansResponse>('ListPlans', {})).plans,
     createCheckout: async (plan) =>

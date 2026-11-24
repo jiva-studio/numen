@@ -48,7 +48,8 @@
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
-    "lifecycle": "persistent"
+    "lifecycle": "persistent",
+    "requires": ["identity"]
   },
   "settings": [
     {

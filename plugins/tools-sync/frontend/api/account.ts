@@ -4,6 +4,8 @@
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
+import { REQUIREMENT_UNMET } from './call'
+
 /**
  * The identity fingerprint is the name of the identity, which the person types to confirm a deletion. The time is
  * RFC 3339 and empty unless the account is being deleted. A device with no identity has neither.
@@ -32,18 +34,33 @@ export interface AccountClient {
   exportAccountData(): Promise<string>
 }
 
+const NO_IDENTITY: AccountStateResponse = {
+  hasIdentity: false,
+  account: '',
+  isDeleting: false,
+  deleteAt: '',
+}
+
 const createFailure = (error: ApiError): Error =>
   Object.assign(new Error(error.message), { code: error.code })
 
 export function createAccountClient(api: Api): AccountClient {
-  async function call<Req extends object, Res>(method: string, request: Req): Promise<Res> {
+  async function call<Req extends object, Res>(
+    method: string,
+    request: Req,
+    ifNoIdentity?: Res,
+  ): Promise<Res> {
     const result = await api.call<Req, Res>(method, request)
+    if (!result.ok && ifNoIdentity !== undefined && result.error.code === REQUIREMENT_UNMET) {
+      return ifNoIdentity
+    }
     if (!result.ok) throw createFailure(result.error)
     return result.value
   }
 
   return {
-    getAccountState: () => call<Record<string, never>, AccountStateResponse>('GetAccountState', {}),
+    getAccountState: () =>
+      call<Record<string, never>, AccountStateResponse>('GetAccountState', {}, NO_IDENTITY),
     deleteCloudData: async () =>
       (await call<Record<string, never>, DeleteCloudDataResponse>('DeleteCloudData', {})).deleteAt,
     restoreAccount: async () => {

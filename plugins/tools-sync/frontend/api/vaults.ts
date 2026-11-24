@@ -5,6 +5,8 @@
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
+import { REQUIREMENT_UNMET } from './call'
+
 export const SERVICE = 'md.numen.tools.sync'
 
 export type VaultState = 'notConnected' | 'connected' | 'copy' | 'received'
@@ -90,11 +92,16 @@ export interface VaultsClient {
   stopSyncingVault(request: StopSyncingVaultRequest): Promise<void>
 }
 
+const NO_IDENTITY: GetStatusResponse = { hasIdentity: false, isReachable: false, items: [] }
+
 const createFailure = (error: ApiError): Error => new Error(error.message)
 
 export function createVaultsClient(api: Api): VaultsClient {
-  async function call<Req, Res>(method: string, request: Req): Promise<Res> {
+  async function call<Req, Res>(method: string, request: Req, ifNoIdentity?: Res): Promise<Res> {
     const result = await api.call<Req, Res>(method, request)
+    if (!result.ok && ifNoIdentity !== undefined && result.error.code === REQUIREMENT_UNMET) {
+      return ifNoIdentity
+    }
     if (!result.ok) throw createFailure(result.error)
     return result.value
   }
@@ -110,7 +117,7 @@ export function createVaultsClient(api: Api): VaultsClient {
     resolveDeletions: async (request) => {
       await call<ResolveDeletionsRequest, Empty>('ResolveDeletions', request)
     },
-    getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}),
+    getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}, NO_IDENTITY),
     stopSyncingVault: async (request) => {
       await call<StopSyncingVaultRequest, Empty>('StopSyncingVault', request)
     },

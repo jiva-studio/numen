@@ -44,6 +44,14 @@ const createClient = (respond: () => Response) => {
 }
 
 describe('the client of the vaults service', () => {
+  it('answers a device with no identity when the host does not start the backend', async () => {
+    const { client } = createClient(() =>
+      Response.json({ code: 'requirement_unmet', message: 'needs identity' }, { status: 503 }),
+    )
+
+    expect((await client.getStatus()).hasIdentity).toBe(false)
+  })
+
   it('stops the sync of a vault by its id', async () => {
     const { client, sent } = createClient(() => Response.json({}))
 

@@ -53,6 +53,14 @@ describe('the fixtures of the identity methods', () => {
 })
 
 describe('createAccountClient', () => {
+  it('answers a device with no identity when the host does not start the backend', async () => {
+    const { client } = createClient(() =>
+      Response.json({ code: 'requirement_unmet', message: 'needs identity' }, { status: 503 }),
+    )
+
+    expect((await client.getAccountState()).hasIdentity).toBe(false)
+  })
+
   it('sends the method of the service and returns the time the server deletes the account', async () => {
     const { client, sent } = createClient(() => answer(read('DeleteCloudData.response')))
 

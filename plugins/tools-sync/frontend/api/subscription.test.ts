@@ -94,6 +94,14 @@ describe('the fixtures of the subscription methods', () => {
 })
 
 describe('the subscription client', () => {
+  it('answers a device with no identity when the host does not start the backend', async () => {
+    const { client } = createClient(() =>
+      Response.json({ code: 'requirement_unmet', message: 'needs identity' }, { status: 503 }),
+    )
+
+    expect((await client.getSubscription()).hasIdentity).toBe(false)
+  })
+
   it('asks GetSubscription and answers its response', async () => {
     const answer = read('GetSubscription.response') as SubscriptionResponse
     const { client, sent } = createClient(() => Response.json(answer))
