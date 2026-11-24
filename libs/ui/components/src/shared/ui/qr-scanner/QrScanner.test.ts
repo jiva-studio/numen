@@ -36,6 +36,18 @@ describe('a QR scanner', () => {
     expect(scanner.emitted('unavailable')).toStrictEqual([['The camera is not allowed.']])
   })
 
+  it('gives up on a camera that does not open in ten seconds', async () => {
+    vi.useFakeTimers()
+    try {
+      const scanner = mount(QrScanner, { props: { camera: () => new Promise<MediaStream>(() => undefined) } })
+      await vi.advanceTimersByTimeAsync(10_500)
+      expect(scanner.get('[role="alert"]').text()).toBe('The camera did not open.')
+      expect(scanner.emitted('unavailable')).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('reports that no camera was found', async () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => Promise.reject(new DOMException('none', 'NotFoundError')) },

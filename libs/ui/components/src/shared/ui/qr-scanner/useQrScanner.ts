@@ -6,6 +6,25 @@ import { decodeFrame } from './decodeFrame'
 /** How long a code that stays in front of the camera is not reported again. */
 const SAME_CODE_PAUSE_MS = 2000
 
+/** How long the camera may take to open before the scanner reports it unavailable. */
+const CAMERA_OPEN_MS = 10_000
+
+function openInTime(open: ScannerCamera): Promise<MediaStream> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('The camera did not open in time.')), CAMERA_OPEN_MS)
+    open().then(
+      (opened) => {
+        clearTimeout(timer)
+        resolve(opened)
+      },
+      (cause: unknown) => {
+        clearTimeout(timer)
+        reject(cause)
+      },
+    )
+  })
+}
+
 export interface QrScannerSource {
   camera: ScannerCamera
   isAccepted: (text: string) => boolean
@@ -80,7 +99,7 @@ export function useQrScanner(
     status.value = 'waiting'
     problem.value = ''
     try {
-      stream = await source.camera()
+      stream = await openInTime(source.camera)
     } catch (cause) {
       status.value = 'failed'
       problem.value = describeCameraFailure(cause)

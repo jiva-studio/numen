@@ -81,6 +81,23 @@ describe('the dialog that joins an identity', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('Checking the camera')
   })
 
+  it('shows the field to paste the link when the machine never answers the check of the camera', async () => {
+    vi.useFakeTimers()
+    try {
+      const client = createIdentityClient({})
+      const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
+      wrapper = mount(JoinDialog, {
+        props: { calls: store.devices.link, findCamera: () => new Promise<boolean>(() => undefined) },
+        attachTo: document.body,
+      })
+      await vi.advanceTimersByTimeAsync(2500)
+      expect(textInputs()).toHaveLength(1)
+      expect(wrapper.find('video').exists()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('shows the field and the paste hint when the camera is not allowed', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true, () =>
       Promise.reject(new DOMException('no', 'NotAllowedError')),

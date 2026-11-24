@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -71,7 +72,7 @@ func (h *Handler) GetIdentity(
 		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED, Detail: getDetail(err)}), nil
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, newInternalError(ctx, err)
 	}
 	return connect.NewResponse(&v1.GetIdentityResponse{Identity: writeIdentity(found)}), nil
 }
@@ -83,7 +84,7 @@ func (h *Handler) GenerateRecoveryWords(
 ) (*connect.Response[v1.GenerateRecoveryWordsResponse], error) {
 	words, err := h.identity.Identity.GenerateWords.Execute(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, newInternalError(ctx, err)
 	}
 	return connect.NewResponse(&v1.GenerateRecoveryWordsResponse{Words: words}), nil
 }
@@ -97,7 +98,7 @@ func (h *Handler) CreateIdentity(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, newInternalError(ctx, err)
 		}
 		return connect.NewResponse(&v1.CreateIdentityResponse{
 			Error:  code,
@@ -115,7 +116,7 @@ func (h *Handler) StartRestore(
 	if err := h.identity.Identity.StartRestore.Execute(ctx, r.Msg.GetWords(), r.Msg.GetChainMark()); err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, newInternalError(ctx, err)
 		}
 		return connect.NewResponse(&v1.StartRestoreResponse{Error: code, Detail: getDetail(err)}), nil
 	}
@@ -127,9 +128,15 @@ func (h *Handler) DeleteIdentity(
 	_ *connect.Request[v1.DeleteIdentityRequest],
 ) (*connect.Response[v1.DeleteIdentityResponse], error) {
 	if err := h.identity.Identity.Delete.Execute(ctx); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, newInternalError(ctx, err)
 	}
 	return connect.NewResponse(&v1.DeleteIdentityResponse{}), nil
+}
+
+// newInternalError logs the failure behind an internal error: the window shows a plain sentence only.
+func newInternalError(ctx context.Context, err error) error {
+	slog.ErrorContext(ctx, "an identity call failed", "error", err)
+	return connect.NewError(connect.CodeInternal, err)
 }
 
 func writeIdentity(found identitydomain.Identity) *v1.IdentityInfo {
@@ -162,7 +169,7 @@ func (h *Handler) SaveRecoveryKit(
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, newInternalError(ctx, err)
 		}
 		return connect.NewResponse(&v1.SaveRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
 	}
@@ -181,7 +188,7 @@ func (h *Handler) StartRestoreFromKit(
 	if err := h.identity.Kit.Restore.Execute(ctx, sheets, r.Msg.GetChainMark()); err != nil {
 		code, served := getErrorCode(err)
 		if !served {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, newInternalError(ctx, err)
 		}
 		return connect.NewResponse(&v1.StartRestoreFromKitResponse{Error: code, Detail: getDetail(err)}), nil
 	}

@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
@@ -48,11 +49,20 @@ func (r records) checkAbsent(ctx context.Context) error {
 	_, err := r.keys.GetKey(ctx, keyName)
 	switch {
 	case err == nil:
-		return identitydomain.ErrIdentityExists
+		return r.checkReplaceable(ctx)
 	case isNoKey(err):
 		return nil
 	}
 	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
+}
+
+// checkReplaceable refuses when the record has its chain. A record without a chain file cannot be used,
+// and a new identity, a restore or a link replaces it.
+func (r records) checkReplaceable(ctx context.Context) error {
+	if _, err := r.chains.Read(ctx); errors.Is(err, identitydomain.ErrNoChain) {
+		return nil
+	}
+	return identitydomain.ErrIdentityExists
 }
 
 func (r records) readState(ctx context.Context) (identitylib.State, error) {
