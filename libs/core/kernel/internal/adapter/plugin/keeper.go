@@ -46,7 +46,7 @@ type KeeperDeps struct {
 	Set          pluginViews
 	Mode         hostState
 	Supervisors  *supervision.Supervisors
-	Activation   *Activation
+	Activation   heldStarter
 	Requirements *Requirements
 	Stopper      pluginStopper
 	Report       func(error)

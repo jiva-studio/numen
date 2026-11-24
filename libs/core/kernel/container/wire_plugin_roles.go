@@ -54,7 +54,8 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	health := pluginhealth.NewItems()
 	failures := supervision.NewFailures(sups, clock, errs, health)
-	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}})
+	core := manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}
+	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: core})
 	files := storage.New(errs.Report, set.GetVersion)
 	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, GetTools: toolbridge.ListKeptItems(files)})
 	config := plugin.NewConfigPush(plugin.ConfigPushDeps{Set: set, Supervisors: sups, Report: errs.Report, Health: health})
@@ -110,10 +111,4 @@ func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string) {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
 		roles.Dependencies.Replace(newDependencyRegistry(roles.Clock, roles.Services.Observe, models))
 	}
-}
-
-// pluginLifecycleParts is the teardown and the keeper of the plugins as one lifecycle.
-type pluginLifecycleParts struct {
-	*plugin.Teardown
-	*plugin.Keeper
 }

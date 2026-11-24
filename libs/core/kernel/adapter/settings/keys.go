@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
@@ -48,4 +49,13 @@ func WriteCredentialsFile(path, value string) error {
 		Path: []string{settingsdomain.AppOwner, "keys", "credentialsFile"},
 		JSON: `"` + value + `"`,
 	}})
+}
+
+// WriteKeyFileMode writes the chosen mode to keys.credentialsFile of the settings file of the installation.
+func WriteKeyFileMode(mode domainkeyfile.Mode) error {
+	path, err := GetPath()
+	if err != nil {
+		return err
+	}
+	return WriteCredentialsFile(path, string(mode))
 }

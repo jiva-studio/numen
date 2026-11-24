@@ -30,7 +30,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
-	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
@@ -390,16 +389,8 @@ func mountKeyFile(w *windowRoutes, res *Resources) {
 	}
 	handler := windowkeyfile.NewHandler(windowkeyfile.UseCases{
 		GetState: keyfileusecase.NewGetState(res.KeyFile),
-		Choose:   keyfileusecase.NewChoose(res.KeyFile, rememberKeyFileMode),
+		Choose:   keyfileusecase.NewChoose(res.KeyFile, settingsadapter.WriteKeyFileMode),
 		Unlock:   keyfileusecase.NewUnlock(res.KeyFile),
 	})
 	w.Installation.Mount(editor.NewRoute(windowkeyfile.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
-func rememberKeyFileMode(mode domainkeyfile.Mode) error {
-	path, err := settingsadapter.GetPath()
-	if err != nil {
-		return err
-	}
-	return settingsadapter.WriteCredentialsFile(path, string(mode))
 }

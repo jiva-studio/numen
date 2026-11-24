@@ -150,7 +150,7 @@ func CreatePluginHost(management *PluginManagement, roles *PluginSupervision) (*
 			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
-			pluginLifecycle:    pluginLifecycleParts{Teardown: management.Teardown, Keeper: management.Keeper},
+			pluginLifecycle:    plugin.NewLifecycle(management.Teardown, management.Keeper),
 			dependencyReporter: roles.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
@@ -206,23 +206,13 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Activation:   management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
-		GetTools: func() hostendpoint.PluginTools {
-			return tools
-		},
-		Health: hostendpoint.HealthUseCases{
-			Report: pluginhealth.NewReport(processes.Health, management.Registry),
-			Clear:  pluginhealth.NewClear(processes.Health),
-		},
+		GetTools: func() hostendpoint.PluginTools { return tools },
+		Health:   hostendpoint.HealthUseCases{Report: pluginhealth.NewReport(processes.Health, management.Registry), Clear: pluginhealth.NewClear(processes.Health)},
 	}
 	var accounts hostendpoint.AccountCalls
 	if processes.Account != nil {
 		link := identity.NewAccountLink(processes.Account)
-		accounts = hostendpoint.AccountCalls{
-			Account: processes.Account,
-			Restore: processes.Account,
-			Link:    link,
-			Chain:   link,
-		}
+		accounts = hostendpoint.AccountCalls{Account: processes.Account, Restore: processes.Account, Link: link, Chain: link}
 	}
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers, accounts))
 	return services
