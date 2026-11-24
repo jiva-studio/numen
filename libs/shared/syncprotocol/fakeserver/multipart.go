@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"slices"
 	"strconv"
@@ -201,19 +200,15 @@ func listIncomplete(row *blobRow) *syncv1.MultipartIncomplete {
 }
 
 func (s *Server) joinParts(id string, row *blobRow) error {
-	object := make([]byte, 0, row.size)
+	parts := make([]string, 0, row.multipart.partCount)
 	for number := uint32(1); number <= row.multipart.partCount; number++ {
-		part, found := s.store.Read(getPartName(id, number))
-		if !found {
+		if !s.store.Has(getPartName(id, number)) {
 			return fmt.Errorf("%w: part %d is not stored", errIncomplete, number)
 		}
-		object = append(object, part...)
+		parts = append(parts, getPartName(id, number))
 	}
-	if err := s.store.Write(getObjectName(id), object); err != nil {
+	if err := s.store.Join(getObjectName(id), parts); err != nil {
 		return err
-	}
-	for number := uint32(1); number <= row.multipart.partCount; number++ {
-		s.store.Remove(getPartName(id, number))
 	}
 	row.multipart.isCompleted, row.isUploaded = true, true
 	return nil
@@ -257,11 +252,12 @@ func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, nu
 		http.NotFound(w, r)
 		return
 	}
-	body, err := io.ReadAll(io.LimitReader(r.Body, int64(expected)+1))
+	staged, err := s.store.Stage(r.Body, int64(expected)+1)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer staged.Discard()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	switch {
@@ -269,16 +265,16 @@ func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, nu
 		http.NotFound(w, r)
 	case !row.expiresAt.After(s.now()):
 		http.Error(w, "the upload URL expired", http.StatusForbidden)
-	case r.ContentLength != int64(len(body)) || uint64(len(body)) != expected:
+	case r.ContentLength != staged.Size || uint64(staged.Size) != expected:
 		http.Error(w, "the body is not of the size of the part", http.StatusBadRequest)
 	default:
-		if err := s.store.Write(getPartName(id, number), body); err != nil {
+		if err := staged.Commit(getPartName(id, number)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		row.multipart.parts[number] = expected
-		s.partLog = append(s.partLog, partLogEntry{Blob: hex.EncodeToString([]byte(id)), Part: number, Direction: "put", Bytes: int64(len(body))})
-		s.countReceivedBytes(int64(len(body)))
+		s.partLog = append(s.partLog, partLogEntry{Blob: hex.EncodeToString([]byte(id)), Part: number, Direction: "put", Bytes: staged.Size})
+		s.countReceivedBytes(staged.Size)
 		w.WriteHeader(http.StatusOK)
 	}
 }

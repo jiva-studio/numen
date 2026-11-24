@@ -165,11 +165,12 @@ func (s *Server) serveBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) storeBlobBody(w http.ResponseWriter, r *http.Request, id string) {
-	body, err := io.ReadAll(io.LimitReader(r.Body, syncprotocol.MaxBlobSize+1))
+	staged, err := s.store.Stage(r.Body, syncprotocol.MaxBlobSize+1)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer staged.Discard()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	row, found := s.blobs[id]
@@ -180,10 +181,10 @@ func (s *Server) storeBlobBody(w http.ResponseWriter, r *http.Request, id string
 		http.Error(w, "the subscription does not allow writes", http.StatusForbidden)
 	case !row.expiresAt.After(s.now()):
 		http.Error(w, "the upload URL expired", http.StatusForbidden)
-	case r.ContentLength != int64(len(body)) || uint64(len(body)) != row.size:
+	case r.ContentLength != staged.Size || uint64(staged.Size) != row.size:
 		http.Error(w, "the body is not of the reserved size", http.StatusBadRequest)
 	default:
-		if err := s.store.Write(getObjectName(id), body); err != nil {
+		if err := staged.Commit(getObjectName(id)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -195,19 +196,21 @@ func (s *Server) storeBlobBody(w http.ResponseWriter, r *http.Request, id string
 func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string) {
 	s.mu.Lock()
 	row, found := s.blobs[id]
-	var body []byte
+	var body io.ReadSeekCloser
+	var size int64
 	if found && row.state == blobCommitted && row.downloadUntil.After(s.now()) {
-		body = s.getBody(id, row)
+		body, size, _ = s.store.Open(getObjectName(id))
 	}
 	s.mu.Unlock()
 	if body == nil {
 		http.NotFound(w, r)
 		return
 	}
-	s.sendBody(w, r, id, body)
+	defer func() { _ = body.Close() }()
+	s.sendBody(w, r, id, body, size)
 }
 
-func (s *Server) getBody(id string, row *blobRow) []byte {
+func (s *Server) getBody(id string) []byte {
 	body, _ := s.store.Read(getObjectName(id))
 	return body
 }
@@ -242,7 +245,7 @@ func (s *Server) listStoredBlobs() []byte {
 	var all bytes.Buffer
 	for _, id := range ids {
 		all.WriteString(id)
-		all.Write(s.getBody(id, s.blobs[id]))
+		all.Write(s.getBody(id))
 	}
 	return all.Bytes()
 }

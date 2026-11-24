@@ -1,6 +1,7 @@
 package fakeserver
 
 import (
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -39,30 +40,33 @@ func (s *Server) serveStopAfter(direction *stopafter.Limit) http.HandlerFunc {
 	}
 }
 
-func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, body []byte) {
+func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, body io.ReadSeeker, size int64) {
 	from, status := int64(0), http.StatusOK
 	if header := r.Header.Get("Range"); header != "" {
 		text, found := strings.CutPrefix(header, "bytes=")
 		start, isOpen := strings.CutSuffix(text, "-")
 		parsed, err := strconv.ParseInt(start, 10, 64)
-		if !found || !isOpen || err != nil || parsed < 0 || parsed > int64(len(body)) {
+		if !found || !isOpen || err != nil || parsed < 0 || parsed > size {
 			http.Error(w, "the range cannot be served", http.StatusRequestedRangeNotSatisfiable)
 			return
 		}
 		from, status = parsed, http.StatusPartialContent
 	}
-	rest := body[from:]
+	rest := size - from
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", strconv.Itoa(len(rest)))
+	w.Header().Set("Content-Length", strconv.FormatInt(rest, 10))
 	if status == http.StatusPartialContent {
-		w.Header().Set("Content-Range", "bytes "+strconv.FormatInt(from, 10)+"-"+strconv.Itoa(len(body)-1)+"/"+strconv.Itoa(len(body)))
+		w.Header().Set("Content-Range", "bytes "+strconv.FormatInt(from, 10)+"-"+strconv.FormatInt(size-1, 10)+"/"+strconv.FormatInt(size, 10))
 	}
 	s.mu.Lock()
-	allowed, isEnd := s.stopDownload.Take(int64(len(rest)))
+	allowed, isEnd := s.stopDownload.Take(rest)
 	s.logDownload(id, from, allowed)
 	s.mu.Unlock()
 	w.WriteHeader(status)
-	if _, err := w.Write(rest[:allowed]); err != nil {
+	if _, err := body.Seek(from, io.SeekStart); err != nil {
+		return
+	}
+	if _, err := io.CopyN(w, body, allowed); err != nil {
 		return
 	}
 	if isEnd {

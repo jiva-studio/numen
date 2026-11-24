@@ -90,3 +90,18 @@ func TestTheStateSurvivesARestart(t *testing.T) {
 		t.Errorf("state after the restart = %s, want %s", after, before)
 	}
 }
+
+func TestTheSessionFolderIsRemovedWhenTheServerStops(t *testing.T) {
+	folder, remove, err := newSessionFolder()
+	if err != nil {
+		t.Fatal(err)
+	}
+	keep, _ := newTestKeeper(t, folder)
+	post(t, keep, "/numen.sync.v1.CatalogService/GetCatalog")
+
+	remove()
+
+	if _, err := os.Stat(folder); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the session folder is still there: %v", err)
+	}
+}

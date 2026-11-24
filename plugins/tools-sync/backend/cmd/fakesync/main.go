@@ -1,6 +1,6 @@
 // Command fakesync serves the fake sync server on a local port for the end-to-end tests. It prints the
 // address it listens on, then serves until it is stopped. With -heartbeat a stream of change hints sends a heartbeat after that silence. With -state-dir it keeps the data of the server in
-// a file there and reads it again at start, so the process can stop and run again. With -subscriptions a new account has no
+// a file there and reads it again at start, so the process can stop and run again; without it the server works in a fresh temporary folder that it removes when it stops (also on SIGINT and SIGTERM). With -subscriptions a new account has no
 // subscription and its writes are refused until it pays at the address CreateCheckout returns. The admin paths /admin/backup,
 // /admin/restore, /admin/announce and /admin/retention keep the state, put it back, announce the restore and delete the
 // vaults, as the operator of a real server does; a backup and an announced epoch live in the memory of the process.
@@ -18,10 +18,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -141,8 +143,19 @@ func main() {
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
 	plansFlag := flag.String("plans", "", "plans the server sells as id:GB pairs, such as basic:10,plus:100; empty sells basic, plus and pro")
 	heartbeat := flag.Duration("heartbeat", syncprotocol.WatchHeartbeat, "silence after which a stream of change hints sends a heartbeat")
-	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
+	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty uses a fresh folder for this run and removes it at exit")
 	flag.Parse()
+	cleanup := func() {}
+	if *stateDir == "" {
+		folder, remove, err := newSessionFolder()
+		if err != nil {
+			log.Fatal(err)
+		}
+		*stateDir, cleanup = folder, remove
+	}
+	defer cleanup()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	if *protocol > math.MaxUint32 {
 		log.Fatalf("-protocol %d does not fit in 32 bits", *protocol)
 	}
@@ -151,8 +164,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *address)
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", *address)
 	if err != nil {
+		cleanup()
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
@@ -168,16 +182,37 @@ func main() {
 	exit := make(chan struct{})
 	handler := newKeeper(fake, getStatePath(fake, *stateDir), &stopped, exit)
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
+		cleanup()
 		log.Fatal(err)
 	}
 	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		if err := server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+			cleanup()
 			log.Fatal(err)
 		}
 	}()
-	<-exit
+	select {
+	case <-exit:
+	case <-ctx.Done():
+	}
 	if err := server.Close(); err != nil {
 		log.Print(err)
 	}
+}
+
+// newSessionFolder makes the folder a run without -state-dir works in, and returns the function that removes it.
+func newSessionFolder() (string, func(), error) {
+	folder, err := os.MkdirTemp("", "fakesync-")
+	if err != nil {
+		return "", nil, err
+	}
+	log.Printf("working in %s; it is removed when the server stops", folder)
+	return folder, func() {
+		if err := os.RemoveAll(folder); err != nil {
+			log.Print(err)
+			return
+		}
+		log.Printf("removed %s", folder)
+	}, nil
 }
