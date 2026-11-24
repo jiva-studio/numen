@@ -22,7 +22,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <SettingRow at="identity-kit" :name="words.kitTitle" :detail="words.kitDetail">
+  <SettingRow
+    at="identity-kit"
+    :name="words.kitTitle"
+    :detail="words.kitDetail"
+    :details="words.kitDetails"
+  >
     <Button
       type="button"
       variant="ghost"

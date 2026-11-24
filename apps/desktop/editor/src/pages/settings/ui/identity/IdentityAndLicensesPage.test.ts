@@ -571,6 +571,9 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
   it('is one row of the identity card with a button that downloads a PDF', async () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Recovery kit')
+    expect(tab.text()).toContain('Printed sheets that bring your identity back')
+    expect(tab.text()).not.toContain('if you lose this computer')
+    await tab.get('[aria-label="About Recovery kit"]').trigger('click')
     expect(tab.text()).toContain(
       'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
     )

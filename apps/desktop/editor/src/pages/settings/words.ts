@@ -151,7 +151,8 @@ export const WORDS = {
   identityDeleteCancel: 'Cancel',
   /** The recovery kit of three sheets on the identity section, saved as a PDF. */
   kitTitle: 'Recovery kit',
-  kitDetail:
+  kitDetail: 'Printed sheets that bring your identity back',
+  kitDetails:
     'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
