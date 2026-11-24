@@ -6,7 +6,6 @@ Feature: Numen Sync smaller plan
   I want to move to a smaller plan when my notes shrink
   So that I do not pay for space I do not use and do not lose notes
 
-
   Background:
     Given the empty vault "Test"
     And a sync server that sells the plans "Basic" with 10 GB, "Plus" with 100 GB and "Pro" with 250 GB runs

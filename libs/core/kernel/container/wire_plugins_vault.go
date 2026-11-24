@@ -99,8 +99,8 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Create:       file.NewCreateFile(vaultDeps.Writers, index),
 			Index:        scan,
 			Locks:        hold.NewLocks(vaultDeps.Writers, hold.LockHold),
-			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), fileCounts{count}, fileHashes{stat}),
-			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), fileCounts{count}, fileHashes{stat}),
+			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), hostvault.NewFileCounts(count), hostvault.NewFileHashes(stat)),
+			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), hostvault.NewFileCounts(count), hostvault.NewFileHashes(stat)),
 			Place:        file.NewPlaceStaged(stat, scan, vaultDeps.Writers),
 			StoreReaders: storeReaders, StoreWriters: storeWriters,
 		},
@@ -177,16 +177,4 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 func getPluginDir(resolver pluginResolver, id string) (string, bool) {
 	p, ok := resolver.GetPlugin(id)
 	return p.Dir, ok
-}
-
-type fileCounts struct{ count *file.CountFiles }
-
-func (c fileCounts) Count(ctx context.Context, v domain.Vault, path string) (int, error) {
-	return c.count.Execute(ctx, v, path)
-}
-
-type fileHashes struct{ hash *file.HashFile }
-
-func (h fileHashes) Hash(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error) {
-	return h.hash.Execute(ctx, v, path)
 }

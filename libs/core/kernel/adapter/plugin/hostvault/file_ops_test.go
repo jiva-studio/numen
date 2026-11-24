@@ -54,8 +54,8 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		Writer{
 			Index:  scan,
 			Place:  file.NewPlaceStaged(stat, scan, writers),
-			Move:   note.NewMoveChecked(note.MoveFile{}, fileCounts{count}, fileHashes{stat}),
-			Remove: note.NewRemoveChecked(note.RemoveFile{}, fileCounts{count}, fileHashes{stat}),
+			Move:   note.NewMoveChecked(note.MoveFile{}, NewFileCounts(count), NewFileHashes(stat)),
+			Remove: note.NewRemoveChecked(note.RemoveFile{}, NewFileCounts(count), NewFileHashes(stat)),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},
@@ -327,16 +327,4 @@ func TestPlaceFileNeverShowsAReaderAFileThatIsNotWhole(t *testing.T) {
 	if got, readErr := os.ReadFile(target); readErr != nil || string(got) != content {
 		t.Errorf("the placed file holds %d bytes (%v), want the %d bytes of the staged file", len(got), readErr, len(content))
 	}
-}
-
-type fileCounts struct{ count *file.CountFiles }
-
-func (c fileCounts) Count(ctx context.Context, v domain.Vault, path string) (int, error) {
-	return c.count.Execute(ctx, v, path)
-}
-
-type fileHashes struct{ hash *file.HashFile }
-
-func (h fileHashes) Hash(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error) {
-	return h.hash.Execute(ctx, v, path)
 }
