@@ -610,8 +610,8 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### reader
 
-- Is: A person who reads a share, with an identity of their own. A reader needs no subscription. The owner adds a reader with the reader code the person gives, and compares the account fingerprint with the person before sharing.
-- Texts: "Reader code", "Readers", "Reader account fingerprint" (plugins/tools-sync/frontend/words.ts).
+- Is: A person who reads a share, with an identity of their own. A reader needs no subscription. The owner sends a link, and allows the device that opens it after comparing the confirmation code on both screens. The owner sees the device by its name and account fingerprint.
+- Texts: "Devices that can read this folder", "Remove access", "Code" (plugins/tools-sync/frontend/words.ts).
 - Not: not a collaborator: a reader never writes.
 
 ### invitation
