@@ -66,6 +66,10 @@ Then('the sync settings list the synced vault {string}', async ({ person }, vaul
   await person.computers.expectConnected('first', vault)
 })
 
+Then('the vault {string} is not connected', async ({ person }, vault: string) => {
+  await person.computers.expectNotConnected('first', vault)
+})
+
 Then('the sync settings warn about {string}', async ({ person }, text: string) => {
   await person.syncVaults.expectWarning(text)
 })
