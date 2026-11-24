@@ -107,7 +107,7 @@ func TestGetIdentity_AnswersNothingWithoutAnIdentityAndTheInfoAfterCreate(t *tes
 	if err != nil || none.Msg.GetIdentity() != nil {
 		t.Fatalf("GetIdentity() = %v, %v; want no identity", none, err)
 	}
-	created := create(t, h, getLegalWords())
+	created := createWithNewWords(t, h)
 	if created.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("CreateIdentity() refused: %v %q", created.GetError(), created.GetDetail())
 	}
@@ -165,8 +165,8 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testin
 func TestCreateIdentity_RefusesASecondIdentity(t *testing.T) {
 	t.Parallel()
 	h := newHandler(newKeys())
-	create(t, h, getLegalWords())
-	if answer := create(t, h, getLegalWords()); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	createWithNewWords(t, h)
+	if answer := createWithNewWords(t, h); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
 		t.Errorf("answer = %v", answer)
 	}
 }
@@ -175,7 +175,7 @@ func TestCreateIdentity_AnswersAKeyStoreFailureAsACode(t *testing.T) {
 	t.Parallel()
 	keys := newKeys()
 	keys.setFails = errors.New("the keychain refuses")
-	answer := create(t, newHandler(keys), getLegalWords())
+	answer := createWithNewWords(t, newHandler(keys))
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED || len(keys.keys) != 0 {
 		t.Errorf("answer = %v, keys = %v", answer, keys.keys)
 	}
@@ -187,7 +187,7 @@ func TestDeleteIdentity_RemovesTheIdentityAndAnswersWithoutOne(t *testing.T) {
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
 		t.Fatalf("delete without identity = %v", err)
 	}
-	create(t, h, getLegalWords())
+	createWithNewWords(t, h)
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
 		t.Fatal(err)
 	}
@@ -209,5 +209,53 @@ func TestNewService_AnswersUnimplementedWhereTheInstallationHasNoKeyStore(t *tes
 	}
 	if path, handler := windowidentity.NewRoute(service, connect.WithInterceptors()); path == "" || handler == nil {
 		t.Error("NewRoute returned no route")
+	}
+}
+
+func makeWords(t *testing.T, h *windowidentity.Handler) []string {
+	t.Helper()
+	generated, err := h.GenerateRecoveryWords(t.Context(), connect.NewRequest(&v1.GenerateRecoveryWordsRequest{}))
+	if err != nil {
+		t.Fatalf("GenerateRecoveryWords() error = %v", err)
+	}
+	return generated.Msg.GetWords()
+}
+
+func createWithNewWords(t *testing.T, h *windowidentity.Handler) *v1.CreateIdentityResponse {
+	t.Helper()
+	return create(t, h, makeWords(t, h))
+}
+
+func TestCreateIdentity_RefusesValidWordsTheCoreDidNotMake(t *testing.T) {
+	t.Parallel()
+	keys := newKeys()
+	h := newHandler(keys)
+
+	answer := create(t, h, getLegalWords())
+
+	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || len(keys.keys) != 0 {
+		t.Errorf("answer = %v with %d entries kept, want INVALID_WORDS and nothing kept", answer.GetError(), len(keys.keys))
+	}
+}
+
+func TestCreateIdentity_AcceptsTheGeneratedWordsOnce(t *testing.T) {
+	t.Parallel()
+	h := newHandler(newKeys())
+	generated, err := h.GenerateRecoveryWords(t.Context(), connect.NewRequest(&v1.GenerateRecoveryWordsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	words := generated.Msg.GetWords()
+	if first := create(t, h, words); first.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("first create = %v, want success", first.GetError())
+	}
+	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
+		t.Fatal(err)
+	}
+
+	again := create(t, h, words)
+
+	if again.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS {
+		t.Errorf("second create = %v, want INVALID_WORDS", again.GetError())
 	}
 }

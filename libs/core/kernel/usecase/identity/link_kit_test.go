@@ -58,7 +58,7 @@ func newLinkDevice(name string, clock *testsupport.ManualClock) *linkDevice {
 	return &linkDevice{keys: keys, chains: chains, deps: deps}
 }
 
-func (d *linkDevice) create() *identity.CreateIdentity   { return identity.NewCreateIdentity(d.deps) }
+func (d *linkDevice) create() *identity.SeededCreate     { return identity.NewSeededCreate(d.deps) }
 func (d *linkDevice) get() *identity.GetIdentity         { return identity.NewGetIdentity(d.deps) }
 func (d *linkDevice) start() *identity.StartLink         { return identity.NewStartLink(d.deps) }
 func (d *linkDevice) view() *identity.GetLink            { return identity.NewGetLink(d.deps) }

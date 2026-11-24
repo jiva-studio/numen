@@ -14,12 +14,13 @@ type pendingRestore struct {
 	replaced  chan struct{}
 }
 
-// restoreHold is the restore that waits for the account chain of a sync plugin: replace, isCurrent and read take the
+// restoreHold is the restore that waits for the account chain of a sync plugin: replace, isCurrent, read and expire take the
 // lock of the store themselves, and hold waits for the lock and returns the store with the function that gives it back.
 type restoreHold interface {
 	replace(next *pendingRestore)
 	isCurrent(restore *pendingRestore) bool
 	read() *pendingRestore
+	expire(restore *pendingRestore)
 	hold() (*pendingStore, func())
 }
 
@@ -56,8 +57,19 @@ func (s *pendingStore) isCurrent(restore *pendingRestore) bool {
 	return s.current == restore
 }
 
+// read returns the current restore to compare it with the store later; its keys are read only while hold holds the lock.
 func (s *pendingStore) read() *pendingRestore {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.current
+}
+
+func (s *pendingStore) expire(restore *pendingRestore) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.current == restore {
+		s.clearLocked()
+		restore.recovery = identitylib.RecoveryKey{}
+		restore.device = identitylib.DeviceKey{}
+	}
 }

@@ -13,18 +13,19 @@ import (
 type CreateIdentity struct {
 	records records
 	builder stateBuilder
+	created *generatedWords
 }
 
 // NewCreateIdentity returns the use case that creates the identity of this device.
 func NewCreateIdentity(d Deps) *CreateIdentity {
-	return &CreateIdentity{records: d.records, builder: d.getBuilder()}
+	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: &d.progress.created}
 }
 
-// Execute parses the words (ErrInvalidWords wrapping the library error), refuses when the key store
+// Execute accepts only the words GenerateRecoveryWords made last (ErrInvalidWords otherwise); it parses the words (ErrInvalidWords wrapping the library error), refuses when the key store
 // holds an entry of the identity (ErrIdentityExists, even when it does not parse), derives the
 // recovery key, makes new account keys and a device key, builds the chain (genesis and this device,
 // signed by the recovery key), wraps the account keys for the device, writes the chain file and then
-// the record with one SetKey. The words and the entropy are dropped when Execute returns.
+// the record with one SetKey. The generated words are dropped once the record is written, so a failed attempt can be repeated with the same words.
 func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identitydomain.Identity, error) {
 	recovery, err := identitylib.ParseRecoveryWords(words)
 	if err != nil {
@@ -33,6 +34,9 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := u.records.checkAbsent(ctx); err != nil {
 		return identitydomain.Identity{}, err
 	}
+	if !u.created.matches(words) {
+		return identitydomain.Identity{}, fmt.Errorf("%w: these are not the words the core made", identitydomain.ErrInvalidWords)
+	}
 	state, err := u.buildState(recovery)
 	if err != nil {
 		return identitydomain.Identity{}, err
@@ -40,6 +44,7 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err := u.records.writeNewState(ctx, state.Record, state.Chain); err != nil {
 		return identitydomain.Identity{}, err
 	}
+	u.created.drop()
 	return toIdentity(state)
 }
 
