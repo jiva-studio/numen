@@ -148,7 +148,7 @@ export const Deleting: Story = {
   args: { isAskingDelete: true },
   play: async ({ canvasElement }) => {
     await expect(
-      await within(canvasElement).findByRole('alertdialog', { name: 'Delete identity?' }),
+      await within(canvasElement).findByRole('alertdialog', { name: 'Delete the identity from this device?' }),
     ).toBeVisible()
   },
 }

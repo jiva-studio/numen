@@ -68,3 +68,9 @@ Both use the same tokens: `tokens.css` holds every value, `theme.css` defines Ta
 **Scoped CSS overrides a utility.** Component styles are unlayered and Tailwind's are in `@layer`, so an unlayered rule wins whatever its specificity. A scoped block on a DOM component is therefore for what a utility cannot express — an input field and its copy sharing one grid cell — and never for what one can.
 
 **A component root has the class `numen`.** The tokens are declared on `:root` and on `.numen` both, so a component works in a page that never set them.
+
+## Dialogs
+
+**A dialog is `Dialog`, everywhere.** A window, a settings page and a plugin draw every modal with `Dialog` and never with a backdrop and a panel of their own. It takes `label` (the title), `hint`, `size` (`sm` 22rem, `md` 28rem, `lg` 36rem; as high as its content, never the full height), `role`, `tone`, the default slot for the body and the `actions` slot for the buttons, which stand at the right with the primary one last. It emits `cancel` for Escape and a press on the backdrop, traps Tab, takes the focus to its first control and gives it back, and with `is-form` it is a form that emits `submit`. `ConfirmDialog` is `Dialog` with a question and two buttons.
+
+**The area is chosen by the host.** A parent that calls `provideDialogHost` with an element (a tab, a panel) gets its dialogs over that element alone; with none, a dialog covers the window. A tab body that is `contain: strict` already holds a fixed backdrop to itself. The look is the same in both: the backdrop colour, the 1.25rem padding, the title in `--numen-title-size`, and all other text in `--numen-text-2`.
