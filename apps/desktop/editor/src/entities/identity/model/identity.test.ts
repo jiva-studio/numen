@@ -404,7 +404,7 @@ describe('the identity store and the recovery kit', () => {
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ sheets: SHEETS })
   })
 
-  it('says that words of another account are not those of this account', async () => {
+  it('says that words of another identity are not those of this identity', async () => {
     const { store } = createStore(
       createClient({
         saveKit: () => Promise.resolve(asFailure({ error: 'otherAccount', message: '' })),
@@ -412,11 +412,11 @@ describe('the identity store and the recovery kit', () => {
     )
     expect(await store.saveKit({ words: WORDS })).toStrictEqual({
       ok: false,
-      error: 'The words belong to another account.',
+      error: 'The words belong to another identity.',
     })
   })
 
-  it('says that sheets of another account are not those of this account', async () => {
+  it('says that sheets of another identity are not those of this identity', async () => {
     const { store } = createStore(
       createClient({
         saveKit: () => Promise.resolve(asFailure({ error: 'otherAccount', message: '' })),
@@ -424,7 +424,7 @@ describe('the identity store and the recovery kit', () => {
     )
     expect(await store.saveKit({ sheets: SHEETS })).toStrictEqual({
       ok: false,
-      error: 'The sheets belong to another account.',
+      error: 'The sheets belong to another identity.',
     })
   })
 
@@ -444,7 +444,7 @@ describe('the identity store and the recovery kit', () => {
     const texts: Array<[IdentityFailure['error'], string]> = [
       ['notEnoughSheets', 'One more sheet is needed.'],
       ['invalidSheets', 'Some sheets are not valid.'],
-      ['otherAccount', 'The sheets belong to another account.'],
+      ['otherAccount', 'The sheets belong to another identity.'],
     ]
     for (const [error, text] of texts) {
       const { store } = createStore(
@@ -522,7 +522,7 @@ describe('the devices and the link of the identity store', () => {
     { name: 'Phone', fingerprint: 'B', addedAt: 'y', isThis: false, isRevoked: true },
   ]
 
-  it('loads the devices of the account', async () => {
+  it('loads the devices of the identity', async () => {
     const { store } = createStore(
       createClient({ listDevices: () => Promise.resolve(asValue(DEVICES)) }),
     )

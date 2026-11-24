@@ -117,7 +117,7 @@ describe('the restore from sheets dialog', () => {
 
   it('keeps the list after a failure and sets the sheets back to pending', async () => {
     const { scan, problem } = createDialog(() => {
-      problem.value = 'The sheets belong to another account.'
+      problem.value = 'The sheets belong to another identity.'
       return Promise.resolve()
     })
     await scan(makeCode('C0DE', 1, 'a'))
@@ -134,12 +134,12 @@ describe('the restore from sheets dialog', () => {
 
   it('shows the failure of the restore and starts over with the next sheet scanned', async () => {
     const { scan, problem } = createDialog(() => {
-      problem.value = 'The sheets belong to another account.'
+      problem.value = 'The sheets belong to another identity.'
       return Promise.resolve()
     })
     await scan(makeCode('C0DE', 1, 'a'))
     await scan(makeCode('C0DE', 2, 'b'))
-    expect(getBody().get('[role=alert]').text()).toBe('The sheets belong to another account.')
+    expect(getBody().get('[role=alert]').text()).toBe('The sheets belong to another identity.')
     expect(getBody().findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
     await scan(makeCode('C0DE', 3, 'c'))
     expect(getBody().find('[role=alert]').exists()).toBe(false)

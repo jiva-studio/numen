@@ -146,7 +146,7 @@ describe('useVaults', () => {
     expect(model.state.error.value).toBe('boom')
   })
 
-  it('offers the vaults of the account that this device does not hold', async () => {
+  it('offers the vaults of the identity that this device does not hold', async () => {
     const model = createModel(createClient([createVault({ id: 'a' })]))
 
     await model.actions.load()
@@ -156,7 +156,7 @@ describe('useVaults', () => {
     expect(model.state.canGetFromCloud.value).toBe(true)
   })
 
-  it('offers nothing when every vault of the account is on this device', async () => {
+  it('offers nothing when every vault of the identity is on this device', async () => {
     const client = createClient()
     client.listRemoteVaults.mockResolvedValue({
       vaults: [{ remoteId: 'bb22', name: 'Home', isConnected: true }],
@@ -168,7 +168,7 @@ describe('useVaults', () => {
     expect(model.state.canGetFromCloud.value).toBe(false)
   })
 
-  it('still lists the vaults when the vaults of the account cannot be read', async () => {
+  it('still lists the vaults when the vaults of the identity cannot be read', async () => {
     const client = createClient([createVault({ state: 'connected' })])
     client.listRemoteVaults.mockRejectedValue(new Error('down'))
     const model = createModel(client)
@@ -179,7 +179,7 @@ describe('useVaults', () => {
     expect(model.state.cloudVaults.value).toStrictEqual([])
   })
 
-  it('connects a vault to a vault of the account and reads the vaults again', async () => {
+  it('connects a vault to a vault of the identity and reads the vaults again', async () => {
     const client = createClient()
     const model = createModel(client)
 
@@ -203,7 +203,7 @@ describe('useVaults', () => {
     expect(model.state.error.value).toBe('a copy of a connected vault')
   })
 
-  describe('connecting to a vault of the account that holds notes', () => {
+  describe('connecting to a vault of the identity that holds notes', () => {
     const differ = (count: number) => {
       const client = createClient()
       client.getConnectPreview.mockResolvedValue({ differCount: count })

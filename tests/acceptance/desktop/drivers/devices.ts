@@ -1,6 +1,6 @@
 /**
  * The person at the devices of the page "Identity and licenses" of one computer: the list of devices, the dialog that
- * shows the QR code that links a new device, the dialog that joins an account by a QR code, and the revoke of a device.
+ * shows the QR code that links a new device, the dialog that joins an identity by a QR code, and the revoke of a device.
  */
 import { expect, type Locator } from 'playwright/test'
 import { decodeQr } from './qr.js'
@@ -11,7 +11,7 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const LIST = 'Devices'
 const LINK_NEW = 'Link a new device'
-const JOIN_WITH_QR = 'Use existing account'
+const JOIN_WITH_QR = 'Use existing identity'
 const QR_IMAGE = 'QR code'
 const PASTE_FIELD = 'Link from the other device'
 const USE_LINK = 'Use link'
@@ -19,7 +19,7 @@ const LINK_THIS = 'Link device'
 const DECLINE = "Don't link"
 const CODE_FIELD = 'Enter the code shown on your other device'
 const CONFIRM_CODE = 'Confirm'
-const JOIN = 'Use account'
+const JOIN = 'Use identity'
 const REVOKE = 'Remove'
 const THIS_DEVICE = 'This device'
 const REVOKED = 'Revoked'
@@ -27,7 +27,7 @@ const DELETE_REVOKED = 'Delete identity from this device'
 const DEVICE_NAME = 'Device name'
 const DEVICE_FINGERPRINT = 'Device fingerprint'
 const CONFIRMATION_CODE = 'Confirmation code'
-const ACCOUNT_FINGERPRINT = 'Account fingerprint'
+const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 /** The people at the two computers act within seconds; the plugin carries a message in about a second. */
 const STEP_LIMIT_MS = 30_000
 
@@ -79,7 +79,7 @@ export class DevicesDriver {
     return this.getDialog()
   }
 
-  /** Expects the page of this computer to offer no way to join an account: it has one already. */
+  /** Expects the page of this computer to offer no way to join an identity: it has one already. */
   async expectNoJoin(): Promise<void> {
     const panel = await this.showPage()
     await expect(panel.getByRole('button', { name: LINK_NEW, exact: true })).toBeVisible({ timeout: STEP_LIMIT_MS })
@@ -92,12 +92,12 @@ export class DevicesDriver {
     return decodeQr(this.scenario.page.context(), await image.screenshot())
   }
 
-  /** Shows the QR code of a device that has the account and returns the text the picture holds. */
+  /** Shows the QR code of a device that has the identity and returns the text the picture holds. */
   async showQrToLink(): Promise<string> {
     return this.readQr(await this.openLinkDialog())
   }
 
-  /** A new device reads the QR code of a device that has the account: the desktop takes the link by paste. */
+  /** A new device reads the QR code of a device that has the identity: the desktop takes the link by paste. */
   async scanToJoin(text: string): Promise<void> {
     const dialog = await this.openJoinDialog()
     const field = dialog.getByRole('textbox', { name: PASTE_FIELD })
@@ -123,12 +123,12 @@ export class DevicesDriver {
     }
   }
 
-  /** The name and the fingerprint of the new device that the dialog of the device that has the account shows. */
+  /** The name and the fingerprint of the new device that the dialog of the device that has the identity shows. */
   async readPeer(): Promise<{ readonly name: string; readonly fingerprint: string }> {
     return this.readOwnDevice()
   }
 
-  /** The six digits the device that has the account shows when it scanned the QR code of a new device. */
+  /** The six digits the device that has the identity shows when it scanned the QR code of a new device. */
   async readConfirmationCode(): Promise<string> {
     const code = this.getDialog().getByLabel(CONFIRMATION_CODE)
     await expect(code).toBeVisible({ timeout: STEP_LIMIT_MS })
@@ -145,14 +145,14 @@ export class DevicesDriver {
     await dialog.getByRole('button', { name: CONFIRM_CODE, exact: true }).click()
   }
 
-  /** Expects the page of a new device to ask whether to join the account with this fingerprint, and answers Join where answer is set. */
+  /** Expects the page of a new device to ask whether to join the identity with this fingerprint, and answers Join where answer is set. */
   async expectAskedToJoin(account: string, answer: boolean): Promise<void> {
     const dialog = this.getDialog()
-    await expect(dialog.getByText(`Use existing account ${account}?`)).toBeVisible({ timeout: STEP_LIMIT_MS })
+    await expect(dialog.getByText(`Use existing identity ${account}?`)).toBeVisible({ timeout: STEP_LIMIT_MS })
     if (answer) await dialog.getByRole('button', { name: JOIN, exact: true }).click()
   }
 
-  /** Joins where the page asks to, and expects the page to show the account. */
+  /** Joins where the page asks to, and expects the page to show the identity. */
   async expectAccount(account: string): Promise<void> {
     await this.joinWhereAsked()
     const panel = await this.showPage()

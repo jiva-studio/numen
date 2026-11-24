@@ -42,7 +42,7 @@ const createClients = (shared: SharedFolder[] = [FOOD]) => {
 }
 
 describe('the page of the shared folders', () => {
-  it('lists the folders shared by this account with the devices that read them', async () => {
+  it('lists the folders shared by this identity with the devices that read them', async () => {
     const { view } = createClients()
 
     await view.load()
@@ -57,7 +57,7 @@ describe('the page of the shared folders', () => {
     ])
   })
 
-  it('lists the folders shared with this account and how they stand', async () => {
+  it('lists the folders shared with this identity and how they stand', async () => {
     const { view } = createClients()
 
     await view.load()

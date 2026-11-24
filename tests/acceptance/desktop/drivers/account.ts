@@ -1,4 +1,4 @@
-/** The person at the card of the account on the page "Identity and licenses": deletes the cloud data, restores the account and exports what the server holds. */
+/** The person at the card of the identity on the page "Identity and licenses": deletes the cloud data, restores the cloud data and exports what the server holds. */
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, type Locator } from 'playwright/test'
@@ -8,13 +8,13 @@ import type { SettingsDriver } from './settings.js'
 
 const PAGE = 'Identity and licenses'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
-const ACCOUNT_FINGERPRINT = 'Account fingerprint'
+const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 const MORE_ACTIONS = 'More actions'
 const DELETE_CLOUD_DATA = 'Delete cloud data'
-const RESTORE_ACCOUNT = 'Restore account'
-const EXPORT_ACCOUNT_DATA = 'Export account data'
-const EXPORT_FILE = 'Numen Sync account data.json'
-/** The plugin reads the account when the card opens and every 3 seconds while a payment is awaited. */
+const RESTORE_ACCOUNT = 'Restore cloud data'
+const EXPORT_ACCOUNT_DATA = 'Export identity data'
+const EXPORT_FILE = 'Numen Sync identity data.json'
+/** The plugin reads the identity when the card opens and every 3 seconds while a payment is awaited. */
 const ACCOUNT_LIMIT_MS = 20_000
 
 export class AccountDriver {
@@ -37,7 +37,7 @@ export class AccountDriver {
     await this.scenario.page.getByRole('menuitem', { name: item }).click()
   }
 
-  /** Opens the question of the card, types the account fingerprint and confirms the deletion of the cloud data. */
+  /** Opens the question of the card, types the identity fingerprint and confirms the deletion of the cloud data. */
   async deleteCloudData(): Promise<void> {
     await this.openDeleteQuestion()
     await this.confirmDeleteCloudData(this.identity.getAccountFingerprint())
@@ -79,7 +79,7 @@ export class AccountDriver {
     await card.getByRole('button', { name: RESTORE_ACCOUNT }).click()
   }
 
-  /** Exports the account data into the folder the save dialog answers with, and keeps the text of the file. */
+  /** Exports the identity data into the folder the save dialog answers with, and keeps the text of the file. */
   async exportAccountData(): Promise<void> {
     const folder = path.join(this.scenario.getWorld().root, `account-export-${++this.downloads}`)
     fs.mkdirSync(folder, { recursive: true })
@@ -93,7 +93,7 @@ export class AccountDriver {
     this.exported = fs.readFileSync(target, 'utf8')
   }
 
-  /** Expects the file the export saved to hold the account fingerprint. */
+  /** Expects the file the export saved to hold the identity fingerprint. */
   expectExportNamesAccount(): void {
     expect(this.exported).toContain(this.identity.getAccountFingerprint())
   }

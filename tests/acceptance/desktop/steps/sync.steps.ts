@@ -14,7 +14,7 @@ Then('the sync server has a session for this device', async ({ person }) => {
   await person.sync.expectSession()
 })
 
-Then('the sync server has a session for the account fingerprint of the identity', async ({ person }) => {
+Then('the sync server has a session for the fingerprint of the identity', async ({ person }) => {
   await person.sync.expectSessionForAccount()
 })
 
@@ -362,14 +362,14 @@ Then('the cloud data is kept', async ({ person }) => {
   await person.accounts.expectDeleting(false)
 })
 
-When('the person restores the account', async ({ person }) => {
+When('the person restores the cloud data', async ({ person }) => {
   await person.accounts.restoreAccount()
 })
 
-When('the person exports the account data', async ({ person }) => {
+When('the person exports the identity data', async ({ person }) => {
   await person.accounts.exportAccountData()
 })
 
-Then('the saved file names the account of the person', ({ person }) => {
+Then('the saved file names the identity of the person', ({ person }) => {
   person.accounts.expectExportNamesAccount()
 })

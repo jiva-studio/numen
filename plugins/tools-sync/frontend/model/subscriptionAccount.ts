@@ -8,7 +8,7 @@ import type {
 
 const NO_DATES: SubscriptionDates = { periodEnd: '', writesEnd: '', deleteAt: '' }
 
-/** What the card knows of the account: the last answer of the server and the plans it sells. */
+/** What the card knows of the identity: the last answer of the server and the plans it sells. */
 export interface SubscriptionAccount {
   readonly status: Ref<SubscriptionStatus>
   readonly phase: Ref<SubscriptionPhase | ''>

@@ -20,7 +20,7 @@ import {
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
-const NO_IDENTITY = 'An identity is your Numen account.'
+const NO_IDENTITY = 'An identity is who you are in Numen.'
 
 const RECOVERY_WORDS = [
   'legal',
@@ -241,25 +241,25 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).toContain(NO_IDENTITY)
     expect(findButton(tab, 'Create identity')).toBeDefined()
     expect(findButton(tab, 'Restore')).toBeDefined()
-    expect(tab.text()).not.toContain('Account fingerprint')
+    expect(tab.text()).not.toContain('Identity fingerprint')
   })
 
   it('shows the join by a QR code in the header with restore and create, and create keeps its text', async () => {
     const { tab } = await createPage()
-    const header = findButton(tab, 'Use existing account')?.element.parentElement
+    const header = findButton(tab, 'Use existing identity')?.element.parentElement
     expect(header?.contains(findButton(tab, 'Restore')?.element ?? null)).toBe(true)
     expect(header?.contains(findButton(tab, 'Create identity')?.element ?? null)).toBe(true)
   })
 
   it('opens the join dialog from the header', async () => {
     const { tab } = await createPage()
-    await press(tab, 'Use existing account')
-    expect(getDialog(tab).text()).toContain('Use existing account')
+    await press(tab, 'Use existing identity')
+    expect(getDialog(tab).text()).toContain('Use existing identity')
   })
 
-  it('shows the account fingerprint and the linked device when the device has an identity', async () => {
+  it('shows the identity fingerprint and the linked device when the device has an identity', async () => {
     const { tab } = await createPage(IDENTITY)
-    expect(tab.text()).toContain('Account fingerprint')
+    expect(tab.text()).toContain('Identity fingerprint')
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
     expect(tab.text()).toContain('Laptop')
     expect(tab.text()).toContain('This device')
@@ -572,7 +572,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Recovery kit')
     expect(tab.text()).toContain(
-      'Printed sheets that bring your account back if you lose this computer. Any two of the three restore it.',
+      'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
     )
     expect(getDownload(tab)).toBeDefined()
     expect(hasDialog(tab)).toBe(false)
@@ -630,12 +630,12 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
 
   it('shows a refusal under the fields and keeps the dialog open', async () => {
     const { tab } = await createPage(IDENTITY, undefined, {
-      saveKit: asFailure('The words belong to another account.'),
+      saveKit: asFailure('The words belong to another identity.'),
     })
     await pressDownload(tab)
     await enterProof(tab, RECOVERY_WORDS.join(' '))
     await submitRestore(tab)
-    expect(getDialog(tab).get('[role="alert"]').text()).toBe('The words belong to another account.')
+    expect(getDialog(tab).get('[role="alert"]').text()).toBe('The words belong to another identity.')
     expect(readToasts()).toStrictEqual([])
   })
 
@@ -745,14 +745,14 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     expect(restoreFromKit).not.toHaveBeenCalled()
   })
 
-  it('shows the refusal of the core for sheets of another account', async () => {
+  it('shows the refusal of the core for sheets of another identity', async () => {
     const { tab, identity } = await createPage(undefined, undefined, {
-      restoreFromKit: asFailure('The sheets belong to another account.'),
+      restoreFromKit: asFailure('The sheets belong to another identity.'),
     })
     await openSheets(tab)
     await typeSheets(tab, SHEET_ONE.join(' '), SHEET_THREE.join(' '))
     await submitRestore(tab)
-    expect(getTypedNote(tab).text()).toBe('The sheets belong to another account.')
+    expect(getTypedNote(tab).text()).toBe('The sheets belong to another identity.')
     expect(identity.value).toBeUndefined()
   })
 })

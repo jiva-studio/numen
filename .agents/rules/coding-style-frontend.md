@@ -199,3 +199,7 @@ One `Dialog` from `@numen/ui` hosts every dialog, at the window root.
 - No reserved empty line for a message that may not come. A box that fills later (a QR code, a camera) has its final size from the first frame.
 - A mode that scans shows no text field; a mode that types shows no camera. A second way is one secondary button.
 - Look at how Signal, 1Password and Bitwarden do the same thing before inventing a layout.
+
+## Words
+
+- The product has an identity, not an account: no user-visible text says account.

@@ -28,11 +28,11 @@ When('the second computer enters a wrong confirmation code {int} times', async (
   await person.computers.enterWrongCodes(times)
 })
 
-Then('the second computer has the account of the person', async ({ person }) => {
+Then('the second computer has the identity of the person', async ({ person }) => {
   await person.computers.expectSecondHasAccount()
 })
 
-Then('the second computer asks to join the account of the person', async ({ person }) => {
+Then('the second computer asks to join the identity of the person', async ({ person }) => {
   await person.computers.expectAsksToJoin()
 })
 
@@ -48,7 +48,7 @@ Given('the second computer creates an identity', async ({ person }) => {
   await person.computers.createSecondIdentity()
 })
 
-Then('the account has {int} device(s)', async ({ person }, count: number) => {
+Then('the identity has {int} device(s)', async ({ person }, count: number) => {
   await person.computers.expectActiveDevices(count)
 })
 
@@ -60,7 +60,7 @@ Then('the second computer warns about {string}', async ({ person }, text: string
   await person.computers.expectWarning('second', text)
 })
 
-Given('the second computer is linked to the account of the person', async ({ person }) => {
+Given('the second computer is linked to the identity of the person', async ({ person }) => {
   await person.computers.linkSecond()
 })
 
@@ -76,6 +76,6 @@ Then('the sync server has no session for the second computer', async ({ person }
   await person.computers.expectNoSessionOfSecond()
 })
 
-Then('the second computer cannot join an account', async ({ person }) => {
+Then('the second computer cannot join another identity', async ({ person }) => {
   await person.computers.expectSecondCannotJoin()
 })

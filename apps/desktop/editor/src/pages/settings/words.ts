@@ -91,9 +91,9 @@ export const WORDS = {
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
   identityNoneDetail:
-    'An identity is your Numen account. Unlike a usual account, it lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
+    'An identity is who you are in Numen. It lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
   identityNoneWords:
-    'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
+    'When you create it, you get 12 recovery words — write them down. With them you can bring the same identity to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
   moreActions: 'More actions',
   identityRestore: 'Restore',
@@ -104,7 +104,7 @@ export const WORDS = {
   identityRestoreTypeDetail: 'Type the words of two sheets',
   identityRestoreWords: 'Recovery words',
   identityRestoreSheets: 'Recovery kit: scan',
-  identityJoin: 'Use existing account',
+  identityJoin: 'Use existing identity',
   identityLinkDevice: 'Link a new device',
   identitySetupTitle: 'Recovery words',
   identityWriteDown: 'Write the 12 words down in order. We show them once.',
@@ -138,7 +138,7 @@ export const WORDS = {
   scanOtherKit: 'This sheet is from another kit. Scan a sheet of the same kit.',
   scanRepeated: (sheet: number) => `Sheet ${sheet} is scanned already. Scan another sheet.`,
   identityNotValid: 'Some words are not valid.',
-  identityAccount: 'Account fingerprint',
+  identityAccount: 'Identity fingerprint',
   identityAccountDetail: 'Compare it when you link a device',
   identityThisDevice: 'This device',
   identityDevices: 'Devices',
@@ -152,7 +152,7 @@ export const WORDS = {
   /** The recovery kit of three sheets on the identity section, saved as a PDF. */
   kitTitle: 'Recovery kit',
   kitDetail:
-    'Printed sheets that bring your account back if you lose this computer. Any two of the three restore it.',
+    'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
   kitSaved: 'Recovery kit saved',

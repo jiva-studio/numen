@@ -17,7 +17,7 @@ You do not need Numen to cancel. If you lost your device or cannot open the app,
 2. If you cannot find the receipt, open `https://creem.io/my-orders/login` in any browser and ask for a login link. Enter the email you bought with. The link comes to that inbox.
 3. In the portal, select your subscription, press **Manage Subscription**, then **Cancel Subscription**.
 
-The portal needs no Numen account and no password. The login link may not arrive if you enter a different email than the one you paid with. If it does not, check your spam folder and try the other emails you use.
+The portal needs no password. The login link may not arrive if you enter a different email than the one you paid with. If it does not, check your spam folder and try the other emails you use.
 
 ## Refunds
 

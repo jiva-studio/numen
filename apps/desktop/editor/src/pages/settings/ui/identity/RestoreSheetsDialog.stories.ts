@@ -71,10 +71,10 @@ export const Restoring: Story = {
 
 /** The core refuses: the reason, and the next sheet scanned starts over. */
 export const Failed: Story = {
-  args: { slots: [3, 1], problem: 'The sheets belong to another account.' },
+  args: { slots: [3, 1], problem: 'The sheets belong to another identity.' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveTextContent('another account')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('another identity')
     await expect(canvas.queryByRole('button', { name: 'Try again' })).toBeNull()
   },
 }

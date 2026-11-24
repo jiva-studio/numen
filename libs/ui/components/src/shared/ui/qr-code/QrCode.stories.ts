@@ -13,7 +13,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The text of a link to join an account. */
+/** The text of a link to join an identity. */
 export const Playground: Story = {
   args: {
     text: 'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC',

@@ -69,7 +69,7 @@ export const CheckingCamera: Story = {
   args: { findCamera: () => new Promise<boolean>(() => undefined) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dialog = canvas.getByRole('dialog', { name: 'Use existing account' })
+    const dialog = canvas.getByRole('dialog', { name: 'Use existing identity' })
     await expect(dialog).toBeVisible()
     await expect(canvas.getByText('Checking the camera')).toBeVisible()
   },
@@ -174,8 +174,8 @@ export const AskedToJoin: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await submitText(canvas, QR_TEXT)
-    await expect(await canvas.findByText('Use account 3F2A 91C0 on this device?')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Use account' }))
+    await expect(await canvas.findByText('Use identity 3F2A 91C0 on this device?')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Use identity' }))
     await expect(args.calls.confirmJoin).toHaveBeenCalledWith(true)
   },
 }

@@ -559,7 +559,7 @@ describe('SubscriptionCard trial and portal', () => {
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(PORTAL_URL)
   })
 
-  it('offers no portal to an account without a subscription', async () => {
+  it('offers no portal to an identity without a subscription', async () => {
     const { wrapper } = await render(createResponse())
 
     expect(wrapper.text()).not.toContain('Manage subscription')

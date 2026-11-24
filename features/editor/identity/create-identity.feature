@@ -1,9 +1,9 @@
 Feature: Create an identity
-  A person keeps an account identity on this device, made with 12 recovery words.
+  A person keeps an identity on this device, made with 12 recovery words.
 
   As a person who uses Numen on more than one device
   I want an identity with 12 recovery words
-  So that my account can be the same on each of my devices
+  So that my identity can be the same on each of my devices
 
   Background:
     Given the empty vault "Test"

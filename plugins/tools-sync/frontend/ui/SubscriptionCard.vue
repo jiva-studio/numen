@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The card of the subscription of the account on the page "Identity and licenses", an island card with
+ * The card of the subscription of the identity on the page "Identity and licenses", an island card with
  * the plan as its badge: a row per plan that buys it on a click when there is no subscription, and the
  * rows of the plan, the end of the paid period and the space used with the actions to change or manage
  * it when there is. A plan chosen in the menu "Change plan" is changed to only after the person confirms
@@ -51,7 +51,6 @@ const deletingText = computed(() =>
   words.deletingText(formatDate(accountData?.state.deleteAt.value ?? '')),
 )
 const isConfirmingDelete = ref(false)
-const exportedTo = computed(() => accountData?.state.exportedTo.value ?? '')
 
 /** The plan chosen in the menu "Change plan" that waits for the person to confirm the switch. */
 const pendingOffer = ref<PlanOffer | undefined>(undefined)
@@ -157,7 +156,12 @@ function onFailure(failure: unknown): void {
         <CardAction v-if="canManage" is-primary :label="words.manageSubscription" @click="onManage">
           <WalletCards :size="14" aria-hidden="true" />
         </CardAction>
-        <AccountMenu v-if="canChangeAccount" @export="onExport" @delete="onAskDelete" />
+        <AccountMenu
+          v-if="canChangeAccount"
+          :is-exporting="accountData?.state.isExporting.value === true"
+          @export="onExport"
+          @delete="onAskDelete"
+        />
       </template>
     </template>
     <div v-if="isDeleting" class="subscription__content">
@@ -230,15 +234,6 @@ function onFailure(failure: unknown): void {
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
-    <p v-if="accountData?.state.isExporting.value" role="status" class="subscription__waiting-text">
-      <Spinner class="subscription__spinner" />
-      <span>{{ words.exportingText }}</span>
-    </p>
-    <div v-else-if="exportedTo !== ''" role="status" class="subscription__text">
-      <p class="subscription__export-title">{{ words.exportedTitle }}</p>
-      <p>{{ words.exportedText(exportedTo) }}</p>
-      <p>{{ words.exportNotEncrypted }}</p>
-    </div>
     <p
       v-if="(accountData?.state.problem.value ?? '') !== ''"
       role="alert"

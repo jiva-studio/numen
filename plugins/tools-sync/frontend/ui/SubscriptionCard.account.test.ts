@@ -72,7 +72,7 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
       Promise.resolve(''),
     ),
   }
-  const saveFile = vi.fn<SaveFile>(() => Promise.resolve('/home/me/Numen Sync account data.json'))
+  const saveFile = vi.fn<SaveFile>(() => Promise.resolve('/home/me/Numen Sync identity data.json'))
   const openExternal = vi.fn<PluginContext['identity']['openExternal']>(() =>
     Promise.resolve(asValue(null)),
   )
@@ -125,12 +125,12 @@ const getDialogText = (): string =>
   document.body.querySelector('[role="alertdialog"]')?.textContent ?? ''
 
 describe('SubscriptionCard account actions', () => {
-  it('offers to export the account data and to delete the cloud data in the menu of the header', async () => {
+  it('offers to export the identity data and to delete the cloud data in the menu of the header', async () => {
     await render(createState())
-    expect(findButton('Export account data')).toBeUndefined()
+    expect(findButton('Export identity data')).toBeUndefined()
     await press('More actions')
 
-    expect(findButton('Export account data')).toBeDefined()
+    expect(findButton('Export identity data')).toBeDefined()
     expect(findButton('Delete cloud data')).toBeDefined()
     expect(findButton('Delete identity')).toBeUndefined()
   })
@@ -185,7 +185,7 @@ describe('SubscriptionCard account actions', () => {
 
     expect(accountClient.deleteCloudData).not.toHaveBeenCalled()
     expect(document.body.querySelector('[role="alertdialog"] [role="alert"]')?.textContent).toBe(
-      'This is not the account fingerprint.',
+      'This is not the identity fingerprint.',
     )
   })
 
@@ -200,7 +200,7 @@ describe('SubscriptionCard account actions', () => {
     expect(document.body.querySelector('[role="alertdialog"]')).toBeNull()
     expect(wrapper.get('.subscription__badge').text()).toBe('Deleting')
     expect(wrapper.text()).toContain('deleted on November 30, 2026')
-    expect(wrapper.text()).toContain('Restore account')
+    expect(wrapper.text()).toContain('Restore cloud data')
   })
 
   it('does not delete when the person cancels the question', async () => {
@@ -216,68 +216,59 @@ describe('SubscriptionCard account actions', () => {
   it('shows the deleting state of an account that is already deleting and stops reading the subscription', async () => {
     const { wrapper, client } = await render(createState({ isDeleting: true, deleteAt: DELETE_AT }))
 
-    expect(wrapper.text()).toContain('Restore account')
+    expect(wrapper.text()).toContain('Restore cloud data')
     expect(wrapper.text()).not.toContain('Delete cloud data')
     expect(client.getSubscription).not.toHaveBeenCalled()
   })
 
-  it('restores the account and brings the card back', async () => {
+  it('restores the cloud data and brings the card back', async () => {
     const { wrapper, accountClient } = await render(
       createState({ isDeleting: true, deleteAt: DELETE_AT }),
     )
 
-    await press('Restore account')
+    await press('Restore cloud data')
 
     expect(accountClient.restoreAccount).toHaveBeenCalledOnce()
-    expect(wrapper.text()).not.toContain('Restore account')
+    expect(wrapper.text()).not.toContain('Restore cloud data')
   })
 
   it('saves the document the server sent under the name of the file', async () => {
     const { saveFile } = await render(createState())
 
-    await pressMenu('Export account data')
+    await pressMenu('Export identity data')
 
-    expect(saveFile).toHaveBeenCalledWith('Numen Sync account data.json', EXPORT_DOCUMENT)
-  })
-
-  it('says where the file was saved and that it is not encrypted', async () => {
-    const { wrapper } = await render(createState())
-
-    await pressMenu('Export account data')
-
-    const text = wrapper.get('[role="status"]').text()
-    expect(text).toContain('Saved to /home/me/Numen Sync account data.json')
-    expect(text).toContain('This file is not encrypted. Delete it after use.')
+    expect(saveFile).toHaveBeenCalledWith('Numen Sync identity data.json', EXPORT_DOCUMENT)
   })
 
   it('says nothing when the person closes the save dialog', async () => {
     const { wrapper, saveFile } = await render(createState())
     saveFile.mockResolvedValueOnce(undefined)
 
-    await pressMenu('Export account data')
+    await pressMenu('Export identity data')
 
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
-  it('shows that the export is under way until the file is saved', async () => {
+  it('disables the export item until the file is saved and shows nothing on success', async () => {
     const { wrapper, saveFile } = await render(createState())
     const saving = Promise.withResolvers<string | undefined>()
     saveFile.mockReturnValueOnce(saving.promise)
 
-    await pressMenu('Export account data')
-    expect(wrapper.get('[role="status"]').text()).toBe('Exporting account data')
+    await pressMenu('Export identity data')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
 
     saving.resolve('/home/me/a.json')
     await flushPromises()
-    expect(wrapper.get('[role="status"]').text()).toContain('Saved to /home/me/a.json')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('shows the reason under the card when the file cannot be saved', async () => {
     const { wrapper, saveFile } = await render(createState())
     saveFile.mockRejectedValueOnce(new Error('Could not save the file: the disk is full'))
 
-    await pressMenu('Export account data')
+    await pressMenu('Export identity data')
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Could not save the file: the disk is full')
   })
@@ -286,7 +277,7 @@ describe('SubscriptionCard account actions', () => {
     const { wrapper, accountClient } = await render(createState())
     accountClient.exportAccountData.mockRejectedValueOnce(new Error('Could not reach the server'))
 
-    await pressMenu('Export account data')
+    await pressMenu('Export identity data')
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Could not reach the server')
   })

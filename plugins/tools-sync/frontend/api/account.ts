@@ -1,11 +1,11 @@
 /**
- * The JSON messages of the account methods the plugin's backend serves, and the client that calls them. Keys and
+ * The JSON messages of the identity methods the plugin's backend serves, and the client that calls them. Keys and
  * meaning match the Go messages in backend/api; testdata/api holds the fixtures both sides are tested against.
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
 /**
- * The account fingerprint is the name of the account, which the person types to confirm a deletion. The time is
+ * The identity fingerprint is the name of the identity, which the person types to confirm a deletion. The time is
  * RFC 3339 and empty unless the account is being deleted. A device with no identity has neither.
  */
 interface AccountStateResponse {
@@ -28,7 +28,7 @@ export interface AccountClient {
   /** When the server deletes the account for good, an RFC 3339 time. */
   deleteCloudData(): Promise<string>
   restoreAccount(): Promise<void>
-  /** The JSON document of what the server holds of the account. */
+  /** The JSON document of what the server holds of the identity. */
   exportAccountData(): Promise<string>
 }
 

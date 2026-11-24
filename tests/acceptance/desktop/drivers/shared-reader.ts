@@ -114,7 +114,7 @@ export class SharedReaderDriver {
   }
 
   /**
-   * Pastes the link, compares the owner the dialog shows with the account of the person who shared (the two people
+   * Pastes the link, compares the owner the dialog shows with the identity of the person who shared (the two people
    * compare it by voice), asks for the folder and returns the code the dialog shows while it waits for the owner.
    */
   async ask(name: ReaderName, link: string, ownerFingerprint: string): Promise<string> {

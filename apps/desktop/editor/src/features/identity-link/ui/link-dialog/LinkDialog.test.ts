@@ -37,11 +37,11 @@ describe('the dialog that links a new device', () => {
     expect(dialog.get('h2').text()).toBe('Link a device')
     expect(dialog.findAll('ol li')).toHaveLength(3)
     expect(dialog.get('svg[role="img"]').attributes('aria-label')).toBe('QR code')
-    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing account')
+    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing identity')
     expect(dialog.find('[role="status"]').exists()).toBe(false)
   })
 
-  it('shows neither the link as a field nor the fingerprint of the account', async () => {
+  it('shows neither the link as a field nor the fingerprint of the identity', async () => {
     const link = createLinkInfo()
     const dialog = await mountDialog(link)
     expect(dialog.find('input').exists()).toBe(false)

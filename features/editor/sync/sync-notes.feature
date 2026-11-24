@@ -1,6 +1,6 @@
 Feature: Sync notes between computers
 
-  Numen Sync sends the notes of a connected vault to the account and brings them to every computer.
+  Numen Sync sends the notes of a connected vault to the identity and brings them to every computer.
 
   As a person who uses Numen on more than one computer
   I want a note I write on one computer to be on the other

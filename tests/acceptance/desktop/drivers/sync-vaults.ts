@@ -54,7 +54,7 @@ export class SyncVaultsDriver {
     return this.scenario.page.getByRole('dialog')
   }
 
-  /** Opens the dialog "Get a vault from the cloud" and expects the vault of the account in it, then closes it. */
+  /** Opens the dialog "Get a vault from the cloud" and expects the vault of the identity in it, then closes it. */
   async expectCanConnectTo(vault: string, synced: string): Promise<void> {
     const dialog = await this.openCloud(await this.show())
     await expect(dialog.getByLabel(CLOUD_VAULT)).toContainText(synced, { timeout: SYNC_LIMIT_MS })

@@ -1,6 +1,6 @@
 Feature: Connect a vault to Numen Sync
 
-  A person connects a vault to their account as a new synced vault, or to a synced vault that exists.
+  A person connects a vault to their identity as a new synced vault, or to a synced vault that exists.
 
   As a person who uses Numen on more than one computer
   I want to choose which vault a folder syncs with
@@ -18,7 +18,7 @@ Feature: Connect a vault to Numen Sync
       When the person syncs the vault "Test"
       Then the sync settings list the synced vault "Test"
 
-    Scenario: A second computer lists the synced vaults of the account
+    Scenario: A second computer lists the synced vaults of the identity
       Given the person syncs the vault "Test"
       When a second computer restores the identity from the recovery words
       Then the second computer can connect to the synced vault "Test"

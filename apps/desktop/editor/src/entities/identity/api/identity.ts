@@ -1,7 +1,7 @@
 /**
  * The calls of the identity: reading it, making recovery words, creating it from them, restoring it
  * from them or from the sheets of a recovery kit, saving a new kit as a PDF, and deleting it from this
- * device; the link of a device; the devices of the account.
+ * device; the link of a device; the devices of the identity.
  */
 import type { AccountClient, DevicesClient, LinkClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
@@ -22,7 +22,7 @@ export const createAccountApi = (identity: AccountClient) => ({
   createIdentity: (words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>> =>
     identity.create(words),
 
-  /** Starts to restore the account of the twelve `words`; the core completes it in the background. */
+  /** Starts to restore the cloud data of the twelve `words`; the core completes it in the background. */
   startRestore: (words: readonly string[]): Promise<Result<undefined, IdentityFailure>> =>
     identity.startRestore(words),
 
@@ -35,7 +35,7 @@ export const createAccountApi = (identity: AccountClient) => ({
    */
   saveKit: (proof: KitProof): Promise<Result<boolean, IdentityFailure>> => identity.saveKit(proof),
 
-  /** Starts to restore the account of two `sheets` of a kit; the core completes it in the background. */
+  /** Starts to restore the cloud data of two `sheets` of a kit; the core completes it in the background. */
   startRestoreFromKit: (
     sheets: readonly (readonly string[])[],
   ): Promise<Result<undefined, IdentityFailure>> => identity.startRestoreFromKit(sheets),
@@ -56,16 +56,16 @@ export const createDeviceLinkApi = (identity: LinkClient) => ({
   /** The confirmation code the person read on the host. */
   enterLinkCode: (code: string) => identity.enterLinkCode(code),
 
-  /** The answer of the person on the new device to the account it is offered. */
+  /** The answer of the person on the new device to the identity it is offered. */
   confirmJoin: (approve: boolean) => identity.confirmJoin(approve),
 
   /** Ends the link in progress. */
   cancelLink: () => identity.cancelLink(),
 })
 
-/** The calls of the devices of the account. */
+/** The calls of the devices of the identity. */
 export const createDevicesApi = (identity: DevicesClient) => ({
-  /** The devices of the account. */
+  /** The devices of the identity. */
   listDevices: () => identity.listDevices(),
 
   /** Removes a device from the account. */

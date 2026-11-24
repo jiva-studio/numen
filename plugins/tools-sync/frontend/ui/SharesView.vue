@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The card "Shared folders" of the plugin's settings: the folders this account shares with the devices that
- * read them, and the folders other people share with this account. It only lists; a folder is shared from the
+ * The card "Shared folders" of the plugin's settings: the folders this identity shares with the devices that
+ * read them, and the folders other people share with this identity. It only lists; a folder is shared from the
  * file tree and a shared folder is accepted by a command.
  */
 import { FolderOpen } from '@lucide/vue'

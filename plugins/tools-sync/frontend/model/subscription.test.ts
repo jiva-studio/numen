@@ -119,7 +119,7 @@ describe('useSubscription on load', () => {
     await subscription.session.load()
   })
 
-  it('is ready with the phase none and offers to buy for an account without a subscription', async () => {
+  it('is ready with the phase none and offers to buy for an identity without a subscription', async () => {
     const { subscription } = mountSubscription(createClient([createResponse()]))
 
     await subscription.session.load()
@@ -647,7 +647,7 @@ describe('useSubscription change of the plan', () => {
     expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
   })
 
-  it('shows the refusal and reads the subscription again when the server says the plan is the plan of the account', async () => {
+  it('shows the refusal and reads the subscription again when the server says the plan is the plan of the identity', async () => {
     const client = createClient([
       ACTIVE_ON_PLUS,
       createResponse({ ...ACTIVE_ON_PLUS, plan: 'pro', quotaBytes: 250 * GIB }),

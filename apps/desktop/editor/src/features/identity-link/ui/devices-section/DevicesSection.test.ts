@@ -43,7 +43,7 @@ const mountSection = async (
 }
 
 describe('the devices section', () => {
-  it('lists the devices of the account and marks this one', async () => {
+  it('lists the devices of the identity and marks this one', async () => {
     const section = await mountSection([THIS, OTHER])
     const rows = section.findAll('li')
     expect(rows).toHaveLength(2)

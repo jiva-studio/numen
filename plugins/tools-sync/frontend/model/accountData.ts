@@ -16,7 +16,7 @@ const getMessage = (failure: unknown): string =>
   failure instanceof Error ? failure.message : String(failure)
 
 /**
- * The deletion of the account as the sign-in of this device knows it, kept up to date; the deletion of the cloud
+ * The deletion of the identity as the sign-in of this device knows it, kept up to date; the deletion of the cloud
  * data, the restore of an account that is being deleted and the export of what the server holds. Each action
  * answers false when it failed, and the reason is in `problem`.
  */
@@ -27,7 +27,6 @@ export function useAccountData(options: AccountDataOptions) {
   const deleteAt = ref('')
   const isBusy = ref(false)
   const problem = ref('')
-  const exportedTo = ref('')
   const isExporting = ref(false)
   let timer: ReturnType<typeof setTimeout> | undefined
   let isDisposed = false
@@ -89,10 +88,9 @@ export function useAccountData(options: AccountDataOptions) {
 
   const exportData = (): Promise<boolean> =>
     run(async () => {
-      exportedTo.value = ''
       isExporting.value = true
       try {
-        exportedTo.value = (await saveFile(words.exportFileName, await client.exportAccountData())) ?? ''
+        await saveFile(words.exportFileName, await client.exportAccountData())
       } finally {
         isExporting.value = false
       }
@@ -110,7 +108,6 @@ export function useAccountData(options: AccountDataOptions) {
       deleteAt: computed(() => deleteAt.value),
       isBusy,
       problem,
-      exportedTo,
       isExporting,
     },
     actions: { load, remove, restore, exportData },

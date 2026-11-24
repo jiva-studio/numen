@@ -80,7 +80,7 @@ describe('getSubscriptionView', () => {
     expect(ready('deleted').badge).toBe('Deleted')
   })
 
-  it('badges an account without identity with the identity it needs', () => {
+  it('badges an identity without identity with the identity it needs', () => {
     const view = getSubscriptionView({ status: 'noIdentity', phase: '', dates: DATES })
 
     expect(view.badge).toBe('Needs an identity')

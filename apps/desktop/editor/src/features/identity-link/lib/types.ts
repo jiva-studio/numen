@@ -2,7 +2,7 @@
 import type { Result } from '@numen/result'
 import type { LinkInfo, LinkMode, LinkRole } from '@/entities/identity'
 
-/** The link of a device to the account by a QR code, as the dialog drives it. */
+/** The link of a device to the identity by a QR code, as the dialog drives it. */
 export interface LinkCalls {
   start(role: LinkRole, mode: LinkMode, scannedText: string): Promise<Result<LinkInfo, string>>
   get(): Promise<Result<LinkInfo, string>>

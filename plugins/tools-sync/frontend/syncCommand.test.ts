@@ -62,7 +62,7 @@ afterEach(() => {
 })
 
 describe('the command "Sync this vault"', () => {
-  it('sends the vault as a new vault when the account holds none of that name', async () => {
+  it('sends the vault as a new vault when the identity holds none of that name', async () => {
     const { context, dialogs } = await run({ cloud: [], state: 'notConnected' })
 
     expect(calls.some((one) => one.startsWith('ConnectVault'))).toBe(true)
@@ -77,7 +77,7 @@ describe('the command "Sync this vault"', () => {
     context.dispose()
   })
 
-  it('asks which copy to use when the account holds a vault of the same name', async () => {
+  it('asks which copy to use when the identity holds a vault of the same name', async () => {
     const { context, dialogs } = await run({
       cloud: [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
       state: 'notConnected',

@@ -1,6 +1,6 @@
 Feature: Delete cloud data
 
-  The person can delete everything Numen Sync holds of the account, apart from deleting the identity on this computer. The server keeps
+  The person can delete everything Numen Sync holds of the identity, apart from deleting the identity on this computer. The server keeps
   the data for 7 days, so a mistake can be undone, and then deletes it for good. The notes on the computers stay.
 
   As a person who uses Numen Sync
@@ -20,12 +20,12 @@ Feature: Delete cloud data
       When the person asks to delete the cloud data
       Then the question says "7 days"
       And the question says "Your notes stay on your devices"
-      And the question says "Type the account fingerprint"
+      And the question says "Type the identity fingerprint"
 
-    Scenario: A text that is not the account fingerprint deletes nothing
+    Scenario: A text that is not the identity fingerprint deletes nothing
       Given the person asks to delete the cloud data
       When the person confirms the deletion with the text "somebody else"
-      Then the page says "This is not the account fingerprint."
+      Then the page says "This is not the identity fingerprint."
       And the cloud data is kept
 
   Rule: The cloud data is kept for 7 days
@@ -33,21 +33,21 @@ Feature: Delete cloud data
     Scenario: The card shows that the cloud data is being deleted
       When the person deletes the cloud data
       Then the cloud data is being deleted
-      And the page says "Restore account"
+      And the page says "Restore cloud data"
 
-    Scenario: Restoring the account stops the deletion
+    Scenario: Restoring the cloud data stops the deletion
       Given the person deletes the cloud data
-      When the person restores the account
+      When the person restores the cloud data
       Then the cloud data is kept
 
     Scenario: Deleting the cloud data cancels the subscription
       Given the person buys the subscription
       And the person deletes the cloud data
-      When the person restores the account
+      When the person restores the cloud data
       Then the page offers to buy the subscription
 
   Rule: The person can see what the server holds
 
-    Scenario: The account data is saved as a file
-      When the person exports the account data
-      Then the saved file names the account of the person
+    Scenario: The identity data is saved as a file
+      When the person exports the identity data
+      Then the saved file names the identity of the person

@@ -200,7 +200,7 @@ export class ComputerDriver {
     return this.shownQr
   }
 
-  /** The device of the person that has the account shows a QR code. */
+  /** The device of the person that has the identity shows a QR code. */
   async showQrToLink(): Promise<void> {
     this.shownQr = await this.owner.devices.showQrToLink()
   }
@@ -229,7 +229,7 @@ export class ComputerDriver {
     await this.requireSecond().devices.expectAskedToJoin(this.owner.identity.getAccountFingerprint(), false)
   }
 
-  /** The second computer holds the account of the person: it joins where it asks to, and has a session of its own. */
+  /** The second computer holds the identity of the person: it joins where it asks to, and has a session of its own. */
   async expectSecondHasAccount(): Promise<void> {
     const second = this.requireSecond()
     await second.devices.expectAccount(this.owner.identity.getAccountFingerprint())
@@ -273,7 +273,7 @@ export class ComputerDriver {
     await this.owner.devices.expectActiveDevices(count)
   }
 
-  /** The second computer joins the account of the person by the QR code of the person; a revoked identity of it is deleted first. */
+  /** The second computer joins the identity of the person by the QR code of the person; a revoked identity of it is deleted first. */
   async linkSecond(): Promise<void> {
     const second = await this.ensureSecond()
     if (await second.devices.isRevoked()) await this.deleteSecondIdentity()
@@ -285,7 +285,7 @@ export class ComputerDriver {
   }
 
   async revokeSecond(): Promise<void> {
-    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the account: begin with a step that links it')
+    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the identity: begin with a step that links it')
     await this.owner.devices.revoke(this.secondFingerprint)
   }
 
@@ -294,7 +294,7 @@ export class ComputerDriver {
   }
 
   async expectNoSessionOfSecond(): Promise<void> {
-    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the account: begin with a step that links it')
+    if (this.secondFingerprint === undefined) throw new Error('the second computer has no device in the identity: begin with a step that links it')
     await this.owner.sync.expectNoSessionOfDevice(this.secondFingerprint)
   }
 

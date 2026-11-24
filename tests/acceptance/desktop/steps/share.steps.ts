@@ -30,7 +30,7 @@ Then('{reader} has no vault {string}', async ({ person }, reader: ReaderName, va
   await person.readers.expectNoVault(reader, vault)
 })
 
-Then('the sharing of the folder {string} lists the device of the reader with its account fingerprint', async ({ person }, folder: string) => {
+Then('the sharing of the folder {string} lists the device of the reader with its identity fingerprint', async ({ person }, folder: string) => {
   await person.sharing.expectReaderListed(folder)
 })
 

@@ -10,7 +10,7 @@ import {
 } from '../lib/subscriptionView'
 import type { SubscriptionAccount } from './subscriptionAccount'
 
-/** What the card tells of the account: the badge and the text, the plan, the space used and how long it is paid for. */
+/** What the card tells of the identity: the badge and the text, the plan, the space used and how long it is paid for. */
 export function useSubscriptionSummary(account: SubscriptionAccount, server: Ref<string>) {
   const { status, phase, plan, quotaBytes, usedBytes } = account
   const knownPlan = computed(() => account.plans.value.find((one) => one.id === plan.value))

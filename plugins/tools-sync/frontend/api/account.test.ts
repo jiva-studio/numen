@@ -30,7 +30,7 @@ const createClient = (respond: () => Response) => {
 
 const answer = (body: unknown): Response => Response.json(body)
 
-describe('the fixtures of the account methods', () => {
+describe('the fixtures of the identity methods', () => {
   it('reads the GetAccountState fixture as an account state', () => {
     const response: Awaited<ReturnType<AccountClient['getAccountState']>> = {
       hasIdentity: true,

@@ -1,6 +1,6 @@
 Feature: Numen Sync subscription
 
-  One subscription belongs to the identity of a person. It covers every vault and every computer of the account.
+  One subscription belongs to the identity of a person. It covers every vault and every computer of the identity.
 
   As a person who uses Numen Sync
   I want to see and buy my subscription in one place
@@ -12,9 +12,9 @@ Feature: Numen Sync subscription
     And the person creates an identity
     And the application "editor" starts
 
-  Rule: The page "Identity and licenses" shows the subscription of the account
+  Rule: The page "Identity and licenses" shows the subscription of the identity
 
-    Scenario: A new account has no subscription
+    Scenario: A new identity has no subscription
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the subscription
 
@@ -34,7 +34,7 @@ Feature: Numen Sync subscription
       When the person buys the subscription
       Then the page does not offer to buy the subscription
 
-    Scenario: A payment that is not made leaves the account without a subscription
+    Scenario: A payment that is not made leaves the identity without a subscription
       Given the person opens the page "Identity and licenses"
       When the person opens the payment page without paying
       Then the page offers to buy the subscription

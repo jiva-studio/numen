@@ -22,8 +22,8 @@ import type { SettingsDriver } from './settings.js'
 
 const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
-const ACCOUNT_FINGERPRINT = 'Account fingerprint'
-const NO_IDENTITY = 'An identity is your Numen account.'
+const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
+const NO_IDENTITY = 'An identity is who you are in Numen.'
 const PROOF_FIELD = 'Recovery words or sheets'
 
 export class IdentityDriver {
@@ -253,7 +253,7 @@ export class IdentityDriver {
     return this.words
   }
 
-  /** The account fingerprint of the last identity this person created. */
+  /** The identity fingerprint of the last identity this person created. */
   getAccountFingerprint(): string {
     expect(this.account, 'no identity was created before').not.toBe('')
     return this.account

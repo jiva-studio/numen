@@ -2,7 +2,7 @@
 /**
  * The dialog of a new device: the camera scans the QR code of a device that has the account, and a machine
  * without a camera shows a field to paste its link into instead. Then it shows the name of this device, asks for
- * the confirmation code the other device shows, and asks whether to join the account. Escape closes it, and closing
+ * the confirmation code the other device shows, and asks whether to join the identity. Escape closes it, and closing
  * it cancels the link.
  */
 import { computed, ref } from 'vue'

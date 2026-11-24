@@ -134,7 +134,7 @@ describe('PluginsList', () => {
       'Identity and licenses',
     ])
     expect(tiles[3]?.text()).toContain('Reranking, limits and results')
-    expect(tiles[5]?.text()).toContain('Account, this device and license keys')
+    expect(tiles[5]?.text()).toContain('Identity, this device and license keys')
   })
 
   it('emits the page identity from the Identity and licenses tile', async () => {

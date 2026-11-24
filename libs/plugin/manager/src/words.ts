@@ -103,7 +103,7 @@ export const PLUGIN_WORDS = {
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
   identityAndLicenses: 'Identity and licenses',
-  identityAndLicensesDetail: 'Account, this device and license keys',
+  identityAndLicensesDetail: 'Identity, this device and license keys',
   /** The sections of a plugin page, in the order of its tabs. */
   pluginTabs: {
     settings: 'Settings',

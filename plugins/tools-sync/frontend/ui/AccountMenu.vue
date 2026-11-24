@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The "..." action of the card header and the menu it opens: export the account data, and delete the cloud
+ * The "..." action of the card header and the menu it opens: export the identity data, and delete the cloud
  * data, which is marked as dangerous. Choosing an item emits it; nothing is done here.
  */
 import { computed, defineComponent, h, markRaw, ref, useTemplateRef } from 'vue'
@@ -9,6 +9,7 @@ import { CardAction, Menu, measureRect, type MenuItem, type Position } from '@nu
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{ isExporting?: boolean }>()
 const emit = defineEmits<{
   (event: 'export'): void
   (event: 'delete'): void
@@ -28,13 +29,12 @@ const DANGER = markRaw(
   }),
 )
 
-const ITEMS: readonly MenuItem[] = [
-  { id: 'export', text: words.exportAccountData, group: 'safe' },
+const items = computed<readonly MenuItem[]>(() => [
+  { id: 'export', text: words.exportAccountData, group: 'safe', isDisabled: props.isExporting === true },
   { id: 'delete', text: words.deleteCloudData, group: 'danger', component: DANGER },
-]
+])
 
 const anchor = ref<{ at: Position; wide: number } | null>(null)
-const items = computed(() => ITEMS)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(): void {

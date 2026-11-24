@@ -53,7 +53,7 @@ Feature: Share a folder with another person
 
     Scenario: The page lists the device with its fingerprint
       When the person shares the folder "Food" of the vault "Test" with the reader
-      Then the sharing of the folder "Food" lists the device of the reader with its account fingerprint
+      Then the sharing of the folder "Food" lists the device of the reader with its identity fingerprint
 
     Scenario: A link works once
       When the person shares the folder "Food" of the vault "Test" with the reader

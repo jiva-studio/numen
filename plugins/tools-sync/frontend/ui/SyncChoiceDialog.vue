@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** The question of "Sync this vault" when the account holds a vault of the same name: use that copy or send this one. */
+/** The question of "Sync this vault" when the identity holds a vault of the same name: use that copy or send this one. */
 import { Button, Dialog } from '@numen/ui'
 import { WORDS as words } from '../words'
 

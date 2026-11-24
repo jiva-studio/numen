@@ -1,6 +1,6 @@
 /**
  * What the identity of this device is, as the window holds it: two fingerprints and the name of the
- * device, the link of a device to the account and the devices of the account. No key and no recovery
+ * device, the link of a device to the identity and the devices of the identity. No key and no recovery
  * word is part of it.
  */
 
@@ -89,7 +89,7 @@ export interface LinkInfo {
   readonly isApproved: boolean
 }
 
-/** One device of the account. */
+/** One device of the identity. */
 export interface DeviceInfo {
   readonly name: string
   readonly fingerprint: string

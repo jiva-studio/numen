@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The identity of this device as two cards: the account fingerprint, the rows the default slot adds
- * and the way to delete the identity after a confirmation, and the list of the devices of the account
+ * The identity of this device as two cards: the identity fingerprint, the rows the default slot adds
+ * and the way to delete the identity after a confirmation, and the list of the devices of the identity
  * with the link of a new one and the revoke of another. A revoked device shows only itself.
  */
 import { computed, ref } from 'vue'

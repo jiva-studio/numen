@@ -1,6 +1,6 @@
 Feature: Revoke a device
 
-  A person removes a lost device from the account. The removed device loses its access.
+  A person removes a lost device from the identity. The removed device loses its access.
 
   As a person who uses Numen on more than one device
   I want to revoke a device I lost
@@ -11,13 +11,13 @@ Feature: Revoke a device
     And a sync server runs
     And the person creates an identity
     And the application "editor" starts
-    And the second computer is linked to the account of the person
+    And the second computer is linked to the identity of the person
 
-  Rule: A revoked device leaves the account
+  Rule: A revoked device leaves the identity
 
     Scenario: A revoked device leaves the list of devices
       When the person revokes the second computer
-      Then the account has 1 device
+      Then the identity has 1 device
 
     Scenario: A device does not revoke itself
       Then the person cannot revoke this device

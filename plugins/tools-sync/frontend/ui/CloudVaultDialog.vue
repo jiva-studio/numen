@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The dialog "Get a vault from the cloud": the vault of the account to get and the vault of this device that
+ * The dialog "Get a vault from the cloud": the vault of the identity to get and the vault of this device that
  * receives it. When notes of the two differ, it asks once more before it connects them.
  */
 import { computed, ref } from 'vue'

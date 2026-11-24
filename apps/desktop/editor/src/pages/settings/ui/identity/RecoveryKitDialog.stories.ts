@@ -67,7 +67,7 @@ export const Filled: Story = {
 
 /** The core refused the words. */
 export const Refused: Story = {
-  args: { problem: 'These words do not belong to this account.' },
+  args: { problem: 'These words do not belong to this identity.' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('alert')).toHaveTextContent('do not belong')
   },

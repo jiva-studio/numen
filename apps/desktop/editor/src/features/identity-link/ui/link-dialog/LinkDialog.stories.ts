@@ -56,7 +56,7 @@ export const ShowingQr: Story = {
     ).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
     await expect(canvas.getByText('Scan this code.')).toBeVisible()
-    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('choose Use existing account')
+    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('choose Use existing identity')
     await expect(canvas.getByRole('button', { name: 'Copy link' })).toBeVisible()
   },
 }

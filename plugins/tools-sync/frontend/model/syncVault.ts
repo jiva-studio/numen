@@ -9,7 +9,7 @@ type SyncClient = Pick<VaultsClient, 'listVaults' | 'listRemoteVaults' | 'connec
 
 /**
  * Starts the sync of a vault. A vault that is synced already needs nothing. A vault with the name of a vault
- * of the account that no device holds yet waits for the person to choose between the two copies.
+ * of the identity that no device holds yet waits for the person to choose between the two copies.
  */
 export async function startSync(client: SyncClient, vaultId: string): Promise<SyncOutcome> {
   const vault = (await client.listVaults()).vaults.find((one) => one.id === vaultId)
@@ -24,7 +24,7 @@ export async function startSync(client: SyncClient, vaultId: string): Promise<Sy
   return { kind: 'synced' }
 }
 
-/** Ties a vault to the vault of the account the person chose, or sends the vault as a new one. */
+/** Ties a vault to the vault of the identity the person chose, or sends the vault as a new one. */
 export async function finishSync(
   client: Pick<VaultsClient, 'connectVault'>,
   vaultId: string,

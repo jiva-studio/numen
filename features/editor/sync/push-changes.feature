@@ -1,6 +1,6 @@
 Feature: Receive changes within seconds
 
-  The sync server tells each computer when the account has a change, so a computer does not wait for its next look.
+  The sync server tells each computer when the identity has a change, so a computer does not wait for its next look.
 
   As a person who uses Numen on more than one computer
   I want a note I write on one computer to reach the other in seconds

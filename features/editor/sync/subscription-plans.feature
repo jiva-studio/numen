@@ -1,6 +1,6 @@
 Feature: Numen Sync plans
 
-  A subscription has a plan. The plan sets how much the cloud holds for the account.
+  A subscription has a plan. The plan sets how much the cloud holds for the identity.
 
   As a person who uses Numen Sync
   I want to choose a plan and see how much of it I use
@@ -14,7 +14,7 @@ Feature: Numen Sync plans
 
   Rule: The page "Identity and licenses" offers plans and shows the one bought
 
-    Scenario: A new account is offered every plan with its size
+    Scenario: A new identity is offered every plan with its size
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the plan "Basic" with 10 GB
       And the page offers to buy the plan "Plus" with 100 GB

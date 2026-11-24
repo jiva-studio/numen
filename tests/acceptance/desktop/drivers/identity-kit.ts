@@ -38,10 +38,10 @@ export const planSheetTexts = (
   })
 }
 
-/** Valid recovery words of an account other than the one of `own`. */
+/** Valid recovery words of an identity other than the one of `own`. */
 export const pickOtherWords = (own: readonly string[]): readonly string[] => {
   const other = OTHER_ACCOUNTS.find((words) => words.join(' ') !== own.join(' '))
-  if (other === undefined) throw new Error('no other account is left to pick')
+  if (other === undefined) throw new Error('no other identity is left to pick')
   return other
 }
 

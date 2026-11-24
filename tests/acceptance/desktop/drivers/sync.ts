@@ -158,26 +158,26 @@ export class SyncDriver {
     private readonly identity: IdentityDriver,
   ) {}
 
-  /** Starts the sync server that sells subscriptions: an account has none until it pays on the page the server serves. */
+  /** Starts the sync server that sells subscriptions: an identity has none until it pays on the page the server serves. */
   async startSellingSubscriptions(): Promise<void> {
     this.extraFlags = ['-subscriptions']
     await this.start()
   }
 
-  /** Starts the sync server that sells the plans: an account has none until it pays for one on the page the server serves. */
+  /** Starts the sync server that sells the plans: an identity has none until it pays for one on the page the server serves. */
   async startSellingPlans(plans: readonly PlanSpec[]): Promise<void> {
     this.extraFlags = ['-subscriptions', '-plans', getPlansFlag(plans)]
     await this.start()
   }
 
-  /** Starts a trial of the plan on the account, as the stand-in of the payment does for an account that asked for one. */
+  /** Starts a trial of the plan on the identity, as the stand-in of the payment does for an identity that asked for one. */
   async startTrial(plan: string): Promise<void> {
     await this.expectSessionForAccount()
     await this.sendAdminRequest(`trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
     this.trial = { plan, endsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000) }
   }
 
-  /** Cancels the trial the account runs: the subscription stays until the trial ends. */
+  /** Cancels the trial the identity runs: the subscription stays until the trial ends. */
   async cancelTrial(): Promise<void> {
     if (this.trial === undefined) throw new Error('no trial started: begin with the person starts a trial of a plan')
     await this.sendAdminRequest(`cancel-trial?plan=${this.trial.plan.toLowerCase()}`, 'the cancel of the trial')

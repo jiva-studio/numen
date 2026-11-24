@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One device of the account: its name, when it was linked, its fingerprint and whether it is this
+ * One device of the identity: its name, when it was linked, its fingerprint and whether it is this
  * one. Every row has the same columns; the actions column holds a "..." menu with Remove on another
  * device and stays empty on this one.
  */

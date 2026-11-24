@@ -1,8 +1,8 @@
 Feature: Restore an identity from two sheets
-  A person gets the account back from any two sheets of a recovery kit.
+  A person gets the identity back from any two sheets of a recovery kit.
 
   As a person who lost every device
-  I want to restore my account from two sheets of my recovery kit
+  I want to restore my identity from two sheets of my recovery kit
   So that I do not need the 12 words
 
   Background:
@@ -12,18 +12,18 @@ Feature: Restore an identity from two sheets
     And the person downloads the recovery kit
     And the person deletes the identity from this device
 
-  Rule: Two sheets restore the same account
+  Rule: Two sheets restore the same identity
 
-    Scenario: Two sheets give back the same account
+    Scenario: Two sheets give back the same identity
       When the person restores the identity from the sheets "2 and 3"
       Then this device has an identity
-      And the account fingerprint is the same as before
+      And the identity fingerprint is the same as before
 
-    Scenario: The sheets and the words give the same account
+    Scenario: The sheets and the words give the same identity
       Given the person restores the identity from the sheets "1 and 2"
       And the person deletes the identity from this device
       When the person restores the identity from its recovery words
-      Then the account fingerprint is the same as before
+      Then the identity fingerprint is the same as before
 
   Rule: One sheet restores nothing
 

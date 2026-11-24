@@ -17,10 +17,10 @@ Feature: Numen Sync signs in
       When the application "editor" starts
       Then the sync server has a session for this device
 
-    Scenario: The server knows the account of the identity
+    Scenario: The server knows the identity
       Given the person creates an identity
       When the application "editor" starts
-      Then the sync server has a session for the account fingerprint of the identity
+      Then the sync server has a session for the fingerprint of the identity
 
     Scenario: Numen Sync does not sign in without an identity
       When the application "editor" starts

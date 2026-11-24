@@ -1,4 +1,4 @@
-/** The devices of the account and the link of a new one, as the core holds them. */
+/** The devices of the identity and the link of a new one, as the core holds them. */
 import { shallowRef } from 'vue'
 import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'

@@ -58,7 +58,7 @@ When(
   },
 )
 
-Then('the account fingerprint is the same as before', async ({ person }) => {
+Then('the identity fingerprint is the same as before', async ({ person }) => {
   await person.identity.expectSameAccount()
 })
 
@@ -79,7 +79,7 @@ When('the person downloads the recovery kit again with the recovery words', asyn
 })
 
 When(
-  'the person downloads the recovery kit of another account',
+  'the person downloads the recovery kit of another identity',
   async ({ person }) => {
     await person.identity.downloadWithOtherWords()
   },
@@ -89,7 +89,7 @@ Then('the recovery kit is saved as a PDF of {int} sheets', ({ person }, count: n
   person.identity.expectKitSaved(count)
 })
 
-Then('each sheet shows the account fingerprint', ({ person }) => {
+Then('each sheet shows the identity fingerprint', ({ person }) => {
   person.identity.expectKitShowsAccount()
 })
 

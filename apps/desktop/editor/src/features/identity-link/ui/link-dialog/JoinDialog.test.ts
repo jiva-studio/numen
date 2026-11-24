@@ -46,10 +46,10 @@ const mountWithLink = async (link: LinkInfo, overrides: Partial<IdentityCalls> =
   return dialog
 }
 
-describe('the dialog that joins an account', () => {
+describe('the dialog that joins an identity', () => {
   it('has a short title and asks for the camera first', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }))
-    expect(dialog.get('h2').text()).toBe('Use existing account')
+    expect(dialog.get('h2').text()).toBe('Use existing identity')
     expect(dialog.get('[role="status"]').text()).toBe(
       'No camera found. Paste the link from the other device.',
     )
@@ -130,7 +130,7 @@ describe('the dialog that joins an account', () => {
     expect(enterLinkCode).toHaveBeenCalledWith('482913')
   })
 
-  it('asks the new device to join the account and passes the answer on', async () => {
+  it('asks the new device to join the identity and passes the answer on', async () => {
     const link = createLinkInfo({
       phase: 'confirmAccount',
       role: 'joiner',
@@ -138,8 +138,8 @@ describe('the dialog that joins an account', () => {
     })
     const confirmJoin = vi.fn(() => ok(undefined))
     const dialog = await mountWithLink(link, { confirmJoin })
-    expect(dialog.text()).toContain('Use account 3F2A 91C0 on this device?')
-    await click(findButton(/^Use account$/))
+    expect(dialog.text()).toContain('Use identity 3F2A 91C0 on this device?')
+    await click(findButton(/^Use identity$/))
     expect(confirmJoin).toHaveBeenCalledWith(true)
   })
 })

@@ -2,7 +2,7 @@
 export const WORDS = {
   devices: 'Devices',
   deviceLinkNew: 'Link a new device',
-  deviceJoin: 'Use existing account',
+  deviceJoin: 'Use existing identity',
   deviceThis: 'This device',
   deviceMore: (name: string) => `More actions for ${name}`,
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
@@ -22,14 +22,14 @@ export const WORDS = {
   linkDecline: "Don't link",
   linkCodeField: 'Enter the code shown on your other device',
   linkCodeConfirm: 'Confirm',
-  linkJoin: 'Use account',
+  linkJoin: 'Use identity',
   linkCancel: 'Cancel',
   linkClose: 'Close',
-  linkJoinTitle: 'Use existing account',
+  linkJoinTitle: 'Use existing identity',
   linkHostTitle: 'Link a device',
   linkJoinHint: 'Scan the code shown on your other device.',
   linkHostSteps: [
-    'On the other device, choose Use existing account.',
+    'On the other device, choose Use existing identity.',
     'Scan this code.',
     'Type the code shown here on the other device.',
   ],
@@ -44,10 +44,10 @@ export const WORDS = {
   linkWaitingTitle: 'Waiting for the other device',
   linkWaitingDetail: 'Keep this window open until the other device answers.',
   linkLinkingTitle: 'Linking the device',
-  linkLinkingDetail: 'The keys of the account are being passed on.',
+  linkLinkingDetail: 'The keys of the identity are being passed on.',
   linkCodeHint: 'Type this confirmation code on the new device.',
   linkDoneTitle: 'The device is linked',
-  linkDoneDetail: 'It has the account now.',
+  linkDoneDetail: 'It has the identity now.',
   linkFailedTitle: 'The link failed',
   linkChecking: 'Make sure this is your new device.',
   linkTryAgain: 'Try again',
@@ -58,7 +58,7 @@ export const WORDS = {
   linkCompare: 'Compare this fingerprint with the one the new device shows.',
   linkWaitingCode: 'Waiting for the code on the new device.',
   linkTriesLeft: (count: number) => `${count} tries left.`,
-  linkJoinQuestion: (account: string) => `Use account ${account} on this device?`,
+  linkJoinQuestion: (account: string) => `Use identity ${account} on this device?`,
   linkReason: (reason: string | undefined): string => {
     switch (reason) {
       case 'declined':
@@ -74,7 +74,7 @@ export const WORDS = {
       case 'expired':
         return 'The link ran out of time.'
       case 'staleChain':
-        return 'The account changed while linking. Try again.'
+        return 'The identity changed while linking. Try again.'
       default:
         return 'The link failed.'
     }

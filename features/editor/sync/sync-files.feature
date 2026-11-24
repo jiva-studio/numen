@@ -1,6 +1,6 @@
 Feature: Sync files between computers
 
-  Numen Sync sends every file of a connected vault to the account and brings it to every computer.
+  Numen Sync sends every file of a connected vault to the identity and brings it to every computer.
 
   As a person who keeps PDF files and images in a vault
   I want a file I add on one computer to be on the other
