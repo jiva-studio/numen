@@ -43,7 +43,7 @@ const mountSection = async (
 
 describe('the devices section', () => {
   it('lists the devices of the account and marks this one', async () => {
-    const section = await mountSection(true, [THIS, OTHER])
+    const section = await mountSection([THIS, OTHER])
     const rows = section.findAll('li')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('This device')
@@ -51,14 +51,14 @@ describe('the devices section', () => {
   })
 
   it('offers no revoke on this device and one on another', async () => {
-    const section = await mountSection(true, [THIS, OTHER])
+    const section = await mountSection([THIS, OTHER])
     const rows = section.findAll('li')
     expect(rows[0]?.find('button').exists()).toBe(false)
     expect(rows[1]?.find('button').text()).toBe('Revoke')
   })
 
   it('offers no revoke on a revoked device', async () => {
-    const section = await mountSection(true, [THIS, { ...OTHER, isRevoked: true }])
+    const section = await mountSection([THIS, { ...OTHER, isRevoked: true }])
     const rows = section.findAll('li')
     expect(rows[1]?.text()).toContain('Revoked')
     expect(rows[1]?.find('button').exists()).toBe(false)
@@ -66,7 +66,7 @@ describe('the devices section', () => {
 
   it('revokes a device only after the person confirms the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
-    await mountSection(true, [THIS, OTHER], { revokeDevice })
+    await mountSection([THIS, OTHER], { revokeDevice })
     await click(findButtons(/^Revoke$/)[0] as HTMLElement)
     expect(
       findText(
@@ -80,7 +80,7 @@ describe('the devices section', () => {
 
   it('keeps the device when the person cancels the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
-    await mountSection(true, [THIS, OTHER], { revokeDevice })
+    await mountSection([THIS, OTHER], { revokeDevice })
     await click(findButton(/^Revoke$/))
     await click(findButton(/^Cancel$/))
     expect(revokeDevice).not.toHaveBeenCalled()
@@ -92,7 +92,7 @@ describe('the devices section', () => {
         ok: false as const,
         error: { error: 'revokeRaced' as const, message: 'x' },
       })
-    const section = await mountSection(true, [THIS, OTHER], { revokeDevice })
+    const section = await mountSection([THIS, OTHER], { revokeDevice })
     await click(findButtons(/^Revoke$/)[0] as HTMLElement)
     await click(findButtons(/^Revoke$/)[1] as HTMLElement)
     expect(section.get('[role="alert"]').text()).toBe(
@@ -101,9 +101,8 @@ describe('the devices section', () => {
   })
 
   it('offers to link a new device and not to join', async () => {
-    const section = await mountSection(true, [THIS])
+    const section = await mountSection([THIS])
     expect(section.text()).toContain('Link a new device')
     expect(section.text()).not.toContain('Join with a QR code')
   })
-
 })
