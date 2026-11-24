@@ -4,7 +4,7 @@ export const WORDS = {
   deviceLinkNew: 'Link a new device',
   deviceJoin: 'Join account',
   deviceThis: 'This device',
-  deviceRevoked: 'Revoked',
+  deviceMore: (name: string) => `More actions for ${name}`,
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   deviceRevoke: 'Remove',
   deviceRevokeTitle: 'Remove this device?',

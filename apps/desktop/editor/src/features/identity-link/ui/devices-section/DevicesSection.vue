@@ -2,7 +2,7 @@
 /**
  * The devices of the account: a list with the fingerprint of each (this device alone until the list arrives), the
  * dialog that links a new device by a QR code when `isLinking` is set, and the revoke of a device after a question.
- * Each device that is not this one has a Remove button; this one has none.
+ * Each device that is not this one has a "..." menu with Remove; this one has an empty slot of the same size.
  */
 import { computed } from 'vue'
 import { ConfirmDialog } from '@numen/ui'
