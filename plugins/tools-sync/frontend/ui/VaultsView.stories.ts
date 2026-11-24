@@ -14,9 +14,10 @@ const work: Vault = {
   state: 'connected',
   lastSyncedAt: '2026-11-23T11:55:00Z',
   conflictCount: 0,
+  remoteId: 'aa11',
 }
 
-const home: Vault = { ...work, id: 'home', name: 'Home', lastSyncedAt: '2026-11-23T11:59:50Z' }
+const home: Vault = { ...work, id: 'home', name: 'Home', remoteId: 'cc33', lastSyncedAt: '2026-11-23T11:59:50Z' }
 
 const plain: Vault = {
   id: 'plain',
@@ -25,11 +26,12 @@ const plain: Vault = {
   state: 'notConnected',
   lastSyncedAt: '',
   conflictCount: 0,
+  remoteId: '',
 }
 
 const cloud: RemoteVault[] = [
-  { remoteId: 'aa11', name: 'Work', isConnected: true },
-  { remoteId: 'bb22', name: 'Recipes', isConnected: false },
+  { remoteId: 'aa11', name: 'Work', isConnected: true, sizeBytes: 1_048_576 },
+  { remoteId: 'bb22', name: 'Recipes', isConnected: false, sizeBytes: 3_670_016 },
 ]
 
 interface Setup {
@@ -51,6 +53,7 @@ const createClient = (setup: Setup): VaultsClient => ({
   resolveDeletions: () => Promise.resolve(),
   connectVault: () => Promise.resolve(),
   stopSyncingVault: () => Promise.resolve(),
+  deleteCloudVault: () => Promise.resolve(),
   getStatus: () => {
     if (setup.isPending === true) return never()
     if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))
@@ -145,5 +148,17 @@ export const NoIdentity: Story = {
   args: { client: createClient({ hasIdentity: false }), now: () => NOW },
   play: async ({ canvasElement }) => {
     await expect(await within(canvasElement).findByText('No identity on this device')).toBeVisible()
+  },
+}
+
+export const NotSyncingHere: Story = {
+  args: { client: createClient({ vaults: [work], remote: cloud }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Recipes')).toBeVisible()
+    await expect(canvas.getByText('Not syncing')).toBeVisible()
+    await expect(canvas.getByText('1 MB in the cloud')).toBeVisible()
+    await expect(canvas.getByText('3.5 MB in the cloud')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Actions for Recipes' })).toBeVisible()
   },
 }

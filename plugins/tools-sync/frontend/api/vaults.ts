@@ -29,12 +29,14 @@ export interface Vault {
   readonly lastSyncedAt: string
   readonly conflictCount: number
   readonly pausedDeletions?: PausedDeletions | null
+  readonly remoteId: string
 }
 
 export interface RemoteVault {
   readonly remoteId: string
   readonly name: string
   readonly isConnected: boolean
+  readonly sizeBytes: number
 }
 
 interface StatusItem {
@@ -74,6 +76,11 @@ interface ResolveDeletionsRequest {
 
 interface StopSyncingVaultRequest {
   readonly vaultId: string
+  readonly deleteCloudCopy: boolean
+}
+
+interface DeleteCloudVaultRequest {
+  readonly remoteId: string
 }
 
 interface GetStatusResponse {
@@ -90,6 +97,7 @@ export interface VaultsClient {
   resolveDeletions(request: ResolveDeletionsRequest): Promise<void>
   getStatus(): Promise<GetStatusResponse>
   stopSyncingVault(request: StopSyncingVaultRequest): Promise<void>
+  deleteCloudVault(request: DeleteCloudVaultRequest): Promise<void>
 }
 
 const NO_IDENTITY: GetStatusResponse = { hasIdentity: false, isReachable: false, items: [] }
@@ -120,6 +128,9 @@ export function createVaultsClient(api: Api): VaultsClient {
     getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}, NO_IDENTITY),
     stopSyncingVault: async (request) => {
       await call<StopSyncingVaultRequest, Empty>('StopSyncingVault', request)
+    },
+    deleteCloudVault: async (request) => {
+      await call<DeleteCloudVaultRequest, Empty>('DeleteCloudVault', request)
     },
   }
 }

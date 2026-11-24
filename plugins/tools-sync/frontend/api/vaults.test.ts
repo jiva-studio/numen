@@ -55,10 +55,20 @@ describe('the client of the vaults service', () => {
   it('stops the sync of a vault by its id', async () => {
     const { client, sent } = createClient(() => Response.json({}))
 
-    await client.stopSyncingVault({ vaultId: 'v1' })
+    await client.stopSyncingVault({ vaultId: 'v1', deleteCloudCopy: true })
 
     expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
-      ['StopSyncingVault', { vaultId: 'v1' }],
+      ['StopSyncingVault', { vaultId: 'v1', deleteCloudCopy: true }],
+    ])
+  })
+
+  it('deletes the cloud copy of a vault by its synced id', async () => {
+    const { client, sent } = createClient(() => Response.json({}))
+
+    await client.deleteCloudVault({ remoteId: 'aa11' })
+
+    expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
+      ['DeleteCloudVault', { remoteId: 'aa11' }],
     ])
   })
 })
@@ -81,6 +91,7 @@ describe('the fixtures of the vaults service', () => {
       lastSyncedAt: '2026-11-23T12:00:00Z',
       conflictCount: 1,
       pausedDeletions: { count: 5, tracked: 10, direction: 'send' },
+      remoteId: '00112233445566778899aabbccddeeff',
     })
   })
 
@@ -90,6 +101,7 @@ describe('the fixtures of the vaults service', () => {
     expect(read('ListRemoteVaults.request')).toStrictEqual({})
     expect(response.vaults.map((one) => one.name)).toStrictEqual(['Test', 'Work'])
     expect(response.vaults.map((one) => one.isConnected)).toStrictEqual([true, false])
+    expect(response.vaults.map((one) => one.sizeBytes)).toStrictEqual([3_145_728, 0])
   })
 
   it('reads the ConnectVault fixture as ConnectVaultRequest', () => {

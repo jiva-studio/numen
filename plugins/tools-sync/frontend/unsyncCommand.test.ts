@@ -9,12 +9,14 @@ import { activate, STOP_SYNC_COMMAND } from './index'
 import EndSyncDialog from './ui/EndSyncDialog.vue'
 
 const calls: string[] = []
+const bodies: unknown[] = []
 
 const run = async (state: 'notConnected' | 'connected' | 'received') => {
   calls.length = 0
-  vi.stubGlobal('fetch', (url: string | URL | Request) => {
+  vi.stubGlobal('fetch', (url: string | URL | Request, init?: RequestInit) => {
     const method = String(url).split('/').at(-1) ?? ''
     calls.push(method)
+    if (method === 'StopSyncingVault') bodies.push(JSON.parse(String(init?.body)))
     if (method !== 'ListVaults') return Promise.resolve(Response.json({}))
     const vault = { id: 'v1', name: 'Work', path: '/Work', lastSyncedAt: '', conflictCount: 0 }
     return Promise.resolve(Response.json({ vaults: [{ ...vault, state }] }))
@@ -40,10 +42,11 @@ describe('the command "Stop syncing this vault"', () => {
 
     const opened = dialogs.getOpened().at(0)
     expect(opened?.component).toBe(EndSyncDialog)
-    expect(opened?.props).toMatchObject({ kind: 'stop' })
+    expect(opened?.props).toMatchObject({ kind: 'stop', name: 'Work' })
     expect(calls).not.toContain('StopSyncingVault')
-    ;(opened?.props?.['onConfirm'] as () => void)()
+    ;(opened?.props?.['onConfirm'] as (deleteCloudCopy: boolean) => void)(true)
     await vi.waitFor(() => expect(calls).toContain('StopSyncingVault'))
+    expect(bodies.at(-1)).toStrictEqual({ vaultId: 'v1', deleteCloudCopy: true })
     expect(dialogs.getOpened()).toHaveLength(0)
     context.dispose()
   })

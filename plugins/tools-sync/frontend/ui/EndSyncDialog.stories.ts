@@ -19,14 +19,15 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const StopSyncing: Story = {
-  args: { kind: 'stop' },
+  args: { kind: 'stop', name: 'Work' },
   play: async ({ canvasElement }) => {
     const dialog = within(canvasElement.ownerDocument.body)
-    await expect(await dialog.findByRole('alertdialog', { name: 'Stop syncing' })).toBeVisible()
     await expect(
-      dialog.getByText('This device stops syncing. Files stay here and in the cloud.'),
+      await dialog.findByRole('alertdialog', { name: 'Stop syncing Work?' }),
     ).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Stop syncing' })).toBeVisible()
+    await expect(dialog.getByText('The files stay on this device.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Keep the cloud copy' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Delete the cloud copy' })).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible()
   },
 }

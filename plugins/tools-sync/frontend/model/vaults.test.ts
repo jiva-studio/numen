@@ -11,6 +11,7 @@ const createVault = (patch: Partial<Vault> = {}): Vault => ({
   state: 'notConnected',
   lastSyncedAt: '',
   conflictCount: 0,
+  remoteId: '',
   ...patch,
 })
 
@@ -20,8 +21,8 @@ const createClient = (vaults: Vault[] = [createVault()]) => {
     listRemoteVaults: vi.fn<VaultsClient['listRemoteVaults']>(() =>
       Promise.resolve({
         vaults: [
-          { remoteId: 'aa11', name: 'Work', isConnected: false },
-          { remoteId: 'bb22', name: 'Home', isConnected: true },
+          { remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 3_670_016 },
+          { remoteId: 'bb22', name: 'Home', isConnected: true, sizeBytes: 0 },
         ],
       }),
     ),
@@ -31,6 +32,7 @@ const createClient = (vaults: Vault[] = [createVault()]) => {
     resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
     connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
     stopSyncingVault: vi.fn<VaultsClient['stopSyncingVault']>(() => Promise.resolve()),
+    deleteCloudVault: vi.fn<VaultsClient['deleteCloudVault']>(() => Promise.resolve()),
     getStatus: vi.fn<VaultsClient['getStatus']>(() =>
       Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
     ),
@@ -42,7 +44,7 @@ const createModel = (client: ReturnType<typeof createClient>) =>
   useVaults({ client, now: () => NOW })
 
 describe('useVaults', () => {
-  it('lists only the vaults that are synced', async () => {
+  it('lists the vaults that are synced, then the vaults of the cloud that this device does not sync', async () => {
     const client = createClient([
       createVault({ id: 'a', name: 'Plain', state: 'notConnected' }),
       createVault({ id: 'b', name: 'Synced', state: 'connected' }),
@@ -54,7 +56,7 @@ describe('useVaults', () => {
     await model.actions.load()
 
     expect(model.state.status.value).toBe('ready')
-    expect(model.state.rows.value.map((row) => row.name)).toStrictEqual(['Synced'])
+    expect(model.state.rows.value.map((row) => row.name)).toStrictEqual(['Synced', 'Work'])
   })
 
   it('says a synced vault is up to date and how long ago it synced', async () => {
@@ -159,7 +161,7 @@ describe('useVaults', () => {
   it('offers nothing when every vault of the identity is on this device', async () => {
     const client = createClient()
     client.listRemoteVaults.mockResolvedValue({
-      vaults: [{ remoteId: 'bb22', name: 'Home', isConnected: true }],
+      vaults: [{ remoteId: 'bb22', name: 'Home', isConnected: true, sizeBytes: 0 }],
     })
     const model = createModel(client)
 
@@ -286,6 +288,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.map((row) => [row.status, row.canResolve])).toStrictEqual([
       ['Paused: 5 of 10 files are removed here', true],
       ['Paused: 3 of 9 files were removed on another device', true],
+      ['Not syncing', false],
     ])
   })
 
@@ -306,10 +309,49 @@ describe('useVaults', () => {
 
     model.actions.askStop(model.state.rows.value[0]!)
     expect(client.stopSyncingVault).not.toHaveBeenCalled()
-    await model.actions.confirmStop()
+    await model.actions.confirmStop(false)
 
-    expect(client.stopSyncingVault).toHaveBeenCalledWith({ vaultId: 'a' })
+    expect(client.stopSyncingVault).toHaveBeenCalledWith({ vaultId: 'a', deleteCloudCopy: false })
     expect(model.state.pendingStop.value).toBeNull()
+  })
+
+  it('deletes the cloud copy with the answer, and keeps the vault linked when the server refuses', async () => {
+    const client = createClient([createVault({ id: 'a', state: 'connected' })])
+    client.stopSyncingVault.mockRejectedValue(new Error('away'))
+    const model = createModel(client)
+    await model.actions.load()
+
+    model.actions.askStop(model.state.rows.value[0]!)
+    await model.actions.confirmStop(true)
+
+    expect(client.stopSyncingVault).toHaveBeenCalledWith({ vaultId: 'a', deleteCloudCopy: true })
+    expect(model.state.error.value).toBe('away')
+  })
+
+  it('shows the size of a synced vault and of a vault that is not synced here', async () => {
+    const client = createClient([createVault({ id: 'a', state: 'connected', remoteId: 'bb22' })])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.map((row) => [row.name, row.size])).toStrictEqual([
+      ['Test', '0 MB in the cloud'],
+      ['Work', '3.5 MB in the cloud'],
+    ])
+    expect(model.state.rows.value.map((row) => row.isSynced)).toStrictEqual([true, false])
+  })
+
+  it('asks before it deletes the cloud copy of a vault that is not synced here', async () => {
+    const client = createClient()
+    const model = createModel(client)
+    await model.actions.load()
+
+    model.actions.askDelete(model.state.rows.value[0]!)
+    expect(client.deleteCloudVault).not.toHaveBeenCalled()
+    await model.actions.confirmDelete()
+
+    expect(client.deleteCloudVault).toHaveBeenCalledWith({ remoteId: 'aa11' })
+    expect(model.state.pendingDelete.value).toBeNull()
   })
 
   it('stops nothing when the person cancels', async () => {
@@ -319,7 +361,7 @@ describe('useVaults', () => {
 
     model.actions.askStop(model.state.rows.value[0]!)
     model.actions.cancelStop()
-    await model.actions.confirmStop()
+    await model.actions.confirmStop(true)
 
     expect(client.stopSyncingVault).not.toHaveBeenCalled()
   })

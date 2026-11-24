@@ -8,6 +8,7 @@ import type {
 } from '../api/vaults'
 import { getFailureCode } from '../api/subscription'
 import { vaultsClient } from '../api/wire'
+import { formatCloudSize } from '../lib/cloudSize'
 import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
@@ -22,6 +23,9 @@ export interface VaultRow {
   readonly tone: RowTone
   readonly detail: string
   readonly canResolve: boolean
+  readonly remoteId: string
+  readonly isSynced: boolean
+  readonly size: string
 }
 
 interface UseVaultsOptions {
@@ -31,6 +35,11 @@ interface UseVaultsOptions {
 
 export interface PendingStop {
   readonly vaultId: string
+  readonly name: string
+}
+
+export interface PendingDelete {
+  readonly remoteId: string
   readonly name: string
 }
 
@@ -61,8 +70,36 @@ const getPausedLabel = (paused: PausedDeletions | null | undefined): string => {
     : words.deletionsPausedSend(paused.count, paused.tracked)
 }
 
-const getRow = (vault: Vault, now: Date, isReachable: boolean): VaultRow => {
-  const base = { id: vault.id, name: vault.name }
+const getSize = (cloud: readonly RemoteVault[], remoteId: string): string => {
+  const one = cloud.find((vault) => vault.remoteId === remoteId)
+  return one === undefined ? '' : words.sizeInCloud(formatCloudSize(one.sizeBytes))
+}
+
+const getCloudRow = (one: RemoteVault): VaultRow => ({
+  id: one.remoteId,
+  name: one.name,
+  status: words.notSyncing,
+  tone: 'warning',
+  detail: '',
+  canResolve: false,
+  remoteId: one.remoteId,
+  isSynced: false,
+  size: words.sizeInCloud(formatCloudSize(one.sizeBytes)),
+})
+
+const getRow = (
+  vault: Vault,
+  now: Date,
+  isReachable: boolean,
+  cloud: readonly RemoteVault[],
+): VaultRow => {
+  const base = {
+    id: vault.id,
+    name: vault.name,
+    remoteId: vault.remoteId,
+    isSynced: true,
+    size: getSize(cloud, vault.remoteId),
+  }
   const paused = getPausedLabel(vault.pausedDeletions)
   if (paused !== '') {
     return { ...base, status: paused, tone: 'warning', detail: '', canResolve: true }
@@ -89,14 +126,16 @@ export function useVaults(options: UseVaultsOptions) {
   const isReachable = ref(true)
   const pendingConfirm = shallowRef<PendingConfirm | null>(null)
   const pendingStop = shallowRef<PendingStop | null>(null)
+  const pendingDelete = shallowRef<PendingDelete | null>(null)
 
-  const rows = computed(() =>
-    vaults.value
-      .filter((vault) => vault.state === 'connected')
-      .map((vault) => getRow(vault, now(), isReachable.value)),
-  )
-  const freeVaults = computed(() => vaults.value.filter((vault) => vault.state === 'notConnected'))
   const cloudVaults = computed(() => remote.value.filter((one) => !one.isConnected))
+  const rows = computed(() => [
+    ...vaults.value
+      .filter((vault) => vault.state === 'connected')
+      .map((vault) => getRow(vault, now(), isReachable.value, remote.value)),
+    ...cloudVaults.value.map(getCloudRow),
+  ])
+  const freeVaults = computed(() => vaults.value.filter((vault) => vault.state === 'notConnected'))
   const canGetFromCloud = computed(
     () => hasIdentity.value && isReachable.value && cloudVaults.value.length > 0,
   )
@@ -169,12 +208,33 @@ export function useVaults(options: UseVaultsOptions) {
     pendingStop.value = null
   }
 
-  async function confirmStop(): Promise<void> {
+  async function confirmStop(deleteCloudCopy: boolean): Promise<void> {
     const pending = pendingStop.value
     if (pending === null) return
     pendingStop.value = null
     try {
-      await client.stopSyncingVault({ vaultId: pending.vaultId })
+      await client.stopSyncingVault({ vaultId: pending.vaultId, deleteCloudCopy })
+      error.value = ''
+      await read()
+    } catch (failure) {
+      error.value = getErrorMessage(failure)
+    }
+  }
+
+  function askDelete(row: VaultRow): void {
+    pendingDelete.value = { remoteId: row.remoteId, name: row.name }
+  }
+
+  function cancelDelete(): void {
+    pendingDelete.value = null
+  }
+
+  async function confirmDelete(): Promise<void> {
+    const pending = pendingDelete.value
+    if (pending === null) return
+    pendingDelete.value = null
+    try {
+      await client.deleteCloudVault({ remoteId: pending.remoteId })
       error.value = ''
       await read()
     } catch (failure) {
@@ -220,6 +280,7 @@ export function useVaults(options: UseVaultsOptions) {
       canGetFromCloud,
       pendingConfirm,
       pendingStop,
+      pendingDelete,
     },
     actions: {
       load,
@@ -231,6 +292,9 @@ export function useVaults(options: UseVaultsOptions) {
       askStop,
       cancelStop,
       confirmStop,
+      askDelete,
+      cancelDelete,
+      confirmDelete,
     },
   }
 }

@@ -12,6 +12,7 @@ const createVault = (patch: Partial<Vault> = {}): Vault => ({
   state: 'notConnected',
   lastSyncedAt: '',
   conflictCount: 0,
+  remoteId: '',
   ...patch,
 })
 
@@ -28,7 +29,7 @@ const createClient = (setup: Setup = {}) => ({
   ),
   listRemoteVaults: vi.fn<VaultsClient['listRemoteVaults']>(() =>
     Promise.resolve({
-      vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
+      vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 3_670_016 }],
     }),
   ),
   getConnectPreview: vi.fn<VaultsClient['getConnectPreview']>(() =>
@@ -37,6 +38,7 @@ const createClient = (setup: Setup = {}) => ({
   resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
   connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
   stopSyncingVault: vi.fn<VaultsClient['stopSyncingVault']>(() => Promise.resolve()),
+  deleteCloudVault: vi.fn<VaultsClient['deleteCloudVault']>(() => Promise.resolve()),
   getStatus: vi.fn<VaultsClient['getStatus']>(() =>
     Promise.resolve({ hasIdentity: setup.hasIdentity ?? true, isReachable: true, items: [] }),
   ),
@@ -97,6 +99,24 @@ describe('VaultsView', () => {
     expect(wrapper.text()).toContain('Up to date')
     expect(wrapper.text()).not.toContain('Plain')
     expect(wrapper.text()).not.toContain('Not connected')
+  })
+
+  it('lists a vault of the cloud that is not synced here with its size, after the synced ones', async () => {
+    const { wrapper } = await render({
+      vaults: [createVault({ id: 'b', name: 'Synced', state: 'connected', remoteId: 'bb22' })],
+      remote: [
+        { remoteId: 'bb22', name: 'Synced', isConnected: true, sizeBytes: 1_048_576 },
+        { remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 3_670_016 },
+      ],
+    })
+
+    const rows = wrapper.findAll('li').map((one) => one.text())
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toContain('Up to date')
+    expect(rows[0]).toContain('1 MB in the cloud')
+    expect(rows[1]).toContain('Work')
+    expect(rows[1]).toContain('Not syncing')
+    expect(rows[1]).toContain('3.5 MB in the cloud')
   })
 
   it('offers the removals that wait for an answer', async () => {

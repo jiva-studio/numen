@@ -16,6 +16,7 @@ import {
 import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
+import DeleteCloudCopyDialog from './DeleteCloudCopyDialog.vue'
 import EndSyncDialog from './EndSyncDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
 import RowMenu from './RowMenu.vue'
@@ -33,9 +34,22 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, warning, rows, pendingStop } = model.state
-const { load, watch, resolveDeletions, askStop, cancelStop, confirmStop } = model.actions
-const ITEMS: readonly MenuItem[] = [{ id: 'stop', text: words.stopSyncing, group: 'danger' }]
+const { status, error, warning, rows, pendingStop, pendingDelete } = model.state
+const {
+  load,
+  watch,
+  resolveDeletions,
+  askStop,
+  cancelStop,
+  confirmStop,
+  askDelete,
+  cancelDelete,
+  confirmDelete,
+} = model.actions
+const STOP_ITEMS: readonly MenuItem[] = [{ id: 'stop', text: words.stopSyncing, group: 'danger' }]
+const DELETE_ITEMS: readonly MenuItem[] = [
+  { id: 'delete', text: words.deleteCloudItem, group: 'danger' },
+]
 const hasProblem = computed(() => error.value !== '' && status.value !== 'error')
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -54,8 +68,12 @@ function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
   resolveDeletions(vaultId, choice).catch(report)
 }
 
-function onConfirmStop(): void {
-  confirmStop().catch(report)
+function onConfirmStop(deleteCloudCopy: boolean): void {
+  confirmStop(deleteCloudCopy).catch(report)
+}
+
+function onConfirmDelete(): void {
+  confirmDelete().catch(report)
 }
 
 function onRetry(): void {
@@ -96,6 +114,7 @@ function report(failure: unknown): void {
       <ul v-else class="sync-card__list">
         <SyncRow v-for="row in rows" :key="row.id" :name="row.name">
           <SyncStatus :text="row.status" :tone="row.tone" />
+          <span v-if="row.size !== ''" class="sync-row__detail">{{ row.size }}</span>
           <span v-if="row.detail !== ''" class="sync-row__detail">{{ row.detail }}</span>
           <template #actions>
             <template v-if="row.canResolve">
@@ -106,7 +125,18 @@ function report(failure: unknown): void {
                 {{ words.keepFiles }}
               </Button>
             </template>
-            <RowMenu :label="words.rowActions(row.name)" :items="ITEMS" @choose="askStop(row)" />
+            <RowMenu
+              v-if="row.isSynced"
+              :label="words.rowActions(row.name)"
+              :items="STOP_ITEMS"
+              @choose="askStop(row)"
+            />
+            <RowMenu
+              v-else
+              :label="words.rowActions(row.name)"
+              :items="DELETE_ITEMS"
+              @choose="askDelete(row)"
+            />
           </template>
         </SyncRow>
       </ul>
@@ -114,8 +144,15 @@ function report(failure: unknown): void {
     <EndSyncDialog
       v-if="pendingStop !== null"
       kind="stop"
+      :name="pendingStop.name"
       @confirm="onConfirmStop"
       @cancel="cancelStop"
+    />
+    <DeleteCloudCopyDialog
+      v-if="pendingDelete !== null"
+      :name="pendingDelete.name"
+      @confirm="onConfirmDelete"
+      @cancel="cancelDelete"
     />
   </IslandCard>
 </template>

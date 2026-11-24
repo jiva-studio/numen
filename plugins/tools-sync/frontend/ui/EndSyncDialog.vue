@@ -1,24 +1,51 @@
 <script setup lang="ts">
-/** The question before a vault stops syncing or a received folder is left: the files stay on this device either way. */
-import { ConfirmDialog } from '@numen/ui'
+/**
+ * The question before a vault stops syncing or a received folder is left: the files stay on this device either way.
+ * A synced vault also asks whether its copy in the cloud stays or is deleted.
+ */
+import { onMounted, useTemplateRef } from 'vue'
+import { Button, ConfirmDialog, Dialog } from '@numen/ui'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ kind: 'stop' | 'leave' }>()
+withDefaults(defineProps<{ kind: 'stop' | 'leave'; name?: string }>(), { name: '' })
 
 const emit = defineEmits<{
-  (event: 'confirm'): void
+  (event: 'confirm', deleteCloudCopy: boolean): void
   (event: 'cancel'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const cancel = useTemplateRef<InstanceType<typeof Button>>('cancel')
+
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => {
+  const element = cancel.value?.$el
+  if (element instanceof HTMLElement) element.focus()
+})
 </script>
 
 <template>
+  <Dialog
+    v-if="kind === 'stop'"
+    role="alertdialog"
+    :label="words.stopSyncingQuestion(name)"
+    @cancel="emit('cancel')"
+  >
+    <p class="sync-dialog__text">{{ words.stopSyncingText }}</p>
+    <template #actions>
+      <Button ref="cancel" variant="ghost" @click="emit('cancel')">{{ words.cancel }}</Button>
+      <Button variant="solid" @click="emit('confirm', false)">{{ words.keepCloudCopy }}</Button>
+      <Button variant="danger" @click="emit('confirm', true)">{{ words.deleteCloudCopy }}</Button>
+    </template>
+  </Dialog>
   <ConfirmDialog
-    :label="kind === 'stop' ? words.stopSyncing : words.leaveTitle"
-    :text="kind === 'stop' ? words.stopSyncingText : words.leaveText"
-    :confirm-text="kind === 'stop' ? words.stopSyncing : words.leaveShare"
+    v-else
+    :label="words.leaveTitle"
+    :text="words.leaveText"
+    :confirm-text="words.leaveShare"
     :cancel-text="words.cancel"
-    @confirm="emit('confirm')"
+    @confirm="emit('confirm', false)"
     @cancel="emit('cancel')"
   />
 </template>

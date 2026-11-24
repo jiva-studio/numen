@@ -9,7 +9,7 @@ import { activate, SYNC_COMMAND } from './index'
 import SyncChoiceDialog from './ui/SyncChoiceDialog.vue'
 
 interface Server {
-  readonly cloud: { remoteId: string; name: string; isConnected: boolean }[]
+  readonly cloud: { remoteId: string; name: string; isConnected: boolean; sizeBytes: number }[]
   readonly state: 'notConnected' | 'connected'
 }
 
@@ -79,7 +79,7 @@ describe('the command "Sync this vault"', () => {
 
   it('asks which copy to use when the identity holds a vault of the same name', async () => {
     const { context, dialogs } = await run({
-      cloud: [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
+      cloud: [{ remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 0 }],
       state: 'notConnected',
     })
 

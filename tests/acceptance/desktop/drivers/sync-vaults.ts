@@ -11,6 +11,8 @@ const PLUGIN_NAME = 'Numen Sync'
 const SECTION = 'Synced vaults'
 const SYNC = 'Sync this vault'
 const STOP_SYNCING = 'Stop syncing'
+const KEEP_CLOUD_COPY = 'Keep the cloud copy'
+const NOT_SYNCING = 'Not syncing'
 const FROM_CLOUD = 'Get a vault from the cloud'
 const CLOUD_VAULT = 'Vault in the cloud'
 const DEVICE_VAULT = 'Vault on this device'
@@ -37,12 +39,12 @@ export class SyncVaultsDriver {
   }
 
   /** Runs the command "Sync this vault" on the top folder of the vault that is open. */
-  /** Chooses "Stop syncing" in the menu of the row of the vault and answers the question with the same button. */
+  /** Chooses "Stop syncing" in the menu of the row of the vault and answers the question with "Keep the cloud copy". */
   async stopSyncingVault(vault: string): Promise<void> {
     const row = this.getRow(await this.show(), vault)
     await row.getByRole('button', { name: `Actions for ${vault}` }).click()
     await this.scenario.page.getByRole('menuitem', { name: STOP_SYNCING, exact: true }).click()
-    await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: STOP_SYNCING, exact: true }).click()
+    await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: KEEP_CLOUD_COPY, exact: true }).click()
   }
 
   async connectNew(_vault: string): Promise<void> {
@@ -88,7 +90,7 @@ export class SyncVaultsDriver {
 
   async expectNotConnected(vault: string): Promise<void> {
     const panel = await this.show()
-    await expect(this.getRow(panel, vault)).toHaveCount(0, { timeout: SYNC_LIMIT_MS })
+    await expect(this.getRow(panel, vault).filter({ hasNotText: NOT_SYNCING })).toHaveCount(0, { timeout: SYNC_LIMIT_MS })
   }
 
   /** Expects the card to list the vault as synced. */

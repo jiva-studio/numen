@@ -12,11 +12,12 @@ const vault = (id: string, state: Vault['state']): Vault => ({
   state,
   lastSyncedAt: '',
   conflictCount: 0,
+  remoteId: '',
 })
 
 const cloud: RemoteVault[] = [
-  { remoteId: 'aa11', name: 'Work', isConnected: true },
-  { remoteId: 'bb22', name: 'Recipes', isConnected: false },
+  { remoteId: 'aa11', name: 'Work', isConnected: true, sizeBytes: 1_048_576 },
+  { remoteId: 'bb22', name: 'Recipes', isConnected: false, sizeBytes: 3_670_016 },
 ]
 
 const createClient = (vaults: Vault[], differCount = 0): VaultsClient => ({
@@ -26,6 +27,7 @@ const createClient = (vaults: Vault[], differCount = 0): VaultsClient => ({
   resolveDeletions: () => Promise.resolve(),
   connectVault: () => Promise.resolve(),
   stopSyncingVault: () => Promise.resolve(),
+  deleteCloudVault: () => Promise.resolve(),
   getStatus: () => Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
 })
 

@@ -13,20 +13,21 @@ const getCurrentVault = (host: HostServices): string =>
 export const registerUnsync = (plugin: PluginContext, host: HostServices, id: string): void => {
   const show = (failure: unknown): void =>
     host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
-  const ask = (kind: 'stop' | 'leave', vaultId: string): void => {
+  const ask = (kind: 'stop' | 'leave', vaultId: string, name: string): void => {
     const dialogs = host.ui.dialogs
     if (dialogs === undefined) return
-    const end = (): Promise<void> =>
+    const end = (deleteCloudCopy: boolean): Promise<void> =>
       kind === 'stop'
-        ? vaultsClient.stopSyncingVault({ vaultId })
+        ? vaultsClient.stopSyncingVault({ vaultId, deleteCloudCopy })
         : shareInboxClient.leaveShare({ vaultId })
     const dialog = dialogs.open({
       component: EndSyncDialog,
       props: {
         kind,
-        onConfirm: () => {
+        name,
+        onConfirm: (deleteCloudCopy: boolean) => {
           dialog.close()
-          end().catch(show)
+          end(deleteCloudCopy).catch(show)
         },
         onCancel: () => dialog.close(),
       },
@@ -38,8 +39,8 @@ export const registerUnsync = (plugin: PluginContext, host: HostServices, id: st
       const vaultId = getCurrentVault(host)
       try {
         const vault = (await vaultsClient.listVaults()).vaults.find((one) => one.id === vaultId)
-        if (vault?.state === 'connected') ask('stop', vaultId)
-        else if (vault?.state === 'received') ask('leave', vaultId)
+        if (vault?.state === 'connected') ask('stop', vaultId, vault.name)
+        else if (vault?.state === 'received') ask('leave', vaultId, vault.name)
         else host.ui.notices.show(words.notSyncedHere)
       } catch (failure) {
         show(failure)
