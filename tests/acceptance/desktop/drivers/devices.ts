@@ -218,7 +218,8 @@ export class DevicesDriver {
   /** Revokes the device with this fingerprint and confirms the question the page asks. */
   async revoke(fingerprint: string): Promise<void> {
     const row = await this.getRowOf(fingerprint)
-    await row.getByRole('button', { name: REVOKE, exact: true }).click()
+    await row.click({ button: 'right' })
+    await this.scenario.page.getByRole('menuitem', { name: REVOKE, exact: true }).click()
     await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: REVOKE, exact: true }).click()
   }
 
@@ -226,7 +227,8 @@ export class DevicesDriver {
     const rows = this.getRows(await this.showPage())
     const own = rows.filter({ hasText: THIS_DEVICE })
     await expect(own).toHaveCount(1)
-    await expect(own.getByRole('button', { name: REVOKE })).toHaveCount(0)
+    await own.click({ button: 'right' })
+    await expect(this.scenario.page.getByRole('menuitem', { name: REVOKE })).toHaveCount(0)
   }
 
   /** Expects a warning of the page, in the dialog or beside it. */

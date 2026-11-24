@@ -1,20 +1,18 @@
 <script setup lang="ts">
 /**
  * One device of the identity: its name, when it was linked, its fingerprint and whether it is this
- * one. Every row has the same columns; the actions column holds a "..." menu with Remove on another
- * device and stays empty on this one.
+ * one. A right-click (or the Menu key) on another device opens a menu with Remove; this one has none.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
-import { Fingerprint } from '@numen/ui'
+import { Fingerprint, Menu, measureRect, type MenuItem } from '@numen/ui'
 import type { DeviceInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
-import DeviceActions from './DeviceActions.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ device: DeviceInfo }>()
 
-defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
+const emit = defineEmits<{ (e: 'revoke', device: DeviceInfo): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const date = computed(() => {
@@ -23,11 +21,42 @@ const date = computed(() => {
   return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(added)
 })
 
-const hasActions = computed(() => !props.device.isThis && !props.device.isRevoked)
+const hasMenu = computed(() => !props.device.isThis && !props.device.isRevoked)
+const row = ref<HTMLElement | null>(null)
+const anchor = ref<{ x: number; y: number } | null>(null)
+
+const items: readonly MenuItem[] = [{ id: 'revoke', text: words.deviceRevoke }]
+
+/* -------------------------------- Handlers -------------------------------- */
+function onContextMenu(event: MouseEvent): void {
+  if (!hasMenu.value) return
+  event.preventDefault()
+  const box = measureRect(row.value)
+  // The Menu key and Shift+F10 fire the event at 0,0.
+  const isFromKeyboard = event.clientX === 0 && event.clientY === 0 && box !== undefined
+  anchor.value = isFromKeyboard
+    ? { x: box.left, y: box.bottom }
+    : { x: event.clientX, y: event.clientY }
+}
+
+function onClose(): void {
+  anchor.value = null
+}
+
+function onChoose(): void {
+  onClose()
+  emit('revoke', props.device)
+}
 </script>
 
 <template>
-  <li class="device-row">
+  <li
+    ref="row"
+    class="device-row"
+    :tabindex="hasMenu ? 0 : undefined"
+    :aria-haspopup="hasMenu ? 'menu' : undefined"
+    @contextmenu="onContextMenu"
+  >
     <NavigationRow
       category="device"
       is-static
@@ -39,11 +68,18 @@ const hasActions = computed(() => !props.device.isThis && !props.device.isRevoke
       </template>
       <template #trail>
         <Fingerprint class="device-row__fingerprint" :value="device.fingerprint" />
-        <span class="device-row__actions">
-          <DeviceActions v-if="hasActions" :device="device" @revoke="$emit('revoke', $event)" />
-        </span>
       </template>
     </NavigationRow>
+    <Menu
+      v-if="anchor"
+      :items="items"
+      :at="anchor"
+      :from="row"
+      :name="words.deviceMenu(device.name)"
+      is-open
+      @choose="onChoose"
+      @dismiss="onClose"
+    />
   </li>
 </template>
 
@@ -54,15 +90,6 @@ const hasActions = computed(() => !props.device.isThis && !props.device.isRevoke
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   letter-spacing: 0.02em;
-}
-
-.device-row__actions {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
 }
 
 .device-row__badge {

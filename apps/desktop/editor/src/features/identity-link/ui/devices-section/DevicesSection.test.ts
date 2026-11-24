@@ -42,6 +42,15 @@ const mountSection = async (
   return wrapper
 }
 
+/** Right-clicks the row, as the pointer does. */
+const openMenu = async (index: number): Promise<void> => {
+  const row = document.querySelectorAll('li')[index]
+  row?.dispatchEvent(
+    new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }),
+  )
+  await flushPromises()
+}
+
 describe('the devices section', () => {
   it('lists the devices of the identity and marks this one', async () => {
     const section = await mountSection([THIS, OTHER])
@@ -51,20 +60,36 @@ describe('the devices section', () => {
     expect(rows[1]?.text()).toContain(OTHER.fingerprint)
   })
 
-  it('gives every row the same actions slot and a menu button only on another device', async () => {
+  it('has no button on any row and opens a menu with Remove on a right-click of another device', async () => {
     const section = await mountSection([THIS, OTHER])
-    const rows = section.findAll('li')
-    expect(rows[0]?.find('.device-row__actions').exists()).toBe(true)
-    expect(rows[1]?.find('.device-row__actions').exists()).toBe(true)
-    expect(rows[0]?.find('button').exists()).toBe(false)
-    expect(rows[1]?.find('button').attributes('aria-label')).toBe('More actions for Phone')
-    expect(rows[1]?.text()).not.toContain('Remove')
+    expect(section.find('li button').exists()).toBe(false)
+    expect(document.querySelector('[role="menuitem"]')).toBeNull()
+    await openMenu(1)
+    expect(findMenuItem(/^Remove$/)).not.toBeNull()
   })
+
+  it('opens no menu on this device and makes only another device reachable by keyboard', async () => {
+    const section = await mountSection([THIS, OTHER])
+    await openMenu(0)
+    expect(document.querySelector('[role="menuitem"]')).toBeNull()
+    const rows = section.findAll('li')
+    expect(rows[0]?.attributes('tabindex')).toBeUndefined()
+    expect(rows[1]?.attributes('tabindex')).toBe('0')
+  })
+
+  it('hints at the right-click only while another device is listed', async () => {
+    const withOther = await mountSection([THIS, OTHER])
+    expect(withOther.text()).toContain('Right-click a device to remove it.')
+    dispose(withOther)
+    const alone = await mountSection([THIS])
+    expect(alone.text()).not.toContain('Right-click')
+  })
+
 
   it('revokes a device only after the person confirms the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButton(/^More actions for Phone$/))
+    await openMenu(1)
     await click(findMenuItem(/^Remove$/))
     expect(
       findText(
@@ -87,7 +112,7 @@ describe('the devices section', () => {
       listDevices: () => Promise.resolve({ ok: true, value: listed }),
     })
     expect(section.findAll('li')).toHaveLength(2)
-    await click(findButton(/^More actions for Phone$/))
+    await openMenu(1)
     await click(findMenuItem(/^Remove$/))
     await click(findButton(/^Remove$/))
     await flushPromises()
@@ -97,7 +122,7 @@ describe('the devices section', () => {
   it('keeps the device when the person cancels the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButton(/^More actions for Phone$/))
+    await openMenu(1)
     await click(findMenuItem(/^Remove$/))
     await click(findButton(/^Cancel$/))
     expect(revokeDevice).not.toHaveBeenCalled()
@@ -110,7 +135,7 @@ describe('the devices section', () => {
         error: { error: 'revokeRaced' as const, message: 'x' },
       })
     const section = await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButton(/^More actions for Phone$/))
+    await openMenu(1)
     await click(findMenuItem(/^Remove$/))
     await click(findButton(/^Remove$/))
     expect(section.get('[role="alert"]').text()).toBe(
@@ -142,7 +167,7 @@ describe('devices with the same name', () => {
       revokeDevice,
       listDevices: () => Promise.resolve({ ok: true, value: listed }),
     })
-    await click(section.findAll('li')[2]?.get('button').element as Element)
+    await openMenu(2)
     await click(findMenuItem(/^Remove$/))
     expect(findText(twin.fingerprint)).not.toBeNull()
     await click(findButton(/^Remove$/))
