@@ -70,6 +70,7 @@ export type {
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultFlagsHost,
   VaultsHost,
   VaultsState,
   WindowHost,
