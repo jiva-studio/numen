@@ -18,17 +18,17 @@ defineProps<{ isDisabled?: boolean }>()
 .header-action {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: calc(0.375 * var(--numen-chrome-unit));
   box-sizing: border-box;
-  block-size: calc(var(--numen-text-2) * var(--numen-line-height));
+  block-size: calc(var(--numen-chrome-text-2) * var(--numen-line-height));
   margin: 0;
-  padding: 0 0.375rem;
+  padding: 0 calc(0.375 * var(--numen-chrome-unit));
   border: none;
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   background: none;
   color: var(--numen-accent);
   font: inherit;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -53,6 +53,6 @@ defineProps<{ isDisabled?: boolean }>()
 }
 
 .header-action:last-child {
-  margin-inline-end: calc(0.375rem - var(--numen-card-pad));
+  margin-inline-end: calc(0.375 * var(--numen-chrome-unit) - var(--numen-chrome-unit));
 }
 </style>

@@ -23,10 +23,10 @@ defineProps<{ name: string }>()
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem 1rem;
+  gap: calc(0.5 * var(--numen-chrome-unit)) var(--numen-chrome-unit);
   box-sizing: border-box;
-  min-block-size: 3.25rem;
-  padding-block: 0.75rem;
+  min-block-size: calc(3.25 * var(--numen-chrome-unit));
+  padding-block: calc(0.75 * var(--numen-chrome-unit));
 }
 
 .sync-row__label {
@@ -44,6 +44,6 @@ defineProps<{ name: string }>()
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: calc(0.5 * var(--numen-chrome-unit));
 }
 </style>

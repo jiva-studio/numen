@@ -16,14 +16,14 @@ defineProps<{ text: string; tone: 'ok' | 'warning' | 'alarm' }>()
 .sync-status {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.375rem;
+  gap: calc(0.375 * var(--numen-chrome-unit));
   color: var(--numen-ink);
 }
 
 .sync-status__dot {
   flex: none;
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
+  inline-size: calc(0.5 * var(--numen-chrome-unit));
+  block-size: calc(0.5 * var(--numen-chrome-unit));
   border-radius: var(--numen-radius-pill);
   background-color: var(--numen-positive);
 }

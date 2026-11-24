@@ -57,13 +57,13 @@
 
 .sync-card__lead {
   margin: 0;
-  padding-block: var(--numen-card-inset);
+  padding-block: calc(0.25 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
 }
 
 .sync-card__note {
   margin: 0;
-  padding-block: var(--numen-card-inset);
+  padding-block: calc(0.25 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
 }
 
@@ -73,7 +73,7 @@
 
 .sync-card__group {
   margin: 0;
-  padding-block: 0.75rem 0;
+  padding-block: calc(0.75 * var(--numen-chrome-unit)) 0;
   font-size: var(--numen-chrome-text-2);
   font-weight: 600;
 }
@@ -86,7 +86,7 @@
 
 .sync-card__state {
   display: flex;
-  min-block-size: 8rem;
+  min-block-size: calc(8 * var(--numen-chrome-unit));
 }
 
 .sync-row__detail {
@@ -97,7 +97,7 @@
 .sync-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: calc(0.25 * var(--numen-chrome-unit));
 }
 
 .sync-field__label {
@@ -107,16 +107,16 @@
 .sync-field__line {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: calc(0.5 * var(--numen-chrome-unit));
 }
 
 .sync-field__input {
   box-sizing: border-box;
   inline-size: 100%;
   min-inline-size: 0;
-  padding: 0.375rem 0.5rem;
+  padding: calc(0.375 * var(--numen-chrome-unit)) calc(0.5 * var(--numen-chrome-unit));
   border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   background: var(--numen-surface);
   color: var(--numen-ink);
   font: inherit;
@@ -139,7 +139,7 @@
 .sync-dialog__text {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: calc(0.375 * var(--numen-chrome-unit));
   margin: 0;
 }
 
@@ -153,7 +153,7 @@
 }
 
 .sync-dialog__spinner {
-  --spinner-size: 0.875rem;
+  --spinner-size: calc(0.875 * var(--numen-chrome-unit));
   --spinner-thickness: var(--numen-stroke);
 }
 
@@ -161,14 +161,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: calc(0.5 * var(--numen-chrome-unit));
 }
 
 .share-people {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding-block-start: 0.5rem;
+  gap: calc(0.25 * var(--numen-chrome-unit));
+  padding-block-start: calc(0.5 * var(--numen-chrome-unit));
 }
 
 .share-people__title {
@@ -209,7 +209,7 @@
 }
 
 .subscription__text {
-  padding-block: var(--numen-card-inset);
+  padding-block: calc(0.25 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
 }
 
@@ -416,7 +416,7 @@
 .share-code {
   margin: 0;
   font-family: var(--numen-font-mono);
-  font-size: var(--numen-title-size);
+  font-size: calc(1.125 * var(--numen-chrome-unit));
   font-weight: 600;
   letter-spacing: 0.1em;
   color: var(--numen-ink);

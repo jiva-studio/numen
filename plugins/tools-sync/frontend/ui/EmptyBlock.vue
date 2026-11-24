@@ -19,8 +19,8 @@ defineProps<{ icon: Component; title: string; text: string }>()
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.375rem;
-  padding-block: 1.5rem;
+  gap: calc(0.375 * var(--numen-chrome-unit));
+  padding-block: calc(1.5 * var(--numen-chrome-unit));
   text-align: center;
 }
 
@@ -36,7 +36,7 @@ defineProps<{ icon: Component; title: string; text: string }>()
 
 .empty-block__text {
   margin: 0;
-  max-inline-size: 24rem;
+  max-inline-size: calc(24 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
 }
 </style>
