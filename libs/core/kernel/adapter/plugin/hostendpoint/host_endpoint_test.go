@@ -87,6 +87,11 @@ func capability[T any](fake any) T {
 	return found
 }
 
+type fakeStorage struct {
+	vaultapi.StoreOpener
+	vaultapi.CacheStore
+}
+
 func vaultOf(fake any) *vaultapi.Access {
 	return &vaultapi.Access{
 		Notes: capability[vaultapi.NoteLookup](fake), Frontmatter: capability[vaultapi.FrontmatterLookup](fake),
@@ -95,7 +100,7 @@ func vaultOf(fake any) *vaultapi.Access {
 		Files:       capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
 		Arranger: capability[vaultapi.Arranger](fake), LinkEditor: capability[vaultapi.LinkEditor](fake),
 		Watch: capability[vaultapi.Watch](fake), Switch: capability[vaultapi.Switch](fake),
-		Storage: vaultapi.Storage{Stores: capability[vaultapi.StoreOpener](fake), Cache: capability[vaultapi.CacheStore](fake)},
+		Storage: fakeStorage{StoreOpener: capability[vaultapi.StoreOpener](fake), CacheStore: capability[vaultapi.CacheStore](fake)},
 	}
 }
 

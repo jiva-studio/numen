@@ -10,14 +10,14 @@ import (
 // DefaultServer is the address of the server of the build, the only one the embedded roots are for.
 const DefaultServer = "https://sync.numen.md"
 
-// embeddedRoots are the public root keys of the operator. A build with none ignores every restore announcement.
-var embeddedRoots = []ed25519.PublicKey{}
+// getEmbeddedRoots returns the public root keys of the operator. A build with none ignores every restore announcement.
+func getEmbeddedRoots() []ed25519.PublicKey { return []ed25519.PublicKey{} }
 
 // GetRoots returns the roots that count for the server at address: the embedded ones, and the root key of the
 // plugin setting (hex) when the person typed another server than the default one. A setting never adds a root
 // for the default server.
 func GetRoots(address, settingRoot string) ([]ed25519.PublicKey, error) {
-	roots := append([]ed25519.PublicKey{}, embeddedRoots...)
+	roots := getEmbeddedRoots()
 	settingRoot = strings.TrimSpace(settingRoot)
 	if settingRoot == "" || isDefaultServer(address) {
 		return roots, nil

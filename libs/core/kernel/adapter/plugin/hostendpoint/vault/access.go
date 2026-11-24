@@ -153,9 +153,9 @@ type CacheStore interface {
 }
 
 // Storage is what the host keeps for a plugin in the vault: its store folder and its cache.
-type Storage struct {
-	Stores StoreOpener
-	Cache  CacheStore
+type Storage interface {
+	StoreOpener
+	CacheStore
 }
 
 // Access is the open vault as the host exposes it to a plugin: its files, the index data of its

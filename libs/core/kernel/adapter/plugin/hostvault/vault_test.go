@@ -159,11 +159,11 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 
 func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 	access, v := diskVault(t, nil, diskHooks{})
-	store, err := access.Storage.Stores.OpenStoreWriter("md.numen.a")
+	store, err := access.Storage.OpenStoreWriter("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := access.Storage.Stores.OpenStore("md.numen.a")
+	reader, err := access.Storage.OpenStore("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +181,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, id := range []string{"", "samples", "index", "..", "a/b.c", ".a.b"} {
-		if _, err := access.Storage.Stores.OpenStore(id); !errors.Is(err, vaultdomain.ErrOutside) {
+		if _, err := access.Storage.OpenStore(id); !errors.Is(err, vaultdomain.ErrOutside) {
 			t.Errorf("the folder of %q was opened with %v", id, err)
 		}
 	}
@@ -190,14 +190,14 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 	access, _ := diskVault(t, nil, diskHooks{})
 
-	if _, found, err := access.Storage.Cache.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {
+	if _, found, err := access.Storage.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {
 		t.Fatalf("an empty cache answered %v, %v", found, err)
 	}
-	if err := access.Storage.Cache.WriteCache(t.Context(), "md.numen.a", "schedules", []byte("{}")); err != nil {
+	if err := access.Storage.WriteCache(t.Context(), "md.numen.a", "schedules", []byte("{}")); err != nil {
 		t.Fatal(err)
 	}
-	mine, found, err := access.Storage.Cache.ReadCache(t.Context(), "md.numen.a", "schedules")
-	other, otherFound, otherErr := access.Storage.Cache.ReadCache(t.Context(), "md.numen.b", "schedules")
+	mine, found, err := access.Storage.ReadCache(t.Context(), "md.numen.a", "schedules")
+	other, otherFound, otherErr := access.Storage.ReadCache(t.Context(), "md.numen.b", "schedules")
 
 	if err != nil || !found || string(mine) != "{}" {
 		t.Errorf("the cache held %q, %v (%v)", mine, found, err)
@@ -206,7 +206,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 		t.Errorf("another plugin's cache held %q, %v (%v)", other, otherFound, otherErr)
 	}
 	for _, name := range []string{"", "../x", "a/b", ".days"} {
-		if err := access.Storage.Cache.WriteCache(t.Context(), "md.numen.a", name, nil); err == nil {
+		if err := access.Storage.WriteCache(t.Context(), "md.numen.a", name, nil); err == nil {
 			t.Errorf("a cache was written under %q", name)
 		}
 	}
@@ -221,7 +221,7 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")
 	_, writeErr := access.Writer.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
 	_, notesErr := access.Notes.GetNotes(t.Context(), nil)
-	_, openErr := access.Storage.Stores.OpenStore("md.numen.a")
+	_, openErr := access.Storage.OpenStore("md.numen.a")
 
 	for name, err := range map[string]error{"read": readErr, "write": writeErr, "notes": notesErr, "store": openErr} {
 		if !errors.Is(err, plugin.ErrNoVault) {

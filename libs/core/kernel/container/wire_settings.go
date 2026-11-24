@@ -40,7 +40,7 @@ func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, r
 func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
 	prefs = getPluginPreferences(prefs)
-	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.settings.subscribedHosts, s, c.machine.ResolvedCompute)
+	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.settings.subscriptions.Hosts, s, c.machine.ResolvedCompute)
 	return c
 }
 

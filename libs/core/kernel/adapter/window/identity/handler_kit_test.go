@@ -338,14 +338,3 @@ func TestNewService_AnswersUnimplementedForTheKitCallsWithoutAKeyStore(t *testin
 		t.Errorf("StartRestoreFromKit error = %v, want Unimplemented", err)
 	}
 }
-
-func createWithGeneratedWords(t *testing.T, h *windowidentity.Handler) []string {
-	t.Helper()
-	generated, err := h.GenerateRecoveryWords(t.Context(), connect.NewRequest(&v1.GenerateRecoveryWordsRequest{}))
-	if err != nil {
-		t.Fatalf("GenerateRecoveryWords() error = %v", err)
-	}
-	words := generated.Msg.GetWords()
-	create(t, h, words)
-	return words
-}

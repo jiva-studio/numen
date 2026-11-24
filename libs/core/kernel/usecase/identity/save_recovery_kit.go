@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -21,13 +22,15 @@ type KitSaver interface {
 
 // SaveRecoveryKit makes a new kit of three sheets for the account of this device and saves it.
 type SaveRecoveryKit struct {
-	deps  Deps
-	saver KitSaver
+	records records
+	random  io.Reader
+	clock   Clock
+	saver   KitSaver
 }
 
 // NewSaveRecoveryKit returns the use case that makes a recovery kit and saves it through saver.
 func NewSaveRecoveryKit(d Deps, saver KitSaver) *SaveRecoveryKit {
-	return &SaveRecoveryKit{deps: d, saver: saver}
+	return &SaveRecoveryKit{records: d.records, random: d.random, clock: d.clock, saver: saver}
 }
 
 // Execute proves the account first with exactly one of words and sheets, then makes the kit and
@@ -39,19 +42,19 @@ func (u *SaveRecoveryKit) Execute(ctx context.Context, words []string, sheets []
 	if err != nil {
 		return false, err
 	}
-	account, err := u.deps.proveAccount(ctx, secret)
+	account, err := u.records.proveAccount(ctx, secret)
 	if err != nil {
 		return false, err
 	}
-	state, err := u.deps.records.readState(ctx)
+	state, err := u.records.readState(ctx)
 	if err != nil {
 		return false, err
 	}
-	made, err := identitylib.NewKit(u.deps.random, secret)
+	made, err := identitylib.NewKit(u.random, secret)
 	if err != nil {
 		return false, err
 	}
-	return u.saver.SaveKit(ctx, writeKit(made, account, state.Chain.GetMark().String(), u.deps.clock.Now()))
+	return u.saver.SaveKit(ctx, writeKit(made, account, state.Chain.GetMark().String(), u.clock.Now()))
 }
 
 func proveSecret(words []string, sheets [][]string) (identitylib.RecoverySecret, error) {

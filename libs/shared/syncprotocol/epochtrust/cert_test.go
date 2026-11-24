@@ -13,7 +13,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
-var now = time.Unix(1_800_000_000, 0)
+func getNow() time.Time { return time.Unix(1_800_000_000, 0) }
 
 func newKey(tb testing.TB, seed byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	tb.Helper()
@@ -38,17 +38,17 @@ func newCert(tb testing.TB, serial uint64, notBefore, notAfter time.Time) (epoch
 
 func TestVerifyCert_AcceptsACertificateOfTheRootInsideItsValidity(t *testing.T) {
 	t.Parallel()
-	cert, root, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, root, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 
-	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, now); err != nil {
+	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, getNow()); err != nil {
 		t.Errorf("VerifyCert = %v, want nil", err)
 	}
 }
 
 func TestVerifyCert_RefusesACertificateOutsideItsValidity(t *testing.T) {
 	t.Parallel()
-	cert, root, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
-	for name, at := range map[string]time.Time{"before": now.Add(-2 * time.Hour), "at the end": now.Add(time.Hour), "after": now.Add(2 * time.Hour)} {
+	cert, root, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
+	for name, at := range map[string]time.Time{"before": getNow().Add(-2 * time.Hour), "at the end": getNow().Add(time.Hour), "after": getNow().Add(2 * time.Hour)} {
 		if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, at); !errors.Is(err, epochtrust.ErrUntrusted) {
 			t.Errorf("%s: VerifyCert = %v, want ErrUntrusted", name, err)
 		}
@@ -57,23 +57,23 @@ func TestVerifyCert_RefusesACertificateOutsideItsValidity(t *testing.T) {
 
 func TestVerifyCert_RefusesACertificateOfAnotherRootAndAnEmptyRootList(t *testing.T) {
 	t.Parallel()
-	cert, _, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, _, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 	_, other := newKey(t, 9)
 
-	if err := epochtrust.VerifyCert([]ed25519.PublicKey{other}, cert, now); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if err := epochtrust.VerifyCert([]ed25519.PublicKey{other}, cert, getNow()); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("another root: VerifyCert = %v, want ErrUntrusted", err)
 	}
-	if err := epochtrust.VerifyCert(nil, cert, now); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if err := epochtrust.VerifyCert(nil, cert, getNow()); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("no roots: VerifyCert = %v, want ErrUntrusted", err)
 	}
 }
 
 func TestVerifyCert_RefusesACertificateWhoseFieldWasChanged(t *testing.T) {
 	t.Parallel()
-	cert, root, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, root, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 	cert.NotAfter += 3600
 
-	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, now); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, getNow()); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("VerifyCert = %v, want ErrUntrusted", err)
 	}
 }
@@ -83,32 +83,32 @@ func TestSignCert_RefusesSerialZeroAndAnEmptyValidity(t *testing.T) {
 	root, _ := newKey(t, 1)
 	_, epoch := newKey(t, 2)
 
-	if _, err := epochtrust.SignCert(root, epoch, 0, now, now.Add(time.Hour)); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if _, err := epochtrust.SignCert(root, epoch, 0, getNow(), getNow().Add(time.Hour)); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("serial 0: SignCert = %v, want ErrUntrusted", err)
 	}
-	if _, err := epochtrust.SignCert(root, epoch, 1, now, now); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if _, err := epochtrust.SignCert(root, epoch, 1, getNow(), getNow()); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("empty validity: SignCert = %v, want ErrUntrusted", err)
 	}
 }
 
 func TestVerifyCert_KeepsTheSerialInTheSignature(t *testing.T) {
 	t.Parallel()
-	cert, root, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, root, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 	cert.Serial = 2
 
-	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, now); !errors.Is(err, epochtrust.ErrUntrusted) {
+	if err := epochtrust.VerifyCert([]ed25519.PublicKey{root}, cert, getNow()); !errors.Is(err, epochtrust.ErrUntrusted) {
 		t.Errorf("VerifyCert = %v, want ErrUntrusted", err)
 	}
 }
 
 func newAnnouncement(private ed25519.PrivateKey) *syncv1.RestoreEpoch {
 	id := bytes.Repeat([]byte{0x31}, 16)
-	return &syncv1.RestoreEpoch{Id: id, IssuedAt: now.Unix(), Signature: ed25519.Sign(private, syncprotocol.GetRestoreEpochMessage(id, now.Unix()))}
+	return &syncv1.RestoreEpoch{Id: id, IssuedAt: getNow().Unix(), Signature: ed25519.Sign(private, syncprotocol.GetRestoreEpochMessage(id, getNow().Unix()))}
 }
 
 func TestVerifyAnnouncement_AcceptsTheAnnouncementOfTheCertifiedKey(t *testing.T) {
 	t.Parallel()
-	cert, _, private := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, _, private := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 
 	if err := epochtrust.VerifyAnnouncement(cert, newAnnouncement(private)); err != nil {
 		t.Errorf("VerifyAnnouncement = %v, want nil", err)
@@ -117,7 +117,7 @@ func TestVerifyAnnouncement_AcceptsTheAnnouncementOfTheCertifiedKey(t *testing.T
 
 func TestVerifyAnnouncement_RefusesTheAnnouncementOfAnotherKey(t *testing.T) {
 	t.Parallel()
-	cert, _, _ := newCert(t, 1, now.Add(-time.Hour), now.Add(time.Hour))
+	cert, _, _ := newCert(t, 1, getNow().Add(-time.Hour), getNow().Add(time.Hour))
 	other, _ := newKey(t, 9)
 
 	if err := epochtrust.VerifyAnnouncement(cert, newAnnouncement(other)); !errors.Is(err, epochtrust.ErrUntrusted) {

@@ -13,12 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 )
 
-var (
-	errBlobAddress  = errors.New("the sync server sent a storage address that Numen does not use")
-	errBlobRedirect = errors.New("the storage answered with a redirect")
-)
+var errBlobAddress = errors.New("the sync server sent a storage address that Numen does not use")
 
-var carrierGradeNAT = netip.MustParsePrefix("100.64.0.0/10")
+func getCarrierGradeNAT() netip.Prefix { return netip.MustParsePrefix("100.64.0.0/10") }
 
 // NewBlobHTTPClient returns the client that moves blobs over the presigned addresses of the server at
 // serverAddress. It sends to https addresses only, and to http only on a loopback host when the server is
@@ -88,7 +85,7 @@ func isPublicAddress(ip netip.Addr, isLocal bool) bool {
 		return isLocal
 	}
 	return !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() && !ip.IsMulticast() &&
-		!ip.IsUnspecified() && !carrierGradeNAT.Contains(ip)
+		!ip.IsUnspecified() && !getCarrierGradeNAT().Contains(ip)
 }
 
 func refuseRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
@@ -100,8 +97,7 @@ func withoutRedirects(httpClient *http.Client) *http.Client {
 }
 
 func redactURL(err error) error {
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
 		return fmt.Errorf("%s: %w", urlErr.Op, urlErr.Err)
 	}
 	return err

@@ -9,8 +9,8 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func (d Deps) proveAccount(ctx context.Context, secret identitylib.RecoverySecret) (string, error) {
-	state, err := d.records.readState(ctx)
+func (r records) proveAccount(ctx context.Context, secret identitylib.RecoverySecret) (string, error) {
+	state, err := r.readState(ctx)
 	if err != nil {
 		return "", err
 	}

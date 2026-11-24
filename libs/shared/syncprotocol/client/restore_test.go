@@ -35,7 +35,7 @@ func (s *restoreStub) GetRestoreEpoch(_ context.Context, req *connect.Request[sy
 	return connect.NewResponse(s.response), nil
 }
 
-var testNow = time.Unix(1_800_000_000, 0)
+func getTestNow() time.Time { return time.Unix(1_800_000_000, 0) }
 
 func newRoot(tb testing.TB, seed byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	tb.Helper()
@@ -54,14 +54,14 @@ func serveRestoreStub(tb testing.TB, response *syncv1.GetRestoreEpochResponse, r
 	mux.Handle(syncv1connect.NewRestoreServiceHandler(stub, connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(syncprotocol.Version))))
 	server := httptest.NewServer(mux)
 	tb.Cleanup(server.Close)
-	return stub, syncclient.NewRestoreClient(server.URL, http.DefaultClient, func() string { return "token-of-the-session" }, roots, func() time.Time { return testNow })
+	return stub, syncclient.NewRestoreClient(server.URL, http.DefaultClient, func() string { return "token-of-the-session" }, roots, getTestNow)
 }
 
 func newEpochOf(tb testing.TB, epochSeed byte) (*syncv1.GetRestoreEpochResponse, ed25519.PrivateKey, ed25519.PublicKey) {
 	tb.Helper()
 	root, rootPublic := newRoot(tb, 1)
 	private, public := newRoot(tb, epochSeed)
-	cert, err := epochtrust.SignCert(root, public, 3, testNow.Add(-time.Hour), testNow.Add(time.Hour))
+	cert, err := epochtrust.SignCert(root, public, 3, getTestNow().Add(-time.Hour), getTestNow().Add(time.Hour))
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestRestoreClient_RefusesAForgedServerKeyAtFirstUse(t *testing.T) {
 	id := bytes.Repeat([]byte{0x41}, 16)
 	forged := &syncv1.GetRestoreEpochResponse{
 		EpochSignKey: forgerPublic, Epoch: &syncv1.RestoreEpoch{Id: id, IssuedAt: 1_800_000_000, Signature: ed25519.Sign(forger, syncprotocol.GetRestoreEpochMessage(id, 1_800_000_000))},
-		EpochSerial: 1, EpochNotBefore: testNow.Add(-time.Hour).Unix(), EpochNotAfter: testNow.Add(time.Hour).Unix(), RootSignature: bytes.Repeat([]byte{9}, 64),
+		EpochSerial: 1, EpochNotBefore: getTestNow().Add(-time.Hour).Unix(), EpochNotAfter: getTestNow().Add(time.Hour).Unix(), RootSignature: bytes.Repeat([]byte{9}, 64),
 	}
 	_, root := newRoot(t, 1)
 	_, client := serveRestoreStub(t, forged, root)
@@ -181,7 +181,7 @@ func TestRestoreClient_IgnoresEveryAnnouncementWhenTheBuildHasNoRoot(t *testing.
 func TestRestoreClient_RefusesAnExpiredCertificate(t *testing.T) {
 	t.Parallel()
 	response, _, root := newEpochOf(t, 2)
-	response.EpochNotAfter = testNow.Add(-time.Minute).Unix()
+	response.EpochNotAfter = getTestNow().Add(-time.Minute).Unix()
 	_, client := serveRestoreStub(t, response, root)
 
 	_, _, err := client.GetRestoreEpoch(t.Context())

@@ -78,20 +78,18 @@ type Resources struct {
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vaultLocks   *vaultwriter.Locks
-	watches      *vaultwatch.Hub
-	settings     settingsResources
-	logEntries   *logsusecase.Entries
-	progress     *identity.Progress
-	identityLock identity.CreateGate
-	absentFiles  vaultport.AbsentFiles
+	vaultLocks  *vaultwriter.Locks
+	watches     *vaultwatch.Hub
+	settings    settingsResources
+	logEntries  *logsusecase.Entries
+	progress    *identity.Progress
+	absentFiles vaultport.AbsentFiles
 }
 
 type settingsResources struct {
-	files           *settingsadapter.Files
-	events          *settingevents.Events
-	pluginChanges   *settingsusecase.PluginChanges
-	subscribedHosts settingsusecase.HostSubscriptions
+	files         *settingsadapter.Files
+	events        *settingevents.Events
+	subscriptions settingsusecase.Subscriptions
 }
 
 func NewResources() *Resources {
@@ -101,15 +99,23 @@ func NewResources() *Resources {
 		vaultLocks: vaultwriter.NewLocks(),
 		watches:    vaultwatch.NewHub(),
 		settings: settingsResources{
-			files:           settingsadapter.NewFiles(),
-			events:          settingevents.New(),
-			pluginChanges:   &settingsusecase.PluginChanges{},
-			subscribedHosts: settingsusecase.HostSubscriptions{},
+			files:         settingsadapter.NewFiles(),
+			events:        settingevents.New(),
+			subscriptions: settingsusecase.Subscriptions{
+				Changes: settingsusecase.PluginChanges{},
+				Hosts:   settingsusecase.HostSubscriptions{},
+			},
 		},
-		logEntries:   logsusecase.NewEntries(),
-		progress:     progress,
-		identityLock: progress.GetCreateGate(),
+		logEntries: logsusecase.NewEntries(),
+		progress:   progress,
 	}
+}
+
+func getCreateGate(res *Resources) identity.CreateGate {
+	if res.progress == nil {
+		return nil
+	}
+	return res.progress.GetCreateGate()
 }
 
 func getLogEntries(res *Resources) *logsusecase.Entries {
@@ -179,7 +185,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		Watches:         res.watches,
 		SettingsFiles:   res.settings.files,
 		SettingEvents:   res.settings.events,
-		PluginChanges:   res.settings.pluginChanges,
+		PluginChanges:   &res.settings.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
@@ -248,6 +254,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: res.identityLock},
+		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: getCreateGate(res)},
 	}
 }
