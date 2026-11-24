@@ -18,8 +18,18 @@ func (u Remove) WithAbsent(absent vaultport.AbsentFiles) Remove {
 
 // WithAbsent returns the move that also moves the entries of absent files at the path and under it.
 func (u MoveFile) WithAbsent(absent vaultport.AbsentFiles) MoveFile {
-	u.absent = absent
+	u.queries = movedFiles{sources: u.queries, absent: absent}
 	return u
+}
+
+// movedFiles is what the vault holds under a path: the sources the index holds and the entries of absent files.
+type movedFiles struct {
+	sources SourcesUnder
+	absent  vaultport.AbsentFiles
+}
+
+func (m movedFiles) GetSourcesUnder(ctx context.Context, id domain.VaultID, path string) ([]domain.FileStat, error) {
+	return m.sources.GetSourcesUnder(ctx, id, path)
 }
 
 func listAbsentUnder(ctx context.Context, absent vaultport.AbsentFiles, v domain.Vault, path string) ([]vault.AbsentFile, error) {
@@ -51,8 +61,8 @@ func (u Remove) removeAbsent(ctx context.Context, v domain.Vault, path string) (
 	return len(paths), u.absent.RemoveAbsentFiles(ctx, v, paths)
 }
 
-func (u MoveFile) moveAbsent(ctx context.Context, v domain.Vault, from, to string) (int, error) {
-	under, err := listAbsentUnder(ctx, u.absent, v, from)
+func (m movedFiles) MoveAbsent(ctx context.Context, v domain.Vault, from, to string) (int, error) {
+	under, err := listAbsentUnder(ctx, m.absent, v, from)
 	if err != nil || len(under) == 0 {
 		return 0, err
 	}
@@ -63,8 +73,8 @@ func (u MoveFile) moveAbsent(ctx context.Context, v domain.Vault, from, to strin
 		entry.Path = getMovedPath(from, to, entry.Path)
 		moved[i] = entry
 	}
-	if err := u.absent.RemoveAbsentFiles(ctx, v, paths); err != nil {
+	if err := m.absent.RemoveAbsentFiles(ctx, v, paths); err != nil {
 		return 0, err
 	}
-	return len(moved), u.absent.PutAbsentFiles(ctx, v, moved)
+	return len(moved), m.absent.PutAbsentFiles(ctx, v, moved)
 }

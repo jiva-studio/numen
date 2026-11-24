@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/windowtest"
 
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
@@ -15,7 +16,7 @@ import (
 // deadlineWindow is a window whose ActivateTab returns what the client of the host returns when the
 // host returns a deadline: ErrTabNotShown over the deadline error with its code.
 type deadlineWindow struct {
-	*hosttest.Window
+	*windowtest.Window
 }
 
 func (w deadlineWindow) ActivateTab(_ context.Context, id string) (host.OpenTab, string, error) {
@@ -25,7 +26,7 @@ func (w deadlineWindow) ActivateTab(_ context.Context, id string) (host.OpenTab,
 
 func TestWindowTabActivateReturnsAHostDeadlineAsText(t *testing.T) {
 	vault := hosttest.New(testVault)
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: deadlineWindow{Window: window}})}
 

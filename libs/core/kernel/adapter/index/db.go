@@ -198,9 +198,9 @@ func (d *DB) Sources() sources {
 // reads the vaults again and leaves them as they are.
 func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d.read, d.write) }
 
-// OpenTabs is the tabs the window has open on every vault. A rebuild of the
+// NewOpenTabs is the tabs the window has open on every vault, kept in the database of the index. A rebuild of the
 // index leaves them as they are.
-func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
+func NewOpenTabs(d *DB) *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
 
 // AbsentFiles is the registry of the files each vault lists and does not hold. A rebuild of the
 // index empties it, and the plugin that filled it sends it again.

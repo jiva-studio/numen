@@ -1,4 +1,4 @@
-package hosttest_test
+package windowtest_test
 
 import (
 	"errors"
@@ -8,13 +8,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/windowtest"
 )
 
-func newWindowVault() *hosttest.Window {
+func newWindowVault() *windowtest.Window {
 	vault := hosttest.New("marsh")
 	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
 	vault.File("library/Birds.pdf", "%PDF-1.7\n\x00\x01binary body")
-	return hosttest.NewWindow(vault)
+	return windowtest.NewWindow(vault)
 }
 
 func TestTheWindowFocusesANoteOfTheVaultAndRecordsIt(t *testing.T) {
@@ -53,7 +54,7 @@ func TestTheWindowOpensAFileAtTheSpansItIsGivenAndRecordsThem(t *testing.T) {
 	if err := window.FocusFile(t.Context(), "library/Birds.pdf", spans); err != nil {
 		t.Fatal(err)
 	}
-	want := []hosttest.FocusRequest{{Path: "library/Birds.pdf", Spans: spans}}
+	want := []windowtest.FocusRequest{{Path: "library/Birds.pdf", Spans: spans}}
 	if got := window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window recorded %+v, want %+v", got, want)
 	}
@@ -68,7 +69,7 @@ func TestTheWindowOpensAFileWithNoSpansAndANote(t *testing.T) {
 	if err := window.FocusFile(t.Context(), "notes/Heron.md", []host.ByteSpan{{Start: 0, Length: 6}}); err != nil {
 		t.Errorf("a note returned %v", err)
 	}
-	want := []hosttest.FocusRequest{{Path: "library/Birds.pdf"}, {Path: "notes/Heron.md", Spans: []host.ByteSpan{{Start: 0, Length: 6}}}}
+	want := []windowtest.FocusRequest{{Path: "library/Birds.pdf"}, {Path: "notes/Heron.md", Spans: []host.ByteSpan{{Start: 0, Length: 6}}}}
 	if got := window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window recorded %+v, want %+v", got, want)
 	}

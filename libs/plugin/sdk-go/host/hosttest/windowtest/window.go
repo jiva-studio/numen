@@ -1,4 +1,5 @@
-package hosttest
+// Package windowtest is the window of a vault in memory, for the tests of a plugin that focuses notes and files.
+package windowtest
 
 import (
 	"context"
@@ -8,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
 // FocusRequest is one FocusFile call a Window received.
@@ -20,7 +22,7 @@ type FocusRequest struct {
 // of the vault, and FocusFile looks up the file among its files; a path with no file in the vault
 // returns ErrNotExist and is not recorded. The window returns the tabs set by SetOpenTabs.
 type Window struct {
-	vault *Vault
+	vault *hosttest.Vault
 
 	mu         sync.Mutex
 	tabs       []host.OpenTab
@@ -34,7 +36,7 @@ type Window struct {
 var _ host.Window = (*Window)(nil)
 
 // NewWindow returns the window of the vault, with no tab open.
-func NewWindow(vault *Vault) *Window { return &Window{vault: vault} }
+func NewWindow(vault *hosttest.Vault) *Window { return &Window{vault: vault} }
 
 func (w *Window) hasNoWindow() bool {
 	w.mu.Lock()

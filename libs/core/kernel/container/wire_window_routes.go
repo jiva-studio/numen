@@ -151,7 +151,7 @@ func mountWindowState(w *windowRoutes) {
 func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 	state := w.session
 	links := workspace.NewLinks()
-	store := db.OpenTabs()
+	store := index.NewOpenTabs(db.DB)
 	handler := workspace.NewHandler(
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
@@ -207,16 +207,14 @@ func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
 
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) })
-	host := exec
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
+	watch := pluginprocess.NewWatchProcesses(exec.Processes, exec.Health, exec.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch, settings.NewRetryPlugin(exec.Runtime.RetryPlugin))
 	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
 func mountHealth(w *windowRoutes, exec *PluginExecution) {
-	host := exec
 	handler := windowhealth.NewHandler(
-		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.Resolver), pluginhealth.NewClear(host.Health),
+		exec.Health, pluginhealth.NewReport(exec.Health, exec.Runtime.Resolver), pluginhealth.NewClear(exec.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
