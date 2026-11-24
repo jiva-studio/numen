@@ -35,10 +35,8 @@ func New(account, vault string) *State {
 	return &State{Account: account, Vault: vault, Exits: map[string]uint64{}, URLs: map[int64]int{}}
 }
 
-// GetHead returns the last entry of the log.
 func (sh *State) GetHead() *syncv1.ShareLogEntry { return sh.Log[len(sh.Log)-1] }
 
-// FindMember returns the member of the account, or nil.
 func (sh *State) FindMember(account string) *Member {
 	for _, member := range sh.Members {
 		if member.Account == account {
@@ -48,7 +46,6 @@ func (sh *State) FindMember(account string) *Member {
 	return nil
 }
 
-// FindMemberByRoot returns the member with the root, or nil.
 func (sh *State) FindMemberByRoot(root []byte) *Member {
 	for _, member := range sh.Members {
 		if bytes.Equal(member.Root, root) {
