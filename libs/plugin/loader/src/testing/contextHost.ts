@@ -70,6 +70,7 @@ const IDLE: PluginContextHost = {
     getSlots: () => createMockSlotHost(),
     getNotices: () => createMockNoticeHost(),
     getPicker: () => undefined,
+    getDialogs: () => undefined,
   },
   work: {
     getTasks: () => undefined,

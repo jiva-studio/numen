@@ -1,12 +1,20 @@
 <script setup lang="ts">
 /**
- * The page "Shares" of the plugin's settings: the code this account gives to a person who shares a folder,
- * the field where an invitation is received, and the folders received.
+ * The card "Shared folders" of the plugin's settings: the folders other people share with this account, the
+ * identity code of the account to send to a person who wants to share one, and the header action that
+ * accepts an invitation. A folder is shared from the file tree.
  */
-import { computed } from 'vue'
-import { Button } from '@numen/ui'
+import { ref } from 'vue'
+import { Copy, FolderOpen, Mail } from '@lucide/vue'
+import { Button, IslandCard } from '@numen/ui'
 import type { ReceivedView } from '../model/shares'
+import { getShortFingerprint } from '../lib/fingerprint'
 import { WORDS as words } from '../words'
+import AcceptInvitationDialog from './AcceptInvitationDialog.vue'
+import EmptyBlock from './EmptyBlock.vue'
+import HeaderAction from './HeaderAction.vue'
+import SyncRow from './SyncRow.vue'
+import SyncStatus from './SyncStatus.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -14,59 +22,74 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const problem = computed(() => props.view.error || props.view.invitationError)
-const canReceive = computed(() => !props.view.isBusy && props.view.text.trim() !== '')
+const isAccepting = ref(false)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onInvitationInput(event: Event): void {
-  props.view.setText((event.target as HTMLTextAreaElement).value).catch(props.view.fail)
-}
-
-function onReceive(): void {
-  props.view.receive().catch(props.view.fail)
-}
-
-function onCopy(): void {
+function onCopyCode(): void {
   props.view.copyCode().catch(props.view.fail)
+}
+
+function onCopyIdentity(fingerprint: string): void {
+  props.view.copyFingerprint(fingerprint).catch(props.view.fail)
 }
 </script>
 
 <template>
-  <section class="shares" :aria-label="words.sharesTitle">
-    <h2 class="shares__title">{{ words.sharesTitle }}</h2>
-    <div class="shares__block">
-      <input class="shares__input" readonly :value="view.code" :aria-label="words.yourCode" />
-      <Button variant="outline" @click="onCopy">{{ words.copy }}</Button>
-      <p class="shares__note">{{ words.yourCodeHint }}</p>
-      <p v-if="view.fingerprint !== ''" class="shares__note">
-        {{ words.yourFingerprint }}:
-        <output>{{ view.fingerprint }}</output>
-      </p>
-    </div>
-    <div class="shares__block">
-      <textarea
-        class="shares__input shares__input--invitation"
-        :value="view.text"
-        :aria-label="words.invitation"
-        :placeholder="words.pasteInvitation"
-        @input="onInvitationInput"
-      />
-      <p v-if="view.shareName !== ''" class="shares__note">
-        <span class="shares__name">{{ view.shareName }}</span>
-        <span>{{ words.ownerFingerprint }}:</span>
-        <output>{{ view.ownerFingerprint }}</output>
-      </p>
-      <Button variant="outline" :disabled="!canReceive" @click="onReceive">
-        {{ words.receive }}
-      </Button>
-    </div>
-    <p v-if="problem !== ''" class="shares__note shares__note--alarm" role="alert">{{ problem }}</p>
-    <p v-if="view.rows.length === 0" class="shares__note">{{ words.noReceived }}</p>
-    <ul v-else class="shares__list" :aria-label="words.received">
-      <li v-for="row in view.rows" :key="row.vaultId" class="shares__row">
-        <span class="shares__name">{{ row.name }}</span>
-        <span class="shares__note">{{ row.stateLabel }}</span>
-      </li>
+  <IslandCard
+    class="sync-card"
+    :title="words.sharedFoldersTitle"
+    :aria-label="words.sharedFoldersTitle"
+  >
+    <template #aside>
+      <HeaderAction @click="isAccepting = true">
+        <Mail :size="14" aria-hidden="true" />
+        {{ words.acceptInvitation }}
+      </HeaderAction>
+    </template>
+    <p class="sync-card__lead">{{ words.sharedFoldersText }}</p>
+    <p v-if="view.error !== ''" class="sync-card__note sync-card__note--alarm" role="alert">
+      {{ view.error }}
+    </p>
+    <ul class="sync-card__list">
+      <SyncRow :name="words.yourCode">
+        <span class="sync-row__detail">{{ words.yourCodeText }}</span>
+        <span v-if="view.fingerprint !== ''" class="sync-row__detail">
+          {{ getShortFingerprint(view.fingerprint) }}
+        </span>
+        <template #actions>
+          <Button variant="outline" size="small" @click="onCopyCode">
+            <Copy :size="14" aria-hidden="true" />
+            {{ words.copyCode }}
+          </Button>
+        </template>
+      </SyncRow>
     </ul>
-  </section>
+    <h3 v-if="view.rows.length > 0" class="sync-card__group">{{ words.sharedWithYou }}</h3>
+    <p v-if="view.rows.length > 0" class="sync-card__lead">{{ words.sharedWithYouText }}</p>
+    <EmptyBlock
+      v-if="view.rows.length === 0"
+      :icon="FolderOpen"
+      :title="words.noSharedTitle"
+      :text="words.noSharedText"
+    />
+    <ul v-else class="sync-card__list" :aria-label="words.sharedWithYou">
+      <SyncRow v-for="row in view.rows" :key="row.vaultId" :name="row.name">
+        <SyncStatus :text="row.stateLabel" :tone="row.tone" />
+        <span class="sync-row__detail">
+          {{ words.readOnly }} · {{ words.fromPerson(row.ownerShort) }}
+        </span>
+        <template #actions>
+          <Button
+            variant="ghost"
+            size="small"
+            :aria-label="words.copyIdentity"
+            @click="onCopyIdentity(row.ownerFingerprint)"
+          >
+            <Copy :size="14" aria-hidden="true" />
+          </Button>
+        </template>
+      </SyncRow>
+    </ul>
+    <AcceptInvitationDialog v-if="isAccepting" :view="view" @close="isAccepting = false" />
+  </IslandCard>
 </template>

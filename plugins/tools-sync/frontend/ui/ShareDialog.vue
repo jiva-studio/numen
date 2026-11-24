@@ -1,13 +1,16 @@
 <script setup lang="ts">
 /**
- * The dialog of the command "Share...": gives a folder to a reader by the code of the reader, shows the
- * invitation to send, and lists the readers of a shared folder.
+ * The dialog "Share <folder>": the identity code of the person and an optional name, the button that shares
+ * the folder, the invitation to send once it is shared, and the people who can read this folder.
  */
 import { computed } from 'vue'
-import { Button } from '@numen/ui'
+import { Check, ClipboardPaste, Copy } from '@lucide/vue'
+import { Button, ModalDialog, Spinner } from '@numen/ui'
 import type { ShareReader } from '../api/shares'
+import { getShortFingerprint } from '../lib/fingerprint'
 import { isIdentityWarning, type ShareView } from '../model/shares'
 import { WORDS as words } from '../words'
+import SyncRow from './SyncRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -15,21 +18,20 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const refusal = computed(() => props.state.error || props.state.codeError)
+const folderName = computed(() => props.state.target.folder.split('/').at(-1) ?? '')
+const refusal = computed(() => props.state.error)
 const isIdentityChange = computed(() => isIdentityWarning(props.state.error))
-const canShare = computed(
-  () => !props.state.isBusy && props.state.code.trim() !== '' && props.state.label.trim() !== '',
-)
-const hasReaders = computed(() => props.state.share.readers.length > 0)
-const isCreating = computed(() => props.state.share.state === 'creating')
-const isActive = computed(() => props.state.share.state === 'active')
+const hasInvitation = computed(() => props.state.invitation !== '')
+const isSharing = computed(() => props.state.isBusy || props.state.share.state === 'creating')
+const canShare = computed(() => !isSharing.value && props.state.code.trim() !== '')
+const sharedWith = computed(() => words.sharedWith(props.state.sharedName || words.sharedWithPerson))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCodeInput(event: Event): void {
   props.state.setCode((event.target as HTMLInputElement).value).catch(props.state.fail)
 }
 
-function onLabelInput(event: Event): void {
+function onNameInput(event: Event): void {
   props.state.setLabel((event.target as HTMLInputElement).value)
 }
 
@@ -37,80 +39,129 @@ function onShare(isConfirmed: boolean): void {
   props.state.add(isConfirmed).catch(props.state.fail)
 }
 
-function onRemoveReader(reader: ShareReader): void {
-  props.state.removeReader(reader).catch(props.state.fail)
+function onPaste(): void {
+  props.state.pasteCode().catch(props.state.fail)
 }
 
-function onStopShare(): void {
-  props.state.stopShare().catch(props.state.fail)
+function onRemove(person: ShareReader): void {
+  props.state.removeReader(person).catch(props.state.fail)
 }
 
-function onCopy(): void {
+function onCopyInvitation(): void {
   props.state.copyInvitation().catch(props.state.fail)
+}
+
+function onCopyIdentity(fingerprint: string): void {
+  props.state.copyFingerprint(fingerprint).catch(props.state.fail)
 }
 </script>
 
 <template>
-  <section class="share" role="dialog" :aria-label="words.shareFolderTitle(state.target.folder)">
-    <h2 class="share__title">{{ words.shareFolderTitle(state.target.folder) }}</h2>
-    <p v-if="isCreating" class="share__note" role="status">{{ words.creating }}</p>
-    <form class="share__form" @submit.prevent="onShare(false)">
-      <label class="share__field">
-        <span>{{ words.readerCode }}</span>
-        <input
-          class="share__input"
-          type="text"
-          :value="state.code"
-          :aria-label="words.readerCode"
-          @input="onCodeInput"
-        />
-      </label>
-      <p v-if="state.fingerprint !== ''" class="share__fingerprint">
-        <output :aria-label="words.readerFingerprint">{{ state.fingerprint }}</output>
-        <span class="share__note">{{ words.compareCode }}</span>
+  <ModalDialog
+    is-form
+    :label="words.shareDialogTitle(folderName)"
+    :hint="words.shareDialogText"
+    :step="hasInvitation ? 'shared' : 'share'"
+    @submit="onShare(false)"
+    @cancel="state.close"
+  >
+    <div v-if="hasInvitation" class="share-result">
+      <p class="sync-dialog__text" role="status">
+        <Check :size="14" aria-hidden="true" />
+        {{ sharedWith }}
       </p>
-      <label class="share__field">
-        <span>{{ words.label }}</span>
+      <textarea
+        class="sync-field__input sync-field__input--code"
+        readonly
+        rows="3"
+        :value="state.invitation"
+        :aria-label="words.invitationName"
+      />
+      <Button variant="outline" @click="onCopyInvitation">
+        <Copy :size="14" aria-hidden="true" />
+        {{ words.copyInvitation }}
+      </Button>
+      <p class="sync-dialog__text sync-dialog__text--hushed">{{ words.acceptWhere }}</p>
+    </div>
+    <template v-else>
+      <div class="sync-field">
+        <label class="sync-field__label" for="share-code">{{ words.identityCodeField }}</label>
+        <div class="sync-field__line">
+          <input
+            id="share-code"
+            class="sync-field__input sync-field__input--code"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            :value="state.code"
+            :aria-invalid="state.codeError !== ''"
+            @input="onCodeInput"
+          />
+          <Button variant="outline" @click="onPaste">
+            <ClipboardPaste :size="14" aria-hidden="true" />
+            {{ words.pasteCode }}
+          </Button>
+        </div>
+        <p v-if="state.codeError !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
+          {{ state.codeError }}
+        </p>
+        <p v-else-if="state.fingerprint !== ''" class="sync-dialog__text" role="status">
+          <Check :size="14" aria-hidden="true" />
+          {{ state.fingerprint }}
+        </p>
+        <p v-else class="sync-dialog__text sync-dialog__text--hushed">{{ words.identityCodeHint }}</p>
+      </div>
+      <label class="sync-field">
+        <span class="sync-field__label">{{ words.nameField }}</span>
         <input
-          class="share__input"
+          class="sync-field__input"
           type="text"
           :value="state.label"
-          :aria-label="words.label"
-          @input="onLabelInput"
+          @input="onNameInput"
         />
+        <span class="sync-dialog__text sync-dialog__text--hushed">{{ words.nameHint }}</span>
       </label>
-      <div class="share__actions">
-        <Button type="submit" variant="outline" :disabled="!canShare">{{ words.share }}</Button>
-        <Button v-if="isIdentityChange" variant="outline" @click="onShare(true)">
-          {{ words.shareAnyway }}
-        </Button>
-      </div>
-    </form>
-    <p v-if="refusal !== ''" class="share__note share__note--alarm" role="alert">{{ refusal }}</p>
-    <div v-if="state.invitation !== ''" class="share__field">
-      <textarea
-        class="share__input share__input--invitation"
-        readonly
-        :value="state.invitation"
-        :aria-label="words.invitation"
-      />
-      <Button variant="outline" @click="onCopy">{{ words.copy }}</Button>
-      <p class="share__note">{{ words.invitationHint }}</p>
-    </div>
-    <ul v-if="hasReaders" class="share__readers" :aria-label="words.readers">
-      <li v-for="reader in state.share.readers" :key="reader.fingerprint" class="share__reader">
-        <span class="share__name">{{ reader.label }}</span>
-        <span class="share__fingerprint">{{ reader.fingerprint }}</span>
-        <Button variant="ghost" :disabled="state.isBusy" @click="onRemoveReader(reader)">
-          {{ words.remove }}
-        </Button>
-      </li>
-    </ul>
-    <div v-if="isActive" class="share__actions">
-      <Button variant="outline" :disabled="state.isBusy" @click="onStopShare">
-        {{ words.stopSharing }}
+    </template>
+    <p v-if="isSharing" class="sync-dialog__text" role="status">
+      <Spinner class="sync-dialog__spinner" />
+      {{ words.sharing }}
+    </p>
+    <p v-if="refusal !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
+      {{ refusal }}
+    </p>
+    <section class="share-people" :aria-label="words.peopleTitle">
+      <h3 class="share-people__title">{{ words.peopleTitle }}</h3>
+      <p v-if="state.people.length === 0" class="sync-dialog__text sync-dialog__text--hushed">
+        {{ words.noPeople }}
+      </p>
+      <ul v-else class="sync-card__list">
+        <SyncRow v-for="person in state.people" :key="person.fingerprint" :name="person.label">
+          <span class="sync-row__detail">{{ getShortFingerprint(person.fingerprint) }}</span>
+          <template #actions>
+            <Button
+              variant="ghost"
+              size="small"
+              :aria-label="words.copyIdentity"
+              @click="onCopyIdentity(person.fingerprint)"
+            >
+              <Copy :size="14" aria-hidden="true" />
+            </Button>
+            <Button variant="ghost" size="small" :disabled="isSharing" @click="onRemove(person)">
+              {{ words.removeAccess }}
+            </Button>
+          </template>
+        </SyncRow>
+      </ul>
+    </section>
+    <template #actions>
+      <Button v-if="isIdentityChange" variant="outline" @click="onShare(true)">
+        {{ words.shareAnyway }}
       </Button>
-      <p class="share__note">{{ words.removedKeeps }}</p>
-    </div>
-  </section>
+      <Button v-if="hasInvitation" type="button" @click="state.close">{{ words.done }}</Button>
+      <template v-else>
+        <Button variant="ghost" @click="state.close">{{ words.cancel }}</Button>
+        <Button type="submit" :disabled="!canShare">{{ words.shareFolder }}</Button>
+      </template>
+    </template>
+  </ModalDialog>
 </template>

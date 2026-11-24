@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import {
   SLOT,
   openExternalUrl,
+  type DialogHost,
   type PickerHost,
   type PluginHost,
   type PluginStatus,
@@ -14,6 +15,7 @@ import { createNoticeQueue, type NoticeQueue, type WindowFrame } from '@numen/wo
 import type { SettingsStore } from '@/entities/settings'
 import { createPickerSession } from '@/features/command-palette'
 import {
+  createDialogStack,
   createNoticeParts,
   createPluginSupport,
   createTabActionParts,
@@ -31,7 +33,11 @@ import type { WindowApi } from './createWindowApi'
 
 /** What the window draws for plugins besides their views: the notices and the list to pick items from. */
 export function createPluginSurfaces() {
-  return { notices: createNoticeQueue(), picker: createPickerSession() }
+  return {
+    notices: createNoticeQueue(),
+    picker: createPickerSession(),
+    dialogs: createDialogStack(),
+  }
 }
 
 /** What the host parts that read the services of the window are made from. */
@@ -43,6 +49,7 @@ export interface ServicePartsDeps {
   readonly pluginNotes: PluginNotes
   readonly hostParts: readonly HostParts[]
   readonly picker?: PickerHost | undefined
+  readonly dialogs?: DialogHost | undefined
 }
 
 /**
@@ -62,7 +69,7 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
       api: plugins.pluginHost,
       rest: deps.rest,
     }),
-    createNoticeParts({ queue: deps.notices, picker: deps.picker }),
+    createNoticeParts({ queue: deps.notices, picker: deps.picker, dialogs: deps.dialogs }),
     {
       kinds: {
         readNote: pluginNotes.readNote,

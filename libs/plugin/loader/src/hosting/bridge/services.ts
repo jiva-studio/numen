@@ -62,6 +62,7 @@ export function createUiServiceBridge(
     getWindow: window.getWindow,
     getNotices: window.getNotices,
     getPicker: window.getPicker,
+    getDialogs: window.getDialogs,
     getSlots: () => slots,
   }
 }

@@ -69,6 +69,8 @@ export {
   type PromptTextOptions,
   type SelectOptionOptions,
   type PickerHost,
+  type DialogHost,
+  type DialogOptions,
   type PickerItem,
   type PickerOptions,
   type PluginContext,

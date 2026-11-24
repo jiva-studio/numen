@@ -9,6 +9,7 @@ import {
   type HostKinds,
   type HostTabs,
   type HostWork,
+  type DialogHost,
   type PickerHost,
   type PluginHostDeps,
   type ProcessHost,
@@ -132,11 +133,13 @@ export function createTaskServiceParts(deps: {
 export function createNoticeParts(deps: {
   readonly queue: NoticeQueue
   readonly picker?: PickerHost | undefined
+  readonly dialogs?: DialogHost | undefined
 }): HostParts {
   const { queue } = deps
   return {
     window: {
       getPicker: () => deps.picker,
+      getDialogs: () => deps.dialogs,
       getNotices: (pluginId) => createPluginNotices(queue, pluginId),
       clearNotices: (pluginId) => queue.clear(pluginId),
     },

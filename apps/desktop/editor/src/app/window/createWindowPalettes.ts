@@ -111,6 +111,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   return {
     palette,
     picker: plugins.picker,
+    dialogs: plugins.dialogs,
     commandDeps,
     pluginPalette,
     windowCommands: createHostConnection({

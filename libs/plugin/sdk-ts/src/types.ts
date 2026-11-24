@@ -4,6 +4,7 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { EditorExtensionHost, EditorExtensionRegistration } from './editorExtensions'
 import type { NoticeHost } from './notices'
+import type { DialogHost } from './dialogs'
 import type { PickerHost } from './picker'
 import type { TaskHost } from './tasks'
 import type { ProcessHost } from './processes'
@@ -301,7 +302,7 @@ export interface PluginVault {
   readonly vaults?: VaultsHost
 }
 
-// PluginUi is the window a plugin draws in. The picker is left out where the window offers no list to pick from.
+// PluginUi is the window a plugin draws in. The picker and the dialogs are left out where the window offers none.
 export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
@@ -309,6 +310,7 @@ export interface PluginUi {
   readonly slots: SlotHost
   readonly notices: NoticeHost
   readonly picker?: PickerHost
+  readonly dialogs?: DialogHost
   readonly drops?: DropHost
   // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
   // plugin declares one the element stays empty, and the view is drawn once one does.

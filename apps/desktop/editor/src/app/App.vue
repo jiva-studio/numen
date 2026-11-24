@@ -13,6 +13,7 @@ import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from './CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
+import { PluginDialogs } from '@/features/plugin-host'
 import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { BootstrapFailure } from '@/features/app-start'
@@ -46,7 +47,7 @@ const { isReady: isLayoutReady } = tabParts.layout
 const { openCurrentVault } = tabParts
 const { commands, search } = palettes.palette
 const { runCommand, runChoice } = palettes.palette.runs
-const { commandDeps, picker } = palettes
+const { commandDeps, picker, dialogs } = palettes
 const { pluginWays } = palettes.pluginPalette
 const { pluginHost, titleBarView, statusBarView, windowEdge } = views
 const { fileFlush, getTitle } = vault.editing
@@ -146,6 +147,8 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
       :run-choice="runChoice"
       :picker="picker"
     />
+
+    <PluginDialogs :entries="dialogs.entries.value" />
   </main>
 </template>
 

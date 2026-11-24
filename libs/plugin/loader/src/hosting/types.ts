@@ -15,6 +15,7 @@ import type {
   LogHost,
   NoticeHost,
   PickerHost,
+  DialogHost,
   ProcessHost,
   EditorSettings,
   CommandTarget,
@@ -117,6 +118,7 @@ export interface HostWindow {
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined
+  readonly getDialogs: () => DialogHost | undefined
   readonly clearNotices: (pluginId: string) => void
 }
 

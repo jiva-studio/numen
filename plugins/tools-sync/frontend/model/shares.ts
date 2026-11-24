@@ -9,6 +9,7 @@ import type {
 } from '../api/shares'
 import { folderSharesClient, readerSharesClient } from '../api/wire'
 import { WORDS as words } from '../words'
+import { getShortFingerprint } from '../lib/fingerprint'
 import { getErrorMessage } from './vaults'
 
 const REFRESH_MS = 2000
@@ -22,7 +23,9 @@ export interface ReceivedRow {
   readonly vaultId: string
   readonly name: string
   readonly ownerFingerprint: string
+  readonly ownerShort: string
   readonly stateLabel: string
+  readonly tone: 'ok' | 'warning' | 'alarm'
 }
 
 const RECEIVED_LABELS: Record<ReceivedState, string> = {
@@ -31,17 +34,27 @@ const RECEIVED_LABELS: Record<ReceivedState, string> = {
   ended: words.receivedEnded,
 }
 
+const RECEIVED_TONES: Record<ReceivedState, ReceivedRow['tone']> = {
+  receiving: 'warning',
+  ready: 'ok',
+  ended: 'alarm',
+}
+
 const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
   vaultId: share.vaultId,
   name: share.name,
   ownerFingerprint: share.ownerFingerprint,
+  ownerShort: getShortFingerprint(share.ownerFingerprint),
   stateLabel: RECEIVED_LABELS[share.state],
+  tone: RECEIVED_TONES[share.state],
 })
 
 /** Whether a refusal is the warning the person must confirm before the reader is added. */
 export const isIdentityWarning = (message: string): boolean => message === words.otherIdentity
 
 const copyText = (text: string): Promise<void> => globalThis.navigator.clipboard.writeText(text)
+
+const pasteText = (): Promise<string> => globalThis.navigator.clipboard.readText()
 
 function createRepeater(delayMs: number, onFail: (failure: unknown) => void) {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -104,6 +117,7 @@ export function createShareView(options: ShareViewOptions) {
   const share = ref<Share>(EMPTY_SHARE)
   const label = ref('')
   const invitation = ref('')
+  const sharedName = ref('')
   const error = ref('')
   const isBusy = ref(false)
   const field = createReadField((text) => client.readReaderCode(text))
@@ -149,6 +163,7 @@ export function createShareView(options: ShareViewOptions) {
         confirmChange,
       })
       invitation.value = added.invitation
+      sharedName.value = label.value.trim()
       field.clear()
       label.value = ''
       await load()
@@ -164,6 +179,7 @@ export function createShareView(options: ShareViewOptions) {
     guard(async () => {
       await client.stopShare(target)
       invitation.value = ''
+      sharedName.value = ''
       await load()
     })
 
@@ -172,7 +188,9 @@ export function createShareView(options: ShareViewOptions) {
     share,
     code: field.text,
     fingerprint: computed(() => field.info.value?.fingerprint ?? ''),
-    codeError: field.error,
+    codeError: computed(() => (field.error.value === '' ? '' : words.notIdentityCode)),
+    sharedName,
+    people: computed(() => share.value.readers.filter((one) => one.state === 'active')),
     label,
     invitation,
     error,
@@ -189,6 +207,12 @@ export function createShareView(options: ShareViewOptions) {
     removeReader,
     stopShare,
     copyInvitation: (): Promise<void> => copyText(invitation.value),
+    copyFingerprint: (value: string): Promise<void> => copyText(value),
+    pasteCode: async (): Promise<void> => setCode(await pasteText()),
+    startAnother: (): void => {
+      invitation.value = ''
+      sharedName.value = ''
+    },
     stop: repeater.stop,
     close,
   })
@@ -267,6 +291,7 @@ export function createReceivedView(options: ReceivedViewOptions = {}) {
     },
     receive,
     copyCode: (): Promise<void> => copyText(code.value),
+    copyFingerprint: (value: string): Promise<void> => copyText(value),
     stop: repeater.stop,
   })
 }

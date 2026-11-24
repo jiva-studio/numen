@@ -26,6 +26,7 @@ export const NO_WINDOW: Omit<HostWindow, 'target'> = {
   getWindow: () => undefined,
   getNotices: () => DISCARDING_NOTICES,
   getPicker: () => undefined,
+  getDialogs: () => undefined,
   clearNotices: () => undefined,
 }
 

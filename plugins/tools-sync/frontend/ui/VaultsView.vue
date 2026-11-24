@@ -1,13 +1,20 @@
 <script setup lang="ts">
 /**
- * The vaults section of the plugin's settings: every vault of this device, whether it syncs, and the
- * two ways to connect one that does not.
+ * The card "Synced vaults" of the plugin's settings: the vaults of this device that sync, each with a calm
+ * status in words. A vault gets in the list from the file tree; the header offers only to get a vault of the
+ * account that this device does not hold.
  */
-import { onMounted, onUnmounted } from 'vue'
-import { Button, getCurrentDate } from '@numen/ui'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { Cloud, RefreshCw } from '@lucide/vue'
+import { Button, ErrorState, getCurrentDate, IslandCard, LoadingIndicator } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
+import CloudVaultDialog from './CloudVaultDialog.vue'
+import EmptyBlock from './EmptyBlock.vue'
+import HeaderAction from './HeaderAction.vue'
+import SyncRow from './SyncRow.vue'
+import SyncStatus from './SyncStatus.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -20,17 +27,11 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, isReachable, warning, rows, openFor, remote, pendingConfirm } = model.state
-const {
-  watch,
-  openRemote,
-  closeRemote,
-  connectNew,
-  connectExisting,
-  resolveDeletions,
-  confirmConnect,
-  cancelConnect,
-} = model.actions
+const { status, error, warning, rows, freeVaults, cloudVaults, canGetFromCloud } = model.state
+const { isCloudOpen, pendingConfirm } = model.state
+const { load, watch, openCloud, closeCloud, connectExisting, resolveDeletions } = model.actions
+const hasProblem = computed(() => error.value !== '' && status.value !== 'error')
+const question = computed(() => pendingConfirm.value?.text ?? '')
 
 /* --------------------------------- Hooks ---------------------------------- */
 let stopWatching: (() => void) | undefined
@@ -44,24 +45,20 @@ onUnmounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onConnectNew(vaultId: string): void {
-  connectNew(vaultId).catch(report)
-}
-
-function onOpenRemote(vaultId: string): void {
-  openRemote(vaultId).catch(report)
-}
-
-function onChooseRemote(vaultId: string, remoteId: string): void {
+function onChoose(vaultId: string, remoteId: string): void {
   connectExisting(vaultId, remoteId).catch(report)
 }
 
 function onConfirm(): void {
-  confirmConnect().catch(report)
+  model.actions.confirmConnect().catch(report)
 }
 
 function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
   resolveDeletions(vaultId, choice).catch(report)
+}
+
+function onRetry(): void {
+  load().catch(report)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
@@ -71,76 +68,60 @@ function report(failure: unknown): void {
 </script>
 
 <template>
-  <section class="vaults" :aria-label="words.vaultsTitle">
-    <h2 class="vaults__title">{{ words.vaultsTitle }}</h2>
-    <p v-if="status === 'loading'" class="vaults__note" role="status">{{ words.loading }}</p>
-    <p v-if="warning !== ''" class="vaults__note vaults__note--alarm" role="status">
-      {{ warning }}
-    </p>
-    <p v-if="error !== ''" class="vaults__note vaults__note--alarm" role="alert">{{ error }}</p>
-    <ul class="vaults__list">
-      <template v-for="row in rows" :key="row.id">
-        <li class="vaults__row">
-          <span class="vaults__name">{{ row.name }}</span>
-          <span class="vaults__state">{{ row.stateLabel }}</span>
-          <span class="vaults__path">{{ row.path }}</span>
-          <span v-if="row.syncedLabel !== ''" class="vaults__detail">{{ row.syncedLabel }}</span>
-          <span v-if="row.conflictLabel !== ''" class="vaults__detail vaults__detail--alarm">
-            {{ row.conflictLabel }}
-          </span>
-          <Button
-            v-if="row.canConnect"
-            variant="outline"
-            :disabled="!isReachable"
-            @click="onConnectNew(row.id)"
-          >
-            {{ words.connectNew }}
-          </Button>
-          <Button
-            v-if="row.canConnect"
-            variant="outline"
-            :disabled="!isReachable"
-            @click="onOpenRemote(row.id)"
-          >
-            {{ words.connectExisting }}
-          </Button>
-        </li>
-        <li v-if="row.pausedLabel !== ''" class="vaults__row vaults__row--paused">
-          <span class="vaults__detail vaults__detail--alarm" role="status">
-            {{ row.pausedLabel }}
-          </span>
-          <Button variant="outline" @click="onResolve(row.id, 'remove')">
-            {{ words.removeFiles }}
-          </Button>
-          <Button variant="outline" @click="onResolve(row.id, 'keep')">
-            {{ words.keepFiles }}
-          </Button>
-        </li>
-        <li v-if="openFor === row.id" class="vaults__row vaults__row--remote">
-          <span class="vaults__name">{{ words.chooseRemote }}</span>
-          <span v-if="remote.length === 0" class="vaults__detail">{{ words.noRemoteVaults }}</span>
-          <Button
-            v-for="one in remote"
-            :key="one.remoteId"
-            variant="outline"
-            :disabled="one.isConnected"
-            @click="onChooseRemote(row.id, one.remoteId)"
-          >
-            {{ one.name }}
-          </Button>
-          <Button variant="ghost" @click="closeRemote">{{ words.closeRemote }}</Button>
-        </li>
-        <li
-          v-if="pendingConfirm !== null && pendingConfirm.vaultId === row.id"
-          class="vaults__row vaults__row--confirm"
-        >
-          <span class="vaults__detail vaults__detail--alarm" role="status">
-            {{ pendingConfirm.text }}
-          </span>
-          <Button variant="outline" @click="onConfirm">{{ words.confirmConnect }}</Button>
-          <Button variant="ghost" @click="cancelConnect">{{ words.cancelConnect }}</Button>
-        </li>
-      </template>
-    </ul>
-  </section>
+  <IslandCard class="sync-card" :title="words.vaultsTitle" :aria-label="words.vaultsTitle">
+    <template v-if="canGetFromCloud" #aside>
+      <HeaderAction @click="openCloud">
+        <Cloud :size="14" aria-hidden="true" />
+        {{ words.getFromCloud }}
+      </HeaderAction>
+    </template>
+    <p class="sync-card__lead">{{ words.vaultsText }}</p>
+    <div v-if="status === 'loading'" class="sync-card__state">
+      <LoadingIndicator :label="words.loading" />
+    </div>
+    <div v-else-if="status === 'error'" class="sync-card__state">
+      <ErrorState :message="error === '' ? words.loadFailed : error">
+        <Button variant="outline" @click="onRetry">
+          <RefreshCw :size="14" aria-hidden="true" />
+          {{ words.tryAgain }}
+        </Button>
+      </ErrorState>
+    </div>
+    <template v-else>
+      <p v-if="warning !== ''" class="sync-card__note" role="status">{{ warning }}</p>
+      <p v-if="hasProblem" class="sync-card__note sync-card__note--alarm" role="alert">
+        {{ error }}
+      </p>
+      <EmptyBlock
+        v-if="rows.length === 0 && warning === ''"
+        :icon="Cloud"
+        :title="words.noVaultsTitle"
+        :text="words.noVaultsText"
+      />
+      <ul v-else class="sync-card__list">
+        <SyncRow v-for="row in rows" :key="row.id" :name="row.name">
+          <SyncStatus :text="row.status" :tone="row.tone" />
+          <span v-if="row.detail !== ''" class="sync-row__detail">{{ row.detail }}</span>
+          <template v-if="row.canResolve" #actions>
+            <Button variant="outline" size="small" @click="onResolve(row.id, 'remove')">
+              {{ words.removeFiles }}
+            </Button>
+            <Button variant="ghost" size="small" @click="onResolve(row.id, 'keep')">
+              {{ words.keepFiles }}
+            </Button>
+          </template>
+        </SyncRow>
+      </ul>
+    </template>
+    <CloudVaultDialog
+      v-if="isCloudOpen"
+      :cloud-vaults="cloudVaults"
+      :free-vaults="freeVaults"
+      :question="question"
+      @choose="onChoose"
+      @confirm="onConfirm"
+      @back="model.actions.cancelConnect"
+      @cancel="closeCloud"
+    />
+  </IslandCard>
 </template>

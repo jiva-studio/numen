@@ -23,6 +23,7 @@ import type {
 } from '../types'
 import type { BufferHost } from '../buffers'
 import type { NoticeHost } from '../notices'
+import type { DialogHost } from '../dialogs'
 import type { PickerHost } from '../picker'
 import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
@@ -101,6 +102,7 @@ export interface MockHostServicesInit {
   readonly texts?: VaultTexts
   readonly notices?: NoticeHost
   readonly picker?: PickerHost
+  readonly dialogs?: DialogHost
   readonly openTab?: PluginTabs['open']
   readonly navigateTab?: PluginTabs['navigate']
   readonly closeTab?: PluginTabs['close']
@@ -445,9 +447,10 @@ export function createMockHostServices(initialValues?: MockHostServicesInit): Mo
     },
     tabs: createMockTabs(init),
     ui: {
-      ...pickDefinedParts<Pick<PluginUi, 'workspace' | 'picker'>>({
+      ...pickDefinedParts<Pick<PluginUi, 'workspace' | 'picker' | 'dialogs'>>({
         workspace: init.workspace,
         picker: init.picker,
+        dialogs: init.dialogs,
       }),
       notices: init.notices ?? createMockNoticeHost(),
       commands: createMockCommandsHost(),

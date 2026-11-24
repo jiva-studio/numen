@@ -3,6 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import type { FolderSharesClient, ReceivedSharesClient, Share, ShareReader } from '../api/shares'
 import { createShareView } from '../model/shares'
 import ShareDialog from './ShareDialog.vue'
+import { frameDecorator } from './storyFrame'
 import '../styles.css'
 
 const TARGET = { vaultId: 'v1', folder: 'Food' }
@@ -16,6 +17,8 @@ interface Setup {
   readonly share?: Share
   readonly refusal?: string
   readonly label?: string
+  readonly isInvalid?: boolean
+  readonly isPending?: boolean
 }
 
 type SharesClient = FolderSharesClient & ReceivedSharesClient
@@ -23,13 +26,17 @@ type SharesClient = FolderSharesClient & ReceivedSharesClient
 const createClient = (setup: Setup): SharesClient => ({
   getReaderCode: () => Promise.resolve({ code: CODE, fingerprint: 'AAAA' }),
   readReaderCode: () =>
-    Promise.resolve({
+    setup.isInvalid === true
+      ? Promise.reject(new Error('this is not a reader code or an invitation'))
+      : Promise.resolve({
       fingerprint: FINGERPRINT,
       ...(setup.label === undefined ? {} : { label: setup.label }),
     }),
   getShare: () => Promise.resolve(setup.share ?? { state: 'notShared', readers: [] }),
   addReader: () =>
-    setup.refusal === undefined
+    setup.isPending === true
+      ? new Promise(() => undefined)
+      : setup.refusal === undefined
       ? Promise.resolve({ invitation: INVITATION, fingerprint: FINGERPRINT })
       : Promise.reject(new Error(setup.refusal)),
   removeReader: () => Promise.resolve(),
@@ -52,6 +59,7 @@ const createState = (setup: Setup) => {
 const meta = {
   title: 'NumenSync/ShareDialog',
   component: ShareDialog,
+  decorators: [frameDecorator],
   render: (args) => ({
     components: { ShareDialog },
     setup: () => ({ args }),
@@ -64,76 +72,69 @@ type Story = StoryObj<typeof meta>
 
 const fillAndShare = async (canvasElement: HTMLElement): Promise<ReturnType<typeof within>> => {
   const canvas = within(canvasElement)
-  await userEvent.type(await canvas.findByRole('textbox', { name: 'Reader code' }), CODE)
-  await expect(await canvas.findByLabelText('Reader account fingerprint')).toHaveTextContent(
-    FINGERPRINT,
-  )
-  await userEvent.type(canvas.getByRole('textbox', { name: 'Label' }), 'Anna')
-  await userEvent.click(canvas.getByRole('button', { name: 'Share' }))
+  await userEvent.type(await canvas.findByLabelText('Their identity code'), CODE)
+  await userEvent.type(canvas.getByRole('textbox', { name: /Name for this person/ }), 'Anna')
+  await userEvent.click(canvas.getByRole('button', { name: 'Share the folder' }))
   return canvas
 }
 
-export const NotShared: Story = {
+export const Empty: Story = {
   args: { state: createState({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('textbox', { name: 'Reader code' })).toBeVisible()
-    await expect(canvas.queryByRole('list', { name: 'Readers' })).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'Stop sharing' })).toBeNull()
+    await expect(await canvas.findByText('Share Food (read only)')).toBeVisible()
+    await expect(canvas.getByText('Nobody has access yet.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Share the folder' })).toBeDisabled()
   },
 }
 
-export const Creating: Story = {
-  args: { state: createState({ share: { state: 'creating', readers: [] } }) },
+export const InvalidCode: Story = {
+  args: { state: createState({ isInvalid: true }) },
   play: async ({ canvasElement }) => {
-    await expect(
-      await within(canvasElement).findByText('Preparing the shared folder…'),
-    ).toBeVisible()
+    const canvas = within(canvasElement)
+    await userEvent.type(await canvas.findByLabelText('Their identity code'), 'nonsense')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'This does not look like an identity code.',
+    )
   },
 }
 
-export const InvitationShown: Story = {
+export const Sharing: Story = {
+  args: { state: createState({ isPending: true }) },
+  play: async ({ canvasElement }) => {
+    const canvas = await fillAndShare(canvasElement)
+    await expect(await canvas.findByText('Sharing the folder…')).toBeVisible()
+  },
+}
+
+export const Shared: Story = {
   args: { state: createState({}) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
-    await expect(await canvas.findByRole('textbox', { name: 'Invitation' })).toHaveValue(INVITATION)
-    await expect(canvas.getByText(/only the reader can use it/)).toBeVisible()
+    await expect(await canvas.findByRole('textbox', { name: 'Invitation to send' })).toHaveValue(
+      INVITATION,
+    )
+    await expect(canvas.getByText('Folder shared with Anna. Send them this invitation:')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Copy invitation' })).toBeVisible()
   },
 }
 
-export const ActiveWithReaders: Story = {
+export const WithPeople: Story = {
   args: { state: createState({ share: { state: 'active', readers: [anna] } }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const readers = await canvas.findByRole('list', { name: 'Readers' })
-    await expect(within(readers).getByText('Anna')).toBeVisible()
-    await expect(within(readers).getByRole('button', { name: 'Remove' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Stop sharing' })).toBeVisible()
-    await expect(
-      canvas.getByText('A removed reader keeps what the reader already has.'),
-    ).toBeVisible()
+    await expect(await canvas.findByText('Anna')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Remove access' })).toBeVisible()
   },
 }
 
-export const FolderInsideSharedFolder: Story = {
+export const Refused: Story = {
   args: { state: createState({ refusal: 'A folder inside a shared folder cannot be shared' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
       'A folder inside a shared folder cannot be shared',
     )
-  },
-}
-
-export const ReaderNotSignedIn: Story = {
-  args: {
-    state: createState({
-      refusal: 'The reader could not be added; the reader may not have signed in to Numen Sync yet',
-    }),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = await fillAndShare(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('could not be added')
   },
 }
 

@@ -50,6 +50,8 @@ export type {
   PromptTextOptions,
   SelectOptionOptions,
   PickerHost,
+  DialogHost,
+  DialogOptions,
   PickerItem,
   PickerOptions,
   PluginContext,

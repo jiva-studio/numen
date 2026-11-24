@@ -2,9 +2,10 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { FolderSharesClient, ReceivedShare, ReceivedSharesClient } from '../api/shares'
 import { createReceivedPage } from './receivedView'
+import { frameDecorator } from './storyFrame'
 import '../styles.css'
 
-const OWNER = 'EEEE FFFF GGGG'
+const OWNER = 'EEEE FFFF GGGG HHHH IIII'
 
 const food = (state: ReceivedShare['state']): ReceivedShare => ({
   vaultId: 'r1',
@@ -48,7 +49,8 @@ const createClient = (setup: Setup): SharesClient => ({
 const createPage = (setup: Setup) => createReceivedPage({ client: createClient(setup) })
 
 const meta = {
-  title: 'NumenSync/Shares',
+  title: 'NumenSync/SharedFolders',
+  decorators: [frameDecorator],
   render: (args) => ({
     components: { Page: args.page },
     template: '<Page />',
@@ -58,53 +60,61 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const NothingReceived: Story = {
+const openInvitation = async (canvasElement: HTMLElement): Promise<ReturnType<typeof within>> => {
+  const canvas = within(canvasElement)
+  await userEvent.click(await canvas.findByRole('button', { name: 'Accept an invitation' }))
+  await userEvent.type(await canvas.findByRole('textbox', { name: 'Invitation' }), 'numen-invitation-1.xyz')
+  return canvas
+}
+
+export const Empty: Story = {
   args: { page: createPage({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('textbox', { name: 'Your code' })).toHaveValue(
-      'numen-reader-1.abc',
-    )
-    await expect(canvas.getByText('No shared folders received yet')).toBeVisible()
+    await expect(await canvas.findByText('No folder is shared yet')).toBeVisible()
+    await expect(canvas.getByText('Your identity code')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Accept an invitation' })).toBeVisible()
   },
 }
 
 export const Ready: Story = {
   args: { page: createPage({ received: [food('ready')] }) },
   play: async ({ canvasElement }) => {
-    const list = await within(canvasElement).findByRole('list', { name: 'Received shares' })
+    const list = await within(canvasElement).findByRole('list', { name: 'Shared with you' })
     await expect(within(list).getByText('Up to date')).toBeVisible()
+    await expect(within(list).getByText('Read only · From EEEE FFFF GGGG…')).toBeVisible()
+  },
+}
+
+export const Receiving: Story = {
+  args: { page: createPage({ received: [food('receiving')] }) },
+  play: async ({ canvasElement }) => {
+    await expect(await within(canvasElement).findByText('Getting the folder…')).toBeVisible()
   },
 }
 
 export const Ended: Story = {
   args: { page: createPage({ received: [food('ended')] }) },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText('The owner ended this share')).toBeVisible()
+    await expect(
+      await within(canvasElement).findByText('The person stopped sharing this folder'),
+    ).toBeVisible()
   },
 }
 
-export const InvitationPasted: Story = {
+export const AcceptDialog: Story = {
   args: { page: createPage({}) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.type(
-      await canvas.findByRole('textbox', { name: 'Invitation' }),
-      'numen-invitation-1.xyz',
-    )
-    await expect(await canvas.findByText(OWNER)).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Receive' })).toBeEnabled()
+    const canvas = await openInvitation(canvasElement)
+    await expect(await canvas.findByText(/Food: From/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Accept' })).toBeEnabled()
   },
 }
 
 export const InvitationOfAnotherPerson: Story = {
   args: { page: createPage({ invitationRefusal: 'This invitation is for another person' }) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.type(
-      await canvas.findByRole('textbox', { name: 'Invitation' }),
-      'numen-invitation-1.xyz',
-    )
+    const canvas = await openInvitation(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
       'This invitation is for another person',
     )
@@ -114,12 +124,8 @@ export const InvitationOfAnotherPerson: Story = {
 export const OwnerIdentityChanged: Story = {
   args: { page: createPage({ acceptRefusal: 'The owner identity changed' }) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.type(
-      await canvas.findByRole('textbox', { name: 'Invitation' }),
-      'numen-invitation-1.xyz',
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Receive' }))
+    const canvas = await openInvitation(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Accept' }))
     await expect(await canvas.findByRole('alert')).toHaveTextContent('The owner identity changed')
   },
 }

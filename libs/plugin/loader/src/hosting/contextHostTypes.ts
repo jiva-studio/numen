@@ -21,6 +21,7 @@ import type {
   MountedView,
   NoticeHost,
   PickerHost,
+  DialogHost,
   ProcessHost,
   ReaderRegistration,
   SettingsViewRegistration,
@@ -150,6 +151,7 @@ export interface ContextUiHost {
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined
+  readonly getDialogs: () => DialogHost | undefined
   readonly getSlots: () => SlotHost
 }
 

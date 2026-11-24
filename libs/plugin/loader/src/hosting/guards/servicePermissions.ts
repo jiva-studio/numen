@@ -312,6 +312,9 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       promptText: requireNothing('it draws the question the plugin gives and holds no vault data'),
       selectOption: requireNothing('it draws the options the plugin gives and holds no vault data'),
     },
+    dialogs: {
+      open: requireNothing('it draws the view the plugin gives and holds no vault data'),
+    },
     drops: {
       canDrop: requireNothing('it tells whether some plugin takes the types, nothing more'),
       drop: requirePermissionsAsync(WRITE),

@@ -8,15 +8,23 @@
   "activationEvents": ["onFilesChanged"],
   "contributes": {
     "category": "tools",
-    "tabKinds": [{ "kind": "share", "title": "Share", "icon": "share-2" }],
-    "commands": [{ "id": "share.open", "title": "Share...", "icon": "share-2" }],
+    "commands": [
+      { "id": "vault.sync", "title": "Sync this vault", "icon": "refresh-cw" },
+      { "id": "share.open", "title": "Share...", "icon": "share-2" }
+    ],
     "slots": [
       { "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 },
       {
         "slot": "fileTree.context",
+        "command": "vault.sync",
+        "group": "6-sync",
+        "when": "target.isRoot"
+      },
+      {
+        "slot": "fileTree.context",
         "command": "share.open",
         "group": "6-sync",
-        "when": "target.isFolder"
+        "when": "target.isFolder && !target.isRoot"
       }
     ]
   },
@@ -83,8 +91,8 @@
     }
   ],
   "settingsViews": [
-    { "id": "vaults", "title": "Vaults" },
-    { "id": "shares", "title": "Shares" },
+    { "id": "vaults", "title": "Synced vaults" },
+    { "id": "shares", "title": "Shared folders" },
     { "id": "subscription", "title": "Subscription", "page": "identity" }
   ],
   "frontend": {}

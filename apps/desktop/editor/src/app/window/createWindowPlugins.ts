@@ -74,7 +74,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const { notices, picker } = createPluginSurfaces()
+  const { notices, picker, dialogs } = createPluginSurfaces()
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
@@ -125,6 +125,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       pluginNotes,
       hostParts: declarations.hostParts,
       picker,
+      dialogs: dialogs.host,
     }),
   })
   vault.vaultChanges.subscribe((event) => {
@@ -146,5 +147,5 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     rest.state.plugins,
   )
   const slotGroups = createSlotGroups(declaredCommands)
-  return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker }
+  return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker, dialogs }
 }

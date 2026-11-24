@@ -102,6 +102,7 @@ function createHost(
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
       getPicker: () => ui.picker as never,
+      getDialogs: () => undefined,
       ...overrides.ui,
     },
     work: {
