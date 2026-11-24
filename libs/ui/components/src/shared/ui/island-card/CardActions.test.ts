@@ -26,8 +26,18 @@ describe('the card actions', () => {
     expect(actions.find('[title]').exists()).toBe(false)
   })
 
-  it('shows the label of an action as a tooltip', async () => {
+  it('shows no tooltip on an action whose label is visible', async () => {
     const actions = mountActions()
+
+    await actions.get('button[aria-label="Create"]').trigger('mouseenter')
+
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+    actions.unmount()
+  })
+
+  it('shows the label as a tooltip on an action whose label is hidden', async () => {
+    const actions = mountActions()
+    actions.get<HTMLElement>('button[aria-label="Create"] .card-action__label').element.style.display = 'none'
 
     await actions.get('button[aria-label="Create"]').trigger('mouseenter')
 

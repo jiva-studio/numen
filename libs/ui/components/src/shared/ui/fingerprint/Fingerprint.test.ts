@@ -14,12 +14,11 @@ describe('a fingerprint', () => {
     expect(tail.text()).toBe('D750 C8AD')
   })
 
-  it('holds the whole value in the label and shows it as a tooltip, not a native title', async () => {
+  it('holds the whole value in the label and shows no tooltip', async () => {
     const wrapper = mount(Fingerprint, { props: { value: VALUE }, attachTo: document.body })
     expect(wrapper.attributes('aria-label')).toBe(VALUE)
-    expect(wrapper.attributes('title')).toBeUndefined()
     await wrapper.trigger('mouseenter')
-    expect(document.body.querySelector('[role="tooltip"]')?.textContent).toBe(VALUE)
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
     wrapper.unmount()
   })
 })

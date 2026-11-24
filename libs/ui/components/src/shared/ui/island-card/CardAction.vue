@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue'
+import { useTemplateRef } from 'vue'
 import { Tooltip, useTooltip } from '../tooltip'
 
 /**
  * An action in the header of an island card: an icon in the default slot and the label beside it. The
- * label hides when the card gets narrow, and then names the button as its tooltip and accessible name.
+ * label hides when the card gets narrow, and then names the button as its tooltip; the accessible name is always the label.
  */
 
 /* --------------------------------- Props ---------------------------------- */
@@ -25,10 +26,18 @@ const props = defineProps<{
 }>()
 
 const tip = useTooltip()
+const button = useTemplateRef<HTMLButtonElement>('button')
+
+/** The tooltip names the action only while the card hides its label. */
+function getTip(): string {
+  const shown = button.value?.querySelector<HTMLElement>('.card-action__label')
+  return shown && getComputedStyle(shown).display !== 'none' ? '' : props.label
+}
 </script>
 
 <template>
   <button
+    ref="button"
     type="button"
     class="card-action"
     :class="{
@@ -40,16 +49,16 @@ const tip = useTooltip()
     :disabled="isDisabled"
     :aria-label="label"
     :aria-describedby="tip.describedBy.value"
-    @mouseenter="tip.open"
+    @mouseenter="tip.open($event, getTip)"
     @mouseleave="tip.close"
-    @focus="tip.open"
+    @focus="tip.open($event, getTip)"
     @blur="tip.close"
   >
     <slot />
     <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">{{ label }}</span>
     <ChevronDown v-if="hasMenu" :size="12" aria-hidden="true" />
     <Teleport to="body">
-      <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ props.label }}</Tooltip>
+      <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ tip.text.value }}</Tooltip>
     </Teleport>
   </button>
 </template>
