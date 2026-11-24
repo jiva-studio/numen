@@ -1,72 +1,103 @@
 <script setup lang="ts">
-/** What a link in progress shows in each of its phases. */
+/** What a link in progress draws in each view: a status, the QR code, the new device, the code, the account, the end. */
 import { computed } from 'vue'
+import { ErrorState } from '@numen/ui'
 import type { LinkInfo, LinkRole } from '@/entities/identity'
+import type { Fact } from '../../lib/types'
+import type { LinkView } from '../../lib/phases'
 import { WORDS as words } from '../../words'
 import LinkCodeForm from './LinkCodeForm.vue'
-import type { Fact } from '../../lib/types'
 import LinkFacts from './LinkFacts.vue'
-import LinkJoinQuestion from './LinkJoinQuestion.vue'
 import LinkPeerView from './LinkPeerView.vue'
 import LinkQrView from './LinkQrView.vue'
+import LinkStatus from './LinkStatus.vue'
+import LinkSteps from './LinkSteps.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ link: LinkInfo; role: LinkRole; isBusy: boolean }>()
-
-const emit = defineEmits<{
-  (e: 'decide', isApproved: boolean): void
-  (e: 'code', code: string): void
-  (e: 'join', isJoining: boolean): void
+const props = defineProps<{
+  view: LinkView
+  link: LinkInfo | undefined
+  role: LinkRole
+  problem: string
+  steps: readonly string[]
+  code: string
 }>()
+
+const emit = defineEmits<{ (e: 'update:code', value: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const ownFacts = computed<Fact[]>(() =>
-  props.role === 'joiner'
+  props.role === 'joiner' && props.link !== undefined
     ? [
         { label: words.linkDeviceName, value: props.link.deviceName, isMono: false },
         { label: words.linkDeviceFingerprint, value: props.link.deviceFingerprint, isMono: true },
       ]
     : [],
 )
-const isWaiting = computed(() =>
-  ['waitingForPeer', 'waitingForAccept'].includes(props.link.phase),
-)
-const isShowingQr = computed(
-  () => props.link.phase === 'waitingForPeer' && props.link.mode === 'show',
-)
-const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFingerprint : ''))
+const isOwnShown = computed(() => ['qr', 'waiting', 'code', 'account'].includes(props.view))
 </script>
 
 <template>
   <div class="link-progress">
-    <LinkFacts v-if="ownFacts.length > 0" :facts="ownFacts" />
-    <p v-if="link.phase === 'waitingForChannel'">{{ words.linkPreparing }}</p>
-    <LinkQrView v-else-if="isShowingQr" :qr-text="link.qrText" :account-fingerprint="hostAccount" />
-    <p v-else-if="isWaiting">{{ words.linkWaiting }}</p>
+    <LinkSteps v-if="view === 'qr' || view === 'preparing'" :steps="steps" />
+    <LinkFacts v-if="isOwnShown && ownFacts.length > 0" :facts="ownFacts" />
+
+    <LinkStatus
+      v-if="view === 'preparing'"
+      :title="words.linkPreparingTitle"
+      :detail="words.linkPreparingDetail"
+    />
+    <ErrorState
+      v-else-if="view === 'stalled'"
+      :heading="words.linkStalledTitle"
+      :message="words.linkStalled"
+    />
+    <ErrorState
+      v-else-if="view === 'refused'"
+      :heading="words.linkRefusedTitle"
+      :message="problem"
+    />
+    <LinkQrView
+      v-else-if="view === 'qr' && link"
+      :qr-text="link.qrText"
+      :account-fingerprint="role === 'host' ? link.accountFingerprint : ''"
+    />
+    <LinkStatus
+      v-else-if="view === 'waiting'"
+      :title="words.linkWaitingTitle"
+      :detail="words.linkWaitingDetail"
+    />
     <LinkPeerView
-      v-else-if="link.phase === 'confirmPeer'"
+      v-else-if="view === 'peer' && link"
       :name="link.peerName"
       :fingerprint="link.peerFingerprint"
       :code="link.code"
       :is-approved="link.isApproved"
-      :is-busy="isBusy"
-      @decide="emit('decide', $event)"
     />
     <LinkCodeForm
-      v-else-if="link.phase === 'enterCode'"
+      v-else-if="view === 'code' && link"
+      :model-value="code"
       :tries-left="link.triesLeft"
-      :is-busy="isBusy"
-      @submit="emit('code', $event)"
+      @update:model-value="emit('update:code', $event)"
     />
-    <LinkJoinQuestion
-      v-else-if="link.phase === 'confirmAccount' && role === 'joiner'"
-      :account="link.accountFingerprint"
-      :is-busy="isBusy"
-      @answer="emit('join', $event)"
+    <p v-else-if="view === 'account' && link">
+      {{ words.linkJoinQuestion(link.accountFingerprint) }}
+    </p>
+    <LinkStatus
+      v-else-if="view === 'linked'"
+      is-done
+      :title="words.linkDoneTitle"
+      :detail="words.linkDoneDetail"
     />
-    <p v-else-if="link.phase === 'linked'">{{ words.linkDone }}</p>
-    <p v-else-if="link.phase === 'failed'" role="alert">{{ words.linkReason(link.reason) }}</p>
-    <p v-else>{{ words.linkLinking }}</p>
+    <ErrorState
+      v-else-if="view === 'failed'"
+      :heading="words.linkFailedTitle"
+      :message="words.linkReason(link?.reason)"
+    />
+    <LinkStatus v-else :title="words.linkLinkingTitle" :detail="words.linkLinkingDetail" />
+    <p v-if="problem !== '' && view !== 'refused'" role="alert" class="link-progress__problem">
+      {{ problem }}
+    </p>
   </div>
 </template>
 
@@ -75,5 +106,10 @@ const hostAccount = computed(() => (props.role === 'host' ? props.link.accountFi
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.link-progress__problem {
+  margin: 0;
+  color: var(--numen-alarm);
 }
 </style>

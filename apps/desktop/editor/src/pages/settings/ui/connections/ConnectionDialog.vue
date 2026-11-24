@@ -7,7 +7,7 @@
  * as one types. A saved connection is announced with `saved` before the dialog closes.
  */
 import { computed } from 'vue'
-import { ModalDialog, Select } from '@numen/ui'
+import { Dialog, Select } from '@numen/ui'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -58,7 +58,7 @@ function onDelete(): void {
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     is-form
     :label="form.isEditing ? words.connectionEdit : words.connectionAdd"
     @submit="form.actions.submit"
@@ -101,7 +101,7 @@ function onDelete(): void {
         @delete="onDelete"
       />
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>
 
 <style scoped>

@@ -75,7 +75,7 @@ describe('ConfirmDialog', () => {
     const dialog = mountDialog()
     await getButton(dialog, 'Cancel').trigger('click')
     await dialog.get('[role="alertdialog"]').trigger('keydown', { key: 'Escape' })
-    await dialog.get('[data-slot="modal-dialog-backdrop"]').trigger('click')
+    await dialog.get('[data-slot="dialog-backdrop"]').trigger('click')
     expect(dialog.emitted('cancel')).toHaveLength(3)
     expect(dialog.emitted('confirm')).toBeUndefined()
   })

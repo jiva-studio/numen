@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createIdentityStore } from '@/entities/identity'
+import { createIdentityStore, type LinkRole } from '@/entities/identity'
 import {
   createIdentityClient,
   createLinkInfo,
@@ -11,13 +11,13 @@ import {
 } from '@/testing/identityClient'
 import { useLinkSession } from './useLinkSession'
 
-const mountSession = (overrides: Partial<IdentityCalls>) => {
+const mountSession = (overrides: Partial<IdentityCalls>, role: LinkRole = 'joiner') => {
   const store = createIdentityStore(wrapIdentityClient(createIdentityClient(overrides)), vi.fn())
   let session!: ReturnType<typeof useLinkSession>
   const wrapper = mount(
     defineComponent({
       setup() {
-        session = useLinkSession(() => store.devices.link, 'host')
+        session = useLinkSession(() => store.devices.link, role)
         return () => h('div')
       },
     }),
@@ -34,7 +34,37 @@ describe('useLinkSession', () => {
   it('has no link before a mode is chosen', () => {
     const { session } = mountSession({})
     expect(session.link.value).toBeUndefined()
-    expect(session.isChoosing.value).toBe(true)
+  })
+
+  it('starts to show the QR code of a host when it opens', async () => {
+    const startLink = vi.fn(() => ok(createLinkInfo()))
+    mountSession({ startLink }, 'host')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(startLink).toHaveBeenCalledWith('host', 'show', '')
+  })
+
+  it('reports a link that waits 15 seconds for its channel as stalled and cancels it', async () => {
+    const waiting = createLinkInfo({ phase: 'waitingForChannel', qrText: '' })
+    const cancelLink = vi.fn(() => ok(undefined))
+    const { session } = mountSession({
+      startLink: () => ok(waiting),
+      getLink: () => ok(waiting),
+      cancelLink,
+    })
+    await session.start('show')
+    await vi.advanceTimersByTimeAsync(14000)
+    expect(session.isStalled.value).toBe(false)
+    await vi.advanceTimersByTimeAsync(1500)
+    expect(session.isStalled.value).toBe(true)
+    expect(cancelLink).toHaveBeenCalledOnce()
+  })
+
+  it('starts the same link again on retry', async () => {
+    const startLink = vi.fn(() => ok(createLinkInfo()))
+    const { session } = mountSession({ startLink, getLink: () => ok(createLinkInfo()) })
+    await session.start('scan', 'numen://x')
+    await session.retry()
+    expect(startLink).toHaveBeenLastCalledWith('joiner', 'scan', 'numen://x')
   })
 
   it('starts a link and reads it again every half second until it ends', async () => {
@@ -62,7 +92,6 @@ describe('useLinkSession', () => {
     })
     await session.start('scan', 'x')
     expect(session.problem.value).toBe('This text is not the link of a QR code.')
-    expect(session.isChoosing.value).toBe(true)
   })
 
   it('cancels an active link when the dialog closes', async () => {

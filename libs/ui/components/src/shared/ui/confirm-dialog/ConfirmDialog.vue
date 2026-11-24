@@ -6,7 +6,7 @@
  */
 import { onMounted, useId, useTemplateRef } from 'vue'
 import { Button } from '../button'
-import { ModalDialog } from '../modal-dialog'
+import { Dialog } from '../dialog'
 
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
@@ -37,7 +37,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     role="alertdialog"
     :label="label"
     :tone="tone"
@@ -53,5 +53,5 @@ onMounted(() => {
         {{ confirmText }}
       </Button>
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>

@@ -1,101 +1,97 @@
 <script setup lang="ts">
 /**
- * The dialog that links a device to the account by a QR code. On a device that has the account it shows the QR code or
- * reads the one of a new device, and asks the person about the new device; on a device with no identity it
- * shows its own name and fingerprint while it waits, asks for the code the other device shows, and asks whether to join the
- * account. Escape closes it, and closing it cancels the link.
+ * The dialog that links a device to the account by a QR code, with the steps written on it. A device that has the
+ * account shows its QR code at once and asks about the new device that scans it; a new device opens its camera to
+ * scan the QR code of the other device, or shows its own. The device that has the account then shows a confirmation
+ * code, and the new device asks for it and for the answer to join the account. Escape closes it, and closing it
+ * cancels the link.
  */
-import { onMounted, ref, useId, useTemplateRef } from 'vue'
-import { Button } from '@numen/ui'
+import { computed, ref } from 'vue'
+import { Dialog, type ScannerCamera } from '@numen/ui'
 import type { LinkRole } from '@/entities/identity'
+import { getLinkView } from '../../lib/phases'
 import type { LinkCalls } from '../../lib/types'
+import { useLinkActions } from '../../model/useLinkActions'
 import { useLinkSession } from '../../model/useLinkSession'
 import { WORDS as words } from '../../words'
-import LinkChoices from './LinkChoices.vue'
+import LinkActions from './LinkActions.vue'
 import LinkProgress from './LinkProgress.vue'
 import LinkScanForm from './LinkScanForm.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ role: LinkRole; calls: LinkCalls }>()
+const props = defineProps<{
+  role: LinkRole
+  calls: LinkCalls
+  findCamera?: () => Promise<boolean>
+  camera?: ScannerCamera
+}>()
 
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const titleId = useId()
-const dialog = useTemplateRef<HTMLElement>('dialog')
-const isScanning = ref(false)
-const { link, problem, isBusy, isChoosing, start, answers } = useLinkSession(
-  () => props.calls,
-  props.role,
+const session = useLinkSession(() => props.calls, props.role)
+const draft = { text: ref(''), code: ref(''), isScanning: ref(props.role === 'joiner') }
+const view = computed(() =>
+  getLinkView({
+    link: session.link.value,
+    role: props.role,
+    isScanning: draft.isScanning.value,
+    isStalled: session.isStalled.value,
+    hasProblem: session.problem.value !== '',
+  }),
 )
-
-/* ---------------------------------- Hooks --------------------------------- */
-onMounted(() => dialog.value?.focus())
-
-/* -------------------------------- Handlers -------------------------------- */
-function onKey(event: KeyboardEvent): void {
-  if (event.key === 'Escape') emit('close')
-}
+const actions = useLinkActions(session, draft, view)
+const steps = computed(() =>
+  words.linkSteps(props.role, view.value === 'scan' ? 'scan' : (session.link.value?.mode ?? 'show')),
+)
+const switchLabel = computed(() => {
+  if (view.value === 'scan') return words.linkShowInstead
+  return view.value === 'qr' ? words.linkScanInstead : ''
+})
+const hasInput = computed(() =>
+  view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
+)
 </script>
 
 <template>
-  <div
-    ref="dialog"
-    class="link-dialog"
-    role="dialog"
-    aria-modal="true"
-    :aria-labelledby="titleId"
-    tabindex="-1"
-    @keydown="onKey"
+  <Dialog
+    is-form
+    :label="role === 'host' ? words.linkHostTitle : words.linkJoinTitle"
+    :hint="role === 'host' ? words.linkHostHint : words.linkJoinHint"
+    :step="view"
+    @submit="actions.submit"
+    @cancel="emit('close')"
   >
-    <h2 :id="titleId" class="link-dialog__title">
-      {{ role === 'host' ? words.deviceLinkNew : words.deviceJoin }}
-    </h2>
-    <template v-if="isChoosing">
-      <LinkScanForm v-if="isScanning" :is-busy="isBusy" @submit="start('scan', $event)" />
-      <LinkChoices v-else @show="start('show')" @scan="isScanning = true" />
-    </template>
-    <LinkProgress
-      v-else-if="link"
-      :link="link"
-      :role="role"
-      :is-busy="isBusy"
-      @decide="answers.decide"
-      @code="answers.sendCode"
-      @join="answers.confirmJoin"
+    <LinkScanForm
+      v-if="view === 'scan'"
+      v-model="draft.text.value"
+      :problem="session.problem.value"
+      :steps="steps"
+      v-bind="{
+        ...(findCamera === undefined ? {} : { findCamera }),
+        ...(camera === undefined ? {} : { camera }),
+      }"
+      @scanned="actions.scan"
     />
-    <p v-if="problem !== ''" role="alert">{{ problem }}</p>
-    <div class="link-dialog__actions">
-      <Button type="button" variant="outline" @click="emit('close')">{{ words.linkClose }}</Button>
-    </div>
-  </div>
+    <LinkProgress
+      v-else
+      v-model:code="draft.code.value"
+      :view="view"
+      :link="session.link.value"
+      :role="role"
+      :problem="session.problem.value"
+      :steps="steps"
+    />
+    <template #actions>
+      <LinkActions
+        :view="view"
+        :is-busy="session.isBusy.value"
+        :has-input="hasInput"
+        :switch-label="switchLabel"
+        @close="emit('close')"
+        @decline="actions.decline"
+        @switch="actions.switchWay"
+      />
+    </template>
+  </Dialog>
 </template>
-
-<style scoped>
-.link-dialog {
-  position: fixed;
-  inset: 10% 20%;
-  z-index: var(--numen-lift-menu);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  overflow: auto;
-  border: 1px solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-raised);
-  color: var(--numen-ink);
-}
-
-.link-dialog__title {
-  margin: 0;
-  font-size: var(--numen-title-size);
-  font-weight: 500;
-}
-
-.link-dialog__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-</style>

@@ -52,7 +52,7 @@ export { ErrorState } from './shared/ui/error-state'
 export { IslandCard } from './shared/ui/island-card'
 
 export { ConfirmDialog } from './shared/ui/confirm-dialog'
-export { ModalDialog } from './shared/ui/modal-dialog'
+export { Dialog, provideDialogHost } from './shared/ui/dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
 export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'

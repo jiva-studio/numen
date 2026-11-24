@@ -1,10 +1,10 @@
 /** The shared modal: its roles, what closes it, and where the focus goes. */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import ModalDialog from './ModalDialog.vue'
+import Dialog from './Dialog.vue'
 
 const mountDialog = (props: Record<string, unknown> = {}) =>
-  mount(ModalDialog, {
+  mount(Dialog, {
     attachTo: document.body,
     props: { label: 'Restore identity', hint: 'Enter the words.', ...props },
     slots: {
@@ -17,7 +17,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('ModalDialog', () => {
+describe('Dialog', () => {
   it('names the dialog by its title and draws the hint', () => {
     const dialog = mountDialog()
     const box = dialog.get('[role="dialog"]')
@@ -38,7 +38,7 @@ describe('ModalDialog', () => {
     await dialog.get('[role="dialog"]').trigger('click')
     expect(dialog.emitted('cancel')).toBeUndefined()
     await dialog.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
-    await dialog.get('[data-slot="modal-dialog-backdrop"]').trigger('click')
+    await dialog.get('[data-slot="dialog-backdrop"]').trigger('click')
     expect(dialog.emitted('cancel')).toHaveLength(2)
   })
 

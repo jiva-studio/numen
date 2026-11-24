@@ -3,7 +3,7 @@
  * The modal of the identity: the shared modal as a form with a title, a line that says what to do, the
  * body and a row of buttons. `step` moves the focus to the first control when it changes.
  */
-import { ModalDialog } from '@numen/ui'
+import { Dialog } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{ title: string; hint?: string; step?: string }>()
@@ -15,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     is-form
     :label="title"
     :hint="hint ?? ''"
@@ -25,5 +25,5 @@ const emit = defineEmits<{
   >
     <slot />
     <template v-if="$slots['actions']" #actions><slot name="actions" /></template>
-  </ModalDialog>
+  </Dialog>
 </template>

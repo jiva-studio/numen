@@ -1,42 +1,41 @@
 <script setup lang="ts">
-/** The new device the host is asked about: its name and fingerprint, and the code to read out when this device scanned it. */
+/** The new device the host is asked about: its name and fingerprint, and the confirmation code to type on it. */
 import { computed } from 'vue'
-import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { Fact } from '../../lib/types'
 import LinkFacts from './LinkFacts.vue'
+import LinkStatus from './LinkStatus.vue'
 
-/* ----------------------------- Props & Emits ------------------------------ */
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   name: string
   fingerprint: string
   code: string
   isApproved: boolean
-  isBusy: boolean
 }>()
-
-const emit = defineEmits<{ (e: 'decide', isApproved: boolean): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const facts = computed<Fact[]>(() => [
   { label: words.linkDeviceName, value: props.name, isMono: false },
   { label: words.linkDeviceFingerprint, value: props.fingerprint, isMono: true },
-  ...(props.code === '' ? [] : [{ label: words.linkCode, value: props.code, isMono: true }]),
 ])
+const grouped = computed(() => props.code.replace(/^(\d{3})(\d+)$/, '$1 $2'))
 </script>
 
 <template>
   <div class="link-peer">
     <LinkFacts :facts="facts" />
-    <p>{{ words.linkCompare }}</p>
-    <p v-if="isApproved">{{ words.linkWaitingCode }}</p>
-    <div v-else class="link-peer__actions">
-      <Button type="button" variant="solid" :disabled="isBusy" @click="emit('decide', true)">
-        {{ words.linkApprove }}
-      </Button>
-      <Button type="button" variant="outline" :disabled="isBusy" @click="emit('decide', false)">
-        {{ words.linkDecline }}
-      </Button>
+    <p v-if="!isApproved" class="link-peer__ask">{{ words.linkChecking }}</p>
+    <LinkStatus
+      v-if="isApproved"
+      :title="words.linkWaitingCodeTitle"
+      :detail="words.linkWaitingCodeDetail"
+    >
+      <p v-if="code !== ''" class="link-peer__code" :aria-label="words.linkCode">{{ grouped }}</p>
+    </LinkStatus>
+    <div v-else-if="code !== ''" class="link-peer__shown">
+      <p class="link-peer__hint">{{ words.linkCodeHint }}</p>
+      <p class="link-peer__code" :aria-label="words.linkCode">{{ grouped }}</p>
     </div>
   </div>
 </template>
@@ -48,9 +47,28 @@ const facts = computed<Fact[]>(() => [
   gap: 0.75rem;
 }
 
-.link-peer__actions {
+.link-peer__ask,
+.link-peer__hint {
+  margin: 0;
+}
+
+.link-peer__shown {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.link-peer__hint {
+  color: var(--numen-hushed);
+}
+
+.link-peer__code {
+  margin: 0;
+  color: var(--numen-ink);
+  font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-4);
+  font-weight: 600;
+  letter-spacing: 0.1em;
 }
 </style>

@@ -1,7 +1,7 @@
 /** The form that reads the QR code of the other device: the camera where there is one, the text field always. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { click, dispose, enterText, findButton, textInputs } from '@/testing/dom'
+import { dispose, enterText, textInputs } from '@/testing/dom'
 import LinkScanForm from './LinkScanForm.vue'
 
 let wrapper: VueWrapper | undefined
@@ -15,7 +15,7 @@ const mountForm = async (
   camera: () => Promise<MediaStream> = () => new Promise<MediaStream>(() => undefined),
 ) => {
   wrapper = mount(LinkScanForm, {
-    props: { isBusy: false, findCamera, camera },
+    props: { modelValue: '', problem: '', steps: ['One', 'Two'], findCamera, camera },
     attachTo: document.body,
   })
   await flushPromises()
@@ -60,17 +60,21 @@ describe('the scan form', () => {
     )
   })
 
-  it('submits the pasted code where the machine has no camera', async () => {
+  it('passes the pasted code on where the machine has no camera', async () => {
     const form = await mountForm(() => Promise.resolve(false))
     await enterText(textInputs()[0] as HTMLInputElement, 'numen://link?v=1')
-    await click(findButton(/^Use link$/))
-    expect(form.emitted('submit')).toStrictEqual([['numen://link?v=1']])
+    expect(form.emitted('update:modelValue')).toStrictEqual([['numen://link?v=1']])
   })
 
-  it('waits for the check before it shows the camera', async () => {
+  it('says that the camera is checked while the check runs', async () => {
     const check = vi.fn(() => new Promise<boolean>(() => undefined))
     const form = await mountForm(check)
     expect(form.find('video').exists()).toBe(false)
-    expect(form.find('[role="status"]').exists()).toBe(false)
+    expect(form.get('[role="status"]').text()).toContain('Checking the camera')
+  })
+
+  it('has the line that tells where to point the camera', async () => {
+    const form = await mountForm(() => Promise.resolve(true))
+    expect(form.text()).toContain('Point the camera at the QR code on your other device')
   })
 })
