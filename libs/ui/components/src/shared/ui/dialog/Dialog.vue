@@ -12,7 +12,15 @@ import DialogPanel from './DialogPanel.vue'
 import { useDialogHost } from './host'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<DialogProps>()
+withDefaults(defineProps<DialogProps>(), {
+  hint: '',
+  role: 'dialog',
+  tone: 'default',
+  describedBy: '',
+  step: '',
+  size: 'md',
+  isForm: false,
+})
 
 const emit = defineEmits<DialogEvents>()
 
