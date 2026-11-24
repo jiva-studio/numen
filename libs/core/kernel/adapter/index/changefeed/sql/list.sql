@@ -6,7 +6,7 @@ SELECT c.source_id, CASE WHEN c.event = ?1 THEN c.path ELSE coalesce(s.path, c.p
        (SELECT json_group_array(key) FROM json_each(c.note_types) WHERE value > ?3)
 FROM file_changes c
 JOIN vaults v ON v.id = c.vault_id
-LEFT JOIN sources s ON s.id = c.source_id
+LEFT JOIN sources s ON s.id = c.source_id AND s.vault_id = c.vault_id AND c.event <> ?1
 WHERE v.identifier = ?2 AND c.seq > ?3 AND c.seq <= ?4
   AND c.event IN (SELECT value FROM json_each(?5))
 ORDER BY c.seq
