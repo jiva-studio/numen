@@ -8,6 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
+	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -31,6 +33,8 @@ func NewReceiveDeps(deps syncvault.Deps) receive.Deps {
 
 // Shares answers the methods of the settings view about the folders this account shares.
 type Shares struct {
+	host   ports.Host
+	read   *share.ReadShares
 	get    *share.GetShare
 	remove *share.RemoveReader
 	stop   *share.StopShare
@@ -40,6 +44,7 @@ type Shares struct {
 func New(deps syncvault.Deps) *Shares {
 	sharing := NewShareDeps(deps)
 	return &Shares{
+		host: deps.Host, read: share.NewReadShares(sharing),
 		get:    share.NewGetShare(sharing),
 		remove: share.NewRemoveReader(sharing), stop: share.NewStopShare(sharing),
 	}
@@ -62,11 +67,7 @@ func (s *Shares) GetShare(ctx context.Context, request api.GetShareRequest) (api
 	if err != nil {
 		return api.GetShareResponse{}, err
 	}
-	readers := make([]api.ShareReader, len(overview.Readers))
-	for i, reader := range overview.Readers {
-		readers[i] = api.ShareReader{Label: reader.Label, Fingerprint: reader.Fingerprint, State: api.ReaderState(reader.GetState())}
-	}
-	return api.GetShareResponse{State: api.ShareState(overview.State), Readers: readers, Error: ""}, nil
+	return api.GetShareResponse{State: api.ShareState(overview.State), Readers: getReaders(overview.Readers), Error: ""}, nil
 }
 
 func (s *Shares) RemoveReader(ctx context.Context, request api.RemoveReaderRequest) (api.RemoveReaderResponse, error) {
@@ -95,4 +96,36 @@ func (s *Received) ListReceived(ctx context.Context, _ api.ListReceivedRequest) 
 		}
 	}
 	return api.ListReceivedResponse{Shares: shares}, nil
+}
+
+// ListShares returns the open shares of every vault of this account.
+func (s *Shares) ListShares(ctx context.Context, _ api.ListSharesRequest) (api.ListSharesResponse, error) {
+	vaults, err := s.host.GetVaults(ctx)
+	if err != nil {
+		return api.ListSharesResponse{}, err
+	}
+	shares := []api.SharedFolder{}
+	for _, vault := range vaults {
+		roots, err := s.read.Execute(ctx, vault.ID)
+		if err != nil {
+			return api.ListSharesResponse{}, err
+		}
+		for _, root := range roots {
+			if root.IsClosed {
+				continue
+			}
+			shares = append(shares, api.SharedFolder{
+				VaultID: string(vault.ID), Folder: root.Folder, State: api.ShareState(root.GetState()), Readers: getReaders(root.Readers),
+			})
+		}
+	}
+	return api.ListSharesResponse{Shares: shares}, nil
+}
+
+func getReaders(readers []domainshare.Reader) []api.ShareReader {
+	listed := make([]api.ShareReader, len(readers))
+	for i, reader := range readers {
+		listed[i] = api.ShareReader{Label: reader.Label, Fingerprint: reader.Fingerprint, State: api.ReaderState(reader.GetState())}
+	}
+	return listed
 }

@@ -66,6 +66,11 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		shared.Readers[0].State != api.ReaderActive {
 		t.Fatalf("share = %+v, %v, want one active reader named by its device", shared, err)
 	}
+	listed, err := ownerSide.ListShares(ctx, api.ListSharesRequest{})
+	if err != nil || len(listed.Shares) != 1 || listed.Shares[0].Folder != "Food" || len(listed.Shares[0].Readers) != 1 ||
+		listed.Shares[0].Readers[0].Label != "Anna laptop" {
+		t.Fatalf("listed = %+v, %v, want Food with the reader Anna laptop", listed, err)
+	}
 	if _, err := ownerSide.RemoveReader(ctx, api.RemoveReaderRequest{VaultID: "Test", Folder: "Food", Fingerprint: shared.Readers[0].Fingerprint}); err != nil {
 		t.Fatal(err)
 	}

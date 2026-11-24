@@ -21,6 +21,7 @@ const (
 	MethodRestoreAccount           = "RestoreAccount"
 	MethodExportAccountData        = "ExportAccountData"
 	MethodGetShare                 = "GetShare"
+	MethodListShares               = "ListShares"
 	MethodRemoveReader             = "RemoveReader"
 	MethodStopShare                = "StopShare"
 	MethodListReceived             = "ListReceived"
@@ -336,6 +337,23 @@ type GetShareResponse struct {
 	State   ShareState    `json:"state"`
 	Readers []ShareReader `json:"readers"`
 	Error   string        `json:"error,omitempty"`
+}
+
+// ListSharesRequest asks for the folders this account shares.
+type ListSharesRequest struct{}
+
+// SharedFolder is a folder of a vault of this account that is shared, with its readers, the removed ones too.
+type SharedFolder struct {
+	VaultID string        `json:"vaultId"`
+	Folder  string        `json:"folder"`
+	State   ShareState    `json:"state"`
+	Readers []ShareReader `json:"readers"`
+}
+
+// ListSharesResponse is the folders this account shares, in the order of the vault list. A folder whose share was
+// stopped is not listed.
+type ListSharesResponse struct {
+	Shares []SharedFolder `json:"shares"`
 }
 
 // RemoveReaderRequest removes the reader with the account fingerprint from a folder.

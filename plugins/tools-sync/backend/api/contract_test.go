@@ -34,7 +34,8 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodCreateCheckout: {
 			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
-		api.MethodGetShare: {CreateRequest: func() any { return &api.GetShareRequest{} }, CreateResponse: func() any { return &api.GetShareResponse{} }},
+		api.MethodGetShare:   {CreateRequest: func() any { return &api.GetShareRequest{} }, CreateResponse: func() any { return &api.GetShareResponse{} }},
+		api.MethodListShares: {CreateRequest: func() any { return &api.ListSharesRequest{} }, CreateResponse: func() any { return &api.ListSharesResponse{} }},
 		api.MethodRemoveReader: {
 			CreateRequest: func() any { return &api.RemoveReaderRequest{} }, CreateResponse: func() any { return &api.RemoveReaderResponse{} },
 		},
@@ -123,7 +124,7 @@ func TestTheNameOfTheMethodThatAnswersPausedRemovalsAndTheirDirections(t *testin
 
 func TestTheNamesOfTheSharingMethodsAndTheirStates(t *testing.T) {
 	methods := map[string]string{
-		api.MethodGetShare:     "GetShare",
+		api.MethodGetShare: "GetShare", api.MethodListShares: "ListShares",
 		api.MethodRemoveReader: "RemoveReader", api.MethodStopShare: "StopShare",
 		api.MethodListReceived: "ListReceived", api.MethodStartShareInvitation: "StartShareInvitation",
 		api.MethodListShareInvitations: "ListShareInvitations", api.MethodRevokeShareInvitation: "RevokeShareInvitation",

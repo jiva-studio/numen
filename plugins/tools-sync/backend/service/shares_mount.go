@@ -11,6 +11,9 @@ func mountShareMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodGetShare, func(ctx context.Context, request api.GetShareRequest) (api.GetShareResponse, error) {
 		return handle(r, func(b *Backend) (api.GetShareResponse, error) { return b.GetShare(ctx, request) })
 	})
+	server.Handle(service, api.MethodListShares, func(ctx context.Context, request api.ListSharesRequest) (api.ListSharesResponse, error) {
+		return handle(r, func(b *Backend) (api.ListSharesResponse, error) { return b.ListShares(ctx, request) })
+	})
 	server.Handle(service, api.MethodRemoveReader, func(ctx context.Context, request api.RemoveReaderRequest) (api.RemoveReaderResponse, error) {
 		return handle(r, func(b *Backend) (api.RemoveReaderResponse, error) { return b.RemoveReader(ctx, request) })
 	})
