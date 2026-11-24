@@ -66,7 +66,7 @@ const tabs = computed(() =>
     hasSettings: hasSettingsTab.value,
     hasSlots: props.hasSlots === true,
     hasData: props.dataFileCount > 0 || props.problem !== '',
-    contributed: props.contributedTabs,
+    contributed: props.contributedTabs ?? [],
   }),
 )
 const activeTab = ref(getFirstPluginTab(hasSettingsTab.value))
