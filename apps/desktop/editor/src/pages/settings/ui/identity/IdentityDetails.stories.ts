@@ -84,7 +84,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div
         class="numen"
-        style="position:relative;contain:strict;overflow:auto;inline-size:48rem;block-size:34rem;padding:1rem;box-sizing:border-box;background:var(--numen-surface)"
+        style="position:relative;contain:strict;box-sizing:border-box;inline-size:760px;block-size:560px;margin:1.5rem auto;border:1px solid var(--numen-rule);background:var(--numen-surface);overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem"
       >
         <IdentityDetails
           :info="info"

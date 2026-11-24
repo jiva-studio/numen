@@ -83,43 +83,39 @@ function focusFirst(): void {
 
 <template>
   <Teleport :to="host ?? 'body'" :disabled="host === null">
-  <div
-    data-slot="dialog-backdrop"
-    class="dialog-backdrop"
-    :data-scope="host === null ? 'window' : 'host'"
-    @click.self="emit('cancel')"
-    @keydown.esc="emit('cancel')"
-    @keydown.tab="onKeepFocus"
-  >
-    <component
-      :is="isForm ? 'form' : 'div'"
-      ref="panel"
-      data-slot="dialog"
-      class="dialog"
-      :role="role"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-      :aria-describedby="describedBy === '' ? undefined : describedBy"
-      :data-tone="tone"
-      :data-size="size"
-      @submit.prevent="emit('submit')"
+    <div
+      data-slot="dialog-backdrop"
+      class="dialog-backdrop"
+      :data-scope="host === null ? 'window' : 'host'"
+      @click.self="emit('cancel')"
+      @keydown.esc="emit('cancel')"
+      @keydown.tab="onKeepFocus"
     >
-      <header class="dialog__head">
-        <h2 :id="titleId" class="dialog__title">{{ label }}</h2>
-        <p v-if="hint !== ''" class="dialog__hint">{{ hint }}</p>
-      </header>
-      <div class="dialog__body"><slot /></div>
-      <div v-if="$slots['actions']" class="dialog__actions"><slot name="actions" /></div>
-    </component>
-  </div>
+      <component
+        :is="isForm ? 'form' : 'div'"
+        ref="panel"
+        data-slot="dialog"
+        class="dialog"
+        :role="role"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+        :aria-describedby="describedBy === '' ? undefined : describedBy"
+        :data-tone="tone"
+        :data-size="size"
+        @submit.prevent="emit('submit')"
+      >
+        <header class="dialog__head">
+          <h2 :id="titleId" class="dialog__title">{{ label }}</h2>
+          <p v-if="hint !== ''" class="dialog__hint">{{ hint }}</p>
+        </header>
+        <div class="dialog__body"><slot /></div>
+        <div v-if="$slots['actions']" class="dialog__actions"><slot name="actions" /></div>
+      </component>
+    </div>
   </Teleport>
 </template>
 
 <style scoped>
-.dialog-backdrop[data-scope='host'] {
-  position: absolute;
-}
-
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -127,8 +123,11 @@ function focusFirst(): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--numen-gutter);
   background: color-mix(in oklab, var(--numen-surface), transparent 30%);
+}
+
+.dialog-backdrop[data-scope='host'] {
+  position: absolute;
 }
 
 .dialog[data-size='sm'] {
@@ -148,9 +147,9 @@ function focusFirst(): void {
   flex-direction: column;
   gap: 0.75rem;
   box-sizing: border-box;
-  inline-size: min(100%, var(--width));
-  max-block-size: 100%;
-  overflow-y: auto;
+  inline-size: min(calc(100% - 2rem), var(--width));
+  max-block-size: calc(100% - 2rem);
+  overflow: hidden;
   padding: var(--numen-gutter);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
@@ -183,10 +182,20 @@ function focusFirst(): void {
   font-size: var(--numen-text-2);
 }
 
+.dialog__head,
+.dialog__actions {
+  flex: none;
+}
+
 .dialog__body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0.5rem;
+  min-block-size: 0;
+  margin: -0.25rem;
+  padding: 0.25rem;
+  overflow-y: auto;
 }
 
 .dialog__actions {

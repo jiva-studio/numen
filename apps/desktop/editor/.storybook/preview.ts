@@ -10,6 +10,12 @@ import './preview.css'
 configure({ asyncUtilTimeout: 5_000 })
 
 const preview: Preview = {
+  loaders: [
+    async () => {
+      await document.fonts.ready
+      return {}
+    },
+  ],
   parameters: {
     layout: 'fullscreen',
     backgrounds: { disable: true },

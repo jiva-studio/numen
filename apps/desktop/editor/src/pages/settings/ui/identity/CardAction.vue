@@ -33,7 +33,7 @@ defineProps<{ isPrimary?: boolean; isDisabled?: boolean }>()
   background: none;
   color: var(--numen-hushed);
   font: inherit;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;

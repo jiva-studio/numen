@@ -35,7 +35,7 @@ const meta: Meta<IdentitySetupProps> = {
     template: `
       <div
         class="numen"
-        style="position:relative;contain:strict;inline-size:48rem;block-size:34rem;background:var(--numen-surface)"
+        style="position:relative;contain:strict;box-sizing:border-box;inline-size:760px;block-size:560px;margin:1.5rem auto;border:1px solid var(--numen-rule);background:var(--numen-surface)"
       >
         <IdentitySetup v-bind="args" @check="onCheck" @back="onBack" @cancel="onCancel" @keep="onKeep" />
       </div>

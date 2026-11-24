@@ -18,6 +18,8 @@ export const WORDS = {
   linkPaste: 'Paste the link text',
   linkUse: 'Use link',
   linkText: 'Link text',
+  linkCopy: 'Copy',
+  linkCopied: 'Copied',
   linkApprove: 'Link this device',
   linkDecline: 'Decline',
   linkCodeField: 'Enter the code shown on your other device',

@@ -13,7 +13,7 @@ import {
   createRefusal,
   filmCode,
   QR_TEXT,
-  TAB_FRAME,
+  TabFrame,
 } from './linkStory'
 
 interface Knobs {
@@ -36,10 +36,10 @@ const meta: Meta<Knobs> = {
     onClose: fn(),
   },
   render: (args) => ({
-    components: { LinkDialog },
-    setup: () => ({ args, frame: TAB_FRAME }),
+    components: { LinkDialog, TabFrame },
+    setup: () => ({ args }),
     template: `
-      <div class="numen" :style="frame">
+      <TabFrame>
         <LinkDialog
           role="joiner"
           :calls="args.calls"
@@ -48,7 +48,7 @@ const meta: Meta<Knobs> = {
           v-bind="args.camera ? { camera: args.camera } : {}"
           @close="args.onClose"
         />
-      </div>
+      </TabFrame>
     `,
   }),
 }
@@ -76,9 +76,17 @@ export const CheckingCamera: Story = {
   },
 }
 
-/** The camera shows its picture in a frame and the QR code of the other device is read. */
+/** The camera shows its picture in a frame and the QR code of the other device is read; the core has not answered yet, so the scanner stays. */
 export const CameraReady: Story = {
-  args: { findCamera: () => Promise.resolve(true), camera: filmCode(QR_TEXT) },
+  args: {
+    findCamera: () => Promise.resolve(true),
+    camera: filmCode(QR_TEXT),
+    stallMs: 600_000,
+    calls: {
+      ...createCalls(joiner()),
+      start: fn(() => new Promise<never>(() => undefined)),
+    },
+  },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(

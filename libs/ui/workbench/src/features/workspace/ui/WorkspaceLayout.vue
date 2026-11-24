@@ -4,6 +4,7 @@ import { browserClock } from '@numen/ui'
 import { DragPreview, Menu } from '@numen/ui'
 import { WorkspaceBranch } from './branch'
 import { WorkspacePane } from './pane'
+import TabContent from './tab/TabContent.vue'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
 import type { WorkspaceLayoutProps } from './WorkspaceLayout.types'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
@@ -155,7 +156,9 @@ function onResizeBranch(branch: NodeId, sizes: readonly number[]): void {
         :to="hosts.getElement(tab.id)"
         :disabled="!hosts.getElement(tab.id)"
       >
-        <slot name="tab" :id="tab.id" />
+        <TabContent :host="hosts.getElement(tab.id)">
+          <slot name="tab" :id="tab.id" />
+        </TabContent>
       </Teleport>
     </div>
 

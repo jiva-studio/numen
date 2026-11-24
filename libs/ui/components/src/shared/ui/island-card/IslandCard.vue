@@ -45,7 +45,7 @@ defineProps<{ title: string }>()
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   color: var(--numen-hushed);
 }
 

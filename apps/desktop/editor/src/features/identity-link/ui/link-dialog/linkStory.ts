@@ -1,3 +1,5 @@
+import { defineComponent, h, ref } from 'vue'
+import { provideDialogHost } from '@numen/ui'
 import { fn } from 'storybook/test'
 import { encode } from 'uqr'
 import type { LinkInfo } from '@/entities/identity'
@@ -6,9 +8,17 @@ import type { LinkCalls } from '../../lib/types'
 export const QR_TEXT =
   'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
 
-/** The area of a tab: the dialog covers it and is centred in it, as in the window. */
-export const TAB_FRAME =
-  'position:relative;contain:strict;inline-size:48rem;block-size:34rem;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)'
+const TAB_FRAME =
+  'position:relative;contain:strict;box-sizing:border-box;inline-size:760px;block-size:560px;margin:1.5rem auto;border:1px solid var(--numen-rule);background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)'
+
+/** The area of a tab as the workbench draws it: it hosts the dialogs below it, which are centred in it. */
+export const TabFrame = defineComponent({
+  setup(_, { slots }) {
+    const area = ref<HTMLElement | null>(null)
+    provideDialogHost(area)
+    return () => h('div', { ref: area, class: 'numen', style: TAB_FRAME }, slots['default']?.())
+  },
+})
 
 export const createInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => ({
   phase: 'waitingForPeer',
