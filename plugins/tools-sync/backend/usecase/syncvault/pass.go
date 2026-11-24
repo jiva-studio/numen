@@ -29,7 +29,6 @@ type pass struct {
 	unverified int
 	verdict    restore.Verdict
 	isSent     bool
-	// isStaleEpoch is a push the server refused because the epoch of a share moved: the shares are read again.
 	isStaleEpoch bool
 }
 

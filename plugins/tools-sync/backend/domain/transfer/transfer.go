@@ -49,7 +49,6 @@ func (v Vault) GetNewest() EpochKey {
 	return v.Later[len(v.Later)-1]
 }
 
-// GetKey returns the key of the epoch and whether the vault has one.
 func (v Vault) GetKey(epoch uint32) ([32]byte, bool) {
 	if epoch == 0 {
 		return v.Key, true

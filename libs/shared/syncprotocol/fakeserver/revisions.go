@@ -344,9 +344,8 @@ func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// checkEpochs refuses a revision of the vault whose key epoch is below the newest one; a revision of a share carries the
-// epoch of the share and is checked against the share instead.
 func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
+	// A revision of a share carries the epoch of the share and is not compared with the vault epoch.
 	var highest uint32
 	for _, stored := range vault.files {
 		if len(stored.GetRevision().GetShareRootId()) == 0 {

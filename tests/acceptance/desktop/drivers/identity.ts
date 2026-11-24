@@ -223,7 +223,6 @@ export class IdentityDriver {
     this.account = await this.readAccount(await this.showPage())
   }
 
-  /** Makes the save dialog answer with a folder of this world, and returns the file the kit goes to. */
   private prepareDownload(): string {
     const folder = path.join(this.scenario.getWorld().root, `downloads-${++this.downloads}`)
     fs.mkdirSync(folder, { recursive: true })
@@ -455,7 +454,6 @@ export class IdentityDriver {
     await expect(card.getByRole('button', { name: CHOOSE })).toHaveCount(0)
   }
 
-  /** Opens the menu "Change plan" of the card and gives its item of the plan of a name; the item names the plan, then its size and price. */
   private async openChangeItem(card: Locator, name: string): Promise<Locator> {
     const change = card.getByRole('button', { name: CHANGE_PLAN, exact: true })
     await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
