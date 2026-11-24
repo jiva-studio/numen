@@ -26,7 +26,6 @@ export const WORDS = {
   needsIdentity: 'Needs an identity',
   noIdentityText:
     'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
-  offline: 'Offline',
   chooseNamed: (name: string, detail: string): string =>
     detail === '' ? `Choose ${name}` : `Choose ${name}, ${detail}`,
   changePlan: 'Change plan',
@@ -70,10 +69,7 @@ export const WORDS = {
     permissionDenied: 'Numen Sync may not open the browser.',
   },
   stopWaiting: 'Cancel',
-  unreachableText: (server: string): string =>
-    server === ''
-      ? 'Start the sync server, or correct its address in the settings.'
-      : `Could not connect to ${server}. Start the server, or change the address in the settings.`,
+  serverAway: 'The sync server is not available.',
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Synced vaults',

@@ -85,7 +85,7 @@ describe('getSubscriptionView', () => {
     )
   })
 
-  it('badges an unreachable server as offline and names it in the text', () => {
+  it('says only that the server is not available, with no badge and no address', () => {
     const view = getSubscriptionView({
       status: 'unreachable',
       phase: '',
@@ -94,8 +94,8 @@ describe('getSubscriptionView', () => {
     })
 
     expect(view).toStrictEqual({
-      badge: 'Offline',
-      text: 'Could not connect to http://127.0.0.1:8787. Start the server, or change the address in the settings.',
+      badge: '',
+      text: 'The sync server is not available.',
       tone: 'warning',
     })
   })

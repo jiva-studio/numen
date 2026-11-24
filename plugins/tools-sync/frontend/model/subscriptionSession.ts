@@ -51,7 +51,6 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
       await read()
     } catch (failure) {
       account.status.value = 'unreachable'
-      if (getFailureCode(failure) !== 'unavailable') problem.value = getMessage(failure)
       return
     }
     if (before === 'unreachable') problem.value = ''

@@ -156,7 +156,7 @@ export const Unreachable: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Offline')).toBeVisible()
+    await expect(await canvas.findByText('The sync server is not available.')).toBeVisible()
     await expect(await canvas.findByText(/https:\/\/sync\.numen\.md/)).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Open the settings' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()

@@ -213,6 +213,12 @@
   color: var(--numen-hushed);
 }
 
+.subscription__away {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .subscription__full {
   margin-inline: calc(-1 * var(--settings-card-pad));
   padding: var(--row-pad) var(--settings-card-pad);

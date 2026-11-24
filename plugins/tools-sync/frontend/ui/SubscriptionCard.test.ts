@@ -264,8 +264,24 @@ describe('SubscriptionCard', () => {
     })
     await flushPromises()
 
-    expect(wrapper.get('.subscription__badge').text()).toBe('Offline')
+    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
+    expect(wrapper.text()).toContain('The sync server is not available.')
+    expect(wrapper.text()).not.toContain('Could not connect')
     expect(findChoose(wrapper)).toBeUndefined()
+  })
+
+  it('says nothing more than that when the failure of the server has no known cause', async () => {
+    const client = createClient(() => Promise.reject(new Error('Something went wrong in Numen Sync.')))
+    const wrapper = mountCard({
+      client,
+      openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+      now: () => NOW,
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('The sync server is not available.')
+    expect(wrapper.text()).not.toContain('Something went wrong')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('opens the payment page in the browser and waits when the person buys', async () => {

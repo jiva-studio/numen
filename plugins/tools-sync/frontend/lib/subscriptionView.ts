@@ -83,8 +83,8 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
       return { badge: '', text: words.subscriptionLoading, tone: 'neutral' }
     case 'unreachable':
       return {
-        badge: words.offline,
-        text: words.unreachableText(snapshot.server ?? ''),
+        badge: '',
+        text: words.serverAway,
         tone: 'warning',
       }
     case 'noIdentity':

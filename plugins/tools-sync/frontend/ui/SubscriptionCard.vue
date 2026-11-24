@@ -8,7 +8,7 @@
  * stop waiting.
  */
 import { computed, onMounted, ref } from 'vue'
-import { ChevronRight, RotateCcw, Settings } from '@lucide/vue'
+import { ChevronRight, RotateCcw, ServerOff, Settings } from '@lucide/vue'
 import { Button, CardAction, IslandCard, Spinner } from '@numen/ui'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
@@ -165,7 +165,11 @@ function onFailure(failure: unknown): void {
     </div>
     <div v-else class="subscription__content" :inert="isPaying || undefined" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
-      <p v-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
+      <p v-if="status === 'unreachable'" class="subscription__text subscription__away">
+        <ServerOff :size="16" aria-hidden="true" />
+        <span>{{ view.text }}</span>
+      </p>
+      <p v-else-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
       <div v-if="planLine !== ''" class="subscription__row">
         <div class="subscription__label">
           <span class="subscription__name">{{ words.planRow }}</span>
@@ -229,7 +233,9 @@ function onFailure(failure: unknown): void {
         {{ words.stopWaiting }}
       </Button>
     </div>
-    <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
+    <p v-if="problem !== '' && status !== 'unreachable'" role="alert" class="subscription__problem">
+      {{ problem }}
+    </p>
     <p
       v-if="(accountData?.state.problem.value ?? '') !== ''"
       role="alert"
