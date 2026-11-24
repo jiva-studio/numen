@@ -59,7 +59,7 @@ const joiner = (overrides: Parameters<typeof createInfo>[0] = {}) =>
   createInfo({ role: 'joiner', mode: 'scan', accountFingerprint: '', ...overrides })
 
 const submitText = async (canvas: ReturnType<typeof within>, text: string) => {
-  const reveal = canvas.queryByRole('button', { name: 'Paste the link instead' })
+  const reveal = canvas.queryByRole('button', { name: 'Paste link instead' })
   if (reveal) await userEvent.click(reveal)
   await userEvent.click(await canvas.findByRole('textbox', { name: 'Link from the other device' }))
   await userEvent.paste(text)
@@ -91,7 +91,7 @@ export const CameraReady: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('Scan the QR code on your other device.'),
+      await canvas.findByText('Point the camera at the code on your other device.'),
     ).toBeVisible()
     await waitFor(() => expect(args.calls.start).toHaveBeenCalledWith('joiner', 'scan', QR_TEXT), {
       timeout: 10_000,

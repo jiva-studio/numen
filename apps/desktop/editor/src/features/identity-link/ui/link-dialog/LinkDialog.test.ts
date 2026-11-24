@@ -79,7 +79,7 @@ describe('the dialog that links a new device', () => {
     expect(dialog.text()).toContain('Phone')
     expect(dialog.text()).toContain('1111 2222')
     expect(dialog.text()).toContain('482 913')
-    await click(findButton(/^Link this device$/))
+    await click(findButton(/^Link device$/))
     expect(decideLink).toHaveBeenCalledWith(true)
   })
 
@@ -91,7 +91,7 @@ describe('the dialog that links a new device', () => {
     })
     const decideLink = vi.fn(() => ok(undefined))
     await mountDialog(link, { decideLink })
-    await click(findButton(/^Decline$/))
+    await click(findButton(/^Don't link$/))
     expect(decideLink).toHaveBeenCalledWith(false)
   })
 
@@ -106,7 +106,7 @@ describe('the dialog that links a new device', () => {
     const dialog = await mountDialog(link)
     expect(dialog.text()).toContain('Waiting for the new device')
     expect(dialog.text()).toContain('482 913')
-    expect(dialog.text()).not.toContain('Link this device')
+    expect(dialog.text()).not.toContain('Link device')
   })
 
   it('says that the device is linked', async () => {

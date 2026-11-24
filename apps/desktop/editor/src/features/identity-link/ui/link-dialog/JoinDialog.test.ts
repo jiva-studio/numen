@@ -59,7 +59,7 @@ describe('the dialog that joins an account', () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true)
     expect(dialog.find('input').exists()).toBe(false)
     expect(findButtons(/^Use link$/)).toHaveLength(0)
-    await click(findButton(/^Paste the link instead$/))
+    await click(findButton(/^Paste link instead$/))
     expect(dialog.find('input').exists()).toBe(true)
     expect(findButton(/^Use link$/)).toBeTruthy()
   })
@@ -68,7 +68,7 @@ describe('the dialog that joins an account', () => {
   it('shows the camera and says where to point it', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true)
     expect(dialog.find('video').exists()).toBe(true)
-    expect(dialog.text()).toContain('Scan the QR code on your other device.')
+    expect(dialog.text()).toContain('Point the camera at the code on your other device.')
   })
 
   it('says that the camera is checked while the check runs', async () => {

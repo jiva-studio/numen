@@ -230,14 +230,14 @@ describe('the page "Identity and licenses"', () => {
 
   it('shows the join by a QR code in the header with restore and create', async () => {
     const { tab } = await createPage()
-    const header = findButton(tab, 'Join with a QR code')?.element.parentElement
+    const header = findButton(tab, 'Join account')?.element.parentElement
     expect(header?.contains(findButton(tab, 'Restore')?.element ?? null)).toBe(true)
     expect(header?.contains(findButton(tab, 'Create identity')?.element ?? null)).toBe(true)
   })
 
   it('opens the join dialog from the header', async () => {
     const { tab } = await createPage()
-    await press(tab, 'Join with a QR code')
+    await press(tab, 'Join account')
     expect(getDialog(tab).text()).toContain('Join account')
   })
 

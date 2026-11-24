@@ -96,7 +96,7 @@ export const WORDS = {
     'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
   identityRestore: 'Restore',
-  identityJoin: 'Join with a QR code',
+  identityJoin: 'Join account',
   identityLinkDevice: 'Link a new device',
   identitySetupTitle: 'Recovery words',
   identityWriteDown: 'Write the 12 words down in order. We show them once.',

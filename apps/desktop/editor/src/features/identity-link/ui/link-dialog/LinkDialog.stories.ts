@@ -102,7 +102,7 @@ export const NewDeviceAsked: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Phone')).toBeVisible()
     await expect(canvas.getByLabelText('Confirmation code')).toHaveTextContent('482 913')
-    await userEvent.click(canvas.getByRole('button', { name: 'Link this device' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Link device' }))
     await expect(args.calls.decide).toHaveBeenCalledWith(true)
   },
 }
@@ -122,7 +122,7 @@ export const Declined: Story = {
   args: { calls: createCalls(peer()) },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Decline' }))
+    await userEvent.click(await canvas.findByRole('button', { name: "Don't link" }))
     await expect(args.calls.decide).toHaveBeenCalledWith(false)
   },
 }
