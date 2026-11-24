@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
@@ -72,6 +73,7 @@ type Processes struct {
 	launcher Launcher
 	limits   process.Limits
 	policy   lifecycle.ActivationPolicy
+	record   func(domainlogs.Entry)
 
 	stdinsMu sync.Mutex
 	stdins   map[stdinKey]io.Closer
@@ -85,6 +87,19 @@ func NewProcesses(sups processTable, clock machineport.Clock, report func(error)
 		limits: process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
 		stdins: make(map[stdinKey]io.Closer),
 	}
+}
+
+// SetOutputLog sets where the lines a plugin process writes to its output are recorded. Without it they are dropped.
+func (p *Processes) SetOutputLog(record func(domainlogs.Entry)) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.record = record
+}
+
+func (p *Processes) getOutputLog() func(domainlogs.Entry) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.record
 }
 
 // SetProcessLimits sets execution limits for launched plugin processes.
@@ -242,9 +257,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 
 	go func() {
-		if _, err := io.Copy(io.Discard, stdout); err != nil && !errors.Is(err, os.ErrClosed) {
-			p.report(fmt.Errorf("read output of plugin %s: %w", plug.Manifest.ID, err))
-		}
+		pumpOutput(stdout, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelInfo)
 		closeResource(p.report, "stdout of plugin "+plug.Manifest.ID, stdout)
 	}()
 
@@ -317,8 +330,13 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("pipe stdout: %w", err), stdin.Close())
 	}
 
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, nil, errors.Join(fmt.Errorf("pipe stderr: %w", err), stdin.Close(), stdout.Close())
+	}
+
 	if err := process.HideInheritedFiles(); err != nil {
-		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close())
+		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close(), stderr.Close())
 	}
 	// A failed Start has closed both pipes already.
 	if err := p.starter.Start(cmd); err != nil {
@@ -333,6 +351,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
+	go pumpOutput(stderr, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelWarning)
 	p.HoldStdin(plug.Manifest.ID, cmd.Process.Pid, stdin)
 	return cmd.Process, stdout, nil
 }

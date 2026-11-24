@@ -84,6 +84,7 @@ func NewPluginHost(indexPath string, res *Resources, report func(error), target 
 // InitializePluginRoles installs host services before discovering the target's plugins.
 func InitializePluginRoles(indexPath string, res *Resources, management *PluginManagement, processes *PluginSupervision, report func(error)) error {
 	record := openOptionalRecordLog(indexPath, res)
+	processes.Processes.SetOutputLog(record)
 	processes.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
 	processes.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	management.ContentTypes.SetContentTypeTable(contenttype.Open())
