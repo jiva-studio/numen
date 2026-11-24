@@ -28,6 +28,7 @@ export type {
   PluginSettingOptionsBy,
   PluginSettingGroupInfo,
   PluginSettingsViewInfo,
+  PluginSettingsTabInfo,
   PluginSettingType,
 } from './pluginInfo'
 export {

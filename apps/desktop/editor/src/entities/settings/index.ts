@@ -5,6 +5,7 @@ export type {
   PluginSettingGroupInfo,
   PluginSettingInfo,
   PluginSettingsViewInfo,
+  PluginSettingsTabInfo,
   PluginSettingOption,
 } from './lib/configuration'
 export { SETTINGS_WORDS } from './words'

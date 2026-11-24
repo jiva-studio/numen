@@ -96,6 +96,7 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
+  readonly settingsTabs?: readonly PluginSettingsTabInfo[]
   readonly settingGroups?: readonly PluginSettingGroupInfo[]
   readonly contributions?: readonly PluginContribution[]
   readonly isOffByDefault?: boolean
@@ -156,6 +157,14 @@ export interface PluginSettingsViewInfo {
   readonly id: string
   readonly title: string
   readonly page?: string | undefined
+  /** The id of the tab the view is drawn in; empty or absent is the default tab "settings". */
+  readonly tab?: string | undefined
+}
+
+/** A tab of the settings page of a plugin besides the default tab "settings". */
+export interface PluginSettingsTabInfo {
+  readonly id: string
+  readonly title: string
 }
 
 /** A reader of a plugin and the extensions, lowercase and without the dot, of the files it opens. */

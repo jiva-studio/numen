@@ -67,7 +67,8 @@ describe('every setting', () => {
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
-              settingsViews: [{ id: 'floor', title: 'Floor', page: '' }],
+              settingsViews: [{ id: 'floor', title: 'Floor', page: '', tab: '' }],
+              settingsTabs: [],
               contributions: [
                 {
                   kind: PLUGIN_CONTRIBUTION_KIND.COMMANDS,
@@ -137,7 +138,8 @@ describe('every setting', () => {
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
-        settingsViews: [{ id: 'floor', title: 'Floor', page: '' }],
+        settingsViews: [{ id: 'floor', title: 'Floor', page: '', tab: '' }],
+        settingsTabs: [],
         settingGroups: [{ id: 'run', title: 'Run' }],
         contributions: [
           {
@@ -300,6 +302,7 @@ describe('what the core resolved and declared', () => {
               hasBackend: false,
               readers: [],
               settingsViews: [],
+              settingsTabs: [],
               settings: [
                 {
                   key: 'model',
@@ -462,9 +465,10 @@ describe('the page of a settings view', () => {
               hasBackend: false,
               readers: [],
               settingsViews: [
-                { id: 'vaults', title: 'Vaults', page: '' },
-                { id: 'subscription', title: 'Subscription', page: 'identity' },
+                { id: 'vaults', title: 'Vaults', page: '', tab: 'sync' },
+                { id: 'subscription', title: 'Subscription', page: 'identity', tab: '' },
               ],
+              settingsTabs: [{ id: 'sync', title: 'Sync' }],
               settingGroups: [],
               contributions: [],
               settings: [],
@@ -477,8 +481,11 @@ describe('the page of a settings view', () => {
     const configuration = await core.getSettings()
 
     expect(configuration.plugins?.at(0)?.settingsViews).toStrictEqual([
-      { id: 'vaults', title: 'Vaults', page: '' },
-      { id: 'subscription', title: 'Subscription', page: 'identity' },
+      { id: 'vaults', title: 'Vaults', page: '', tab: 'sync' },
+      { id: 'subscription', title: 'Subscription', page: 'identity', tab: '' },
+    ])
+    expect(configuration.plugins?.at(0)?.settingsTabs).toStrictEqual([
+      { id: 'sync', title: 'Sync' },
     ])
   })
 })
