@@ -30,15 +30,11 @@ func (s *Server) GetVaultUsage(_ context.Context, req *connect.Request[syncv1.Ge
 func (s *Server) getVaultBytes(account, vault string) uint64 {
 	var total uint64
 	for _, row := range s.blobs {
-		if row.account == account && row.vault == vault && isCounted(row) {
+		if row.account == account && row.vault == vault && (row.state == blobReserved || row.state == blobCommitted) {
 			total += row.size
 		}
 	}
 	return total
-}
-
-func isCounted(row *blobRow) bool {
-	return row.state == blobReserved || row.state == blobCommitted
 }
 
 func (s *Server) DeleteVault(_ context.Context, req *connect.Request[syncv1.DeleteVaultRequest]) (*connect.Response[syncv1.DeleteVaultResponse], error) {

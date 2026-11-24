@@ -133,7 +133,7 @@ func New(cfg Config) *Server {
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, plans: cfg.Plans, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
+		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: shop{trials: map[string]bool{}},
 		store: bodystore.New(cfg.BodyDir), stop: cfg.Stop, streams: streams.New(cfg.Heartbeat),
 		shares: map[string]*sharestate.State{}, deleting: map[string]time.Time{},
 	}

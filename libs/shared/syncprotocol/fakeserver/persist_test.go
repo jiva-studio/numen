@@ -100,13 +100,8 @@ func TestRestore_ServesAfterARestartABodyThatWasUploadedBefore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			t.Error(err)
-		}
-	}()
 	listed, err := io.ReadAll(response.Body)
-	if err != nil {
+	if err = errors.Join(err, response.Body.Close()); err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Contains(listed, body) {

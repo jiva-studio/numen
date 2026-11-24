@@ -37,14 +37,6 @@ func (r records) readRecord(ctx context.Context) (identitylib.Record, error) {
 	return record, nil
 }
 
-func (r records) readExistingRecord(ctx context.Context) (identitylib.Record, error) {
-	record, err := r.readRecord(ctx)
-	if isNoKey(err) {
-		return identitylib.Record{}, identitydomain.ErrNoIdentity
-	}
-	return record, err
-}
-
 func (r records) checkAbsent(ctx context.Context) error {
 	_, err := r.keys.GetKey(ctx, keyName)
 	switch {
@@ -80,7 +72,10 @@ func (r records) readState(ctx context.Context) (identitylib.State, error) {
 }
 
 func (r records) readStoredState(ctx context.Context) (identitylib.State, error) {
-	record, err := r.readExistingRecord(ctx)
+	record, err := r.readRecord(ctx)
+	if isNoKey(err) {
+		return identitylib.State{}, identitydomain.ErrNoIdentity
+	}
 	if err != nil {
 		return identitylib.State{}, err
 	}
@@ -128,13 +123,6 @@ func (r records) writeNewState(ctx context.Context, record identitylib.Record, c
 	return r.writeRecord(ctx, record)
 }
 
-func (r records) writeAdoptedState(ctx context.Context, state identitylib.State) error {
-	if err := r.writeRecord(ctx, state.Record); err != nil {
-		return err
-	}
-	return r.writeChain(ctx, state.Chain)
-}
-
 func (r records) adoptState(ctx context.Context, state identitylib.State, chain identitylib.Chain) (identitylib.State, error) {
 	next, err := state.Adopt(chain)
 	if err != nil {
@@ -143,7 +131,10 @@ func (r records) adoptState(ctx context.Context, state identitylib.State, chain 
 	if next.Chain.Len() == state.Chain.Len() {
 		return next, nil
 	}
-	if err := r.writeAdoptedState(ctx, next); err != nil {
+	if err := r.writeRecord(ctx, next.Record); err != nil {
+		return identitylib.State{}, err
+	}
+	if err := r.writeChain(ctx, next.Chain); err != nil {
 		return identitylib.State{}, err
 	}
 	return next, nil

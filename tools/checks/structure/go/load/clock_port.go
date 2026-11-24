@@ -22,7 +22,7 @@ func LoadPackages(t *testing.T, dir string, env []string, patterns ...string) []
 func NewTypedConfig(dir string, env []string) *packages.Config {
 	return &packages.Config{
 		Dir:   dir,
-		Env:   append(os.Environ(), env...),
+		Env:   append(append(os.Environ(), "CGO_ENABLED=0"), env...),
 		Tests: true,
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports |
 			packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,

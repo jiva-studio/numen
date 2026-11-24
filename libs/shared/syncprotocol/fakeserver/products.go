@@ -24,10 +24,6 @@ type shop struct {
 	trials map[string]bool
 }
 
-func newShop() shop {
-	return shop{trials: map[string]bool{}}
-}
-
 func (s *Server) findPlan(id string) (syncprotocol.Plan, bool) {
 	index := slices.IndexFunc(s.plans, func(one syncprotocol.Plan) bool { return one.ID == id })
 	if index < 0 {

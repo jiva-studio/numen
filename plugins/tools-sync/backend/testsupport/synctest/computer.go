@@ -210,7 +210,8 @@ func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.health
 // CatalogDeps are the dependencies of the catalog use cases.
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
-		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State, Cloud: c.Cloud, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader,
+		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State,
+		Cloud: c.Cloud, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader,
 	}
 }
 
