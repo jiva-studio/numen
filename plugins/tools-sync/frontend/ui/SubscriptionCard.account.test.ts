@@ -247,7 +247,7 @@ describe('SubscriptionCard account actions', () => {
 
     const text = wrapper.get('[role="status"]').text()
     expect(text).toContain('Saved to /home/me/Numen Sync account data.json')
-    expect(text).toContain('Your notes are not included.')
+    expect(text).toContain('This file is not encrypted. Delete it after use.')
   })
 
   it('says nothing when the person closes the save dialog', async () => {

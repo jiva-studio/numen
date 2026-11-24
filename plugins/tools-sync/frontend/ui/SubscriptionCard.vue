@@ -228,9 +228,11 @@ function onFailure(failure: unknown): void {
       <Spinner class="subscription__spinner" />
       <span>{{ words.exportingText }}</span>
     </p>
-    <p v-else-if="exportedTo !== ''" role="status" class="subscription__text">
-      {{ words.exportedText(exportedTo) }}. {{ words.exportAbout }}
-    </p>
+    <div v-else-if="exportedTo !== ''" role="status" class="subscription__text">
+      <p class="subscription__export-title">{{ words.exportedTitle }}</p>
+      <p>{{ words.exportedText(exportedTo) }}</p>
+      <p>{{ words.exportNotEncrypted }}</p>
+    </div>
     <p
       v-if="(accountData?.state.problem.value ?? '') !== ''"
       role="alert"

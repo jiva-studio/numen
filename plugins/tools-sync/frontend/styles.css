@@ -215,6 +215,11 @@
   color: var(--numen-hushed);
 }
 
+.subscription__export-title {
+  color: var(--numen-ink);
+  font-weight: 600;
+}
+
 .subscription__full {
   margin-inline: calc(-1 * var(--settings-card-pad));
   padding: var(--row-pad) var(--settings-card-pad);

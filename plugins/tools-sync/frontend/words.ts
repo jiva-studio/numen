@@ -50,9 +50,9 @@ export const WORDS = {
   exportFileName: 'Numen Sync account data.json',
   exportDialogTitle: 'Save account data',
   exportingText: 'Exporting account data',
-  exportedText: (path: string): string => `Saved to ${path}`,
-  exportAbout:
-    'Everything the sync server keeps of your account: vault names, devices, subscription. Your notes are not included.',
+  exportedTitle: 'Export saved',
+  exportedText: (path: string): string => `Saved to ${path}.`,
+  exportNotEncrypted: 'This file is not encrypted. Delete it after use.',
   exportUnavailable: 'This window cannot save files.',
   exportFailed: (reason: string): string => `Could not save the file: ${reason}`,
   deleteQuestion: 'Delete your cloud data?',

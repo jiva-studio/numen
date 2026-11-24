@@ -15,8 +15,8 @@ describe('KeyFileDialog', () => {
   it('offers the passphrase first and waits for it to be repeated', async () => {
     const view = open()
 
-    expect(document.body.textContent).toContain('No system keychain on this computer')
-    expect(document.body.textContent).toContain('Protect with a passphrase (recommended)')
+    expect(document.body.textContent).toContain('Key storage')
+    expect(document.body.textContent).toContain('Protect with passphrase (recommended)')
     expect(getContinue(view)?.attributes('disabled')).toBeDefined()
     view.unmount()
   })

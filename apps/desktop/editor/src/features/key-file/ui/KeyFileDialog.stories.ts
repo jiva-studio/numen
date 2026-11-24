@@ -34,7 +34,7 @@ export const ChoosePassphrase: Story = {
   render: () => frame(CHOOSE, { KeyFileDialog }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('dialog', { name: 'No system keychain on this computer' })).toBeVisible()
+    await expect(canvas.getByRole('dialog', { name: 'Key storage' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled()
     await userEvent.type(canvas.getByLabelText('Passphrase'), 'moon river')
     await userEvent.type(canvas.getByLabelText('Repeat the passphrase'), 'moon river')
@@ -60,7 +60,7 @@ export const ChoosePlainFile: Story = {
   render: () => frame(CHOOSE, { KeyFileDialog }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('radio', { name: /Store in a plain file/ }))
+    await userEvent.click(canvas.getByRole('radio', { name: /Save in a file/ }))
     await expect(canvas.getByText(/Anyone who can read your files/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }))
     await expect(onChoose).toHaveBeenCalledWith('plaintext', '')

@@ -41,7 +41,6 @@ function onSubmit(): void {
         <input v-model="mode" type="radio" name="key-file-mode" value="passphrase" />
         <span class="key-file-choice__text">
           <span class="key-file-choice__title">{{ words.passphraseTitle }}</span>
-          <span class="key-file-choice__detail">{{ words.passphraseRule }}</span>
         </span>
       </label>
       <div v-if="mode === 'passphrase'" class="key-file-choice__fields">
