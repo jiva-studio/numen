@@ -226,7 +226,7 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).not.toContain('Account fingerprint')
   })
 
-  it('shows the join by a QR code in the header beside restore and create', async () => {
+  it('shows the join by a QR code in the header with restore and create', async () => {
     const { tab } = await createPage()
     const header = findButton(tab, 'Join with a QR code')?.element.parentElement
     expect(header?.contains(findButton(tab, 'Restore')?.element ?? null)).toBe(true)
