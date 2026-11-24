@@ -128,7 +128,7 @@ export const Linking: Story = {
     await expect(
       await canvas.findByRole('dialog', { name: 'Link a device' }),
     ).toBeVisible()
-    await expect(await canvas.findByText('Preparing the link')).toBeVisible()
+    await expect(await canvas.findByText('Scan this code.')).toBeVisible()
   },
 }
 

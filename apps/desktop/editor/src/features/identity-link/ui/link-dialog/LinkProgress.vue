@@ -10,6 +10,7 @@ import LinkCodeForm from './LinkCodeForm.vue'
 import LinkFacts from './LinkFacts.vue'
 import LinkPeerView from './LinkPeerView.vue'
 import LinkQrView from './LinkQrView.vue'
+import LinkSteps from './LinkSteps.vue'
 import LinkStatus from './LinkStatus.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -33,6 +34,9 @@ const ownFacts = computed<Fact[]>(() =>
     : [],
 )
 const isQrShown = computed(() => props.role === 'host' && (props.view === 'qr' || props.view === 'preparing'))
+const isStepsShown = computed(
+  () => props.role === 'host' && ['qr', 'preparing', 'peer', 'linking', 'linked'].includes(props.view),
+)
 const isOwnShown = computed(() => ['waiting', 'code', 'account'].includes(props.view))
 </script>
 
@@ -40,6 +44,8 @@ const isOwnShown = computed(() => ['waiting', 'code', 'account'].includes(props.
   <div class="link-progress">
     <LinkFacts v-if="isOwnShown && ownFacts.length > 0" :facts="ownFacts" />
     <LinkQrView v-if="isQrShown" :qr-text="link?.qrText ?? ''" />
+    <LinkSteps v-if="isStepsShown" :view="view" />
+    <template v-if="isStepsShown && view !== 'peer'" />
     <LinkStatus
       v-else-if="view === 'preparing'"
       :title="words.linkPreparingTitle"

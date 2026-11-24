@@ -55,17 +55,18 @@ export const ShowingQr: Story = {
       await canvas.findByRole('dialog', { name: 'Link a device' }),
     ).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
-    await expect(canvas.getByText('Waiting for the other device to scan')).toBeVisible()
+    await expect(canvas.getByText('Scan this code.')).toBeVisible()
+    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('choose Use existing account')
     await expect(canvas.getByRole('button', { name: 'Copy link' })).toBeVisible()
   },
 }
 
-/** The server has not made the channel yet: the box of the QR code holds a spinner and the line says what happens. */
+/** The server has not made the channel yet: the box of the QR code holds a spinner and Copy link waits. */
 export const Preparing: Story = {
   args: { calls: createCalls(createInfo({ phase: 'waitingForChannel', qrText: '' })) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Preparing the link')).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Copy link' })).toBeDisabled()
   },
 }
 
@@ -112,7 +113,7 @@ export const WaitingForTheCode: Story = {
   args: { calls: createCalls(peer({ isApproved: true })) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Waiting for the new device')).toBeVisible()
+    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('Type the code shown here')
     await expect(canvas.getByLabelText('Confirmation code')).toHaveTextContent('482 913')
   },
 }

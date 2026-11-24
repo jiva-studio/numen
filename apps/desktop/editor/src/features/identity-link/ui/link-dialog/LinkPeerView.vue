@@ -4,7 +4,6 @@ import { computed } from 'vue'
 import { WORDS as words } from '../../words'
 import type { Fact } from '../../lib/types'
 import LinkFacts from './LinkFacts.vue'
-import LinkStatus from './LinkStatus.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -26,14 +25,7 @@ const grouped = computed(() => props.code.replace(/^(\d{3})(\d+)$/, '$1 $2'))
   <div class="link-peer">
     <LinkFacts :facts="facts" />
     <p v-if="!isApproved" class="link-peer__ask">{{ words.linkChecking }}</p>
-    <LinkStatus
-      v-if="isApproved"
-      :title="words.linkWaitingCodeTitle"
-      :detail="words.linkWaitingCodeDetail"
-    >
-      <p v-if="code !== ''" class="link-peer__code" :aria-label="words.linkCode">{{ grouped }}</p>
-    </LinkStatus>
-    <div v-else-if="code !== ''" class="link-peer__shown">
+    <div v-if="code !== ''" class="link-peer__shown">
       <p class="link-peer__hint">{{ words.linkCodeHint }}</p>
       <p class="link-peer__code" :aria-label="words.linkCode">{{ grouped }}</p>
     </div>

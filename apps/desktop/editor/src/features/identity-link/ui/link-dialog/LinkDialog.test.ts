@@ -37,7 +37,8 @@ describe('the dialog that links a new device', () => {
     expect(dialog.get('h2').text()).toBe('Link a device')
     expect(dialog.findAll('ol li')).toHaveLength(3)
     expect(dialog.get('svg[role="img"]').attributes('aria-label')).toBe('QR code')
-    expect(dialog.text()).toContain('Waiting for the other device to scan')
+    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing account')
+    expect(dialog.find('[role="status"]').exists()).toBe(false)
   })
 
   it('shows neither the link as a field nor the fingerprint of the account', async () => {
@@ -63,7 +64,7 @@ describe('the dialog that links a new device', () => {
     const dialog = await mountDialog(createLinkInfo({ phase: 'waitingForChannel', qrText: '' }))
     expect(dialog.find('svg[role="img"]').exists()).toBe(false)
     expect(dialog.find('.link-qr__code').exists()).toBe(true)
-    expect(dialog.get('[role="status"]').text()).toContain('Preparing the link')
+    expect(dialog.findAll('ol li[data-state="active"]')).toHaveLength(0)
     expect(findButton(/^Copy link$/).hasAttribute('disabled')).toBe(true)
   })
 
@@ -104,9 +105,15 @@ describe('the dialog that links a new device', () => {
       code: '482913',
     })
     const dialog = await mountDialog(link)
-    expect(dialog.text()).toContain('Waiting for the new device')
+    expect(dialog.get('ol li[data-state="active"]').text()).toContain('Type the code shown here')
+    expect(dialog.findAll('ol li[data-state="done"]')).toHaveLength(2)
     expect(dialog.text()).toContain('482 913')
     expect(dialog.text()).not.toContain('Link device')
+  })
+
+  it('checks the steps once linked and keeps the same three', async () => {
+    const dialog = await mountDialog(createLinkInfo({ phase: 'linked' }))
+    expect(dialog.findAll('ol li[data-state="done"]')).toHaveLength(3)
   })
 
   it('says that the device is linked', async () => {
