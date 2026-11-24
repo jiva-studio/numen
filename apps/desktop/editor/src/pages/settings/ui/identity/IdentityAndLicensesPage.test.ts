@@ -547,11 +547,11 @@ const SHEET_THREE = createSheetWords(3)
 const getDownload = (tab: Page) =>
   tab
     .findAll('button')
-    .find((one) => one.text() === 'Download' && one.attributes('type') === 'button')
+    .find((one) => one.attributes('aria-label') === 'Download recovery kit')
 
 const pressDownload = async (tab: Page) => {
   const button = getDownload(tab)
-  if (!button) throw new Error('the page has no button "Download"')
+  if (!button) throw new Error('the page has no button "Download recovery kit"')
   await button.trigger('click')
   await flushPromises()
 }
@@ -572,7 +572,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Recovery kit')
     expect(tab.text()).toContain(
-      'Keep each sheet in a different place. Any two of three restore your account; one sheet alone is useless.',
+      'Printed sheets that bring your account back if you lose this computer. Any two of the three restore it.',
     )
     expect(getDownload(tab)).toBeDefined()
     expect(hasDialog(tab)).toBe(false)

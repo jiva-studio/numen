@@ -4,7 +4,8 @@
  * as a PDF at the right of the row. The action is in the row, not in the header of the card, because
  * the row is about one object. The row says why a kit was not saved.
  */
-import { Button } from '@numen/ui'
+import { Download } from '@lucide/vue'
+import { Button, Spinner } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
 
@@ -21,11 +22,15 @@ const emit = defineEmits<{
     <Button
       type="button"
       variant="ghost"
+      size="icon"
       class="recovery-kit__download"
+      :aria-label="isBusy ? words.kitDownloading : words.kitDialogTitle"
+      :title="isBusy ? words.kitDownloading : words.kitDialogTitle"
       :disabled="isBusy"
       @click="emit('download')"
     >
-      {{ isBusy ? words.kitDownloading : words.kitRowDownload }}
+      <Spinner v-if="isBusy" />
+      <Download v-else :size="16" aria-hidden="true" />
     </Button>
   </SettingRow>
   <p v-if="problem !== ''" role="alert" class="recovery-kit__problem">{{ problem }}</p>
@@ -34,7 +39,6 @@ const emit = defineEmits<{
 <style scoped>
 .recovery-kit__download {
   justify-self: end;
-  inline-size: 6rem;
 }
 
 .recovery-kit__problem {

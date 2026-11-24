@@ -135,7 +135,7 @@ export class IdentityDriver {
   private getDownloadButton(panel: Locator): Locator {
     return panel
       .locator('.settings__row', { hasText: 'Recovery kit' })
-      .getByRole('button', { name: 'Download', exact: true })
+      .getByRole('button', { name: 'Download recovery kit', exact: true })
   }
 
   async download(): Promise<void> {
