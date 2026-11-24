@@ -14,6 +14,8 @@ export const WORDS = {
   account: 'Account fingerprint',
   linkShow: 'Show a QR code',
   linkScan: 'Scan a QR code',
+  linkNoCamera: 'No camera found: paste the code from the other device.',
+  linkCameraFailed: (reason: string) => `${reason} Paste the code from the other device.`,
   linkQr: 'QR code',
   linkPaste: 'Paste the link text',
   linkUse: 'Use link',

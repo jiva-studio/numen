@@ -4,21 +4,32 @@
  * field to paste it into.
  */
 import { ref } from 'vue'
-import { Button, hasCamera, QrScanner } from '@numen/ui'
+import { Button, hasCamera, QrScanner, type ScannerCamera } from '@numen/ui'
+import { useLinkScan } from '../../model/useLinkScan'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-defineProps<{ isBusy: boolean }>()
+const props = withDefaults(
+  defineProps<{ isBusy: boolean; findCamera?: () => Promise<boolean>; camera?: ScannerCamera }>(),
+  { findCamera: hasCamera },
+)
 
 const emit = defineEmits<{ (e: 'submit', text: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const pasted = ref('')
+const { phase, notice, setUnavailable } = useLinkScan(props.findCamera)
 </script>
 
 <template>
   <form class="link-scan" @submit.prevent="emit('submit', pasted)">
-    <QrScanner v-if="hasCamera()" @scanned="emit('submit', $event)" />
+    <QrScanner
+      v-if="phase === 'camera'"
+      v-bind="camera === undefined ? {} : { camera }"
+      @scanned="emit('submit', $event)"
+      @unavailable="setUnavailable"
+    />
+    <p v-if="notice !== ''" role="status" class="link-scan__notice">{{ notice }}</p>
     <label class="link-scan__field">
       <span>{{ words.linkPaste }}</span>
       <input v-model="pasted" type="text" autocomplete="off" />
@@ -33,5 +44,9 @@ const pasted = ref('')
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.link-scan__notice {
+  margin: 0;
 }
 </style>

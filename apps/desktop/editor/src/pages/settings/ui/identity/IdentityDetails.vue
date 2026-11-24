@@ -72,7 +72,7 @@ const count = computed(() =>
 
   <IslandCard class="identity-details__devices" :title="words.identityDevices">
     <template #aside>{{ words.identityDeviceCount(count) }}</template>
-    <DevicesSection v-if="!info.isRevoked" :calls="devices" has-identity :current="thisDevice" />
+    <DevicesSection v-if="!info.isRevoked" :calls="devices" :current="thisDevice" />
     <NavigationRow
       v-else
       class="identity-details__current"

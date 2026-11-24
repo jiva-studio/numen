@@ -25,7 +25,6 @@ afterEach(() => {
 })
 
 const mountSection = async (
-  hasIdentity: boolean,
   devices: readonly DeviceInfo[],
   overrides: Partial<IdentityCalls> = {},
 ) => {
@@ -35,7 +34,7 @@ const mountSection = async (
   })
   const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
   wrapper = mount(DevicesSection, {
-    props: { calls: store.devices, hasIdentity },
+    props: { calls: store.devices },
     attachTo: document.body,
   })
   await flushPromises()
@@ -101,16 +100,10 @@ describe('the devices section', () => {
     )
   })
 
-  it('offers to link a new device where the device has the account, and not to join', async () => {
+  it('offers to link a new device and not to join', async () => {
     const section = await mountSection(true, [THIS])
     expect(section.text()).toContain('Link a new device')
     expect(section.text()).not.toContain('Join with a QR code')
   })
 
-  it('offers to join an account where the device has none, and no list', async () => {
-    const section = await mountSection(false, [])
-    expect(section.text()).toContain('Join with a QR code')
-    expect(section.text()).not.toContain('Link a new device')
-    expect(section.find('ul').exists()).toBe(false)
-  })
 })

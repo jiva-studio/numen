@@ -20,6 +20,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'scanned', text: string): void
   (e: 'failed', reason: string): void
+  (e: 'unavailable', reason: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */

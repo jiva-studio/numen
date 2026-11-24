@@ -26,6 +26,8 @@
     <string>12.0</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Numen uses the microphone when you start an audio recording in your vault.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Numen uses the camera to read the QR code that links another device to your account.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>

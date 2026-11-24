@@ -15,15 +15,39 @@ describe('a QR scanner', () => {
     })
     await flushPromises()
     expect(scanner.get('[role="alert"]').text()).toBe('The camera is not allowed.')
-    expect(scanner.emitted('failed')).toStrictEqual([['The camera is not allowed.']])
+    expect(scanner.emitted('unavailable')).toStrictEqual([['The camera is not allowed.']])
   })
 
-  it('says no camera was found', async () => {
+  it('reports that no camera was found', async () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => Promise.reject(new DOMException('none', 'NotFoundError')) },
     })
     await flushPromises()
-    expect(scanner.get('[role="alert"]').text()).toBe('No camera was found.')
+    expect(scanner.get('[role="alert"]').text()).toBe('No camera found.')
+  })
+
+  it.each([
+    ['NotReadableError', 'The camera is used by another program.'],
+    ['OverconstrainedError', 'The camera did not open.'],
+    ['SecurityError', 'The camera did not open.'],
+  ])('reports %s as a state and does not throw', async (name, text) => {
+    const scanner = mount(QrScanner, {
+      props: { camera: () => Promise.reject(new DOMException('x', name)) },
+    })
+    await flushPromises()
+    expect(scanner.emitted('unavailable')).toStrictEqual([[text]])
+  })
+
+  it('reports a camera that throws at once', async () => {
+    const scanner = mount(QrScanner, {
+      props: {
+        camera: () => {
+          throw new TypeError('no media')
+        },
+      },
+    })
+    await flushPromises()
+    expect(scanner.emitted('unavailable')).toStrictEqual([['The camera did not open.']])
   })
 
   it('waits while the camera has not answered', () => {

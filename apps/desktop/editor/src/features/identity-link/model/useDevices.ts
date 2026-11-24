@@ -6,13 +6,12 @@ import type { DeviceCalls } from './types'
 
 const REFRESH_MS = 2000
 
-export function useDevices(getCalls: () => DeviceCalls, hasIdentity: () => boolean) {
+export function useDevices(getCalls: () => DeviceCalls) {
   const asked = ref<DeviceInfo | undefined>(undefined)
   const problem = ref('')
   let timer: ReturnType<typeof setInterval> | undefined
 
   const refresh = (): void => {
-    if (!hasIdentity()) return
     runInBackground(getCalls().load(), () => undefined)
   }
 

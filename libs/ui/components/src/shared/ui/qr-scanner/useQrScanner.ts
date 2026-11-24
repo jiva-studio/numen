@@ -11,6 +11,7 @@ export interface QrScannerSource {
 export interface QrScannerEvents {
   (e: 'scanned', text: string): void
   (e: 'failed', reason: string): void
+  (e: 'unavailable', reason: string): void
 }
 
 /**
@@ -66,7 +67,7 @@ export function useQrScanner(
     } catch (cause) {
       status.value = 'failed'
       problem.value = describeCameraFailure(cause)
-      emit('failed', problem.value)
+      emit('unavailable', problem.value)
       return
     }
     if (video.value === null) return stop()

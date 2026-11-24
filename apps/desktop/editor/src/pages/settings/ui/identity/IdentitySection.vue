@@ -4,13 +4,14 @@
  * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of them)
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
-import { KeyRound, Plus } from '@lucide/vue'
+import { ref } from 'vue'
+import { KeyRound, Plus, QrCode } from '@lucide/vue'
 import { IslandCard, Toast } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { WORDS as words } from '../../words'
-import { DevicesSection } from '@/features/identity-link'
+import { LinkDialog } from '@/features/identity-link'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
@@ -26,6 +27,7 @@ const kit = useRecoveryKit(() => props.identity)
 const section = useIdentitySection(() => props.identity, kit.actions.hold)
 const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
 const { stage, recoveryWords } = setup
+const isJoining = ref(false)
 </script>
 
 <template>
@@ -70,6 +72,10 @@ const { stage, recoveryWords } = setup
         <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
       </CardAction>
+      <CardAction :is-disabled="call.isBusy.value" @click="isJoining = true">
+        <QrCode :size="14" aria-hidden="true" />
+        {{ words.identityJoin }}
+      </CardAction>
       <CardAction is-primary :is-disabled="call.isBusy.value" @click="actions.startSetup">
         <Plus :size="14" aria-hidden="true" />
         {{ words.identityCreate }}
@@ -79,7 +85,12 @@ const { stage, recoveryWords } = setup
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
       <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
-      <DevicesSection v-if="step === 'idle'" :calls="identity.devices" :has-identity="false" />
+      <LinkDialog
+        v-if="isJoining && step === 'idle'"
+        role="joiner"
+        :calls="identity.devices.link"
+        @close="isJoining = false"
+      />
 
       <p
         v-if="call.problem.value !== '' && step === 'idle'"

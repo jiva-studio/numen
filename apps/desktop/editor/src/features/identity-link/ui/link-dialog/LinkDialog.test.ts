@@ -71,6 +71,14 @@ describe('the link dialog', () => {
     expect(startLink).toHaveBeenCalledWith('host', 'scan', 'numen://link?v=1')
   })
 
+  it('tells a machine with no camera to paste the code', async () => {
+    const dialog = await mountDialog('joiner', createLinkInfo())
+    await click(findButton(/^Scan a QR code$/))
+    expect(dialog.get('[role="status"]').text()).toBe(
+      'No camera found: paste the code from the other device.',
+    )
+  })
+
   it('shows a refused text and stays on the form', async () => {
     const startLink = () =>
       Promise.resolve({
