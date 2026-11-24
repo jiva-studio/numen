@@ -29,6 +29,7 @@ export function createSyncState(
       else phase.value = status.isReachable ? 'synced' : 'waiting'
       return true
     } catch {
+      phase.value = 'hidden'
       return false
     }
   }

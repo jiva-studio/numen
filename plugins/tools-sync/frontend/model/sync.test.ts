@@ -125,3 +125,22 @@ describe('createSyncState when the server does not answer', () => {
     state.stop()
   })
 })
+
+describe('createSyncState when the status cannot be read', () => {
+  it('stops showing the spinner, and shows the state again once the status can be read', async () => {
+    let isFailing = true
+    const state = createSyncState(
+      createClient(() => (isFailing ? Promise.reject(new Error('internal')) : Promise.resolve(createStatus()))),
+      1000,
+    )
+
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(state.phase.value).toBe('hidden')
+
+    isFailing = false
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(state.phase.value).toBe('synced')
+    state.stop()
+  })
+})

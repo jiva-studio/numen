@@ -314,3 +314,14 @@ func TestLinkAndChainCallsNeedThePermissionIdentityLinkAndNotIdentity(t *testing
 		}
 	}
 }
+
+func TestADeviceWhoseIdentityHasNoChainFileAnswersTheReasonNoIdentity(t *testing.T) {
+	h := newAccountHost(t)
+	h.operations.err = identitydomain.ErrNoChain
+
+	_, err := h.client("token-a").GetPublicIdentity(t.Context(), connect.NewRequest(&v1.GetPublicIdentityRequest{}))
+
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition || readReason(err) != "NO_IDENTITY" {
+		t.Errorf("error = %v, reason %q, want failed precondition with NO_IDENTITY", err, readReason(err))
+	}
+}

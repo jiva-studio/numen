@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -34,7 +35,9 @@ const (
 func Describe(ctx context.Context, operation string, err error) (server.ErrorCode, string) {
 	text, isKnown := findText(err)
 	if !isKnown {
-		slog.WarnContext(ctx, "a method of Numen Sync failed", "operation", operation, "error", err)
+		if isNewFailure(operation, err) {
+			slog.WarnContext(ctx, "a method of Numen Sync failed", "operation", operation, "error", err)
+		}
 		text = GenericText
 	}
 	return GetCode(err), text
@@ -154,4 +157,21 @@ func getRefusals() []error {
 		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack, share.ErrBadLink, share.ErrLinkExpired, share.ErrLinkOtherServer,
 		share.ErrLinkUsed, share.ErrUnknownRequest, share.ErrLinkDeclined, share.ErrLinkMismatch,
 	}
+}
+
+var (
+	lastFailureMu sync.Mutex
+	lastFailure   = map[string]string{}
+)
+
+// isNewFailure tells whether the operation failed with another error than the last one it logged, so that a
+// method a window asks again and again writes one line, not one per ask.
+func isNewFailure(operation string, err error) bool {
+	lastFailureMu.Lock()
+	defer lastFailureMu.Unlock()
+	if lastFailure[operation] == err.Error() {
+		return false
+	}
+	lastFailure[operation] = err.Error()
+	return true
 }

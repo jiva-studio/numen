@@ -120,3 +120,20 @@ func TestDescribe_ExplainsFirstSyncFailures(t *testing.T) {
 		}
 	}
 }
+
+func TestDescribe_LogsTheSameFailureOfAnOperationOnce(t *testing.T) {
+	var logged bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+	failure := errors.New("the identity of this device could not be read")
+
+	Describe(t.Context(), "get-status-once", failure)
+	Describe(t.Context(), "get-status-once", failure)
+	Describe(t.Context(), "get-status-once", failure)
+	Describe(t.Context(), "get-status-once", errors.New("another failure"))
+
+	if lines := strings.Count(logged.String(), "level=WARN"); lines != 2 {
+		t.Errorf("logged %d warnings, want 2: one for each distinct failure\n%s", lines, logged.String())
+	}
+}

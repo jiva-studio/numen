@@ -101,6 +101,7 @@ type accountRefusal struct {
 func getAccountRefusals() []accountRefusal {
 	return []accountRefusal{
 		{identitydomain.ErrNoIdentity, connect.CodeFailedPrecondition, noIdentityReason},
+		{identitydomain.ErrNoChain, connect.CodeFailedPrecondition, noIdentityReason},
 		{identitydomain.ErrCannotOpen, connect.CodeFailedPrecondition, cannotOpenReason},
 		{identitydomain.ErrNoPendingRestore, connect.CodeFailedPrecondition, noPendingRestoreReason},
 		{identitydomain.ErrInvalidChain, connect.CodeInvalidArgument, invalidChainReason},
