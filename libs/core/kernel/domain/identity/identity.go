@@ -68,9 +68,9 @@ type PendingRestore struct {
 type Kit struct {
 	ID                 string
 	AccountFingerprint string
-	ChainMark string
-	CreatedAt time.Time
-	Sheets    []Sheet
+	ChainMark          string
+	CreatedAt          time.Time
+	Sheets             []Sheet
 }
 
 // Sheet is one sheet of a kit: its number and its 33 words.
