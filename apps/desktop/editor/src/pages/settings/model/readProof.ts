@@ -36,7 +36,9 @@ function readSheetLine(sheets: readonly (readonly string[])[], at: number): Proo
   if (sheet.length > WORDS_ON_SHEET) {
     return createReading(words.proofSheetLong(at + 1, sheet.length), true)
   }
-  if (sheet.length < WORDS_ON_SHEET) return createReading(words.proofSheetShort(at + 1, sheet.length))
+  if (sheet.length < WORDS_ON_SHEET) {
+    return createReading(words.proofSheetShort(at + 1, sheet.length))
+  }
   const first = sheets.findIndex((other) => other.join(' ') === sheet.join(' '))
   return first < at ? createReading(words.proofSheetRepeated(at + 1, first + 1), true) : null
 }
