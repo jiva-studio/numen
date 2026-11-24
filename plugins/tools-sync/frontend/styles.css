@@ -216,7 +216,18 @@
 .subscription__away {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--row-pad);
+  margin-block: var(--row-pad);
+  padding: var(--row-pad);
+  border-radius: var(--numen-chrome-radius-tight);
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
+  color: var(--numen-ink);
+  font-size: var(--numen-chrome-text-2);
+}
+
+.subscription__away svg {
+  flex: none;
+  color: var(--numen-hushed);
 }
 
 .subscription__full {
