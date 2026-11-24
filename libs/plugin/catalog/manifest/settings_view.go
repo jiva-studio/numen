@@ -18,6 +18,7 @@ type SettingsView struct {
 	ID    string
 	Title string
 	Page  string
+	Tab   string
 }
 
 func (m Manifest) listSettingsViewIssues() []error {

@@ -309,6 +309,7 @@ type Manifest struct {
 	Settings         []Setting
 	Services         []string
 	SettingsViews    []SettingsView
+	SettingsTabs     []SettingsTab
 	SettingGroups    []SettingGroup
 	Contributes      Contributes
 	IsOffByDefault   bool
@@ -340,6 +341,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
+	issues = append(issues, m.listSettingsTabIssues()...)
 	issues = append(issues, m.listSettingGroupIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
