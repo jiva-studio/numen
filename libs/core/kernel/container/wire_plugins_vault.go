@@ -9,6 +9,7 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/vaultchecks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
@@ -99,8 +100,8 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Create:       file.NewCreateFile(vaultDeps.Writers, index),
 			Index:        scan,
 			Locks:        hold.NewLocks(vaultDeps.Writers, hold.LockHold),
-			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), hostvault.NewFileCounts(count), hostvault.NewFileHashes(stat)),
-			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), hostvault.NewFileCounts(count), hostvault.NewFileHashes(stat)),
+			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), vaultchecks.NewFileCounts(count.Execute), vaultchecks.NewFileHashes(stat.Execute)),
+			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), vaultchecks.NewFileCounts(count.Execute), vaultchecks.NewFileHashes(stat.Execute)),
 			Place:        file.NewPlaceStaged(stat, scan, vaultDeps.Writers),
 			StoreReaders: storeReaders, StoreWriters: storeWriters,
 		},
