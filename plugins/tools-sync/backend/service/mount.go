@@ -18,12 +18,10 @@ import (
 )
 
 const (
-	settingServer         = "server"
 	settingInterval       = "syncIntervalSeconds"
 	settingRemovalDelay   = "removalDelaySeconds"
 	settingForeground     = "syncOnlyWhileOpen"
 	settingReceivedFolder = "receivedFolder"
-	settingEpochRoot      = "epochRootKey"
 	requestTimeout        = 30 * time.Second
 	streamHeaderTimeout   = 30 * time.Second
 )

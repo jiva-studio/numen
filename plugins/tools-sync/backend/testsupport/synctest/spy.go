@@ -34,7 +34,8 @@ type RemoveCall struct {
 // SpyHost is the host of a computer that writes down the calls that move the bytes of files, and serves a file that
 // is never held whole when one is given.
 type SpyHost struct {
-	inner HostPorts
+	inner ports.Host
+	notes ports.NoteHost
 
 	mu            sync.Mutex
 	sources       map[string]*Source
@@ -46,8 +47,8 @@ type SpyHost struct {
 }
 
 // NewSpyHost returns the host over the inner host.
-func NewSpyHost(inner HostPorts) *SpyHost {
-	return &SpyHost{inner: inner, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, placeCallback: nil}
+func NewSpyHost(inner ports.Host, notes ports.NoteHost) *SpyHost {
+	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, placeCallback: nil}
 }
 
 // Serve makes the host read the file at the path of the source from the source, not from the vault.
@@ -93,7 +94,7 @@ func (h *SpyHost) GetFiles(id domain.VaultID) ports.Files { return h.inner.GetFi
 
 func (h *SpyHost) GetAbsent(id domain.VaultID) ports.Absent { return h.inner.GetAbsent(id) }
 
-func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.inner.GetNotes(id) }
+func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.notes.GetNotes(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (h *SpyHost) Store(id domain.VaultID) ports.Store { return h.inner.Store(id) }

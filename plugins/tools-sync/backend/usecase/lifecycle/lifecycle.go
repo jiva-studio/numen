@@ -136,14 +136,18 @@ func (u *Lifecycle) flush(ctx context.Context) error {
 	defer endGrace()
 	graced := make(chan error, 1)
 	go func() { graced <- u.deps.Clock.Wait(graceCtx, Grace) }()
+	var graceFailure error
 	select {
 	case <-ended:
-	case <-graced:
+	case err := <-graced:
+		if !isIgnored(err) {
+			graceFailure = err
+		}
 		cancel()
 		<-ended
 	}
 	close(failures)
-	return joinFailures(failures)
+	return errors.Join(graceFailure, joinFailures(failures))
 }
 
 func (u *Lifecycle) getConnectedIDs(ctx context.Context) ([]domain.VaultID, error) {

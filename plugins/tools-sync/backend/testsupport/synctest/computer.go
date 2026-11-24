@@ -50,12 +50,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
-// HostPorts is the host of a computer as the use cases take it: the vaults and the notes of the installation.
-type HostPorts interface {
-	ports.Host
-	ports.NoteHost
-}
-
 // Host is the host of a computer for the plugin: the vaults of the installation and the files and the store
 // folder of each, served by the vaults of the SDK test host.
 type Host struct {
@@ -85,7 +79,8 @@ type Computer struct {
 	Client    *account.Client
 	Health    *healthtest.Host
 	Vaults    *hosttest.Vault
-	Host      HostPorts
+	Host      ports.Host
+	Notes     ports.NoteHost
 	Cloud     *cloud.Cloud
 	Roots     []ed25519.PublicKey
 	Account   *accountadapter.Account
@@ -158,7 +153,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	web := &http.Client{Transport: network}
 	receivedRoot := t.TempDir()
 	c := &Computer{
-		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
+		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root}, Notes: Host{Root: root},
 		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
@@ -262,7 +257,7 @@ func (c *Computer) JoinDeps() join.Deps {
 func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
-		Host: c.Host, Notes: c.Host, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
+		Host: c.Host, Notes: c.Notes, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
 		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
 		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders,
 	}
@@ -309,7 +304,7 @@ func (c *Computer) Spy() *SpyHost {
 	if spy, isSpy := c.Host.(*SpyHost); isSpy {
 		return spy
 	}
-	spy := NewSpyHost(c.Host)
+	spy := NewSpyHost(c.Host, c.Notes)
 	c.Host = spy
 	return spy
 }
@@ -386,7 +381,7 @@ func (c *Computer) ShareDeps() share.Deps {
 // ReceiveDeps are the dependencies of the use cases of receiving a folder.
 func (c *Computer) ReceiveDeps() receive.Deps {
 	return receive.Deps{
-		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Notes: c.Host, Links: c.State,
+		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Notes: c.Notes, Links: c.State,
 		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock,
 	}
 }

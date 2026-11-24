@@ -34,12 +34,15 @@ type Deps struct {
 
 // Courier runs for as long as the plugin does.
 type Courier struct {
-	deps     Deps
-	isRaised bool
+	deps          Deps
+	isRaised      bool
+	isOtherRaised bool
 }
 
 // NewCourier returns the courier over the dependencies.
-func NewCourier(deps Deps) *Courier { return &Courier{deps: deps, isRaised: false} }
+func NewCourier(deps Deps) *Courier {
+	return &Courier{deps: deps, isRaised: false, isOtherRaised: false}
+}
 
 // channelState is the channel the courier works on: whether it made it, which side it is, and the reader of the
 // messages of the other side.
@@ -217,10 +220,16 @@ func (u *Courier) report(ctx context.Context) {
 }
 
 func (u *Courier) reportOtherServer(ctx context.Context) {
-	_ = u.deps.Health.Report(ctx, health.Item{
+	if u.isOtherRaised {
+		return
+	}
+	item := health.Item{
 		Key: healthOtherKey, Severity: health.Warning, Text: healthOtherText,
 		Detail: "Numen does not send a link to any server but the one this device is set to.",
-	})
+	}
+	if u.deps.Health.Report(ctx, item) == nil {
+		u.isOtherRaised = true
+	}
 }
 
 func (u *Courier) clear(ctx context.Context) {

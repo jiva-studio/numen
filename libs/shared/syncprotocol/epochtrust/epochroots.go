@@ -10,7 +10,6 @@ import (
 // DefaultServer is the address of the server of the build, the only one the embedded roots are for.
 const DefaultServer = "https://sync.numen.md"
 
-// getEmbeddedRoots returns the public root keys of the operator. A build with none ignores every restore announcement.
 func getEmbeddedRoots() []ed25519.PublicKey { return []ed25519.PublicKey{} }
 
 // GetRoots returns the roots that count for the server at address: the embedded ones, and the root key of the

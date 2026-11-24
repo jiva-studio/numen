@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/settingswire"
 )
 
 func TestRuntimeStart_ReturnsTheSignInRestoreSyncWatchChainLinkAndRotateLoopsByName(t *testing.T) {
@@ -27,7 +28,7 @@ func TestRuntimeConfigure_RunsNoSessionOverPlainHTTPToAnotherHost(t *testing.T) 
 	r := newRuntime(parts{clock: clock.System{}})
 	t.Cleanup(r.stop)
 
-	r.configure(map[string]string{settingServer: "http://sync.example.test"})
+	r.configure(map[string]string{settingswire.SettingServer: "http://sync.example.test"})
 
 	if _, err := r.getBackend(); !errors.Is(err, errNotConfigured) {
 		t.Errorf("getBackend = %v, want errNotConfigured", err)
@@ -43,8 +44,8 @@ func TestReadServerAddress_AcceptsHTTPSAndLoopbackHTTPAndRefusesOtherHTTP(t *tes
 		"http://sync.example.test":  "",
 		"":                          "",
 	} {
-		if got := r.readServerAddress(address); got != want {
-			t.Errorf("readServerAddress(%q) = %q, want %q", address, got, want)
+		if got := r.settings.ReadServerAddress(address); got != want {
+			t.Errorf("ReadServerAddress(%q) = %q, want %q", address, got, want)
 		}
 	}
 }

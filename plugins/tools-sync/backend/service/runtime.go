@@ -32,6 +32,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/settingswire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -63,13 +64,13 @@ type runtime struct {
 	received     *loops.Text
 	session      *loops.Supervisor[*Backend]
 	isForeground loops.Flag
-	epochRoot    *loops.Text
+	settings     *settingswire.Settings
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), epochRoot: loops.NewText(), session: nil,
+		received: loops.NewText(), settings: settingswire.New(p.health), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -92,15 +93,15 @@ func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
-	r.epochRoot.Set(values[settingEpochRoot])
-	r.session.Configure(r.readServerAddress(values[settingServer]))
+	r.settings.SetEpochRoot(values[settingswire.SettingEpochRoot])
+	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]))
 }
 
 func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
-	roots := r.readEpochRoots(ctx, address)
+	roots := r.settings.ReadEpochRoots(ctx, address)
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),

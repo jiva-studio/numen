@@ -323,7 +323,9 @@ func TestKeep_DeletingAccountRaisesItemAndNeverRestoresByItself(t *testing.T) {
 	go func() { done <- keep.Execute(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-done
+		if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("Execute returned %v after its context ended, want context.Canceled", err)
+		}
 	})
 
 	eventually(t, "the item that says the account is being deleted", func() bool { return p.second.HasItemKey("account-deleting") })
