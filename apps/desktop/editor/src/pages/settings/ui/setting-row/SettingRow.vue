@@ -2,8 +2,8 @@
 /**
  * One settings row: the title with a one-line description under it on the left, the control on the
  * right. A setting with details shows an info button beside the title that opens them in a popover.
- * Escape closes it and gives the focus back to the button, and a press outside closes it; a scroll or
- * a resize of the page leaves it open, since it moves with its row. A value changed from its default
+ * It stands over the page, outside the card, placed against the button; Escape closes it and gives
+ * the focus back to the button, and a press outside, a scroll or a resize of the page closes it. A value changed from its default
  * shows a Reset action beside the title. When the settings column is narrower than 34rem, the control
  * moves under the title at full width.
  *
@@ -17,9 +17,10 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
-import { runInBackground, isPageMove, useMenuDismissal } from '@numen/ui'
+import { runInBackground, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import RowAction from './RowAction.vue'
+import { useInfoPopoverPlace } from './useInfoPopoverPlace'
 import type { SettingRowProps } from './SettingRow.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -46,7 +47,13 @@ const label = useTemplateRef<HTMLElement>('label')
 const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
 const popover = useTemplateRef<HTMLElement>('popover')
 const isInfoOpen = ref(false)
-const dismissal = useMenuDismissal(label, () => closeInfo(false), isPageMove)
+const { style: popoverStyle, place } = useInfoPopoverPlace()
+const dismissal = useMenuDismissal(
+  popover,
+  () => closeInfo(false),
+  undefined,
+  () => label.value,
+)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -60,7 +67,10 @@ watch(isInfoOpen, (isOpen) => {
   }
   dismissal.listen()
   runInBackground(
-    nextTick(() => popover.value?.focus()),
+    nextTick(() => {
+      place(infoButton.value, popover.value)
+      popover.value?.focus()
+    }),
     () => undefined,
   )
 })
@@ -131,18 +141,21 @@ function scrollIntoView(): void {
       <span v-if="trimmedDetail" :id="detailId" class="settings__detail">
         {{ trimmedDetail }}
       </span>
-      <div
-        v-if="isInfoOpen"
-        ref="popover"
-        class="settings__popover"
-        role="dialog"
-        :aria-label="words.aboutSetting(props.name)"
-        tabindex="-1"
-        @keydown.esc.stop.prevent="onPopoverEscape"
-      >
-        <p class="settings__popover-title">{{ props.name }}</p>
-        <p class="settings__popover-text">{{ trimmedDetails }}</p>
-      </div>
+      <Teleport to="body">
+        <div
+          v-if="isInfoOpen"
+          ref="popover"
+          class="settings__popover"
+          role="dialog"
+          :style="popoverStyle"
+          :aria-label="words.aboutSetting(props.name)"
+          tabindex="-1"
+          @keydown.esc.stop.prevent="onPopoverEscape"
+        >
+          <p class="settings__popover-title">{{ props.name }}</p>
+          <p class="settings__popover-text">{{ trimmedDetails }}</p>
+        </div>
+      </Teleport>
     </div>
     <div class="settings__value">
       <slot v-bind="{ labelledBy: nameId, describedBy: detailId }" />
@@ -188,13 +201,11 @@ function scrollIntoView(): void {
 }
 
 .settings__popover {
-  position: absolute;
-  inset-block-start: calc(100% + 0.25rem);
-  inset-inline-start: 0;
-  z-index: 1;
+  position: fixed;
+  z-index: var(--numen-lift-menu);
   box-sizing: border-box;
   inline-size: max-content;
-  max-inline-size: min(26rem, 100cqi);
+  max-inline-size: min(26rem, calc(100vw - 1rem));
   padding: 0.75rem 0.875rem;
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-popup);
