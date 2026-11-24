@@ -172,8 +172,8 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 	var target settings.File
 	target.AddNotice("first")
 	target.AddNotice("second")
-	if !slices.Equal(target.Notices, []string{"first", "second"}) {
-		t.Errorf("said %v", target.Notices)
+	if !slices.Equal(target.Header.Notices, []string{"first", "second"}) {
+		t.Errorf("said %v", target.Header.Notices)
 	}
 }
 

@@ -78,8 +78,8 @@ func TestAValueOfTheWrongTypeInTheShellIsDroppedAndTheFileReads(t *testing.T) {
 	if value, _ := got.GetValue("app", "appearance", "textScale"); value != 1.0 {
 		t.Errorf("the text scale in force is %v, want the default", value)
 	}
-	if len(got.Notices) != 1 || countNotices(got.Notices, "appearance.textScale") != 1 {
-		t.Errorf("the notices are %q", got.Notices)
+	if len(got.Header.Notices) != 1 || countNotices(got.Header.Notices, "appearance.textScale") != 1 {
+		t.Errorf("the notices are %q", got.Header.Notices)
 	}
 }
 
@@ -93,8 +93,8 @@ func TestAnObjectWhereAPluginDeclaresTextIsDroppedAndTheFileReads(t *testing.T) 
 	if _, found := owner["ytDlp"]; found || owner["retries"] != 5.0 {
 		t.Errorf("the object of the plugin is %v", owner)
 	}
-	if len(got.Notices) != 1 || countNotices(got.Notices, importerID+".ytDlp", "wrong type") != 1 {
-		t.Errorf("the notices are %q", got.Notices)
+	if len(got.Header.Notices) != 1 || countNotices(got.Header.Notices, importerID+".ytDlp", "wrong type") != 1 {
+		t.Errorf("the notices are %q", got.Header.Notices)
 	}
 }
 
@@ -108,8 +108,8 @@ func TestATextWhereAPluginDeclaresANumberIsDroppedAndTheFileReads(t *testing.T) 
 	if _, found := owner["retries"]; found || owner["verbose"] != true {
 		t.Errorf("the object of the plugin is %v", owner)
 	}
-	if len(got.Notices) != 1 || countNotices(got.Notices, importerID+".retries") != 1 {
-		t.Errorf("the notices are %q", got.Notices)
+	if len(got.Header.Notices) != 1 || countNotices(got.Header.Notices, importerID+".retries") != 1 {
+		t.Errorf("the notices are %q", got.Header.Notices)
 	}
 }
 
@@ -123,8 +123,8 @@ func TestATextWhereThePluginIsSwitchedOnOrOffIsDroppedAndTheFileReads(t *testing
 	if _, found := owner["enabled"]; found || owner["retries"] != 2.0 {
 		t.Errorf("the object of the plugin is %v", owner)
 	}
-	if len(got.Notices) != 1 || countNotices(got.Notices, importerID+".enabled") != 1 {
-		t.Errorf("the notices are %q", got.Notices)
+	if len(got.Header.Notices) != 1 || countNotices(got.Header.Notices, importerID+".enabled") != 1 {
+		t.Errorf("the notices are %q", got.Header.Notices)
 	}
 }
 
@@ -166,8 +166,8 @@ func TestOldKeysOfTheFileAreIgnoredWithNoticesThatNameThemAndNothingIsCarriedInt
 		t.Errorf("the object of the plugin holds %v", owner)
 	}
 	for _, key := range []string{"importing", "review"} {
-		if countNotices(got.Notices, key, "ignored") != 1 {
-			t.Errorf("no notice names %s: %q", key, got.Notices)
+		if countNotices(got.Header.Notices, key, "ignored") != 1 {
+			t.Errorf("no notice names %s: %q", key, got.Header.Notices)
 		}
 	}
 	raw, err := os.ReadFile(path)
@@ -188,8 +188,8 @@ func TestAnObjectInsideTheKeyPluginsIsIgnoredWithANotice(t *testing.T) {
 	if value, found := got.GetValue(importerID, "ytDlp"); found {
 		t.Errorf("the object is in force as the yt-dlp program: %v", value)
 	}
-	if countNotices(got.Notices, "plugins", "ignored") != 1 {
-		t.Errorf("the notices are %q", got.Notices)
+	if countNotices(got.Header.Notices, "plugins", "ignored") != 1 {
+		t.Errorf("the notices are %q", got.Header.Notices)
 	}
 }
 

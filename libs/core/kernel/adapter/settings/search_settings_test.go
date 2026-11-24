@@ -30,8 +30,8 @@ func openSearch(t *testing.T, search string) settings.File {
 func TestTheRerankingRowsOfTheShellAreReadAndARowOfAMissingConnectionIsDropped(t *testing.T) {
 	cfg := openSearch(t, `{"reranking":[{"connection":"c1f0a9e20","model":"mongodb/rerank-3"},{"connection":"c00000000","model":"x"}]}`)
 
-	if !hasNotice(cfg.Notices, "search.reranking", "row 2") {
-		t.Errorf("the notices are %q, want one for the second row", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "search.reranking", "row 2") {
+		t.Errorf("the notices are %q, want one for the second row", cfg.Header.Notices)
 	}
 	world := newRowsWorld()
 	world.stored = cfg
@@ -85,8 +85,8 @@ func TestAWindowOutOfItsBoundsIsRefusedAndTheDefaultApplies(t *testing.T) {
 		if stages.RerankWindow != 60 {
 			t.Errorf("a window of %s leaves %d in force, want the default 60", window, stages.RerankWindow)
 		}
-		if !hasNotice(cfg.Notices, "search.rerankWindow") {
-			t.Errorf("a window of %s gives the notices %q", window, cfg.Notices)
+		if !hasNotice(cfg.Header.Notices, "search.rerankWindow") {
+			t.Errorf("a window of %s gives the notices %q", window, cfg.Header.Notices)
 		}
 		if limits.DefaultLimit != 30 {
 			t.Errorf("the default limit in force is %d, want 30", limits.DefaultLimit)

@@ -17,7 +17,7 @@ import (
 // `v` and the owners of settings: `app` holds the settings of the shell, and every other key is the
 // id of a plugin with the settings of that plugin below it.
 type File struct {
-	Version     int
+	Header      settings.Header
 	Appearance  Appearance  `json:"appearance"`
 	Titles      Titles      `json:"naming"`
 	Editor      Editor      `json:"editor"`
@@ -27,7 +27,6 @@ type File struct {
 	Keys        Keys        `json:"keys"`
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
-	Notices     []string
 }
 
 // appObject is the object of the owner app as the file lays it out.
@@ -56,13 +55,13 @@ type appSections struct {
 const keyVersion = "v"
 
 // GetVersion returns a pointer to the file format version.
-func (f *File) GetVersion() *int { return &f.Version }
+func (f *File) GetVersion() *int { return &f.Header.Version }
 
 // GetAppearance returns a pointer to the appearance section.
 func (f *File) GetAppearance() *Appearance { return &f.Appearance }
 
 // AddNotice records one line about the file's contents, shown to the user.
-func (f *File) AddNotice(notice string) { f.Notices = append(f.Notices, notice) }
+func (f *File) AddNotice(notice string) { f.Header.Notices = append(f.Header.Notices, notice) }
 
 // Sync is whether a note's title and its filename are kept as one name.
 func (f *File) Sync() bool { return f.Titles.Sync() }
@@ -84,7 +83,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		key   string
 		value any
 	}{
-		{keyVersion, f.Version},
+		{keyVersion, f.Header.Version},
 		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging, &f.Keys}},
 	}
 	if len(f.Connections) > 0 {
@@ -131,7 +130,7 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 	for _, key := range slices.Sorted(maps.Keys(root)) {
 		switch key {
 		case keyVersion:
-			if err := json.Unmarshal(root[key], &f.Version); err != nil {
+			if err := json.Unmarshal(root[key], &f.Header.Version); err != nil {
 				return err
 			}
 		case settings.AppOwner:
@@ -271,7 +270,7 @@ func storePath(object map[string]any, path []string, value any) {
 // declaration of the shell gives.
 func DefaultFile() File {
 	return File{
-		Version:     DefaultVersion,
+		Header:      settings.Header{Version: DefaultVersion},
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
 		Editor:      DefaultEditor(),

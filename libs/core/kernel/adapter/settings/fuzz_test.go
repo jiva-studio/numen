@@ -59,8 +59,8 @@ func FuzzAt(f *testing.F) {
 		if outside := target.Appearance.Check(); outside != nil {
 			t.Fatalf("%s was read as settings the window is not drawn at: %v", raw, outside)
 		}
-		if target.Version < 1 {
-			t.Fatalf("%s was read at version %d", raw, target.Version)
+		if target.Header.Version < 1 {
+			t.Fatalf("%s was read at version %d", raw, target.Header.Version)
 		}
 		switch target.Appearance.Mode {
 		case domaintheme.SchemeSystem, domaintheme.SchemeLight, domaintheme.SchemeDark:

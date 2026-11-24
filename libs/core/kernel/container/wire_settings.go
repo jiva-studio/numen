@@ -34,7 +34,7 @@ func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, r
 	if err != nil {
 		return c, nil, err
 	}
-	return applySettingsFile(c, exec, prefs, res, selected), selected.Notices, nil
+	return applySettingsFile(c, exec, prefs, res, selected), selected.Header.Notices, nil
 }
 
 func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
