@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The dialog "Share <folder>": the identity code of the person and an optional name, the button that shares
+ * The dialog "Share <folder>": the sharing link of the person, whose name the link holds, the button that shares
  * the folder, the invitation to send once it is shared, and the people who can read this folder.
  */
 import { computed } from 'vue'
@@ -24,15 +24,11 @@ const isIdentityChange = computed(() => isIdentityWarning(props.state.error))
 const hasInvitation = computed(() => props.state.invitation !== '')
 const isSharing = computed(() => props.state.isBusy || props.state.share.state === 'creating')
 const canShare = computed(() => !isSharing.value && props.state.code.trim() !== '')
-const sharedWith = computed(() => words.sharedWith(props.state.sharedName || words.sharedWithPerson))
+const sharedWith = computed(() => words.sharedWith(props.state.sharedName || words.unnamed))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCodeInput(event: Event): void {
   props.state.setCode((event.target as HTMLInputElement).value).catch(props.state.fail)
-}
-
-function onNameInput(event: Event): void {
-  props.state.setLabel((event.target as HTMLInputElement).value)
 }
 
 function onShare(isConfirmed: boolean): void {
@@ -85,7 +81,7 @@ function onCopyIdentity(fingerprint: string): void {
     </div>
     <template v-else>
       <div class="sync-field">
-        <label class="sync-field__label" for="share-code">{{ words.identityCodeField }}</label>
+        <label class="sync-field__label" for="share-code">{{ words.sharingLinkField }}</label>
         <div class="sync-field__line">
           <input
             id="share-code"
@@ -107,20 +103,10 @@ function onCopyIdentity(fingerprint: string): void {
         </p>
         <p v-else-if="state.fingerprint !== ''" class="sync-dialog__text" role="status">
           <Check :size="14" aria-hidden="true" />
-          {{ state.fingerprint }}
+          {{ words.shareWith(state.label || state.fingerprint) }}
         </p>
-        <p v-else class="sync-dialog__text sync-dialog__text--hushed">{{ words.identityCodeHint }}</p>
+        <p v-else class="sync-dialog__text sync-dialog__text--hushed">{{ words.sharingLinkHint }}</p>
       </div>
-      <label class="sync-field">
-        <span class="sync-field__label">{{ words.nameField }}</span>
-        <input
-          class="sync-field__input"
-          type="text"
-          :value="state.label"
-          @input="onNameInput"
-        />
-        <span class="sync-dialog__text sync-dialog__text--hushed">{{ words.nameHint }}</span>
-      </label>
     </template>
     <p v-if="isSharing" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />

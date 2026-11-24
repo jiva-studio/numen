@@ -5,7 +5,8 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Check, ChevronDown } from '@lucide/vue'
-import { Button, Menu, measureRect, type Position } from '@numen/ui'
+import { Menu, measureRect, type Position } from '@numen/ui'
+import HeaderAction from './HeaderAction.vue'
 import { getPlanItems } from './planItems'
 import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
@@ -14,7 +15,6 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   offers: readonly PlanOffer[]
   currentId: string
-  isSolid: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const trigger = useTemplateRef<InstanceType<typeof Button>>('trigger')
+const trigger = useTemplateRef<InstanceType<typeof HeaderAction>>('trigger')
 const getTrigger = (): HTMLElement | null => {
   const element: unknown = trigger.value?.$el
   return element instanceof HTMLElement ? element : null
@@ -56,18 +56,15 @@ function onChoose(id: string): void {
 </script>
 
 <template>
-  <Button
+  <HeaderAction
     ref="trigger"
-    type="button"
-    class="subscription__change"
-    :variant="isSolid ? 'solid' : 'outline'"
     aria-haspopup="menu"
     :aria-expanded="anchor !== null"
     @click="onToggle"
   >
     {{ words.changePlan }}
     <ChevronDown :size="14" aria-hidden="true" />
-  </Button>
+  </HeaderAction>
   <Menu
     v-if="anchor"
     :items="items"

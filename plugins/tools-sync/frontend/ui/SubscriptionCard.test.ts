@@ -174,10 +174,10 @@ describe('SubscriptionCard', () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
     expect(getRow(wrapper, 'Plan')).toContain('100 GB, $15 / month')
-    expect(getRow(wrapper, 'Plan')).toContain('Change plan')
     expect(getRow(wrapper, 'Storage')).toContain('Space used by your synced vaults')
     expect(getRow(wrapper, 'Storage')).toContain('2 GB of 100 GB')
-    expect(getRow(wrapper, 'Renews')).toContain('Manage subscription')
+    expect(wrapper.find('.island-card__aside').text()).toContain('Change plan')
+    expect(wrapper.find('.island-card__aside').text()).toContain('Manage subscription')
     expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('2')
   })
 

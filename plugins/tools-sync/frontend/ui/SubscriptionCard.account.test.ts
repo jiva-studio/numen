@@ -100,6 +100,11 @@ const press = async (text: string) => {
   await flushPromises()
 }
 
+const pressMenu = async (text: string) => {
+  await press('More actions')
+  await press(text)
+}
+
 const pressInDialog = async (text: string) => {
   Array.from(document.body.querySelectorAll('[role="alertdialog"] button'))
     .find((one) => one.textContent?.trim() === text)
@@ -119,8 +124,10 @@ const getDialogText = (): string =>
   document.body.querySelector('[role="alertdialog"]')?.textContent ?? ''
 
 describe('SubscriptionCard account actions', () => {
-  it('offers to export the account data and to delete the cloud data as ghost buttons', async () => {
+  it('offers to export the account data and to delete the cloud data in the menu of the header', async () => {
     await render(createState())
+    expect(findButton('Export account data')).toBeUndefined()
+    await press('More actions')
 
     expect(findButton('Export account data')).toBeDefined()
     expect(findButton('Delete cloud data')).toBeDefined()
@@ -144,14 +151,13 @@ describe('SubscriptionCard account actions', () => {
     mounted.push(wrapper)
     await flushPromises()
 
-    expect(findButton('Delete cloud data')).toBeUndefined()
-    expect(findButton('Export account data')).toBeUndefined()
+    expect(findButton('More actions')).toBeUndefined()
   })
 
   it('asks what is deleted, the seven days, that notes stay and that the subscription is cancelled', async () => {
     await render(createState())
 
-    await press('Delete cloud data')
+    await pressMenu('Delete cloud data')
 
     const text = getDialogText()
     expect(text).toContain('Delete your cloud data?')
@@ -164,14 +170,14 @@ describe('SubscriptionCard account actions', () => {
   it('does not mention a subscription to cancel when there is none', async () => {
     await render(createState(), { ...ACTIVE, phase: 'none', plan: '', quotaBytes: 0 })
 
-    await press('Delete cloud data')
+    await pressMenu('Delete cloud data')
 
     expect(getDialogText()).not.toContain('Your subscription is cancelled now')
   })
 
   it('deletes nothing and shows under the field that the typed text is not the account name', async () => {
     const { accountClient } = await render(createState())
-    await press('Delete cloud data')
+    await pressMenu('Delete cloud data')
 
     await type('somebody else')
     await pressInDialog('Delete cloud data')
@@ -184,7 +190,7 @@ describe('SubscriptionCard account actions', () => {
 
   it('deletes the cloud data once the account name is typed and shows the deleting state with the date', async () => {
     const { wrapper, accountClient } = await render(createState())
-    await press('Delete cloud data')
+    await pressMenu('Delete cloud data')
 
     await type(ACCOUNT)
     await pressInDialog('Delete cloud data')
@@ -198,7 +204,7 @@ describe('SubscriptionCard account actions', () => {
 
   it('does not delete when the person cancels the question', async () => {
     const { accountClient } = await render(createState())
-    await press('Delete cloud data')
+    await pressMenu('Delete cloud data')
 
     await pressInDialog('Cancel')
 
@@ -228,7 +234,7 @@ describe('SubscriptionCard account actions', () => {
   it('saves the document the server sent under the name of the file', async () => {
     const { saveFile } = await render(createState())
 
-    await press('Export account data')
+    await pressMenu('Export account data')
 
     expect(saveFile).toHaveBeenCalledWith('Numen Sync account data.json', EXPORT_DOCUMENT)
   })
@@ -237,7 +243,7 @@ describe('SubscriptionCard account actions', () => {
     const { wrapper, accountClient } = await render(createState())
     accountClient.exportAccountData.mockRejectedValueOnce(new Error('Could not reach the server'))
 
-    await press('Export account data')
+    await pressMenu('Export account data')
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Could not reach the server')
   })

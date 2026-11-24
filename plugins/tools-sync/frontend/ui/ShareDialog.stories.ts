@@ -9,6 +9,7 @@ import '../styles.css'
 const TARGET = { vaultId: 'v1', folder: 'Food' }
 const CODE = 'numen-reader-1.abc'
 const FINGERPRINT = 'CCCC DDDD EEEE'
+const LINK = `numen://share/${CODE}`
 const INVITATION = 'numen-invitation-1.xyz'
 
 const anna: ShareReader = { label: 'Anna', fingerprint: FINGERPRINT, state: 'active' }
@@ -30,7 +31,7 @@ const createClient = (setup: Setup): SharesClient => ({
       ? Promise.reject(new Error('this is not a reader code or an invitation'))
       : Promise.resolve({
       fingerprint: FINGERPRINT,
-      ...(setup.label === undefined ? {} : { label: setup.label }),
+      label: setup.label ?? 'Anna',
     }),
   getShare: () => Promise.resolve(setup.share ?? { state: 'notShared', readers: [] }),
   addReader: () =>
@@ -72,8 +73,7 @@ type Story = StoryObj<typeof meta>
 
 const fillAndShare = async (canvasElement: HTMLElement): Promise<ReturnType<typeof within>> => {
   const canvas = within(canvasElement)
-  await userEvent.type(await canvas.findByLabelText('Their identity code'), CODE)
-  await userEvent.type(canvas.getByRole('textbox', { name: /Name for this person/ }), 'Anna')
+  await userEvent.type(await canvas.findByLabelText('Sharing link of the person'), LINK)
   await userEvent.click(canvas.getByRole('button', { name: 'Share the folder' }))
   return canvas
 }
@@ -92,9 +92,9 @@ export const InvalidCode: Story = {
   args: { state: createState({ isInvalid: true }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.type(await canvas.findByLabelText('Their identity code'), 'nonsense')
+    await userEvent.type(await canvas.findByLabelText('Sharing link of the person'), 'nonsense')
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'This does not look like an identity code.',
+      'This does not look like a sharing link.',
     )
   },
 }

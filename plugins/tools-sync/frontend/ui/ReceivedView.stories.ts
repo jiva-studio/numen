@@ -72,7 +72,7 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('No folder is shared yet')).toBeVisible()
-    await expect(canvas.getByText('Your identity code')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Copy my sharing link' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Accept an invitation' })).toBeVisible()
   },
 }

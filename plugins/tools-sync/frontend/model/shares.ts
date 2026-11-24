@@ -10,6 +10,7 @@ import type {
 import { folderSharesClient, readerSharesClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import { getShortFingerprint } from '../lib/fingerprint'
+import { getCodeFromLink, getSharingLink } from '../lib/sharingLink'
 import { getErrorMessage } from './vaults'
 
 const REFRESH_MS = 2000
@@ -120,7 +121,7 @@ export function createShareView(options: ShareViewOptions) {
   const sharedName = ref('')
   const error = ref('')
   const isBusy = ref(false)
-  const field = createReadField((text) => client.readReaderCode(text))
+  const field = createReadField((text) => client.readReaderCode(getCodeFromLink(text)))
   const repeater = createRepeater(refreshMs, (failure) => {
     error.value = getErrorMessage(failure)
   })
@@ -155,7 +156,7 @@ export function createShareView(options: ShareViewOptions) {
 
   const add = (confirmChange: boolean): Promise<void> =>
     guard(async () => {
-      const code = field.text.value.trim()
+      const code = getCodeFromLink(field.text.value)
       const added = await client.addReader({
         ...target,
         code,
@@ -188,7 +189,7 @@ export function createShareView(options: ShareViewOptions) {
     share,
     code: field.text,
     fingerprint: computed(() => field.info.value?.fingerprint ?? ''),
-    codeError: computed(() => (field.error.value === '' ? '' : words.notIdentityCode)),
+    codeError: computed(() => (field.error.value === '' ? '' : words.notSharingLink)),
     sharedName,
     people: computed(() => share.value.readers.filter((one) => one.state === 'active')),
     label,
@@ -290,7 +291,7 @@ export function createReceivedView(options: ReceivedViewOptions = {}) {
       error.value = getErrorMessage(failure)
     },
     receive,
-    copyCode: (): Promise<void> => copyText(code.value),
+    copyLink: (): Promise<void> => copyText(getSharingLink(code.value)),
     copyFingerprint: (value: string): Promise<void> => copyText(value),
     stop: repeater.stop,
   })

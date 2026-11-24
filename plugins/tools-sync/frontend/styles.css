@@ -185,14 +185,9 @@
   font-size: var(--numen-chrome-text-2);
 }
 
-.subscription .island-card__aside {
-  align-self: stretch;
-  margin-inline-end: calc(-0.625 * var(--numen-chrome-unit));
-}
-
 .subscription__badge {
   display: flex;
-  align-self: stretch;
+  align-self: center;
   align-items: center;
   box-sizing: border-box;
   padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
@@ -333,11 +328,6 @@
   font-size: calc(0.75 * var(--numen-chrome-unit));
 }
 
-.subscription .subscription__change {
-  gap: calc(0.375 * var(--numen-chrome-unit));
-  padding-inline: calc(0.75 * var(--numen-chrome-unit));
-}
-
 .subscription__current-tag {
   margin-inline-start: calc(0.5 * var(--numen-chrome-unit));
   padding: 0 calc(0.375 * var(--numen-chrome-unit));
@@ -396,14 +386,6 @@
   text-align: end;
 }
 
-.subscription__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: calc(var(--numen-chrome-unit) / 2);
-  padding-block: calc(var(--numen-chrome-unit) / 2) var(--row-pad);
-}
-
 .subscription__problem {
   padding-block-end: var(--row-pad);
   color: var(--numen-alarm);
@@ -450,4 +432,8 @@
 
 .subscription__input[aria-invalid='true'] {
   border-color: var(--numen-alarm);
+}
+
+.subscription__danger {
+  color: var(--numen-alarm);
 }

@@ -5,10 +5,9 @@
  * accepts an invitation. A folder is shared from the file tree.
  */
 import { ref } from 'vue'
-import { Copy, FolderOpen, Mail } from '@lucide/vue'
+import { Copy, FolderOpen, Link, Mail } from '@lucide/vue'
 import { Button, IslandCard } from '@numen/ui'
 import type { ReceivedView } from '../model/shares'
-import { getShortFingerprint } from '../lib/fingerprint'
 import { WORDS as words } from '../words'
 import AcceptInvitationDialog from './AcceptInvitationDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
@@ -25,8 +24,8 @@ const props = defineProps<{
 const isAccepting = ref(false)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onCopyCode(): void {
-  props.view.copyCode().catch(props.view.fail)
+function onCopyLink(): void {
+  props.view.copyLink().catch(props.view.fail)
 }
 
 function onCopyIdentity(fingerprint: string): void {
@@ -41,6 +40,10 @@ function onCopyIdentity(fingerprint: string): void {
     :aria-label="words.sharedFoldersTitle"
   >
     <template #aside>
+      <HeaderAction @click="onCopyLink">
+        <Link :size="14" aria-hidden="true" />
+        {{ words.copyLink }}
+      </HeaderAction>
       <HeaderAction @click="isAccepting = true">
         <Mail :size="14" aria-hidden="true" />
         {{ words.acceptInvitation }}
@@ -50,20 +53,6 @@ function onCopyIdentity(fingerprint: string): void {
     <p v-if="view.error !== ''" class="sync-card__note sync-card__note--alarm" role="alert">
       {{ view.error }}
     </p>
-    <ul class="sync-card__list">
-      <SyncRow :name="words.yourCode">
-        <span class="sync-row__detail">{{ words.yourCodeText }}</span>
-        <span v-if="view.fingerprint !== ''" class="sync-row__detail">
-          {{ getShortFingerprint(view.fingerprint) }}
-        </span>
-        <template #actions>
-          <Button variant="outline" size="small" @click="onCopyCode">
-            <Copy :size="14" aria-hidden="true" />
-            {{ words.copyCode }}
-          </Button>
-        </template>
-      </SyncRow>
-    </ul>
     <h3 v-if="view.rows.length > 0" class="sync-card__group">{{ words.sharedWithYou }}</h3>
     <p v-if="view.rows.length > 0" class="sync-card__lead">{{ words.sharedWithYouText }}</p>
     <EmptyBlock

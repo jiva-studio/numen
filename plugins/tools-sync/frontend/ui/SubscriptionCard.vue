@@ -13,8 +13,10 @@ import { Button, IslandCard, Spinner } from '@numen/ui'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
+import AccountMenu from './AccountMenu.vue'
 import ChangePlanMenu from './ChangePlanMenu.vue'
 import DeleteCloudDataDialog from './DeleteCloudDataDialog.vue'
+import HeaderAction from './HeaderAction.vue'
 import SwitchPlanDialog from './SwitchPlanDialog.vue'
 import type { SubscriptionCardProps } from './SubscriptionCard.types'
 
@@ -41,7 +43,6 @@ const { phase } = session.account
 const hasSettingsAction = computed(
   () => status.value === 'unreachable' && props.openSettings !== undefined,
 )
-const hasManageAction = computed(() => canManage.value && validity.value === undefined)
 const isPaying = computed(() => waiting.value || starting.value)
 const isDeleting = computed(() => accountData?.state.isDeleting.value === true)
 const canChangeAccount = computed(
@@ -118,28 +119,42 @@ function onFailure(failure: unknown): void {
     :title="words.subscriptionTitle"
     :aria-label="words.subscriptionTitle"
   >
-    <template v-if="isDeleting" #aside>
-      <span class="subscription__badge subscription__badge--warning">
+    <template #aside>
+      <span v-if="isDeleting" class="subscription__badge subscription__badge--warning">
         {{ words.deletingBadge }}
       </span>
-    </template>
-    <template v-else-if="view.badge !== ''" #aside>
-      <span class="subscription__badge" :class="`subscription__badge--${view.tone}`">
+      <span
+        v-else-if="view.badge !== ''"
+        class="subscription__badge"
+        :class="`subscription__badge--${view.tone}`"
+      >
         {{ view.badge }}
       </span>
+      <HeaderAction
+        v-if="isDeleting"
+        :is-disabled="accountData?.state.isBusy.value"
+        @click="onRestore"
+      >
+        {{ words.restoreAccount }}
+      </HeaderAction>
+      <template v-else>
+        <HeaderAction v-if="hasSettingsAction" @click="props.openSettings?.()">
+          {{ words.openSettings }}
+        </HeaderAction>
+        <ChangePlanMenu
+          v-if="changeOffers.length > 0"
+          :offers="changeOffers"
+          :current-id="currentOffer?.id ?? ''"
+          @choose="onChoosePlan"
+        />
+        <HeaderAction v-if="canManage" @click="onManage">
+          {{ words.manageSubscription }}
+        </HeaderAction>
+        <AccountMenu v-if="canChangeAccount" @export="onExport" @delete="onAskDelete" />
+      </template>
     </template>
     <div v-if="isDeleting" class="subscription__content">
       <p class="subscription__text">{{ deletingText }}</p>
-      <div class="subscription__actions">
-        <Button
-          type="button"
-          variant="ghost"
-          :disabled="accountData?.state.isBusy.value"
-          @click="onRestore"
-        >
-          {{ words.restoreAccount }}
-        </Button>
-      </div>
     </div>
     <div v-else class="subscription__content" :inert="isPaying || undefined" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
@@ -149,24 +164,11 @@ function onFailure(failure: unknown): void {
           <span class="subscription__name">{{ words.planRow }}</span>
           <span class="subscription__detail">{{ planLine }}</span>
         </div>
-        <div v-if="changeOffers.length > 0" class="subscription__value">
-          <ChangePlanMenu
-            :offers="changeOffers"
-            :current-id="currentOffer?.id ?? ''"
-            :is-solid="isFull"
-            @choose="onChoosePlan"
-          />
-        </div>
       </div>
       <div v-if="validity !== undefined" class="subscription__row">
         <div class="subscription__label">
           <span class="subscription__name">{{ validity.label }}</span>
           <span class="subscription__detail">{{ validity.date }}</span>
-        </div>
-        <div v-if="canManage" class="subscription__value">
-          <Button type="button" variant="outline" @click="onManage">
-            {{ words.manageSubscription }}
-          </Button>
         </div>
       </div>
       <div v-if="usage !== ''" class="subscription__row">
@@ -210,37 +212,6 @@ function onFailure(failure: unknown): void {
           <ChevronRight class="subscription__chevron" :size="16" aria-hidden="true" />
         </span>
       </button>
-      <div v-if="hasSettingsAction || hasManageAction" class="subscription__actions">
-        <Button
-          v-if="hasSettingsAction"
-          type="button"
-          variant="outline"
-          @click="props.openSettings?.()"
-        >
-          {{ words.openSettings }}
-        </Button>
-        <Button v-if="hasManageAction" type="button" variant="outline" @click="onManage">
-          {{ words.manageSubscription }}
-        </Button>
-      </div>
-      <div v-if="canChangeAccount" class="subscription__actions">
-        <Button
-          type="button"
-          variant="ghost"
-          :disabled="accountData?.state.isBusy.value"
-          @click="onExport"
-        >
-          {{ words.exportAccountData }}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          :disabled="accountData?.state.isBusy.value"
-          @click="onAskDelete"
-        >
-          {{ words.deleteCloudData }}
-        </Button>
-      </div>
     </div>
     <div v-if="isPaying" class="subscription__waiting">
       <p role="status" class="subscription__waiting-text">
