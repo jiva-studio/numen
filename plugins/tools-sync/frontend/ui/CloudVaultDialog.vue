@@ -36,7 +36,8 @@ function onSubmit(): void {
 }
 
 function onSecondary(): void {
-  emit(isAsking.value ? 'back' : 'cancel')
+  if (isAsking.value) emit('back')
+  else emit('cancel')
 }
 </script>
 

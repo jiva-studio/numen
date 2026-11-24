@@ -126,7 +126,7 @@ function onChoose(id: string): void {
     :at="anchor.at"
     :asking="anchor.wide"
     :from="getTrigger()"
-    :current="isChoosingPlan ? currentId : undefined"
+    :current="isChoosingPlan ? (currentId ?? null) : null"
     :name="isChoosingPlan ? words.changePlanChoices : words.moreActions"
     is-open
     trigger="keyboard"

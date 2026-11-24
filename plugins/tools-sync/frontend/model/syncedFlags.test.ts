@@ -10,6 +10,7 @@ const vault = (id: string, state: Listed['state']): Listed => ({
   path: `/${id}`,
   state,
   lastSyncedAt: '',
+  remoteId: `remote-${id}`,
   conflictCount: 0,
 })
 

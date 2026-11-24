@@ -234,13 +234,16 @@ describe('SubscriptionCard account actions', () => {
 
   it('disables the export item until the file is saved and shows nothing on success', async () => {
     const { wrapper, saveFile } = await render(createState())
-    const saving = Promise.withResolvers<string | undefined>()
-    saveFile.mockReturnValueOnce(saving.promise)
+    let finish: (path: string | undefined) => void = () => undefined
+    const saved = new Promise<string | undefined>((done) => {
+      finish = done
+    })
+    saveFile.mockReturnValueOnce(saved)
 
     await pressMenu('Export identity data')
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
 
-    saving.resolve('/home/me/a.json')
+    finish('/home/me/a.json')
     await flushPromises()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)

@@ -577,12 +577,14 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     expect(tab.text()).toContain('Recovery kit')
     expect(tab.text()).toContain('Printed sheets to bring your identity back')
     expect(tab.text()).not.toContain('if you lose this computer')
+    expect(tab.find('button[aria-label="Download recovery kit"]').exists()).toBe(true)
     expect(hasDialog(tab)).toBe(false)
     await tab.get('[aria-label="About Recovery kit"]').trigger('click')
     expect(getBody(tab).text()).toContain(
       'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
     )
     expect(getDialog(tab).attributes('aria-label')).toBe('About Recovery kit')
+    await getDialog(tab).trigger('keydown', { key: 'Escape' })
     expect(hasDialog(tab)).toBe(false)
   })
 

@@ -61,7 +61,6 @@ type launchServices interface {
 // Processes starts the process of a plugin, or the handler of a built-in one, and holds the pipes it
 // opened for the process until the process exits.
 type Processes struct {
-	// Output is where the lines of the plugin processes are recorded.
 	Output OutputLog
 
 	sups     processTable

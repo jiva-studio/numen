@@ -12,7 +12,6 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -76,12 +75,12 @@ type Resources struct {
 	KeyFile       keyfileusecase.File
 	ChainStore    identity.ChainStore
 	ErrorHandler  window.ErrorHandler
-	Now           installationClock
+	Now           identity.Clock
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
 	vault         vaultShared
-	settings      sharedSettings
+	settings      settingsadapter.Shared
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
 	progress      *identity.Progress
@@ -98,7 +97,7 @@ func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
 		vault:         vaultShared{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
-		settings:      newSharedSettings(),
+		settings:      settingsadapter.NewShared(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
@@ -158,7 +157,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) installationClock {
+func GetClock(res *Resources) identity.Clock {
 	if res.Now != nil {
 		return res.Now
 	}
@@ -246,14 +245,4 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		PluginCatalog:   res.PluginCatalog,
 		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: getCreateGate(res)},
 	}
-}
-
-// sharedSettings holds the settings files and the change events that one composition root shares.
-type sharedSettings struct {
-	Files  *settingsadapter.Files
-	Events *settingevents.Events
-}
-
-func newSharedSettings() sharedSettings {
-	return sharedSettings{Files: settingsadapter.NewFiles(), Events: settingevents.New()}
 }

@@ -132,7 +132,7 @@ function onFailure(failure: unknown): void {
         v-if="isDeleting"
         is-primary
         :label="words.restoreAccount"
-        :is-disabled="accountData?.state.isBusy.value"
+        :is-disabled="accountData?.state.isBusy.value ?? false"
         @click="onRestore"
       >
         <RotateCcw :size="14" aria-hidden="true" />

@@ -91,7 +91,6 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
       if (dialogs === undefined) return Promise.resolve()
       const view = createAcceptanceView({
         client: acceptInvitationClient,
-        now: getCurrentDate,
         close: () => {
           view.stop()
           dialog.close()
