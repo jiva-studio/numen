@@ -81,9 +81,10 @@ type Transfers interface {
 	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
 }
 
-// Indexer asks the host to read a vault into its index.
-type Indexer interface {
+// Notes is what the host does with the notes of one vault in its index and its trash.
+type Notes interface {
 	EnsureIndexed(ctx context.Context) (host.IndexState, error)
+	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
 }
 
 // Store is the folder of the plugin in the store of one vault.
@@ -95,19 +96,13 @@ type Store interface {
 	Delete(ctx context.Context, name string) error
 }
 
-// Remover moves notes of one vault to the trash.
-type Remover interface {
-	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
-}
-
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	GetFiles(id domain.VaultID) Files
 	GetTransfers(id domain.VaultID) Transfers
-	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
-	GetRemover(id domain.VaultID) Remover
+	GetNotes(id domain.VaultID) Notes
 }
 
 // Links keeps the link of each vault.
