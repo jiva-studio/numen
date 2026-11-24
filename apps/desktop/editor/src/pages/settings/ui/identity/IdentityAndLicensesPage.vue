@@ -34,8 +34,13 @@ const page = useIdentityPage(
 const keyFileState = computed(() => props.identity.keyFile.state.value)
 
 onMounted(() => {
-  runInBackground(props.identity.keyFile.load(), () => undefined)
+  runInBackground(openKeyFile(), () => undefined)
 })
+
+async function openKeyFile(): Promise<void> {
+  const found = await props.identity.keyFile.load()
+  if (found?.isLocked) await props.identity.keyFile.askWhenNeeded()
+}
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
