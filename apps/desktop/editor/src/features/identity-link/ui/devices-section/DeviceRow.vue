@@ -6,6 +6,7 @@
  */
 import { computed } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
+import { Fingerprint } from '@numen/ui'
 import type { DeviceInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
 import DeviceActions from './DeviceActions.vue'
@@ -37,7 +38,7 @@ const hasActions = computed(() => !props.device.isThis && !props.device.isRevoke
         <span v-if="device.isThis" class="device-row__badge">{{ words.deviceThis }}</span>
       </template>
       <template #trail>
-        <span class="device-row__fingerprint">{{ device.fingerprint }}</span>
+        <Fingerprint class="device-row__fingerprint" :value="device.fingerprint" />
         <span class="device-row__actions">
           <DeviceActions v-if="hasActions" :device="device" @revoke="$emit('revoke', $event)" />
         </span>
@@ -48,12 +49,11 @@ const hasActions = computed(() => !props.device.isThis && !props.device.isRevoke
 
 <style scoped>
 .device-row__fingerprint {
-  flex: none;
-  font-family: var(--numen-font-mono);
+  flex: 0 1 auto;
+  min-inline-size: 8rem;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   letter-spacing: 0.02em;
-  white-space: nowrap;
 }
 
 .device-row__actions {

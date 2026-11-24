@@ -130,7 +130,11 @@ function onClick(): void {
 }
 
 .navigation-row__name {
+  min-inline-size: 0;
+  overflow: hidden;
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .navigation-row__detail {

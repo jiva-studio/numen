@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Labelled values of a link as rows of a name and its value: a device name, a fingerprint. */
 
+import { Fingerprint } from '@numen/ui'
 import type { Fact } from '../../lib/types'
 
 defineProps<{ facts: readonly Fact[] }>()
@@ -11,7 +12,8 @@ defineProps<{ facts: readonly Fact[] }>()
     <div v-for="fact in facts" :key="fact.label" class="link-facts__row">
       <dt class="link-facts__label">{{ fact.label }}</dt>
       <dd class="link-facts__value" :class="{ 'link-facts__value--mono': fact.isMono }">
-        {{ fact.value }}
+        <Fingerprint v-if="fact.isMono" :value="fact.value" />
+        <template v-else>{{ fact.value }}</template>
       </dd>
     </div>
   </dl>

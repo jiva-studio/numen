@@ -6,7 +6,14 @@
  */
 import { computed, ref } from 'vue'
 import { Link, Trash2 } from '@lucide/vue'
-import { CardAction, CardActions, ConfirmDialog, IslandCard, type CardActionItem } from '@numen/ui'
+import {
+  CardAction,
+  CardActions,
+  ConfirmDialog,
+  Fingerprint,
+  IslandCard,
+  type CardActionItem,
+} from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
 import { DevicesSection, type DeviceCalls } from '@/features/identity-link'
@@ -67,7 +74,7 @@ const thisDevice = computed<DeviceInfo>(() => ({
       :name="words.identityAccount"
       :detail="words.identityAccountDetail"
     >
-      <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
+      <Fingerprint class="identity-details__mono" :value="info.accountFingerprint" />
     </SettingRow>
     <slot />
     <p v-if="info.isRevoked" role="alert" class="identity-details__revoked">
@@ -105,7 +112,7 @@ const thisDevice = computed<DeviceInfo>(() => ({
         <span class="identity-details__badge">{{ words.identityThisDevice }}</span>
       </template>
       <template #trail>
-        <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
+        <Fingerprint class="identity-details__mono" :value="info.deviceFingerprint" />
       </template>
     </NavigationRow>
   </IslandCard>
@@ -124,15 +131,23 @@ const thisDevice = computed<DeviceInfo>(() => ({
 
 <style scoped>
 .identity-details__mono {
-  font-family: var(--numen-font-mono);
+  flex: 0 1 auto;
+  min-inline-size: 8rem;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   letter-spacing: 0.02em;
-  white-space: nowrap;
 }
 
 .identity-details__fact.identity-details__fact {
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(min-content, 1fr) minmax(8rem, max-content);
+}
+
+.identity-details__fact :deep(.settings__name) {
+  overflow-wrap: normal;
+}
+
+.identity-details__fact :deep(.settings__detail) {
+  white-space: normal;
 }
 
 .identity-details__devices :deep(.island-card__body) {
