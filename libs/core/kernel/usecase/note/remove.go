@@ -68,7 +68,7 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 		return res, err
 	}
 
-	target, err := u.trashFiles(ctx, v, path)
+	target, err := u.moveFilesToTrash(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
@@ -85,11 +85,11 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 	// The file is in the trash from here on, so the index update result is reported
 	// alongside the links that now resolve to nothing.
 	indexErr := u.updateIndex(ctx, v, indexPaths...)
-	res.Dangling = getDangling(pointing, inside)
+	res.Dangling = getDanglingLinks(pointing, inside)
 	return res, errors.Join(filingErr, indexErr)
 }
 
-func (u Remove) trashFiles(ctx context.Context, v domain.Vault, path string) (string, error) {
+func (u Remove) moveFilesToTrash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	writer, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return "", err
@@ -123,7 +123,7 @@ func getIndexPaths(went []domain.FileStat, path string) ([]string, map[string]bo
 	return indexPaths, inside
 }
 
-func getDangling(pointing []domain.ResolvedLink, inside map[string]bool) []string {
+func getDanglingLinks(pointing []domain.ResolvedLink, inside map[string]bool) []string {
 	var dangling []string
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
