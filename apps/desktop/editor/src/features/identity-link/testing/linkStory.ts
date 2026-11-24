@@ -2,7 +2,7 @@ import { defineComponent, h } from 'vue'
 import { fn } from 'storybook/test'
 import { encode } from 'uqr'
 import type { LinkInfo } from '@/entities/identity'
-import type { LinkCalls } from '../../lib/types'
+import type { LinkCalls } from '../lib/types'
 
 export const QR_TEXT =
   'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
@@ -15,7 +15,7 @@ export const WindowFrame = defineComponent({
   setup: (_, { slots }) => () => h('div', { class: 'numen', style: WINDOW_FRAME }, slots['default']?.()),
 })
 
-export const createInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => ({
+const INFO: LinkInfo = {
   phase: 'waitingForPeer',
   mode: 'show',
   role: 'host',
@@ -29,8 +29,10 @@ export const createInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => ({
   deviceName: 'Studio laptop',
   deviceFingerprint: 'D5AF 4DDB 6D92 FA46 0390 D870 1186 EB41',
   isApproved: false,
-  ...overrides,
-})
+}
+
+export const createInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo =>
+  Object.assign({}, INFO, overrides)
 
 const ok = <T>(value: T) => Promise.resolve({ ok: true as const, value })
 
@@ -43,16 +45,16 @@ export const createCalls = (link: LinkInfo): LinkCalls => ({
   cancel: fn(() => ok(undefined)),
 })
 
-export const createRefusal = (text: string): LinkCalls => ({
-  ...createCalls(createInfo()),
-  start: fn(() => Promise.resolve({ ok: false as const, error: text })),
-})
+export const createRefusal = (text: string): LinkCalls =>
+  Object.assign({}, createCalls(createInfo()), {
+    start: fn(() => Promise.resolve({ ok: false as const, error: text })),
+  })
 
 const CELL = 8
 const QUIET = 4
 const FRAME_RATE = 8
 
-export const filmCode = (text: string) => (): Promise<MediaStream> => {
+export const createCodeCamera = (text: string) => (): Promise<MediaStream> => {
   const { data: modules } = encode(text, { ecc: 'M', border: 0 })
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = (modules.length + 2 * QUIET) * CELL

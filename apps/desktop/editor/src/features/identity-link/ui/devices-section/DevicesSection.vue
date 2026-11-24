@@ -16,7 +16,7 @@ import DeviceRow from './DeviceRow.vue'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ calls: DeviceCalls; current?: DeviceInfo; isLinking: boolean }>()
 
-const emit = defineEmits<{ (e: 'update:isLinking', value: boolean): void }>()
+const emit = defineEmits<{ (e: 'update:is-linking', value: boolean): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { asked, problem, refresh, confirmRevoke } = useDevices(() => props.calls)
@@ -28,7 +28,7 @@ const shown = computed(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose(): void {
-  emit('update:isLinking', false)
+  emit('update:is-linking', false)
   refresh()
 }
 </script>

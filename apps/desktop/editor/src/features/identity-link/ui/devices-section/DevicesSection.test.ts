@@ -71,7 +71,7 @@ describe('the devices section', () => {
     await click(findButtons(/^Remove$/)[0] as HTMLElement)
     expect(
       findText(
-        'Phone will lose access. Files on that device stay.',
+        'Phone will lose access. The files on the device stay.',
       ),
     ).not.toBeNull()
     expect(revokeDevice).not.toHaveBeenCalled()
@@ -101,7 +101,7 @@ describe('the devices section', () => {
     )
   })
 
-  it('draws the link dialog of a host when it is asked to link', async () => {
+  it('draws the link dialog when isLinking is set', async () => {
     const section = await mountSection([THIS], {}, true)
     expect(section.get('[role="dialog"] h2').text()).toBe('Link a device')
   })

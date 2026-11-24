@@ -27,10 +27,10 @@ import {
   type HostParts,
   type PluginNotes,
   type PluginServices,
+  type TextSaver,
 } from '@/features/plugin-host'
 import type { createTabsPart } from './createTabsPart'
 import type { WindowApi } from './createWindowApi'
-import type { TextSaver } from '@/shared/api/createTextSaver'
 
 /** What the window draws for plugins besides their views: the notices and the list to pick items from. */
 export function createPluginSurfaces(saveText: TextSaver) {

@@ -39,7 +39,7 @@ import {
   createWindowLogClient,
   type WindowTransports,
 } from '@/shared/api/clients'
-import { createTextSaver } from '@/shared/api/createTextSaver'
+import { createTextSaver } from '@/features/plugin-host'
 
 export function createWindowApi(transports: WindowTransports) {
   const { transport } = transports

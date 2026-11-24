@@ -39,7 +39,7 @@ const mountDialog = async (
   return wrapper
 }
 
-const mountJoined = async (link: LinkInfo, overrides: Partial<IdentityCalls> = {}) => {
+const mountWithLink = async (link: LinkInfo, overrides: Partial<IdentityCalls> = {}) => {
   const dialog = await mountDialog(link, overrides)
   await enterText(textInputs()[0] as HTMLInputElement, 'numen://link?v=1')
   await click(findButton(/^Use link$/))
@@ -95,7 +95,7 @@ describe('the dialog that joins an account', () => {
   })
   it('starts as the scanner with the link pasted', async () => {
     const startLink = vi.fn(() => ok(createLinkInfo({ phase: 'waitingForAccept', mode: 'scan' })))
-    await mountJoined(createLinkInfo(), { startLink })
+    await mountWithLink(createLinkInfo(), { startLink })
     expect(startLink).toHaveBeenCalledWith('joiner', 'scan', 'numen://link?v=1')
   })
 
@@ -106,7 +106,7 @@ describe('the dialog that joins an account', () => {
       mode: 'scan',
       accountFingerprint: '',
     })
-    const dialog = await mountJoined(link)
+    const dialog = await mountWithLink(link)
     expect(dialog.text()).toContain(link.deviceName)
     expect(dialog.text()).toContain(link.deviceFingerprint)
   })
@@ -126,7 +126,7 @@ describe('the dialog that joins an account', () => {
   it('sends the code the person typed from the other device', async () => {
     const link = createLinkInfo({ phase: 'enterCode', role: 'joiner', mode: 'scan', triesLeft: 2 })
     const enterLinkCode = vi.fn(() => ok(undefined))
-    const dialog = await mountJoined(link, { enterLinkCode })
+    const dialog = await mountWithLink(link, { enterLinkCode })
     expect(dialog.text()).toContain('2 tries left.')
     await enterText(textInputs()[0] as HTMLInputElement, '482913')
     await click(findButton(/^Confirm$/))
@@ -140,7 +140,7 @@ describe('the dialog that joins an account', () => {
       accountFingerprint: '3F2A 91C0',
     })
     const confirmJoin = vi.fn(() => ok(undefined))
-    const dialog = await mountJoined(link, { confirmJoin })
+    const dialog = await mountWithLink(link, { confirmJoin })
     expect(dialog.text()).toContain('Join account 3F2A 91C0?')
     await click(findButton(/^Join$/))
     expect(confirmJoin).toHaveBeenCalledWith(true)

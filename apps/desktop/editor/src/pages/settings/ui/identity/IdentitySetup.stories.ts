@@ -46,7 +46,7 @@ const meta: Meta<IdentitySetupProps> = {
 export default meta
 type Story = StoryObj<IdentitySetupProps>
 
-/** The twelve words, shown once, and the warning that nobody can recover them. */
+/** The twelve words, shown once, and the warning that the words cannot be recovered. */
 export const Words: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

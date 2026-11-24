@@ -13,14 +13,14 @@ defineProps<{ keyFile: KeyFileStore }>()
     v-if="keyFile.request.value === 'choose'"
     :problem="keyFile.problem.value"
     :is-busy="keyFile.isBusy.value"
-    @choose="keyFile.choose"
-    @cancel="keyFile.cancel"
+    @choose="keyFile.dialog.choose"
+    @cancel="keyFile.dialog.cancel"
   />
   <KeyFileUnlockDialog
     v-else-if="keyFile.request.value === 'unlock'"
     :problem="keyFile.problem.value"
     :is-busy="keyFile.isBusy.value"
-    @unlock="keyFile.unlock"
-    @cancel="keyFile.cancel"
+    @unlock="keyFile.dialog.unlock"
+    @cancel="keyFile.dialog.cancel"
   />
 </template>

@@ -4,7 +4,7 @@ import { createMockDialogHost } from '../src/testing/mockDialogs'
 const TEXT = { title: 'Save', fileName: 'account.json', content: '{}', extension: '.json' }
 
 describe('createMockDialogHost', () => {
-  it('keeps the texts the person was asked to save and answers the file chosen', async () => {
+  it('records the saved texts and answers the chosen file', async () => {
     const dialogs = createMockDialogHost()
     dialogs.chooseSavePath('/home/me/account.json')
 

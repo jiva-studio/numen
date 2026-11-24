@@ -37,7 +37,7 @@ describe('createKeyFileStore', () => {
 
     const pending = store.retryAfterAsking(call)
     await vi.waitFor(() => expect(store.request.value).toBe('choose'))
-    await store.choose('plaintext', '')
+    await store.dialog.choose('plaintext', '')
     const answer = await pending
 
     expect(answer).toBe(kept)
@@ -49,9 +49,11 @@ describe('createKeyFileStore', () => {
     const locked = { ...NO_KEYCHAIN, mode: 'passphrase', isChoiceNeeded: false, isLocked: true } as const
     const store = createKeyFileStore(createApi({ getState: () => Promise.resolve(locked) }), vi.fn())
 
-    void store.retryAfterAsking(() => Promise.resolve(refused))
+    const pending = store.retryAfterAsking(() => Promise.resolve(refused))
 
     await vi.waitFor(() => expect(store.request.value).toBe('unlock'))
+    store.dialog.cancel()
+    await pending
   })
 
   it('returns the refusal when the person cancels', async () => {
@@ -60,7 +62,7 @@ describe('createKeyFileStore', () => {
 
     const pending = store.retryAfterAsking(call)
     await vi.waitFor(() => expect(store.request.value).toBe('choose'))
-    store.cancel()
+    store.dialog.cancel()
 
     expect(await pending).toBe(refused)
     expect(call).toHaveBeenCalledTimes(1)
@@ -82,15 +84,15 @@ describe('createKeyFileStore', () => {
       }),
       vi.fn(),
     )
-    store.change()
+    store.dialog.change()
 
-    await store.unlock('guess')
+    await store.dialog.unlock('guess')
 
     expect(store.problem.value).toBe('This passphrase does not open your keys. Try again.')
     expect(store.request.value).toBe('choose')
   })
 
-  it('tells the person when the state cannot be read', async () => {
+  it('reports an error when the state cannot be read', async () => {
     const notify = vi.fn()
     const store = createKeyFileStore(
       createApi({ getState: () => Promise.reject(new Error('down')) }),

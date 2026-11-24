@@ -6,7 +6,6 @@
  */
 import { computed, ref } from 'vue'
 import { Dialog } from '@numen/ui'
-import { getLinkView } from '../../lib/phases'
 import type { LinkCalls } from '../../lib/types'
 import { useCopyText } from '../../model/useCopyText'
 import { useLinkActions } from '../../model/useLinkActions'
@@ -23,16 +22,8 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 /* --------------------------------- State ---------------------------------- */
 const session = useLinkSession(() => props.calls, 'host', props.stallMs)
 const code = ref('')
-const view = computed(() =>
-  getLinkView({
-    link: session.link.value,
-    role: 'host',
-    isScanning: false,
-    isStalled: session.isStalled.value,
-    hasProblem: session.problem.value !== '',
-  }),
-)
-const actions = useLinkActions(session, { text: ref(''), code }, view)
+const actions = useLinkActions(session, 'host', { text: ref(''), code })
+const { view } = actions
 const { isCopied, copy } = useCopyText(() => session.link.value?.qrText ?? '')
 const extra = computed(() =>
   view.value === 'qr' || view.value === 'preparing'

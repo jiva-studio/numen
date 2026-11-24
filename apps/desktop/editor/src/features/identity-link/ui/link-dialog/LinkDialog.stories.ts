@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { LinkCalls } from '../../lib/types'
 import LinkDialog from './LinkDialog.vue'
-import { createCalls, createInfo, createRefusal, QR_TEXT, WindowFrame } from './linkStory'
+import { createCalls, createInfo, createRefusal, WindowFrame } from '../../testing/linkStory'
 
 interface Knobs {
   calls: LinkCalls

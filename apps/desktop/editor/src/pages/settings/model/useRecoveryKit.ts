@@ -44,7 +44,7 @@ export function useRecoveryKit(getIdentity: () => InstallationIdentity) {
 
   const save = async (given: KitProof): Promise<void> => {
     isSaved.value = false
-    const answer = await run(() => getIdentity().saveKit(given))
+    const answer = await run(() => getIdentity().recovery.saveKit(given))
     if (!answer.ok) return
     isSaved.value = answer.value
     if (!answer.value) return

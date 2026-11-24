@@ -1,7 +1,7 @@
 import type { Component } from 'vue'
 
 // DialogOptions is the view a plugin draws in a dialog: a component and the props it is given. Listeners
-// are props that start with `on`, so `onCancel` hears the event `cancel`.
+// are props that start with `on`, so `onCancel` receives the event `cancel`.
 export interface DialogOptions {
   readonly component: Component
   readonly props?: Readonly<Record<string, unknown>>

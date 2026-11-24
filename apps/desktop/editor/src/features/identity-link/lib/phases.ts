@@ -29,31 +29,24 @@ export interface LinkViewState {
   hasProblem: boolean
 }
 
+const PHASE_VIEWS: Partial<Record<LinkPhase, LinkView>> = {
+  waitingForChannel: 'preparing',
+  waitingForAccept: 'waiting',
+  confirmPeer: 'peer',
+  enterCode: 'code',
+  linked: 'linked',
+  failed: 'failed',
+}
+
+function getViewOfLink(link: LinkInfo, role: LinkRole): LinkView {
+  if (link.phase === 'waitingForPeer') return link.mode === 'show' ? 'qr' : 'waiting'
+  if (link.phase === 'confirmAccount') return role === 'joiner' ? 'account' : 'linking'
+  return PHASE_VIEWS[link.phase] ?? 'linking'
+}
+
 export function getLinkView(state: LinkViewState): LinkView {
-  const { link } = state
   if (state.isStalled) return 'stalled'
-  if (link === undefined) {
-    if (state.isScanning) return 'scan'
-    return state.hasProblem ? 'refused' : 'preparing'
-  }
-  switch (link.phase) {
-    case 'waitingForChannel':
-      return 'preparing'
-    case 'waitingForPeer':
-      return link.mode === 'show' ? 'qr' : 'waiting'
-    case 'waitingForAccept':
-      return 'waiting'
-    case 'confirmPeer':
-      return 'peer'
-    case 'enterCode':
-      return 'code'
-    case 'confirmAccount':
-      return state.role === 'joiner' ? 'account' : 'linking'
-    case 'linked':
-      return 'linked'
-    case 'failed':
-      return 'failed'
-    default:
-      return 'linking'
-  }
+  if (state.link !== undefined) return getViewOfLink(state.link, state.role)
+  if (state.isScanning) return 'scan'
+  return state.hasProblem ? 'refused' : 'preparing'
 }

@@ -40,14 +40,15 @@ export function createKeyFileStore(api: KeyFileApi, notify: MessageWriter) {
     waiting?.(isDone)
   }
 
-  const ask = (kind: KeyFileRequest): Promise<boolean> => {
+  const show = (kind: KeyFileRequest, resolve: (isDone: boolean) => void): void => {
     answer?.(false)
     problem.value = ''
     request.value = kind
-    return new Promise<boolean>((resolve) => {
-      answer = resolve
-    })
+    answer = resolve
   }
+
+  const ask = (kind: KeyFileRequest): Promise<boolean> =>
+    new Promise<boolean>((resolve) => show(kind, resolve))
 
   const askWhenNeeded = async (): Promise<boolean> => {
     const found = await load()
@@ -88,9 +89,7 @@ export function createKeyFileStore(api: KeyFileApi, notify: MessageWriter) {
 
   const unlock = (passphrase: string): Promise<void> => settle(() => api.unlock(passphrase))
 
-  const change = (): void => {
-    void ask('choose')
-  }
+  const change = (): void => show('choose', () => undefined)
 
   return {
     state,
@@ -100,10 +99,7 @@ export function createKeyFileStore(api: KeyFileApi, notify: MessageWriter) {
     load,
     askWhenNeeded,
     retryAfterAsking,
-    choose,
-    unlock,
-    change,
-    cancel: () => close(false),
+    dialog: { choose, unlock, change, cancel: () => close(false) },
   }
 }
 

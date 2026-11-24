@@ -50,7 +50,7 @@ describe('KeyFileDialog', () => {
     const view = open()
     await view.findAll('input[type="radio"]')[1]?.setValue()
 
-    expect(view.text()).toContain('Anyone who can read your files can read your keys.')
+    expect(view.text()).toContain('Anyone with access to your files can read your keys.')
     await view.find('form').trigger('submit')
 
     expect(view.emitted('choose')).toEqual([['plaintext', '']])

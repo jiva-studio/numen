@@ -9,7 +9,7 @@ export const WORDS = {
   deviceRevoke: 'Remove',
   deviceRevokeTitle: 'Remove this device?',
   deviceRevokeWarning: (name: string) =>
-    `${name} will lose access. Files on that device stay.`,
+    `${name} will lose access. The files on the device stay.`,
   deviceRevokeCancel: 'Cancel',
   linkNoCamera: 'No camera found. Paste the link from the other device.',
   linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,
@@ -53,7 +53,7 @@ export const WORDS = {
   linkDoneTitle: 'The device is linked',
   linkDoneDetail: 'It has the account now.',
   linkFailedTitle: 'The link failed',
-  linkChecking: 'Check that this is your new device.',
+  linkChecking: 'Make sure this is your new device.',
   linkTryAgain: 'Try again',
   linkDone: 'Done',
   linkDeviceName: 'Device name',

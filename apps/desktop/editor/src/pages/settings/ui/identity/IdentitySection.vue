@@ -27,7 +27,8 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 /* --------------------------------- State ---------------------------------- */
 const kit = useRecoveryKit(() => props.identity)
 const section = useIdentitySection(() => props.identity, kit.actions.hold)
-const { identity: current, step, setup, call, confirmation, restoring, typing, scanning, deletion, actions } = section
+const { identity: current, step, setup, call, confirmation, restore, deletion, actions } = section
+const { words: restoring, typed: typing, scanning } = restore
 const { stage, recoveryWords } = setup
 const isJoining = ref(false)
 

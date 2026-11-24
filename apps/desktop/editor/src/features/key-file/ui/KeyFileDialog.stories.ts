@@ -61,7 +61,7 @@ export const ChoosePlainFile: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('radio', { name: /Save in a file/ }))
-    await expect(canvas.getByText(/Anyone who can read your files/)).toBeVisible()
+    await expect(canvas.getByText(/Anyone with access to your files/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }))
     await expect(onChoose).toHaveBeenCalledWith('plaintext', '')
   },

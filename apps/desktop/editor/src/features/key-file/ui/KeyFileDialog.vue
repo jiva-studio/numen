@@ -6,6 +6,7 @@
 import { Button, Dialog } from '@numen/ui'
 import { useKeyFileChoice } from '../model/useKeyFileChoice'
 import { WORDS as words } from '../words'
+import KeyFileOption from './KeyFileOption.vue'
 import PassphraseField from './PassphraseField.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -37,12 +38,12 @@ function onSubmit(): void {
   >
     <fieldset class="key-file-choice" :disabled="isBusy">
       <legend class="key-file-choice__legend">{{ words.choiceLabel }}</legend>
-      <label class="key-file-choice__card" :class="{ 'key-file-choice__card--on': mode === 'passphrase' }">
-        <input v-model="mode" type="radio" name="key-file-mode" value="passphrase" />
-        <span class="key-file-choice__text">
-          <span class="key-file-choice__title">{{ words.passphraseTitle }}</span>
-        </span>
-      </label>
+      <KeyFileOption
+        value="passphrase"
+        :is-on="mode === 'passphrase'"
+        :title="words.passphraseTitle"
+        @pick="mode = $event"
+      />
       <div v-if="mode === 'passphrase'" class="key-file-choice__fields">
         <PassphraseField
           :label="words.passphraseField"
@@ -59,13 +60,13 @@ function onSubmit(): void {
         />
         <p v-if="isMismatch" role="alert" class="key-file-choice__problem">{{ words.mismatch }}</p>
       </div>
-      <label class="key-file-choice__card" :class="{ 'key-file-choice__card--on': mode === 'plaintext' }">
-        <input v-model="mode" type="radio" name="key-file-mode" value="plaintext" />
-        <span class="key-file-choice__text">
-          <span class="key-file-choice__title">{{ words.plaintextTitle }}</span>
-          <span class="key-file-choice__detail">{{ words.plaintextWarning }}</span>
-        </span>
-      </label>
+      <KeyFileOption
+        value="plaintext"
+        :is-on="mode === 'plaintext'"
+        :title="words.plaintextTitle"
+        :detail="words.plaintextWarning"
+        @pick="mode = $event"
+      />
     </fieldset>
     <p v-if="problem !== ''" role="alert" class="key-file-choice__problem">{{ problem }}</p>
     <template #actions>
@@ -95,36 +96,6 @@ function onSubmit(): void {
   block-size: 1px;
   overflow: hidden;
   clip-path: inset(50%);
-}
-
-.key-file-choice__card {
-  display: flex;
-  gap: 0.625rem;
-  align-items: flex-start;
-  padding: 0.625rem 0.75rem;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  cursor: pointer;
-}
-
-.key-file-choice__card--on {
-  background: var(--numen-selection);
-  border-color: var(--numen-accent);
-}
-
-.key-file-choice__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.key-file-choice__title {
-  font-weight: 500;
-}
-
-.key-file-choice__detail {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
 }
 
 .key-file-choice__fields {

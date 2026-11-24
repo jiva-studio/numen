@@ -34,7 +34,7 @@ describe('KeyFileRow', () => {
     const plain = mount(KeyFileRow, { props: { state: state({ mode: 'plaintext' }) } })
     const keychain = mount(KeyFileRow, { props: { state: state({ isInUse: false }) } })
 
-    expect(plain.text()).toContain('Anyone who can read your files')
+    expect(plain.text()).toContain('Anyone with access to your files')
     expect(keychain.find('button').exists()).toBe(false)
   })
 })

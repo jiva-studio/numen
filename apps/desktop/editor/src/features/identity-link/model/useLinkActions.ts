@@ -1,6 +1,7 @@
-import type { Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { LinkView } from '../lib/phases'
+import type { LinkRole } from '@/entities/identity'
+import { getLinkView } from '../lib/phases'
 import type { useLinkSession } from './useLinkSession'
 
 /** What the person typed into the dialog and which way it links. */
@@ -11,12 +12,24 @@ export interface LinkDraft {
 
 const ignore = (): void => undefined
 
-/** What the buttons of the link dialog do in the view it is in. */
+/**
+ * The view a link dialog is in and what its buttons do there. A joiner starts at the scan of the
+ * link; a host shows its own QR code at once.
+ */
 export function useLinkActions(
   session: ReturnType<typeof useLinkSession>,
+  role: LinkRole,
   draft: LinkDraft,
-  view: Readonly<Ref<LinkView>>,
 ) {
+  const view = computed(() =>
+    getLinkView({
+      link: session.link.value,
+      role,
+      isScanning: role === 'joiner',
+      isStalled: session.isStalled.value,
+      hasProblem: session.problem.value !== '',
+    }),
+  )
   const run = (work: Promise<void>): void => runInBackground(work, ignore)
 
   function submit(): void {
@@ -52,5 +65,5 @@ export function useLinkActions(
     run(session.start('scan', text))
   }
 
-  return { submit, decline, scan }
+  return { view, submit, decline, scan }
 }

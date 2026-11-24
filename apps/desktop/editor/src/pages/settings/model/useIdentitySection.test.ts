@@ -28,11 +28,13 @@ describe('the identity section', () => {
     const installation: InstallationIdentity = {
       identity: ref<IdentityInfo | undefined>(undefined),
       load: vi.fn(() => Promise.resolve()),
-      generateWords: () => new Promise((resolve) => (finish = resolve)),
       create: vi.fn(),
-      restore: vi.fn(),
       delete: vi.fn(),
-      saveKit: vi.fn(),
+      recovery: {
+        generateWords: () => new Promise((resolve) => (finish = resolve)),
+        restore: vi.fn(),
+        saveKit: vi.fn(),
+      },
       devices: createInertDevices(),
       keyFile: createInertKeyFile(),
     }

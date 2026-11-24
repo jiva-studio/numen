@@ -11,10 +11,10 @@ import {
   createCalls,
   createInfo,
   createRefusal,
-  filmCode,
+  createCodeCamera,
   QR_TEXT,
   WindowFrame,
-} from './linkStory'
+} from '../../testing/linkStory'
 
 interface Knobs {
   calls: LinkCalls
@@ -81,7 +81,7 @@ export const CheckingCamera: Story = {
 export const CameraReady: Story = {
   args: {
     findCamera: () => Promise.resolve(true),
-    camera: filmCode(QR_TEXT),
+    camera: createCodeCamera(QR_TEXT),
     stallMs: 600_000,
     calls: {
       ...createCalls(joiner()),

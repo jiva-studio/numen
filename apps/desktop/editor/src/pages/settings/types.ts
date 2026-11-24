@@ -172,11 +172,13 @@ export interface InstallationIdentity {
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
   readonly devices: DeviceCalls
   load(): Promise<void>
-  generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
-  restore(proof: KitProof): Promise<Result<IdentityInfo, string>>
   delete(): Promise<Result<void, string>>
-  saveKit(proof: KitProof): Promise<Result<boolean, string>>
+  readonly recovery: {
+    generateWords(): Promise<Result<readonly string[], string>>
+    restore(proof: KitProof): Promise<Result<IdentityInfo, string>>
+    saveKit(proof: KitProof): Promise<Result<boolean, string>>
+  }
 }
 
 /**

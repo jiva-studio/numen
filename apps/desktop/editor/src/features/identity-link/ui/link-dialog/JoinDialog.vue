@@ -7,7 +7,6 @@
  */
 import { computed, ref } from 'vue'
 import { Dialog, hasCamera, type ScannerCamera } from '@numen/ui'
-import { getLinkView } from '../../lib/phases'
 import type { LinkCalls } from '../../lib/types'
 import { useLinkActions } from '../../model/useLinkActions'
 import { useLinkScan } from '../../model/useLinkScan'
@@ -36,16 +35,8 @@ const scan = useLinkScan(props.findCamera)
 const draft = { text: ref(''), code: ref('') }
 const isPasteAsked = ref(false)
 const isPasting = computed(() => isPasteAsked.value || scan.phase.value === 'paste')
-const view = computed(() =>
-  getLinkView({
-    link: session.link.value,
-    role: 'joiner',
-    isScanning: true,
-    isStalled: session.isStalled.value,
-    hasProblem: session.problem.value !== '',
-  }),
-)
-const actions = useLinkActions(session, draft, view)
+const actions = useLinkActions(session, 'joiner', draft)
+const { view } = actions
 const extra = computed(() =>
   view.value === 'scan' && !isPasting.value
     ? { label: words.linkPasteInstead, isDisabled: false }

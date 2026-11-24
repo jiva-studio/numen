@@ -6,7 +6,7 @@ export const WORDS = {
   choiceLabel: 'How to keep your keys',
   passphraseTitle: 'Protect with passphrase (recommended)',
   plaintextTitle: 'Save in a file (less secure)',
-  plaintextWarning: 'Anyone who can read your files can read the key.',
+  plaintextWarning: 'Anyone with access to your files can read the key.',
   passphraseField: 'Passphrase',
   confirmField: 'Repeat the passphrase',
   mismatch: 'The two passphrases are not the same.',
@@ -25,5 +25,5 @@ export const WORDS = {
   rowUnset: 'Not chosen yet. Numen asks when it first needs to keep a key.',
   rowPassphrase: 'In a file protected by your passphrase.',
   rowLocked: 'In a file protected by your passphrase. Enter it to open your keys.',
-  rowPlaintext: 'In a plain file. Anyone who can read your files can read your keys.',
+  rowPlaintext: 'In a plain file. Anyone with access to your files can read your keys.',
 }

@@ -10,12 +10,8 @@ import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
-import { createIdentityRestore } from './createIdentityRestore'
 import { useIdentityCall } from './useIdentityCall'
-import { readWordsOnly } from './readProof'
-import { useRecoveryProof } from './useRecoveryProof'
-import { useSheetScan } from './useSheetScan'
-import { useTypedSheets } from './useTypedSheets'
+import { useRestoreSources } from './useRestoreSources'
 import { useWordsConfirmation } from './useWordsConfirmation'
 import { useSetupStage } from './useSetupStage'
 
@@ -31,13 +27,8 @@ export function useIdentitySection(
   const { problem, isBusy, run } = call
   const setup = useSetupStage(problem)
   const confirmation = useWordsConfirmation(setup.recoveryWords)
-  const restoring = useRecoveryProof(problem, readWordsOnly)
-  const typing = useTypedSheets(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
-  const identityRestore = createIdentityRestore(getIdentity, run, restoring.read)
-  const scanning = useSheetScan(problem, async (proof) => {
-    if (await identityRestore.restore(proof)) reset()
-  })
+  const restore = useRestoreSources(getIdentity, run, problem, () => isBusy.value, () => reset())
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {
@@ -54,9 +45,7 @@ export function useIdentitySection(
     step.value = 'idle'
     setup.clear()
     confirmation.clear()
-    restoring.clear()
-    typing.clear()
-    scanning.clear()
+    restore.clear()
     problem.value = ''
     deletion.cancelDelete()
   }
@@ -64,7 +53,7 @@ export function useIdentitySection(
   const startSetup = async (): Promise<void> => {
     if (isBusy.value) return
     const started = generation
-    const answer = await run(() => getIdentity().generateWords())
+    const answer = await run(() => getIdentity().recovery.generateWords())
     if (!answer.ok || started !== generation) return
     setup.recoveryWords.value = answer.value
     confirmation.pick()
@@ -75,10 +64,6 @@ export function useIdentitySection(
   const startRestore = (kind: 'restore-words' | 'restore-sheets' | 'restore-typed'): void => {
     reset()
     step.value = kind
-  }
-
-  const restoreTyped = async (): Promise<void> => {
-    if (!isBusy.value && (await identityRestore.restore(typing.read()))) reset()
   }
 
   const setEntered = (position: number, value: string): void => {
@@ -99,19 +84,13 @@ export function useIdentitySection(
     onKept(kept)
   }
 
-  const restore = async (): Promise<void> => {
-    if (!isBusy.value && (await identityRestore.restore())) reset()
-  }
-
   return {
     identity,
     step,
     setup,
     call,
     confirmation,
-    restoring,
-    typing,
-    scanning,
+    restore,
     deletion,
     actions: {
       startSetup,
@@ -119,8 +98,8 @@ export function useIdentitySection(
       cancel: reset,
       setEntered,
       keep,
-      restore,
-      restoreTyped,
+      restore: restore.restoreWords,
+      restoreTyped: restore.restoreTyped,
     },
   }
 }

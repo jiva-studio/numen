@@ -127,11 +127,13 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     keyFile: createInertKeyFile(),
     identity: ref(undefined),
     load: fn(() => Promise.resolve()),
-    generateWords: fn(() => Promise.resolve(asFailure('No words.'))),
     create: fn(() => Promise.resolve(asFailure('Not kept.'))),
-    restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
     delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
-    saveKit: fn(() => Promise.resolve(asFailure('Not saved.'))),
+    recovery: {
+      generateWords: fn(() => Promise.resolve(asFailure('No words.'))),
+      restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
+      saveKit: fn(() => Promise.resolve(asFailure('Not saved.'))),
+    },
     devices: createInertDevices(),
   },
   licenses: overrides.licenses ?? {

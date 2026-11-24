@@ -16,7 +16,7 @@ export function createIdentityRestore(
   const restore = async (proof: KitProof | undefined = readProof()): Promise<boolean> => {
     const given = proof
     if (given === undefined) return false
-    const answer = await run(() => getIdentity().restore(given))
+    const answer = await run(() => getIdentity().recovery.restore(given))
     return answer.ok
   }
 

@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
 import type { LinkView } from '../../lib/phases'
+import { getPrimaryAction } from '../../lib/primaryAction'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -24,26 +25,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const primary = computed(() => {
-  switch (props.view) {
-    case 'scan':
-      return props.isPasting
-        ? { label: words.linkUse, isDisabled: props.isBusy || !props.hasInput }
-        : undefined
-    case 'peer':
-      return { label: words.linkApprove, isDisabled: props.isBusy }
-    case 'code':
-      return { label: words.linkCodeConfirm, isDisabled: props.isBusy || !props.hasInput }
-    case 'account':
-      return { label: words.linkJoin, isDisabled: props.isBusy }
-    case 'stalled':
-    case 'refused':
-    case 'failed':
-      return { label: words.linkTryAgain, isDisabled: props.isBusy }
-    default:
-      return undefined
-  }
-})
+const primary = computed(() => getPrimaryAction(props.view, props))
 const isAsking = computed(() => props.view === 'peer' || props.view === 'account')
 const isDone = computed(() => props.view === 'linked')
 </script>

@@ -40,7 +40,7 @@ export function useLinkSession(
     if (link.value !== undefined && !isEnded(link.value)) await getCalls().cancel()
   }
 
-  const stall = (): void => {
+  const markStalled = (): void => {
     isStalled.value = true
     runInBackground(cancel(), () => undefined)
   }
@@ -50,7 +50,7 @@ export function useLinkSession(
     if (!answer.ok) return
     link.value = answer.value
     waits = answer.value.phase === 'waitingForChannel' ? waits + 1 : 0
-    if (waits >= stallPolls) stall()
+    if (waits >= stallPolls) markStalled()
     if (isEnded(answer.value)) stopPoll()
   }
 

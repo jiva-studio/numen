@@ -258,17 +258,32 @@ function createInstallationLicenses(licenses: LicenseStore) {
   }
 }
 
-function createInstallationIdentity(identity: IdentityStore, keyFile: KeyFileStore) {
+function createInstallationIdentity(
+  identity: Pick<
+    IdentityStore,
+    | 'identity'
+    | 'devices'
+    | 'load'
+    | 'generateWords'
+    | 'create'
+    | 'restore'
+    | 'delete'
+    | 'saveKit'
+  >,
+  keyFile: KeyFileStore,
+) {
   return {
     keyFile,
     identity: identity.identity,
     devices: identity.devices,
     load: () => identity.load(),
-    generateWords: () => identity.generateWords(),
     create: (words: readonly string[]) => identity.create(words),
-    restore: (proof: KitProof) => identity.restore(proof),
     delete: () => identity.delete(),
-    saveKit: (proof: KitProof) => identity.saveKit(proof),
+    recovery: {
+      generateWords: () => identity.generateWords(),
+      restore: (proof: KitProof) => identity.restore(proof),
+      saveKit: (proof: KitProof) => identity.saveKit(proof),
+    },
   }
 }
 

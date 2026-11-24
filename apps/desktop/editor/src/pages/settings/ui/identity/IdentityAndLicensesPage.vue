@@ -37,14 +37,15 @@ onMounted(() => {
   runInBackground(openKeyFile(), () => undefined)
 })
 
-async function openKeyFile(): Promise<void> {
-  const found = await props.identity.keyFile.load()
-  if (found?.isLocked) await props.identity.keyFile.askWhenNeeded()
-}
-
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+async function openKeyFile(): Promise<void> {
+  const found = await props.identity.keyFile.load()
+  if (found?.isLocked) await props.identity.keyFile.askWhenNeeded()
 }
 </script>
 
@@ -56,7 +57,7 @@ function onBack(): void {
       <KeyFileRow
         v-if="keyFileState && keyFileState.isInUse"
         :state="keyFileState"
-        @change="props.identity.keyFile.change"
+        @change="props.identity.keyFile.dialog.change"
         @unlock="props.identity.keyFile.askWhenNeeded"
       />
 

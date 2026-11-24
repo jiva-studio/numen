@@ -7,6 +7,7 @@ import { computed } from 'vue'
 import { LockOpen, Pencil } from '@lucide/vue'
 import { CardAction, IslandCard } from '@numen/ui'
 import type { KeyFileState } from '@/entities/key-file'
+import { describeKeyFile } from '../lib/describeKeyFile'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -15,14 +16,7 @@ const props = defineProps<{ state: KeyFileState }>()
 const emit = defineEmits<{ (e: 'change'): void; (e: 'unlock'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const detail = computed(() => {
-  if (!props.state.isInUse) return words.rowKeychain
-  if (props.state.mode === 'plaintext') return words.rowPlaintext
-  if (props.state.mode === 'passphrase') {
-    return props.state.isLocked ? words.rowLocked : words.rowPassphrase
-  }
-  return words.rowUnset
-})
+const detail = computed(() => describeKeyFile(props.state))
 </script>
 
 <template>

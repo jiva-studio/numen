@@ -29,7 +29,7 @@ describe('createDialogStack', () => {
     expect(stack.entries.value).toHaveLength(1)
   })
 
-  it('hands the text to the save dialog of the machine and answers the file chosen', async () => {
+  it('passes the text to the save dialog of the machine and answers the chosen file', async () => {
     const saveText = vi.fn(() => Promise.resolve({ path: '/home/me/a.json' }))
     const stack = createDialogStack(saveText)
     const text = { title: 'Save', fileName: 'a.json', content: '{}' }

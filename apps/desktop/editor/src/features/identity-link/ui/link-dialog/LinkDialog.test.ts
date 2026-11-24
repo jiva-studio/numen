@@ -32,7 +32,7 @@ const mountDialog = async (link: LinkInfo, overrides: Partial<IdentityCalls> = {
 }
 
 describe('the dialog that links a new device', () => {
-  it('names what it does and lists three steps beside the QR code', async () => {
+  it('has the title Link a device and lists three steps next to the QR code', async () => {
     const dialog = await mountDialog(createLinkInfo())
     expect(dialog.get('h2').text()).toBe('Link a device')
     expect(dialog.findAll('ol li')).toHaveLength(3)
