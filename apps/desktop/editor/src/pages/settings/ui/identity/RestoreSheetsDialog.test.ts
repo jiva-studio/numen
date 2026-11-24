@@ -1,6 +1,6 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { KitProof } from '@/entities/identity'
 import { useSheetScan } from '../../model/useSheetScan'
 import RestoreSheetsDialog from './RestoreSheetsDialog.vue'
@@ -18,6 +18,15 @@ const camera = defineComponent({
   template: '<div class="camera" />',
 })
 
+const mounted: VueWrapper[] = []
+
+// The dialog is drawn into the body of the document, outside the wrapper.
+const getBody = () => new DOMWrapper(document.body)
+
+afterEach(() => {
+  while (mounted.length) mounted.pop()?.unmount()
+})
+
 function createDialog(restore: (proof: KitProof) => Promise<void> = () => Promise.resolve()) {
   const problem = ref('')
   const isBusy = ref(false)
@@ -29,9 +38,10 @@ function createDialog(restore: (proof: KitProof) => Promise<void> = () => Promis
   const Host = defineComponent({
     components: { RestoreSheetsDialog },
     setup: () => ({ scanning: useSheetScan(problem, run), problem, isBusy }),
-    template: `<RestoreSheetsDialog :slots="scanning.slots.value" :note="scanning.note.value" :problem="problem" :is-busy="isBusy" @scanned="scanning.scan" @retry="scanning.retry" />`,
+    template: `<RestoreSheetsDialog :slots="scanning.slots.value" :note="scanning.note.value" :problem="problem" :is-busy="isBusy" @scanned="scanning.scan" />`,
   })
   const wrapper = mount(Host, { attachTo: document.body, global: { stubs: { QrScanner: camera } } })
+  mounted.push(wrapper)
   const scan = async (text: string) => {
     wrapper.findComponent(camera).vm.$emit('scanned', text)
     await flushPromises()
@@ -41,37 +51,37 @@ function createDialog(restore: (proof: KitProof) => Promise<void> = () => Promis
 
 describe('the restore from sheets dialog', () => {
   it('has the camera and two waiting slots and no field', () => {
-    const { wrapper } = createDialog()
-    expect(wrapper.find('.camera').exists()).toBe(true)
-    expect(wrapper.find('textarea').exists()).toBe(false)
-    expect(wrapper.find('input').exists()).toBe(false)
-    expect(wrapper.text()).toContain('First sheet')
-    expect(wrapper.text()).toContain('Second sheet')
-    expect(wrapper.text()).toContain('Take two of your three recovery sheets and scan their QR codes one after the other.')
+    createDialog()
+    expect(getBody().find('.camera').exists()).toBe(true)
+    expect(getBody().find('textarea').exists()).toBe(false)
+    expect(getBody().find('input').exists()).toBe(false)
+    expect(getBody().text()).toContain('First sheet')
+    expect(getBody().text()).toContain('Second sheet')
+    expect(getBody().text()).toContain('Take two of your three recovery sheets and scan their QR codes one after the other.')
   })
 
   it('keeps the camera on after the first sheet and restores by itself after the second', async () => {
-    const { wrapper, scan, run } = createDialog()
+    const { scan, run } = createDialog()
     await scan(makeCode('C0DE', 3, 'a'))
-    expect(wrapper.findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
-    expect(wrapper.text()).toContain('Second sheet')
-    expect(wrapper.find('.camera').exists()).toBe(true)
+    expect(getBody().findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
+    expect(getBody().text()).toContain('Second sheet')
+    expect(getBody().find('.camera').exists()).toBe(true)
     expect(run).not.toHaveBeenCalled()
     await scan(makeCode('C0DE', 1, 'b'))
     expect(run).toHaveBeenCalledExactlyOnceWith({ sheets: [getWords('a'), getWords('b')] })
   })
 
   it('refuses a repeated sheet, another kit and a foreign code while it keeps scanning', async () => {
-    const { wrapper, scan, run } = createDialog()
+    const { scan, run } = createDialog()
     await scan(makeCode('C0DE', 1, 'a'))
     await scan(makeCode('C0DE', 1, 'a'))
-    expect(wrapper.get('[role=alert]').text()).toBe('Sheet 1 is scanned already. Scan another sheet.')
+    expect(getBody().get('[role=alert]').text()).toBe('Sheet 1 is scanned already. Scan another sheet.')
     await scan(makeCode('BEEF', 2, 'b'))
-    expect(wrapper.get('[role=alert]').text()).toBe(
+    expect(getBody().get('[role=alert]').text()).toBe(
       'This sheet is from another kit. Scan a sheet of the same kit.',
     )
     await scan('https://example.com')
-    expect(wrapper.get('[role=alert]').text()).toBe('This is not a code of a Numen recovery kit.')
+    expect(getBody().get('[role=alert]').text()).toBe('This is not a code of a Numen recovery kit.')
     expect(run).not.toHaveBeenCalled()
     await scan(makeCode('C0DE', 2, 'c'))
     expect(run).toHaveBeenCalledOnce()
@@ -87,22 +97,22 @@ describe('the restore from sheets dialog', () => {
   })
 
   it('has only Cancel as a button', () => {
-    const { wrapper } = createDialog()
-    expect(wrapper.findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
+    createDialog()
+    expect(getBody().findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
   })
 
   it('shows the failure of the restore and starts over with the next sheet scanned', async () => {
-    const { wrapper, scan, problem } = createDialog(() => {
+    const { scan, problem } = createDialog(() => {
       problem.value = 'The sheets belong to another account.'
       return Promise.resolve()
     })
     await scan(makeCode('C0DE', 1, 'a'))
     await scan(makeCode('C0DE', 2, 'b'))
-    expect(wrapper.get('[role=alert]').text()).toBe('The sheets belong to another account.')
-    expect(wrapper.findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
+    expect(getBody().get('[role=alert]').text()).toBe('The sheets belong to another account.')
+    expect(getBody().findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
     problem.value = ''
     await scan(makeCode('C0DE', 3, 'c'))
-    expect(wrapper.find('[role=alert]').exists()).toBe(false)
-    expect(wrapper.findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
+    expect(getBody().find('[role=alert]').exists()).toBe(false)
+    expect(getBody().findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
   })
 })

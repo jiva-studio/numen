@@ -213,7 +213,6 @@ export class IdentityDriver {
     if (await restore.isEnabled()) await restore.click()
   }
 
-  // The test browser has no camera, so the sheets dialog hands over to the typed one.
   private async restoreSheets(texts: readonly string[]): Promise<void> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore from sheets', exact: true }).click()

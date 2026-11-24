@@ -68,14 +68,12 @@ export class DevicesDriver {
     return (await value.innerText()).trim()
   }
 
-  /** A device that has the account shows its QR code when the dialog opens. */
   private async openLinkDialog(): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: LINK_NEW, exact: true }).click()
     return this.getDialog()
   }
 
-  /** A new device scans when the dialog opens. */
   private async openJoinDialog(): Promise<Locator> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: JOIN_WITH_QR, exact: true }).click()

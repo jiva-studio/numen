@@ -31,7 +31,6 @@ export class ShareDriver {
     return this.scenario.page.getByRole('dialog')
   }
 
-  /** Opens the dialog of the command "Share..." on the folder of the vault; the empty folder is the vault, asked through the palette. */
   private async open(folder: string): Promise<Locator> {
     if (folder === '') await this.application.runCommand(SHARE)
     else await this.fileTree.runCommandOn(SHARE, 'folder', folder)
@@ -55,7 +54,6 @@ export class ShareDriver {
     return { link: await link.inputValue() }
   }
 
-  /** Reads the request of the device in the open dialog: it names the device by its fingerprint and shows the code the device shows too. */
   private async expectRequest(fingerprint: string, code: string): Promise<void> {
     const request = this.getDialog().getByRole('alert')
     await expect(request).toContainText(getShortFingerprint(fingerprint), { timeout: SHARE_LIMIT_MS })

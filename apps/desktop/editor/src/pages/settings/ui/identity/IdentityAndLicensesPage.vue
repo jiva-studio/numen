@@ -9,6 +9,7 @@ import { runInBackground } from '@numen/ui'
 import { SettingsPage } from '@numen/plugin-manager'
 import { KeyFileRow } from '@/features/key-file'
 import type { InstallationIdentity, InstallationLicenses, InstallationPlugin } from '../../types'
+import { openKeyFile } from '../../model/openKeyFile'
 import { useIdentityPage } from '../../model/useIdentityPage'
 import { WORDS as words } from '../../words'
 import LicenseCard from '../licenses/LicenseCard.vue'
@@ -34,18 +35,12 @@ const page = useIdentityPage(
 const keyFileState = computed(() => props.identity.keyFile.state.value)
 
 onMounted(() => {
-  runInBackground(openKeyFile(), () => undefined)
+  runInBackground(openKeyFile(props.identity.keyFile), () => undefined)
 })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-async function openKeyFile(): Promise<void> {
-  const found = await props.identity.keyFile.load()
-  if (found?.isLocked) await props.identity.keyFile.askWhenNeeded()
 }
 </script>
 

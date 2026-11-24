@@ -15,11 +15,6 @@ export class SharingDriver {
     private readonly identity: IdentityDriver,
   ) {}
 
-  /**
-   * The person opens the dialog of the folder and copies the link, the reader pastes it in its dialog and checks the
-   * owner, the reader tells the code it sees, and the person allows the device that shows the same code. A dialog that
-   * refuses stops there and shows the reason.
-   */
   private async ask(folder: string, reader: ReaderName): Promise<string | undefined> {
     this.refusal = undefined
     const started = await this.share.start(folder)

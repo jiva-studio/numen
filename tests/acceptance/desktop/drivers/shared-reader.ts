@@ -186,7 +186,7 @@ export class SharedReaderDriver {
     await reader.scenario.page.getByRole('alertdialog').getByRole('button', { name: 'Leave', exact: true }).click()
   }
 
-  async expectFolderKept(name: ReaderName, vault: string, filePath: string, text: string): Promise<void> {
+  expectFolderKept(name: ReaderName, vault: string, filePath: string, text: string): void {
     const folder = this.left.get(`${name}/${vault}`)
     expect(folder, `the ${name} left no shared vault "${vault}"`).toBeDefined()
     expect(readNote(folder as string, filePath)).toBe(text)

@@ -92,7 +92,7 @@ When('{reader} leaves the shared vault {string}', async ({ person }, reader: Rea
 
 Then(
   'the folder of the shared vault {string} of {reader} still has the file {string} with the text {string}',
-  async ({ person }, vault: string, reader: ReaderName, filePath: string, text: string) => {
-    await person.readers.expectFolderKept(reader, vault, filePath, text)
+  ({ person }, vault: string, reader: ReaderName, filePath: string, text: string) => {
+    person.readers.expectFolderKept(reader, vault, filePath, text)
   },
 )

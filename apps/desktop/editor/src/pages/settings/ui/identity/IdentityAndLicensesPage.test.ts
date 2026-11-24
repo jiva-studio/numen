@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, type Ref } from 'vue'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { asFailure, asValue, type Result } from '@numen/result'
 import type { IdentityInfo } from '@/entities/identity'
 import type { LicenseInfo } from '@/entities/license'
@@ -132,12 +132,14 @@ const createPage = async (
     identity: {
       identity,
       load: calls.load,
-      generateWords: calls.generateWords,
       create: calls.create,
-      restore: (proof: KitProof) =>
-        'words' in proof ? calls.restore(proof.words) : kitCalls.restoreFromKit(proof.sheets),
       delete: calls.delete,
-      saveKit: kitCalls.saveKit,
+      recovery: {
+        generateWords: calls.generateWords,
+        restore: (proof: KitProof) =>
+          'words' in proof ? calls.restore(proof.words) : kitCalls.restoreFromKit(proof.sheets),
+        saveKit: kitCalls.saveKit,
+      },
       devices: createInertDevices(),
       keyFile: createInertKeyFile(),
     },
@@ -154,8 +156,13 @@ const createPage = async (
 
 type Page = Awaited<ReturnType<typeof createPage>>['tab']
 
+// The dialogs are drawn into the body of the document, outside the tab.
+const getBody = (tab: Page) => new DOMWrapper(tab.element.ownerDocument.body)
+
+const hasDialog = (tab: Page): boolean => getBody(tab).find('[role="dialog"]').exists()
+
 const findButton = (tab: Page, text: string) =>
-  tab.findAll('button').find((one) => one.text() === text)
+  getBody(tab).findAll('button').find((one) => one.text() === text)
 
 const press = async (tab: Page, text: string) => {
   const button = findButton(tab, text)
@@ -165,11 +172,11 @@ const press = async (tab: Page, text: string) => {
 }
 
 const getShownWords = (tab: Page): string[] =>
-  tab.findAll('ol[aria-label="Recovery words"] li').map((one) => one.text())
+  getBody(tab).findAll('ol[aria-label="Recovery words"] li').map((one) => one.text())
 
-const getConfirmInputs = (tab: Page) => tab.findAll('label.word-check input')
+const getConfirmInputs = (tab: Page) => getBody(tab).findAll('label.word-check input')
 
-const getDialog = (tab: Page) => tab.get('[role="dialog"]')
+const getDialog = (tab: Page) => getBody(tab).get('[role="dialog"]')
 
 const getProofField = (tab: Page) =>
   getDialog(tab).get('textarea[aria-label="Recovery words or sheets"]')
@@ -261,8 +268,8 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Create identity')
     expect(generateWords).toHaveBeenCalledOnce()
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
-    expect(tab.text()).toContain('Write the 12 words down in order. We show them once.')
-    expect(tab.text()).toContain('Neither Numen nor support can recover these words')
+    expect(getDialog(tab).text()).toContain('Write the 12 words down in order. We show them once.')
+    expect(getDialog(tab).text()).toContain('Neither Numen nor support can recover these words')
     expect(getConfirmInputs(tab)).toHaveLength(0)
     expect(findButton(tab, 'Cancel')).toBeDefined()
   })
@@ -274,8 +281,8 @@ describe('the page "Identity and licenses"', () => {
     expect(positions).toHaveLength(3)
     expect(new Set(positions).size).toBe(3)
     expect(positions.every((position) => position >= 1 && position <= 12)).toBe(true)
-    expect(tab.get('[role="dialog"] h2').text()).toBe('Check the words')
-    expect(tab.text()).toContain('from your record.')
+    expect(getDialog(tab).get('h2').text()).toBe('Check the words')
+    expect(getDialog(tab).text()).toContain('from your record.')
     expect(getShownWords(tab)).toStrictEqual([])
   })
 
@@ -286,10 +293,10 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Continue')
     expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-    expect(tab.find('ol[aria-label="Recovery words"]').exists()).toBe(false)
+    expect(getBody(tab).find('ol[aria-label="Recovery words"]').exists()).toBe(false)
     expect(getConfirmInputs(tab)).toHaveLength(0)
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
-    for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+    expect(hasDialog(tab)).toBe(false)
+    for (const word of RECOVERY_WORDS) expect(getBody(tab).text()).not.toContain(word)
   })
 
   it('does not continue until all three words are typed', async () => {
@@ -307,7 +314,7 @@ describe('the page "Identity and licenses"', () => {
     await fillConfirmations(tab, { word: 'zoo' })
     await press(tab, 'Continue')
     expect(create).not.toHaveBeenCalled()
-    const alert = tab.get('[role="alert"]')
+    const alert = getDialog(tab).get('[role="alert"]')
     expect(alert.text()).toBe('Some words are not valid.')
     expect(tab.text()).toContain(NO_IDENTITY)
     const inputs = getConfirmInputs(tab)
@@ -345,7 +352,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Continue')
     await press(tab, 'Back')
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
-    expect(tab.find('[role="alert"]').exists()).toBe(false)
+    expect(getDialog(tab).find('[role="alert"]').exists()).toBe(false)
   })
 
   it('drops the words from the page when the person cancels the first step', async () => {
@@ -353,16 +360,16 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Create identity')
     await press(tab, 'Cancel')
     expect(create).not.toHaveBeenCalled()
-    for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+    for (const word of RECOVERY_WORDS) expect(getBody(tab).text()).not.toContain(word)
     expect(findButton(tab, 'Create identity')).toBeDefined()
   })
 
   it('drops the words from the page when the person presses Escape in the second step', async () => {
     const { tab, create } = await createPage()
     await startSetup(tab)
-    await tab.get('[role="dialog"]').trigger('keydown.esc')
+    await getDialog(tab).trigger('keydown.esc')
     expect(create).not.toHaveBeenCalled()
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
     expect(findButton(tab, 'Create identity')).toBeDefined()
   })
 
@@ -385,7 +392,7 @@ describe('the page "Identity and licenses"', () => {
     )
     expect(getSubmit(tab).text()).toBe('Restore')
     expect(getSubmit(tab).attributes('disabled')).toBeDefined()
-    expect(getNote(tab).text()).toBe('')
+    expect(getDialog(tab).find('.proof-field__note').exists()).toBe(false)
   })
 
   it('counts the words while they are typed and restores when the 12th is in', async () => {
@@ -408,7 +415,7 @@ describe('the page "Identity and licenses"', () => {
     expect(restore).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
     expect(create).not.toHaveBeenCalled()
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
   })
 
   it('shows "Restoring…" until the core has the identity', async () => {
@@ -483,7 +490,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Restore from words')
     await enterProof(tab, RECOVERY_WORDS.join(' '))
     await press(tab, 'Cancel')
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
     expect(restore).not.toHaveBeenCalled()
     await press(tab, 'Restore from words')
     expect((getProofField(tab).element as HTMLTextAreaElement).value).toBe('')
@@ -559,7 +566,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
       'Keep each sheet in a different place. Any two of three restore your account; one sheet alone is useless.',
     )
     expect(getDownload(tab)).toBeDefined()
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
   })
 
   it('saves the kit for the words of the setup without asking again', async () => {
@@ -568,10 +575,10 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     expect(saveKit).not.toHaveBeenCalled()
     await pressDownload(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
     expect(readToasts()).toStrictEqual(['Recovery kit saved'])
     expect(tab.text()).not.toContain('Recovery kit saved')
-    for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+    for (const word of RECOVERY_WORDS) expect(getBody(tab).text()).not.toContain(word)
   })
 
   it('asks for the words again once the kit of the setup is saved', async () => {
@@ -600,7 +607,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await enterProof(tab, RECOVERY_WORDS.join(' '))
     await submitRestore(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
     expect(readToasts()).toStrictEqual(['Recovery kit saved'])
   })
 
@@ -638,7 +645,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     await pressDownload(tab)
     await enterProof(tab, RECOVERY_WORDS.join(' '))
     await press(tab, 'Cancel')
-    expect(tab.find('[role="dialog"]').exists()).toBe(false)
+    expect(hasDialog(tab)).toBe(false)
     await pressDownload(tab)
     expect((getProofField(tab).element as HTMLTextAreaElement).value).toBe('')
     expect(saveKit).not.toHaveBeenCalled()
@@ -648,7 +655,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     const { tab } = await createPage()
     await keepNewIdentity(tab)
     await pressDownload(tab)
-    expect(tab.findAll('article')).toHaveLength(0)
+    expect(getBody(tab).findAll('article')).toHaveLength(0)
     expect(findButton(tab, 'Print')).toBeUndefined()
     expect(findButton(tab, 'Check two sheets')).toBeUndefined()
     expect(findButton(tab, 'Skip for now')).toBeUndefined()

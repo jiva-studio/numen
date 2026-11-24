@@ -67,7 +67,7 @@ Then('the sync settings list the synced vault {string}', async ({ person }, vaul
 })
 
 When('the person stops syncing the vault {string}', async ({ person }, vault: string) => {
-  await person.computers.stopSyncing('first', vault)
+  await person.computers.stopSyncingVault('first', vault)
 })
 
 Then('the vault {string} is not synced', async ({ person }, vault: string) => {

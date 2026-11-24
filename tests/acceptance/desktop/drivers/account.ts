@@ -32,7 +32,6 @@ export class AccountDriver {
     return panel.getByRole('region', { name: SUBSCRIPTION_TITLE, exact: true })
   }
 
-  /** Opens the menu "..." in the header of the card and chooses the item. */
   private async chooseFromMenu(card: Locator, item: string): Promise<void> {
     await card.getByRole('button', { name: MORE_ACTIONS }).click()
     await this.scenario.page.getByRole('menuitem', { name: item }).click()
