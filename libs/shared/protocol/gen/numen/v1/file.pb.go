@@ -141,7 +141,7 @@ type Entry struct {
 	TabKind string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	// When the file or folder was last modified, in milliseconds since the Unix
 	// epoch. 0 where the vault does not know it.
-	ModifiedAtMs int64 `protobuf:"varint,8,opt,name=modified_at_ms,json=modifiedAtMs,proto3" json:"modified_at_ms,omitempty"`
+	ModifiedUnixMs int64 `protobuf:"varint,8,opt,name=modified_unix_ms,json=modifiedUnixMs,proto3" json:"modified_unix_ms,omitempty"`
 	// Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
 	IsAbsent bool `protobuf:"varint,9,opt,name=is_absent,json=isAbsent,proto3" json:"is_absent,omitempty"`
 	// The id of the plugin that can fill an absent file. Empty for a file that is not absent.
@@ -222,9 +222,9 @@ func (x *Entry) GetTabKind() string {
 	return ""
 }
 
-func (x *Entry) GetModifiedAtMs() int64 {
+func (x *Entry) GetModifiedUnixMs() int64 {
 	if x != nil {
-		return x.ModifiedAtMs
+		return x.ModifiedUnixMs
 	}
 	return 0
 }
@@ -245,7 +245,7 @@ func (x *Entry) GetProvider() string {
 
 type ListFileKindsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The paths to answer about, as the vault files them. More than the vault
+	// The paths to answer about, as the vault files them.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -474,7 +474,7 @@ func (x *MoveFileRequest) GetTo() string {
 type MoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the file did. Absent when nothing was moved.
-	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	MoveResult *MoveResult `protobuf:"bytes,1,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
 	// Set when nothing was moved, and why.
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the move reached the vault and the index could not be updated for
@@ -515,9 +515,9 @@ func (*MoveFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *MoveFileResponse) GetMoved() *MoveResult {
+func (x *MoveFileResponse) GetMoveResult() *MoveResult {
 	if x != nil {
-		return x.Moved
+		return x.MoveResult
 	}
 	return nil
 }
@@ -545,12 +545,12 @@ type MoveResult struct {
 	// Where it is now.
 	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The notes whose link stopped resolving and was written again, by name.
-	Repaired []string `protobuf:"bytes,3,rep,name=repaired,proto3" json:"repaired,omitempty"`
+	RepairedNotes []string `protobuf:"bytes,3,rep,name=repaired_notes,json=repairedNotes,proto3" json:"repaired_notes,omitempty"`
 	// The notes whose link stopped resolving and could not be written again, by
 	// name. Each of them still points at the name the file left, and nothing
 	// returns to it: a move that reports only what it repaired reports a
 	// vault it did not leave behind.
-	Dangling      []string `protobuf:"bytes,4,rep,name=dangling,proto3" json:"dangling,omitempty"`
+	DanglingNotes []string `protobuf:"bytes,4,rep,name=dangling_notes,json=danglingNotes,proto3" json:"dangling_notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -599,16 +599,16 @@ func (x *MoveResult) GetTo() string {
 	return ""
 }
 
-func (x *MoveResult) GetRepaired() []string {
+func (x *MoveResult) GetRepairedNotes() []string {
 	if x != nil {
-		return x.Repaired
+		return x.RepairedNotes
 	}
 	return nil
 }
 
-func (x *MoveResult) GetDangling() []string {
+func (x *MoveResult) GetDanglingNotes() []string {
 	if x != nil {
-		return x.Dangling
+		return x.DanglingNotes
 	}
 	return nil
 }
@@ -697,7 +697,7 @@ func (*EmptyTrashRequest) Descriptor() ([]byte, []int) {
 type EmptyTrashResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The paths in the trash that could not be deleted. Empty when all went.
-	Undeleted     []string `protobuf:"bytes,1,rep,name=undeleted,proto3" json:"undeleted,omitempty"`
+	FailedPaths   []string `protobuf:"bytes,1,rep,name=failed_paths,json=failedPaths,proto3" json:"failed_paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -732,9 +732,9 @@ func (*EmptyTrashResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *EmptyTrashResponse) GetUndeleted() []string {
+func (x *EmptyTrashResponse) GetFailedPaths() []string {
 	if x != nil {
-		return x.Undeleted
+		return x.FailedPaths
 	}
 	return nil
 }
@@ -742,9 +742,9 @@ func (x *EmptyTrashResponse) GetUndeleted() []string {
 type RemoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// and when nothing was removed.
-	Trashed string `protobuf:"bytes,1,opt,name=trashed,proto3" json:"trashed,omitempty"`
+	TrashPath string `protobuf:"bytes,1,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links pointed at what was removed and now reach nothing.
-	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
+	DanglingNotes []string `protobuf:"bytes,2,rep,name=dangling_notes,json=danglingNotes,proto3" json:"dangling_notes,omitempty"`
 	// Set when nothing was removed, and why.
 	Error ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the file no longer exists and the index could not be updated for it.
@@ -784,16 +784,16 @@ func (*RemoveFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *RemoveFileResponse) GetTrashed() string {
+func (x *RemoveFileResponse) GetTrashPath() string {
 	if x != nil {
-		return x.Trashed
+		return x.TrashPath
 	}
 	return ""
 }
 
-func (x *RemoveFileResponse) GetDangling() []string {
+func (x *RemoveFileResponse) GetDanglingNotes() []string {
 	if x != nil {
-		return x.Dangling
+		return x.DanglingNotes
 	}
 	return nil
 }
@@ -911,15 +911,15 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xf3\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xf7\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
 	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12\x17\n" +
 	"\ais_note\x18\x06 \x01(\bR\x06isNote\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12\x19\n" +
-	"\btab_kind\x18\a \x01(\tR\atabKind\x12$\n" +
-	"\x0emodified_at_ms\x18\b \x01(\x03R\fmodifiedAtMs\x12\x1b\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\x12(\n" +
+	"\x10modified_unix_ms\x18\b \x01(\x03R\x0emodifiedUnixMs\x12\x1b\n" +
 	"\tis_absent\x18\t \x01(\bR\bisAbsent\x12\x1a\n" +
 	"\bprovider\x18\n" +
 	" \x01(\tR\bprovider\",\n" +
@@ -937,26 +937,28 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xa4\x01\n" +
-	"\x10MoveFileResponse\x12/\n" +
-	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12)\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xb5\x01\n" +
+	"\x10MoveFileResponse\x12:\n" +
+	"\vmove_result\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\n" +
+	"moveResult\x88\x01\x01\x12)\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
-	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\b\n" +
-	"\x06_moved\"h\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\x0e\n" +
+	"\f_move_result\"~\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
-	"\brepaired\x18\x03 \x03(\tR\brepaired\x12\x1a\n" +
-	"\bdangling\x18\x04 \x03(\tR\bdangling\"'\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\x12%\n" +
+	"\x0erepaired_notes\x18\x03 \x03(\tR\rrepairedNotes\x12%\n" +
+	"\x0edangling_notes\x18\x04 \x03(\tR\rdanglingNotes\"'\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x13\n" +
-	"\x11EmptyTrashRequest\"2\n" +
-	"\x12EmptyTrashResponse\x12\x1c\n" +
-	"\tundeleted\x18\x01 \x03(\tR\tundeleted\"\xa1\x01\n" +
-	"\x12RemoveFileResponse\x12\x18\n" +
-	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
-	"\bdangling\x18\x02 \x03(\tR\bdangling\x12)\n" +
+	"\x11EmptyTrashRequest\"7\n" +
+	"\x12EmptyTrashResponse\x12!\n" +
+	"\ffailed_paths\x18\x01 \x03(\tR\vfailedPaths\"\xb1\x01\n" +
+	"\x12RemoveFileResponse\x12\x1d\n" +
+	"\n" +
+	"trash_path\x18\x01 \x01(\tR\ttrashPath\x12%\n" +
+	"\x0edangling_notes\x18\x02 \x03(\tR\rdanglingNotes\x12)\n" +
 	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
 	"\x11is_index_outdated\x18\x04 \x01(\bR\x0fisIndexOutdated\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
@@ -1009,7 +1011,7 @@ var file_numen_v1_file_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	5,  // 1: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
 	15, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
-	8,  // 3: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
+	8,  // 3: numen.v1.MoveFileResponse.move_result:type_name -> numen.v1.MoveResult
 	16, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
 	16, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
 	16, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode

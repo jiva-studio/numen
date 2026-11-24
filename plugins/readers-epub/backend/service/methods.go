@@ -28,13 +28,13 @@ func withVault[Req, Res any](fn func(ctx context.Context, req Req) (Res, error))
 		res, err := fn(books.WithVault(ctx, host.GetRequestVault(server.GetHeader(ctx))), req)
 		if err != nil {
 			// gomutants:disable-next-line RETURN_ZERO reason="res is ignored when an error is returned"
-			return res, toAPIError(err)
+			return res, buildAPIError(err)
 		}
 		return res, nil
 	}
 }
 
-func toAPIError(err error) *server.APIError {
+func buildAPIError(err error) *server.APIError {
 	if failure, ok := errors.AsType[*server.APIError](err); ok {
 		return failure
 	}

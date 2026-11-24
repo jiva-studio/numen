@@ -1,14 +1,17 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints when it has one, and otherwise the way to make one
- * (write down twelve words, confirm three of them) or to restore one from its words.
+ * The identity of this device: its fingerprints and devices when it has one, and otherwise the way
+ * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
+ * one from its words in a dialog.
  */
-import { Button } from '@numen/ui'
+import { KeyRound, Plus } from '@lucide/vue'
+import { IslandCard } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
+import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
-import IdentityRestore from './IdentityRestore.vue'
+import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
 import IdentitySetup from './IdentitySetup.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -16,117 +19,89 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
 const section = useIdentitySection(() => props.identity)
-const {
-  identity: current,
-  step,
-  recoveryWords,
-  call,
-  confirmation,
-  typing,
-  deletion,
-  actions,
-} = section
+const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
+const { stage, recoveryWords } = setup
 </script>
 
 <template>
-  <section class="settings-card identity-section" :aria-label="words.identitySection">
-    <IdentityDetails
-      v-if="current"
-      :info="current"
+  <IdentityDetails
+    v-if="current"
+    :info="current"
+    :problem="call.problem.value"
+    :is-busy="call.isBusy.value"
+    :is-asking-delete="deletion.isAskingDelete.value"
+    @ask="deletion.askDelete"
+    @confirm="deletion.confirmDelete"
+    @cancel="deletion.cancelDelete"
+  />
+
+  <IslandCard v-else :title="words.identitySection">
+    <template #aside>
+      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore">
+        <KeyRound :size="14" aria-hidden="true" />
+        {{ words.identityRestore }}
+      </CardAction>
+      <CardAction is-primary :is-disabled="call.isBusy.value" @click="actions.startSetup">
+        <Plus :size="14" aria-hidden="true" />
+        {{ words.identityCreate }}
+      </CardAction>
+    </template>
+    <div class="identity-section__body">
+      <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
+      <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
+
+      <p
+        v-if="call.problem.value !== '' && step === 'idle'"
+        role="alert"
+        class="identity-section__problem"
+      >
+        {{ call.problem.value }}
+      </p>
+    </div>
+
+    <IdentitySetup
+      v-if="step === 'setup'"
+      :stage="stage"
+      :recovery-words="recoveryWords"
+      :positions="confirmation.positions.value"
+      :entered="confirmation.entered.value"
+      :wrong="confirmation.wrong.value"
+      :is-complete="confirmation.isComplete.value"
+      :problem="call.problem.value"
       :is-busy="call.isBusy.value"
-      :is-asking-delete="deletion.isAskingDelete.value"
-      @ask="deletion.askDelete"
-      @confirm="deletion.confirmDelete"
-      @cancel="deletion.cancelDelete"
+      @change="actions.setEntered"
+      @check="actions.showCheck"
+      @back="actions.showWords"
+      @keep="actions.keep"
+      @cancel="actions.cancel"
     />
 
-    <template v-else>
-      <div class="identity-section__empty">
-        <p class="identity-section__title">{{ words.identityNone }}</p>
-        <p v-if="step === 'idle'" class="identity-section__detail">
-          {{ words.identityNoneDetail }}
-        </p>
-      </div>
-
-      <div v-if="step === 'idle'" class="identity-section__actions">
-        <Button
-          type="button"
-          variant="solid"
-          :disabled="call.isBusy.value"
-          @click="actions.startSetup"
-        >
-          {{ words.identityCreate }}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          :disabled="call.isBusy.value"
-          @click="actions.startRestore"
-        >
-          {{ words.identityRestore }}
-        </Button>
-      </div>
-
-      <IdentitySetup
-        v-else-if="step === 'setup'"
-        :recovery-words="recoveryWords"
-        :positions="confirmation.positions.value"
-        :entered="confirmation.entered.value"
-        :is-busy="call.isBusy.value"
-        @change="actions.setEntered"
-        @keep="actions.keep"
-        @cancel="actions.cancel"
-      />
-
-      <IdentityRestore
-        v-else
-        :text="typing.restoreText.value"
-        :is-busy="call.isBusy.value"
-        @change="typing.setRestoreText"
-        @restore="actions.restore"
-        @cancel="actions.cancel"
-      />
-    </template>
-
-    <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">
-      {{ call.problem.value }}
-    </p>
-  </section>
+    <IdentityRestoreDialog
+      v-if="step === 'restore'"
+      :entered="restoring.entered.value"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      @change="restoring.setWord"
+      @restore="actions.restore"
+      @cancel="actions.cancel"
+    />
+  </IslandCard>
 </template>
 
 <style scoped>
-.identity-section {
+.identity-section__body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: var(--settings-card-pad);
+  padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
 }
 
-.identity-section__empty {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.identity-section__title {
+.identity-section__detail,
+.identity-section__problem {
   margin: 0;
-  font-weight: 500;
-}
-
-.identity-section__detail {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.identity-section__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .identity-section__problem {
-  margin: 0;
   font-size: var(--numen-text-1);
   color: var(--numen-alarm);
 }

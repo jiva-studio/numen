@@ -7,15 +7,23 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
-const (
-	guidePath = "Books/Guide.pdf"
-	rangeLen  = 5
-)
+const guidePath = "Books/Guide.pdf"
+
+// countRanges is how many requests of fetchfile.RangeSize bytes the stored blob of the guide takes: the 5 MiB of
+// the file are stored padded to whole chunks, with a header and a tag for each chunk.
+func countRanges(t *testing.T, w *synctest.PhoneWorld) int {
+	t.Helper()
+	stored := w.Phone.ReadChanges(t, w.Phone.GetRemoteID(t, synctest.PhoneVault))
+	if len(stored) != 1 {
+		t.Fatalf("the server holds %d files, want the guide only", len(stored))
+	}
+	return int((int64(stored[0].GetRevision().GetBlobSize()) + fetchfile.RangeSize - 1) / fetchfile.RangeSize)
+}
 
 func TestFetchFile_PlacesTheWholeFileAndListsItNoMore(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
@@ -54,19 +62,21 @@ func TestFetchFile_AsksForTheFileInRanges(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	before := w.Server.CountBlobGets()
+	want := countRanges(t, w)
 
 	if err := w.Fetch(t.Context(), guidePath); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := w.Server.CountBlobGets() - before; got < rangeLen {
-		t.Errorf("the server took %d blob requests, want at least %d, one for each range of %d bytes", got, rangeLen, fetchfile.RangeSize)
+	if got := w.Server.CountBlobGets() - before; got != want {
+		t.Errorf("the server took %d blob requests, want %d, one for each range of %d bytes", got, want, fetchfile.RangeSize)
 	}
 }
 
 func TestFetchFile_ResumesWhereAnInterruptedDownloadStopped(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
+	want := countRanges(t, w)
 	w.Server.FailBlobGetsAfter(2)
 	if err := w.Fetch(t.Context(), guidePath); err == nil {
 		t.Fatal("a download that lost the server succeeded")
@@ -81,8 +91,8 @@ func TestFetchFile_ResumesWhereAnInterruptedDownloadStopped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := w.Server.CountBlobGets() - before; got != rangeLen-2 {
-		t.Errorf("the second try took %d blob requests, want the %d ranges the first did not get", got, rangeLen-2)
+	if got := w.Server.CountBlobGets() - before; got != want-2 {
+		t.Errorf("the second try took %d blob requests, want the %d ranges the first did not get", got, want-2)
 	}
 	if _, ok := w.Phone.ReadNote(synctest.PhoneVault, guidePath); !ok {
 		t.Error("the file is not in the vault after the resumed download")
@@ -92,7 +102,7 @@ func TestFetchFile_ResumesWhereAnInterruptedDownloadStopped(t *testing.T) {
 func TestFetchFile_PlacesNothingWhenTheBytesAreDamaged(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
-	w.Server.CorruptBlobs(true)
+	w.Server.SetBlobCorruption(true)
 
 	err := w.Fetch(t.Context(), guidePath)
 
@@ -126,6 +136,7 @@ func TestFetchFile_RunsOneDownloadForOnePathAtATime(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	before := w.Server.CountBlobGets()
+	want := countRanges(t, w)
 	var wg sync.WaitGroup
 	failures := make(chan error, 2)
 	for range 2 {
@@ -139,8 +150,8 @@ func TestFetchFile_RunsOneDownloadForOnePathAtATime(t *testing.T) {
 			t.Errorf("a download failed: %v", err)
 		}
 	}
-	if got := w.Server.CountBlobGets() - before; got > rangeLen+1 {
-		t.Errorf("the server took %d blob requests for two taps, want the %d of one download", got, rangeLen)
+	if got := w.Server.CountBlobGets() - before; got != want {
+		t.Errorf("the server took %d blob requests for two taps, want the %d of one download", got, want)
 	}
 }
 

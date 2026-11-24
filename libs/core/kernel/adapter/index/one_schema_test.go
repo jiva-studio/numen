@@ -60,7 +60,7 @@ func getUserVersion(ctx context.Context, t *testing.T, db *sql.DB) int {
 
 func openRawDB(t *testing.T, path string) *sql.DB {
 	t.Helper()
-	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	raw, err := sql.Open("sqlite", buildDSN(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}

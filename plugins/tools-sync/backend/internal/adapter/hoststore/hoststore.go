@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -32,7 +33,7 @@ type State struct {
 func New(vaults ports.Host) *State { return &State{host: vaults} }
 
 type recordsDocument struct {
-	Files []note.FileRecord `json:"files"`
+	Files []transfer.FileRecord `json:"files"`
 }
 
 type statusDocument struct {
@@ -87,14 +88,14 @@ func (s *State) WriteLink(ctx context.Context, id domain.VaultID, link vaultlink
 }
 
 // ReadRecords returns what is known of the synced notes of the vault.
-func (s *State) ReadRecords(ctx context.Context, id domain.VaultID) ([]note.FileRecord, error) {
+func (s *State) ReadRecords(ctx context.Context, id domain.VaultID) ([]transfer.FileRecord, error) {
 	var document recordsDocument
 	_, err := s.read(ctx, id, recordsFile, &document)
 	return document.Files, err
 }
 
 // WriteRecords replaces what is known of the synced notes of the vault.
-func (s *State) WriteRecords(ctx context.Context, id domain.VaultID, records []note.FileRecord) error {
+func (s *State) WriteRecords(ctx context.Context, id domain.VaultID, records []transfer.FileRecord) error {
 	return s.write(ctx, id, recordsFile, recordsDocument{Files: records})
 }
 

@@ -233,6 +233,7 @@ The settings of the plugin Numen Sync.
 | `server` | text | address of the server this device signs in to. |
 | `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
 | `syncOnlyWhileOpen` | yes or no | stops the sync when the app leaves the screen and starts it when it returns. |
+| `removalDelaySeconds` | a number | how long a removed file is watched before the removal is sent. |
 
 ### `md.numen.tools.templates`
 

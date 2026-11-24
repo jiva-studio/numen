@@ -3,7 +3,7 @@
  * rest passes a message through unchanged, and the schema defines its shape.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { THEME_MODE, THEME_ORIGIN, createThemeServiceClient } from '../clients'
+import { THEME_MODE, THEME_ORIGIN, createThemeRpc } from '../clients'
 import { createCoreTransport } from '../testing'
 import { createThemeClient } from './themes'
 
@@ -14,7 +14,7 @@ const request = {
   watchThemes: vi.fn(),
 }
 
-const themes = createThemeClient(createThemeServiceClient(createCoreTransport({ theme: request })))
+const themes = createThemeClient(createThemeRpc(createCoreTransport({ theme: request })))
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -22,7 +22,7 @@ beforeEach(() => {
 
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
-  applied: 'preset:numen',
+  appliedTheme: 'preset:numen',
   mode: THEME_MODE.SYSTEM,
   interfaceScale: 1,
   textScale: 1,
@@ -85,7 +85,7 @@ describe('which half of a color pair is read', () => {
 
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
-    request.listThemes.mockResolvedValue(createAnswer({ applied: 'mine:sea' }))
+    request.listThemes.mockResolvedValue(createAnswer({ appliedTheme: 'mine:sea' }))
     const { applied, sizes, bounds } = await themes.getAppearance()
 
     expect(applied).toBe('mine:sea')
@@ -112,9 +112,12 @@ describe('a choice written', () => {
   it('sends the mode as the schema carries it and answers why it was refused', async () => {
     request.writeAppearance.mockResolvedValue({ error: 'the file is read-only' })
 
-    const reason = await themes.writeAppearance('mine:sea', 'light')
+    const answer = await themes.writeAppearance('mine:sea', 'light')
 
-    expect(reason).toBe('the file is read-only')
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: { error: 'notWritten', message: 'the file is read-only' },
+    })
     expect(request.writeAppearance.mock.calls[0]?.[0]).toMatchObject({
       name: 'mine:sea',
       mode: THEME_MODE.LIGHT,

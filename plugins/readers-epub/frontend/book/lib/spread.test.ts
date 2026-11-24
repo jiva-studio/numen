@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAP,
-  columnHeight,
+  getColumnHeight,
   countColumns,
   countFilledColumns,
   findSpreadAt,
   getSpreadStart,
-  inFront,
-  leftInDocument,
+  findFirstMark,
+  getLeftInDocument,
   createPages,
   type Flow,
   type Mark,
 } from './spread'
-import { columnsInAll } from './columnCount'
-import { NARROWEST, columnWidth, countSpreads, getColumn, getSpread } from './columnGrid'
+import { countAllColumns } from './columnCount'
+import { NARROWEST, getColumnWidth, countSpreads, getColumn, getSpread } from './columnGrid'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { goToPage, dragPage } from './pageStep'
@@ -50,27 +50,31 @@ describe('countColumns', () => {
   })
 
   it('calculates column width subtracting gap', () => {
-    expect(columnWidth({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(WIDE / 2 - GAP)
-    expect(columnWidth({ contentWidth: 0, width: NARROW, gap: GAP, columns: 1 })).toBe(NARROW - GAP)
+    expect(getColumnWidth({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(
+      WIDE / 2 - GAP,
+    )
+    expect(getColumnWidth({ contentWidth: 0, width: NARROW, gap: GAP, columns: 1 })).toBe(
+      NARROW - GAP,
+    )
   })
 })
 
 describe('columnHeight', () => {
   it('fits whole lines within available height', () => {
-    expect(columnHeight(1000, 24)).toBe(984)
-    expect(columnHeight(984, 24)).toBe(984)
+    expect(getColumnHeight(1000, 24)).toBe(984)
+    expect(getColumnHeight(984, 24)).toBe(984)
   })
 
   it('returns minimum one line height when available height is too short', () => {
-    expect(columnHeight(20, 24)).toBe(24)
+    expect(getColumnHeight(20, 24)).toBe(24)
   })
 
   it('returns total height when line height is zero', () => {
-    expect(columnHeight(1000, 0)).toBe(1000)
+    expect(getColumnHeight(1000, 0)).toBe(1000)
   })
 
   it('returns zero when area height is zero', () => {
-    expect(columnHeight(0, 24)).toBe(0)
+    expect(getColumnHeight(0, 24)).toBe(0)
   })
 })
 
@@ -124,8 +128,8 @@ describe('countFilledColumns', () => {
 
 describe('countSpreads and columnsInAll', () => {
   it('calculates total column count from content width', () => {
-    expect(columnsInAll(createFlow(WIDE, 2, 10))).toBe(10)
-    expect(columnsInAll(createFlow(NARROW, 1, 7))).toBe(7)
+    expect(countAllColumns(createFlow(WIDE, 2, 10))).toBe(10)
+    expect(countAllColumns(createFlow(NARROW, 1, 7))).toBe(7)
   })
 
   it('converts columns to spreads based on columns per spread', () => {
@@ -147,7 +151,7 @@ describe('countSpreads and columnsInAll', () => {
 
   it('returns zero for empty content', () => {
     expect(countSpreads({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
-    expect(columnsInAll({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
+    expect(countAllColumns({ contentWidth: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
   })
 
   it('returns one spread for single-line content', () => {
@@ -163,7 +167,7 @@ describe('countSpreads and columnsInAll', () => {
 describe('getSpreadStart', () => {
   it('computes spread offset as a multiple of column pairs and gaps', () => {
     const flow = createFlow(WIDE, 2, 200)
-    const one = columnWidth(flow)
+    const one = getColumnWidth(flow)
     expect(getSpreadStart(flow, 100)).toBe(200 * (one + GAP))
   })
 
@@ -176,7 +180,7 @@ describe('getSpreadStart', () => {
 describe('getSpread', () => {
   it('maps horizontal position to the correct spread index', () => {
     const flow = createFlow(WIDE, 2, 10)
-    const step = columnWidth(flow) + GAP
+    const step = getColumnWidth(flow) + GAP
 
     expect(getSpread(flow, 0)).toBe(0)
     expect(getSpread(flow, step)).toBe(0)
@@ -194,7 +198,7 @@ describe('getSpread', () => {
 
 describe('inFront', () => {
   const createRuns = (flow: Flow, count: number): Mark[] => {
-    const step = columnWidth(flow) + GAP
+    const step = getColumnWidth(flow) + GAP
     return Array.from({ length: count }, (_, index) => ({ at: index * 100, x: index * step }))
   }
 
@@ -202,9 +206,9 @@ describe('inFront', () => {
     const flow = createFlow(WIDE, 2, 10)
     const marks = createRuns(flow, 10)
 
-    expect(inFront(marks, flow, 0)).toBe(0)
-    expect(inFront(marks, flow, 1)).toBe(200)
-    expect(inFront(marks, flow, 4)).toBe(800)
+    expect(findFirstMark(marks, flow, 0)).toBe(0)
+    expect(findFirstMark(marks, flow, 1)).toBe(200)
+    expect(findFirstMark(marks, flow, 4)).toBe(800)
   })
 
   it('returns undefined when spread contains no marks', () => {
@@ -214,17 +218,17 @@ describe('inFront', () => {
       { at: 500, x: getSpreadStart(flow, 3) },
     ]
 
-    expect(inFront(marks, flow, 2)).toBeUndefined()
+    expect(findFirstMark(marks, flow, 2)).toBeUndefined()
   })
 
   it('returns undefined when marks list is empty', () => {
-    expect(inFront([], createFlow(WIDE, 2, 1), 0)).toBeUndefined()
+    expect(findFirstMark([], createFlow(WIDE, 2, 1), 0)).toBeUndefined()
   })
 })
 
 describe('findSpreadAt', () => {
   const flow = createFlow(WIDE, 2, 10)
-  const step = columnWidth(flow) + GAP
+  const step = getColumnWidth(flow) + GAP
   const marks: Mark[] = [
     { at: 0, x: 0 },
     { at: 100, x: 3 * step },
@@ -340,10 +344,10 @@ describe('createPages', () => {
   const createMarks = (columns: number): Mark[] =>
     Array.from({ length: columns }, (_, column) => ({
       at: document.start + column,
-      x: column * (columnWidth(flow) + GAP),
+      x: column * (getColumnWidth(flow) + GAP),
     }))
 
-  const marks = createMarks(columnsInAll(flow))
+  const marks = createMarks(countAllColumns(flow))
   const here = marks.length
   const perColumn = (document.end - document.start) / here
   const before = Math.round((document.start - book.start) / perColumn)
@@ -380,11 +384,11 @@ describe('leftInDocument', () => {
   ]
 
   it('returns count of columns remaining after active spread', () => {
-    expect(leftInDocument(flow, 0, marks)).toBe(3)
+    expect(getLeftInDocument(flow, 0, marks)).toBe(3)
   })
 
   it('returns zero when active spread is the final spread', () => {
-    expect(leftInDocument(flow, 2, marks)).toBe(0)
+    expect(getLeftInDocument(flow, 2, marks)).toBe(0)
   })
 })
 
@@ -428,11 +432,11 @@ describe('goToPage', () => {
 
 describe('zero columns layout', () => {
   it('returns zero column width when columns count is zero', () => {
-    expect(columnWidth({ contentWidth: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
+    expect(getColumnWidth({ contentWidth: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
   })
 
   it('evaluates to zero columns and zero spreads when dimensions are zero', () => {
-    expect(columnsInAll({ contentWidth: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
+    expect(countAllColumns({ contentWidth: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
     expect(countSpreads({ contentWidth: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
   })
 })
@@ -440,7 +444,7 @@ describe('zero columns layout', () => {
 describe('spread index when gap fills column', () => {
   it('returns spread zero when column width is zero', () => {
     const flow = { contentWidth: 500, width: 100, gap: GAP, columns: 2 }
-    expect(columnWidth(flow)).toBe(0)
+    expect(getColumnWidth(flow)).toBe(0)
     expect(getSpread(flow, 300)).toBe(0)
   })
 })
@@ -449,7 +453,7 @@ describe('createPages with byte distribution', () => {
   const flow = { contentWidth: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }
   const marks: Mark[] = [
     { at: 100, x: 0 },
-    { at: 200, x: columnWidth(flow) + GAP },
+    { at: 200, x: getColumnWidth(flow) + GAP },
   ]
 
   it('calculates page count when document has zero bytes', () => {

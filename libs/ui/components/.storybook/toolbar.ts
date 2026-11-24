@@ -12,10 +12,10 @@ import type { Preview } from '@storybook/vue3-vite'
 const INTERFACE = [0.8, 1, 1.25, 1.5, 2]
 const READING = [0.8, 1, 1.25, 1.5, 1.75]
 
-const sizes = (among: readonly number[]) =>
+const getSizeChoices = (among: readonly number[]) =>
   among.map((size) => ({ value: String(size), title: `${size}×` }))
 
-const selected = (target: string | number | undefined, among: readonly number[]) =>
+const getSelected = (target: string | number | undefined, among: readonly number[]) =>
   among.includes(Number(target)) ? String(Number(target)) : '1'
 
 export const toolbar = {
@@ -38,7 +38,7 @@ export const toolbar = {
       toolbar: {
         title: 'Interface',
         icon: 'grow',
-        items: sizes(INTERFACE),
+        items: getSizeChoices(INTERFACE),
         dynamicTitle: true,
       },
     },
@@ -48,7 +48,7 @@ export const toolbar = {
       toolbar: {
         title: 'Text',
         icon: 'paragraph',
-        items: sizes(READING),
+        items: getSizeChoices(READING),
         dynamicTitle: true,
       },
     },
@@ -64,9 +64,9 @@ export const toolbar = {
       // through the same two numbers the window is drawn through.
       root.style.setProperty(
         '--numen-interface-scale',
-        selected(context.globals['interface'], INTERFACE),
+        getSelected(context.globals['interface'], INTERFACE),
       )
-      root.style.setProperty('--numen-text-scale', selected(context.globals['font'], READING))
+      root.style.setProperty('--numen-text-scale', getSelected(context.globals['font'], READING))
       return { components: { story }, template: '<story />' }
     },
   ],

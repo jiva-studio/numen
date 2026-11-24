@@ -58,7 +58,7 @@ func (c catalog) listPluginThemes() []themedomain.Theme {
 	themes := make([]themedomain.Theme, 0, len(declared))
 	for _, one := range declared {
 		themes = append(themes, themedomain.Theme{
-			Name:       themedomain.PluginName(one.PluginID, one.ID),
+			Name:       themedomain.BuildPluginName(one.PluginID, one.ID),
 			Title:      one.Name,
 			Origin:     themedomain.Plugin,
 			IsPinned:   one.Appearance != "",

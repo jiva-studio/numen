@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -38,17 +39,17 @@ func getMeasuredAt() time.Time {
 // fixture is a plugin over a host that shows an embedded vault of 25 notes.
 type fixture struct {
 	app       *service.App
-	search    *hosttest.Search
+	search    *searchtest.Search
 	vault     *hosttest.Vault
 	queue     *hosttest.Queue
 	processes *processtest.Host
 	web       *httptest.Server
 }
 
-func sampledChunks(n, sources int) []hosttest.SampledChunk {
-	out := make([]hosttest.SampledChunk, n)
+func sampledChunks(n, sources int) []searchtest.SampledChunk {
+	out := make([]searchtest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = searchtest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
@@ -59,25 +60,25 @@ func setNotes(vault *hosttest.Vault, n int) {
 			vault.Remove(fmt.Sprintf("note-%d.md", i))
 			continue
 		}
-		vault.File(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
+		vault.WriteFile(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
 	}
 }
 
 func newFixture(t *testing.T, hint float64) *fixture {
 	t.Helper()
-	search := hosttest.NewSearch("physics", "chemistry")
-	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
+	search := searchtest.NewSearch("physics", "chemistry")
+	search.SetModel(searchtest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 
 	vault := hosttest.New("physics")
-	vault.Beside(hosttest.New("chemistry"))
+	vault.LinkBeside(hosttest.New("chemistry"))
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	processes := processtest.NewHost(t)
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
 	}, newFakeClock(getMeasuredAt()), processes.NewClient(t))
 
@@ -162,11 +163,11 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 	if set.State.Source != api.SourceManual || set.State.Floor != 0.7 || !set.State.IsManual || set.State.ManualFloor != 0.7 {
 		t.Errorf("set %+v", set)
 	}
-	if stored, _ := f.search.StoredFloor(modelRecipe); stored != 0.7 {
+	if stored, _ := f.search.GetStoredFloor(modelRecipe); stored != 0.7 {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 
-	f.search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
+	f.search.SetSampledChunks(modelRecipe, []searchtest.SampledChunk{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
 	var probe api.ProbeFloorResponse
 	if status, failure := f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &probe); status != http.StatusOK {
 		t.Fatalf("probe: %d %v", status, failure)
@@ -224,7 +225,7 @@ func TestAnIndexChangedEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing
 	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
 		t.Errorf("the vault was measured %d times, want once", len(batches))
 	}
-	if stored, found := f.search.StoredFloor(modelRecipe); !found || stored < 0.51 || stored > 0.53 {
+	if stored, found := f.search.GetStoredFloor(modelRecipe); !found || stored < 0.51 || stored > 0.53 {
 		t.Errorf("the host applies %v (%v), want the measured floor", stored, found)
 	}
 	if f.search.FloorWrites() != 1 {
@@ -239,7 +240,7 @@ func TestAnEventOtherThanIndexChangedMeasuresNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, found := f.search.StoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
+	if _, found := f.search.GetStoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
 		t.Error("an event other than index changed measured the vault")
 	}
 }
@@ -250,7 +251,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	if err := f.app.HandleEvent(ctx, hosttest.GetIndexChangedEvent("chemistry")); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := f.search.StoredFloor(modelRecipe); found {
+	if _, found := f.search.GetStoredFloor(modelRecipe); found {
 		t.Error("the shown vault was given the floor measured on another")
 	}
 	if batches := f.search.EmbeddedBatches(); len(batches) != 0 {
@@ -319,7 +320,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		t.Errorf("Mount without host env gave %v, want ErrNoHost", err)
 	}
 
-	search := hosttest.NewSearch("physics")
+	search := searchtest.NewSearch("physics")
 	vault := hosttest.New("physics")
 	queue := hosttest.NewQueue()
 	clk := newFakeClock(getMeasuredAt())
@@ -328,10 +329,10 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		name  string
 		hosts service.Hosts
 	}{
-		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
+		{"missing search", service.Hosts{Floors: relevance.Host{GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
 		{"missing vault", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Store: foldersOf(vault)}, Queue: queue}},
-		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
-		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk, nil)
@@ -343,14 +344,14 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	errReport := errors.New("report task failed")
 	errFinish := errors.New("finish task failed")
-	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
+	search.SetModel(searchtest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 	setNotes(vault, 25)
 
 	appReportFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk, nil)
 	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
@@ -364,7 +365,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	search.FailEmbedding(nil)
 	appFinishFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
+		Floors: relevance.Host{Search: searchOf(search), GetVault: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk, nil)
 	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
@@ -382,7 +383,7 @@ func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	}
 }
 
-func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+func searchOf(search *searchtest.Search) func(domain.VaultID) relevance.Search {
 	return func(id domain.VaultID) relevance.Search {
 		on := search.With(id)
 		return relevance.Search{Index: on, Policy: on}

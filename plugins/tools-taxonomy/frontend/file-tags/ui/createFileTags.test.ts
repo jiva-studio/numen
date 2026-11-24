@@ -28,7 +28,7 @@ describe('the tag dots view of a file tree row', () => {
   it('draws the tags the map holds for the path it is given', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     const wrapper = mount(createFileTags(map), { props: { path: 'notes/Dock.md' } })
 
@@ -39,7 +39,7 @@ describe('the tag dots view of a file tree row', () => {
   it('draws nothing for a path without tags', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     const wrapper = mount(createFileTags(map), { props: { path: 'notes/Pier.md' } })
 
@@ -50,7 +50,7 @@ describe('the tag dots view of a file tree row', () => {
   it('draws nothing for a folder', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
 
     const wrapper = mount(createFileTags(map), { props: { path: 'notes' } })
 
@@ -61,7 +61,7 @@ describe('the tag dots view of a file tree row', () => {
   it('draws the tags again when the tags of its path change, without another request', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const wrapper = mount(createFileTags(map), { props: { path: 'notes/Pier.md' } })
 
     map.setTags({ 'notes/Pier.md': ['Sea'] })
@@ -75,7 +75,7 @@ describe('the tag dots view of a file tree row', () => {
   it('draws nothing again when its path is left with no tags', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const wrapper = mount(createFileTags(map), { props: { path: 'notes/Quay.md' } })
 
     map.setTags({ 'notes/Quay.md': [] })
@@ -88,7 +88,7 @@ describe('the tag dots view of a file tree row', () => {
   it('makes no request of its own for each row it is drawn in', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await map.whenLoaded()
+    await map.waitForLoad()
     const view = createFileTags(map)
 
     for (let i = 0; i < 30; i++) mount(view, { props: { path: `notes/Note ${i}.md` } })

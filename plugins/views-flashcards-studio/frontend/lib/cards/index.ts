@@ -5,12 +5,12 @@ export {
   type CardModelTemplate,
   type CardModelWords,
   type FieldRow,
-  fieldRows,
+  buildFieldRows as fieldRows,
   getPanes,
   NO_CARD_MODEL_PROBLEMS,
   type Pane,
   type TemplateRow,
-  templateRows,
+  buildTemplateRows as templateRows,
 } from './card-model'
 export { type CardModel } from './card'
 export {
@@ -48,11 +48,11 @@ export {
   type InsertionPoint,
   type NameCheckResult,
   type Objection,
-  orderNames,
+  sortNames as orderNames,
   parseStepKey,
   type Problems,
   reorderFields,
   STEP_KEYS,
   type StepDirection,
 } from './order'
-export { decodeHref, scheme } from './links'
+export { decodeHref, getScheme as scheme } from './links'

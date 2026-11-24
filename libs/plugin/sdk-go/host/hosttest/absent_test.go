@@ -54,7 +54,7 @@ func TestReadOfAnAbsentFileReturnsErrFileAbsent(t *testing.T) {
 
 func TestStoreAbsentFilesRefusesAPathWithAFileOfAnotherHash(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File(guidePath, "my own notes in a file")
+	v.WriteFile(guidePath, "my own notes in a file")
 	if err := v.PutAbsentFiles(t.Context(), []host.AbsentFile{getGuide()}); !errors.Is(err, host.ErrFilePresent) {
 		t.Fatalf("got %v, want ErrFilePresent", err)
 	}
@@ -73,7 +73,7 @@ func TestFillFilePlacesTheStoreFileAndReportsNoChange(t *testing.T) {
 	v := hosttest.New("garden")
 	putGuide(t, v)
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
-	v.Store().File("guide.part", []byte(guideContent))
+	v.Store().WriteFile("guide.part", []byte(guideContent))
 	if err := v.FillFile(t.Context(), guidePath, "guide.part"); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestFillFilePlacesTheStoreFileAndReportsNoChange(t *testing.T) {
 func TestFillFileWithOtherBytesReturnsErrHashMismatchAndPlacesNothing(t *testing.T) {
 	v := hosttest.New("garden")
 	putGuide(t, v)
-	v.Store().File("guide.part", []byte("damaged"))
+	v.Store().WriteFile("guide.part", []byte("damaged"))
 	if err := v.FillFile(t.Context(), guidePath, "guide.part"); !errors.Is(err, host.ErrHashMismatch) {
 		t.Fatalf("got %v, want ErrHashMismatch", err)
 	}
@@ -102,7 +102,7 @@ func TestFillFileWithOtherBytesReturnsErrHashMismatchAndPlacesNothing(t *testing
 
 func TestEvictFileDeletesTheBytesListsTheFileAndReportsNoRemoval(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File(guidePath, guideContent)
+	v.WriteFile(guidePath, guideContent)
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
 	if err := v.EvictFile(t.Context(), guidePath, getHash(guideContent)); err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestEvictFileDeletesTheBytesListsTheFileAndReportsNoRemoval(t *testing.T) {
 
 func TestEvictFileOfAFileWithChangesReturnsErrChangedAndKeepsIt(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File(guidePath, guideContent+", then my notes")
+	v.WriteFile(guidePath, guideContent+", then my notes")
 	if err := v.EvictFile(t.Context(), guidePath, getHash(guideContent)); !errors.Is(err, host.ErrChanged) {
 		t.Fatalf("got %v, want ErrChanged", err)
 	}

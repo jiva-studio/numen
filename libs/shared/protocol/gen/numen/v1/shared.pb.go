@@ -74,14 +74,16 @@ const (
 	ErrorCode_ERROR_CODE_INTERNAL ErrorCode = 13
 	// The call was cancelled before this note was changed: the note is as it was.
 	ErrorCode_ERROR_CODE_NOT_ATTEMPTED ErrorCode = 14
+	// The staged file does not have the hash the caller expected.
+	ErrorCode_ERROR_CODE_HASH_MISMATCH ErrorCode = 15
+	// A byte range is not one the file can give: a length outside 1 to 4194304 or a negative start.
+	ErrorCode_ERROR_CODE_INVALID_RANGE ErrorCode = 16
 	// The file is listed and its bytes are not on this device.
-	ErrorCode_ERROR_CODE_FILE_ABSENT ErrorCode = 15
+	ErrorCode_ERROR_CODE_FILE_ABSENT ErrorCode = 17
 	// A file with other content is already at the path of an absent file.
-	ErrorCode_ERROR_CODE_FILE_PRESENT ErrorCode = 16
-	// The bytes do not have the hash the call named. Nothing is placed.
-	ErrorCode_ERROR_CODE_HASH_MISMATCH ErrorCode = 17
+	ErrorCode_ERROR_CODE_FILE_PRESENT ErrorCode = 18
 	// The file has changes that are not the content the call named. It is left as it is.
-	ErrorCode_ERROR_CODE_CHANGED ErrorCode = 18
+	ErrorCode_ERROR_CODE_CHANGED ErrorCode = 19
 )
 
 // Enum value maps for ErrorCode.
@@ -102,10 +104,11 @@ var (
 		12: "ERROR_CODE_LOCKED",
 		13: "ERROR_CODE_INTERNAL",
 		14: "ERROR_CODE_NOT_ATTEMPTED",
-		15: "ERROR_CODE_FILE_ABSENT",
-		16: "ERROR_CODE_FILE_PRESENT",
-		17: "ERROR_CODE_HASH_MISMATCH",
-		18: "ERROR_CODE_CHANGED",
+		15: "ERROR_CODE_HASH_MISMATCH",
+		16: "ERROR_CODE_INVALID_RANGE",
+		17: "ERROR_CODE_FILE_ABSENT",
+		18: "ERROR_CODE_FILE_PRESENT",
+		19: "ERROR_CODE_CHANGED",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":     0,
@@ -123,10 +126,11 @@ var (
 		"ERROR_CODE_LOCKED":          12,
 		"ERROR_CODE_INTERNAL":        13,
 		"ERROR_CODE_NOT_ATTEMPTED":   14,
-		"ERROR_CODE_FILE_ABSENT":     15,
-		"ERROR_CODE_FILE_PRESENT":    16,
-		"ERROR_CODE_HASH_MISMATCH":   17,
-		"ERROR_CODE_CHANGED":         18,
+		"ERROR_CODE_HASH_MISMATCH":   15,
+		"ERROR_CODE_INVALID_RANGE":   16,
+		"ERROR_CODE_FILE_ABSENT":     17,
+		"ERROR_CODE_FILE_PRESENT":    18,
+		"ERROR_CODE_CHANGED":         19,
 	}
 )
 
@@ -372,7 +376,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
 	"\x06Bounds\x12\x10\n" +
 	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x01R\x03max*\x93\x04\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max*\xb1\x04\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -389,11 +393,12 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x18ERROR_CODE_OUTSIDE_VAULT\x10\v\x12\x15\n" +
 	"\x11ERROR_CODE_LOCKED\x10\f\x12\x17\n" +
 	"\x13ERROR_CODE_INTERNAL\x10\r\x12\x1c\n" +
-	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0e\x12\x1a\n" +
-	"\x16ERROR_CODE_FILE_ABSENT\x10\x0f\x12\x1b\n" +
-	"\x17ERROR_CODE_FILE_PRESENT\x10\x10\x12\x1c\n" +
-	"\x18ERROR_CODE_HASH_MISMATCH\x10\x11\x12\x16\n" +
-	"\x12ERROR_CODE_CHANGED\x10\x12BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0e\x12\x1c\n" +
+	"\x18ERROR_CODE_HASH_MISMATCH\x10\x0f\x12\x1c\n" +
+	"\x18ERROR_CODE_INVALID_RANGE\x10\x10\x12\x1a\n" +
+	"\x16ERROR_CODE_FILE_ABSENT\x10\x11\x12\x1b\n" +
+	"\x17ERROR_CODE_FILE_PRESENT\x10\x12\x12\x16\n" +
+	"\x12ERROR_CODE_CHANGED\x10\x13BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

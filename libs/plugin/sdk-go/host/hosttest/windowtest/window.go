@@ -1,4 +1,5 @@
-// Package windowtest is the window of a vault in memory, for the tests of a plugin that focuses notes and files.
+// Package windowtest is the window of a vault in memory, for the tests of a plugin that focuses notes and files and
+// reads the open tabs.
 package windowtest
 
 import (

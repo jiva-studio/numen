@@ -6,12 +6,14 @@
 import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { createVaultsClient, SERVICE } from './vaults'
-import type { VaultsClient } from './vaults'
+type VaultsClient = ReturnType<typeof createVaultsClient>
 
 type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
 type ListRemoteVaultsResponse = Awaited<ReturnType<VaultsClient['listRemoteVaults']>>
 type ConnectVaultRequest = Parameters<VaultsClient['connectVault']>[0]
 type GetStatusResponse = Awaited<ReturnType<VaultsClient['getStatus']>>
+type GetConnectPreviewRequest = Parameters<VaultsClient['getConnectPreview']>[0]
+type GetConnectPreviewResponse = Awaited<ReturnType<VaultsClient['getConnectPreview']>>
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -54,6 +56,7 @@ describe('the fixtures of the vaults service', () => {
       state: 'connected',
       lastSyncedAt: '2026-11-23T12:00:00Z',
       conflictCount: 1,
+      pausedDeletions: { count: 5, tracked: 10, direction: 'send' },
     })
   })
 
@@ -74,6 +77,25 @@ describe('the fixtures of the vaults service', () => {
 
     expect(read('ConnectVault.request')).toStrictEqual(request)
     expect(read('ConnectVault.response')).toStrictEqual({})
+  })
+
+  it('reads the GetConnectPreview fixture as GetConnectPreviewRequest and GetConnectPreviewResponse', () => {
+    const request: GetConnectPreviewRequest = {
+      vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0Q',
+      remoteId: '00112233445566778899aabbccddeeff',
+    }
+    const response: GetConnectPreviewResponse = { differCount: 2 }
+
+    expect(read('GetConnectPreview.request')).toStrictEqual(request)
+    expect(read('GetConnectPreview.response')).toStrictEqual(response)
+  })
+
+  it('reads the ResolveDeletions fixture as ResolveDeletionsRequest', () => {
+    expect(read('ResolveDeletions.request')).toStrictEqual({
+      vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0P',
+      choice: 'keep',
+    })
+    expect(read('ResolveDeletions.response')).toStrictEqual({})
   })
 
   it('reads the GetStatus fixture as GetStatusResponse', () => {
@@ -116,6 +138,17 @@ describe('the vaults client', () => {
     await client.connectVault(request)
 
     expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/ConnectVault`, body: request }])
+  })
+
+  it('asks GetConnectPreview and answers its response', async () => {
+    const request = read('GetConnectPreview.request') as GetConnectPreviewRequest
+    const answer = read('GetConnectPreview.response') as GetConnectPreviewResponse
+    const { client, sent } = createClient(() => Response.json(answer))
+
+    const response = await client.getConnectPreview(request)
+
+    expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/GetConnectPreview`, body: request }])
+    expect(response).toStrictEqual(answer)
   })
 
   it('asks GetStatus and answers its response', async () => {

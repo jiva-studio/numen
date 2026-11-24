@@ -12,6 +12,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
@@ -65,6 +66,14 @@ type Files interface {
 	host.FileChangeLister
 }
 
+// Transfers is what the host does with the bytes of files of any kind.
+type Transfers interface {
+	ReadBytes(ctx context.Context, path string, start, length int64) (host.ByteRange, error)
+	MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (host.MoveFileResult, error)
+	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (host.RemoveFileResult, error)
+	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
+}
+
 // Indexer asks the host to read a vault into its index.
 type Indexer interface {
 	EnsureIndexed(ctx context.Context) (host.IndexState, error)
@@ -74,23 +83,21 @@ type Indexer interface {
 type Store interface {
 	Read(ctx context.Context, name string) ([]byte, error)
 	Write(ctx context.Context, name string, content []byte) error
+	Append(ctx context.Context, name string, content []byte) error
+	List(ctx context.Context) ([]host.StoreFile, error)
+	Delete(ctx context.Context, name string) error
 }
 
 // Absent is the files of one vault that the device lists and does not hold.
 type Absent interface{ host.AbsentFiles }
 
-// BlobRanges downloads a part of a blob.
-type BlobRanges interface {
-	// GetBlobRange returns at most length bytes of the blob from offset; fewer only at its end.
-	GetBlobRange(ctx context.Context, url string, offset, length int64) ([]byte, error)
-}
-
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
-	Files(id domain.VaultID) Files
-	Absent(id domain.VaultID) Absent
-	Indexer(id domain.VaultID) Indexer
+	GetFiles(id domain.VaultID) Files
+	GetAbsent(id domain.VaultID) Absent
+	GetTransfers(id domain.VaultID) Transfers
+	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
 }
 
@@ -102,8 +109,8 @@ type Links interface {
 
 // Records keeps what is known of the synced notes of each vault.
 type Records interface {
-	ReadRecords(ctx context.Context, id domain.VaultID) ([]note.FileRecord, error)
-	WriteRecords(ctx context.Context, id domain.VaultID, records []note.FileRecord) error
+	ReadRecords(ctx context.Context, id domain.VaultID) ([]transfer.FileRecord, error)
+	WriteRecords(ctx context.Context, id domain.VaultID, records []transfer.FileRecord) error
 }
 
 // Status is how the last pass over a vault ended.
@@ -124,6 +131,13 @@ type Sightings interface {
 	WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error
 }
 
+// Absences keeps when each synced file of a vault that is gone from it was first missed, by path, in nanoseconds since
+// the Unix epoch.
+type Absences interface {
+	ReadAbsences(ctx context.Context, id domain.VaultID) (map[string]int64, error)
+	WriteAbsences(ctx context.Context, id domain.VaultID, absent map[string]int64) error
+}
+
 // Health is where the plugin says what does not work.
 type Health interface {
 	Report(ctx context.Context, item health.Item) error
@@ -140,4 +154,54 @@ type Clock interface {
 type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)
 	CreateCheckout(ctx context.Context) (string, error)
+}
+
+// Head is the head of a live note of a synced vault: its path and the hash of its text.
+type Head struct {
+	Path string
+	Hash string
+}
+
+// Heads lists the verified heads of the live notes of a synced vault of the account.
+type Heads interface {
+	ListHeads(ctx context.Context, remoteID string) ([]Head, error)
+}
+
+// Pauses reports whether the removals of a vault wait for an answer.
+type Pauses interface {
+	HasPending(ctx context.Context, id domain.VaultID) (bool, error)
+}
+
+// FileSide is the local file of a conflict: its hash and the stat the host gave it.
+type FileSide struct {
+	Hash string
+	Stat domain.FileStat
+}
+
+// HeadSide is the head of a conflict: its hash and size, and Replace, which writes the head over the file at the path
+// of the conflict when the file still has the baseline.
+type HeadSide struct {
+	Hash    string
+	Size    int64
+	Replace func(ctx context.Context, baseline domain.FileStat) error
+}
+
+// ConflictInput is a file both computers changed.
+type ConflictInput struct {
+	Vault domain.VaultID
+	Path  string
+	Local FileSide
+	Head  HeadSide
+	Day   time.Time
+}
+
+// ConflictOutcome is the paths a resolve wrote, and the path of the copy, empty when there is none.
+type ConflictOutcome struct {
+	Applied []string
+	Copy    string
+}
+
+// ConflictResolver settles a file both computers changed.
+type ConflictResolver interface {
+	Resolve(ctx context.Context, in ConflictInput) (ConflictOutcome, error)
 }

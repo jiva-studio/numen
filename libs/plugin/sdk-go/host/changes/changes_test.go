@@ -43,7 +43,7 @@ func follow(t *testing.T, v *hosttest.Vault, f *follower) error {
 
 func TestTheFirstFollowReviewsAndTheNextOnesReadTheNewChanges(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 	f := &follower{}
 
 	if err := follow(t, v, f); err != nil {
@@ -52,7 +52,7 @@ func TestTheFirstFollowReviewsAndTheNextOnesReadTheNewChanges(t *testing.T) {
 	if f.reviews != 1 || len(f.batches) != 0 {
 		t.Fatalf("the first follow reviewed %d times and applied %v", f.reviews, f.batches)
 	}
-	v.File("b.md", "B\n")
+	v.WriteFile("b.md", "B\n")
 	if err := follow(t, v, f); err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestAFailedApplyIsHandedTheSameChangesAgain(t *testing.T) {
 	if err := follow(t, v, f); err != nil {
 		t.Fatal(err)
 	}
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 
 	f.refuse = errors.New("disk full")
 	if err := follow(t, v, f); !errors.Is(err, f.refuse) {

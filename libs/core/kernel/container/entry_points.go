@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -33,7 +33,7 @@ func (c Config) OpenEditor(
 }
 
 func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *vaultIndex, error) {
-	ports, err := c.registry()
+	ports, err := openVaultRegistry(c.RegistryPath)
 	if err != nil {
 		return ports, nil, err
 	}
@@ -48,12 +48,12 @@ func connectWindow(
 	vaultDeps vaultWiring,
 	opened *windowRoutes,
 	startup windowStartup,
-	access windowPluginAccess,
 ) (*editor.Installation, error) {
 	if !startup.isEditor {
 		return opened.Installation, nil
 	}
 	state := opened.session
+	access := opened.plugins
 	exec.Runtime.pluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	hooks := pluginVaultHooks{WriteWake: access.writeWake, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
@@ -94,22 +94,23 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	log := opening.Log
+	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	api := &shell.API{
 		Window:          shell.NewWindow(opening.Target, nil),
 		Frontends:       shell.NewFrontendPlugins(exec.Runtime.Manifests.ListFrontendPluginIDs, func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }),
 		PluginServices:  servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing),
-		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
+		ConnectionCalls: connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
+	vaults := openVaults(vaultDeps, db, log.Out, log.Label, func(v domain.Vault) { ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(v) })
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
+	api.Runs = ensureindexed.NewRuns(ctx, vaults.IndexVault)
+	api.Ensure = ensureindexed.New(api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
-	api.SetVaultIndexer(ctx, vaults.IndexVault)
-	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
+	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, WatchMoves: api.WatchIndexChanges}
+	if err := installPluginVault(install, vaultDeps, ports, db, func() (domain.Vault, bool) { return domain.Vault{}, false }, hooks); err != nil {
 		return closers, err
 	}
 	closers.Themes = followShell(settingsDeps, vaultDeps, ctx, api, log.Label, log.Notify)
@@ -125,13 +126,13 @@ type ShellLog struct {
 }
 
 func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
+	changes, err := watchMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {
 		api.ReportChangesFrom(ctx, changes)
 	}
-	service, themesErr := settingsThemes(settingsDeps, Scales{}, func(response string) {
+	service, themesErr := createThemeService(settingsDeps, Scales{}, func(response string) {
 		if response != "" {
 			notify("themes: " + response)
 		}
@@ -139,8 +140,6 @@ func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context
 	api.Themes = service
 	return themesErr
 }
-
-func getNoShownVault() (domain.Vault, bool) { return domain.Vault{}, false }
 
 // FlushTimeout is how long a page may take to write its unsaved data when the vault closes.
 func FlushTimeout() time.Duration { return windowsession.FlushTimeout }

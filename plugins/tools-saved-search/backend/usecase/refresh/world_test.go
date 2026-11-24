@@ -94,11 +94,11 @@ func (c *countingSearch) GetSearch(ctx context.Context, id string, read host.Sea
 	return c.Searches.GetSearch(ctx, id, read)
 }
 
-func (c *countingSearch) RemoveSearch(ctx context.Context, id string) error {
+func (c *countingSearch) DeleteSearch(ctx context.Context, id string) error {
 	c.mu.Lock()
 	c.active--
 	c.mu.Unlock()
-	return c.Searches.RemoveSearch(ctx, id)
+	return c.Searches.DeleteSearch(ctx, id)
 }
 
 func (c *countingSearch) getMaxActive() int {
@@ -182,7 +182,7 @@ func newWorld(t *testing.T, refreshMinutes int) *world {
 		clock:    fake,
 		settings: refresh.Settings{RefreshMinutes: refreshMinutes},
 	}
-	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, stormsQuery))
 	w.setStorms(passage("Harbor/Gale.md", galeText, 0.9), passage("Logbooks/1911.md", mooringText, 0.6))
 	searches.SetAnswer(galesQuery, host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", galeText, 1)}, ScoreKind: "words"})
 	searches.SetAnswer(brokenQuery, host.SearchState{Errors: []host.SearchProblem{{Line: 1, Column: 20, Message: "Syntax error: unexpected end of input"}}})
@@ -209,7 +209,7 @@ func (w *world) setStorms(results ...host.SearchResult) {
 }
 
 func (w *world) addWinterNote() {
-	w.vault.File("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
+	w.vault.WriteFile("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
 	w.setStorms(passage("Harbor/Gale.md", galeText, 0.9), passage("Harbor/Winter.md", winterText, 0.8), passage("Logbooks/1911.md", mooringText, 0.6))
 }
 

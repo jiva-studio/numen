@@ -14,8 +14,8 @@ func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
 	s := newRequestFixture(t)
 	s.putTranscript(t, true)
 	changed := lectureSound + " and a second half"
-	s.vault.File(lecture, changed)
-	s.texts.File(lecture, []byte(changed))
+	s.vault.WriteFile(lecture, changed)
+	s.texts.WriteFile(lecture, []byte(changed))
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
@@ -28,7 +28,7 @@ func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
 
 func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) {
 	s := newRequestFixture(t)
-	other := s.texts.As("md.numen.other")
+	other := s.texts.UsePlugin("md.numen.other")
 	if err := host.WriteText(t.Context(), other.GetStore("md.numen.other"), "k.jsonl",
 		[]domain.TextSegment{{Text: "other words\n"}}); err != nil {
 		t.Fatal(err)

@@ -27,6 +27,12 @@ var (
 	// ErrNotText is returned by a ranged read of bytes that are not UTF-8.
 	ErrNotText = errors.New("the file is not text")
 
+	// ErrHashMismatch is returned by a placement of a staged file whose content is not the hash the caller expected.
+	ErrHashMismatch = errors.New("the staged file does not have the expected hash")
+
+	// ErrInvalidRange is returned by a read of bytes of a file for a start below zero or a length outside 1 to 4194304.
+	ErrInvalidRange = errors.New("the range is invalid")
+
 	// ErrUnsavedChanges is returned by OpenVault while the window prompts the user about unsaved
 	// changes. The window keeps its vault.
 	ErrUnsavedChanges = errors.New("the window has unsaved changes and is prompting the user; retry after the prompt closes")
@@ -71,6 +77,6 @@ func (e invalidFocusError) Error() string { return e.err.Error() }
 
 func (e invalidFocusError) Unwrap() []error { return []error{e.err, ErrInvalidFocus} }
 
-// InvalidFocus is err as the rejection of a focus call: it keeps the message and the identity of err
+// CreateInvalidFocus is err as the rejection of a focus call: it keeps the message and the identity of err
 // and is also ErrInvalidFocus.
-func InvalidFocus(err error) error { return invalidFocusError{err: err} }
+func CreateInvalidFocus(err error) error { return invalidFocusError{err: err} }

@@ -54,34 +54,34 @@ func (l *Lender) Update(apply func(*Lent)) {
 
 // Services gives the plugins' calls what the host lends, as it is when the call is made.
 type Services struct {
-	source func() Lent
+	getLent func() Lent
 }
 
 // NewServices creates services that read what is lent from source at each call.
-func NewServices(source func() Lent) *Services { return &Services{source: source} }
+func NewServices(getLent func() Lent) *Services { return &Services{getLent: getLent} }
 
 // GetModelCalls returns what carries out the calls on models plugins ask for, or nil.
-func (s *Services) GetModelCalls() ModelCalls { return s.source().ModelCalls }
+func (s *Services) GetModelCalls() ModelCalls { return s.getLent().ModelCalls }
 
 // GetRowLists returns what lists the rows of the plugins and the values of their row fields, or nil.
-func (s *Services) GetRowLists() RowLists { return s.source().RowLists }
+func (s *Services) GetRowLists() RowLists { return s.getLent().RowLists }
 
 // GetPluginVault returns the vault exposed to plugins, or nil.
-func (s *Services) GetPluginVault() *vault.Access { return s.source().Vault }
+func (s *Services) GetPluginVault() *vault.Access { return s.getLent().Vault }
 
 // GetPluginTexts returns the text versions the plugins work, or nil.
-func (s *Services) GetPluginTexts() TextVersions { return s.source().Texts }
+func (s *Services) GetPluginTexts() TextVersions { return s.getLent().Texts }
 
 // GetPluginWindow returns the window exposed to plugins, or nil.
-func (s *Services) GetPluginWindow() WindowControl { return s.source().Window }
+func (s *Services) GetPluginWindow() WindowControl { return s.getLent().Window }
 
-func (s *Services) GetPluginVaultList() vault.List { return s.source().VaultList }
+func (s *Services) GetPluginVaultList() vault.List { return s.getLent().VaultList }
 
 // GetPluginSearch returns the search index the plugins work, or nil.
-func (s *Services) GetPluginSearch() *SearchAccess { return s.source().Search }
+func (s *Services) GetPluginSearch() *SearchAccess { return s.getLent().Search }
 
 // GetPluginWork returns the queue and the list of tasks the plugins use, or nil.
-func (s *Services) GetPluginWork() WorkQueue { return s.source().Work }
+func (s *Services) GetPluginWork() WorkQueue { return s.getLent().Work }
 
 // GetPluginLogs returns the log writer the plugins use, or nil.
-func (s *Services) GetPluginLogs() LogWriter { return s.source().Logs }
+func (s *Services) GetPluginLogs() LogWriter { return s.getLent().Logs }

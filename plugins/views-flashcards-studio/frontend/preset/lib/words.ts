@@ -3,7 +3,7 @@ import type { StopReason } from '../../lib/stop'
 import { getErrorWords } from '../../lib/wire/errors'
 import { formatStopReasonMessage } from '../../lib/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */
-import { many, percent } from '@numen/ui'
+import { formatCount, formatPercent } from '@numen/ui'
 import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
 import type { Field } from './field'
 import {
@@ -44,7 +44,7 @@ export const WORDS = {
   backlogY: 'Cards overdue',
   backlogX: 'Days from today',
   /** One height of the backlog, and one day along it. */
-  formatBacklogCards: (value: number) => many(value, 'card'),
+  formatBacklogCards: (value: number) => formatCount(value, 'card'),
   formatBacklogDays: (days: number) => `${count(days)} d`,
   /**
    * Lines of the bubble above the knob: the current value, and below it what that
@@ -58,10 +58,10 @@ export const WORDS = {
     getBuyFacts(goal, input).map(formatBuyFact),
   /** Formats one vertical-axis value of the curve in the unit of the goal. */
   formatGoalCost: (goal: Goal, value: number) =>
-    goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
+    goal === 'minutes' ? formatCount(value, 'card') : `${count(value)} min`,
   /** Formats one horizontal-axis value of the curve in the units of the goal's grid. */
   formatGoalValue: (goal: Goal, value: number) => {
-    if (goal === 'retention') return percent(value)
+    if (goal === 'retention') return formatPercent(value)
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
   /**
@@ -96,9 +96,9 @@ export const WORDS = {
     return goal === 'date' ? 'earliest date' : 'enough time'
   },
   value: (goal: Goal, value: number, day: string) => {
-    if (goal === 'retention') return `${percent(value)} remembered`
-    if (goal === 'date') return `${many(value, 'day')} to ${day}`
-    return `${many(value, 'minute')} a day`
+    if (goal === 'retention') return `${formatPercent(value)} remembered`
+    if (goal === 'date') return `${formatCount(value, 'day')} to ${day}`
+    return `${formatCount(value, 'minute')} a day`
   },
   /** No deck points here, so the goal has nothing to work on. */
   unpointed: 'No decks use this preset. Set it on a deck to schedule cards.',

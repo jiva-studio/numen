@@ -59,13 +59,13 @@ func TestStoreAbsentFilesSendsEachFileAndTheVaultOfTheClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(a.put) != 1 || a.put[0].GetPath() != "Books/Guide.pdf" || a.put[0].GetSize() != 5<<20 ||
-		a.put[0].GetModifiedAtMs() != 1_700_000_000_123 || a.put[0].GetHash() != "ab12" || a.vault != "v1" {
+		a.put[0].GetModifiedUnixMs() != 1_700_000_000_123 || a.put[0].GetHash() != "ab12" || a.vault != "v1" {
 		t.Fatalf("got %+v for the vault %q", a.put, a.vault)
 	}
 }
 
 func TestListAbsentFilesReadsEachFile(t *testing.T) {
-	a := &absentHost{put: []*v1.HostAbsentFile{{Path: "a.pdf", Size: 3, ModifiedAtMs: 1_700_000_000_123, Hash: "ff"}}}
+	a := &absentHost{put: []*v1.HostAbsentFile{{Path: "a.pdf", Size: 3, ModifiedUnixMs: 1_700_000_000_123, Hash: "ff"}}}
 	got, err := clientToAbsent(t, a).ListAbsentFiles(t.Context())
 	want := host.AbsentFile{Path: "a.pdf", Size: 3, ModTime: time.UnixMilli(1_700_000_000_123), Hash: "ff"}
 	if err != nil || len(got) != 1 || got[0].Path != want.Path || got[0].Size != want.Size || !got[0].ModTime.Equal(want.ModTime) || got[0].Hash != want.Hash {

@@ -22,6 +22,11 @@ export const WORDS = {
   syncServerUnreachable: 'Could not reach the sync server',
   buy: 'Buy',
   waitingForPayment: 'Waiting for the payment…',
+  checkoutNotOpened: {
+    notWebAddress: 'The payment page has an address the browser cannot open.',
+    openFailed: 'The browser did not open the payment page.',
+    permissionDenied: 'Numen Sync may not open the browser.',
+  },
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',
   connectNew: 'Connect as a new synced vault',
@@ -29,6 +34,12 @@ export const WORDS = {
   chooseRemote: 'Choose a synced vault',
   noRemoteVaults: 'No synced vaults in your account',
   closeRemote: 'Cancel',
+  notesDiffer: (count: number): string =>
+    count === 1
+      ? '1 note differs from the synced vault'
+      : `${count} notes differ from the synced vault`,
+  confirmConnect: 'Connect',
+  cancelConnect: 'Cancel',
   loading: 'Loading vaults…',
   stateNotConnected: 'Not connected',
   stateConnected: 'Connected',
@@ -39,4 +50,10 @@ export const WORDS = {
     `Synced ${count} ${count === 1 ? 'minute' : 'minutes'} ago`,
   conflicts: (count: number): string =>
     `${count} ${count === 1 ? 'note' : 'notes'} changed on two computers`,
+  deletionsPausedSend: (count: number, total: number): string =>
+    `Sync is paused: ${count} of ${total} files are removed`,
+  deletionsPausedApply: (count: number, total: number): string =>
+    `Sync is paused: ${count} of ${total} files were removed on another computer`,
+  removeFiles: 'Remove the files',
+  keepFiles: 'Keep the files',
 } as const

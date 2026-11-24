@@ -67,6 +67,16 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Actions: "New" with "New note" and "New folder"; "Rename"; "Move to trash".
 - Texts: "N files" (drag label); "Not moved, names already exist:" (plugins/views-file-tree/frontend/words.ts).
 
+### staged file
+
+- Is: A file a plugin writes in parts to its own store folder (`.numen/<plugin id>/<name>`) before it is placed in the vault in one step, so that no reader sees a half file. Numen Sync stages a file it downloads.
+- Not: not a file of the vault, not a trash entry.
+
+### removal record
+
+- Is: What Numen Sync sends to the sync server instead of a removed file: a signed revision that says the file is removed and holds no content and no name.
+- Not: not the trash; the other computers move their copy to the trash when they apply it.
+
 ## Notes and tabs
 
 ### note
@@ -556,10 +566,10 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### identity
 
-- Is: The account of a person, kept as keys on each of their devices and not on any server. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
-- States: no identity on this device; an identity with its account fingerprint and this device.
-- Actions: "Create identity", "Restore from words", "Delete from this device"; when an identity is created the person confirms 3 of the 12 words.
-- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "This device"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
+- Is: The Numen account of a person, kept on their own computers and not on any server: no email and no password. Their devices use it to recognize each other, and their subscription belongs to it. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
+- States: not created (the card explains in two paragraphs what an identity is ("An identity is your Numen account. ...") and what the 12 recovery words are for, and offers "Create identity" and "Restore" in its header); an identity with its account fingerprint and this device.
+- Actions: "Create identity", "Restore", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore" opens the dialog "Restore identity" ("Type the 12 words in order.") with the 12 numbered boxes of the setup as fields, three to a row, named "Recovery word 1" to "Recovery word 12"; the 12 words pasted into the first box fill the rest.
+- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "Some words are not valid." (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
 ### subscription

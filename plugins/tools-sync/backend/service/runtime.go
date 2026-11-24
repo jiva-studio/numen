@@ -9,6 +9,8 @@ import (
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
@@ -22,8 +24,9 @@ import (
 )
 
 const (
-	defaultInterval = 30
-	wakeBuffer      = 16
+	defaultInterval     = 30
+	defaultRemovalDelay = 60
+	wakeBuffer          = 16
 )
 
 var errNotConfigured = errors.New("no sync server is set")
@@ -43,13 +46,14 @@ type runtime struct {
 	parts        parts
 	wakes        *loops.Wakes
 	interval     *loops.Interval
+	removal      *loops.Interval
 	session      *loops.Supervisor[*Backend]
 	isForeground loops.Flag
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
-		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), session: nil,
+		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -70,6 +74,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 func (r *runtime) configure(values map[string]string) {
 	r.isForeground.Set(values[settingForeground] == "true")
 	r.interval.Set(values[settingInterval])
+	r.removal.Set(values[settingRemovalDelay])
 	r.session.Configure(values[settingServer])
 }
 
@@ -80,17 +85,22 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	cloudSide := cloud.New(cloud.Config{Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
-		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.Random(),
-		Subscriptions: cloudSide,
+		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.NewRandom(),
+		Subscriptions: cloudSide, Pauses: p.state,
 	}
-	pass := syncwire.NewSyncVault(deps)
+	wired := syncwire.Deps{
+		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
+		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
+		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: false,
+	}
+	pass := syncwire.NewSyncVault(wired)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: pass, Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
-		Interval: r.interval.Get, Changed: r.wakes.Vaults(),
+		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(),
 	})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	backend := NewBackend(deps)
+	backend := NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired))
 	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
 	}))

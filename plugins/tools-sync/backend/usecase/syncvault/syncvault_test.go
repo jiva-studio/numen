@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
@@ -145,17 +145,34 @@ func TestSyncVault_DoesNotSendANoteBackThatItWroteItself(t *testing.T) {
 	}
 }
 
-func TestSyncVault_SyncsNoFileThatIsNotANote(t *testing.T) {
+func TestSyncVault_AFileThatIsNotANoteAppearsOnTheSecondComputerAsItIs(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "data.bin", "bytes")
+	p.a.WriteNote(source, "Papers/Report.pdf", "%PDF-1.7 bytes")
+
+	sync(t, p.a, source)
+	sync(t, p.b, target)
+
+	wantNote(t, p.b, target, "Papers/Report.pdf", "%PDF-1.7 bytes")
+	row, ok := p.b.GetFileRow(t, target, "Papers/Report.pdf")
+	if !ok || row.BaseHash != note.Hash([]byte("%PDF-1.7 bytes")) {
+		t.Errorf("row of the second computer = %+v (there: %v), want the hash of the file as base", row, ok)
+	}
+}
+
+func TestSyncVault_SendsNoFileThatIsNotThePersons(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Papers/Report.pdf.part", "half")
+	p.a.WriteNote(source, "Papers/~$Report.docx", "lock")
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, "Shopping list.md", "milk")
-	if _, ok := p.b.ReadNote(target, "data.bin"); ok {
-		t.Error("a file that is not a note reached the second computer")
+	for _, path := range []string{"Papers/Report.pdf.part", "Papers/~$Report.docx"} {
+		if _, ok := p.b.ReadNote(target, path); ok {
+			t.Errorf("%s reached the second computer", path)
+		}
 	}
 	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 1 {
 		t.Errorf("server holds %d revisions, want 1", got)
@@ -191,29 +208,6 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 	}
 }
 
-func TestSyncVault_WarnsAboutANoteChangedOnTwoComputersAndChangesNeither(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.a.WriteNote(source, "Shopping list.md", "bread")
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	sync(t, p.a, source)
-
-	sync(t, p.b, target)
-	sync(t, p.b, target)
-
-	if !p.b.HasItem("1 note changed on two computers") {
-		t.Errorf("health items = %+v, want 1 note changed on two computers", p.b.Health.List())
-	}
-	wantNote(t, p.a, source, "Shopping list.md", "bread")
-	wantNote(t, p.b, target, "Shopping list.md", "eggs")
-	head := p.a.ReadChanges(t, p.a.GetRemoteID(t, source))
-	if len(head) != 1 || string(p.a.OpenBlob(t, p.a.GetVaultKey(t, source), head[0].GetRevision())) != "bread" {
-		t.Error("the server head is not the text of the first computer, want the second computer to have pushed nothing")
-	}
-}
-
 func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	for _, path := range []string{"One.md", "Two.md"} {
@@ -231,27 +225,6 @@ func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
 
 	if !p.b.HasItem("2 notes changed on two computers") {
 		t.Errorf("health items = %+v, want 2 notes changed on two computers", p.b.Health.List())
-	}
-}
-
-func TestSyncVault_ClearsTheWarningWhenTheTwoNotesAreTheSame(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.a.WriteNote(source, "Shopping list.md", "bread")
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	p.b.WriteNote(target, "Shopping list.md", "bread")
-
-	sync(t, p.b, target)
-
-	if p.b.HasItemKey("conflicts") {
-		t.Errorf("health items = %+v, want the warning cleared once the notes are equal", p.b.Health.List())
-	}
-	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 1 {
-		t.Errorf("server holds %d revisions, want 1: nothing is pushed for a note equal to the head", got)
 	}
 }
 

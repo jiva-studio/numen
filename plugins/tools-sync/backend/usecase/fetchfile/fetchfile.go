@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -24,11 +26,13 @@ const RangeSize = 1 << 20
 
 var (
 	// ErrBlobMissing means the server answered and holds no blob for the file.
-	ErrBlobMissing = errors.New("the server has no blob for the file")
+	ErrBlobMissing = transfer.ErrBlobMissing
 	// ErrNotAbsent means the vault does not list the file as absent.
 	ErrNotAbsent = errors.New("the file is not listed as absent")
 	// ErrHeadChanged means the head of the file on the server is not the one the vault lists.
 	ErrHeadChanged = errors.New("the head of the file is not the one listed")
+
+	errHeld = errors.New("the file is already placed")
 )
 
 // State is the link and the records of the vault.
@@ -40,8 +44,7 @@ type State interface {
 // Deps are what the use case needs.
 type Deps struct {
 	Revisions ports.Revisions
-	Blobs     ports.BlobDownloader
-	Ranges    ports.BlobRanges
+	Blobs     ports.BlobReader
 	Crypto    ports.Crypto
 	Host      ports.Host
 	State     State
@@ -93,12 +96,15 @@ type target struct {
 	id     domain.VaultID
 	path   string
 	remote []byte
-	record note.FileRecord
+	record transfer.FileRecord
 	entry  host.AbsentFile
 }
 
 func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) error {
 	t, key, err := u.open(ctx, id, path)
+	if errors.Is(err, errHeld) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -119,24 +125,24 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 	if err := store.Write(ctx, name, plain); err != nil {
 		return err
 	}
-	fillErr := u.deps.Host.Absent(id).FillFile(ctx, path, name)
+	fillErr := u.deps.Host.GetAbsent(id).FillFile(ctx, path, name)
 	return errors.Join(fillErr, store.Write(ctx, name, nil), u.dropPart(ctx, t, rev, nil))
 }
 
 func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (target, [32]byte, error) {
-	listed, err := u.deps.Host.Absent(id).ListAbsentFiles(ctx)
+	listed, err := u.deps.Host.GetAbsent(id).ListAbsentFiles(ctx)
 	if err != nil {
 		return target{}, [32]byte{}, err
 	}
 	at := slices.IndexFunc(listed, func(one host.AbsentFile) bool { return one.Path == path })
 	if at < 0 {
-		return target{}, [32]byte{}, fmt.Errorf("download %s: %w", path, ErrNotAbsent)
+		return target{}, [32]byte{}, u.checkHeld(ctx, id, path)
 	}
 	records, err := u.deps.State.ReadRecords(ctx, id)
 	if err != nil {
 		return target{}, [32]byte{}, err
 	}
-	recordAt := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == path })
+	recordAt := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == path })
 	if recordAt < 0 {
 		return target{}, [32]byte{}, fmt.Errorf("download %s: no record of the file: %w", path, ErrNotAbsent)
 	}
@@ -189,13 +195,6 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 	if size <= 0 || size > syncprotocol.MaxBlobSize {
 		return nil, fmt.Errorf("download %s: the blob has a size of %d bytes: %w", t.path, size, note.ErrCorruptBlob)
 	}
-	downloads, err := u.deps.Blobs.GetBlobUrls(ctx, t.remote, [][]byte{rev.GetBlobId()})
-	if err != nil {
-		return nil, err
-	}
-	if len(downloads) != 1 || !downloads[0].GetFound() {
-		return nil, ErrBlobMissing
-	}
 	store := u.deps.Host.Store(t.id)
 	name := getPartName(rev)
 	part, err := store.Read(ctx, name)
@@ -206,7 +205,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 		part = nil
 	}
 	for int64(len(part)) < size {
-		next, err := u.deps.Ranges.GetBlobRange(ctx, downloads[0].GetUrl(), int64(len(part)), min(RangeSize, size-int64(len(part))))
+		next, err := u.readRange(ctx, t, rev, int64(len(part)), min(RangeSize, size-int64(len(part))))
 		if err != nil {
 			return nil, err
 		}
@@ -223,4 +222,27 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 
 func (u *FetchFile) dropPart(ctx context.Context, t target, rev *syncv1.Revision, cause error) error {
 	return errors.Join(cause, u.deps.Host.Store(t.id).Write(ctx, getPartName(rev), nil))
+}
+
+func (u *FetchFile) readRange(ctx context.Context, t target, rev *syncv1.Revision, from, length int64) ([]byte, error) {
+	body, err := u.deps.Blobs.OpenBlob(ctx, t.remote, rev.GetBlobId(), from)
+	if err != nil {
+		return nil, err
+	}
+	next, readErr := io.ReadAll(io.LimitReader(body, length))
+	return next, errors.Join(readErr, body.Close())
+}
+
+func (u *FetchFile) checkHeld(ctx context.Context, id domain.VaultID, path string) error {
+	records, err := u.deps.State.ReadRecords(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !slices.ContainsFunc(records, func(one transfer.FileRecord) bool { return one.Path == path }) {
+		return fmt.Errorf("download %s: %w", path, ErrNotAbsent)
+	}
+	if _, err := u.deps.Host.GetFiles(id).StatFile(ctx, path); err != nil {
+		return fmt.Errorf("download %s: %w", path, ErrNotAbsent)
+	}
+	return errHeld
 }

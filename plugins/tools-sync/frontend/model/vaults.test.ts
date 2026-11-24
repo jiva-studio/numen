@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { useVaults } from './vaults'
 
-type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
-
 const NOW = new Date('2026-11-23T12:00:00Z')
 
 const createVault = (patch: Partial<Vault> = {}): Vault => ({
@@ -27,6 +25,10 @@ const createClient = (vaults: Vault[] = [createVault()]) => {
         ],
       }),
     ),
+    getConnectPreview: vi.fn<VaultsClient['getConnectPreview']>(() =>
+      Promise.resolve({ differCount: 0 }),
+    ),
+    resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
     connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
     getStatus: vi.fn<VaultsClient['getStatus']>(() =>
       Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
@@ -190,7 +192,7 @@ describe('useVaults', () => {
     await model.actions.load()
     client.listVaults.mockResolvedValue({
       vaults: [createVault({ state: 'connected' })],
-    } satisfies ListVaultsResponse)
+    } satisfies Awaited<ReturnType<VaultsClient['listVaults']>>)
 
     await model.actions.connectNew('Test')
 
@@ -238,5 +240,172 @@ describe('useVaults', () => {
     await model.actions.connectNew('Test')
 
     expect(model.state.error.value).toBe('')
+  })
+
+  describe('connecting to a synced vault that holds notes', () => {
+    const openChoice = async (client: ReturnType<typeof createClient>) => {
+      const model = createModel(client)
+      await model.actions.load()
+      await model.actions.openRemote('Test')
+      return model
+    }
+
+    it('asks the backend how many notes differ before it connects', async () => {
+      const client = createClient()
+      const model = await openChoice(client)
+
+      await model.actions.connectExisting('Test', 'aa11')
+
+      expect(client.getConnectPreview).toHaveBeenCalledWith({ vaultId: 'Test', remoteId: 'aa11' })
+    })
+
+    it('connects without asking when no note differs', async () => {
+      const client = createClient()
+      const model = await openChoice(client)
+
+      await model.actions.connectExisting('Test', 'aa11')
+
+      expect(model.state.pendingConfirm.value).toBeNull()
+      expect(client.connectVault).toHaveBeenCalledWith({
+        vaultId: 'Test',
+        mode: 'existing',
+        remoteId: 'aa11',
+      })
+    })
+
+    it('asks before it connects when one note differs', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockResolvedValue({ differCount: 1 })
+      const model = await openChoice(client)
+
+      await model.actions.connectExisting('Test', 'aa11')
+
+      expect(model.state.pendingConfirm.value?.text).toBe('1 note differs from the synced vault')
+      expect(client.connectVault).not.toHaveBeenCalled()
+    })
+
+    it('asks before it connects when several notes differ', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockResolvedValue({ differCount: 2 })
+      const model = await openChoice(client)
+
+      await model.actions.connectExisting('Test', 'aa11')
+
+      expect(model.state.pendingConfirm.value?.text).toBe('2 notes differ from the synced vault')
+      expect(client.connectVault).not.toHaveBeenCalled()
+    })
+
+    it('connects once the person confirms, closes the question and reads the vaults again', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockResolvedValue({ differCount: 2 })
+      const model = await openChoice(client)
+      await model.actions.connectExisting('Test', 'aa11')
+      client.listVaults.mockResolvedValue({ vaults: [createVault({ state: 'connected' })] })
+
+      await model.actions.confirmConnect()
+
+      expect(client.connectVault).toHaveBeenCalledTimes(1)
+      expect(client.connectVault).toHaveBeenCalledWith({
+        vaultId: 'Test',
+        mode: 'existing',
+        remoteId: 'aa11',
+      })
+      expect(model.state.pendingConfirm.value).toBeNull()
+      expect(model.state.rows.value.at(0)?.stateLabel).toBe('Connected')
+    })
+
+    it('calls nothing more when the person cancels', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockResolvedValue({ differCount: 2 })
+      const model = await openChoice(client)
+      await model.actions.connectExisting('Test', 'aa11')
+      client.listVaults.mockClear()
+
+      model.actions.cancelConnect()
+
+      expect(model.state.pendingConfirm.value).toBeNull()
+      expect(client.connectVault).not.toHaveBeenCalled()
+      expect(client.listVaults).not.toHaveBeenCalled()
+      expect(model.state.rows.value.at(0)?.stateLabel).toBe('Not connected')
+    })
+
+    it('keeps the message of a preview the backend refuses and does not connect', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockRejectedValue(new Error('the sync server is not reachable'))
+      const model = await openChoice(client)
+
+      await model.actions.connectExisting('Test', 'aa11')
+
+      expect(model.state.error.value).toBe('the sync server is not reachable')
+      expect(client.connectVault).not.toHaveBeenCalled()
+      expect(model.state.pendingConfirm.value).toBeNull()
+    })
+
+    it('keeps the message of a connection the backend refuses after the person confirms', async () => {
+      const client = createClient()
+      client.getConnectPreview.mockResolvedValue({ differCount: 1 })
+      client.connectVault.mockRejectedValue(new Error('a copy of a connected vault'))
+      const model = await openChoice(client)
+      await model.actions.connectExisting('Test', 'aa11')
+
+      await model.actions.confirmConnect()
+
+      expect(model.state.error.value).toBe('a copy of a connected vault')
+    })
+
+    it('never asks for a vault connected as a new synced vault', async () => {
+      const client = createClient()
+      const model = createModel(client)
+      await model.actions.load()
+
+      await model.actions.connectNew('Test')
+
+      expect(client.getConnectPreview).not.toHaveBeenCalled()
+      expect(model.state.pendingConfirm.value).toBeNull()
+    })
+  })
+
+  it('names the removals that wait for an answer, by the way they go', async () => {
+    const client = createClient([
+      createVault({ id: 'a', pausedDeletions: { count: 5, tracked: 10, direction: 'send' } }),
+      createVault({ id: 'b', pausedDeletions: { count: 6, tracked: 12, direction: 'apply' } }),
+      createVault({ id: 'c', pausedDeletions: null }),
+      createVault({ id: 'd' }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.map((row) => row.pausedLabel)).toStrictEqual([
+      'Sync is paused: 5 of 10 files are removed',
+      'Sync is paused: 6 of 12 files were removed on another computer',
+      '',
+      '',
+    ])
+  })
+
+  it('sends the answer for the removals and reads the vaults again', async () => {
+    const client = createClient([
+      createVault({ pausedDeletions: { count: 5, tracked: 10, direction: 'send' } }),
+    ])
+    const model = createModel(client)
+    await model.actions.load()
+    client.listVaults.mockResolvedValue({ vaults: [createVault()] })
+
+    await model.actions.resolveDeletions('Test', 'keep')
+
+    expect(client.resolveDeletions).toHaveBeenCalledWith({ vaultId: 'Test', choice: 'keep' })
+    expect(model.state.rows.value.at(0)?.pausedLabel).toBe('')
+  })
+
+  it('keeps the message of an answer the backend refuses', async () => {
+    const client = createClient()
+    client.resolveDeletions.mockRejectedValue(new Error('no removals are paused'))
+    const model = createModel(client)
+    await model.actions.load()
+
+    await model.actions.resolveDeletions('Test', 'remove')
+
+    expect(model.state.error.value).toBe('no removals are paused')
   })
 })

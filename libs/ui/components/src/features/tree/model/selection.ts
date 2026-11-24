@@ -7,7 +7,7 @@
 import { computed, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
 import {
-  everyRow,
+  getAllRows,
   resolveSelection,
   isSameSelection,
   type Press,
@@ -50,7 +50,7 @@ export function useRowSelection(
       ),
     )
 
-  const selectEveryRow = (): readonly RowId[] => apply(everyRow(getVisibleRows(), anchor.value))
+  const selectEveryRow = (): readonly RowId[] => apply(getAllRows(getVisibleRows(), anchor.value))
 
   return { picked, hasApplied, selectRow, selectEveryRow }
 }

@@ -51,7 +51,7 @@ type Filter struct {
 func Apply(tasks []todo.Task, f Filter, today string) []todo.Task {
 	accepted := []todo.Task{}
 	for _, task := range tasks {
-		if f.accepts(task, today) {
+		if f.isAccepted(task, today) {
 			accepted = append(accepted, task)
 		}
 	}
@@ -59,9 +59,9 @@ func Apply(tasks []todo.Task, f Filter, today string) []todo.Task {
 	return accepted
 }
 
-// Matches reports whether the filter accepts at least one of the tasks, without ordering them.
-func Matches(tasks []todo.Task, f Filter, today string) bool {
-	return slices.ContainsFunc(tasks, func(task todo.Task) bool { return f.accepts(task, today) })
+// IsMatch reports whether the filter accepts at least one of the tasks, without ordering them.
+func IsMatch(tasks []todo.Task, f Filter, today string) bool {
+	return slices.ContainsFunc(tasks, func(task todo.Task) bool { return f.isAccepted(task, today) })
 }
 
 // ClampLimit returns the count a caller asked for, the default when it asked for none and at most max.
@@ -84,7 +84,7 @@ func NormalizePriority(letter string) (string, bool) {
 	return letter, true
 }
 
-func (f Filter) accepts(task todo.Task, today string) bool {
+func (f Filter) isAccepted(task todo.Task, today string) bool {
 	return f.isStatusAccepted(task) &&
 		f.isDueAccepted(task, today) &&
 		isAnyOf(f.Projects, task.Projects) &&

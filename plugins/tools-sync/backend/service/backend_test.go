@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
 type world struct {
@@ -45,7 +45,7 @@ func TestListVaults_ListsEveryVaultOfTheInstallationWithItsState(t *testing.T) {
 	w.c.AddVault(t, "Plain")
 	w.c.AddVault(t, "Test copy")
 	w.c.Connect(t, "Test")
-	w.c.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.c.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	vaults := listVaults(t, backend)
@@ -112,7 +112,7 @@ func TestConnectVault_WarnsAboutACopyOfAConnectedVault(t *testing.T) {
 	w := newWorld(t)
 	w.c.AddVault(t, "Test copy")
 	w.c.Connect(t, "Test")
-	w.c.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.c.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	err := connect(t, backend, api.ConnectVaultRequest{VaultID: "Test copy", Mode: api.ModeNew})
@@ -155,7 +155,7 @@ func TestGetStatus_ReportsAnIdentityAndAReachableServer(t *testing.T) {
 
 func TestGetStatus_WarnsThatThisDeviceHasNoIdentity(t *testing.T) {
 	w := newWorld(t)
-	w.c.Fake.NoIdentity()
+	w.c.Fake.RemoveIdentity()
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	status, err := backend.GetStatus(t.Context(), api.GetStatusRequest{})
@@ -180,5 +180,62 @@ func TestGetStatus_ReportsAServerThatIsAway(t *testing.T) {
 
 	if !status.HasIdentity || status.IsReachable {
 		t.Errorf("status = %+v, want an identity and an unreachable server", status)
+	}
+}
+
+func newJoiningWorld(t *testing.T) (*world, *service.Backend, string) {
+	t.Helper()
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	for path, text := range map[string]string{"Shopping list.md": "milk", "Plan.md": "tea", "Ideas.md": "walk"} {
+		w.c.WriteNote("Test", path, text)
+	}
+	if err := w.c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+	second := synctest.NewSecondComputer(t, w.server, w.clock, "Copy", w.words)
+	backend := service.NewBackend(second.SyncDeps())
+	remote, err := backend.ListRemoteVaults(t.Context(), api.ListRemoteVaultsRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second.WriteNote("Copy", "Shopping list.md", "milk")
+	second.WriteNote("Copy", "Plan.md", "eggs")
+	second.WriteNote("Copy", "Ideas.md", "run")
+	return w, backend, remote.Vaults[0].RemoteID
+}
+
+func TestGetConnectPreview_CountsTheNotesWithAnotherTextOnEachSide(t *testing.T) {
+	_, backend, remoteID := newJoiningWorld(t)
+
+	response, err := backend.GetConnectPreview(t.Context(), api.GetConnectPreviewRequest{VaultID: "Copy", RemoteID: remoteID})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.DifferCount != 2 {
+		t.Errorf("differ count = %d, want 2 (Plan and Ideas)", response.DifferCount)
+	}
+}
+
+func TestGetConnectPreview_DoesNotConnectTheVault(t *testing.T) {
+	_, backend, remoteID := newJoiningWorld(t)
+
+	if _, err := backend.GetConnectPreview(t.Context(), api.GetConnectPreviewRequest{VaultID: "Copy", RemoteID: remoteID}); err != nil {
+		t.Fatal(err)
+	}
+
+	if vaults := listVaults(t, backend); len(vaults) != 1 || vaults[0].State != api.StateNotConnected {
+		t.Errorf("vaults = %+v, want Copy not connected", vaults)
+	}
+}
+
+func TestGetConnectPreview_RefusesAnIdThatIsNotAnId(t *testing.T) {
+	_, backend, _ := newJoiningWorld(t)
+
+	_, err := backend.GetConnectPreview(t.Context(), api.GetConnectPreviewRequest{VaultID: "Copy", RemoteID: "not an id"})
+
+	if err == nil {
+		t.Error("GetConnectPreview of a bad id succeeded, want an error")
 	}
 }

@@ -58,7 +58,7 @@ func (e *absentCalls) PutAbsentFiles(
 			files := make([]vaultdomain.AbsentFile, len(req.Msg.GetFiles()))
 			for i, file := range req.Msg.GetFiles() {
 				files[i] = vaultdomain.AbsentFile{
-					Path: file.GetPath(), Size: file.GetSize(), Mtime: time.UnixMilli(file.GetModifiedAtMs()), Hash: file.GetHash(),
+					Path: file.GetPath(), Size: file.GetSize(), Mtime: time.UnixMilli(file.GetModifiedUnixMs()), Hash: file.GetHash(),
 				}
 			}
 			return &v1.PutAbsentFilesResponse{}, absent.PutAbsentFiles(ctx, pluginID, files)
@@ -77,7 +77,7 @@ func (e *absentCalls) ListAbsentFiles(
 			}
 			files := make([]*v1.HostAbsentFile, len(listed))
 			for i, file := range listed {
-				files[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedAtMs: file.Mtime.UnixMilli(), Hash: file.Hash}
+				files[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedUnixMs: file.Mtime.UnixMilli(), Hash: file.Hash}
 			}
 			return &v1.ListAbsentFilesResponse{Files: files}, nil
 		})

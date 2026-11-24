@@ -16,7 +16,7 @@ export const createCatalogReader =
     if (!answer.ok) {
       return {
         ok: false,
-        error: answer.error.kind === 'unavailable' ? answer.error.message : 'it lists nothing',
+        error: answer.error.error === 'unavailable' ? answer.error.message : 'it lists nothing',
       }
     }
     return {

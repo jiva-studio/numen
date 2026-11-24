@@ -66,9 +66,10 @@ func getErrorEntries() []errorEntry {
 		{edit.ErrNotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},
+		{plugin.ErrHashMismatch, v1.ErrorCode_ERROR_CODE_HASH_MISMATCH},
+		{plugin.ErrInvalidRange, v1.ErrorCode_ERROR_CODE_INVALID_RANGE},
 		{vaultdomain.ErrFileAbsent, v1.ErrorCode_ERROR_CODE_FILE_ABSENT},
 		{vaultdomain.ErrFilePresent, v1.ErrorCode_ERROR_CODE_FILE_PRESENT},
-		{vaultdomain.ErrHashMismatch, v1.ErrorCode_ERROR_CODE_HASH_MISMATCH},
 		{vaultdomain.ErrChanged, v1.ErrorCode_ERROR_CODE_CHANGED},
 	}
 }
@@ -120,19 +121,19 @@ func (e *filesCalls) GetHostVault(
 	return connect.NewResponse(&v1.GetHostVaultResponse{Path: v.Path, Id: string(v.ID), Name: v.Name}), nil
 }
 
-func (e *filesCalls) EnsureVaultIndexed(
-	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
-) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+func (e *filesCalls) IndexVault(
+	ctx context.Context, req *connect.Request[v1.IndexVaultRequest],
+) (*connect.Response[v1.IndexVaultResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
-		func(code v1.ErrorCode) *v1.EnsureVaultIndexedResponse {
-			return &v1.EnsureVaultIndexedResponse{Error: code}
+		func(code v1.ErrorCode) *v1.IndexVaultResponse {
+			return &v1.IndexVaultResponse{Error: code}
 		},
-		func(vault *Access) (*v1.EnsureVaultIndexedResponse, error) {
+		func(vault *Access) (*v1.IndexVaultResponse, error) {
 			state, err := vault.Switch.EnsureIndexed(ctx)
 			if err != nil {
 				return nil, err
 			}
-			out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
+			out := &v1.IndexVaultResponse{Reason: state.Reason}
 			switch state.Status {
 			case plugin.Indexed:
 				out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED

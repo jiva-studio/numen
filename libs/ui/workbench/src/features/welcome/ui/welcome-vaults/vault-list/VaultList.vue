@@ -6,7 +6,7 @@ import type { VNode } from 'vue'
  */
 import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../../welcome-row'
-import { vaultLetter } from '../../../lib/letters'
+import { getVaultLetter } from '../../../lib/letters'
 import type { VaultRow } from '../../../model/welcome'
 import type { Keystroke } from '@numen/ui'
 
@@ -25,7 +25,7 @@ defineSlots<{
 }>()
 
 const getVaultKeys = (pos: number, vault: VaultRow): Keystroke | undefined => {
-  const letter = vaultLetter(pos)
+  const letter = getVaultLetter(pos)
   if (!letter || vault.isWorking) return undefined
   return { icons: [], letter }
 }

@@ -45,20 +45,20 @@ type recordingLinks struct {
 	err           error
 }
 
-func (r *recordingLinks) GetLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (r *recordingLinks) ListLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	r.linkCalls = append(r.linkCalls, slices.Clone(paths))
 	if r.err != nil {
 		return nil, r.err
 	}
-	return r.LinkBatches.GetLinksOf(ctx, v, paths)
+	return r.LinkBatches.ListLinksOf(ctx, v, paths)
 }
 
-func (r *recordingLinks) GetBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (r *recordingLinks) ListBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	r.backlinkCalls = append(r.backlinkCalls, slices.Clone(paths))
 	if r.err != nil {
 		return nil, r.err
 	}
-	return r.LinkBatches.GetBacklinksOf(ctx, v, paths)
+	return r.LinkBatches.ListBacklinksOf(ctx, v, paths)
 }
 
 // recordingNotes keeps the paths of every query for the notes to display.

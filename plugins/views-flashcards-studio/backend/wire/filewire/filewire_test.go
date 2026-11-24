@@ -19,13 +19,13 @@ func TestStampAndInstantRoundTripZeroAndNanoseconds(t *testing.T) {
 	if got := stamp(time.Unix(0, 789)); got != 789 {
 		t.Fatalf("expected 789 for stamp, got %d", got)
 	}
-	if !instant(0).IsZero() {
-		t.Fatalf("expected zero time for instant(0), got %v", instant(0))
+	if !buildInstant(0).IsZero() {
+		t.Fatalf("expected zero time for instant(0), got %v", buildInstant(0))
 	}
-	if got := instant(-1).UnixNano(); got != -1 {
+	if got := buildInstant(-1).UnixNano(); got != -1 {
 		t.Fatalf("expected -1 for instant(-1), got %d", got)
 	}
-	if got := instant(1).UnixNano(); got != 1 {
+	if got := buildInstant(1).UnixNano(); got != 1 {
 		t.Fatalf("expected 1 for instant(1), got %d", got)
 	}
 }

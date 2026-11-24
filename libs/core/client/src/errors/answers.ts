@@ -57,9 +57,10 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.LOCKED]: 'unreadable',
   [ProtoErrorCode.INTERNAL]: 'unreadable',
   [ProtoErrorCode.NOT_ATTEMPTED]: 'unreadable',
+  [ProtoErrorCode.HASH_MISMATCH]: 'unreadable',
+  [ProtoErrorCode.INVALID_RANGE]: 'unreadable',
   [ProtoErrorCode.FILE_ABSENT]: 'notFound',
   [ProtoErrorCode.FILE_PRESENT]: 'alreadyExists',
-  [ProtoErrorCode.HASH_MISMATCH]: 'unreadable',
   [ProtoErrorCode.CHANGED]: null,
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 

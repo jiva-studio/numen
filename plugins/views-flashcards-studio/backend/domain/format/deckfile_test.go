@@ -86,7 +86,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			if got := cardHeadings(f.Deck(domain.FileStat{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
+			if got := cardHeadings(f.BuildDeck(domain.FileStat{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
 				t.Errorf("cards = %v, want %v", got, one.cards)
 			}
 			if err := os.WriteFile(path, f.Bytes(), 0o600); err != nil {
@@ -141,7 +141,7 @@ func TestSetValueKeepsTheOrderTheFieldsWereSavedIn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	card := f.Deck(domain.FileStat{}).Cards[0]
+	card := f.BuildDeck(domain.FileStat{}).Cards[0]
 	if got := fieldsOf(card); !slices.Equal(got, []string{"Life span", "Height"}) {
 		t.Errorf("fields = %v, want the order they were written in", got)
 	}
@@ -302,7 +302,7 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if got := string(f.Bytes()); got != removed {
 		t.Errorf("section removed wrong\n want %q\n  got %q", removed, got)
 	}
-	read := f.Deck(domain.FileStat{})
+	read := f.BuildDeck(domain.FileStat{})
 	if len(read.Cards) != 2 {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
@@ -355,7 +355,7 @@ func TestAddCard(t *testing.T) {
 		t.Errorf("card added wrong\n want %q\n  got %q", want, got)
 	}
 
-	card, err := f.Deck(domain.FileStat{}).Card("m9n8b7v6c5")
+	card, err := f.BuildDeck(domain.FileStat{}).FindCard("m9n8b7v6c5")
 	if err != nil {
 		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestRenameFieldReachesTheCardsOfThatCardModelAlone(t *testing.T) {
 		t.Errorf("renamed = %d, want the one card cut by that card model", renamed)
 	}
 
-	deck := f.Deck(domain.FileStat{})
+	deck := f.BuildDeck(domain.FileStat{})
 	llama := deck.Cards[0]
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Life span", "Shoulder height"}) {
 		t.Errorf("fields = %v", got)
@@ -564,7 +564,7 @@ func TestACardIsSplitByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got := f.Deck(domain.FileStat{}).Cards[0]; got.CardModelLink != "Animal|the beast" {
+	if got := f.BuildDeck(domain.FileStat{}).Cards[0]; got.CardModelLink != "Animal|the beast" {
 		t.Errorf("the link was rewritten: %q", got.CardModelLink)
 	}
 }
@@ -586,7 +586,7 @@ func TestSetValue_ErrorsOnDuplicateCardID(t *testing.T) {
 	if string(f.Bytes()) != raw {
 		t.Error("a card was written anyway")
 	}
-	if _, err := f.Deck(domain.FileStat{}).Card("k7m2xq9fzp"); !errors.Is(err, format.ErrTwoCards) {
+	if _, err := f.BuildDeck(domain.FileStat{}).FindCard("k7m2xq9fzp"); !errors.Is(err, format.ErrTwoCards) {
 		t.Errorf("card = %v, want ErrTwoCards", err)
 	}
 }
@@ -609,7 +609,7 @@ func TestAHeadingAndASectionsNameAreSplitAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.FileStat{})
+	read := f.BuildDeck(domain.FileStat{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}
@@ -639,7 +639,7 @@ func TestAFieldsNameIsSplitAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.FileStat{})
+	read := f.BuildDeck(domain.FileStat{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}
@@ -679,7 +679,7 @@ func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 		return out
 	}
 
-	_, provided := format.Whole(body, map[string]format.CardModel{
+	_, provided := format.AssignCardIDs(body, map[string]format.CardModel{
 		"Animal": {Fields: []string{"Name"}},
 	}, createID)
 	want := []format.CardID{{Card: 0, CardID: "m9n8b7v6c5"}, {Card: 2, CardID: "zpqrstvwxy"}}
@@ -692,7 +692,7 @@ func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 // the order they stand, and the tail below the last value. A section no card
 // is placed under is written at its current position.
 func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
-	body, err := format.DeckBody(format.Deck{
+	body, err := format.BuildDeckBody(format.Deck{
 		Preamble: "Cards I am learning.",
 		Sections: []format.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
 		Cards: []format.Card{{
@@ -713,7 +713,7 @@ func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 // A card in a section the deck does not hold fails. Writing it under the last
 // section would move a card between sections silently.
 func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
-	_, err := format.DeckBody(format.Deck{
+	_, err := format.BuildDeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
 		Cards:    []format.Card{{Heading: "Llama", CardModelLink: "Animal", Section: 99}},
 	})
@@ -866,7 +866,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"whole": func(f *format.DeckFile) error {
-			provided, err := f.Whole(cardModels, createID)
+			provided, err := f.AssignCardIDs(cardModels, createID)
 			if provided != nil {
 				t.Errorf("card ids given = %+v, want none", provided)
 			}
@@ -914,7 +914,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 // reports which cards were assigned one.
 func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
-	provided, err := f.Whole(map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}},
+	provided, err := f.AssignCardIDs(map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}},
 		func() format.ID { return "m9n8b7v6c5" })
 	if err != nil {
 		t.Fatalf("whole: %v", err)
@@ -1088,7 +1088,7 @@ func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 // A card standing under a section before the first or past the last fails.
 func TestDeckBody_ErrorsOnSectionOutOfRange(t *testing.T) {
 	for _, item := range []int{-2, 2} {
-		_, err := format.DeckBody(format.Deck{
+		_, err := format.BuildDeckBody(format.Deck{
 			Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
 			Cards:    []format.Card{{Heading: "Llama", Section: item}},
 		})
@@ -1120,7 +1120,7 @@ func TestDeckBodyEndsOnTheTailOfTheDeck(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got, err := format.DeckBody(one.deck)
+			got, err := format.BuildDeckBody(one.deck)
 			if err != nil {
 				t.Fatalf("body: %v", err)
 			}
@@ -1263,7 +1263,7 @@ func TestADeckEndingOnASectionLeadHasOnlyTheFinalBreakAsTail(t *testing.T) {
 // and the link before it still holds the cut off.
 func TestProjectKeepsALinkWhenALaterPairIsNeverClosed(t *testing.T) {
 	head := strings.Repeat("a", format.HeadingRunes-3)
-	got := format.Project(head + " [[xy]] [[never closed and more")
+	got := format.GetHeadingText(head + " [[xy]] [[never closed and more")
 	if got != head {
 		t.Errorf("project = %q, want %q", got, head)
 	}
@@ -1285,7 +1285,7 @@ func TestWriteIdentifier(t *testing.T) {
 		if err != nil {
 			t.Fatalf("reopen: %v", err)
 		}
-		if id, ok := doc.Identifier(); !ok || id != "abc123" {
+		if id, ok := doc.GetIdentifier(); !ok || id != "abc123" {
 			t.Errorf("identifier = %q, %v", id, ok)
 		}
 	})
@@ -1367,7 +1367,7 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 				t.Fatalf("open: %v", err)
 			}
 			read := format.ReadCardModel(markdown.Parse(domain.FileStat{Path: "Animal.md"}, []byte(raw)))
-			body, err := format.CardModelBody(read.Preamble, read.Templates, read.Tail)
+			body, err := format.BuildCardModelBody(read.Preamble, read.Templates, read.Tail)
 			if err != nil {
 				t.Fatalf("card model body: %v", err)
 			}
@@ -1405,10 +1405,10 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			var body string
 			switch n.Type {
 			case format.TypeDeck:
-				body, err = format.DeckBody(format.ReadDeck(n))
+				body, err = format.BuildDeckBody(format.ReadDeck(n))
 			case format.TypeCardModel:
 				read := format.ReadCardModel(n)
-				body, err = format.CardModelBody(read.Preamble, read.Templates, read.Tail)
+				body, err = format.BuildCardModelBody(read.Preamble, read.Templates, read.Tail)
 			default:
 				t.Fatalf("type = %q, want a deck or a card model", n.Type)
 			}
@@ -1434,7 +1434,7 @@ func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 	target := append([]format.CardTemplate(nil), read.Templates...)
 	target[0].Back = "**{{Height}}**"
 
-	body, err := format.CardModelBody(read.Preamble, target, read.Tail)
+	body, err := format.BuildCardModelBody(read.Preamble, target, read.Tail)
 	if err != nil {
 		t.Fatalf("card model body: %v", err)
 	}
@@ -1454,7 +1454,7 @@ func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 // addressed by its name here. Two templates of one name are two templates, and what
 // each holds is in the file.
 func TestACardModelKeepsEveryTemplateItIsGiven(t *testing.T) {
-	body, err := format.CardModelBody("", []format.CardTemplate{
+	body, err := format.BuildCardModelBody("", []format.CardTemplate{
 		{Name: "Recognize", Front: "{{Name}}", Back: "{{Height}}"},
 		{Name: "Recognize", Front: "{{Height}}", Back: "{{Name}}"},
 	}, "")
@@ -1485,7 +1485,7 @@ func createWholeID() format.ID { return "zpqrstvwxy" }
 func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 	body := "\n## Old ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
 
-	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
+	got, provided := format.AssignCardIDs(body, wholeAnimals(), createWholeID)
 
 	want := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
 	if got != want {
@@ -1501,7 +1501,7 @@ func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 func TestWholeKeepsTheHeadingOfACardWhoseCardModelIsUnknown(t *testing.T) {
 	body := "\n## Old\n\n[[Plant]]\n\n### Name\n\nFern\n"
 
-	got, _ := format.Whole(body, wholeAnimals(), createWholeID)
+	got, _ := format.AssignCardIDs(body, wholeAnimals(), createWholeID)
 
 	want := "\n## Old ^zpqrstvwxy\n\n[[Plant]]\n\n### Name\n\nFern\n"
 	if got != want {
@@ -1514,7 +1514,7 @@ func TestWholeKeepsTheHeadingOfACardWhoseCardModelIsUnknown(t *testing.T) {
 func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
 	body := "\n##   Llama ^k7m2xq9fzp  \n\n[[Animal]]\n\n### Name\n\nLlama\n"
 
-	got, provided := format.Whole(body, wholeAnimals(), createWholeID)
+	got, provided := format.AssignCardIDs(body, wholeAnimals(), createWholeID)
 
 	if got != body {
 		t.Errorf("body\n want %q\n  got %q", body, got)
@@ -1526,7 +1526,7 @@ func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
 
 // A heading that ends the body is written without a line break after it.
 func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
-	got, provided := format.Whole("## Llama", nil, createWholeID)
+	got, provided := format.AssignCardIDs("## Llama", nil, createWholeID)
 
 	if want := "## Llama ^zpqrstvwxy"; got != want {
 		t.Errorf("body = %q, want %q", got, want)
@@ -1539,7 +1539,7 @@ func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
 // A template added with only its front typed is a heading and a Front side, and no
 // Back side is written for the empty half.
 func TestCardModelBodyHasAHeadingAndAFrontSideForATemplateWithOnlyAFront(t *testing.T) {
-	body, err := format.CardModelBody("", []format.CardTemplate{
+	body, err := format.BuildCardModelBody("", []format.CardTemplate{
 		{Name: "Card 1", Front: "What lives under {{Field 1}}?"},
 	}, "")
 	if err != nil {

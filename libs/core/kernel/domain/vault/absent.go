@@ -13,9 +13,6 @@ var (
 	// ErrFilePresent is what an absent entry gets when a file with other content is at its path.
 	ErrFilePresent = errors.New("a file with other content is at the path")
 
-	// ErrHashMismatch is what a fill gets when the bytes do not have the hash of the entry.
-	ErrHashMismatch = errors.New("the bytes do not have the hash of the entry")
-
 	// ErrChanged is what an eviction gets when the file does not have the hash it was asked to drop.
 	ErrChanged = errors.New("the file has changes that are not the content named")
 )

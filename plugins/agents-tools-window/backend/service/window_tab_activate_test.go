@@ -161,7 +161,7 @@ func TestWindowTabActivateReturnsIsActiveFromTheWindow(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := windowtest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
-	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: otherActiveWindow{Window: window, activeID: "tab-1"}})}
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: otherActiveWindow{Window: window, activeID: "tab-1"}})}
 
 	var out tabActivateOutput
 	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
@@ -190,7 +190,7 @@ func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":2,"pageCount":120}`})
 	window.SetOpenTabs(tabs, "tab-1")
 	calls := &atomic.Int64{}
-	on := service.Host{Files: filesOf(vault), Window: countingWindow{Window: window, activateCalls: calls}}
+	on := service.Host{GetFiles: filesOf(vault), Window: countingWindow{Window: window, activateCalls: calls}}
 	return windowTools{window: window, registry: newRegistry(t, on)}, calls
 }
 
@@ -231,7 +231,7 @@ func TestWindowTabActivateRejectsATabNotShownInTime(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := windowtest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
-	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: lateWindow{Window: window}})}
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: lateWindow{Window: window}})}
 
 	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, nil)
 	if failure == "" {

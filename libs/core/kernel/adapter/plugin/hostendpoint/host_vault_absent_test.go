@@ -106,7 +106,7 @@ func newPhoneVault(t *testing.T, held map[string]string) phoneVault {
 func (p phoneVault) put(t *testing.T, content string) *v1.PutAbsentFilesResponse {
 	t.Helper()
 	res, err := p.client.PutAbsentFiles(t.Context(), connect.NewRequest(&v1.PutAbsentFilesRequest{Files: []*v1.HostAbsentFile{{
-		Path: guidePath, Size: int64(len(content)), ModifiedAtMs: 1_700_000_000_123, Hash: getGuideHash(content),
+		Path: guidePath, Size: int64(len(content)), ModifiedUnixMs: 1_700_000_000_123, Hash: getGuideHash(content),
 	}}}))
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +127,7 @@ func TestAnAbsentFileIsListedAndRefusesAReadWithFileAbsent(t *testing.T) {
 
 	listed, err := p.client.ListAbsentFiles(t.Context(), connect.NewRequest(&v1.ListAbsentFilesRequest{}))
 	if err != nil || len(listed.Msg.GetFiles()) != 1 || listed.Msg.GetFiles()[0].GetPath() != guidePath ||
-		listed.Msg.GetFiles()[0].GetModifiedAtMs() != 1_700_000_000_123 {
+		listed.Msg.GetFiles()[0].GetModifiedUnixMs() != 1_700_000_000_123 {
 		t.Fatalf("the list was %v (%v)", listed.Msg, err)
 	}
 	read, err := p.client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: guidePath}))

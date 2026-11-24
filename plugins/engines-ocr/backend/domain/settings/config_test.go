@@ -7,7 +7,7 @@ import (
 )
 
 func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
-	cfg := Defaults()
+	cfg := NewDefaultConfig()
 	if got := cfg.GetThreads(8); got != 4 {
 		t.Errorf("default fallback threads with 8 cores = %d, want 4", got)
 	}
@@ -28,7 +28,7 @@ func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
 }
 
 func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
-	cfg := Defaults()
+	cfg := NewDefaultConfig()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
 	cfg.Recognize.Threads, cfg.Recognize.Jobs = 1, 1
 	if got := cfg.GetThreads(8); got != 1 {
@@ -40,7 +40,7 @@ func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 }
 
 func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
-	cfg := Defaults()
+	cfg := NewDefaultConfig()
 	if cfg.Recognize.DPI != 300 {
 		t.Errorf("a page is rendered at %d dpi, want 300", cfg.Recognize.DPI)
 	}

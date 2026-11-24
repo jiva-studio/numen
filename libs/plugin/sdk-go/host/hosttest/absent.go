@@ -117,3 +117,33 @@ func (v *Vault) checkAbsent(path string, readErr error) error {
 	}
 	return readErr
 }
+
+func (v *Vault) isListed(filePath string) bool {
+	_, isListed := v.absent[filePath]
+	return isListed
+}
+
+func (v *Vault) listEntryPaths() ([]string, error) {
+	paths, err := v.files.listPaths()
+	if err != nil {
+		return nil, err
+	}
+	for listed := range v.absent {
+		paths = append(paths, listed)
+	}
+	return paths, nil
+}
+
+func (v *Vault) moveEntry(from, target string) error {
+	entry, isListed := v.absent[from]
+	if !isListed {
+		return v.moveFile(from, target)
+	}
+	if v.isPresent(target) || v.isListed(target) {
+		return fmt.Errorf("%s: %w", target, host.ErrAlreadyExists)
+	}
+	delete(v.absent, from)
+	entry.Path = target
+	v.absent[target] = entry
+	return nil
+}

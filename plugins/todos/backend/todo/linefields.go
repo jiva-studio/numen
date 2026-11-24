@@ -164,7 +164,7 @@ func isRecurrence(value string) bool {
 func maskSpans(text string) []bool {
 	masked := make([]bool, len(text)+1)
 	for i := 0; i < len(text); {
-		end := spanEnd(text, i)
+		end := findSpanEnd(text, i)
 		if end <= i {
 			_, size := utf8.DecodeRuneInString(text[i:])
 			i += size
@@ -178,10 +178,10 @@ func maskSpans(text string) []bool {
 	return masked
 }
 
-func spanEnd(text string, i int) int {
+func findSpanEnd(text string, i int) int {
 	switch {
 	case text[i] == '`':
-		return codeEnd(text, i)
+		return findCodeEnd(text, i)
 	case strings.HasPrefix(text[i:], "[["):
 		if end := strings.Index(text[i+2:], "]]"); end >= 0 {
 			return i + 2 + end + 2
@@ -192,7 +192,7 @@ func spanEnd(text string, i int) int {
 	return i
 }
 
-func codeEnd(text string, i int) int {
+func findCodeEnd(text string, i int) int {
 	run := 0
 	for i+run < len(text) && text[i+run] == '`' {
 		run++

@@ -17,10 +17,11 @@ import (
 )
 
 const (
-	settingServer     = "server"
-	settingInterval   = "syncIntervalSeconds"
-	settingForeground = "syncOnlyWhileOpen"
-	requestTimeout    = 30 * time.Second
+	settingServer       = "server"
+	settingInterval     = "syncIntervalSeconds"
+	settingRemovalDelay = "removalDelaySeconds"
+	settingForeground   = "syncOnlyWhileOpen"
+	requestTimeout      = 30 * time.Second
 )
 
 // App is the backend of Numen Sync: Mount registers its methods and keeps the sync running, and HandleEvent wakes
@@ -54,7 +55,7 @@ func (a *App) Mount(s *server.Server) error {
 		return err
 	}
 	s.SetUpdateConfig(a.runtime.configure)
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		a.runtime.stop()
 		return nil
 	})

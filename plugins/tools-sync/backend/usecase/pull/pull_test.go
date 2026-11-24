@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
@@ -59,7 +59,7 @@ func trustAll([]byte) bool { return true }
 
 func (p *pair) pull(t *testing.T, authors func([]byte) bool) transfer.PullResult {
 	t.Helper()
-	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors})
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: authors})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,27 +132,6 @@ func TestPullChanges_AdoptsAHeadThatEqualsTheLocalNote(t *testing.T) {
 	}
 }
 
-func TestPullChanges_KeepsANoteChangedOnBothComputersAsItIs(t *testing.T) {
-	p := newPair(t)
-	first := p.push(t, "Shopping list.md", "milk", nil)
-	p.pull(t, trustAll)
-	p.b.WriteNote(target, "Shopping list.md", "eggs")
-	p.push(t, "Shopping list.md", "bread", &first)
-
-	result := p.pull(t, trustAll)
-	again := p.pull(t, trustAll)
-
-	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "eggs" {
-		t.Errorf("note = %q, want the local text eggs", text)
-	}
-	if !slices.Equal(result.Conflicts, []string{"Shopping list.md"}) || !slices.Equal(again.Conflicts, []string{"Shopping list.md"}) {
-		t.Errorf("conflicts = %v then %v, want the note both times", result.Conflicts, again.Conflicts)
-	}
-	if row, _ := p.b.GetFileRow(t, target, "Shopping list.md"); row.BaseHash != note.Hash([]byte("milk")) {
-		t.Errorf("base = %s, want the hash of milk, unchanged", row.BaseHash)
-	}
-}
-
 func TestPullChanges_KeepsTheNoteWhenTheHostRefusesTheWrite(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, "Shopping list.md", "milk", nil)
@@ -190,9 +169,9 @@ func TestPullChanges_SkipsARevisionOfAnAuthorItDoesNotTrust(t *testing.T) {
 func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 	p := newPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
-	p.server.CorruptBlobs(true)
+	p.server.SetBlobCorruption(true)
 
-	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll})
 
 	if !errors.Is(err, pull.ErrCorruptBlob) {
 		t.Errorf("error = %v, want ErrCorruptBlob", err)

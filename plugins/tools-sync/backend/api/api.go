@@ -6,17 +6,18 @@ const Service = "md.numen.tools.sync"
 
 // The methods of the service.
 const (
-	MethodListVaults       = "ListVaults"
-	MethodListRemoteVaults = "ListRemoteVaults"
-	MethodConnectVault     = "ConnectVault"
-	MethodGetStatus        = "GetStatus"
-	MethodGetSubscription  = "GetSubscription"
-	MethodCreateCheckout   = "CreateCheckout"
-	MethodFetchFile        = "FetchFile"
-	MethodDropDownload     = "DropDownload"
-	MethodGetDownloads     = "GetDownloads"
-	MethodSuspend          = "Suspend"
-	MethodResume           = "Resume"
+	MethodListVaults        = "ListVaults"
+	MethodListRemoteVaults  = "ListRemoteVaults"
+	MethodConnectVault      = "ConnectVault"
+	MethodGetConnectPreview = "GetConnectPreview"
+	MethodGetStatus         = "GetStatus"
+	MethodGetSubscription   = "GetSubscription"
+	MethodCreateCheckout    = "CreateCheckout"
+	MethodFetchFile         = "FetchFile"
+	MethodDropDownload      = "DropDownload"
+	MethodGetDownloads      = "GetDownloads"
+	MethodSuspend           = "Suspend"
+	MethodResume            = "Resume"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -43,12 +44,13 @@ const (
 
 // Vault is a vault of this installation.
 type Vault struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Path          string `json:"path"`
-	State         State  `json:"state"`
-	LastSyncedAt  string `json:"lastSyncedAt"`
-	ConflictCount int    `json:"conflictCount"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Path            string           `json:"path"`
+	State           State            `json:"state"`
+	LastSyncedAt    string           `json:"lastSyncedAt"`
+	ConflictCount   int              `json:"conflictCount"`
+	PausedDeletions *PausedDeletions `json:"pausedDeletions"`
 }
 
 // ListVaultsRequest asks for every vault of the installation.
@@ -78,6 +80,17 @@ type ConnectVaultRequest struct {
 	VaultID  string `json:"vaultId"`
 	Mode     Mode   `json:"mode"`
 	RemoteID string `json:"remoteId,omitempty"`
+}
+
+// GetConnectPreviewRequest asks how many notes of a vault differ from the notes of a synced vault.
+type GetConnectPreviewRequest struct {
+	VaultID  string `json:"vaultId"`
+	RemoteID string `json:"remoteId"`
+}
+
+// GetConnectPreviewResponse is the number of notes that have another text on each side.
+type GetConnectPreviewResponse struct {
+	DifferCount int `json:"differCount"`
 }
 
 // ConnectVaultResponse is the answer to a connection that went through.
@@ -180,3 +193,42 @@ type ResumeRequest struct{}
 
 // ResumeResponse is the answer to a resumption that started the sync.
 type ResumeResponse struct{}
+
+// MethodResolveDeletions answers the pause before many removals.
+const MethodResolveDeletions = "ResolveDeletions"
+
+// Direction is which way the removals that wait for an answer go.
+type Direction string
+
+const (
+	// DirectionSend is removals of this device that wait to be sent.
+	DirectionSend Direction = "send"
+	// DirectionApply is removals of another device that wait to be applied here.
+	DirectionApply Direction = "apply"
+)
+
+// Choice is the answer to the removals that wait.
+type Choice string
+
+const (
+	// ChoiceRemove goes on with the removals.
+	ChoiceRemove Choice = "remove"
+	// ChoiceKeep restores the files.
+	ChoiceKeep Choice = "keep"
+)
+
+// PausedDeletions is the removals of a vault that wait for an answer. Direction says which way they go.
+type PausedDeletions struct {
+	Count     int       `json:"count"`
+	Tracked   int       `json:"tracked"`
+	Direction Direction `json:"direction"`
+}
+
+// ResolveDeletionsRequest answers for a vault.
+type ResolveDeletionsRequest struct {
+	VaultID string `json:"vaultId"`
+	Choice  Choice `json:"choice"`
+}
+
+// ResolveDeletionsResponse is the answer to a choice that was taken.
+type ResolveDeletionsResponse struct{}

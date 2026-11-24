@@ -68,8 +68,8 @@ const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ??
 
 const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
 
-const tabName = (pos: number): string => getTabName(props.pane.id, pos)
-const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
+const getPaneTabName = (pos: number): string => getTabName(props.pane.id, pos)
+const getPaneTabPanelName = (pos: number): string => getPanelName(props.pane.id, pos)
 
 function reach(tab: TabId): void {
   drawnTabs.get(tab)?.focus()
@@ -86,10 +86,10 @@ function reach(tab: TabId): void {
   >
     <WorkspaceTab
       v-for="(tab, index) in pane.tabs"
-      :id="tabName(index)"
+      :id="getPaneTabName(index)"
       :ref="(element) => onHoldTab(tab, element)"
       :key="tab"
-      :aria-controls="panelName(index)"
+      :aria-controls="getPaneTabPanelName(index)"
       :tab="tab"
       :title="getTitle(tab)"
       :mark="getMarkOf(tab)"

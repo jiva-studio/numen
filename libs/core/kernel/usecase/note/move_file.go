@@ -45,7 +45,10 @@ func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) 
 	}
 	defer release()
 	moved, err := u.move(ctx, v, from, to)
-	return moved, u.follow.IsIndexOutdated(err), err
+	if isIndexOutdated(u.follow, err) {
+		return moved, true, nil
+	}
+	return moved, false, err
 }
 
 func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
@@ -114,7 +117,7 @@ func (u MoveFile) getBacklinksByPath(
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.notes.links.GetBacklinks(ctx, v.ID, source.Path)
+		links, err := u.notes.links.ListBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}

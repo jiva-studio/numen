@@ -34,7 +34,7 @@ func Apply(opts application.WebviewWindowOptions, goos string) application.Webvi
 	return opts
 }
 
-// Window returns the options with the frame of the platform the program runs on.
-func Window(opts application.WebviewWindowOptions) application.WebviewWindowOptions {
+// ApplyPlatformFrame returns the options with the frame of the platform the program runs on.
+func ApplyPlatformFrame(opts application.WebviewWindowOptions) application.WebviewWindowOptions {
 	return Apply(opts, runtime.GOOS)
 }

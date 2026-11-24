@@ -34,11 +34,14 @@ interface Setup {
   readonly remote?: RemoteVault[]
   readonly hasIdentity?: boolean
   readonly refusal?: string
+  readonly differCount?: number
 }
 
 const createClient = (setup: Setup): VaultsClient => ({
   listVaults: () => Promise.resolve({ vaults: setup.vaults }),
   listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
+  getConnectPreview: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
+  resolveDeletions: () => Promise.resolve(),
   connectVault: () =>
     setup.refusal === undefined ? Promise.resolve() : Promise.reject(new Error(setup.refusal)),
   getStatus: () =>
@@ -111,5 +114,39 @@ export const CopyRefused: Story = {
       await canvas.findByRole('button', { name: 'Connect as a new synced vault' }),
     )
     await expect(await canvas.findByRole('alert')).toHaveTextContent('a copy of a connected vault')
+  },
+}
+
+export const ConfirmationAsked: Story = {
+  args: {
+    client: createClient({ vaults: [plainVault], remote: remoteVaults, differCount: 2 }),
+    now: () => NOW,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Connect to an existing synced vault' }),
+    )
+    await userEvent.click(await canvas.findByRole('button', { name: 'Home' }))
+    await expect(await canvas.findByText('2 notes differ from the synced vault')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Connect' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Cancel' })).toBeVisible()
+  },
+}
+
+export const DeletionsPaused: Story = {
+  args: {
+    client: createClient({
+      vaults: [
+        { ...connectedVault, pausedDeletions: { count: 5, tracked: 10, direction: 'send' } },
+      ],
+    }),
+    now: () => NOW,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Sync is paused: 5 of 10 files are removed')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Remove the files' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Keep the files' })).toBeVisible()
   },
 }

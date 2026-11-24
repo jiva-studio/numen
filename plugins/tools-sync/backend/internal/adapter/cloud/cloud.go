@@ -109,8 +109,3 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
 }
-
-// GetBlobRange returns at most length bytes of the blob from offset.
-func (c *Cloud) GetBlobRange(ctx context.Context, url string, offset, length int64) ([]byte, error) {
-	return syncclient.GetBlobSpan(ctx, c.http, url, offset, length)
-}

@@ -133,7 +133,7 @@ func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Regi
 	registry, err := service.New(vault.vaults()).WithLibrary(func(id domain.VaultID) service.Library {
 		on := l.texts.With(id)
 		return service.Library{Versions: on, Texts: countingTexts{TextReader: on, calls: counted}, Search: l.search.With(id)}
-	}, host.SearchFunctions{}).Registry()
+	}, host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestFileReadOfARangeThatIsNotTextNamesLibraryRead(t *testing.T) {
 
 func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	l := newLibrary(t)
-	l.vault.File("notes/Moor.txt", "Öl und Ödland")
+	l.vault.WriteFile("notes/Moor.txt", "Öl und Ödland")
 
 	var out fileReadAnswer
 	if failure := l.call(t, "file_read", `{"path":"notes/Moor.txt","start":1,"length":5}`, &out); failure != "" {
@@ -211,7 +211,7 @@ func TestLibraryReadOfNonTextFileStatesThatARecognitionOrTranscriptionCreatesOne
 func TestLibraryReadOfLargeBinaryStatesThatARecognitionOrTranscriptionCreatesOne(t *testing.T) {
 	const archivePath = "recordings/Long Night.wav"
 	l, vault, _, registry := newRangeLibrary(t)
-	l.vault.File(archivePath, "RIFF\x00\x00wave body")
+	l.vault.WriteFile(archivePath, "RIFF\x00\x00wave body")
 	vault.readRefused[archivePath] = errors.New("the host refused the call with the code ERROR_CODE_TOO_LARGE")
 	vault.rangeErrors[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
 
@@ -318,7 +318,7 @@ func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.Tex
 func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing.T) {
 	l := newLibrary(t)
 	l.texts.SetPageSize(2)
-	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(l.texts, l.search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(l.texts, l.search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +340,7 @@ func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.
 	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(func(id domain.VaultID) service.Library {
 		on := l.texts.With(id)
 		return service.Library{Versions: on, Texts: repeatingTexts{TextReader: on}, Search: l.search.With(id)}
-	}, host.SearchFunctions{}).Registry()
+	}, host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

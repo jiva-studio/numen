@@ -2,9 +2,11 @@ package note
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // IndexFollow reports whether the index followed a write.
@@ -28,4 +30,11 @@ type SourcesUnder interface {
 // FileMovers opens a vault for moving and removing its files.
 type FileMovers interface {
 	OpenFileMover(v domain.Vault) (vaultport.FileMover, error)
+}
+
+func isIndexOutdated(follow IndexFollow, err error) bool {
+	if follow == nil {
+		return errors.Is(err, edit.ErrIndexOutdated)
+	}
+	return follow.IsIndexOutdated(err)
 }

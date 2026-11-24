@@ -4,7 +4,7 @@
  * goes to its moment.
  */
 import { useTemplateRef } from 'vue'
-import { clock } from '../lib/duration'
+import { formatClock } from '../lib/duration'
 import type { Cue } from '../lib/cues'
 import { useFollowedLine } from '../model/useFollowedLine'
 
@@ -32,7 +32,7 @@ useFollowedLine(
       :data-active="index === active ? '' : undefined"
     >
       <button type="button" class="transcript__line" @click="emit('seek', cue.from)">
-        <time class="transcript__time">{{ clock(cue.from) }}</time>
+        <time class="transcript__time">{{ formatClock(cue.from) }}</time>
         <span class="transcript__text">{{ cue.text }}</span>
       </button>
     </li>

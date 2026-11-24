@@ -20,8 +20,17 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, warning, rows, openFor, remote } = model.state
-const { load, openRemote, closeRemote, connectNew, connectExisting } = model.actions
+const { status, error, warning, rows, openFor, remote, pendingConfirm } = model.state
+const {
+  load,
+  openRemote,
+  closeRemote,
+  connectNew,
+  connectExisting,
+  resolveDeletions,
+  confirmConnect,
+  cancelConnect,
+} = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -39,6 +48,14 @@ function onOpenRemote(vaultId: string): void {
 
 function onChooseRemote(vaultId: string, remoteId: string): void {
   connectExisting(vaultId, remoteId).catch(report)
+}
+
+function onConfirm(): void {
+  confirmConnect().catch(report)
+}
+
+function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
+  resolveDeletions(vaultId, choice).catch(report)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
@@ -72,6 +89,17 @@ function report(failure: unknown): void {
             {{ words.connectExisting }}
           </Button>
         </li>
+        <li v-if="row.pausedLabel !== ''" class="vaults__row vaults__row--paused">
+          <span class="vaults__detail vaults__detail--alarm" role="status">
+            {{ row.pausedLabel }}
+          </span>
+          <Button variant="outline" @click="onResolve(row.id, 'remove')">
+            {{ words.removeFiles }}
+          </Button>
+          <Button variant="outline" @click="onResolve(row.id, 'keep')">
+            {{ words.keepFiles }}
+          </Button>
+        </li>
         <li v-if="openFor === row.id" class="vaults__row vaults__row--remote">
           <span class="vaults__name">{{ words.chooseRemote }}</span>
           <span v-if="remote.length === 0" class="vaults__detail">{{ words.noRemoteVaults }}</span>
@@ -85,6 +113,16 @@ function report(failure: unknown): void {
             {{ one.name }}
           </Button>
           <Button variant="ghost" @click="closeRemote">{{ words.closeRemote }}</Button>
+        </li>
+        <li
+          v-if="pendingConfirm !== null && pendingConfirm.vaultId === row.id"
+          class="vaults__row vaults__row--confirm"
+        >
+          <span class="vaults__detail vaults__detail--alarm" role="status">
+            {{ pendingConfirm.text }}
+          </span>
+          <Button variant="outline" @click="onConfirm">{{ words.confirmConnect }}</Button>
+          <Button variant="ghost" @click="cancelConnect">{{ words.cancelConnect }}</Button>
         </li>
       </template>
     </ul>

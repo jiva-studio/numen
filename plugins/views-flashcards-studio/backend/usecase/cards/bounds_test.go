@@ -85,7 +85,7 @@ func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	made, err := u.CardModel(t.Context(), v, cards.New{
+	made, err := u.CreateCardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name", "Call"},
 		Templates: []format.CardTemplate{{Name: "Recognize", Front: "{{Name}}", Back: "{{Call}}"}},
 	})
@@ -103,7 +103,7 @@ func TestACardModelWithTemplatesLargerThanANoteIsRefused(t *testing.T) {
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
-	_, err := u.CardModel(t.Context(), v, cards.New{
+	_, err := u.CreateCardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name"},
 		Templates: []format.CardTemplate{{Name: "Big", Front: strings.Repeat("x", 1<<20), Back: "{{Name}}"}},
 	})
@@ -115,7 +115,7 @@ func TestACardModelWithTemplatesLargerThanANoteIsRefused(t *testing.T) {
 	prefix := "\n## Exact\n\n### Front\n\n"
 	suffix := "\n\n### Back\n\nx\n"
 	exactFront := strings.Repeat("a", note.MaxBytes-len(prefix)-len(suffix))
-	if _, err := u.CardModel(t.Context(), v, cards.New{
+	if _, err := u.CreateCardModel(t.Context(), v, cards.New{
 		Title: "ExactModel", Fields: []string{"Name"},
 		Templates: []format.CardTemplate{{Name: "Exact", Front: exactFront, Back: "x"}},
 	}); err != nil {

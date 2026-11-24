@@ -14,7 +14,7 @@ import (
 func TestAWriteOverTheHashOfWhatWasReadReturnsTheNewHashAndAHigherVersion(t *testing.T) {
 	ctx := t.Context()
 	v := hosttest.New("Physics")
-	v.File("a.md", "one")
+	v.WriteFile("a.md", "one")
 	_, read, err := v.Read(ctx, "a.md")
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func TestAWriteOverTheHashOfWhatWasReadReturnsTheNewHashAndAHigherVersion(t *tes
 func TestAWriteOverAStaleHashIsStale(t *testing.T) {
 	ctx := t.Context()
 	v := hosttest.New("Physics")
-	v.File("a.md", "one")
+	v.WriteFile("a.md", "one")
 	_, read, err := v.Read(ctx, "a.md")
 	if err != nil {
 		t.Fatal(err)
@@ -58,7 +58,7 @@ func TestAWriteOverAStaleHashIsStale(t *testing.T) {
 
 func TestAChangeThatKeepsSizeAndTimeOnDiskIsStaleAndSoIsABaselineWithoutAHash(t *testing.T) {
 	ctx := t.Context()
-	v := hosttest.OnDisk(t, "Physics", map[string]string{"a.md": "body"})
+	v := hosttest.CreateOnDisk(t, "Physics", map[string]string{"a.md": "body"})
 	_, read, err := v.Read(ctx, "a.md")
 	if err != nil {
 		t.Fatal(err)

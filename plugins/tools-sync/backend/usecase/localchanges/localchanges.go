@@ -39,7 +39,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	if err != nil {
 		return nil, err
 	}
-	files := u.deps.Host.Files(in.VaultID)
+	files := u.deps.Host.GetFiles(in.VaultID)
 	if seen, err = follow(ctx, files, u.deps.Host.Store(in.VaultID), seen); err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 }
 
 func follow(ctx context.Context, files ports.Files, store ports.Store, seen map[string]note.Seen) (map[string]note.Seen, error) {
-	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileRemoved}
+	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
 	from := changes.Source{Feed: files, Store: store, CursorFile: cursorFile}
 	apply := func(_ context.Context, batch []host.FileChange) error {
 		applyChanges(seen, batch)
@@ -109,7 +109,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 		if err != nil {
 			return nil, err
 		}
-		seen[path] = note.Seen{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}
+		seen[path] = note.Seen{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
 		if stat.Hash != bases[path] && u.deps.Clock.Now().Sub(stat.ModTime) >= settleTime {
 			found = append(found, transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
 		}
@@ -120,14 +120,22 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 var errFeedReset = errors.New("the file change feed reset while the notes were read")
 
 func applyChanges(seen map[string]note.Seen, batch []host.FileChange) {
+	bySource := map[int64]string{}
+	for path, one := range seen {
+		bySource[one.SourceID] = path
+	}
 	for _, change := range batch {
-		if !note.IsMarkdown(change.Path) {
+		if !note.IsSyncable(change.Path) {
 			continue
 		}
 		if change.Event == host.EventFileRemoved {
 			delete(seen, change.Path)
 			continue
 		}
-		seen[change.Path] = note.Seen{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt}
+		if old, isMoved := bySource[change.SourceID]; isMoved && old != change.Path && change.Event == host.EventFileMoved {
+			delete(seen, old)
+		}
+		bySource[change.SourceID] = change.Path
+		seen[change.Path] = note.Seen{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt, SourceID: change.SourceID}
 	}
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 )
 
@@ -198,7 +198,7 @@ func TestConnectVault_RefusesACopyOfAConnectedVault(t *testing.T) {
 	w := newWorld(t)
 	w.first.Connect(t, "Test")
 	w.first.AddVault(t, "Test copy")
-	w.first.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.first.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.first.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.first.ReadStoreFile(t, "Test", synctest.LinkFile))
 
 	asNew := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test copy", Mode: catalog.ModeNew})
 	asExisting := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(),
@@ -270,7 +270,7 @@ func TestConnectVault_FailsAfterThreeLostRaces(t *testing.T) {
 
 func TestConnectVault_NeedsAnIdentity(t *testing.T) {
 	w := newWorld(t)
-	w.first.Fake.NoIdentity()
+	w.first.Fake.RemoveIdentity()
 
 	err := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test", Mode: catalog.ModeNew})
 

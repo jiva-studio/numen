@@ -9,6 +9,16 @@ export const SERVICE = 'md.numen.tools.sync'
 
 export type VaultState = 'notConnected' | 'connected' | 'copy'
 
+type DeletionsDirection = 'send' | 'apply'
+
+export type DeletionsChoice = 'remove' | 'keep'
+
+export interface PausedDeletions {
+  readonly count: number
+  readonly tracked: number
+  readonly direction: DeletionsDirection
+}
+
 export interface Vault {
   readonly id: string
   readonly name: string
@@ -16,6 +26,7 @@ export interface Vault {
   readonly state: VaultState
   readonly lastSyncedAt: string
   readonly conflictCount: number
+  readonly pausedDeletions?: PausedDeletions | null
 }
 
 export interface RemoteVault {
@@ -45,6 +56,20 @@ interface ConnectVaultRequest {
   readonly remoteId?: string
 }
 
+interface GetConnectPreviewRequest {
+  readonly vaultId: string
+  readonly remoteId: string
+}
+
+interface GetConnectPreviewResponse {
+  readonly differCount: number
+}
+
+interface ResolveDeletionsRequest {
+  readonly vaultId: string
+  readonly choice: DeletionsChoice
+}
+
 interface GetStatusResponse {
   readonly hasIdentity: boolean
   readonly isReachable: boolean
@@ -54,7 +79,9 @@ interface GetStatusResponse {
 export interface VaultsClient {
   listVaults(): Promise<ListVaultsResponse>
   listRemoteVaults(): Promise<ListRemoteVaultsResponse>
+  getConnectPreview(request: GetConnectPreviewRequest): Promise<GetConnectPreviewResponse>
   connectVault(request: ConnectVaultRequest): Promise<void>
+  resolveDeletions(request: ResolveDeletionsRequest): Promise<void>
   getStatus(): Promise<GetStatusResponse>
 }
 
@@ -70,8 +97,13 @@ export function createVaultsClient(api: Api): VaultsClient {
   return {
     listVaults: () => call<Empty, ListVaultsResponse>('ListVaults', {}),
     listRemoteVaults: () => call<Empty, ListRemoteVaultsResponse>('ListRemoteVaults', {}),
+    getConnectPreview: (request) =>
+      call<GetConnectPreviewRequest, GetConnectPreviewResponse>('GetConnectPreview', request),
     connectVault: async (request) => {
       await call<ConnectVaultRequest, Empty>('ConnectVault', request)
+    },
+    resolveDeletions: async (request) => {
+      await call<ResolveDeletionsRequest, Empty>('ResolveDeletions', request)
     },
     getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}),
   }

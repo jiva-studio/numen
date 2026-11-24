@@ -40,8 +40,8 @@ func TestPaddedLength_FollowsTheLadderOfTheFormat(t *testing.T) {
 		{2*mebibyte - 7, 3 * mebibyte},
 		{3*mebibyte + 1, 4 * mebibyte},
 	} {
-		if got := blobcipher.PaddedLength(one.payload); got != one.want {
-			t.Errorf("PaddedLength(%d) = %d, want %d", one.payload, got, one.want)
+		if got := blobcipher.ComputePaddedLength(one.payload); got != one.want {
+			t.Errorf("ComputePaddedLength(%d) = %d, want %d", one.payload, got, one.want)
 		}
 	}
 }

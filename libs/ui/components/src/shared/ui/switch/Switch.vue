@@ -12,7 +12,7 @@
  */
 import type { HTMLAttributes } from 'vue'
 import { SwitchRoot, SwitchThumb } from 'reka-ui'
-import { cn } from '@/shared/lib/dom/classes'
+import { joinClasses } from '@/shared/lib/dom/classes'
 
 const props = withDefaults(
   defineProps<{
@@ -40,7 +40,7 @@ function onUpdate(value: boolean): void {
     :aria-busy="props.isBusy || undefined"
     @update:model-value="onUpdate"
     :class="
-      cn(
+      joinClasses(
         'rounded-pill inline-flex h-5 w-9 shrink-0 items-center p-0.5',
         'duration-hover ease-numen cursor-pointer transition-colors',
         'bg-hushed data-[state=checked]:bg-accent',
@@ -52,7 +52,7 @@ function onUpdate(value: boolean): void {
   >
     <SwitchThumb
       :class="
-        cn(
+        joinClasses(
           'rounded-pill bg-raised block size-4',
           // The thumb moves by its margin, a layout change, not by a transform: a transform
           // transition ends with one stray frame drawn at the start in WebKitGTK, which showed as

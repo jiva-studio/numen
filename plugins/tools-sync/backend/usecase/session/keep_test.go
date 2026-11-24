@@ -69,14 +69,14 @@ func newKit(t *testing.T, s setup) *kit {
 
 	k.identity = accounttest.NewFake(t, s.signAs)
 	if s.noIdentity {
-		k.identity.NoIdentity()
+		k.identity.RemoveIdentity()
 	}
 	k.health = healthtest.NewHost(t)
-	identityEndpoint, err := hostcall.FromVars(k.identity.Vars("token"))
+	identityEndpoint, err := hostcall.ReadVars(k.identity.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	healthEndpoint, err := hostcall.FromVars(k.health.Vars("token"))
+	healthEndpoint, err := hostcall.ReadVars(k.health.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,7 +7,7 @@ import (
 
 const recoverySignPrefix = "numen/v1/recovery-sign/"
 
-func recoverySignMessage(pluginID string, message []byte) []byte {
+func encodeRecoverySignMessage(pluginID string, message []byte) []byte {
 	signed := make([]byte, 0, len(recoverySignPrefix)+len(pluginID)+1+len(message))
 	signed = append(signed, recoverySignPrefix...)
 	signed = append(signed, pluginID...)
@@ -17,7 +17,7 @@ func recoverySignMessage(pluginID string, message []byte) []byte {
 
 // SignForRecovery signs message with the recovery signing key for one plugin, under a prefix no device signature shares.
 func (k RecoveryKey) SignForRecovery(pluginID string, message []byte) [64]byte {
-	return [64]byte(k.signEntry(recoverySignMessage(pluginID, message)))
+	return [64]byte(k.signEntry(encodeRecoverySignMessage(pluginID, message)))
 }
 
 // VerifyForRecovery checks a signature made by SignForRecovery; a plugin id with a zero byte never verifies.
@@ -25,5 +25,5 @@ func VerifyForRecovery(sign ed25519.PublicKey, pluginID string, message []byte, 
 	if len(sign) != ed25519.PublicKeySize || strings.IndexByte(pluginID, 0) >= 0 {
 		return false
 	}
-	return ed25519.Verify(sign, recoverySignMessage(pluginID, message), signature[:])
+	return ed25519.Verify(sign, encodeRecoverySignMessage(pluginID, message), signature[:])
 }

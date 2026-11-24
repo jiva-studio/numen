@@ -10,14 +10,14 @@
  * has still to finish reads by `percentWord`, which never rounds up to a
  * hundred.
  */
-export const percent = (share: number): string => `${Math.round(share * 100)}%`
+export const formatPercent = (share: number): string => `${Math.round(share * 100)}%`
 
 /**
  * The thing a count counts, in the singular where there is one of it. `other`
  * is the whole plural where an `s` on the end does not give it, and the two
  * arguments are the two forms English has, in `Intl.PluralRules`' words.
  */
-export const plural = (count: number, one: string, other = `${one}s`): string =>
+export const pickPlural = (count: number, one: string, other = `${one}s`): string =>
   Math.round(count) === 1 ? one : other
 
 /**
@@ -26,8 +26,8 @@ export const plural = (count: number, one: string, other = `${one}s`): string =>
  * The count is rounded before it is formatted and before the plural is chosen,
  * because a curve produces fractions and the user is shown how many cards.
  */
-export const many = (count: number, one: string): string =>
-  `${Math.round(count)} ${plural(count, one)}`
+export const formatCount = (count: number, one: string): string =>
+  `${Math.round(count)} ${pickPlural(count, one)}`
 
 /** A whole number, grouped in thousands. */
 export const groupDigits = (n: number): string => {

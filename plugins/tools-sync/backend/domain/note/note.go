@@ -15,10 +15,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-const (
-	pathHashInfo = "numen-sync/path-hash/v1"
-	extension    = ".md"
-)
+const pathHashInfo = "numen-sync/path-hash/v1"
 
 // ErrInvalidPath means a path is empty, absolute or leaves the vault.
 var ErrInvalidPath = errors.New("the path is not inside the vault")
@@ -41,9 +38,6 @@ func Hash(content []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// IsMarkdown reports whether the path names a markdown note.
-func IsMarkdown(notePath string) bool { return strings.EqualFold(path.Ext(notePath), extension) }
-
 // NormalizePath returns the path in Unicode normal form C, or ErrInvalidPath for a path that is not
 // inside the vault.
 func NormalizePath(notePath string) (string, error) {
@@ -54,15 +48,19 @@ func NormalizePath(notePath string) (string, error) {
 	return norm.NFC.String(notePath), nil
 }
 
-// PathHash returns the keyed hash of the path folded to one case in normal form C, so two paths that differ in
+// GetPathKey returns the path folded to one case in normal form C: two paths that differ in case or composition only have
+// the same key.
+func GetPathKey(notePath string) string { return cases.Fold().String(norm.NFC.String(notePath)) }
+
+// HashPath returns the keyed hash of the path folded to one case in normal form C, so two paths that differ in
 // case or composition only hash alike.
-func PathHash(vaultKey [32]byte, notePath string) []byte {
+func HashPath(vaultKey [32]byte, notePath string) []byte {
 	derived, err := hkdf.Key(sha256.New, vaultKey[:], nil, pathHashInfo, sha256.Size)
 	if err != nil {
 		return nil
 	}
 	mac := hmac.New(sha256.New, derived)
-	mac.Write([]byte(cases.Fold().String(norm.NFC.String(notePath))))
+	mac.Write([]byte(GetPathKey(notePath)))
 	return mac.Sum(nil)
 }
 

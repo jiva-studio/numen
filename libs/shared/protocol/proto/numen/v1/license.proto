@@ -101,11 +101,11 @@ message LicenseInfo {
   string active_provider = 9;
   // instance_name is the machine name recorded when the key was activated.
   string instance_name = 10;
-  // expires_at is the RFC 3339 UTC timestamp when the current period ends, or empty when the provider
+  // expires_unix_ms is the Unix time in milliseconds when the current period ends, or zero when the provider
   // does not report one.
-  string expires_at = 11;
-  // verified_at is the RFC 3339 UTC timestamp when the key was last verified online.
-  string verified_at = 12;
+  int64 expires_unix_ms = 11;
+  // verified_unix_ms is the Unix time in milliseconds when the key was last verified online, or zero when never.
+  int64 verified_unix_ms = 12;
 }
 
 message ListLicensesRequest {}

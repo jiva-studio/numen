@@ -1,5 +1,5 @@
 /** The part of the runtime of the desktop shell the pages use, under the names the shell gives it. */
-export interface FrameRuntime {
+interface FrameRuntime {
   readonly Window?: {
     readonly Focus?: () => Promise<void>
     readonly Minimise?: () => Promise<void>
@@ -22,16 +22,18 @@ export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
 
 const RUNTIME_PATH = '/wails/runtime.js'
 
-let runtime: Promise<FrameRuntime | undefined> | undefined
-
-// Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
-export const loadFrameRuntime: FrameRuntimeLoader = () => {
-  // A path built at run time is left to the webview, not resolved by the bundler.
-  runtime ??= import(/* @vite-ignore */ new URL(RUNTIME_PATH, window.location.href).href).then(
-    (loaded: FrameRuntime) => loaded,
-    () => undefined,
-  )
-  return runtime
+/** A loader that imports the runtime module once and gives the same promise on every call. */
+export function createFrameRuntimeLoader(): FrameRuntimeLoader {
+  let runtime: Promise<FrameRuntime | undefined> | undefined
+  // Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
+  return () => {
+    // A path built at run time is left to the webview, not resolved by the bundler.
+    runtime ??= import(/* @vite-ignore */ new URL(RUNTIME_PATH, window.location.href).href).then(
+      (loaded: FrameRuntime) => loaded,
+      () => undefined,
+    )
+    return runtime
+  }
 }
 
 /**
@@ -39,10 +41,7 @@ export const loadFrameRuntime: FrameRuntimeLoader = () => {
  * page has none. The caller decides which schemes it opens. A failure of the runtime to open the
  * address rejects the returned promise.
  */
-export async function openExternalUrl(
-  href: string,
-  load: FrameRuntimeLoader = loadFrameRuntime,
-): Promise<void> {
+export async function openExternalUrl(href: string, load: FrameRuntimeLoader): Promise<void> {
   const open = (await load())?.Browser?.OpenURL
   if (open) {
     await open(href)
@@ -52,7 +51,7 @@ export async function openExternalUrl(
 }
 
 /** Adapts the shell controls and platform queries used by the window chrome. */
-export function createWindowFrameControls(load: FrameRuntimeLoader = loadFrameRuntime) {
+export function createWindowFrameControls(load: FrameRuntimeLoader) {
   const runtime = load()
   return {
     async getEnvironment() {

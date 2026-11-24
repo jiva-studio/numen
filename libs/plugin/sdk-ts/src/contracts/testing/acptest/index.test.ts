@@ -71,7 +71,7 @@ describe('createTaskHost', () => {
       yield* []
       return {
         ok: false,
-        error: { error: 'all_failed', message: 'the agent is down', failures: [] },
+        error: { error: 'allFailed', message: 'the agent is down', failures: [] },
       }
     })
 
@@ -79,11 +79,11 @@ describe('createTaskHost', () => {
 
     expect(end).toEqual({
       ok: false,
-      error: { error: 'all_failed', message: 'the agent is down', failures: [] },
+      error: { error: 'allFailed', message: 'the agent is down', failures: [] },
     })
   })
 
-  it('ends an operation other than acp.task with no_connection', async () => {
+  it('ends an operation other than acp.task with noConnection', async () => {
     const host = createTaskHost(async function* () {
       yield* []
       return { ok: true, value: StopReason.END_TURN }
@@ -93,7 +93,7 @@ describe('createTaskHost', () => {
 
     expect(result).toMatchObject({
       done: true,
-      value: { ok: false, error: { error: 'no_connection' } },
+      value: { ok: false, error: { error: 'noConnection' } },
     })
   })
 })

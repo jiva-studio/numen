@@ -101,7 +101,7 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
 	grant := manifest.FormatConnectionsUse("<operation>")
-	valid := append(manifest.PluginPermissions(), grant)
+	valid := append(manifest.ListPluginPermissions(), grant)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
@@ -195,7 +195,7 @@ func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no capabilities: a rule checked against nothing")
 	}
-	valid := manifest.PluginCapabilities()
+	valid := manifest.ListPluginCapabilities()
 	for _, difference := range listDifferences(documented, valid, "capability") {
 		t.Error(difference)
 	}
@@ -218,7 +218,7 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := manifest.PluginActivationEvents()
+	valid := manifest.ListPluginActivationEvents()
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
@@ -455,7 +455,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 // The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
 func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
 	want := []string{bridge.CapabilitySearchSource, bridge.CapabilityTools}
-	got := slices.Sorted(slices.Values(manifest.PluginCapabilities()))
+	got := slices.Sorted(slices.Values(manifest.ListPluginCapabilities()))
 	if !slices.Equal(got, want) {
 		t.Errorf("PluginCapabilities = %v, want %v", got, want)
 	}

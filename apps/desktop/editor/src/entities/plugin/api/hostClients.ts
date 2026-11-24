@@ -2,7 +2,7 @@
  * The calls of the core that the plugin host makes for plugins: the texts they read, and the
  * operations their rows of connections carry out.
  */
-import { createPluginConnections, createPluginTexts } from '@numen/plugin-loader'
+import { createPluginConnections, createPluginTexts, type Disposable } from '@numen/plugin-loader'
 import type { WindowClients } from '@/shared/api/clients'
 
 /** The texts and the connections a plugin reaches, over the clients of the window. */
@@ -16,13 +16,13 @@ export const createPluginHostApi = ({
 
   /**
    * The connections a plugin lists in its rows, as the plugin of that id calls them.
-   * `subscribeChanges` notifies them of a change of the rows.
+   * `watchChanges` notifies them of a change of the rows.
    */
   getPluginConnections: (
     pluginId: string,
-    subscribeChanges: (handler: () => void) => () => void,
+    watchChanges: (handler: () => void) => Disposable,
   ): ReturnType<typeof createPluginConnections> =>
-    createPluginConnections(connectionCalls, pluginId, subscribeChanges),
+    createPluginConnections(connectionCalls, pluginId, watchChanges),
 })
 
 export type PluginHostApi = ReturnType<typeof createPluginHostApi>

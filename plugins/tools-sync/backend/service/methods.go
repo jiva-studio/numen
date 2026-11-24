@@ -22,11 +22,17 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodConnectVault, func(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
 		return handle(r, func(b *Backend) (api.ConnectVaultResponse, error) { return b.ConnectVault(ctx, request) })
 	})
+	server.Handle(service, api.MethodGetConnectPreview, func(ctx context.Context, request api.GetConnectPreviewRequest) (api.GetConnectPreviewResponse, error) {
+		return handle(r, func(b *Backend) (api.GetConnectPreviewResponse, error) { return b.GetConnectPreview(ctx, request) })
+	})
 	server.Handle(service, api.MethodGetStatus, func(ctx context.Context, request api.GetStatusRequest) (api.GetStatusResponse, error) {
 		return handle(r, func(b *Backend) (api.GetStatusResponse, error) { return b.GetStatus(ctx, request) })
 	})
 	server.Handle(service, api.MethodGetSubscription, func(ctx context.Context, request api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
 		return handle(r, func(b *Backend) (api.GetSubscriptionResponse, error) { return b.GetSubscription(ctx, request) })
+	})
+	server.Handle(service, api.MethodResolveDeletions, func(ctx context.Context, request api.ResolveDeletionsRequest) (api.ResolveDeletionsResponse, error) {
+		return handle(r, func(b *Backend) (api.ResolveDeletionsResponse, error) { return b.ResolveDeletions(ctx, request) })
 	})
 	server.Handle(service, api.MethodCreateCheckout, func(ctx context.Context, request api.CreateCheckoutRequest) (api.CreateCheckoutResponse, error) {
 		return handle(r, func(b *Backend) (api.CreateCheckoutResponse, error) { return b.CreateCheckout(ctx, request) })

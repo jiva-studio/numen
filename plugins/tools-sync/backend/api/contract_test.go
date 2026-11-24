@@ -11,17 +11,23 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		api.MethodListVaults: {Request: func() any { return &api.ListVaultsRequest{} }, Response: func() any { return &api.ListVaultsResponse{} }},
+		api.MethodListVaults: {CreateRequest: func() any { return &api.ListVaultsRequest{} }, CreateResponse: func() any { return &api.ListVaultsResponse{} }},
 		api.MethodListRemoteVaults: {
-			Request: func() any { return &api.ListRemoteVaultsRequest{} }, Response: func() any { return &api.ListRemoteVaultsResponse{} },
+			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
-		api.MethodConnectVault: {Request: func() any { return &api.ConnectVaultRequest{} }, Response: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodGetStatus:    {Request: func() any { return &api.GetStatusRequest{} }, Response: func() any { return &api.GetStatusResponse{} }},
+		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
+		api.MethodGetConnectPreview: {
+			CreateRequest: func() any { return &api.GetConnectPreviewRequest{} }, CreateResponse: func() any { return &api.GetConnectPreviewResponse{} },
+		},
+		api.MethodResolveDeletions: {
+			CreateRequest: func() any { return &api.ResolveDeletionsRequest{} }, CreateResponse: func() any { return &api.ResolveDeletionsResponse{} },
+		},
+		api.MethodGetStatus: {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
 		api.MethodGetSubscription: {
-			Request: func() any { return &api.GetSubscriptionRequest{} }, Response: func() any { return &api.GetSubscriptionResponse{} },
+			CreateRequest: func() any { return &api.GetSubscriptionRequest{} }, CreateResponse: func() any { return &api.GetSubscriptionResponse{} },
 		},
 		api.MethodCreateCheckout: {
-			Request: func() any { return &api.CreateCheckoutRequest{} }, Response: func() any { return &api.CreateCheckoutResponse{} },
+			CreateRequest: func() any { return &api.CreateCheckoutRequest{} }, CreateResponse: func() any { return &api.CreateCheckoutResponse{} },
 		},
 	}
 }
@@ -36,7 +42,7 @@ func TestEveryMethodHasItsFixturePair(t *testing.T) {
 
 func TestTheServiceAndMethodNames(t *testing.T) {
 	if api.Service != "md.numen.tools.sync" || api.MethodListVaults != "ListVaults" || api.MethodListRemoteVaults != "ListRemoteVaults" ||
-		api.MethodConnectVault != "ConnectVault" || api.MethodGetStatus != "GetStatus" {
+		api.MethodGetConnectPreview != "GetConnectPreview" || api.MethodConnectVault != "ConnectVault" || api.MethodGetStatus != "GetStatus" {
 		t.Errorf("service %q with %q, %q, %q, %q", api.Service, api.MethodListVaults, api.MethodListRemoteVaults, api.MethodConnectVault, api.MethodGetStatus)
 	}
 }
@@ -54,5 +60,11 @@ func TestTheNamesOfTheSubscriptionMethodsAndPhases(t *testing.T) {
 	}
 	if api.PhaseNone != "none" || api.PhaseActive != "active" || api.PhaseGrace != "grace" || api.PhaseReadOnly != "readOnly" || api.PhaseDeleted != "deleted" {
 		t.Errorf("phases %q, %q, %q, %q, %q", api.PhaseNone, api.PhaseActive, api.PhaseGrace, api.PhaseReadOnly, api.PhaseDeleted)
+	}
+}
+
+func TestTheNameOfTheMethodThatAnswersPausedRemovalsAndTheirDirections(t *testing.T) {
+	if api.MethodResolveDeletions != "ResolveDeletions" {
+		t.Errorf("method %q, want ResolveDeletions", api.MethodResolveDeletions)
 	}
 }

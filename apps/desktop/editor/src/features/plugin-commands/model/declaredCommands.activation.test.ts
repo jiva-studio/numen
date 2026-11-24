@@ -3,7 +3,19 @@
  * host must not report a command as missing from a read taken while its plugin starts.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost, createPluginLoader, type PluginHost } from '@numen/plugin-loader'
+import {
+  createPluginHost,
+  createPluginLoader,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
+  type PluginHost,
+} from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 import { UNANSWERED_RUNS } from '@/testing/declaredCommands'
@@ -37,18 +49,34 @@ async function createWindow() {
   })
   const reportCommandIssue = vi.fn()
   const host = createPluginHost({
-    window: { target: 'desktop.editor' },
+    window: { ...NO_WINDOW, target: 'desktop.editor' },
     kinds: {
+      ...NO_KINDS,
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn(() => vi.fn()),
     },
-    tabs: { openTab: vi.fn(async () => 'tab-1') },
-    commands: { getCommandDeclarations: () => declared.declarations.value, reportCommandIssue },
-    plugins: { hasPluginFrontend: (pluginId) => pluginId === VIEW, hasPluginBackend: hasBackend },
+    tabs: { ...NO_TABS, openTab: vi.fn(async () => 'tab-1') },
+    commands: {
+      ...NO_COMMANDS,
+      getCommandDeclarations: () => declared.declarations.value,
+      reportCommandIssue,
+    },
+    plugins: {
+      ...NO_PLUGINS,
+      hasPluginFrontend: (pluginId) => pluginId === VIEW,
+      hasPluginBackend: hasBackend,
+    },
+    slots: NO_SLOTS,
+    vault: NO_VAULT,
+    work: NO_WORK,
   })
   holder.current = host
   await declared.load()
-  return { host, loader: createPluginLoader({ host: host.lifecycle }), reportCommandIssue }
+  return {
+    host,
+    loader: createPluginLoader({ host: host.lifecycle, styles: host.slotViews.styles }),
+    reportCommandIssue,
+  }
 }
 
 describe('the commands of a view plugin that starts in a window with a backend plugin', () => {

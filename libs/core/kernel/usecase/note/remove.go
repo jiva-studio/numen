@@ -52,10 +52,10 @@ type RemoveResult struct {
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
-	return writeUnder(u.admission, func() (RemoveResult, error) { return u.trash(ctx, v, path) })
+	return writeUnder(u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path) })
 }
 
-func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	went, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
@@ -123,7 +123,7 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.links.GetBacklinks(ctx, v.ID, source.Path)
+		links, err := u.links.ListBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +153,7 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	pointing, err := u.links.GetBacklinks(ctx, v.ID, path)
+	pointing, err := u.links.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}

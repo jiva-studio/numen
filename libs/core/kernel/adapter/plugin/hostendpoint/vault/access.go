@@ -30,14 +30,14 @@ type FileChangeLookup interface {
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
-	GetNamedPaths(ctx context.Context, name string) ([]string, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListNamedPaths(ctx context.Context, name string) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // LinkLookup reads the links between the notes of the vault.
 type LinkLookup interface {
-	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 }
 
@@ -48,6 +48,25 @@ type FileReader interface {
 	// characters. A range that is not UTF-8 returns plugin.ErrNotText; a folder or a path not in the vault
 	// returns fs.ErrNotExist.
 	ReadRange(ctx context.Context, path string, start, length int) (plugin.FileRange, error)
+}
+
+// FileRanges reads bytes of any file as they are.
+type FileRanges interface {
+	// ReadFileRange returns at most length bytes of the file from start, with the file stat taken before the bytes
+	// are read. A start or length outside the limits returns plugin.ErrInvalidRange; a folder, fs.ErrNotExist.
+	ReadFileRange(ctx context.Context, path string, start, length int64) ([]byte, domain.FileStat, error)
+}
+
+// FileOperations files, trashes and places files of any kind. A baseline names the file as the caller last saw it:
+// the file changed since returns edit.ErrStale.
+type FileOperations interface {
+	// MoveFile moves a file, or a folder with everything under it, and returns the count of files under to.
+	MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (int, error)
+	// RemoveFile moves a file, or a folder with everything under it, to the trash and returns the count of files.
+	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (int, error)
+	// PlaceFile puts the staged file of the plugin in the vault at path, whole or not at all. A content that does
+	// not have expectedHash returns plugin.ErrHashMismatch. Without a baseline the path must be free.
+	PlaceFile(ctx context.Context, pluginID, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
 }
 
 type FileWriter interface {
@@ -71,7 +90,7 @@ type Arranger interface {
 	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
 	// returns the names of the checks the result covers and the problems they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
-	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
 // LinkEditor edits the frontmatter of the notes of the vault: its links, and its other keys.
@@ -93,7 +112,7 @@ type LinkEditor interface {
 
 // Watch tells of the moves in the vaults of the installation.
 type Watch interface {
-	WatchMoves(ctx context.Context) (<-chan struct{}, error)
+	WatchIndexChanges(ctx context.Context) (<-chan struct{}, error)
 }
 
 // Switch names the vault a call works and the vaults the installation lists.
@@ -142,6 +161,8 @@ type Access struct {
 	FileChanges FileChangeLookup
 	Links       LinkLookup
 	Files       FileReader
+	Ranges      FileRanges
+	Ops         FileOperations
 	Writer      FileWriter
 	Arranger    Arranger
 	LinkEditor  LinkEditor

@@ -1,5 +1,5 @@
 import { computed, onScopeDispose, ref } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { Failure, OpenExternalErrorCode, Result } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { getFailureCode, type SubscriptionClient } from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
@@ -15,9 +15,9 @@ const DEFAULT_POLL_EVERY_MS = 3000
 const DEFAULT_POLL_LIMIT_MS = 600_000
 const NO_DATES: SubscriptionDates = { periodEnd: '', writesEnd: '', deleteAt: '' }
 
-export interface UseSubscriptionOptions {
+interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
-  readonly openExternal: (url: string) => Promise<Result<null>>
+  readonly openExternal: (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
   readonly now?: (() => Date) | undefined
   readonly pollEveryMs?: number | undefined
   readonly pollLimitMs?: number | undefined
@@ -104,13 +104,13 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }, pollLimitMs)
   }
 
-  async function buy(): Promise<void> {
+  async function startPurchase(): Promise<void> {
     if (waiting.value) return
     problem.value = ''
     try {
       const opened = await openExternal(await client.createCheckout())
       if (opened.ok) beginPaymentPoll()
-      else problem.value = opened.error
+      else problem.value = words.checkoutNotOpened[opened.error.error]
     } catch (failure) {
       if (getFailureCode(failure) === 'already_exists') await load()
       else problem.value = getMessage(failure)
@@ -119,5 +119,5 @@ export function useSubscription(options: UseSubscriptionOptions) {
 
   onScopeDispose(endPaymentPoll)
 
-  return { status, phase, canBuy, waiting, problem, view, load, buy }
+  return { status, phase, canBuy, waiting, problem, view, load, startPurchase }
 }

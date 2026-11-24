@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { line, mark } from './styles'
+import { createLineStyle, mark } from './styles'
 
 describe('the decoration for a class', () => {
   it('is the same decoration each time a line is requested for it', () => {
-    expect(line('cm-one')).toBe(line('cm-one'))
-    expect(line('cm-one')).not.toBe(line('cm-two'))
+    expect(createLineStyle('cm-one')).toBe(createLineStyle('cm-one'))
+    expect(createLineStyle('cm-one')).not.toBe(createLineStyle('cm-two'))
   })
 
   it('is the same decoration each time a stretch of text is requested for it', () => {
@@ -13,6 +13,6 @@ describe('the decoration for a class', () => {
   })
 
   it('is kept apart for a line and for a stretch of text', () => {
-    expect(line('cm-one')).not.toBe(mark('cm-one'))
+    expect(createLineStyle('cm-one')).not.toBe(mark('cm-one'))
   })
 })

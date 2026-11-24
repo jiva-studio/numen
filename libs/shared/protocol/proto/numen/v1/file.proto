@@ -81,7 +81,7 @@ message Entry {
 
   // When the file or folder was last modified, in milliseconds since the Unix
   // epoch. 0 where the vault does not know it.
-  int64 modified_at_ms = 8;
+  int64 modified_unix_ms = 8;
 
   // Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
   bool is_absent = 9;
@@ -91,7 +91,7 @@ message Entry {
 }
 
 message ListFileKindsRequest {
-  // The paths to answer about, as the vault files them. More than the vault
+  // The paths to answer about, as the vault files them.
   repeated string paths = 1;
 }
 
@@ -130,7 +130,7 @@ message MoveFileRequest {
 
 message MoveFileResponse {
   // What the file did. Absent when nothing was moved.
-  optional MoveResult moved = 1;
+  optional MoveResult move_result = 1;
 
   // Set when nothing was moved, and why.
   ErrorCode error = 2;
@@ -151,13 +151,13 @@ message MoveResult {
   string to = 2;
 
   // The notes whose link stopped resolving and was written again, by name.
-  repeated string repaired = 3;
+  repeated string repaired_notes = 3;
 
   // The notes whose link stopped resolving and could not be written again, by
   // name. Each of them still points at the name the file left, and nothing
   // returns to it: a move that reports only what it repaired reports a
   // vault it did not leave behind.
-  repeated string dangling = 4;
+  repeated string dangling_notes = 4;
 }
 
 message RemoveFileRequest {
@@ -169,15 +169,15 @@ message EmptyTrashRequest {}
 
 message EmptyTrashResponse {
   // The paths in the trash that could not be deleted. Empty when all went.
-  repeated string undeleted = 1;
+  repeated string failed_paths = 1;
 }
 
 message RemoveFileResponse {
   // and when nothing was removed.
-  string trashed = 1;
+  string trash_path = 1;
 
   // The notes whose links pointed at what was removed and now reach nothing.
-  repeated string dangling = 2;
+  repeated string dangling_notes = 2;
 
   // Set when nothing was removed, and why.
   ErrorCode error = 3;

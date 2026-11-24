@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
 
@@ -45,14 +45,14 @@ func TestRunSync_RunsAPassOverEveryConnectedVaultAtStart(t *testing.T) {
 
 	startRun(t, p.a, nil)
 
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
 }
 
 func TestRunSync_RunsAPassAfterEachInterval(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	startRun(t, p.a, nil)
-	synctest.Eventually(t, "the first pass", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the first pass", hasHeadOf(t, p.a, "milk"))
 	if waited := p.a.Clock.AwaitWait(t); waited != interval {
 		t.Fatalf("wait = %v, want the interval of %v", waited, interval)
 	}
@@ -60,7 +60,7 @@ func TestRunSync_RunsAPassAfterEachInterval(t *testing.T) {
 
 	p.a.Clock.Advance(interval)
 
-	synctest.Eventually(t, "the second pass", hasHeadOf(t, p.a, "bread"))
+	synctest.WaitUntil(t, "the second pass", hasHeadOf(t, p.a, "bread"))
 }
 
 func TestRunSync_RunsAPassAtOnceWhenFilesOfAConnectedVaultChange(t *testing.T) {
@@ -72,7 +72,7 @@ func TestRunSync_RunsAPassAtOnceWhenFilesOfAConnectedVaultChange(t *testing.T) {
 
 	changed <- source
 
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
 }
 
 func TestRunSync_WarnsWhileTheServerIsAwayAndWaitsTheSameIntervalEachTime(t *testing.T) {
@@ -80,7 +80,7 @@ func TestRunSync_WarnsWhileTheServerIsAwayAndWaitsTheSameIntervalEachTime(t *tes
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	p.server.SetDown(true)
 	startRun(t, p.a, nil)
-	synctest.Eventually(t, "the warning", func() bool { return p.a.HasItem("Could not reach the sync server") })
+	synctest.WaitUntil(t, "the warning", func() bool { return p.a.HasItem("Could not reach the sync server") })
 	first := p.a.Clock.AwaitWait(t)
 	p.a.Clock.Advance(interval)
 	second := p.a.Clock.AwaitWait(t)
@@ -91,8 +91,8 @@ func TestRunSync_WarnsWhileTheServerIsAwayAndWaitsTheSameIntervalEachTime(t *tes
 	if first != interval || second != interval {
 		t.Errorf("waits = %v then %v, want %v each time with no backoff", first, second, interval)
 	}
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
-	synctest.Eventually(t, "the warning cleared", func() bool { return !p.a.HasItemKey("server-unreachable") })
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the warning cleared", func() bool { return !p.a.HasItemKey("server-unreachable") })
 }
 
 func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
@@ -103,7 +103,7 @@ func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
 
 	startRun(t, p.a, nil)
 
-	synctest.Eventually(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
+	synctest.WaitUntil(t, "the note on the server", hasHeadOf(t, p.a, "milk"))
 	if p.a.HasItemKey("server-unreachable") {
 		t.Errorf("health items = %+v, want none for a vault that is not connected", p.a.Health.List())
 	}

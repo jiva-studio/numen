@@ -41,9 +41,9 @@ func TestNamesThatAreOneName(t *testing.T) {
 		if one.a == one.b {
 			t.Fatalf("%s: the two sides are the same bytes, so nothing is tested", one.what)
 		}
-		if domain.FoldName(one.a) != domain.FoldName(one.b) {
+		if domain.NormalizeName(one.a) != domain.NormalizeName(one.b) {
 			t.Errorf("%s: %q and %q are two names, folded %q and %q",
-				one.what, one.a, one.b, domain.FoldName(one.a), domain.FoldName(one.b))
+				one.what, one.a, one.b, domain.NormalizeName(one.a), domain.NormalizeName(one.b))
 		}
 	}
 }
@@ -61,9 +61,9 @@ func TestNamesThatAreTwoNames(t *testing.T) {
 		{"a full-width word", "Ｎｏｔｅ", "Note"},
 		{"two words", "Энтропия", "Энергия"},
 	} {
-		if domain.FoldName(two.a) == domain.FoldName(two.b) {
+		if domain.NormalizeName(two.a) == domain.NormalizeName(two.b) {
 			t.Errorf("%s: %q and %q became one name, %q",
-				two.what, two.a, two.b, domain.FoldName(two.a))
+				two.what, two.a, two.b, domain.NormalizeName(two.a))
 		}
 	}
 }
@@ -74,11 +74,11 @@ func TestTheKeyIsComposed(t *testing.T) {
 	for _, name := range []string{
 		"İstanbul", "ЭНТРОПИЯ", norm.NFD.String(cafe), norm.NFD.String(hangul), norm.NFD.String(kana),
 	} {
-		key := domain.FoldName(name)
+		key := domain.NormalizeName(name)
 		if !norm.NFC.IsNormalString(key) {
 			t.Errorf("the key for %q is %q, which is not composed", name, key)
 		}
-		if again := domain.FoldName(key); again != key {
+		if again := domain.NormalizeName(key); again != key {
 			t.Errorf("folding the key for %q again gave %q", name, again)
 		}
 	}

@@ -18,7 +18,7 @@ func getSecond() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000
 
 func openRepository(t *testing.T) *opentabs.Repository {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}

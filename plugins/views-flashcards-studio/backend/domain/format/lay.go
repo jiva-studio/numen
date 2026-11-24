@@ -27,7 +27,7 @@ func fillPlaceholders(template string, card Card) string {
 	})
 }
 
-func placeholders(template string) []string {
+func findPlaceholders(template string) []string {
 	var out []string
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: any negative count returns every match"
 	for _, m := range placeholderRe.FindAllStringSubmatch(template, -1) {

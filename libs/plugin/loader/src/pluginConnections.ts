@@ -3,12 +3,12 @@
  * that plugin.
  */
 import type { ConnectionCallClient, ConnectionCallFailure } from '@numen/core-client'
-import type { ConnectionError, ConnectionHost } from '@numen/plugin-sdk'
+import type { ConnectionError, ConnectionHost, Disposable } from '@numen/plugin-sdk'
 import type { Result } from '@numen/result'
 
 const readError = (failure: ConnectionCallFailure): ConnectionError => ({
-  error: failure.errorCode,
-  message: failure.detail,
+  error: failure.error,
+  message: failure.message,
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,
@@ -26,13 +26,13 @@ const readCancellation = (error: unknown, signal: AbortSignal | undefined): Conn
 }
 
 /**
- * The connections a plugin calls through, with the plugin id the loader gives it. `subscribeChanges` is
+ * The connections a plugin calls through, with the plugin id the loader gives it. `watchChanges` is
  * the window's signal of a change that can change the rows; without it the host has no onChange.
  */
 export const createPluginConnections = (
   client: ConnectionCallClient,
   pluginId: string,
-  subscribeChanges?: (handler: () => void) => () => void,
+  watchChanges?: (handler: () => void) => Disposable,
 ): ConnectionHost => {
   const host: ConnectionHost = {
     call: async function* (operation, payload, options) {
@@ -49,6 +49,6 @@ export const createPluginConnections = (
     listRows: (operation) => client.listRows(pluginId, operation),
     listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
   }
-  if (subscribeChanges) host.onChange = (handler) => ({ dispose: subscribeChanges(handler) })
+  if (watchChanges) host.onChange = watchChanges
   return host
 }

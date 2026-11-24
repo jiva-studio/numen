@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -34,9 +34,9 @@ func (u *DropDownload) Execute(ctx context.Context, id domain.VaultID, path stri
 	if err != nil {
 		return err
 	}
-	at := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == path })
+	at := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == path })
 	if at < 0 {
 		return fmt.Errorf("drop the download of %s: the file is not synced: %w", path, host.ErrNotExist)
 	}
-	return u.deps.Host.Absent(id).EvictFile(ctx, path, records[at].BaseHash)
+	return u.deps.Host.GetAbsent(id).EvictFile(ctx, path, records[at].BaseHash)
 }

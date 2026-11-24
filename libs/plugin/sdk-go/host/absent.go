@@ -13,8 +13,6 @@ var (
 	ErrFileAbsent = errors.New("the file is listed but its bytes are not on this device")
 	// ErrFilePresent is what listing a file as absent gets when a file with other content is at its path.
 	ErrFilePresent = errors.New("a file with other content is at the path")
-	// ErrHashMismatch is what a fill gets when the bytes do not have the hash of the entry.
-	ErrHashMismatch = errors.New("the bytes do not have the hash of the entry")
 	// ErrChanged is what an eviction gets when the file does not have the hash it was asked to drop.
 	ErrChanged = errors.New("the file has changes that are not the content named")
 )
@@ -50,7 +48,7 @@ var _ AbsentFiles = (*Client)(nil)
 func (c *Client) PutAbsentFiles(ctx context.Context, files []AbsentFile) error {
 	sent := make([]*v1.HostAbsentFile, len(files))
 	for i, file := range files {
-		sent[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedAtMs: file.ModTime.UnixMilli(), Hash: file.Hash}
+		sent[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedUnixMs: file.ModTime.UnixMilli(), Hash: file.Hash}
 	}
 	res, err := c.vaults.PutAbsentFiles(ctx, request(c, &v1.PutAbsentFilesRequest{Files: sent}))
 	if err != nil {
@@ -69,7 +67,7 @@ func (c *Client) ListAbsentFiles(ctx context.Context) ([]AbsentFile, error) {
 	}
 	listed := make([]AbsentFile, len(res.Msg.GetFiles()))
 	for i, file := range res.Msg.GetFiles() {
-		listed[i] = AbsentFile{Path: file.GetPath(), Size: file.GetSize(), ModTime: time.UnixMilli(file.GetModifiedAtMs()), Hash: file.GetHash()}
+		listed[i] = AbsentFile{Path: file.GetPath(), Size: file.GetSize(), ModTime: time.UnixMilli(file.GetModifiedUnixMs()), Hash: file.GetHash()}
 	}
 	return listed, nil
 }

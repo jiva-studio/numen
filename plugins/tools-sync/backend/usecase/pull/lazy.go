@@ -12,6 +12,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/layer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 func (r *run) isLazy(meta note.Meta, isListed bool) bool {
@@ -26,7 +27,7 @@ func (r *run) isLazy(meta note.Meta, isListed bool) bool {
 
 func (r *run) getListedHash(ctx context.Context, filePath string) (string, error) {
 	if r.listed == nil {
-		files, err := r.deps.Host.Absent(r.in.VaultID).ListAbsentFiles(ctx)
+		files, err := r.deps.Host.GetAbsent(r.in.VaultID).ListAbsentFiles(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -44,8 +45,8 @@ func (r *run) getListedHash(ctx context.Context, filePath string) (string, error
 
 // list lists the file of the head as absent instead of downloading it, and evicts the bytes a downloaded
 // file holds.
-func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, isListed bool) error {
-	absent := r.deps.Host.Absent(r.in.VaultID)
+func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, previous transfer.FileRecord, local string, isListed, isKnown bool) error {
+	absent := r.deps.Host.GetAbsent(r.in.VaultID)
 	if local != "" && !isListed {
 		if err := absent.EvictFile(ctx, meta.Path, local); err != nil {
 			return r.holdOnRefusal(err, host.ErrChanged, meta.Path, stored.GetSeq())
@@ -58,8 +59,11 @@ func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note
 	if r.listed != nil {
 		r.listed[meta.Path] = meta.Hash
 	}
-	rev := stored.GetRevision()
-	r.setRecord(note.FileRecord{FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId()})
+	record, err := r.makeRecord(ctx, stored, meta, previous, isKnown)
+	if err != nil {
+		return err
+	}
+	r.setRecord(record)
 	r.result.Applied = append(r.result.Applied, meta.Path)
 	return nil
 }

@@ -12,6 +12,9 @@ const CONNECT_NEW = 'Connect as a new synced vault'
 const CONNECT_EXISTING = 'Connect to an existing synced vault'
 const CHOOSE = 'Choose a synced vault'
 const CONNECTED = 'Connected'
+const NOT_CONNECTED = 'Not connected'
+/** What the question of a connection says after its number. */
+const CONFIRMATION = /differs? from the synced vault/
 /** The plugin reads the vaults when the section opens and asks the server every second: a vault is connected within this time. */
 const CONNECT_LIMIT_MS = 20_000
 
@@ -51,6 +54,30 @@ export class SyncVaultsDriver {
     await (await this.show()).getByRole('button', { name: synced, exact: true }).click()
   }
 
+  /** Gives the answer to the question that asks for a confirmation. */
+  async answerConfirmation(answer: string): Promise<void> {
+    const panel = await this.show()
+    await panel.getByRole('button', { name: answer, exact: true }).click({ timeout: CONNECT_LIMIT_MS })
+  }
+
+  async expectAskedToConfirm(text: string): Promise<void> {
+    const panel = await this.show()
+    await expect(panel.getByText(text, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+  }
+
+  /** A vault that connects without a question shows as connected, and no question is on the page. */
+  async expectNotAsked(): Promise<void> {
+    const panel = await this.show()
+    await expect(panel.getByText(CONNECTED, { exact: true }).first()).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+    await expect(panel.getByText(CONFIRMATION)).toHaveCount(0)
+  }
+
+  async expectNotConnected(vault: string): Promise<void> {
+    const panel = await this.show()
+    await expect(this.getRow(panel, vault).getByText(NOT_CONNECTED, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+    await expect(panel.getByText(CONFIRMATION)).toHaveCount(0)
+  }
+
   /** Expects the list to show the vault as connected. */
   async expectConnected(vault: string): Promise<void> {
     const panel = await this.show()
@@ -60,6 +87,12 @@ export class SyncVaultsDriver {
   async expectWarning(text: string): Promise<void> {
     const panel = await this.show()
     await expect(panel.getByText(text).first()).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+  }
+
+  /** Presses the button of an action under the row of a vault, as "Remove the files" under a paused vault. */
+  async choose(action: string): Promise<void> {
+    const panel = await this.show()
+    await panel.getByRole('button', { name: action, exact: true }).click()
   }
 
   async open(): Promise<void> {

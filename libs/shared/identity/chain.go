@@ -73,7 +73,6 @@ func NewChain(root RecoveryKey, account AccountKeys, at time.Time) (Chain, error
 	return Chain{entries: []Entry{entry}}, nil
 }
 
-// Len returns the number of entries in the chain.
 func (c Chain) Len() int { return len(c.entries) }
 
 // IsExtensionOf reports whether the first prefix.Len() entries of c equal the entries of prefix.
@@ -175,7 +174,7 @@ func verifyAddDevice(entry Entry, i int, root ed25519.PublicKey, known map[strin
 }
 
 func hasValidSignature(entry Entry) bool {
-	return len(entry.Signer) == ed25519.PublicKeySize && ed25519.Verify(entry.Signer, signedMessage(entry), entry.Signature[:])
+	return len(entry.Signer) == ed25519.PublicKeySize && ed25519.Verify(entry.Signer, encodeSignedMessage(entry), entry.Signature[:])
 }
 
 func checkLink(entries []Entry, i int) error {
@@ -221,10 +220,10 @@ func (c Chain) ListDevices() []Device {
 }
 
 func sign(entry *Entry, by Signer) {
-	copy(entry.Signature[:], by.signEntry(signedMessage(*entry)))
+	copy(entry.Signature[:], by.signEntry(encodeSignedMessage(*entry)))
 }
 
-func signedMessage(entry Entry) []byte {
+func encodeSignedMessage(entry Entry) []byte {
 	message := append([]byte(labelChainEntry), 0)
 	return append(message, encodeEntryBody(entry)...)
 }

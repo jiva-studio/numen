@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -136,7 +137,7 @@ func TestFillFileWithOtherBytesPlacesNothing(t *testing.T) {
 	p := newPhone(t, nil)
 	p.putEntry(t, getGuideEntry(guideContent))
 	err := p.newFill().Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, "damaged bytes"))
-	if !errors.Is(err, vault.ErrHashMismatch) {
+	if !errors.Is(err, plugin.ErrHashMismatch) {
 		t.Fatalf("got %v, want ErrHashMismatch", err)
 	}
 	if p.hasBytes(guidePath) {

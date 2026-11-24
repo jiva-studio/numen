@@ -83,8 +83,8 @@ func setNow(handler *API, now time.Time) {
 	pos := newFakeClock(now)
 	handler.now = pos
 	day := getReviewDay()
-	handler.flash().Day = day
-	flash := handler.flash()
+	handler.getFlashReview().Day = day
+	flash := handler.getFlashReview()
 	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.OpenPresetReads
 	flash.Reviews.Record = flashcards.NewRecord(pos, machineclock.Entropy{})
 	flash.Counts.CardsDue = flashcards.NewCountCardsDue(schedules.ReviewCards(), schedules, deckPresets, day, pos)
@@ -158,7 +158,7 @@ func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 
 func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
-	found, err := handler.flash().Schedules.Presets.Read.Execute(t.Context(), v, path)
+	found, err := handler.getFlashReview().Schedules.Presets.Read.Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
-	if _, err := handler.flash().Schedules.Presets.Save.Execute(t.Context(), v, path, p, domain.FileStat{}); err != nil {
+	if _, err := handler.getFlashReview().Schedules.Presets.Save.Execute(t.Context(), v, path, p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -183,10 +183,10 @@ func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.
 
 func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
-		handler.flash().Schedules.Schedules.ReviewCards(),
-		handler.flash().Schedules.Schedules,
-		handler.flash().Schedules.OpenPresetReads,
-		handler.flash().Day,
+		handler.getFlashReview().Schedules.Schedules.ReviewCards(),
+		handler.getFlashReview().Schedules.Schedules,
+		handler.getFlashReview().Schedules.OpenPresetReads,
+		handler.getFlashReview().Day,
 		handler.now,
 	)
 	c.Cores = runtime.GOMAXPROCS(0)

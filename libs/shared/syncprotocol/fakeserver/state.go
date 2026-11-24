@@ -28,13 +28,16 @@ var (
 	errInvalidRequest  = errors.New("invalid request")
 	errBlobNotReady    = errors.New("a blob is not ready")
 	errQuotaExceeded   = errors.New("the quota is exceeded")
+	errNoUpload        = errors.New("no such upload")
+	errIncomplete      = errors.New("the upload is incomplete")
 )
 
 type vaultState struct {
-	account string
-	seq     uint64
-	files   map[string]*syncv1.StoredRevision
-	paths   map[string]string
+	account   string
+	seq       uint64
+	prunedSeq uint64
+	files     map[string]*syncv1.StoredRevision
+	paths     map[string]string
 }
 
 func newVaultState(account string) *vaultState {
@@ -58,6 +61,7 @@ type blobRow struct {
 	state      blobState
 	body       []byte
 	isUploaded bool
+	multipart  *multipartState
 }
 
 func (s *Server) authenticate(header http.Header) (string, error) {

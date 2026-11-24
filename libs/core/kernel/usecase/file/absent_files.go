@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -98,7 +99,7 @@ func NewFillFile(
 }
 
 // Execute checks the bytes of the store file, writes them to the vault path in one atomic step, and
-// removes the entry. A file of other bytes returns vault.ErrHashMismatch and places nothing; a path
+// removes the entry. A file of other bytes returns plugin.ErrHashMismatch and places nothing; a path
 // that is not listed returns edit.ErrNotExist.
 func (u *FillFile) Execute(ctx context.Context, v domain.Vault, path, storeName string) error {
 	entry, isListed, err := u.absent.GetAbsentFile(ctx, v, path)
@@ -131,7 +132,7 @@ func (u *FillFile) check(ctx context.Context, storeName string, entry vault.Abse
 		return err
 	}
 	if !strings.EqualFold(hash, entry.Hash) {
-		return fmt.Errorf("fill %s: %w", entry.Path, vault.ErrHashMismatch)
+		return fmt.Errorf("fill %s: %w", entry.Path, plugin.ErrHashMismatch)
 	}
 	return nil
 }

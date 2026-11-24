@@ -1,7 +1,14 @@
 import {
   createAppInfo,
-  openExternalUrl,
   createPluginHost,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
   createPluginLoader,
   type PluginStatus,
 } from '@numen/plugin-loader'
@@ -44,11 +51,12 @@ const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { rest, catalog, status } = deps
-  const { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange } =
+  const { getSetting, watchSetting, getEditorSettings, watchEditorSettings } =
     createPluginSettingsAccessor(rest, deps.reports.reportError)
   const parts = mergeHostParts(deps.parts)
   const pluginHost = createPluginHost({
     window: {
+      ...NO_WINDOW,
       ...parts.window,
       target: TARGET,
       app: createAppInfo({
@@ -56,10 +64,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform: deps.getPlatform,
       }),
-      openExternal: openExternalUrl,
       onError: deps.reports.reportError,
     },
     plugins: {
+      ...NO_PLUGINS,
       ...parts.plugins,
       hasPluginFrontend: catalog.hasFrontend,
       hasPluginBackend: catalog.hasBackend,
@@ -68,20 +76,26 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       startPluginsOf: status.startPluginsOf,
       findPluginsOf: status.findPluginsOf,
       getSetting,
-      onSettingChange,
+      watchSetting,
       getEditorSettings,
-      onEditorSettingsChange,
+      watchEditorSettings,
     },
-    commands: { ...parts.commands },
-    slots: { ...parts.slots },
-    kinds: { ...parts.kinds, ...deps.kinds, getReaderExtensions: catalog.getReaderExtensions },
-    tabs: { ...parts.tabs, ...deps.tabs },
-    vault: { ...parts.vault },
-    work: { ...parts.work },
+    commands: { ...NO_COMMANDS, ...parts.commands },
+    slots: { ...NO_SLOTS, ...parts.slots },
+    kinds: {
+      ...NO_KINDS,
+      ...parts.kinds,
+      ...deps.kinds,
+      getReaderExtensions: catalog.getReaderExtensions,
+    },
+    tabs: { ...NO_TABS, ...parts.tabs, ...deps.tabs },
+    vault: { ...NO_VAULT, ...parts.vault },
+    work: { ...NO_WORK, ...parts.work },
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,
     status,
+    styles: pluginHost.slotViews.styles,
     onError: deps.reports.reportLoadError,
   })
   return { pluginHost, pluginLoader }

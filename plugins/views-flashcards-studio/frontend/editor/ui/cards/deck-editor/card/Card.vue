@@ -35,11 +35,11 @@ const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
 const cardModelTitle = useCardModelTitle(
   () => props.tile.cardModel,
-  () => props.words.unknown,
+  () => props.words.describeUnknown,
 )
 
 /* -------------------------------- Helpers --------------------------------- */
-const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
+const buildBoxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
 const getProblems = (value: PlacedFieldValue): readonly string[] =>
   value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
@@ -80,7 +80,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
         v-if="!tile.isKnown && tile.cardModel !== null"
         class="card__objections"
         role="alert"
-        :said="words.unknown(tile.cardModel)"
+        :said="words.describeUnknown(tile.cardModel)"
       />
 
       <ErrorMessage
@@ -96,7 +96,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
         :key="value.key"
         :card="tile.id"
         :value="value"
-        :box-id="boxId(value)"
+        :box-id="buildBoxId(value)"
         :wrong="getProblems(value)"
         :words="words"
       />

@@ -2,7 +2,6 @@
 package catalog
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -10,8 +9,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/identity"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -22,7 +19,7 @@ const maxTries = 3
 
 var (
 	// ErrInvalidCatalog means the catalog of the server is not a signed, unbroken log of the devices of the account.
-	ErrInvalidCatalog = errors.New("the catalog of the account is not valid")
+	ErrInvalidCatalog = vaultlink.ErrInvalidCatalog
 	// ErrUnknownRemoteVault means the account has no synced vault of the id.
 	ErrUnknownRemoteVault = errors.New("the account has no such synced vault")
 	// ErrCopyOfConnectedVault means a vault is a copy of a folder that is connected already.
@@ -71,48 +68,10 @@ func (r reader) read(ctx context.Context) ([]*syncv1.CatalogEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return entries, checkEntries(entries, authors)
+	return entries, vaultlink.CheckEntries(entries, authors)
 }
 
-func checkEntries(entries []*syncv1.CatalogEntry, authors trust.Authors) error {
-	var previous [32]byte
-	for i, entry := range entries {
-		if err := checkEntry(entry, uint64(i)+1, previous, authors); err != nil {
-			return fmt.Errorf("%w: entry %d: %w", ErrInvalidCatalog, i+1, err)
-		}
-		previous = syncprotocol.GetCatalogEntryID(entry)
-	}
-	return nil
-}
-
-var (
-	errWrongVersion  = errors.New("the version does not follow the one before")
-	errWrongPrevious = errors.New("the previous hash is not the id of the entry before")
-	errBadSignature  = errors.New("the signature is not valid")
-	errUnknownAuthor = errors.New("the author is not a device of the account")
-)
-
-func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, authors trust.Authors) error {
-	if err := syncprotocol.CheckCatalogEntry(entry); err != nil {
-		return err
-	}
-	if entry.GetVersion() != version {
-		return errWrongVersion
-	}
-	if version > 1 && !bytes.Equal(entry.GetPrevHash(), previous[:]) {
-		return errWrongPrevious
-	}
-	if len(entry.GetSignature()) != 64 || !identity.VerifyForPlugin(entry.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID,
-		syncprotocol.GetCatalogEntryMessage(entry), [64]byte(entry.GetSignature())) {
-		return errBadSignature
-	}
-	if !authors.IsTrusted(entry.GetAuthorDeviceSignKey()) {
-		return errUnknownAuthor
-	}
-	return nil
-}
-
-func (r reader) fold(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {
+func (r reader) mergeEntries(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {
 	var vaults []remote
 	positions := map[string]int{}
 	for _, entry := range entries {
@@ -177,7 +136,7 @@ func (u *ListRemoteVaults) Execute(ctx context.Context) ([]vaultlink.RemoteVault
 	if err != nil {
 		return nil, err
 	}
-	vaults, err := u.reader.fold(ctx, entries)
+	vaults, err := u.reader.mergeEntries(ctx, entries)
 	if err != nil {
 		return nil, err
 	}

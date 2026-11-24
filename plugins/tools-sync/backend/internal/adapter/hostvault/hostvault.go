@@ -25,14 +25,15 @@ func (v *Vaults) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return v.client.GetVaults(ctx)
 }
 
-// Files returns the files of the vault.
-func (v *Vaults) Files(id domain.VaultID) ports.Files { return v.client.With(id) }
+func (v *Vaults) GetFiles(id domain.VaultID) ports.Files { return v.client.With(id) }
 
-// Indexer returns the index of the vault.
-func (v *Vaults) Indexer(id domain.VaultID) ports.Indexer { return v.client.With(id) }
+func (v *Vaults) GetIndexer(id domain.VaultID) ports.Indexer { return v.client.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
 
-// Absent returns the files of the vault that the device lists and does not hold.
-func (v *Vaults) Absent(id domain.VaultID) ports.Absent { return v.client.With(id) }
+// GetAbsent returns the files of the vault that the device lists and does not hold.
+func (v *Vaults) GetAbsent(id domain.VaultID) ports.Absent { return v.client.With(id) }
+
+// GetTransfers returns what the host does with the bytes of the files of the vault.
+func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.client.With(id) }

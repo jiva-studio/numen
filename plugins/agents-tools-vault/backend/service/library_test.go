@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
@@ -103,35 +104,35 @@ func getPlaceSeconds(place *placeAnswer) float64 {
 type library struct {
 	vault    *hosttest.Vault
 	texts    *hosttest.Texts
-	search   *hosttest.Search
+	search   *searchtest.Search
 	registry *tools.Registry
 }
 
 func newLibrary(t *testing.T) library {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File("Entropy.md", "---\ntitle: Entropy Concept\n---\n# Entropy\nDisorder grows.")
-	vault.File("notes/Herons.md", "---\ntitle: Herons of the Marsh\n---\nHerons fish at dusk.")
-	vault.File(guidePath, pdfBytes)
-	vault.File(scanPath, pdfBytes+"scan")
-	vault.File(talkPath, talkBytes)
-	vault.File("data.txt", "line 1\nline 2\nline 3\n")
+	vault.WriteFile("Entropy.md", "---\ntitle: Entropy Concept\n---\n# Entropy\nDisorder grows.")
+	vault.WriteFile("notes/Herons.md", "---\ntitle: Herons of the Marsh\n---\nHerons fish at dusk.")
+	vault.WriteFile(guidePath, pdfBytes)
+	vault.WriteFile(scanPath, pdfBytes+"scan")
+	vault.WriteFile(talkPath, talkBytes)
+	vault.WriteFile("data.txt", "line 1\nline 2\nline 3\n")
 
 	texts := hosttest.NewTexts(testVault, readerID)
-	texts.File(guidePath, []byte(pdfBytes))
-	texts.File(talkPath, []byte(talkBytes))
+	texts.WriteFile(guidePath, []byte(pdfBytes))
+	texts.WriteFile(talkPath, []byte(talkBytes))
 	putText(t, texts, readerID, guidePath, "page-text", []byte(pdfBytes), []domain.TextSegment{
 		{Text: pageOne, Selector: `{"page":1,"boxes":[[0,0,1,1]]}`},
 		{Text: pageTwo[:20], Selector: `{"page":2}`},
 		{Text: pageTwo[20:], Selector: `{"page":2}`},
 		{Text: pageThree, Selector: `{"page":3}`},
 	})
-	putText(t, texts.As(scribeID), scribeID, talkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
+	putText(t, texts.UsePlugin(scribeID), scribeID, talkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
 		{Text: talkSecond, Selector: `{"t":[0,4.5]}`},
 		{Text: talkThird, Selector: `{"t":[4.5,9]}`},
 	})
 
-	search := hosttest.NewSearch(testVault)
+	search := searchtest.NewSearch(testVault)
 	search.SetIndexedResults([]host.SearchResult{
 		{Path: guidePath, Text: "The gray heron stands in the reeds", PlaceLabel: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
 		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, MatchLine: 1},
@@ -139,14 +140,14 @@ func newLibrary(t *testing.T) library {
 	})
 
 	svc := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search), host.SearchFunctions{})
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
 	return library{vault: vault, texts: texts, search: search, registry: registry}
 }
 
-func libraryOf(texts *hosttest.Texts, search *hosttest.Search) func(domain.VaultID) service.Library {
+func libraryOf(texts *hosttest.Texts, search *searchtest.Search) func(domain.VaultID) service.Library {
 	return func(id domain.VaultID) service.Library {
 		on := texts.With(id)
 		return service.Library{Versions: on, Texts: on, Search: search.With(id)}
@@ -321,11 +322,11 @@ func TestLibrarySearchRejectsUnknownKindAndBlankQuery(t *testing.T) {
 func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	vault := hosttest.New(testVault)
 	garden := hosttest.New("garden-vault")
-	vault.Beside(garden)
-	search := hosttest.NewSearch(testVault, "garden-vault")
+	vault.LinkBeside(garden)
+	search := searchtest.NewSearch(testVault, "garden-vault")
 	search.SetIndexedResults([]host.SearchResult{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
 	search.With("garden-vault").SetIndexedResults([]host.SearchResult{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
-	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search), host.SearchFunctions{}).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search), host.SearchFunctions{}).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,11 +355,11 @@ func TestLibrarySearchReportsMissingIndexPermission(t *testing.T) {
 func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	l := newLibrary(t)
 	cyrillic := hosttest.NewTexts(testVault, readerID)
-	cyrillic.File("ru.pdf", []byte(pdfBytes))
+	cyrillic.WriteFile("ru.pdf", []byte(pdfBytes))
 	putText(t, cyrillic, readerID, "ru.pdf", "page-text", []byte(pdfBytes), []domain.TextSegment{{Text: "Ачарьи говорят", Selector: `{"page":1}`}})
-	l.vault.File("ru.pdf", pdfBytes)
+	l.vault.WriteFile("ru.pdf", pdfBytes)
 	svc := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(cyrillic, l.search), host.SearchFunctions{})
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +485,7 @@ func TestLibraryReadRejectsAPageWithAStartAndANegativeNumber(t *testing.T) {
 func TestARangeOverTheBinaryTailOfATextFileIsNotText(t *testing.T) {
 	l := newLibrary(t)
 	text := strings.Repeat("plain text line\n", 1000)
-	l.vault.File("export.dat", text+"\xff\xfe binary tail")
+	l.vault.WriteFile("export.dat", text+"\xff\xfe binary tail")
 	var head fileReadAnswer
 	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, &head); failure != "" || head.Text != text {
 		t.Errorf("file_read of the text before the binary tail gave %q and %d bytes, want the 16000 bytes of text", failure, len(head.Text))
@@ -510,8 +511,8 @@ func TestLibraryReadFailsOnASegmentWithInvalidSelector(t *testing.T) {
 	l := newLibrary(t)
 	const pondPath = "library/Pond Survey.pdf"
 	file := []byte(pdfBytes + "pond")
-	l.vault.File(pondPath, string(file))
-	l.texts.File(pondPath, file)
+	l.vault.WriteFile(pondPath, string(file))
+	l.texts.WriteFile(pondPath, file)
 	putText(t, l.texts, readerID, pondPath, "page-text", file, []domain.TextSegment{
 		{Text: "Frogs lay eggs in spring. ", Selector: `{"page":1}`},
 		{Text: "Newts hide under stones. ", Selector: `{"page":"two"}`},

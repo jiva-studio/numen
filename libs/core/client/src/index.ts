@@ -1,11 +1,138 @@
-export * from './clients'
-export * from './catalog'
-export * from './manifest'
-export * from './connections'
-export * from './connectioncalls'
-export * from './licenses'
-export * from './identity'
-export * from './protocol'
+export {
+  createVaultRpc,
+  createNoteRpc,
+  createWorkspaceRpc,
+  createFileRpc,
+  createSearchRpc,
+  createVaultsRpc,
+  createFolderDialogRpc,
+  createSettingsRpc,
+  createWindowRpc,
+  createThemeRpc,
+  createTextRpc,
+  createCommandRpc,
+  createPluginRpc,
+  createPluginProcessRpc,
+  createPluginDataRpc,
+  createContributionRpc,
+  createTextVersionRpc,
+  createPluginHealthRpc,
+  createCatalogRpc,
+  createProviderConnectionRpc,
+  createConnectionCallRpc,
+  createLogRpc,
+  createLicenseRpc,
+  createIdentityRpc,
+  NAME_SOURCE,
+  type NameSourceCode,
+  NOTE_MARKER,
+  type NoteMarkerCode,
+  NOTE_ROLE,
+  type NoteRoleCode,
+  NOTE_RELATION,
+  type NoteRelationCode,
+  NOTE_LINK_DIRECTION,
+  type NoteLinkDirectionCode,
+  FLUSH_RESULT,
+  type FlushResultCode,
+  SEARCH_MODE,
+  type SearchModeCode,
+  TASK_KIND,
+  TASK_UNIT,
+  VAULTS_ERROR_CODE,
+  type VaultsErrorCodeValue,
+  COMMAND_ERROR_CODE,
+  TEXT_ERROR_CODE,
+  TAB_MOVE_ERROR_CODE,
+  type TabMoveErrorCodeValue,
+  THEME_MODE,
+  type ThemeModeCode,
+  THEME_ORIGIN,
+  NOTE_ERROR_CODE,
+  type NoteErrorCodeValue,
+  type TextClient,
+} from './clients'
+export {
+  type CatalogEntry,
+  type CatalogSourceError,
+  CATALOG_STATE,
+  type CatalogStateValue,
+  CATALOG_INCOMPATIBILITY,
+  type CatalogClient,
+  type CatalogListing,
+  type CatalogMatch,
+  type CatalogFailure,
+  type PluginCatalog,
+  createPluginCatalog,
+} from './catalog'
+export { type Manifest, parseManifest } from './manifest'
+export {
+  resolveTextLinks,
+  type ResolvedTextLink,
+  type TextLinkRequest,
+  type TextLinkRpc,
+} from './textLinks'
+export {
+  type ConnectionValue,
+  type ConnectionFieldType,
+  type ConnectionFieldInfo,
+  type ConnectionTypeInfo,
+  type ConnectionOperationInfo,
+  type ConnectionTypeList,
+  type ConnectionUse,
+  type ConnectionInfo,
+  type ConnectionDraft,
+  type ConnectionChange,
+  type ConnectionErrorCode,
+  type ConnectionFailure,
+  type ConnectionRpc,
+  type ConnectionClient,
+  type RowOptionsRequest,
+  type RowOption,
+  createConnectionClient,
+} from './connections'
+export {
+  type ConnectionCallRpc,
+  type ConnectionCallPriority,
+  type ConnectionCallPreferredRow,
+  type ConnectionCallOptions,
+  type ConnectionCallRequest,
+  type ConnectionCallFailureCode,
+  type ConnectionCallRowFailure,
+  type ConnectionCallErrorCode,
+  type ConnectionCallFailure,
+  type ConnectionCallRowField,
+  type ConnectionCallRow,
+  type ConnectionCallRowOptionsRequest,
+  type ConnectionCallClient,
+  createConnectionCallClient,
+} from './connectioncalls'
+export {
+  type LicenseInfo,
+  type LicenseErrorCode,
+  type LicenseFailure,
+  type LicenseRpc,
+  type LicenseClient,
+  createLicenseClient,
+} from './licenses'
+export {
+  type IdentityInfo,
+  type IdentityFailure,
+  type IdentityClient,
+  createIdentityClient,
+} from './identity'
+export {
+  NoteGraphSchema,
+  type Entry,
+  type PluginCommand,
+  type PluginHandler,
+  type PluginKeybinding,
+  type PluginSlotEntry,
+  type PluginSlotPoint,
+  type RunPluginCommandResponse,
+  type TextSegmentMessage,
+  type TextVersionMessage,
+} from './protocol'
 export {
   CALLER_HEADER,
   createBearerTransport,
@@ -14,17 +141,52 @@ export {
   createOriginTransport,
   type Transport,
 } from './transport'
-export * from './settings'
-export * from './themes'
-export * from './tasks'
-export * from './health'
-export * from './processes'
-export * from './logs'
+export { getNames, PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from './settings'
 export {
-  findErrorCode,
-  isStaleAnswer,
-  parseFingerprint,
-  ERRORS,
-  getKnownErrorCode,
-} from './errors'
+  createThemeClient,
+  type ThemeMode,
+  type ThemeOrigin,
+  type ThemeEntry,
+  type ThemeScales,
+  type ThemeBounds,
+  type ThemeAppearance,
+  type ThemeRpc,
+  type ThemeClient,
+} from './themes'
+export {
+  createTaskClient,
+  type CoreTaskUnit,
+  type CoreTaskProgress,
+  type CoreTaskSource,
+  type CoreTask,
+  type TaskRpc,
+  type TaskClient,
+} from './tasks'
+export {
+  createHealthClient,
+  type HealthSeverityName,
+  type HealthAction,
+  type PluginHealthItem,
+  type HealthReport,
+  type HealthRpc,
+  type HealthClient,
+} from './health'
+export {
+  createProcessClient,
+  type PluginProcess,
+  type LeaseHolder,
+  type ProcessRpc,
+  type PluginProcessList,
+  type ProcessClient,
+} from './processes'
+export {
+  createLogClient,
+  type LogClient,
+  type LogEntry,
+  type LogLevelName,
+  type LogPropertyValue,
+  type LogRpc,
+  type LogWrite,
+} from './logs'
+export { findErrorCode, isStaleAnswer, parseFingerprint, ERRORS, getKnownErrorCode } from './errors'
 export { createFollower } from './stream'

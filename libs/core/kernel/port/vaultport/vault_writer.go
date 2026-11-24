@@ -17,6 +17,8 @@ type NoteWriter interface {
 type FolderWriter interface {
 	MakeFolder(ctx context.Context, path string) error
 	Import(ctx context.Context, path string, content io.Reader) error
+	// Replace streams content over the file at path, whole or not at all.
+	Replace(ctx context.Context, path string, content io.Reader) error
 }
 
 type FileMover interface {
@@ -30,8 +32,8 @@ type FileMover interface {
 
 // TrashEmptier deletes what a vault keeps in its trash.
 type TrashEmptier interface {
-	// EmptyTrash deletes everything under the vault's trash and returns the paths it could not delete.
-	EmptyTrash(ctx context.Context) (undeleted []string, err error)
+	// ClearTrash deletes everything under the vault's trash and returns the paths it could not delete.
+	ClearTrash(ctx context.Context) (undeleted []string, err error)
 }
 
 // NoteWriters opens a vault for writing notes. Which vault a use case works on
