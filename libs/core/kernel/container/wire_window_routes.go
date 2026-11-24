@@ -120,7 +120,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 	w.Installation.Mount(editor.NewRoute(windowsearch.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
-func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing) {
+func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *note.Placing) {
 	readers := vaultDeps.Readers
 	folders := filewindow.NewFolders(
 		&w.session.Runtime,
@@ -149,7 +149,7 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 	w.Installation.Mount(editor.NewRoute(workspace.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
-func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
+func mountNote(w *windowRoutes, notes *note.UseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
 	queries := createQueryUseCases(db)
 	writes := w.page.Writes
 	prose := notewindow.NewProse(

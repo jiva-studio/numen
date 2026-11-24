@@ -61,53 +61,14 @@ type noteViews struct {
 	Follow    note.IndexFollow
 }
 
-func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
-	names, links := db.NoteQueries(), db.NoteQueries()
-	indexed := db.Sources()
-	readers := c.Readers
-	writers := c.Writers
-	now := c.Clock
-
-	// One note.Move settles every note that traveled, whether a rename sent it
-	// or a move did.
-	moveDeps := note.MoveDeps{
-		Readers: readers, Writers: writers, Links: links, Names: names,
-		Sources: db.Sources(), Index: index, Now: now,
-		Drawing: views.Moves, Sync: c.SyncSetting,
-	}
-	mover := note.NewMove(moveDeps)
-
-	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Admission).WithAbsent(c.AbsentFiles)
-	create := note.NewCreate(writers, names, index, now, views.Admission)
-	connecting := note.ConnectionDeps{
-		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,
-		Admission: views.Admission, Follow: views.Follow,
-	}
-
-	return noteUseCases{
-		Edit: noteEditing{
-			Read:    note.NewRead(readers),
-			Write:   note.NewWrite(readers, writers, index, now, views.Admission),
-			Create:  create,
-			Linking: linking,
-		},
-		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
-		Place: notePlacing{
-			Move:       mover,
-			Rename:     note.NewRename(moveDeps, mover, views.Admission),
-			Remove:     remove,
-			RemoveNote: note.NewRemoveNote(remove, readers),
-			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
-		},
-		Connect: noteConnecting{
-			SaveConnection:       note.NewSaveConnection(connecting),
-			DeleteConnectionSide: note.NewDeleteConnectionSide(connecting),
-			DeleteConnection:     note.NewDeleteConnection(connecting),
-			Join:                 note.NewJoin(connecting),
-			CreateInRelation:     note.NewCreateInRelation(create, names),
-		},
-	}
+func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) note.UseCases {
+	queries := db.NoteQueries()
+	return note.NewUseCases(note.Deps{
+		Readers: c.Readers, Writers: c.Writers, Links: queries, Names: queries, Sources: db.Sources(), Index: index, Now: c.Clock,
+		Trash:  textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}),
+		Absent: c.AbsentFiles, Sync: c.SyncSetting,
+		Moves: views.Moves, Admission: views.Admission, Follow: views.Follow,
+	})
 }
 
 func createQueryUseCases(db *vaultIndex) query.UseCases {
