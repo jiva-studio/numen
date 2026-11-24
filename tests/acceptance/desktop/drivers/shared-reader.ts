@@ -85,7 +85,7 @@ export class SharedReaderDriver {
       identity,
       subscription,
       settings,
-      vaults: new SyncVaultsDriver(scenario, settings),
+      vaults: new SyncVaultsDriver(scenario, settings, application),
       share: new ShareDriver(scenario, new FileTreeDriver(scenario), application),
       lastError: undefined,
     })

@@ -59,7 +59,7 @@ Feature: Numen Sync plans
     Scenario: A note stays on this computer when the plan is full
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Basic"
-      And the person connects the vault "Test" as a new synced vault
+      And the person syncs the vault "Test"
       And a second computer restores the identity from the recovery words
       And the second computer connects its vault "Copy" to the synced vault "Test"
       And the cloud holds 10 GB of the notes of the person

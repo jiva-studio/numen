@@ -54,7 +54,7 @@ Then('the sync server holds no stored text {string}', async ({ person }, text: s
   await person.sync.expectNoStoredText(text)
 })
 
-When('the person connects the vault {string} as a new synced vault', async ({ person }, vault: string) => {
+When('the person syncs the vault {string}', async ({ person }, vault: string) => {
   await person.computers.connectNew('first', vault)
 })
 
@@ -66,7 +66,7 @@ Then('the sync settings list the synced vault {string}', async ({ person }, vaul
   await person.computers.expectConnected('first', vault)
 })
 
-Then('the vault {string} is not connected', async ({ person }, vault: string) => {
+Then('the vault {string} is not synced', async ({ person }, vault: string) => {
   await person.computers.expectNotConnected('first', vault)
 })
 
@@ -94,7 +94,7 @@ When('the second computer connects its vault {string} to the synced vault {strin
   await person.computers.connectExisting('second', vault, synced)
 })
 
-Then('the sync settings of the second computer show the vault {string} as connected', async ({ person }, vault: string) => {
+Then('the sync settings of the second computer show the vault {string} as synced', async ({ person }, vault: string) => {
   await person.computers.expectConnected('second', vault)
 })
 

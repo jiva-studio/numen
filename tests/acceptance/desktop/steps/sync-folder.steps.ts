@@ -17,7 +17,7 @@ When('the second computer cancels the connection', async ({ person }) => {
   await person.computers.answerConfirmation('second', 'Cancel')
 })
 
-Then('the sync settings of the second computer list the vault {string} as unconnected', async ({ person }, vault: string) => {
+Then('the sync settings of the second computer do not list the vault {string}', async ({ person }, vault: string) => {
   await person.computers.expectNotConnected('second', vault)
 })
 

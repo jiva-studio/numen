@@ -152,7 +152,7 @@ export class ComputerDriver {
       scenario,
       identity: new IdentityDriver(scenario, settings),
       subscription: new SubscriptionDriver(scenario, settings),
-      vaults: new SyncVaultsDriver(scenario, settings),
+      vaults: new SyncVaultsDriver(scenario, settings, application),
       devices: new DevicesDriver(scenario, settings),
       settings,
     }

@@ -13,7 +13,7 @@ Feature: Read a shared folder
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the subscription
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And the person writes the note "Home/Food/Shopping list" with the text "milk" in the vault "Test"
     And the reader sets up an identity
     And the second reader sets up an identity

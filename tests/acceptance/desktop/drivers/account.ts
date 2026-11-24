@@ -9,6 +9,7 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
+const MORE_ACTIONS = 'More actions'
 const DELETE_CLOUD_DATA = 'Delete cloud data'
 const RESTORE_ACCOUNT = 'Restore account'
 const EXPORT_ACCOUNT_DATA = 'Export account data'
@@ -31,6 +32,12 @@ export class AccountDriver {
     return panel.getByRole('region', { name: SUBSCRIPTION_TITLE, exact: true })
   }
 
+  /** Opens the menu "..." in the header of the card and chooses the item. */
+  private async chooseFromMenu(card: Locator, item: string): Promise<void> {
+    await card.getByRole('button', { name: MORE_ACTIONS }).click()
+    await this.scenario.page.getByRole('menuitem', { name: item }).click()
+  }
+
   /** Opens the question of the card, types the account fingerprint and confirms the deletion of the cloud data. */
   async deleteCloudData(): Promise<void> {
     await this.openDeleteQuestion()
@@ -40,7 +47,7 @@ export class AccountDriver {
   /** Opens the question of the card. */
   async openDeleteQuestion(): Promise<void> {
     const card = await this.getCard()
-    await card.getByRole('button', { name: DELETE_CLOUD_DATA }).click()
+    await this.chooseFromMenu(card, DELETE_CLOUD_DATA)
   }
 
   /** Types the text into the open question of the card and confirms the deletion. */
@@ -79,7 +86,7 @@ export class AccountDriver {
     fs.mkdirSync(folder, { recursive: true })
     const card = await this.getCard()
     const download = this.scenario.page.waitForEvent('download')
-    await card.getByRole('button', { name: EXPORT_ACCOUNT_DATA }).click()
+    await this.chooseFromMenu(card, EXPORT_ACCOUNT_DATA)
     const saved = await download
     expect(saved.suggestedFilename()).toBe(EXPORT_FILE)
     const target = path.join(folder, EXPORT_FILE)

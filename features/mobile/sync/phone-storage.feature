@@ -11,7 +11,7 @@ Feature: Free space on the phone
     And a sync server runs
     And the person creates an identity
     And the application "editor" starts
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And the phone is connected to the synced vault "Test"
     And the person writes the file "Books/Guide.pdf" of 5 MB in the vault "Test"
     And the person opens the file "Books/Guide.pdf" on the phone

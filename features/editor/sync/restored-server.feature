@@ -13,7 +13,7 @@ Feature: Numen Sync after the server is restored from a backup
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the subscription
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
 
@@ -62,7 +62,7 @@ Feature: Numen Sync after the server is restored from a backup
     Scenario: A vault connected after the backup is listed again
       Given the empty vault "Work"
       And the operator makes a backup of the sync server
-      And the person connects the vault "Work" as a new synced vault
+      And the person syncs the vault "Work"
       When the operator restores the sync server from the backup
       And the operator announces the restore
       Then the second computer can connect to the synced vault "Work"

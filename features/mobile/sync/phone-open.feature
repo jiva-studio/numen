@@ -11,7 +11,7 @@ Feature: Numen Sync on a phone
     And a sync server runs
     And the person creates an identity
     And the application "editor" starts
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And the phone is connected to the synced vault "Test"
 
   Rule: A phone that is open gets the changes of the vault

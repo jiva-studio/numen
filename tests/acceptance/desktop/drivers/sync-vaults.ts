@@ -1,33 +1,32 @@
-/** The person at the section "Vaults" of the settings of the plugin "Numen Sync": connects vaults to synced vaults and reads their state. */
+/** The person at the card "Synced vaults" of the settings of the plugin "Numen Sync" and at the command "Sync this vault": syncs vaults and reads their state. */
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, type Locator } from 'playwright/test'
 import { addVault, callRPC, listVaults } from '../../../e2e/desktop/tests/support/vault.js'
+import type { ApplicationDriver } from './application.js'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
 const PLUGIN_NAME = 'Numen Sync'
-const SECTION = 'Vaults'
-const CONNECT_NEW = 'Connect as a new synced vault'
-const CONNECT_EXISTING = 'Connect to an existing synced vault'
-const CHOOSE = 'Choose a synced vault'
-const CONNECTED = 'Connected'
-const NOT_CONNECTED = 'Not connected'
-/** What the question of a connection says after its number. */
-const CONFIRMATION = /differs? from the synced vault/
-/** The plugin reads the vaults when the section opens and asks the server every second: a vault is connected within this time. */
-const CONNECT_LIMIT_MS = 20_000
+const SECTION = 'Synced vaults'
+const SYNC = 'Sync this vault'
+const FROM_CLOUD = 'Get a vault from the cloud'
+const CLOUD_VAULT = 'Vault in the cloud'
+const DEVICE_VAULT = 'Vault on this device'
+const GET = 'Get vault'
+const UP_TO_DATE = 'Up to date'
+/** The plugin reads the vaults when the card opens and asks the server every second: a vault is synced within this time. */
+const SYNC_LIMIT_MS = 20_000
 
 export class SyncVaultsDriver {
   constructor(
     private readonly scenario: Scenario,
     private readonly settings: SettingsDriver,
+    private readonly application: ApplicationDriver,
   ) {}
 
   private async show(): Promise<Locator> {
     const panel = await this.settings.showPage(PLUGIN_NAME)
-    const section = panel.getByRole('tab', { name: SECTION, exact: true })
-    if ((await section.count()) > 0) await section.click()
     await expect(panel.getByText(SECTION, { exact: true }).first()).toBeVisible()
     return panel
   }
@@ -36,60 +35,64 @@ export class SyncVaultsDriver {
     return panel.getByRole('listitem').filter({ hasText: vault })
   }
 
-  async connectNew(vault: string): Promise<void> {
-    const row = this.getRow(await this.show(), vault)
-    await row.getByRole('button', { name: CONNECT_NEW, exact: true }).click()
+  /** Runs the command "Sync this vault" on the top folder of the vault that is open. */
+  async connectNew(_vault: string): Promise<void> {
+    await this.application.runCommand(SYNC)
   }
 
-  /** Opens the list of the synced vaults of the account for a vault and expects the synced vault in it. */
+  private async openCloud(panel: Locator): Promise<Locator> {
+    await panel.getByRole('button', { name: FROM_CLOUD, exact: true }).click({ timeout: SYNC_LIMIT_MS })
+    return this.scenario.page.getByRole('dialog')
+  }
+
+  /** Opens the dialog "Get a vault from the cloud" and expects the vault of the account in it, then closes it. */
   async expectCanConnectTo(vault: string, synced: string): Promise<void> {
-    const panel = await this.show()
-    await this.getRow(panel, vault).getByRole('button', { name: CONNECT_EXISTING, exact: true }).click()
-    await expect(panel.getByText(CHOOSE, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
-    await expect(panel.getByRole('button', { name: synced, exact: true })).toBeVisible()
+    const dialog = await this.openCloud(await this.show())
+    await expect(dialog.getByLabel(CLOUD_VAULT)).toContainText(synced, { timeout: SYNC_LIMIT_MS })
+    await expect(dialog.getByLabel(DEVICE_VAULT)).toContainText(vault)
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
   }
 
   async connectExisting(vault: string, synced: string): Promise<void> {
-    await this.expectCanConnectTo(vault, synced)
-    await (await this.show()).getByRole('button', { name: synced, exact: true }).click()
+    const dialog = await this.openCloud(await this.show())
+    await dialog.getByLabel(CLOUD_VAULT).selectOption({ label: synced })
+    await dialog.getByLabel(DEVICE_VAULT).selectOption({ label: vault })
+    await dialog.getByRole('button', { name: GET, exact: true }).click()
   }
 
-  /** Gives the answer to the question that asks for a confirmation. */
+  /** Answers the question of the dialog: "Connect" gets the vault, "Cancel" goes back. */
   async answerConfirmation(answer: string): Promise<void> {
-    const panel = await this.show()
-    await panel.getByRole('button', { name: answer, exact: true }).click({ timeout: CONNECT_LIMIT_MS })
+    const name = answer === 'Connect' ? GET : answer
+    await this.scenario.page.getByRole('dialog').getByRole('button', { name, exact: true }).click({ timeout: SYNC_LIMIT_MS })
   }
 
   async expectAskedToConfirm(text: string): Promise<void> {
-    const panel = await this.show()
-    await expect(panel.getByText(text, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+    await expect(this.scenario.page.getByRole('dialog').getByText(text, { exact: true })).toBeVisible({ timeout: SYNC_LIMIT_MS })
   }
 
-  /** A vault that connects without a question shows as connected, and no question is on the page. */
+  /** A vault that is got without a question shows as up to date, and no dialog is open. */
   async expectNotAsked(): Promise<void> {
     const panel = await this.show()
-    await expect(panel.getByText(CONNECTED, { exact: true }).first()).toBeVisible({ timeout: CONNECT_LIMIT_MS })
-    await expect(panel.getByText(CONFIRMATION)).toHaveCount(0)
+    await expect(panel.getByText(UP_TO_DATE, { exact: true }).first()).toBeVisible({ timeout: SYNC_LIMIT_MS })
+    await expect(this.scenario.page.getByRole('dialog')).toHaveCount(0)
   }
 
   async expectNotConnected(vault: string): Promise<void> {
     const panel = await this.show()
-    await expect(this.getRow(panel, vault).getByText(NOT_CONNECTED, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
-    await expect(panel.getByText(CONFIRMATION)).toHaveCount(0)
+    await expect(this.getRow(panel, vault)).toHaveCount(0, { timeout: SYNC_LIMIT_MS })
   }
 
-  /** Expects the list to show the vault as connected. */
+  /** Expects the card to list the vault as synced. */
   async expectConnected(vault: string): Promise<void> {
     const panel = await this.show()
-    await expect(this.getRow(panel, vault).getByText(CONNECTED, { exact: true })).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+    await expect(this.getRow(panel, vault)).toBeVisible({ timeout: SYNC_LIMIT_MS })
   }
 
   async expectWarning(text: string): Promise<void> {
-    const panel = await this.show()
-    await expect(panel.getByText(text).first()).toBeVisible({ timeout: CONNECT_LIMIT_MS })
+    await expect(this.scenario.page.getByText(text).first()).toBeVisible({ timeout: SYNC_LIMIT_MS })
   }
 
-  /** Presses the button of an action under the row of a vault, as "Remove the files" under a paused vault. */
+  /** Presses the button of an action in the row of a vault, as "Remove the files" of a paused vault. */
   async choose(action: string): Promise<void> {
     const panel = await this.show()
     await panel.getByRole('button', { name: action, exact: true }).click()

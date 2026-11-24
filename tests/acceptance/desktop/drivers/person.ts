@@ -102,7 +102,7 @@ export class Person {
     this.subscription = new SubscriptionDriver(this.scenario, this.settings)
     this.accounts = new AccountDriver(this.scenario, this.settings, this.identity)
     this.sync = new SyncDriver(this.scenario, this.identity)
-    this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
+    this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings, this.application)
     this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
     this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity)
     this.computers = new ComputerDriver(this.scenario, viewport, {

@@ -247,7 +247,7 @@ describe('the dialog of a share, in the words of the product', () => {
     expect(view.sharedName).toBe('Anna')
   })
 
-  it('says a code that cannot be read is not an identity code', async () => {
+  it('says a code that cannot be read is not a sharing link', async () => {
     const client = createClient({
       readReaderCode: () => Promise.reject(new Error('this is not a reader code or an invitation')),
     })
@@ -255,7 +255,7 @@ describe('the dialog of a share, in the words of the product', () => {
 
     await view.setCode('nonsense')
 
-    expect(view.codeError).toBe('This does not look like an identity code.')
+    expect(view.codeError).toBe('This does not look like a sharing link.')
   })
 
   it('lists only the people who have access', () => {

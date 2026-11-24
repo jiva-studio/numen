@@ -12,7 +12,7 @@ Feature: Connect a folder that holds notes
     And the person creates an identity
     And the application "editor" starts
     And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And a second computer restores the identity from the recovery words
 
   Rule: A note with the same text on both sides stays one note
@@ -47,7 +47,7 @@ Feature: Connect a folder that holds notes
       And the second computer writes the note "Plan" with the text "tea" in its vault "Copy"
       And the person writes the note "Plan" with the text "eggs" in the vault "Test"
       When the second computer connects its vault "Copy" to the synced vault "Test"
-      Then the second computer is asked to confirm "2 notes differ from the synced vault"
+      Then the second computer is asked to confirm "2 notes differ from the vault in the cloud. Get it anyway?"
 
     Scenario: A confirmed note keeps both texts
       Given the second computer writes the note "Shopping list" with the text "bread" in its vault "Copy"
@@ -61,4 +61,4 @@ Feature: Connect a folder that holds notes
       When the second computer connects its vault "Copy" to the synced vault "Test"
       And the second computer cancels the connection
       Then the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
-      And the sync settings of the second computer list the vault "Copy" as unconnected
+      And the sync settings of the second computer do not list the vault "Copy"

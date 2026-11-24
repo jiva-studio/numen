@@ -11,7 +11,7 @@ Feature: Pause the sync when many files are removed
     And a sync server runs
     And the person creates an identity
     And the application "editor" starts
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
 

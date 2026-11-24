@@ -13,7 +13,7 @@ Feature: Numen Sync after the cloud deleted the vaults
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the subscription
-    And the person connects the vault "Test" as a new synced vault
+    And the person syncs the vault "Test"
     And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
 
   Rule: A deleted vault is not a deletion of notes
