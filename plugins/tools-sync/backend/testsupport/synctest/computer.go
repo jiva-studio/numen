@@ -154,7 +154,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root}, Notes: Host{Root: root},
-		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
+		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, LazyHeavy: false, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -340,7 +340,7 @@ func (c *Computer) RestoreDeps() restore.Deps {
 // timeout, both over the network link of this computer, and refresh as the way to sign in again.
 func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
 	return cloud.New(cloud.Config{
-		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now,
+		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now, Storage: nil,
 	})
 }
 

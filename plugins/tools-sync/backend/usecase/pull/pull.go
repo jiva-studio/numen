@@ -88,7 +88,7 @@ func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.
 		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
-		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil,
+		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil, failures: nil,
 	}
 	if err = r.execute(ctx); err == nil && r.result.Verdict == restore.Same {
 		err = r.reportRollbacks(ctx)
@@ -125,13 +125,17 @@ func (r *run) execute(ctx context.Context) error {
 			return err
 		}
 		if !page.GetHasMore() {
-			if err := r.settleRemovals(ctx); err != nil {
-				return err
-			}
-			return errors.Join(r.failures...)
+			return r.finish(ctx)
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (r *run) finish(ctx context.Context) error {
+	if err := r.settleRemovals(ctx); err != nil {
+		return err
+	}
+	return errors.Join(r.failures...)
 }
 
 func (r *run) save(ctx context.Context) error {

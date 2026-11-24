@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/logging"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/platform"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
@@ -65,12 +66,13 @@ type runtime struct {
 	session      *loops.Supervisor[*Backend]
 	isForeground loops.Flag
 	settings     *settingswire.Settings
+	epochRoot    *loops.Text
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), settings: settingswire.New(p.health), session: nil,
+		received: loops.NewText(), settings: settingswire.New(p.health, logging.Warn), epochRoot: loops.NewText(), isForeground: loops.Flag{}, session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -93,7 +95,7 @@ func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
-	r.settings.SetEpochRoot(values[settingswire.SettingEpochRoot])
+	r.epochRoot.Set(values[settingswire.SettingEpochRoot])
 	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]))
 }
 
@@ -101,7 +103,8 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
-	roots := r.settings.ReadEpochRoots(ctx, address)
+	roots, rootsErr := cloud.GetRoots(address, r.epochRoot.Get())
+	r.settings.ReportEpochRoot(ctx, rootsErr)
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),

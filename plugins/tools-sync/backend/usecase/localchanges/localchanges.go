@@ -44,10 +44,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	if seen, err = u.follow(ctx, in.VaultID, files, seen); err != nil {
 		return nil, err
 	}
-	found, err := u.list(ctx, files, seen, in.Bases)
-	if err != nil {
-		return nil, err
-	}
+	found := u.list(ctx, files, seen, in.Bases)
 	return found, u.deps.State.WriteSightings(ctx, in.VaultID, seen)
 }
 
@@ -91,7 +88,7 @@ func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note
 	}
 }
 
-func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.Seen, bases map[string]string) ([]transfer.Change, error) {
+func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.Seen, bases map[string]string) []transfer.Change {
 	paths := make([]string, 0, len(seen))
 	for path := range seen {
 		paths = append(paths, path)
@@ -118,7 +115,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 			found = append(found, transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
 		}
 	}
-	return found, nil
+	return found
 }
 
 var errFeedReset = errors.New("the file change feed reset while the notes were read")

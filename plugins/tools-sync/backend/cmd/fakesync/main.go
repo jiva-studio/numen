@@ -82,6 +82,20 @@ func (k *keeper) save() error {
 	return os.Rename(temporary, k.path)
 }
 
+func getStatePath(fake *fakeserver.Server, stateDir string) string {
+	if stateDir == "" {
+		return ""
+	}
+	if err := prepareStateDir(stateDir); err != nil {
+		log.Fatal(err)
+	}
+	path := filepath.Join(stateDir, stateFile)
+	if err := load(fake, path); err != nil {
+		log.Fatal(err)
+	}
+	return path
+}
+
 func load(fake *fakeserver.Server, path string) error {
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -127,19 +141,7 @@ func main() {
 	}
 	fake := fakeserver.New(config)
 	exit := make(chan struct{})
-	var handler http.Handler
-	if *stateDir != "" {
-		if err := prepareStateDir(*stateDir); err != nil {
-			log.Fatal(err)
-		}
-		path := filepath.Join(*stateDir, stateFile)
-		if err := load(fake, path); err != nil {
-			log.Fatal(err)
-		}
-		handler = newKeeper(fake, path, &stopped, exit)
-	} else {
-		handler = newKeeper(fake, "", &stopped, exit)
-	}
+	handler := newKeeper(fake, getStatePath(fake, *stateDir), &stopped, exit)
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
 		log.Fatal(err)
 	}

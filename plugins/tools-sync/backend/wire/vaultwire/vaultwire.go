@@ -15,7 +15,6 @@ import (
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	domaintransfer "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/heads"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
@@ -33,18 +32,19 @@ type Vaults struct {
 	deps    syncvault.Deps
 	catalog catalog.Deps
 	connect *catalog.ConnectVault
+	heads   ports.Heads
 	pending ports.PausedStore
 	resolve *deletions.ResolveDeletions
 }
 
-// New returns the methods over the dependencies of a pass.
-func New(deps syncvault.Deps) *Vaults {
+// New returns the methods over the dependencies of a pass and the heads of a synced vault.
+func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	catalogDeps := catalog.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
 		Journals: deps.Restore.Mirror,
 		Random:   deps.Random,
 	}
-	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), pending: nil, resolve: nil}
+	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil}
 }
 
 // SetDeletions gives the methods the answer to the pause before many removals.
@@ -158,10 +158,8 @@ func (v *Vaults) GetConnectPreview(ctx context.Context, request api.PreviewConne
 		return api.PreviewConnectResponse{}, catalog.ErrUnknownRemoteVault
 	}
 	use := preview.NewPreviewConnect(preview.Deps{
-		Heads: heads.New(heads.Deps{
-			Catalog: v.deps.Catalog, Chain: v.deps.Chain, Revisions: v.deps.Revisions, Crypto: v.deps.Crypto, Identity: v.deps.Identity,
-		}),
-		Host: v.deps.Host,
+		Heads: v.heads,
+		Host:  v.deps.Host,
 	})
 	found, err := use.Execute(ctx, preview.Input{VaultID: domain.VaultID(request.VaultID), RemoteID: request.RemoteID})
 	return api.PreviewConnectResponse{DifferCount: len(found.Differ)}, err

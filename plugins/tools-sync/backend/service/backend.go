@@ -3,6 +3,7 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/heads"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
@@ -28,9 +29,10 @@ type Backend struct {
 
 // NewBackend returns the backend over the dependencies of a pass.
 func NewBackend(deps syncvault.Deps) *Backend {
+	headsDeps := heads.Deps{Catalog: deps.Catalog, Chain: deps.Chain, Revisions: deps.Revisions, Crypto: deps.Crypto, Identity: deps.Identity}
 	return &Backend{
 		life: nil, Downloads: nil,
-		Vaults:       vaultwire.New(deps),
+		Vaults:       vaultwire.New(deps, heads.New(headsDeps)),
 		Shares:       sharewire.New(deps),
 		Received:     sharewire.NewReceived(deps),
 		Subscription: subscriptionwire.New(deps),

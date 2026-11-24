@@ -70,7 +70,7 @@ func (r *running) record(err error) {
 }
 
 // NewLifecycle returns the use case over the dependencies.
-func NewLifecycle(deps Deps) *Lifecycle { return &Lifecycle{deps: deps} }
+func NewLifecycle(deps Deps) *Lifecycle { return &Lifecycle{deps: deps, mu: sync.Mutex{}, running: nil, isFlushed: false} }
 
 // Resume starts the loop, which passes over every connected vault at once, and the stream. A second call
 // while they run does nothing.
@@ -81,7 +81,7 @@ func (u *Lifecycle) Resume(ctx context.Context) error {
 		return nil
 	}
 	runCtx, stop := context.WithCancel(context.WithoutCancel(ctx))
-	started := &running{stop: stop}
+	started := &running{stop: stop, done: sync.WaitGroup{}, mu: sync.Mutex{}, failed: nil}
 	started.done.Add(2)
 	go func() {
 		defer started.done.Done()

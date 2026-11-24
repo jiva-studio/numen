@@ -41,7 +41,17 @@ func (r *run) getListedHash(ctx context.Context, filePath string) (string, error
 	return hash, nil
 }
 
-func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, previous transfer.FileRecord, local string, isListed, isKnown bool) error {
+type listing struct {
+	stored   *syncv1.StoredRevision
+	meta     note.Meta
+	previous transfer.FileRecord
+	local    string
+	isListed bool
+	isKnown  bool
+}
+
+func (r *run) list(ctx context.Context, item listing) error {
+	stored, meta, previous, local, isListed, isKnown := item.stored, item.meta, item.previous, item.local, item.isListed, item.isKnown
 	absent := r.deps.Host.GetAbsent(r.in.VaultID)
 	if local != "" && !isListed {
 		if err := absent.EvictFile(ctx, meta.Path, local); err != nil {
