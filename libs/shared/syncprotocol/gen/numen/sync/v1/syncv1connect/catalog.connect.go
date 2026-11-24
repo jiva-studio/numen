@@ -39,6 +39,12 @@ const (
 	// CatalogServiceGetCatalogProcedure is the fully-qualified name of the CatalogService's GetCatalog
 	// RPC.
 	CatalogServiceGetCatalogProcedure = "/numen.sync.v1.CatalogService/GetCatalog"
+	// CatalogServiceGetVaultUsageProcedure is the fully-qualified name of the CatalogService's
+	// GetVaultUsage RPC.
+	CatalogServiceGetVaultUsageProcedure = "/numen.sync.v1.CatalogService/GetVaultUsage"
+	// CatalogServiceDeleteVaultProcedure is the fully-qualified name of the CatalogService's
+	// DeleteVault RPC.
+	CatalogServiceDeleteVaultProcedure = "/numen.sync.v1.CatalogService/DeleteVault"
 )
 
 // CatalogServiceClient is a client for the numen.sync.v1.CatalogService service.
@@ -47,6 +53,29 @@ type CatalogServiceClient interface {
 	AppendCatalogEntry(context.Context, *connect.Request[v1.AppendCatalogEntryRequest]) (*connect.Response[v1.AppendCatalogEntryResponse], error)
 	// GetCatalog returns the entries after a version, page by page.
 	GetCatalog(context.Context, *connect.Request[v1.GetCatalogRequest]) (*connect.Response[v1.GetCatalogResponse], error)
+	// GetVaultUsage returns the stored size of every vault of the account of the session, also of a vault that no
+	// device of the account syncs any more. A vault with no stored byte is listed with 0; a deleted vault is not
+	// listed. The bytes are counted as the used_bytes of GetSubscriptionResponse is (the reserved and committed
+	// blobs), so the sizes add up to it. It needs the session bearer and no write entitlement.
+	GetVaultUsage(context.Context, *connect.Request[v1.GetVaultUsageRequest]) (*connect.Response[v1.GetVaultUsageResponse], error)
+	// DeleteVault removes one vault of the account of the session from the server: its revisions, tombstones, blobs
+	// (and the stored objects), multipart uploads and share roots, and gives its bytes back to the quota. The vault id
+	// stays in the catalog log, which is append-only and is never rewritten.
+	//
+	// The catalog interplay is the caller's: before it calls DeleteVault the client appends a CatalogEntry for the
+	// vault with creates_vault false whose enc_body says the vault was removed (the body is client-defined and the
+	// server never reads it, so there is no new entry kind and no change of the signed layout). Other devices read
+	// that newest body, drop their link to the vault and stop pushing to it; the server does not check that the
+	// entry exists. The client also closes every share root of the vault first (ShareService.AppendShareLogEntry,
+	// kind CLOSE); a reader that is left reads the deleted share as NOT_FOUND.
+	//
+	// Any active device of the account may call it; there is no role below the account. It is allowed in every
+	// subscription phase but DELETED, also READ_ONLY, because it only frees space. It is idempotent: a vault that is
+	// not stored, or that belongs to another account, answers OK with deleted false, so a retry after a dropped
+	// answer succeeds and no caller learns whether a foreign vault exists. A reserve or a commit that races with it
+	// is refused with NOT_FOUND, which the client reads as ErrNoVault. The deletion is one transaction: the vault is
+	// whole or gone. It needs the session bearer.
+	DeleteVault(context.Context, *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error)
 }
 
 // NewCatalogServiceClient constructs a client for the numen.sync.v1.CatalogService service. By
@@ -72,6 +101,18 @@ func NewCatalogServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(catalogServiceMethods.ByName("GetCatalog")),
 			connect.WithClientOptions(opts...),
 		),
+		getVaultUsage: connect.NewClient[v1.GetVaultUsageRequest, v1.GetVaultUsageResponse](
+			httpClient,
+			baseURL+CatalogServiceGetVaultUsageProcedure,
+			connect.WithSchema(catalogServiceMethods.ByName("GetVaultUsage")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteVault: connect.NewClient[v1.DeleteVaultRequest, v1.DeleteVaultResponse](
+			httpClient,
+			baseURL+CatalogServiceDeleteVaultProcedure,
+			connect.WithSchema(catalogServiceMethods.ByName("DeleteVault")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -79,6 +120,8 @@ func NewCatalogServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 type catalogServiceClient struct {
 	appendCatalogEntry *connect.Client[v1.AppendCatalogEntryRequest, v1.AppendCatalogEntryResponse]
 	getCatalog         *connect.Client[v1.GetCatalogRequest, v1.GetCatalogResponse]
+	getVaultUsage      *connect.Client[v1.GetVaultUsageRequest, v1.GetVaultUsageResponse]
+	deleteVault        *connect.Client[v1.DeleteVaultRequest, v1.DeleteVaultResponse]
 }
 
 // AppendCatalogEntry calls numen.sync.v1.CatalogService.AppendCatalogEntry.
@@ -91,12 +134,45 @@ func (c *catalogServiceClient) GetCatalog(ctx context.Context, req *connect.Requ
 	return c.getCatalog.CallUnary(ctx, req)
 }
 
+// GetVaultUsage calls numen.sync.v1.CatalogService.GetVaultUsage.
+func (c *catalogServiceClient) GetVaultUsage(ctx context.Context, req *connect.Request[v1.GetVaultUsageRequest]) (*connect.Response[v1.GetVaultUsageResponse], error) {
+	return c.getVaultUsage.CallUnary(ctx, req)
+}
+
+// DeleteVault calls numen.sync.v1.CatalogService.DeleteVault.
+func (c *catalogServiceClient) DeleteVault(ctx context.Context, req *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error) {
+	return c.deleteVault.CallUnary(ctx, req)
+}
+
 // CatalogServiceHandler is an implementation of the numen.sync.v1.CatalogService service.
 type CatalogServiceHandler interface {
 	// AppendCatalogEntry adds one entry to the catalog.
 	AppendCatalogEntry(context.Context, *connect.Request[v1.AppendCatalogEntryRequest]) (*connect.Response[v1.AppendCatalogEntryResponse], error)
 	// GetCatalog returns the entries after a version, page by page.
 	GetCatalog(context.Context, *connect.Request[v1.GetCatalogRequest]) (*connect.Response[v1.GetCatalogResponse], error)
+	// GetVaultUsage returns the stored size of every vault of the account of the session, also of a vault that no
+	// device of the account syncs any more. A vault with no stored byte is listed with 0; a deleted vault is not
+	// listed. The bytes are counted as the used_bytes of GetSubscriptionResponse is (the reserved and committed
+	// blobs), so the sizes add up to it. It needs the session bearer and no write entitlement.
+	GetVaultUsage(context.Context, *connect.Request[v1.GetVaultUsageRequest]) (*connect.Response[v1.GetVaultUsageResponse], error)
+	// DeleteVault removes one vault of the account of the session from the server: its revisions, tombstones, blobs
+	// (and the stored objects), multipart uploads and share roots, and gives its bytes back to the quota. The vault id
+	// stays in the catalog log, which is append-only and is never rewritten.
+	//
+	// The catalog interplay is the caller's: before it calls DeleteVault the client appends a CatalogEntry for the
+	// vault with creates_vault false whose enc_body says the vault was removed (the body is client-defined and the
+	// server never reads it, so there is no new entry kind and no change of the signed layout). Other devices read
+	// that newest body, drop their link to the vault and stop pushing to it; the server does not check that the
+	// entry exists. The client also closes every share root of the vault first (ShareService.AppendShareLogEntry,
+	// kind CLOSE); a reader that is left reads the deleted share as NOT_FOUND.
+	//
+	// Any active device of the account may call it; there is no role below the account. It is allowed in every
+	// subscription phase but DELETED, also READ_ONLY, because it only frees space. It is idempotent: a vault that is
+	// not stored, or that belongs to another account, answers OK with deleted false, so a retry after a dropped
+	// answer succeeds and no caller learns whether a foreign vault exists. A reserve or a commit that races with it
+	// is refused with NOT_FOUND, which the client reads as ErrNoVault. The deletion is one transaction: the vault is
+	// whole or gone. It needs the session bearer.
+	DeleteVault(context.Context, *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error)
 }
 
 // NewCatalogServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -118,12 +194,28 @@ func NewCatalogServiceHandler(svc CatalogServiceHandler, opts ...connect.Handler
 		connect.WithSchema(catalogServiceMethods.ByName("GetCatalog")),
 		connect.WithHandlerOptions(opts...),
 	)
+	catalogServiceGetVaultUsageHandler := connect.NewUnaryHandler(
+		CatalogServiceGetVaultUsageProcedure,
+		svc.GetVaultUsage,
+		connect.WithSchema(catalogServiceMethods.ByName("GetVaultUsage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	catalogServiceDeleteVaultHandler := connect.NewUnaryHandler(
+		CatalogServiceDeleteVaultProcedure,
+		svc.DeleteVault,
+		connect.WithSchema(catalogServiceMethods.ByName("DeleteVault")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.CatalogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CatalogServiceAppendCatalogEntryProcedure:
 			catalogServiceAppendCatalogEntryHandler.ServeHTTP(w, r)
 		case CatalogServiceGetCatalogProcedure:
 			catalogServiceGetCatalogHandler.ServeHTTP(w, r)
+		case CatalogServiceGetVaultUsageProcedure:
+			catalogServiceGetVaultUsageHandler.ServeHTTP(w, r)
+		case CatalogServiceDeleteVaultProcedure:
+			catalogServiceDeleteVaultHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -139,4 +231,12 @@ func (UnimplementedCatalogServiceHandler) AppendCatalogEntry(context.Context, *c
 
 func (UnimplementedCatalogServiceHandler) GetCatalog(context.Context, *connect.Request[v1.GetCatalogRequest]) (*connect.Response[v1.GetCatalogResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.CatalogService.GetCatalog is not implemented"))
+}
+
+func (UnimplementedCatalogServiceHandler) GetVaultUsage(context.Context, *connect.Request[v1.GetVaultUsageRequest]) (*connect.Response[v1.GetVaultUsageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.CatalogService.GetVaultUsage is not implemented"))
+}
+
+func (UnimplementedCatalogServiceHandler) DeleteVault(context.Context, *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.CatalogService.DeleteVault is not implemented"))
 }

@@ -322,6 +322,240 @@ func (x *GetCatalogResponse) GetHasMore() bool {
 	return false
 }
 
+type VaultUsage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// vault_id is 16 bytes.
+	VaultId []byte `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	// used_bytes is the stored (padded) size of the reserved and committed blobs of the vault.
+	UsedBytes     uint64 `protobuf:"varint,2,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VaultUsage) Reset() {
+	*x = VaultUsage{}
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VaultUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VaultUsage) ProtoMessage() {}
+
+func (x *VaultUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VaultUsage.ProtoReflect.Descriptor instead.
+func (*VaultUsage) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_catalog_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *VaultUsage) GetVaultId() []byte {
+	if x != nil {
+		return x.VaultId
+	}
+	return nil
+}
+
+func (x *VaultUsage) GetUsedBytes() uint64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+type GetVaultUsageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVaultUsageRequest) Reset() {
+	*x = GetVaultUsageRequest{}
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVaultUsageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVaultUsageRequest) ProtoMessage() {}
+
+func (x *GetVaultUsageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVaultUsageRequest.ProtoReflect.Descriptor instead.
+func (*GetVaultUsageRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+type GetVaultUsageResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// vaults are all the vaults the server stores for the account, ordered by vault_id.
+	Vaults        []*VaultUsage `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVaultUsageResponse) Reset() {
+	*x = GetVaultUsageResponse{}
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVaultUsageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVaultUsageResponse) ProtoMessage() {}
+
+func (x *GetVaultUsageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVaultUsageResponse.ProtoReflect.Descriptor instead.
+func (*GetVaultUsageResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_catalog_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetVaultUsageResponse) GetVaults() []*VaultUsage {
+	if x != nil {
+		return x.Vaults
+	}
+	return nil
+}
+
+type DeleteVaultRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// vault_id is 16 bytes.
+	VaultId       []byte `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteVaultRequest) Reset() {
+	*x = DeleteVaultRequest{}
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVaultRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVaultRequest) ProtoMessage() {}
+
+func (x *DeleteVaultRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVaultRequest.ProtoReflect.Descriptor instead.
+func (*DeleteVaultRequest) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_catalog_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DeleteVaultRequest) GetVaultId() []byte {
+	if x != nil {
+		return x.VaultId
+	}
+	return nil
+}
+
+type DeleteVaultResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deleted is true when the call removed the vault and false when the server stored no such vault of the account.
+	Deleted bool `protobuf:"varint,1,opt,name=deleted,proto3" json:"deleted,omitempty"`
+	// freed_bytes is what the call gave back to the quota, 0 when deleted is false.
+	FreedBytes    uint64 `protobuf:"varint,2,opt,name=freed_bytes,json=freedBytes,proto3" json:"freed_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteVaultResponse) Reset() {
+	*x = DeleteVaultResponse{}
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVaultResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVaultResponse) ProtoMessage() {}
+
+func (x *DeleteVaultResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_sync_v1_catalog_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVaultResponse.ProtoReflect.Descriptor instead.
+func (*DeleteVaultResponse) Descriptor() ([]byte, []int) {
+	return file_numen_sync_v1_catalog_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteVaultResponse) GetDeleted() bool {
+	if x != nil {
+		return x.Deleted
+	}
+	return false
+}
+
+func (x *DeleteVaultResponse) GetFreedBytes() uint64 {
+	if x != nil {
+		return x.FreedBytes
+	}
+	return 0
+}
+
 var File_numen_sync_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_catalog_proto_rawDesc = "" +
@@ -345,11 +579,27 @@ const file_numen_sync_v1_catalog_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\rR\x05limit\"f\n" +
 	"\x12GetCatalogResponse\x125\n" +
 	"\aentries\x18\x01 \x03(\v2\x1b.numen.sync.v1.CatalogEntryR\aentries\x12\x19\n" +
-	"\bhas_more\x18\x02 \x01(\bR\ahasMore2\xce\x01\n" +
+	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"F\n" +
+	"\n" +
+	"VaultUsage\x12\x19\n" +
+	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\x02 \x01(\x04R\tusedBytes\"\x16\n" +
+	"\x14GetVaultUsageRequest\"J\n" +
+	"\x15GetVaultUsageResponse\x121\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x19.numen.sync.v1.VaultUsageR\x06vaults\"/\n" +
+	"\x12DeleteVaultRequest\x12\x19\n" +
+	"\bvault_id\x18\x01 \x01(\fR\avaultId\"P\n" +
+	"\x13DeleteVaultResponse\x12\x18\n" +
+	"\adeleted\x18\x01 \x01(\bR\adeleted\x12\x1f\n" +
+	"\vfreed_bytes\x18\x02 \x01(\x04R\n" +
+	"freedBytes2\x80\x03\n" +
 	"\x0eCatalogService\x12i\n" +
 	"\x12AppendCatalogEntry\x12(.numen.sync.v1.AppendCatalogEntryRequest\x1a).numen.sync.v1.AppendCatalogEntryResponse\x12Q\n" +
 	"\n" +
-	"GetCatalog\x12 .numen.sync.v1.GetCatalogRequest\x1a!.numen.sync.v1.GetCatalogResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
+	"GetCatalog\x12 .numen.sync.v1.GetCatalogRequest\x1a!.numen.sync.v1.GetCatalogResponse\x12Z\n" +
+	"\rGetVaultUsage\x12#.numen.sync.v1.GetVaultUsageRequest\x1a$.numen.sync.v1.GetVaultUsageResponse\x12T\n" +
+	"\vDeleteVault\x12!.numen.sync.v1.DeleteVaultRequest\x1a\".numen.sync.v1.DeleteVaultResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
 var (
 	file_numen_sync_v1_catalog_proto_rawDescOnce sync.Once
@@ -363,27 +613,37 @@ func file_numen_sync_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_catalog_proto_rawDescData
 }
 
-var file_numen_sync_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_numen_sync_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_sync_v1_catalog_proto_goTypes = []any{
 	(*CatalogEntry)(nil),               // 0: numen.sync.v1.CatalogEntry
 	(*AppendCatalogEntryRequest)(nil),  // 1: numen.sync.v1.AppendCatalogEntryRequest
 	(*AppendCatalogEntryResponse)(nil), // 2: numen.sync.v1.AppendCatalogEntryResponse
 	(*GetCatalogRequest)(nil),          // 3: numen.sync.v1.GetCatalogRequest
 	(*GetCatalogResponse)(nil),         // 4: numen.sync.v1.GetCatalogResponse
+	(*VaultUsage)(nil),                 // 5: numen.sync.v1.VaultUsage
+	(*GetVaultUsageRequest)(nil),       // 6: numen.sync.v1.GetVaultUsageRequest
+	(*GetVaultUsageResponse)(nil),      // 7: numen.sync.v1.GetVaultUsageResponse
+	(*DeleteVaultRequest)(nil),         // 8: numen.sync.v1.DeleteVaultRequest
+	(*DeleteVaultResponse)(nil),        // 9: numen.sync.v1.DeleteVaultResponse
 }
 var file_numen_sync_v1_catalog_proto_depIdxs = []int32{
 	0, // 0: numen.sync.v1.AppendCatalogEntryRequest.entry:type_name -> numen.sync.v1.CatalogEntry
 	0, // 1: numen.sync.v1.AppendCatalogEntryResponse.head:type_name -> numen.sync.v1.CatalogEntry
 	0, // 2: numen.sync.v1.GetCatalogResponse.entries:type_name -> numen.sync.v1.CatalogEntry
-	1, // 3: numen.sync.v1.CatalogService.AppendCatalogEntry:input_type -> numen.sync.v1.AppendCatalogEntryRequest
-	3, // 4: numen.sync.v1.CatalogService.GetCatalog:input_type -> numen.sync.v1.GetCatalogRequest
-	2, // 5: numen.sync.v1.CatalogService.AppendCatalogEntry:output_type -> numen.sync.v1.AppendCatalogEntryResponse
-	4, // 6: numen.sync.v1.CatalogService.GetCatalog:output_type -> numen.sync.v1.GetCatalogResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 3: numen.sync.v1.GetVaultUsageResponse.vaults:type_name -> numen.sync.v1.VaultUsage
+	1, // 4: numen.sync.v1.CatalogService.AppendCatalogEntry:input_type -> numen.sync.v1.AppendCatalogEntryRequest
+	3, // 5: numen.sync.v1.CatalogService.GetCatalog:input_type -> numen.sync.v1.GetCatalogRequest
+	6, // 6: numen.sync.v1.CatalogService.GetVaultUsage:input_type -> numen.sync.v1.GetVaultUsageRequest
+	8, // 7: numen.sync.v1.CatalogService.DeleteVault:input_type -> numen.sync.v1.DeleteVaultRequest
+	2, // 8: numen.sync.v1.CatalogService.AppendCatalogEntry:output_type -> numen.sync.v1.AppendCatalogEntryResponse
+	4, // 9: numen.sync.v1.CatalogService.GetCatalog:output_type -> numen.sync.v1.GetCatalogResponse
+	7, // 10: numen.sync.v1.CatalogService.GetVaultUsage:output_type -> numen.sync.v1.GetVaultUsageResponse
+	9, // 11: numen.sync.v1.CatalogService.DeleteVault:output_type -> numen.sync.v1.DeleteVaultResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_sync_v1_catalog_proto_init() }
@@ -397,7 +657,7 @@ func file_numen_sync_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_catalog_proto_rawDesc), len(file_numen_sync_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
