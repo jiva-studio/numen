@@ -402,3 +402,42 @@ func TestCreatePortalSession_RefusesAnAccountThatNeverPaid(t *testing.T) {
 		t.Errorf("error = %v, want ErrNoActiveSubscription", err)
 	}
 }
+
+func TestGetSubscription_ShowsTheSecondDeviceOfTheAccountTheSubscriptionTheFirstOneBought(t *testing.T) {
+	w := newBillingWorld(t)
+	first := service.NewBackend(w.c.SyncDeps())
+	other := synctest.NewSecondComputer(t, w.server, w.clock, "Other", w.words)
+	second := service.NewBackend(other.SyncDeps())
+	checkout, err := first.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "plus"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pay(t, checkout.CheckoutURL)
+
+	got, err := second.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Phase != api.PhaseActive || got.Plan != "plus" {
+		t.Errorf("the second device sees phase %q and plan %q, want active and plus", got.Phase, got.Plan)
+	}
+}
+
+func TestListPlans_ListsThePlansOfAnAccountThatHasNoSubscription(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	subscription, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	plans, err := backend.ListPlans(t.Context(), api.ListPlansRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if subscription.Phase != api.PhaseNone || len(plans.Plans) == 0 {
+		t.Errorf("phase %q with %d plans, want none with the plans of the server", subscription.Phase, len(plans.Plans))
+	}
+}

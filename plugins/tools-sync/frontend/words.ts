@@ -69,6 +69,8 @@ export const WORDS = {
     permissionDenied: 'Numen Sync may not open the browser.',
   },
   stopWaiting: 'Cancel',
+  noPlans: 'The sync server sells no plans.',
+  plansNotLoaded: (reason: string): string => `The plans could not be loaded: ${reason}`,
   serverAway: 'The sync server is not available.',
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',

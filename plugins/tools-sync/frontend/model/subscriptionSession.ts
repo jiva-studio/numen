@@ -28,6 +28,7 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
   const server = ref(settings?.get<string>(SERVER_SETTING) ?? '')
   const waiting = ref(false)
   const problem = ref('')
+  const plansProblem = ref('')
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let isDisposed = false
 
@@ -38,9 +39,10 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
   async function loadPlans(): Promise<void> {
     try {
       account.plans.value = await client.listPlans()
+      plansProblem.value = account.plans.value.length === 0 ? words.noPlans : ''
     } catch (failure) {
       account.plans.value = []
-      problem.value = getMessage(failure)
+      plansProblem.value = words.plansNotLoaded(getMessage(failure))
     }
   }
 
@@ -132,5 +134,5 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     followServer?.dispose()
   })
 
-  return { account, server, waiting, problem, load, readIfReachable, change, manage }
+  return { account, server, waiting, problem, plansProblem, load, readIfReachable, change, manage }
 }

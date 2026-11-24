@@ -578,9 +578,21 @@ describe('useSubscription plans', () => {
     await subscription.session.load()
 
     expect(subscription.offers.buyOffers.value).toStrictEqual([])
-    expect(subscription.session.problem.value).toContain(
-      'the sync server does not sell subscriptions',
+    expect(subscription.session.plansProblem.value).toBe(
+      'The plans could not be loaded: the sync server does not sell subscriptions',
     )
+  })
+
+  it('lists the plans and drops the problem when the next read of the plans works', async () => {
+    const client = createClient([createResponse(), createResponse()])
+    client.listPlans.mockRejectedValueOnce(createFailure('unavailable', 'no answer'))
+    const { subscription } = mountSubscription(client)
+    await subscription.session.load()
+
+    await subscription.session.load()
+
+    expect(subscription.offers.buyOffers.value).not.toStrictEqual([])
+    expect(subscription.session.plansProblem.value).toBe('')
   })
 })
 

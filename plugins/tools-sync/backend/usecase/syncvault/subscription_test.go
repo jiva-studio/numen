@@ -189,3 +189,36 @@ func TestRunSync_ReadsNoSubscriptionWhenNoVaultIsConnected(t *testing.T) {
 		t.Errorf("the server ran %d subscription reads, want none", got)
 	}
 }
+
+func TestSyncVault_SendsTheNoteOnTheNextPassWithoutARestartAfterAPlanIsBought(t *testing.T) {
+	p := newSubscribedPair(t)
+	setPhase(t, p.server, "none")
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	sync(t, p.a, source)
+	if !p.a.HasItemKey(keyNeeded) {
+		t.Fatalf("health items = %+v, want the warning after the pass with no subscription", p.a.Health.List())
+	}
+
+	checkout, err := p.a.Cloud.CreateCheckout(t.Context(), "plus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, checkout, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := response.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	sync(t, p.a, source)
+	sync(t, p.b, target)
+
+	if p.a.HasItemKey(keyNeeded) {
+		t.Errorf("health items = %+v, want the warning cleared", p.a.Health.List())
+	}
+	wantNote(t, p.b, target, "Shopping list.md", "milk")
+}

@@ -31,7 +31,7 @@ const { session, payment, offers, summary, accountData, start } = useSubscriptio
   settings: props.settings,
   refreshMs: props.refreshMs,
 })
-const { problem, change, manage } = session
+const { problem, plansProblem, change, manage } = session
 const { status } = session.account
 const { waiting, starting, startPurchase, cancel } = payment
 const { buyOffers, changeOffers, currentOffer, canManage } = offers
@@ -233,6 +233,9 @@ function onFailure(failure: unknown): void {
         {{ words.stopWaiting }}
       </Button>
     </div>
+    <p v-if="plansProblem !== '' && status === 'ready'" role="alert" class="subscription__problem">
+      {{ plansProblem }}
+    </p>
     <p v-if="problem !== '' && status !== 'unreachable'" role="alert" class="subscription__problem">
       {{ problem }}
     </p>
