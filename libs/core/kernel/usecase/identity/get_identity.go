@@ -9,7 +9,7 @@ import (
 
 type GetIdentity struct {
 	records  records
-	restores *pendingStore
+	restores restoreHold
 }
 
 // NewGetIdentity returns the use case that reads the identity of this device.

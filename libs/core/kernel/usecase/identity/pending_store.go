@@ -22,6 +22,7 @@ type restoreHold interface {
 	replace(next *pendingRestore)
 	isCurrent(restore *pendingRestore) bool
 	read() *pendingRestore
+	readRefusal() error
 	expire(restore *pendingRestore)
 	hold() (*pendingStore, func())
 }
