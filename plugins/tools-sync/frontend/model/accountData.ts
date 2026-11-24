@@ -42,15 +42,19 @@ export function useAccountData(options: AccountDataOptions) {
   function schedule(): void {
     clearTimeout(timer)
     if (isDisposed) return
-    timer = setTimeout(() => runInBackground(load(), (failure) => (problem.value = getMessage(failure))), refreshMs)
+    const report = (failure: unknown): void => {
+      problem.value = getMessage(failure)
+    }
+    timer = setTimeout(() => runInBackground(load(), report), refreshMs)
   }
 
-  /** Reads the state and keeps reading it. An unreadable state leaves the last one and says nothing: the card tells that the server is away. */
-  async function load(): Promise<void> {
+  /** Reads the state and keeps reading it. It answers false when the state is unreadable and the last one stays. */
+  async function load(): Promise<boolean> {
     try {
       await read()
+      return true
     } catch {
-      /* the subscription of the card reports the server that is away */
+      return false
     } finally {
       schedule()
     }
@@ -94,14 +98,7 @@ export function useAccountData(options: AccountDataOptions) {
   })
 
   return {
-    account,
-    isDeleting,
-    deleteAt: computed(() => deleteAt.value),
-    isBusy,
-    problem,
-    load,
-    remove,
-    restore,
-    exportData,
+    state: { account, isDeleting, deleteAt: computed(() => deleteAt.value), isBusy, problem },
+    actions: { load, remove, restore, exportData },
   }
 }

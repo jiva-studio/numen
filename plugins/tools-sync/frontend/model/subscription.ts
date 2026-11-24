@@ -31,10 +31,17 @@ export function useSubscription(options: UseSubscriptionOptions) {
       : useAccountData({ client: options.accountClient, saveFile: options.saveFile })
   const session = useSubscriptionSession({
     ...options,
-    isPaused: () => accountData?.isDeleting.value === true,
+    isPaused: () => accountData?.state.isDeleting.value === true,
   })
   const payment = useSubscriptionPayment(options, session)
   const offers = useSubscriptionOffers(session.account)
   const summary = useSubscriptionSummary(session.account, session.server)
-  return { session, payment, offers, summary, accountData }
+
+  async function start(): Promise<void> {
+    if (accountData !== undefined) await accountData.actions.load()
+    await session.load()
+  }
+
+
+  return { session, payment, offers, summary, accountData, start }
 }

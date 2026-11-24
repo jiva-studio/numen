@@ -9,32 +9,20 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { ChevronRight } from '@lucide/vue'
-import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
 import { Button, IslandCard, Spinner } from '@numen/ui'
-import type { AccountClient } from '../api/account'
-import type { SubscriptionClient } from '../api/subscription'
-import type { SaveFile } from '../model/accountData'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
-import { useSubscription, type UseSubscriptionOptions } from '../model/subscription'
+import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 import ChangePlanMenu from './ChangePlanMenu.vue'
 import DeleteCloudDataDialog from './DeleteCloudDataDialog.vue'
 import SwitchPlanDialog from './SwitchPlanDialog.vue'
+import type { SubscriptionCardProps } from './SubscriptionCard.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  client?: SubscriptionClient | undefined
-  accountClient?: AccountClient | undefined
-  saveFile?: SaveFile | undefined
-  openExternal: PluginContext['identity']['openExternal']
-  now?: (() => Date) | undefined
-  settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
-  openSettings?: (() => void) | undefined
-  refreshMs?: UseSubscriptionOptions['refreshMs']
-}>()
+const props = defineProps<SubscriptionCardProps>()
 
 /* --------------------------------- State ---------------------------------- */
-const { session, payment, offers, summary, accountData } = useSubscription({
+const { session, payment, offers, summary, accountData, start } = useSubscription({
   openExternal: props.openExternal,
   client: props.client,
   accountClient: props.accountClient,
@@ -43,7 +31,7 @@ const { session, payment, offers, summary, accountData } = useSubscription({
   settings: props.settings,
   refreshMs: props.refreshMs,
 })
-const { problem, load, change, manage } = session
+const { problem, change, manage } = session
 const { status } = session.account
 const { waiting, starting, startPurchase, cancel } = payment
 const { buyOffers, changeOffers, currentOffer, canManage } = offers
@@ -55,12 +43,12 @@ const hasSettingsAction = computed(
 )
 const hasManageAction = computed(() => canManage.value && validity.value === undefined)
 const isPaying = computed(() => waiting.value || starting.value)
-const isDeleting = computed(() => accountData?.isDeleting.value === true)
+const isDeleting = computed(() => accountData?.state.isDeleting.value === true)
 const canChangeAccount = computed(
   () => accountData !== undefined && status.value === 'ready' && !isDeleting.value,
 )
 const deletingText = computed(() =>
-  words.deletingText(formatDate(accountData?.deleteAt.value ?? '')),
+  words.deletingText(formatDate(accountData?.state.deleteAt.value ?? '')),
 )
 const isConfirmingDelete = ref(false)
 
@@ -72,11 +60,7 @@ const currentLine = computed(() =>
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
-  if (accountData === undefined) {
-    load().catch(onFailure)
-    return
-  }
-  accountData.load().then(load).catch(onFailure)
+  start().catch(onFailure)
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -112,15 +96,15 @@ function onCancelDelete(): void {
 
 function onConfirmDelete(): void {
   isConfirmingDelete.value = false
-  accountData?.remove().catch(onFailure)
+  accountData?.actions.remove().catch(onFailure)
 }
 
 function onRestore(): void {
-  accountData?.restore().catch(onFailure)
+  accountData?.actions.restore().catch(onFailure)
 }
 
 function onExport(): void {
-  accountData?.exportData().catch(onFailure)
+  accountData?.actions.exportData().catch(onFailure)
 }
 
 function onFailure(failure: unknown): void {
@@ -135,7 +119,9 @@ function onFailure(failure: unknown): void {
     :aria-label="words.subscriptionTitle"
   >
     <template v-if="isDeleting" #aside>
-      <span class="subscription__badge subscription__badge--warning">{{ words.deletingBadge }}</span>
+      <span class="subscription__badge subscription__badge--warning">
+        {{ words.deletingBadge }}
+      </span>
     </template>
     <template v-else-if="view.badge !== ''" #aside>
       <span class="subscription__badge" :class="`subscription__badge--${view.tone}`">
@@ -145,7 +131,12 @@ function onFailure(failure: unknown): void {
     <div v-if="isDeleting" class="subscription__content">
       <p class="subscription__text">{{ deletingText }}</p>
       <div class="subscription__actions">
-        <Button type="button" variant="ghost" :disabled="accountData?.isBusy.value" @click="onRestore">
+        <Button
+          type="button"
+          variant="ghost"
+          :disabled="accountData?.state.isBusy.value"
+          @click="onRestore"
+        >
           {{ words.restoreAccount }}
         </Button>
       </div>
@@ -238,10 +229,20 @@ function onFailure(failure: unknown): void {
         </Button>
       </div>
       <div v-if="canChangeAccount" class="subscription__actions">
-        <Button type="button" variant="ghost" :disabled="accountData?.isBusy.value" @click="onExport">
+        <Button
+          type="button"
+          variant="ghost"
+          :disabled="accountData?.state.isBusy.value"
+          @click="onExport"
+        >
           {{ words.exportAccountData }}
         </Button>
-        <Button type="button" variant="ghost" :disabled="accountData?.isBusy.value" @click="onAskDelete">
+        <Button
+          type="button"
+          variant="ghost"
+          :disabled="accountData?.state.isBusy.value"
+          @click="onAskDelete"
+        >
           {{ words.deleteCloudData }}
         </Button>
       </div>
@@ -256,12 +257,16 @@ function onFailure(failure: unknown): void {
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
-    <p v-if="(accountData?.problem.value ?? '') !== ''" role="alert" class="subscription__problem">
-      {{ accountData?.problem.value }}
+    <p
+      v-if="(accountData?.state.problem.value ?? '') !== ''"
+      role="alert"
+      class="subscription__problem"
+    >
+      {{ accountData?.state.problem.value }}
     </p>
     <DeleteCloudDataDialog
       v-if="isConfirmingDelete"
-      :account="accountData?.account.value ?? ''"
+      :account="accountData?.state.account.value ?? ''"
       :has-subscription="phase === 'active'"
       @confirm="onConfirmDelete"
       @cancel="onCancelDelete"
