@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
 // NewPhone makes a computer that is a phone: it restores the identity of the words, joins the account, signs in
@@ -29,7 +30,9 @@ func NewPhone(t *testing.T, server *Server, clock *Clock, vault string, words []
 
 // FetchDeps are the dependencies of the download of an absent file.
 func (c *Computer) FetchDeps() fetchfile.Deps {
-	return fetchfile.Deps{Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State}
+	return fetchfile.Deps{
+		Stage: syncwire.NewDownloads(c.WireDeps()), Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
+	}
 }
 
 // DropDeps are the dependencies of the removal of a download.

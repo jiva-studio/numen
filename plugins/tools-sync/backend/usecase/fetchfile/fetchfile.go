@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -41,8 +40,16 @@ type State interface {
 	ports.Records
 }
 
+// Stager brings a file of more than the whole-file limit down chunk by chunk into a staged file of the store
+// folder, and goes on from the chunk it reached after a break.
+type Stager interface {
+	Execute(ctx context.Context, in transfer.DownloadInput) (string, error)
+	Forget(ctx context.Context, vault domain.VaultID, fileID []byte) error
+}
+
 // Deps are what the use case needs.
 type Deps struct {
+	Stage     Stager
 	Revisions ports.Revisions
 	Blobs     ports.BlobReader
 	Crypto    ports.Crypto
@@ -112,6 +119,9 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 	if err != nil {
 		return err
 	}
+	if rev.GetBlobSize() > note.BigFileLimit {
+		return u.runLarge(ctx, t, rev, meta)
+	}
 	blob, err := u.readBlob(ctx, t, rev)
 	if err != nil {
 		return err
@@ -127,6 +137,22 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 	}
 	fillErr := u.deps.Host.GetAbsent(id).FillFile(ctx, path, name)
 	return errors.Join(fillErr, store.Write(ctx, name, nil), u.dropPart(ctx, t, rev, nil))
+}
+
+func (u *FetchFile) runLarge(ctx context.Context, t target, rev *syncv1.Revision, meta note.Meta) error {
+	in := transfer.DownloadInput{
+		Vault: t.id, RemoteID: t.remote, FileID: t.record.FileID, Path: t.path, BlobID: rev.GetBlobId(), BlobHash: rev.GetBlobHash(),
+		BlobSize: rev.GetBlobSize(), Key: [32]byte(meta.Key), Hash: meta.Hash, Size: meta.Size, HeadRev: nil, Baseline: nil,
+	}
+	name, err := u.deps.Stage.Execute(ctx, in)
+	if errors.Is(err, transfer.ErrIntegrity) {
+		return errors.Join(note.ErrCorruptBlob, err)
+	}
+	if err != nil {
+		return err
+	}
+	fillErr := u.deps.Host.GetAbsent(t.id).FillFile(ctx, t.path, name)
+	return errors.Join(fillErr, u.deps.Host.Store(t.id).Delete(ctx, name), u.deps.Stage.Forget(ctx, t.id, t.record.FileID))
 }
 
 func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (target, [32]byte, error) {
@@ -192,7 +218,7 @@ func getPartName(rev *syncv1.Revision) string {
 
 func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision) ([]byte, error) {
 	size := int64(rev.GetBlobSize())
-	if size <= 0 || size > syncprotocol.MaxBlobSize {
+	if size <= 0 {
 		return nil, fmt.Errorf("download %s: the blob has a size of %d bytes: %w", t.path, size, note.ErrCorruptBlob)
 	}
 	store := u.deps.Host.Store(t.id)

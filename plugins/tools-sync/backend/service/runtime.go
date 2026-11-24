@@ -14,12 +14,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/platform"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -91,7 +94,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	wired := syncwire.Deps{
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
-		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: false,
+		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: platform.IsPhone(),
 	}
 	pass := syncwire.NewSyncVault(wired)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
@@ -100,7 +103,13 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(),
 	})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	backend := NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired))
+	fetching := downloadwire.Deps{
+		Fetch: fetchfile.Deps{
+			Stage: syncwire.NewDownloads(wired), Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
+		},
+		Entries: p.state,
+	}
+	backend := NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithDownloads(downloadwire.New(fetching))
 	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
 	}))

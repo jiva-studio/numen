@@ -40,6 +40,15 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodSuspend, func(ctx context.Context, request api.SuspendRequest) (api.SuspendResponse, error) {
 		return handle(r, func(b *Backend) (api.SuspendResponse, error) { return b.Suspend(ctx, request) })
 	})
+	server.Handle(service, api.MethodFetchFile, func(ctx context.Context, request api.FetchFileRequest) (api.FetchFileResponse, error) {
+		return handle(r, func(b *Backend) (api.FetchFileResponse, error) { return b.FetchFile(ctx, request) })
+	})
+	server.Handle(service, api.MethodDropDownload, func(ctx context.Context, request api.DropDownloadRequest) (api.DropDownloadResponse, error) {
+		return handle(r, func(b *Backend) (api.DropDownloadResponse, error) { return b.DropDownload(ctx, request) })
+	})
+	server.Handle(service, api.MethodGetDownloads, func(ctx context.Context, request api.GetDownloadsRequest) (api.GetDownloadsResponse, error) {
+		return handle(r, func(b *Backend) (api.GetDownloadsResponse, error) { return b.GetDownloads(ctx, request) })
+	})
 	server.Handle(service, api.MethodResume, func(ctx context.Context, request api.ResumeRequest) (api.ResumeResponse, error) {
 		return handle(r, func(b *Backend) (api.ResumeResponse, error) { return b.Resume(ctx, request) })
 	})
@@ -64,8 +73,12 @@ func getCode(err error) server.ErrorCode {
 		return server.CodeUnavailable
 	case errors.Is(err, syncprotocol.ErrAlreadySubscribed):
 		return server.CodeAlreadyExists
-	case errors.Is(err, host.ErrChanged):
+	case errors.Is(err, host.ErrChanged), errors.Is(err, fetchfile.ErrNotAbsent), errors.Is(err, fetchfile.ErrHeadChanged):
 		return server.CodeFailedPrecondition
+	case errors.Is(err, fetchfile.ErrBlobMissing), errors.Is(err, host.ErrNotExist):
+		return server.CodeNotFound
+	case errors.Is(err, host.ErrInvalidRange):
+		return server.CodeInvalidArgument
 	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable):
 		return server.CodeFailedPrecondition
 	}

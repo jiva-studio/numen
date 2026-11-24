@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
 )
 
 const (
@@ -28,11 +29,12 @@ const (
 
 // Backend answers the methods of the settings view.
 type Backend struct {
-	deps    syncvault.Deps
-	catalog catalog.Deps
-	life    *lifecycle.Lifecycle
-	pending ports.PausedStore
-	resolve *deletions.ResolveDeletions
+	deps      syncvault.Deps
+	catalog   catalog.Deps
+	life      *lifecycle.Lifecycle
+	pending   ports.PausedStore
+	resolve   *deletions.ResolveDeletions
+	downloads *downloadwire.Downloads
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -43,7 +45,7 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
 			Random: deps.Random,
 		},
-		life: nil, pending: nil, resolve: nil,
+		life: nil, pending: nil, resolve: nil, downloads: nil,
 	}
 }
 
