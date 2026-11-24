@@ -66,7 +66,7 @@ export class ShareDriver {
   async allow(fingerprint: string, code: string): Promise<void> {
     await this.expectRequest(fingerprint, code)
     const dialog = this.getDialog()
-    await dialog.getByRole('button', { name: 'Allow', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Approve', exact: true }).click()
     await expect(dialog.getByText(getShortFingerprint(fingerprint))).toBeVisible({ timeout: SHARE_LIMIT_MS })
     await this.close()
   }

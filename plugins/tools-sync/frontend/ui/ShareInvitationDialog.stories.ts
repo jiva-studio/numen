@@ -91,7 +91,7 @@ export const WaitingForDevice: Story = {
     await expect(await screen.findByRole('textbox', { name: 'Invitation link' })).toHaveValue(
       'numen-share:eyJ2IjoxfQ',
     )
-    await expect(screen.getByText(/^Valid until .*, works once\.$/)).toBeVisible()
+    await expect(screen.getByText(/^Works once\. Expires in \d+ (min|h)\.$/)).toBeVisible()
     await expect(screen.getByText('Waiting for a device to open the link')).toBeVisible()
     await expect(screen.getByRole('button', { name: 'Copy link' })).toBeVisible()
     await expect(screen.getByRole('button', { name: 'Revoke' })).toBeVisible()
@@ -104,10 +104,10 @@ export const DeviceAsks: Story = {
     const screen = within(canvasElement.ownerDocument.body)
     await expect(
       await screen.findByText(
-        'Device «Phone» (1111 2222 3333…) wants to read Recipes. Code 482 913',
+        'Device «Phone» (1111 2222 3333…) wants to join Recipes. Code 482 913',
       ),
     ).toBeVisible()
-    await expect(screen.getByRole('button', { name: 'Allow' })).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Approve' })).toBeVisible()
     await expect(screen.getByRole('button', { name: 'Decline' })).toBeVisible()
   },
 }

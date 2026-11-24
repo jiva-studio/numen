@@ -73,8 +73,8 @@ export const Empty: Story = {
   args: { view: createView({}, 'empty') },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement)
-    await expect(await screen.findByRole('textbox', { name: 'Link' })).toHaveValue('')
-    await expect(screen.getByRole('button', { name: 'Accept' })).toBeDisabled()
+    await expect(await screen.findByRole('textbox', { name: 'Invitation link' })).toHaveValue('')
+    await expect(screen.getByRole('button', { name: 'Join' })).toBeDisabled()
   },
 }
 
@@ -82,9 +82,8 @@ export const LinkOffer: Story = {
   args: { view: createView({}, 'pasted') },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement)
-    await expect(await screen.findByText(/Recipes: read only/)).toBeVisible()
-    await expect(screen.getByText(/Owner 0F3A 9C21 77B0…/)).toBeVisible()
-    await expect(screen.getByText(/^The link works until /)).toBeVisible()
+    await expect(await screen.findByText(/invited you to Recipes. Read only\./)).toBeVisible()
+    await expect(screen.getByText(/0F3A 9C21 77B0… invited you/)).toBeVisible()
     await expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled()
   },
 }

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * The dialog "Accept a shared folder": the link pasted and what it offers, then the code to tell the owner
+ * The dialog "Join folder": the link pasted and what it offers, then the code to tell the owner
  * while the owner decides, then how the request ended.
  */
 import { computed } from 'vue'
 import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
-import { getExpiryText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
 import type { AcceptanceView } from '../model/acceptance'
 import { WORDS as words } from '../words'
@@ -61,20 +60,13 @@ function onAccept(): void {
         class="sync-field__input sync-field__input--code"
         rows="4"
         :value="view.text"
-        :placeholder="words.linkPlaceholder"
         :aria-invalid="view.previewError !== ''"
         @input="onInput"
       />
     </label>
-    <div v-if="view.preview" class="share-result" role="status">
-      <p class="sync-dialog__text">
-        {{ words.folderOffer(view.preview.folder) }} ({{ words.readOnly.toLowerCase() }}).
-        {{ words.fromOwner(getShortFingerprint(view.preview.ownerFingerprint)) }}.
-      </p>
-      <p class="sync-dialog__text sync-dialog__text--hushed">
-        {{ words.linkValidUntil(getExpiryText(view.preview.expiresAt)) }}
-      </p>
-    </div>
+    <p v-if="view.preview" class="sync-dialog__text" role="status">
+      {{ words.invitedYou(getShortFingerprint(view.preview.ownerFingerprint), view.preview.folder) }}
+    </p>
     <p v-if="view.phase === 'connecting'" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />
       {{ words.connecting }}
@@ -93,8 +85,12 @@ function onAccept(): void {
     </p>
     <template #actions>
       <template v-if="isLink">
-        <Button variant="ghost" @click="view.close">{{ words.cancel }}</Button>
-        <Button type="submit" :disabled="!canAccept">{{ words.accept }}</Button>
+        <Button variant="ghost" @click="view.close">
+          {{ canAccept ? words.decline : words.cancel }}
+        </Button>
+        <Button type="submit" :disabled="!canAccept">
+          {{ canAccept ? words.accept : words.join }}
+        </Button>
       </template>
       <Button v-else-if="isWaiting" variant="ghost" @click="view.close">{{ words.cancel }}</Button>
       <Button v-else @click="view.close">{{ words.done }}</Button>

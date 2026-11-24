@@ -1,4 +1,5 @@
-const FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-
-/** The moment a link stops working, in the language of the system. */
-export const getExpiryText = (expiresAt: string): string => FORMAT.format(new Date(expiresAt))
+/** How long a link still works, as "10 min" or "2 h". */
+export const getTimeLeftText = (expiresAt: string, now: number = Date.now()): string => {
+  const minutes = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60_000))
+  return minutes < 60 ? `${minutes} min` : `${Math.ceil(minutes / 60)} h`
+}

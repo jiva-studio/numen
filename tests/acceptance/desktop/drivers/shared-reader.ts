@@ -20,7 +20,7 @@ const SYNC_PLUGIN = 'md.numen.tools.sync'
 const PLUGIN_NAME = 'Numen Sync'
 const SHARES = 'Shared folders'
 const ACCEPT = 'Accept a shared folder...'
-const LINK = 'Link'
+const LINK = 'Invitation link'
 /** The code the dialog shows while it waits for the owner: six digits in two groups. */
 const CODE = /^\d{3} \d{3}$/
 /** The own vault of a reader: the application needs one to start. */

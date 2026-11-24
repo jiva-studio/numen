@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * The dialog "Share <folder>": the link to send with its validity, the wait for a device, the request to read
+ * The dialog "Share folder": the link to send with its validity, the wait for a device, the request to read
  * with its code and the buttons that allow or decline it, and the devices that read the folder.
  */
 import { computed } from 'vue'
 import { Copy } from '@lucide/vue'
 import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
-import { getExpiryText } from '../lib/expiry'
+import { getTimeLeftText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
 import type { InvitationView } from '../model/invitation'
 import { WORDS as words } from '../words'
@@ -44,8 +44,7 @@ function onDecline(): void {
 
 <template>
   <Dialog
-    :label="words.shareDialogTitle(folderName)"
-    :hint="words.shareDialogText"
+    :label="words.shareDialogTitle"
     :step="step"
     @cancel="state.close"
   >
@@ -66,7 +65,7 @@ function onDecline(): void {
         {{ words.copyLinkButton }}
       </Button>
       <p class="sync-dialog__text sync-dialog__text--hushed">
-        {{ words.validUntil(getExpiryText(state.expiresAt)) }}
+        {{ words.validUntil(getTimeLeftText(state.expiresAt)) }}
       </p>
       <Button variant="ghost" size="small" :disabled="state.isBusy" @click="onRevoke">
         {{ words.revoke }}
@@ -77,15 +76,17 @@ function onDecline(): void {
       {{ words.waitingForPerson }}
     </p>
     <div v-if="state.request" class="share-result" role="alert">
+      <h3 class="share-people__title">{{ words.joinRequest }}</h3>
       <p class="sync-dialog__text">
         {{
-          words.wantsToRead(
+          words.wantsToJoin(
             getDevice(state.request.deviceName, state.request.fingerprint),
             folderName,
           )
         }}
         {{ words.confirmationCode(getCodeText(state.request.code)) }}
       </p>
+      <p class="sync-dialog__text sync-dialog__text--hushed">{{ words.readOnlyHint }}</p>
     </div>
     <p v-if="state.error !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
       {{ state.error }}
@@ -116,7 +117,7 @@ function onDecline(): void {
         <Button variant="ghost" :disabled="state.isBusy" @click="onDecline">
           {{ words.decline }}
         </Button>
-        <Button :disabled="state.isBusy" @click="onAllow">{{ words.allow }}</Button>
+        <Button :disabled="state.isBusy" @click="onAllow">{{ words.approve }}</Button>
       </template>
       <Button v-else @click="state.close">{{ words.done }}</Button>
     </template>
