@@ -17,8 +17,9 @@ const props = defineProps<{ state: InvitationView }>()
 
 /* --------------------------------- State ---------------------------------- */
 const folderName = computed(() => props.state.target.folder.split('/').at(-1) ?? '')
-const isAsking = computed(() => props.state.phase === 'waiting' && props.state.request !== undefined)
-const isWaiting = computed(() => props.state.phase === 'waiting' && props.state.request === undefined)
+const hasRequest = computed(() => props.state.request !== undefined)
+const isAsking = computed(() => props.state.phase === 'waiting' && hasRequest.value)
+const isWaiting = computed(() => props.state.phase === 'waiting' && !hasRequest.value)
 const isEnded = computed(() => props.state.phase === 'approved')
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -93,7 +94,9 @@ function onDecline(): void {
     </section>
     <template #actions>
       <template v-if="isAsking">
-        <Button variant="ghost" :disabled="state.isBusy" @click="onDecline">{{ words.decline }}</Button>
+        <Button variant="ghost" :disabled="state.isBusy" @click="onDecline">
+          {{ words.decline }}
+        </Button>
         <Button :disabled="state.isBusy" @click="onAllow">{{ words.allow }}</Button>
       </template>
       <Button v-else @click="state.close">{{ words.done }}</Button>

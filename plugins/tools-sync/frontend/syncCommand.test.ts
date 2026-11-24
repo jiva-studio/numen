@@ -59,7 +59,7 @@ afterEach(() => {
 })
 
 describe('the command "Sync this vault"', () => {
-  it('sends the vault as a new synced vault when the account holds no vault of that name', async () => {
+  it('sends the vault as a new vault when the account holds none of that name', async () => {
     const { context, dialogs } = await run({ cloud: [], state: 'notConnected' })
 
     expect(calls.some((one) => one.startsWith('ConnectVault'))).toBe(true)

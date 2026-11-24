@@ -69,7 +69,9 @@ function onSecondary(): void {
         {{ words.noDeviceVault }}
       </p>
     </template>
-    <p v-if="problem" class="sync-dialog__text sync-dialog__text--alarm" role="alert">{{ problem }}</p>
+    <p v-if="problem" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
+      {{ problem }}
+    </p>
     <template #actions>
       <Button variant="ghost" @click="onSecondary">{{ words.cancel }}</Button>
       <Button type="submit" :disabled="!isAsking && !canChoose">{{ words.getVault }}</Button>

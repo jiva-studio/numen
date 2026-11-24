@@ -68,7 +68,8 @@ const getRow = (vault: Vault, now: Date, isReachable: boolean): VaultRow => {
     return { ...base, status: words.statusProblem, tone: 'alarm', detail, canResolve: false }
   }
   if (!isReachable) {
-    return { ...base, status: words.statusWaiting, tone: 'warning', detail: synced, canResolve: false }
+    const status = words.statusWaiting
+    return { ...base, status, tone: 'warning', detail: synced, canResolve: false }
   }
   return { ...base, status: words.statusUpToDate, tone: 'ok', detail: synced, canResolve: false }
 }

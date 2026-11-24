@@ -96,6 +96,9 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
   })
 }
 
+const getOutcomeText = (kind: 'synced' | 'already'): string =>
+  kind === 'synced' ? words.syncStarted : words.syncedAlready
+
 const registerSync = (plugin: PluginContext, host: HostServices): void => {
   const show = (failure: unknown): void =>
     host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
@@ -125,7 +128,7 @@ const registerSync = (plugin: PluginContext, host: HostServices): void => {
       try {
         const outcome = await startSync(vaultsClient, vaultId)
         if (outcome.kind === 'choose') choose(vaultId, outcome.name, outcome.remoteId)
-        else host.ui.notices.show(outcome.kind === 'synced' ? words.syncStarted : words.syncedAlready)
+        else host.ui.notices.show(getOutcomeText(outcome.kind))
       } catch (failure) {
         show(failure)
       }

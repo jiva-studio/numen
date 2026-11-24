@@ -188,7 +188,7 @@ describe('useVaults', () => {
     expect(model.state.isCloudOpen.value).toBe(false)
   })
 
-  it('connects a vault to a vault of the account, closes the dialog and reads the vaults again', async () => {
+  it('connects a vault to a vault of the account and reads the vaults again', async () => {
     const client = createClient()
     const model = createModel(client)
     model.actions.openCloud()

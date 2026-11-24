@@ -114,7 +114,9 @@ export const Shared: Story = {
     await expect(await canvas.findByRole('textbox', { name: 'Invitation to send' })).toHaveValue(
       INVITATION,
     )
-    await expect(canvas.getByText('Folder shared with Anna. Send them this invitation:')).toBeVisible()
+    await expect(
+      canvas.getByText('Folder shared with Anna. Send them this invitation:'),
+    ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Copy invitation' })).toBeVisible()
   },
 }

@@ -98,14 +98,20 @@ function onCopyIdentity(fingerprint: string): void {
             {{ words.pasteCode }}
           </Button>
         </div>
-        <p v-if="state.codeError !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
+        <p
+          v-if="state.codeError !== ''"
+          class="sync-dialog__text sync-dialog__text--alarm"
+          role="alert"
+        >
           {{ state.codeError }}
         </p>
         <p v-else-if="state.fingerprint !== ''" class="sync-dialog__text" role="status">
           <Check :size="14" aria-hidden="true" />
           {{ words.shareWith(state.label || state.fingerprint) }}
         </p>
-        <p v-else class="sync-dialog__text sync-dialog__text--hushed">{{ words.sharingLinkHint }}</p>
+        <p v-else class="sync-dialog__text sync-dialog__text--hushed">
+          {{ words.sharingLinkHint }}
+        </p>
       </div>
     </template>
     <p v-if="isSharing" class="sync-dialog__text" role="status">

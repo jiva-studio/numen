@@ -49,7 +49,8 @@ type Story = StoryObj<typeof meta>
 
 const paste = async (canvasElement: HTMLElement): Promise<ReturnType<typeof within>> => {
   const canvas = within(canvasElement)
-  await userEvent.type(await canvas.findByRole('textbox', { name: 'Invitation' }), 'numen-invitation-1.xyz')
+  const field = await canvas.findByRole('textbox', { name: 'Invitation' })
+  await userEvent.type(field, 'numen-invitation-1.xyz')
   return canvas
 }
 
