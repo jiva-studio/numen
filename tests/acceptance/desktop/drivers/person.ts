@@ -14,6 +14,8 @@ import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
 import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
+import { AccountDriver } from './account.js'
+import { SubscriptionDriver } from './subscription.js'
 import { ComputerDriver } from './computer.js'
 import { SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
@@ -59,6 +61,8 @@ export class Person {
   readonly reader: ReaderDriver
   readonly deck: DeckDriver
   readonly identity: IdentityDriver
+  readonly subscription: SubscriptionDriver
+  readonly accounts: AccountDriver
   readonly sync: SyncDriver
   readonly syncVaults: SyncVaultsDriver
   readonly computers: ComputerDriver
@@ -95,12 +99,15 @@ export class Person {
     this.reader = new ReaderDriver(this.scenario, this.tab)
     this.deck = new DeckDriver(this.scenario, this.tab)
     this.identity = new IdentityDriver(this.scenario, this.settings)
+    this.subscription = new SubscriptionDriver(this.scenario, this.settings)
+    this.accounts = new AccountDriver(this.scenario, this.settings, this.identity)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
     this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
-    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity, this.scenario)
+    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity)
     this.computers = new ComputerDriver(this.scenario, viewport, {
       identity: this.identity,
+      subscription: this.subscription,
       sync: this.sync,
       vaults: this.syncVaults,
       settings: this.settings,

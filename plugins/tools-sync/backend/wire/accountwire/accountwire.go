@@ -1,33 +1,40 @@
-package service
+// Package accountwire answers the methods of the settings view about the account on the server.
+package accountwire
 
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 )
 
-// WithAccountData gives the backend the deletion, the restore and the export of the account.
-func (b *Backend) WithAccountData(deps accountdata.Deps) *Backend {
-	b.account = &deps
-	return b
+// Account answers the methods of the settings view about the account on the server.
+type Account struct {
+	deps *accountdata.Deps
 }
 
-func (b *Backend) getAccountDeps() (accountdata.Deps, error) {
-	if b.account == nil {
+// New returns the methods with no account data until Use gives them.
+func New() *Account { return &Account{deps: nil} }
+
+// Use gives the methods the deletion, the restore and the export of the account.
+func (a *Account) Use(deps accountdata.Deps) { a.deps = &deps }
+
+func (a *Account) getDeps() (accountdata.Deps, error) {
+	if a.deps == nil {
 		return accountdata.Deps{}, errNoAccountData
 	}
-	return *b.account, nil
+	return *a.deps, nil
 }
 
 var errNoAccountData = errors.New("the account cannot be changed here")
 
 // GetAccountState returns whether the account is being deleted and when the server deletes it. A device with no
 // identity gets an empty answer.
-func (b *Backend) GetAccountState(ctx context.Context, _ api.GetAccountStateRequest) (api.GetAccountStateResponse, error) {
-	deps, err := b.getAccountDeps()
+func (a *Account) GetAccountState(ctx context.Context, _ api.GetAccountStateRequest) (api.GetAccountStateResponse, error) {
+	deps, err := a.getDeps()
 	if err != nil {
 		return api.GetAccountStateResponse{}, err
 	}
@@ -43,8 +50,8 @@ func (b *Backend) GetAccountState(ctx context.Context, _ api.GetAccountStateRequ
 
 // DeleteCloudData asks the server to delete the account after its grace period. A device with no identity gets
 // ErrNoIdentity and the server is not asked.
-func (b *Backend) DeleteCloudData(ctx context.Context, _ api.DeleteCloudDataRequest) (api.DeleteCloudDataResponse, error) {
-	deps, err := b.getAccountDeps()
+func (a *Account) DeleteCloudData(ctx context.Context, _ api.DeleteCloudDataRequest) (api.DeleteCloudDataResponse, error) {
+	deps, err := a.getDeps()
 	if err != nil {
 		return api.DeleteCloudDataResponse{}, err
 	}
@@ -56,8 +63,8 @@ func (b *Backend) DeleteCloudData(ctx context.Context, _ api.DeleteCloudDataRequ
 }
 
 // RestoreAccount cancels the deletion of the account.
-func (b *Backend) RestoreAccount(ctx context.Context, _ api.RestoreAccountRequest) (api.RestoreAccountResponse, error) {
-	deps, err := b.getAccountDeps()
+func (a *Account) RestoreAccount(ctx context.Context, _ api.RestoreAccountRequest) (api.RestoreAccountResponse, error) {
+	deps, err := a.getDeps()
 	if err != nil {
 		return api.RestoreAccountResponse{}, err
 	}
@@ -65,8 +72,8 @@ func (b *Backend) RestoreAccount(ctx context.Context, _ api.RestoreAccountReques
 }
 
 // ExportAccountData returns what the server holds of the account as a JSON document.
-func (b *Backend) ExportAccountData(ctx context.Context, _ api.ExportAccountDataRequest) (api.ExportAccountDataResponse, error) {
-	deps, err := b.getAccountDeps()
+func (a *Account) ExportAccountData(ctx context.Context, _ api.ExportAccountDataRequest) (api.ExportAccountDataResponse, error) {
+	deps, err := a.getDeps()
 	if err != nil {
 		return api.ExportAccountDataResponse{}, err
 	}
@@ -75,4 +82,11 @@ func (b *Backend) ExportAccountData(ctx context.Context, _ api.ExportAccountData
 		return api.ExportAccountDataResponse{}, err
 	}
 	return api.ExportAccountDataResponse{Document: string(document)}, nil
+}
+
+func formatTime(at time.Time) string {
+	if at.IsZero() {
+		return ""
+	}
+	return at.UTC().Format(time.RFC3339)
 }

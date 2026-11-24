@@ -7,7 +7,7 @@ import { useSubscriptionPayment } from './subscriptionPayment'
 import { useSubscriptionSession } from './subscriptionSession'
 import { useSubscriptionSummary } from './subscriptionSummary'
 
-interface UseSubscriptionOptions {
+export interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
   readonly accountClient?: AccountClient | undefined
   readonly saveFile?: SaveFile | undefined

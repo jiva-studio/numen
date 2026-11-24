@@ -46,7 +46,6 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		return nil
 	}
 	scan := file.NewScanFiles(index)
-	count := file.NewCountFiles(vaultreader.Readers{})
 	stores := derivedfile.PluginStores{}
 	return NewAccess(
 		Session{GetCurrent: func() (domain.Vault, bool) { return v, true }},
@@ -54,8 +53,8 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		Writer{
 			Index:  scan,
 			Place:  file.NewPlaceStaged(stat, scan, writers),
-			Move:   note.NewMoveChecked(note.MoveFile{}, count, stat),
-			Remove: note.NewRemoveChecked(note.RemoveFile{}, count, stat),
+			Move:   note.NewMoveChecked(note.MoveFile{}, vaultreader.Readers{}),
+			Remove: note.NewRemoveChecked(note.RemoveFile{}, vaultreader.Readers{}),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},

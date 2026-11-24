@@ -22,7 +22,7 @@ var ErrDiverged = domain.ErrDiverged
 
 // Committer commits notes to the server.
 type Committer interface {
-	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
+	Execute(ctx context.Context, in ports.CommitInput) ([]transfer.Outcome, error)
 }
 
 // Remover commits the removal of notes to the server.

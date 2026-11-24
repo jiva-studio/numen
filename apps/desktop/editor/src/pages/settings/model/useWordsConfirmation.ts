@@ -56,16 +56,15 @@ export function useWordsConfirmation(recoveryWords: Readonly<Ref<readonly string
   const isRight = (position: number): boolean =>
     normalize(entered.value[position] ?? '') === recoveryWords.value[position - 1]
 
-  const isConfirmed = (): boolean => positions.value.every(isRight)
-
-  /** Marks the positions whose typed word is not the word at that place. */
-  const markWrong = (): void => {
+  /** Whether every typed word is right; marks the positions whose typed word is not. */
+  const check = (): boolean => {
     wrong.value = positions.value.filter((position) => !isRight(position))
+    return wrong.value.length === 0
   }
 
   const isComplete = computed(() =>
     positions.value.every((position) => (entered.value[position] ?? '').trim() !== ''),
   )
 
-  return { positions, entered, wrong, isComplete, pick, clear, setEntered, isConfirmed, markWrong }
+  return { positions, entered, wrong, isComplete, pick, clear, setEntered, check }
 }

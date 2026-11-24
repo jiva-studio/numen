@@ -81,9 +81,10 @@ type Transfers interface {
 	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
 }
 
-// Indexer asks the host to read a vault into its index.
-type Indexer interface {
+// Notes is what the host does with the notes of one vault in its index and its trash.
+type Notes interface {
 	EnsureIndexed(ctx context.Context) (host.IndexState, error)
+	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
 }
 
 // Store is the folder of the plugin in the store of one vault.
@@ -95,19 +96,13 @@ type Store interface {
 	Delete(ctx context.Context, name string) error
 }
 
-// Remover moves notes of one vault to the trash.
-type Remover interface {
-	RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error)
-}
-
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	GetFiles(id domain.VaultID) Files
 	GetTransfers(id domain.VaultID) Transfers
-	GetIndexer(id domain.VaultID) Indexer
 	Store(id domain.VaultID) Store
-	GetRemover(id domain.VaultID) Remover
+	GetNotes(id domain.VaultID) Notes
 }
 
 // Links keeps the link of each vault.
@@ -301,7 +296,7 @@ type ChainCore interface {
 // Relay is the link relay of the sync server.
 type Relay interface {
 	CreateChannel(ctx context.Context) (syncclient.LinkChannel, error)
-	PostMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
+	SendMessage(ctx context.Context, channelID []byte, to syncclient.LinkSide, body []byte) (uint32, error)
 	WaitMessages(ctx context.Context, channelID []byte, reader syncclient.LinkSide, afterSeq uint32, wait time.Duration) (syncclient.LinkMessages, error)
 	CloseChannel(ctx context.Context, channelID []byte) error
 }
@@ -364,4 +359,21 @@ type Deletion interface {
 	GetDeletion() (deleteAt time.Time, isDeleting bool)
 	SetDeletion(deleteAt time.Time)
 	Restore(ctx context.Context) error
+}
+
+// CommitInput is the files to commit to a vault. VaultID names the vault on this device; a note under the folder of
+// one of Shares is sealed under the key of that share.
+type CommitInput struct {
+	VaultID domain.VaultID
+	Vault   transfer.Vault
+	Files   []transfer.File
+	Shares  []share.Root
+}
+
+// PullInput is the vault, the check of the author of a revision and the shares of the vault, whose revisions open with
+// the keys of the share.
+type PullInput struct {
+	VaultID  domain.VaultID
+	IsAuthor func(deviceSignKey []byte) bool
+	Shares   []share.Root
 }

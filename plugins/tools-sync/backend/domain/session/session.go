@@ -54,10 +54,10 @@ type Challenge struct {
 
 // Proof is what the server checks to give a session.
 type Proof struct {
-	ChallengeID   []byte
-	DeviceSignKey []byte
-	Signature     []byte
-	Chain         []byte
+	ChallengeID    []byte
+	DeviceSignKey  []byte
+	Signature      []byte
+	Chain          []byte
 	RestoreAccount bool
 }
 

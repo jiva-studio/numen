@@ -25,5 +25,5 @@ Feature: Download a recovery kit
 
     Scenario: Words of another account make no kit
       Given the person downloads the recovery kit
-      When the person downloads the recovery kit again with other recovery words
+      When the person downloads the recovery kit of another account
       Then the identity warns about "another account"

@@ -7,7 +7,7 @@ import (
 )
 
 // SignAsRecovery signs a message of a plugin with the recovery key of the pending restore.
-type SignAsRecovery struct{ restores *pendingStore }
+type SignAsRecovery struct{ restores restoreHold }
 
 // NewSignAsRecovery returns the use case that signs with the recovery key.
 func NewSignAsRecovery(d Deps) *SignAsRecovery { return &SignAsRecovery{restores: d.progress.restores} }
