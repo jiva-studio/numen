@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import GetVaultDialog from './GetVaultDialog.vue'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import '../styles.css'
 
 const vault = (id: string, state: Vault['state']): Vault => ({

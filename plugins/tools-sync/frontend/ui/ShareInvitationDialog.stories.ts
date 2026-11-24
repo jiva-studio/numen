@@ -4,7 +4,7 @@ import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
 import type { FolderSharesClient, SharedFolder } from '../api/shares'
 import { createInvitationView } from '../model/invitation'
 import ShareInvitationDialog from './ShareInvitationDialog.vue'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import '../styles.css'
 
 type Reader = SharedFolder['readers'][number]

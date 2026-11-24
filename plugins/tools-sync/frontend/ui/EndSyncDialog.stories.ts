@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import EndSyncDialog from './EndSyncDialog.vue'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import '../styles.css'
 
 const meta = {

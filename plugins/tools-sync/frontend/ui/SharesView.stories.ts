@@ -7,7 +7,7 @@ import type {
   SharedFolder,
 } from '../api/shares'
 import { createSharesPage } from './sharesPage'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import '../styles.css'
 
 const OWNER = 'EEEE FFFF GGGG HHHH IIII'

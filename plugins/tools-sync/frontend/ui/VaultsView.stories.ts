@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import VaultsView from './VaultsView.vue'
 import '../styles.css'
 

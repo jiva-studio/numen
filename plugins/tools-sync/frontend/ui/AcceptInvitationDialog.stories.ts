@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import type { AcceptInvitationClient, RequestStatus } from '../api/invitations'
 import { createAcceptanceView } from '../model/acceptance'
 import AcceptInvitationDialog from './AcceptInvitationDialog.vue'
-import { decorateWithFrame } from './storyFrame'
+import { decorateWithFrame } from './testing/storyFrame'
 import '../styles.css'
 
 const LINK = 'numen-share:eyJ2IjoxfQ'

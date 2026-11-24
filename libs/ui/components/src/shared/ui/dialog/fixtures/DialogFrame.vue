@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** A window in miniature for stories and tests: a title bar, the content that hosts dialogs, a status bar. */
 import { useTemplateRef } from 'vue'
-import { provideDialogHost } from './host'
+import { provideDialogHost } from '../host'
 
 const content = useTemplateRef<HTMLElement>('content')
 provideDialogHost(content)

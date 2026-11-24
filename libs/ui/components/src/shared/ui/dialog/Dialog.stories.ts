@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from '../button'
 import Dialog from './Dialog.vue'
-import DialogFrame from './DialogFrame.vue'
+import DialogFrame from './fixtures/DialogFrame.vue'
 
 interface Knobs {
   size: 'sm' | 'md' | 'lg'
