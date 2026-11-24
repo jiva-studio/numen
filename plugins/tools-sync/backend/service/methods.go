@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/errorwire"
@@ -16,7 +17,13 @@ func mountMethods(service *server.API, r *runtime) {
 		return handle(ctx, r, api.MethodListRemoteVaults, func(b *Backend) (api.ListRemoteVaultsResponse, error) { return b.ListRemoteVaults(ctx, request) })
 	})
 	server.Handle(service, api.MethodConnectVault, func(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
-		return handle(ctx, r, api.MethodConnectVault, func(b *Backend) (api.ConnectVaultResponse, error) { return b.ConnectVault(ctx, request) })
+		return handle(ctx, r, api.MethodConnectVault, func(b *Backend) (api.ConnectVaultResponse, error) {
+			response, err := b.ConnectVault(ctx, request)
+			if err == nil {
+				r.wake(domain.VaultID(request.VaultID))
+			}
+			return response, err
+		})
 	})
 	server.Handle(service, api.MethodStopSyncingVault, func(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
 		return handle(ctx, r, api.MethodStopSyncingVault, func(b *Backend) (api.StopSyncingVaultResponse, error) { return b.StopSyncingVault(ctx, request) })

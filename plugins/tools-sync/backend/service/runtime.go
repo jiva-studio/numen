@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -35,6 +36,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/errorwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/invitewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/settingswire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
@@ -130,7 +132,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: pass, Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
-		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(),
+		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(), Describe: errorwire.GetText, Report: reportPassFailure,
 	})
 	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
@@ -176,4 +178,8 @@ func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {
 	return rotatevaultkeys.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State, Random: deps.Random,
 	}
+}
+
+func reportPassFailure(ctx context.Context, vault domain.VaultID, err error) {
+	slog.WarnContext(ctx, "a pass over a vault failed", "operation", "sync pass", "vault", vault, "error", err)
 }

@@ -47,6 +47,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/errorwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -293,6 +294,7 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
+		Describe: errorwire.GetText, Report: func(context.Context, domain.VaultID, error) {},
 	}
 }
 

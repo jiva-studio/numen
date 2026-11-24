@@ -3,6 +3,7 @@ package syncvault
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -39,6 +40,9 @@ type RunDeps struct {
 	Warn     Warner
 	Interval func() time.Duration
 	Changed  <-chan domain.VaultID
+	// Describe is the plain text of an error for the person; Report writes the failure of a pass to the log.
+	Describe func(err error) string
+	Report   func(ctx context.Context, vault domain.VaultID, err error)
 }
 
 // RunSync passes over every connected vault at a fixed interval, and at once over a vault whose files changed.
@@ -99,23 +103,48 @@ func (u *RunSync) wait(ctx context.Context, next time.Time) (domain.VaultID, boo
 func (u *RunSync) passAll(ctx context.Context) error {
 	vaults, err := u.deps.Host.GetVaults(ctx)
 	if err != nil {
-		return u.finish(ctx, err, false)
+		return u.finish(ctx, &failure{vault: domain.Vault{}, err: err}, false)
 	}
-	var failure error
+	var failed []failure
 	isConnected := false
 	for _, vault := range vaults {
 		isPassed, err := u.pass(ctx, vault.ID)
 		isConnected = isConnected || isPassed
 		if err != nil {
-			failure = err
+			failed = append(failed, failure{vault: vault, err: err})
 		}
 	}
-	return u.finish(ctx, failure, isConnected)
+	return u.finish(ctx, u.pick(ctx, failed), isConnected)
 }
 
 func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	isConnected, err := u.pass(ctx, id)
-	return u.finish(ctx, err, isConnected)
+	if err == nil {
+		return u.finish(ctx, nil, isConnected)
+	}
+	named := domain.Vault{ID: id, Name: "", Path: "", ManagedBy: ""}
+	if vaults, listErr := u.deps.Host.GetVaults(ctx); listErr == nil {
+		if at := slices.IndexFunc(vaults, func(vault domain.Vault) bool { return vault.ID == id }); at >= 0 {
+			named = vaults[at]
+		}
+	}
+	return u.finish(ctx, u.pick(ctx, []failure{{vault: named, err: err}}), isConnected)
+}
+
+// pick logs every failure of the pass and returns the one the health item tells of: a server that is away first.
+func (u *RunSync) pick(ctx context.Context, failed []failure) *failure {
+	var picked *failure
+	for i := range failed {
+		u.deps.Report(ctx, failed[i].vault.ID, failed[i].err)
+		if picked == nil || (isUnreachable(failed[i].err) && !isUnreachable(picked.err)) {
+			picked = &failed[i]
+		}
+	}
+	return picked
+}
+
+func isUnreachable(err error) bool {
+	return errors.Is(err, syncprotocol.ErrUnreachable) || errors.Is(err, sessiondomain.ErrUnreachable)
 }
 
 func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
@@ -132,26 +161,38 @@ func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 	return true, u.deps.Pass.Execute(ctx, id)
 }
 
-func (u *RunSync) finish(ctx context.Context, failure error, isConnected bool) error {
+func (u *RunSync) finish(ctx context.Context, failed *failure, isConnected bool) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if failure == nil && isConnected {
-		failure = u.deps.Warn.Execute(ctx)
+	if failed == nil && isConnected {
+		if err := u.deps.Warn.Execute(ctx); err != nil {
+			u.deps.Report(ctx, "", err)
+			failed = &failure{vault: domain.Vault{}, err: err}
+		}
 	}
-	switch {
-	case failure == nil:
+	if failed == nil {
 		return u.clear(ctx)
-	case errors.Is(failure, syncprotocol.ErrUnreachable), errors.Is(failure, sessiondomain.ErrUnreachable):
-		return u.raise(ctx, keyUnreachable, "Could not reach the sync server")
-	case errors.Is(failure, sessiondomain.ErrNoIdentity):
-		return nil
 	}
-	return u.raise(ctx, keyFailed, "Could not sync a vault")
+	if isUnreachable(failed.err) {
+		return u.raise(ctx, health.Item{Key: keyUnreachable, Text: "Could not reach the sync server", Detail: "", Action: nil, Severity: health.Warning})
+	}
+	text := textFailed
+	if name := failed.vault.Name; name != "" {
+		text = "Could not sync the vault «" + truncate(name, maxName) + "»"
+	}
+	return u.raise(ctx, health.Item{Key: keyFailed, Text: text, Detail: truncate(u.deps.Describe(failed.err), maxDetail), Action: nil, Severity: health.Warning})
 }
 
-func (u *RunSync) raise(ctx context.Context, key, text string) error {
-	return u.deps.Health.Report(ctx, health.Item{Key: key, Severity: health.Warning, Text: text, Detail: "", Action: nil})
+func truncate(text string, limit int) string {
+	if runes := []rune(text); len(runes) > limit {
+		return string(runes[:limit])
+	}
+	return text
+}
+
+func (u *RunSync) raise(ctx context.Context, item health.Item) error {
+	return u.deps.Health.Report(ctx, item)
 }
 
 func (u *RunSync) clear(ctx context.Context) error {
@@ -161,4 +202,16 @@ func (u *RunSync) clear(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+const (
+	maxDetail  = 500
+	maxName    = 60
+	textFailed = "Could not sync a vault"
+)
+
+// failure is the error of the pass over one vault. A vault that is not known has an empty ID.
+type failure struct {
+	vault domain.Vault
+	err   error
 }
