@@ -12,16 +12,17 @@ import { IdentityDriver } from './identity.js'
 import { SubscriptionDriver } from './subscription.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
-import { ShareDriver, type GivenInvitation } from './share.js'
+import { getShortFingerprint, ShareDriver } from './share.js'
 import type { SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 const SYNC_PLUGIN = 'md.numen.tools.sync'
 const PLUGIN_NAME = 'Numen Sync'
-const SHARES = 'Shares'
-const YOUR_CODE = 'Your code'
-const INVITATION = 'Invitation'
-const RECEIVE = 'Receive'
+const SHARES = 'Shared folders'
+const ACCEPT = 'Accept a shared folder...'
+const LINK = 'Link'
+/** The code the dialog shows while it waits for the owner: six digits in two groups. */
+const CODE = /^\d{3} \d{3}$/
 /** The own vault of a reader: the application needs one to start. */
 const HOME_VAULT = 'Reader'
 /** The folder of a reader the shared vaults are made in, outside every vault. */
@@ -47,6 +48,7 @@ interface Reader {
   readonly settings: SettingsDriver
   readonly vaults: SyncVaultsDriver
   readonly share: ShareDriver
+  readonly application: ApplicationDriver
   lastError: string | undefined
 }
 
@@ -86,7 +88,8 @@ export class SharedReaderDriver {
       subscription,
       settings,
       vaults: new SyncVaultsDriver(scenario, settings, application),
-      share: new ShareDriver(scenario, new FileTreeDriver(scenario), application),
+      share: new ShareDriver(scenario, new FileTreeDriver(scenario), application, settings),
+      application,
       lastError: undefined,
     })
   }
@@ -102,28 +105,43 @@ export class SharedReaderDriver {
     return panel
   }
 
-  /** The code the reader gives the owner, read from the page "Shares". */
-  async getCode(name: ReaderName): Promise<string> {
-    const reader = this.require(name)
-    const field = (await this.showShares(reader)).getByRole('textbox', { name: YOUR_CODE })
-    await expect(field).toHaveValue(/^numen-reader-1\./, { timeout: ARRIVAL_LIMIT_MS })
-    return field.inputValue()
+  private async openAccept(reader: Reader): Promise<Locator> {
+    await reader.application.runCommand(ACCEPT)
+    const dialog = reader.scenario.page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    return dialog
   }
 
-  /** Pastes the invitation, checks that the page shows the fingerprint of the owner and receives the share. */
-  async receive(name: ReaderName, invitation: GivenInvitation, ownerFingerprint: string): Promise<void> {
-    const panel = await this.showShares(this.require(name))
-    await panel.getByRole('textbox', { name: INVITATION }).fill(invitation.text)
-    await expect(panel.getByText(ownerFingerprint, { exact: true })).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
-    await panel.getByRole('button', { name: RECEIVE, exact: true }).click()
+  /**
+   * Pastes the link, compares the owner the dialog shows with the account of the person who shared (the two people
+   * compare it by voice), asks for the folder and returns the code the dialog shows while it waits for the owner.
+   */
+  async ask(name: ReaderName, link: string, ownerFingerprint: string): Promise<string> {
+    const dialog = await this.openAccept(this.require(name))
+    await dialog.getByRole('textbox', { name: LINK }).fill(link)
+    await expect(dialog.getByText(getShortFingerprint(ownerFingerprint), { exact: false })).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
+    await dialog.getByRole('button', { name: 'Accept', exact: true }).click()
+    const code = dialog.getByText(CODE)
+    await expect(code).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
+    return (await code.innerText()).trim()
   }
 
-  /** Pastes an invitation and presses Receive; the page shows why when it refuses. */
-  async tryReceive(name: ReaderName, invitation: GivenInvitation): Promise<void> {
-    const reader = this.require(name)
-    const panel = await this.showShares(reader)
-    await panel.getByRole('textbox', { name: INVITATION }).fill(invitation.text)
-    await panel.getByRole('button', { name: RECEIVE, exact: true }).click()
+  /** Expects the open dialog to tell that the folder arrived, and closes it. */
+  async expectReceived(name: ReaderName): Promise<void> {
+    const { page } = this.require(name).scenario
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByText('The folder is shared with you')).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
+    await dialog.getByRole('button', { name: 'Done', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+  }
+
+  /** Pastes a link and presses Accept; the dialog shows why when the link does not work. */
+  async tryAccept(name: ReaderName, link: string): Promise<void> {
+    const dialog = await this.openAccept(this.require(name))
+    await dialog.getByRole('textbox', { name: LINK }).fill(link)
+    const accept = dialog.getByRole('button', { name: 'Accept', exact: true })
+    await expect(accept.or(dialog.getByRole('alert'))).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
+    if (await accept.isEnabled()) await accept.click()
   }
 
   private async findVaultFolder(reader: Reader, vault: string): Promise<string | undefined> {
@@ -177,12 +195,14 @@ export class SharedReaderDriver {
   }
 
   /** Tries to share the shared vault with another reader; the dialog or the page tells why it cannot. */
-  async shareVault(name: ReaderName, vault: string, other: ReaderName): Promise<void> {
+  async shareVault(name: ReaderName, vault: string): Promise<void> {
     const reader = this.require(name)
     const found = (await listVaults(reader.scenario.page.request)).find((one) => one.name === vault)
     if (found === undefined) throw new Error(`the ${name} has no vault "${vault}"`)
     await callRPC(reader.scenario.page.request, 'VaultsService/OpenVault', { id: found.id })
-    reader.lastError = await reader.share.tryAddReader('', await this.getCode(other), 'Other')
+    const started = await reader.share.start('')
+    reader.lastError = 'refusal' in started ? started.refusal : undefined
+    await reader.share.close()
   }
 
   async connectVault(name: ReaderName, vault: string): Promise<void> {
@@ -191,10 +211,15 @@ export class SharedReaderDriver {
     await reader.vaults.connectNew(vault)
   }
 
-  /** Expects the words in the answer of the core, in the dialog, or on the page "Shares" of the reader. */
+  /** Expects the words in the answer of the core, in the open dialog, or on the page "Shared folders" of the reader. */
   async expectTold(name: ReaderName, text: string): Promise<void> {
     const reader = this.require(name)
     if (reader.lastError?.includes(text) === true) return
+    const dialog = reader.scenario.page.getByRole('dialog')
+    if ((await dialog.count()) > 0) {
+      await expect(dialog.getByText(text).first()).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
+      return
+    }
     const panel = await this.showShares(reader)
     await expect(panel.getByText(text).first()).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
   }

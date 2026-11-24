@@ -42,13 +42,20 @@ Feature: Share a folder with another person
       And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
       Then the sync server holds no stored text "milk"
 
-  Rule: The person sees who reads the folder
+  Rule: The person allows a device before it gets anything
 
-    Scenario: The share lists the reader with its fingerprint
-      When the person shares the folder "Food" of the vault "Test" with the reader
-      Then the sharing of the folder "Food" lists the reader with its account fingerprint
+    Scenario: A device that is declined gets nothing
+      When the person shares the folder "Food" of the vault "Test" with the reader and declines the request
+      Then the reader is told "The owner declined the request. Nothing is shared."
+      And the reader has no vault "Food"
 
-    Scenario: An invitation of another person is refused
+  Rule: The person sees which devices read the folder
+
+    Scenario: The page lists the device with its fingerprint
       When the person shares the folder "Food" of the vault "Test" with the reader
-      And the invitation is given to a second reader
-      Then the second reader is told "This invitation is for another person"
+      Then the sharing of the folder "Food" lists the device of the reader with its account fingerprint
+
+    Scenario: A link works once
+      When the person shares the folder "Food" of the vault "Test" with the reader
+      And the link is given to a second reader
+      Then the second reader is told "Someone used this link before. Ask the owner for a new one."

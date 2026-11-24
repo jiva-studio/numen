@@ -1,6 +1,6 @@
-Feature: End the share of a folder
+Feature: End the access to a shared folder
 
-  A person ends the share of a folder. The reader keeps what it has and gets nothing more.
+  A person removes the access of a device to a folder. The reader keeps what it has and gets nothing more.
 
   As a person who keeps notes in Numen
   I want to stop another person from getting more of my notes of one folder
@@ -16,14 +16,14 @@ Feature: End the share of a folder
     And the person writes the note "Plan" with the text "tea" in the vault "Test"
     And the reader sets up an identity
 
-  Rule: The person ends the share
+  Rule: The person ends the access of a device
 
     Scenario: The reader keeps what it has and gets no more
       Given the person shares the folder "Food" of the vault "Test" with the reader
       And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
-      When the person removes the reader from the sharing of the folder "Food"
+      When the person removes the access of the device of the reader to the folder "Food"
       And the person writes the note "Food/Menu" with the text "soup" in the vault "Test"
-      Then the reader is told "The owner ended this share" in the shared vault "Food"
+      Then the reader is told "The person stopped sharing this folder" in the shared vault "Food"
       And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
       And the reader does not have the file "Menu.md" in the shared vault "Food"
 

@@ -30,12 +30,12 @@ Then('{reader} has no vault {string}', async ({ person }, reader: ReaderName, va
   await person.readers.expectNoVault(reader, vault)
 })
 
-Then('the sharing of the folder {string} lists the reader with its account fingerprint', async ({ person }, folder: string) => {
+Then('the sharing of the folder {string} lists the device of the reader with its account fingerprint', async ({ person }, folder: string) => {
   await person.sharing.expectReaderListed(folder)
 })
 
-When('the invitation is given to a second reader', async ({ person }) => {
-  await person.sharing.giveInvitationTo('second reader')
+When('the link is given to a second reader', async ({ person }) => {
+  await person.sharing.giveLinkTo('second reader')
 })
 
 Then('{teller} is told {string}', async ({ person }, teller: string, text: string) => {
@@ -50,7 +50,7 @@ Then(
   },
 )
 
-When('the person removes the reader from the sharing of the folder {string}', async ({ person }, folder: string) => {
+When('the person removes the access of the device of the reader to the folder {string}', async ({ person }, folder: string) => {
   await person.sharing.removeReader(folder)
 })
 
@@ -62,9 +62,16 @@ When(
 )
 
 When(
+  'the person shares the folder {string} of the vault {string} with {reader} and declines the request',
+  async ({ person }, folder: string, _vault: string, reader: ReaderName) => {
+    await person.sharing.declineFolder(folder, reader)
+  },
+)
+
+When(
   '{reader} shares the shared vault {string} with the second reader',
   async ({ person }, reader: ReaderName, vault: string) => {
-    await person.readers.shareVault(reader, vault, 'second reader')
+    await person.readers.shareVault(reader, vault)
   },
 )
 

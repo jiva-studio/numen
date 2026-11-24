@@ -1,11 +1,11 @@
-/** The person who shares folders with readers: the dialog of the owner, the pages of the readers and the messages the owner receives. */
+/** The person who shares folders with readers: the dialog of the owner, the dialogs of the readers and the messages the owner receives. */
 import { expect } from 'playwright/test'
 import type { IdentityDriver } from './identity.js'
-import type { ShareDriver, GivenInvitation } from './share.js'
+import type { ShareDriver } from './share.js'
 import type { ReaderName, SharedReaderDriver } from './shared-reader.js'
 
 export class SharingDriver {
-  private invitation: GivenInvitation | undefined
+  private link: string | undefined
   private refusal: string | undefined
   private fingerprint: string | undefined
 
@@ -16,34 +16,52 @@ export class SharingDriver {
   ) {}
 
   /**
-   * The person copies the code of the reader, adds the reader in the dialog, compares the fingerprint of the reader on both
-   * sides, copies the invitation and the reader receives it. A dialog that refuses stops there and shows the reason.
+   * The person opens the dialog of the folder and copies the link, the reader pastes it in its dialog and checks the
+   * owner, the reader tells the code it sees, and the person allows the device that shows the same code. A dialog that
+   * refuses stops there and shows the reason.
    */
-  async shareFolder(folder: string, reader: ReaderName): Promise<void> {
+  private async ask(folder: string, reader: ReaderName): Promise<string | undefined> {
     this.refusal = undefined
-    const outcome = await this.share.addReader(folder, await this.readers.getCode(reader), this.readers.getFingerprint(reader), reader)
-    if ('refusal' in outcome) {
-      this.refusal = outcome.refusal
-      return
+    const started = await this.share.start(folder)
+    if ('refusal' in started) {
+      this.refusal = started.refusal
+      await this.share.close()
+      return undefined
     }
-    this.invitation = outcome.invitation
-    this.fingerprint = outcome.invitation.readerFingerprint
-    await this.readers.receive(reader, outcome.invitation, this.identity.getAccountFingerprint())
+    this.link = started.link
+    this.fingerprint = this.readers.getFingerprint(reader)
+    return this.readers.ask(reader, started.link, this.identity.getAccountFingerprint())
   }
 
-  async giveInvitationTo(reader: ReaderName): Promise<void> {
-    if (this.invitation === undefined) throw new Error('no invitation was given: begin with the person shares the folder')
-    await this.readers.tryReceive(reader, this.invitation)
+  async shareFolder(folder: string, reader: ReaderName): Promise<void> {
+    const code = await this.ask(folder, reader)
+    if (code === undefined) return
+    await this.share.allow(this.getReaderFingerprint(), code)
+    await this.readers.expectReceived(reader)
+  }
+
+  async declineFolder(folder: string, reader: ReaderName): Promise<void> {
+    const code = await this.ask(folder, reader)
+    if (code === undefined) return
+    await this.share.decline(this.getReaderFingerprint(), code)
+  }
+
+  async giveLinkTo(reader: ReaderName): Promise<void> {
+    if (this.link === undefined) throw new Error('no link was given: begin with the person shares the folder')
+    await this.readers.tryAccept(reader, this.link)
+  }
+
+  private getReaderFingerprint(): string {
+    if (this.fingerprint === undefined) throw new Error('no reader was asked: begin with the person shares the folder')
+    return this.fingerprint
   }
 
   async expectReaderListed(folder: string): Promise<void> {
-    if (this.fingerprint === undefined) throw new Error('no reader was added: begin with the person shares the folder')
-    await this.share.expectReaderListed(folder, this.fingerprint)
+    await this.share.expectReaderListed(folder, this.getReaderFingerprint())
   }
 
   async removeReader(folder: string): Promise<void> {
-    if (this.fingerprint === undefined) throw new Error('no reader was added: begin with the person shares the folder')
-    await this.share.removeReader(folder, this.fingerprint)
+    await this.share.removeReader(folder, this.getReaderFingerprint())
   }
 
   async expectTold(text: string): Promise<void> {
