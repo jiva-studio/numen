@@ -313,6 +313,19 @@
       ]
     },
     {
+      "key": "keys.credentialsFile",
+      "type": "enum",
+      "title": "Where keys are kept without a system keychain",
+      "description": "How the keys are kept in a file on a computer that has no system keychain; applies after a restart.",
+      "details": "Without a reachable system keychain Numen keeps the keys in a file in its settings folder. Not chosen means Numen has not asked yet and will not store a key. Passphrase encrypts the file and asks for the passphrase at each start. Plain file leaves the keys readable by anyone who can read your files. Change it under Identity and licenses.",
+      "default": "unset",
+      "options": [
+        { "value": "unset", "title": "Not chosen" },
+        { "value": "passphrase", "title": "Passphrase" },
+        { "value": "plaintext", "title": "Plain file" }
+      ]
+    },
+    {
       "key": "search.maxQueryBytes",
       "group": "limits",
       "type": "number",

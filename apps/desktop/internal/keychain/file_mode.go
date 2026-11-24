@@ -28,10 +28,12 @@ const (
 
 // FileState tells the window whether the credentials file is in use and how it is kept.
 // Warning is empty unless the file is in use and holds its keys as plaintext or no mode is chosen yet.
+// IsLocked is a passphrase file whose passphrase this run has not been given yet.
 type FileState struct {
-	IsInUse bool
-	Mode    FileMode
-	Warning string
+	IsInUse  bool
+	Mode     FileMode
+	Warning  string
+	IsLocked bool
 }
 
 const (
@@ -61,15 +63,23 @@ func (s *Store) GetFileState(ctx context.Context) (FileState, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	state := FileState{IsInUse: true, Mode: s.fileMode}
+	state := FileState{IsInUse: true, Mode: s.fileMode, Warning: "", IsLocked: false}
 	switch s.fileMode {
 	case FileModeUnset:
 		state.Warning = warningUnset
 	case FileModePlaintext:
 		state.Warning = warningPlaintext
 	case FileModePassphrase:
+		state.IsLocked = s.passphrase == ""
 	}
 	return state, nil
+}
+
+// CheckFile reads the credentials file with the passphrase the source gives, so that a wrong passphrase
+// fails here and a right one is kept for the keys that follow.
+func (s *Store) CheckFile(ctx context.Context) error {
+	_, err := s.readEntries(ctx)
+	return err
 }
 
 func (s *Store) getFileMode() FileMode {
