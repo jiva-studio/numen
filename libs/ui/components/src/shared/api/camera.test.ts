@@ -11,7 +11,7 @@ describe('describeCameraFailure', () => {
 
   it('says no camera was found', () => {
     expect(describeCameraFailure(new DOMException('none', 'NotFoundError'))).toBe(
-      'No camera was found.',
+      'No camera found.',
     )
   })
 

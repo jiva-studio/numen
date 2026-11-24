@@ -254,20 +254,20 @@ func (s *Server) serveCorrupted(w http.ResponseWriter, r *http.Request) {
 	if len(body) > 0 {
 		body[0] ^= 0xff
 	}
-	setBinaryHeaders(w)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(recorded.Code)
 	if _, err := w.Write(body); err != nil {
 		return
 	}
 }
 
-func setBinaryHeaders(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-}
-
-func setContentType(w http.ResponseWriter, replayed string) {
-	switch {
+func (s *Server) serveHooked(w http.ResponseWriter, r *http.Request, hook func()) {
+	recorded := httptest.NewRecorder()
+	s.Fake.ServeHTTP(recorded, r)
+	hook()
+	maps.Copy(w.Header(), recorded.Header())
+	switch replayed := recorded.Header().Get("Content-Type"); {
 	case strings.HasPrefix(replayed, "application/proto"):
 		w.Header().Set("Content-Type", "application/proto")
 	case strings.HasPrefix(replayed, "application/connect+proto"):
@@ -278,14 +278,6 @@ func setContentType(w http.ResponseWriter, replayed string) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-}
-
-func (s *Server) serveHooked(w http.ResponseWriter, r *http.Request, hook func()) {
-	recorded := httptest.NewRecorder()
-	s.Fake.ServeHTTP(recorded, r)
-	hook()
-	maps.Copy(w.Header(), recorded.Header())
-	setContentType(w, recorded.Header().Get("Content-Type"))
 	w.WriteHeader(recorded.Code)
 	if _, err := w.Write(recorded.Body.Bytes()); err != nil {
 		return
