@@ -33,7 +33,7 @@ func (s *changeSignal) notify() {
 // watchedKeys notifies the signal when the record of the identity is written or deleted.
 type watchedKeys struct {
 	pluginport.KeyStore
-	signal *changeSignal
+	signal changeNotifier
 }
 
 func (k watchedKeys) SetKey(ctx context.Context, name, key string) error {
@@ -50,4 +50,11 @@ func (k watchedKeys) DeleteKey(ctx context.Context, name string) error {
 		k.signal.notify()
 	}
 	return err
+}
+
+type changeNotifier interface{ notify() }
+
+type changeSource interface {
+	changeNotifier
+	subscribe(listener func())
 }

@@ -10,12 +10,12 @@ import (
 // GenerateRecoveryWords makes 12 new recovery words.
 type GenerateRecoveryWords struct {
 	random  io.Reader
-	created *generatedWords
+	created wordsHold
 }
 
 // NewGenerateRecoveryWords returns the use case that makes new recovery words.
 func NewGenerateRecoveryWords(d Deps) *GenerateRecoveryWords {
-	return &GenerateRecoveryWords{random: d.random, created: &d.progress.created}
+	return &GenerateRecoveryWords{random: d.random, created: d.progress.created}
 }
 
 // Execute returns 12 new words and holds them in memory until CreateIdentity takes them; the next call replaces them.

@@ -42,15 +42,14 @@ type linkHold interface {
 // change takes the next version, which the courier waits on.
 type linkStore struct {
 	mu      sync.Mutex
-	version uint64
-	changed chan struct{}
+	ticker  versionClock
 	current *pendingLink
 	revoke  *pendingRevoke
-	signal  *changeSignal
+	signal  changeNotifier
 }
 
 func newLinkStore(signal *changeSignal) *linkStore {
-	return &linkStore{changed: make(chan struct{}), signal: signal}
+	return &linkStore{ticker: &versionTicker{changed: make(chan struct{})}, signal: signal}
 }
 
 func (s *linkStore) hold() (*linkStore, func()) {
@@ -59,11 +58,9 @@ func (s *linkStore) hold() (*linkStore, func()) {
 }
 
 func (s *linkStore) bumpLocked() uint64 {
-	s.version++
-	close(s.changed)
-	s.changed = make(chan struct{})
+	version := s.ticker.bump()
 	s.signal.notify()
-	return s.version
+	return version
 }
 
 func (s *linkStore) expireLocked(now time.Time) {
@@ -100,3 +97,26 @@ func (s *linkStore) getCurrentLocked() (*pendingLink, error) {
 }
 
 func (l *pendingLink) isEnded() bool { return l.progress.IsEnded() }
+
+// versionClock numbers the changes of a store and lets a waiter learn of the next one.
+type versionClock interface {
+	bump() uint64
+	getVersion() uint64
+	getChanged() <-chan struct{}
+}
+
+type versionTicker struct {
+	version uint64
+	changed chan struct{}
+}
+
+func (t *versionTicker) bump() uint64 {
+	t.version++
+	close(t.changed)
+	t.changed = make(chan struct{})
+	return t.version
+}
+
+func (t *versionTicker) getVersion() uint64 { return t.version }
+
+func (t *versionTicker) getChanged() <-chan struct{} { return t.changed }

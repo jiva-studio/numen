@@ -13,13 +13,13 @@ import (
 type CreateIdentity struct {
 	records records
 	builder stateBuilder
-	created *generatedWords
+	created wordsHold
 	gate    CreateGate
 }
 
 // NewCreateIdentity returns the use case that creates the identity of this device.
 func NewCreateIdentity(d Deps) *CreateIdentity {
-	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: &d.progress.created, gate: d.createLock}
+	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: d.progress.created, gate: d.createLock}
 }
 
 // Execute accepts only the words GenerateRecoveryWords made last (ErrInvalidWords otherwise); it parses the words (ErrInvalidWords wrapping the library error), refuses when the key store

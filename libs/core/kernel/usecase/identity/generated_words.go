@@ -43,3 +43,9 @@ func normalizeWords(words []string) []string {
 	}
 	return out
 }
+
+type wordsHold interface {
+	put(words []string)
+	hasSameWords(words []string) bool
+	drop()
+}
