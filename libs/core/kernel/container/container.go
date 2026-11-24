@@ -196,13 +196,6 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 	}
 }
 
-func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
-	base.SyncSetting = syncSetting(settings)
-	base = setVaultSearch(base, chunks)
-	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
-	return base
-}
-
 func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
@@ -214,7 +207,10 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
 		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), HandleError: settings.HandleError,
 	}
-	return settings, plan, createVaultWiring(res, base, settings, plan.ChunkPolicy)
+	base.SyncSetting = syncSetting(settings)
+	base = setVaultSearch(base, plan.ChunkPolicy)
+	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
+	return settings, plan, base
 }
 
 func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {

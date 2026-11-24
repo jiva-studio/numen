@@ -64,41 +64,38 @@ type noteViews struct {
 func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
-	readers := c.Readers
-	writers := c.Writers
-	now := c.Clock
 
 	// One note.Move settles every note that traveled, whether a rename sent it
 	// or a move did.
 	moveDeps := note.MoveDeps{
-		Readers: readers, Writers: writers, Links: links, Names: names,
-		Sources: db.Sources(), Index: index, Now: now,
+		Readers: c.Readers, Writers: c.Writers, Links: links, Names: names,
+		Sources: db.Sources(), Index: index, Now: c.Clock,
 		Drawing: views.Moves, Sync: c.SyncSetting,
 	}
 	mover := note.NewMove(moveDeps)
 
-	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Admission).WithAbsent(c.AbsentFiles)
-	create := note.NewCreate(writers, names, index, now, views.Admission)
+	linking := note.NewEditLinks(c.Readers, c.Writers, index, c.Clock)
+	remove := note.NewRemove(c.Writers, links, indexed, indexed, index, views.Admission).WithAbsent(c.AbsentFiles)
+	create := note.NewCreate(c.Writers, names, index, c.Clock, views.Admission)
 	connecting := note.ConnectionDeps{
-		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,
+		Readers: c.Readers, Writers: c.Writers, Index: index, Now: c.Clock, Links: links, Names: names,
 		Admission: views.Admission, Follow: views.Follow,
 	}
 
 	return noteUseCases{
 		Edit: noteEditing{
-			Read:    note.NewRead(readers),
-			Write:   note.NewWrite(readers, writers, index, now, views.Admission),
+			Read:    note.NewRead(c.Readers),
+			Write:   note.NewWrite(c.Readers, c.Writers, index, c.Clock, views.Admission),
 			Create:  create,
 			Linking: linking,
 		},
-		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
+		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(c.Readers, c.Writers, index, c.Clock)},
 		Place: notePlacing{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover, views.Admission),
 			Remove:     remove,
-			RemoveNote: note.NewRemoveNote(remove, readers),
-			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
+			RemoveNote: note.NewRemoveNote(remove, c.Readers),
+			EmptyTrash: note.NewEmptyTrash(c.Writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
 		},
 		Connect: noteConnecting{
 			SaveConnection:       note.NewSaveConnection(connecting),
@@ -186,13 +183,6 @@ func openPluginData(options vaultconfig.Options, versions *textVersions) *textve
 		return nil
 	}
 	return textversion.NewPluginData(versions.Versions, derivedfile.PluginStores{Options: options})
-}
-
-func openFileText(versions *textVersions) *textversion.FileText {
-	if versions == nil {
-		return nil
-	}
-	return textversion.NewFileText(versions.Texts, versions.Versions)
 }
 
 func openPluginFile(options vaultconfig.Options) *file.OpenPluginFile {

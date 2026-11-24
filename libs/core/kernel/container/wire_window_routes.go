@@ -49,6 +49,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -83,8 +84,8 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 
 func mountText(w *windowRoutes, vaultDeps vaultWiring) {
 	handler := windowtext.NewUnavailable()
-	if text := openFileText(vaultDeps.TextVersions); text != nil {
-		handler = windowtext.NewHandler(&w.session.Runtime, text)
+	if versions := vaultDeps.TextVersions; versions != nil {
+		handler = windowtext.NewHandler(&w.session.Runtime, textversion.NewFileText(versions.Texts, versions.Versions))
 	}
 	w.Installation.Mount(editor.NewRoute(windowtext.NewRoute(handler, w.page.Gate.CountQuestions())))
 }

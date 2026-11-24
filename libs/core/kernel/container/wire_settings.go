@@ -201,10 +201,9 @@ func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 }
 
 func notifyPlugins(c settingsWiring, prefs *PluginPreferences) *settingsusecase.NotifyPlugins {
-	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: prefs.ApplySetting, Config: prefs.Configuration,
-		ResolveProfile: resolveProfile, Signal: signal,
+		ResolveProfile: resolveProfile, Signal: c.PluginChanges.Signal,
 		Report: func(err error) { c.HandleError(err) },
 	})
 }
