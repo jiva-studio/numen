@@ -204,7 +204,7 @@ func (r *recovery) send(ctx context.Context, files []transfer.File) error {
 	if len(files) == 0 {
 		return nil
 	}
-	outcomes, err := r.deps.Commit.Execute(ctx, ports.CommitInput{VaultID: r.id, Vault: r.vault, Files: files})
+	outcomes, err := r.deps.Commit.Execute(ctx, ports.CommitInput{VaultID: r.id, Vault: r.vault, Files: files, Shares: nil})
 	if err != nil {
 		return err
 	}
