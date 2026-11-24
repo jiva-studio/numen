@@ -23,7 +23,7 @@ import (
 var (
 	pageObject = regexp.MustCompile(`/Type /Page\b[^s]`)
 	stream     = regexp.MustCompile(`(?s)stream\r?\n(.*?)\r?\nendstream`)
-	shown      = regexp.MustCompile(`BT ([\d.-]+) ([\d.-]+) Td \(((?:[^()\\]|\\.)*)\) Tj`)
+	shown      = regexp.MustCompile(`BT ([\d.-]+) ([\d.-]+) Td \(((?:[^()\\]|\\.)*)\) ?Tj`)
 )
 
 // shownText is one string the page shows and the point, in points, where it starts.
