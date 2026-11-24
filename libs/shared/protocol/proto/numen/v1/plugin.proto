@@ -124,6 +124,8 @@ message PluginInfo {
   repeated PluginReader readers = 12;
   // The components the frontend draws inside the plugin's settings.
   repeated PluginSettingsView settings_views = 13;
+  // The tabs of the settings page besides the default tab "settings", in the order they are shown.
+  repeated PluginSettingsTab settings_tabs = 18;
   // Whether the plugin declares a backend the host starts.
   bool has_backend = 14;
   // What the manifest declares, one entry per section that declares anything, in the order of
@@ -207,6 +209,15 @@ message PluginSettingsView {
   // Where the component is drawn: empty for the settings of the plugin, "identity" for the page "Identity and
   // licenses".
   string page = 3;
+
+  // The id of the tab the component is drawn in. Empty means the default tab "settings".
+  string tab = 4;
+}
+
+// PluginSettingsTab is a tab of a plugin's settings page.
+message PluginSettingsTab {
+  string id = 1;
+  string title = 2;
 }
 
 // PluginReader is a tab of a plugin's frontend that opens files.

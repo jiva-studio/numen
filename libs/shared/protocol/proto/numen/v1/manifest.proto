@@ -31,6 +31,8 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
+  // settings_tabs are the tabs of the settings page besides the default tab "settings", in the order they are shown.
+  repeated ManifestSettingsTab settings_tabs = 29;
   // setting_groups are the islands the settings page draws the settings in, in the order they are shown.
   repeated ManifestSettingGroup setting_groups = 28;
   // contributes is what the plugin adds to the application, known before its
@@ -564,4 +566,12 @@ message ManifestSettingsView {
   string title = 2;
   // page is empty for the form of the plugin, or "identity" for the page "Identity and licenses".
   string page = 3;
+  // tab is the id of the tab the view is drawn in. Empty means the default tab "settings".
+  string tab = 4;
+}
+
+// ManifestSettingsTab is a tab of the plugin's settings page.
+message ManifestSettingsTab {
+  string id = 1;
+  string title = 2;
 }
