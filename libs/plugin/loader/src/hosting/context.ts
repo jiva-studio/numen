@@ -165,7 +165,7 @@ function createUi(
   return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
     workspace: ui.getWorkspace(),
     window: ui.getWindow(),
-    vaultFlags: ui.getVaultFlags(pluginId),
+    vaultFlags: ui.forPlugin.getVaultFlags(pluginId),
     commands:
       commands &&
       limitCommands(commands, {
@@ -176,21 +176,19 @@ function createUi(
       }),
     drops: views.drops,
     slots: ui.getSlots(),
-    notices: ui.getNotices(pluginId),
-    picker: ui.getPicker(),
-    dialogs: ui.getDialogs(),
+    notices: ui.forPlugin.getNotices(pluginId),
+    picker: ui.prompts.getPicker(),
+    dialogs: ui.prompts.getDialogs(),
   })
 }
 
 function createUiService(
   pluginId: string,
   host: PluginContextHost,
-  guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
-): PluginUi {
-  const ui = guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
-    check: guards.check,
-  })
-  return pickDefinedParts<PluginUi>({
+  check: RequirePermission,
+): Omit<PluginUi, 'mountView'> {
+  const ui = guardService(createUi(pluginId, host, check), SERVICE_RULES.ui, { check })
+  return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
     workspace: ui.workspace,
     window: ui.window,
     vaultFlags: ui.vaultFlags,
@@ -200,8 +198,12 @@ function createUiService(
     notices: ui.notices,
     picker: ui.picker,
     dialogs: ui.dialogs,
-    mountView: createMountView(host, guards.guard),
   })
+}
+
+/** The window a plugin draws in: the guarded services of the window and the view mounter of the plugin. */
+function addMountView(ui: Omit<PluginUi, 'mountView'>, mountView: PluginUi['mountView']): PluginUi {
+  return { ...ui, mountView }
 }
 
 function trackConnections(
@@ -278,7 +280,7 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
   return {
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     tabs: guardService(createTabs(host), rules.tabs, { check }),
-    ui: createUiService(pluginId, host, { guard: scope, check }),
+    ui: addMountView(createUiService(pluginId, host, check), createMountView(host, scope)),
     work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
     editor: guardService(trackEditorExtensions(host.views.editorExtensions, add), rules.editor, {

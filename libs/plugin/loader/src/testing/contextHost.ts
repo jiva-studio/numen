@@ -67,11 +67,9 @@ const IDLE: PluginContextHost = {
     getCommands: () => undefined,
     commandAccess: { isListed: () => false },
     getWindow: () => undefined,
-    getVaultFlags: () => undefined,
+    forPlugin: { getVaultFlags: () => undefined, getNotices: () => createMockNoticeHost() },
     getSlots: () => createMockSlotHost(),
-    getNotices: () => createMockNoticeHost(),
-    getPicker: () => undefined,
-    getDialogs: () => undefined,
+    prompts: { getPicker: () => undefined, getDialogs: () => undefined },
   },
   work: {
     getTasks: () => undefined,

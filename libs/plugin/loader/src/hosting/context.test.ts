@@ -455,8 +455,8 @@ describe('host service bridges', () => {
       fillHostDeps({ window: { target: 'desktop.editor' } }),
       { slots, manifests, readSlotEntries: () => slotState.entries as never },
     )
-    expect(uiNoCommands.getNotices('p').show('info')).toBeUndefined()
-    expect(uiNoCommands.getNotices('p').setTasks([])).toBeUndefined()
+    expect(uiNoCommands.forPlugin.getNotices('p').show('info')).toBeUndefined()
+    expect(uiNoCommands.forPlugin.getNotices('p').setTasks([])).toBeUndefined()
     expect(uiNoCommands.commandAccess.isListed('md.tree:open')).toBe(false)
 
     slotState.entries = [
