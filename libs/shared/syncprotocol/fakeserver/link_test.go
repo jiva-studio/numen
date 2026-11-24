@@ -67,7 +67,7 @@ func TestCreateChannel_MakesASixteenByteIdThatLivesTenMinutes(t *testing.T) {
 	}
 }
 
-func TestPostMessage_DeliversInOrderToTheSideItIsAddressedTo(t *testing.T) {
+func TestSendMessage_DeliversInOrderToTheSideItIsAddressedTo(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	id := newChannel(t, relay)
@@ -75,9 +75,9 @@ func TestPostMessage_DeliversInOrderToTheSideItIsAddressedTo(t *testing.T) {
 		to   syncclient.LinkSide
 		body string
 	}{{syncclient.LinkSideDisplayer, "first"}, {syncclient.LinkSideScanner, "second"}, {syncclient.LinkSideDisplayer, "third"}} {
-		seq, err := relay.PostMessage(t.Context(), id, post.to, []byte(post.body))
+		seq, err := relay.SendMessage(t.Context(), id, post.to, []byte(post.body))
 		if err != nil || seq != uint32(i+1) {
-			t.Fatalf("PostMessage(%q) = %d, %v, want seq %d", post.body, seq, err, i+1)
+			t.Fatalf("SendMessage(%q) = %d, %v, want seq %d", post.body, seq, err, i+1)
 		}
 	}
 
@@ -117,7 +117,7 @@ func TestWaitMessages_AnswersWhenAMessageIsPostedWhileItWaits(t *testing.T) {
 			return
 		case <-time.After(100 * time.Millisecond):
 			if !posted {
-				if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("hello")); err != nil {
+				if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("hello")); err != nil {
 					t.Fatal(err)
 				}
 				posted = true
@@ -146,7 +146,7 @@ func TestWaitMessages_RefusesASecondWaitOnTheSameSide(t *testing.T) {
 	if !errors.Is(refused.err, syncprotocol.ErrLinkBusy) {
 		t.Errorf("second wait: error = %v, want ErrLinkBusy", refused.err)
 	}
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("end")); err != nil {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("end")); err != nil {
 		t.Fatal(err)
 	}
 	kept := <-answers
@@ -166,7 +166,7 @@ func TestCloseChannel_EndsTheChannelAndTellsTheWaitingPeerOnce(t *testing.T) {
 	if err != nil || !told.IsClosed {
 		t.Errorf("the peer reads %+v, %v, want is_closed", told, err)
 	}
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("late")); !errors.Is(err, syncprotocol.ErrChannelGone) {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("late")); !errors.Is(err, syncprotocol.ErrChannelGone) {
 		t.Errorf("post to a closed channel: error = %v, want ErrChannelGone", err)
 	}
 	if _, err := relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 0, 0); !errors.Is(err, syncprotocol.ErrChannelGone) {
@@ -177,16 +177,16 @@ func TestCloseChannel_EndsTheChannelAndTellsTheWaitingPeerOnce(t *testing.T) {
 	}
 }
 
-func TestPostMessage_TheTwentyFourthMessageClosesTheChannel(t *testing.T) {
+func TestSendMessage_TheTwentyFourthMessageClosesTheChannel(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	id := newChannel(t, relay)
 	for i := range 24 {
-		if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte{byte(i + 1)}); err != nil {
+		if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte{byte(i + 1)}); err != nil {
 			t.Fatalf("message %d: %v", i+1, err)
 		}
 	}
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("25")); !errors.Is(err, syncprotocol.ErrChannelGone) {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("25")); !errors.Is(err, syncprotocol.ErrChannelGone) {
 		t.Errorf("the 25th message: error = %v, want ErrChannelGone", err)
 	}
 	last, err := relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 23, 0)
@@ -200,11 +200,11 @@ func TestLinkChannel_ExpiresTenMinutesAfterCreation(t *testing.T) {
 	relay, clock := newRelayOn(t)
 	id := newChannel(t, relay)
 	clock.Advance(10*time.Minute - time.Second)
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("in time")); err != nil {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("in time")); err != nil {
 		t.Fatalf("a post before the end: %v", err)
 	}
 	clock.Advance(2 * time.Second)
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("late")); !errors.Is(err, syncprotocol.ErrChannelGone) {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("late")); !errors.Is(err, syncprotocol.ErrChannelGone) {
 		t.Errorf("a post after the end: error = %v, want ErrChannelGone", err)
 	}
 	if _, err := relay.WaitMessages(t.Context(), id, syncclient.LinkSideScanner, 0, 0); !errors.Is(err, syncprotocol.ErrChannelGone) {
@@ -216,7 +216,7 @@ func TestLinkChannel_UnknownIdIsExpiredForEveryCallWithNoDetail(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	unknown := bytes.Repeat([]byte{7}, 16)
-	_, post := relay.PostMessage(t.Context(), unknown, syncclient.LinkSideScanner, []byte("x"))
+	_, post := relay.SendMessage(t.Context(), unknown, syncclient.LinkSideScanner, []byte("x"))
 	_, wait := relay.WaitMessages(t.Context(), unknown, syncclient.LinkSideScanner, 0, 0)
 	closing := relay.CloseChannel(t.Context(), unknown)
 	for name, err := range map[string]error{"post": post, "wait": wait, "close": closing} {
@@ -229,17 +229,17 @@ func TestLinkChannel_UnknownIdIsExpiredForEveryCallWithNoDetail(t *testing.T) {
 	}
 }
 
-func TestPostMessage_RefusesAnEmptyBodyAndABodyOverTheLimit(t *testing.T) {
+func TestSendMessage_RefusesAnEmptyBodyAndABodyOverTheLimit(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	id := newChannel(t, relay)
 	for name, body := range map[string][]byte{"empty": nil, "over the limit": make([]byte, syncprotocol.MaxLinkMessage+1)} {
-		_, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, body)
+		_, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, body)
 		if connect.CodeOf(err) != connect.CodeInvalidArgument {
 			t.Errorf("%s: error = %v, want INVALID_ARGUMENT", name, err)
 		}
 	}
-	if _, err := relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, make([]byte, syncprotocol.MaxLinkMessage)); err != nil {
+	if _, err := relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, make([]byte, syncprotocol.MaxLinkMessage)); err != nil {
 		t.Errorf("a body of the limit: %v", err)
 	}
 }

@@ -91,13 +91,11 @@ func (h *SpyHost) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 
 func (h *SpyHost) GetFiles(id domain.VaultID) ports.Files { return h.inner.GetFiles(id) }
 
-func (h *SpyHost) GetIndexer(id domain.VaultID) ports.Indexer { return h.inner.GetIndexer(id) }
+func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.inner.GetNotes(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (h *SpyHost) Store(id domain.VaultID) ports.Store { return h.inner.Store(id) }
 
-// GetRemover returns the remover of the inner host.
-func (h *SpyHost) GetRemover(id domain.VaultID) ports.Remover { return h.inner.GetRemover(id) }
 
 // Transfers returns what the host does with the bytes of the files of the vault, written down.
 func (h *SpyHost) GetTransfers(id domain.VaultID) ports.Transfers {

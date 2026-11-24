@@ -17,6 +17,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/bodystore"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/linkrelay"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/sharestate"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/stopafter"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/streams"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
@@ -98,7 +103,7 @@ type Server struct {
 
 	mu            sync.Mutex
 	audience      string
-	streams       streamSet
+	streams       *streams.Set
 	challenges    map[string]challenge
 	chains        map[string]identity.Chain
 	sessions      []Session
@@ -112,13 +117,13 @@ type Server struct {
 	checkouts     map[string]checkout
 	shop          shop
 	restore       restoreState
-	store         *bodyStore
+	store         *bodystore.Store
 	partLog       []partLogEntry
-	stopUpload    stopAfter
-	stopDownload  stopAfter
+	stopUpload    stopafter.Limit
+	stopDownload  stopafter.Limit
 	stop          func()
-	links         map[string]*linkChannel
-	shares        map[string]*shareState
+	links         *linkrelay.Relay
+	shares        map[string]*sharestate.State
 }
 
 // New returns the server for the config.
@@ -128,8 +133,8 @@ func New(cfg Config) *Server {
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: newShop(),
-		store: newBodyStore(cfg.BodyDir), stop: cfg.Stop, streams: streamSet{heartbeat: cfg.Heartbeat, watchers: map[*watcher]struct{}{}},
-		links: map[string]*linkChannel{}, shares: map[string]*shareState{},
+		store: bodystore.New(cfg.BodyDir), stop: cfg.Stop, streams: streams.New(cfg.Heartbeat),
+		shares: map[string]*sharestate.State{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -138,8 +143,9 @@ func New(cfg Config) *Server {
 		var machine clock = systemClock{}
 		s.now = machine.Now
 	}
-	if s.streams.heartbeat == 0 {
-		s.streams.heartbeat = syncprotocol.WatchHeartbeat
+	s.links = linkrelay.New(s.now)
+	if s.streams.Heartbeat == 0 {
+		s.streams.Heartbeat = syncprotocol.WatchHeartbeat
 	}
 	if s.ttl == 0 {
 		s.ttl = defaultSessionTTL
@@ -159,7 +165,7 @@ func (s *Server) newMux() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle(syncv1connect.NewSignInServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewAccountServiceHandler(s, options))
-	mux.Handle(syncv1connect.NewLinkServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewLinkServiceHandler(s.links, options))
 	mux.Handle(syncv1connect.NewCatalogServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))

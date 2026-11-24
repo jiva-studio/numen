@@ -67,7 +67,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted, Shares: p.shares})
+	result, err := p.use.steps.Pull.Execute(ctx, ports.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted, Shares: p.shares})
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 	if err != nil || len(files) == 0 {
 		return records, false, err
 	}
-	input := transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files, Shares: p.shares}
+	input := ports.CommitInput{VaultID: p.id, Vault: vault, Files: files, Shares: p.shares}
 	outcomes, err := p.use.steps.Commit.Execute(ctx, input)
 	if err != nil {
 		return records, false, err

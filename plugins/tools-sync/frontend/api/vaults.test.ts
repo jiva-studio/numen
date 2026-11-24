@@ -12,8 +12,8 @@ type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
 type ListRemoteVaultsResponse = Awaited<ReturnType<VaultsClient['listRemoteVaults']>>
 type ConnectVaultRequest = Parameters<VaultsClient['connectVault']>[0]
 type GetStatusResponse = Awaited<ReturnType<VaultsClient['getStatus']>>
-type PreviewConnectRequest = Parameters<VaultsClient['previewConnect']>[0]
-type PreviewConnectResponse = Awaited<ReturnType<VaultsClient['previewConnect']>>
+type PreviewConnectRequest = Parameters<VaultsClient['getConnectPreview']>[0]
+type PreviewConnectResponse = Awaited<ReturnType<VaultsClient['getConnectPreview']>>
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -149,7 +149,7 @@ describe('the vaults client', () => {
     const answer = read('PreviewConnect.response') as PreviewConnectResponse
     const { client, sent } = createClient(() => Response.json(answer))
 
-    const response = await client.previewConnect(request)
+    const response = await client.getConnectPreview(request)
 
     expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/PreviewConnect`, body: request }])
     expect(response).toStrictEqual(answer)
