@@ -950,3 +950,16 @@ func TestNarrowBuildServesTheServiceOfAPluginItNames(t *testing.T) {
 		t.Errorf("a service the build does not name answered %d", other.StatusCode)
 	}
 }
+
+func TestNarrowBuildServesEveryPluginServiceWhenItNamesAllPluginServices(t *testing.T) {
+	services := newBareServices()
+	services.PluginServices = &servingPlugins{}
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName, AllPluginServices))
+	t.Cleanup(server.Close)
+
+	answer := fetch(t, server.Client(), server.URL+"/md.numen.any/Call")
+
+	if answer.StatusCode != http.StatusOK || string(answer.Body) != "served by the plugin" {
+		t.Errorf("a plugin service answered %d %q", answer.StatusCode, answer.Body)
+	}
+}

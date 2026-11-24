@@ -53,6 +53,10 @@ func NewRoute(path string, handler http.Handler) Route {
 	return Route{path: path, handler: handler}
 }
 
+// AllPluginServices is the name that makes a narrow build serve the services of the enabled plugins, which
+// the plugin catalog of the app limits to the plugins that target it.
+const AllPluginServices = "plugins"
+
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
@@ -68,7 +72,7 @@ type pageSet struct {
 // are served by one handler.
 // named lists the services this build serves, by the names the schema gives
 // them. A service left out is not mounted, so a call to it is unanswered.
-// Naming none builds the whole schema.
+// AllPluginServices among them also serves every service of an enabled plugin. Naming none builds the whole schema.
 func (o *Installation) NewHandler(files http.Handler, named ...string) http.Handler {
 	return o.pages.newHandler(files, named...)
 }
@@ -118,6 +122,9 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 }
 
 func isNamedService(named []string, urlPath string) bool {
+	if slices.Contains(named, AllPluginServices) {
+		return true
+	}
 	return slices.ContainsFunc(named, func(name string) bool { return strings.HasPrefix(urlPath, "/"+name+"/") })
 }
 
