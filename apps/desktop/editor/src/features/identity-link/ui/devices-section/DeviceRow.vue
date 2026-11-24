@@ -4,6 +4,7 @@
  * one. A right-click (or the Menu key) on another device opens a menu with Remove; this one has none.
  */
 import { computed, ref } from 'vue'
+import { Trash2 } from '@lucide/vue'
 import { NavigationRow } from '@numen/plugin-manager'
 import { Fingerprint, Menu, measureRect, type MenuItem } from '@numen/ui'
 import type { DeviceInfo } from '@/entities/identity'
@@ -79,7 +80,11 @@ function onChoose(): void {
       is-open
       @choose="onChoose"
       @dismiss="onClose"
-    />
+    >
+      <template #icon>
+        <Trash2 :size="14" aria-hidden="true" />
+      </template>
+    </Menu>
   </li>
 </template>
 
