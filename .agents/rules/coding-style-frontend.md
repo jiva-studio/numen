@@ -186,3 +186,14 @@ Then the windows, which need the library built first:
 cd apps/desktop/editor         && npm run typecheck && npm test
 cd apps/desktop/flashcards && npm run typecheck && npm test
 ```
+
+## Dialogs
+
+One `Dialog` from `@numen/ui` hosts every dialog, at the window root.
+
+- One job per dialog. A title of two or three words, a hint of one short line or none.
+- The actions sit in the bottom row. The body holds no buttons.
+- Gaps and text sizes come from tokens. A dialog sets no font size, no line height and no gap of its own.
+- No reserved empty line for a message that may not come. A box that fills later (a QR code, a camera) has its final size from the first frame.
+- A mode that scans shows no text field; a mode that types shows no camera. A second way is one secondary button.
+- Look at how Signal, 1Password and Bitwarden do the same thing before inventing a layout.
