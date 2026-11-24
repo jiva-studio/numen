@@ -72,16 +72,8 @@ func TestRevokeDevice_RemovesDeviceFromListAndNextSealUsesNewEpoch(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var active, revoked int
-	for _, device := range devices {
-		if device.IsRevoked {
-			revoked++
-		} else {
-			active++
-		}
-	}
-	if active != 1 || revoked != 1 {
-		t.Errorf("devices = %+v, want 1 active and 1 revoked", devices)
+	if len(devices) != 1 || !devices[0].IsThis || devices[0].IsRevoked {
+		t.Errorf("devices = %+v, want this device alone", devices)
 	}
 	sealed, err := l.host.seal().Execute(t.Context(), "md.numen.tools.sync", []byte("c"), []byte("milk"))
 	if err != nil || binary.BigEndian.Uint32(sealed[1:5]) != 1 {
@@ -226,5 +218,17 @@ func TestAdoptChain_RefusesBytesThatAreNotAChain(t *testing.T) {
 	l := newLinkPair(t)
 	if err := l.host.adopt().Execute(t.Context(), []byte("not a chain")); !errors.Is(err, identitylib.ErrMalformed) {
 		t.Errorf("error = %v, want ErrMalformed", err)
+	}
+}
+
+func TestRevokeDevice_TheDeviceLeavesTheListBeforeTheServerAnswers(t *testing.T) {
+	t.Parallel()
+	l := newLinkPair(t)
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
+		t.Fatal(err)
+	}
+	devices, err := l.host.devices().Execute(t.Context())
+	if err != nil || len(devices) != 1 || !devices[0].IsThis {
+		t.Errorf("devices = %+v, %v, want this device alone while the revoke waits for the server", devices, err)
 	}
 }
