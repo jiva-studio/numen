@@ -86,20 +86,4 @@ defineProps<{
 .card-action--more {
   display: none;
 }
-
-@container island-card-header (max-inline-size: 46rem) {
-  .card-action__label {
-    display: none;
-  }
-}
-
-@container island-card-header (max-inline-size: 24rem) {
-  .card-action--secondary {
-    display: none;
-  }
-
-  .card-action--more {
-    display: inline-flex;
-  }
-}
 </style>
