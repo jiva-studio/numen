@@ -5,8 +5,8 @@ import { WORDS as words } from '../words'
 
 const REFRESH_MS = 10_000
 
-/** Writes the text of a file to a place the person chooses, and answers false when the person chose none. */
-export type SaveFile = (name: string, content: string) => Promise<boolean>
+/** Writes the text of a file to a place the person chooses, and answers that file, or undefined when the person chose none. */
+export type SaveFile = (name: string, content: string) => Promise<string | undefined>
 
 export interface AccountDataOptions {
   readonly client: AccountClient
@@ -29,6 +29,8 @@ export function useAccountData(options: AccountDataOptions) {
   const deleteAt = ref('')
   const isBusy = ref(false)
   const problem = ref('')
+  const exportedTo = ref('')
+  const isExporting = ref(false)
   let timer: ReturnType<typeof setTimeout> | undefined
   let isDisposed = false
 
@@ -89,7 +91,13 @@ export function useAccountData(options: AccountDataOptions) {
 
   const exportData = (): Promise<boolean> =>
     run(async () => {
-      await saveFile(words.exportFileName, await client.exportAccountData())
+      exportedTo.value = ''
+      isExporting.value = true
+      try {
+        exportedTo.value = (await saveFile(words.exportFileName, await client.exportAccountData())) ?? ''
+      } finally {
+        isExporting.value = false
+      }
     })
 
   onScopeDispose(() => {
@@ -98,7 +106,15 @@ export function useAccountData(options: AccountDataOptions) {
   })
 
   return {
-    state: { account, isDeleting, deleteAt: computed(() => deleteAt.value), isBusy, problem },
+    state: {
+      account,
+      isDeleting,
+      deleteAt: computed(() => deleteAt.value),
+      isBusy,
+      problem,
+      exportedTo,
+      isExporting,
+    },
     actions: { load, remove, restore, exportData },
   }
 }

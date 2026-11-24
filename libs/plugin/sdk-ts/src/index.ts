@@ -107,7 +107,13 @@ export type {
   ConnectionRowOptionsRequest,
   ConnectionHost,
 } from './connections'
-export type { DialogOptions, DialogHandle, DialogHost } from './dialogs'
+export type {
+  DialogOptions,
+  DialogHandle,
+  DialogHost,
+  SaveTextOptions,
+  SavedText,
+} from './dialogs'
 export type { Severity, NoticeTask, NoticeHost } from './notices'
 export type {
   PickerItem,

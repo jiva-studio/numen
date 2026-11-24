@@ -52,6 +52,8 @@ export type {
   PickerHost,
   DialogHost,
   DialogOptions,
+  SaveTextOptions,
+  SavedText,
   PickerItem,
   PickerOptions,
   PluginContext,

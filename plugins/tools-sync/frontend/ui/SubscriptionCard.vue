@@ -52,6 +52,7 @@ const deletingText = computed(() =>
   words.deletingText(formatDate(accountData?.state.deleteAt.value ?? '')),
 )
 const isConfirmingDelete = ref(false)
+const exportedTo = computed(() => accountData?.state.exportedTo.value ?? '')
 
 /** The plan chosen in the menu "Change plan" that waits for the person to confirm the switch. */
 const pendingOffer = ref<PlanOffer | undefined>(undefined)
@@ -223,6 +224,13 @@ function onFailure(failure: unknown): void {
       </Button>
     </div>
     <p v-if="problem !== ''" role="alert" class="subscription__problem">{{ problem }}</p>
+    <p v-if="accountData?.state.isExporting.value" role="status" class="subscription__waiting-text">
+      <Spinner class="subscription__spinner" />
+      <span>{{ words.exportingText }}</span>
+    </p>
+    <p v-else-if="exportedTo !== ''" role="status" class="subscription__text">
+      {{ words.exportedText(exportedTo) }}. {{ words.exportAbout }}
+    </p>
     <p
       v-if="(accountData?.state.problem.value ?? '') !== ''"
       role="alert"

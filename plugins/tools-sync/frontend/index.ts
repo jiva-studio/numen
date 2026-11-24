@@ -143,7 +143,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.settingsView({ id: SHARES_VIEW, component: createReceivedPage() })
   plugin.register.settingsView({
     id: SUBSCRIPTION_VIEW,
-    component: createSubscriptionView(plugin, createSettingsOpener(plugin, host)),
+    component: createSubscriptionView(plugin, host, createSettingsOpener(plugin, host)),
   })
   registerShare(plugin, host)
   registerSync(plugin, host)

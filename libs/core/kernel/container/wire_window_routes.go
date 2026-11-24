@@ -102,7 +102,7 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served))
 	if dialog != nil {
-		path, served = vaults.NewDialogRoute(picker.NewChooseFolder(dialog), w.page.Gate.CountQuestions())
+		path, served = vaults.NewDialogRoute(picker.NewChooseFolder(dialog), picker.NewSaveText(dialog), w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served))
 	}
 }

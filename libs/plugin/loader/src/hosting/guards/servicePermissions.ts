@@ -314,6 +314,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
     dialogs: {
       open: requireNothing('it draws the view the plugin gives and holds no vault data'),
+      saveText: requireNothing('the person chooses the file in the native dialog and it holds no vault data'),
     },
     drops: {
       canDrop: requireNothing('it tells whether some plugin takes the types, nothing more'),

@@ -48,6 +48,13 @@ export const WORDS = {
   exportAccountData: 'Export account data',
   restoreAccount: 'Restore account',
   exportFileName: 'Numen Sync account data.json',
+  exportDialogTitle: 'Save account data',
+  exportingText: 'Exporting account data',
+  exportedText: (path: string): string => `Saved to ${path}`,
+  exportAbout:
+    'Everything the sync server keeps of your account: vault names, devices, subscription. Your notes are not included.',
+  exportUnavailable: 'This window cannot save files.',
+  exportFailed: (reason: string): string => `Could not save the file: ${reason}`,
   deleteQuestion: 'Delete your cloud data?',
   deleteWhat:
     'This deletes your account on the Numen Sync server: your list of devices, your synced vaults, their history and the encrypted copies of your files.',

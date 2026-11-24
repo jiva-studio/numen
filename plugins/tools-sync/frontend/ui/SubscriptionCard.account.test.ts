@@ -2,6 +2,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asValue, type PluginContext } from '@numen/plugin-sdk'
 import type { AccountClient } from '../api/account'
+import type { SaveFile } from '../model/accountData'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -71,7 +72,7 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
       Promise.resolve(''),
     ),
   }
-  const saveFile = vi.fn((_name: string, _content: string) => Promise.resolve(true))
+  const saveFile = vi.fn<SaveFile>(() => Promise.resolve('/home/me/Numen Sync account data.json'))
   const openExternal = vi.fn<PluginContext['identity']['openExternal']>(() =>
     Promise.resolve(asValue(null)),
   )
@@ -237,6 +238,48 @@ describe('SubscriptionCard account actions', () => {
     await pressMenu('Export account data')
 
     expect(saveFile).toHaveBeenCalledWith('Numen Sync account data.json', EXPORT_DOCUMENT)
+  })
+
+  it('says where the file was saved and what it holds', async () => {
+    const { wrapper } = await render(createState())
+
+    await pressMenu('Export account data')
+
+    const text = wrapper.get('[role="status"]').text()
+    expect(text).toContain('Saved to /home/me/Numen Sync account data.json')
+    expect(text).toContain('Your notes are not included.')
+  })
+
+  it('says nothing when the person closes the save dialog', async () => {
+    const { wrapper, saveFile } = await render(createState())
+    saveFile.mockResolvedValueOnce(undefined)
+
+    await pressMenu('Export account data')
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('shows that the export is under way until the file is saved', async () => {
+    const { wrapper, saveFile } = await render(createState())
+    const saving = Promise.withResolvers<string | undefined>()
+    saveFile.mockReturnValueOnce(saving.promise)
+
+    await pressMenu('Export account data')
+    expect(wrapper.get('[role="status"]').text()).toBe('Exporting account data')
+
+    saving.resolve('/home/me/a.json')
+    await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toContain('Saved to /home/me/a.json')
+  })
+
+  it('shows the reason under the card when the file cannot be saved', async () => {
+    const { wrapper, saveFile } = await render(createState())
+    saveFile.mockRejectedValueOnce(new Error('Could not save the file: the disk is full'))
+
+    await pressMenu('Export account data')
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Could not save the file: the disk is full')
   })
 
   it('shows the reason under the card when the export fails', async () => {

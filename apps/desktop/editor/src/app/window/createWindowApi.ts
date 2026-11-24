@@ -39,6 +39,7 @@ import {
   createWindowLogClient,
   type WindowTransports,
 } from '@/shared/api/clients'
+import { createTextSaver } from '@/shared/api/createTextSaver'
 
 export function createWindowApi(transports: WindowTransports) {
   const { transport } = transports
@@ -61,6 +62,7 @@ export function createWindowApi(transports: WindowTransports) {
       listVaults: createVaultListReader({ vaults, getShownVault: windowVaultApi.getShownVault }),
     },
     window: {
+      saveText: createTextSaver(vaultClients.folderDialog),
       logs: createWindowLogClient(workspaceClients.logService),
       focus: createFocusApi(workspaceClients.workspace),
       quit: createQuitApi(workspaceClients.windowService),

@@ -95,6 +95,7 @@ type folders struct {
 	fails    error
 	title    string
 	from     string
+	proposed string
 }
 
 func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
@@ -177,7 +178,7 @@ func onAList(t *testing.T) *onTheList {
 	)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
-	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: chooseFolder}))
+	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: chooseFolder, saveText: picker.NewSaveText(f.dialog)}))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -647,4 +648,12 @@ func TestAnInstallationWithNoFolderDialogAnswersUnimplemented(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("the folder dialog answered %v, want %v", connect.CodeOf(err), connect.CodeUnimplemented)
 	}
+}
+
+// ChooseSaveFile answers the save dialog with the file a test chose, and keeps what was proposed.
+func (f *folders) ChooseSaveFile(_ context.Context, _, name string, _ []string) (string, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.proposed = name
+	return f.pick, f.isChosen, f.fails
 }

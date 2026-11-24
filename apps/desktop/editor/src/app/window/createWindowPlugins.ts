@@ -74,7 +74,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const { notices, picker, dialogs } = createPluginSurfaces()
+  const { notices, picker, dialogs } = createPluginSurfaces(api.window.saveText)
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
