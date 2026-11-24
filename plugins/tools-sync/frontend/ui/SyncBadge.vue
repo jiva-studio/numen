@@ -9,10 +9,14 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const label = computed(() => (props.phase === 'syncing' ? words.syncingLabel : words.syncedLabel))
-const detail = computed(() =>
-  props.phase === 'syncing' ? words.syncingDetail : words.syncedDetail,
-)
+const label = computed(() => {
+  if (props.phase === 'syncing') return words.syncingLabel
+  return props.phase === 'waiting' ? words.statusWaiting : words.syncedLabel
+})
+const detail = computed(() => {
+  if (props.phase === 'syncing') return words.syncingDetail
+  return props.phase === 'waiting' ? words.statusWaiting : words.syncedDetail
+})
 </script>
 
 <template>

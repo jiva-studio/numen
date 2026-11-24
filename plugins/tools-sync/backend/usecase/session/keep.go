@@ -97,8 +97,9 @@ func newSignInFailedConcern() concern {
 // Keep signs in with the identity of this device, signs in again before the session ends, and tries
 // again at a fixed interval where it cannot.
 type Keep struct {
-	deps   Deps
-	raised string
+	deps    Deps
+	raised  string
+	isClean bool
 
 	mu         sync.Mutex
 	token      string
@@ -108,7 +109,7 @@ type Keep struct {
 
 // NewKeep returns the use case over the dependencies.
 func NewKeep(deps Deps) *Keep {
-	return &Keep{deps: deps, raised: "", mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
+	return &Keep{deps: deps, raised: "", isClean: false, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
 }
 
 // Execute runs until ctx ends and returns its error.
@@ -240,6 +241,7 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 
 func (u *Keep) clear(ctx context.Context) {
 	if u.raised == "" {
+		u.clearLeft(ctx)
 		return
 	}
 	clearCtx, cancel := context.WithTimeout(ctx, hostCallTimeout)
@@ -254,4 +256,19 @@ func (u *Keep) adopt(ctx context.Context, revoked domain.DeviceRevokedError) err
 		return nil
 	}
 	return u.deps.Chains.AdoptChain(ctx, revoked.Chain)
+}
+
+// clearLeft clears, once, the items an earlier run of the plugin raised: the host keeps them across a restart, and this run does not know them.
+func (u *Keep) clearLeft(ctx context.Context) {
+	if u.isClean {
+		return
+	}
+	clearCtx, cancel := context.WithTimeout(ctx, hostCallTimeout)
+	defer cancel()
+	for _, what := range []concern{newNoIdentityConcern(), newServerUnreachableConcern(), newUpdateRequiredConcern(), newRevokedConcern(), newAccountDeletingConcern(), newSignInFailedConcern()} {
+		if u.deps.Health.Clear(clearCtx, what.key) != nil {
+			return
+		}
+	}
+	u.isClean = true
 }

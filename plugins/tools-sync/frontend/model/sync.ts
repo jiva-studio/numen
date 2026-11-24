@@ -6,7 +6,7 @@ const DEFAULT_POLL_EVERY_MS = 10_000
 
 const ignore = (): void => undefined
 
-export type SyncPhase = 'hidden' | 'syncing' | 'synced'
+export type SyncPhase = 'hidden' | 'syncing' | 'synced' | 'waiting'
 
 export interface SyncState {
   readonly phase: Readonly<Ref<SyncPhase>>
@@ -25,7 +25,8 @@ export function createSyncState(
   const update = async (): Promise<boolean> => {
     try {
       const status = await client.getStatus()
-      phase.value = status.hasIdentity ? 'synced' : 'hidden'
+      if (!status.hasIdentity) phase.value = 'hidden'
+      else phase.value = status.isReachable ? 'synced' : 'waiting'
       return true
     } catch {
       return false

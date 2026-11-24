@@ -34,6 +34,7 @@ type setup struct {
 	isDown     bool
 	sessionTTL time.Duration
 	serverSkew time.Duration
+	leftItem   string
 }
 
 type kit struct {
@@ -79,6 +80,12 @@ func newKit(t *testing.T, s setup) *kit {
 	healthEndpoint, err := hostcall.ReadVars(k.health.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if s.leftItem != "" {
+		left := health.Item{Key: s.leftItem, Severity: health.Warning, Text: "Could not reach the sync server"}
+		if err := health.NewClient(healthEndpoint).Report(t.Context(), left); err != nil {
+			t.Fatal(err)
+		}
 	}
 	keep := session.NewKeep(session.Deps{
 		Identity: accountadapter.New(account.NewClient(identityEndpoint)),
@@ -356,4 +363,11 @@ func TestKeep_RestoreCancelsTheDeletionAndClearsTheItem(t *testing.T) {
 	if _, isDeleting := keep.GetDeletion(); isDeleting || keep.GetToken() == "" {
 		t.Errorf("deleting = %v, token empty = %v, want a signed-in account that is not deleting", isDeleting, keep.GetToken() == "")
 	}
+}
+
+func TestKeep_ClearsAnItemAnEarlierRunLeftOnceTheSignInWorks(t *testing.T) {
+	k := newKit(t, setup{leftItem: "server-unreachable"})
+
+	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
+	eventually(t, "the left item to clear", func() bool { _, ok := k.item("server-unreachable"); return !ok })
 }

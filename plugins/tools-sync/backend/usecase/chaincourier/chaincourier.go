@@ -20,6 +20,9 @@ const (
 	adoptEvery       = 5
 	noticeKey        = "device-revoked-others"
 	publishFailedKey = "chain-publish-failed"
+	// publishFailedText names what failed and not that the plugin cannot sync: the vaults sync on their own.
+	publishFailedText = "Could not save the change of the devices on the server"
+	maxDetail         = 500
 )
 
 // Deps are what the courier needs.
@@ -88,10 +91,11 @@ func (u *Publish) confirmRevoked(ctx context.Context, pending []byte) error {
 type Adopt struct {
 	deps     Deps
 	isRaised bool
+	isClean  bool
 }
 
 // NewAdopt returns the use case over the dependencies.
-func NewAdopt(deps Deps) *Adopt { return &Adopt{deps: deps, isRaised: false} }
+func NewAdopt(deps Deps) *Adopt { return &Adopt{deps: deps, isRaised: false, isClean: false} }
 
 // Execute returns whether the core took a chain.
 func (u *Adopt) Execute(ctx context.Context) (bool, error) {
@@ -135,8 +139,8 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) {
 		if u.deps.Health.Report(ctx, health.Item{Key: noticeKey, Severity: health.Warning, Text: text}) == nil {
 			u.isRaised = true
 		}
-	case u.isRaised && u.deps.Health.Clear(ctx, noticeKey) == nil:
-		u.isRaised = false
+	case (u.isRaised || !u.isClean) && u.deps.Health.Clear(ctx, noticeKey) == nil:
+		u.isRaised, u.isClean = false, true
 	}
 }
 
@@ -148,11 +152,12 @@ type Loop struct {
 	clock    ports.Clock
 	health   ports.Health
 	isFailed bool
+	isClean  bool
 }
 
 // NewLoop returns the loop over the dependencies and the clock it waits on.
 func NewLoop(deps Deps, clock ports.Clock) *Loop {
-	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock, health: deps.Health, isFailed: false}
+	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock, health: deps.Health, isFailed: false, isClean: false}
 }
 
 // Execute runs until ctx ends and returns its error with the failures of the last round. A failed round is tried again at the next one;
@@ -173,14 +178,22 @@ func (u *Loop) Execute(ctx context.Context) error {
 
 func (u *Loop) reportPublish(ctx context.Context, published error) {
 	if published == nil {
-		if u.isFailed && u.health.Clear(ctx, publishFailedKey) == nil {
-			u.isFailed = false
+		// The host keeps an item across a restart of the plugin, so the first good round clears it whether or not this run raised it.
+		if (u.isFailed || !u.isClean) && u.health.Clear(ctx, publishFailedKey) == nil {
+			u.isFailed, u.isClean = false, true
 		}
 		return
 	}
 	slog.WarnContext(ctx, "could not publish the chain to the server", "error", published)
-	text := fmt.Sprintf("Could not save the change of the devices on the server: %v", published)
-	if u.health.Report(ctx, health.Item{Key: publishFailedKey, Severity: health.Warning, Text: text}) == nil {
+	item := health.Item{Key: publishFailedKey, Severity: health.Warning, Text: publishFailedText, Detail: truncate(published.Error(), maxDetail)}
+	if u.health.Report(ctx, item) == nil {
 		u.isFailed = true
 	}
+}
+
+func truncate(text string, limit int) string {
+	if runes := []rune(text); len(runes) > limit {
+		return string(runes[:limit])
+	}
+	return text
 }

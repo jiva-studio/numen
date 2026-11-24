@@ -109,3 +109,19 @@ describe('createSyncState', () => {
     expect(client.getStatus).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('createSyncState when the server does not answer', () => {
+  it('shows waiting, like the rows of the vaults, and synced again once it answers', async () => {
+    let status = createStatus({ isReachable: false })
+    const state = createSyncState(createClient(() => Promise.resolve(status)), 1000)
+
+    state.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(state.phase.value).toBe('waiting')
+
+    status = createStatus()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(state.phase.value).toBe('synced')
+    state.stop()
+  })
+})

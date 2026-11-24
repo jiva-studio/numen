@@ -3,10 +3,10 @@ package chaincourier_test
 import (
 	"bytes"
 	"context"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
@@ -187,11 +187,25 @@ func TestLoop_ShowsAndLogsAFailedPublishAndClearsItWhenTheServerIsBack(t *testin
 
 	current.Clock.AwaitWait(t)
 	items := current.Health.List()
-	if len(items) != 1 || items[0].Key != "chain-publish-failed" || !strings.HasPrefix(items[0].Text, "Could not save the change of the devices on the server:") {
+	if len(items) != 1 || items[0].Key != "chain-publish-failed" || items[0].Text != "Could not save the change of the devices on the server" || items[0].Detail == "" {
 		t.Fatalf("health items = %+v, want the failed publish", items)
 	}
 
 	current.GoOnline()
 	current.Clock.Advance(2 * time.Second)
 	synctest.WaitUntil(t, "the failure is cleared", func() bool { return len(current.Health.List()) == 0 })
+}
+
+func TestLoop_ClearsTheFailureAnEarlierRunLeftWhenNothingIsPending(t *testing.T) {
+	t.Parallel()
+	_, current := newThreeRestores(t)
+	stale := health.Item{Key: "chain-publish-failed", Severity: health.Warning, Text: "Could not save the change of the devices on the server"}
+	if err := current.ChainDeps().Health.Report(t.Context(), stale); err != nil {
+		t.Fatal(err)
+	}
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	go func() { _ = chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx) }()
+
+	synctest.WaitUntil(t, "the stale failure is cleared", func() bool { return len(current.Health.List()) == 0 })
 }
