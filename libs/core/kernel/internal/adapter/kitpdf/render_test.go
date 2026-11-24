@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -22,9 +23,14 @@ import (
 var (
 	pageObject = regexp.MustCompile(`/Type /Page\b[^s]`)
 	stream     = regexp.MustCompile(`(?s)stream\r?\n(.*?)\r?\nendstream`)
-	shown      = regexp.MustCompile(`\(((?:[^()\\]|\\.)*)\) Tj`)
-	lowerWord  = regexp.MustCompile(`^[a-z]+$`)
+	shown      = regexp.MustCompile(`BT ([\d.-]+) ([\d.-]+) Td \(((?:[^()\\]|\\.)*)\) Tj`)
 )
+
+// shownText is one string the page shows and the point, in points, where it starts.
+type shownText struct {
+	x, y float64
+	text string
+}
 
 func getSampleKit() identitydomain.Kit {
 	sheets := make([]identitydomain.Sheet, 3)
@@ -42,9 +48,9 @@ func getSampleKit() identitydomain.Kit {
 	}
 }
 
-func readPages(t *testing.T, content []byte) [][]string {
+func readTexts(t *testing.T, content []byte) [][]shownText {
 	t.Helper()
-	var pages [][]string
+	var pages [][]shownText
 	for _, found := range stream.FindAllSubmatch(content, -1) {
 		reader, err := zlib.NewReader(bytes.NewReader(found[1]))
 		if err != nil {
@@ -54,13 +60,31 @@ func readPages(t *testing.T, content []byte) [][]string {
 		if err != nil {
 			t.Fatalf("inflate a stream: %v", err)
 		}
-		var strs []string
+		var texts []shownText
 		for _, one := range shown.FindAllSubmatch(text, -1) {
-			strs = append(strs, string(one[1]))
+			x, errX := strconv.ParseFloat(string(one[1]), 64)
+			y, errY := strconv.ParseFloat(string(one[2]), 64)
+			if errX != nil || errY != nil {
+				t.Fatalf("read the point of %q", one[3])
+			}
+			texts = append(texts, shownText{x: x, y: y, text: string(one[3])})
 		}
-		if len(strs) > 0 {
-			pages = append(pages, strs)
+		if len(texts) > 0 {
+			pages = append(pages, texts)
 		}
+	}
+	return pages
+}
+
+func readPages(t *testing.T, content []byte) [][]string {
+	t.Helper()
+	var pages [][]string
+	for _, texts := range readTexts(t, content) {
+		strs := make([]string, len(texts))
+		for i, one := range texts {
+			strs[i] = one.text
+		}
+		pages = append(pages, strs)
 	}
 	return pages
 }
@@ -82,7 +106,7 @@ func TestRender_WritesAPDFOfOnePageForEachSheet(t *testing.T) {
 	}
 }
 
-func TestRender_ShowsOnlyTheTitleTheSheetTheWordsAndOneLine(t *testing.T) {
+func TestRender_ShowsTheTextsOfTheDesign(t *testing.T) {
 	t.Parallel()
 	kit := getSampleKit()
 	content, err := kitpdf.Render(kit)
@@ -90,26 +114,64 @@ func TestRender_ShowsOnlyTheTitleTheSheetTheWordsAndOneLine(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, page := range readPages(t, content) {
+		number := string(rune('1' + i))
+		joined := strings.Join(strings.Fields(strings.Join(page, " ")), " ")
 		for _, want := range []string{
-			"Numen recovery kit",
-			"Settings, Restore. Any 2 of 3 sheets are enough.",
-			"To restore, scan this code in Numen under",
+			"Numen", "Recovery kit", "Sheet " + number + " of 3",
+			"Restore by scanning", "Restore by typing",
+			"Settings > Identity", "Restore > Recovery kit: scan", "Restore > Recovery kit: type",
+			"QR CODE OF SHEET " + number, "THE 33 WORDS OF SHEET " + number,
+			"numen.md", "Do not photograph or share. Anyone with two sheets can restore your identity.",
 		} {
 			if !slices.Contains(page, want) {
 				t.Errorf("page %d does not show %q", i+1, want)
 			}
 		}
-		if !slices.ContainsFunc(page, func(s string) bool { return strings.Contains(s, "Sheet "+string(rune('1'+i))+" of 3") }) {
-			t.Errorf("page %d does not name its sheet", i+1)
-		}
-		var words []string
-		for _, s := range page {
-			if lowerWord.MatchString(s) {
-				words = append(words, s)
+		for _, want := range []string{
+			"This sheet helps you get your identity back if you lose your computer.",
+			"Any two of the three sheets are enough.",
+			"One sheet alone cannot be used by anyone. Keep each sheet in a different place.",
+			"Scan the QR code of this sheet, then of another.",
+			"Type the 33 words of this sheet, then of another.",
+			"It holds the same 33 words as the list below. Both ways give the same result.",
+		} {
+			if !strings.Contains(joined, want) {
+				t.Errorf("page %d does not show %q", i+1, want)
 			}
 		}
-		if !slices.Equal(words, kit.Sheets[i].Words) {
-			t.Errorf("page %d shows the words %v, want %v", i+1, words, kit.Sheets[i].Words)
+		if strings.Contains(strings.ToLower(joined), "account") {
+			t.Errorf("page %d says account, the product says identity", i+1)
+		}
+	}
+}
+
+func TestRender_ShowsTheWordsOfTheSheetInThreeColumnsOfEleven(t *testing.T) {
+	t.Parallel()
+	kit := getSampleKit()
+	content, err := kitpdf.Render(kit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, page := range readTexts(t, content) {
+		words := kit.Sheets[i].Words
+		var columns []float64
+		byColumn := map[float64][]string{}
+		for _, one := range page {
+			if !slices.Contains(words, one.text) {
+				continue
+			}
+			if _, ok := byColumn[one.x]; !ok {
+				columns = append(columns, one.x)
+			}
+			byColumn[one.x] = append(byColumn[one.x], one.text)
+		}
+		if len(columns) != 3 {
+			t.Fatalf("page %d shows the words at %d left edges, want 3", i+1, len(columns))
+		}
+		for c, x := range columns {
+			if want := words[c*11 : (c+1)*11]; !slices.Equal(byColumn[x], want) {
+				t.Errorf("page %d column %d shows %v, want %v", i+1, c+1, byColumn[x], want)
+			}
 		}
 	}
 }

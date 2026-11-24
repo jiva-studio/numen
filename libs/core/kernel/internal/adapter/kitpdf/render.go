@@ -16,20 +16,25 @@ const (
 	pageWidth  = 210.0
 	margin     = 20.0
 	right      = pageWidth - margin
-	gridTop    = 40.0
+	contentW   = right - margin
 	gridRows   = 11
-	gridRowH   = 9.0
-	gridPad    = 2.5
-	gridColumn = (right - margin) / 3
+	gridRowH   = 8.0
+	gridColumn = contentW / 3
+	gridGap    = 5.0
+	boxGap     = 4.0
+	boxPad     = 4.0
+	boxHeight  = 35.0
+	stepIndent = 5.0
+	pointToMM  = 25.4 / 72
 )
 
 type color int
 
 const (
-	ink    color = 0x18181B
-	hushed color = 0x71717A
-	rule   color = 0xD4D4D8
-	shade  color = 0xF4F4F5
+	ink    color = 0x000000
+	hushed color = 0x666666
+	rule   color = 0xBBBBBB
+	shade  color = 0xF0F0F0
 )
 
 func (c color) getRed() int   { return int(c>>16) & 0xFF }
@@ -65,11 +70,52 @@ type sheetPage struct {
 	kit        identitydomain.Kit
 }
 
+// segment is a piece of flowing text; a bold one names a menu or stresses a phrase.
+type segment struct {
+	text   string
+	isBold bool
+}
+
+// flow is a block of wrapped text between two x positions.
+type flow struct {
+	left, right, top, lineH float64
+	size                    float64
+	color                   color
+}
+
+type way struct {
+	title string
+	steps [][]segment
+}
+
+func getMenuStep(before, menu string) []segment {
+	return []segment{{text: before, isBold: false}, {text: menu, isBold: true}, {text: ".", isBold: false}}
+}
+
+func getWays() []way {
+	open := getMenuStep("In Numen open ", "Settings > Identity")
+	return []way{
+		{title: "Restore by scanning", steps: [][]segment{
+			open,
+			getMenuStep("Choose ", "Restore > Recovery kit: scan"),
+			{{text: "Scan the QR code of this sheet, then of another.", isBold: false}},
+		}},
+		{title: "Restore by typing", steps: [][]segment{
+			open,
+			getMenuStep("Choose ", "Restore > Recovery kit: type"),
+			{{text: "Type the 33 words of this sheet, then of another.", isBold: false}},
+		}},
+	}
+}
+
 func (p sheetPage) draw(sheet identitydomain.Sheet, matrix [][]bool) {
 	p.pdf.AddPage()
 	p.drawHeader(fmt.Sprintf("Sheet %d of %d", sheet.Number, len(p.kit.Sheets)))
-	p.drawWords(sheet.Words)
-	p.drawQR(matrix)
+	p.drawLead()
+	p.drawWays()
+	p.drawQR(sheet.Number, matrix)
+	p.drawWords(sheet)
+	p.drawFooter()
 }
 
 func (p sheetPage) setFont(family, style string, size float64, c color) {
@@ -84,44 +130,108 @@ func (p sheetPage) writeRight(x, y float64, s string) {
 	p.pdf.Text(x-p.pdf.GetStringWidth(s), y, s)
 }
 
-func (p sheetPage) drawLine(y float64) {
-	p.pdf.SetDrawColor(rule.getRed(), rule.getGreen(), rule.getBlue())
-	p.pdf.SetLineWidth(0.2)
-	p.pdf.Line(margin, y, right, y)
+func (p sheetPage) drawLine(x1, x2, y, width float64, c color) {
+	p.pdf.SetDrawColor(c.getRed(), c.getGreen(), c.getBlue())
+	p.pdf.SetLineWidth(width)
+	p.pdf.Line(x1, y, x2, y)
 }
+
+// writeFlow wraps the segments between f.left and f.right and returns the y below the last line.
+func (p sheetPage) writeFlow(f flow, segments []segment) float64 {
+	p.pdf.SetLeftMargin(f.left)
+	p.pdf.SetRightMargin(pageWidth - f.right)
+	p.pdf.SetXY(f.left, f.top)
+	for _, s := range segments {
+		style := ""
+		if s.isBold {
+			style = "B"
+		}
+		p.setFont("Helvetica", style, f.size, f.color)
+		p.pdf.Write(f.lineH, p.toCodePage(s.text))
+	}
+	p.pdf.SetLeftMargin(margin)
+	p.pdf.SetRightMargin(margin)
+	return p.pdf.GetY() + f.lineH
+}
+
+// getBaseline is the y where fpdf puts the baseline of text written on a line of the given top and height.
+func getBaseline(top, lineH, size float64) float64 { return top + lineH/2 + 0.3*size*pointToMM }
 
 func (p sheetPage) drawHeader(of string) {
-	p.setFont("Helvetica", "B", 22, ink)
-	p.write(margin, 26, "Numen recovery kit")
-	p.setFont("Helvetica", "", 11, hushed)
-	p.writeRight(right, 26, of)
-	p.drawLine(32)
+	p.setFont("Helvetica", "B", 26, ink)
+	p.write(margin, 30, "Numen")
+	p.setFont("Helvetica", "B", 13, ink)
+	p.writeRight(right, 25.5, "Recovery kit")
+	p.setFont("Helvetica", "", 10, hushed)
+	p.writeRight(right, 31, of)
+	p.drawLine(margin, right, 34, 0.5, ink)
 }
 
-func (p sheetPage) drawWords(words []string) {
-	height := gridRows*gridRowH + 2*gridPad
+func (p sheetPage) drawLead() {
+	p.writeFlow(flow{left: margin, right: right, top: 40, lineH: 5.4, size: 11, color: ink}, []segment{
+		{text: "This sheet helps you get your ", isBold: false},
+		{text: "identity", isBold: true},
+		{text: " back if you lose your computer. ", isBold: false},
+		{text: "Any two of the three sheets are enough.", isBold: true},
+		{text: " One sheet alone cannot be used by anyone. Keep each sheet in a different place.", isBold: false},
+	})
+}
+
+func (p sheetPage) drawWays() {
+	const top = 62.0
+	width := (contentW - boxGap) / 2
 	p.pdf.SetFillColor(shade.getRed(), shade.getGreen(), shade.getBlue())
-	for row := 1; row < gridRows; row += 2 {
-		p.pdf.Rect(margin, gridTop+gridPad+float64(row)*gridRowH, right-margin, gridRowH, "F")
-	}
-	p.pdf.SetDrawColor(rule.getRed(), rule.getGreen(), rule.getBlue())
-	p.pdf.SetLineWidth(0.2)
-	p.pdf.RoundedRect(margin, gridTop, right-margin, height, 2, "1234", "D")
-	for i, word := range words {
-		x := margin + float64(i/gridRows)*gridColumn
-		y := gridTop + gridPad + (float64(i%gridRows)+0.5)*gridRowH + 1.6
-		p.setFont("Helvetica", "", 9, hushed)
-		p.writeRight(x+12, y, strconv.Itoa(i+1))
-		p.setFont("Courier", "B", 13, ink)
-		p.write(x+15, y, word)
+	for i, w := range getWays() {
+		left := margin + float64(i)*(width+boxGap)
+		p.pdf.RoundedRect(left, top, width, boxHeight, 1.5, "1234", "F")
+		p.setFont("Helvetica", "B", 10.5, ink)
+		p.write(left+boxPad, top+boxPad+2.6, w.title)
+		p.drawSteps(w.steps, left+boxPad, left+width-boxPad, top+boxPad+5)
 	}
 }
 
-func (p sheetPage) drawQR(matrix [][]bool) {
-	const top = 160.0
+func (p sheetPage) drawSteps(steps [][]segment, left, edge, top float64) {
+	const size, lineH = 9.0, 4.4
+	for i, step := range steps {
+		p.setFont("Helvetica", "", size, ink)
+		p.write(left, getBaseline(top, lineH, size), strconv.Itoa(i+1)+".")
+		top = p.writeFlow(flow{left: left + stepIndent, right: edge, top: top, lineH: lineH, size: size, color: ink}, step) + 1.2
+	}
+}
+
+func (p sheetPage) drawQR(number int, matrix [][]bool) {
+	const top = 102.0
+	offset := getQuietOffset(matrix)
 	p.pdf.SetFillColor(0, 0, 0)
-	drawQR(func(x, y, w, h float64) { p.pdf.Rect(x, y, w, h, "F") }, matrix, margin, top)
-	p.setFont("Helvetica", "", 10, ink)
-	p.write(margin+qrSide+6, top+qrSide/2-2, "To restore, scan this code in Numen under")
-	p.write(margin+qrSide+6, top+qrSide/2+3, "Settings, Restore. Any 2 of 3 sheets are enough.")
+	drawQR(func(x, y, w, h float64) { p.pdf.Rect(x, y, w, h, "F") }, matrix, margin-offset, top-offset)
+	left := margin + contentW/3
+	p.setFont("Helvetica", "B", 8, hushed)
+	p.write(left, getBaseline(top, 4, 8), fmt.Sprintf("QR CODE OF SHEET %d", number))
+	p.writeFlow(flow{left: left, right: right, top: top + 5, lineH: 4.6, size: 9.5, color: ink}, []segment{
+		{text: "It holds the same 33 words as the list below. Both ways give the same result.", isBold: false},
+	})
+}
+
+func (p sheetPage) drawWords(sheet identitydomain.Sheet) {
+	const captionY, gridTop = 152.0, 155.0
+	p.setFont("Helvetica", "B", 8, hushed)
+	p.write(margin, captionY, fmt.Sprintf("THE 33 WORDS OF SHEET %d", sheet.Number))
+	for i, word := range sheet.Words {
+		x := margin + float64(i/gridRows)*gridColumn
+		top := gridTop + float64(i%gridRows)*gridRowH
+		y := getBaseline(top, gridRowH, 11)
+		p.setFont("Helvetica", "", 9, hushed)
+		p.writeRight(x+7, y, strconv.Itoa(i+1))
+		p.setFont("Courier", "", 11, ink)
+		p.write(x+10, y, word)
+		p.drawLine(x, x+gridColumn-gridGap, top+gridRowH, 0.1, rule)
+	}
+}
+
+func (p sheetPage) drawFooter() {
+	const ruleY, textY = 270.0, 275.0
+	p.drawLine(margin, right, ruleY, 0.1, rule)
+	p.setFont("Helvetica", "", 8, hushed)
+	p.write(margin, textY, "numen.md")
+	p.writeRight(right, textY, "Do not photograph or share. Anyone with two sheets can restore your identity.")
 }

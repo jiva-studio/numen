@@ -75,3 +75,20 @@ func TestDrawQR_FillsEachRunOfBlackModulesInsideTheSquare(t *testing.T) {
 		}
 	}
 }
+
+func TestGetQuietOffset_IsTheBorderBeforeTheFirstModule(t *testing.T) {
+	t.Parallel()
+	matrix, err := getQRMatrix(getLongText())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink := &recordingSink{}
+	drawQR(sink.fill, matrix, 0, 0)
+	minX := sink.rects[0].x
+	for _, r := range sink.rects {
+		minX = min(minX, r.x)
+	}
+	if got := getQuietOffset(matrix); minX < got-1e-9 || minX > got+1e-9 {
+		t.Errorf("the first module starts at %v, the offset is %v", minX, got)
+	}
+}

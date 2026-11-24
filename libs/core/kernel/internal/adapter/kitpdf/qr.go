@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	qrSide      = 56.0
+	qrSide      = 40.0
 	qrQuietSize = 4
 )
 
@@ -55,4 +55,9 @@ func drawQR(fill fillBlack, matrix [][]bool, left, top float64) {
 			x = end
 		}
 	}
+}
+
+// getQuietOffset is the width of the blank border around the code, which the square includes.
+func getQuietOffset(matrix [][]bool) float64 {
+	return qrQuietSize * qrSide / float64(len(matrix)+2*qrQuietSize)
 }
