@@ -5,10 +5,10 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Check, ChevronDown } from '@lucide/vue'
-import { Button, Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
-import { getOfferDetail, type PlanOffer } from '../lib/subscriptionView'
+import { Button, Menu, measureRect, type Position } from '@numen/ui'
+import { getPlanItems } from './planItems'
+import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
-import { getCurrentPlanName } from './getCurrentPlanName'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -32,16 +32,7 @@ const getTrigger = (): HTMLElement | null => {
 /** Where the menu is drawn and how wide its button is, and nothing while it is closed. */
 const anchor = ref<{ at: Position; wide: number } | null>(null)
 
-const items = computed<readonly MenuItem[]>(() =>
-  props.offers.map((offer) => ({
-    id: offer.id,
-    text: offer.name,
-    detail: getOfferDetail(offer),
-    ...(offer.id === props.currentId
-      ? { isDisabled: true, component: getCurrentPlanName(offer.name) }
-      : {}),
-  })),
-)
+const items = computed(() => getPlanItems(props.offers, props.currentId))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(): void {
