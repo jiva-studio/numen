@@ -1,7 +1,10 @@
 <script setup lang="ts">
-/** The question before a received folder is left: the files stay on this device either way. */
+/** The question before a vault stops syncing or a received folder is left: the files stay on this device either way. */
 import { ConfirmDialog } from '@numen/ui'
 import { WORDS as words } from '../words'
+
+/* --------------------------------- Props ---------------------------------- */
+defineProps<{ kind: 'stop' | 'leave' }>()
 
 const emit = defineEmits<{
   (event: 'confirm'): void
@@ -11,9 +14,9 @@ const emit = defineEmits<{
 
 <template>
   <ConfirmDialog
-    :label="words.leaveTitle"
-    :text="words.leaveText"
-    :confirm-text="words.leaveShare"
+    :label="kind === 'stop' ? words.stopSyncing : words.leaveTitle"
+    :text="kind === 'stop' ? words.stopSyncingText : words.leaveText"
+    :confirm-text="kind === 'stop' ? words.stopSyncing : words.leaveShare"
     :cancel-text="words.cancel"
     @confirm="emit('confirm')"
     @cancel="emit('cancel')"

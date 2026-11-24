@@ -25,6 +25,7 @@ const createClient = (vaults: Vault[], differCount = 0): VaultsClient => ({
   getConnectPreview: () => Promise.resolve({ differCount }),
   resolveDeletions: () => Promise.resolve(),
   connectVault: () => Promise.resolve(),
+  stopSyncingVault: () => Promise.resolve(),
   getStatus: () => Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
 })
 

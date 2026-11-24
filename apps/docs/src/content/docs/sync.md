@@ -43,6 +43,6 @@ You can let another person read one folder of a synced vault, or the whole vault
 
 The link holds no key to your notes. A link that leaks before it is used cannot add anybody without your answer, and a second person who pastes it is refused. Remove the access of a device, or stop sharing a folder, under **Shared folders** in the settings of Numen Sync.
 
-## Leaving a shared folder
+## Stopping the sync of a vault, or leaving a shared folder
 
-To leave a folder another person shares, press **...** on its row under **Shared with you** and choose **Leave**. The files stay on this computer, and the vault in the cloud stays too. A left folder becomes an ordinary folder; the owner still lists your device until the owner removes its access.
+To stop syncing a vault on one computer, right-click the vault folder in the file tree and choose **Stop syncing this vault**, or open the card **Synced vaults**, press **...** on its row and choose **Stop syncing**. To leave a folder another person shares, press **...** on its row under **Shared with you** and choose **Leave**. Either way the files stay on this computer, and the vault in the cloud stays too. A left folder becomes an ordinary folder; the owner still lists your device until the owner removes its access.

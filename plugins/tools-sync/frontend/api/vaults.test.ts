@@ -51,6 +51,16 @@ describe('the client of the vaults service', () => {
 
     expect((await client.getStatus()).hasIdentity).toBe(false)
   })
+
+  it('stops the sync of a vault by its id', async () => {
+    const { client, sent } = createClient(() => Response.json({}))
+
+    await client.stopSyncingVault({ vaultId: 'v1' })
+
+    expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
+      ['StopSyncingVault', { vaultId: 'v1' }],
+    ])
+  })
 })
 
 describe('the fixtures of the vaults service', () => {
