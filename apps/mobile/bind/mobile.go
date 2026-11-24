@@ -99,9 +99,9 @@ func (c *Core) Start(dir string) (int, error) {
 		return 0, errors.Join(err, opened.Close())
 	}
 
-	// The phone shows the vault, its notes and the tree they are filed in, and
-	// the health items of the plugins. The socket is reachable by every process
-	// on the phone, so only those four services are mounted. The settings and
+	// The phone shows the vault, its notes and the tree they are filed in, the
+	// health items of the plugins and the downloads of the sync. The socket is reachable by every process
+	// on the phone, so only those five services are mounted. The settings and
 	// the files on disk next to the notes are not served.
 	handler, token, err := opened.NewLocalHandler(
 		http.NotFoundHandler(),
@@ -109,6 +109,7 @@ func (c *Core) Start(dir string) (int, error) {
 		numenv1connect.NoteServiceName,
 		numenv1connect.FileServiceName,
 		numenv1connect.PluginHealthServiceName,
+		syncService,
 	)
 	if err != nil {
 		stop()
@@ -235,6 +236,9 @@ func registerVault(cfg container.Config, res *container.Resources, root string) 
 // `androidScheme` in capacitor.config.ts, with no port. The core serves on the
 // loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
+
+// syncService is the service of the sync plugin, which the phone calls to download a file and to remove its download.
+const syncService = "md.numen.tools.sync"
 
 // readHeaderTimeout is how long a client of the local service may take to send its request headers.
 const readHeaderTimeout = 10 * time.Second
