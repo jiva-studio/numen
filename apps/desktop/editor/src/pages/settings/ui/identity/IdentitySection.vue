@@ -33,12 +33,6 @@ const { words: restoring, typed: typing, scanning } = restore
 const { stage, recoveryWords } = setup
 const isJoining = ref(false)
 
-function loadLinkedIdentity(): void {
-  runInBackground(props.identity.load(), (caughtError) => {
-    call.problem.value = formatError(caughtError)
-  })
-}
-
 const noneActions = computed<readonly CardActionItem[]>(() => {
   const isDisabled = call.isBusy.value
   return [
@@ -77,6 +71,12 @@ function onChooseNone(id: string): void {
   if (id === 'restore-words' || id === 'restore-sheets' || id === 'restore-typed') actions.startRestore(id)
   else if (id === 'join') isJoining.value = true
   else runInBackground(actions.startSetup(), (caught) => (call.problem.value = formatError(caught)))
+}
+
+function onLoadLinkedIdentity(): void {
+  runInBackground(props.identity.load(), (caughtError) => {
+    call.problem.value = formatError(caughtError)
+  })
 }
 </script>
 
@@ -129,7 +129,7 @@ function onChooseNone(id: string): void {
         v-if="isJoining && step === 'idle'"
         :calls="identity.devices.link"
         @close="isJoining = false"
-        @linked="loadLinkedIdentity"
+        @linked="onLoadLinkedIdentity"
       />
 
       <p

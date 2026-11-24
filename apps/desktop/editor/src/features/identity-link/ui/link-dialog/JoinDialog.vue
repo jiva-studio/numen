@@ -36,13 +36,13 @@ const draft = { text: ref('') }
 const isPasting = computed(() => scan.phase.value === 'paste')
 const actions = useLinkActions(session, 'joiner', draft)
 const { view } = actions
+const hasInput = computed(() => view.value === 'scan' && draft.text.value !== '')
 watch(
   () => session.link.value?.phase,
   (phase) => {
     if (phase === 'linked') emit('linked')
   },
 )
-const hasInput = computed(() => view.value === 'scan' && draft.text.value !== '')
 
 /* -------------------------------- Handlers -------------------------------- */
 function getHint(): string {

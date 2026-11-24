@@ -58,7 +58,7 @@ describe('a QR scanner', () => {
 
   it.each([
     ['NotReadableError', 'The camera is used by another program.'],
-    ['OverconstrainedError', 'The camera did not open.'],
+    ['OverconstrainedError', 'No camera found.'],
     ['SecurityError', 'The camera did not open.'],
   ])('reports %s as a state and does not throw', async (name, text) => {
     const scanner = mount(QrScanner, {
