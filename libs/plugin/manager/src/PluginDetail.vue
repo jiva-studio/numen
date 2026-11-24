@@ -233,8 +233,42 @@ function onRunAction(key: string): void {
   padding: var(--settings-card-pad);
 }
 
+.plugin-detail__readme {
+  --numen-prose-size: var(--numen-font-size);
+}
+
 .plugin-detail__readme :deep(.prose) {
   max-inline-size: 36rem;
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(p, ul, ol, li, blockquote, pre, table)) {
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(h1, h2)) {
+  margin-block: 1.25em 0.5em;
+  font-size: var(--numen-title-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(h3, h4, h5, h6)) {
+  margin-block: 1em 0.375em;
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(p, ul, ol, pre, blockquote, table)) {
+  margin-block: 0.5em;
+}
+
+.plugin-detail__readme :deep(.prose :where(li)) {
+  margin-block: 0.125em;
+}
+
+.plugin-detail__readme :deep(.prose :where(code, pre code)) {
+  font-size: var(--numen-text-1);
 }
 
 .plugin-detail__readme :deep(.prose > :first-child) {
