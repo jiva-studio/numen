@@ -32,3 +32,13 @@ Cancelling stops further payments. Your notes are not removed at once:
 - 60 days after the end of the paid period, if you have not paid again, the cloud deletes the vaults. The notes on your computers stay.
 
 Paying again at any point before the deletion brings sync back.
+
+## Sharing a folder by a link
+
+You can let another person read one folder of a synced vault. They read it; they cannot change it, and nothing else of your vault reaches them. Both of you need Numen Sync with the same sync server, and you must stay online until they have pasted the link.
+
+1. **Make the link.** Right-click the folder, choose **Share**, and copy the link. It works once and stops working after 24 hours at most; the sync server may end it sooner, and you can revoke it before.
+2. **Send it, and let them paste it.** The other person chooses **Accept an invitation** and pastes the link. Both of your screens show a six-digit code.
+3. **Compare the codes and allow.** If the code is the same on both screens, choose **Allow**. If it differs, choose **Decline**: someone else may be on the line. After you allow, the folder appears under **Shared with you** for the other person.
+
+The link holds no key to your notes. A link that leaks before it is used cannot add anybody without your answer, and a second person who pastes it is refused. Stop reading for a person, or stop sharing, in the dialog of the folder.
