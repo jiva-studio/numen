@@ -43,6 +43,9 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := p.pinRestoreKey(ctx); err != nil {
+		return err
+	}
 	if isReady, err := p.pullOrRecover(ctx); err != nil || !isReady {
 		return err
 	}
@@ -55,6 +58,10 @@ func (p *pass) run(ctx context.Context) error {
 			return err
 		}
 	}
+	return p.finish(ctx, previous)
+}
+
+func (p *pass) finish(ctx context.Context, previous ports.Status) error {
 	conflicts := len(p.conflicts) + p.resolved
 	found := tally{conflicts: conflicts, previousConflicts: previous.ConflictCount, unverified: p.unverified, clashes: len(p.clashes)}
 	if err := p.use.reports.report(ctx, found); err != nil {
@@ -200,7 +207,7 @@ func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) err
 	}
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID})
+			link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
 		}
 	}
 	return p.use.deps.State.WriteLink(ctx, p.id, link)
@@ -260,7 +267,7 @@ func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []
 		case outcome.Head == nil && len(file.ParentRev) > 0:
 			file.ParentRev = nil
 		case outcome.Head != nil && outcome.Head.GetRevision().GetDeleted():
-			file.ParentRev = outcome.Head.GetRevId()
+			file.ParentRev, file.ParentVersion = outcome.Head.GetRevId(), outcome.Head.GetRevision().GetFileVersion()
 		default:
 			continue
 		}
@@ -302,7 +309,7 @@ func (p *pass) readFiles(ctx context.Context, records []transfer.FileRecord, cha
 		if slices.Contains(p.conflicts, change.Path) {
 			continue
 		}
-		file := transfer.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: nil, ModifiedAt: change.ModifiedAt, Stat: nil}
+		file := transfer.File{FileID: nil, ParentRev: nil, ParentVersion: 0, Path: change.Path, Content: nil, ModifiedAt: change.ModifiedAt, Stat: nil}
 		isFound, err := p.readBody(ctx, &file, change.Size)
 		if err != nil {
 			return nil, err
@@ -311,7 +318,7 @@ func (p *pass) readFiles(ctx context.Context, records []transfer.FileRecord, cha
 			continue
 		}
 		if at := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
-			file.FileID, file.ParentRev = records[at].FileID, records[at].HeadRev
+			file.FileID, file.ParentRev, file.ParentVersion = records[at].FileID, records[at].HeadRev, records[at].Version
 		}
 		files = append(files, file)
 	}

@@ -86,9 +86,11 @@ func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.
 		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
-		removals: nil, removalSeq: 0, isListing: false,
+		removals: nil, removalSeq: 0, isListing: false, rolledBack: nil,
 	}
-	err = r.execute(ctx)
+	if err = r.execute(ctx); err == nil && r.result.Verdict == restore.Same {
+		err = r.reportRollbacks(ctx)
+	}
 	return r.result, err
 }
 

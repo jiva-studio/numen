@@ -66,7 +66,7 @@ func TestGetRevisionMessage_ProducesTheFrozenBytes(t *testing.T) {
 			"040404040404040404040420050505050505050505050505050505050505050505050505050505050505050520ea3bd7"+
 			"3e2b506e00527232b3ed743c066da83a8e3066f62a71e75eb9b4aa1db620060606060606060606060606060606060606"+
 			"060606060606060606060606060600200707070707070707070707070707070707070707070707070707070707070707"+
-			"00000000000010000000000000")
+			"000000000000100000000000000000000000000000")
 
 	got := syncprotocol.GetRevisionMessage(newRevision())
 
@@ -80,7 +80,7 @@ func TestGetRevisionID_IsTheSHA256OfTheMessage(t *testing.T) {
 
 	got := syncprotocol.GetRevisionID(newRevision())
 
-	if want := "72ff3f6d63bcbb16ac98b68e02f06025b38a062a55b164837ac5cbd9073d70d9"; hex.EncodeToString(got[:]) != want {
+	if want := "c78e9f224c3b49253b686def53577d4c962c06ae48da65d37ae8687d70e3385e"; hex.EncodeToString(got[:]) != want {
 		t.Errorf("id = %x, want %s", got, want)
 	}
 }
@@ -90,18 +90,19 @@ func TestGetRevisionMessage_ChangesWithEveryFieldItCovers(t *testing.T) {
 	base := syncprotocol.GetRevisionMessage(newRevision())
 
 	for name, change := range map[string]func(*syncv1.Revision){
-		"vault id":   func(r *syncv1.Revision) { r.GetVaultId()[0] ^= 1 },
-		"file id":    func(r *syncv1.Revision) { r.GetFileId()[0] ^= 1 },
-		"parent":     func(r *syncv1.Revision) { r.GetParentRev()[0] ^= 1 },
-		"blob id":    func(r *syncv1.Revision) { r.GetBlobId()[0] ^= 1 },
-		"blob hash":  func(r *syncv1.Revision) { r.GetBlobHash()[0] ^= 1 },
-		"blob size":  func(r *syncv1.Revision) { r.BlobSize++ },
-		"meta":       func(r *syncv1.Revision) { r.EncMeta = []byte("metb") },
-		"path hash":  func(r *syncv1.Revision) { r.GetPathHash()[0] ^= 1 },
-		"share root": func(r *syncv1.Revision) { r.ShareRootId = bytes.Repeat([]byte{8}, 16) },
-		"deleted":    func(r *syncv1.Revision) { r.Deleted = true },
-		"epoch":      func(r *syncv1.Revision) { r.Epoch = 1 },
-		"author":     func(r *syncv1.Revision) { r.GetAuthorDeviceSignKey()[0] ^= 1 },
+		"vault id":     func(r *syncv1.Revision) { r.GetVaultId()[0] ^= 1 },
+		"file id":      func(r *syncv1.Revision) { r.GetFileId()[0] ^= 1 },
+		"parent":       func(r *syncv1.Revision) { r.GetParentRev()[0] ^= 1 },
+		"blob id":      func(r *syncv1.Revision) { r.GetBlobId()[0] ^= 1 },
+		"blob hash":    func(r *syncv1.Revision) { r.GetBlobHash()[0] ^= 1 },
+		"blob size":    func(r *syncv1.Revision) { r.BlobSize++ },
+		"file version": func(r *syncv1.Revision) { r.FileVersion++ },
+		"meta":         func(r *syncv1.Revision) { r.EncMeta = []byte("metb") },
+		"path hash":    func(r *syncv1.Revision) { r.GetPathHash()[0] ^= 1 },
+		"share root":   func(r *syncv1.Revision) { r.ShareRootId = bytes.Repeat([]byte{8}, 16) },
+		"deleted":      func(r *syncv1.Revision) { r.Deleted = true },
+		"epoch":        func(r *syncv1.Revision) { r.Epoch = 1 },
+		"author":       func(r *syncv1.Revision) { r.GetAuthorDeviceSignKey()[0] ^= 1 },
 	} {
 		changed := newRevision()
 		change(changed)

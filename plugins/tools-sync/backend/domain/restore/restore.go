@@ -138,6 +138,7 @@ type Head struct {
 	FileID        []byte
 	Rev           []byte
 	ParentRev     []byte
+	Version       uint64
 	Hash          string
 	Path          string
 	IsDeleted     bool
@@ -145,12 +146,14 @@ type Head struct {
 }
 
 // Action is what a recovery does with a file. ParentRev is the head the commit goes on top of, or the head to adopt,
-// and empty for Recreate and Keep.
+// and empty for Recreate and Keep. ParentVersion is the highest signed version of the file this device or the server
+// holds: a commit or a record of the file continues from it.
 type Action struct {
-	Kind      ActionKind
-	FileID    []byte
-	Path      string
-	ParentRev []byte
+	Kind          ActionKind
+	FileID        []byte
+	Path          string
+	ParentRev     []byte
+	ParentVersion uint64
 }
 
 // Known is what a device records of a synced file: the head the file had on the server when it was last in step.
@@ -159,6 +162,7 @@ type Known struct {
 	Path     string
 	BaseHash string
 	HeadRev  []byte
+	Version  uint64
 }
 
 // PlanRecovery decides what to do with each file: records are what this device knows of its synced notes, heads
@@ -183,23 +187,34 @@ func PlanRecovery(records []Known, heads map[string]Head, local map[string]strin
 }
 
 func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool) Action {
-	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil}
+	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil, ParentVersion: 0}
 	isUsable := isFound && !head.IsBlobMissing
 	if isUsable && isHeadKept(head, record, isLocal) {
 		return action
 	}
+	return planChange(action, head, record, isFound, hash, isLocal)
+}
+
+func planChange(action Action, head Head, record Known, isFound bool, hash string, isLocal bool) Action {
+	isUsable := isFound && !head.IsBlobMissing
+	action.ParentVersion = max(head.Version, record.Version)
 	switch {
 	case isUsable && isLocal && isSameContent(head, hash):
-		action.Kind = Adopt
-		action.ParentRev = head.Rev
+		action.Kind, action.ParentRev, action.ParentVersion = Adopt, head.Rev, head.Version
 	case isLocal && !isFound:
-		action.Kind = Recreate
+		action.Kind, action.ParentVersion = Recreate, record.Version
+	case isUsable && isNewer(head, record):
+		action.ParentVersion = 0
 	case isLocal:
 		action.Kind, action.ParentRev = Send, head.Rev
 	case isFound && !head.IsDeleted:
 		action.Kind, action.ParentRev = Tombstone, head.Rev
 	}
 	return action
+}
+
+func isNewer(head Head, record Known) bool {
+	return head.Version > record.Version || (len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev))
 }
 
 func isHeadKept(head Head, record Known, isLocal bool) bool {
@@ -214,7 +229,7 @@ func isSameContent(head Head, hash string) bool {
 }
 
 func planUnknown(head Head, local map[string]string) Action {
-	action := Action{Kind: Keep, FileID: head.FileID, Path: head.Path, ParentRev: nil}
+	action := Action{Kind: Keep, FileID: head.FileID, Path: head.Path, ParentRev: nil, ParentVersion: 0}
 	if _, isTaken := local[head.Path]; !isTaken && !head.IsDeleted && !head.IsBlobMissing {
 		action.Kind = Pull
 	}

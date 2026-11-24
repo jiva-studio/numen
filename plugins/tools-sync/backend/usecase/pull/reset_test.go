@@ -52,20 +52,20 @@ func (w *away) countLiveNotes(t *testing.T) int {
 	return live
 }
 
-func TestPullChanges_RemovesAnUnchangedNoteTheServerNoLongerHasToTheTrashOnAReset(t *testing.T) {
+func TestPullChanges_KeepsAnUnchangedNoteTheServerNoLongerHasOnAReset(t *testing.T) {
 	w := newAway(t)
 	w.forgetRemoval(t, "Shopping list.md", w.shopping)
 
 	w.pull(t, trustAll)
 
-	if _, isThere := w.b.ReadNote(target, "Shopping list.md"); isThere {
-		t.Error("the removed note is still in the folder")
+	if text, isThere := w.b.ReadNote(target, "Shopping list.md"); !isThere || text != "milk" {
+		t.Errorf("note = %q (there: %v), want milk kept: a listing that lacks a note is no signed removal", text, isThere)
 	}
-	if text, isThere := w.b.ReadNote(target, trash+"Shopping list.md"); !isThere || text != "milk" {
-		t.Errorf("trash note = %q (there: %v), want milk in the trash", text, isThere)
+	if _, isThere := w.b.ReadNote(target, trash+"Shopping list.md"); isThere {
+		t.Error("the note was moved to the trash")
 	}
 	if _, isThere := w.b.GetFileRow(t, target, "Shopping list.md"); isThere {
-		t.Error("the record of the removed note is kept")
+		t.Error("the record of a note the listing lacks is kept, so the next pass cannot send it as a new file")
 	}
 }
 
@@ -140,15 +140,15 @@ func TestSyncPass_SendsANewNoteOfTheAwayComputerAfterAReset(t *testing.T) {
 	}
 }
 
-func TestSyncPass_DoesNotSendARemovedNoteBackOnTheNextPassAfterAReset(t *testing.T) {
+func TestSyncPass_SendsAnUnchangedNoteTheServerForgotBackAsANewNoteOnAReset(t *testing.T) {
 	w := newAway(t)
 	w.forgetRemoval(t, "Shopping list.md", w.shopping)
 
 	w.sync(t)
 	w.sync(t)
 
-	if live := w.countLiveNotes(t); live != 1 {
-		t.Errorf("server holds %d live notes, want 1 (the removed note did not come back)", live)
+	if live := w.countLiveNotes(t); live != 2 {
+		t.Errorf("server holds %d live notes, want 2 (the note without a signed removal is sent again, once)", live)
 	}
 }
 
@@ -225,8 +225,8 @@ func TestPullChanges_KeepsANoteWhoseHeadDoesNotVerifyOnAReset(t *testing.T) {
 			t.Errorf("note %s was removed although its head did not verify", path)
 		}
 	}
-	if _, isThere := w.b.ReadNote(target, trash+"Old.md"); !isThere {
-		t.Error("the removal of Old, which has a verified list to stand on, was not applied")
+	if _, isThere := w.b.ReadNote(target, "Old.md"); !isThere {
+		t.Error("note Old was removed although the listing that lacks it carries no signed removal")
 	}
 }
 
@@ -241,7 +241,7 @@ func commitAsAway(t *testing.T, w *away, path, text string) transfer.Outcome {
 	return outcomes[0]
 }
 
-func TestPullChanges_PausesWhenAResetWouldRemoveMostOfTheNotesAndKeepsThemUntilTheAnswer(t *testing.T) {
+func TestPullChanges_RemovesNothingWhenAResetOmitsMostOfTheNotes(t *testing.T) {
 	p := newPair(t)
 	paths := []string{"A.md", "B.md", "C.md", "D.md", "E.md", "F.md"}
 	outcomes := map[string]transfer.Outcome{}
@@ -249,7 +249,6 @@ func TestPullChanges_PausesWhenAResetWouldRemoveMostOfTheNotesAndKeepsThemUntilT
 		outcomes[path] = p.push(t, path, "text of "+path, nil)
 	}
 	p.pull(t, trustAll)
-	before := p.b.Link(t, target)
 	for _, path := range paths[:5] {
 		p.a.CommitRemoval(t, p.vault, path, outcomes[path])
 	}
@@ -258,14 +257,11 @@ func TestPullChanges_PausesWhenAResetWouldRemoveMostOfTheNotesAndKeepsThemUntilT
 	p.pull(t, trustAll)
 
 	for _, path := range paths {
-		if _, isThere := p.b.ReadNote(target, path); !isThere {
-			t.Errorf("note %s was removed although five of six removals wait for an answer", path)
+		if text, isThere := p.b.ReadNote(target, path); !isThere || text != "text of "+path {
+			t.Errorf("note %s = %q (there: %v), want it kept: the listing carries no signed removal", path, text, isThere)
 		}
 	}
-	if !p.b.HasItemKey(deletions.HealthKey) {
-		t.Error("no paused removals were reported")
-	}
-	if after := p.b.Link(t, target); after.ServerSeq != before.ServerSeq {
-		t.Errorf("position = %d, want %d kept, so the next pass reads the vault again", after.ServerSeq, before.ServerSeq)
+	if p.b.HasItemKey(deletions.HealthKey) {
+		t.Error("paused removals were reported although nothing was queued for removal")
 	}
 }

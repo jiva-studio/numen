@@ -41,7 +41,7 @@ func (u *CommitMoves) Execute(ctx context.Context, in transfer.MoveInput) ([]tra
 			outcome.Path = batch[i].To
 			if outcome.Status == transfer.Committed {
 				outcome.Record = batch[i].Record
-				outcome.Record.Path, outcome.Record.HeadRev = batch[i].To, outcome.RevID
+				outcome.Record.Path, outcome.Record.HeadRev, outcome.Record.Version = batch[i].To, outcome.RevID, batch[i].Record.Version+1
 			}
 			outcomes = append(outcomes, outcome)
 		}
@@ -63,7 +63,7 @@ func (u *CommitMoves) build(ctx context.Context, vault transfer.Vault, author []
 	}
 	revision := &syncv1.Revision{
 		VaultId: vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, BlobId: record.BlobID, BlobHash: record.BlobHash, BlobSize: record.BlobSize,
-		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author, Epoch: newest.Epoch,
+		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author, Epoch: newest.Epoch, FileVersion: record.Version + 1,
 	}
 	return revision, u.sign(ctx, revision)
 }
@@ -92,7 +92,7 @@ func (u *CommitRemovals) Execute(ctx context.Context, in transfer.RemoveInput) (
 		revisions := make([]*syncv1.Revision, len(batch))
 		for i, record := range batch {
 			revisions[i] = &syncv1.Revision{
-				VaultId: in.Vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, Deleted: true,
+				VaultId: in.Vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, Deleted: true, FileVersion: record.Version + 1,
 				PathHash: note.HashPath(in.Vault.Key, record.Path), AuthorDeviceSignKey: author.DeviceSignKey,
 			}
 			signature, err := u.deps.Identity.SignAsDevice(ctx, syncprotocol.GetRevisionMessage(revisions[i]))

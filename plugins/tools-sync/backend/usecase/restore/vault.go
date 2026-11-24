@@ -184,7 +184,7 @@ func (r *recovery) readFile(ctx context.Context, action domainrestore.Action) (t
 	if err != nil {
 		return transfer.File{}, false, err
 	}
-	file := transfer.File{FileID: action.FileID, ParentRev: action.ParentRev, Path: action.Path, Content: nil, ModifiedAt: stat.ModTime.UnixNano(), Stat: nil}
+	file := transfer.File{FileID: action.FileID, ParentRev: action.ParentRev, ParentVersion: action.ParentVersion, Path: action.Path, Content: nil, ModifiedAt: stat.ModTime.UnixNano(), Stat: nil}
 	if stat.Size > note.SmallFileLimit {
 		file.Stat = &stat
 		return file, true, nil
@@ -227,7 +227,7 @@ func (r *recovery) remove(ctx context.Context, removals []transfer.FileRecord) e
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
-			r.link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID})
+			r.link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
 		}
 	}
 	return nil
@@ -245,13 +245,13 @@ func (r *recovery) setRecord(record transfer.FileRecord) {
 func (r *recovery) getKnownFiles() []domainrestore.Known {
 	known := make([]domainrestore.Known, len(r.records), len(r.records)+len(r.link.Removed))
 	for i, record := range r.records {
-		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev}
+		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev, Version: record.Version}
 	}
 	for _, gone := range r.link.Removed {
 		_, isLocal := r.hashes[gone.Path]
 		isKnown := slices.ContainsFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, gone.FileID) })
 		if !isLocal && !isKnown {
-			known = append(known, domainrestore.Known{FileID: gone.FileID, Path: gone.Path, BaseHash: "", HeadRev: gone.HeadRev})
+			known = append(known, domainrestore.Known{FileID: gone.FileID, Path: gone.Path, BaseHash: "", HeadRev: gone.HeadRev, Version: gone.Version})
 		}
 	}
 	return known
@@ -259,13 +259,13 @@ func (r *recovery) getKnownFiles() []domainrestore.Known {
 
 func (r *recovery) getAdoptedRecord(action domainrestore.Action) transfer.FileRecord {
 	record := r.getRecord(action.FileID)
-	record.FileID, record.Path, record.BaseHash, record.HeadRev = action.FileID, action.Path, r.hashes[action.Path], action.ParentRev
+	record.FileID, record.Path, record.BaseHash, record.HeadRev, record.Version = action.FileID, action.Path, r.hashes[action.Path], action.ParentRev, action.ParentVersion
 	return record
 }
 
 func (r *recovery) getRemoval(action domainrestore.Action) transfer.FileRecord {
 	record := r.getRecord(action.FileID)
-	record.FileID, record.Path, record.HeadRev = action.FileID, action.Path, action.ParentRev
+	record.FileID, record.Path, record.HeadRev, record.Version = action.FileID, action.Path, action.ParentRev, action.ParentVersion
 	return record
 }
 

@@ -47,3 +47,60 @@ func TestPlanRecovery_SendsAHeadOnTopOfTheRecordedOneWhenItsBodyIsMissing(t *tes
 
 	wantAction(t, got, restore.Send, 1)
 }
+
+func TestPlanRecovery_SkipsHeadWithHigherVersionEvenWhenLocalNoteWasEdited(t *testing.T) {
+	t.Parallel()
+	milk := note.Hash([]byte("milk"))
+	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records[0].Version = 3
+	newer := head(1, "a.md", 9)
+	newer.Version = 5
+	newer.Hash = note.Hash([]byte("tea"))
+
+	got := restore.PlanRecovery(records, heads(newer), map[string]string{"a.md": note.Hash([]byte("milk with eggs"))})
+
+	wantAction(t, got, restore.Keep, 1)
+}
+
+func TestPlanRecovery_SkipsHeadWithHigherVersionWhenNoteIsRemovedLocally(t *testing.T) {
+	t.Parallel()
+	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 7)}
+	records[0].Version = 3
+	newer := head(1, "a.md", 9)
+	newer.Version = 4
+
+	got := restore.PlanRecovery(records, heads(newer), map[string]string{})
+
+	wantAction(t, got, restore.Keep, 1)
+}
+
+func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheHighestVersionKnown(t *testing.T) {
+	t.Parallel()
+	milk := note.Hash([]byte("milk"))
+	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records[0].Version = 6
+	older := head(1, "a.md", 5)
+	older.Version = 4
+
+	got := restore.PlanRecovery(records, heads(older), map[string]string{"a.md": milk})
+
+	action := wantAction(t, got, restore.Send, 1)
+	if action.ParentVersion != 6 {
+		t.Errorf("parent version = %d, want 6 so the new revision continues above both", action.ParentVersion)
+	}
+}
+
+func TestPlanRecovery_AdoptsTheVersionOfTheHead(t *testing.T) {
+	t.Parallel()
+	bread := note.Hash([]byte("bread"))
+	records := []restore.Known{record(1, "a.md", bread, 8)}
+	records[0].Version = 9
+	same := head(1, "a.md", 9)
+	same.Hash, same.Version = bread, 4
+
+	got := restore.PlanRecovery(records, heads(same), map[string]string{"a.md": bread})
+
+	if action := wantAction(t, got, restore.Adopt, 1); action.ParentVersion != 4 {
+		t.Errorf("version to adopt = %d, want 4 of the head the server holds", action.ParentVersion)
+	}
+}

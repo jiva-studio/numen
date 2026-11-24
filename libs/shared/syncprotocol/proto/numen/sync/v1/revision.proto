@@ -41,6 +41,10 @@ message Revision {
   bytes author_device_sign_key = 12;
   // signature is 64 bytes over syncprotocol.GetRevisionMessage, under the plugin domain.
   bytes signature = 13;
+  // file_version is signed: 1 for the first revision of a file, the version of the parent plus one for every later one.
+  // A device that holds a version never takes an older revision of the file as its head. A file written again after a
+  // removal or a restore continues from the highest version its author knows. A revision of a version below 1 is invalid.
+  uint64 file_version = 14;
 }
 
 message StoredRevision {

@@ -22,6 +22,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
+// KeyRollback is the health item of a revision from the server that is older than the head this device holds.
+const KeyRollback = "rollback-detected"
+
 var errBlobMissing = errors.New("the server has no blob for a revision")
 
 type run struct {
@@ -41,6 +44,7 @@ type run struct {
 	removals   []removal
 	removalSeq uint64
 	isListing  bool
+	rolledBack []string
 }
 
 func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) error {
@@ -63,6 +67,10 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	rev := stored.GetRevision()
 	record, isKnown := r.getRecord(rev.GetFileId())
 	if isKnown && bytes.Equal(record.HeadRev, stored.GetRevId()) {
+		return nil
+	}
+	if (isKnown || !rev.GetDeleted()) && r.isRegressed(rev, record, isKnown) {
+		r.recordRollback(meta, rev)
 		return nil
 	}
 	if rev.GetDeleted() {
@@ -202,6 +210,7 @@ func (r *run) makeRecord(ctx context.Context, stored *syncv1.StoredRevision, met
 	record := transfer.FileRecord{
 		FileID: rev.GetFileId(), Path: meta.Path, BaseHash: meta.Hash, HeadRev: stored.GetRevId(), Size: meta.Size, ModifiedAt: meta.MTime,
 		Kind: meta.Kind, BlobID: rev.GetBlobId(), BlobHash: rev.GetBlobHash(), BlobSize: rev.GetBlobSize(), SealedKey: nil,
+		Version: rev.GetFileVersion(),
 	}
 	if isKnown && len(previous.SealedKey) > 0 && bytes.Equal(previous.BlobID, rev.GetBlobId()) {
 		record.SealedKey = previous.SealedKey
@@ -330,4 +339,29 @@ func (r *run) getKey(epoch uint32) ([32]byte, bool) {
 		return [32]byte{}, false
 	}
 	return [32]byte(r.keys[at].Key), true
+}
+
+func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKnown bool) bool {
+	floor := r.link.GetFloor(rev.GetFileId())
+	if isKnown {
+		floor = max(floor, record.Version)
+	}
+	return rev.GetFileVersion() <= floor
+}
+
+func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) {
+	text := meta.Path
+	if rev.GetDeleted() {
+		text = fmt.Sprintf("%x", rev.GetFileId())
+	}
+	r.rolledBack = append(r.rolledBack, text)
+}
+
+func (r *run) reportRollbacks(ctx context.Context) error {
+	if len(r.rolledBack) == 0 {
+		return r.deps.Health.Clear(ctx, KeyRollback)
+	}
+	return r.deps.Health.Report(ctx, health.Item{
+		Key: KeyRollback, Severity: health.Error, Text: "The sync server sent an older version of a file", Detail: r.rolledBack[0], Action: nil,
+	})
 }
