@@ -1,7 +1,3 @@
-/**
- * The sharing methods as the dialog and the page call them: the name of the method, the request it
- * sends, and the message of the backend a failed call throws.
- */
 import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { createFolderSharesClient, createReceivedSharesClient } from './shares'
@@ -12,7 +8,7 @@ interface Sent {
   readonly body: unknown
 }
 
-const createClient = (respond: () => Response) => {
+const createClients = (respond: () => Response) => {
   const sent: Sent[] = []
   const api = createApi(SERVICE, {
     origin: 'http://window',
@@ -25,51 +21,49 @@ const createClient = (respond: () => Response) => {
 }
 
 describe('the client of the sharing methods', () => {
-  it('adds a reader by the code, the label and the folder', async () => {
-    const { folder, sent } = createClient(() =>
-      Response.json({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' }),
-    )
-
-    const added = await folder.addReader({
+  it('lists the folders shared with their readers', async () => {
+    const shared = {
       vaultId: 'v1',
       folder: 'Food',
-      code: 'c',
-      label: 'Anna',
-    })
+      state: 'active',
+      readers: [{ label: 'Phone', fingerprint: 'AAAA', state: 'active' }],
+    }
+    const { folder, sent } = createClients(() => Response.json({ shares: [shared] }))
 
-    expect(added).toStrictEqual({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' })
-    expect(sent.at(0)?.url).toMatch(/AddReader$/)
-    expect(sent.at(0)?.body).toStrictEqual({
-      vaultId: 'v1',
-      folder: 'Food',
-      code: 'c',
-      label: 'Anna',
-    })
+    expect(await folder.listShares()).toStrictEqual([shared])
+    expect(sent.at(0)?.url).toMatch(/ListShares$/)
+  })
+
+  it('removes a reader by the fingerprint and stops a share', async () => {
+    const { folder, sent } = createClients(() => Response.json({}))
+
+    await folder.removeReader({ vaultId: 'v1', folder: 'Food', fingerprint: 'AAAA' })
+    await folder.stopShare({ vaultId: 'v1', folder: 'Food' })
+
+    expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
+      ['RemoveReader', { vaultId: 'v1', folder: 'Food', fingerprint: 'AAAA' }],
+      ['StopShare', { vaultId: 'v1', folder: 'Food' }],
+    ])
   })
 
   it('lists the shares received', async () => {
     const share = {
       vaultId: 'r1',
       name: 'Food',
-      ownerFingerprint: 'E',
+      ownerFingerprint: 'EEEE',
       state: 'ready',
       lastSyncedAt: '',
     }
-    const { received } = createClient(() => Response.json({ shares: [share] }))
+    const { received } = createClients(() => Response.json({ shares: [share] }))
 
     expect(await received.listReceived()).toStrictEqual([share])
   })
 
-  it('throws the message of the backend when a call fails', async () => {
-    const { received } = createClient(() =>
-      Response.json(
-        { code: 'failed_precondition', message: 'This invitation is for another person' },
-        { status: 400 },
-      ),
+  it('throws the message of a failed call', async () => {
+    const { folder } = createClients(() =>
+      Response.json({ code: 'failed_precondition', message: 'No identity' }, { status: 400 }),
     )
 
-    await expect(received.acceptInvitation('text')).rejects.toThrow(
-      'This invitation is for another person',
-    )
+    await expect(folder.stopShare({ vaultId: 'v1', folder: 'Food' })).rejects.toThrow('No identity')
   })
 })

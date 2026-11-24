@@ -1,32 +1,37 @@
-import { computed, getCurrentScope, onScopeDispose, reactive, ref } from 'vue'
+import { getCurrentScope, onScopeDispose, reactive, ref } from 'vue'
 import type {
-  ReceivedShare,
-  ReceivedState,
-  Share,
   FolderSharesClient,
+  ReceivedShare,
   ReceivedSharesClient,
-  ShareReader,
+  ReceivedState,
+  SharedFolder,
 } from '../api/shares'
-import { folderSharesClient, readerSharesClient } from '../api/wire'
+import { folderSharesClient, receivedSharesClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import { getShortFingerprint } from '../lib/fingerprint'
-import { getCodeFromLink, getSharingLink } from '../lib/sharingLink'
+import { createPoller } from './polling'
 import { getErrorMessage } from './vaults'
 
 const REFRESH_MS = 2000
 
-interface ShareTarget {
-  readonly vaultId: string
-  readonly folder: string
-}
-
 export interface ReceivedRow {
   readonly vaultId: string
   readonly name: string
-  readonly ownerFingerprint: string
   readonly ownerShort: string
   readonly stateLabel: string
   readonly tone: 'ok' | 'warning' | 'alarm'
+}
+
+export interface DeviceRow {
+  readonly fingerprint: string
+  readonly name: string
+}
+
+export interface GivenRow {
+  readonly vaultId: string
+  readonly folder: string
+  readonly isCreating: boolean
+  readonly devices: readonly DeviceRow[]
 }
 
 const RECEIVED_LABELS: Record<ReceivedState, string> = {
@@ -44,257 +49,85 @@ const RECEIVED_TONES: Record<ReceivedState, ReceivedRow['tone']> = {
 const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
   vaultId: share.vaultId,
   name: share.name,
-  ownerFingerprint: share.ownerFingerprint,
   ownerShort: getShortFingerprint(share.ownerFingerprint),
   stateLabel: RECEIVED_LABELS[share.state],
   tone: RECEIVED_TONES[share.state],
 })
 
-/** Whether a refusal is the warning the person must confirm before the reader is added. */
-export const isIdentityWarning = (message: string): boolean => message === words.otherIdentity
+const getGivenRow = (share: SharedFolder): GivenRow => ({
+  vaultId: share.vaultId,
+  folder: share.folder,
+  isCreating: share.state === 'creating',
+  devices: share.readers
+    .filter((one) => one.state === 'active')
+    .map((one) => ({
+      fingerprint: one.fingerprint,
+      name: words.deviceLabel(one.label, getShortFingerprint(one.fingerprint)),
+    })),
+})
 
-const copyText = (text: string): Promise<void> => globalThis.navigator.clipboard.writeText(text)
-
-const pasteText = (): Promise<string> => globalThis.navigator.clipboard.readText()
-
-function createRepeater(delayMs: number, onFail: (failure: unknown) => void) {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const stop = (): void => {
-    if (timer !== undefined) clearTimeout(timer)
-    timer = undefined
-  }
-  const runAgain = (task: () => Promise<void>): void => {
-    stop()
-    timer = setTimeout(() => {
-      task().catch(onFail)
-    }, delayMs)
-  }
-  if (getCurrentScope() !== undefined) onScopeDispose(stop)
-  return { stop, runAgain }
-}
-
-function createReadField<Info>(read: (text: string) => Promise<Info>) {
-  const text = ref('')
-  const info = ref<Info | undefined>(undefined)
-  const error = ref('')
-  let seq = 0
-
-  async function set(value: string): Promise<void> {
-    text.value = value
-    const mine = ++seq
-    info.value = undefined
-    error.value = ''
-    if (value.trim() === '') return
-    try {
-      const result = await read(value.trim())
-      if (mine === seq) info.value = result
-    } catch (failure) {
-      if (mine === seq) error.value = getErrorMessage(failure)
-    }
-  }
-
-  function clear(): void {
-    seq++
-    text.value = ''
-    info.value = undefined
-    error.value = ''
-  }
-
-  return { text, info, error, set, clear }
-}
-
-export interface ShareViewOptions {
-  readonly client?: FolderSharesClient | undefined
-  readonly target: ShareTarget
-  readonly close: () => void
+export interface SharesViewOptions {
+  readonly given?: FolderSharesClient | undefined
+  readonly received?: ReceivedSharesClient | undefined
   readonly refreshMs?: number
 }
 
-const EMPTY_SHARE: Share = { state: 'notShared', readers: [] }
-
-/** What the dialog "Share..." of a folder holds: the share, the code being read and the invitation given. */
-export function createShareView(options: ShareViewOptions) {
-  const { client = folderSharesClient, target, close, refreshMs = REFRESH_MS } = options
-  const share = ref<Share>(EMPTY_SHARE)
-  const label = ref('')
-  const invitation = ref('')
-  const sharedName = ref('')
+/** What the page "Shared folders" holds: the folders this account shares with their devices, and the folders shared with it. */
+export function createSharesView(options: SharesViewOptions = {}) {
+  const { given = folderSharesClient, received = receivedSharesClient } = options
+  const gives = ref<readonly GivenRow[]>([])
+  const receives = ref<readonly ReceivedRow[]>([])
   const error = ref('')
-  const isBusy = ref(false)
-  const field = createReadField((text) => client.readReaderCode(getCodeFromLink(text)))
-  const repeater = createRepeater(refreshMs, (failure) => {
+  const poller = createPoller(options.refreshMs ?? REFRESH_MS, fail)
+
+  if (getCurrentScope() !== undefined) onScopeDispose(poller.stop)
+
+  function fail(failure: unknown): void {
     error.value = getErrorMessage(failure)
-  })
+  }
 
   async function load(): Promise<void> {
-    repeater.stop()
     try {
-      share.value = await client.getShare(target)
-      if (share.value.error !== undefined) error.value = share.value.error
+      const [shared, taken] = await Promise.all([given.listShares(), received.listReceived()])
+      gives.value = shared.map(getGivenRow)
+      receives.value = taken.map(getReceivedRow)
+      error.value = ''
+      const isBusy =
+        shared.some((one) => one.state === 'creating') ||
+        taken.some((one) => one.state === 'receiving')
+      if (isBusy) poller.runAgain(load)
     } catch (failure) {
-      error.value = getErrorMessage(failure)
+      fail(failure)
     }
-    if (share.value.state === 'creating') repeater.runAgain(load)
   }
 
-  async function setCode(text: string): Promise<void> {
-    await field.set(text)
-    if (label.value === '') label.value = field.info.value?.label ?? ''
-  }
-
-  async function guard(work: () => Promise<void>): Promise<void> {
-    isBusy.value = true
-    error.value = ''
+  async function change(work: () => Promise<void>): Promise<void> {
     try {
       await work()
-    } catch (failure) {
-      error.value = getErrorMessage(failure)
-    } finally {
-      isBusy.value = false
-    }
-  }
-
-  const add = (confirmChange: boolean): Promise<void> =>
-    guard(async () => {
-      const code = getCodeFromLink(field.text.value)
-      const added = await client.addReader({
-        ...target,
-        code,
-        label: label.value.trim(),
-        confirmChange,
-      })
-      invitation.value = added.invitation
-      sharedName.value = label.value.trim()
-      field.clear()
-      label.value = ''
       await load()
-    })
-
-  const removeReader = (reader: ShareReader): Promise<void> =>
-    guard(async () => {
-      await client.removeReader({ ...target, fingerprint: reader.fingerprint })
-      await load()
-    })
-
-  const stopShare = (): Promise<void> =>
-    guard(async () => {
-      await client.stopShare(target)
-      invitation.value = ''
-      sharedName.value = ''
-      await load()
-    })
-
-  return reactive({
-    target,
-    share,
-    code: field.text,
-    fingerprint: computed(() => field.info.value?.fingerprint ?? ''),
-    codeError: computed(() => (field.error.value === '' ? '' : words.notSharingLink)),
-    sharedName,
-    people: computed(() => share.value.readers.filter((one) => one.state === 'active')),
-    label,
-    invitation,
-    error,
-    isBusy,
-    load,
-    setCode,
-    setLabel: (value: string): void => {
-      label.value = value
-    },
-    fail: (failure: unknown): void => {
-      error.value = getErrorMessage(failure)
-    },
-    add,
-    removeReader,
-    stopShare,
-    copyInvitation: (): Promise<void> => copyText(invitation.value),
-    copyFingerprint: (value: string): Promise<void> => copyText(value),
-    pasteCode: async (): Promise<void> => setCode(await pasteText()),
-    startAnother: (): void => {
-      invitation.value = ''
-      sharedName.value = ''
-    },
-    stop: repeater.stop,
-    close,
-  })
-}
-
-export type ShareView = ReturnType<typeof createShareView>
-
-export interface ReceivedViewOptions {
-  readonly client?: ReceivedSharesClient | undefined
-  readonly refreshMs?: number
-}
-
-/** What the page "Shares" holds: the code of this account, the invitation being received and the shares received. */
-export function createReceivedView(options: ReceivedViewOptions = {}) {
-  const { client = readerSharesClient, refreshMs = REFRESH_MS } = options
-  const code = ref('')
-  const fingerprint = ref('')
-  const error = ref('')
-  const rows = ref<readonly ReceivedRow[]>([])
-  const isBusy = ref(false)
-  const invitation = createReadField((text) => client.readInvitation(text))
-  const repeater = createRepeater(refreshMs, (failure) => {
-    error.value = getErrorMessage(failure)
-  })
-
-  async function refresh(): Promise<void> {
-    repeater.stop()
-    try {
-      const shares = await client.listReceived()
-      rows.value = shares.map(getReceivedRow)
-      if (shares.some((one) => one.state === 'receiving')) repeater.runAgain(refresh)
     } catch (failure) {
-      error.value = getErrorMessage(failure)
-    }
-  }
-
-  async function load(): Promise<void> {
-    try {
-      const own = await client.getReaderCode()
-      code.value = own.code
-      fingerprint.value = own.fingerprint
-    } catch (failure) {
-      error.value = getErrorMessage(failure)
-    }
-    await refresh()
-  }
-
-  async function receive(): Promise<void> {
-    isBusy.value = true
-    error.value = ''
-    try {
-      await client.acceptInvitation(invitation.text.value.trim())
-      invitation.clear()
-      await refresh()
-    } catch (failure) {
-      error.value = getErrorMessage(failure)
-    } finally {
-      isBusy.value = false
+      fail(failure)
     }
   }
 
   return reactive({
-    code,
-    fingerprint,
-    text: invitation.text,
-    shareName: computed(() => invitation.info.value?.shareName ?? ''),
-    ownerFingerprint: computed(() => invitation.info.value?.ownerFingerprint ?? ''),
-    invitationError: invitation.error,
+    gives,
+    receives,
     error,
-    rows,
-    isBusy,
     load,
-    setText: invitation.set,
-    fail: (failure: unknown): void => {
-      error.value = getErrorMessage(failure)
-    },
-    receive,
-    copyLink: (): Promise<void> => copyText(getSharingLink(code.value)),
-    copyFingerprint: (value: string): Promise<void> => copyText(value),
-    stop: repeater.stop,
+    fail,
+    removeAccess: (row: GivenRow, device: DeviceRow): Promise<void> =>
+      change(() =>
+        given.removeReader({
+          vaultId: row.vaultId,
+          folder: row.folder,
+          fingerprint: device.fingerprint,
+        }),
+      ),
+    stopSharing: (row: GivenRow): Promise<void> =>
+      change(() => given.stopShare({ vaultId: row.vaultId, folder: row.folder })),
+    stop: poller.stop,
   })
 }
 
-export type ReceivedView = ReturnType<typeof createReceivedView>
+export type SharesView = ReturnType<typeof createSharesView>

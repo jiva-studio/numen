@@ -1,70 +1,78 @@
 import { getCurrentScope, onScopeDispose, reactive, ref, shallowRef } from 'vue'
-import type {
-  InvitationState,
-  SharePerson,
-  ShareInvitationClient,
-  ShareRequest,
-} from '../api/invitations'
+import type { FolderSharesClient } from '../api/shares'
+import type { FolderTarget, ShareInvitationClient, ShareRequest } from '../api/invitations'
 import { getErrorMessage } from './vaults'
+import { createPoller } from './polling'
 
 const REFRESH_MS = 2000
 
 export interface InvitationViewOptions {
-  readonly client: ShareInvitationClient
-  readonly target: { readonly vaultId: string; readonly folder: string }
+  readonly invitations: ShareInvitationClient
+  readonly shares: FolderSharesClient
+  readonly target: FolderTarget
   readonly close: () => void
   readonly refreshMs?: number
 }
 
-type InvitationPhase = 'starting' | InvitationState
+export interface SharePerson {
+  readonly deviceName: string
+  readonly fingerprint: string
+}
 
-/** What the dialog "Share..." holds: the link to send, who waits for an answer, and who was allowed. */
+/** What the dialog "Share..." holds: the link to send, the device that asks to read, and the devices that read. */
 export function createInvitationView(options: InvitationViewOptions) {
-  const { client, target, close, refreshMs = REFRESH_MS } = options
+  const { invitations, shares, target, close, refreshMs = REFRESH_MS } = options
+  const id = ref('')
   const link = ref('')
-  const phase = ref<InvitationPhase>('starting')
+  const expiresAt = ref('')
+  const isStarting = ref(true)
+  const isLinkAlive = ref(false)
   const request = shallowRef<ShareRequest | undefined>(undefined)
   const people = shallowRef<readonly SharePerson[]>([])
   const error = ref('')
   const isBusy = ref(false)
-  let timer: ReturnType<typeof setTimeout> | undefined
+  const poller = createPoller(refreshMs, fail)
 
-  const stop = (): void => {
-    if (timer !== undefined) clearTimeout(timer)
-    timer = undefined
-  }
-  if (getCurrentScope() !== undefined) onScopeDispose(stop)
-
-  async function refresh(): Promise<void> {
-    stop()
-    try {
-      const status = await client.getInvitationStatus(target)
-      phase.value = status.state
-      request.value = status.requests.at(0)
-      people.value = status.people
-    } catch (failure) {
-      error.value = getErrorMessage(failure)
-    }
-    if (phase.value === 'waiting') {
-      timer = setTimeout(() => {
-        refresh().catch(fail)
-      }, refreshMs)
-    }
-  }
+  if (getCurrentScope() !== undefined) onScopeDispose(poller.stop)
 
   function fail(failure: unknown): void {
     error.value = getErrorMessage(failure)
   }
 
-  async function start(): Promise<void> {
+  const isTarget = (one: FolderTarget): boolean =>
+    one.vaultId === target.vaultId && one.folder === target.folder
+
+  async function refresh(): Promise<void> {
     try {
-      const started = await client.startShareInvitation(target)
-      link.value = started.link
-      phase.value = 'waiting'
+      const [alive, requests, shared] = await Promise.all([
+        invitations.listShareInvitations(),
+        invitations.listShareRequests(),
+        shares.listShares(),
+      ])
+      isLinkAlive.value = alive.some((one) => one.id === id.value)
+      request.value = requests.find(isTarget)
+      people.value = (shared.find(isTarget)?.readers ?? [])
+        .filter((one) => one.state === 'active')
+        .map((one) => ({ deviceName: one.label, fingerprint: one.fingerprint }))
+      error.value = ''
     } catch (failure) {
       fail(failure)
+    }
+    if (isLinkAlive.value || request.value !== undefined) poller.runAgain(refresh)
+  }
+
+  async function start(): Promise<void> {
+    try {
+      const started = await invitations.startShareInvitation(target)
+      id.value = started.id
+      link.value = started.link
+      expiresAt.value = started.expiresAt
+    } catch (failure) {
+      fail(failure)
+      isStarting.value = false
       return
     }
+    isStarting.value = false
     await refresh()
   }
 
@@ -80,31 +88,30 @@ export function createInvitationView(options: InvitationViewOptions) {
     }
   }
 
+  const answerRequest = (reply: (requestId: string) => Promise<void>): Promise<void> =>
+    answer(async () => {
+      if (request.value !== undefined) await reply(request.value.requestId)
+    })
+
   return reactive({
     target,
     link,
-    phase,
+    expiresAt,
+    isStarting,
+    isLinkAlive,
     request,
     people,
     error,
     isBusy,
     start,
     fail,
-    approve: (): Promise<void> =>
-      answer(async () => {
-        if (request.value !== undefined) await client.approveShareRequest(request.value.requestId)
-      }),
-    decline: (): Promise<void> =>
-      answer(async () => {
-        if (request.value !== undefined) await client.declineShareRequest(request.value.requestId)
-      }),
-    revoke: (): Promise<void> =>
-      answer(async () => {
-        await client.revokeShareInvitation(target)
-        close()
-      }),
+    approve: (): Promise<void> => answerRequest((one) => invitations.approveShareRequest(one)),
+    decline: (): Promise<void> => answerRequest((one) => invitations.declineShareRequest(one)),
+    revoke: (): Promise<void> => answer(() => invitations.revokeShareInvitation(id.value)),
+    removeAccess: (person: SharePerson): Promise<void> =>
+      answer(() => shares.removeReader({ ...target, fingerprint: person.fingerprint })),
     copyLink: (): Promise<void> => globalThis.navigator.clipboard.writeText(link.value),
-    stop,
+    stop: poller.stop,
     close,
   })
 }

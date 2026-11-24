@@ -1,63 +1,103 @@
 <script setup lang="ts">
-/** The dialog "Accept an invitation": one field for the invitation a person sent, and the button that accepts it. */
+/**
+ * The dialog "Accept a shared folder": the link pasted and what it offers, then the code to tell the owner
+ * while the owner decides, then how the request ended.
+ */
 import { computed } from 'vue'
-import { Button, ModalDialog } from '@numen/ui'
-import type { ReceivedView } from '../model/shares'
+import { Button, ModalDialog, Spinner } from '@numen/ui'
+import { getCodeText } from '../lib/code'
+import { getExpiryText } from '../lib/expiry'
+import { getShortFingerprint } from '../lib/fingerprint'
+import type { AcceptanceView } from '../model/acceptance'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ view: ReceivedView }>()
-
-const emit = defineEmits<{ (event: 'close'): void }>()
+const props = defineProps<{ view: AcceptanceView }>()
 
 /* --------------------------------- State ---------------------------------- */
-const problem = computed(() => props.view.error || props.view.invitationError)
-const canAccept = computed(() => !props.view.isBusy && props.view.text.trim() !== '')
+const isLink = computed(() => props.view.phase === 'link')
+const isWaiting = computed(() => props.view.phase === 'connecting' || props.view.phase === 'waiting')
+const canAccept = computed(() => isLink.value && props.view.preview !== undefined)
+const endText = computed(() => {
+  switch (props.view.phase) {
+    case 'received':
+      return words.receivedDone
+    case 'declined':
+      return words.declinedText
+    case 'used':
+      return words.usedText
+    case 'expired':
+      return words.expiredText
+    case 'failed':
+      return props.view.reason === '' ? words.failedText : props.view.reason
+    default:
+      return ''
+  }
+})
+const problem = computed(() => props.view.error || props.view.previewError)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event): void {
-  props.view.setText((event.target as HTMLTextAreaElement).value).catch(props.view.fail)
+  props.view.setLink((event.target as HTMLTextAreaElement).value).catch(props.view.fail)
 }
 
 function onAccept(): void {
-  if (!canAccept.value) return
-  props.view
-    .receive()
-    .then(() => {
-      if (props.view.error === '') emit('close')
-    })
-    .catch(props.view.fail)
+  if (canAccept.value) props.view.accept().catch(props.view.fail)
 }
 </script>
 
 <template>
   <ModalDialog
     is-form
-    :label="words.acceptInvitation"
+    :label="words.acceptTitle"
     :hint="words.acceptText"
+    :step="view.phase"
     @submit="onAccept"
-    @cancel="emit('close')"
+    @cancel="view.close"
   >
-    <label class="sync-field">
-      <span class="sync-field__label">{{ words.invitationField }}</span>
+    <label v-if="isLink" class="sync-field">
+      <span class="sync-field__label">{{ words.linkField }}</span>
       <textarea
         class="sync-field__input sync-field__input--code"
         rows="4"
         :value="view.text"
-        :placeholder="words.invitationPlaceholder"
-        :aria-invalid="problem !== ''"
+        :placeholder="words.linkPlaceholder"
+        :aria-invalid="view.previewError !== ''"
         @input="onInput"
       />
     </label>
-    <p v-if="view.shareName !== ''" class="sync-dialog__text" role="status">
-      {{ words.willRead(view.shareName) }}. {{ words.fromPerson(view.ownerFingerprint) }}
+    <div v-if="view.preview" class="share-result" role="status">
+      <p class="sync-dialog__text">
+        {{ words.folderOffer(view.preview.folder) }} ({{ words.readOnly.toLowerCase() }}).
+        {{ words.fromOwner(getShortFingerprint(view.preview.ownerFingerprint)) }}.
+      </p>
+      <p class="sync-dialog__text sync-dialog__text--hushed">
+        {{ words.linkValidUntil(getExpiryText(view.preview.expiresAt)) }}
+      </p>
+    </div>
+    <p v-if="view.phase === 'connecting'" class="sync-dialog__text" role="status">
+      <Spinner class="sync-dialog__spinner" />
+      {{ words.connecting }}
     </p>
+    <div v-if="view.phase === 'waiting'" class="share-result" role="status">
+      <p class="sync-dialog__text">{{ words.codeText }}</p>
+      <p class="share-code">{{ getCodeText(view.code) }}</p>
+      <p class="sync-dialog__text">
+        <Spinner class="sync-dialog__spinner" />
+        {{ words.waitingForOwner }}
+      </p>
+    </div>
+    <p v-if="endText !== ''" class="sync-dialog__text" role="status">{{ endText }}</p>
     <p v-if="problem !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
       {{ problem }}
     </p>
     <template #actions>
-      <Button variant="ghost" @click="emit('close')">{{ words.cancel }}</Button>
-      <Button type="submit" :disabled="!canAccept">{{ words.accept }}</Button>
+      <template v-if="isLink">
+        <Button variant="ghost" @click="view.close">{{ words.cancel }}</Button>
+        <Button type="submit" :disabled="!canAccept">{{ words.accept }}</Button>
+      </template>
+      <Button v-else-if="isWaiting" variant="ghost" @click="view.close">{{ words.cancel }}</Button>
+      <Button v-else @click="view.close">{{ words.done }}</Button>
     </template>
   </ModalDialog>
 </template>

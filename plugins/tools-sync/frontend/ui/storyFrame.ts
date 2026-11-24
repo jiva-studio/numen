@@ -1,8 +1,8 @@
 const FRAME =
-  'box-sizing:border-box;inline-size:56rem;block-size:40rem;padding:1rem;overflow:auto;' +
-  'transform:translateZ(0);background:var(--numen-surface);color:var(--numen-ink)'
+  'position:relative;box-sizing:border-box;inline-size:100vw;block-size:100vh;padding:1rem;overflow:auto;' +
+  'background:var(--numen-surface);color:var(--numen-ink)'
 
-/** Draws a story in a frame as large as a tab, so a dialog covers the frame and not the whole page. */
+/** Draws a story in a frame as large as the window, where every dialog is centred under one backdrop. */
 export const frameDecorator = () => ({
-  template: `<div style="${FRAME}"><story /></div>`,
+  template: `<div class="numen" style="${FRAME}"><story /></div>`,
 })

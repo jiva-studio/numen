@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * The dialog "Share <folder>" of the invitation: the link to send with its validity and the wait for the
- * person, the request to read with its code and the buttons that allow or decline it, and the people who
- * can read the folder once one is allowed.
+ * The dialog "Share <folder>": the link to send with its validity, the wait for a device, the request to read
+ * with its code and the buttons that allow or decline it, and the devices that read the folder.
  */
 import { computed } from 'vue'
-import { Check, Copy } from '@lucide/vue'
+import { Copy } from '@lucide/vue'
 import { Button, ModalDialog, Spinner } from '@numen/ui'
+import { getCodeText } from '../lib/code'
+import { getExpiryText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
 import type { InvitationView } from '../model/invitation'
 import { WORDS as words } from '../words'
@@ -17,19 +18,11 @@ const props = defineProps<{ state: InvitationView }>()
 
 /* --------------------------------- State ---------------------------------- */
 const folderName = computed(() => props.state.target.folder.split('/').at(-1) ?? '')
-const hasRequest = computed(() => props.state.request !== undefined)
-const isAsking = computed(() => props.state.phase === 'waiting' && hasRequest.value)
-const isWaiting = computed(() => props.state.phase === 'waiting' && !hasRequest.value)
-const accepted = computed(() => props.state.people.at(-1))
+const isAsking = computed(() => props.state.request !== undefined)
+const isWaiting = computed(() => props.state.isLinkAlive && !isAsking.value)
+const step = computed(() => (isAsking.value ? 'asking' : props.state.isLinkAlive ? 'link' : 'done'))
 const getDevice = (name: string, fingerprint: string): string =>
   words.deviceLabel(name, getShortFingerprint(fingerprint))
-const requester = computed(() =>
-  getDevice(props.state.request?.deviceName ?? '', props.state.request?.fingerprint ?? ''),
-)
-const acceptedDevice = computed(() =>
-  getDevice(accepted.value?.deviceName ?? '', accepted.value?.fingerprint ?? ''),
-)
-const isEnded = computed(() => props.state.phase === 'approved')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCopy(): void {
@@ -53,14 +46,14 @@ function onDecline(): void {
   <ModalDialog
     :label="words.shareDialogTitle(folderName)"
     :hint="words.shareDialogText"
-    :step="state.phase"
+    :step="step"
     @cancel="state.close"
   >
-    <p v-if="state.phase === 'starting'" class="sync-dialog__text" role="status">
+    <p v-if="state.isStarting" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />
       {{ words.preparing }}
     </p>
-    <div v-if="isWaiting || isAsking" class="share-result">
+    <div v-if="state.isLinkAlive" class="share-result">
       <textarea
         class="sync-field__input sync-field__input--code"
         readonly
@@ -72,28 +65,28 @@ function onDecline(): void {
         <Copy :size="14" aria-hidden="true" />
         {{ words.copyLinkButton }}
       </Button>
-      <p class="sync-dialog__text sync-dialog__text--hushed">{{ words.invitationValidity }}</p>
+      <p class="sync-dialog__text sync-dialog__text--hushed">
+        {{ words.validUntil(getExpiryText(state.expiresAt)) }}
+      </p>
+      <Button variant="ghost" size="small" :disabled="state.isBusy" @click="onRevoke">
+        {{ words.revoke }}
+      </Button>
     </div>
     <p v-if="isWaiting" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />
       {{ words.waitingForPerson }}
     </p>
-    <div v-if="isAsking && state.request" class="share-result" role="alert">
+    <div v-if="state.request" class="share-result" role="alert">
       <p class="sync-dialog__text">
-        {{ words.wantsToRead(requester, state.request.folderName) }}
+        {{
+          words.wantsToRead(
+            getDevice(state.request.deviceName, state.request.fingerprint),
+            folderName,
+          )
+        }}
+        {{ words.confirmationCode(getCodeText(state.request.code)) }}
       </p>
-      <p class="sync-dialog__text">{{ words.confirmationCode(state.request.code) }}</p>
     </div>
-    <p v-if="isEnded" class="sync-dialog__text" role="status">
-      <Check :size="14" aria-hidden="true" />
-      {{ words.sharedWithName(acceptedDevice) }}
-    </p>
-    <p v-if="state.phase === 'declined'" class="sync-dialog__text" role="status">
-      {{ words.declinedText }}
-    </p>
-    <p v-if="state.phase === 'expired'" class="sync-dialog__text" role="status">
-      {{ words.expiredText }}
-    </p>
     <p v-if="state.error !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
       {{ state.error }}
     </p>
@@ -103,9 +96,18 @@ function onDecline(): void {
         <SyncRow
           v-for="person in state.people"
           :key="person.fingerprint"
-          :name="person.deviceName === '' ? words.deviceName : person.deviceName"
+          :name="getDevice(person.deviceName, person.fingerprint)"
         >
-          <span class="sync-row__detail">{{ getShortFingerprint(person.fingerprint) }}</span>
+          <template #actions>
+            <Button
+              variant="ghost"
+              size="small"
+              :disabled="state.isBusy"
+              @click="state.removeAccess(person).catch(state.fail)"
+            >
+              {{ words.removeAccess }}
+            </Button>
+          </template>
         </SyncRow>
       </ul>
     </section>
@@ -115,12 +117,6 @@ function onDecline(): void {
           {{ words.decline }}
         </Button>
         <Button :disabled="state.isBusy" @click="onAllow">{{ words.allow }}</Button>
-      </template>
-      <template v-else-if="isWaiting">
-        <Button variant="ghost" :disabled="state.isBusy" @click="onRevoke">
-          {{ words.revoke }}
-        </Button>
-        <Button @click="state.close">{{ words.done }}</Button>
       </template>
       <Button v-else @click="state.close">{{ words.done }}</Button>
     </template>

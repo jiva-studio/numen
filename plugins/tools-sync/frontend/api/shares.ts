@@ -1,39 +1,23 @@
 /**
- * The JSON messages of the sharing methods the plugin's backend serves, and the client that calls them.
+ * The JSON messages of the sharing methods the plugin's backend serves, and the clients that call them.
  * Keys and meaning match the Go messages in backend/api.
  */
-import type { Api, ApiError } from '@numen/plugin-sdk'
+import type { Api } from '@numen/plugin-sdk'
+import { call, type Empty } from './call'
 
 type ShareState = 'notShared' | 'creating' | 'active'
-type ReaderState = 'active' | 'removed'
 
 export interface ShareReader {
   readonly label: string
   readonly fingerprint: string
-  readonly state: ReaderState
+  readonly state: 'active' | 'removed'
 }
 
-export interface Share {
+export interface SharedFolder {
+  readonly vaultId: string
+  readonly folder: string
   readonly state: ShareState
   readonly readers: readonly ShareReader[]
-  readonly error?: string
-}
-
-interface ReaderCode {
-  readonly code: string
-  readonly fingerprint: string
-}
-
-interface ReaderCodeInfo {
-  readonly fingerprint: string
-  readonly label?: string
-}
-
-interface InvitationInfo {
-  readonly shareName: string
-  readonly ownerFingerprint: string
-  readonly isForThisAccount: boolean
-  readonly alreadyReceived: boolean
 }
 
 export type ReceivedState = 'receiving' | 'ready' | 'ended'
@@ -51,54 +35,26 @@ interface FolderRequest {
   readonly folder: string
 }
 
-interface AddReaderRequest extends FolderRequest {
-  readonly code: string
-  readonly label: string
-  readonly confirmChange?: boolean
-}
-
 interface RemoveReaderRequest extends FolderRequest {
   readonly fingerprint: string
 }
 
-interface AddedReader {
-  readonly invitation: string
-  readonly fingerprint: string
-}
-
-/** The calls of the owner of a folder: the share of the folder and the readers of it. */
+/** The calls of the owner of a folder: the folders shared and the readers of them. */
 export interface FolderSharesClient {
-  readReaderCode(code: string): Promise<ReaderCodeInfo>
-  getShare(request: FolderRequest): Promise<Share>
-  addReader(request: AddReaderRequest): Promise<AddedReader>
+  listShares(): Promise<readonly SharedFolder[]>
   removeReader(request: RemoveReaderRequest): Promise<void>
   stopShare(request: FolderRequest): Promise<void>
 }
 
-/** The calls of a reader: the code of this account, the invitation and the folders received. */
+/** The calls of a reader: the folders received. */
 export interface ReceivedSharesClient {
-  getReaderCode(): Promise<ReaderCode>
-  readInvitation(text: string): Promise<InvitationInfo>
-  acceptInvitation(text: string): Promise<void>
   listReceived(): Promise<readonly ReceivedShare[]>
-}
-
-type Empty = Record<string, never>
-
-const createFailure = (error: ApiError): Error => new Error(error.message)
-
-async function call<Req, Res>(api: Api, method: string, request: Req): Promise<Res> {
-  const result = await api.call<Req, Res>(method, request)
-  if (!result.ok) throw createFailure(result.error)
-  return result.value
 }
 
 export function createFolderSharesClient(api: Api): FolderSharesClient {
   return {
-    readReaderCode: (code) =>
-      call<{ code: string }, ReaderCodeInfo>(api, 'ReadReaderCode', { code }),
-    getShare: (request) => call<FolderRequest, Share>(api, 'GetShare', request),
-    addReader: (request) => call<AddReaderRequest, AddedReader>(api, 'AddReader', request),
+    listShares: async () =>
+      (await call<Empty, { shares: readonly SharedFolder[] }>(api, 'ListShares', {})).shares,
     removeReader: async (request) => {
       await call<RemoveReaderRequest, Empty>(api, 'RemoveReader', request)
     },
@@ -110,12 +66,6 @@ export function createFolderSharesClient(api: Api): FolderSharesClient {
 
 export function createReceivedSharesClient(api: Api): ReceivedSharesClient {
   return {
-    getReaderCode: () => call<Empty, ReaderCode>(api, 'GetReaderCode', {}),
-    readInvitation: (text) =>
-      call<{ text: string }, InvitationInfo>(api, 'ReadInvitation', { text }),
-    acceptInvitation: async (text) => {
-      await call<{ text: string }, Empty>(api, 'AcceptInvitation', { text })
-    },
     listReceived: async () =>
       (await call<Empty, { shares: readonly ReceivedShare[] }>(api, 'ListReceived', {})).shares,
   }

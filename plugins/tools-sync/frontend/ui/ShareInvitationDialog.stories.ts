@@ -1,54 +1,64 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
-import type {
-  InvitationState,
-  ShareInvitationClient,
-  SharePerson,
-  ShareRequest,
-} from '../api/invitations'
+import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
+import type { FolderSharesClient, ShareReader } from '../api/shares'
 import { createInvitationView } from '../model/invitation'
 import ShareInvitationDialog from './ShareInvitationDialog.vue'
 import { frameDecorator } from './storyFrame'
 import '../styles.css'
 
-const PHONE: SharePerson = { deviceName: 'Phone', fingerprint: '1111 2222 3333 4444' }
+const TARGET = { vaultId: 'v1', folder: 'Recipes' }
+const PHONE: ShareReader = { label: 'Phone', fingerprint: '1111 2222 3333 4444', state: 'active' }
 const REQUEST: ShareRequest = {
   requestId: 'r1',
+  ...TARGET,
   deviceName: 'Phone',
   fingerprint: '1111 2222 3333 4444',
-  folderName: 'Recipes',
-  code: '482 913',
+  code: '482913',
 }
 
 interface Setup {
-  readonly state?: InvitationState
   readonly request?: ShareRequest
-  readonly people?: SharePerson[]
+  readonly readers?: ShareReader[]
+  readonly isUsed?: boolean
   readonly isPending?: boolean
   readonly failure?: string
 }
 
-const createClient = (setup: Setup): ShareInvitationClient => ({
+const createInvitations = (setup: Setup): ShareInvitationClient => ({
   startShareInvitation: () => {
     if (setup.isPending === true) return new Promise(() => undefined)
     if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))
-    return Promise.resolve({ link: 'numen://invite/3f9a1c', expiresAt: '2026-11-25T12:00:00Z' })
+    return Promise.resolve({ id: 'i1', link: 'numen-share:eyJ2IjoxfQ', expiresAt: '2026-11-25T12:00:00Z' })
   },
-  getInvitationStatus: () =>
-    Promise.resolve({
-      state: setup.state ?? 'waiting',
-      requests: setup.request === undefined ? [] : [setup.request],
-      people: setup.people ?? [],
-    }),
+  listShareInvitations: () =>
+    Promise.resolve(
+      setup.isUsed === true
+        ? []
+        : [{ id: 'i1', folder: 'Recipes', expiresAt: '2026-11-25T12:00:00Z', isRequested: false }],
+    ),
+  listShareRequests: () => Promise.resolve(setup.request === undefined ? [] : [setup.request]),
+  revokeShareInvitation: () => Promise.resolve(),
   approveShareRequest: () => Promise.resolve(),
   declineShareRequest: () => Promise.resolve(),
-  revokeShareInvitation: () => Promise.resolve(),
+})
+
+const createShares = (setup: Setup): FolderSharesClient => ({
+  listShares: () =>
+    Promise.resolve(
+      setup.readers === undefined
+        ? []
+        : [{ ...TARGET, state: 'active' as const, readers: setup.readers }],
+    ),
+  removeReader: () => Promise.resolve(),
+  stopShare: () => Promise.resolve(),
 })
 
 const createState = (setup: Setup) => {
   const state = createInvitationView({
-    client: createClient(setup),
-    target: { vaultId: 'v1', folder: 'Recipes' },
+    invitations: createInvitations(setup),
+    shares: createShares(setup),
+    target: TARGET,
     close: () => undefined,
     refreshMs: 1_000_000,
   })
@@ -74,64 +84,49 @@ export const Starting: Story = {
   args: { state: createState({ isPending: true }) },
 }
 
-export const LinkShown: Story = {
+export const WaitingForDevice: Story = {
   args: { state: createState({}) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('textbox', { name: 'Invitation link' })).toHaveValue(
-      'numen://invite/3f9a1c',
+    const screen = within(canvasElement.ownerDocument.body)
+    await expect(await screen.findByRole('textbox', { name: 'Invitation link' })).toHaveValue(
+      'numen-share:eyJ2IjoxfQ',
     )
-    await expect(canvas.getByText('Valid for 24 hours, works once.')).toBeVisible()
-    await expect(canvas.getByText('Waiting for the person to open the link')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Revoke the link' })).toBeVisible()
+    await expect(screen.getByText(/^Valid until .*, works once\.$/)).toBeVisible()
+    await expect(screen.getByText('Waiting for a device to open the link')).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Copy link' })).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Revoke' })).toBeVisible()
   },
 }
 
-export const RequestWaiting: Story = {
+export const DeviceAsks: Story = {
   args: { state: createState({ request: REQUEST }) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const screen = within(canvasElement.ownerDocument.body)
     await expect(
-      await canvas.findByText('Device «Phone» (1111 2222 3333…) wants to read Recipes.'),
+      await screen.findByText(
+        'Device «Phone» (1111 2222 3333…) wants to read Recipes. Code 482 913',
+      ),
     ).toBeVisible()
-    await expect(canvas.getByText('Code 482 913')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Allow' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Decline' })).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Allow' })).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Decline' })).toBeVisible()
   },
 }
 
-export const Approved: Story = {
-  args: { state: createState({ state: 'approved', people: [PHONE] }) },
+export const DeviceReads: Story = {
+  args: { state: createState({ isUsed: true, readers: [PHONE] }) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(
-      await canvas.findByText('Shared with Device «Phone» (1111 2222 3333…)'),
-    ).toBeVisible()
-    await expect(canvas.getAllByText('1111 2222 3333…')).toHaveLength(2)
-  },
-}
-
-export const Declined: Story = {
-  args: { state: createState({ state: 'declined' }) },
-  play: async ({ canvasElement }) => {
-    await expect(
-      await within(canvasElement).findByText('You declined the request. Nothing is shared.'),
-    ).toBeVisible()
-  },
-}
-
-export const Expired: Story = {
-  args: { state: createState({ state: 'expired' }) },
-  play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText(/The link expired/)).toBeVisible()
+    const screen = within(canvasElement.ownerDocument.body)
+    await expect(await screen.findByText('Device «Phone» (1111 2222 3333…)')).toBeVisible()
+    await expect(screen.getByRole('button', { name: 'Remove access' })).toBeVisible()
+    await expect(screen.queryByRole('textbox', { name: 'Invitation link' })).toBeNull()
   },
 }
 
 export const Failed: Story = {
   args: { state: createState({ failure: 'The server did not answer' }) },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByRole('alert')).toHaveTextContent(
-      'The server did not answer',
-    )
+    await expect(
+      await within(canvasElement.ownerDocument.body).findByRole('alert'),
+    ).toHaveTextContent('The server did not answer')
   },
 }

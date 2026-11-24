@@ -178,20 +178,9 @@ describe('useVaults', () => {
     expect(model.state.cloudVaults.value).toStrictEqual([])
   })
 
-  it('opens and closes the dialog of the cloud', () => {
-    const model = createModel(createClient())
-
-    model.actions.openCloud()
-    expect(model.state.isCloudOpen.value).toBe(true)
-    model.actions.closeCloud()
-
-    expect(model.state.isCloudOpen.value).toBe(false)
-  })
-
   it('connects a vault to a vault of the account and reads the vaults again', async () => {
     const client = createClient()
     const model = createModel(client)
-    model.actions.openCloud()
 
     await model.actions.connectExisting('Test', 'aa11')
 
@@ -200,7 +189,6 @@ describe('useVaults', () => {
       mode: 'existing',
       remoteId: 'aa11',
     })
-    expect(model.state.isCloudOpen.value).toBe(false)
     expect(client.listVaults).toHaveBeenCalled()
   })
 
@@ -223,14 +211,12 @@ describe('useVaults', () => {
 
     it('asks before it connects and keeps the dialog open', async () => {
       const { client, model } = differ(2)
-      model.actions.openCloud()
-
+  
       await model.actions.connectExisting('Test', 'aa11')
 
       expect(model.state.pendingConfirm.value?.text).toBe(
         '2 notes differ from the vault in the cloud. Get it anyway?',
       )
-      expect(model.state.isCloudOpen.value).toBe(true)
       expect(client.connectVault).not.toHaveBeenCalled()
     })
 

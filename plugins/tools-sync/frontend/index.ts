@@ -4,16 +4,21 @@ import {
   type HostServices,
   type PluginContext,
 } from '@numen/plugin-sdk'
-import { folderSharesClient, vaultsClient } from './api/wire'
-import { createShareView } from './model/shares'
+import {
+  acceptInvitationClient,
+  folderSharesClient,
+  shareInvitationClient,
+  vaultsClient,
+} from './api/wire'
+import { createAcceptanceView } from './model/acceptance'
+import { createInvitationView } from './model/invitation'
 import { createSyncState } from './model/sync'
 import { finishSync, startSync } from './model/syncVault'
-import { createReceivedView } from './model/shares'
 import { createSubscriptionView } from './ui/subscriptionView'
-import { createReceivedPage } from './ui/receivedView'
+import { createSharesPage } from './ui/sharesPage'
 import AcceptInvitationDialog from './ui/AcceptInvitationDialog.vue'
 import GetVaultDialog from './ui/GetVaultDialog.vue'
-import ShareDialog from './ui/ShareDialog.vue'
+import ShareInvitationDialog from './ui/ShareInvitationDialog.vue'
 import SyncChoiceDialog from './ui/SyncChoiceDialog.vue'
 import { createSyncView } from './ui/syncStatusView'
 import VaultsView from './ui/VaultsView.vue'
@@ -51,16 +56,17 @@ const registerShare = (plugin: PluginContext, host: HostServices): void => {
     handler: (note) => {
       const dialogs = host.ui.dialogs
       if (dialogs === undefined) return Promise.resolve()
-      const view = createShareView({
-        client: folderSharesClient,
+      const view = createInvitationView({
+        invitations: shareInvitationClient,
+        shares: folderSharesClient,
         target: { vaultId: getCurrentVault(host), folder: note.path },
         close: () => {
           view.stop()
           dialog.close()
         },
       })
-      const dialog = dialogs.open({ component: ShareDialog, props: { state: view } })
-      view.load().catch(view.fail)
+      const dialog = dialogs.open({ component: ShareInvitationDialog, props: { state: view } })
+      view.start().catch(view.fail)
       return Promise.resolve()
     },
   })
@@ -70,17 +76,16 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.command({
     id: ACCEPT_COMMAND,
     handler: () => {
-      const view = createReceivedView()
-      const dialog = host.ui.dialogs?.open({
-        component: AcceptInvitationDialog,
-        props: {
-          view,
-          onClose: () => {
-            view.stop()
-            dialog?.close()
-          },
+      const dialogs = host.ui.dialogs
+      if (dialogs === undefined) return Promise.resolve()
+      const view = createAcceptanceView({
+        client: acceptInvitationClient,
+        close: () => {
+          view.stop()
+          dialog.close()
         },
       })
+      const dialog = dialogs.open({ component: AcceptInvitationDialog, props: { view } })
       return Promise.resolve()
     },
   })
@@ -140,7 +145,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   const state = createSyncState(vaultsClient)
   plugin.register.slotView({ id: SYNC_VIEW, component: createSyncView(state) })
   plugin.register.settingsView({ id: VAULTS_VIEW, component: VaultsView })
-  plugin.register.settingsView({ id: SHARES_VIEW, component: createReceivedPage() })
+  plugin.register.settingsView({ id: SHARES_VIEW, component: createSharesPage() })
   plugin.register.settingsView({
     id: SUBSCRIPTION_VIEW,
     component: createSubscriptionView(plugin, host, createSettingsOpener(plugin, host)),

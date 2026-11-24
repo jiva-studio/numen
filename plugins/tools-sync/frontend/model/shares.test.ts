@@ -1,285 +1,107 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { FolderSharesClient, ReceivedSharesClient, Share } from '../api/shares'
-import { createReceivedView, createShareView, isIdentityWarning } from './shares'
+import type { FolderSharesClient, ReceivedSharesClient, SharedFolder } from '../api/shares'
+import { createSharesView } from './shares'
 
-const TARGET = { vaultId: 'v1', folder: 'Food' }
+const FOOD: SharedFolder = {
+  vaultId: 'v1',
+  folder: 'Food',
+  state: 'active',
+  readers: [
+    { label: 'Phone', fingerprint: '1111 2222 3333 4444', state: 'active' },
+    { label: 'Old tablet', fingerprint: '5555 6666 7777 8888', state: 'removed' },
+  ],
+}
 
-type SharesClient = FolderSharesClient & ReceivedSharesClient
-
-const createClient = (patch: Partial<SharesClient> = {}): SharesClient => ({
-  getReaderCode: vi.fn(() =>
-    Promise.resolve({ code: 'numen-reader-1.abc', fingerprint: 'AAAA BBBB' }),
-  ),
-  readReaderCode: vi.fn(() => Promise.resolve({ fingerprint: 'CCCC DDDD' })),
-  getShare: vi.fn((): Promise<Share> => Promise.resolve({ state: 'notShared', readers: [] })),
-  addReader: vi.fn(() =>
-    Promise.resolve({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' }),
-  ),
-  removeReader: vi.fn(() => Promise.resolve()),
-  stopShare: vi.fn(() => Promise.resolve()),
-  readInvitation: vi.fn(() =>
-    Promise.resolve({
-      shareName: 'Food',
-      ownerFingerprint: 'EEEE FFFF',
-      isForThisAccount: true,
-      alreadyReceived: false,
+const createClients = (shared: SharedFolder[] = [FOOD]) => {
+  const given: FolderSharesClient = {
+    listShares: vi.fn(() => Promise.resolve(shared)),
+    removeReader: vi.fn(() => {
+      shared[0] = { ...FOOD, readers: [] }
+      return Promise.resolve()
     }),
-  ),
-  acceptInvitation: vi.fn(() => Promise.resolve()),
-  listReceived: vi.fn(() => Promise.resolve([])),
-  ...patch,
-})
+    stopShare: vi.fn(() => {
+      shared.length = 0
+      return Promise.resolve()
+    }),
+  }
+  const received: ReceivedSharesClient = {
+    listReceived: vi.fn(() =>
+      Promise.resolve([
+        {
+          vaultId: 'r1',
+          name: 'Plans',
+          ownerFingerprint: 'AAAA BBBB CCCC DDDD',
+          state: 'ended' as const,
+          lastSyncedAt: '',
+        },
+      ]),
+    ),
+  }
+  return { given, received, view: createSharesView({ given, received, refreshMs: 10_000 }) }
+}
 
-const createShare = (client: SharesClient) =>
-  createShareView({ client, target: TARGET, close: vi.fn() })
-
-describe('the dialog of a shared folder', () => {
-  it('shows the fingerprint of the reader code that was typed', async () => {
-    const view = createShare(createClient())
-
-    await view.setCode('  numen-reader-1.def ')
-
-    expect(view.fingerprint).toBe('CCCC DDDD')
-  })
-
-  it('drops the answer of a code that was replaced before the answer came', async () => {
-    const answers = new Map<string, (value: { fingerprint: string }) => void>()
-    const client = createClient({
-      readReaderCode: (code) => new Promise((resolve) => answers.set(code, resolve)),
-    })
-    const view = createShare(client)
-
-    const first = view.setCode('first')
-    const second = view.setCode('second')
-    answers.get('second')?.({ fingerprint: 'SECOND' })
-    answers.get('first')?.({ fingerprint: 'FIRST' })
-    await Promise.all([first, second])
-
-    expect(view.fingerprint).toBe('SECOND')
-  })
-
-  it('has the invitation and the name and clears the form once the person is added', async () => {
-    const client = createClient()
-    const view = createShare(client)
-    await view.setCode('numen-reader-1.def')
-    view.setLabel('Anna')
-
-    await view.add(false)
-
-    expect(client.addReader).toHaveBeenCalledWith({
-      ...TARGET,
-      code: 'numen-reader-1.def',
-      label: 'Anna',
-      confirmChange: false,
-    })
-    expect(view.invitation).toBe('numen-invitation-1.xyz')
-    expect([view.code, view.label, view.error]).toStrictEqual(['', '', ''])
-  })
-
-  it('keeps the form and shows the words of a refusal', async () => {
-    const client = createClient({
-      addReader: () => Promise.reject(new Error('A shared vault cannot be shared again')),
-    })
-    const view = createShare(client)
-    await view.setCode('numen-reader-1.def')
-
-    await view.add(false)
-
-    expect(view.error).toBe('A shared vault cannot be shared again')
-    expect(view.code).toBe('numen-reader-1.def')
-    expect(view.invitation).toBe('')
-  })
-
-  it('knows the warning that needs the person to confirm', () => {
-    expect(isIdentityWarning('This person has another identity than before')).toBe(true)
-    expect(isIdentityWarning('That is your own identity')).toBe(false)
-  })
-
-  it('asks the share again while it is being made, and stops when it is active', async () => {
-    vi.useFakeTimers()
-    const states: Share[] = [
-      { state: 'creating', readers: [] },
-      { state: 'active', readers: [{ label: 'Anna', fingerprint: 'CCCC DDDD', state: 'active' }] },
-    ]
-    const client = createClient({
-      getShare: vi.fn(() => Promise.resolve(states.shift() ?? (states[0] as Share))),
-    })
-    const view = createShareView({ client, target: TARGET, close: vi.fn(), refreshMs: 1000 })
-
-    await view.load()
-    expect(view.share.state).toBe('creating')
-    await vi.advanceTimersByTimeAsync(1000)
-
-    expect(view.share.state).toBe('active')
-    expect(client.getShare).toHaveBeenCalledTimes(2)
-    view.stop()
-    vi.useRealTimers()
-  })
-
-  it('removes a reader and reads the share again', async () => {
-    const client = createClient()
-    const view = createShare(client)
-
-    await view.removeReader({ label: 'Anna', fingerprint: 'CCCC DDDD', state: 'active' })
-
-    expect(client.removeReader).toHaveBeenCalledWith({ ...TARGET, fingerprint: 'CCCC DDDD' })
-    expect(client.getShare).toHaveBeenCalledTimes(1)
-  })
-
-  it('forgets the invitation when the sharing stops', async () => {
-    const view = createShare(createClient())
-    await view.setCode('numen-reader-1.def')
-    view.setLabel('Anna')
-    await view.add(false)
-
-    await view.stopShare()
-
-    expect(view.invitation).toBe('')
-  })
-})
-
-describe('the page of the shares received', () => {
-  it('shows the code of this account and the shares received', async () => {
-    const client = createClient({
-      listReceived: () =>
-        Promise.resolve([
-          {
-            vaultId: 'r1',
-            name: 'Food',
-            ownerFingerprint: 'EEEE FFFF',
-            state: 'ready',
-            lastSyncedAt: '',
-          },
-        ]),
-    })
-    const view = createReceivedView({ client })
+describe('the page of the shared folders', () => {
+  it('lists the folders shared by this account with the devices that read them', async () => {
+    const { view } = createClients()
 
     await view.load()
 
-    expect(view.code).toBe('numen-reader-1.abc')
-    expect(view.rows).toStrictEqual([
+    expect(view.gives).toStrictEqual([
       {
-        vaultId: 'r1',
-        name: 'Food',
-        ownerFingerprint: 'EEEE FFFF',
-        ownerShort: 'EEEE FFFF',
-        stateLabel: 'Up to date',
-        tone: 'ok',
+        vaultId: 'v1',
+        folder: 'Food',
+        isCreating: false,
+        devices: [{ fingerprint: '1111 2222 3333 4444', name: 'Device «Phone» (1111 2222 3333…)' }],
       },
     ])
   })
 
-  it('shows who owns the invitation that was pasted', async () => {
-    const view = createReceivedView({ client: createClient() })
-
-    await view.setText('numen-invitation-1.xyz')
-
-    expect([view.shareName, view.ownerFingerprint]).toStrictEqual(['Food', 'EEEE FFFF'])
-  })
-
-  it('reports why an invitation for another reader is refused', async () => {
-    const client = createClient({
-      readInvitation: () => Promise.reject(new Error('This invitation is for another person')),
-    })
-    const view = createReceivedView({ client })
-
-    await view.setText('numen-invitation-1.xyz')
-
-    expect(view.invitationError).toBe('This invitation is for another person')
-    expect(view.shareName).toBe('')
-  })
-
-  it('receives the invitation and empties the field', async () => {
-    const client = createClient()
-    const view = createReceivedView({ client })
-    await view.setText(' numen-invitation-1.xyz ')
-
-    await view.receive()
-
-    expect(client.acceptInvitation).toHaveBeenCalledWith('numen-invitation-1.xyz')
-    expect(view.text).toBe('')
-  })
-
-  it('keeps the invitation and shows the words of a refusal to receive it', async () => {
-    const client = createClient({
-      acceptInvitation: () => Promise.reject(new Error('The owner identity changed')),
-    })
-    const view = createReceivedView({ client })
-    await view.setText('numen-invitation-1.xyz')
-
-    await view.receive()
-
-    expect(view.error).toBe('The owner identity changed')
-    expect(view.text).toBe('numen-invitation-1.xyz')
-  })
-
-  it('words the three states of a received share', async () => {
-    const base = { ownerFingerprint: 'E', lastSyncedAt: '' }
-    const client = createClient({
-      listReceived: () =>
-        Promise.resolve([
-          { ...base, vaultId: 'r1', name: 'One', state: 'receiving' },
-          { ...base, vaultId: 'r2', name: 'Two', state: 'ready' },
-          { ...base, vaultId: 'r3', name: 'Three', state: 'ended' },
-        ]),
-    })
-    const view = createReceivedView({ client, refreshMs: 1_000_000 })
+  it('lists the folders shared with this account and how they stand', async () => {
+    const { view } = createClients()
 
     await view.load()
-    view.stop()
 
-    expect(view.rows.map((row) => row.stateLabel)).toStrictEqual([
-      'Getting the folder…',
-      'Up to date',
-      'The person stopped sharing this folder',
+    expect(view.receives).toStrictEqual([
+      {
+        vaultId: 'r1',
+        name: 'Plans',
+        ownerShort: 'AAAA BBBB CCCC…',
+        stateLabel: 'The person stopped sharing this folder',
+        tone: 'alarm',
+      },
     ])
   })
-})
 
-describe('the dialog of a share, in the words of the product', () => {
-  it('names the person the invitation is for', async () => {
-    const view = createShare(createClient())
-    await view.setCode('numen-reader-1.def')
-    view.setLabel(' Anna ')
+  it('removes the access of a device and lists the folders again', async () => {
+    const { given, view } = createClients()
+    await view.load()
 
-    await view.add(false)
+    await view.removeAccess(view.gives[0]!, view.gives[0]!.devices[0]!)
 
-    expect(view.sharedName).toBe('Anna')
-  })
-
-  it('says a code that cannot be read is not a sharing link', async () => {
-    const client = createClient({
-      readReaderCode: () => Promise.reject(new Error('this is not a reader code or an invitation')),
+    expect(given.removeReader).toHaveBeenCalledWith({
+      vaultId: 'v1',
+      folder: 'Food',
+      fingerprint: '1111 2222 3333 4444',
     })
-    const view = createShare(client)
-
-    await view.setCode('nonsense')
-
-    expect(view.codeError).toBe('This does not look like a sharing link.')
+    expect(view.gives[0]?.devices).toStrictEqual([])
   })
 
-  it('lists only the people who have access', () => {
-    const view = createShare(createClient())
-    view.share = {
-      state: 'active',
-      readers: [
-        { label: 'Anna', fingerprint: 'CCCC DDDD', state: 'active' },
-        { label: 'Bo', fingerprint: 'EEEE FFFF', state: 'removed' },
-      ],
-    }
+  it('stops sharing a folder and drops it from the list', async () => {
+    const { given, view } = createClients()
+    await view.load()
 
-    expect(view.people.map((one) => one.label)).toStrictEqual(['Anna'])
+    await view.stopSharing(view.gives[0]!)
+
+    expect(given.stopShare).toHaveBeenCalledWith({ vaultId: 'v1', folder: 'Food' })
+    expect(view.gives).toStrictEqual([])
   })
 
-  it('takes the code from the clipboard', async () => {
-    vi.stubGlobal('navigator', {
-      clipboard: { readText: () => Promise.resolve('numen-reader-1.xyz') },
-    })
-    const view = createShare(createClient())
+  it('shows the words of a failed list', async () => {
+    const { given, view } = createClients()
+    vi.mocked(given.listShares).mockRejectedValue(new Error('No identity'))
 
-    await view.pasteCode()
+    await view.load()
 
-    expect(view.code).toBe('numen-reader-1.xyz')
-    vi.unstubAllGlobals()
+    expect(view.error).toBe('No identity')
   })
 })

@@ -82,7 +82,6 @@ export function useVaults(options: UseVaultsOptions) {
   const error = ref('')
   const hasIdentity = ref(true)
   const isReachable = ref(true)
-  const isCloudOpen = ref(false)
   const pendingConfirm = shallowRef<PendingConfirm | null>(null)
 
   const rows = computed(() =>
@@ -134,20 +133,11 @@ export function useVaults(options: UseVaultsOptions) {
     return () => clearInterval(timer)
   }
 
-  function openCloud(): void {
-    isCloudOpen.value = true
-  }
-
-  function closeCloud(): void {
-    isCloudOpen.value = false
-    pendingConfirm.value = null
-  }
-
   async function connect(request: Parameters<VaultsClient['connectVault']>[0]): Promise<void> {
     try {
       await client.connectVault(request)
       error.value = ''
-      closeCloud()
+      pendingConfirm.value = null
       await read()
     } catch (failure) {
       if (isServerAway(failure)) isReachable.value = false
@@ -201,14 +191,11 @@ export function useVaults(options: UseVaultsOptions) {
       freeVaults,
       cloudVaults,
       canGetFromCloud,
-      isCloudOpen,
       pendingConfirm,
     },
     actions: {
       load,
       watch,
-      openCloud,
-      closeCloud,
       connectExisting,
       resolveDeletions,
       confirmConnect,

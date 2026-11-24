@@ -15,7 +15,7 @@ describe('the settings views of the sync plugin', () => {
     const views = context.getRegisteredSettingsViews()
     expect(views.map((one) => one.id)).toStrictEqual(['vaults', 'shares', 'subscription'])
     expect(views.at(0)).toMatchObject({ component: VaultsView })
-    expect(views.at(1)).toMatchObject({ component: { name: 'ReceivedPage' } })
+    expect(views.at(1)).toMatchObject({ component: { name: 'SharesPage' } })
     context.dispose()
     vi.unstubAllGlobals()
   })
