@@ -7,4 +7,6 @@ import "context"
 // wholesale invalidates that view.
 //
 // This states what changed. What the upkeep consists of is the index's own concern.
-type IndexMaintenance interface{ ReportChanges(ctx context.Context) error }
+type IndexMaintenance interface {
+	ReportChanges(ctx context.Context) error
+}

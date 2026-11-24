@@ -8,4 +8,6 @@ import (
 
 // FileStats reads what the index recorded of each file of a vault, keyed by
 // path, so a scan can decide what to reparse without reading anything.
-type FileStats interface{ GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) }
+type FileStats interface {
+	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
+}

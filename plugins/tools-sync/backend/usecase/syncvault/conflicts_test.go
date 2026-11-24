@@ -104,7 +104,7 @@ func TestSyncVault_TheSameTextOnBothComputersMakesNoCopyAndNoWarning(t *testing.
 	if _, ok := p.b.ReadNote(target, listCopy); ok {
 		t.Error("a conflict copy of equal notes was made")
 	}
-	if p.b.HasItemKey("conflicts/" + string(target)) || len(p.heads(t)) != 1 {
+	if p.b.HasItemKey("conflicts/"+string(target)) || len(p.heads(t)) != 1 {
 		t.Errorf("health items = %+v with %d files on the server, want no warning and the one note", p.b.Health.List(), len(p.heads(t)))
 	}
 }
@@ -150,7 +150,7 @@ func TestSyncVault_AFileChangedOnTwoComputersKeepsTheHeadAndMakesNoCopyAndNoWarn
 
 	wantNote(t, p.b, target, pdf, pdfText+" there")
 	wantNote(t, p.a, source, pdf, pdfText+" there")
-	if p.b.HasItemKey("conflicts/" + string(target)) || len(p.heads(t)) != 1 {
+	if p.b.HasItemKey("conflicts/"+string(target)) || len(p.heads(t)) != 1 {
 		t.Errorf("health items = %+v with %d files on the server, want no warning and no copy", p.b.Health.List(), len(p.heads(t)))
 	}
 }

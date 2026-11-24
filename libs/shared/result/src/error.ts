@@ -144,6 +144,9 @@ const ERROR_CODE_MESSAGES: Readonly<Partial<Record<number, string>>> = {
   15: 'the file does not match its recorded hash',
   16: 'the requested range is outside the file',
   17: 'This vault is read only',
+  18: 'the file is not on this device yet',
+  19: 'a file with other content is already at this path',
+  20: 'the file has changes that were not part of the request',
 }
 
 /** The message for one error code; empty when there was no error. */

@@ -237,7 +237,6 @@ func registerVault(cfg container.Config, res *container.Resources, root string) 
 // loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
 
-
 // readHeaderTimeout is how long a client of the local service may take to send its request headers.
 const readHeaderTimeout = 10 * time.Second
 
