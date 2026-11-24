@@ -71,16 +71,30 @@ func readMode(mode FileMode) pluginport.KeyFileMode {
 	return pluginport.KeyFileUnset
 }
 
-// UsePlaintext keeps the keys as plaintext from now on.
-func (k *KeyFile) UsePlaintext() {
-	k.passphrase.Set("")
-	k.store.UsePlaintextFile()
+// UsePlaintext keeps the keys as plaintext from now on. Keys the file holds are written again as plaintext.
+func (k *KeyFile) UsePlaintext(ctx context.Context) error {
+	use := func() {
+		k.store.UsePlaintextFile()
+		k.passphrase.Set("")
+	}
+	if k.store.getFileMode() == FileModeUnset {
+		use()
+		return nil
+	}
+	return k.store.ChangeFileMode(ctx, use)
 }
 
-// UsePassphrase encrypts the keys with the passphrase from now on.
+// UsePassphrase encrypts the keys with the passphrase from now on. Keys the file holds are written again
+// under it; a file that is encrypted already must be unlocked first.
 func (k *KeyFile) UsePassphrase(ctx context.Context, passphrase string) error {
-	k.passphrase.Set(passphrase)
-	k.store.UsePassphraseFile(k.passphrase)
+	use := func() {
+		k.passphrase.Set(passphrase)
+		k.store.UsePassphraseFile(k.passphrase)
+	}
+	if k.store.getFileMode() != FileModeUnset {
+		return k.store.ChangeFileMode(ctx, use)
+	}
+	use()
 	return k.check(ctx)
 }
 

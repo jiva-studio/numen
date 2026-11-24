@@ -45,7 +45,9 @@ func NewChoose(file pluginport.KeyFile, remember func(mode pluginport.KeyFileMod
 func (u *Choose) Execute(ctx context.Context, mode pluginport.KeyFileMode, passphrase string) error {
 	switch mode {
 	case pluginport.KeyFilePlaintext:
-		u.file.UsePlaintext()
+		if err := u.file.UsePlaintext(ctx); err != nil {
+			return err
+		}
 	case pluginport.KeyFilePassphrase:
 		if passphrase == "" {
 			return pluginport.ErrEmptyPassphrase

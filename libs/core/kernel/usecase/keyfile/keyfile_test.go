@@ -21,7 +21,10 @@ func (f *recordingFile) GetState(context.Context) (pluginport.KeyFileState, erro
 	return f.state, f.fail
 }
 
-func (f *recordingFile) UsePlaintext() { f.plaintext++ }
+func (f *recordingFile) UsePlaintext(context.Context) error {
+	f.plaintext++
+	return f.fail
+}
 
 func (f *recordingFile) UsePassphrase(_ context.Context, passphrase string) error {
 	f.passphrases = append(f.passphrases, passphrase)

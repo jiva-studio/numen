@@ -14,6 +14,7 @@ import {
   FolderDialogService,
   FlushResult,
   IdentityService,
+  KeyFileService,
   LicenseService,
   LinkDirection,
   LogService,
@@ -79,6 +80,7 @@ export const createConnectionCallRpc = (transport: Transport) =>
 export const createLogRpc = (transport: Transport) => createClient(LogService, transport)
 export const createLicenseRpc = (transport: Transport) => createClient(LicenseService, transport)
 export const createIdentityRpc = (transport: Transport) => createClient(IdentityService, transport)
+export const createKeyFileRpc = (transport: Transport) => createClient(KeyFileService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

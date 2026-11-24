@@ -115,7 +115,9 @@ func TestKeyFileKeepsKeysAsTextAfterAPlaintextChoice(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	file, store := newKeyFile(dir)
-	file.UsePlaintext()
+	if err := file.UsePlaintext(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := store.SetKey(t.Context(), entryName, seedValue); err != nil {
 		t.Fatal(err)
@@ -125,5 +127,34 @@ func TestKeyFileKeepsKeysAsTextAfterAPlaintextChoice(t *testing.T) {
 	state, _ := file.GetState(t.Context())
 	if isEncryptedFile(raw) || state.Mode != pluginport.KeyFilePlaintext || state.Warning == "" {
 		t.Fatalf("encrypted %v, state %+v", isEncryptedFile(raw), state)
+	}
+}
+
+func TestKeyFileWritesTheKeysAgainWhenTheModeChanges(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	file, store := newKeyFile(dir)
+	if err := file.UsePassphrase(t.Context(), passphraseOne); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetKey(t.Context(), entryName, seedValue); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := file.UsePlaintext(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, _ := os.ReadFile(credentialsPath(dir))
+	got, err := store.GetKey(t.Context(), entryName)
+	if isEncryptedFile(raw) || err != nil || got != seedValue {
+		t.Fatalf("encrypted %v, key %q, err %v", isEncryptedFile(raw), got, err)
+	}
+	if err := file.UsePassphrase(t.Context(), passphraseTwo); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ = os.ReadFile(credentialsPath(dir))
+	if !isEncryptedFile(raw) {
+		t.Fatal("the keys stayed as plaintext after the passphrase was chosen")
 	}
 }

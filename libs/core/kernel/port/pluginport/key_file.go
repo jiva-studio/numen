@@ -35,8 +35,9 @@ type KeyFileState struct {
 type KeyFile interface {
 	// GetState returns how the file is kept; IsInUse is false where the system keychain works.
 	GetState(ctx context.Context) (KeyFileState, error)
-	// UsePlaintext keeps the keys of the file as plaintext from now on.
-	UsePlaintext()
+	// UsePlaintext keeps the keys of the file as plaintext from now on. It returns what keeps the file
+	// from being written again, such as a passphrase file that is still locked.
+	UsePlaintext(ctx context.Context) error
 	// UsePassphrase encrypts the keys of the file with the passphrase from now on. It returns
 	// ErrWrongPassphrase for a passphrase that does not open a file that is already encrypted.
 	UsePassphrase(ctx context.Context, passphrase string) error

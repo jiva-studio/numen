@@ -22,7 +22,12 @@ type fakeFile struct {
 }
 
 func (f *fakeFile) GetState(context.Context) (pluginport.KeyFileState, error) { return f.state, nil }
-func (f *fakeFile) UsePlaintext()                                             { f.plaintext++ }
+
+func (f *fakeFile) UsePlaintext(context.Context) error {
+	f.plaintext++
+	return f.err
+}
+
 func (f *fakeFile) UsePassphrase(_ context.Context, passphrase string) error {
 	f.passphrases = append(f.passphrases, passphrase)
 	return f.err

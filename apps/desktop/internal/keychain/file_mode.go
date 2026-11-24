@@ -75,6 +75,22 @@ func (s *Store) GetFileState(ctx context.Context) (FileState, error) {
 	return state, nil
 }
 
+// ChangeFileMode reads the keys the file holds with the mode in force, calls apply to change the mode, and
+// writes the keys again in the new mode. A file that cannot be read keeps its mode.
+func (s *Store) ChangeFileMode(ctx context.Context, apply func()) error {
+	return s.changeEntries(ctx, func() error {
+		entries, err := s.readEntries(ctx)
+		if err != nil {
+			return err
+		}
+		apply()
+		if len(entries) == 0 {
+			return nil
+		}
+		return s.writeEntries(ctx, entries, s.getFileMode())
+	})
+}
+
 // CheckFile reads the credentials file with the passphrase the source gives, so that a wrong passphrase
 // fails here and a right one is kept for the keys that follow.
 func (s *Store) CheckFile(ctx context.Context) error {

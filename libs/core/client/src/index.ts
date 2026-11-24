@@ -23,6 +23,7 @@ export {
   createLogRpc,
   createLicenseRpc,
   createIdentityRpc,
+  createKeyFileRpc,
   NAME_SOURCE,
   type NameSourceCode,
   NOTE_MARKER,
@@ -126,6 +127,14 @@ export {
   type IdentityClient,
   createIdentityClient,
 } from './identity'
+export {
+  type KeyFileClient,
+  type KeyFileFailure,
+  type KeyFileMode,
+  type KeyFileRpc,
+  type KeyFileState,
+  createKeyFileClient,
+} from './keyfile'
 export {
   NoteGraphSchema,
   type Entry,
