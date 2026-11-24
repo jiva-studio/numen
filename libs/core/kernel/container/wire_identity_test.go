@@ -7,6 +7,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
 type memoryKeys map[string]string
@@ -38,7 +39,7 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
 	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all four use cases", use)
 	}

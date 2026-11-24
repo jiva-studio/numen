@@ -66,8 +66,8 @@ func NewChain(root RecoveryKey, account AccountKeys, at time.Time) (Chain, error
 	entry := Entry{
 		Kind:    KindGenesis,
 		Time:    at.UTC().Truncate(time.Second),
-		Signer:  public.Sign,
-		Genesis: &Genesis{Recovery: public, AccountBox: account.BoxPublicKey(), WrappedForRecovery: wrapped},
+		Signer:  slices.Clone(public.Sign),
+		Genesis: &Genesis{Recovery: RecoveryPublicKey{Sign: slices.Clone(public.Sign), Box: public.Box}, AccountBox: account.BoxPublicKey(), WrappedForRecovery: wrapped},
 	}
 	sign(&entry, root)
 	return Chain{entries: []Entry{entry}}, nil
@@ -104,8 +104,8 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 		Prev:      hashEntry(last),
 		Kind:      KindAddDevice,
 		Time:      at.UTC().Truncate(time.Second),
-		Signer:    by.SignerKey(),
-		AddDevice: &AddDevice{Device: device, Name: name},
+		Signer:    slices.Clone(by.SignerKey()),
+		AddDevice: &AddDevice{Device: DevicePublicKey{Sign: slices.Clone(device.Sign), Box: device.Box}, Name: name},
 	}
 	sign(&entry, by)
 	next := Chain{entries: append(slices.Clone(c.entries), entry)}
@@ -166,6 +166,9 @@ func verifyAddDevice(entry Entry, i int, root ed25519.PublicKey, known map[strin
 	if err := checkDeviceName(entry.AddDevice.Name); err != nil {
 		return err
 	}
+	if len(entry.AddDevice.Device.Sign) != ed25519.PublicKeySize {
+		return fmt.Errorf("%w: entry %d has a device signing key of %d bytes", ErrMalformed, i, len(entry.AddDevice.Device.Sign))
+	}
 	added := string(entry.AddDevice.Device.Sign)
 	if _, ok := known[added]; ok || bytes.Equal(entry.AddDevice.Device.Sign, root) {
 		return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)
@@ -193,7 +196,8 @@ func (c Chain) Root() RecoveryPublicKey {
 	if len(c.entries) == 0 || c.entries[0].Genesis == nil {
 		return RecoveryPublicKey{}
 	}
-	return c.entries[0].Genesis.Recovery
+	recovery := c.entries[0].Genesis.Recovery
+	return RecoveryPublicKey{Sign: slices.Clone(recovery.Sign), Box: recovery.Box}
 }
 
 func (c Chain) AccountBoxKey() [32]byte {
@@ -214,7 +218,8 @@ func (c Chain) ListDevices() []Device {
 	var devices []Device
 	for _, entry := range c.entries {
 		if entry.Kind == KindAddDevice && entry.AddDevice != nil {
-			devices = append(devices, Device{Public: entry.AddDevice.Device, Name: entry.AddDevice.Name, AddedAt: entry.Time})
+			public := DevicePublicKey{Sign: slices.Clone(entry.AddDevice.Device.Sign), Box: entry.AddDevice.Device.Box}
+			devices = append(devices, Device{Public: public, Name: entry.AddDevice.Name, AddedAt: entry.Time})
 		}
 	}
 	return devices

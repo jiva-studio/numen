@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -311,5 +313,48 @@ func TestDeleteIdentity_RemovesTheRecordAndAMissingRecordIsNotAnError(t *testing
 	}
 	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
 		t.Errorf("GetIdentity() error = %v, want ErrNoIdentity", err)
+	}
+}
+
+func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	lock := &sync.Mutex{}
+	newDeps := func() identity.Deps {
+		return identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithCreateLock(lock)
+	}
+	first := identity.NewCreateIdentity(newDeps())
+	second := identity.NewCreateIdentity(newDeps())
+	var arrived atomic.Int32
+	both := make(chan struct{})
+	k.keys.onGet = func() {
+		if arrived.Add(1) == 2 {
+			close(both)
+		}
+		select {
+		case <-both:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	creates := []*identity.CreateIdentity{first, second}
+	errs := make([]error, len(creates))
+	var wg sync.WaitGroup
+	for i, create := range creates {
+		wg.Go(func() {
+			_, errs[i] = create.Execute(t.Context(), getLegalWords())
+		})
+	}
+	wg.Wait()
+	created, exists := 0, 0
+	for _, err := range errs {
+		switch {
+		case err == nil:
+			created++
+		case errors.Is(err, identitydomain.ErrIdentityExists):
+			exists++
+		}
+	}
+	if created != 1 || exists != 1 || k.keys.setCalled != 1 {
+		t.Errorf("created = %d, refused = %d, writes = %d, want 1, 1, 1", created, exists, k.keys.setCalled)
 	}
 }

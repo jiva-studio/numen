@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
 	licensingadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/licensing"
@@ -48,7 +49,7 @@ type pluginInstall struct {
 	SafeMode        bool
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
-	KeyStore        pluginport.KeyStore
+	Keys            identity.SharedKeys
 }
 
 func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {

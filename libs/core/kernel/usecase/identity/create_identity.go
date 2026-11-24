@@ -25,6 +25,8 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
+	u.deps.createLock.Lock()
+	defer u.deps.createLock.Unlock()
 	if err := u.checkAbsent(ctx); err != nil {
 		return identitydomain.Identity{}, err
 	}
