@@ -77,14 +77,6 @@ describe('the devices section', () => {
     expect(rows[1]?.attributes('tabindex')).toBe('0')
   })
 
-  it('hints at the right-click only while another device is listed', async () => {
-    const withOther = await mountSection([THIS, OTHER])
-    expect(withOther.text()).toContain('Right-click a device to remove it.')
-    dispose(withOther)
-    const alone = await mountSection([THIS])
-    expect(alone.text()).not.toContain('Right-click')
-  })
-
 
   it('revokes a device only after the person confirms the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))

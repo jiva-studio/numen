@@ -4,7 +4,6 @@ export const WORDS = {
   deviceLinkNew: 'Link a new device',
   deviceJoin: 'Use existing',
   deviceThis: 'This device',
-  devicesHint: 'Right-click a device to remove it.',
   deviceMenu: (name: string) => `Actions for ${name}`,
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   deviceRevoke: 'Remove',

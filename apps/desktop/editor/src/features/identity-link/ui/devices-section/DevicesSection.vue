@@ -26,7 +26,6 @@ const shown = computed(() => {
   return [props.current]
 })
 
-const hasOther = computed(() => shown.value.some((device) => !device.isThis && !device.isRevoked))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose(): void {
@@ -45,7 +44,6 @@ function onClose(): void {
         @revoke="asked = $event"
       />
     </ul>
-    <p v-if="hasOther" class="devices__hint">{{ words.devicesHint }}</p>
     <p v-if="problem !== ''" role="alert" class="devices__problem">{{ problem }}</p>
 
     <LinkDialog
@@ -79,13 +77,6 @@ function onClose(): void {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.devices__hint {
-  margin: 0;
-  padding: 0 1rem 0.75rem;
-  font-size: var(--numen-text-2);
-  color: var(--numen-hushed);
 }
 
 .devices__problem {
