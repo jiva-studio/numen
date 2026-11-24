@@ -8,7 +8,7 @@ import (
 
 func TestFileCreateSchemaRequiresText(t *testing.T) {
 	_, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +23,7 @@ func TestFileCreateSchemaRequiresText(t *testing.T) {
 
 func TestFileCreateWithoutTextIsRejectedAsMissing(t *testing.T) {
 	v, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestFileCreateWithoutTextIsRejectedAsMissing(t *testing.T) {
 
 func TestFileCreateWithEmptyTextCreatesAnEmptyFile(t *testing.T) {
 	v, svc := setupTestVault()
-	registry, err := svc.Registry()
+	registry, err := svc.BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

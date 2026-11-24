@@ -78,7 +78,7 @@ func TestTheIdentityPermissionIsDeclarable(t *testing.T) {
 	if manifest.PermissionIdentity != "identity" {
 		t.Fatalf("PermissionIdentity = %q", manifest.PermissionIdentity)
 	}
-	if !slices.Contains(manifest.PluginPermissions(), manifest.PermissionIdentity) {
+	if !slices.Contains(manifest.ListPluginPermissions(), manifest.PermissionIdentity) {
 		t.Error("PluginPermissions does not list identity")
 	}
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"org.example.atlas","name":"Atlas","version":"1.0.0","permissions":["identity"]}`))

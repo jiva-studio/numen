@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   formatPrice,
   formatSize,
+  getOfferDetail,
+  getOfferLine,
   getPlanLine,
   getSubscriptionView,
   getUsagePercent,
@@ -78,12 +80,12 @@ describe('getSubscriptionView', () => {
     expect(ready('deleted').badge).toBe('Deleted')
   })
 
-  it('has no badge for an account without identity, because the text says it', () => {
+  it('badges an account without identity with the identity it needs', () => {
     const view = getSubscriptionView({ status: 'noIdentity', phase: '', dates: DATES })
 
-    expect(view.badge).toBe('')
+    expect(view.badge).toBe('Needs an identity')
     expect(view.text).toBe(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
   })
 
@@ -147,5 +149,18 @@ describe('getUsageText', () => {
 
   it('shows the used space above the quota as it is', () => {
     expect(getUsageText(20 * GIB, 10 * GIB)).toBe('20 GB of 10 GB')
+  })
+})
+
+describe('getOfferLine', () => {
+  const PRO_OFFER = { id: 'pro', name: 'Pro', size: '250 GB', price: '$30' }
+
+  it('names the plan with its size and its price for a month', () => {
+    expect(getOfferLine(PRO_OFFER)).toBe('Pro, 250 GB, $30 / month')
+    expect(getOfferDetail(PRO_OFFER)).toBe('250 GB, $30 / month')
+  })
+
+  it('leaves out the price of a plan with no price', () => {
+    expect(getOfferLine({ ...PRO_OFFER, price: '' })).toBe('Pro, 250 GB')
   })
 })

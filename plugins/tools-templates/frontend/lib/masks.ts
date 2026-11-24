@@ -75,17 +75,17 @@ export function findGroup(masks: readonly Mask[], path: string): string | undefi
   return found ? getGroup(found, path) : undefined
 }
 
-const couldHoldUnder = (pattern: readonly string[], folder: readonly string[]): boolean => {
+const canHoldUnder = (pattern: readonly string[], folder: readonly string[]): boolean => {
   const [head, ...rest] = pattern
   const [part, ...others] = folder
   if (part === undefined) return true
   if (head === ANY_FOLDERS) return true
   if (head === undefined || rest.length === 0) return false
-  return toExpression(head).test(part) && couldHoldUnder(rest, others)
+  return toExpression(head).test(part) && canHoldUnder(rest, others)
 }
 
 /** Whether a folder could hold a note some mask names, so that a search below it is worth making. */
-export function couldHold(masks: readonly Mask[], folder: string): boolean {
+export function canHold(masks: readonly Mask[], folder: string): boolean {
   const parts = folder.split('/').filter((part) => part !== '')
-  return masks.some((mask) => couldHoldUnder(mask.segments, parts))
+  return masks.some((mask) => canHoldUnder(mask.segments, parts))
 }

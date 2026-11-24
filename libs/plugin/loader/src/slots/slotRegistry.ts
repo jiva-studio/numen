@@ -23,8 +23,8 @@ import {
   formatItemKey,
   getFullCommand,
   getValuesKey,
-  orderSlotEntries,
-  separateGroups,
+  sortSlotEntries,
+  insertSeparators,
 } from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
@@ -49,7 +49,7 @@ export interface SlotCommandLook {
   readonly hasItems?: boolean | undefined
 }
 
-export interface SlotRegistryDeps {
+interface SlotRegistryDeps {
   readonly getKeyFor?: (
     command: string,
     values?: Readonly<Record<string, string>>,
@@ -66,7 +66,7 @@ export interface SlotRegistryDeps {
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly when?: {
-    readonly getValues?: (target: CommandTarget | undefined) => WhenValues
+    readonly getValues?: (target: CommandTarget | undefined) => WhenValues | undefined
     readonly reader?: WhenReader
   }
   readonly requestPlugin?: (pluginId: string) => void
@@ -84,12 +84,12 @@ const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
 const layOut = (slot: string, placed: readonly Placed[]): SlotItem[] =>
-  separateGroups(
-    orderSlotEntries(placed, (one) => one.entry),
+  insertSeparators(
+    sortSlotEntries(placed, (one) => one.entry),
     {
       group: (one) => one.entry.group,
-      row: (one) => one.item,
-      separator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
+      buildRow: (one) => one.item,
+      buildSeparator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
     },
   )
 

@@ -30,11 +30,11 @@ type Files interface {
 // versions: every word with its page and the rectangle it covers in its selector. Each layer is
 // written as background work in the host's queue.
 type Writer struct {
-	vaults func(domain.VaultID) Files
-	texts  func(domain.VaultID) host.TextVersions
-	store  func(domain.VaultID) host.StoreWriter
-	queue  host.Queue
-	report func(what string, err error)
+	getVault func(domain.VaultID) Files
+	getTexts func(domain.VaultID) host.TextVersions
+	store    func(domain.VaultID) host.StoreWriter
+	queue    host.Queue
+	report   func(what string, err error)
 
 	wg sync.WaitGroup
 
@@ -57,11 +57,11 @@ type Request struct {
 // store and reported to texts, each written in a turn of queue. report receives the failures of the
 // background work.
 func NewWriter(
-	vaults func(domain.VaultID) Files, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue, workers *pdf.Workers,
+	getVault func(domain.VaultID) Files, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue, workers *pdf.Workers,
 	report func(what string, err error),
 ) *Writer {
 	return &Writer{
-		vaults: vaults, texts: texts, store: store, queue: queue, report: report,
+		getVault: getVault, getTexts: texts, store: store, queue: queue, report: report,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
 		running: map[string]context.CancelFunc{}, workers: workers,
 	}
@@ -118,7 +118,7 @@ func (s *Writer) readLayer(ctx context.Context, files host.FileReader, path stri
 // started again.
 func (s *Writer) CreateText(ctx context.Context, req Request) error {
 	if req.Vault == "" {
-		shown, err := s.vaults("").GetVault(ctx)
+		shown, err := s.getVault("").GetVault(ctx)
 		if err != nil {
 			return fmt.Errorf("get the shown vault: %w", err)
 		}
@@ -173,7 +173,7 @@ func (s *Writer) finishTask(ctx context.Context, task host.Task, err error) {
 }
 
 func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err error) {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, NotifyWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
@@ -181,7 +181,7 @@ func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.vaults(req.Vault), s.texts(req.Vault), s.store(req.Vault)
+	files, texts, store := s.getVault(req.Vault), s.getTexts(req.Vault), s.store(req.Vault)
 	read, err := s.readLayer(ctx, files, req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
 		return nil
@@ -233,11 +233,11 @@ func (s *Writer) WriteMissingText(ctx context.Context, req Request) error {
 }
 
 func (s *Writer) isLayerMade(ctx context.Context, req Request) (bool, error) {
-	raw, _, err := s.vaults(req.Vault).Read(ctx, req.Path)
+	raw, _, err := s.getVault(req.Vault).Read(ctx, req.Path)
 	if err != nil {
 		return false, err
 	}
-	listing, err := s.texts(req.Vault).ListVersions(ctx, req.Path)
+	listing, err := s.getTexts(req.Vault).ListVersions(ctx, req.Path)
 	if err != nil {
 		return false, err
 	}

@@ -4,7 +4,7 @@
 import type { Size } from '@numen/ui'
 
 /** The space between a title and the edges of its pill. */
-export interface Padding {
+export interface BoxPadding {
   readonly inline: number
   readonly block: number
 }
@@ -23,7 +23,7 @@ interface Gaps {
 const TITLE_LINE = 13 * 1.35
 
 /** The box of a neighbor: a line of title between the top and bottom padding. */
-export const getNodeSize = (width: number, padding: Padding): Size => ({
+export const getNodeSize = (width: number, padding: BoxPadding): Size => ({
   width,
   height: TITLE_LINE + 2 * padding.block,
 })

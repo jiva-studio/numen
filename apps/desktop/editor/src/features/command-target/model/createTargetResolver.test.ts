@@ -98,7 +98,7 @@ describe('the target of a command that names none', () => {
       {
         handle: {
           ...windowTabs.handle,
-          front: () => ({ id: 'ghost', kind: 'note', state: { path: 'a.md', title: 'A' } }),
+          getFrontTab: () => ({ id: 'ghost', kind: 'note', state: { path: 'a.md', title: 'A' } }),
         },
         tabs: { getTab: () => null } as never,
       },

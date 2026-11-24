@@ -72,8 +72,8 @@ func TestALinkedHandlerWhoseMountFailsIsNotMade(t *testing.T) {
 func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
 	var closed []string
 	handler, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
-		s.OnClose(func() error { closed = append(closed, "first"); return nil })
-		s.OnClose(func() error { closed = append(closed, "second"); return nil })
+		s.AddCloser(func() error { closed = append(closed, "first"); return nil })
+		s.AddCloser(func() error { closed = append(closed, "second"); return nil })
 		return nil
 	})
 	if err != nil {
@@ -98,7 +98,7 @@ func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
 func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 	closed := false
 	_, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
-		s.OnClose(func() error { closed = true; return nil })
+		s.AddCloser(func() error { closed = true; return nil })
 		return errors.New("the backend cannot start")
 	})
 	if err == nil || !closed {
@@ -111,9 +111,9 @@ func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 func TestCloseJoinsTheErrorsOfItsClosers(t *testing.T) {
 	first, second := errors.New("first failed"), errors.New("second failed")
 	s := New(withPort(0), withToken("close-token"))
-	s.OnClose(func() error { return first })
-	s.OnClose(func() error { return nil })
-	s.OnClose(func() error { return second })
+	s.AddCloser(func() error { return first })
+	s.AddCloser(func() error { return nil })
+	s.AddCloser(func() error { return second })
 
 	err := s.Close()
 
@@ -130,7 +130,7 @@ func TestALinkedHandlerReturnsTheCloseErrorOfAFailedMount(t *testing.T) {
 	mountErr, closeErr := errors.New("mount failed"), errors.New("close failed")
 
 	_, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
-		s.OnClose(func() error { return closeErr })
+		s.AddCloser(func() error { return closeErr })
 		return mountErr
 	})
 

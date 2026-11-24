@@ -57,7 +57,7 @@ func getBuiltinCommands(session Session) []command {
 func listDeclaredCommands(session Session) []command {
 	var commands []command
 	for _, entry := range session.GetPluginCommands().List.Execute() {
-		commands = append(commands, declaredCommand{plugins: session.GetPluginCommands, entry: entry})
+		commands = append(commands, declaredCommand{getPlugins: session.GetPluginCommands, entry: entry})
 	}
 	return commands
 }
@@ -72,7 +72,7 @@ func listSharedCommands(session Session) []command {
 	}
 	var commands []command
 	for _, id := range ids {
-		commands = append(commands, sharedCommand{plugins: session.GetPluginCommands, handlers: list.ListSharedHandlers(id)})
+		commands = append(commands, sharedCommand{getPlugins: session.GetPluginCommands, handlers: list.ListSharedHandlers(id)})
 	}
 	return commands
 }

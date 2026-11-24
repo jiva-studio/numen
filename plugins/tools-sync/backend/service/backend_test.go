@@ -45,7 +45,7 @@ func TestListVaults_ListsEveryVaultOfTheInstallationWithItsState(t *testing.T) {
 	w.c.AddVault(t, "Plain")
 	w.c.AddVault(t, "Test copy")
 	w.c.Connect(t, "Test")
-	w.c.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.c.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	vaults := listVaults(t, backend)
@@ -112,7 +112,7 @@ func TestConnectVault_WarnsAboutACopyOfAConnectedVault(t *testing.T) {
 	w := newWorld(t)
 	w.c.AddVault(t, "Test copy")
 	w.c.Connect(t, "Test")
-	w.c.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.c.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.c.ReadStoreFile(t, "Test", synctest.LinkFile))
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	err := connect(t, backend, api.ConnectVaultRequest{VaultID: "Test copy", Mode: api.ModeNew})
@@ -155,7 +155,7 @@ func TestGetStatus_ReportsAnIdentityAndAReachableServer(t *testing.T) {
 
 func TestGetStatus_WarnsThatThisDeviceHasNoIdentity(t *testing.T) {
 	w := newWorld(t)
-	w.c.Fake.NoIdentity()
+	w.c.Fake.RemoveIdentity()
 	backend := service.NewBackend(w.c.SyncDeps())
 
 	status, err := backend.GetStatus(t.Context(), api.GetStatusRequest{})

@@ -131,9 +131,10 @@ export const NoIdentity: Story = {
     const canvas = within(canvasElement)
     await expect(
       await canvas.findByText(
-        'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+        'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
       ),
     ).toBeVisible()
+    await expect(canvas.getByText('Needs an identity')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
@@ -192,6 +193,47 @@ export const ActiveWithPlanAndUsage: Story = {
     await expect(await canvas.findByText('2 GB of 100 GB')).toBeVisible()
     await expect(await canvas.findByRole('progressbar', { name: 'Space used' })).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
+  },
+}
+
+export const ChangePlanOpen: Story = {
+  args: createArgs(() =>
+    Promise.resolve(
+      createResponse({
+        phase: 'active',
+        periodEndAt: '2026-12-23T12:00:00Z',
+        plan: 'plus',
+        quotaBytes: 100 * GIB,
+        usedBytes: 2 * GIB,
+      }),
+    ),
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
+    const page = within(canvasElement.ownerDocument.body)
+    const plans = await page.findAllByRole('menuitemradio')
+    await expect(plans).toHaveLength(3)
+    const current = plans.filter((one) => one.getAttribute('aria-checked') === 'true')
+    await expect(current).toHaveLength(1)
+    await expect(current[0]).toHaveTextContent('Current plan')
+    await expect(current[0]).toBeDisabled()
+  },
+}
+
+export const ConfirmSwitch: Story = {
+  args: { ...ChangePlanOpen.args },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
+    const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(await page.findByRole('menuitemradio', { name: /^Pro/ }))
+    const dialog = await page.findByRole('alertdialog', { name: 'Switch to Pro?' })
+    await expect(dialog).toHaveTextContent('Plus, 100 GB, $15 / month')
+    await expect(dialog).toHaveTextContent('Pro, 250 GB, $30 / month')
+    await expect(dialog).toHaveTextContent('$30 on December 23, 2026')
+    await expect(within(dialog).getByRole('button', { name: 'Switch to Pro' })).toBeVisible()
+    await expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
   },
 }
 

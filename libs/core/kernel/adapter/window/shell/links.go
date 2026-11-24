@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// errNoVault is what a request naming no vault is answered with: this window shows none.
-var errNoVault = errors.New("this window shows no vault, so a request names the vault of its links")
+// errNoVaultNamed is what a request naming no vault is answered with.
+var errNoVaultNamed = errors.New("the request names no vault")
 
 // noteLinks answers where the links of a text land, in the vault the request names. The rest of
 // NoteService belongs to the editor.
@@ -26,19 +26,16 @@ type noteLinks struct {
 func (l noteLinks) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	named := r.Msg.GetVault()
+	named := r.Msg.GetVaultId()
 	if named == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNoVault)
-	}
-	if l.resolve == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("this window resolves no links"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoVaultNamed)
 	}
 	out, err := wire.ResolveAddresses(ctx, l.resolve, domain.VaultID(named), r.Msg)
 	if errors.Is(err, query.ErrUnknownVault) {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(out), nil
 }

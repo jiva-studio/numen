@@ -40,27 +40,27 @@ type staleLinks struct {
 	emptyFor     string
 }
 
-func (f staleLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) ListBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinksErr != nil {
 		return nil, f.backlinksErr
 	}
-	return f.LinkQueries.GetBacklinks(ctx, id, to)
+	return f.LinkQueries.ListBacklinks(ctx, id, to)
 }
 
-func (f staleLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) ListLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.linksErr != nil {
 		return nil, f.linksErr
 	}
 	if f.isLinksEmpty || from == f.emptyFor {
 		return nil, nil
 	}
-	return f.LinkQueries.GetLinks(ctx, id, from)
+	return f.LinkQueries.ListLinks(ctx, id, from)
 }
 
 // failingNames is a vault that cannot say which notes share a name.
 type failingNames struct{ err error }
 
-func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
+func (f failingNames) ListNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, f.err
 }
 

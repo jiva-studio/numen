@@ -6,11 +6,11 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
-import { openTab, getPanes, paneById } from '@numen/workbench'
+import { openTab, getPanes, findPane } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
-import { fileOpeners } from './openers'
+import { createFileOpeners } from './openers'
 import { openInScope } from './tabStore'
 import { createTestTabs, NO_TAB_KIND_PLUGINS } from '@/testing/tabs'
 
@@ -255,14 +255,14 @@ describe('what a kind is given', () => {
 
     const openedTab = await handle!.openTab('other', 'Note.md')
     const mine = await window.tabs.openTabOfKind('thing')
-    expect(window.handle.front()?.id).toBe(mine)
+    expect(window.handle.getFrontTab()?.id).toBe(mine)
     handle!.show(openedTab)
 
-    expect(window.handle.front()?.id).toBe(openedTab)
+    expect(window.handle.getFrontTab()?.id).toBe(openedTab)
     expect(other.opened).toEqual(['Note.md'])
     expect(onScreen(window.panes.layout.value)).toContain(mine)
     expect(window.tabs.getTab(openedTab)).not.toBeNull()
-    expect(handle!.each('other')).toStrictEqual([
+    expect(handle!.listTabs('other')).toStrictEqual([
       { id: openedTab, state: { targetPath: 'Note.md', title: 'Note.md' } },
     ])
   })
@@ -353,7 +353,7 @@ describe('the tab the person is looking at', () => {
     await window.tabs.openTabOfKind('thing', 'One.md')
     const two = await window.tabs.openTabOfKind('thing', 'Two.md')
 
-    expect(window.handle.front()).toEqual({
+    expect(window.handle.getFrontTab()).toEqual({
       id: two,
       kind: 'thing',
       state: { targetPath: 'Two.md', title: 'Two.md' },
@@ -373,9 +373,9 @@ describe('the tab the person is looking at', () => {
     // Every pane reports the tab it is showing when it renders.
     window.panes.onTabShown(two)
 
-    expect(window.handle.front()?.id).toBe(one)
-    expect(window.handle.last('thing')?.id).toBe(two)
-    expect(window.handle.each('thing').map((t) => t.id)).toStrictEqual([one, zero, two])
+    expect(window.handle.getFrontTab()?.id).toBe(one)
+    expect(window.handle.findLastTab('thing')?.id).toBe(two)
+    expect(window.handle.listTabs('thing').map((t) => t.id)).toStrictEqual([one, zero, two])
   })
 
   it('answers under no kind for a tab the window has release', async () => {
@@ -384,13 +384,13 @@ describe('the tab the person is looking at', () => {
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
     window.panes.closeTab(id, () => undefined)
 
-    expect(window.handle.front()).toEqual({ id, kind: null, state: null })
+    expect(window.handle.getFrontTab()).toEqual({ id, kind: null, state: null })
   })
 
   it('is nothing while the pane in front holds no tab', () => {
     const window = notifiedCalls([kind().declared])
 
-    expect(window.handle.front()).toBeNull()
+    expect(window.handle.getFrontTab()).toBeNull()
   })
 })
 
@@ -573,8 +573,8 @@ describe('reconciling tabs for a path', () => {
     const window = notifiedCalls([noteKind.declared, sampleKind.declared])
 
     let fileKind: FileKind = { isNote: true, type: 'note', tabKind: 'note' }
-    const openers = fileOpeners({
-      fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
+    const openers = createFileOpeners({
+      readFileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
       reconcileTab: window.panes.reconcileTab,
     })
     openers.registerEditor('note', (path) => {
@@ -735,7 +735,7 @@ describe('the tab in front, with the pane in front unknown to the layout', () =>
     await window.tabs.openTabOfKind('thing', 'One.md')
     window.panes.layout.value = { ...window.panes.layout.value, focus: 'ghost' }
 
-    expect(window.handle.front()).toBeNull()
+    expect(window.handle.getFrontTab()).toBeNull()
   })
 })
 
@@ -1077,9 +1077,7 @@ describe('the kinds the window holds', () => {
     window.kinds.registerKind(kind().one)
     window.kinds.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
-    expect(window.kinds.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe(
-      'chat',
-    )
+    expect(window.kinds.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe('chat')
     expect(window.kinds.findKind((one) => one.display?.isTool === true)).toBeUndefined()
   })
 })
@@ -1224,7 +1222,7 @@ describe('a tab of a kind moved to a path', () => {
     expect(navigations).toStrictEqual(['Wanted.md:'])
     expect(window.tabs.getTab(first)?.state).toMatchObject({ targetPath: 'Wanted.md' })
     expect(window.tabs.getTab(second)?.state).toMatchObject({ targetPath: 'Two.md' })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
+    expect(findPane(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
       first,
     )
 
@@ -1361,7 +1359,7 @@ describe('the tabs the core kept', () => {
     expect(window.handle.getTabState('paged', alreadyOpen)).toMatchObject({ page: 99 })
     expect(window.handle.getTabState('paged', 'paged:a.bin')).toMatchObject({ page: 4 })
     expect(window.handle.getTabState('paged', 'paged:b.bin')).toMatchObject({ page: 1 })
-    expect(window.handle.front()?.id).toBe('paged:a.bin')
+    expect(window.handle.getFrontTab()?.id).toBe('paged:a.bin')
     expect(getPanes(window.panes.layout.value.root).map((p) => [p.id, p.tabs])).toStrictEqual([
       ['main', [alreadyOpen, 'paged:a.bin', 'paged:b.bin']],
       ['aside', ['aside-kind:s.bin']],
@@ -1529,7 +1527,7 @@ describe('a saved tab whose kind fails to open it', () => {
     expect(failed?.kind.address?.getOpenTab?.(failed.state)).toStrictEqual({ path: 'dir/bad.bin' })
     expect(failed?.kind.address?.identity?.('dir/bad.bin')).toBe('dir/bad.bin')
     expect(window.tabs.getTab('paged:empty')?.state).toMatchObject({ message: 'string failure' })
-    expect(window.handle.front()?.id).toBe('paged:c.bin')
+    expect(window.handle.getFrontTab()?.id).toBe('paged:c.bin')
   })
 })
 
@@ -1547,7 +1545,7 @@ describe('openSavedTab', () => {
     })
 
     expect(window.handle.getTabState('paged', 'paged:a.bin')).toMatchObject({ page: 4 })
-    expect(window.handle.front()?.id).toBe('paged:a.bin')
+    expect(window.handle.getFrontTab()?.id).toBe('paged:a.bin')
   })
 
   it('activates an open tab with the same id without opening it again', async () => {
@@ -1560,7 +1558,7 @@ describe('openSavedTab', () => {
     window.restored.openSavedTab({ id, kind: 'paged', path: 'a.bin', saved: { page: 4 } })
 
     expect(window.handle.getTabState('paged', id)).toMatchObject({ page: 7 })
-    expect(window.handle.front()?.id).toBe(id)
+    expect(window.handle.getFrontTab()?.id).toBe(id)
   })
 })
 

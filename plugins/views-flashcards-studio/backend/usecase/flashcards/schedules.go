@@ -23,14 +23,14 @@ const keptVersion = 2
 // is the whole history read again: a run arriving from another machine can hold answers older
 // than ones counted, and a schedule depends on the order of the answers.
 type Schedules struct {
-	logs        ports.LogStores
-	Cache       ports.ScheduleStore
-	Report      func(what string, err error)
-	scheduler   review.Scheduler
-	day         review.Day
-	reviewCards ListReviewCards
-	presets     OpenPresetReads
-	At          func(retention float64) review.Scheduler
+	logs         ports.LogStores
+	Cache        ports.ScheduleStore
+	Report       func(what string, err error)
+	scheduler    review.Scheduler
+	day          review.Day
+	reviewCards  ListReviewCards
+	presets      OpenPresetReads
+	GetScheduler func(retention float64) review.Scheduler
 }
 
 // NewSchedules is what a vault's cards are placed through: where its answers
@@ -46,7 +46,7 @@ func NewSchedules(
 ) Schedules {
 	return Schedules{
 		logs: logs, Cache: nil, Report: nil, scheduler: scheduler,
-		day: day, reviewCards: reviewCards, presets: presets, At: nil,
+		day: day, reviewCards: reviewCards, presets: presets, GetScheduler: nil,
 	}
 }
 
@@ -71,7 +71,7 @@ type assignment struct {
 func (u Schedules) createPlainAssignment() assignment {
 	return assignment{
 		policy: review.ScheduleBy(u.scheduler),
-		mark:   getMark([]string{u.scheduler.GetName(), u.getDayStartMark(), review.Defaults().GetPlacing()}),
+		mark:   getMark([]string{u.scheduler.GetName(), u.getDayStartMark(), review.NewDefaultPreset().GetPlacing()}),
 	}
 }
 
@@ -80,7 +80,7 @@ func (u Schedules) getDayStartMark() string {
 	if u.day.In != nil {
 		in = u.day.In.String()
 	}
-	return "day\t" + review.Clock(u.day.Starts) + "\t" + in
+	return "day\t" + review.FormatClock(u.day.Starts) + "\t" + in
 }
 
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
@@ -136,7 +136,7 @@ func (u Schedules) getAssignmentFrom(
 		if one, targetVal := underMap[reviewCard]; targetVal {
 			return one
 		}
-		return review.SchedulingPolicy{By: u.scheduler, Preset: review.Defaults()}
+		return review.SchedulingPolicy{By: u.scheduler, Preset: review.NewDefaultPreset()}
 	}
 	return out, nil
 }
@@ -152,8 +152,8 @@ func getMark(lines []string) string {
 }
 
 func (u Schedules) getScheduler(retention float64) review.Scheduler {
-	if u.At != nil {
-		return u.At(retention)
+	if u.GetScheduler != nil {
+		return u.GetScheduler(retention)
 	}
 	return review.NewFSRSAt(retention)
 }

@@ -13,20 +13,20 @@ const without = (id: string) => ({ ...whole, nodes: whole.nodes.filter((node) =>
 
 describe('the attention of the drawing', () => {
   it('is released by the note that took it, and not by another', () => {
-    const { attention, attend } = useAttention(() => whole)
-    attend(first, true)
+    const { attention, setAttention } = useAttention(() => whole)
+    setAttention(first, true)
 
-    attend(second, false)
+    setAttention(second, false)
     expect(attention.node).toBe(first)
 
-    attend(first, false)
+    setAttention(first, false)
     expect(attention.node).toBeNull()
   })
 
   it('is cleared when the note it rests on leaves the frame', async () => {
     const frame = ref(whole)
-    const { attention, attend } = useAttention(() => frame.value)
-    attend(first, true)
+    const { attention, setAttention } = useAttention(() => frame.value)
+    setAttention(first, true)
 
     frame.value = without(first)
     await nextTick()
@@ -36,8 +36,8 @@ describe('the attention of the drawing', () => {
 
   it('stays on a note that is still in the frame', async () => {
     const frame = ref(whole)
-    const { attention, attend } = useAttention(() => frame.value)
-    attend(second, true)
+    const { attention, setAttention } = useAttention(() => frame.value)
+    setAttention(second, true)
 
     frame.value = without(first)
     await nextTick()

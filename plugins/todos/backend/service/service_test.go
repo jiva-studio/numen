@@ -42,7 +42,7 @@ func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*host
 	t.Helper()
 	vault := hosttest.New("notes")
 	for path, text := range notes {
-		vault.File(path, text)
+		vault.WriteFile(path, text)
 	}
 	var writer ports.FileWriter = vault
 	if getWriter != nil {
@@ -165,7 +165,7 @@ func TestRefreshIndexReadsAChangedNoteAndTheNextListShowsIt(t *testing.T) {
 	a := start(t, map[string]string{"a.md": "- [ ] first"})
 	before := a.list(t, api.Filter{}, 10)
 
-	a.vault.File("a.md", "- [ ] first\n- [ ] second")
+	a.vault.WriteFile("a.md", "- [ ] first\n- [ ] second")
 	var empty api.RefreshIndexResponse
 	status, failure := a.call(t, api.MethodRefreshIndex, api.RefreshIndexRequest{Paths: []string{"a.md"}, Renamed: []api.Rename{}}, &empty)
 	after := a.list(t, api.Filter{}, 10)
@@ -255,7 +255,7 @@ func TestWatchTasksSendsOnceAtTheStartAndAgainAfterAChangeOfTheIndex(t *testing.
 		t.Errorf("first message = %+v, want a ready index with a revision", first)
 	}
 
-	a.vault.File("a.md", "- [ ] first\n- [ ] second")
+	a.vault.WriteFile("a.md", "- [ ] first\n- [ ] second")
 	if err := a.index.Refresh(t.Context(), []string{"a.md"}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestTickOverHTTPWritesTheLineAndTheNextListShowsTheTaskTicked(t *testing.T)
 		task.Raw != "- [x] fix the tap +home done:2026-11-14" || task.Projects[0] != "home" {
 		t.Errorf("task = %+v", task)
 	}
-	if note, _ := a.vault.Content("Home.md"); note != "# Chores\n- [x] fix the tap +home done:2026-11-14\n- [ ] buy milk\n" {
+	if note, _ := a.vault.ReadContent("Home.md"); note != "# Chores\n- [x] fix the tap +home done:2026-11-14\n- [ ] buy milk\n" {
 		t.Errorf("note = %q", note)
 	}
 	open := a.list(t, api.Filter{}, 10)
@@ -314,7 +314,7 @@ func TestUntickOverHTTPReopensATickedTask(t *testing.T) {
 	if status != http.StatusOK || got.Error != "" || got.Change != "reopened" || got.Task.Status != "open" {
 		t.Fatalf("SetTaskDone = %d %+v %+v", status, got, failure)
 	}
-	if note, _ := a.vault.Content("a.md"); note != "- [ ] buy milk\n" {
+	if note, _ := a.vault.ReadContent("a.md"); note != "- [ ] buy milk\n" {
 		t.Errorf("note = %q", note)
 	}
 }
@@ -323,8 +323,8 @@ func TestUntickOverHTTPReopensATickedTask(t *testing.T) {
 type staleWriter struct{ vault *hosttest.Vault }
 
 func (w staleWriter) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
-	now, _ := w.vault.Content(path)
-	w.vault.File(path, now+"typed\n")
+	now, _ := w.vault.ReadContent(path)
+	w.vault.WriteFile(path, now+"typed\n")
 	return w.vault.Write(ctx, path, content, baseline)
 }
 
@@ -358,7 +358,7 @@ func TestTickOverHTTPAnswersAChangeTheNoteDoesNotAllowWithItsErrorWord(t *testin
 			if status != http.StatusOK || got.Error != tc.want || got.Change != "" {
 				t.Errorf("SetTaskDone = %d %+v %+v, want error %q", status, got, failure, tc.want)
 			}
-			if note, _ := a.vault.Content("a.md"); strings.Contains(note, "[x] buy milk done:") {
+			if note, _ := a.vault.ReadContent("a.md"); strings.Contains(note, "[x] buy milk done:") {
 				t.Errorf("note = %q, want no tick written", note)
 			}
 		})
@@ -402,7 +402,7 @@ func TestTickOverHTTPAnswersAMalformedDayWithAnInvalidArgumentError(t *testing.T
 			if status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument {
 				t.Errorf("SetTaskDone = %d %+v, want %d %s", status, failure, http.StatusBadRequest, server.CodeInvalidArgument)
 			}
-			if note, _ := a.vault.Content("a.md"); note != "- [ ] buy milk\n" {
+			if note, _ := a.vault.ReadContent("a.md"); note != "- [ ] buy milk\n" {
 				t.Errorf("note = %q, want it untouched", note)
 			}
 		})

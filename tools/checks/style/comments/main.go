@@ -245,20 +245,20 @@ func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.Comme
 		detached := findDetachedDoc(file, previous, start)
 		switch d := decl.(type) {
 		case *ast.FuncDecl:
-			check(firstOf(d.Doc, detached, d.Name.Name), "function", d.Name.Name, listSignatureNames(pkg, d))
+			check(findDoc(d.Doc, detached, d.Name.Name), "function", d.Name.Name, listSignatureNames(pkg, d))
 		case *ast.GenDecl:
 			for _, spec := range d.Specs {
 				switch s := spec.(type) {
 				case *ast.TypeSpec:
 					group := s.Doc
 					if group == nil && len(d.Specs) == 1 {
-						group = firstOf(d.Doc, detached, s.Name.Name)
+						group = findDoc(d.Doc, detached, s.Name.Name)
 					}
 					check(group, "type", s.Name.Name, []string{pkg, s.Name.Name})
 				case *ast.ValueSpec:
 					group := s.Doc
 					if group == nil && len(d.Specs) == 1 {
-						group = firstOf(d.Doc, detached, s.Names[0].Name)
+						group = findDoc(d.Doc, detached, s.Names[0].Name)
 					}
 					names := []string{pkg}
 					for _, n := range s.Names {
@@ -273,7 +273,7 @@ func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.Comme
 	}
 }
 
-func firstOf(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
+func findDoc(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
 	if doc != nil {
 		return doc
 	}

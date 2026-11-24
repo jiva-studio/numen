@@ -80,7 +80,7 @@ describe('the two palettes of the window', () => {
       isReady: true,
     }
     const windowPalette = createWindowPalette({
-      searchCore: { names: async () => [], search: async () => [] },
+      searchCore: { searchNames: async () => [], search: async () => [] },
       commandDeps: createCommandDeps({
         windowTabs: {} as never,
         reached: {} as never,
@@ -94,7 +94,7 @@ describe('the two palettes of the window', () => {
       knows: { getTitle: () => '', getTabAt: () => null },
       plugin: {
         lists: {
-          lists: { getStepGroups: () => [], previewItem: vi.fn() },
+          lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
           removeEmptyCommands: (cmds) => cmds,
           resetWhenClosed,
         },

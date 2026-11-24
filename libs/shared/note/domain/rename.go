@@ -6,14 +6,14 @@ package domain
 // file name. isRenamed is false when the file name is unchanged, or when a
 // titled note was already filed under a different name than its title gives.
 func GetNameAfterMove(from, to, title string, isNamed bool) (display string, isRenamed bool) {
-	name := Basename(to)
-	if name == Basename(from) {
+	name := GetBasename(to)
+	if name == GetBasename(from) {
 		return "", false
 	}
 	if !isNamed {
 		return name, true
 	}
-	if filed, _ := GetReducedFilename(title); FoldName(filed) != FoldName(name) {
+	if filed, _ := GetReducedFilename(title); NormalizeName(filed) != NormalizeName(name) {
 		return "", false
 	}
 	return title, true

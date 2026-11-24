@@ -35,7 +35,7 @@ func (s *prefixSpy) GetNamedSections(_ context.Context, _ domain.VaultID, q sour
 func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
 	nearest := &nearestFake{}
-	source := sourcefake.Wrap(oneWay{direction: newVector(+1)}).Over(search.NewFindNearest(nearest).Execute)
+	source := sourcefake.Wrap(oneWay{direction: newVector(+1)}).UseNearest(search.NewFindNearest(nearest).Execute)
 	searching := search.New(spy, vaultreader.Readers{}, nil, []search.Participant{search.NewSource(source, nearest)}, nil, nil)
 
 	p := search.Parameters{Limit: 5, PathPrefix: "library/"}

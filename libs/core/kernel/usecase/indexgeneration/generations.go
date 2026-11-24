@@ -27,8 +27,8 @@ func (g *Generations) GetGeneration(v domain.VaultID) string {
 	return g.epoch + "." + strconv.Itoa(g.counts[v])
 }
 
-// IncreaseGeneration records one change of the index of the vault.
-func (g *Generations) IncreaseGeneration(v domain.VaultID) {
+// BumpGeneration records one change of the index of the vault.
+func (g *Generations) BumpGeneration(v domain.VaultID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.counts[v]++

@@ -36,7 +36,7 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := s.methods.ReadBookEntry(books.WithVault(r.Context(), host.GetRequestVault(r.Header)), req)
 	if err != nil {
-		failure := toAPIError(err)
+		failure := buildAPIError(err)
 		http.Error(w, failure.Error(), getStatus(failure.Code))
 		return
 	}

@@ -74,7 +74,7 @@ export const applyReadHeadings = (screen: BufferDeck, readItem: BufferDeck): Buf
  */
 export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): BufferDeck => {
   // Stryker disable next-line ConditionalExpression: findIndex for null id yields -1 either way.
-  const seat = (deck: BufferDeck, section: string | null): number =>
+  const findSeat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
   const sections =
@@ -89,7 +89,7 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
 
   // Stryker disable next-line ConditionalExpression: index -1 from seat yields null fallback either way.
   const getSectionId = (section: string | null): string | null =>
-    section === null ? null : (sections[seat(readItem, section)]?.id ?? null)
+    section === null ? null : (sections[findSeat(readItem, section)]?.id ?? null)
 
   const alongside = screen.cards.length === readItem.cards.length
 
@@ -100,7 +100,7 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
     const same =
       was.cardModelLink === card.cardModelLink &&
       was.preamble === card.preamble &&
-      seat(screen, was.section) === seat(readItem, card.section) &&
+      findSeat(screen, was.section) === findSeat(readItem, card.section) &&
       JSON.stringify(was.values) === JSON.stringify(card.values)
     return same ? { ...withSection, id: was.id } : withSection
   })

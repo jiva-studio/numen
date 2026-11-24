@@ -62,9 +62,10 @@ Feature: Numen Sync plan change
 
   Rule: Only an active subscription changes its plan
 
-    Scenario: The page does not offer the plan that is bought
+    Scenario: The page shows the plan that is bought as current and does not offer it
       When the person opens the page "Identity and licenses"
       Then the page offers to change the plan to "Plus"
+      And the page shows the plan "Basic" as the current plan
       And the page does not offer to change the plan to "Basic"
 
     Scenario: An ended subscription offers to buy, not to change

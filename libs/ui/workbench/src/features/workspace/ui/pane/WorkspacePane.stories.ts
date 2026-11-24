@@ -4,7 +4,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
-import { pane, type Tab, type TabId } from '../../lib/node'
+import { createPane, type Tab, type TabId } from '../../lib/node'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import WorkspacePane from './WorkspacePane.vue'
 import { RUSSIAN } from '@/shared/fixtures/prose'
@@ -36,11 +36,11 @@ const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDo
  * it keeps what was typed.
  */
 export const ShownAgain: Story = {
-  args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
+  args: { pane: createPane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
   render: () => ({
     components: { WorkspacePane },
     setup: () => {
-      const pendingTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
+      const pendingTab = ref(createPane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const shownTabs = ref<string[]>([])
       return {
         current: pendingTab,
@@ -49,7 +49,7 @@ export const ShownAgain: Story = {
         shownTabs,
         titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
-          pendingTab.value = pane('main', [NOTE_TAB, BESIDE], tab)
+          pendingTab.value = createPane('main', [NOTE_TAB, BESIDE], tab)
         },
         onShow: (tab: string) => shownTabs.value.push(tab),
       }
@@ -91,7 +91,7 @@ export const ShownAgain: Story = {
 
 /** A tab shows no tooltip for its title; hovering its mark shows the mark tooltip. */
 export const TabNamedByTooltip: Story = {
-  args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
+  args: { pane: createPane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
   render: (args) => ({
     components: { WorkspacePane },
     setup: () => {
@@ -109,7 +109,7 @@ export const TabNamedByTooltip: Story = {
           choose: fn(),
           close: fn(),
           startTabPress: fn(),
-          menu: fn(),
+          openMenu: fn(),
           claim: fn(),
           resize: fn(),
           show: fn(),

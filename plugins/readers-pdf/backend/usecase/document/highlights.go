@@ -35,14 +35,14 @@ func (e *RangeError) Error() string { return e.Message }
 // places of each range, in the order of the ranges. A file with no live version, or a version
 // without places, has no places.
 func (r *Reader) GetHighlights(ctx context.Context, vault domain.VaultID, path string, ranges []domain.ByteRange) ([][]Place, error) {
-	if _, err := r.files(vault).StatFile(ctx, path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
+	if _, err := r.getFiles(vault).StatFile(ctx, path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
 		return nil, err
 	}
 	end, err := checkRanges(ranges)
 	if err != nil {
 		return nil, err
 	}
-	text, err := readLiveText(ctx, r.texts(vault), path, end)
+	text, err := readLiveText(ctx, r.getTexts(vault), path, end)
 	if err != nil {
 		return nil, fmt.Errorf("%w %s: %w", ErrText, path, err)
 	}

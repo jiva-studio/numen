@@ -63,8 +63,8 @@ func (l *Layout) Close() error {
 	return nil
 }
 
-// Regions divides one page and returns its parts in reading order.
-func (l *Layout) Regions(page image.Image) ([]Region, error) {
+// FindRegions divides one page and returns its parts in reading order.
+func (l *Layout) FindRegions(page image.Image) ([]Region, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

@@ -44,17 +44,17 @@ func New(open Open) *Chat {
 	return &Chat{open: open}
 }
 
-// FromEnvironment returns the Chat and the Connections of the host the process environment names.
-func FromEnvironment() (*Chat, *Connections, error) {
+// NewFromEnvironment returns the Chat and the Connections of the host the process environment names.
+func NewFromEnvironment() (*Chat, *Connections, error) {
 	client, err := connection.NewClientFromEnv()
 	if err != nil {
 		return nil, nil, err
 	}
-	return FromHost(client), NewConnections(client), nil
+	return NewFromHost(client), NewConnections(client), nil
 }
 
-// FromHost returns a Chat that asks host for each turn.
-func FromHost(host Host) *Chat {
+// NewFromHost returns a Chat that asks host for each turn.
+func NewFromHost(host Host) *Chat {
 	return New(func(ctx context.Context, request *llm.ChatRequest, priority connection.Priority, row connection.PreferredRow) (Stream, error) {
 		stream, err := llm.Chat(ctx, host.Prefer(row), request, priority)
 		if err != nil {

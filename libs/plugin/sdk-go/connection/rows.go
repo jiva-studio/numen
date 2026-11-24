@@ -97,7 +97,7 @@ type preferringClient struct {
 func (p *preferringClient) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
 	return p.client.call(ctx, &v1.ConnectionCallServiceCallRequest{
 		Operation: operation, Payload: payload, Priority: writePriority(priority),
-		Preferred: &v1.PreferredRow{ConnectionId: p.row.ConnectionID, Options: maps.Clone(p.row.Options), IsExclusive: p.row.IsExclusive},
+		PreferredRow: &v1.PreferredRow{ConnectionId: p.row.ConnectionID, Options: maps.Clone(p.row.Options), IsExclusive: p.row.IsExclusive},
 	})
 }
 

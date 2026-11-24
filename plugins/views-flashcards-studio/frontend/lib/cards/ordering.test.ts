@@ -10,7 +10,7 @@ import {
   checkFieldName,
   checkHeadingName,
   getSealedMap,
-  orderNames,
+  sortNames,
   reorderFields,
   getStepInsertionPoint,
 } from './order'
@@ -19,35 +19,35 @@ describe('orderNames', () => {
   const NAMES = ['a', 'b', 'c']
 
   it('puts a dragged name before the one it lands on', () => {
-    expect(orderNames(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
+    expect(sortNames(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
   })
 
   it('puts it at the end when it lands on nothing', () => {
-    expect(orderNames(NAMES, 'a', null)).toEqual(['b', 'c', 'a'])
+    expect(sortNames(NAMES, 'a', null)).toEqual(['b', 'c', 'a'])
   })
 
   it('takes it out before it puts it back', () => {
-    expect(orderNames(NAMES, 'a', 'c')).toEqual(['b', 'a', 'c'])
+    expect(sortNames(NAMES, 'a', 'c')).toEqual(['b', 'a', 'c'])
   })
 
   it('leaves the order alone when it lands on itself', () => {
-    expect(orderNames(NAMES, 'b', 'b')).toEqual(NAMES)
+    expect(sortNames(NAMES, 'b', 'b')).toEqual(NAMES)
   })
 
   it('leaves the order alone when it lands on a name that is not there', () => {
-    expect(orderNames(NAMES, 'b', 'z')).toEqual(NAMES)
+    expect(sortNames(NAMES, 'b', 'z')).toEqual(NAMES)
   })
 
   it('leaves the order alone where what is dragged is not there', () => {
-    expect(orderNames(NAMES, 'z', 'a')).toEqual(NAMES)
+    expect(sortNames(NAMES, 'z', 'a')).toEqual(NAMES)
   })
 
   it('leaves the order alone where the first name lands on a name that is not there', () => {
-    expect(orderNames(NAMES, 'a', 'z')).toEqual(NAMES)
+    expect(sortNames(NAMES, 'a', 'z')).toEqual(NAMES)
   })
 
   it('keeps one name alone where it is', () => {
-    expect(orderNames(['only'], 'only', null)).toEqual(['only'])
+    expect(sortNames(['only'], 'only', null)).toEqual(['only'])
   })
 })
 
@@ -105,7 +105,7 @@ describe('getStepInsertionPoint', () => {
 
   it('lands what is dragged up before the one above it', () => {
     expect(getStepInsertionPoint(NAMES, 'c', 'up')).toBe('b')
-    expect(orderNames(NAMES, 'c', getStepInsertionPoint(NAMES, 'c', 'up') ?? null)).toEqual([
+    expect(sortNames(NAMES, 'c', getStepInsertionPoint(NAMES, 'c', 'up') ?? null)).toEqual([
       'a',
       'c',
       'b',
@@ -114,7 +114,7 @@ describe('getStepInsertionPoint', () => {
 
   it('lands what is dragged down before the one below the one below it', () => {
     expect(getStepInsertionPoint(NAMES, 'a', 'down')).toBe('c')
-    expect(orderNames(NAMES, 'a', getStepInsertionPoint(NAMES, 'a', 'down') ?? null)).toEqual([
+    expect(sortNames(NAMES, 'a', getStepInsertionPoint(NAMES, 'a', 'down') ?? null)).toEqual([
       'b',
       'a',
       'c',
@@ -123,7 +123,7 @@ describe('getStepInsertionPoint', () => {
 
   it('lands the last but one at the end', () => {
     expect(getStepInsertionPoint(NAMES, 'b', 'down')).toBeNull()
-    expect(orderNames(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
+    expect(sortNames(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
   })
 
   it('lands nothing above the first, and nothing below the last', () => {

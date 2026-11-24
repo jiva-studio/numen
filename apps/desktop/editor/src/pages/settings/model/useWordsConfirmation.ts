@@ -2,7 +2,7 @@
  * The check that a person wrote the recovery words down: three positions picked at random, and the
  * words typed for them compared with the words of the identity being set up.
  */
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 
 const WORD_COUNT = 12
 const CONFIRMED_COUNT = 3
@@ -34,25 +34,37 @@ function pickPositions(count: number, total: number): readonly number[] {
 export function useWordsConfirmation(recoveryWords: Readonly<Ref<readonly string[]>>) {
   const positions = ref<readonly number[]>([])
   const entered = ref<Readonly<Record<number, string>>>({})
+  const wrong = ref<readonly number[]>([])
 
   const pick = (): void => {
     positions.value = pickPositions(CONFIRMED_COUNT, WORD_COUNT)
     entered.value = {}
+    wrong.value = []
   }
 
   const clear = (): void => {
     positions.value = []
     entered.value = {}
+    wrong.value = []
   }
 
   const setEntered = (position: number, value: string): void => {
     entered.value = { ...entered.value, [position]: value }
+    wrong.value = wrong.value.filter((one) => one !== position)
   }
 
-  const isConfirmed = (): boolean =>
-    positions.value.every(
-      (position) => normalize(entered.value[position] ?? '') === recoveryWords.value[position - 1],
-    )
+  const isRight = (position: number): boolean =>
+    normalize(entered.value[position] ?? '') === recoveryWords.value[position - 1]
 
-  return { positions, entered, pick, clear, setEntered, isConfirmed }
+  /** Marks the positions whose typed word is not the word at that place; true when none is. */
+  const verify = (): boolean => {
+    wrong.value = positions.value.filter((position) => !isRight(position))
+    return wrong.value.length === 0
+  }
+
+  const isComplete = computed(() =>
+    positions.value.every((position) => (entered.value[position] ?? '').trim() !== ''),
+  )
+
+  return { positions, entered, wrong, isComplete, pick, clear, setEntered, verify }
 }

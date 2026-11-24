@@ -95,7 +95,7 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 	defer target.Run()
 	themes.Report(started.Themes, os.Stderr)
 
-	pages, err := shell.Pages()
+	pages, err := shell.CreatePagesHandler()
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 		// Runs on the thread the window is drawn on, once the application has stopped dispatching.
 		PostShutdown: target.Run,
 	})
-	app.Window.NewWithOptions(frame.Window(application.WebviewWindowOptions{
+	app.Window.NewWithOptions(frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",
 		Width:  760,
 		Height: 720,

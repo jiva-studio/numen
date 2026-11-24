@@ -51,7 +51,7 @@ func newChunking(tokens int) *announcing {
 
 func watchChunkSizes(embedder *announcing, sizes ...int) []bool {
 	var changed []bool
-	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
+	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).SubscribeModelChange(func(isChunkSizeChanged bool) {
 		changed = append(changed, isChunkSizeChanged)
 	})
 	for _, tokens := range sizes {
@@ -73,7 +73,7 @@ func TestANewChunkSizeIsAnnouncedAsAChange(t *testing.T) {
 func TestAChunkSizeThatStaysIsNotAChange(t *testing.T) {
 	embedder := newChunking(256)
 	var changed []bool
-	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
+	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).SubscribeModelChange(func(isChunkSizeChanged bool) {
 		changed = append(changed, isChunkSizeChanged)
 	})
 
@@ -106,6 +106,6 @@ func TestAChunkSizeThatBecomesKnownIsAChange(t *testing.T) {
 
 func TestAnEmbedderThatAnnouncesNothingIsNotFollowed(t *testing.T) {
 	var absent *indexing.Embedding
-	absent.OnModelChange(func(bool) { t.Error("a window without an embedder announced a change") })
-	indexing.NewEmbedding(sourcefake.Wrap(silent{}), nil, nil).OnModelChange(func(bool) { t.Error("a silent embedder announced a change") })
+	absent.SubscribeModelChange(func(bool) { t.Error("a window without an embedder announced a change") })
+	indexing.NewEmbedding(sourcefake.Wrap(silent{}), nil, nil).SubscribeModelChange(func(bool) { t.Error("a silent embedder announced a change") })
 }

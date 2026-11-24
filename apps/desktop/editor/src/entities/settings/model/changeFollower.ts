@@ -18,7 +18,7 @@ export function createChangeFollower(deps: {
   const abortController = new AbortController()
   let isOpen = true
   let isResumed = false
-  const follows = createFollower({
+  const follower = createFollower({
     isOpen: () => isOpen,
     // The stream of the themes reports the lost connection.
     setLost: () => undefined,
@@ -29,7 +29,7 @@ export function createChangeFollower(deps: {
   })
   return {
     start: () =>
-      follows(
+      follower(
         () => watchSettings(abortController.signal),
         async (batch) => {
           if (batch.length === 0 && !isResumed) return

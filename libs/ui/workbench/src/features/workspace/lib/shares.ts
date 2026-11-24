@@ -6,7 +6,7 @@
  * and use the result directly.
  */
 
-import { even } from './even'
+import { getEvenShares } from './getEvenShares'
 
 /**
  * The same shares, one per child and summing to one.
@@ -23,7 +23,7 @@ export function fit(sizes: readonly number[], count: number): readonly number[] 
   }
 
   const total = provided.reduce((sum, size) => sum + size, 0)
-  if (total <= 0) return even(count)
+  if (total <= 0) return getEvenShares(count)
 
   const missing = provided.filter((size) => size === 0).length
   const average = total / (count - missing)
@@ -53,7 +53,7 @@ export function insert(
  * An equal share is the ceiling: a branch too short to give everyone the
  * minimum divides what it has evenly.
  */
-export function atLeast(minimum: number, length: number, count: number): number {
+export function getMinimumShare(minimum: number, length: number, count: number): number {
   // Stryker disable next-line EqualityOperator: a zero minimum yields 0 / length = 0 on the return line.
   if (count <= 0 || !(length > 0) || !(minimum > 0)) return 0
   return Math.min(1 / count, minimum / length)

@@ -1,37 +1,76 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints and the way to delete it, after a confirmation.
+ * The identity of this device as two cards: the account fingerprint with the way to delete the identity,
+ * after a confirmation, and the list of devices it is linked to.
  */
-import { Button } from '@numen/ui'
+import { computed } from 'vue'
+import { Trash2 } from '@lucide/vue'
+import { ConfirmDialog, IslandCard } from '@numen/ui'
+import { NavigationRow } from '@numen/plugin-manager'
 import type { IdentityInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
+import SettingRow from '../setting-row/SettingRow.vue'
+import CardAction from './CardAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ info: IdentityInfo; isBusy: boolean; isAskingDelete: boolean }>()
+const props = defineProps<{
+  info: IdentityInfo
+  problem: string
+  isBusy: boolean
+  isAskingDelete: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'ask'): void
   (e: 'confirm'): void
   (e: 'cancel'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const date = computed(() => {
+  const added = new Date(props.info.deviceAddedAt)
+  if (Number.isNaN(added.getTime())) return ''
+  return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(added)
+})
 </script>
 
 <template>
-  <dl class="identity-details__facts">
-    <dt>{{ words.identityAccount }}</dt>
-    <dd class="identity-details__fingerprint">{{ info.accountFingerprint }}</dd>
-    <dt>{{ words.identityThisDevice }}</dt>
-    <dd>
-      <span>{{ info.deviceName }}</span>
-      <span class="identity-details__fingerprint">{{ info.deviceFingerprint }}</span>
-    </dd>
-  </dl>
-  <div class="identity-details__actions">
-    <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-      {{ words.identityDelete }}
-    </Button>
-  </div>
+  <IslandCard :title="words.identitySection">
+    <template #aside>
+      <CardAction :is-disabled="isBusy" @click="emit('ask')">
+        <Trash2 :size="14" aria-hidden="true" />
+        {{ words.identityDelete }}
+      </CardAction>
+    </template>
+    <SettingRow
+      class="identity-details__fact"
+      at="identity-account"
+      :name="words.identityAccount"
+      :detail="words.identityAccountDetail"
+    >
+      <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
+    </SettingRow>
+    <p v-if="problem !== ''" role="alert" class="identity-details__problem">{{ problem }}</p>
+  </IslandCard>
+
+  <IslandCard class="identity-details__devices" :title="words.identityDevices">
+    <template #aside>{{ words.identityDeviceCount(1) }}</template>
+    <NavigationRow
+      class="identity-details__current"
+      category="device"
+      is-static
+      :name="info.deviceName"
+      :detail="words.identityDeviceLinked(date)"
+    >
+      <template #name-suffix>
+        <span class="identity-details__badge">{{ words.identityThisDevice }}</span>
+      </template>
+      <template #trail>
+        <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
+      </template>
+    </NavigationRow>
+  </IslandCard>
+
   <ConfirmDialog
     v-if="isAskingDelete"
     tone="danger"
@@ -45,31 +84,40 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.identity-details__facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.375rem 1rem;
-  margin: 0;
-}
-
-.identity-details__facts dt {
-  color: var(--numen-hushed);
-}
-
-.identity-details__facts dd {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-  margin: 0;
-}
-
-.identity-details__fingerprint {
+.identity-details__mono {
   font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-2);
+  color: var(--numen-ink);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.identity-details__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.identity-details__fact.identity-details__fact {
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.identity-details__devices :deep(.island-card__body) {
+  padding: 0;
+}
+
+.identity-details__current,
+.identity-details__current:hover {
+  background-color: var(--settings-hover-bg);
+}
+
+.identity-details__badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--numen-radius-tight);
+  background-color: var(--settings-hover-bg);
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+  white-space: nowrap;
+}
+
+.identity-details__problem {
+  margin: 0;
+  padding-block: 0.5rem;
+  font-size: var(--numen-text-1);
+  color: var(--numen-alarm);
 }
 </style>

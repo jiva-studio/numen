@@ -98,7 +98,7 @@ function onDismissMenu() {
       :open="props.state.list.queries.openRows.value"
       :selected="props.state.list.state.selectedPaths.value"
       :name="words.tree"
-      :counted="words.dragging"
+      :get-count-text="words.dragging"
       :marking="dropTarget"
       @open="onOpenEntry"
       @close="onCloseEntry"

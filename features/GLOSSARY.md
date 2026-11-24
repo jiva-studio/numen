@@ -556,17 +556,17 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### identity
 
-- Is: The account of a person, kept as keys on each of their devices and not on any server. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
-- States: no identity on this device; an identity with its account fingerprint and this device.
-- Actions: "Create identity", "Restore from words", "Delete from this device"; when an identity is created the person confirms 3 of the 12 words.
-- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "This device"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
+- Is: The Numen account of a person, kept on their own computers and not on any server: no email and no password. Their devices use it to recognize each other, and their subscription belongs to it. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
+- States: not created (the card explains in two paragraphs what an identity is ("An identity is your Numen account. ...") and what the 12 recovery words are for, and offers "Create identity" and "Restore" in its header); an identity with its account fingerprint and this device.
+- Actions: "Create identity", "Restore", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore" opens the dialog "Restore identity" ("Type the 12 words in order.") with the 12 numbered boxes of the setup as fields, three to a row, named "Recovery word 1" to "Recovery word 12"; the 12 words pasted into the first box fill the rest.
+- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "Some words are not valid." (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
 ### subscription
 
 - Is: What the person buys to sync their vaults with Numen Sync, for the account and not for one computer. The sync server tells where it stands: no subscription, active, ended with changes still sent, read only, or deleted; the app only shows it.
-- States: no subscription (a row per plan to choose, no badge), active (the plan as the badge, the day it renews), Ended (changes are sent until a date), Read only (changes stay on this device, the cloud deletes the vaults on a date), Deleted.
-- Actions: a click on a plan row of the card "Numen Sync" of the page "Identity and licenses" (named "Choose Plus, 100 GB, $15 / month"); it opens the payment page in the system browser and the card follows the payment.
+- States: no identity ("Needs an identity" as the badge, the card says what Numen Sync does), no subscription (a row per plan to choose, no badge), active (the plan as the badge, the day it renews), Ended (changes are sent until a date), Read only (changes stay on this device, the cloud deletes the vaults on a date), Deleted.
+- Actions: a click on a plan row of the card "Numen Sync" of the page "Identity and licenses" (named "Choose Plus, 100 GB, $15 / month"); it opens the payment page in the system browser and the card follows the payment. An active subscription changes its plan from the menu "Change plan": it lists every plan with its size and price, the current plan checked and tagged "Current plan" and not to choose; choosing another plan asks "Switch to Pro?" with "Now", "New plan", "Charged now" (the difference for the rest of this period, to the card on file) and "Next payment", answered "Switch to Pro" or "Cancel". The plan changes only after "Switch to Pro".
 - Texts: "Sync needs a subscription", "Subscription ended: changes are sent until <date>", "Subscription ended: changes stay on this device" (plugins/tools-sync/backend/usecase/subscription/warn.go, plugins/tools-sync/frontend/words.ts).
 - Not: not a license key; there is no key to enter. Nothing about a payment or a card is kept in the app.
 

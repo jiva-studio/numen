@@ -40,11 +40,9 @@ type Host struct {
 
 func (h Host) GetVaults(ctx context.Context) ([]domain.Vault, error) { return h.Root.GetVaults(ctx) }
 
-// Files returns the files of the vault.
-func (h Host) Files(id domain.VaultID) ports.Files { return h.Root.With(id) }
+func (h Host) GetFiles(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
-// Indexer returns the index of the vault.
-func (h Host) Indexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
+func (h Host) GetIndexer(id domain.VaultID) ports.Indexer { return h.Root.With(id) }
 
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
@@ -112,11 +110,11 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	t.Helper()
 	fake := accounttest.NewFake(t, syncprotocol.SignInPluginID)
 	healthHost := healthtest.NewHost(t)
-	accountEndpoint, err := hostcall.FromVars(fake.Vars("token"))
+	accountEndpoint, err := hostcall.ReadVars(fake.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	healthEndpoint, err := hostcall.FromVars(healthHost.Vars("token"))
+	healthEndpoint, err := hostcall.ReadVars(healthHost.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}

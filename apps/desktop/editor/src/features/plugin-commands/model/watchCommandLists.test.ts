@@ -15,7 +15,7 @@ function setup(load = vi.fn(async (): Promise<void> => undefined)) {
   const getCommittedSetting = (path: readonly string[]) => settings.value[path.join('.')]
   watchCommandLists(
     {
-      declaredCommands: { load } as unknown as DeclaredCommands,
+      commandDeclarations: { load } as unknown as DeclaredCommands,
       writeMessage,
       plugins,
       getCommittedSetting,

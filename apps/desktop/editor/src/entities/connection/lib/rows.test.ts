@@ -14,7 +14,7 @@ import {
 const reasons = {
   unavailable: 'Type unavailable',
   incomplete: 'Incomplete',
-  cannot: (operation: string) => `This type cannot ${operation}`,
+  formatCannot: (operation: string) => `This type cannot ${operation}`,
 }
 
 const TITLES = { 'llm.embed': 'embed text', 'llm.profile': 'describe a model' }

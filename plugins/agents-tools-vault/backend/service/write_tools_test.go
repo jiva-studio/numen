@@ -46,7 +46,7 @@ func TestWriteToolsReadAndWriteTheVault(t *testing.T) {
 
 func TestWriteToolsWithoutAVaultAreRejected(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
-	before, _ := geology.Content("Rocks/Basalt.md")
+	before, _ := geology.ReadContent("Rocks/Basalt.md")
 	for name, arguments := range getWriteToolArguments() {
 		res, err := registry.InvokeTool(t.Context(), tools.Call{Name: name, Arguments: []byte(arguments)})
 		if err != nil {

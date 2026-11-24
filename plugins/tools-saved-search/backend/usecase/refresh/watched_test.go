@@ -84,7 +84,7 @@ func TestEditRunsAtOnceRightAfterARun(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
 
-	w.vault.File(stormsPath, formatSearchNote(stormsID, galesQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, galesQuery))
 	editedAt := w.clock.Advance(time.Second)
 	record := w.runNow(t, stormsPath)
 
@@ -98,7 +98,7 @@ func TestEditOfAnOpenSearchMarkedStaleByTheIndexRunsAgainAfterTheDebounce(t *tes
 	w.runDueSearches(t)
 	w.watchStorms(t)
 
-	w.vault.File(stormsPath, formatSearchNote(stormsID, galesQuery))
+	w.vault.WriteFile(stormsPath, formatSearchNote(stormsID, galesQuery))
 	answer := host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", galeText, 1)}, ScoreKind: "words", IsStale: true}
 	w.searches.SetAnswer(galesQuery, answer)
 	w.clock.Advance(time.Second)

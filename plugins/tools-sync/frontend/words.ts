@@ -23,18 +23,34 @@ export const WORDS = {
     `The subscription ended on ${periodEnd}. The vaults in the cloud can only be read and changes stay on this device. The cloud deletes them on ${deleteAt}.`,
   deleted: 'Deleted',
   deletedText: 'The cloud deleted your vaults. Buy a subscription to sync again.',
+  needsIdentity: 'Needs an identity',
   noIdentityText:
-    'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+    'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
   offline: 'Offline',
   chooseNamed: (name: string, detail: string): string =>
     detail === '' ? `Choose ${name}` : `Choose ${name}, ${detail}`,
   changePlan: 'Change plan',
-  changePlanChoices: 'Plans to change to',
+  changePlanChoices: 'Plans',
+  currentPlan: 'Current plan',
+  switchQuestion: (name: string): string => `Switch to ${name}?`,
+  switchTo: (name: string): string => `Switch to ${name}`,
+  cancelSwitch: 'Cancel',
+  nowFact: 'Now',
+  newPlanFact: 'New plan',
+  chargedNowFact: 'Charged now',
+  chargedNowText: 'The difference for the rest of this period, to the card on file',
+  nextPaymentFact: 'Next payment',
+  nextPayment: (price: string, date: string): string => `${price} on ${date}`,
   usagePercentName: 'Space used',
   manageSubscription: 'Manage subscription',
   cloudFull:
     'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
   waitingForPayment: 'Finish the payment in your browser. This card updates by itself.',
+  pageNotOpened: {
+    notWebAddress: 'The page has an address the browser cannot open.',
+    openFailed: 'The browser did not open the page.',
+    permissionDenied: 'Numen Sync may not open the browser.',
+  },
   stopWaiting: 'Cancel',
   unreachableText: (server: string): string =>
     server === ''

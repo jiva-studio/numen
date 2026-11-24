@@ -73,6 +73,15 @@ func (u *OpenVaultFile) Execute(ctx context.Context, showing domain.Vault, id, p
 	return VaultFile{OpenedFile: opened, MediaType: getMediaType(u.types, opened.Path)}, nil
 }
 
+// ExecuteLatest opens the file at the path of the vault shown, as it is now. The caller closes the body.
+func (u *OpenVaultFile) ExecuteLatest(ctx context.Context, shown domain.Vault, path string) (VaultFile, error) {
+	opened, err := u.open.ExecuteLatest(ctx, shown, path)
+	if err != nil {
+		return VaultFile{}, err
+	}
+	return VaultFile{OpenedFile: opened, MediaType: getMediaType(u.types, opened.Path)}, nil
+}
+
 // VaultPluginFile is a file of a plugin's store open to read and the media type it is served under.
 type VaultPluginFile struct {
 	PluginFile

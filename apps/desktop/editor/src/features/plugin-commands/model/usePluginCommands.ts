@@ -32,10 +32,10 @@ type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> 
 
 /** What a plugin command runs over: the target, the others selected with it, its type and properties. */
 export const createCommandNoteReader =
-  (core: { fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>> }) =>
+  (core: { readFileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>> }) =>
   async (target: NoteTarget): Promise<CommandNote> => {
     const { path } = target
-    const kind = path === '' ? undefined : (await core.fileKinds([path])).get(path)
+    const kind = path === '' ? undefined : (await core.readFileKinds([path])).get(path)
     return {
       path,
       title: target.title,

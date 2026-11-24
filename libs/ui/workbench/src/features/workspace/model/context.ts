@@ -13,7 +13,7 @@ export interface WorkspaceContext {
   readonly choose: (tab: TabId) => void
   readonly close: (tab: TabId) => void
   readonly startTabPress: (tab: TabId, pointer: PointerEvent) => void
-  readonly menu: (tab: TabId, pos: { x: number; y: number }) => void
+  readonly openMenu: (tab: TabId, pos: { x: number; y: number }) => void
   readonly claim: (pane: NodeId) => void
   readonly resize: (branch: NodeId, sizes: readonly number[]) => void
   readonly show: (tab: TabId) => void

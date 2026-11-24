@@ -1,6 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asValue, type Result } from '@numen/plugin-sdk'
+import { asValue, type PluginContext } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -64,7 +64,7 @@ const mountCard = (props: InstanceType<typeof SubscriptionCard>['$props']) => {
 
 const render = async (response: SubscriptionResponse) => {
   const client = createClient(() => Promise.resolve(response))
-  const openExternal = vi.fn<(url: string) => Promise<Result<null>>>(() =>
+  const openExternal = vi.fn<PluginContext['identity']['openExternal']>(() =>
     Promise.resolve(asValue(null)),
   )
   const wrapper = mountCard({ client, openExternal, now: () => NOW })
@@ -97,21 +97,51 @@ const getContent = (wrapper: VueWrapper) => wrapper.get('.subscription__content'
 const findCancel = (wrapper: VueWrapper) =>
   wrapper.findAll('button').find((one) => one.text() === 'Cancel')
 
-const findPlanSelect = (wrapper: VueWrapper) => wrapper.find('button[data-slot="select"]')
+const findPlanButton = (wrapper: VueWrapper) =>
+  wrapper.findAll('button').find((one) => one.text() === 'Change plan')
 
-const getPlanChoices = () =>
-  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).map(
-    (one) => one.querySelector('.menu__text')?.textContent?.trim() ?? '',
+const getPlanItems = () =>
+  Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'))
+
+const getPlanName = (item: Element): string => {
+  const name = Array.from(item.querySelector('.menu__text')?.childNodes ?? []).find(
+    (node) => node.textContent?.trim() !== '',
   )
+  return name?.textContent?.trim() ?? ''
+}
+
+const getPlanChoices = (): string[] => getPlanItems().map(getPlanName)
+
+const openPlans = async (wrapper: VueWrapper) => {
+  await findPlanButton(wrapper)?.trigger('click')
+  await flushPromises()
+}
+
+const choosePlan = async (wrapper: VueWrapper, name: string) => {
+  await openPlans(wrapper)
+  getPlanItems()
+    .find((one) => getPlanName(one) === name)
+    ?.click()
+  await flushPromises()
+}
+
+const findSwitchDialog = () => document.body.querySelector<HTMLElement>('[role="alertdialog"]')
+
+const getSwitchFacts = (): string[] =>
+  Array.from(findSwitchDialog()?.querySelectorAll('dt') ?? []).map(
+    (term) => `${term.textContent} — ${term.nextElementSibling?.textContent ?? ''}`,
+  )
+
+const answerSwitch = async (text: string) => {
+  Array.from(findSwitchDialog()?.querySelectorAll('button') ?? [])
+    .find((one) => one.textContent?.trim() === text)
+    ?.click()
+  await flushPromises()
+}
 
 const changePlanTo = async (wrapper: VueWrapper, name: string) => {
-  await findPlanSelect(wrapper).trigger('click')
-  await flushPromises()
-  const choice = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
-    (one) => one.querySelector('.menu__text')?.textContent?.trim() === name,
-  )
-  choice?.click()
-  await flushPromises()
+  await choosePlan(wrapper, name)
+  await answerSwitch(`Switch to ${name}`)
 }
 
 describe('SubscriptionCard', () => {
@@ -198,9 +228,9 @@ describe('SubscriptionCard', () => {
     const { wrapper } = await render(createResponse({ hasIdentity: false, phase: '' }))
 
     expect(wrapper.text()).toContain(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
-    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
+    expect(wrapper.get('.subscription__badge').text()).toBe('Needs an identity')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
@@ -304,7 +334,7 @@ describe('SubscriptionCard', () => {
     })
     await flushPromises()
     expect(wrapper.text()).toContain(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
 
     answer = createResponse({ phase: 'none' })
@@ -349,17 +379,59 @@ describe('SubscriptionCard', () => {
     expect(findChoose(wrapper, 'Basic')).toBeDefined()
     expect(findChoose(wrapper, 'Plus')).toBeDefined()
     expect(findChoose(wrapper, 'Pro')).toBeDefined()
-    expect(findPlanSelect(wrapper).exists()).toBe(false)
+    expect(findPlanButton(wrapper)).toBeUndefined()
   })
 
-  it('offers one menu Change plan with every other plan and not the plan the account has', async () => {
+  it('lists every plan in the menu Change plan with its size and price, the current one checked and not to choose', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(findPlanSelect(wrapper).text()).toBe('Change plan')
-    await findPlanSelect(wrapper).trigger('click')
-    await flushPromises()
+    await openPlans(wrapper)
 
-    expect(getPlanChoices()).toStrictEqual(['Basic', 'Pro'])
+    expect(getPlanChoices()).toStrictEqual(['Basic', 'Plus', 'Pro'])
+    expect(
+      getPlanItems().map((one) => one.querySelector('.menu__detail')?.textContent),
+    ).toStrictEqual(['10 GB, $5 / month', '100 GB, $15 / month', '250 GB, $30 / month'])
+    const current = getPlanItems().filter((one) => one.getAttribute('aria-checked') === 'true')
+    expect(current.map(getPlanName)).toStrictEqual(['Plus'])
+    expect(current[0]?.textContent).toContain('Current plan')
+    expect(current[0]?.disabled).toBe(true)
+    expect(current[0]?.querySelector('.menu__icon svg')).not.toBeNull()
+    expect(getPlanItems().filter((one) => one.disabled)).toHaveLength(1)
+  })
+
+  it('asks before it changes the plan, with the plan now, the new plan, the charge and the next payment', async () => {
+    const { wrapper, client } = await render(ACTIVE_ON_PLUS)
+
+    await choosePlan(wrapper, 'Pro')
+
+    expect(findSwitchDialog()?.querySelector('h2')?.textContent).toBe('Switch to Pro?')
+    expect(getSwitchFacts()).toStrictEqual([
+      'Now — Plus, 100 GB, $15 / month',
+      'New plan — Pro, 250 GB, $30 / month',
+      'Charged now — The difference for the rest of this period, to the card on file',
+      'Next payment — $30 on December 23, 2026',
+    ])
+    expect(client.changePlan).not.toHaveBeenCalled()
+    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+  })
+
+  it('keeps the plan and asks the server nothing when the switch is cancelled', async () => {
+    const { wrapper, client } = await render(ACTIVE_ON_PLUS)
+    await choosePlan(wrapper, 'Pro')
+
+    await answerSwitch('Cancel')
+
+    expect(findSwitchDialog()).toBeNull()
+    expect(client.changePlan).not.toHaveBeenCalled()
+    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+  })
+
+  it('does not ask to switch to the current plan', async () => {
+    const { wrapper } = await render(ACTIVE_ON_PLUS)
+
+    await choosePlan(wrapper, 'Plus')
+
+    expect(findSwitchDialog()).toBeNull()
   })
 
   it('offers one Manage subscription and no plan to choose while the subscription is active', async () => {
@@ -370,7 +442,7 @@ describe('SubscriptionCard', () => {
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
-  it('changes the plan without opening a browser and shows the new plan', async () => {
+  it('changes the plan once the switch is confirmed, without opening a browser', async () => {
     const { wrapper, client, openExternal } = await render(ACTIVE_ON_PLUS)
 
     await changePlanTo(wrapper, 'Pro')
@@ -379,7 +451,8 @@ describe('SubscriptionCard', () => {
     expect(openExternal).not.toHaveBeenCalled()
     expect(wrapper.get('.subscription__badge').text()).toBe('Pro')
     expect(getRow(wrapper, 'Plan')).toContain('250 GB, $30 / month')
-    expect(findPlanSelect(wrapper).text()).toBe('Change plan')
+    expect(findSwitchDialog()).toBeNull()
+    expect(findPlanButton(wrapper)?.text()).toBe('Change plan')
   })
 
   it('shows the problem of a refused change and keeps the plan', async () => {
@@ -425,9 +498,12 @@ describe('SubscriptionCard', () => {
     expect(wrapper.text()).toContain(
       'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
     )
-    await findPlanSelect(wrapper).trigger('click')
-    await flushPromises()
-    expect(getPlanChoices()).toStrictEqual(['Plus', 'Pro'])
+    await openPlans(wrapper)
+    expect(
+      getPlanItems()
+        .filter((one) => !one.disabled)
+        .map(getPlanName),
+    ).toStrictEqual(['Plus', 'Pro'])
   })
 
   it('does not say the cloud is full while there is room', async () => {
@@ -449,7 +525,7 @@ describe('SubscriptionCard', () => {
 
     expect(getRow(wrapper, 'Plan')).toContain('Plus, 100 GB, $15 / month')
     expect(findChoose(wrapper, 'Plus')).toBeDefined()
-    expect(findPlanSelect(wrapper).exists()).toBe(false)
+    expect(findPlanButton(wrapper)).toBeUndefined()
   })
 
   it('shows only the size of a plan the client does not know', async () => {

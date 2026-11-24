@@ -34,10 +34,10 @@ func describe(changes []host.FileChange) []string {
 func TestListFileChangesReturnsTheLatestEventOfEachKindOfEachFile(t *testing.T) {
 	v := hosttest.New("garden")
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
-	v.File("a.md", "---\ntags: lake\n---\nA\n")
-	v.File("scan.pdf", "%PDF")
-	v.File("a.md", "---\ntags: lake\n---\nA, longer\n")
-	v.File("a.md", "---\ntags: river\n---\nA, longer\n")
+	v.WriteFile("a.md", "---\ntags: lake\n---\nA\n")
+	v.WriteFile("scan.pdf", "%PDF")
+	v.WriteFile("a.md", "---\ntags: lake\n---\nA, longer\n")
+	v.WriteFile("a.md", "---\ntags: river\n---\nA, longer\n")
 
 	got := describe(readFeed(t, v, start).Changes)
 	want := []string{"a.md file.added", "scan.pdf file.added", "a.md file.changed", "a.md note.frontmatterChanged"}
@@ -48,8 +48,8 @@ func TestListFileChangesReturnsTheLatestEventOfEachKindOfEachFile(t *testing.T) 
 
 func TestAMovedNoteKeepsItsSourceAndARemovalDropsTheOtherEvents(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "---\ntags: lake\n---\nA\n")
-	v.File("b.md", "B\n")
+	v.WriteFile("a.md", "---\ntags: lake\n---\nA\n")
+	v.WriteFile("b.md", "B\n")
 	page, err := v.ReadFrontmatter(t.Context(), host.FrontmatterQuery{Paths: []string{"a.md"}})
 	if err != nil {
 		t.Fatal(err)
@@ -81,7 +81,7 @@ func TestAMovedNoteKeepsItsSourceAndARemovalDropsTheOtherEvents(t *testing.T) {
 
 func TestAResetFeedOrTrimmedRemovalsResetACursor(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 	before := readFeed(t, v, host.FileChangeCursor{}).Next
 	v.Remove("a.md")
 	v.TrimRemovals()
@@ -100,8 +100,8 @@ func TestAResetFeedOrTrimmedRemovalsResetACursor(t *testing.T) {
 
 func TestTheStartOfTheFeedListsTheFilesAfterTrimmedRemovals(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
-	v.File("b.md", "B\n")
+	v.WriteFile("a.md", "A\n")
+	v.WriteFile("b.md", "B\n")
 	v.Remove("a.md")
 	v.TrimRemovals()
 	head := readFeed(t, v, host.FileChangeCursor{}).Next
@@ -114,7 +114,7 @@ func TestTheStartOfTheFeedListsTheFilesAfterTrimmedRemovals(t *testing.T) {
 func TestAChangeHasTheHashSizeAndModificationTimeOfTheFile(t *testing.T) {
 	v := hosttest.New("garden")
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 	stat, err := v.StatFile(t.Context(), "a.md")
 	if err != nil {
 		t.Fatal(err)
@@ -133,9 +133,9 @@ func TestAChangeHasTheHashSizeAndModificationTimeOfTheFile(t *testing.T) {
 
 func TestAChangeAfterARewriteHasTheLatestContent(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
-	v.File("a.md", "A, longer\n")
+	v.WriteFile("a.md", "A, longer\n")
 	stat, err := v.StatFile(t.Context(), "a.md")
 	if err != nil {
 		t.Fatal(err)
@@ -153,8 +153,8 @@ func TestAChangeAfterARewriteHasTheLatestContent(t *testing.T) {
 
 func TestAnEarlierChangeHasTheLatestContentOfItsFile(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
-	v.File("a.md", "A, longer\n")
+	v.WriteFile("a.md", "A\n")
+	v.WriteFile("a.md", "A, longer\n")
 
 	for _, one := range readFeed(t, v, host.FileChangeCursor{}).Changes {
 		if one.Hash != domain.HashContent([]byte("A, longer\n")) || one.Size != int64(len("A, longer\n")) {
@@ -165,7 +165,7 @@ func TestAnEarlierChangeHasTheLatestContentOfItsFile(t *testing.T) {
 
 func TestARemovalHasEmptyHashSizeAndModificationTime(t *testing.T) {
 	v := hosttest.New("garden")
-	v.File("a.md", "A\n")
+	v.WriteFile("a.md", "A\n")
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
 	v.Remove("a.md")
 

@@ -118,7 +118,16 @@
   font-size: var(--numen-chrome-text-2);
 }
 
+.subscription .island-card__aside {
+  align-self: stretch;
+  margin-inline-end: calc(-0.625 * var(--numen-chrome-unit));
+}
+
 .subscription__badge {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  box-sizing: border-box;
   padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
@@ -258,34 +267,33 @@
 }
 
 .subscription .subscription__change {
-  inline-size: auto;
+  gap: calc(0.375 * var(--numen-chrome-unit));
   padding-inline: calc(0.75 * var(--numen-chrome-unit));
-  font-weight: 500;
-  transition: background-color var(--numen-motion-hover) ease;
 }
 
-.subscription .subscription__change:hover {
-  border-color: var(--numen-field-border);
-  background-color: color-mix(in oklab, var(--numen-field-bg), var(--numen-ink) 8%);
-}
-
-.subscription .subscription__change .select__reading {
+.subscription__current-tag {
+  margin-inline-start: calc(0.5 * var(--numen-chrome-unit));
+  padding: 0 calc(0.375 * var(--numen-chrome-unit));
+  border-radius: var(--numen-chrome-radius-tight);
+  background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
   color: var(--numen-ink);
+  font-size: var(--numen-chrome-text-1);
+  font-weight: 500;
 }
 
-.subscription .subscription__change--solid {
-  border-color: transparent;
-  background-color: var(--numen-accent);
-  color: var(--numen-accent-ink);
+.subscription__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(0.375 * var(--numen-chrome-unit)) var(--numen-chrome-unit);
+  margin: 0;
 }
 
-.subscription .subscription__change--solid:hover {
-  background-color: color-mix(in oklab, var(--numen-accent), var(--numen-ink) 8%);
+.subscription__facts dt {
+  color: var(--numen-hushed);
 }
 
-.subscription .subscription__change--solid .select__reading,
-.subscription .subscription__change--solid .select__mark {
-  color: inherit;
+.subscription__facts dd {
+  margin: 0;
 }
 
 .subscription__meter {

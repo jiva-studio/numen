@@ -91,7 +91,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 	}
 	var output []byte
 	if isStruct(reflect.TypeFor[Out]()) {
-		if output, err = schemaOf(reflect.TypeFor[Out]()); err != nil {
+		if output, err = buildSchema(reflect.TypeFor[Out]()); err != nil {
 			return fmt.Errorf("tool %s: result: %w", spec.Name, err)
 		}
 	}
@@ -233,7 +233,7 @@ func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
-func schemaOf(t reflect.Type) ([]byte, error) {
+func buildSchema(t reflect.Type) ([]byte, error) {
 	schema, err := createSchema(t)
 	if err != nil {
 		return nil, err

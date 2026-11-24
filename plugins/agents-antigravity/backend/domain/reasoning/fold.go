@@ -45,9 +45,9 @@ func SplitTitle(title string) (string, string) {
 	return base, strings.ToLower(level)
 }
 
-// Fold gathers the models that differ by the level in their titles into one family each, in the order
+// GroupFamilies gathers the models that differ by the level in their titles into one family each, in the order
 // the first of each is listed. A title standing alone with a level in it stays as it was listed.
-func Fold(models []Listed) []Family {
+func GroupFamilies(models []Listed) []Family {
 	type group struct {
 		base     string
 		listings []Listed

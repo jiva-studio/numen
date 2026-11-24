@@ -35,7 +35,9 @@ const createWindow = (answers: Answers = {}) => {
   const api = createHandledApi({
     moveFile: (request: { from: string; to: string }) => {
       actions.push(`move ${request.from} ${request.to}`)
-      return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
+      return (
+        answers.move ?? { moveResult: { from: request.from, to: request.to, repairedNotes: [] } }
+      )
     },
     listFiles: (request: { path: string }) => {
       actions.push(`listNames ${request.path || '—'}`)
@@ -59,7 +61,7 @@ const createWindow = (answers: Answers = {}) => {
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,
-      asking: () => answers.isAsking === true,
+      isAsking: () => answers.isAsking === true,
       flushPending: async (id: string) => {
         actions.push(`flushPending ${id}`)
       },

@@ -12,16 +12,23 @@ export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
-export { branch, pane } from './features/workspace'
-export { paneById, getPanes, getTabPaneRect } from './features/workspace'
+export { branch, createPane } from './features/workspace'
+export { findPane, getPanes, getTabPaneRect } from './features/workspace'
 export type { Tab, TabMenu, Workspace } from './features/workspace'
 
 /** The theme, the mode and the sizes a window is drawn at, and the palette they are chosen in. */
-export { createAppearanceOutput, useAppearancePalette, MODES } from './features/appearance'
-export type { Mode } from './features/appearance'
+export {
+  createAppearanceOutput,
+  createWindowAppearance,
+  useAppearancePalette,
+  INTERFACE_SCALE,
+  MODES,
+  TEXT_SCALE,
+} from './features/appearance'
+export type { AppearanceWords, Mode, ThemeSource, WindowAppearance } from './features/appearance'
 
 export { Palette } from './features/palette'
-export { commandKeyChord } from './features/palette'
+export { getCommandKeyChord } from './features/palette'
 export type { ActionWords, PaletteItem, PaletteGroup, PaletteMultiProps } from './features/palette'
 
 /** One list of notices for a window, given by the parts it hosts. */

@@ -90,7 +90,7 @@ func TestSecondaryWindowOptions_UsesDefaultSizeWithoutOne(t *testing.T) {
 }
 
 func TestFatalReportPage_DrawsTitleBar(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{}, errFatalSample)
+	page, err := fatalReport{}.buildPage(container.Config{}, errFatalSample)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ type stringError string
 func (e stringError) Error() string { return string(e) }
 
 func TestFatalReportPage_DrawsNoPluginAction(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{}, errFatalSample)
+	page, err := fatalReport{}.buildPage(container.Config{}, errFatalSample)
 	if err != nil {
 		t.Fatal(err)
 	}

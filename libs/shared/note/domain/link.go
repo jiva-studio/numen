@@ -153,10 +153,10 @@ type ResolvedLink struct {
 	IsAmbiguous bool
 }
 
-// InVault is the vault the link resolved into, which is not always the vault it
+// ResolveVault returns the vault the link resolved into, which is not always the vault it
 // was written in: an identifier names one note in the world, so a link may cross
 // a boundary the user put there on purpose.
-func (r ResolvedLink) InVault(writtenIn VaultID) (vault VaultID, crossed bool) {
+func (r ResolvedLink) ResolveVault(writtenIn VaultID) (vault VaultID, crossed bool) {
 	if r.ToVault == "" || r.ToVault == writtenIn {
 		return writtenIn, false
 	}

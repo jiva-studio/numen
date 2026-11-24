@@ -7,39 +7,39 @@ export class TabStrip {
   constructor(private readonly host: Host) {}
 
   /** The tab with the id the core gave it. */
-  tabById(id: string): Locator {
+  getTabById(id: string): Locator {
     return this.host.page.getByRole('tab').and(this.host.page.locator(`[data-workspace-tab="${id}"]`))
   }
 
   /** The tab of a note: a tab linked to the file tree is named with the words "Linked tab" before its title. */
-  noteTab(title: string): Locator {
+  getNoteTab(title: string): Locator {
     const escaped = escapeRegExp(title)
     return this.host.page
       .getByRole('tab', { name: new RegExp(`^(Linked tab )?${escaped} Close ${escaped}$`) })
       .and(this.host.page.locator('[data-workspace-tab^="note:"]'))
   }
 
-  noteTabs(): Locator {
+  getNoteTabs(): Locator {
     return this.host.page.locator('[data-workspace-tab^="note:"]')
   }
 
   /** The tabs titled by the words. */
-  tabTitled(title: string): Locator {
+  getTabTitled(title: string): Locator {
     return this.host.page.getByRole('tab', { name: getTitlePattern(title) })
   }
 
   /** The tab of the file, named by the beginning of its file name. */
-  tabOfFile(file: string): Locator {
-    return this.tabOfFileIn(this.host.page, file)
+  getTabOfFile(file: string): Locator {
+    return this.getTabOfFileIn(this.host.page, file)
   }
 
   /** The tab of the file inside a pane. */
-  tabOfFileIn(pane: Locator | Page, file: string): Locator {
+  getTabOfFileIn(pane: Locator | Page, file: string): Locator {
     return pane.getByRole('tab', { name: new RegExp('^' + escapeRegExp(getStem(file)), 'i') })
   }
 
   /** The first pane of the window. */
-  firstPane(): Locator {
+  getFirstPane(): Locator {
     return this.host.page.locator('section[data-workspace-pane]').first()
   }
 

@@ -72,8 +72,8 @@ type curveBuilder struct {
 	cards        []Card
 	bounds       Bounds
 	unbegunCount int
-	scheduler    func(retention float64) Scheduler
-	places       func(count int, each func(index int) error) error
+	getScheduler func(retention float64) Scheduler
+	visitPlaces  func(count int, each func(index int) error) error
 }
 
 // CurveInputs are the cards and the helpers a curve is evaluated with: the scheduler at each retention, how the
@@ -82,14 +82,14 @@ type curveBuilder struct {
 type CurveInputs struct {
 	Cards           []Card
 	UnbegunCount    int
-	Scheduler       func(retention float64) Scheduler
-	Places          func(count int, each func(index int) error) error
+	GetScheduler    func(retention float64) Scheduler
+	VisitPlaces     func(count int, each func(index int) error) error
 	RetentionBounds Bounds
 }
 
-// Curve evaluates a preset over the goal range using simulation.
-func (s Simulation) Curve(ctx context.Context, now time.Time, p Settings, in CurveInputs) (Curve, error) {
-	cards, unbegunCount, scheduler, places := in.Cards, in.UnbegunCount, in.Scheduler, in.Places
+// ComputeCurve evaluates a preset over the goal range using simulation.
+func (s Simulation) ComputeCurve(ctx context.Context, now time.Time, p Settings, in CurveInputs) (Curve, error) {
+	cards, unbegunCount, scheduler, places := in.Cards, in.UnbegunCount, in.GetScheduler, in.VisitPlaces
 	if scheduler == nil {
 		scheduler = func(float64) Scheduler { return s.By }
 	}
@@ -105,21 +105,21 @@ func (s Simulation) Curve(ctx context.Context, now time.Time, p Settings, in Cur
 	}
 	d := curveBuilder{
 		run: s, now: now, preset: p, cards: cards, bounds: in.RetentionBounds,
-		unbegunCount: unbegunCount, scheduler: scheduler, places: places,
+		unbegunCount: unbegunCount, getScheduler: scheduler, visitPlaces: places,
 	}
 	switch p.Goal {
 	case GoalRetention:
-		return d.retention(ctx)
+		return d.buildRetentionCurve(ctx)
 	case GoalDate:
-		return d.date(ctx)
+		return d.buildDateCurve(ctx)
 	case GoalMinutes:
-		return d.minutes(ctx)
+		return d.buildMinutesCurve(ctx)
 	default:
-		return d.minutes(ctx)
+		return d.buildMinutesCurve(ctx)
 	}
 }
 
-func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
+func (d curveBuilder) buildMinutesCurve(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	free := p
@@ -135,19 +135,19 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
 	// The day the preset keeps is a place of the grid.
-	snap(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
+	setNearestCell(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.GetDurationDays() - 1}
 	out.Points = make([]Point, len(out.Grid))
-	if err := d.places(len(out.Grid), func(i int) error {
+	if err := d.visitPlaces(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
 		ran, err := run.Run(ctx, now, one, pos, unreviewed)
 		if err != nil {
 			return err
 		}
-		place := session(ran)
+		place := buildSessionPoint(ran)
 		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, pos, unreviewed); err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
+func (d curveBuilder) buildRetentionCurve(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	out := createCurve(GoalRetention)
@@ -181,21 +181,21 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	}
 	// The preset's target is a place of the grid. The two ends are fixed by what
 	// memory allows, and no setting displaces them.
-	snap(out.Grid, p.Retention, 1, len(out.Grid)-2)
+	setNearestCell(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.GetDurationDays() - 1}
 	out.Points = make([]Point, len(out.Grid))
-	if err := d.places(len(out.Grid), func(i int) error {
+	if err := d.visitPlaces(len(out.Grid), func(i int) error {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
-		asks.By = d.scheduler(out.Grid[i])
+		asks.By = d.getScheduler(out.Grid[i])
 		ran, err := asks.Run(ctx, now, one, pos, unreviewed)
 		if err != nil {
 			return err
 		}
-		place := point(ran)
+		place := buildPoint(ran)
 		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, pos, unreviewed); err != nil {
 			return err
 		}
@@ -225,10 +225,10 @@ func getNamedOffset(d Calendar, open time.Time, targetDate string) int {
 
 func createDatePoint(ran Projection, day int) Point {
 	back, _ := ran.Retained.GetShare(day)
-	opening, session := ran.Session()
+	opening, session := ran.FindSession()
 	one := Point{
 		Reviews:  0,
-		Minutes:  ran.minutesADay(day),
+		Minutes:  ran.computeMinutesADay(day),
 		Due:      ran.Backlog[day],
 		Retained: back,
 		Share:    ran.Through[day],
@@ -261,7 +261,7 @@ func findSuggestedDate(points []Point, grid []float64, days []string, minutesADa
 	}
 	return GetOutsideGrid()
 }
-func (d curveBuilder) date(ctx context.Context) (Curve, error) {
+func (d curveBuilder) buildDateCurve(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	out := createCurve(GoalDate)
@@ -290,7 +290,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
 	out.Points = make([]Point, len(steps))
-	if err := d.places(len(steps), func(i int) error {
+	if err := d.visitPlaces(len(steps), func(i int) error {
 		day := first + steps[i]
 		aiming, asks := p, run
 		aiming.By = openDate.AddDate(0, 0, day)
@@ -342,7 +342,7 @@ func getDaysToLearnWithoutForgetting(
 
 func isLearned(one Point) bool { return one.Short == 0 && one.IsEnough }
 
-func point(p Projection) Point {
+func buildPoint(p Projection) Point {
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	back, _ := p.Retained.GetShare(p.Days - 1)
@@ -365,16 +365,16 @@ func point(p Projection) Point {
 }
 
 func getSessionClosed(p Projection) BudgetNames {
-	day, isAdmitted := p.Session()
+	day, isAdmitted := p.FindSession()
 	if !isAdmitted {
 		return BudgetNames{ClosedPaused}
 	}
 	return p.Closed[day]
 }
 
-func session(p Projection) Point {
-	out := point(p)
-	day, isAdmitted := p.Session()
+func buildSessionPoint(p Projection) Point {
+	out := buildPoint(p)
+	day, isAdmitted := p.FindSession()
 	if !isAdmitted {
 		return out
 	}
@@ -383,7 +383,7 @@ func session(p Projection) Point {
 }
 
 func getSessionMinutes(p Projection) float64 {
-	day, isAdmitted := p.Session()
+	day, isAdmitted := p.FindSession()
 	if !isAdmitted {
 		return 0
 	}

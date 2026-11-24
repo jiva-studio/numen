@@ -39,9 +39,9 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const { onGripPress, onRowTransitionRun, onRowTransitionEnd, isPressed, getRowClass, getRowStyle } =
   useSlotDrag({
-    getRows: (group) => rowsOf(group),
+    getRows: (group) => getRows(group),
     move: (group, from, to) => {
-      const rows = moveSlotRow(rowsOf(group), from, to)
+      const rows = moveSlotRow(getRows(group), from, to)
       onChange(group, rows)
       return rows
     },
@@ -52,7 +52,7 @@ function onGripKey(group: SlotGroup, at: number, event: KeyboardEvent): void {
   const by = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0
   if (by === 0) return
   event.preventDefault()
-  onChange(group, moveSlotRow(rowsOf(group), at, at + by))
+  onChange(group, moveSlotRow(getRows(group), at, at + by))
 }
 
 function onReset(group: SlotGroup): void {
@@ -64,7 +64,7 @@ function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, props.layout)
+const getRows = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, props.layout)
 </script>
 
 <template>
@@ -78,7 +78,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
       <RowAction
         :label="words.slotsAddSeparator"
         class="plugin-slots__action"
-        @click="onChange(group, addSlotSeparator(rowsOf(group)))"
+        @click="onChange(group, addSlotSeparator(getRows(group)))"
       >
         <SeparatorHorizontal :size="14" aria-hidden="true" />
       </RowAction>
@@ -93,7 +93,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
     </template>
     <ul class="plugin-slots__list" :class="{ 'plugin-slots__list--pressed': isPressed(group) }">
       <li
-        v-for="(row, at) in rowsOf(group)"
+        v-for="(row, at) in getRows(group)"
         :key="row.key"
         class="plugin-slots__row"
         :class="getRowClass(group, row.key)"
@@ -103,12 +103,12 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
       >
         <PluginSlotRow
           :row="row"
-          :is-movable="rowsOf(group).length > 1"
-          :place="getSeparatorPlace(rowsOf(group), at)"
+          :is-movable="getRows(group).length > 1"
+          :place="getSeparatorPlace(getRows(group), at)"
           @grip-press="(event) => onGripPress(group, at, event)"
           @grip-key="(event) => onGripKey(group, at, event)"
-          @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"
-          @remove="onChange(group, removeSlotSeparator(rowsOf(group), at))"
+          @toggle="onChange(group, toggleSlotRow(getRows(group), at))"
+          @remove="onChange(group, removeSlotSeparator(getRows(group), at))"
         />
       </li>
     </ul>

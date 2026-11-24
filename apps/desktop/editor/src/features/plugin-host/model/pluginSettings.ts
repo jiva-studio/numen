@@ -4,6 +4,7 @@ import {
   DEFAULT_PLUGIN_ENABLED,
   createPluginStatus,
   isPluginEnabledValue,
+  type Disposable,
   type EditorSettings,
   type JsonValue,
   type PluginStatus,
@@ -36,12 +37,13 @@ const hasRowChange = (batch: readonly SettingEdit[]): boolean =>
  * connection, of the connections detected on this machine, or of whether a plugin is enabled. An empty
  * batch is the first after the stream was lost, and may hold any of them.
  */
-export const createRowChangeSubscriber =
+export const createRowChangeWatcher =
   (rest: SettingsStore) =>
-  (handler: () => void): (() => void) =>
-    rest.changes.subscribe((batch) => {
+  (handler: () => void): Disposable => ({
+    dispose: rest.changes.subscribe((batch) => {
       if (hasRowChange(batch)) handler()
-    })
+    }),
+  })
 
 /** The settings of a plugin as the plugin host reads them, and the handlers run when one changes. */
 export function createPluginSettingsAccessor(
@@ -51,17 +53,18 @@ export function createPluginSettingsAccessor(
   const getSetting = (pluginId: string, key: string): JsonValue | undefined =>
     getPluginSetting(rest, pluginId, key)
 
-  const onSettingChange = (
+  const watchSetting = (
     pluginId: string,
     key: string,
     handler: (value: JsonValue | undefined) => void | Promise<void>,
-  ): (() => void) =>
-    watch(
+  ): Disposable => ({
+    dispose: watch(
       () => getSetting(pluginId, key),
       (newVal) => {
         runInBackground(Promise.resolve(handler(newVal)), (error) => reportError(pluginId, error))
       },
-    )
+    ),
+  })
 
   const getFlag = (key: string, fallback: boolean): boolean => {
     const value = rest.read.getCommittedSetting(['app', 'editor', key])
@@ -74,15 +77,19 @@ export function createPluginSettingsAccessor(
       ? { lineNumbers: getFlag('lineNumbers', false), softWrap: getFlag('softWrap', true) }
       : undefined
 
-  const onEditorSettingsChange = (
+  const watchEditorSettings = (
     pluginId: string,
     handler: (settings: EditorSettings) => void | Promise<void>,
-  ): (() => void) =>
-    watch([hasLoaded, () => getFlag('lineNumbers', false), () => getFlag('softWrap', true)], () => {
-      const settings = getEditorSettings()
-      if (!settings) return
-      runInBackground(Promise.resolve(handler(settings)), (error) => reportError(pluginId, error))
-    })
+  ): Disposable => ({
+    dispose: watch(
+      [hasLoaded, () => getFlag('lineNumbers', false), () => getFlag('softWrap', true)],
+      () => {
+        const settings = getEditorSettings()
+        if (!settings) return
+        runInBackground(Promise.resolve(handler(settings)), (error) => reportError(pluginId, error))
+      },
+    ),
+  })
 
-  return { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange }
+  return { getSetting, watchSetting, getEditorSettings, watchEditorSettings }
 }

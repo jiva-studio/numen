@@ -44,7 +44,7 @@ message GetSettingsResponse {
   // Every setting currently, as JSON: what the file says, and what an
   // installation without a configuration does under everything it does not. The first level is the
   // version `v`, the owner `app` and one object per plugin id.
-  string written = 1;
+  string settings_json = 1;
 
   // The file itself, absolute on this machine.
   string path = 2;
@@ -57,7 +57,7 @@ message GetSettingsResponse {
   repeated PluginSetting app = 8;
 
 
-  // The version of the state `written` is read from. It grows with every write the core takes, so
+  // The version of the state `settings_json` is read from. It grows with every write the core takes, so
   // an answer with a smaller version than one already taken is older than it and is dropped.
   uint64 version = 10;
 
@@ -69,9 +69,9 @@ message GetSettingsResponse {
 message Setting {
   // The setting, as a path through the file. The first element is the owner, `app` or the id of a
   // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
-  repeated string at = 1;
+  repeated string key_path = 1;
 
-  // What to write there, as JSON. A value the settings cannot be read out of
+  // What to write there, as JSON.
   string value = 2;
 }
 
@@ -80,7 +80,7 @@ message WatchSettingsRequest {}
 message WatchSettingsResponse {
   // The settings that changed together, with the value each now holds. A write of several settings
   // arrives as one response.
-  repeated Setting changed = 1;
+  repeated Setting settings = 1;
 }
 
 message WriteSettingsRequest {
@@ -89,11 +89,11 @@ message WriteSettingsRequest {
 }
 
 message WriteSettingsResponse {
-  // Every setting after the write, in the shape of GetSettingsResponse.written.
-  string written = 1;
+  // Every setting after the write, in the shape of GetSettingsResponse.settings_json.
+  string settings_json = 1;
 
-  // The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
-  // than the version of any answer the core gave before the write.
+  // The version of the state `settings_json` describes, as in GetSettingsResponse.version. It is
+  // greater than the version of any answer the core gave before the write.
   uint64 version = 2;
 }
 

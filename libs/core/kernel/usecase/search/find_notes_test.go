@@ -21,7 +21,7 @@ type kindsOf struct {
 	requests [][]string
 }
 
-func (k *kindsOf) Execute(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
+func (k *kindsOf) ListTabKinds(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
 	k.requests = append(k.requests, paths)
 	return k.kinds, k.err
 }

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, getChoosePattern, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
+import { formatDay, getChoosePattern, getPlanItemPattern, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
 describe('readPosition', () => {
   it('reads the place a confirmation asks for', () => {
-    expect(readPosition('Confirm word 4')).toBe(4)
-    expect(readPosition('Confirm word 12')).toBe(12)
+    expect(readPosition('Word 4')).toBe(4)
+    expect(readPosition('Word 12')).toBe(12)
   })
 
   it('refuses a label that is not a confirmation', () => {
@@ -56,5 +56,18 @@ describe('getPlanLinePattern', () => {
   it('does not match another size or the detail of a plan to choose', () => {
     expect(getPlanLinePattern('Plus', 100).test('10 GB, $5 / month')).toBe(false)
     expect(getPlanLinePattern('Plus', 100).test('100 GB of synced files')).toBe(false)
+  })
+})
+
+describe('getPlanItemPattern', () => {
+  it('matches the item of the plan with or without its size and price', () => {
+    expect(getPlanItemPattern('Pro').test('Pro')).toBe(true)
+    expect(getPlanItemPattern('Pro').test('Pro 250 GB, $30 / month')).toBe(true)
+    expect(getPlanItemPattern('Pro').test('Pro250 GB, $30 / month')).toBe(true)
+  })
+
+  it('does not match a plan whose name only starts with the name', () => {
+    expect(getPlanItemPattern('Pro').test('Professional 1 TB')).toBe(false)
+    expect(getPlanItemPattern('Plus').test('Pro 250 GB')).toBe(false)
   })
 })

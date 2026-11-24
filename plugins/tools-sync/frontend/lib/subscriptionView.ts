@@ -76,7 +76,8 @@ const getPhaseView = (
 
 /**
  * The badge and the text of the card for what the server told. A badge appears only where it adds to the
- * text and to the plans: the plan of an active subscription, and the state of an ended one.
+ * text and to the plans: the plan of an active subscription, the state of an ended one, and the identity a
+ * device without one needs.
  */
 export function getSubscriptionView(snapshot: SubscriptionSnapshot): SubscriptionView {
   switch (snapshot.status) {
@@ -89,7 +90,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
         tone: 'warning',
       }
     case 'noIdentity':
-      return { badge: '', text: words.noIdentityText, tone: 'neutral' }
+      return { badge: words.needsIdentity, text: words.noIdentityText, tone: 'neutral' }
     case 'ready':
       return snapshot.phase === ''
         ? { badge: '', text: '', tone: 'neutral' }
@@ -165,4 +166,16 @@ export function getUsageText(usedBytes: number, quotaBytes: number): string {
 export function getUsagePercent(usedBytes: number, quotaBytes: number): number {
   if (quotaBytes <= 0) return 0
   return Math.min(100, Math.round((usedBytes / quotaBytes) * 100))
+}
+
+/** The size and the price for a month of a plan to choose, such as "100 GB, $15 / month"; a plan with no price shows only its size. */
+export function getOfferDetail(offer: PlanOffer): string {
+  return [offer.size, offer.price === '' ? '' : words.pricePerMonth(offer.price)]
+    .filter((part) => part !== '')
+    .join(', ')
+}
+
+/** A plan to choose with its name in front, such as "Plus, 100 GB, $15 / month". */
+export function getOfferLine(offer: PlanOffer): string {
+  return [offer.name, getOfferDetail(offer)].filter((part) => part !== '').join(', ')
 }

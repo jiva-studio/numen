@@ -9,7 +9,7 @@ import (
 
 // A run of encoder frames decoded through the Parakeet predictor and joiner.
 func BenchmarkParakeetGreedyLoop(b *testing.B) {
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	cfg.ShouldDownload = false
 	delta, err := Open(b.Context(), NewRuntime(), cfg, nil)
 	if err != nil {
@@ -42,7 +42,7 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 
 // A run of audio cut by the segmenter, scored through Silero VAD.
 func BenchmarkSileroVAD(b *testing.B) {
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	cfg.ShouldDownload = false
 	delta, err := Open(b.Context(), NewRuntime(), cfg, nil)
 	if err != nil {

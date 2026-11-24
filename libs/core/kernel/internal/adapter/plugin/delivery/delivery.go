@@ -191,7 +191,7 @@ func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot) (bool, 
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		d.host.GetClient(snapshot.Endpoint),
 		transport.GetBaseURL(snapshot.Endpoint),
-		connect.WithInterceptors(transport.AuthInterceptor(snapshot.Endpoint.Token)),
+		connect.WithInterceptors(transport.CreateAuthInterceptor(snapshot.Endpoint.Token)),
 	)
 	req := connect.NewRequest(&v1.ConfigureRequest{
 		Values: snapshot.Values,

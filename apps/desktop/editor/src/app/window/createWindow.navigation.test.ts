@@ -5,15 +5,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import { COMMAND } from '@/shared/model/command'
 import {
-  changed,
+  vaultChanges,
   getWindowParts,
   mountWindowWithPalette,
   registerNoteTabs,
-  outside,
+  focusRequests,
   requests,
   settle,
   submitPalette,
-  typeInPalette,
+  enterPaletteText,
 } from '@/testing/window'
 
 type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
@@ -31,12 +31,12 @@ const readSavedPaths = (): readonly string[] =>
   requests.openTabs.at(-1)?.tabs.map((one) => one.path) ?? []
 
 const showNote = async (path: string): Promise<void> => {
-  outside.ask({ path, start: 0, length: 0 })
+  focusRequests.ask({ path, start: 0, length: 0 })
   await vi.waitFor(() => expect(readSavedPaths()).toContain(path))
 }
 
 const renameNote = async (from: string, to: string): Promise<void> => {
-  changed.report({ paths: [to], renamed: [{ from, to }] })
+  vaultChanges.report({ paths: [to], moves: [{ from, to }] })
   await settle()
   await settle()
 }
@@ -58,7 +58,7 @@ describe('a note created by a command of the window', () => {
 
     palette.runCommand(COMMAND.createNote, palette.getTarget())
     await settle()
-    await typeInPalette('Entropy')
+    await enterPaletteText('Entropy')
     await submitPalette()
 
     await vi.waitFor(() => expect(readSavedPaths()).toContain('Entropy.md'))
@@ -100,7 +100,7 @@ describe('a note renamed', () => {
       await settle()
 
       await renameNote(ENTROPY, HEAT)
-      await typeInPalette('Kelvin')
+      await enterPaletteText('Kelvin')
       await submitPalette()
 
       expect(requests.renamed).toStrictEqual([`${HEAT} Kelvin`])

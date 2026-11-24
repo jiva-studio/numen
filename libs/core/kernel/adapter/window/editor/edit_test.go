@@ -173,10 +173,10 @@ func readNote(t *testing.T, api *Services, path string) *v1.ReadBaseline {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.GetAt() == nil {
+	if out.Msg.GetFileStat() == nil {
 		t.Fatalf("the read of %s carried no fingerprint", path)
 	}
-	return &v1.ReadBaseline{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
+	return &v1.ReadBaseline{Prose: out.Msg.GetBody(), FileStat: out.Msg.GetFileStat()}
 }
 
 // A note holding prose the client has not read is its own answer.
@@ -201,7 +201,7 @@ func TestWriteNote_ReportsConflictOnUnreadDiskChange(t *testing.T) {
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a note that changed was answered %v", code)
 	}
-	if out.Msg.GetAt() != nil {
+	if out.Msg.GetFileStat() != nil {
 		t.Error("a write that wrote nothing answered with a fingerprint")
 	}
 
@@ -231,14 +231,14 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Fatal("the first write said the note changed")
 	}
-	if first.Msg.GetAt() == nil {
+	if first.Msg.GetFileStat() == nil {
 		t.Fatal("the write answered with no fingerprint")
 	}
 
 	second, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nTwo.\n",
-		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), At: first.Msg.GetAt()},
+		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), FileStat: first.Msg.GetFileStat()},
 	}))
 	if err != nil {
 		t.Fatal(err)

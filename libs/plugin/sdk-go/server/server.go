@@ -99,7 +99,7 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 		return nil, errors.New("empty auth token")
 	}
 	s := newServer(0, token, nil, true)
-	endpoint, endpointErr := hostcall.FromVars(vars)
+	endpoint, endpointErr := hostcall.ReadVars(vars)
 	s.getHostEndpoint = func() (hostcall.Endpoint, error) { return endpoint, endpointErr }
 	if err := mount(s); err != nil {
 		return nil, errors.Join(err, s.Close())
@@ -142,7 +142,7 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 	s := &Server{
 		port:              port,
 		token:             token,
-		getHostEndpoint:   hostcall.FromEnv,
+		getHostEndpoint:   hostcall.ReadEnv,
 		stdout:            os.Stdout,
 		stdin:             os.Stdin,
 		signals:           []os.Signal{os.Interrupt, syscall.SIGTERM},
@@ -174,9 +174,9 @@ func (s *Server) GetHostEndpoint() (hostcall.Endpoint, error) {
 	return s.getHostEndpoint()
 }
 
-// OnClose adds what Close runs. A server that serves on a port runs it when Serve returns; a linked
+// AddCloser adds what Close runs. A server that serves on a port runs it when Serve returns; a linked
 // server runs it when the host shuts the plugin down.
-func (s *Server) OnClose(fn func() error) {
+func (s *Server) AddCloser(fn func() error) {
 	s.closers = append(s.closers, fn)
 }
 

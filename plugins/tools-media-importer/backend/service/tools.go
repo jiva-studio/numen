@@ -46,8 +46,8 @@ func NewTools(links *link.Links) *Tools {
 	return &Tools{links: links}
 }
 
-// Registry registers and returns the import tool.
-func (t *Tools) Registry() (*tools.Registry, error) {
+// BuildRegistry registers and returns the import tool.
+func (t *Tools) BuildRegistry() (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
 		Name:  "url_import",

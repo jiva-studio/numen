@@ -94,7 +94,7 @@ func (c *Clock) AwaitWait(tb testing.TB) time.Duration {
 }
 
 // Eventually polls the condition until it holds, and fails the test when it does not hold in five seconds.
-func Eventually(tb testing.TB, what string, condition func() bool) {
+func WaitUntil(tb testing.TB, what string, condition func() bool) {
 	tb.Helper()
 	timeout := time.After(5 * time.Second)
 	for !condition() {

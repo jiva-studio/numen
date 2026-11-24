@@ -80,7 +80,7 @@ func TestTheSearchOfAnUnknownVaultIsRefusedAndAKnownOtherVaultIsItsOwn(t *testin
 	if err := search.With("chemistry").SetSearchFloor(ctx, searchRecipe, 0.6); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := search.StoredFloor(searchRecipe); found {
+	if _, found := search.GetStoredFloor(searchRecipe); found {
 		t.Error("a floor set on another vault was stored for the shown one")
 	}
 }
@@ -173,7 +173,7 @@ func TestTheSearchRefusesARecipeOfAnotherModelAndAHostWithNoModel(t *testing.T) 
 	if err := search.SetSearchFloor(ctx, "other", 0.5); !errors.Is(err, host.ErrRecipeMismatch) {
 		t.Errorf("floor set gave %v", err)
 	}
-	if _, found := search.StoredFloor("other"); found || search.FloorWrites() != 0 {
+	if _, found := search.GetStoredFloor("other"); found || search.FloorWrites() != 0 {
 		t.Error("a refused floor was stored")
 	}
 
@@ -197,7 +197,7 @@ func TestTheSearchRefusesAFloorOutsideTheRange(t *testing.T) {
 			t.Errorf("floor %v gave %v", floor, err)
 		}
 	}
-	if _, found := search.StoredFloor(searchRecipe); found {
+	if _, found := search.GetStoredFloor(searchRecipe); found {
 		t.Error("a floor outside the range was stored")
 	}
 	if err := search.SetSearchFloor(ctx, searchRecipe, 1); err != nil {

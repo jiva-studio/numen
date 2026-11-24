@@ -133,7 +133,7 @@ Then('the subscription is active{on}', async ({ person }, computer: ComputerName
 })
 
 When('the person buys the subscription', async ({ person }) => {
-  await person.identity.buy()
+  await person.identity.startPurchase()
 })
 
 When('the person opens the payment page without paying', async ({ person }) => {
@@ -157,7 +157,7 @@ Given('a sync server that sells the plans {plans} runs', async ({ person }, plan
 })
 
 When('the person buys the plan {string}', async ({ person }, name: string) => {
-  await person.identity.buyPlan(name)
+  await person.identity.choosePlan(name)
 })
 
 Then('the page offers to buy the plan {string} with {int} GB', async ({ person }, name: string, gigabytes: number) => {
@@ -174,6 +174,22 @@ Then('the subscription shows the plan {string} with {int} GB{on}', async ({ pers
 
 When('the person changes the plan to {string}', async ({ person }, name: string) => {
   await person.identity.changePlan(name)
+})
+
+When('the person chooses the plan {string} in Change plan', async ({ person }, name: string) => {
+  await person.identity.chooseChange(name)
+})
+
+When('the person confirms the switch to {string}', async ({ person }, name: string) => {
+  await person.identity.confirmChange(name)
+})
+
+When('the person cancels the switch', async ({ person }) => {
+  await person.identity.cancelChange()
+})
+
+Then('the page shows the plan {string} as the current plan', async ({ person }, name: string) => {
+  await person.identity.expectCurrentPlan(name)
 })
 
 Then('the page offers to change the plan to {string}', async ({ person }, name: string) => {

@@ -79,12 +79,12 @@ const { frame, waiting, isMoving } = usePlexTransition(
     options: options.value,
     placement: props.placement,
     measure: measures.value?.node,
-    measureLabel: measures.value?.label,
+    measureLabel: measures.value?.measureLabel,
     labelType: measures.value?.labelType,
     room: rooms.getNodeRoom.value,
   }),
   {
-    duration: () => props.duration,
+    getDuration: () => props.duration,
     clock: props.clock,
     isReady: rooms.areLoaded,
     // The size of the window decides which nodes are shown, so nothing is arranged before it is reported.
@@ -120,10 +120,10 @@ const canReach = computed(() => props.creatable.length > 0)
  * creating one writes, is decided by the application.
  */
 const gesture = usePlexGesture({
-  frame: () => frame.value,
-  options: () => options.value,
-  relations: () => props.creatable,
-  threshold: () => props.dragThreshold,
+  getFrame: () => frame.value,
+  getOptions: () => options.value,
+  getRelations: () => props.creatable,
+  getThreshold: () => props.dragThreshold,
   commit: (drop) => {
     if (drop.kind === 'create') emit('create', drop.from, drop.relation)
     else emit('link', drop.from, drop.to, drop.relation)

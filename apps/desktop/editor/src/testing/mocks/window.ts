@@ -4,17 +4,17 @@
  */
 import type { BackgroundTask, PluginHost } from '@numen/plugin-loader'
 import type { CoreAnswers } from '@numen/core-client/testing'
-import { mockVaultList, outside, pendingStream } from '../answers'
+import { mockVaultList, focusRequests, createPendingStream } from '../answers'
 
 export const windowAnswers = {
   windowService: {
-    getCurrentVault: () => ({ vault: mockVaultList.showing }),
-    watchTasks: pendingStream,
-    watchQuit: pendingStream,
-    reportFlush: () => ({}),
+    getCurrentVault: () => ({ vaultId: mockVaultList.showing }),
+    watchTasks: createPendingStream,
+    watchWindowClose: createPendingStream,
+    reportPendingWork: () => ({}),
     cancelTask: () => ({}),
   },
-  workspace: { watchFocus: outside.stream },
+  workspace: { watchFocus: focusRequests.stream },
 } satisfies CoreAnswers
 
 /** The tasks the window lists for its plugins now, read from the host of its plugins. */

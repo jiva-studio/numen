@@ -1,4 +1,4 @@
-/** The person at the page "Identity and licenses": sets up an identity, restores it from its words and deletes it. */
+/** The person at the page "Identity and licenses": sets up an identity in two steps (the words, then the check of three), restores it from its words and deletes it. */
 import { expect, type Locator, type Page } from 'playwright/test'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
@@ -6,10 +6,13 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
-const NO_IDENTITY = 'No identity on this device'
+const NO_IDENTITY = 'An identity is your Numen account.'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const CHOOSE = /^Choose /
 const CHANGE_PLAN = 'Change plan'
+const CURRENT_PLAN = 'Current plan'
+const SWITCH_QUESTION = /^Switch to .+\?$/
+const CANCEL = 'Cancel'
 const RENEWS = 'Renews'
 const PAYMENT_RECEIVED = 'Payment received'
 const PAYMENT_ROUTE = /\/pay\//
@@ -22,14 +25,17 @@ export const getChoosePattern = (name: string, gigabytes?: number): RegExp => ne
 /** The plan row of the card: the size in GB and the price, with the name in front once the subscription ended. */
 export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^(${name}, )?${gigabytes} GB(,|$)`)
 
+/** The name of the item of the menu "Change plan" of a plan: the name of the plan, then its size and price or nothing. */
+export const getPlanItemPattern = (name: string): RegExp => new RegExp(`^${name}(?![A-Za-z])`)
 
 /** The day as the card of the subscription writes it, such as "December 7, 2026". */
 export const formatDay = (day: Date): string => day.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 
-/** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
+/** The place a field of the confirmation asks for: "Word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
-  const found = /^Confirm word (\d+)$/.exec(label)
-  if (found?.[1] === undefined) throw new Error(`"${label}" is not the label of a confirmation of a word`)
+  const found = /^Word (\d+)$/.exec(label)
+  if (found?.[1] === undefined)
+    throw new Error(`"${label}" is not the label of a confirmation of a word`)
   return Number(found[1])
 }
 
@@ -37,10 +43,15 @@ export const readPosition = (label: string): number => {
  * The words to type for the places the page asks about. A mistake replaces the first word that is not the mistake already,
  * so the answer is wrong whatever the words are.
  */
-export const planAnswers = (positions: readonly number[], words: readonly string[], mistake?: string): string[] => {
+export const planAnswers = (
+  positions: readonly number[],
+  words: readonly string[],
+  mistake?: string,
+): string[] => {
   const answers = positions.map((position) => {
     const word = words.at(position - 1)
-    if (word === undefined) throw new Error(`the page asks for the word ${position} of ${words.length}`)
+    if (word === undefined)
+      throw new Error(`the page asks for the word ${position} of ${words.length}`)
     return word
   })
   if (mistake === undefined) return answers
@@ -67,7 +78,9 @@ export class IdentityDriver {
   }
 
   private async readAccount(panel: Locator): Promise<string> {
-    const value = panel.locator('dt', { hasText: ACCOUNT_FINGERPRINT }).locator('xpath=following-sibling::dd[1]')
+    const value = panel
+      .locator('.settings__row', { hasText: ACCOUNT_FINGERPRINT })
+      .locator('.settings__value')
     await expect(value).toBeVisible()
     return (await value.innerText()).trim()
   }
@@ -80,6 +93,17 @@ export class IdentityDriver {
     this.words = (await shown.allInnerTexts()).map((word) => word.trim())
   }
 
+  async writeWordsDown(): Promise<void> {
+    const panel = await this.showPage()
+    await panel.getByRole('button', { name: 'I wrote the words down', exact: true }).click()
+  }
+
+  async expectWordsAsked(count: number): Promise<void> {
+    const panel = await this.showPage()
+    await expect(panel.getByRole('textbox', { name: /^Word \d+$/ })).toHaveCount(count)
+    await expect(panel.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
+  }
+
   async expectWordCount(count: number): Promise<void> {
     await expect(this.getShownWords(await this.showPage())).toHaveCount(count)
   }
@@ -87,21 +111,25 @@ export class IdentityDriver {
   async expectNoWords(): Promise<void> {
     const panel = await this.showPage()
     await expect(panel.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
-    for (const word of this.words) await expect(panel.getByText(word, { exact: true })).toHaveCount(0)
+    for (const word of this.words)
+      await expect(panel.getByText(word, { exact: true })).toHaveCount(0)
   }
 
   private async confirm(mistake?: string): Promise<void> {
     const panel = await this.showPage()
-    const fields = panel.getByRole('textbox', { name: /^Confirm word \d+$/ })
+    const fields = panel.getByRole('textbox', { name: /^Word \d+$/ })
     await expect(fields).toHaveCount(CONFIRMATIONS)
-    const labels = await fields.evaluateAll((all) => all.map((one) => one.getAttribute('aria-label') ?? ''))
+    const labels = await fields.evaluateAll((all) =>
+      all.map((one) => (one as HTMLInputElement).labels?.[0]?.textContent.trim() ?? ''),
+    )
     const answers = planAnswers(labels.map(readPosition), this.words, mistake)
     for (const [index, answer] of answers.entries()) await fields.nth(index).fill(answer)
-    await panel.getByRole('button', { name: 'Keep identity', exact: true }).click()
+    await panel.getByRole('button', { name: 'Continue', exact: true }).click()
   }
 
   async confirmWords(count: number): Promise<void> {
-    if (count !== CONFIRMATIONS) throw new Error(`the page asks for ${CONFIRMATIONS} words, not ${count}`)
+    if (count !== CONFIRMATIONS)
+      throw new Error(`the page asks for ${CONFIRMATIONS} words, not ${count}`)
     await this.confirm()
   }
 
@@ -111,28 +139,34 @@ export class IdentityDriver {
 
   async create(): Promise<void> {
     await this.start()
+    await this.writeWordsDown()
     await this.confirm()
     this.account = await this.readAccount(await this.showPage())
   }
 
   async expectIdentity(has: boolean): Promise<void> {
     const panel = await this.showPage()
-    if (has) await expect(panel.locator('dt', { hasText: ACCOUNT_FINGERPRINT })).toBeVisible()
+    if (has)
+      await expect(panel.locator('.settings__row', { hasText: ACCOUNT_FINGERPRINT })).toBeVisible()
     else await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
   async delete(): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Delete from this device', exact: true }).click()
-    await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click()
+    await panel.getByRole('button', { name: 'Delete identity', exact: true }).click()
+    await this.scenario.page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
     await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore from words', exact: true }).click()
-    await panel.getByRole('textbox', { name: 'Your 12 recovery words' }).fill(text)
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
+    const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
+    await dialog.getByRole('textbox', { name: 'Recovery word 1', exact: true }).fill(text)
+    await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
   }
 
   async restoreFromRecoveryWords(): Promise<void> {
@@ -209,7 +243,7 @@ export class IdentityDriver {
   }
 
   /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buy(): Promise<void> {
+  async startPurchase(): Promise<void> {
     const payment = await this.openPayment()
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
@@ -228,7 +262,7 @@ export class IdentityDriver {
   }
 
   /** Buys the plan of a name on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buyPlan(name: string): Promise<void> {
+  async choosePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
     await card.getByRole('button', { name: getChoosePattern(name) }).click()
@@ -253,25 +287,61 @@ export class IdentityDriver {
   }
 
   private async openChangeItem(card: Locator, name: string): Promise<Locator> {
-    await card.getByRole('button', { name: CHANGE_PLAN, exact: true }).click()
-    return this.scenario.page.getByRole('menuitem', { name, exact: true })
+    const change = card.getByRole('button', { name: CHANGE_PLAN, exact: true })
+    await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await change.click()
+    return this.scenario.page.getByRole('menuitemradio', { name: getPlanItemPattern(name) })
   }
 
-  /** Expects the menu "Change plan" of the card to offer, or not to offer, the plan of a name. */
+  /** Expects the menu "Change plan" of the card to offer, or not to offer, the plan of a name: the current plan is listed and cannot be chosen. */
   async expectChangeOffer(name: string, isOffered: boolean): Promise<void> {
     const card = this.getCard(await this.showPage())
-    await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-    await expect(card.getByRole('button', { name: CHANGE_PLAN, exact: true })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
     const item = await this.openChangeItem(card, name)
-    await expect(item).toHaveCount(isOffered ? 1 : 0)
+    if (isOffered) await expect(item).toBeEnabled()
+    else await expect(item.and(this.scenario.page.locator(':enabled'))).toHaveCount(0)
     await this.scenario.page.keyboard.press('Escape')
   }
 
-  /** Changes the plan from the menu of the card and waits until the card shows the plan of the name. */
-  async changePlan(name: string): Promise<void> {
+  /** Expects the menu "Change plan" of the card to check the plan of a name as the current plan. */
+  async expectCurrentPlan(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const item = await this.openChangeItem(card, name)
+    await expect(item).toHaveAttribute('aria-checked', 'true')
+    await expect(item).toContainText(CURRENT_PLAN)
+    await this.scenario.page.keyboard.press('Escape')
+  }
+
+  /** Chooses the plan of a name in the menu "Change plan" of the card, which asks to confirm the switch. */
+  async chooseChange(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     await (await this.openChangeItem(card, name)).click()
+    await expect(this.getSwitchQuestion(name)).toBeVisible()
+  }
+
+  private getSwitchQuestion(name: string): Locator {
+    return this.scenario.page.getByRole('alertdialog', { name: `Switch to ${name}?`, exact: true })
+  }
+
+  /** Confirms the switch to the plan of a name and waits until the card shows that plan. */
+  async confirmChange(name: string): Promise<void> {
+    const question = this.getSwitchQuestion(name)
+    await question.getByRole('button', { name: `Switch to ${name}`, exact: true }).click()
+    await expect(question).toHaveCount(0)
+    const card = this.getCard(await this.showPage())
     await expect(this.getBadge(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  /** Cancels the switch the card asks about. */
+  async cancelChange(): Promise<void> {
+    const question = this.scenario.page.getByRole('alertdialog', { name: SWITCH_QUESTION })
+    await question.getByRole('button', { name: CANCEL, exact: true }).click()
+    await expect(question).toHaveCount(0)
+  }
+
+  /** Changes the plan from the menu of the card, confirms the switch and waits until the card shows the plan of the name. */
+  async changePlan(name: string): Promise<void> {
+    await this.chooseChange(name)
+    await this.confirmChange(name)
   }
 
   /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */

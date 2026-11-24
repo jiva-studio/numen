@@ -7,8 +7,15 @@
 import {
   SLOT,
   createAppInfo,
-  openExternalUrl,
   createPluginHost,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
   createPluginNotices,
   readManifestSlotEntries,
   readManifestSlotPoints,
@@ -16,7 +23,6 @@ import {
   type BackgroundTaskHost,
   type CommandsHost,
   type createPluginConnections,
-  type Manifest,
   type SlotLayout,
   type VaultRelations,
   type VaultsHost,
@@ -44,6 +50,7 @@ interface ShellServices {
  */
 interface ShellHostDeps {
   readonly relations: VaultRelations
+  readonly openExternal: (href: string) => Promise<void>
   readonly getConnections: (pluginId: string) => ReturnType<typeof createPluginConnections>
   readonly tabs: Pick<WindowTabs, 'registerKind' | 'closeTab' | 'closePluginTab'>
   readonly notices: NoticeQueue
@@ -52,40 +59,51 @@ interface ShellHostDeps {
   readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
 }
 
-const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
+type SlotManifest = Parameters<typeof readManifestSlotPoints>[1]
+
+const readSlotEntries = (manifests: ReadonlyMap<string, SlotManifest>) =>
   [...manifests].flatMap(([pluginId, manifest]) =>
     readManifestSlotEntries(pluginId, manifest, createNamedIcon),
   )
 
-const readSlotPoints = (manifests: ReadonlyMap<string, Manifest>) =>
+const readSlotPoints = (manifests: ReadonlyMap<string, SlotManifest>) =>
   [...manifests].flatMap(([pluginId, manifest]) => readManifestSlotPoints(pluginId, manifest))
 
 export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
     window: {
+      ...NO_WINDOW,
       target: TARGET,
       app: createAppInfo({
         version: import.meta.env.VITE_NUMEN_VERSION,
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform,
       }),
-      openExternal: openExternalUrl,
+      openExternal: deps.openExternal,
       getNotices: (pluginId) => createPluginNotices(notices, pluginId),
       clearNotices: (pluginId) => notices.clear(pluginId),
       getCommands: () => services.commands,
       getWindow: () => services.window,
     },
-    kinds: { registerKind: tabs.registerKind, closeTabsForPlugin: tabs.closePluginTab },
-    tabs: { closeTab: (id) => tabs.closeTab(id) },
+    plugins: NO_PLUGINS,
+    commands: NO_COMMANDS,
+    kinds: {
+      ...NO_KINDS,
+      registerKind: tabs.registerKind,
+      closeTabsForPlugin: tabs.closePluginTab,
+    },
+    tabs: { ...NO_TABS, closeTab: (id) => tabs.closeTab(id) },
     slots: {
+      ...NO_SLOTS,
       getSlotEntries: readSlotEntries,
       getSlotPoints: readSlotPoints,
       ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       reportViewIssue: createViewIssueReporter(notices),
     },
-    vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
+    vault: { ...NO_VAULT, getVaults: () => services.vaults, getRelations: () => deps.relations },
     work: {
+      ...NO_WORK,
       getBackgroundTasks: () => services.backgroundTasks,
       getConnections: (pluginId) => deps.getConnections(pluginId),
     },
@@ -94,6 +112,7 @@ export function createShellHost(deps: ShellHostDeps) {
 
   return {
     host: pluginHost.lifecycle,
+    styles: pluginHost.slotViews.styles,
     /** The view a plugin draws in the title bar, or null while none does. */
     titleBarView: pluginHost.slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */

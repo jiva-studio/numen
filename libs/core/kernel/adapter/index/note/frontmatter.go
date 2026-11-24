@@ -19,7 +19,7 @@ import (
 // ListFrontmatter returns the stored frontmatter of the notes the query names, in path order. A note
 // without frontmatter has no values; a path with no note is left out.
 func (q *QueryReads) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, query frontmatter.Query) ([]frontmatter.Note, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}

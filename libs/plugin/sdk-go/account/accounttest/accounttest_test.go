@@ -14,7 +14,7 @@ import (
 
 func newClient(t *testing.T, fake *accounttest.Fake) *account.Client {
 	t.Helper()
-	endpoint, err := hostcall.FromVars(fake.Vars("token"))
+	endpoint, err := hostcall.ReadVars(fake.BuildVars("token"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestTheFakeSignsWithTheKeyOfItsRecordForThePluginItWasMadeFor(t *testing.T)
 func TestTheFakeIsAHostAPluginReachesByTheEnvironment(t *testing.T) {
 	fake := accounttest.NewFake(t, "md.numen.a")
 
-	vars := fake.Vars("token")
+	vars := fake.BuildVars("token")
 
 	if vars[hostcall.PluginTokenEnv] != "token" || vars[hostcall.HostPortEnv] == "" {
 		t.Errorf("vars = %v", vars)
@@ -56,7 +56,7 @@ func TestTheFakeIsAHostAPluginReachesByTheEnvironment(t *testing.T) {
 
 func TestAFakeThatStartedARestoreHasNoIdentityUntilTheRestoreCompletes(t *testing.T) {
 	fake := accounttest.NewFake(t, "md.numen.a")
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	words, err := identity.NewRecoveryWords(rand.Reader)
 	if err != nil {
 		t.Fatal(err)

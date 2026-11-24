@@ -25,7 +25,7 @@ func readWidth(t *testing.T, db *DB) (int, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	recipe, _, err := coarseRecipe(t.Context(), db.write)
+	recipe, _, err := readCoarseRecipe(t.Context(), db.write)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
 	db, faults := openBreakingDB(t)
 	faults.breakOn(t, "SELECT recipe FROM coarse_recipe")
-	recipe, recorded, err := coarseRecipe(t.Context(), db.write)
+	recipe, recorded, err := readCoarseRecipe(t.Context(), db.write)
 	faults.stop()
 	if !errors.Is(err, errBroken) || recipe != "" || recorded {
 		t.Errorf("got %q, %v, %v", recipe, recorded, err)

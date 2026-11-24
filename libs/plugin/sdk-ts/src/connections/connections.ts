@@ -8,16 +8,16 @@ type ConnectionPriority = 'interactive' | 'background'
 // ConnectionErrorCode is why a call has no result. `canceled` is a call whose signal aborted; the other
 // three are the errors of the Go client: no row can serve the operation, every row failed, and a
 // connection found the request itself wrong.
-export type ConnectionErrorCode = 'no_connection' | 'all_failed' | 'stopped' | 'canceled'
+export type ConnectionErrorCode = 'noConnection' | 'allFailed' | 'stopped' | 'canceled'
 
 // ConnectionFailureCode is the reason a row did not answer, as a program reads it: the codes of
 // connection.Reason of the Go SDK. A row the core set aside for a reason outside these has `unavailable`.
 type ConnectionFailureCode =
   | 'unavailable'
-  | 'rejected_key'
-  | 'payment_required'
-  | 'rate_limited'
-  | 'invalid_request'
+  | 'rejectedKey'
+  | 'paymentRequired'
+  | 'rateLimited'
+  | 'invalidRequest'
 
 // ConnectionFailure is one row that did not answer: the name of its connection, the reason in the words
 // the person reads and the reason as a code.
@@ -28,7 +28,7 @@ interface ConnectionFailure {
 }
 
 // ConnectionError is the error of a call. `failures` lists the rows that failed, in order, and is empty
-// for `no_connection` and `canceled`.
+// for `noConnection` and `canceled`.
 export interface ConnectionError {
   readonly error: ConnectionErrorCode
   readonly message: string
@@ -38,7 +38,7 @@ export interface ConnectionError {
 // ConnectionPreferredRow is a connection among the rows of the plugin for the operation, asked before the
 // other rows with `options` in place of the values of its row fields. A connection that is not among the
 // rows is ignored. `isExclusive` asks that row alone: the call fails with its failure, and with
-// `no_connection` where the connection is not among the rows.
+// `noConnection` where the connection is not among the rows.
 export interface ConnectionPreferredRow {
   readonly connectionId: string
   readonly options: Readonly<Record<string, string>>
