@@ -30,7 +30,7 @@ func (u *CancelLink) Execute(_ context.Context) error {
 		store.bumpLocked()
 		return nil
 	}
-	store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonCanceled, 0))
+	store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonCanceled))
 	store.endLocked(link, identitydomain.LinkPhaseCanceled, identitydomain.LinkReasonCanceled)
 	return nil
 }

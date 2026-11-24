@@ -46,9 +46,6 @@ service IdentityService {
   // DecideLink is the answer of the person on the host to the new device.
   rpc DecideLink(DecideLinkRequest) returns (DecideLinkResponse);
 
-  // EnterLinkCode sends the confirmation code the person read on the host.
-  rpc EnterLinkCode(EnterLinkCodeRequest) returns (EnterLinkCodeResponse);
-
   // ConfirmJoin is the answer of the person on the new device to the account it is offered.
   rpc ConfirmJoin(ConfirmJoinRequest) returns (ConfirmJoinResponse);
 
@@ -98,13 +95,11 @@ enum IdentityErrorCode {
   IDENTITY_ERROR_CODE_DEVICE_REVOKED = 14;
   // IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
   IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
-  // IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
-  IDENTITY_ERROR_CODE_CODE_INVALID = 16;
   // IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
-  IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 17;
+  IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 16;
   // IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
   // kit: older, or another history, or none. The restore is over; nothing was kept.
-  IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 18;
+  IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 17;
 }
 
 // IdentityInfo is what a person can see of the identity of this device.
@@ -231,24 +226,21 @@ enum LinkPhase {
   // LINK_PHASE_CONFIRM_PEER is the host asking the person about the new device.
   LINK_PHASE_CONFIRM_PEER = 3;
   LINK_PHASE_WAITING_FOR_ACCEPT = 4;
-  LINK_PHASE_ENTER_CODE = 5;
-  LINK_PHASE_PUBLISHING = 6;
+  LINK_PHASE_PUBLISHING = 5;
   // LINK_PHASE_CONFIRM_ACCOUNT is the new device asking the person about the account; the host waits for the answer.
-  LINK_PHASE_CONFIRM_ACCOUNT = 7;
-  LINK_PHASE_LINKED = 8;
-  LINK_PHASE_FAILED = 9;
+  LINK_PHASE_CONFIRM_ACCOUNT = 6;
+  LINK_PHASE_LINKED = 7;
+  LINK_PHASE_FAILED = 8;
 }
 
 enum LinkReason {
   LINK_REASON_UNSPECIFIED = 0;
   LINK_REASON_DECLINED = 1;
   LINK_REASON_DEVICE_HAS_IDENTITY = 2;
-  LINK_REASON_WRONG_CODE = 3;
-  LINK_REASON_TOO_MANY_WRONG_CODES = 4;
-  LINK_REASON_STALE_CHAIN = 5;
-  LINK_REASON_CANCELED = 6;
-  LINK_REASON_EXPIRED = 7;
-  LINK_REASON_INVALID = 8;
+  LINK_REASON_STALE_CHAIN = 3;
+  LINK_REASON_CANCELED = 4;
+  LINK_REASON_EXPIRED = 5;
+  LINK_REASON_INVALID = 6;
 }
 
 // LinkInfo is what a window shows of the link in progress. It holds no key.
@@ -258,18 +250,13 @@ message LinkInfo {
   LinkRole role = 3;
   // qr_text is the text of the QR code, set on the device that shows it.
   string qr_text = 4;
-  // code is the confirmation code, set on the host that reads the QR code of a new device.
-  string code = 5 [debug_redact = true];
-  string peer_name = 6;
-  string peer_fingerprint = 7;
-  string account_fingerprint = 8;
-  uint32 tries_left = 9;
-  LinkReason reason = 10;
+  string peer_name = 5;
+  string peer_fingerprint = 6;
+  string account_fingerprint = 7;
+  LinkReason reason = 8;
   // device_name and device_fingerprint name this device.
-  string device_name = 11;
-  string device_fingerprint = 12;
-  // is_approved is true once the person approved the new device and the host waits for the code.
-  bool is_approved = 13;
+  string device_name = 9;
+  string device_fingerprint = 10;
 }
 
 message StartLinkRequest {
@@ -298,15 +285,6 @@ message DecideLinkRequest {
 }
 
 message DecideLinkResponse {
-  IdentityErrorCode error = 1;
-  string detail = 2;
-}
-
-message EnterLinkCodeRequest {
-  string code = 1 [debug_redact = true];
-}
-
-message EnterLinkCodeResponse {
   IdentityErrorCode error = 1;
   string detail = 2;
 }

@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	maxLinkWait  = 20 * time.Second
-	maxCodeTries = 3
-	codeDigits   = 6
+	maxLinkWait = 20 * time.Second
 )
 
 // pendingLink is the link in progress. peer and chain are of the host: the device that joins and the chain that

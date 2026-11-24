@@ -23,7 +23,6 @@ type LinkUseCases struct {
 
 // AccountUseCases are the use cases of the devices of the account and of joining one.
 type AccountUseCases struct {
-	EnterCode   *identity.EnterLinkCode
 	ConfirmJoin *identity.ConfirmJoin
 	List        *identity.ListDevices
 	Revoke      *identity.RevokeDevice
@@ -66,15 +65,6 @@ func (h *Handler) DecideLink(
 ) (*connect.Response[v1.DecideLinkResponse], error) {
 	code, detail, err := serveLinkCall(h.identity.Link.Decide.Execute(ctx, r.Msg.GetApprove()))
 	return connect.NewResponse(&v1.DecideLinkResponse{Error: code, Detail: detail}), err
-}
-
-// EnterLinkCode sends the confirmation code of the person.
-func (h *Handler) EnterLinkCode(
-	ctx context.Context,
-	r *connect.Request[v1.EnterLinkCodeRequest],
-) (*connect.Response[v1.EnterLinkCodeResponse], error) {
-	code, detail, err := serveLinkCall(h.identity.Account.EnterCode.Execute(ctx, r.Msg.GetCode()))
-	return connect.NewResponse(&v1.EnterLinkCodeResponse{Error: code, Detail: detail}), err
 }
 
 // ConfirmJoin answers the account the new device is offered.
@@ -159,7 +149,6 @@ func getLinkErrorCode(err error) (v1.IdentityErrorCode, bool) {
 		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
 		{identitydomain.ErrDeviceRevoked, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED},
 		{identitylib.ErrUnknownDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE},
-		{identity.ErrCodeFormat, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CODE_INVALID},
 	}
 	for _, refusal := range refusals {
 		if errors.Is(err, refusal.target) {
@@ -189,15 +178,12 @@ func writeLink(link identitydomain.Link) *v1.LinkInfo {
 		Mode:               writeLinkMode(link.Mode),
 		Role:               writeLinkRole(link.Role),
 		QrText:             link.QRText,
-		Code:               link.Code,
 		PeerName:           link.PeerName,
 		PeerFingerprint:    link.PeerFingerprint,
 		AccountFingerprint: link.AccountFingerprint,
-		TriesLeft:          uint32(max(link.TriesLeft, 0)),
 		Reason:             writeLinkReason(link.Reason),
 		DeviceName:         link.DeviceName,
 		DeviceFingerprint:  link.DeviceFingerprint,
-		IsApproved:         link.IsApproved,
 	}
 }
 
@@ -221,7 +207,6 @@ func writeLinkPhase(phase identitydomain.LinkPhase) v1.LinkPhase {
 		identitydomain.LinkPhaseWaitingForPeer:    v1.LinkPhase_LINK_PHASE_WAITING_FOR_PEER,
 		identitydomain.LinkPhaseConfirmPeer:       v1.LinkPhase_LINK_PHASE_CONFIRM_PEER,
 		identitydomain.LinkPhaseWaitingForAccept:  v1.LinkPhase_LINK_PHASE_WAITING_FOR_ACCEPT,
-		identitydomain.LinkPhaseEnterCode:         v1.LinkPhase_LINK_PHASE_ENTER_CODE,
 		identitydomain.LinkPhasePublishing:        v1.LinkPhase_LINK_PHASE_PUBLISHING,
 		identitydomain.LinkPhaseConfirmAccount:    v1.LinkPhase_LINK_PHASE_CONFIRM_ACCOUNT,
 		identitydomain.LinkPhaseLinked:            v1.LinkPhase_LINK_PHASE_LINKED,
@@ -234,8 +219,6 @@ func writeLinkReason(reason identitydomain.LinkReason) v1.LinkReason {
 	reasons := map[identitydomain.LinkReason]v1.LinkReason{
 		identitydomain.LinkReasonDeclined:          v1.LinkReason_LINK_REASON_DECLINED,
 		identitydomain.LinkReasonDeviceHasIdentity: v1.LinkReason_LINK_REASON_DEVICE_HAS_IDENTITY,
-		identitydomain.LinkReasonWrongCode:         v1.LinkReason_LINK_REASON_WRONG_CODE,
-		identitydomain.LinkReasonTooManyWrongCodes: v1.LinkReason_LINK_REASON_TOO_MANY_WRONG_CODES,
 		identitydomain.LinkReasonStaleChain:        v1.LinkReason_LINK_REASON_STALE_CHAIN,
 		identitydomain.LinkReasonCanceled:          v1.LinkReason_LINK_REASON_CANCELED,
 		identitydomain.LinkReasonExpired:           v1.LinkReason_LINK_REASON_EXPIRED,

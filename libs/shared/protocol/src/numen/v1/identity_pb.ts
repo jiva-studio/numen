@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/identity.proto.
  */
 export const file_numen_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEinAEKDElkZW50aXR5SW5mbxIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCRIXCg9kZXZpY2VfYWRkZWRfYXQYBCABKAkSEgoKaXNfcmV2b2tlZBgFIAEoCBIRCglrZXlfZXBvY2gYBiABKA0iFAoSR2V0SWRlbnRpdHlSZXF1ZXN0InsKE0dldElkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiHgocR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdCIzCh1HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRISCgV3b3JkcxgBIAMoCUIDgAEBIisKFUNyZWF0ZUlkZW50aXR5UmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBIn4KFkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiPQoTU3RhcnRSZXN0b3JlUmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBEhIKCmNoYWluX21hcmsYAiABKAkiUgoUU3RhcnRSZXN0b3JlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiFwoVRGVsZXRlSWRlbnRpdHlSZXF1ZXN0IhgKFkRlbGV0ZUlkZW50aXR5UmVzcG9uc2UiIwoNUmVjb3ZlcnlTaGVldBISCgV3b3JkcxgBIAMoCUIDgAEBIigKElJlY292ZXJ5V29yZHNQcm9vZhISCgV3b3JkcxgBIAMoCUIDgAEBIj4KE1JlY292ZXJ5U2hlZXRzUHJvb2YSJwoGc2hlZXRzGAEgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCKBAQoWU2F2ZVJlY292ZXJ5S2l0UmVxdWVzdBItCgV3b3JkcxgBIAEoCzIcLm51bWVuLnYxLlJlY292ZXJ5V29yZHNQcm9vZkgAEi8KBnNoZWV0cxgCIAEoCzIdLm51bWVuLnYxLlJlY292ZXJ5U2hlZXRzUHJvb2ZIAEIHCgVwcm9vZiJnChdTYXZlUmVjb3ZlcnlLaXRSZXNwb25zZRIQCghpc19zYXZlZBgBIAEoCBIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJZChpTdGFydFJlc3RvcmVGcm9tS2l0UmVxdWVzdBInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0EhIKCmNoYWluX21hcmsYAiABKAkiWQobU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIuACCghMaW5rSW5mbxIiCgVwaGFzZRgBIAEoDjITLm51bWVuLnYxLkxpbmtQaGFzZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSIAoEcm9sZRgDIAEoDjISLm51bWVuLnYxLkxpbmtSb2xlEg8KB3FyX3RleHQYBCABKAkSEQoEY29kZRgFIAEoCUIDgAEBEhEKCXBlZXJfbmFtZRgGIAEoCRIYChBwZWVyX2ZpbmdlcnByaW50GAcgASgJEhsKE2FjY291bnRfZmluZ2VycHJpbnQYCCABKAkSEgoKdHJpZXNfbGVmdBgJIAEoDRIkCgZyZWFzb24YCiABKA4yFC5udW1lbi52MS5MaW5rUmVhc29uEhMKC2RldmljZV9uYW1lGAsgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgMIAEoCRITCgtpc19hcHByb3ZlZBgNIAEoCCJsChBTdGFydExpbmtSZXF1ZXN0EiAKBHJvbGUYASABKA4yEi5udW1lbi52MS5MaW5rUm9sZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSFAoMc2Nhbm5lZF90ZXh0GAMgASgJInEKEVN0YXJ0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIQCg5HZXRMaW5rUmVxdWVzdCJvCg9HZXRMaW5rUmVzcG9uc2USIAoEbGluaxgBIAEoCzISLm51bWVuLnYxLkxpbmtJbmZvEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIiQKEURlY2lkZUxpbmtSZXF1ZXN0Eg8KB2FwcHJvdmUYASABKAgiUAoSRGVjaWRlTGlua1Jlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIikKFEVudGVyTGlua0NvZGVSZXF1ZXN0EhEKBGNvZGUYASABKAlCA4ABASJTChVFbnRlckxpbmtDb2RlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiJQoSQ29uZmlybUpvaW5SZXF1ZXN0Eg8KB2FwcHJvdmUYASABKAgiUQoTQ29uZmlybUpvaW5SZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSITChFDYW5jZWxMaW5rUmVxdWVzdCJQChJDYW5jZWxMaW5rUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiZgoKRGV2aWNlSW5mbxIMCgRuYW1lGAEgASgJEhMKC2ZpbmdlcnByaW50GAIgASgJEhAKCGFkZGVkX2F0GAMgASgJEg8KB2lzX3RoaXMYBCABKAgSEgoKaXNfcmV2b2tlZBgFIAEoCCIUChJMaXN0RGV2aWNlc1JlcXVlc3QieAoTTGlzdERldmljZXNSZXNwb25zZRIlCgdkZXZpY2VzGAEgAygLMhQubnVtZW4udjEuRGV2aWNlSW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIqChNSZXZva2VEZXZpY2VSZXF1ZXN0EhMKC2ZpbmdlcnByaW50GAEgASgJIlIKFFJldm9rZURldmljZVJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJKogGChFJZGVudGl0eUVycm9yQ29kZRIjCh9JREVOVElUWV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJQohSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1dPUkRTEAESJwojSURFTlRJVFlfRVJST1JfQ09ERV9JREVOVElUWV9FWElTVFMQAhIoCiRJREVOVElUWV9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQAxImCiJJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfU0hFRVRTEAQSKQolSURFTlRJVFlfRVJST1JfQ09ERV9OT1RfRU5PVUdIX1NIRUVUUxAFEiUKIUlERU5USVRZX0VSUk9SX0NPREVfT1RIRVJfQUNDT1VOVBAGEiMKH0lERU5USVRZX0VSUk9SX0NPREVfTk9fSURFTlRJVFkQBxIjCh9JREVOVElUWV9FUlJPUl9DT0RFX0xJTktfQUNUSVZFEAgSHwobSURFTlRJVFlfRVJST1JfQ09ERV9OT19MSU5LEAkSKQolSURFTlRJVFlfRVJST1JfQ09ERV9MSU5LX1RFWFRfSU5WQUxJRBAKEiMKH0lERU5USVRZX0VSUk9SX0NPREVfTEFTVF9ERVZJQ0UQCxIkCiBJREVOVElUWV9FUlJPUl9DT0RFX1JFVk9LRV9SQUNFRBAMEi8KK0lERU5USVRZX0VSUk9SX0NPREVfTk9UX0FMTE9XRURfVEhJU19ERVZJQ0UQDRImCiJJREVOVElUWV9FUlJPUl9DT0RFX0RFVklDRV9SRVZPS0VEEA4SJgoiSURFTlRJVFlfRVJST1JfQ09ERV9VTktOT1dOX0RFVklDRRAPEiQKIElERU5USVRZX0VSUk9SX0NPREVfQ09ERV9JTlZBTElEEBASKgomSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX0NIQUlOX01BUksQERImCiJJREVOVElUWV9FUlJPUl9DT0RFX0NIQUlOX09VVERBVEVEEBIqTwoITGlua1JvbGUSGQoVTElOS19ST0xFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19ST0xFX0hPU1QQARIUChBMSU5LX1JPTEVfSk9JTkVSEAIqTQoITGlua01vZGUSGQoVTElOS19NT0RFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19NT0RFX1NIT1cQARISCg5MSU5LX01PREVfU0NBThACKrACCglMaW5rUGhhc2USGgoWTElOS19QSEFTRV9VTlNQRUNJRklFRBAAEiIKHkxJTktfUEhBU0VfV0FJVElOR19GT1JfQ0hBTk5FTBABEh8KG0xJTktfUEhBU0VfV0FJVElOR19GT1JfUEVFUhACEhsKF0xJTktfUEhBU0VfQ09ORklSTV9QRUVSEAMSIQodTElOS19QSEFTRV9XQUlUSU5HX0ZPUl9BQ0NFUFQQBBIZChVMSU5LX1BIQVNFX0VOVEVSX0NPREUQBRIZChVMSU5LX1BIQVNFX1BVQkxJU0hJTkcQBhIeChpMSU5LX1BIQVNFX0NPTkZJUk1fQUNDT1VOVBAHEhUKEUxJTktfUEhBU0VfTElOS0VEEAgSFQoRTElOS19QSEFTRV9GQUlMRUQQCSqTAgoKTGlua1JlYXNvbhIbChdMSU5LX1JFQVNPTl9VTlNQRUNJRklFRBAAEhgKFExJTktfUkVBU09OX0RFQ0xJTkVEEAESIwofTElOS19SRUFTT05fREVWSUNFX0hBU19JREVOVElUWRACEhoKFkxJTktfUkVBU09OX1dST05HX0NPREUQAxIkCiBMSU5LX1JFQVNPTl9UT09fTUFOWV9XUk9OR19DT0RFUxAEEhsKF0xJTktfUkVBU09OX1NUQUxFX0NIQUlOEAUSGAoUTElOS19SRUFTT05fQ0FOQ0VMRUQQBhIXChNMSU5LX1JFQVNPTl9FWFBJUkVEEAcSFwoTTElOS19SRUFTT05fSU5WQUxJRBAIMs0JCg9JZGVudGl0eVNlcnZpY2USSgoLR2V0SWRlbnRpdHkSHC5udW1lbi52MS5HZXRJZGVudGl0eVJlcXVlc3QaHS5udW1lbi52MS5HZXRJZGVudGl0eVJlc3BvbnNlEmgKFUdlbmVyYXRlUmVjb3ZlcnlXb3JkcxImLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1JlcXVlc3QaJy5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRJTCg5DcmVhdGVJZGVudGl0eRIfLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USTQoMU3RhcnRSZXN0b3JlEh0ubnVtZW4udjEuU3RhcnRSZXN0b3JlUmVxdWVzdBoeLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlc3BvbnNlElMKDkRlbGV0ZUlkZW50aXR5Eh8ubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXNwb25zZRJWCg9TYXZlUmVjb3ZlcnlLaXQSIC5udW1lbi52MS5TYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0GiEubnVtZW4udjEuU2F2ZVJlY292ZXJ5S2l0UmVzcG9uc2USYgoTU3RhcnRSZXN0b3JlRnJvbUtpdBIkLm51bWVuLnYxLlN0YXJ0UmVzdG9yZUZyb21LaXRSZXF1ZXN0GiUubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEkQKCVN0YXJ0TGluaxIaLm51bWVuLnYxLlN0YXJ0TGlua1JlcXVlc3QaGy5udW1lbi52MS5TdGFydExpbmtSZXNwb25zZRI+CgdHZXRMaW5rEhgubnVtZW4udjEuR2V0TGlua1JlcXVlc3QaGS5udW1lbi52MS5HZXRMaW5rUmVzcG9uc2USRwoKRGVjaWRlTGluaxIbLm51bWVuLnYxLkRlY2lkZUxpbmtSZXF1ZXN0GhwubnVtZW4udjEuRGVjaWRlTGlua1Jlc3BvbnNlElAKDUVudGVyTGlua0NvZGUSHi5udW1lbi52MS5FbnRlckxpbmtDb2RlUmVxdWVzdBofLm51bWVuLnYxLkVudGVyTGlua0NvZGVSZXNwb25zZRJKCgtDb25maXJtSm9pbhIcLm51bWVuLnYxLkNvbmZpcm1Kb2luUmVxdWVzdBodLm51bWVuLnYxLkNvbmZpcm1Kb2luUmVzcG9uc2USRwoKQ2FuY2VsTGluaxIbLm51bWVuLnYxLkNhbmNlbExpbmtSZXF1ZXN0GhwubnVtZW4udjEuQ2FuY2VsTGlua1Jlc3BvbnNlEkoKC0xpc3REZXZpY2VzEhwubnVtZW4udjEuTGlzdERldmljZXNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdERldmljZXNSZXNwb25zZRJNCgxSZXZva2VEZXZpY2USHS5udW1lbi52MS5SZXZva2VEZXZpY2VSZXF1ZXN0Gh4ubnVtZW4udjEuUmV2b2tlRGV2aWNlUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEinAEKDElkZW50aXR5SW5mbxIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCRIXCg9kZXZpY2VfYWRkZWRfYXQYBCABKAkSEgoKaXNfcmV2b2tlZBgFIAEoCBIRCglrZXlfZXBvY2gYBiABKA0iFAoSR2V0SWRlbnRpdHlSZXF1ZXN0InsKE0dldElkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiHgocR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdCIzCh1HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRISCgV3b3JkcxgBIAMoCUIDgAEBIisKFUNyZWF0ZUlkZW50aXR5UmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBIn4KFkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiPQoTU3RhcnRSZXN0b3JlUmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBEhIKCmNoYWluX21hcmsYAiABKAkiUgoUU3RhcnRSZXN0b3JlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiFwoVRGVsZXRlSWRlbnRpdHlSZXF1ZXN0IhgKFkRlbGV0ZUlkZW50aXR5UmVzcG9uc2UiIwoNUmVjb3ZlcnlTaGVldBISCgV3b3JkcxgBIAMoCUIDgAEBIigKElJlY292ZXJ5V29yZHNQcm9vZhISCgV3b3JkcxgBIAMoCUIDgAEBIj4KE1JlY292ZXJ5U2hlZXRzUHJvb2YSJwoGc2hlZXRzGAEgAygLMhcubnVtZW4udjEuUmVjb3ZlcnlTaGVldCKBAQoWU2F2ZVJlY292ZXJ5S2l0UmVxdWVzdBItCgV3b3JkcxgBIAEoCzIcLm51bWVuLnYxLlJlY292ZXJ5V29yZHNQcm9vZkgAEi8KBnNoZWV0cxgCIAEoCzIdLm51bWVuLnYxLlJlY292ZXJ5U2hlZXRzUHJvb2ZIAEIHCgVwcm9vZiJnChdTYXZlUmVjb3ZlcnlLaXRSZXNwb25zZRIQCghpc19zYXZlZBgBIAEoCBIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJZChpTdGFydFJlc3RvcmVGcm9tS2l0UmVxdWVzdBInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0EhIKCmNoYWluX21hcmsYAiABKAkiWQobU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIqQCCghMaW5rSW5mbxIiCgVwaGFzZRgBIAEoDjITLm51bWVuLnYxLkxpbmtQaGFzZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSIAoEcm9sZRgDIAEoDjISLm51bWVuLnYxLkxpbmtSb2xlEg8KB3FyX3RleHQYBCABKAkSEQoJcGVlcl9uYW1lGAUgASgJEhgKEHBlZXJfZmluZ2VycHJpbnQYBiABKAkSGwoTYWNjb3VudF9maW5nZXJwcmludBgHIAEoCRIkCgZyZWFzb24YCCABKA4yFC5udW1lbi52MS5MaW5rUmVhc29uEhMKC2RldmljZV9uYW1lGAkgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgKIAEoCSJsChBTdGFydExpbmtSZXF1ZXN0EiAKBHJvbGUYASABKA4yEi5udW1lbi52MS5MaW5rUm9sZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSFAoMc2Nhbm5lZF90ZXh0GAMgASgJInEKEVN0YXJ0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIQCg5HZXRMaW5rUmVxdWVzdCJvCg9HZXRMaW5rUmVzcG9uc2USIAoEbGluaxgBIAEoCzISLm51bWVuLnYxLkxpbmtJbmZvEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIiQKEURlY2lkZUxpbmtSZXF1ZXN0Eg8KB2FwcHJvdmUYASABKAgiUAoSRGVjaWRlTGlua1Jlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIiUKEkNvbmZpcm1Kb2luUmVxdWVzdBIPCgdhcHByb3ZlGAEgASgIIlEKE0NvbmZpcm1Kb2luUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiEwoRQ2FuY2VsTGlua1JlcXVlc3QiUAoSQ2FuY2VsTGlua1Jlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJImYKCkRldmljZUluZm8SDAoEbmFtZRgBIAEoCRITCgtmaW5nZXJwcmludBgCIAEoCRIQCghhZGRlZF9hdBgDIAEoCRIPCgdpc190aGlzGAQgASgIEhIKCmlzX3Jldm9rZWQYBSABKAgiFAoSTGlzdERldmljZXNSZXF1ZXN0IngKE0xpc3REZXZpY2VzUmVzcG9uc2USJQoHZGV2aWNlcxgBIAMoCzIULm51bWVuLnYxLkRldmljZUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiKgoTUmV2b2tlRGV2aWNlUmVxdWVzdBITCgtmaW5nZXJwcmludBgBIAEoCSJSChRSZXZva2VEZXZpY2VSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSriBQoRSWRlbnRpdHlFcnJvckNvZGUSIwofSURFTlRJVFlfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIUlERU5USVRZX0VSUk9SX0NPREVfSU5WQUxJRF9XT1JEUxABEicKI0lERU5USVRZX0VSUk9SX0NPREVfSURFTlRJVFlfRVhJU1RTEAISKAokSURFTlRJVFlfRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAMSJgoiSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX1NIRUVUUxAEEikKJUlERU5USVRZX0VSUk9SX0NPREVfTk9UX0VOT1VHSF9TSEVFVFMQBRIlCiFJREVOVElUWV9FUlJPUl9DT0RFX09USEVSX0FDQ09VTlQQBhIjCh9JREVOVElUWV9FUlJPUl9DT0RFX05PX0lERU5USVRZEAcSIwofSURFTlRJVFlfRVJST1JfQ09ERV9MSU5LX0FDVElWRRAIEh8KG0lERU5USVRZX0VSUk9SX0NPREVfTk9fTElOSxAJEikKJUlERU5USVRZX0VSUk9SX0NPREVfTElOS19URVhUX0lOVkFMSUQQChIjCh9JREVOVElUWV9FUlJPUl9DT0RFX0xBU1RfREVWSUNFEAsSJAogSURFTlRJVFlfRVJST1JfQ09ERV9SRVZPS0VfUkFDRUQQDBIvCitJREVOVElUWV9FUlJPUl9DT0RFX05PVF9BTExPV0VEX1RISVNfREVWSUNFEA0SJgoiSURFTlRJVFlfRVJST1JfQ09ERV9ERVZJQ0VfUkVWT0tFRBAOEiYKIklERU5USVRZX0VSUk9SX0NPREVfVU5LTk9XTl9ERVZJQ0UQDxIqCiZJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfQ0hBSU5fTUFSSxAQEiYKIklERU5USVRZX0VSUk9SX0NPREVfQ0hBSU5fT1VUREFURUQQESpPCghMaW5rUm9sZRIZChVMSU5LX1JPTEVfVU5TUEVDSUZJRUQQABISCg5MSU5LX1JPTEVfSE9TVBABEhQKEExJTktfUk9MRV9KT0lORVIQAipNCghMaW5rTW9kZRIZChVMSU5LX01PREVfVU5TUEVDSUZJRUQQABISCg5MSU5LX01PREVfU0hPVxABEhIKDkxJTktfTU9ERV9TQ0FOEAIqlQIKCUxpbmtQaGFzZRIaChZMSU5LX1BIQVNFX1VOU1BFQ0lGSUVEEAASIgoeTElOS19QSEFTRV9XQUlUSU5HX0ZPUl9DSEFOTkVMEAESHwobTElOS19QSEFTRV9XQUlUSU5HX0ZPUl9QRUVSEAISGwoXTElOS19QSEFTRV9DT05GSVJNX1BFRVIQAxIhCh1MSU5LX1BIQVNFX1dBSVRJTkdfRk9SX0FDQ0VQVBAEEhkKFUxJTktfUEhBU0VfUFVCTElTSElORxAFEh4KGkxJTktfUEhBU0VfQ09ORklSTV9BQ0NPVU5UEAYSFQoRTElOS19QSEFTRV9MSU5LRUQQBxIVChFMSU5LX1BIQVNFX0ZBSUxFRBAIKtEBCgpMaW5rUmVhc29uEhsKF0xJTktfUkVBU09OX1VOU1BFQ0lGSUVEEAASGAoUTElOS19SRUFTT05fREVDTElORUQQARIjCh9MSU5LX1JFQVNPTl9ERVZJQ0VfSEFTX0lERU5USVRZEAISGwoXTElOS19SRUFTT05fU1RBTEVfQ0hBSU4QAxIYChRMSU5LX1JFQVNPTl9DQU5DRUxFRBAEEhcKE0xJTktfUkVBU09OX0VYUElSRUQQBRIXChNMSU5LX1JFQVNPTl9JTlZBTElEEAYy+wgKD0lkZW50aXR5U2VydmljZRJKCgtHZXRJZGVudGl0eRIcLm51bWVuLnYxLkdldElkZW50aXR5UmVxdWVzdBodLm51bWVuLnYxLkdldElkZW50aXR5UmVzcG9uc2USaAoVR2VuZXJhdGVSZWNvdmVyeVdvcmRzEiYubnVtZW4udjEuR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdBonLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1Jlc3BvbnNlElMKDkNyZWF0ZUlkZW50aXR5Eh8ubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlSWRlbnRpdHlSZXNwb25zZRJNCgxTdGFydFJlc3RvcmUSHS5udW1lbi52MS5TdGFydFJlc3RvcmVSZXF1ZXN0Gh4ubnVtZW4udjEuU3RhcnRSZXN0b3JlUmVzcG9uc2USUwoORGVsZXRlSWRlbnRpdHkSHy5udW1lbi52MS5EZWxldGVJZGVudGl0eVJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVJZGVudGl0eVJlc3BvbnNlElYKD1NhdmVSZWNvdmVyeUtpdBIgLm51bWVuLnYxLlNhdmVSZWNvdmVyeUtpdFJlcXVlc3QaIS5udW1lbi52MS5TYXZlUmVjb3ZlcnlLaXRSZXNwb25zZRJiChNTdGFydFJlc3RvcmVGcm9tS2l0EiQubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlcXVlc3QaJS5udW1lbi52MS5TdGFydFJlc3RvcmVGcm9tS2l0UmVzcG9uc2USRAoJU3RhcnRMaW5rEhoubnVtZW4udjEuU3RhcnRMaW5rUmVxdWVzdBobLm51bWVuLnYxLlN0YXJ0TGlua1Jlc3BvbnNlEj4KB0dldExpbmsSGC5udW1lbi52MS5HZXRMaW5rUmVxdWVzdBoZLm51bWVuLnYxLkdldExpbmtSZXNwb25zZRJHCgpEZWNpZGVMaW5rEhsubnVtZW4udjEuRGVjaWRlTGlua1JlcXVlc3QaHC5udW1lbi52MS5EZWNpZGVMaW5rUmVzcG9uc2USSgoLQ29uZmlybUpvaW4SHC5udW1lbi52MS5Db25maXJtSm9pblJlcXVlc3QaHS5udW1lbi52MS5Db25maXJtSm9pblJlc3BvbnNlEkcKCkNhbmNlbExpbmsSGy5udW1lbi52MS5DYW5jZWxMaW5rUmVxdWVzdBocLm51bWVuLnYxLkNhbmNlbExpbmtSZXNwb25zZRJKCgtMaXN0RGV2aWNlcxIcLm51bWVuLnYxLkxpc3REZXZpY2VzUmVxdWVzdBodLm51bWVuLnYxLkxpc3REZXZpY2VzUmVzcG9uc2USTQoMUmV2b2tlRGV2aWNlEh0ubnVtZW4udjEuUmV2b2tlRGV2aWNlUmVxdWVzdBoeLm51bWVuLnYxLlJldm9rZURldmljZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * IdentityInfo is what a person can see of the identity of this device.
@@ -453,55 +453,36 @@ export type LinkInfo = Message<"numen.v1.LinkInfo"> & {
   qrText: string;
 
   /**
-   * code is the confirmation code, set on the host that reads the QR code of a new device.
-   *
-   * @generated from field: string code = 5;
-   */
-  code: string;
-
-  /**
-   * @generated from field: string peer_name = 6;
+   * @generated from field: string peer_name = 5;
    */
   peerName: string;
 
   /**
-   * @generated from field: string peer_fingerprint = 7;
+   * @generated from field: string peer_fingerprint = 6;
    */
   peerFingerprint: string;
 
   /**
-   * @generated from field: string account_fingerprint = 8;
+   * @generated from field: string account_fingerprint = 7;
    */
   accountFingerprint: string;
 
   /**
-   * @generated from field: uint32 tries_left = 9;
-   */
-  triesLeft: number;
-
-  /**
-   * @generated from field: numen.v1.LinkReason reason = 10;
+   * @generated from field: numen.v1.LinkReason reason = 8;
    */
   reason: LinkReason;
 
   /**
    * device_name and device_fingerprint name this device.
    *
-   * @generated from field: string device_name = 11;
+   * @generated from field: string device_name = 9;
    */
   deviceName: string;
 
   /**
-   * @generated from field: string device_fingerprint = 12;
+   * @generated from field: string device_fingerprint = 10;
    */
   deviceFingerprint: string;
-
-  /**
-   * is_approved is true once the person approved the new device and the host waits for the code.
-   *
-   * @generated from field: bool is_approved = 13;
-   */
-  isApproved: boolean;
 };
 
 /**
@@ -647,45 +628,6 @@ export const DecideLinkResponseSchema: GenMessage<DecideLinkResponse> = /*@__PUR
   messageDesc(file_numen_v1_identity, 24);
 
 /**
- * @generated from message numen.v1.EnterLinkCodeRequest
- */
-export type EnterLinkCodeRequest = Message<"numen.v1.EnterLinkCodeRequest"> & {
-  /**
-   * @generated from field: string code = 1;
-   */
-  code: string;
-};
-
-/**
- * Describes the message numen.v1.EnterLinkCodeRequest.
- * Use `create(EnterLinkCodeRequestSchema)` to create a new message.
- */
-export const EnterLinkCodeRequestSchema: GenMessage<EnterLinkCodeRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 25);
-
-/**
- * @generated from message numen.v1.EnterLinkCodeResponse
- */
-export type EnterLinkCodeResponse = Message<"numen.v1.EnterLinkCodeResponse"> & {
-  /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
-   */
-  error: IdentityErrorCode;
-
-  /**
-   * @generated from field: string detail = 2;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.EnterLinkCodeResponse.
- * Use `create(EnterLinkCodeResponseSchema)` to create a new message.
- */
-export const EnterLinkCodeResponseSchema: GenMessage<EnterLinkCodeResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 26);
-
-/**
  * @generated from message numen.v1.ConfirmJoinRequest
  */
 export type ConfirmJoinRequest = Message<"numen.v1.ConfirmJoinRequest"> & {
@@ -700,7 +642,7 @@ export type ConfirmJoinRequest = Message<"numen.v1.ConfirmJoinRequest"> & {
  * Use `create(ConfirmJoinRequestSchema)` to create a new message.
  */
 export const ConfirmJoinRequestSchema: GenMessage<ConfirmJoinRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 27);
+  messageDesc(file_numen_v1_identity, 25);
 
 /**
  * @generated from message numen.v1.ConfirmJoinResponse
@@ -722,7 +664,7 @@ export type ConfirmJoinResponse = Message<"numen.v1.ConfirmJoinResponse"> & {
  * Use `create(ConfirmJoinResponseSchema)` to create a new message.
  */
 export const ConfirmJoinResponseSchema: GenMessage<ConfirmJoinResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 28);
+  messageDesc(file_numen_v1_identity, 26);
 
 /**
  * @generated from message numen.v1.CancelLinkRequest
@@ -735,7 +677,7 @@ export type CancelLinkRequest = Message<"numen.v1.CancelLinkRequest"> & {
  * Use `create(CancelLinkRequestSchema)` to create a new message.
  */
 export const CancelLinkRequestSchema: GenMessage<CancelLinkRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 29);
+  messageDesc(file_numen_v1_identity, 27);
 
 /**
  * @generated from message numen.v1.CancelLinkResponse
@@ -757,7 +699,7 @@ export type CancelLinkResponse = Message<"numen.v1.CancelLinkResponse"> & {
  * Use `create(CancelLinkResponseSchema)` to create a new message.
  */
 export const CancelLinkResponseSchema: GenMessage<CancelLinkResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 30);
+  messageDesc(file_numen_v1_identity, 28);
 
 /**
  * DeviceInfo is one device of the account.
@@ -798,7 +740,7 @@ export type DeviceInfo = Message<"numen.v1.DeviceInfo"> & {
  * Use `create(DeviceInfoSchema)` to create a new message.
  */
 export const DeviceInfoSchema: GenMessage<DeviceInfo> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 31);
+  messageDesc(file_numen_v1_identity, 29);
 
 /**
  * @generated from message numen.v1.ListDevicesRequest
@@ -811,7 +753,7 @@ export type ListDevicesRequest = Message<"numen.v1.ListDevicesRequest"> & {
  * Use `create(ListDevicesRequestSchema)` to create a new message.
  */
 export const ListDevicesRequestSchema: GenMessage<ListDevicesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 32);
+  messageDesc(file_numen_v1_identity, 30);
 
 /**
  * @generated from message numen.v1.ListDevicesResponse
@@ -838,7 +780,7 @@ export type ListDevicesResponse = Message<"numen.v1.ListDevicesResponse"> & {
  * Use `create(ListDevicesResponseSchema)` to create a new message.
  */
 export const ListDevicesResponseSchema: GenMessage<ListDevicesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 33);
+  messageDesc(file_numen_v1_identity, 31);
 
 /**
  * @generated from message numen.v1.RevokeDeviceRequest
@@ -857,7 +799,7 @@ export type RevokeDeviceRequest = Message<"numen.v1.RevokeDeviceRequest"> & {
  * Use `create(RevokeDeviceRequestSchema)` to create a new message.
  */
 export const RevokeDeviceRequestSchema: GenMessage<RevokeDeviceRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 34);
+  messageDesc(file_numen_v1_identity, 32);
 
 /**
  * @generated from message numen.v1.RevokeDeviceResponse
@@ -879,7 +821,7 @@ export type RevokeDeviceResponse = Message<"numen.v1.RevokeDeviceResponse"> & {
  * Use `create(RevokeDeviceResponseSchema)` to create a new message.
  */
 export const RevokeDeviceResponseSchema: GenMessage<RevokeDeviceResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_identity, 35);
+  messageDesc(file_numen_v1_identity, 33);
 
 /**
  * IdentityErrorCode is why an identity call was refused. The zero value is a call that
@@ -1001,26 +943,19 @@ export enum IdentityErrorCode {
   UNKNOWN_DEVICE = 15,
 
   /**
-   * IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_CODE_INVALID = 16;
-   */
-  CODE_INVALID = 16,
-
-  /**
    * IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
    *
-   * @generated from enum value: IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 17;
+   * @generated from enum value: IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 16;
    */
-  INVALID_CHAIN_MARK = 17,
+  INVALID_CHAIN_MARK = 16,
 
   /**
    * IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
    * kit: older, or another history, or none. The restore is over; nothing was kept.
    *
-   * @generated from enum value: IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 18;
+   * @generated from enum value: IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 17;
    */
-  CHAIN_OUTDATED = 18,
+  CHAIN_OUTDATED = 17,
 }
 
 /**
@@ -1123,31 +1058,26 @@ export enum LinkPhase {
   WAITING_FOR_ACCEPT = 4,
 
   /**
-   * @generated from enum value: LINK_PHASE_ENTER_CODE = 5;
+   * @generated from enum value: LINK_PHASE_PUBLISHING = 5;
    */
-  ENTER_CODE = 5,
-
-  /**
-   * @generated from enum value: LINK_PHASE_PUBLISHING = 6;
-   */
-  PUBLISHING = 6,
+  PUBLISHING = 5,
 
   /**
    * LINK_PHASE_CONFIRM_ACCOUNT is the new device asking the person about the account; the host waits for the answer.
    *
-   * @generated from enum value: LINK_PHASE_CONFIRM_ACCOUNT = 7;
+   * @generated from enum value: LINK_PHASE_CONFIRM_ACCOUNT = 6;
    */
-  CONFIRM_ACCOUNT = 7,
+  CONFIRM_ACCOUNT = 6,
 
   /**
-   * @generated from enum value: LINK_PHASE_LINKED = 8;
+   * @generated from enum value: LINK_PHASE_LINKED = 7;
    */
-  LINKED = 8,
+  LINKED = 7,
 
   /**
-   * @generated from enum value: LINK_PHASE_FAILED = 9;
+   * @generated from enum value: LINK_PHASE_FAILED = 8;
    */
-  FAILED = 9,
+  FAILED = 8,
 }
 
 /**
@@ -1176,34 +1106,24 @@ export enum LinkReason {
   DEVICE_HAS_IDENTITY = 2,
 
   /**
-   * @generated from enum value: LINK_REASON_WRONG_CODE = 3;
+   * @generated from enum value: LINK_REASON_STALE_CHAIN = 3;
    */
-  WRONG_CODE = 3,
+  STALE_CHAIN = 3,
 
   /**
-   * @generated from enum value: LINK_REASON_TOO_MANY_WRONG_CODES = 4;
+   * @generated from enum value: LINK_REASON_CANCELED = 4;
    */
-  TOO_MANY_WRONG_CODES = 4,
+  CANCELED = 4,
 
   /**
-   * @generated from enum value: LINK_REASON_STALE_CHAIN = 5;
+   * @generated from enum value: LINK_REASON_EXPIRED = 5;
    */
-  STALE_CHAIN = 5,
+  EXPIRED = 5,
 
   /**
-   * @generated from enum value: LINK_REASON_CANCELED = 6;
+   * @generated from enum value: LINK_REASON_INVALID = 6;
    */
-  CANCELED = 6,
-
-  /**
-   * @generated from enum value: LINK_REASON_EXPIRED = 7;
-   */
-  EXPIRED = 7,
-
-  /**
-   * @generated from enum value: LINK_REASON_INVALID = 8;
-   */
-  INVALID = 8,
+  INVALID = 6,
 }
 
 /**
@@ -1327,16 +1247,6 @@ export const IdentityService: GenService<{
     methodKind: "unary";
     input: typeof DecideLinkRequestSchema;
     output: typeof DecideLinkResponseSchema;
-  },
-  /**
-   * EnterLinkCode sends the confirmation code the person read on the host.
-   *
-   * @generated from rpc numen.v1.IdentityService.EnterLinkCode
-   */
-  enterLinkCode: {
-    methodKind: "unary";
-    input: typeof EnterLinkCodeRequestSchema;
-    output: typeof EnterLinkCodeResponseSchema;
   },
   /**
    * ConfirmJoin is the answer of the person on the new device to the account it is offered.

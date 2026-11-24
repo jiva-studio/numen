@@ -43,7 +43,6 @@ const (
 	LinkPhaseWaitingForPeer    LinkPhase = "WAITING_FOR_PEER"
 	LinkPhaseConfirmPeer       LinkPhase = "CONFIRM_PEER"
 	LinkPhaseWaitingForAccept  LinkPhase = "WAITING_FOR_ACCEPT"
-	LinkPhaseEnterCode         LinkPhase = "ENTER_CODE"
 	LinkPhasePublishing        LinkPhase = "PUBLISHING"
 	LinkPhaseConfirmAccount    LinkPhase = "CONFIRM_ACCOUNT"
 	LinkPhaseLinked            LinkPhase = "LINKED"
@@ -56,29 +55,23 @@ type LinkReason string
 const (
 	LinkReasonDeclined          LinkReason = "declined"
 	LinkReasonDeviceHasIdentity LinkReason = "device_has_identity"
-	LinkReasonWrongCode         LinkReason = "wrong_code"
-	LinkReasonTooManyWrongCodes LinkReason = "too_many_wrong_codes"
 	LinkReasonStaleChain        LinkReason = "stale_chain"
 	LinkReasonCanceled          LinkReason = "canceled"
 	LinkReasonExpired           LinkReason = "expired"
 	LinkReasonInvalid           LinkReason = "invalid"
 )
 
-// Link is what a window shows of the link in progress. It holds no key; Code is set for the host waiting for an
-// answer to a new device, and QRText in mode show only.
+// Link is what a window shows of the link in progress. It holds no key; QRText is set in mode show only.
 type Link struct {
 	Phase              LinkPhase
 	Mode               LinkMode
 	Role               LinkRole
 	QRText             string
-	Code               string
 	DeviceName         string
 	DeviceFingerprint  string
-	IsApproved         bool
 	PeerName           string
 	PeerFingerprint    string
 	AccountFingerprint string
-	TriesLeft          int
 	Reason             LinkReason
 }
 

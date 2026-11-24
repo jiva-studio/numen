@@ -13,11 +13,9 @@ import (
 // The first byte of a message the two cores send each other through the relay.
 const (
 	messageJoin   byte = 1
-	messageAccept byte = 2
-	messageCode   byte = 3
-	messageRefuse byte = 4
-	messageGrant  byte = 5
-	messageDone   byte = 6
+	messageRefuse byte = 2
+	messageGrant  byte = 3
+	messageDone   byte = 4
 )
 
 var errBadMessage = errors.New("not a link message")
@@ -50,15 +48,6 @@ func decodeJoin(body []byte) (joinRequest, error) {
 	return join, nil
 }
 
-func encodeAccept(isCodeAsked bool) []byte {
-	if isCodeAsked {
-		return []byte{messageAccept, 1}
-	}
-	return []byte{messageAccept, 0}
-}
-
-func encodeCode(code string) []byte { return append([]byte{messageCode}, code...) }
-
 func encodeGrant(wrapped, chain []byte) []byte {
 	out := binary.AppendUvarint([]byte{messageGrant}, uint64(len(wrapped)))
 	out = append(out, wrapped...)
@@ -73,33 +62,23 @@ func decodeGrant(body []byte) (wrapped, chain []byte, err error) {
 	return body[n : n+int(size)], body[n+int(size):], nil
 }
 
-func encodeRefuse(reason identitydomain.LinkReason, triesLeft int) []byte {
-	out := []byte{messageRefuse, getReasonCode(reason)}
-	if reason == identitydomain.LinkReasonWrongCode {
-		out = append(out, byte(triesLeft))
-	}
-	return out
+func encodeRefuse(reason identitydomain.LinkReason) []byte {
+	return []byte{messageRefuse, getReasonCode(reason)}
 }
 
-func decodeRefuse(body []byte) (identitydomain.LinkReason, int) {
+func decodeRefuse(body []byte) identitydomain.LinkReason {
 	if len(body) == 0 {
-		return identitydomain.LinkReasonInvalid, 0
+		return identitydomain.LinkReasonInvalid
 	}
-	tries := 0
-	if len(body) > 1 {
-		tries = int(body[1])
-	}
-	return getReason(body[0]), tries
+	return getReason(body[0])
 }
 
 func getReasonCode(reason identitydomain.LinkReason) byte {
 	codes := map[identitydomain.LinkReason]byte{
 		identitydomain.LinkReasonDeclined:          1,
 		identitydomain.LinkReasonDeviceHasIdentity: 2,
-		identitydomain.LinkReasonWrongCode:         3,
-		identitydomain.LinkReasonTooManyWrongCodes: 4,
-		identitydomain.LinkReasonStaleChain:        5,
-		identitydomain.LinkReasonCanceled:          6,
+		identitydomain.LinkReasonStaleChain:        3,
+		identitydomain.LinkReasonCanceled:          4,
 	}
 	return codes[reason]
 }
@@ -108,10 +87,8 @@ func getReason(code byte) identitydomain.LinkReason {
 	reasons := map[byte]identitydomain.LinkReason{
 		1: identitydomain.LinkReasonDeclined,
 		2: identitydomain.LinkReasonDeviceHasIdentity,
-		3: identitydomain.LinkReasonWrongCode,
-		4: identitydomain.LinkReasonTooManyWrongCodes,
-		5: identitydomain.LinkReasonStaleChain,
-		6: identitydomain.LinkReasonCanceled,
+		3: identitydomain.LinkReasonStaleChain,
+		4: identitydomain.LinkReasonCanceled,
 	}
 	if reason, ok := reasons[code]; ok {
 		return reason

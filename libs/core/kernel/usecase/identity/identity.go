@@ -93,7 +93,7 @@ func (d Deps) getBuilder() stateBuilder {
 }
 
 func (d Deps) getHost() linkHost {
-	return linkHost{records: d.records, clock: d.clock, random: d.random}
+	return linkHost{records: d.records, clock: d.clock}
 }
 
 func (d Deps) getRevocation() revocation {

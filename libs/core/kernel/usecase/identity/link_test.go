@@ -2,7 +2,6 @@ package identity_test
 
 import (
 	"errors"
-	"regexp"
 	"testing"
 	"time"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
-
-var sixDigits = regexp.MustCompile(`^[0-9]{6}$`)
 
 type scanned struct {
 	host, joiner *linkDevice
@@ -58,9 +55,6 @@ func TestStartLink_ShowsAQRTextOnceTheChannelIsKnown(t *testing.T) {
 	payload, err := identitylib.ParseLinkPayload(shown.QRText)
 	if err != nil || string(payload.Channel[:]) != string(r.channel) {
 		t.Errorf("QR text %q: payload = %+v, error = %v, want the channel of the relay", shown.QRText, payload, err)
-	}
-	if shown.Code != "" {
-		t.Error("a host holds a confirmation code before a new device asks")
 	}
 }
 
@@ -109,9 +103,6 @@ func TestLink_TheHostSeesTheNameAndTheFingerprintOfTheNewDevice(t *testing.T) {
 	if seen.Phase != identitydomain.LinkPhaseConfirmPeer || seen.PeerName != "Phone" || !fingerprint.MatchString(seen.PeerFingerprint) {
 		t.Errorf("host link = %+v, want CONFIRM_PEER with the name Phone and a fingerprint", seen)
 	}
-	if !sixDigits.MatchString(seen.Code) {
-		t.Errorf("the host shows code %q for a QR it displayed itself, want 6 digits", seen.Code)
-	}
 	if waiting := joiner.getLink(t); waiting.Phase != identitydomain.LinkPhaseWaitingForAccept {
 		t.Errorf("joiner phase = %s, want WAITING_FOR_ACCEPT", waiting.Phase)
 	}
@@ -131,7 +122,7 @@ func TestLink_NothingIsStoredByTheNewDeviceBeforeThePersonConfirmsTheAccount(t *
 		t.Fatal(err)
 	}
 	r.settle(t, host, joiner)
-	approveAndEnterCode(t, r, host, joiner)
+	approvePeer(t, r, host, joiner)
 
 	asked := joiner.getLink(t)
 	hostIdentity, err := host.get().Execute(t.Context())
@@ -173,15 +164,9 @@ func TestDecideLink_TheHostStoresTheLongerChainOnlyAfterTheServerAcceptedIt(t *t
 		t.Fatal(err)
 	}
 	r.settle(t, host, joiner)
-	code := host.getLink(t).Code
 	if err := host.decide().Execute(t.Context(), true); err != nil {
 		t.Fatalf("DecideLink() = %v", err)
 	}
-	r.settle(t, host, joiner)
-	if err := joiner.code().Execute(t.Context(), code); err != nil {
-		t.Fatalf("EnterLinkCode() = %v", err)
-	}
-	r.carry(t, joiner, host)
 
 	pending, err := host.publish().Execute(t.Context())
 	if err != nil || !pending.IsPending {
@@ -230,7 +215,7 @@ func TestLink_TheHostRebuildsOnTheHeadWhenAnotherDeviceAppendedFirst(t *testing.
 		t.Fatal(err)
 	}
 	r.settle(t, host, joiner)
-	approveAndEnterCode(t, r, host, joiner)
+	approvePeer(t, r, host, joiner)
 	if err := joiner.confirm().Execute(t.Context(), true); err != nil {
 		t.Fatal(err)
 	}
@@ -275,24 +260,14 @@ func TestLink_ADeclinedDeviceDoesNotJoinAndTheChainStaysTheSame(t *testing.T) {
 	}
 }
 
-func TestLink_TheHostScansTheQRCodeOfTheNewDeviceAndTheNewDeviceTypesTheCode(t *testing.T) {
+func TestLink_TheHostScansTheQRCodeOfTheNewDeviceAndApprovesIt(t *testing.T) {
 	t.Parallel()
 	s := newScanPair(t)
 	seen := s.host.getLink(t)
-	if seen.Phase != identitydomain.LinkPhaseConfirmPeer || seen.PeerName != "Phone" || !sixDigits.MatchString(seen.Code) {
-		t.Fatalf("host link = %+v, want CONFIRM_PEER with the name Phone and a 6 digit code", seen)
+	if seen.Phase != identitydomain.LinkPhaseConfirmPeer || seen.PeerName != "Phone" {
+		t.Fatalf("host link = %+v, want CONFIRM_PEER with the name Phone", seen)
 	}
 	if err := s.host.decide().Execute(t.Context(), true); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	if got := s.joiner.getLink(t).Phase; got != identitydomain.LinkPhaseEnterCode {
-		t.Fatalf("joiner phase = %s, want ENTER_CODE", got)
-	}
-	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
-		t.Errorf("the host chain lists %d devices before the code, want 1", got)
-	}
-	if err := s.joiner.code().Execute(t.Context(), seen.Code); err != nil {
 		t.Fatal(err)
 	}
 	s.relay.settle(t, s.host, s.joiner)
@@ -309,78 +284,6 @@ func TestLink_TheHostScansTheQRCodeOfTheNewDeviceAndTheNewDeviceTypesTheCode(t *
 	}
 	if _, err := s.joiner.get().Execute(t.Context()); err != nil {
 		t.Errorf("the new device has no identity: %v", err)
-	}
-}
-
-func TestLink_TheCodeIsNotTheSameForTwoLinks(t *testing.T) {
-	t.Parallel()
-	codes := make(map[string]bool)
-	for range 5 {
-		codes[newScanPair(t).host.getLink(t).Code] = true
-	}
-	if len(codes) < 2 {
-		t.Errorf("five links showed %d different codes", len(codes))
-	}
-}
-
-func wrongCode(code string) string {
-	if code[0] == '0' {
-		return "1" + code[1:]
-	}
-	return "0" + code[1:]
-}
-
-func TestEnterLinkCode_WrongCodeReportsRemainingTries(t *testing.T) {
-	t.Parallel()
-	s := newScanPair(t)
-	code := s.host.getLink(t).Code
-	if err := s.host.decide().Execute(t.Context(), true); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	if err := s.joiner.code().Execute(t.Context(), wrongCode(code)); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	asked := s.joiner.getLink(t)
-	if asked.Phase != identitydomain.LinkPhaseEnterCode || asked.TriesLeft != 2 {
-		t.Errorf("joiner link = %+v, want ENTER_CODE with 2 tries left", asked)
-	}
-	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
-		t.Errorf("a wrong code linked a device: the chain lists %d", got)
-	}
-}
-
-func TestEnterLinkCode_ThreeWrongCodesCloseTheLinkEvenForTheRightCode(t *testing.T) {
-	t.Parallel()
-	s := newScanPair(t)
-	code := s.host.getLink(t).Code
-	if err := s.host.decide().Execute(t.Context(), true); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	for range 3 {
-		if err := s.joiner.code().Execute(t.Context(), wrongCode(code)); err != nil {
-			t.Fatal(err)
-		}
-		s.relay.settle(t, s.host, s.joiner)
-	}
-	closed := s.joiner.getLink(t)
-	if closed.Phase != identitydomain.LinkPhaseFailed || closed.Reason != identitydomain.LinkReasonTooManyWrongCodes {
-		t.Fatalf("joiner link = %+v, want FAILED, too many wrong codes", closed)
-	}
-	if err := s.joiner.code().Execute(t.Context(), code); err == nil {
-		t.Error("the right code was accepted after three wrong ones")
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	if !s.relay.isClosed {
-		t.Error("the relay channel was not closed")
-	}
-	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
-		t.Errorf("the chain lists %d devices, want 1", got)
-	}
-	if _, err := s.joiner.get().Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
-		t.Errorf("the new device has an identity: %v", err)
 	}
 }
 
@@ -520,54 +423,22 @@ func newShownPair(tb testing.TB) scanned {
 	return scanned{host: host, joiner: joiner, relay: r, clock: clock}
 }
 
-func TestLink_ADeviceThatScannedTheQRCodeOfTheHostMustTypeTheCodeTheHostShows(t *testing.T) {
+func TestDecideLink_TheNewDeviceIsListedOnlyAfterTheHostApprovesItAndOnlyOnce(t *testing.T) {
 	t.Parallel()
 	s := newShownPair(t)
-	code := s.host.getLink(t).Code
+	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
+		t.Errorf("the host chain lists %d devices before the approval, want 1", got)
+	}
+	if got := s.joiner.getLink(t).Phase; got != identitydomain.LinkPhaseWaitingForAccept {
+		t.Fatalf("joiner phase = %s, want WAITING_FOR_ACCEPT before the approval", got)
+	}
 	if err := s.host.decide().Execute(t.Context(), true); err != nil {
 		t.Fatal(err)
 	}
-	s.relay.settle(t, s.host, s.joiner)
-
-	if got := s.joiner.getLink(t).Phase; got != identitydomain.LinkPhaseEnterCode {
-		t.Fatalf("joiner phase = %s, want ENTER_CODE after the approval", got)
+	if got := s.host.getLink(t).Phase; got != identitydomain.LinkPhasePublishing {
+		t.Errorf("host phase = %s, want PUBLISHING after the approval", got)
 	}
-	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
-		t.Errorf("the host chain lists %d devices before the code, want 1", got)
-	}
-	if err := s.joiner.code().Execute(t.Context(), wrongCode(code)); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	if got := len(s.host.readChain(t).ListDevices()); got != 1 {
-		t.Errorf("the host chain lists %d devices after a wrong code, want 1", got)
-	}
-	if err := s.joiner.code().Execute(t.Context(), code); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-	if got := s.joiner.getLink(t).Phase; got != identitydomain.LinkPhaseConfirmAccount {
-		t.Errorf("joiner phase = %s, want CONFIRM_ACCOUNT after the right code", got)
-	}
-}
-
-func TestLink_ThreeWrongCodesCloseALinkTheHostShowed(t *testing.T) {
-	t.Parallel()
-	s := newShownPair(t)
-	code := s.host.getLink(t).Code
-	if err := s.host.decide().Execute(t.Context(), true); err != nil {
-		t.Fatal(err)
-	}
-	s.relay.settle(t, s.host, s.joiner)
-
-	for range 3 {
-		if err := s.joiner.code().Execute(t.Context(), wrongCode(code)); err != nil {
-			t.Fatal(err)
-		}
-		s.relay.settle(t, s.host, s.joiner)
-	}
-
-	if got := s.host.getLink(t); got.Phase != identitydomain.LinkPhaseFailed || got.Reason != identitydomain.LinkReasonTooManyWrongCodes {
-		t.Errorf("host link = %+v, want FAILED, too many wrong codes", got)
+	if err := s.host.decide().Execute(t.Context(), true); !errors.Is(err, identitydomain.ErrNoLink) {
+		t.Errorf("a second approval = %v, want ErrNoLink", err)
 	}
 }

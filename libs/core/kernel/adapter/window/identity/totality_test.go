@@ -5,7 +5,6 @@ import (
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -28,7 +27,6 @@ func TestIdentityErrorCodesAreProducedFromFailures(t *testing.T) {
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE: identitylib.ErrSelfRevoke,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED:          identitydomain.ErrDeviceRevoked,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE:          identitylib.ErrUnknownDevice,
-		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CODE_INVALID:            identity.ErrCodeFormat,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK:      identitydomain.ErrInvalidChainMark,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED:          identitydomain.ErrChainOutdated,
 	}, func(failure error) v1.IdentityErrorCode {

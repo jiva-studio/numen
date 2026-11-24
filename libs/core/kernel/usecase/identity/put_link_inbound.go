@@ -40,7 +40,7 @@ func (u *PutLinkInbound) Execute(ctx context.Context, blob []byte) error {
 		return nil
 	}
 	if link.progress.Role == identitydomain.LinkRoleHost {
-		return u.host.receiveLocked(ctx, store, link, plain[0], plain[1:])
+		return u.host.receiveLocked(store, link, plain[0], plain[1:])
 	}
 	receiveAsJoinerLocked(store, link, plain[0], plain[1:])
 	return nil

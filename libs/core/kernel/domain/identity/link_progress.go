@@ -8,8 +8,7 @@ import (
 const linkLifetime = 10 * time.Minute
 
 // LinkProgress is what a link in progress holds besides its keys: the phase, the names and fingerprints of this
-// device and of the other device, and the confirmation code. TriesLeft counts the codes the host still takes, or on the
-// new device the codes it may still enter.
+// device and of the other device.
 type LinkProgress struct {
 	Role               LinkRole
 	Mode               LinkMode
@@ -22,9 +21,6 @@ type LinkProgress struct {
 	AccountFingerprint string
 	PeerName           string
 	PeerFingerprint    string
-	Code               string
-	TriesLeft          int
-	IsApproved         bool
 	IsRebuilt          bool
 }
 
@@ -38,8 +34,7 @@ func (p LinkProgress) IsExpired(now time.Time) bool {
 	return !p.IsEnded() && !now.Before(p.StartedAt.Add(linkLifetime))
 }
 
-// GetLink returns what a window shows: the QR text only while a link in mode show runs, and the code with the tries
-// the host takes only on the host in mode scan while the person compares the code.
+// GetLink returns what a window shows: the QR text only while a link in mode show runs.
 func (p LinkProgress) GetLink() Link {
 	link := Link{
 		Phase:              p.Phase,
@@ -49,19 +44,11 @@ func (p LinkProgress) GetLink() Link {
 		DeviceName:         p.DeviceName,
 		DeviceFingerprint:  p.DeviceFingerprint,
 		AccountFingerprint: p.AccountFingerprint,
-		IsApproved:         p.IsApproved,
 		PeerName:           p.PeerName,
 		PeerFingerprint:    p.PeerFingerprint,
 	}
-	if p.Role == LinkRoleJoiner {
-		link.TriesLeft = p.TriesLeft
-	}
 	if p.Mode == LinkModeShow && !p.IsEnded() {
 		link.QRText = p.QRText
-	}
-	if p.Role == LinkRoleHost && p.Phase == LinkPhaseConfirmPeer {
-		link.Code = p.Code
-		link.TriesLeft = p.TriesLeft
 	}
 	return link
 }

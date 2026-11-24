@@ -62,9 +62,6 @@ const (
 	// IdentityServiceDecideLinkProcedure is the fully-qualified name of the IdentityService's
 	// DecideLink RPC.
 	IdentityServiceDecideLinkProcedure = "/numen.v1.IdentityService/DecideLink"
-	// IdentityServiceEnterLinkCodeProcedure is the fully-qualified name of the IdentityService's
-	// EnterLinkCode RPC.
-	IdentityServiceEnterLinkCodeProcedure = "/numen.v1.IdentityService/EnterLinkCode"
 	// IdentityServiceConfirmJoinProcedure is the fully-qualified name of the IdentityService's
 	// ConfirmJoin RPC.
 	IdentityServiceConfirmJoinProcedure = "/numen.v1.IdentityService/ConfirmJoin"
@@ -109,8 +106,6 @@ type IdentityServiceClient interface {
 	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
 	// DecideLink is the answer of the person on the host to the new device.
 	DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error)
-	// EnterLinkCode sends the confirmation code the person read on the host.
-	EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error)
 	// ConfirmJoin is the answer of the person on the new device to the account it is offered.
 	ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error)
 	// CancelLink ends the link in progress.
@@ -192,12 +187,6 @@ func NewIdentityServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(identityServiceMethods.ByName("DecideLink")),
 			connect.WithClientOptions(opts...),
 		),
-		enterLinkCode: connect.NewClient[v1.EnterLinkCodeRequest, v1.EnterLinkCodeResponse](
-			httpClient,
-			baseURL+IdentityServiceEnterLinkCodeProcedure,
-			connect.WithSchema(identityServiceMethods.ByName("EnterLinkCode")),
-			connect.WithClientOptions(opts...),
-		),
 		confirmJoin: connect.NewClient[v1.ConfirmJoinRequest, v1.ConfirmJoinResponse](
 			httpClient,
 			baseURL+IdentityServiceConfirmJoinProcedure,
@@ -237,7 +226,6 @@ type identityServiceClient struct {
 	startLink             *connect.Client[v1.StartLinkRequest, v1.StartLinkResponse]
 	getLink               *connect.Client[v1.GetLinkRequest, v1.GetLinkResponse]
 	decideLink            *connect.Client[v1.DecideLinkRequest, v1.DecideLinkResponse]
-	enterLinkCode         *connect.Client[v1.EnterLinkCodeRequest, v1.EnterLinkCodeResponse]
 	confirmJoin           *connect.Client[v1.ConfirmJoinRequest, v1.ConfirmJoinResponse]
 	cancelLink            *connect.Client[v1.CancelLinkRequest, v1.CancelLinkResponse]
 	listDevices           *connect.Client[v1.ListDevicesRequest, v1.ListDevicesResponse]
@@ -294,11 +282,6 @@ func (c *identityServiceClient) DecideLink(ctx context.Context, req *connect.Req
 	return c.decideLink.CallUnary(ctx, req)
 }
 
-// EnterLinkCode calls numen.v1.IdentityService.EnterLinkCode.
-func (c *identityServiceClient) EnterLinkCode(ctx context.Context, req *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error) {
-	return c.enterLinkCode.CallUnary(ctx, req)
-}
-
 // ConfirmJoin calls numen.v1.IdentityService.ConfirmJoin.
 func (c *identityServiceClient) ConfirmJoin(ctx context.Context, req *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error) {
 	return c.confirmJoin.CallUnary(ctx, req)
@@ -349,8 +332,6 @@ type IdentityServiceHandler interface {
 	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
 	// DecideLink is the answer of the person on the host to the new device.
 	DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error)
-	// EnterLinkCode sends the confirmation code the person read on the host.
-	EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error)
 	// ConfirmJoin is the answer of the person on the new device to the account it is offered.
 	ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error)
 	// CancelLink ends the link in progress.
@@ -428,12 +409,6 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 		connect.WithSchema(identityServiceMethods.ByName("DecideLink")),
 		connect.WithHandlerOptions(opts...),
 	)
-	identityServiceEnterLinkCodeHandler := connect.NewUnaryHandler(
-		IdentityServiceEnterLinkCodeProcedure,
-		svc.EnterLinkCode,
-		connect.WithSchema(identityServiceMethods.ByName("EnterLinkCode")),
-		connect.WithHandlerOptions(opts...),
-	)
 	identityServiceConfirmJoinHandler := connect.NewUnaryHandler(
 		IdentityServiceConfirmJoinProcedure,
 		svc.ConfirmJoin,
@@ -480,8 +455,6 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 			identityServiceGetLinkHandler.ServeHTTP(w, r)
 		case IdentityServiceDecideLinkProcedure:
 			identityServiceDecideLinkHandler.ServeHTTP(w, r)
-		case IdentityServiceEnterLinkCodeProcedure:
-			identityServiceEnterLinkCodeHandler.ServeHTTP(w, r)
 		case IdentityServiceConfirmJoinProcedure:
 			identityServiceConfirmJoinHandler.ServeHTTP(w, r)
 		case IdentityServiceCancelLinkProcedure:
@@ -537,10 +510,6 @@ func (UnimplementedIdentityServiceHandler) GetLink(context.Context, *connect.Req
 
 func (UnimplementedIdentityServiceHandler) DecideLink(context.Context, *connect.Request[v1.DecideLinkRequest]) (*connect.Response[v1.DecideLinkResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.DecideLink is not implemented"))
-}
-
-func (UnimplementedIdentityServiceHandler) EnterLinkCode(context.Context, *connect.Request[v1.EnterLinkCodeRequest]) (*connect.Response[v1.EnterLinkCodeResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.EnterLinkCode is not implemented"))
 }
 
 func (UnimplementedIdentityServiceHandler) ConfirmJoin(context.Context, *connect.Request[v1.ConfirmJoinRequest]) (*connect.Response[v1.ConfirmJoinResponse], error) {

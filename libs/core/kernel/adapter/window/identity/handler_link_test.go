@@ -33,8 +33,8 @@ func newLinkHandler() *windowidentity.Handler {
 			Decide: identity.NewDecideLink(deps), Cancel: identity.NewCancelLink(deps),
 		},
 		Account: windowidentity.AccountUseCases{
-			EnterCode: identity.NewEnterLinkCode(deps), ConfirmJoin: identity.NewConfirmJoin(deps),
-			List: identity.NewListDevices(deps), Revoke: identity.NewRevokeDevice(deps),
+			ConfirmJoin: identity.NewConfirmJoin(deps),
+			List:        identity.NewListDevices(deps), Revoke: identity.NewRevokeDevice(deps),
 		},
 	})
 }
@@ -152,14 +152,6 @@ func TestDecideLink_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 	answer, err := newLinkHandler().DecideLink(t.Context(), connect.NewRequest(&v1.DecideLinkRequest{Approve: true}))
 	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
 		t.Errorf("DecideLink() = %v, %v, want NO_LINK", answer, err)
-	}
-}
-
-func TestEnterLinkCode_AnswersNoLinkWhereTheDeviceAsksForNoCode(t *testing.T) {
-	t.Parallel()
-	answer, err := newLinkHandler().EnterLinkCode(t.Context(), connect.NewRequest(&v1.EnterLinkCodeRequest{Code: "123456"}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
-		t.Errorf("EnterLinkCode() = %v, %v, want NO_LINK", answer, err)
 	}
 }
 

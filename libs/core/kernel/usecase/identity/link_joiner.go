@@ -7,25 +7,11 @@ import (
 
 func receiveAsJoinerLocked(store *linkStore, link *pendingLink, kind byte, body []byte) {
 	switch kind {
-	case messageAccept:
-		if link.progress.Phase == identitydomain.LinkPhaseWaitingForAccept && len(body) == 1 && body[0] == 1 {
-			store.setPhaseLocked(link, identitydomain.LinkPhaseEnterCode)
-		}
 	case messageRefuse:
-		receiveRefuseLocked(store, link, body)
+		store.endLocked(link, identitydomain.LinkPhaseFailed, decodeRefuse(body))
 	case messageGrant:
 		receiveGrantLocked(store, link, body)
 	}
-}
-
-func receiveRefuseLocked(store *linkStore, link *pendingLink, body []byte) {
-	reason, tries := decodeRefuse(body)
-	if reason == identitydomain.LinkReasonWrongCode {
-		link.progress.TriesLeft = tries
-		store.setPhaseLocked(link, identitydomain.LinkPhaseEnterCode)
-		return
-	}
-	store.endLocked(link, identitydomain.LinkPhaseFailed, reason)
 }
 
 func receiveGrantLocked(store *linkStore, link *pendingLink, body []byte) {
@@ -34,7 +20,7 @@ func receiveGrantLocked(store *linkStore, link *pendingLink, body []byte) {
 	}
 	wrapped, chain, err := decodeGrant(body)
 	if err != nil || !readGrant(link, wrapped, chain) {
-		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
+		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonInvalid)
 		return
 	}

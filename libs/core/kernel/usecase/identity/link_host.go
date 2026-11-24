@@ -2,11 +2,7 @@ package identity
 
 import (
 	"context"
-	"crypto/subtle"
-	"encoding/binary"
 	"errors"
-	"fmt"
-	"io"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
@@ -17,18 +13,14 @@ import (
 type linkHost struct {
 	records records
 	clock   Clock
-	random  io.Reader
 }
 
-func (h linkHost) receiveLocked(ctx context.Context, store *linkStore, link *pendingLink, kind byte, body []byte) error {
+func (h linkHost) receiveLocked(store *linkStore, link *pendingLink, kind byte, body []byte) error {
 	switch kind {
 	case messageJoin:
 		return h.receiveJoinLocked(store, link, body)
-	case messageCode:
-		return h.receiveCodeLocked(ctx, store, link, body)
 	case messageRefuse:
-		reason, _ := decodeRefuse(body)
-		store.endLocked(link, identitydomain.LinkPhaseFailed, reason)
+		store.endLocked(link, identitydomain.LinkPhaseFailed, decodeRefuse(body))
 	case messageDone:
 		if link.progress.Phase == identitydomain.LinkPhaseConfirmAccount {
 			store.endLocked(link, identitydomain.LinkPhaseLinked, "")
@@ -48,44 +40,9 @@ func (h linkHost) receiveJoinLocked(store *linkStore, link *pendingLink, body []
 	if err != nil {
 		return err
 	}
-	code, err := h.makeCode()
-	if err != nil {
-		return err
-	}
-	link.progress.Code, link.progress.TriesLeft = code, maxCodeTries
 	link.peer = join.device
 	link.progress.PeerName, link.progress.PeerFingerprint = join.name, join.device.Fingerprint().String()
 	store.setPhaseLocked(link, identitydomain.LinkPhaseConfirmPeer)
-	return nil
-}
-
-func (h linkHost) makeCode() (string, error) {
-	const limit = 4_294_000_000
-	for {
-		var raw [4]byte
-		if _, err := h.random.Read(raw[:]); err != nil {
-			return "", fmt.Errorf("make the confirmation code: %w", err)
-		}
-		if value := binary.BigEndian.Uint32(raw[:]); value < limit {
-			return formatCode(value % 1_000_000), nil
-		}
-	}
-}
-
-func (h linkHost) receiveCodeLocked(ctx context.Context, store *linkStore, link *pendingLink, body []byte) error {
-	if !link.progress.IsApproved || link.progress.Phase != identitydomain.LinkPhaseConfirmPeer {
-		return nil
-	}
-	if subtle.ConstantTimeCompare(body, []byte(link.progress.Code)) == 1 {
-		return h.publishLocked(ctx, store, link)
-	}
-	link.progress.TriesLeft--
-	if link.progress.TriesLeft <= 0 {
-		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonTooManyWrongCodes, 0))
-		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonTooManyWrongCodes)
-		return nil
-	}
-	store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonWrongCode, link.progress.TriesLeft))
 	return nil
 }
 
@@ -100,7 +57,7 @@ func (h linkHost) publishLocked(ctx context.Context, store *linkStore, link *pen
 func (h linkHost) extendLocked(store *linkStore, link *pendingLink, state identitylib.State) error {
 	extended, isAppended := h.appendPeer(state, link)
 	if !isAppended {
-		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
+		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonStaleChain)
 		return nil
 	}
@@ -124,7 +81,7 @@ func (h linkHost) answerLocked(ctx context.Context, store *linkStore, link *pend
 	}
 	state, isAdopted := h.records.adoptLatest(ctx, state, latest)
 	if !isAdopted || link.progress.IsRebuilt || state.Status != identitylib.StatusActive {
-		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
+		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonStaleChain)
 		return nil
 	}

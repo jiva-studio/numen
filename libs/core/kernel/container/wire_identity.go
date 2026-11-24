@@ -33,7 +33,6 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Res
 			Cancel: identity.NewCancelLink(deps),
 		},
 		Account: windowidentity.AccountUseCases{
-			EnterCode:   identity.NewEnterLinkCode(deps),
 			ConfirmJoin: identity.NewConfirmJoin(deps),
 			List:        identity.NewListDevices(deps),
 			Revoke:      identity.NewRevokeDevice(deps),

@@ -66,7 +66,6 @@ func (u *StartLink) newLink(ctx context.Context, role identitydomain.LinkRole, m
 		return nil, err
 	}
 	link.record = identitylib.Record{Device: device}
-	link.progress.TriesLeft = maxCodeTries
 	link.progress.DeviceName = normalizeEntryName(u.names.GetInstanceName())
 	link.progress.DeviceFingerprint = device.Public().Fingerprint().String()
 	return link, nil

@@ -30,7 +30,7 @@ func (u *ConfirmJoin) Execute(ctx context.Context, approve bool) error {
 		return identitydomain.ErrNoLink
 	}
 	if !approve {
-		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonDeclined, 0))
+		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonDeclined))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonDeclined)
 		return nil
 	}
