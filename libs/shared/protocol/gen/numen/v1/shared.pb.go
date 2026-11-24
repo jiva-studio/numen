@@ -80,6 +80,12 @@ const (
 	ErrorCode_ERROR_CODE_INVALID_RANGE ErrorCode = 16
 	// The vault is read only for this caller: another plugin manages it. Nothing is written.
 	ErrorCode_ERROR_CODE_READ_ONLY ErrorCode = 17
+	// The file is listed and its bytes are not on this device.
+	ErrorCode_ERROR_CODE_FILE_ABSENT ErrorCode = 18
+	// A file with other content is already at the path of an absent file.
+	ErrorCode_ERROR_CODE_FILE_PRESENT ErrorCode = 19
+	// The file has changes that are not the content the call named. It is left as it is.
+	ErrorCode_ERROR_CODE_CHANGED ErrorCode = 20
 )
 
 // Enum value maps for ErrorCode.
@@ -103,6 +109,9 @@ var (
 		15: "ERROR_CODE_HASH_MISMATCH",
 		16: "ERROR_CODE_INVALID_RANGE",
 		17: "ERROR_CODE_READ_ONLY",
+		18: "ERROR_CODE_FILE_ABSENT",
+		19: "ERROR_CODE_FILE_PRESENT",
+		20: "ERROR_CODE_CHANGED",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":     0,
@@ -123,6 +132,9 @@ var (
 		"ERROR_CODE_HASH_MISMATCH":   15,
 		"ERROR_CODE_INVALID_RANGE":   16,
 		"ERROR_CODE_READ_ONLY":       17,
+		"ERROR_CODE_FILE_ABSENT":     18,
+		"ERROR_CODE_FILE_PRESENT":    19,
+		"ERROR_CODE_CHANGED":         20,
 	}
 )
 
@@ -368,7 +380,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
 	"\x06Bounds\x12\x10\n" +
 	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x01R\x03max*\xfa\x03\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max*\xcb\x04\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -388,7 +400,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0e\x12\x1c\n" +
 	"\x18ERROR_CODE_HASH_MISMATCH\x10\x0f\x12\x1c\n" +
 	"\x18ERROR_CODE_INVALID_RANGE\x10\x10\x12\x18\n" +
-	"\x14ERROR_CODE_READ_ONLY\x10\x11BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x14ERROR_CODE_READ_ONLY\x10\x11\x12\x1a\n" +
+	"\x16ERROR_CODE_FILE_ABSENT\x10\x12\x12\x1b\n" +
+	"\x17ERROR_CODE_FILE_PRESENT\x10\x13\x12\x16\n" +
+	"\x12ERROR_CODE_CHANGED\x10\x14BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

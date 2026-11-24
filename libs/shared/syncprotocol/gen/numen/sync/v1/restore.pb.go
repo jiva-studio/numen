@@ -59,10 +59,18 @@ func (*GetRestoreEpochRequest) Descriptor() ([]byte, []int) {
 
 type GetRestoreEpochResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// epoch_sign_key is the Ed25519 public key of the server for epochs, 32 bytes.
+	// epoch_sign_key is the Ed25519 public key of the server for epochs, 32 bytes. A client trusts it only through the
+	// certificate below.
 	EpochSignKey []byte `protobuf:"bytes,1,opt,name=epoch_sign_key,json=epochSignKey,proto3" json:"epoch_sign_key,omitempty"`
 	// epoch is unset until the first restore.
-	Epoch         *RestoreEpoch `protobuf:"bytes,2,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	Epoch *RestoreEpoch `protobuf:"bytes,2,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// epoch_serial, epoch_not_before and epoch_not_after (unix seconds) and root_signature are the certificate of
+	// epoch_sign_key: the offline root key of the operator signs them over epochtrust.GetCertMessage.
+	EpochSerial    uint64 `protobuf:"varint,3,opt,name=epoch_serial,json=epochSerial,proto3" json:"epoch_serial,omitempty"`
+	EpochNotBefore int64  `protobuf:"varint,4,opt,name=epoch_not_before,json=epochNotBefore,proto3" json:"epoch_not_before,omitempty"`
+	EpochNotAfter  int64  `protobuf:"varint,5,opt,name=epoch_not_after,json=epochNotAfter,proto3" json:"epoch_not_after,omitempty"`
+	// root_signature is 64 bytes.
+	RootSignature []byte `protobuf:"bytes,6,opt,name=root_signature,json=rootSignature,proto3" json:"root_signature,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -107,6 +115,34 @@ func (x *GetRestoreEpochResponse) GetEpochSignKey() []byte {
 func (x *GetRestoreEpochResponse) GetEpoch() *RestoreEpoch {
 	if x != nil {
 		return x.Epoch
+	}
+	return nil
+}
+
+func (x *GetRestoreEpochResponse) GetEpochSerial() uint64 {
+	if x != nil {
+		return x.EpochSerial
+	}
+	return 0
+}
+
+func (x *GetRestoreEpochResponse) GetEpochNotBefore() int64 {
+	if x != nil {
+		return x.EpochNotBefore
+	}
+	return 0
+}
+
+func (x *GetRestoreEpochResponse) GetEpochNotAfter() int64 {
+	if x != nil {
+		return x.EpochNotAfter
+	}
+	return 0
+}
+
+func (x *GetRestoreEpochResponse) GetRootSignature() []byte {
+	if x != nil {
+		return x.RootSignature
 	}
 	return nil
 }
@@ -179,10 +215,14 @@ var File_numen_sync_v1_restore_proto protoreflect.FileDescriptor
 const file_numen_sync_v1_restore_proto_rawDesc = "" +
 	"\n" +
 	"\x1bnumen/sync/v1/restore.proto\x12\rnumen.sync.v1\"\x18\n" +
-	"\x16GetRestoreEpochRequest\"r\n" +
+	"\x16GetRestoreEpochRequest\"\x8e\x02\n" +
 	"\x17GetRestoreEpochResponse\x12$\n" +
 	"\x0eepoch_sign_key\x18\x01 \x01(\fR\fepochSignKey\x121\n" +
-	"\x05epoch\x18\x02 \x01(\v2\x1b.numen.sync.v1.RestoreEpochR\x05epoch\"Y\n" +
+	"\x05epoch\x18\x02 \x01(\v2\x1b.numen.sync.v1.RestoreEpochR\x05epoch\x12!\n" +
+	"\fepoch_serial\x18\x03 \x01(\x04R\vepochSerial\x12(\n" +
+	"\x10epoch_not_before\x18\x04 \x01(\x03R\x0eepochNotBefore\x12&\n" +
+	"\x0fepoch_not_after\x18\x05 \x01(\x03R\repochNotAfter\x12%\n" +
+	"\x0eroot_signature\x18\x06 \x01(\fR\rrootSignature\"Y\n" +
 	"\fRestoreEpoch\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\fR\x02id\x12\x1b\n" +
 	"\tissued_at\x18\x02 \x01(\x03R\bissuedAt\x12\x1c\n" +
