@@ -14,17 +14,17 @@ import (
 )
 
 const (
-	keyConflicts   = "conflicts"
-	keyUnverified  = "unverified-changes"
-	keyCaseClash   = "case-clash"
-	keyStorageFull = "storage-full"
-	keyWentBack    = "restore.wentBack"
-	keyKeyChanged  = "restore.keyChanged"
-	keyDiverged    = "restore.diverged"
+	keyConflicts      = "conflicts"
+	keyUnverified     = "unverified-changes"
+	keyCaseClash      = "case-clash"
+	keyStorageFull    = "storage-full"
+	keyWentBack       = "restore.wentBack"
+	keyEpochUntrusted = "restore.epochUntrusted"
+	keyDiverged       = "restore.diverged"
 
-	textWentBack   = "The sync server went back to an earlier state"
-	textKeyChanged = "The restore key of the sync server changed"
-	textDiverged   = "The sync server holds another history than this computer"
+	textWentBack       = "The sync server went back to an earlier state"
+	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
+	textDiverged       = "The sync server holds another history than this computer"
 )
 
 type reporter struct {
@@ -106,7 +106,7 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 }
 
 func (r reporter) clearRestore(ctx context.Context, id hostdomain.VaultID) error {
-	for _, key := range []string{keyWentBack, keyKeyChanged, keyDiverged} {
+	for _, key := range []string{keyWentBack, keyEpochUntrusted, keyDiverged} {
 		if err := r.health.Clear(ctx, getKey(key, id)); err != nil {
 			return err
 		}

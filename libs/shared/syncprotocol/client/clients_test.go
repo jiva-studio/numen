@@ -422,6 +422,37 @@ func TestACallToAServerThatIsNotThereIsUnreachable(t *testing.T) {
 	}
 }
 
+type recordingTransport struct {
+	mu      sync.Mutex
+	headers []http.Header
+}
+
+func (r *recordingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.headers = append(r.headers, request.Header.Clone())
+	return nil, errors.New("no network in this test")
+}
+
+func TestEveryClientSendsNoBearerOverPlainHTTPToAnotherHost(t *testing.T) {
+	t.Parallel()
+	transport := &recordingTransport{}
+	web := &http.Client{Transport: transport}
+
+	_, _ = syncclient.NewCatalogClient("http://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4)
+	_, _ = syncclient.NewCatalogClient("https://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4)
+
+	if len(transport.headers) != 2 {
+		t.Fatalf("the transport saw %d requests, want 2", len(transport.headers))
+	}
+	if got := transport.headers[0].Get("Authorization"); got != "" {
+		t.Errorf("plain http sent Authorization = %q, want none", got)
+	}
+	if got := transport.headers[1].Get("Authorization"); got != "Bearer token-of-the-session" {
+		t.Errorf("https sent Authorization = %q, want the bearer", got)
+	}
+}
+
 func TestDeleteAccountReturnsTheTimeTheServerDeletesTheAccountAndExportAccountTheDocument(t *testing.T) {
 	t.Parallel()
 	_, address := serveStub(t, syncprotocol.Version)

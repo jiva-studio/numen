@@ -8,7 +8,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -33,10 +32,23 @@ type fakeLink struct {
 	inbound      chan []byte
 	changed      chan struct{}
 	pending      *identity.Chain
+	server       string
 }
 
 func newFakeLink() *fakeLink {
 	return &fakeLink{wantsChannel: true, inbound: make(chan []byte, 64), changed: make(chan struct{})}
+}
+
+// setLink replaces the link and wakes the courier that waits on the one it replaces or on none.
+func (f *Fake) setLink(l *fakeLink) {
+	if f.link != nil {
+		close(f.link.changed)
+	}
+	if f.linkStarted != nil {
+		close(f.linkStarted)
+		f.linkStarted = nil
+	}
+	f.link = l
 }
 
 func (l *fakeLink) bump() uint64 {
@@ -56,7 +68,22 @@ func (f *Fake) ShowLink() error {
 	if f.link != nil {
 		return errors.New("a link is already in progress")
 	}
-	f.link = newFakeLink()
+	f.setLink(newFakeLink())
+	f.link.bump()
+	return nil
+}
+
+// ScanLink makes the host start a link in mode scan over the channel, as a QR code that names the server would.
+func (f *Fake) ScanLink(channel []byte, server string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.link != nil && !f.link.isClosed {
+		return errors.New("a link is already in progress")
+	}
+	f.setLink(newFakeLink())
+	f.link.wantsChannel = false
+	f.link.channel = append([]byte(nil), channel...)
+	f.link.server = server
 	f.link.bump()
 	return nil
 }
@@ -135,7 +162,7 @@ func (f *Fake) AdvanceEpoch() error {
 	if f.record == nil {
 		return errors.New("the host has no identity")
 	}
-	now := clock.System{}.Now()
+	now := f.now()
 	added, err := f.record.Chain.AppendDevice(f.record.root, stranger.Public(), "Stranger", now)
 	if err != nil {
 		return err
@@ -157,7 +184,7 @@ func (f *Fake) RevokeDeviceAt(deviceSignKey []byte, at time.Time) error {
 	if f.record == nil {
 		return errors.New("the host has no identity")
 	}
-	return f.revokeLocked(deviceSignKey, at)
+	return f.revokeLocked(deviceSignKey, f.now())
 }
 
 func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {
@@ -171,7 +198,7 @@ func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {
 	}
 	f.record.Wrapped, f.record.Chain, f.record.keys = wrapped, revoked, keys
 	if f.link == nil {
-		f.link = newFakeLink()
+		f.setLink(newFakeLink())
 		f.link.wantsChannel = false
 		f.link.isClosed = true
 	}
@@ -204,7 +231,10 @@ func (f *Fake) readWork(since uint64) (*v1.GetLinkWorkResponse, <-chan struct{})
 	defer f.mu.Unlock()
 	link := f.link
 	if link == nil {
-		return &v1.GetLinkWorkResponse{}, make(chan struct{})
+		if f.linkStarted == nil {
+			f.linkStarted = make(chan struct{})
+		}
+		return &v1.GetLinkWorkResponse{}, f.linkStarted
 	}
 	kept := link.outbound[:0]
 	for _, blob := range link.outbound {
@@ -215,7 +245,7 @@ func (f *Fake) readWork(since uint64) (*v1.GetLinkWorkResponse, <-chan struct{})
 	link.outbound = kept
 	response := &v1.GetLinkWorkResponse{
 		Version: link.version, IsActive: !link.isClosed || len(kept) > 0, WantsChannel: link.wantsChannel,
-		ChannelId: link.channel, IsClosed: link.isClosed,
+		ChannelId: link.channel, IsClosed: link.isClosed, Server: link.server,
 	}
 	for _, blob := range kept {
 		response.Outbound = append(response.Outbound, blob.body)

@@ -4,18 +4,18 @@
 package restore
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-// ErrKeyChanged is domain.ErrKeyChanged: the key that signs restore epochs is not the key this device pinned.
-var ErrKeyChanged = domain.ErrKeyChanged
+// ErrEpochUntrusted is epochtrust.ErrUntrusted: the announcement of the server has no valid certificate of a known root key.
+var ErrEpochUntrusted = epochtrust.ErrUntrusted
 
 // ErrDiverged is domain.ErrDiverged: a log on the server differs from the copy of this device, so nothing is replayed.
 var ErrDiverged = domain.ErrDiverged
@@ -52,41 +52,26 @@ type State interface {
 	ports.Records
 }
 
-// RecoverAccount checks the epoch of the server against the key this device pinned, pins the key the first time
-// it sees one, signs in again with the chain of this device and sends the catalog entries the server lost.
+// RecoverAccount requires an announcement that a known root key vouches for, signs in again with the chain of this device and sends the catalog entries the server lost.
 type RecoverAccount struct{ deps Deps }
 
 // NewRecoverAccount returns the use case over the dependencies.
 func NewRecoverAccount(deps Deps) *RecoverAccount { return &RecoverAccount{deps: deps} }
 
-// Execute returns ErrKeyChanged for a key that is not the pinned one and ErrDiverged for a log that differs from
+// Execute returns ErrEpochUntrusted for a missing, forged or expired announcement and ErrDiverged for a log that differs from
 // the copy, and sends nothing in either case.
 func (u *RecoverAccount) Execute(ctx context.Context) error {
-	_, key, err := u.deps.Epochs.GetRestoreEpoch(ctx)
+	epoch, _, err := u.deps.Epochs.GetRestoreEpoch(ctx)
 	if err != nil {
 		return err
 	}
-	if err := u.pin(ctx, key); err != nil {
-		return err
+	if epoch == nil {
+		return fmt.Errorf("%w: the server announced no restore", ErrEpochUntrusted)
 	}
 	if err := u.deps.Chain.SendAccountChain(ctx); err != nil {
 		return err
 	}
 	return u.replayCatalog(ctx)
-}
-
-func (u *RecoverAccount) pin(ctx context.Context, key []byte) error {
-	pinned, err := u.deps.Mirror.ReadPin(ctx, u.deps.Address)
-	if err != nil {
-		return err
-	}
-	switch {
-	case len(pinned) == 0:
-		return u.deps.Mirror.WritePin(ctx, u.deps.Address, key)
-	case !bytes.Equal(pinned, key):
-		return ErrKeyChanged
-	}
-	return nil
 }
 
 func (u *RecoverAccount) replayCatalog(ctx context.Context) error {

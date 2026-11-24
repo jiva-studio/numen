@@ -20,7 +20,7 @@
       }
     ]
   },
-  "permissions": ["identity", "link:open", "vault:manage", "vault:read", "vault:write"],
+  "permissions": ["identity", "identity:link", "link:open", "vault:manage", "vault:read", "vault:write"],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
@@ -49,6 +49,13 @@
       "description": "How long a removed file is watched before the removal is sent",
       "default": 60,
       "min": 1
+    },
+    {
+      "key": "epochRootKey",
+      "type": "string",
+      "title": "Epoch root key",
+      "description": "Public root key (64 hex digits) that vouches for restore announcements of a server you typed above; it never counts for the default server",
+      "default": ""
     },
     {
       "key": "receivedFolder",

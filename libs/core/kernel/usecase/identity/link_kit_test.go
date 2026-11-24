@@ -236,10 +236,7 @@ func newLinkPair(tb testing.TB) linked {
 		tb.Fatalf("joiner StartLink() = %v", err)
 	}
 	r.settle(tb, host, joiner)
-	if err := host.decide().Execute(tb.Context(), true); err != nil {
-		tb.Fatalf("DecideLink() = %v", err)
-	}
-	r.settle(tb, host, joiner)
+	approveAndEnterCode(tb, r, host, joiner)
 	if err := joiner.confirm().Execute(tb.Context(), true); err != nil {
 		tb.Fatalf("ConfirmJoin() = %v", err)
 	}
@@ -255,4 +252,17 @@ func newDeviceKey(tb testing.TB) identitylib.DeviceKey {
 		tb.Fatal(err)
 	}
 	return key
+}
+
+func approveAndEnterCode(tb testing.TB, r *relay, host, joiner *linkDevice) {
+	tb.Helper()
+	code := host.getLink(tb).Code
+	if err := host.decide().Execute(tb.Context(), true); err != nil {
+		tb.Fatalf("DecideLink() = %v", err)
+	}
+	r.settle(tb, host, joiner)
+	if err := joiner.code().Execute(tb.Context(), code); err != nil {
+		tb.Fatalf("EnterLinkCode() = %v", err)
+	}
+	r.settle(tb, host, joiner)
 }

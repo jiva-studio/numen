@@ -48,13 +48,11 @@ func (h linkHost) receiveJoinLocked(store *linkStore, link *pendingLink, body []
 	if err != nil {
 		return err
 	}
-	if link.progress.Mode == identitydomain.LinkModeScan {
-		code, err := h.makeCode()
-		if err != nil {
-			return err
-		}
-		link.progress.Code, link.progress.TriesLeft = code, maxCodeTries
+	code, err := h.makeCode()
+	if err != nil {
+		return err
 	}
+	link.progress.Code, link.progress.TriesLeft = code, maxCodeTries
 	link.peer = join.device
 	link.progress.PeerName, link.progress.PeerFingerprint = join.name, join.device.Fingerprint().String()
 	store.setPhaseLocked(link, identitydomain.LinkPhaseConfirmPeer)

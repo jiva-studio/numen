@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -20,7 +21,7 @@ func newRestoreEnv(tb testing.TB) (*fakeserver.Server, *env, *syncclient.Restore
 	account := newOwnedAccount(tb)
 	device := account.addDevice(tb, "First")
 	e := newEnvOn(tb, address, &account, device)
-	restore := syncclient.NewRestoreClient(address, http.DefaultClient, func() string { return e.token })
+	restore := syncclient.NewRestoreClient(address, http.DefaultClient, func() string { return e.token }, fakeserver.GetTestRoots(), time.Now)
 	return server, e, restore
 }
 

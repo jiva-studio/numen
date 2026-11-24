@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	textWentBack   = "The sync server went back to an earlier state"
-	textKeyChanged = "The restore key of the sync server changed"
-	keyRunning     = "restore.running"
-	keyWentBack    = "restore.wentBack"
-	keyKeyChanged  = "restore.keyChanged"
+	textWentBack       = "The sync server went back to an earlier state"
+	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
+	keyRunning         = "restore.running"
+	keyWentBack        = "restore.wentBack"
+	keyEpochUntrusted  = "restore.epochUntrusted"
 )
 
 func backup(t *testing.T, p *pair) []byte {
@@ -285,55 +285,6 @@ func TestSyncVault_ClearsTheWentBackWarningWhenTheRestoreIsAnnounced(t *testing.
 	wantServerNote(t, p, "Shopping list.md", "eggs")
 }
 
-func TestSyncVault_PinsTheKeyOfTheServerAtTheFirstRecovery(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	kept := backup(t, p)
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	restoreServer(t, p, kept)
-	announce(t, p)
-
-	sync(t, p.a, source)
-
-	_, key, err := p.a.Cloud.GetRestoreEpoch(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	pinned, err := p.a.State.ReadPin(t.Context(), p.server.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(pinned, key) {
-		t.Errorf("pinned key = %x, want the key of the server %x", pinned, key)
-	}
-}
-
-func TestSyncVault_RunsNoRecoveryWhenTheKeyDiffersFromThePinnedOne(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	kept := backup(t, p)
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-	sync(t, p.a, source)
-	if err := p.a.State.WritePin(t.Context(), p.server.URL, bytes.Repeat([]byte{9}, 32)); err != nil {
-		t.Fatal(err)
-	}
-	restoreServer(t, p, kept)
-	announce(t, p)
-	commits := countCommits(p)
-
-	sync(t, p.a, source)
-
-	if !p.a.HasItem(textKeyChanged) || !p.a.HasItemKey(keyKeyChanged) {
-		t.Errorf("health items = %+v, want %q", p.a.Health.List(), textKeyChanged)
-	}
-	if got := countCommits(p); got != commits {
-		t.Errorf("commits grew from %d to %d, want none under a key that is not pinned", commits, got)
-	}
-	if _, ok := readServerNotes(t, p)["Shopping list.md"]; ok {
-		t.Error("the note reached the server under another key")
-	}
-	wantNote(t, p.a, source, "Shopping list.md", "milk")
-}
-
 func TestSyncVault_FinishesARecoveryAfterAnInterruptedOne(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	kept := backup(t, p)
@@ -456,4 +407,28 @@ func TestSyncVault_AppliesNewerTextInsteadOfSendingItsOwnWhenServerAnnouncesRest
 
 	wantNote(t, p.b, target, "Shopping list.md", "eggs")
 	wantServerNote(t, p, "Shopping list.md", "eggs")
+}
+
+func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLocalNotes(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	kept := backup(t, p)
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	sync(t, p.a, source)
+	restoreServer(t, p, kept)
+	announce(t, p)
+	p.a.DistrustServer()
+	commits := countCommits(p)
+
+	sync(t, p.a, source)
+
+	if !p.a.HasItem(textEpochUntrusted) || !p.a.HasItemKey(keyEpochUntrusted) {
+		t.Errorf("health items = %+v, want %q", p.a.Health.List(), textEpochUntrusted)
+	}
+	if got := countCommits(p); got != commits {
+		t.Errorf("commits grew from %d to %d, want none for an announcement nobody vouches for", commits, got)
+	}
+	if _, ok := readServerNotes(t, p)["Shopping list.md"]; ok {
+		t.Error("the note reached the restored server on the word of an announcement nobody vouches for")
+	}
+	wantNote(t, p.a, source, "Shopping list.md", "milk")
 }

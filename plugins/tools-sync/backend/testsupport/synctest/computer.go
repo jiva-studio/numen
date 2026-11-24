@@ -2,6 +2,7 @@ package synctest
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"net/http"
 	"sync/atomic"
@@ -18,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
@@ -80,6 +82,7 @@ type Computer struct {
 	Vaults    *hosttest.Vault
 	Host      ports.Host
 	Cloud     *cloud.Cloud
+	Roots     []ed25519.PublicKey
 	Account   *accountadapter.Account
 	Sessions  *serveradapter.Server
 	State     *hoststore.State
@@ -134,6 +137,7 @@ func NewSecondComputer(t *testing.T, server *Server, clock *Clock, vault string,
 func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Computer {
 	t.Helper()
 	fake := accounttest.NewFake(t, syncprotocol.SignInPluginID)
+	fake.SetClock(clock)
 	healthHost := healthtest.NewHost(t)
 	accountEndpoint, err := hostcall.ReadVars(fake.BuildVars("token"))
 	if err != nil {
@@ -150,7 +154,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
+		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -336,7 +340,7 @@ func (c *Computer) RestoreDeps() restore.Deps {
 // timeout, both over the network link of this computer, and refresh as the way to sign in again.
 func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
 	return cloud.New(cloud.Config{
-		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh,
+		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots,
 	})
 }
 
@@ -350,7 +354,7 @@ func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 // ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
 	return chaincourier.Deps{
-		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Endorse: endorse.NewEndorse(c.EndorseDeps()), Health: c.NewHealth(), Clock: c.Clock,
+		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Health: c.NewHealth(), Clock: c.Clock, Endorse: endorse.NewEndorse(c.EndorseDeps()),
 	}
 }
 
@@ -362,7 +366,7 @@ func (c *Computer) EndorseDeps() endorse.Deps {
 // LinkDeps are the dependencies of the courier of a link over the relay of the server.
 func (c *Computer) LinkDeps() linkcourier.Deps {
 	return linkcourier.Deps{
-		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock,
+		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock, Server: c.Server.URL,
 	}
 }
 
@@ -380,4 +384,10 @@ func (c *Computer) ReceiveDeps() receive.Deps {
 		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Links: c.State,
 		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock,
 	}
+}
+
+// DistrustServer makes this computer trust no root key, as a build without an embedded root does.
+func (c *Computer) DistrustServer() {
+	c.Roots = nil
+	c.Cloud = c.NewCloud(c.Server.URL, c.SignIn)
 }

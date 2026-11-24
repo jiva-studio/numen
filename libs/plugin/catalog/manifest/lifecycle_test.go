@@ -89,3 +89,12 @@ func TestTheIdentityPermissionIsDeclarable(t *testing.T) {
 		t.Errorf("permissions = %v", m.Permissions)
 	}
 }
+
+func TestTheIdentityLinkPermissionIsDeclarableApartFromIdentity(t *testing.T) {
+	if manifest.PermissionIdentityLink != "identity:link" {
+		t.Fatalf("PermissionIdentityLink = %q", manifest.PermissionIdentityLink)
+	}
+	if !slices.Contains(manifest.ListPluginPermissions(), manifest.PermissionIdentityLink) {
+		t.Error("PluginPermissions does not list identity:link")
+	}
+}

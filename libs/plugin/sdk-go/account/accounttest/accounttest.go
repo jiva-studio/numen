@@ -12,6 +12,7 @@ import (
 	"slices"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -31,14 +32,30 @@ type Fake struct {
 	port     string
 	pluginID string
 
-	mu      sync.Mutex
-	record  *held
-	link    *fakeLink
-	failure error
-	signed  int
-	pending *pendingRestore
+	mu          sync.Mutex
+	record      *held
+	link        *fakeLink
+	failure     error
+	signed      int
+	pending     *pendingRestore
+	clock       interface{ Now() time.Time }
+	linkStarted chan struct{}
 
 	completeHook func()
+}
+
+// SetClock makes the host read the time of the clock when it signs a revoke, instead of the machine clock.
+func (f *Fake) SetClock(source interface{ Now() time.Time }) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.clock = source
+}
+
+func (f *Fake) now() time.Time {
+	if f.clock != nil {
+		return f.clock.Now()
+	}
+	return clock.System{}.Now()
 }
 
 // NewFake starts a host with an identity, serving a plugin of the id, and stops it when the test ends.

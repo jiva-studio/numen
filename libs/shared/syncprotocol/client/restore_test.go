@@ -9,11 +9,13 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
@@ -33,32 +35,50 @@ func (s *restoreStub) GetRestoreEpoch(_ context.Context, req *connect.Request[sy
 	return connect.NewResponse(s.response), nil
 }
 
-func serveRestoreStub(tb testing.TB, response *syncv1.GetRestoreEpochResponse) (*restoreStub, *syncclient.RestoreClient) {
-	tb.Helper()
-	stub := &restoreStub{response: response}
-	mux := http.NewServeMux()
-	mux.Handle(syncv1connect.NewRestoreServiceHandler(stub, connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(syncprotocol.Version))))
-	server := httptest.NewServer(mux)
-	tb.Cleanup(server.Close)
-	return stub, syncclient.NewRestoreClient(server.URL, http.DefaultClient, func() string { return "token-of-the-session" })
-}
+var testNow = time.Unix(1_800_000_000, 0)
 
-func newEpochOf(tb testing.TB, seed byte) (*syncv1.GetRestoreEpochResponse, ed25519.PrivateKey) {
+func newRoot(tb testing.TB, seed byte) (ed25519.PrivateKey, ed25519.PublicKey) {
 	tb.Helper()
 	private := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{seed}, ed25519.SeedSize))
 	public, ok := private.Public().(ed25519.PublicKey)
 	if !ok {
 		tb.Fatal("not an Ed25519 key")
 	}
+	return private, public
+}
+
+func serveRestoreStub(tb testing.TB, response *syncv1.GetRestoreEpochResponse, roots ...ed25519.PublicKey) (*restoreStub, *syncclient.RestoreClient) {
+	tb.Helper()
+	stub := &restoreStub{response: response}
+	mux := http.NewServeMux()
+	mux.Handle(syncv1connect.NewRestoreServiceHandler(stub, connect.WithInterceptors(syncprotocol.NewVersionHandlerInterceptor(syncprotocol.Version))))
+	server := httptest.NewServer(mux)
+	tb.Cleanup(server.Close)
+	return stub, syncclient.NewRestoreClient(server.URL, http.DefaultClient, func() string { return "token-of-the-session" }, roots, func() time.Time { return testNow })
+}
+
+// newEpochOf returns the response of a server whose epoch key (seed epochSeed) holds a certificate of the root with
+// the seed 1, and the root key.
+func newEpochOf(tb testing.TB, epochSeed byte) (*syncv1.GetRestoreEpochResponse, ed25519.PrivateKey, ed25519.PublicKey) {
+	tb.Helper()
+	root, rootPublic := newRoot(tb, 1)
+	private, public := newRoot(tb, epochSeed)
+	cert, err := epochtrust.SignCert(root, public, 3, testNow.Add(-time.Hour), testNow.Add(time.Hour))
+	if err != nil {
+		tb.Fatal(err)
+	}
 	id := bytes.Repeat([]byte{0x31}, 16)
 	epoch := &syncv1.RestoreEpoch{Id: id, IssuedAt: 1_800_000_000, Signature: ed25519.Sign(private, syncprotocol.GetRestoreEpochMessage(id, 1_800_000_000))}
-	return &syncv1.GetRestoreEpochResponse{EpochSignKey: public, Epoch: epoch}, private
+	return &syncv1.GetRestoreEpochResponse{
+		EpochSignKey: public, Epoch: epoch, EpochSerial: cert.Serial, EpochNotBefore: cert.NotBefore, EpochNotAfter: cert.NotAfter,
+		RootSignature: cert.RootSignature,
+	}, private, rootPublic
 }
 
 func TestRestoreClient_ReturnsTheEpochAndTheKeyWithTheBearerOfTheToken(t *testing.T) {
 	t.Parallel()
-	response, _ := newEpochOf(t, 1)
-	stub, client := serveRestoreStub(t, response)
+	response, _, root := newEpochOf(t, 2)
+	stub, client := serveRestoreStub(t, response, root)
 
 	epoch, key, err := client.GetRestoreEpoch(t.Context())
 
@@ -77,9 +97,9 @@ func TestRestoreClient_ReturnsTheEpochAndTheKeyWithTheBearerOfTheToken(t *testin
 
 func TestRestoreClient_ReturnsNoEpochBeforeTheFirstRestore(t *testing.T) {
 	t.Parallel()
-	response, _ := newEpochOf(t, 1)
+	response, _, root := newEpochOf(t, 2)
 	response.Epoch = nil
-	_, client := serveRestoreStub(t, response)
+	_, client := serveRestoreStub(t, response, root)
 
 	epoch, key, err := client.GetRestoreEpoch(t.Context())
 
@@ -93,27 +113,83 @@ func TestRestoreClient_ReturnsNoEpochBeforeTheFirstRestore(t *testing.T) {
 
 func TestRestoreClient_RefusesAnEpochWhoseSignatureDoesNotVerify(t *testing.T) {
 	t.Parallel()
-	response, _ := newEpochOf(t, 1)
+	response, _, root := newEpochOf(t, 2)
 	response.Epoch.IssuedAt++
-	_, client := serveRestoreStub(t, response)
+	_, client := serveRestoreStub(t, response, root)
 
 	_, _, err := client.GetRestoreEpoch(t.Context())
 
-	if !errors.Is(err, syncprotocol.ErrInvalidRestoreEpoch) {
-		t.Errorf("GetRestoreEpoch = %v, want ErrInvalidRestoreEpoch", err)
+	if !errors.Is(err, epochtrust.ErrUntrusted) {
+		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
 	}
 }
 
 func TestRestoreClient_RefusesAKeyThatIsNotThirtyTwoBytes(t *testing.T) {
 	t.Parallel()
-	response, _ := newEpochOf(t, 1)
+	response, _, root := newEpochOf(t, 2)
 	response.EpochSignKey = response.GetEpochSignKey()[:31]
+	_, client := serveRestoreStub(t, response, root)
+
+	_, _, err := client.GetRestoreEpoch(t.Context())
+
+	if !errors.Is(err, epochtrust.ErrUntrusted) {
+		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
+	}
+}
+
+func TestRestoreClient_RefusesAForgedServerKeyAtFirstUse(t *testing.T) {
+	t.Parallel()
+	forger, forgerPublic := newRoot(t, 7)
+	id := bytes.Repeat([]byte{0x41}, 16)
+	forged := &syncv1.GetRestoreEpochResponse{
+		EpochSignKey: forgerPublic, Epoch: &syncv1.RestoreEpoch{Id: id, IssuedAt: 1_800_000_000, Signature: ed25519.Sign(forger, syncprotocol.GetRestoreEpochMessage(id, 1_800_000_000))},
+		EpochSerial: 1, EpochNotBefore: testNow.Add(-time.Hour).Unix(), EpochNotAfter: testNow.Add(time.Hour).Unix(), RootSignature: bytes.Repeat([]byte{9}, 64),
+	}
+	_, root := newRoot(t, 1)
+	_, client := serveRestoreStub(t, forged, root)
+
+	epoch, key, err := client.GetRestoreEpoch(t.Context())
+
+	if !errors.Is(err, epochtrust.ErrUntrusted) || epoch != nil || key != nil {
+		t.Errorf("GetRestoreEpoch = %v %x %v, want nothing and ErrUntrusted", epoch, key, err)
+	}
+}
+
+func TestRestoreClient_IgnoresAnAnnouncementOfAnEpochKeyWithoutACertificate(t *testing.T) {
+	t.Parallel()
+	response, _, root := newEpochOf(t, 2)
+	response.RootSignature, response.EpochSerial, response.EpochNotAfter = nil, 0, 0
+	_, client := serveRestoreStub(t, response, root)
+
+	_, _, err := client.GetRestoreEpoch(t.Context())
+
+	if !errors.Is(err, epochtrust.ErrUntrusted) {
+		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
+	}
+}
+
+func TestRestoreClient_IgnoresEveryAnnouncementWhenTheBuildHasNoRoot(t *testing.T) {
+	t.Parallel()
+	response, _, _ := newEpochOf(t, 2)
 	_, client := serveRestoreStub(t, response)
 
 	_, _, err := client.GetRestoreEpoch(t.Context())
 
-	if !errors.Is(err, syncprotocol.ErrInvalidRestoreEpoch) {
-		t.Errorf("GetRestoreEpoch = %v, want ErrInvalidRestoreEpoch", err)
+	if !errors.Is(err, epochtrust.ErrUntrusted) {
+		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
+	}
+}
+
+func TestRestoreClient_RefusesAnExpiredCertificate(t *testing.T) {
+	t.Parallel()
+	response, _, root := newEpochOf(t, 2)
+	response.EpochNotAfter = testNow.Add(-time.Minute).Unix()
+	_, client := serveRestoreStub(t, response, root)
+
+	_, _, err := client.GetRestoreEpoch(t.Context())
+
+	if !errors.Is(err, epochtrust.ErrUntrusted) {
+		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
 	}
 }
 

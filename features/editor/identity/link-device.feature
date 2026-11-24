@@ -18,6 +18,7 @@ Feature: Link a device to the account
       When the person shows the QR code to link a new device
       And the second computer scans the QR code
       And the person approves the new device
+      And the second computer enters the confirmation code of the person
       Then the second computer has the account of the person
       And the account has 2 devices
 
@@ -25,6 +26,14 @@ Feature: Link a device to the account
       When the person shows the QR code to link a new device
       And the second computer scans the QR code
       Then the second computer asks to join the account of the person
+
+    Scenario: A new device without the confirmation code does not join
+      When the person shows the QR code to link a new device
+      And the second computer scans the QR code
+      And the person approves the new device
+      And the second computer types "000000" as the confirmation code
+      Then the second computer has no identity
+      And the account has 1 device
 
     Scenario: The person declines the new device
       When the person shows the QR code to link a new device
@@ -37,6 +46,7 @@ Feature: Link a device to the account
       Given the person shows the QR code to link a new device
       And the second computer scans the QR code
       And the person approves the new device
+      And the second computer enters the confirmation code of the person
       And the second computer deletes the identity from this device
       When the second computer scans the QR code
       Then the second computer has no identity

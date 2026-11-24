@@ -76,13 +76,13 @@ func (u *Uploader) Resume(ctx context.Context, vault, blob []byte) (transfer.Upl
 
 func (u *Uploader) PutPart(ctx context.Context, up transfer.Upload, number int, body []byte) error {
 	if up.URL != "" {
-		return syncclient.PutBlob(ctx, u.cloud.http, up.URL, body)
+		return syncclient.PutBlob(ctx, u.cloud.storage, up.URL, body)
 	}
 	url, err := u.getPartURL(ctx, up, number)
 	if err != nil {
 		return err
 	}
-	return syncclient.PutPart(ctx, u.cloud.http, url, body)
+	return syncclient.PutPart(ctx, u.cloud.storage, url, body)
 }
 
 func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number int) (string, error) {
@@ -168,5 +168,5 @@ func (b *Blobs) OpenBlob(ctx context.Context, vault, blob []byte, from int64) (i
 	if err != nil {
 		return nil, err
 	}
-	return syncclient.GetBlobRange(ctx, b.cloud.http, url, from)
+	return syncclient.GetBlobRange(ctx, b.cloud.storage, url, from)
 }

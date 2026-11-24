@@ -151,3 +151,58 @@ func TestExecute_StopsWhenTheContextEnds(t *testing.T) {
 		t.Errorf("error = %v, want nil or the cancellation", err)
 	}
 }
+
+func waitHealthKey(t *testing.T, r *run, key string) bool {
+	t.Helper()
+	for range 100 {
+		if r.computer.HasItemKey(key) {
+			return true
+		}
+		<-time.After(50 * time.Millisecond)
+	}
+	return false
+}
+
+func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
+	t.Parallel()
+	r := newRun(t, nil)
+	channel, err := r.relay.CreateChannel(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.computer.Fake.ScanLink(channel.ID, "https://other.example.org"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.computer.Fake.QueueLinkOutbound([]byte("sealed blob")); err != nil {
+		t.Fatal(err)
+	}
+
+	if !waitHealthKey(t, r, "link-other-server") {
+		t.Fatalf("health = %+v, want the item that names another server", r.computer.Health.List())
+	}
+	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideDisplayer, 0, 200*time.Millisecond)
+	if err != nil || len(got.Messages) != 0 {
+		t.Errorf("the relay holds %+v, %v, want nothing posted for another server", got, err)
+	}
+}
+
+func TestExecute_CarriesALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
+	t.Parallel()
+	r := newRun(t, nil)
+	channel, err := r.relay.CreateChannel(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.computer.Fake.ScanLink(channel.ID, r.computer.Server.URL); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.computer.Fake.QueueLinkOutbound([]byte("sealed blob")); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := r.relay.WaitMessages(t.Context(), channel.ID, syncclient.LinkSideDisplayer, 0, 10*time.Second)
+
+	if err != nil || len(got.Messages) != 1 || !bytes.Equal(got.Messages[0].Body, []byte("sealed blob")) {
+		t.Errorf("the displayer reads %+v, %v, want the blob of the core", got, err)
+	}
+}

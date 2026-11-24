@@ -36,9 +36,12 @@ func (e *env) signInAgain(restore bool) error {
 		e.tb.Fatal(err)
 	}
 	signature := e.device.SignForPlugin(syncprotocol.SignInPluginID, challenge.Message)
-	_, err = client.SignIn(e.tb.Context(), syncclient.Proof{
+	session, err := client.SignIn(e.tb.Context(), syncclient.Proof{
 		ChallengeID: challenge.ID, DeviceSignKey: key, Signature: signature[:], Chain: e.account.chain.Bytes(), RestoreAccount: restore,
 	})
+	if err == nil {
+		e.token = session.Token
+	}
 	return err
 }
 

@@ -269,3 +269,48 @@ func readReason(err error) string {
 	}
 	return ""
 }
+
+func TestLinkAndChainCallsNeedThePermissionIdentityLinkAndNotIdentity(t *testing.T) {
+	h := newAccountHost(t)
+	client := h.client("token-a")
+	calls := map[string]func() error{
+		"GetLinkWork": func() error {
+			_, err := client.GetLinkWork(t.Context(), connect.NewRequest(&v1.GetLinkWorkRequest{}))
+			return err
+		},
+		"SetLinkChannel": func() error {
+			_, err := client.SetLinkChannel(t.Context(), connect.NewRequest(&v1.SetLinkChannelRequest{ChannelId: bytes.Repeat([]byte{1}, linkChannelSize)}))
+			return err
+		},
+		"PutLinkInbound": func() error {
+			_, err := client.PutLinkInbound(t.Context(), connect.NewRequest(&v1.PutLinkInboundRequest{Blob: []byte("sealed")}))
+			return err
+		},
+		"GetChainPublish": func() error {
+			_, err := client.GetChainPublish(t.Context(), connect.NewRequest(&v1.GetChainPublishRequest{}))
+			return err
+		},
+		"PutChainPublished": func() error {
+			_, err := client.PutChainPublished(t.Context(), connect.NewRequest(&v1.PutChainPublishedRequest{}))
+			return err
+		},
+		"AdoptChain": func() error {
+			_, err := client.AdoptChain(t.Context(), connect.NewRequest(&v1.AdoptChainRequest{Chain: []byte("chain")}))
+			return err
+		},
+	}
+
+	h.callers.granted = []string{manifest.PermissionIdentity}
+	for name, call := range calls {
+		if got := connect.CodeOf(call()); got != connect.CodePermissionDenied {
+			t.Errorf("%s with identity only: code = %v, want permission denied", name, got)
+		}
+	}
+
+	h.callers.granted = []string{manifest.PermissionIdentityLink}
+	for name, call := range calls {
+		if got := connect.CodeOf(call()); got == connect.CodePermissionDenied {
+			t.Errorf("%s with identity:link: permission denied, want the call to pass the permission check", name)
+		}
+	}
+}

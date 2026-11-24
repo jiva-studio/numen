@@ -18,9 +18,9 @@ func PutBlob(ctx context.Context, httpClient *http.Client, url string, body []by
 	if err != nil {
 		return fmt.Errorf("prepare the upload of a blob: %w", err)
 	}
-	response, err := httpClient.Do(request)
+	response, err := withoutRedirects(httpClient).Do(request)
 	if err != nil {
-		return fmt.Errorf("upload a blob: %w", err)
+		return fmt.Errorf("upload a blob: %w", redactURL(err))
 	}
 	defer closeBody(response, &err)
 	return checkTransferStatus("upload", response)
@@ -33,9 +33,9 @@ func GetBlob(ctx context.Context, httpClient *http.Client, url string) (blob []b
 	if err != nil {
 		return nil, fmt.Errorf("prepare the download of a blob: %w", err)
 	}
-	response, err := httpClient.Do(request)
+	response, err := withoutRedirects(httpClient).Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("download a blob: %w", err)
+		return nil, fmt.Errorf("download a blob: %w", redactURL(err))
 	}
 	defer closeBody(response, &err)
 	if err := checkTransferStatus("download", response); err != nil {
@@ -43,7 +43,7 @@ func GetBlob(ctx context.Context, httpClient *http.Client, url string) (blob []b
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, syncprotocol.MaxBlobSize+1))
 	if err != nil {
-		return nil, fmt.Errorf("download a blob: %w", err)
+		return nil, fmt.Errorf("download a blob: %w", redactURL(err))
 	}
 	if len(body) > syncprotocol.MaxBlobSize {
 		return nil, fmt.Errorf("download a blob: the body is larger than %d bytes", syncprotocol.MaxBlobSize)
@@ -71,9 +71,9 @@ func PutPart(ctx context.Context, httpClient *http.Client, url string, body []by
 	if err != nil {
 		return fmt.Errorf("prepare the upload of a part: %w", err)
 	}
-	response, err := httpClient.Do(request)
+	response, err := withoutRedirects(httpClient).Do(request)
 	if err != nil {
-		return fmt.Errorf("upload a part: %w", err)
+		return fmt.Errorf("upload a part: %w", redactURL(err))
 	}
 	defer closeBody(response, &err)
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
@@ -90,9 +90,9 @@ func GetBlobRange(ctx context.Context, httpClient *http.Client, url string, from
 		return nil, fmt.Errorf("prepare the download of a range: %w", err)
 	}
 	request.Header.Set("Range", fmt.Sprintf("bytes=%d-", from))
-	response, err := httpClient.Do(request)
+	response, err := withoutRedirects(httpClient).Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("download a range: %w", err)
+		return nil, fmt.Errorf("download a range: %w", redactURL(err))
 	}
 	return takeRangeBody(response, from)
 }

@@ -13,10 +13,18 @@ service RestoreService {
 message GetRestoreEpochRequest {}
 
 message GetRestoreEpochResponse {
-  // epoch_sign_key is the Ed25519 public key of the server for epochs, 32 bytes.
+  // epoch_sign_key is the Ed25519 public key of the server for epochs, 32 bytes. A client trusts it only through the
+  // certificate below.
   bytes epoch_sign_key = 1;
   // epoch is unset until the first restore.
   RestoreEpoch epoch = 2;
+  // epoch_serial, epoch_not_before and epoch_not_after (unix seconds) and root_signature are the certificate of
+  // epoch_sign_key: the offline root key of the operator signs them over epochtrust.GetCertMessage.
+  uint64 epoch_serial = 3;
+  int64 epoch_not_before = 4;
+  int64 epoch_not_after = 5;
+  // root_signature is 64 bytes.
+  bytes root_signature = 6;
 }
 
 message RestoreEpoch {

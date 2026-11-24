@@ -134,7 +134,7 @@ export const WORDS = {
   /** The recovery kit of three sheets on the identity section, saved as a PDF. */
   kitTitle: 'Recovery kit',
   kitDetail:
-    'Three sheets. Any two restore your account; one alone reveals nothing. Keep them in different places.',
+    'Keep each sheet in a different place. Any two of three restore your account; one sheet alone is useless.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
   kitSaved: 'Recovery kit saved',

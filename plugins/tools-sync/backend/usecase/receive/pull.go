@@ -24,12 +24,13 @@ import (
 )
 
 var (
-	errNotReceived = errors.New("the vault is not a received share")
-	errUnverified  = errors.New("the change does not verify")
-	errRateLimited = errors.New("the server limits the downloads of the share")
-	errBlobMissing = errors.New("the server has no blob for a revision")
-	errCorruptBlob = errors.New("the blob of a revision is damaged")
-	errBadHead     = errors.New("the head of the share log kept in the link is not an entry id")
+	errNotReceived     = errors.New("the vault is not a received share")
+	errUnverified      = errors.New("the change does not verify")
+	errRateLimited     = errors.New("the server limits the downloads of the share")
+	errBlobMissing     = errors.New("the server has no blob for a revision")
+	errCorruptBlob     = errors.New("the blob of a revision is damaged")
+	errBadHead         = errors.New("the head of the share log kept in the link is not an entry id")
+	errChainRolledBack = errors.New("the server serves an owner chain shorter than the one stored")
 )
 
 func getStatus(result restore.PullResult, now time.Time) ports.Status {
@@ -325,6 +326,9 @@ func (r *pullRun) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
 	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
 		return note.Meta{}, false
 	}
+	if note.CheckRemotePath(meta.Path) != nil {
+		return note.Meta{}, false
+	}
 	return meta, true
 }
 
@@ -438,4 +442,22 @@ func newPulledRecord(fileID []byte, path, baseHash string, headRev []byte) trans
 	record := transfer.NewEmptyRecord()
 	record.FileID, record.Path, record.BaseHash, record.HeadRev = fileID, path, baseHash, headRev
 	return record
+}
+
+func refuseShorterChain(stored, served []byte) error {
+	if len(stored) == 0 {
+		return nil
+	}
+	storedChain, err := identity.ParseChain(stored)
+	if err != nil {
+		return err
+	}
+	servedChain, err := identity.ParseChain(served)
+	if err != nil {
+		return err
+	}
+	if servedChain.Len() < storedChain.Len() && storedChain.IsExtensionOf(servedChain) {
+		return errChainRolledBack
+	}
+	return nil
 }

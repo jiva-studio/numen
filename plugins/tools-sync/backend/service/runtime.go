@@ -63,12 +63,13 @@ type runtime struct {
 	received     *loops.Text
 	session      *loops.Supervisor[*Backend]
 	isForeground loops.Flag
+	epochRoot    *loops.Text
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), session: nil,
+		received: loops.NewText(), epochRoot: loops.NewText(), session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -91,15 +92,19 @@ func (r *runtime) configure(values map[string]string) {
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
-	r.session.Configure(values[settingServer])
+	r.epochRoot.Set(values[settingEpochRoot])
+	r.session.Configure(r.readServerAddress(values[settingServer]))
 }
 
 func (r *runtime) start(_ context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
+	roots := r.readEpochRoots(address)
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
+		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),
+		Roots:   roots, Now: p.clock.Now,
 	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
@@ -135,7 +140,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	}))
 	loopsOf := map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute,
-		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
+		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Server: address}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
 			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),

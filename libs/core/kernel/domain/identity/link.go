@@ -64,8 +64,8 @@ const (
 	LinkReasonInvalid           LinkReason = "invalid"
 )
 
-// Link is what a window shows of the link in progress. It holds no key; Code is set for the host in
-// mode scan and QRText in mode show only.
+// Link is what a window shows of the link in progress. It holds no key; Code is set for the host waiting for an
+// answer to a new device, and QRText in mode show only.
 type Link struct {
 	Phase              LinkPhase
 	Mode               LinkMode

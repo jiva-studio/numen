@@ -29,6 +29,8 @@ func TestIdentityErrorCodesAreProducedFromFailures(t *testing.T) {
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED:          identitydomain.ErrDeviceRevoked,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE:          identitylib.ErrUnknownDevice,
 		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CODE_INVALID:            identity.ErrCodeFormat,
+		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK:      identitydomain.ErrInvalidChainMark,
+		v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED:          identitydomain.ErrChainOutdated,
 	}, func(failure error) v1.IdentityErrorCode {
 		code, _ := getErrorCode(failure)
 		return code

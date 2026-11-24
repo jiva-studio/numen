@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
 
-func newClientOptions(token func() string) connect.ClientOption {
-	return connect.WithInterceptors(syncprotocol.NewVersionInterceptor(), syncprotocol.NewBearerInterceptor(token))
+func newClientOptions(address string, token func() string) connect.ClientOption {
+	return connect.WithInterceptors(syncprotocol.NewVersionInterceptor(), syncprotocol.NewBearerInterceptor(getTokenFor(address, token)))
 }
 
 // CatalogClient calls the catalog service of one server with the bearer of the session.
@@ -25,7 +25,7 @@ type CatalogClient struct {
 // NewCatalogClient returns the client of the server at address. token returns the session token and is
 // read again for each call.
 func NewCatalogClient(address string, httpClient *http.Client, token func() string) *CatalogClient {
-	return &CatalogClient{rpc: syncv1connect.NewCatalogServiceClient(httpClient, address, newClientOptions(token))}
+	return &CatalogClient{rpc: syncv1connect.NewCatalogServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // AppendCatalogEntry adds an entry to the catalog. When another device was first, the answer is not committed
@@ -66,7 +66,7 @@ type RevisionClient struct {
 // NewRevisionClient returns the client of the server at address. token returns the session token and is
 // read again for each call.
 func NewRevisionClient(address string, httpClient *http.Client, token func() string) *RevisionClient {
-	return &RevisionClient{rpc: syncv1connect.NewRevisionServiceClient(httpClient, address, newClientOptions(token))}
+	return &RevisionClient{rpc: syncv1connect.NewRevisionServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // CommitRevisions commits a batch of revisions of one vault, all of them or none. A batch that is not
@@ -99,7 +99,7 @@ type BlobClient struct {
 // NewBlobClient returns the client of the server at address. token returns the session token and is read
 // again for each call.
 func NewBlobClient(address string, httpClient *http.Client, token func() string) *BlobClient {
-	return &BlobClient{rpc: syncv1connect.NewBlobServiceClient(httpClient, address, newClientOptions(token))}
+	return &BlobClient{rpc: syncv1connect.NewBlobServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // ReserveBlobs reserves quota for bodies of the given stored sizes and returns one upload for each, in the
@@ -129,7 +129,7 @@ type AccountClient struct {
 // NewAccountClient returns the client of the server at address. token returns the session token and is
 // read again for each call; GetAccountChainByRoot needs none.
 func NewAccountClient(address string, httpClient *http.Client, token func() string) *AccountClient {
-	return &AccountClient{rpc: syncv1connect.NewAccountServiceClient(httpClient, address, newClientOptions(token))}
+	return &AccountClient{rpc: syncv1connect.NewAccountServiceClient(httpClient, address, newClientOptions(address, token))}
 }
 
 // GetAccountChain returns the stored chain of the account of the session.
@@ -195,6 +195,14 @@ func (c *BlobClient) AbortMultipartBlob(ctx context.Context, vaultID, blobID []b
 		return syncprotocol.ReadCallError(err)
 	}
 	return nil
+}
+
+// getTokenFor returns token for an address that is safe to send it to, and an empty token for any other.
+func getTokenFor(address string, token func() string) func() string {
+	if syncprotocol.CheckServerAddress(address) != nil {
+		return func() string { return "" }
+	}
+	return token
 }
 
 // DeleteAccount deletes the account of the session after the grace period. signature is the signature of the device of

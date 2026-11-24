@@ -289,6 +289,7 @@ export class ComputerDriver {
     await this.showQrToLink()
     await this.scan('second')
     await this.approve()
+    await this.enterCode()
     await this.expectSecondHasAccount()
   }
 

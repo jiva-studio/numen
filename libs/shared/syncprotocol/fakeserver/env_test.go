@@ -107,14 +107,13 @@ type env struct {
 func newEnvOn(tb testing.TB, address string, account *ownedAccount, device identity.DeviceKey) *env {
 	tb.Helper()
 	token := signIn(tb, address, device, account.chain)
-	provide := func() string { return token }
-	return &env{
-		tb: tb, address: address, account: account, device: device, token: token,
-		catalog:  syncclient.NewCatalogClient(address, http.DefaultClient, provide),
-		revision: syncclient.NewRevisionClient(address, http.DefaultClient, provide),
-		blob:     syncclient.NewBlobClient(address, http.DefaultClient, provide),
-		accounts: syncclient.NewAccountClient(address, http.DefaultClient, provide),
-	}
+	e := &env{tb: tb, address: address, account: account, device: device, token: token}
+	provide := func() string { return e.token }
+	e.catalog = syncclient.NewCatalogClient(address, http.DefaultClient, provide)
+	e.revision = syncclient.NewRevisionClient(address, http.DefaultClient, provide)
+	e.blob = syncclient.NewBlobClient(address, http.DefaultClient, provide)
+	e.accounts = syncclient.NewAccountClient(address, http.DefaultClient, provide)
+	return e
 }
 
 func newEnv(tb testing.TB) *env {
