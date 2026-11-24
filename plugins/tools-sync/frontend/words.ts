@@ -54,14 +54,15 @@ export const WORDS = {
     'The server keeps it for 7 days, then deletes it for good. Until then you can restore the account.',
   deleteLocal: 'Your notes stay on your devices. Only the copy in the cloud is deleted.',
   deleteSubscription: 'Your subscription is cancelled now and is not charged again.',
-  deleteTypeName: (account: string): string => `Type the account fingerprint  to confirm.`,
+  deleteTypeName: (account: string): string =>
+    `Type the account fingerprint ${account} to confirm.`,
   deleteNameLabel: 'Account fingerprint',
   deleteNameWrong: 'This is not the account fingerprint.',
   deleteConfirm: 'Delete cloud data',
   deleteCancel: 'Cancel',
   deletingBadge: 'Deleting',
   deletingText: (deleteAt: string): string =>
-    `The cloud data of this account is deleted on . Syncing is stopped. Restore the account before then to keep it.`,
+    `The cloud data of this account is deleted on ${deleteAt}. Syncing is stopped. Restore the account before then to keep it.`,
   cloudFull:
     'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
   waitingForPayment: 'Finish the payment in your browser. This card updates by itself.',

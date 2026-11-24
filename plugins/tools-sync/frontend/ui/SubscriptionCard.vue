@@ -72,8 +72,11 @@ const currentLine = computed(() =>
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
-  load().catch(onFailure)
-  accountData?.load().catch(onFailure)
+  if (accountData === undefined) {
+    load().catch(onFailure)
+    return
+  }
+  accountData.load().then(load).catch(onFailure)
 })
 
 /* -------------------------------- Handlers -------------------------------- */
