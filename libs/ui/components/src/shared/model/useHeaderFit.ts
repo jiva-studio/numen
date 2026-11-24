@@ -1,9 +1,9 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 
-export const HEADER_LEVELS = ['full', 'icons', 'menu'] as const
+const HEADER_LEVELS = ['full', 'icons', 'menu'] as const
 
-export type HeaderLevel = (typeof HEADER_LEVELS)[number]
+type HeaderLevel = (typeof HEADER_LEVELS)[number]
 
 /** The header is crowded when its content spills over it or a label shows an ellipsis. */
 function isCrowded(element: HTMLElement): boolean {
