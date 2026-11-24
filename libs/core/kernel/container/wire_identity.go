@@ -10,10 +10,10 @@ import (
 )
 
 func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Resources, dialog editor.PathDialog) *windowidentity.UseCases {
-	if install.KeyStore == nil || res.ChainStore == nil {
+	if install.Keys.Store == nil || res.ChainStore == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithProgress(res.progress).WithChains(res.ChainStore)
+	deps := identity.NewDeps(install.Keys.Store, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithProgress(res.progress).WithChains(res.ChainStore).WithCreateLock(install.Keys.CreateLock)
 	return &windowidentity.UseCases{
 		Identity: windowidentity.IdentityUseCases{
 			Get:           identity.NewGetIdentity(deps),

@@ -2,6 +2,7 @@ package identity_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/hkdf"
 	"crypto/sha256"
 	"encoding/base64"
@@ -9,6 +10,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -379,5 +382,86 @@ func TestCreateIdentity_AcceptsTheWordsOfTheLastGenerateOnceInAnyLetterCase(t *t
 	}
 	if _, err := create.Execute(t.Context(), upper); err != nil {
 		t.Fatalf("create of the held words: %v", err)
+func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	lock := identity.NewCreateGate()
+	newDeps := func() identity.Deps {
+		return identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(k.chains).WithCreateLock(lock)
+	}
+	first := identity.NewSeededCreate(newDeps())
+	second := identity.NewSeededCreate(newDeps())
+	var arrived atomic.Int32
+	both := make(chan struct{})
+	k.keys.onGet = func() {
+		if arrived.Add(1) == 2 {
+			close(both)
+		}
+		select {
+		case <-both:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	creates := []*identity.SeededCreate{first, second}
+	errs := make([]error, len(creates))
+	var wg sync.WaitGroup
+	for i, create := range creates {
+		wg.Go(func() {
+			_, errs[i] = create.Execute(t.Context(), getLegalWords())
+		})
+	}
+	wg.Wait()
+	created, exists := 0, 0
+	for _, err := range errs {
+		switch {
+		case err == nil:
+			created++
+		case errors.Is(err, identitydomain.ErrIdentityExists):
+			exists++
+		}
+	}
+	if created != 1 || exists != 1 || k.keys.setCalled != 1 {
+		t.Errorf("created = %d, refused = %d, writes = %d, want 1, 1, 1", created, exists, k.keys.setCalled)
+	}
+}
+
+func TestCreateIdentity_CanceledWhileWaitingForTheGateWritesNothing(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	gate := identity.NewCreateGate()
+	newCreate := func() *identity.SeededCreate {
+		deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(k.chains).WithCreateLock(gate)
+		return identity.NewSeededCreate(deps)
+	}
+	holding := make(chan struct{})
+	proceed := make(chan struct{})
+	var once sync.Once
+	k.keys.onGet = func() {
+		once.Do(func() { close(holding) })
+		<-proceed
+	}
+	firstDone := make(chan error, 1)
+	go func() {
+		_, err := newCreate().Execute(t.Context(), getLegalWords())
+		firstDone <- err
+	}()
+	<-holding
+
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	_, err := newCreate().Execute(ctx, getLegalWords())
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("second Execute() error = %v, want DeadlineExceeded", err)
+	}
+	if k.keys.setCalled != 0 {
+		t.Errorf("writes before the first creation ends = %d, want 0", k.keys.setCalled)
+	}
+
+	close(proceed)
+	if err := <-firstDone; err != nil {
+		t.Errorf("first Execute() error = %v, want nil", err)
+	}
+	if k.keys.setCalled != 1 {
+		t.Errorf("writes = %d, want 1", k.keys.setCalled)
 	}
 }

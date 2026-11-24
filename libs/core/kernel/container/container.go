@@ -6,6 +6,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
@@ -83,6 +84,7 @@ type Resources struct {
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
 	progress        *identity.Progress
+	identityLock    identity.CreateGate
 }
 
 func NewResources() *Resources {
@@ -95,6 +97,7 @@ func NewResources() *Resources {
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
+		identityLock:  identity.NewCreateGate(),
 	}
 }
 
@@ -233,6 +236,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		KeyStore:        res.KeyStore,
+		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: res.identityLock},
 	}
 }

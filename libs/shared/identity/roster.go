@@ -39,7 +39,7 @@ func (r *roster) isSigner(sign ed25519.PublicKey) bool {
 func (r *roster) apply(entry Entry) {
 	switch {
 	case entry.Kind == KindAddDevice && entry.AddDevice != nil:
-		r.active = append(r.active, Device{Public: entry.AddDevice.Device, Name: entry.AddDevice.Name, AddedAt: entry.Time})
+		r.active = append(r.active, Device{Public: DevicePublicKey{Sign: slices.Clone(entry.AddDevice.Device.Sign), Box: entry.AddDevice.Device.Box}, Name: entry.AddDevice.Name, AddedAt: entry.Time})
 		r.known[string(entry.AddDevice.Device.Sign)] = struct{}{}
 	case entry.Kind == KindRevokeDevice && entry.Revoke != nil:
 		if i := r.indexOf(entry.Revoke.Device); i >= 0 {
@@ -73,6 +73,9 @@ func (r *roster) verifyAdd(entry Entry, i int) error {
 	}
 	if err := checkDeviceName(entry.AddDevice.Name); err != nil {
 		return err
+	}
+	if len(entry.AddDevice.Device.Sign) != ed25519.PublicKeySize {
+		return fmt.Errorf("%w: entry %d has a device signing key of %d bytes", ErrMalformed, i, len(entry.AddDevice.Device.Sign))
 	}
 	added := entry.AddDevice.Device.Sign
 	if _, ok := r.known[string(added)]; ok || bytes.Equal(added, r.root) {

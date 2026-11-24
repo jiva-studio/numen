@@ -18,11 +18,15 @@ type fakeKeyStore struct {
 	getFails  error
 	setFails  error
 	setCalled int
+	onGet     func()
 }
 
 func newFakeKeyStore() *fakeKeyStore { return &fakeKeyStore{keys: make(map[string]string)} }
 
 func (s *fakeKeyStore) GetKey(_ context.Context, name string) (string, error) {
+	if s.onGet != nil {
+		defer s.onGet()
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.getFails != nil {

@@ -66,7 +66,7 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	t.Parallel()
 	keys := memoryKeys{}
 	res := &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, getWiring(), res, nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, getWiring(), res, nil)
 	if use == nil || use.Identity.Get == nil || use.Identity.GenerateWords == nil || use.Identity.Create == nil || use.Identity.Delete == nil ||
 		use.Identity.StartRestore == nil || use.Kit.Save == nil || use.Kit.Restore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all seven use cases", use)
@@ -90,7 +90,7 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "kit.pdf")
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, saveDialog{path: path})
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, saveDialog{path: path})
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -113,7 +113,7 @@ func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T
 
 func TestOpenIdentityUseCases_SavesNoKitWithoutADialog(t *testing.T) {
 	t.Parallel()
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -142,7 +142,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
 	res := &Resources{KeyStore: keys, Now: clock, ChainStore: &memoryChain{}, progress: identity.NewProgress()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res, nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, vaultWiring{Clock: clock}, res, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}

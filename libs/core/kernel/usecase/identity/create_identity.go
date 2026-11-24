@@ -14,11 +14,12 @@ type CreateIdentity struct {
 	records records
 	builder stateBuilder
 	created *generatedWords
+	gate    CreateGate
 }
 
 // NewCreateIdentity returns the use case that creates the identity of this device.
 func NewCreateIdentity(d Deps) *CreateIdentity {
-	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: &d.progress.created}
+	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: &d.progress.created, gate: d.createLock}
 }
 
 // Execute accepts only the words GenerateRecoveryWords made last (ErrInvalidWords otherwise); it parses the words (ErrInvalidWords wrapping the library error), refuses when the key store
@@ -31,6 +32,11 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
+	release, err := u.gate.acquire(ctx)
+	if err != nil {
+		return identitydomain.Identity{}, fmt.Errorf("wait for the creation of the identity: %w", err)
+	}
+	defer release()
 	if err := u.records.checkAbsent(ctx); err != nil {
 		return identitydomain.Identity{}, err
 	}

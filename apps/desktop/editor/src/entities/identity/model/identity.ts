@@ -74,6 +74,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
       if (!answer.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
       }
+      guard.cancel()
       identity.value = answer.value
       return { ok: true, value: answer.value }
     } catch (caughtError) {

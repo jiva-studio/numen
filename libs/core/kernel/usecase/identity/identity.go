@@ -37,11 +37,30 @@ type Deps struct {
 	clock    Clock
 	random   io.Reader
 	progress *Progress
+
+	createLock CreateGate
+}
+
+// SharedKeys is the key store of an installation with the lock that serializes the creation of an identity
+// over it. The windows of the installation share one value.
+type SharedKeys struct {
+	Store      pluginport.KeyStore
+	CreateLock CreateGate
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
-	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: NewProgress()}
+	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: NewProgress(), createLock: NewCreateGate()}
+}
+
+// WithCreateLock makes the use cases over one key store create the identity one at a time. Every
+// window builds its own deps, so the windows of an installation pass the same lock. A nil lock keeps
+// the gate the deps have.
+func (d Deps) WithCreateLock(lock CreateGate) Deps {
+	if lock != nil {
+		d.createLock = lock
+	}
+	return d
 }
 
 // WithProgress returns the deps over another progress, so the use cases of a window and of the plugins share one.

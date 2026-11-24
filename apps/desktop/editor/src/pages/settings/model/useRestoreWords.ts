@@ -8,8 +8,7 @@ const WORD_COUNT = 12
 
 const createEmptyWords = (): readonly string[] => Array.from({ length: WORD_COUNT }, () => '')
 
-/** The words of a text: whole words, lower-cased. */
-export const splitWords = (text: string): string[] =>
+const splitWords = (text: string): string[] =>
   text
     .split(/\s+/)
     .filter((word) => word !== '')
@@ -24,7 +23,9 @@ export function useRestoreWords(problem: Ref<string>) {
     if (typed.length <= 1) {
       next[index] = value
     } else {
-      for (const [at, word] of typed.slice(0, WORD_COUNT - index).entries()) next[index + at] = word
+      const room = WORD_COUNT - index
+      for (const [at, word] of typed.slice(0, room).entries()) next[index + at] = word
+      if (typed.length > room) next[WORD_COUNT - 1] = typed.slice(room - 1).join(' ')
     }
     entered.value = next
     problem.value = ''
