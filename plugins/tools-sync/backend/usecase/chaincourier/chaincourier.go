@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -15,9 +16,10 @@ import (
 )
 
 const (
-	publishInterval = time.Second
-	adoptEvery      = 5
-	noticeKey       = "device-revoked-others"
+	publishInterval  = time.Second
+	adoptEvery       = 5
+	noticeKey        = "device-revoked-others"
+	publishFailedKey = "chain-publish-failed"
 )
 
 // Deps are what the courier needs.
@@ -141,20 +143,24 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) {
 // Loop runs the two couriers for as long as the plugin runs: a pending chain goes to the server at once, and the chain of the server
 // reaches the core every few rounds.
 type Loop struct {
-	publish *Publish
-	adopt   *Adopt
-	clock   ports.Clock
+	publish  *Publish
+	adopt    *Adopt
+	clock    ports.Clock
+	health   ports.Health
+	isFailed bool
 }
 
 // NewLoop returns the loop over the dependencies and the clock it waits on.
 func NewLoop(deps Deps, clock ports.Clock) *Loop {
-	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock}
+	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock, health: deps.Health, isFailed: false}
 }
 
-// Execute runs until ctx ends and returns its error with the failures of the last round. A failed round is tried again at the next one.
+// Execute runs until ctx ends and returns its error with the failures of the last round. A failed round is tried again at the next one;
+// a failed publish is logged and shown to the person until a round publishes again.
 func (u *Loop) Execute(ctx context.Context) error {
 	for round := 0; ; round++ {
 		_, published := u.publish.Execute(ctx)
+		u.reportPublish(ctx, published)
 		var adopted error
 		if round%adoptEvery == 0 {
 			_, adopted = u.adopt.Execute(ctx)
@@ -162,5 +168,19 @@ func (u *Loop) Execute(ctx context.Context) error {
 		if err := u.clock.Wait(ctx, publishInterval); err != nil {
 			return errors.Join(err, published, adopted)
 		}
+	}
+}
+
+func (u *Loop) reportPublish(ctx context.Context, published error) {
+	if published == nil {
+		if u.isFailed && u.health.Clear(ctx, publishFailedKey) == nil {
+			u.isFailed = false
+		}
+		return
+	}
+	slog.WarnContext(ctx, "could not publish the chain to the server", "error", published)
+	text := fmt.Sprintf("Could not save the change of the devices on the server: %v", published)
+	if u.health.Report(ctx, health.Item{Key: publishFailedKey, Severity: health.Warning, Text: text}) == nil {
+		u.isFailed = true
 	}
 }

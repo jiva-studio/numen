@@ -2,6 +2,8 @@ package chaincourier_test
 
 import (
 	"bytes"
+	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -133,4 +135,63 @@ func TestAdopt_ClearsTheNoticeWhenTheCoolingOffEnds(t *testing.T) {
 	if items := observer.Health.List(); len(items) != 0 {
 		t.Errorf("health items = %+v, want none after the cooling-off", items)
 	}
+}
+
+func newThreeRestores(t *testing.T) (earlier, current *synctest.Computer) {
+	t.Helper()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	synctest.NewFirstComputer(t, server, clock, "Test", words)
+	earlier = synctest.NewSecondComputer(t, server, clock, "Test", words)
+	current = synctest.NewSecondComputer(t, server, clock, "Test", words)
+	return earlier, current
+}
+
+func TestPublish_ServerTakesTheRevokeOfAnEarlierRestoreOfTheSameName(t *testing.T) {
+	t.Parallel()
+	earlier, current := newThreeRestores(t)
+	target := earlier.GetDeviceSignKey(t)
+
+	if err := current.Fake.RevokeDevice(target); err != nil {
+		t.Fatalf("RevokeDevice() = %v", err)
+	}
+	published, err := chaincourier.NewPublish(current.ChainDeps()).Execute(t.Context())
+
+	if err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the revoke published", published, err)
+	}
+	stored, err := current.Cloud.GetAccountChain(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	chain, err := identity.ParseChain(stored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if chain.IsActiveDevice(target) || len(chain.ListDevices()) != 2 {
+		t.Errorf("the server holds %d active devices and the earlier one is active = %v, want 2 and false", len(chain.ListDevices()), chain.IsActiveDevice(target))
+	}
+}
+
+func TestLoop_ShowsAndLogsAFailedPublishAndClearsItWhenTheServerIsBack(t *testing.T) {
+	t.Parallel()
+	earlier, current := newThreeRestores(t)
+	if err := current.Fake.RevokeDevice(earlier.GetDeviceSignKey(t)); err != nil {
+		t.Fatal(err)
+	}
+	current.GoOffline()
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	go func() { _ = chaincourier.NewLoop(current.ChainDeps(), current.Clock).Execute(ctx) }()
+
+	current.Clock.AwaitWait(t)
+	items := current.Health.List()
+	if len(items) != 1 || items[0].Key != "chain-publish-failed" || !strings.HasPrefix(items[0].Text, "Could not save the change of the devices on the server:") {
+		t.Fatalf("health items = %+v, want the failed publish", items)
+	}
+
+	current.GoOnline()
+	current.Clock.Advance(2 * time.Second)
+	synctest.WaitUntil(t, "the failure is cleared", func() bool { return len(current.Health.List()) == 0 })
 }
