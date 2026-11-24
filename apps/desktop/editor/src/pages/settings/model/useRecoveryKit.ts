@@ -7,7 +7,6 @@
 import { onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import type { KitProof } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
-import { WORDS as words } from '../words'
 import { useIdentityCall } from './useIdentityCall'
 import { useRecoveryProof } from './useRecoveryProof'
 
@@ -67,11 +66,7 @@ export function useRecoveryKit(getIdentity: () => InstallationIdentity) {
   const submit = async (): Promise<void> => {
     if (isBusy.value) return
     const given = proof.read()
-    if (given === undefined) {
-      problem.value = words.kitOneMoreSheet
-      return
-    }
-    await save(given)
+    if (given !== undefined) await save(given)
   }
 
   return {

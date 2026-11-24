@@ -24,6 +24,7 @@ const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
 const NO_IDENTITY = 'An identity is your Numen account.'
+const PROOF_FIELD = 'Recovery words or sheets'
 
 export class IdentityDriver {
   private words: readonly string[] = []
@@ -149,9 +150,7 @@ export class IdentityDriver {
     const panel = await this.showPage()
     await this.getDownloadButton(panel).click()
     const dialog = this.getKitDialog(panel)
-    await dialog
-      .getByRole('textbox', { name: 'Recovery word 1', exact: true })
-      .fill(words.join(' '))
+    await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(words.join(' '))
     await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click()
     return file
   }
@@ -179,24 +178,9 @@ export class IdentityDriver {
     for (const page of pages) expect(page).toContain(this.account)
   }
 
-  private async typeSheets(
-    dialog: Locator,
-    numbers: readonly number[],
-    mistakeSheet?: number,
-  ): Promise<void> {
-    const texts = planSheetTexts(this.sheets, numbers, mistakeSheet)
-    for (const [index, text] of texts.entries()) {
-      await dialog.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
-    }
-  }
-
   async restoreFromSheets(numbers: string, mistakeSheet?: number): Promise<void> {
-    const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
-    const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
-    await dialog.getByRole('radio', { name: 'Recovery kit', exact: true }).click()
-    await this.typeSheets(dialog, readSheetNumbers(numbers), mistakeSheet)
-    await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
+    const texts = planSheetTexts(this.sheets, readSheetNumbers(numbers), mistakeSheet)
+    await this.restore(texts.join('\n'))
   }
 
   async expectIdentity(has: boolean): Promise<void> {
@@ -216,12 +200,24 @@ export class IdentityDriver {
     await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
+  private getRestoreDialog(panel: Locator): Locator {
+    return panel.getByRole('dialog', { name: 'Restore identity' })
+  }
+
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
-    const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
-    await dialog.getByRole('textbox', { name: 'Recovery word 1', exact: true }).fill(text)
-    await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
+    const dialog = this.getRestoreDialog(panel)
+    await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(text)
+    const restore = dialog.getByRole('button', { name: 'Restore the account', exact: true })
+    if (await restore.isEnabled()) await restore.click()
+  }
+
+  async expectRestoreNote(text: string): Promise<void> {
+    const dialog = this.getRestoreDialog(await this.showPage())
+    await expect(dialog.getByRole('status').or(dialog.getByRole('alert'))).toContainText(text, {
+      ignoreCase: true,
+    })
   }
 
   async restoreFromRecoveryWords(): Promise<void> {

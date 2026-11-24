@@ -21,27 +21,18 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div v-if="stage === 'words'" class="identity-setup-actions">
-    <Button type="button" variant="outline" @click="emit('cancel')">
+  <template v-if="stage === 'words'">
+    <Button type="button" variant="ghost" @click="emit('cancel')">
       {{ words.identityCancel }}
     </Button>
     <Button type="submit" variant="solid">{{ words.identityWordsWritten }}</Button>
-  </div>
-  <div v-else class="identity-setup-actions">
-    <Button type="button" variant="outline" :disabled="isBusy" @click="emit('back')">
+  </template>
+  <template v-else>
+    <Button type="button" variant="ghost" :disabled="isBusy" @click="emit('back')">
       {{ words.identityBack }}
     </Button>
     <Button type="submit" variant="solid" :disabled="isBusy || !isComplete">
       {{ isBusy ? words.identityKeeping : words.identityContinue }}
     </Button>
-  </div>
+  </template>
 </template>
-
-<style scoped>
-.identity-setup-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.375rem;
-}
-</style>

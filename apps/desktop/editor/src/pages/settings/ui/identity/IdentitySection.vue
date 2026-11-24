@@ -51,14 +51,11 @@ const isJoining = ref(false)
 
     <RecoveryKitDialog
       v-if="kit.isAsking.value"
-      :kind="kit.proof.kind.value"
-      :entered="kit.proof.words.entered.value"
-      :texts="kit.proof.sheets.texts.value"
+      :text="kit.proof.text.value"
+      :reading="kit.proof.reading.value"
       :problem="kit.call.problem.value"
       :is-busy="kit.call.isBusy.value"
-      @change-kind="kit.proof.setKind"
-      @change-word="kit.proof.words.setWord"
-      @change-sheet="kit.proof.setSheet"
+      @change="kit.proof.setText"
       @download="kit.actions.submit"
       @cancel="kit.actions.close"
     />
@@ -120,14 +117,11 @@ const isJoining = ref(false)
 
     <IdentityRestoreDialog
       v-if="step === 'restore'"
-      :kind="restoring.kind.value"
-      :entered="restoring.words.entered.value"
-      :texts="restoring.sheets.texts.value"
+      :text="restoring.text.value"
+      :reading="restoring.reading.value"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
-      @change-kind="restoring.setKind"
-      @change="restoring.words.setWord"
-      @change-sheet="restoring.setSheet"
+      @change="restoring.setText"
       @restore="actions.restore"
       @cancel="actions.cancel"
     />

@@ -116,8 +116,9 @@ export const WORDS = {
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
   identityRestoreTitle: 'Restore identity',
-  identityRestoreHint: 'Type the 12 words in order.',
-  identityRestoreWord: (position: number) => `Recovery word ${position}`,
+  identityRestoreHint:
+    'Enter the 12 words, or any two sheets of your recovery kit. One sheet alone is not enough.',
+  identityRestoreAction: 'Restore the account',
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
   identityAccount: 'Account fingerprint',
@@ -141,14 +142,21 @@ export const WORDS = {
   kitSaved: 'Recovery kit saved',
   kitDialogTitle: 'Download recovery kit',
   kitProofHint:
-    'A new kit needs your 12 recovery words or two sheets of an earlier kit. An earlier kit keeps working.',
-  kitOneMoreSheet: 'One more sheet is needed.',
-  proofChoice: 'Recovery words or recovery kit',
-  proofWords: 'Recovery words',
-  proofSheets: 'Recovery kit',
-  restoreSheetsHint: 'Paste the words of any two sheets.',
-  kitSheetField: (number: number) => `Sheet ${number}`,
-  kitSheetPlaceholder: 'Type the 33 words of the sheet, separated by spaces',
+    'Enter the 12 recovery words, or any two sheets of an earlier kit. The earlier kit keeps working.',
+  proofField: 'Recovery words or sheets',
+  proofPlaceholder: 'Type or paste the 12 words, or put one sheet on each line',
+  proofWordsSoFar: (count: number) => `${count} of 12 words`,
+  proofWordsRecognized: '12 words recognized',
+  proofWrongCount: (count: number) =>
+    `${count} words: the recovery words are 12 and a sheet has 33. Remove the extra words.`,
+  proofSheetShort: (sheet: number, count: number) => `Sheet ${sheet} has ${count} of 33 words`,
+  proofSheetLong: (sheet: number, count: number) =>
+    `Sheet ${sheet} has ${count} words, a sheet has 33. Put one sheet on each line.`,
+  proofSheetRepeated: (sheet: number, first: number) =>
+    `Sheet ${sheet} is the same as sheet ${first}. Enter a different sheet.`,
+  proofTooManySheets: 'Two sheets are enough. Remove the others.',
+  proofOneSheet: (sheet: number) => `Sheet ${sheet} recognized, one more sheet needed`,
+  proofTwoSheets: '2 of 3 sheets recognized',
   deviceRevokedNotice: 'This device was revoked',
   deviceDeleteRevoked: 'Delete identity from this device',
   /** The page of licenses. */

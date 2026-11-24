@@ -30,7 +30,7 @@ export function useIdentitySection(
   const confirmation = useWordsConfirmation(setup.recoveryWords)
   const restoring = useRecoveryProof(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
-  const identityRestore = createIdentityRestore(getIdentity, run, restoring.read, problem)
+  const identityRestore = createIdentityRestore(getIdentity, run, restoring.read)
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {

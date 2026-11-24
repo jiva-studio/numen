@@ -62,6 +62,10 @@ Then('the account fingerprint is the same as before', async ({ person }) => {
   await person.identity.expectSameAccount()
 })
 
+Then('the restore dialog says {string}', async ({ person }, text: string) => {
+  await person.identity.expectRestoreNote(text)
+})
+
 Then('the identity warns about {string}', async ({ person }, text: string) => {
   await person.identity.expectWarning(text)
 })

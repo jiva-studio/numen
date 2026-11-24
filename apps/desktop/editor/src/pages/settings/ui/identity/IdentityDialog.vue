@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * The modal dialog of the identity card: a titled form over a backdrop. Escape and a press on the
+ * The modal dialog of the identity card: a form over a backdrop with a title, a line that says what
+ * to do, the body and a row of buttons. Escape and a press on the
  * backdrop cancel, Tab stays inside the dialog, and the first field or button takes the focus when
  * the dialog opens and each time `step` changes. When it closes, the focus returns to the control
  * that was focused when it opened.
@@ -8,7 +9,7 @@
 import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ title: string; step?: string }>()
+const props = defineProps<{ title: string; hint?: string; step?: string }>()
 
 const emit = defineEmits<{
   (e: 'submit'): void
@@ -69,8 +70,14 @@ function focusFirst(): void {
       :aria-labelledby="titleId"
       @submit.prevent="emit('submit')"
     >
-      <h2 :id="titleId" class="identity-dialog__title">{{ title }}</h2>
+      <header class="identity-dialog__head">
+        <h2 :id="titleId" class="identity-dialog__title">{{ title }}</h2>
+        <p v-if="hint" class="identity-dialog__hint">{{ hint }}</p>
+      </header>
       <slot />
+      <div v-if="$slots['actions']" class="identity-dialog__actions">
+        <slot name="actions" />
+      </div>
     </form>
   </div>
 </template>
@@ -90,13 +97,13 @@ function focusFirst(): void {
 .identity-dialog {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 1rem;
   box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: 28rem;
   max-block-size: 100%;
   overflow-y: auto;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem;
   background: var(--numen-raised);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
@@ -106,9 +113,28 @@ function focusFirst(): void {
   line-height: var(--numen-line-height);
 }
 
+.identity-dialog__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .identity-dialog__title {
   margin: 0;
   font-size: var(--numen-title-size);
   font-weight: 500;
+}
+
+.identity-dialog__hint {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+}
+
+.identity-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 </style>

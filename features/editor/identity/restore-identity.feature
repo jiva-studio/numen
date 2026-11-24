@@ -26,3 +26,8 @@ Feature: Restore an identity
       When the person restores an identity from the word "abandon" written 12 times
       Then the identity warns about "words are not valid"
       And this device has no identity
+
+    Scenario: A 13th word is not accepted
+      When the person restores an identity from the word "abandon" written 13 times
+      Then the restore dialog says "13 words"
+      And this device has no identity

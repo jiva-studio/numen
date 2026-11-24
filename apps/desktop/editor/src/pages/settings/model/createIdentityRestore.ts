@@ -1,11 +1,9 @@
 /**
- * The restore of the identity on this device from the words or sheets the person typed.
+ * The restore of the identity on this device from the words or sheets the person entered.
  */
-import type { Ref } from 'vue'
 import type { Result } from '@numen/result'
 import type { KitProof } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
-import { WORDS as words } from '../words'
 
 type Run = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
 
@@ -13,15 +11,11 @@ export function createIdentityRestore(
   getIdentity: () => InstallationIdentity,
   run: Run,
   readProof: () => KitProof | undefined,
-  problem: Ref<string>,
 ) {
-  /** Whether the identity was restored. */
+  /** Whether the identity was restored; nothing is asked of the core until the input is a whole proof. */
   const restore = async (): Promise<boolean> => {
     const given = readProof()
-    if (given === undefined) {
-      problem.value = words.kitOneMoreSheet
-      return false
-    }
+    if (given === undefined) return false
     const answer = await run(() => getIdentity().restore(given))
     return answer.ok
   }

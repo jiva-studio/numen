@@ -35,18 +35,17 @@ function onSubmit(): void {
 <template>
   <IdentityDialog
     :title="isWords ? words.identitySetupTitle : words.identityCheckTitle"
+    :hint="isWords ? words.identityWriteDown : words.identityConfirmHint(positions)"
     :step="stage"
     @submit="onSubmit"
     @cancel="emit('cancel')"
   >
     <template v-if="isWords">
-      <p class="identity-setup__text">{{ words.identityWriteDown }}</p>
       <RecoveryWords :recovery-words="recoveryWords" />
       <p class="caution caution--card">{{ words.identityNobodyRecovers }}</p>
     </template>
 
     <template v-else>
-      <p class="identity-setup__text">{{ words.identityConfirmHint(positions) }}</p>
       <div class="identity-setup__check">
         <ConfirmWords
           :positions="positions"
@@ -62,13 +61,15 @@ function onSubmit(): void {
       </div>
     </template>
 
-    <IdentitySetupActions
-      :stage="stage"
-      :is-busy="isBusy"
-      :is-complete="isComplete"
-      @cancel="emit('cancel')"
-      @back="emit('back')"
-    />
+    <template #actions>
+      <IdentitySetupActions
+        :stage="stage"
+        :is-busy="isBusy"
+        :is-complete="isComplete"
+        @cancel="emit('cancel')"
+        @back="emit('back')"
+      />
+    </template>
   </IdentityDialog>
 </template>
 
@@ -79,12 +80,8 @@ function onSubmit(): void {
   gap: 0.5rem;
 }
 
-.identity-setup__text,
 .identity-setup__problem {
   margin: 0;
-}
-
-.identity-setup__problem {
   font-size: var(--numen-text-1);
   color: var(--numen-alarm);
 }

@@ -29,7 +29,7 @@ Feature: Restore an identity from two sheets
 
     Scenario: One sheet is refused
       When the person restores the identity from the sheets "1"
-      Then the identity warns about "one more sheet"
+      Then the restore dialog says "one more sheet needed"
       And this device has no identity
 
     Scenario: A sheet with a mistake is refused

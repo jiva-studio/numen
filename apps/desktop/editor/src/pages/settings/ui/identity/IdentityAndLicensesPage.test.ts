@@ -169,11 +169,20 @@ const getConfirmInputs = (tab: Page) => tab.findAll('label.word-check input')
 
 const getDialog = (tab: Page) => tab.get('[role="dialog"]')
 
-const getRestoreInputs = (tab: Page) =>
-  getDialog(tab).findAll('input[aria-label^="Recovery word "]')
+const getProofField = (tab: Page) =>
+  getDialog(tab).get('textarea[aria-label="Recovery words or sheets"]')
+
+const getNote = (tab: Page) => getDialog(tab).get('.proof-field__note')
+
+const getSubmit = (tab: Page) => getDialog(tab).get('button[type="submit"]')
+
+const enterProof = async (tab: Page, text: string) => {
+  await getProofField(tab).setValue(text)
+  await flushPromises()
+}
 
 const submitRestore = async (tab: Page) => {
-  await getDialog(tab).get('button[type="submit"]').trigger('click')
+  await getSubmit(tab).trigger('click')
   await flushPromises()
 }
 
@@ -363,22 +372,36 @@ describe('the page "Identity and licenses"', () => {
     expect(generateWords).toHaveBeenCalledTimes(2)
   })
 
-  it('restores in a dialog with a field for each of the 12 words', async () => {
+  it('restores in a dialog with one field, a line of help and a button that waits', async () => {
     const { tab } = await createPage()
     await press(tab, 'Restore')
     expect(getDialog(tab).get('h2').text()).toBe('Restore identity')
-    expect(getRestoreInputs(tab).map((input) => input.attributes('aria-label'))).toStrictEqual(
-      Array.from({ length: 12 }, (_, index) => `Recovery word ${index + 1}`),
+    expect(getDialog(tab).findAll('textarea')).toHaveLength(1)
+    expect(getDialog(tab).findAll('input')).toHaveLength(0)
+    expect(getDialog(tab).text()).toContain(
+      'Enter the 12 words, or any two sheets of your recovery kit. One sheet alone is not enough.',
     )
-    expect(getDialog(tab).findAll('ol[aria-label="Recovery words"] li input')).toHaveLength(12)
-    expect(getDialog(tab).text()).toContain('Type the 12 words in order.')
+    expect(getSubmit(tab).text()).toBe('Restore the account')
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
+    expect(getNote(tab).text()).toBe('')
   })
 
-  it('starts a restore with the words typed one to a field when the person restores', async () => {
+  it('counts the words while they are typed and restores when the 12th is in', async () => {
+    const { tab, restore } = await createPage()
+    await press(tab, 'Restore')
+    await enterProof(tab, RECOVERY_WORDS.slice(0, 5).join(' '))
+    expect(getNote(tab).text()).toBe('5 of 12 words')
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
+    expect(getNote(tab).text()).toBe('12 words recognized')
+    expect(getSubmit(tab).attributes('disabled')).toBeUndefined()
+    expect(restore).not.toHaveBeenCalled()
+  })
+
+  it('restores from the 12 words in any case and spacing and shows the identity', async () => {
     const { tab, create, restore } = await createPage()
     await press(tab, 'Restore')
-    for (const [index, input] of getRestoreInputs(tab).entries())
-      await input.setValue(` ${(RECOVERY_WORDS[index] ?? '').toUpperCase()} `)
+    await enterProof(tab, `  ${RECOVERY_WORDS.join('  ').toUpperCase()}\n`)
     await submitRestore(tab)
     expect(restore).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
     expect(create).not.toHaveBeenCalled()
@@ -396,27 +419,17 @@ describe('the page "Identity and licenses"', () => {
         }),
     )
     await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
 
     await submitRestore(tab)
 
-    expect(findButton(tab, words.identityRestoring)?.attributes('disabled')).toBeDefined()
+    expect(getSubmit(tab).text()).toBe(words.identityRestoring)
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
+    expect(getProofField(tab).attributes('disabled')).toBeDefined()
     expect(identity.value).toBeUndefined()
-    expect(tab.text()).not.toContain(IDENTITY.accountFingerprint)
     finish(asValue(IDENTITY))
     await flushPromises()
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-  })
-
-  it('fills the fields after the first when the 12 words are pasted into it', async () => {
-    const { tab, restore } = await createPage()
-    await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
-    expect(
-      getRestoreInputs(tab).map((input) => (input.element as HTMLInputElement).value),
-    ).toStrictEqual(RECOVERY_WORDS)
-    await submitRestore(tab)
-    expect(restore).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
   })
 
   it('returns the focus to Restore when the restore dialog is cancelled', async () => {
@@ -429,73 +442,49 @@ describe('the page "Identity and licenses"', () => {
     expect(document.activeElement).toBe(opener?.element)
   })
 
-  it('does not restore from 12 words followed by an extra one pasted into the first field', async () => {
+  it('refuses 12 words followed by an extra one and does not call the core', async () => {
     const { tab, restore } = await createPage()
     await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
+    await enterProof(tab, `${RECOVERY_WORDS.join(' ')} extra`)
+    expect(getNote(tab).text()).toContain('13 words')
+    expect(getNote(tab).attributes('role')).toBe('alert')
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
     await submitRestore(tab)
-    expect(restore).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
+    expect(restore).not.toHaveBeenCalled()
   })
 
-  it('says under the fields that the words are not valid and holds no identity when the core refuses them', async () => {
+  it('says under the field that the words are not valid when the core refuses them', async () => {
     const { tab, identity } = await createPage(undefined, () =>
       Promise.resolve(asFailure('Some words are not valid.')),
     )
     await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue('abandon '.repeat(12))
+    await enterProof(tab, 'abandon '.repeat(12))
     await submitRestore(tab)
     const alert = getDialog(tab).get('[role="alert"]')
     expect(alert.text()).toBe('Some words are not valid.')
-    const last = getRestoreInputs(tab).at(-1)?.element
-    const submit = getDialog(tab).get('button[type="submit"]').element
-    if (!last) throw new Error('the dialog has no fields')
     expect(
-      last.compareDocumentPosition(alert.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+      getProofField(tab).element.compareDocumentPosition(alert.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     expect(
-      alert.element.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
+      alert.element.compareDocumentPosition(getSubmit(tab).element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     expect(identity.value).toBeUndefined()
     expect(tab.text()).toContain(NO_IDENTITY)
+    await enterProof(tab, 'abandon '.repeat(11))
+    expect(getNote(tab).text()).toBe('11 of 12 words')
   })
 
-  it('shows "Restoring…" until the core has the identity', async () => {
-    let finish: (answer: Result<IdentityInfo, string>) => void = () => undefined
-    const { tab, identity } = await createPage(
-      undefined,
-      () =>
-        new Promise((resolve) => {
-          finish = resolve
-        }),
-    )
-    await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
-
-    await submitRestore(tab)
-
-    expect(getDialog(tab).get('button[type="submit"]').text()).toBe(words.identityRestoring)
-    expect(getDialog(tab).get('button[type="submit"]').attributes('disabled')).toBeDefined()
-    expect(identity.value).toBeUndefined()
-    finish(asValue(IDENTITY))
-    await flushPromises()
-    expect(tab.text()).toContain(IDENTITY.accountFingerprint)
-  })
-
-  it('closes the restore dialog on Cancel and drops the words typed', async () => {
+  it('closes the restore dialog on Cancel and drops what was entered', async () => {
     const { tab, restore } = await createPage()
     await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
-    await getDialog(tab)
-      .findAll('button')
-      .find((one) => one.text() === 'Cancel')
-      ?.trigger('click')
-    await flushPromises()
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
+    await press(tab, 'Cancel')
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
     expect(restore).not.toHaveBeenCalled()
     await press(tab, 'Restore')
-    expect(
-      getRestoreInputs(tab).every((input) => (input.element as HTMLInputElement).value === ''),
-    ).toBe(true)
+    expect((getProofField(tab).element as HTMLTextAreaElement).value).toBe('')
   })
 
   it('warns that the identity cannot be restored without the words before it deletes', async () => {
@@ -537,9 +526,6 @@ describe('the page "Identity and licenses"', () => {
 const SHEET_ONE = createSheetWords(1)
 const SHEET_THREE = createSheetWords(3)
 
-const getSheetField = (tab: Page, number: number) =>
-  getDialog(tab).get(`textarea[aria-label="Sheet ${number}"]`)
-
 const getDownload = (tab: Page) =>
   tab
     .findAll('button')
@@ -556,20 +542,6 @@ const readToasts = (): string[] =>
   [...document.body.querySelectorAll('[role="status"]')]
     .map((one) => one.textContent?.trim() ?? '')
     .filter((text) => text !== '')
-
-const submitDialog = async (tab: Page) => {
-  await getDialog(tab).get('button[type="submit"]').trigger('click')
-  await flushPromises()
-}
-
-const chooseSheets = async (tab: Page) => {
-  const choice = getDialog(tab)
-    .findAll('button')
-    .find((one) => one.text() === 'Recovery kit')
-  if (!choice) throw new Error('the dialog offers no sheets')
-  await choice.trigger('click')
-  await flushPromises()
-}
 
 const keepNewIdentity = async (tab: Page) => {
   await startSetup(tab)
@@ -623,8 +595,8 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     const { tab, saveKit } = await createPage(IDENTITY)
     await pressDownload(tab)
     expect(saveKit).not.toHaveBeenCalled()
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
-    await submitDialog(tab)
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
+    await submitRestore(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ words: RECOVERY_WORDS })
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
     expect(readToasts()).toStrictEqual(['Recovery kit saved'])
@@ -633,10 +605,8 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
   it('saves the kit for two sheets of an earlier kit', async () => {
     const { tab, saveKit } = await createPage(IDENTITY)
     await pressDownload(tab)
-    await chooseSheets(tab)
-    await getSheetField(tab, 1).setValue(SHEET_ONE.join(' '))
-    await getSheetField(tab, 2).setValue(SHEET_THREE.join('\n'))
-    await submitDialog(tab)
+    await enterProof(tab, `${SHEET_ONE.join(' ')}\n${SHEET_THREE.join('  ')}`)
+    await submitRestore(tab)
     expect(saveKit).toHaveBeenCalledExactlyOnceWith({ sheets: [SHEET_ONE, SHEET_THREE] })
   })
 
@@ -645,31 +615,30 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
       saveKit: asFailure('The words belong to another account.'),
     })
     await pressDownload(tab)
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
-    await submitDialog(tab)
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
+    await submitRestore(tab)
     expect(getDialog(tab).get('[role="alert"]').text()).toBe('The words belong to another account.')
     expect(readToasts()).toStrictEqual([])
   })
 
-  it('asks for one more sheet before it calls the core with none', async () => {
+  it('waits for a whole proof before it calls the core', async () => {
     const { tab, saveKit } = await createPage(IDENTITY)
     await pressDownload(tab)
-    await chooseSheets(tab)
-    await submitDialog(tab)
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
+    await enterProof(tab, SHEET_ONE.join(' '))
+    expect(getNote(tab).text()).toBe('Sheet 1 recognized, one more sheet needed')
+    await submitRestore(tab)
     expect(saveKit).not.toHaveBeenCalled()
-    expect(getDialog(tab).get('[role="alert"]').text()).toBe('One more sheet is needed.')
   })
 
   it('drops the typed words when the person cancels the dialog', async () => {
     const { tab, saveKit } = await createPage(IDENTITY)
     await pressDownload(tab)
-    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+    await enterProof(tab, RECOVERY_WORDS.join(' '))
     await press(tab, 'Cancel')
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
     await pressDownload(tab)
-    expect(
-      getRestoreInputs(tab).every((input) => (input.element as HTMLInputElement).value === ''),
-    ).toBe(true)
+    expect((getProofField(tab).element as HTMLTextAreaElement).value).toBe('')
     expect(saveKit).not.toHaveBeenCalled()
   })
 
@@ -685,56 +654,47 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
 })
 
 describe('the restore from sheets on the page "Identity and licenses"', () => {
-  it('offers the sheets in the restore dialog and no header action of its own', async () => {
-    const { tab } = await createPage()
-    expect(findButton(tab, 'Restore from sheets')).toBeUndefined()
-    await press(tab, 'Restore')
-    await chooseSheets(tab)
-    expect(getSheetField(tab, 1).element).toBeInstanceOf(HTMLTextAreaElement)
-    expect(getSheetField(tab, 2).element).toBeInstanceOf(HTMLTextAreaElement)
-    expect(
-      getDialog(tab).get('ol[aria-label="Recovery words"]').element.closest('[inert]'),
-    ).not.toBeNull()
-  })
-
-  it('sends the sheets that are typed and shows the identity', async () => {
+  it('recognizes two sheets, one on each line, and sends them', async () => {
     const { tab, restoreFromKit, restore } = await createPage()
     await press(tab, 'Restore')
-    await chooseSheets(tab)
-    await getSheetField(tab, 1).setValue(` ${SHEET_THREE.join('  ')} `)
-    await getSheetField(tab, 2).setValue(SHEET_ONE.join(' ').toUpperCase())
-    await submitDialog(tab)
+    await enterProof(tab, SHEET_THREE.join(' '))
+    expect(getNote(tab).text()).toBe('Sheet 1 recognized, one more sheet needed')
+    await enterProof(tab, ` ${SHEET_THREE.join('  ')} \n${SHEET_ONE.join(' ').toUpperCase()}`)
+    expect(getNote(tab).text()).toBe('2 of 3 sheets recognized')
+    await submitRestore(tab)
     expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([SHEET_THREE, SHEET_ONE])
     expect(restore).not.toHaveBeenCalled()
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
   })
 
-  it('sends one sheet when only one is typed and holds no identity after the refusal', async () => {
-    const { tab, restoreFromKit, identity } = await createPage(undefined, undefined, {
-      restoreFromKit: asFailure('One more sheet is needed.'),
-    })
+  it('does not send one sheet and asks for one more', async () => {
+    const { tab, restoreFromKit, identity } = await createPage()
     await press(tab, 'Restore')
-    await chooseSheets(tab)
-    await getSheetField(tab, 2).setValue(SHEET_ONE.join(' '))
-    await submitDialog(tab)
-    expect(restoreFromKit).toHaveBeenCalledExactlyOnceWith([SHEET_ONE])
-    expect(getDialog(tab).get('[role="alert"]').text()).toBe('One more sheet is needed.')
+    await enterProof(tab, SHEET_ONE.join(' '))
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
+    await submitRestore(tab)
+    expect(restoreFromKit).not.toHaveBeenCalled()
     expect(identity.value).toBeUndefined()
   })
 
-  it('drops the typed sheets when the person cancels', async () => {
+  it('refuses a repeated sheet and names it', async () => {
     const { tab, restoreFromKit } = await createPage()
     await press(tab, 'Restore')
-    await chooseSheets(tab)
-    await getSheetField(tab, 1).setValue(SHEET_ONE.join(' '))
-    await getDialog(tab)
-      .findAll('button')
-      .find((one) => one.text() === 'Cancel')
-      ?.trigger('click')
-    await flushPromises()
-    await press(tab, 'Restore')
-    await chooseSheets(tab)
-    expect((getSheetField(tab, 1).element as HTMLTextAreaElement).value).toBe('')
+    await enterProof(tab, `${SHEET_ONE.join(' ')}\n${SHEET_ONE.join(' ')}`)
+    expect(getNote(tab).text()).toBe('Sheet 2 is the same as sheet 1. Enter a different sheet.')
+    expect(getNote(tab).attributes('role')).toBe('alert')
+    expect(getSubmit(tab).attributes('disabled')).toBeDefined()
     expect(restoreFromKit).not.toHaveBeenCalled()
+  })
+
+  it('shows the refusal of the core for sheets of another account under the field', async () => {
+    const { tab, identity } = await createPage(undefined, undefined, {
+      restoreFromKit: asFailure('The sheets belong to another account.'),
+    })
+    await press(tab, 'Restore')
+    await enterProof(tab, `${SHEET_ONE.join(' ')}\n${SHEET_THREE.join(' ')}`)
+    await submitRestore(tab)
+    expect(getNote(tab).text()).toBe('The sheets belong to another account.')
+    expect(identity.value).toBeUndefined()
   })
 })
