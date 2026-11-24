@@ -41,6 +41,12 @@ type Deps struct {
 	createLock CreateGate
 }
 
+// Stores are the key store and the chain store that one installation keeps its identity in.
+type Stores struct {
+	Keys   pluginport.KeyStore
+	Chains ChainStore
+}
+
 // SharedKeys is the key store of an installation with the lock that serializes the creation of an identity
 // over it. The windows of the installation share one value.
 type SharedKeys struct {

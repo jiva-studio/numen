@@ -55,9 +55,9 @@ func NewPluginServices(target string) Installation {
 	store := getKeyStore()
 	passphrase := &keychain.Passphrase{}
 	applyCredentialsFile(store, passphrase)
-	res.KeyStore = store
+	res.Stores.Keys = store
 	res.KeyFile = keychain.NewKeyFile(store, passphrase)
-	res.ChainStore = getChainStore()
+	res.Stores.Chains = getChainStore()
 	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)

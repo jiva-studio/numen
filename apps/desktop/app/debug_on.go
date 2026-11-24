@@ -30,8 +30,8 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 
 func (d *DebugOptions) apply(refreshDependencies func(), res *container.Resources) error {
 	if d.isServingHTTP() {
-		res.KeyStore = debugserve.NewKeyStore()
-		res.ChainStore = debugserve.NewChainStore()
+		res.Stores.Keys = debugserve.NewKeyStore()
+		res.Stores.Chains = debugserve.NewChainStore()
 	}
 	if !d.IsMockML {
 		return nil

@@ -36,7 +36,7 @@ func TestNewPluginServices(t *testing.T) {
 
 func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
 	services := NewPluginServices(TargetFlashcards)
-	if services.Resources.KeyStore == nil {
+	if services.Resources.Stores.Keys == nil {
 		t.Error("the desktop configuration names no key store")
 	}
 

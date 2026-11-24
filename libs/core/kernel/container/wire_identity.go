@@ -10,10 +10,10 @@ import (
 )
 
 func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Resources, dialog editor.PathDialog) *windowidentity.UseCases {
-	if install.Keys.Store == nil || res.ChainStore == nil {
+	if install.Keys.Store == nil || res.Stores.Chains == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.Keys.Store, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithProgress(res.progress).WithChains(res.ChainStore).WithCreateLock(install.Keys.CreateLock)
+	deps := identity.NewDeps(install.Keys.Store, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithProgress(res.progress).WithChains(res.Stores.Chains).WithCreateLock(install.Keys.CreateLock)
 	return &windowidentity.UseCases{
 		Identity: windowidentity.IdentityUseCases{
 			Get:           identity.NewGetIdentity(deps),
@@ -42,7 +42,7 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Res
 }
 
 func openAccount(res *Resources) *identity.Account {
-	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res), res.progress, res.ChainStore)
+	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res), res.progress, res.Stores.Chains)
 }
 
 func openKitSaver(dialog editor.PathDialog) identity.KitSaver {

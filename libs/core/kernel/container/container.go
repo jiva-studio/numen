@@ -12,6 +12,7 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -71,16 +71,16 @@ type Config struct {
 // Resources holds the services shared by the parts of one installation.
 type Resources struct {
 	PluginCatalog catalog.Config
-	KeyStore      pluginport.KeyStore
 	KeyFile       keyfileusecase.File
-	ChainStore    identity.ChainStore
+	Stores        identity.Stores
 	ErrorHandler  window.ErrorHandler
 	Now           identity.Clock
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
 	vault         vaultShared
-	settings      settingsadapter.Shared
+	settingFiles  *settingsadapter.Files
+	settingEvents *settingevents.Events
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
 	progress      *identity.Progress
@@ -97,7 +97,8 @@ func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
 		vault:         vaultShared{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
-		settings:      settingsadapter.NewShared(),
+		settingFiles:  settingsadapter.NewFiles(),
+		settingEvents: settingevents.New(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
@@ -176,8 +177,8 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
 		Watches:         res.vault.watches,
-		SettingsFiles:   res.settings.Files,
-		SettingEvents:   res.settings.Events,
+		SettingsFiles:   res.settingFiles,
+		SettingEvents:   res.settingEvents,
 		PluginChanges:   &res.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
@@ -243,6 +244,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: getCreateGate(res)},
+		Keys:            identity.SharedKeys{Store: res.Stores.Keys, CreateLock: getCreateGate(res)},
 	}
 }
