@@ -20,7 +20,14 @@
       }
     ]
   },
-  "permissions": ["identity", "identity:link", "link:open", "vault:manage", "vault:read", "vault:write"],
+  "permissions": [
+    "identity",
+    "identity:link",
+    "link:open",
+    "vault:manage",
+    "vault:read",
+    "vault:write"
+  ],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
