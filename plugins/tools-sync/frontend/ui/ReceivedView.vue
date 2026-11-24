@@ -4,14 +4,11 @@
  * identity code of the account to send to a person who wants to share one, and the header action that
  * accepts an invitation. A folder is shared from the file tree.
  */
-import { ref } from 'vue'
-import { Copy, FolderOpen, Link, Mail } from '@lucide/vue'
+import { Copy, FolderOpen } from '@lucide/vue'
 import { Button, IslandCard } from '@numen/ui'
 import type { ReceivedView } from '../model/shares'
 import { WORDS as words } from '../words'
-import AcceptInvitationDialog from './AcceptInvitationDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
-import HeaderAction from './HeaderAction.vue'
 import SyncRow from './SyncRow.vue'
 import SyncStatus from './SyncStatus.vue'
 
@@ -20,14 +17,7 @@ const props = defineProps<{
   view: ReceivedView
 }>()
 
-/* --------------------------------- State ---------------------------------- */
-const isAccepting = ref(false)
-
 /* -------------------------------- Handlers -------------------------------- */
-function onCopyLink(): void {
-  props.view.copyLink().catch(props.view.fail)
-}
-
 function onCopyIdentity(fingerprint: string): void {
   props.view.copyFingerprint(fingerprint).catch(props.view.fail)
 }
@@ -39,16 +29,6 @@ function onCopyIdentity(fingerprint: string): void {
     :title="words.sharedFoldersTitle"
     :aria-label="words.sharedFoldersTitle"
   >
-    <template #aside>
-      <HeaderAction @click="onCopyLink">
-        <Link :size="14" aria-hidden="true" />
-        {{ words.copyLink }}
-      </HeaderAction>
-      <HeaderAction @click="isAccepting = true">
-        <Mail :size="14" aria-hidden="true" />
-        {{ words.acceptInvitation }}
-      </HeaderAction>
-    </template>
     <p class="sync-card__lead">{{ words.sharedFoldersText }}</p>
     <p v-if="view.error !== ''" class="sync-card__note sync-card__note--alarm" role="alert">
       {{ view.error }}
@@ -79,6 +59,5 @@ function onCopyIdentity(fingerprint: string): void {
         </template>
       </SyncRow>
     </ul>
-    <AcceptInvitationDialog v-if="isAccepting" :view="view" @close="isAccepting = false" />
   </IslandCard>
 </template>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import { frameDecorator } from './storyFrame'
 import VaultsView from './VaultsView.vue'
@@ -144,39 +144,5 @@ export const NoIdentity: Story = {
   args: { client: createClient({ hasIdentity: false }), now: () => NOW },
   play: async ({ canvasElement }) => {
     await expect(await within(canvasElement).findByText('No identity on this device')).toBeVisible()
-  },
-}
-
-export const CloudVaultOffered: Story = {
-  args: { client: createClient({ vaults: [work, plain], remote: cloud }), now: () => NOW },
-  play: async ({ canvasElement }) => {
-    await expect(
-      await within(canvasElement).findByRole('button', { name: 'Get a vault from the cloud' }),
-    ).toBeVisible()
-  },
-}
-
-export const CloudDialog: Story = {
-  args: { client: createClient({ vaults: [work, plain], remote: cloud }), now: () => NOW },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Get a vault from the cloud' }))
-    await expect(await canvas.findByLabelText('Vault in the cloud')).toBeVisible()
-    await expect(canvas.getByLabelText('Vault on this device')).toBeVisible()
-  },
-}
-
-export const CloudDialogAsks: Story = {
-  args: {
-    client: createClient({ vaults: [work, plain], remote: cloud, differCount: 2 }),
-    now: () => NOW,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Get a vault from the cloud' }))
-    await userEvent.click(await canvas.findByRole('button', { name: 'Get vault' }))
-    await expect(
-      await canvas.findByText('2 notes differ from the vault in the cloud. Get it anyway?'),
-    ).toBeVisible()
   },
 }

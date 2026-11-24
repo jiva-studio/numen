@@ -103,6 +103,9 @@ describe('the manifest of the sync plugin', () => {
         when: 'target.isRoot',
       }),
     )
+    expect(contributes.commands).toContainEqual(
+      expect.objectContaining({ id: 'share.accept', title: 'Accept a shared folder...' }),
+    )
     expect(contributes).not.toHaveProperty('tabKinds')
     expect(manifest.settings.find((one) => one.key === 'receivedFolder')).toMatchObject({
       type: 'string',

@@ -8,8 +8,11 @@ import { folderSharesClient, vaultsClient } from './api/wire'
 import { createShareView } from './model/shares'
 import { createSyncState } from './model/sync'
 import { finishSync, startSync } from './model/syncVault'
+import { createReceivedView } from './model/shares'
 import { createSubscriptionView } from './ui/subscriptionView'
 import { createReceivedPage } from './ui/receivedView'
+import AcceptInvitationDialog from './ui/AcceptInvitationDialog.vue'
+import GetVaultDialog from './ui/GetVaultDialog.vue'
 import ShareDialog from './ui/ShareDialog.vue'
 import SyncChoiceDialog from './ui/SyncChoiceDialog.vue'
 import { createSyncView } from './ui/syncStatusView'
@@ -23,6 +26,8 @@ export const SUBSCRIPTION_VIEW = 'subscription'
 export const SHARES_VIEW = 'shares'
 export const SHARE_COMMAND = 'share.open'
 export const SYNC_COMMAND = 'vault.sync'
+export const ACCEPT_COMMAND = 'share.accept'
+export const CLOUD_COMMAND = 'vault.fromCloud'
 
 const createSettingsOpener = (
   plugin: PluginContext,
@@ -56,6 +61,36 @@ const registerShare = (plugin: PluginContext, host: HostServices): void => {
       })
       const dialog = dialogs.open({ component: ShareDialog, props: { state: view } })
       view.load().catch(view.fail)
+      return Promise.resolve()
+    },
+  })
+}
+
+const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
+  plugin.register.command({
+    id: ACCEPT_COMMAND,
+    handler: () => {
+      const view = createReceivedView()
+      const dialog = host.ui.dialogs?.open({
+        component: AcceptInvitationDialog,
+        props: {
+          view,
+          onClose: () => {
+            view.stop()
+            dialog?.close()
+          },
+        },
+      })
+      return Promise.resolve()
+    },
+  })
+  plugin.register.command({
+    id: CLOUD_COMMAND,
+    handler: () => {
+      const dialog = host.ui.dialogs?.open({
+        component: GetVaultDialog,
+        props: { onClose: () => dialog?.close() },
+      })
       return Promise.resolve()
     },
   })
@@ -109,6 +144,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   })
   registerShare(plugin, host)
   registerSync(plugin, host)
+  registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
   state.start()
 }

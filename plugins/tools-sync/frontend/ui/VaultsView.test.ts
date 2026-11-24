@@ -98,42 +98,6 @@ describe('VaultsView', () => {
     expect(wrapper.text()).not.toContain('Not connected')
   })
 
-  it('offers to get a vault from the cloud only when the account holds one this device lacks', async () => {
-    const withCloud = await render({ vaults: [createVault()] })
-    const withoutCloud = await render({ vaults: [createVault()], remote: [] })
-
-    expect(findButton(withCloud.wrapper, 'Get a vault from the cloud')).toBeDefined()
-    expect(findButton(withoutCloud.wrapper, 'Get a vault from the cloud')).toBeUndefined()
-  })
-
-  it('gets the chosen vault of the cloud into the chosen vault of the device', async () => {
-    const { wrapper, client } = await render({ vaults: [createVault({ id: 'a' })] })
-
-    await findButton(wrapper, 'Get a vault from the cloud')?.trigger('click')
-    await findButton(wrapper, 'Get vault')?.trigger('click')
-    await flushPromises()
-
-    expect(client.connectVault).toHaveBeenCalledWith({
-      vaultId: 'a',
-      mode: 'existing',
-      remoteId: 'aa11',
-    })
-  })
-
-  it('asks before it gets a vault whose notes differ and goes back on a click', async () => {
-    const { wrapper, client } = await render({ vaults: [createVault()], differCount: 2 })
-
-    await findButton(wrapper, 'Get a vault from the cloud')?.trigger('click')
-    await findButton(wrapper, 'Get vault')?.trigger('click')
-    await flushPromises()
-    expect(wrapper.text()).toContain('2 notes differ from the vault in the cloud. Get it anyway?')
-    expect(client.connectVault).not.toHaveBeenCalled()
-
-    await findButton(wrapper, 'Cancel')?.trigger('click')
-
-    expect(wrapper.text()).toContain('Vault in the cloud')
-  })
-
   it('offers the removals that wait for an answer', async () => {
     const { wrapper, client } = await render({
       vaults: [
