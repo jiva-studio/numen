@@ -20,13 +20,11 @@ Feature: Delete cloud data
       When the person asks to delete the cloud data
       Then the question says "7 days"
       And the question says "Your notes stay on your devices"
-      And the question says "Type the identity fingerprint"
 
-    Scenario: A text that is not the identity fingerprint deletes nothing
+    Scenario: Cancelling the question deletes nothing
       Given the person asks to delete the cloud data
-      When the person confirms the deletion with the text "somebody else"
-      Then the page says "This is not the identity fingerprint."
-      And the cloud data is kept
+      When the person cancels the deletion of the cloud data
+      Then the cloud data is kept
 
   Rule: The cloud data is kept for 7 days
 

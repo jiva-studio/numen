@@ -22,7 +22,6 @@ const getMessage = (failure: unknown): string =>
  */
 export function useAccountData(options: AccountDataOptions) {
   const { client, saveFile, refreshMs = REFRESH_MS } = options
-  const account = ref('')
   const isDeleting = ref(false)
   const deleteAt = ref('')
   const isBusy = ref(false)
@@ -33,7 +32,6 @@ export function useAccountData(options: AccountDataOptions) {
 
   async function read(): Promise<void> {
     const state = await client.getAccountState()
-    account.value = state.hasIdentity ? state.account : ''
     isDeleting.value = state.hasIdentity && state.isDeleting
     deleteAt.value = isDeleting.value ? state.deleteAt : ''
   }
@@ -103,7 +101,6 @@ export function useAccountData(options: AccountDataOptions) {
 
   return {
     state: {
-      account,
       isDeleting,
       deleteAt: computed(() => deleteAt.value),
       isBusy,

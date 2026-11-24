@@ -8,9 +8,9 @@ import type { SettingsDriver } from './settings.js'
 
 const PAGE = 'Identity and licenses'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
-const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 const MORE_ACTIONS = 'More actions'
 const DELETE_CLOUD_DATA = 'Delete cloud data'
+const CANCEL = 'Cancel'
 const RESTORE_ACCOUNT = 'Restore cloud data'
 const EXPORT_ACCOUNT_DATA = 'Export identity data'
 const EXPORT_FILE = 'Numen Sync identity data.json'
@@ -37,10 +37,10 @@ export class AccountDriver {
     await this.scenario.page.getByRole('menuitem', { name: item }).click()
   }
 
-  /** Opens the question of the card, types the identity fingerprint and confirms the deletion of the cloud data. */
+  /** Opens the question of the card and confirms the deletion of the cloud data. */
   async deleteCloudData(): Promise<void> {
     await this.openDeleteQuestion()
-    await this.confirmDeleteCloudData(this.identity.getAccountFingerprint())
+    await this.confirmDeleteCloudData()
   }
 
   /** Opens the question of the card. */
@@ -49,11 +49,16 @@ export class AccountDriver {
     await this.chooseFromMenu(card, DELETE_CLOUD_DATA)
   }
 
-  /** Types the text into the open question of the card and confirms the deletion. */
-  async confirmDeleteCloudData(name: string): Promise<void> {
+  /** Confirms the deletion in the open question of the card. */
+  async confirmDeleteCloudData(): Promise<void> {
     const dialog = (await this.getCard()).getByRole('alertdialog')
-    await dialog.getByRole('textbox', { name: ACCOUNT_FINGERPRINT }).fill(name)
     await dialog.getByRole('button', { name: DELETE_CLOUD_DATA }).click()
+  }
+
+  /** Cancels the open question of the card. */
+  async cancelDeleteCloudData(): Promise<void> {
+    const dialog = (await this.getCard()).getByRole('alertdialog')
+    await dialog.getByRole('button', { name: CANCEL }).click()
   }
 
   /** Expects the question of the card to say what is deleted and for how long, and what stays. */

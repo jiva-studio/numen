@@ -243,7 +243,6 @@ function onFailure(failure: unknown): void {
     </p>
     <DeleteCloudDataDialog
       v-if="isConfirmingDelete"
-      :account="accountData?.state.account.value ?? ''"
       :has-subscription="phase === 'active'"
       @confirm="onConfirmDelete"
       @cancel="onCancelDelete"

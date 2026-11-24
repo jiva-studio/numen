@@ -342,8 +342,8 @@ When('the person asks to delete the cloud data', async ({ person }) => {
   await person.accounts.openDeleteQuestion()
 })
 
-When('the person confirms the deletion with the text {string}', async ({ person }, name: string) => {
-  await person.accounts.confirmDeleteCloudData(name)
+When('the person cancels the deletion of the cloud data', async ({ person }) => {
+  await person.accounts.cancelDeleteCloudData()
 })
 
 Then('the question says {string}', async ({ person }, text: string) => {

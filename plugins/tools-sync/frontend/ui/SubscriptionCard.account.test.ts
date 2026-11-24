@@ -113,13 +113,6 @@ const pressInDialog = async (text: string) => {
   await flushPromises()
 }
 
-const type = async (text: string) => {
-  const input = document.body.querySelector<HTMLInputElement>('.subscription__input')
-  if (input === null) throw new Error('the dialog has no field')
-  input.value = text
-  input.dispatchEvent(new Event('input'))
-  await flushPromises()
-}
 
 const getDialogText = (): string =>
   document.body.querySelector('[role="alertdialog"]')?.textContent ?? ''
@@ -155,17 +148,16 @@ describe('SubscriptionCard account actions', () => {
     expect(findButton('More actions')).toBeUndefined()
   })
 
-  it('asks what is deleted, the seven days, that notes stay and that the subscription is cancelled', async () => {
+  it('asks about the seven days, that notes stay and that the subscription is cancelled', async () => {
     await render(createState())
 
     await pressMenu('Delete cloud data')
 
     const text = getDialogText()
-    expect(text).toContain('Delete your cloud data?')
+    expect(text).toContain('Delete cloud data')
     expect(text).toContain('7 days')
     expect(text).toContain('Your notes stay on your devices')
     expect(text).toContain('Your subscription is cancelled now')
-    expect(text).toContain(ACCOUNT)
   })
 
   it('does not mention a subscription to cancel when there is none', async () => {
@@ -176,24 +168,11 @@ describe('SubscriptionCard account actions', () => {
     expect(getDialogText()).not.toContain('Your subscription is cancelled now')
   })
 
-  it('deletes nothing and shows under the field that the typed text is not the account name', async () => {
-    const { accountClient } = await render(createState())
-    await pressMenu('Delete cloud data')
 
-    await type('somebody else')
-    await pressInDialog('Delete cloud data')
-
-    expect(accountClient.deleteCloudData).not.toHaveBeenCalled()
-    expect(document.body.querySelector('[role="alertdialog"] [role="alert"]')?.textContent).toBe(
-      'This is not the identity fingerprint.',
-    )
-  })
-
-  it('deletes the cloud data once the account name is typed and shows the deleting state with the date', async () => {
+  it('deletes the cloud data when the person confirms and shows the deleting state with the date', async () => {
     const { wrapper, accountClient } = await render(createState())
     await pressMenu('Delete cloud data')
 
-    await type(ACCOUNT)
     await pressInDialog('Delete cloud data')
 
     expect(accountClient.deleteCloudData).toHaveBeenCalledOnce()

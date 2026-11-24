@@ -51,17 +51,11 @@ export const WORDS = {
   exportDialogTitle: 'Save identity data',
   exportUnavailable: 'This window cannot save files.',
   exportFailed: (reason: string): string => `Could not save the file: ${reason}`,
-  deleteQuestion: 'Delete your cloud data?',
-  deleteWhat:
-    'This deletes what the Numen Sync server holds for your identity: your list of devices, your synced vaults, their history and the encrypted copies of your files.',
+  deleteQuestion: 'Delete cloud data',
   deleteWhen:
-    'The server keeps it for 7 days, then deletes it for good. Until then you can restore the cloud data.',
-  deleteLocal: 'Your notes stay on your devices. Only the copy in the cloud is deleted.',
+    'The cloud copies of your vaults are deleted in 7 days. You can restore them until then.',
+  deleteLocal: 'Your notes stay on your devices.',
   deleteSubscription: 'Your subscription is cancelled now and is not charged again.',
-  deleteTypeName: (account: string): string =>
-    `Type the identity fingerprint ${account} to confirm.`,
-  deleteNameLabel: 'Identity fingerprint',
-  deleteNameWrong: 'This is not the identity fingerprint.',
   deleteConfirm: 'Delete cloud data',
   deleteCancel: 'Cancel',
   deletingBadge: 'Deleting',
