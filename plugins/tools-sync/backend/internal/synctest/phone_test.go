@@ -13,7 +13,7 @@ import (
 
 // The tests of this file run the scenarios of features/mobile/sync on real pieces: a computer and a phone with
 // their use cases over the fake sync server, the test host of the SDK and a clock set by hand. The network
-// stream is the one thing a test stands in for.
+// stream is the one thing a test replaces with a fake.
 
 const (
 	guidePath = "Books/Guide.pdf"
@@ -172,7 +172,7 @@ func TestAFileDownloadsAgainAfterItsDownloadIsRemoved(t *testing.T) {
 	}
 }
 
-func TestAFileDeletedOnThePhoneLeavesTheVault(t *testing.T) {
+func TestDeletingAFileOnThePhoneRemovesItFromTheVault(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	if err := w.Fetch(t.Context(), guidePath); err != nil {
@@ -189,7 +189,7 @@ func TestAFileDeletedOnThePhoneLeavesTheVault(t *testing.T) {
 	}
 }
 
-func TestAnAbsentFileDeletedOnThePhoneLeavesTheVault(t *testing.T) {
+func TestDeletingAnAbsentFileOnThePhoneRemovesItFromTheVault(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	w.Phone.Vaults.With(synctest.PhoneVault).Remove(guidePath)
@@ -206,7 +206,7 @@ func TestAnAbsentFileDeletedOnThePhoneLeavesTheVault(t *testing.T) {
 	}
 }
 
-func TestANoteWrittenOnTheComputerArrivesWhileNumenIsOpenOnThePhone(t *testing.T) {
+func TestANoteCreatedOnTheComputerArrivesWhileTheApplicationIsOpenOnThePhone(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
@@ -224,7 +224,7 @@ func TestANoteWrittenOnTheComputerArrivesWhileNumenIsOpenOnThePhone(t *testing.T
 	synctest.Eventually(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
 }
 
-func TestANoteWrittenWhileNumenIsClosedArrivesWhenItOpens(t *testing.T) {
+func TestANoteCreatedWhileTheApplicationIsClosedArrivesWhenItOpens(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.Computer.WriteNote(synctest.ComputerVault, listPath, "milk")
 	w.Clock.Advance(time.Minute)
@@ -239,7 +239,7 @@ func TestANoteWrittenWhileNumenIsClosedArrivesWhenItOpens(t *testing.T) {
 	synctest.Eventually(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
 }
 
-func TestNumenAsksForNothingWhenItLeavesTheScreen(t *testing.T) {
+func TestNumenAsksForNothingWhenItIsOffTheScreen(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
@@ -262,7 +262,7 @@ func TestNumenAsksForNothingWhenItLeavesTheScreen(t *testing.T) {
 	}
 }
 
-func TestNumenAsksAgainWhenItComesBack(t *testing.T) {
+func TestNumenAsksAgainWhenItReturnsToTheScreen(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
@@ -281,7 +281,7 @@ func TestNumenAsksAgainWhenItComesBack(t *testing.T) {
 	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
-func TestANoteIsSentWhenNumenLeavesTheScreen(t *testing.T) {
+func TestANoteIsSentWhenTheApplicationIsSuspended(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	life := newLifecycle(w, &synctest.Stream{})
 	if err := life.Resume(t.Context()); err != nil {
@@ -300,7 +300,7 @@ func TestANoteIsSentWhenNumenLeavesTheScreen(t *testing.T) {
 	}
 }
 
-func TestANoteWrittenWithoutTheNetworkIsSentLater(t *testing.T) {
+func TestANoteCreatedWithoutTheNetworkIsSentLater(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.Server.SetDown(true)
 	w.Phone.WriteNote(synctest.PhoneVault, listPath, "eggs")

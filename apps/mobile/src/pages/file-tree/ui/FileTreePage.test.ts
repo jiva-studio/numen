@@ -21,7 +21,6 @@ const list: FileRow = {
   isAbsent: false,
 }
 
-/** A core whose files are `rows`; a download or a removal answers as the test says. */
 function coreWith(rows: FileRow[], answers: Partial<Pick<Core, 'fetchFile' | 'dropDownload'>> = {}) {
   const core = {
     listFiles: vi.fn(async () => rows),

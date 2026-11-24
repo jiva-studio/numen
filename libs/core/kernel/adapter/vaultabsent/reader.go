@@ -95,8 +95,6 @@ func (r reader) StatFile(ctx context.Context, path string) (domain.FileStat, err
 	return getStat(entry), nil
 }
 
-// getReadError turns the failure of a read of a path nothing holds into ErrFileAbsent when the
-// registry lists the path.
 func (r reader) getReadError(ctx context.Context, path string, readErr error) error {
 	if !errors.Is(readErr, fs.ErrNotExist) {
 		return readErr
@@ -119,8 +117,6 @@ func getStat(entry vault.AbsentFile) domain.FileStat {
 	return domain.FileStat{Path: entry.Path, Kind: kind, Size: entry.Size, ModTime: entry.Mtime, IsAbsent: true}
 }
 
-// mergeFolder adds to the entries of a folder the registry files in it and the folders that hold
-// registry files deeper down.
 func mergeFolder(entries []domain.Entry, absent []vault.AbsentFile, folder string) []domain.Entry {
 	folder = strings.Trim(folder, "/")
 	have := map[string]bool{}
@@ -148,7 +144,6 @@ func mergeFolder(entries []domain.Entry, absent []vault.AbsentFile, folder strin
 	return entries
 }
 
-// getChildName returns the first name of path below folder, and whether it is a folder.
 func getChildName(folder, path string) (name string, isFolder, isInside bool) {
 	rest := path
 	if folder != "" {

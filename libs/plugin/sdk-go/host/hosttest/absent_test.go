@@ -35,7 +35,7 @@ func putGuide(t *testing.T, v *hosttest.Vault) {
 	}
 }
 
-func TestListAbsentFilesReturnsTheFilesPut(t *testing.T) {
+func TestListAbsentFilesReturnsTheFilesStored(t *testing.T) {
 	v := hosttest.New("garden")
 	putGuide(t, v)
 	got, err := v.ListAbsentFiles(t.Context())
@@ -52,7 +52,7 @@ func TestReadOfAnAbsentFileReturnsErrFileAbsent(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesRefusesAPathWithAFileOfAnotherHash(t *testing.T) {
+func TestStoreAbsentFilesRefusesAPathWithAFileOfAnotherHash(t *testing.T) {
 	v := hosttest.New("garden")
 	v.File(guidePath, "my own notes in a file")
 	if err := v.PutAbsentFiles(t.Context(), []host.AbsentFile{getGuide()}); !errors.Is(err, host.ErrFilePresent) {
@@ -60,7 +60,7 @@ func TestPutAbsentFilesRefusesAPathWithAFileOfAnotherHash(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesReportsNoChangeInTheFeed(t *testing.T) {
+func TestStoreAbsentFilesReportsNoChangeInTheFeed(t *testing.T) {
 	v := hosttest.New("garden")
 	start := readFeed(t, v, host.FileChangeCursor{}).Next
 	putGuide(t, v)

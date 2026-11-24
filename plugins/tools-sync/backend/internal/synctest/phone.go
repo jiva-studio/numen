@@ -62,7 +62,6 @@ func (c *Computer) WriteFileOfSize(id domain.VaultID, path string, size int) str
 	return content
 }
 
-// ListAbsent returns the files of the vault listed as absent.
 func (c *Computer) ListAbsent(t *testing.T, id domain.VaultID) []host.AbsentFile {
 	t.Helper()
 	files, err := c.Vaults.With(id).ListAbsentFiles(t.Context())
@@ -132,7 +131,6 @@ func (w *PhoneWorld) Fetch(ctx context.Context, path string) error {
 	return fetchfile.NewFetchFile(w.Phone.FetchDeps()).Execute(ctx, PhoneVault, path)
 }
 
-// DropDownload removes the download of the file of the phone.
 func (w *PhoneWorld) DropDownload(ctx context.Context, path string) error {
 	return dropdownload.NewDropDownload(w.Phone.DropDeps()).Execute(ctx, PhoneVault, path)
 }

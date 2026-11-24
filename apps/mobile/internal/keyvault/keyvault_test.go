@@ -51,7 +51,7 @@ func TestGetKeyReturnsWhatSetKeyStored(t *testing.T) {
 	}
 }
 
-func TestKeysAreKeptUnderTheirOwnNames(t *testing.T) {
+func TestKeysAreStoredByTheirOwnNames(t *testing.T) {
 	store := keyvault.New(newMemoryVault())
 	if err := store.SetKey(t.Context(), "identity", "one"); err != nil {
 		t.Fatal(err)
@@ -80,7 +80,7 @@ func TestDeleteKeyOfAMissingNameReturnsErrNoKey(t *testing.T) {
 	}
 }
 
-func TestSetKeyTakesAKeyOfTheLimitAndRefusesALongerOne(t *testing.T) {
+func TestSetKeyAcceptsAKeyOfTheLimitAndRefusesALongerOne(t *testing.T) {
 	store := keyvault.New(newMemoryVault())
 	atLimit := strings.Repeat("v", keyvault.MaxValueBytes)
 	if err := store.SetKey(t.Context(), "identity", atLimit); err != nil {

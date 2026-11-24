@@ -50,7 +50,7 @@ func clientToAbsent(t *testing.T, a *absentHost) *host.Client {
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-func TestPutAbsentFilesSendsEachFileAndTheVaultOfTheClient(t *testing.T) {
+func TestStoreAbsentFilesSendsEachFileAndTheVaultOfTheClient(t *testing.T) {
 	a := &absentHost{}
 	modified := time.UnixMilli(1_700_000_000_123)
 	files := []host.AbsentFile{{Path: "Books/Guide.pdf", Size: 5 << 20, ModTime: modified, Hash: "ab12"}}

@@ -41,7 +41,7 @@ func TestListAbsentFilesReturnsNothingForANewVault(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesStoresEveryFieldOfAnEntry(t *testing.T) {
+func TestStoreAbsentFilesStoresEveryFieldOfAnEntry(t *testing.T) {
 	repo := openRepository(t)
 	if err := repo.PutAbsentFiles(t.Context(), getHomeVault(), []vault.AbsentFile{getGuide()}); err != nil {
 		t.Fatal(err)
@@ -55,7 +55,7 @@ func TestPutAbsentFilesStoresEveryFieldOfAnEntry(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesReplacesTheEntryOfAPath(t *testing.T) {
+func TestStoreAbsentFilesReplacesTheEntryOfAPath(t *testing.T) {
 	repo := openRepository(t)
 	newer := getGuide()
 	newer.Size, newer.Hash = 7<<20, "cd34"

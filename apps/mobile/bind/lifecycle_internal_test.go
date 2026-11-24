@@ -24,7 +24,7 @@ type answeringPlugin struct {
 	called []string
 }
 
-func (p *answeringPlugin) getCalled() []string {
+func (p *answeringPlugin) getCallNames() []string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return slices.Clone(p.called)
@@ -80,7 +80,7 @@ func TestSuspendAndResumeAskEveryPluginThatFollowsTheScreen(t *testing.T) {
 	}
 
 	for _, plugin := range []*answeringPlugin{first, second} {
-		if got := plugin.getCalled(); !slices.Equal(got, []string{"Suspend", "Resume"}) {
+		if got := plugin.getCallNames(); !slices.Equal(got, []string{"Suspend", "Resume"}) {
 			t.Errorf("a plugin was asked %v, want Suspend and then Resume", got)
 		}
 	}
@@ -95,7 +95,7 @@ func TestSuspendReturnsTheFailureOfAPluginAndStillAsksTheOthers(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), lifecycleService) {
 		t.Errorf("got %v, want the failure to name the service", err)
 	}
-	if got := other.getCalled(); !slices.Equal(got, []string{"Suspend"}) {
+	if got := other.getCallNames(); !slices.Equal(got, []string{"Suspend"}) {
 		t.Errorf("the plugin after the broken one was asked %v, want Suspend", got)
 	}
 }
@@ -108,7 +108,7 @@ func TestAPluginThatDoesNotKnowTheTokenIsNotAsked(t *testing.T) {
 	if err := newRunningWith(call).Suspend(); err == nil {
 		t.Error("got nil, want the refusal of the plugin")
 	}
-	if got := plugin.getCalled(); len(got) != 0 {
+	if got := plugin.getCallNames(); len(got) != 0 {
 		t.Errorf("a call with a wrong token reached the plugin: %v", got)
 	}
 }

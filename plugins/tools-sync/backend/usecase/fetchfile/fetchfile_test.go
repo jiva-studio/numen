@@ -33,7 +33,7 @@ func TestFetchFile_PlacesTheWholeFileAndListsItNoMore(t *testing.T) {
 	}
 }
 
-func TestFetchFile_LeavesNothingForThePassToSend(t *testing.T) {
+func TestFetchFile_ProducesNoChangeForThePassToSend(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	before := len(w.Phone.ReadChanges(t, w.Phone.GetRemoteID(t, synctest.PhoneVault)))

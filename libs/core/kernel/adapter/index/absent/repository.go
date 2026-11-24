@@ -73,7 +73,6 @@ func (r *Repository) GetAbsentFile(ctx context.Context, v domain.Vault, path str
 	return f, true, nil
 }
 
-// RemoveAbsentFiles deletes the entries of the paths.
 func (r *Repository) RemoveAbsentFiles(ctx context.Context, v domain.Vault, paths []string) error {
 	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		for _, p := range paths {

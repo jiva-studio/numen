@@ -93,7 +93,7 @@ func writeStoreFile(t *testing.T, content string) string {
 	return name
 }
 
-func TestPutAbsentFilesListsTheFileInTheRegistry(t *testing.T) {
+func TestStoreAbsentFilesListsTheFileInTheRegistry(t *testing.T) {
 	p := newPhone(t, nil)
 	p.putEntry(t, getGuideEntry(guideContent))
 	if got := p.getEntries(t); len(got) != 1 || got[0].Path != guidePath {
@@ -101,7 +101,7 @@ func TestPutAbsentFilesListsTheFileInTheRegistry(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesRefusesAPathThatHoldsAFileOfAnotherHash(t *testing.T) {
+func TestStoreAbsentFilesRefusesAPathWithAFileOfAnotherHash(t *testing.T) {
 	p := newPhone(t, map[string]string{guidePath: "my own notes in a file"})
 	err := file.NewPutAbsentFiles(p.readers, p.absent).Execute(t.Context(), p.vault, []vault.AbsentFile{getGuideEntry(guideContent)})
 	if !errors.Is(err, vault.ErrFilePresent) {
@@ -112,7 +112,7 @@ func TestPutAbsentFilesRefusesAPathThatHoldsAFileOfAnotherHash(t *testing.T) {
 	}
 }
 
-func TestPutAbsentFilesAcceptsAPathThatHoldsTheSameContent(t *testing.T) {
+func TestStoreAbsentFilesAcceptsAPathWithTheSameContent(t *testing.T) {
 	p := newPhone(t, map[string]string{guidePath: guideContent})
 	p.putEntry(t, getGuideEntry(guideContent))
 }

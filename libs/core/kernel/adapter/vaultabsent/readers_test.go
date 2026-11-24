@@ -27,7 +27,6 @@ func getGuide() vault.AbsentFile {
 	}
 }
 
-// openPhone returns the reader of a vault holding the notes given, with the registry as the phone has it.
 func openPhone(t *testing.T, notes map[string]string, absent ...vault.AbsentFile) vaultport.VaultReader {
 	t.Helper()
 	v := domain.Vault{ID: "01VAULT0000000000000000000", Path: vaulttest.CreateVault(t, notes, nil)}
@@ -62,7 +61,7 @@ func walk(t *testing.T, reader vaultport.VaultReader) map[string]domain.FileStat
 	return got
 }
 
-func TestWalkFilesListsAnAbsentFileBesideTheFilesOfTheVault(t *testing.T) {
+func TestWalkFilesListsAnAbsentFileNextToTheFilesOfTheVault(t *testing.T) {
 	reader := openPhone(t, map[string]string{"Shopping list.md": "milk"}, getGuide())
 	got := walk(t, reader)
 	if _, isNote := got["Shopping list.md"]; !isNote || len(got) != 2 {
@@ -104,7 +103,7 @@ func TestListShowsAnAbsentFileInItsFolder(t *testing.T) {
 	}
 }
 
-func TestListShowsAFolderThatHoldsOnlyAbsentFiles(t *testing.T) {
+func TestListShowsAFolderOfOnlyAbsentFiles(t *testing.T) {
 	reader := openPhone(t, map[string]string{"Shopping list.md": "milk"}, getGuide())
 	entries, err := reader.List(t.Context(), "")
 	if err != nil {

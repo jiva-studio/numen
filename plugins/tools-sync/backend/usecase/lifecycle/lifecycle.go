@@ -54,8 +54,20 @@ type Lifecycle struct {
 
 // running is the loop and the stream while the application is on the screen.
 type running struct {
-	stop context.CancelFunc
-	done sync.WaitGroup
+	stop   context.CancelFunc
+	done   sync.WaitGroup
+	mu     sync.Mutex
+	failed []error
+}
+
+// record keeps a failure of the loop or of a pass that is not a server away or a stop.
+func (r *running) record(err error) {
+	if isIgnored(err) {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.failed = append(r.failed, err)
 }
 
 // NewLifecycle returns the use case over the dependencies.
@@ -74,11 +86,13 @@ func (u *Lifecycle) Resume(ctx context.Context) error {
 	started.done.Add(2)
 	go func() {
 		defer started.done.Done()
-		_ = u.deps.Loop.Execute(runCtx)
+		started.record(u.deps.Loop.Execute(runCtx))
 	}()
 	go func() {
 		defer started.done.Done()
-		_ = u.deps.Stream.Watch(runCtx, func(id domain.VaultID) { _ = u.deps.Pass.Execute(runCtx, id) })
+		started.record(u.deps.Stream.Watch(runCtx, func(id domain.VaultID) {
+			started.record(u.deps.Pass.Execute(runCtx, id))
+		}))
 	}()
 	u.running, u.isFlushed = started, false
 	return nil
@@ -89,20 +103,22 @@ func (u *Lifecycle) Resume(ctx context.Context) error {
 func (u *Lifecycle) Suspend(ctx context.Context) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
+	var stopped error
 	if u.running != nil {
 		u.running.stop()
 		u.running.done.Wait()
+		stopped = errors.Join(u.running.failed...)
 		u.running = nil
 	} else if u.isFlushed {
 		return nil
 	}
 	u.isFlushed = true
-	return u.flush(context.WithoutCancel(ctx))
+	return errors.Join(stopped, u.flush(context.WithoutCancel(ctx)))
 }
 
 // flush passes over every connected vault and gives up when Grace has gone.
 func (u *Lifecycle) flush(ctx context.Context) error {
-	ids, err := u.listConnected(ctx)
+	ids, err := u.getConnectedIDs(ctx)
 	if err != nil {
 		return err
 	}
@@ -120,11 +136,8 @@ func (u *Lifecycle) flush(ctx context.Context) error {
 	}()
 	graceCtx, endGrace := context.WithCancel(ctx)
 	defer endGrace()
-	graced := make(chan struct{})
-	go func() {
-		defer close(graced)
-		_ = u.deps.Clock.Wait(graceCtx, Grace)
-	}()
+	graced := make(chan error, 1)
+	go func() { graced <- u.deps.Clock.Wait(graceCtx, Grace) }()
 	select {
 	case <-ended:
 	case <-graced:
@@ -135,7 +148,7 @@ func (u *Lifecycle) flush(ctx context.Context) error {
 	return joinFailures(failures)
 }
 
-func (u *Lifecycle) listConnected(ctx context.Context) ([]domain.VaultID, error) {
+func (u *Lifecycle) getConnectedIDs(ctx context.Context) ([]domain.VaultID, error) {
 	vaults, err := u.deps.Host.GetVaults(ctx)
 	if err != nil {
 		return nil, err
@@ -150,12 +163,17 @@ func (u *Lifecycle) listConnected(ctx context.Context) ([]domain.VaultID, error)
 	return ids, nil
 }
 
-// joinFailures returns the failures that are not a server away or a pass cut short: the loop reports those.
+// isIgnored is true for no failure, a stop and a server away: the loop reports a server away.
+func isIgnored(err error) bool {
+	return err == nil || errors.Is(err, context.Canceled) || errors.Is(err, syncprotocol.ErrUnreachable) ||
+		errors.Is(err, sessiondomain.ErrUnreachable)
+}
+
+// joinFailures returns the failures of the passes that isIgnored does not name.
 func joinFailures(failures <-chan error) error {
 	var joined []error
 	for err := range failures {
-		if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, syncprotocol.ErrUnreachable) ||
-			errors.Is(err, sessiondomain.ErrUnreachable) {
+		if isIgnored(err) {
 			continue
 		}
 		joined = append(joined, err)

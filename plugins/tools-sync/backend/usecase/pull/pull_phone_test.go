@@ -33,14 +33,14 @@ func newPhonePair(t *testing.T) *pair {
 
 func getHeavy() string { return strings.Repeat("g", heavySize) }
 
-func countBlobUrlCalls(p *pair) int {
+func countBlobURLCalls(p *pair) int {
 	return p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
 }
 
 func TestPullChanges_ListsAHeavyFileAsAbsentAndDownloadsNothingOnAPhone(t *testing.T) {
 	p := newPhonePair(t)
 	p.push(t, guidePath, getHeavy(), nil)
-	before := countBlobUrlCalls(p)
+	before := countBlobURLCalls(p)
 
 	result := p.pull(t, trustAll)
 
@@ -48,7 +48,7 @@ func TestPullChanges_ListsAHeavyFileAsAbsentAndDownloadsNothingOnAPhone(t *testi
 	if len(listed) != 1 || listed[0].Path != guidePath || listed[0].Size != heavySize || listed[0].Hash != note.Hash([]byte(getHeavy())) {
 		t.Errorf("absent files = %+v, want %s with its size and hash", listed, guidePath)
 	}
-	if after := countBlobUrlCalls(p); after != before {
+	if after := countBlobURLCalls(p); after != before {
 		t.Errorf("blob URL requests grew from %d to %d, want no download of a file on tap", before, after)
 	}
 	if _, _, err := p.b.Vaults.With(target).Read(t.Context(), guidePath); !errors.Is(err, host.ErrFileAbsent) {
@@ -145,7 +145,7 @@ func TestPullChanges_ListsTheNewHeadOfAnAbsentFileAndDownloadsNothing(t *testing
 	p.pull(t, trustAll)
 	newer := strings.Repeat("h", heavySize)
 	p.push(t, guidePath, newer, &first)
-	before := countBlobUrlCalls(p)
+	before := countBlobURLCalls(p)
 
 	result := p.pull(t, trustAll)
 
@@ -153,7 +153,7 @@ func TestPullChanges_ListsTheNewHeadOfAnAbsentFileAndDownloadsNothing(t *testing
 	if len(listed) != 1 || listed[0].Hash != note.Hash([]byte(newer)) {
 		t.Errorf("absent files = %+v, want the entry of the new head", listed)
 	}
-	if after := countBlobUrlCalls(p); after != before {
+	if after := countBlobURLCalls(p); after != before {
 		t.Errorf("blob URL requests grew from %d to %d, want no download of a change nobody opened", before, after)
 	}
 	if len(result.Conflicts) != 0 {

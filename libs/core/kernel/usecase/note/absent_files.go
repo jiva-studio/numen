@@ -22,7 +22,6 @@ func (u MoveFile) WithAbsent(absent vaultport.AbsentFiles) MoveFile {
 	return u
 }
 
-// listAbsentUnder returns the entries at the path and the entries beneath it.
 func listAbsentUnder(ctx context.Context, absent vaultport.AbsentFiles, v domain.Vault, path string) ([]vault.AbsentFile, error) {
 	if absent == nil {
 		return nil, nil
@@ -40,7 +39,6 @@ func listAbsentUnder(ctx context.Context, absent vaultport.AbsentFiles, v domain
 	return under, nil
 }
 
-// removeAbsent deletes the entries at the path and beneath it and returns how many there were.
 func (u Remove) removeAbsent(ctx context.Context, v domain.Vault, path string) (int, error) {
 	under, err := listAbsentUnder(ctx, u.absent, v, path)
 	if err != nil || len(under) == 0 {
@@ -53,7 +51,6 @@ func (u Remove) removeAbsent(ctx context.Context, v domain.Vault, path string) (
 	return len(paths), u.absent.RemoveAbsentFiles(ctx, v, paths)
 }
 
-// moveAbsent moves the entries at from and beneath it to to, and returns how many there were.
 func (u MoveFile) moveAbsent(ctx context.Context, v domain.Vault, from, to string) (int, error) {
 	under, err := listAbsentUnder(ctx, u.absent, v, from)
 	if err != nil || len(under) == 0 {

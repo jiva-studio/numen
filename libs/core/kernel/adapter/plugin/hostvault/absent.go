@@ -35,7 +35,6 @@ type absentFiles struct {
 	session sessionAccess
 }
 
-// newAbsent returns the absent files of the writer's vault, or nil where the host has none.
 func (w Writer) newAbsent() vault.AbsentFiles {
 	if w.Absent == nil {
 		return nil

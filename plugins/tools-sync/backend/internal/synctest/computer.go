@@ -66,7 +66,6 @@ type Computer struct {
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
 	State    *hoststore.State
-	// LazyHeavy is set on a phone: files that are downloaded on tap are listed as absent.
 	LazyHeavy bool
 
 	healthEndpoint hostcall.Endpoint

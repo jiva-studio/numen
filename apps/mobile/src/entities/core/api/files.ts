@@ -20,7 +20,6 @@ async function readFailure(answer: Response): Promise<string> {
   return typeof message === 'string' && message !== '' ? message : `The core answered ${answer.status}`
 }
 
-/** One method of the sync plugin over the vault the core opened. */
 async function callSync(
   endpoint: SyncEndpoint,
   vaultId: string,

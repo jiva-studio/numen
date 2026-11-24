@@ -11,7 +11,7 @@ import (
 
 const guidePath = "Books/Guide.pdf"
 
-func newDownloaded(t *testing.T) (*synctest.PhoneWorld, string) {
+func newDownloadedWorld(t *testing.T) (*synctest.PhoneWorld, string) {
 	t.Helper()
 	w := synctest.NewPhoneWorld(t)
 	content := w.WriteGuide(t, guidePath)
@@ -22,7 +22,7 @@ func newDownloaded(t *testing.T) (*synctest.PhoneWorld, string) {
 }
 
 func TestDropDownload_ListsTheFileAndFreesItsBytes(t *testing.T) {
-	w, _ := newDownloaded(t)
+	w, _ := newDownloadedWorld(t)
 
 	if err := w.DropDownload(t.Context(), guidePath); err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestDropDownload_ListsTheFileAndFreesItsBytes(t *testing.T) {
 }
 
 func TestDropDownload_IsNoDeleteForThePass(t *testing.T) {
-	w, _ := newDownloaded(t)
+	w, _ := newDownloadedWorld(t)
 	remote := w.Phone.GetRemoteID(t, synctest.PhoneVault)
 	before := len(w.Phone.ReadChanges(t, remote))
 	if err := w.DropDownload(t.Context(), guidePath); err != nil {
@@ -63,7 +63,7 @@ func TestDropDownload_IsNoDeleteForThePass(t *testing.T) {
 }
 
 func TestDropDownload_RefusesAFileWithChanges(t *testing.T) {
-	w, content := newDownloaded(t)
+	w, content := newDownloadedWorld(t)
 	w.Phone.WriteNote(synctest.PhoneVault, guidePath, content+" and my notes")
 
 	err := w.DropDownload(t.Context(), guidePath)
@@ -77,7 +77,7 @@ func TestDropDownload_RefusesAFileWithChanges(t *testing.T) {
 }
 
 func TestDropDownload_LetsTheFileBeDownloadedAgain(t *testing.T) {
-	w, content := newDownloaded(t)
+	w, content := newDownloadedWorld(t)
 	if err := w.DropDownload(t.Context(), guidePath); err != nil {
 		t.Fatal(err)
 	}

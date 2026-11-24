@@ -66,8 +66,6 @@ func getCode(err error) server.ErrorCode {
 	return server.CodeInternal
 }
 
-// getWarning returns the text the phone shows for a failure of a download or of the removal of one, and the
-// empty text for a failure it has no words for.
 func getWarning(err error) string {
 	switch {
 	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):

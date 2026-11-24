@@ -56,8 +56,6 @@ func (u *PutAbsentFiles) Execute(ctx context.Context, v domain.Vault, files []va
 	return u.absent.PutAbsentFiles(ctx, v, listed)
 }
 
-// checkHeld reports whether the vault holds the bytes of the entry, and returns vault.ErrFilePresent
-// when it holds other bytes at its path.
 func checkHeld(ctx context.Context, reader vaultport.VaultReader, entry vault.AbsentFile) (bool, error) {
 	stat, err := reader.StatFile(ctx, entry.Path)
 	if errors.Is(err, fs.ErrNotExist) || err == nil && stat.IsAbsent {

@@ -74,7 +74,7 @@ func TestRemovingAFolderDeletesTheEntriesBelowIt(t *testing.T) {
 	}
 }
 
-func TestRemovingAPathThatNothingHoldsStillFails(t *testing.T) {
+func TestRemovingAnUnknownPathStillFails(t *testing.T) {
 	t.Parallel()
 	db := openIndex(t)
 	tr := newTrashScene()
@@ -122,7 +122,7 @@ func TestMovingAFolderMovesTheEntriesBelowIt(t *testing.T) {
 	}
 }
 
-func TestMovingAPathThatNothingHoldsStillFails(t *testing.T) {
+func TestMovingAnUnknownPathStillFails(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Shopping list.md": "milk"})
 	moving := tree{f.move().MoveFile.WithAbsent(f.db.AbsentFiles())}

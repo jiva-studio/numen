@@ -63,7 +63,6 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
-	// Absent lists the files the sync of a device left out, and keeps their bytes off the device.
 	Absent  bool
 	machine Machine
 }

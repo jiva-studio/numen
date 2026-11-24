@@ -111,7 +111,6 @@ func (v *Vault) EvictFile(ctx context.Context, path, expectedHash string) error 
 	return v.files.remove(path)
 }
 
-// checkAbsent returns host.ErrFileAbsent for a path that is listed and whose bytes are not held.
 func (v *Vault) checkAbsent(path string, readErr error) error {
 	if _, isListed := v.absent[path]; isListed && errors.Is(readErr, fs.ErrNotExist) {
 		return host.ErrFileAbsent

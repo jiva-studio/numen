@@ -36,7 +36,8 @@
       "key": "syncOnlyWhileOpen",
       "type": "boolean",
       "title": "Sync only while the app is open",
-      "description": "Stops the sync when the app leaves the screen and starts it when it returns",
+      "description": "Stops the sync while the app is off the screen",
+      "details": "Stops the sync when the app leaves the screen and starts it when it returns.",
       "default": false
     }
   ],

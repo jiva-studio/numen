@@ -165,7 +165,6 @@ type Download struct {
 	Total   int64  `json:"total"`
 }
 
-// GetDownloadsResponse is the downloads that run.
 type GetDownloadsResponse struct {
 	Downloads []Download `json:"downloads"`
 }

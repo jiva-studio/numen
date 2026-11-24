@@ -117,7 +117,7 @@ func TestResume_OpensTheStreamAgainAfterSuspend(t *testing.T) {
 	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
-func TestSuspend_SendsTheNoteWrittenOnThePhoneBeforeItStops(t *testing.T) {
+func TestSuspend_SendsTheNoteCreatedOnThePhoneBeforeItStops(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	life := newLifecycle(w, &synctest.Stream{})
 	if err := life.Resume(t.Context()); err != nil {
@@ -170,7 +170,7 @@ func TestSuspend_StopsAfterTheGraceWhenThePassDoesNotEnd(t *testing.T) {
 	}
 }
 
-func TestResume_SendsTheNoteWrittenWhileTheApplicationWasClosed(t *testing.T) {
+func TestResume_SendsTheNoteCreatedWhileTheApplicationWasClosed(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.Phone.WriteNote(synctest.PhoneVault, "Shopping list.md", "eggs")
 	w.Clock.Advance(time.Minute)
