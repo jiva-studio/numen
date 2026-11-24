@@ -3,9 +3,13 @@ import { describeCameraFailure, FRAMES_PER_SECOND, type ScannerCamera } from '@/
 import { doc } from '@/shared/api/dom'
 import { decodeFrame } from './decodeFrame'
 
+/** How long a code that stays in front of the camera is not reported again. */
+const SAME_CODE_PAUSE_MS = 2000
+
 export interface QrScannerSource {
   camera: ScannerCamera
   isAccepted: (text: string) => boolean
+  continuous: boolean
 }
 
 export interface QrScannerEvents {
@@ -16,7 +20,8 @@ export interface QrScannerEvents {
 
 /**
  * The camera of one scanner and the frames read from it: what it is waiting for, the problem it shows, and a way to
- * ask the camera again after a failure. The stream stops when the scanner unmounts.
+ * ask the camera again after a failure. The stream stops after the first scan; in the continuous mode it stops only
+ * when the scanner unmounts.
  */
 export function useQrScanner(
   video: Readonly<ShallowRef<HTMLVideoElement | null>>,
@@ -28,6 +33,8 @@ export function useQrScanner(
   let stream: MediaStream | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   let rejected = ''
+  let lastText = ''
+  let lastAt = 0
 
   function readFrame(): void {
     const view = video.value
@@ -46,6 +53,16 @@ export function useQrScanner(
       rejected = found
       problem.value = 'This code is not a link of Numen.'
       emit('failed', problem.value)
+      return
+    }
+    if (source.continuous) {
+      const now = Date.now()
+      const isRepeat = found === lastText && now - lastAt < SAME_CODE_PAUSE_MS
+      lastText = found
+      lastAt = now
+      if (isRepeat) return
+      problem.value = ''
+      emit('scanned', found)
       return
     }
     stop()

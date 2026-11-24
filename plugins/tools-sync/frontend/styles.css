@@ -57,13 +57,13 @@
 
 .sync-card__lead {
   margin: 0;
-  padding-block: 0.5rem 0.25rem;
+  padding-block: var(--numen-card-inset);
   color: var(--numen-hushed);
 }
 
 .sync-card__note {
   margin: 0;
-  padding-block: 0.5rem;
+  padding-block: var(--numen-card-inset);
   color: var(--numen-hushed);
 }
 
@@ -211,7 +211,7 @@
 }
 
 .subscription__text {
-  padding-block: calc(var(--numen-chrome-unit) / 2) calc(var(--numen-chrome-unit) / 4);
+  padding-block: var(--numen-card-inset);
   color: var(--numen-hushed);
 }
 
