@@ -44,6 +44,8 @@ export { reportFailure } from './shared/api/report'
 
 export { Spinner } from './shared/ui/spinner'
 
+export { StageList, type Stage, type StageState } from './shared/ui/stage-list'
+
 export { Toast } from './shared/ui/toast'
 
 export { createNamedIcon } from './shared/ui/named-icon'
