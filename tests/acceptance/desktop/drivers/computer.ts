@@ -359,7 +359,7 @@ export class ComputerDriver {
   }
 
   /** Makes the other computer reach the sync server only after this one sent its changes. */
-  leadToServer(computer: ComputerName): void {
+  connectToServer(computer: ComputerName): void {
     this.owner.sync.holdOthers(this.getScenario(computer))
   }
 

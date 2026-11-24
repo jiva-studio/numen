@@ -38,7 +38,7 @@ func Render(kit identitydomain.Kit) ([]byte, error) {
 	pdf.SetCreator("Numen", true)
 	pdf.SetCreationDate(kit.CreatedAt)
 	pdf.SetModificationDate(kit.CreatedAt)
-	page := sheetPage{pdf: pdf, text: pdf.UnicodeTranslatorFromDescriptor(""), kit: kit}
+	page := sheetPage{pdf: pdf, translate: pdf.UnicodeTranslatorFromDescriptor(""), kit: kit}
 	for _, sheet := range kit.Sheets {
 		page.draw(sheet)
 	}
@@ -50,9 +50,9 @@ func Render(kit identitydomain.Kit) ([]byte, error) {
 }
 
 type sheetPage struct {
-	pdf  *fpdf.Fpdf
-	text func(string) string
-	kit  identitydomain.Kit
+	pdf       *fpdf.Fpdf
+	translate func(string) string
+	kit       identitydomain.Kit
 }
 
 func (p sheetPage) draw(sheet identitydomain.Sheet) {
@@ -72,10 +72,10 @@ func (p sheetPage) setFont(family, style string, size float64, c color) {
 	p.pdf.SetTextColor(c.r, c.g, c.b)
 }
 
-func (p sheetPage) write(x, y float64, s string) { p.pdf.Text(x, y, p.text(s)) }
+func (p sheetPage) write(x, y float64, s string) { p.pdf.Text(x, y, p.translate(s)) }
 
 func (p sheetPage) writeRight(x, y float64, s string) {
-	s = p.text(s)
+	s = p.translate(s)
 	p.pdf.Text(x-p.pdf.GetStringWidth(s), y, s)
 }
 

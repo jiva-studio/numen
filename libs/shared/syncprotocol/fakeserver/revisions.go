@@ -62,7 +62,7 @@ func (s *Server) newBatch(account string, req *syncv1.CommitRevisionsRequest) (*
 		return nil, err
 	}
 	if err := s.checkAuthors(account, req.GetRevisions()); err != nil {
-		return nil, asInvalid(err)
+		return nil, wrapInvalid(err)
 	}
 	if err := checkEpochs(vault, req.GetRevisions()); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -360,7 +360,7 @@ func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 	return nil
 }
 
-func asInvalid(err error) error {
+func wrapInvalid(err error) error {
 	if refused, ok := errors.AsType[*connect.Error](err); ok {
 		return refused
 	}
