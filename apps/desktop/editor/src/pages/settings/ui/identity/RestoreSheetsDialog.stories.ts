@@ -38,7 +38,7 @@ export const Waiting: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('dialog', { name: 'Restore from sheets' })).toBeVisible()
-    await expect(canvas.getByText('Sheet 1 waiting')).toBeVisible()
+    await expect(canvas.getByText('First sheet')).toBeVisible()
     await expect(canvas.queryByRole('textbox')).toBeNull()
   },
 }
@@ -48,8 +48,8 @@ export const OneScanned: Story = {
   args: { slots: [3, undefined] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Sheet 3 scanned')).toBeVisible()
-    await expect(canvas.getByText('Sheet 2 waiting')).toBeVisible()
+    await expect(canvas.getByText('Sheet 3')).toBeVisible()
+    await expect(canvas.getByText('Second sheet')).toBeVisible()
   },
 }
 
@@ -69,12 +69,12 @@ export const Restoring: Story = {
   },
 }
 
-/** The core refuses: the reason and Try again. */
+/** The core refuses: the reason, and the next sheet scanned starts over. */
 export const Failed: Story = {
   args: { slots: [3, 1], problem: 'The sheets belong to another account.' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('alert')).toHaveTextContent('another account')
-    await expect(canvas.getByRole('button', { name: 'Try again' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Try again' })).toBeNull()
   },
 }

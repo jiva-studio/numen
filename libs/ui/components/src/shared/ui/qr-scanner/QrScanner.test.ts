@@ -1,7 +1,10 @@
 /** The scanner reports why a camera did not open, and stops a camera it opened when it unmounts. */
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { decodeFrame } from './decodeFrame'
 import QrScanner from './QrScanner.vue'
+
+vi.mock('./decodeFrame', () => ({ decodeFrame: vi.fn() }))
 
 const makeStream = () => {
   const stop = vi.fn()
@@ -81,5 +84,70 @@ describe('a QR scanner', () => {
     mount(QrScanner, { props: { camera } })
     await flushPromises()
     expect(camera).toHaveBeenCalledOnce()
+  })
+
+  it('has no frame over the picture and no button', () => {
+    const scanner = mount(QrScanner, {
+      props: { camera: () => new Promise<MediaStream>(() => undefined) },
+    })
+    expect(scanner.find('.qr-scanner__frame').exists()).toBe(false)
+    expect(scanner.find('button').exists()).toBe(false)
+  })
+})
+
+describe('a continuous QR scanner', () => {
+  const decode = vi.mocked(decodeFrame)
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    decode.mockReset()
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+    vi.spyOn(HTMLVideoElement.prototype, 'videoWidth', 'get').mockReturnValue(4)
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: () => undefined,
+      getImageData: () => ({}),
+    } as unknown as CanvasRenderingContext2D)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  const open = async (continuous: boolean) => {
+    const { stream, stop } = makeStream()
+    const scanner = mount(QrScanner, {
+      props: { camera: () => Promise.resolve(stream), continuous },
+    })
+    await flushPromises()
+    return { scanner, stop }
+  }
+  const frames = (count: number) => vi.advanceTimersByTimeAsync(count * 125)
+
+  it('reads the second code with the same mounted scanner and keeps the camera on', async () => {
+    const { scanner, stop } = await open(true)
+    decode.mockReturnValue('first')
+    await frames(1)
+    decode.mockReturnValue('second')
+    await frames(1)
+    expect(scanner.emitted('scanned')).toStrictEqual([['first'], ['second']])
+    expect(stop).not.toHaveBeenCalled()
+  })
+
+  it('reports a code held in front of the camera once', async () => {
+    const { scanner } = await open(true)
+    decode.mockReturnValue('first')
+    await frames(10)
+    expect(scanner.emitted('scanned')).toStrictEqual([['first']])
+  })
+
+  it('stops the camera after the first code when it is not continuous', async () => {
+    const { scanner, stop } = await open(false)
+    decode.mockReturnValue('first')
+    await frames(1)
+    decode.mockReturnValue('second')
+    await frames(1)
+    expect(scanner.emitted('scanned')).toStrictEqual([['first']])
+    expect(stop).toHaveBeenCalledOnce()
   })
 })

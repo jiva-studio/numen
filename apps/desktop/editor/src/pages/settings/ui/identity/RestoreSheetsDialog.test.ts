@@ -13,6 +13,7 @@ const makeCode = (kit: string, sheet: number, prefix: string): string =>
 // The camera is the outer edge: the stand-in only reports what a camera would scan.
 const camera = defineComponent({
   name: 'QrScanner',
+  props: ['continuous'],
   emits: ['scanned', 'unavailable'],
   template: '<div class="camera" />',
 })
@@ -44,16 +45,16 @@ describe('the restore from sheets dialog', () => {
     expect(wrapper.find('.camera').exists()).toBe(true)
     expect(wrapper.find('textarea').exists()).toBe(false)
     expect(wrapper.find('input').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Sheet 1 waiting')
-    expect(wrapper.text()).toContain('Sheet 2 waiting')
-    expect(wrapper.text()).toContain('Scan any 2 of your 3 sheets.')
+    expect(wrapper.text()).toContain('First sheet')
+    expect(wrapper.text()).toContain('Second sheet')
+    expect(wrapper.text()).toContain('Take two of your three recovery sheets and scan their QR codes one after the other.')
   })
 
   it('keeps the camera on after the first sheet and restores by itself after the second', async () => {
     const { wrapper, scan, run } = createDialog()
     await scan(makeCode('C0DE', 3, 'a'))
-    expect(wrapper.text()).toContain('Sheet 3 scanned')
-    expect(wrapper.text()).toContain('Sheet 2 waiting')
+    expect(wrapper.findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
+    expect(wrapper.text()).toContain('Second sheet')
     expect(wrapper.find('.camera').exists()).toBe(true)
     expect(run).not.toHaveBeenCalled()
     await scan(makeCode('C0DE', 1, 'b'))
@@ -76,7 +77,21 @@ describe('the restore from sheets dialog', () => {
     expect(run).toHaveBeenCalledOnce()
   })
 
-  it('shows the failure of the restore with Try again, which empties the slots', async () => {
+  it('keeps one scanner in continuous mode through both sheets', async () => {
+    const { wrapper, scan } = createDialog()
+    const before = wrapper.findComponent(camera).vm
+    expect(wrapper.findComponent(camera).props('continuous')).toBe(true)
+    await scan(makeCode('C0DE', 3, 'a'))
+    await scan(makeCode('C0DE', 1, 'b'))
+    expect(wrapper.findComponent(camera).vm).toBe(before)
+  })
+
+  it('has only Cancel as a button', () => {
+    const { wrapper } = createDialog()
+    expect(wrapper.findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
+  })
+
+  it('shows the failure of the restore and starts over with the next sheet scanned', async () => {
     const { wrapper, scan, problem } = createDialog(() => {
       problem.value = 'The sheets belong to another account.'
       return Promise.resolve()
@@ -84,9 +99,10 @@ describe('the restore from sheets dialog', () => {
     await scan(makeCode('C0DE', 1, 'a'))
     await scan(makeCode('C0DE', 2, 'b'))
     expect(wrapper.get('[role=alert]').text()).toBe('The sheets belong to another account.')
-    const retry = wrapper.findAll('button').find((one) => one.text() === 'Try again')
-    await retry?.trigger('click')
-    expect(wrapper.text()).toContain('Sheet 1 waiting')
+    expect(wrapper.findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
+    problem.value = ''
+    await scan(makeCode('C0DE', 3, 'c'))
     expect(wrapper.find('[role=alert]').exists()).toBe(false)
+    expect(wrapper.findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
   })
 })

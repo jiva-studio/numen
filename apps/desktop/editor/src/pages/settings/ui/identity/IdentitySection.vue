@@ -142,7 +142,6 @@ function onChooseNone(id: string): void {
       :is-busy="call.isBusy.value"
       @scanned="scanning.scan"
       @unavailable="actions.startRestore('restore-typed')"
-      @retry="scanning.retry"
       @cancel="actions.cancel"
     />
 

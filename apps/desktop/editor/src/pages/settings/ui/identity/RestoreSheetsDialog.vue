@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * The dialog that restores an identity from two sheets of a recovery kit by their QR codes. The camera
- * stays on: each sheet fills a slot, and the second one starts the restore. It has no field.
+ * The dialog that restores an identity from two sheets of a recovery kit by their QR codes. One camera session
+ * reads the first sheet and then the second, which starts the restore. It has no field and only Cancel as a button.
  */
-import { Check, LoaderCircle } from '@lucide/vue'
+import { Check, Circle, LoaderCircle } from '@lucide/vue'
 import { Button, QrScanner, type ScannerCamera } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import IdentityDialog from './IdentityDialog.vue'
@@ -20,7 +20,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'scanned', text: string): void
   (e: 'unavailable'): void
-  (e: 'retry'): void
   (e: 'cancel'): void
 }>()
 </script>
@@ -32,6 +31,7 @@ const emit = defineEmits<{
     @cancel="emit('cancel')"
   >
     <QrScanner
+      continuous
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="emit('scanned', $event)"
       @unavailable="emit('unavailable')"
@@ -43,8 +43,12 @@ const emit = defineEmits<{
         class="restore-slots__slot"
         :class="{ 'restore-slots__slot--done': sheet !== undefined }"
       >
-        <Check v-if="sheet !== undefined" :size="14" aria-hidden="true" />
-        {{ sheet === undefined ? words.restoreSheetWaiting(at + 1) : words.restoreSheetScanned(sheet) }}
+        <span class="restore-slots__icon" aria-hidden="true">
+          <Check v-if="sheet !== undefined" :size="14" />
+          <Circle v-else :size="14" />
+        </span>
+        <span>{{ words.restoreSheetSlot(at + 1) }}</span>
+        <span class="restore-slots__sheet">{{ sheet === undefined ? '' : words.restoreSheetNumber(sheet) }}</span>
       </li>
     </ul>
     <p v-if="isBusy" role="status" class="restore-sheets__line">
@@ -61,9 +65,6 @@ const emit = defineEmits<{
       <Button type="button" variant="ghost" :disabled="isBusy" @click="emit('cancel')">
         {{ words.identityCancel }}
       </Button>
-      <Button v-if="problem !== ''" type="button" variant="solid" @click="emit('retry')">
-        {{ words.restoreTryAgain }}
-      </Button>
     </template>
   </IdentityDialog>
 </template>
@@ -79,10 +80,20 @@ const emit = defineEmits<{
 }
 
 .restore-slots__slot {
-  display: flex;
-  gap: 0.375rem;
+  display: grid;
+  grid-template-columns: 1rem 1fr 5rem;
+  gap: 0.5rem;
   align-items: center;
   color: var(--numen-hushed);
+}
+
+.restore-slots__icon {
+  display: flex;
+  justify-content: center;
+}
+
+.restore-slots__sheet {
+  text-align: end;
 }
 
 .restore-slots__slot--done {
