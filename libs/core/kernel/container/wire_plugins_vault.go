@@ -37,7 +37,7 @@ type pluginVaultHooks struct {
 	Notes      *hostvault.NoteChanges
 }
 
-func getNoteChanges(notes note.UseCases) hostvault.NoteChanges {
+func getNoteChanges(notes noteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
 		AddLinks: note.NewAddLinks(notes.Edit.Linking),
@@ -115,7 +115,7 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 }
 
 func newArranger(
-	useCases note.UseCases, db *vaultIndex, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
+	useCases noteUseCases, db *vaultIndex, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:       getNoteChanges(useCases),

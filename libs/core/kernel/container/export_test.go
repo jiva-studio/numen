@@ -235,7 +235,7 @@ func (c TestInstallation) openTextVersions(db *Index) *textVersions {
 // These aliases let external container tests inspect the composition they exercise.
 type Index = vaultIndex
 type PluginVaultHooks = pluginVaultHooks
-type NoteUseCases = note.UseCases
+type NoteUseCases = noteUseCases
 
 func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
 	return c.openIndex(res, ctx)

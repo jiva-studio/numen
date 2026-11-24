@@ -210,7 +210,7 @@ func buildWindow(
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (note.UseCases, hostvault.NoteChanges) {
+func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := indexing.NewUpdateIndex(current.Get).Execute
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, createWindowView(state.Notices))
 	views.Moves = moves
