@@ -331,7 +331,7 @@ describe('PluginDetail with a contributed tab', () => {
       return h('div', { class: 'view', 'data-tab': this.id }, 'vaults')
     },
   })
-  const mountContributed = (overrides: Partial<PluginDetailProps> = {}) =>
+  const mountWithContributedTabs = (overrides: Partial<PluginDetailProps> = {}) =>
     mount(PluginDetail, {
       props: baseProps({
         hasSettings: true,
@@ -342,7 +342,7 @@ describe('PluginDetail with a contributed tab', () => {
     })
 
   it('lists the tab right after Settings', () => {
-    const tabs = mountContributed().findAll('[role="tab"]')
+    const tabs = mountWithContributedTabs().findAll('[role="tab"]')
 
     expect(tabs.map((one) => one.text())).toStrictEqual([
       'Settings',
@@ -353,7 +353,7 @@ describe('PluginDetail with a contributed tab', () => {
   })
 
   it('draws the views of the tab with no card around them and not the settings', async () => {
-    const wrapper = mountContributed()
+    const wrapper = mountWithContributedTabs()
     await openTab(wrapper, 'Sync')
 
     const view = wrapper.get('.view')
@@ -364,7 +364,7 @@ describe('PluginDetail with a contributed tab', () => {
   })
 
   it('moves through the tab with the arrow keys', async () => {
-    const wrapper = mountContributed()
+    const wrapper = mountWithContributedTabs()
     const selected = () => wrapper.get('[role="tab"][aria-selected="true"]').text()
 
     await wrapper.findAll('[role="tab"]')[0]?.trigger('keydown', { key: 'ArrowRight' })
@@ -374,7 +374,7 @@ describe('PluginDetail with a contributed tab', () => {
   })
 
   it('ties the tab to its panel by id', async () => {
-    const wrapper = mountContributed()
+    const wrapper = mountWithContributedTabs()
     await openTab(wrapper, 'Sync')
 
     const panel = wrapper.get('[role="tabpanel"]')

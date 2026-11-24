@@ -53,7 +53,7 @@ describe('SettingRow', () => {
     expect(document.activeElement).toBe(popover)
   })
 
-  it('stands over the page outside the row, so a card cannot clip it or grow around it', async () => {
+  it('renders over the page outside the row, so a card cannot clip it or grow around it', async () => {
     const row = mountRow(DETAILS)
     const before = row.element.children.length
     getInfoButton().click()

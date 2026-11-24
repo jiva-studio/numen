@@ -3,15 +3,12 @@ import type { JsonObject, VaultFlagsHost } from '@numen/plugin-loader'
 
 /** The flags plugins set on the vaults, which the when conditions read as `vault.flags`. */
 export interface VaultFlags {
-  /** The flags of a vault nested by the dotted id of the plugin and the key; empty for a vault none is set on. */
   getFlags: (vaultId: string) => JsonObject
-  /** What one plugin sets its flags with, under its own id. */
   createHost: (pluginId: string) => VaultFlagsHost
 }
 
 type Branch = Record<string, unknown>
 
-/** The branch of the name under the node, made as it is first needed; undefined where a flag stands in the way. */
 const getBranch = (node: Branch | undefined, name: string): Branch | undefined => {
   if (node === undefined) return undefined
   node[name] ??= Object.create(null) as Branch

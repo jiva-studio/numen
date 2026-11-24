@@ -12,7 +12,7 @@ describe('getViewTab', () => {
 })
 
 describe('hasPluginSettings with views of a contributed tab', () => {
-  it('is false where every view sits in a contributed tab', () => {
+  it('is false where every view is in a contributed tab', () => {
     const plugin = createPluginInfo('a.b', 'B', {
       settingsViews: [{ id: 'vaults', title: 'Vaults', tab: 'sync' }],
     })
@@ -37,13 +37,13 @@ describe('getRegisteredViews of a tab', () => {
     ['plain', { component: { name: 'Plain' } }],
   ])
 
-  it('lists the views of the tab asked for', () => {
+  it('returns the views of the requested tab', () => {
     expect(getRegisteredViews(declared, registered, 'sync').map((one) => one.id)).toStrictEqual([
       'vaults',
     ])
   })
 
-  it('lists the views of the default tab when no tab is asked for', () => {
+  it('returns the views of the default tab when no tab is requested', () => {
     expect(getRegisteredViews(declared, registered).map((one) => one.id)).toStrictEqual(['plain'])
   })
 })

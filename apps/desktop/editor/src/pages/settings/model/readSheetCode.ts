@@ -13,7 +13,6 @@ type SheetCodeReading =
   | { readonly code: SheetCode; readonly problem?: undefined }
   | { readonly code?: undefined; readonly problem: string }
 
-/** What the QR code of a kit sheet says: its kit, its number and its 33 words. Anything else is no sheet code. */
 function readSheetCode(text: string): SheetCodeReading {
   const bad = { problem: words.scanNotSheet }
   const trimmed = text.trim()

@@ -1,5 +1,5 @@
 /**
- * Where the popover of an info button stands over the page: fixed, below the button and flipped
+ * The position of the popover of an info button over the page: fixed, below the button and flipped
  * above it where there is no room below, kept inside the window.
  */
 import { ref, type Ref } from 'vue'

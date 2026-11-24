@@ -42,6 +42,7 @@ const DANGER = markRaw(
 )
 
 const isChoosingPlan = ref(false)
+let isKeptOpen = false
 const offers = computed(() => props.offers ?? [])
 
 const planActions = computed<readonly MenuItem[]>(() => [
@@ -79,11 +80,22 @@ function onToggle(): void {
 function onClose(): void {
   anchor.value = null
   isChoosingPlan.value = false
+  isKeptOpen = false
+}
+
+// The menu dismisses itself after every choice; choosing "Change plan" turns it into the plans instead.
+function onDismiss(): void {
+  if (isKeptOpen) {
+    isKeptOpen = false
+    return
+  }
+  onClose()
 }
 
 function onChoose(id: string): void {
   if (id === 'change') {
     isChoosingPlan.value = true
+    isKeptOpen = true
     return
   }
   const offer = isChoosingPlan.value ? offers.value.find((one) => one.id === id) : undefined
@@ -119,7 +131,7 @@ function onChoose(id: string): void {
     is-open
     trigger="keyboard"
     @choose="onChoose"
-    @dismiss="onClose"
+    @dismiss="onDismiss"
   >
     <template #icon="{ id }">
       <Check v-if="isChoosingPlan && id === currentId" :size="14" aria-hidden="true" />

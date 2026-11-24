@@ -53,7 +53,6 @@ const createSettingsOpener = (
 const getCurrentVault = (host: HostServices): string =>
   host.vault.vaults?.getState().current?.id ?? ''
 
-/** The folder of the vault the command ran on: the vault root is the empty folder. */
 const getFolder = (path: string): string => {
   const trimmed = path.replace(/^\/+|\/+$/g, '')
   return trimmed === '.' ? '' : trimmed
@@ -171,17 +170,17 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   registerShare(plugin, host)
   const flags = host.ui.vaultFlags
   if (flags === undefined) throw new Error('the window gives no vault flags')
-  const synced = createSyncedFlags({
+  const syncedFlags = createSyncedFlags({
     client: vaultsClient,
     flags,
     getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
   })
-  registerSync(plugin, host, synced.refresh)
+  registerSync(plugin, host, syncedFlags.refresh)
   registerUnsync(plugin, host, STOP_SYNC_COMMAND)
   registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
-  synced.start()
-  plugin.identity.subscriptions.push({ dispose: () => synced.stop() })
+  syncedFlags.start()
+  plugin.identity.subscriptions.push({ dispose: () => syncedFlags.stop() })
   state.start()
 }
 

@@ -129,7 +129,7 @@ export const WORDS = {
   syncVault: 'Sync this vault',
   syncVaultTitle: (name: string): string => `Sync ${name}`,
   syncVaultText: (name: string): string =>
-    `The cloud has a vault named ${name}. Use that copy or send this one.`,
+    `Your cloud holds the vault ${name}. Use it or send this one.`,
   useCloudCopy: 'Use the cloud copy',
   sendThisOne: 'Send this vault',
   syncStarted: 'This vault is synced now.',

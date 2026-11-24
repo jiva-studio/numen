@@ -145,7 +145,10 @@ describe('SubscriptionCard account actions', () => {
     mounted.push(wrapper)
     await flushPromises()
 
-    expect(findButton('More actions')).toBeUndefined()
+    await press('More actions')
+
+    expect(findButton('Export identity data')).toBeUndefined()
+    expect(findButton('Delete cloud data')).toBeUndefined()
   })
 
   it('asks about the seven days, that notes stay and that the subscription is cancelled', async () => {

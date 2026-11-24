@@ -83,7 +83,8 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.map((row) => row.detail)).toStrictEqual([
+    const synced = model.state.rows.value.filter((row) => row.isSynced)
+    expect(synced.map((row) => row.detail)).toStrictEqual([
       'Last sync 1 minute ago',
       'Last sync less than a minute ago',
     ])

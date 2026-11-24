@@ -157,7 +157,6 @@ export interface PluginSettingsViewInfo {
   readonly id: string
   readonly title: string
   readonly page?: string | undefined
-  /** The id of the tab the view is drawn in; empty or absent is the default tab "settings". */
   readonly tab?: string | undefined
 }
 

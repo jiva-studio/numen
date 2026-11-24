@@ -10,7 +10,6 @@ export interface InvitationViewOptions {
   readonly invitations: ShareInvitationClient
   readonly shares: FolderSharesClient
   readonly target: FolderTarget
-  /** The name of the vault, which names the share of the whole vault. */
   readonly vaultName?: string
   readonly close: () => void
   readonly refreshMs?: number

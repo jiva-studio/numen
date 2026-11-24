@@ -21,7 +21,7 @@ const meta: Meta<typeof CardAction> = {
 export default meta
 type Story = StoryObj<typeof CardAction>
 
-/** The label stands beside the icon. */
+/** The label is beside the icon. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('button', { name: 'Create' })).toBeVisible()

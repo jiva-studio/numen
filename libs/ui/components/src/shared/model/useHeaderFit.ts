@@ -5,7 +5,6 @@ const HEADER_LEVELS = ['full', 'icons', 'menu'] as const
 
 type HeaderLevel = (typeof HEADER_LEVELS)[number]
 
-/** The header is crowded when its content spills over it or a label shows an ellipsis. */
 function isCrowded(element: HTMLElement): boolean {
   if (element.scrollWidth > element.clientWidth) return true
   return [...element.querySelectorAll<HTMLElement>('.card-action__label')].some(
