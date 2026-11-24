@@ -82,7 +82,8 @@ type Resources struct {
 
 	vaultLocks    *vaultwriter.Locks
 	watches       *vaultwatch.Hub
-	settings      settingsadapter.Shared
+	settings      *settingsadapter.Files
+	settingEvents *settingevents.Events
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
 	progress      *identity.Progress
@@ -94,7 +95,8 @@ func NewResources() *Resources {
 		Chunks:        &note.ChunkTokens{},
 		vaultLocks:    vaultwriter.NewLocks(),
 		watches:       vaultwatch.NewHub(),
-		settings:      settingsadapter.Shared{Files: settingsadapter.NewFiles(), Events: settingevents.New()},
+		settings:      settingsadapter.NewFiles(),
+		settingEvents: settingevents.New(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
@@ -173,8 +175,8 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
 		Watches:         res.watches,
-		SettingsFiles:   res.settings.Files,
-		SettingEvents:   res.settings.Events,
+		SettingsFiles:   res.settings,
+		SettingEvents:   res.settingEvents,
 		PluginChanges:   &res.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
