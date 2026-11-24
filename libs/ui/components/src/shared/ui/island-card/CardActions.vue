@@ -29,7 +29,7 @@ const anchor = ref<{ at: Position; wide: number } | null>(null)
 const overflow = computed<readonly MenuItem[]>(() =>
   props.items
     .filter((item) => item.isPrimary !== true)
-    .map((item) => ({ id: item.id, text: item.label, isDisabled: item.isDisabled })),
+    .map((item) => ({ id: item.id, text: item.label, isDisabled: item.isDisabled === true })),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -57,9 +57,9 @@ function onChoose(id: string): void {
     v-for="item in items"
     :key="item.id"
     :label="item.label"
-    :is-primary="item.isPrimary"
+    :is-primary="item.isPrimary === true"
     :is-secondary="item.isPrimary !== true"
-    :is-disabled="item.isDisabled"
+    :is-disabled="item.isDisabled === true"
     @click="emit('choose', item.id)"
   >
     <component :is="item.icon" :size="14" aria-hidden="true" />

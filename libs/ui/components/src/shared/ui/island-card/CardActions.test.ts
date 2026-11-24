@@ -23,7 +23,7 @@ describe('the card actions', () => {
     const names = actions.findAll('button').map((button) => button.attributes('aria-label'))
 
     expect(names).toEqual(['Restore from words', 'Create', 'More actions'])
-    expect(actions.get('[title="Create"]').exists()).toBe(true)
+    expect(actions.find('[title="Create"]').exists()).toBe(true)
   })
 
   it('emits the action that was pressed', async () => {
