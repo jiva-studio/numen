@@ -64,7 +64,14 @@ const createWorld = (): { world: World; invitations: ShareInvitationClient; shar
 const create = (refreshMs = 10_000) => {
   const { world, invitations, shares } = createWorld()
   const close = vi.fn()
-  const view = createInvitationView({ invitations, shares, target: TARGET, close, refreshMs })
+  const view = createInvitationView({
+    invitations,
+    shares,
+    target: TARGET,
+    close,
+    refreshMs,
+    now: () => new Date('2026-11-25T11:50:00Z'),
+  })
   return { world, invitations, shares, view, close }
 }
 

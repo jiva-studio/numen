@@ -241,7 +241,7 @@ func TestTheVaultWaitsOnTheClockTheInstallationNamed(t *testing.T) {
 	named := testsupport.NewClock()
 	resources := NewResources()
 	resources.Now = named
-	quiet := openVaultAccess(Paths{}, GetClock(resources), resources.vaultLocks, resources.watches, nil).Clock.After(indexing.QuietPeriod)
+	quiet := openVaultAccess(Paths{}, GetClock(resources), resources.vault.locks, resources.vault.watches, nil).Clock.After(indexing.QuietPeriod)
 	named.Advance(indexing.QuietPeriod)
 	select {
 	case <-quiet:

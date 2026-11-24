@@ -10,6 +10,7 @@ import {
   shareInvitationClient,
   vaultsClient,
 } from './api/wire'
+import { getCurrentDate } from '@numen/ui'
 import { createAcceptanceView } from './model/acceptance'
 import { createInvitationView } from './model/invitation'
 import { createSyncState } from './model/sync'
@@ -69,6 +70,7 @@ const registerShare = (plugin: PluginContext, host: HostServices): void => {
         shares: folderSharesClient,
         target: { vaultId: getCurrentVault(host), folder: getFolder(note.path) },
         vaultName: host.vault.vaults?.getState().current?.name ?? '',
+        now: getCurrentDate,
         close: () => {
           view.stop()
           dialog.close()
@@ -89,6 +91,7 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
       if (dialogs === undefined) return Promise.resolve()
       const view = createAcceptanceView({
         client: acceptInvitationClient,
+        now: getCurrentDate,
         close: () => {
           view.stop()
           dialog.close()

@@ -67,7 +67,7 @@ function onToggleInfo(): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function closeInfo(isFocusReturned: boolean): void {
+function onCloseInfo(isFocusReturned: boolean): void {
   isInfoOpen.value = false
   if (isFocusReturned) infoButton.value?.focus()
 }
@@ -118,7 +118,7 @@ function scrollIntoView(): void {
         :text="trimmedDetails"
         :anchor="infoButton"
         :from="label"
-        @close="closeInfo"
+        @close="onCloseInfo"
       />
     </div>
     <div class="settings__value">

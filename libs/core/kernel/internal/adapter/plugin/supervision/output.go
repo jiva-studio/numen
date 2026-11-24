@@ -18,8 +18,6 @@ const (
 	outputQueueLines   = 256
 )
 
-// forwardOutput records each line read from out until out ends. The lines pass
-// through a bounded queue, so a slow log never blocks the plugin: when the queue is full the line is dropped.
 func forwardOutput(out io.Reader, record func(domainlogs.Entry), pluginID string, level domainlogs.Level) {
 	if record == nil {
 		discardOutput(out)
@@ -72,27 +70,26 @@ func cutLine(chunk []byte, truncated bool) string {
 	return line
 }
 
-// discardOutput drains out; a read error only ends the draining.
 func discardOutput(out io.Reader) {
 	if _, err := io.Copy(io.Discard, out); err != nil {
 		return
 	}
 }
 
-// outputLog holds where the lines a plugin process writes to its output are recorded.
-type outputLog struct {
+// OutputLog holds where the lines a plugin process writes to its output are recorded.
+type OutputLog struct {
 	outputMu sync.RWMutex
 	record   func(domainlogs.Entry)
 }
 
-// SetOutputLog sets where the lines a plugin process writes to its output are recorded. Without it they are dropped.
-func (l *outputLog) SetOutputLog(record func(domainlogs.Entry)) {
+// Set sets where the lines a plugin process writes to its output are recorded. Without it they are dropped.
+func (l *OutputLog) Set(record func(domainlogs.Entry)) {
 	l.outputMu.Lock()
 	defer l.outputMu.Unlock()
 	l.record = record
 }
 
-func (l *outputLog) getOutputLog() func(domainlogs.Entry) {
+func (l *OutputLog) get() func(domainlogs.Entry) {
 	l.outputMu.RLock()
 	defer l.outputMu.RUnlock()
 	return l.record

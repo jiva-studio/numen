@@ -170,14 +170,18 @@ const press = async (tab: Page, text: string) => {
   await flushPromises()
 }
 
-const pressRestore = async (tab: Page, detail: string) => {
-  await press(tab, 'Restore')
+const chooseRestore = async (tab: Page, detail: string) => {
   const item = getBody(tab)
     .findAll('[role=menuitem]')
     .find((one) => one.text().includes(detail))
   if (!item) throw new Error(`the Restore menu has no item "${detail}"`)
   await item.trigger('click')
   await flushPromises()
+}
+
+const pressRestore = async (tab: Page, detail: string) => {
+  await press(tab, 'Restore')
+  await chooseRestore(tab, detail)
 }
 
 const getShownWords = (tab: Page): string[] =>
@@ -573,11 +577,12 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     expect(tab.text()).toContain('Recovery kit')
     expect(tab.text()).toContain('Printed sheets to bring your identity back')
     expect(tab.text()).not.toContain('if you lose this computer')
+    expect(hasDialog(tab)).toBe(false)
     await tab.get('[aria-label="About Recovery kit"]').trigger('click')
     expect(getBody(tab).text()).toContain(
       'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
     )
-    expect(getDownload(tab)).toBeDefined()
+    expect(getDialog(tab).attributes('aria-label')).toBe('About Recovery kit')
     expect(hasDialog(tab)).toBe(false)
   })
 
@@ -701,7 +706,7 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
       ['Recovery kit', 'Scan the QR codes of two sheets'],
       ['Recovery kit', 'Type the words of two sheets'],
     ])
-    await pressRestore(tab, 'Type the 12 words')
+    await chooseRestore(tab, 'Type the 12 words')
     expect(getDialog(tab).get('h2').text()).toBe('Recovery words')
     expect(getDialog(tab).findAll('.camera, video')).toHaveLength(0)
   })

@@ -7,7 +7,6 @@ import { computed } from 'vue'
 import { Copy } from '@lucide/vue'
 import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
-import { getTimeLeftText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
 import type { InvitationView } from '../model/invitation'
 import { WORDS as words } from '../words'
@@ -65,7 +64,7 @@ function onDecline(): void {
         {{ words.copyLinkButton }}
       </Button>
       <p class="sync-dialog__text sync-dialog__text--hushed">
-        {{ words.validUntil(getTimeLeftText(state.expiresAt)) }}
+        {{ words.validUntil(state.getTimeLeft()) }}
       </p>
       <Button variant="ghost" size="small" :disabled="state.isBusy" @click="onRevoke">
         {{ words.revoke }}

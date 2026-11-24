@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
+import { getCurrentDate } from '@numen/ui'
 import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
 import type { FolderSharesClient, SharedFolder } from '../api/shares'
 import { createInvitationView } from '../model/invitation'
@@ -62,6 +63,7 @@ const createState = (setup: Setup) => {
     shares: createShares(setup),
     target: TARGET,
     close: () => undefined,
+    now: getCurrentDate,
     refreshMs: 1_000_000,
   })
   state.start().catch(state.fail)

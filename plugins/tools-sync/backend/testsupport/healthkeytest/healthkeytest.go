@@ -1,4 +1,4 @@
-// Package healthkeytest tells whether the host takes the key of a health item.
+// Package healthkeytest reports whether the host takes the key of a health item.
 package healthkeytest
 
 import (

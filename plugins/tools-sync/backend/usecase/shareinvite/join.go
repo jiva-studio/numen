@@ -207,7 +207,6 @@ func watchJoin(ctx context.Context, deps Deps, mine *join) {
 	}
 }
 
-// retryJoin finishes the join when the failure ends it and reports whether the watch goes on after a wait.
 func retryJoin(ctx context.Context, deps Deps, mine *join, failure error) bool {
 	switch {
 	case errors.Is(failure, syncprotocol.ErrChannelGone):

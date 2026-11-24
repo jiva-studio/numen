@@ -1,17 +1,10 @@
 <script setup lang="ts">
 /** A labelled input in the style of the fields of the identity dialogs, with room at its right for a button. */
 import { useId } from 'vue'
+import type { LinkFieldProps } from './LinkField.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-defineProps<{
-  label: string
-  modelValue: string
-  isReadonly?: boolean
-  isMono?: boolean
-  isLabelHidden?: boolean
-  inputmode?: 'numeric' | 'text'
-  maxlength?: number
-}>()
+defineProps<LinkFieldProps>()
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 

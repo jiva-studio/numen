@@ -3,6 +3,7 @@ import type { FolderSharesClient } from '../api/shares'
 import type { FolderTarget, ShareInvitationClient, ShareRequest } from '../api/invitations'
 import { getErrorMessage } from './vaults'
 import { createPoller } from './polling'
+import { getTimeLeftText } from '../lib/expiry'
 
 const REFRESH_MS = 2000
 
@@ -12,6 +13,7 @@ export interface InvitationViewOptions {
   readonly target: FolderTarget
   readonly vaultName?: string
   readonly close: () => void
+  readonly now: () => Date
   readonly refreshMs?: number
 }
 
@@ -22,7 +24,7 @@ export interface SharePerson {
 
 /** What the dialog "Share..." holds: the link to send, the device that asks to read, and the devices that read. */
 export function createInvitationView(options: InvitationViewOptions) {
-  const { invitations, shares, target, close, vaultName = '', refreshMs = REFRESH_MS } = options
+  const { invitations, shares, target, close, now, vaultName = '', refreshMs = REFRESH_MS } = options
   const name = target.folder.split('/').at(-1) || vaultName
   const id = ref('')
   const link = ref('')
@@ -113,6 +115,7 @@ export function createInvitationView(options: InvitationViewOptions) {
     revoke: (): Promise<void> => answer(() => invitations.revokeShareInvitation(id.value)),
     removeAccess: (person: SharePerson): Promise<void> =>
       answer(() => shares.removeReader({ ...target, fingerprint: person.fingerprint })),
+    getTimeLeft: (): string => getTimeLeftText(expiresAt.value, now().getTime()),
     copyLink: (): Promise<void> => globalThis.navigator.clipboard.writeText(link.value),
     stop: poller.stop,
     close,

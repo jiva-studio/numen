@@ -61,7 +61,8 @@ type launchServices interface {
 // Processes starts the process of a plugin, or the handler of a built-in one, and holds the pipes it
 // opened for the process until the process exits.
 type Processes struct {
-	outputLog
+	// Output is where the lines of the plugin processes are recorded.
+	Output OutputLog
 
 	sups     processTable
 	clock    machineport.Clock
@@ -245,7 +246,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 
 	go func() {
-		forwardOutput(stdout, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelInfo)
+		forwardOutput(stdout, p.Output.get(), plug.Manifest.ID, domainlogs.LevelInfo)
 		closeResource(p.report, "stdout of plugin "+plug.Manifest.ID, stdout)
 	}()
 
@@ -339,7 +340,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
-	go forwardOutput(stderr, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelWarning)
+	go forwardOutput(stderr, p.Output.get(), plug.Manifest.ID, domainlogs.LevelWarning)
 	p.HoldStdin(plug.Manifest.ID, cmd.Process.Pid, stdin)
 	return cmd.Process, stdout, nil
 }

@@ -80,8 +80,7 @@ type Resources struct {
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vaultLocks    *vaultwriter.Locks
-	watches       *vaultwatch.Hub
+	vault         vaultShared
 	settings      sharedSettings
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
@@ -89,11 +88,16 @@ type Resources struct {
 	absentFiles   vaultport.AbsentFiles
 }
 
+// vaultShared holds what every vault of one installation shares: the write locks and the watches.
+type vaultShared struct {
+	locks   *vaultwriter.Locks
+	watches *vaultwatch.Hub
+}
+
 func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
-		vaultLocks:    vaultwriter.NewLocks(),
-		watches:       vaultwatch.NewHub(),
+		vault:         vaultShared{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
 		settings:      newSharedSettings(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
@@ -172,7 +176,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		SettingsPath:    c.SettingsPath,
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
-		Watches:         res.watches,
+		Watches:         res.vault.watches,
 		SettingsFiles:   res.settings.Files,
 		SettingEvents:   res.settings.Events,
 		PluginChanges:   &res.subscriptions.Changes,
@@ -190,7 +194,7 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	settings := createSettingsWiring(c, exec, prefs, res)
-	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	base := openVaultAccess(c.Paths, GetClock(res), res.vault.locks, res.vault.watches, texts)
 	base.Readers, base.AbsentFiles = vaultabsent.Wrap(base.Readers, res.absentFiles), res.absentFiles
 	plan := vaultIndexPlan{
 		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Resolver},
