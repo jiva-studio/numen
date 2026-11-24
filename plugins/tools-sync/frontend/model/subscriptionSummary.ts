@@ -20,14 +20,12 @@ export function useSubscriptionSummary(account: SubscriptionAccount, server: Ref
       phase: phase.value,
       dates: account.dates.value,
       server: server.value,
-      planName: knownPlan.value?.name ?? '',
     }),
   )
   const planLine = computed(() => {
     if (plan.value === '') return ''
     if (knownPlan.value === undefined) return formatSize(quotaBytes.value)
-    const shown = { ...knownPlan.value, quotaBytes: quotaBytes.value }
-    return getPlanLine(shown, phase.value !== 'active')
+    return getPlanLine({ ...knownPlan.value, quotaBytes: quotaBytes.value })
   })
   const hasUsage = computed(
     () =>

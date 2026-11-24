@@ -1,16 +1,28 @@
 <script setup lang="ts">
 /**
- * The "..." action of the card header and the menu it opens: export the identity data, and delete the cloud
- * data, which is marked as dangerous. Choosing an item emits it; nothing is done here.
+ * The "..." action of the card header and the menu it opens: change the plan, manage the subscription, export
+ * the identity data, and delete the cloud data, which is marked as dangerous. "Change plan" turns the menu into
+ * the plans, every one with its size and price, the current one checked and not to be chosen. Choosing an item
+ * emits it; nothing is done here.
  */
 import { computed, defineComponent, h, markRaw, ref, useTemplateRef } from 'vue'
-import { Download, Ellipsis, Trash2 } from '@lucide/vue'
+import { ArrowLeftRight, Check, Download, Ellipsis, Trash2, WalletCards } from '@lucide/vue'
 import { CardAction, Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
+import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
+import { getPlanItems } from './planItems'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ isExporting?: boolean }>()
+const props = defineProps<{
+  isExporting?: boolean
+  hasAccountActions?: boolean
+  canManage?: boolean
+  offers?: readonly PlanOffer[]
+  currentId?: string
+}>()
 const emit = defineEmits<{
+  (event: 'choose-plan', offer: PlanOffer): void
+  (event: 'manage'): void
   (event: 'export'): void
   (event: 'delete'): void
 }>()
@@ -29,10 +41,28 @@ const DANGER = markRaw(
   }),
 )
 
-const items = computed<readonly MenuItem[]>(() => [
-  { id: 'export', text: words.exportAccountData, group: 'safe', isDisabled: props.isExporting === true },
-  { id: 'delete', text: words.deleteCloudData, group: 'danger', component: DANGER },
+const isChoosingPlan = ref(false)
+const offers = computed(() => props.offers ?? [])
+
+const planActions = computed<readonly MenuItem[]>(() => [
+  ...(offers.value.length > 0 ? [{ id: 'change', text: words.changePlan, group: 'plan' }] : []),
+  ...(props.canManage === true
+    ? [{ id: 'manage', text: words.manageSubscription, group: 'plan' }]
+    : []),
 ])
+const accountActions = computed<readonly MenuItem[]>(() =>
+  props.hasAccountActions === true
+    ? [
+        { id: 'export', text: words.exportAccountData, group: 'safe', isDisabled: props.isExporting === true },
+        { id: 'delete', text: words.deleteCloudData, group: 'danger', component: DANGER },
+      ]
+    : [],
+)
+const items = computed(() =>
+  isChoosingPlan.value
+    ? getPlanItems(offers.value, props.currentId ?? '')
+    : [...planActions.value, ...accountActions.value],
+)
 
 const anchor = ref<{ at: Position; wide: number } | null>(null)
 
@@ -48,11 +78,20 @@ function onToggle(): void {
 
 function onClose(): void {
   anchor.value = null
+  isChoosingPlan.value = false
 }
 
 function onChoose(id: string): void {
+  if (id === 'change') {
+    isChoosingPlan.value = true
+    return
+  }
+  const offer = isChoosingPlan.value ? offers.value.find((one) => one.id === id) : undefined
   onClose()
-  if (id === 'export') emit('export')
+  if (offer !== undefined) {
+    if (offer.id !== props.currentId) emit('choose-plan', offer)
+  } else if (id === 'manage') emit('manage')
+  else if (id === 'export') emit('export')
   else if (id === 'delete') emit('delete')
 }
 </script>
@@ -75,14 +114,18 @@ function onChoose(id: string): void {
     :at="anchor.at"
     :asking="anchor.wide"
     :from="getTrigger()"
-    :name="words.moreActions"
+    :current="isChoosingPlan ? currentId : undefined"
+    :name="isChoosingPlan ? words.changePlanChoices : words.moreActions"
     is-open
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="onClose"
   >
     <template #icon="{ id }">
-      <Download v-if="id === 'export'" :size="14" aria-hidden="true" />
+      <Check v-if="isChoosingPlan && id === currentId" :size="14" aria-hidden="true" />
+      <ArrowLeftRight v-else-if="id === 'change'" :size="14" aria-hidden="true" />
+      <WalletCards v-else-if="id === 'manage'" :size="14" aria-hidden="true" />
+      <Download v-else-if="id === 'export'" :size="14" aria-hidden="true" />
       <Trash2 v-else-if="id === 'delete'" :size="14" aria-hidden="true" />
     </template>
   </Menu>

@@ -7,6 +7,7 @@ const PAGE = 'Identity and licenses'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const CHOOSE = /^Choose /
 const CHANGE_PLAN = 'Change plan'
+const MORE_ACTIONS = 'More actions'
 const CURRENT_PLAN = 'Current plan'
 const SWITCH_QUESTION = /^Switch to .+\?$/
 const CANCEL = 'Cancel'
@@ -19,8 +20,8 @@ const SUBSCRIPTION_LIMIT_MS = 20_000
 /** The name of the row of the card that chooses the plan of a name, such as "Choose Plus, 100 GB, $15 / month"; with the size in GB when it is given. */
 export const getChoosePattern = (name: string, gigabytes?: number): RegExp => new RegExp(`^Choose ${name}, ${gigabytes === undefined ? '' : `${gigabytes} GB(,|$)`}`)
 
-/** The plan row of the card: the size in GB and the price, with the name in front once the subscription ended. */
-export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^(${name}, )?${gigabytes} GB(,|$)`)
+/** The plan row of the card: the size in GB and the price, with the name in front. */
+export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => new RegExp(`^${name}, ${gigabytes} GB(,|$)`)
 
 /** The name of the item of the menu "Change plan" of a plan: the name of the plan, then its size and price or nothing. */
 export const getPlanItemPattern = (name: string): RegExp => new RegExp(`^${name}(?![A-Za-z])`)
@@ -42,15 +43,9 @@ export class SubscriptionDriver {
     return panel.getByRole('region', { name: SUBSCRIPTION_TITLE, exact: true })
   }
 
-  private getBadge(card: Locator, text: string): Locator {
-    return card.locator('header').getByText(text, { exact: true })
-  }
-
-  /** Expects the card to show the plan of a name and a size in GB: the name in the badge of an active subscription, in the plan row of an ended one. */
+  /** Expects the card to show the plan of a name and a size in GB: the name in front in the plan row. */
   async expectPlan(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const named = this.getBadge(card, name).or(card.getByText(new RegExp(`^${name}, ${gigabytes} GB`)))
-    await expect(named.first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
     await expect(card.getByText(getPlanLinePattern(name, gigabytes)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
@@ -127,9 +122,10 @@ export class SubscriptionDriver {
   }
 
   private async openChangeItem(card: Locator, name: string): Promise<Locator> {
-    const change = card.getByRole('button', { name: CHANGE_PLAN, exact: true })
-    await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
-    await change.click()
+    const more = card.getByRole('button', { name: MORE_ACTIONS, exact: true })
+    await expect(more).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await more.click()
+    await this.scenario.page.getByRole('menuitem', { name: CHANGE_PLAN, exact: true }).click()
     return this.scenario.page.getByRole('menuitemradio', { name: getPlanItemPattern(name) })
   }
 
@@ -168,7 +164,7 @@ export class SubscriptionDriver {
     await question.getByRole('button', { name: `Switch to ${name}`, exact: true }).click()
     await expect(question).toHaveCount(0)
     const card = this.getCard(await this.showPage())
-    await expect(this.getBadge(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByText(new RegExp(`^${name}, `)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Cancels the switch the card asks about. */

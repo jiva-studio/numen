@@ -97,8 +97,23 @@ const getContent = (wrapper: VueWrapper) => wrapper.get('.subscription__content'
 const findCancel = (wrapper: VueWrapper) =>
   wrapper.findAll('button').find((one) => one.text() === 'Cancel')
 
-const findPlanButton = (wrapper: VueWrapper) =>
-  wrapper.findAll('button').find((one) => one.text() === 'Change plan')
+const toggleMenu = async (wrapper: VueWrapper) => {
+  const trigger = wrapper.find('button[aria-label="More actions"]')
+  if (trigger.exists()) await trigger.trigger('click')
+  await flushPromises()
+}
+
+const findMenuItem = (text: string) =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')).find(
+    (one) => one.textContent?.trim() === text,
+  )
+
+const hasMenuItem = async (wrapper: VueWrapper, text: string) => {
+  await toggleMenu(wrapper)
+  const isThere = findMenuItem(text) !== undefined
+  await toggleMenu(wrapper)
+  return isThere
+}
 
 const getPlanItems = () =>
   Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'))
@@ -113,7 +128,8 @@ const getPlanName = (item: Element): string => {
 const getPlanChoices = (): string[] => getPlanItems().map(getPlanName)
 
 const openPlans = async (wrapper: VueWrapper) => {
-  await findPlanButton(wrapper)?.trigger('click')
+  await toggleMenu(wrapper)
+  findMenuItem('Change plan')?.click()
   await flushPromises()
 }
 
@@ -162,10 +178,10 @@ describe('SubscriptionCard', () => {
     expect(findChoose(wrapper)).toBeDefined()
   })
 
-  it('names the plan in the badge and says until when the active subscription is paid', async () => {
+  it('has no badge and says until when the active subscription is paid', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
     expect(getRow(wrapper, 'Renews')).toContain('December 23, 2026')
     expect(findChoose(wrapper)).toBeUndefined()
   })
@@ -173,11 +189,12 @@ describe('SubscriptionCard', () => {
   it('shows the plan, the space used as a bar and the end of the paid period as rows', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    expect(getRow(wrapper, 'Plan')).toContain('100 GB, $15 / month')
+    expect(getRow(wrapper, 'Plan')).toContain('Plus, 100 GB, $15 / month')
     expect(getRow(wrapper, 'Storage')).toContain('Space used by your synced vaults')
     expect(getRow(wrapper, 'Storage')).toContain('2 GB of 100 GB')
-    expect(wrapper.find('.island-card__aside').text()).toContain('Change plan')
-    expect(wrapper.find('.island-card__aside').text()).toContain('Manage subscription')
+    expect(wrapper.find('.island-card__aside').text()).not.toContain('Change plan')
+    expect(await hasMenuItem(wrapper, 'Change plan')).toBe(true)
+    expect(await hasMenuItem(wrapper, 'Manage subscription')).toBe(true)
     expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('2')
   })
 
@@ -379,7 +396,7 @@ describe('SubscriptionCard', () => {
     expect(findChoose(wrapper, 'Basic')).toBeDefined()
     expect(findChoose(wrapper, 'Plus')).toBeDefined()
     expect(findChoose(wrapper, 'Pro')).toBeDefined()
-    expect(findPlanButton(wrapper)).toBeUndefined()
+    expect(await hasMenuItem(wrapper, 'Change plan')).toBe(false)
   })
 
   it('lists every plan in the menu Change plan with its size and price, the current one checked and not to choose', async () => {
@@ -412,7 +429,7 @@ describe('SubscriptionCard', () => {
       'Next payment — $30 on December 23, 2026',
     ])
     expect(client.changePlan).not.toHaveBeenCalled()
-    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+    expect(getRow(wrapper, 'Plan')).toContain('Plus,')
   })
 
   it('keeps the plan and asks the server nothing when the switch is cancelled', async () => {
@@ -423,7 +440,7 @@ describe('SubscriptionCard', () => {
 
     expect(findSwitchDialog()).toBeNull()
     expect(client.changePlan).not.toHaveBeenCalled()
-    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+    expect(getRow(wrapper, 'Plan')).toContain('Plus,')
   })
 
   it('does not ask to switch to the current plan', async () => {
@@ -437,8 +454,7 @@ describe('SubscriptionCard', () => {
   it('offers one Manage subscription and no plan to choose while the subscription is active', async () => {
     const { wrapper } = await render(ACTIVE_ON_PLUS)
 
-    const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')
-    expect(manage).toHaveLength(1)
+    expect(await hasMenuItem(wrapper, 'Manage subscription')).toBe(true)
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
@@ -449,10 +465,9 @@ describe('SubscriptionCard', () => {
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(openExternal).not.toHaveBeenCalled()
-    expect(wrapper.get('.subscription__badge').text()).toBe('Pro')
-    expect(getRow(wrapper, 'Plan')).toContain('250 GB, $30 / month')
+    expect(getRow(wrapper, 'Plan')).toContain('Pro, 250 GB, $30 / month')
     expect(findSwitchDialog()).toBeNull()
-    expect(findPlanButton(wrapper)?.text()).toBe('Change plan')
+    expect(await hasMenuItem(wrapper, 'Change plan')).toBe(true)
   })
 
   it('shows the problem of a refused change and keeps the plan', async () => {
@@ -480,7 +495,7 @@ describe('SubscriptionCard', () => {
     expect(wrapper.find('[role="alert"]').text()).toBe(
       'the account has no active subscription to change',
     )
-    expect(wrapper.get('.subscription__badge').text()).toBe('Plus')
+    expect(getRow(wrapper, 'Plan')).toContain('Plus,')
   })
 
   it('shows the used space above the plan, says the cloud is full and offers a larger plan', async () => {
@@ -525,7 +540,7 @@ describe('SubscriptionCard', () => {
 
     expect(getRow(wrapper, 'Plan')).toContain('Plus, 100 GB, $15 / month')
     expect(findChoose(wrapper, 'Plus')).toBeDefined()
-    expect(findPlanButton(wrapper)).toBeUndefined()
+    expect(await hasMenuItem(wrapper, 'Change plan')).toBe(false)
   })
 
   it('shows only the size of a plan the client does not know', async () => {
@@ -548,20 +563,19 @@ describe('SubscriptionCard trial and portal', () => {
     expect(wrapper.text()).not.toContain('Renews')
   })
 
-  it('opens the portal in the browser with the one button Manage subscription', async () => {
+  it('opens the portal in the browser with the item Manage subscription', async () => {
     const { wrapper, openExternal } = await render(ACTIVE_ON_PLUS)
 
-    const manage = wrapper.findAll('button').filter((one) => one.text() === 'Manage subscription')
-    await manage[0]?.trigger('click')
+    await toggleMenu(wrapper)
+    findMenuItem('Manage subscription')?.click()
     await flushPromises()
 
-    expect(manage).toHaveLength(1)
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(PORTAL_URL)
   })
 
   it('offers no portal to an identity without a subscription', async () => {
     const { wrapper } = await render(createResponse())
 
-    expect(wrapper.text()).not.toContain('Manage subscription')
+    expect(await hasMenuItem(wrapper, 'Manage subscription')).toBe(false)
   })
 })

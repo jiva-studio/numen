@@ -32,7 +32,6 @@ interface SubscriptionSnapshot {
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
   readonly server?: string | undefined
-  readonly planName?: string | undefined
 }
 
 const LONG_DATE = new Intl.DateTimeFormat('en-US', {
@@ -49,14 +48,13 @@ export function formatDate(time: string): string {
 const getPhaseView = (
   phase: SubscriptionPhase,
   dates: SubscriptionDates,
-  planName: string,
 ): SubscriptionView => {
   const periodEnd = formatDate(dates.periodEnd)
   switch (phase) {
     case 'none':
       return { badge: '', text: words.noSubscriptionText, tone: 'neutral' }
     case 'active':
-      return { badge: planName, text: '', tone: 'positive' }
+      return { badge: '', text: '', tone: 'positive' }
     case 'grace':
       return {
         badge: words.ended,
@@ -94,7 +92,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
     case 'ready':
       return snapshot.phase === ''
         ? { badge: '', text: '', tone: 'neutral' }
-        : getPhaseView(snapshot.phase, snapshot.dates, snapshot.planName ?? '')
+        : getPhaseView(snapshot.phase, snapshot.dates)
   }
 }
 
@@ -143,13 +141,13 @@ export function formatPrice(cents: number, currency: string): string {
 }
 
 /**
- * The plan row of the card: the size and the price for a month, such as "100 GB, $15 / month", with the name in
- * front, "Plus, 100 GB, $15 / month", where the badge does not name the plan. An empty name or price is left out.
+ * The plan row of the card: the name, the size and the price for a month, such as "Plus, 100 GB, $15 / month". An
+ * empty price is left out.
  */
-export function getPlanLine(plan: PlanSize, hasName: boolean): string {
+export function getPlanLine(plan: PlanSize): string {
   const price = formatPrice(plan.priceCents, plan.currency)
   return [
-    hasName ? plan.name : '',
+    plan.name,
     formatSize(plan.quotaBytes),
     price === '' ? '' : words.pricePerMonth(price),
   ]

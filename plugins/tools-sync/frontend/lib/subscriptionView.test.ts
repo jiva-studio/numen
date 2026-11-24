@@ -31,17 +31,13 @@ describe('formatSize', () => {
 })
 
 describe('getPlanLine', () => {
-  it('joins the size and the price for a month of a plan', () => {
-    expect(getPlanLine(PLUS, false)).toBe('100 GB, $15 / month')
-  })
-
-  it('puts the name in front where the badge does not name the plan', () => {
-    expect(getPlanLine(PLUS, true)).toBe('Plus, 100 GB, $15 / month')
+  it('joins the name, the size and the price for a month of a plan', () => {
+    expect(getPlanLine(PLUS)).toBe('Plus, 100 GB, $15 / month')
   })
 
   it('leaves out an empty name and an empty price', () => {
-    expect(getPlanLine({ ...PLUS, name: '' }, true)).toBe('100 GB, $15 / month')
-    expect(getPlanLine({ ...PLUS, priceCents: 0 }, false)).toBe('100 GB')
+    expect(getPlanLine({ ...PLUS, name: '' })).toBe('100 GB, $15 / month')
+    expect(getPlanLine({ ...PLUS, priceCents: 0 })).toBe('Plus, 100 GB')
   })
 })
 
@@ -63,15 +59,15 @@ describe('formatPrice', () => {
 
 describe('getSubscriptionView', () => {
   const DATES = { periodEnd: '2026-12-23T12:00:00Z', writesEnd: '', deleteAt: '' }
-  const ready = (phase: SubscriptionPhase, planName = '') =>
-    getSubscriptionView({ status: 'ready', phase, dates: DATES, planName })
+  const ready = (phase: SubscriptionPhase) =>
+    getSubscriptionView({ status: 'ready', phase, dates: DATES })
 
   it('has no badge when there is no subscription, because the plans say it', () => {
     expect(ready('none').badge).toBe('')
   })
 
-  it('badges an active subscription with its plan', () => {
-    expect(ready('active', 'Plus').badge).toBe('Plus')
+  it('has no badge for an active subscription, because the plan row names the plan', () => {
+    expect(ready('active').badge).toBe('')
   })
 
   it('badges an ended subscription with how it ended', () => {

@@ -75,8 +75,10 @@ export const Active: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('December 23, 2026')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByRole('menuitem', { name: 'Change plan' })).toBeVisible()
+    await expect(await page.findByRole('menuitem', { name: 'Manage subscription' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
@@ -189,10 +191,12 @@ export const ActiveWithPlanAndUsage: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('100 GB, $15 / month')).toBeVisible()
+    await expect(await canvas.findByText('Plus, 100 GB, $15 / month')).toBeVisible()
     await expect(await canvas.findByText('2 GB of 100 GB')).toBeVisible()
     await expect(await canvas.findByRole('progressbar', { name: 'Space used' })).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Change plan' })).toBeVisible()
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByRole('menuitem', { name: 'Change plan' })).toBeVisible()
   },
 }
 
@@ -212,8 +216,9 @@ export const ChangePlanOpen: Story = {
   args: changePlanArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
     const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(await page.findByRole('menuitem', { name: 'Change plan' }))
     const plans = await page.findAllByRole('menuitemradio')
     await expect(plans).toHaveLength(3)
     const current = plans.filter((one) => one.getAttribute('aria-checked') === 'true')
@@ -227,8 +232,9 @@ export const ConfirmSwitch: Story = {
   args: changePlanArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
     const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(await page.findByRole('menuitem', { name: 'Change plan' }))
     await userEvent.click(await page.findByRole('menuitemradio', { name: /^Pro/ }))
     const dialog = await page.findByRole('alertdialog', { name: 'Switch to Pro?' })
     await expect(dialog).toHaveTextContent('Plus, 100 GB, $15 / month')
@@ -275,7 +281,7 @@ export const EndedWithPlan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Plus, 100 GB, $15 / month')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'Change plan' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'More actions' })).toBeNull()
   },
 }
 
@@ -295,7 +301,9 @@ export const Trial: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Trial until')).toBeVisible()
     await expect(await canvas.findByText('December 7, 2026')).toBeVisible()
-    await expect(await canvas.findByRole('button', { name: 'Manage subscription' })).toBeVisible()
+    await userEvent.click(await canvas.findByRole('button', { name: 'More actions' }))
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByRole('menuitem', { name: 'Manage subscription' })).toBeVisible()
   },
 }
 

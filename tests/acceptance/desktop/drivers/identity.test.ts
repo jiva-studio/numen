@@ -57,14 +57,14 @@ describe('the names of the buttons of the card', () => {
 })
 
 describe('getPlanLinePattern', () => {
-  it('matches the plan row of an active and of an ended subscription', () => {
-    expect(getPlanLinePattern('Plus', 100).test('100 GB, $15 / month')).toBe(true)
+  it('matches the plan row with the name in front', () => {
     expect(getPlanLinePattern('Plus', 100).test('Plus, 100 GB, $15 / month')).toBe(true)
-    expect(getPlanLinePattern('Plus', 100).test('100 GB')).toBe(true)
+    expect(getPlanLinePattern('Plus', 100).test('Plus, 100 GB')).toBe(true)
   })
 
   it('does not match another size or the detail of a plan to choose', () => {
     expect(getPlanLinePattern('Plus', 100).test('10 GB, $5 / month')).toBe(false)
+    expect(getPlanLinePattern('Plus', 100).test('100 GB, $15 / month')).toBe(false)
     expect(getPlanLinePattern('Plus', 100).test('100 GB of synced files')).toBe(false)
   })
 })

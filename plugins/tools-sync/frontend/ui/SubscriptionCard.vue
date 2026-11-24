@@ -1,20 +1,19 @@
 <script setup lang="ts">
 /**
  * The card of the subscription of the identity on the page "Identity and licenses", an island card with
- * the plan as its badge: a row per plan that buys it on a click when there is no subscription, and the
+ * a row per plan that buys it on a click when there is no subscription, and the
  * rows of the plan, the end of the paid period and the space used with the actions to change or manage
- * it when there is. A plan chosen in the menu "Change plan" is changed to only after the person confirms
+ * it in the menu "..." when there is. A plan chosen in "Change plan" is changed to only after the person confirms
  * the switch. While a payment is awaited, a layer over the rows keeps them in place, says so and offers to
  * stop waiting.
  */
 import { computed, onMounted, ref } from 'vue'
-import { ChevronRight, RotateCcw, Settings, WalletCards } from '@lucide/vue'
+import { ChevronRight, RotateCcw, Settings } from '@lucide/vue'
 import { Button, CardAction, IslandCard, Spinner } from '@numen/ui'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 import AccountMenu from './AccountMenu.vue'
-import ChangePlanMenu from './ChangePlanMenu.vue'
 import DeleteCloudDataDialog from './DeleteCloudDataDialog.vue'
 import SwitchPlanDialog from './SwitchPlanDialog.vue'
 import type { SubscriptionCardProps } from './SubscriptionCard.types'
@@ -147,18 +146,15 @@ function onFailure(failure: unknown): void {
         >
           <Settings :size="14" aria-hidden="true" />
         </CardAction>
-        <ChangePlanMenu
-          v-if="changeOffers.length > 0"
+        <AccountMenu
+          v-if="canChangeAccount || canManage || changeOffers.length > 0"
+          :has-account-actions="canChangeAccount"
+          :can-manage="canManage"
           :offers="changeOffers"
           :current-id="currentOffer?.id ?? ''"
-          @choose="onChoosePlan"
-        />
-        <CardAction v-if="canManage" is-primary :label="words.manageSubscription" @click="onManage">
-          <WalletCards :size="14" aria-hidden="true" />
-        </CardAction>
-        <AccountMenu
-          v-if="canChangeAccount"
           :is-exporting="accountData?.state.isExporting.value === true"
+          @choose-plan="onChoosePlan"
+          @manage="onManage"
           @export="onExport"
           @delete="onAskDelete"
         />

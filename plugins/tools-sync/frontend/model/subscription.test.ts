@@ -627,7 +627,7 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
-    expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
+    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB, $30 / month')
     expect(subscription.offers.currentOffer.value?.id).toBe('pro')
     expect(openExternal).not.toHaveBeenCalled()
     expect(subscription.payment.waiting.value).toBe(false)
@@ -644,7 +644,7 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(subscription.session.problem.value).toContain('Could not reach the sync server')
-    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
+    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB, $15 / month')
   })
 
   it('shows the refusal and reads the subscription again when the server says the plan is the plan of the identity', async () => {
@@ -660,7 +660,7 @@ describe('useSubscription change of the plan', () => {
 
     await subscription.session.change('pro')
 
-    expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
+    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB, $30 / month')
     expect(subscription.session.problem.value).toBe('the account has this plan already')
   })
 
@@ -695,7 +695,7 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(subscription.session.problem.value).toBe('the sync server does not sell subscriptions')
-    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
+    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB, $15 / month')
   })
 })
 
@@ -753,8 +753,7 @@ describe('useSubscription plan names from the server', () => {
 
     await subscription.session.load()
 
-    expect(subscription.summary.view.value.badge).toBe('Standard')
-    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
+    expect(subscription.summary.planLine.value).toBe('Standard, 100 GB, $15 / month')
   })
 
   it('prices an offer in the currency of the plan', async () => {
@@ -771,19 +770,19 @@ describe('useSubscription plan names from the server', () => {
 })
 
 describe('useSubscription summary', () => {
-  it('badges an active subscription with the name of its plan and no text', async () => {
+  it('has no badge and no text for an active subscription', async () => {
     const { subscription } = mountSubscription(createClient([ACTIVE_ON_PLUS]))
 
     await subscription.session.load()
 
     expect(subscription.summary.view.value).toStrictEqual({
-      badge: 'Plus',
+      badge: '',
       text: '',
       tone: 'positive',
     })
   })
 
-  it('has no badge without a subscription and no badge for a plan the client does not know', async () => {
+  it('has no badge without a subscription and no plan name for a plan the client does not know', async () => {
     const none = mountSubscription(createClient([createResponse()]))
     const unknown = mountSubscription(
       createClient([createResponse({ ...ACTIVE_ON_PLUS, plan: 'gold', quotaBytes: 50 * GIB })]),
