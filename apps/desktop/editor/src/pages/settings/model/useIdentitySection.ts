@@ -63,7 +63,10 @@ export function useIdentitySection(
 
   onBeforeUnmount(reset)
 
+  let generation = 0
+
   function reset(): void {
+    generation += 1
     step.value = 'idle'
     setup.clear()
     confirmation.clear()
@@ -74,8 +77,9 @@ export function useIdentitySection(
 
   const startSetup = async (): Promise<void> => {
     if (isBusy.value) return
+    const started = generation
     const answer = await run(() => getIdentity().generateWords())
-    if (!answer.ok) return
+    if (!answer.ok || started !== generation) return
     recoveryWords.value = answer.value
     confirmation.pick()
     stage.value = 'words'

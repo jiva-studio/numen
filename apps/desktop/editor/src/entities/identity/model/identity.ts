@@ -46,6 +46,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
       if (!answer.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
       }
+      guard.cancel()
       identity.value = answer.value
       return { ok: true, value: answer.value }
     } catch (caughtError) {
@@ -56,6 +57,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const remove = async (): Promise<Result<void, string>> => {
     try {
       await api.deleteIdentity()
+      guard.cancel()
       identity.value = undefined
       return { ok: true, value: undefined }
     } catch (caughtError) {

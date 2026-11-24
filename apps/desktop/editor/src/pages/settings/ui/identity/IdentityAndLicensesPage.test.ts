@@ -362,6 +362,24 @@ describe('the page "Identity and licenses"', () => {
     expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
   })
 
+  it('returns the focus to Restore when the restore dialog is cancelled', async () => {
+    const { tab } = await createPage()
+    const opener = findButton(tab, 'Restore')
+    ;(opener?.element as HTMLElement).focus()
+    await press(tab, 'Restore')
+    expect(document.activeElement).not.toBe(opener?.element)
+    await press(tab, 'Cancel')
+    expect(document.activeElement).toBe(opener?.element)
+  })
+
+  it('does not restore from 12 words followed by an extra one pasted into the first field', async () => {
+    const { tab, create } = await createPage()
+    await press(tab, 'Restore')
+    await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
+    await submitRestore(tab)
+    expect(create).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
+  })
+
   it('says under the fields that the words are not valid and holds no identity when the core refuses them', async () => {
     const { tab, identity } = await createPage(undefined, () =>
       Promise.resolve(asFailure('Some words are not valid.')),

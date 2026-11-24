@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
 type memoryKeys map[string]string
@@ -62,7 +63,7 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, getWiring(), nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, getWiring(), nil)
 	if use == nil || use.Identity.Get == nil || use.Identity.GenerateWords == nil || use.Identity.Create == nil || use.Identity.Delete == nil ||
 		use.Kit.Save == nil || use.Kit.Restore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all six use cases", use)
@@ -86,7 +87,7 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "kit.pdf")
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), saveDialog{path: path})
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), saveDialog{path: path})
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
@@ -109,7 +110,7 @@ func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T
 
 func TestOpenIdentityUseCases_SavesNoKitWithoutADialog(t *testing.T) {
 	t.Parallel()
-	use := openIdentityUseCases(pluginInstall{KeyStore: memoryKeys{}}, getWiring(), nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
