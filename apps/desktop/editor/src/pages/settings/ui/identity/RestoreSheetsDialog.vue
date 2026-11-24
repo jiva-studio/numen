@@ -2,6 +2,7 @@
 /**
  * The dialog that restores an identity from two sheets of a recovery kit by their QR codes. One camera session
  * reads the first sheet and then the second, which starts the restore. It has no field and only Cancel as a button.
+ */
 import { computed } from 'vue'
 import { Button, QrScanner, StageList, type ScannerCamera } from '@numen/ui'
 import { getRestoreStages } from '../../model/getRestoreStages'
