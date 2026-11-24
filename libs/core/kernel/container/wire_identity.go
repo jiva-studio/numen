@@ -42,7 +42,7 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Res
 }
 
 func openAccount(res *Resources) *identity.Account {
-	return identity.NewAccount(func() pluginport.KeyStore { return res.KeyStore }, licensingadapter.NewAdapter(nil), GetClock(res), res.progress, res.Stores.Chains)
+	return identity.NewAccount(func() pluginport.KeyStore { return res.Stores.Keys }, licensingadapter.NewAdapter(nil), GetClock(res), res.progress, res.Stores.Chains)
 }
 
 func openKitSaver(dialog editor.PathDialog) identity.KitSaver {
