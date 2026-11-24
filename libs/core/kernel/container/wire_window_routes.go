@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -65,9 +66,8 @@ func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 }
 
 func mountMedia(w *windowRoutes, vaultDeps vaultWiring) {
-	state := w.session
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
-	handler := mediawindow.NewHandler(&state.Runtime, &w.page.Media, resolve)
+	handler := mediawindow.NewHandler(&w.session.Runtime, &w.page.Media, resolve)
 	w.Installation.Mount(editor.NewMediaRoute(w.page.Gate, handler))
 }
 
@@ -263,8 +263,7 @@ func newPluginVaultList(
 }
 
 func mountVault(w *windowRoutes) {
-	state := w.session
-	handler := windowvault.NewHandler(state, state.Notices)
+	handler := windowvault.NewHandler(w.session, w.session.Notices)
 	path, served := windowvault.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
