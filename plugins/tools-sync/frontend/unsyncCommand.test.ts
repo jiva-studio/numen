@@ -5,7 +5,7 @@ import {
   createMockHostServices,
   createMockPluginContext,
 } from '@numen/plugin-sdk/testing'
-import { activate, STOP_SYNC_COMMAND } from './index'
+import { activate } from './index'
 import EndSyncDialog from './ui/EndSyncDialog.vue'
 
 const calls: string[] = []
@@ -27,7 +27,7 @@ const run = async (state: 'notConnected' | 'connected' | 'received') => {
   ;(host.vault.vaults as MockVaultsHost).setState({ vaults: [current], current })
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.sync' })
   activate(context, host)
-  const command = context.getRegisteredCommands().find((one) => one.id === STOP_SYNC_COMMAND)
+  const command = context.getRegisteredCommands().find((one) => one.id === 'vault.stopSync')
   await command?.handler({ path: '' } as never)
   return { context, dialogs }
 }

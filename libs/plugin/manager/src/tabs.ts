@@ -2,7 +2,7 @@
 import { PLUGIN_WORDS as words } from './words'
 
 /** A tab the page has of its own. */
-export type BuiltInPluginTabId = keyof typeof words.pluginTabs
+type BuiltInPluginTabId = keyof typeof words.pluginTabs
 
 /** A tab of a plugin page: a built-in one or the id of a tab the plugin contributes. */
 export type PluginTabId = string

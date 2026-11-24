@@ -2,7 +2,7 @@ import { runInBackground } from '@numen/ui'
 import type { VaultFlagsHost } from '@numen/plugin-sdk'
 import type { VaultsClient } from '../api/vaults'
 
-export const SYNCED_FLAG = 'isSynced'
+const SYNCED_FLAG = 'isSynced'
 
 const DEFAULT_REFRESH_EVERY_MS = 5000
 

@@ -9,7 +9,6 @@ export type {
   PluginSettingInfo,
   PluginSettingOption,
   PluginSettingsViewInfo,
-  PluginSettingsTabInfo,
 } from '@numen/plugin-manager'
 
 /** One setting of the configuration file, and the JSON value to set. */

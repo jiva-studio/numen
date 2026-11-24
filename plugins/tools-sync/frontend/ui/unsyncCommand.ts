@@ -10,7 +10,7 @@ const getCurrentVault = (host: HostServices): string =>
  * Registers the command that ends the sync of the vault the file tree shows: it asks first, a synced vault stops
  * syncing and a received folder is left, and any other vault gets a notice that it is not synced. The files stay.
  */
-export const registerUnsync = (plugin: PluginContext, host: HostServices, id: string): void => {
+export const registerUnsync = (plugin: PluginContext, host: HostServices): void => {
   const show = (failure: unknown): void =>
     host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
   const ask = (kind: 'stop' | 'leave', vaultId: string, name: string): void => {
@@ -34,7 +34,7 @@ export const registerUnsync = (plugin: PluginContext, host: HostServices, id: st
     })
   }
   plugin.register.command({
-    id,
+    id: 'vault.stopSync',
     handler: async () => {
       const vaultId = getCurrentVault(host)
       try {
