@@ -12,6 +12,7 @@ import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
+const REFRESH_MS = 15_000
 
 interface VaultRow {
   readonly id: string
@@ -117,6 +118,15 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
+  function watch(): () => void {
+    const refresh = (): void => {
+      load().catch(() => undefined)
+    }
+    refresh()
+    const timer = setInterval(refresh, REFRESH_MS)
+    return () => clearInterval(timer)
+  }
+
   function closeRemote(): void {
     openFor.value = ''
   }
@@ -186,6 +196,7 @@ export function useVaults(options: UseVaultsOptions) {
     },
     actions: {
       load,
+      watch,
       openRemote,
       closeRemote,
       connectNew,

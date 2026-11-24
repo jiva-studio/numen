@@ -9,8 +9,6 @@ import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
 
-const REFRESH_MS = 15_000
-
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   client?: VaultsClient
@@ -24,7 +22,7 @@ const model = useVaults({
 })
 const { status, error, isReachable, warning, rows, openFor, remote, pendingConfirm } = model.state
 const {
-  load,
+  watch,
   openRemote,
   closeRemote,
   connectNew,
@@ -35,17 +33,14 @@ const {
 } = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
-let timer: ReturnType<typeof setInterval> | undefined
+let stopWatching: (() => void) | undefined
 
 onMounted(() => {
-  load().catch(report)
-  timer = setInterval(() => {
-    load().catch(report)
-  }, REFRESH_MS)
+  stopWatching = watch()
 })
 
 onUnmounted(() => {
-  clearInterval(timer)
+  stopWatching?.()
 })
 
 /* -------------------------------- Handlers -------------------------------- */
