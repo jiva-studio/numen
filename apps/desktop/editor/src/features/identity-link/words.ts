@@ -41,7 +41,7 @@ export const WORDS = {
       return [
         'On the new device open Settings, Identity and choose Join with a QR code.',
         mode === 'show'
-          ? 'Scan the QR code below with its camera, or paste the link text there.'
+          ? 'Scan this QR code with its camera, or paste the link text there.'
           : 'It shows a QR code: scan it with the camera of this device, or paste its link text below.',
         check,
       ]
@@ -49,7 +49,7 @@ export const WORDS = {
     return [
       'On your other device open Settings, Identity and choose Link a new device.',
       mode === 'show'
-        ? 'Choose Scan a QR code there and point its camera at the QR code below, or paste the link text there.'
+        ? 'Choose Scan a QR code there and point its camera at this QR code, or paste the link text there.'
         : 'It shows a QR code: scan it with the camera of this device, or paste its link text below.',
       check,
     ]

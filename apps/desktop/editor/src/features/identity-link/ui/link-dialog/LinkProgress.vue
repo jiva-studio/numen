@@ -39,8 +39,8 @@ const isOwnShown = computed(() => ['qr', 'waiting', 'code', 'account'].includes(
 
 <template>
   <div class="link-progress">
-    <LinkSteps v-if="view === 'qr' || view === 'preparing'" :steps="steps" />
-    <LinkFacts v-if="isOwnShown && ownFacts.length > 0" :facts="ownFacts" />
+    <LinkSteps v-if="view === 'preparing'" :steps="steps" />
+    <LinkFacts v-if="isOwnShown && view !== 'qr' && ownFacts.length > 0" :facts="ownFacts" />
 
     <LinkStatus
       v-if="view === 'preparing'"
@@ -61,6 +61,8 @@ const isOwnShown = computed(() => ['qr', 'waiting', 'code', 'account'].includes(
       v-else-if="view === 'qr' && link"
       :qr-text="link.qrText"
       :account-fingerprint="role === 'host' ? link.accountFingerprint : ''"
+      :steps="steps"
+      :facts="ownFacts"
     />
     <LinkStatus
       v-else-if="view === 'waiting'"

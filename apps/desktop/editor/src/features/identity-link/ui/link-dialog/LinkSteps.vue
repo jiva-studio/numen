@@ -17,6 +17,7 @@ defineProps<{ steps: readonly string[] }>()
   flex-direction: column;
   gap: 0.5rem;
   margin: 0;
+  line-height: 1.4;
   padding: 0;
   list-style: none;
   counter-reset: step;

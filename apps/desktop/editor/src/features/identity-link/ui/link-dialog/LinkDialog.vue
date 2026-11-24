@@ -49,6 +49,11 @@ const switchLabel = computed(() => {
   if (view.value === 'scan') return words.linkShowInstead
   return view.value === 'qr' ? words.linkScanInstead : ''
 })
+const isCompact = computed(() => view.value === 'qr' || view.value === 'preparing')
+const hint = computed(() => {
+  if (isCompact.value) return ''
+  return props.role === 'host' ? words.linkHostHint : words.linkJoinHint
+})
 const hasInput = computed(() =>
   view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
 )
@@ -58,7 +63,8 @@ const hasInput = computed(() =>
   <Dialog
     is-form
     :label="role === 'host' ? words.linkHostTitle : words.linkJoinTitle"
-    :hint="role === 'host' ? words.linkHostHint : words.linkJoinHint"
+    :hint="hint"
+    :size="isCompact ? 'lg' : 'md'"
     :step="view"
     @submit="actions.submit"
     @cancel="emit('close')"

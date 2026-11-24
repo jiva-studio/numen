@@ -61,6 +61,13 @@ describe('the link dialog', () => {
     expect(dialog.text()).toContain('Waiting for the other device to scan')
   })
 
+  it('drops the hint under the title while the QR code shows its steps beside it', async () => {
+    const dialog = await mountDialog('host', createLinkInfo())
+    expect(dialog.find('.dialog__hint').exists()).toBe(false)
+    expect(dialog.get('.link-qr ol').findAll('li')).toHaveLength(3)
+    expect(dialog.get('[data-slot="dialog"]').attributes('data-size')).toBe('lg')
+  })
+
   it('says that the link is prepared while the channel is awaited', async () => {
     const dialog = await mountDialog('host', createLinkInfo({ phase: 'waitingForChannel' }))
     expect(dialog.get('[role="status"]').text()).toContain('Preparing the link')
