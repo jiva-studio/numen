@@ -41,6 +41,7 @@ func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 	}{
 		"own identity":          {err: fmt.Errorf("add: %w", share.ErrOwnIdentity), wantCode: server.CodeFailedPrecondition, wantText: "That is your own identity"},
 		"inside a share":        {err: share.ErrInsideShare, wantCode: server.CodeFailedPrecondition, wantText: "A folder inside a shared folder cannot be shared"},
+		"a share in the way":    {err: fmt.Errorf("share: %w", share.NestingError{Kind: share.ErrHoldsShare, Folder: "", Shared: "Recipes"}), wantCode: server.CodeFailedPrecondition, wantText: "The vault cannot be shared while its folder «Recipes» is shared"},
 		"share ended":           {err: share.ErrEnded, wantCode: server.CodeFailedPrecondition, wantText: "The owner ended this share"},
 		"not a code":            {err: fmt.Errorf("%w: base64", share.ErrBadCode), wantCode: server.CodeInvalidArgument, wantText: "this is not a reader code or an invitation: base64"},
 		"no such share":         {err: share.ErrUnknownShare, wantCode: server.CodeNotFound, wantText: share.ErrUnknownShare.Error()},

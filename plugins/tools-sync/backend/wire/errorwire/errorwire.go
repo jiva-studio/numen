@@ -41,12 +41,15 @@ func GetCode(err error) server.ErrorCode {
 
 // GetText returns the text of the error an API method reports; a refusal of a share starts with a capital.
 func GetText(err error) string {
+	var nesting share.NestingError
+	if errors.As(err, &nesting) {
+		return capitalize(nesting.Error())
+	}
 	refusal := findRefusal(err)
 	if refusal == nil {
 		return err.Error()
 	}
-	text := refusal.Error()
-	return strings.ToUpper(text[:1]) + text[1:]
+	return capitalize(refusal.Error())
 }
 
 func getRefusals() []error {
@@ -74,3 +77,5 @@ func findRefusal(err error) error {
 	}
 	return nil
 }
+
+func capitalize(text string) string { return strings.ToUpper(text[:1]) + text[1:] }

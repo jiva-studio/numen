@@ -121,7 +121,7 @@ func reportWaiting(ctx context.Context, deps Deps) {
 	first := requests[0]
 	item := health.Item{
 		Key: HealthKey, Severity: health.Warning,
-		Text:   fmt.Sprintf("%s wants to read %s", first.DeviceName, first.Folder),
+		Text:   fmt.Sprintf("%s wants to read %s", first.DeviceName, first.Label),
 		Detail: fmt.Sprintf("Confirmation code %s. Open Numen Sync to allow or decline.", first.Code),
 	}
 	if err := deps.Health.Report(ctx, item); err != nil {
@@ -138,7 +138,7 @@ func listRequests(hub *Hub) []Request {
 			continue
 		}
 		requests = append(requests, Request{
-			ID: key, VaultID: o.vault, Folder: o.getLabel(), DeviceName: o.request.name, Fingerprint: o.request.fingerprint, Code: o.request.code,
+			ID: key, VaultID: o.vault, Folder: o.folder, Label: o.getLabel(), DeviceName: o.request.name, Fingerprint: o.request.fingerprint, Code: o.request.code,
 		})
 	}
 	return requests

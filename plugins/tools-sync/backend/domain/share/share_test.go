@@ -327,3 +327,22 @@ func TestGetRelativePath_TheVaultRootHoldsEveryFile(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckNesting_NamesTheShareInTheWay(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct {
+		folder string
+		shared []string
+		want   string
+	}{
+		"the vault holds a folder":    {folder: "", shared: []string{"Recipes"}, want: "the vault cannot be shared while its folder «Recipes» is shared"},
+		"a folder holds a folder":     {folder: "Life", shared: []string{"Life/Food"}, want: "«Life» cannot be shared while its folder «Life/Food» is shared"},
+		"a folder inside a folder":    {folder: "Food/Dinner", shared: []string{"Food"}, want: "«Food/Dinner» is inside the shared folder «Food»"},
+		"a folder inside the vault":   {folder: "Food", shared: []string{""}, want: "«Food» is inside the shared vault"},
+		"the vault is shared already": {folder: "", shared: []string{""}, want: "the vault is shared already"},
+	} {
+		if err := share.CheckNesting(c.folder, c.shared); err == nil || err.Error() != c.want {
+			t.Errorf("%s: error = %v, want %q", name, err, c.want)
+		}
+	}
+}

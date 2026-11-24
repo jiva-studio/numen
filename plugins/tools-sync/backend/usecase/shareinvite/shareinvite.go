@@ -88,6 +88,7 @@ type Request struct {
 	ID          string
 	VaultID     domain.VaultID
 	Folder      string
+	Label       string
 	DeviceName  string
 	Fingerprint string
 	Code        string

@@ -93,10 +93,10 @@ func CheckNesting(folder string, shared []string) error {
 	for _, one := range shared {
 		other := getSegments(one)
 		if hasPrefix(segments, other) {
-			return ErrInsideShare
+			return NestingError{Kind: ErrInsideShare, Folder: NormalizeFolder(folder), Shared: NormalizeFolder(one)}
 		}
 		if hasPrefix(other, segments) {
-			return ErrHoldsShare
+			return NestingError{Kind: ErrHoldsShare, Folder: NormalizeFolder(folder), Shared: NormalizeFolder(one)}
 		}
 	}
 	return nil
