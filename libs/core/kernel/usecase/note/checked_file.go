@@ -39,7 +39,6 @@ func countMatchingFiles(
 	return count, nil
 }
 
-// countFiles counts one for a file and the files under it for a folder.
 func countFiles(ctx context.Context, reader vaultport.VaultReader, path string) (int, error) {
 	if _, err := reader.StatFile(ctx, path); err == nil {
 		return 1, nil
