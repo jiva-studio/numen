@@ -2,6 +2,7 @@ package identity_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/hkdf"
 	"crypto/sha256"
 	"encoding/base64"
@@ -319,7 +320,7 @@ func TestDeleteIdentity_RemovesTheRecordAndAMissingRecordIsNotAnError(t *testing
 func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	lock := &sync.Mutex{}
+	lock := identity.NewCreateGate()
 	newDeps := func() identity.Deps {
 		return identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithCreateLock(lock)
 	}
@@ -356,5 +357,46 @@ func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
 	}
 	if created != 1 || exists != 1 || k.keys.setCalled != 1 {
 		t.Errorf("created = %d, refused = %d, writes = %d, want 1, 1, 1", created, exists, k.keys.setCalled)
+	}
+}
+
+func TestCreateIdentity_CancelledWhileWaitingForTheGateWritesNothing(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	gate := identity.NewCreateGate()
+	newCreate := func() *identity.CreateIdentity {
+		deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithCreateLock(gate)
+		return identity.NewCreateIdentity(deps)
+	}
+	holding := make(chan struct{})
+	proceed := make(chan struct{})
+	var once sync.Once
+	k.keys.onGet = func() {
+		once.Do(func() { close(holding) })
+		<-proceed
+	}
+	firstDone := make(chan error, 1)
+	go func() {
+		_, err := newCreate().Execute(t.Context(), getLegalWords())
+		firstDone <- err
+	}()
+	<-holding
+
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	_, err := newCreate().Execute(ctx, getLegalWords())
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("second Execute() error = %v, want DeadlineExceeded", err)
+	}
+	if k.keys.setCalled != 0 {
+		t.Errorf("writes before the first creation ends = %d, want 0", k.keys.setCalled)
+	}
+
+	close(proceed)
+	if err := <-firstDone; err != nil {
+		t.Errorf("first Execute() error = %v, want nil", err)
+	}
+	if k.keys.setCalled != 1 {
+		t.Errorf("writes = %d, want 1", k.keys.setCalled)
 	}
 }
