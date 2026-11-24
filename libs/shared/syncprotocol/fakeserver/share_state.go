@@ -1,7 +1,6 @@
 package fakeserver
 
 import (
-	"bytes"
 	"errors"
 	"time"
 
@@ -21,60 +20,6 @@ var (
 	errShareEnded  = errors.New("the share ended")
 	errRateLimited = errors.New("too many download URLs of this share")
 )
-
-type shareMember struct {
-	Account string `json:"account"`
-	Root    []byte `json:"root"`
-	Added   uint64 `json:"added"`
-	Removed uint64 `json:"removed"`
-}
-
-func (m *shareMember) isActive() bool { return m.Removed == 0 }
-
-type shareState struct {
-	account  string
-	vault    string
-	epoch    uint32
-	isClosed bool
-	log      []*syncv1.ShareLogEntry
-	members  []*shareMember
-	exits    map[string]uint64
-	urls     map[int64]int
-}
-
-func newShareState(account, vault string) *shareState {
-	return &shareState{account: account, vault: vault, exits: map[string]uint64{}, urls: map[int64]int{}}
-}
-
-func (sh *shareState) getHead() *syncv1.ShareLogEntry { return sh.log[len(sh.log)-1] }
-
-func (sh *shareState) findMember(account string) *shareMember {
-	for _, member := range sh.members {
-		if member.Account == account {
-			return member
-		}
-	}
-	return nil
-}
-
-func (sh *shareState) findMemberByRoot(root []byte) *shareMember {
-	for _, member := range sh.members {
-		if bytes.Equal(member.Root, root) {
-			return member
-		}
-	}
-	return nil
-}
-
-func (sh *shareState) listActiveMembers() []*shareMember {
-	var active []*shareMember
-	for _, member := range sh.members {
-		if member.isActive() {
-			active = append(active, member)
-		}
-	}
-	return active
-}
 
 func newShareEnded(version uint64) error {
 	failure := connect.NewError(connect.CodePermissionDenied, errShareEnded)

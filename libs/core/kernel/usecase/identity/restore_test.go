@@ -540,7 +540,6 @@ func TestStartRestore_ANewStartMovesTheDeadlineOfTheFallback(t *testing.T) {
 	})
 }
 
-// kitOf saves a kit for the words and returns the kit the saver was given.
 func (k restoreKit) kitOf(tb testing.TB, words []string) identitydomain.Kit {
 	tb.Helper()
 	if isSaved, err := k.saveKit.Execute(tb.Context(), words, nil); err != nil || !isSaved {

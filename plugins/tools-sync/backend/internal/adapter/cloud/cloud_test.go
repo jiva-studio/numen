@@ -233,7 +233,7 @@ func TestCloud_SignsInAgainOnceAndReportsAnAccountWithoutASubscriptionOnAPlanCha
 
 func TestCloud_ReadsTheRestoreEpochAndTheKeyThatSignsIt(t *testing.T) {
 	c, server := newWorld(t, fakeserver.Config{})
-	id, err := server.Fake.IssueRestoreEpoch()
+	id, err := server.Fake.AnnounceRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}

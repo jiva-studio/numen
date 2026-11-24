@@ -248,7 +248,8 @@ func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o o
 		Epoch: read.position.Epoch, Name: read.position.Name, IsEnded: false, Seen: seen,
 	}
 	link := vaultlink.Link{
-		RemoteVaultID: "", SealedKey: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},
+		RemoteVaultID: "", SealedKey: nil, LaterKeys: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},
+		RestoreEpochID: nil, Recovery: nil, Removed: nil,
 		Kind: vaultlink.KindReceived, Received: &received,
 	}
 	return u.deps.Links.WriteLink(ctx, id, link)

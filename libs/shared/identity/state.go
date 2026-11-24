@@ -97,7 +97,7 @@ func (s State) takeKeys(next Chain, isFork bool) (Record, error) {
 
 // KeyEpoch returns the epoch of the account keys this device holds: the epoch of the chain for an active device, the last
 // epoch it was given for a revoked one.
-func (s State) KeyEpoch() uint32 { return s.Chain.heldEpoch(s.Record.Device.SignerKey()) }
+func (s State) KeyEpoch() uint32 { return s.Chain.getKeyEpoch(s.Record.Device.SignerKey()) }
 
 // OpenAccountKeys unwraps the account keys of the record and loads the key encryption key of every epoch before theirs.
 func (s State) OpenAccountKeys() (AccountKeys, error) {

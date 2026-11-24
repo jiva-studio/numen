@@ -37,7 +37,7 @@ func NewCommitRevisions(deps Deps) *CommitRevisions { return &CommitRevisions{de
 
 // Execute returns one outcome for each file, in the order of the input. A note under a folder of shares is sealed under
 // the key of that share.
-func (u *CommitRevisions) Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error) {
+func (u *CommitRevisions) Execute(ctx context.Context, in ports.CommitInput) ([]transfer.Outcome, error) {
 	author, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
 		return nil, err

@@ -40,7 +40,7 @@ interface Setup {
 const createClient = (setup: Setup): VaultsClient => ({
   listVaults: () => Promise.resolve({ vaults: setup.vaults }),
   listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
-  previewConnect: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
+  getConnectPreview: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
   resolveDeletions: () => Promise.resolve(),
   connectVault: () =>
     setup.refusal === undefined ? Promise.resolve() : Promise.reject(new Error(setup.refusal)),

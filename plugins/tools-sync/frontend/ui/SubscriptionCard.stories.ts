@@ -196,18 +196,20 @@ export const ActiveWithPlanAndUsage: Story = {
   },
 }
 
-export const ChangePlanOpen: Story = {
-  args: createArgs(() =>
-    Promise.resolve(
-      createResponse({
-        phase: 'active',
-        periodEndAt: '2026-12-23T12:00:00Z',
-        plan: 'plus',
-        quotaBytes: 100 * GIB,
-        usedBytes: 2 * GIB,
-      }),
-    ),
+const changePlanArgs = createArgs(() =>
+  Promise.resolve(
+    createResponse({
+      phase: 'active',
+      periodEndAt: '2026-12-23T12:00:00Z',
+      plan: 'plus',
+      quotaBytes: 100 * GIB,
+      usedBytes: 2 * GIB,
+    }),
   ),
+)
+
+export const ChangePlanOpen: Story = {
+  args: changePlanArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))
@@ -222,7 +224,7 @@ export const ChangePlanOpen: Story = {
 }
 
 export const ConfirmSwitch: Story = {
-  args: ChangePlanOpen.args,
+  args: changePlanArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: 'Change plan' }))

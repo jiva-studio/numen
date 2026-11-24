@@ -5,7 +5,7 @@ import { useSubscriptionPayment } from './subscriptionPayment'
 import { useSubscriptionSession } from './subscriptionSession'
 import { useSubscriptionSummary } from './subscriptionSummary'
 
-interface UseSubscriptionOptions {
+export interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
   readonly openExternal: PluginContext['identity']['openExternal']
   readonly now?: (() => Date) | undefined
