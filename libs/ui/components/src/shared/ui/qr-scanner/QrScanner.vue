@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Reads QR codes from the camera at eight frames a second and reports the text of the first valid one it finds.
- * It asks the machine for the camera when it mounts, so a dialog that holds it asks once it is open. The picture
- * of the camera fills the width it is given, at 4:3. The stream stops after the first scan; with `continuous` it
+ * It asks the machine for the camera when it mounts, so a dialog that holds it asks once it is open. One box of 4:3 fills the width it
+ * is given from the first frame: a spinner sits in it while the camera starts, the picture replaces it, and a failure
+ * is written in it. The stream stops after the first scan; with `continuous` it
  * keeps reading and reports each new code (the same code held in front of the camera once) until the scanner unmounts.
  * The decoder is plain JavaScript, so no worker and no wasm is needed.
  */
@@ -38,25 +39,17 @@ const { status, problem } = useQrScanner(video, props, emit)
 
 <template>
   <div class="qr-scanner">
-    <div class="qr-scanner__stage">
-      <video ref="video" class="qr-scanner__video" autoplay muted playsinline />
-    </div>
-    <p v-if="status === 'waiting'" class="qr-scanner__note" role="status">
+    <video ref="video" class="qr-scanner__video" autoplay muted playsinline />
+    <div v-if="status === 'waiting'" class="qr-scanner__cover" role="status" aria-label="Starting the camera">
       <Spinner />
-      Waiting for the camera.
-    </p>
-    <p v-if="problem !== ''" role="alert" class="qr-scanner__note">{{ problem }}</p>
+    </div>
+    <p v-if="problem !== ''" role="alert" class="qr-scanner__cover qr-scanner__problem">{{ problem }}</p>
   </div>
 </template>
 
 <style scoped>
 .qr-scanner {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.qr-scanner__stage {
+  position: relative;
   inline-size: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -71,12 +64,19 @@ const { status, problem } = useQrScanner(video, props, emit)
   object-fit: cover;
 }
 
-.qr-scanner__note {
+.qr-scanner__cover {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
   margin: 0;
   color: var(--numen-hushed);
+}
+
+.qr-scanner__problem {
+  padding: 1rem;
+  text-align: center;
   font-size: var(--numen-text-2);
 }
 </style>

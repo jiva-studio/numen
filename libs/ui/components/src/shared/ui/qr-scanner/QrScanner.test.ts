@@ -53,11 +53,13 @@ describe('a QR scanner', () => {
     expect(scanner.emitted('unavailable')).toStrictEqual([['The camera did not open.']])
   })
 
-  it('waits while the camera has not answered', () => {
+  it('shows a spinner in the box of the picture while the camera has not answered', () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => new Promise<MediaStream>(() => undefined) },
     })
-    expect(scanner.text()).toContain('Waiting for the camera.')
+    expect(scanner.get('video').exists()).toBe(true)
+    expect(scanner.get('[role="status"]').element.parentElement).toBe(scanner.element)
+    expect(scanner.text()).not.toContain('Waiting for the camera')
   })
 
   it('stops the camera when the scanner unmounts', async () => {
