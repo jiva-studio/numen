@@ -74,12 +74,13 @@ type runtime struct {
 	isForeground loops.Flag
 	settings     *settingswire.Settings
 	epochRoot    *loops.Text
+	failures     *errorwire.Failures
 }
 
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), settings: settingswire.New(p.health, logging.Warn), epochRoot: loops.NewText(), isForeground: loops.Flag{}, session: nil,
+		received: loops.NewText(), settings: settingswire.New(p.health, logging.Warn), epochRoot: loops.NewText(), failures: errorwire.NewFailures(), isForeground: loops.Flag{}, session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r

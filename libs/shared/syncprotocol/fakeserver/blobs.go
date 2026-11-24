@@ -14,6 +14,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/bodystore"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -206,7 +207,7 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 		http.NotFound(w, r)
 		return
 	}
-	defer func() { _ = body.Close() }()
+	defer bodystore.Close(body)
 	s.sendBody(w, r, id, body, size)
 }
 

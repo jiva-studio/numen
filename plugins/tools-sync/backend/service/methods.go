@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/errorwire"
 )
 
 func mountMethods(service *server.API, r *runtime) {
@@ -95,6 +94,6 @@ func handle[T any](ctx context.Context, r *runtime, operation string, call func(
 		}
 	}
 	var none T
-	code, text := errorwire.Describe(ctx, operation, err)
+	code, text := r.failures.Describe(ctx, operation, err)
 	return none, server.NewAPIError(code, text)
 }

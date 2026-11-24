@@ -51,7 +51,7 @@ func newServerOver(tb testing.TB, bodyDir string) (*fakeserver.Server, string) {
 	return server, served.URL
 }
 
-func TestSnapshot_LeavesBlobBodiesOutAndKeepsThemInTheBodyFolder(t *testing.T) {
+func TestSnapshot_KeepsBlobBodiesInTheBodyFolder(t *testing.T) {
 	t.Parallel()
 	bodyDir := t.TempDir()
 	server, address := newServerOver(t, bodyDir)
@@ -100,7 +100,11 @@ func TestRestore_ServesAfterARestartABodyThatWasUploadedBefore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	listed, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)

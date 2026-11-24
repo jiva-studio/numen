@@ -77,7 +77,7 @@ func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *tes
 		"a Go chain":       fmt.Errorf("sync vault 3f9a: %w", fmt.Errorf("pass: %w", errors.New("internal error"))),
 	} {
 		logged.Reset()
-		code, text := Describe(t.Context(), "connect-vault", err)
+		code, text := NewFailures().Describe(t.Context(), "connect-vault", err)
 		if text != GenericText || code != server.CodeInternal {
 			t.Errorf("%s: got %q %q, want the generic text", name, code, text)
 		}
@@ -89,7 +89,7 @@ func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *tes
 
 func TestDescribe_HidesFileNames(t *testing.T) {
 	wrapped := fmt.Errorf("write journal-catalog.json: %w", host.ErrNotExist)
-	_, text := Describe(t.Context(), "connect-vault", wrapped)
+	_, text := NewFailures().Describe(t.Context(), "connect-vault", wrapped)
 	if strings.Contains(text, "journal-catalog.json") || strings.Contains(text, "file does not exist") {
 		t.Errorf("text = %q, want no file name and no Go text", text)
 	}
@@ -111,7 +111,7 @@ func TestDescribe_ExplainsFirstSyncFailures(t *testing.T) {
 		"no identity": {err: sessiondomain.ErrNoIdentity, want: "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
 		"no server":   {err: sessiondomain.ErrNoServer, want: "No sync server is set. Enter the server address in the settings of Numen Sync."},
 	} {
-		code, text := Describe(t.Context(), "connect-vault", one.err)
+		code, text := NewFailures().Describe(t.Context(), "connect-vault", one.err)
 		if text != one.want {
 			t.Errorf("%s: text = %q, want %q", name, text, one.want)
 		}
@@ -127,11 +127,12 @@ func TestDescribe_LogsTheSameFailureOfAnOperationOnce(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
 	t.Cleanup(func() { slog.SetDefault(previous) })
 	failure := errors.New("the identity of this device could not be read")
+	failures := NewFailures()
 
-	Describe(t.Context(), "get-status-once", failure)
-	Describe(t.Context(), "get-status-once", failure)
-	Describe(t.Context(), "get-status-once", failure)
-	Describe(t.Context(), "get-status-once", errors.New("another failure"))
+	failures.Describe(t.Context(), "get-status-once", failure)
+	failures.Describe(t.Context(), "get-status-once", failure)
+	failures.Describe(t.Context(), "get-status-once", failure)
+	failures.Describe(t.Context(), "get-status-once", errors.New("another failure"))
 
 	if lines := strings.Count(logged.String(), "level=WARN"); lines != 2 {
 		t.Errorf("logged %d warnings, want 2: one for each distinct failure\n%s", lines, logged.String())

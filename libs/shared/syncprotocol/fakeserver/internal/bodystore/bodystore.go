@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -71,7 +72,9 @@ func (s *Staged) Commit(name string) error {
 // Discard drops the staged body.
 func (s *Staged) Discard() {
 	if s.file != "" {
-		_ = os.Remove(s.file)
+		if err := os.Remove(s.file); err != nil {
+			slog.Warn("remove a staged body", "error", err)
+		}
 	}
 }
 
@@ -107,14 +110,14 @@ func (b *Store) Join(name string, parts []string) error {
 			file, err := os.Open(filepath.Join(b.dir, part))
 			if err == nil {
 				_, err = io.Copy(pipeWriter, file)
-				_ = file.Close()
+				err = errors.Join(err, file.Close())
 			}
 			if err != nil {
 				_ = pipeWriter.CloseWithError(err)
 				return
 			}
 		}
-		_ = pipeWriter.Close()
+		Close(pipeWriter)
 	}()
 	staged, err := b.Stage(pipeReader, 1<<62)
 	if err != nil {
@@ -129,7 +132,7 @@ func (b *Store) Join(name string, parts []string) error {
 	return nil
 }
 
-// Has tells whether a body is kept under the name.
+// Has reports whether a body is kept under the name.
 func (b *Store) Has(name string) bool {
 	if b.dir == "" {
 		_, found := b.held[name]
@@ -151,7 +154,7 @@ func (b *Store) Open(name string) (io.ReadSeekCloser, int64, bool) {
 	}
 	info, err := file.Stat()
 	if err != nil {
-		_ = file.Close()
+		Close(file)
 		return nil, 0, false
 	}
 	return file, info.Size(), true
@@ -167,7 +170,7 @@ func (b *Store) Read(name string) ([]byte, bool) {
 	if !found {
 		return nil, false
 	}
-	defer func() { _ = reader.Close() }()
+	defer Close(reader)
 	body, err := io.ReadAll(reader)
 	return body, err == nil
 }
@@ -188,3 +191,10 @@ func (b *Store) GetHeld() map[string][]byte { return b.held }
 
 // SetHeld replaces the bodies kept in memory.
 func (b *Store) SetHeld(held map[string][]byte) { b.held = held }
+
+// Close closes the closer and logs the failure, for a body that was read or written already.
+func Close(c io.Closer) {
+	if err := c.Close(); err != nil {
+		slog.Warn("close a body", "error", err)
+	}
+}

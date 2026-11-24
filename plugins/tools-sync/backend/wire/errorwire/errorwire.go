@@ -32,10 +32,10 @@ const (
 
 // Describe returns the code and the plain text of the failure of an operation. It writes the full error to the log
 // when the failure has no plain text of its own.
-func Describe(ctx context.Context, operation string, err error) (server.ErrorCode, string) {
+func (f *Failures) Describe(ctx context.Context, operation string, err error) (server.ErrorCode, string) {
 	text, isKnown := findText(err)
 	if !isKnown {
-		if isNewFailure(operation, err) {
+		if f.isNew(operation, err) {
 			slog.WarnContext(ctx, "a method of Numen Sync failed", "operation", operation, "error", err)
 		}
 		text = GenericText
@@ -159,19 +159,23 @@ func getRefusals() []error {
 	}
 }
 
-var (
-	lastFailureMu sync.Mutex
-	lastFailure   = map[string]string{}
-)
+// Failures remembers the last error logged for each operation.
+type Failures struct {
+	mu   sync.Mutex
+	last map[string]string
+}
 
-// isNewFailure tells whether the operation failed with another error than the last one it logged, so that a
+// NewFailures returns an empty Failures.
+func NewFailures() *Failures { return &Failures{mu: sync.Mutex{}, last: map[string]string{}} }
+
+// isNew reports whether the operation failed with another error than the last one it logged, so that a
 // method a window asks again and again writes one line, not one per ask.
-func isNewFailure(operation string, err error) bool {
-	lastFailureMu.Lock()
-	defer lastFailureMu.Unlock()
-	if lastFailure[operation] == err.Error() {
+func (f *Failures) isNew(operation string, err error) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.last[operation] == err.Error() {
 		return false
 	}
-	lastFailure[operation] = err.Error()
+	f.last[operation] = err.Error()
 	return true
 }
