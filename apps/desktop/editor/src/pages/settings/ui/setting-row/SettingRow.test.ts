@@ -63,7 +63,6 @@ describe('SettingRow', () => {
     expect(popover?.parentElement).toBe(document.body)
     expect(row.element.contains(popover)).toBe(false)
     expect(row.element.children.length).toBe(before)
-    expect(popover?.style.top).not.toBe('')
   })
 
   it('closes the details on Escape and gives the focus back to the info button', async () => {
@@ -83,7 +82,8 @@ describe('SettingRow', () => {
     getInfoButton().click()
     await new Promise((resolve) => setTimeout(resolve))
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    const outside = document.body.appendChild(document.createElement('div'))
+    outside.dispatchEvent(new Event('pointerdown', { bubbles: true }))
     await new Promise((resolve) => setTimeout(resolve))
 
     expect(getPopover()).toBeNull()

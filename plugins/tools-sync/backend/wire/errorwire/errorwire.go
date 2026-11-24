@@ -54,7 +54,7 @@ func findText(err error) (string, bool) {
 	var quota syncprotocol.QuotaExceededError
 	switch {
 	case errors.As(err, &nesting):
-		return capitalizeFirst(nesting.Error()), true
+		return convertFirstToUpper(nesting.Error()), true
 	case errors.As(err, &missing):
 		return "The folder of the vault «" + missing.Name + "» is missing: " + missing.Path + ". Remove the vault from the list or restore the folder.", true
 	case errors.As(err, &quota):
@@ -70,7 +70,7 @@ func findText(err error) (string, bool) {
 		}
 	}
 	if refusal := findRefusal(err); refusal != nil {
-		return capitalizeFirst(refusal.Error()), true
+		return convertFirstToUpper(refusal.Error()), true
 	}
 	return "", false
 }
@@ -106,7 +106,7 @@ func findRefusal(err error) error {
 	return nil
 }
 
-func capitalizeFirst(text string) string { return strings.ToUpper(text[:1]) + text[1:] }
+func convertFirstToUpper(text string) string { return strings.ToUpper(text[:1]) + text[1:] }
 
 type entry struct {
 	target error

@@ -12,7 +12,7 @@ Feature: Numen Sync subscription
     And the person creates an identity
     And the application "editor" starts
 
-  Rule: The page "Identity and licenses" shows the subscription of the identity
+  Rule: The page "Identity and licenses" shows the subscription
 
     Scenario: A new identity has no subscription
       When the person opens the page "Identity and licenses"

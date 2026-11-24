@@ -79,7 +79,7 @@ func (k *Keeper) KeepAll(ctx context.Context) {
 
 // Keep keeps the plugin if it stays running and is enabled, and starts its process. It returns at once.
 func (k *Keeper) Keep(ctx context.Context, pluginID string) {
-	if k.mode.IsClosed() || k.mode.IsSafeMode() || !k.isKeepable(pluginID) {
+	if k.mode.IsClosed() || k.mode.IsSafeMode() || !k.isKeepable(ctx, pluginID) {
 		return
 	}
 	k.mu.Lock()
@@ -95,11 +95,11 @@ func (k *Keeper) Drop(_ context.Context, pluginID string) {
 	k.mu.Unlock()
 }
 
-func (k *Keeper) isKeepable(pluginID string) bool {
+func (k *Keeper) isKeepable(ctx context.Context, pluginID string) bool {
 	v, release := k.set.getView()
 	defer release()
 	p, ok := v.get(pluginID)
-	return ok && p.Manifest.Backend.IsPersistent() && v.isEnabled(pluginID) && k.requires.GetUnmet(context.Background(), p.Manifest.Backend) == ""
+	return ok && p.Manifest.Backend.IsPersistent() && v.isEnabled(pluginID) && k.requires.GetUnmet(ctx, p.Manifest.Backend) == ""
 }
 
 func (k *Keeper) isKept(pluginID string) bool {
@@ -124,7 +124,7 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 		return
 	}
 	defer k.endStart(ctx, pluginID)
-	if !k.isKeepable(pluginID) {
+	if !k.isKeepable(ctx, pluginID) {
 		k.Drop(ctx, pluginID)
 		return
 	}
@@ -137,7 +137,7 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 		// until the next exit, use or enabling.
 		return
 	}
-	if !k.isKeepable(pluginID) {
+	if !k.isKeepable(ctx, pluginID) {
 		k.Drop(ctx, pluginID)
 		k.stop(ctx, pluginID)
 	}

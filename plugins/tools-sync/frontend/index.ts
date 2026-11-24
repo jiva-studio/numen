@@ -170,17 +170,17 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   registerShare(plugin, host)
   const flags = host.ui.vaultFlags
   if (flags === undefined) throw new Error('the window gives no vault flags')
-  const syncedFlags = createSyncedFlags({
+  const flagSync = createSyncedFlags({
     client: vaultsClient,
     flags,
     getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
   })
-  registerSync(plugin, host, syncedFlags.refresh)
+  registerSync(plugin, host, flagSync.refresh)
   registerUnsync(plugin, host, STOP_SYNC_COMMAND)
   registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
-  syncedFlags.start()
-  plugin.identity.subscriptions.push({ dispose: () => syncedFlags.stop() })
+  flagSync.start()
+  plugin.identity.subscriptions.push({ dispose: () => flagSync.stop() })
   state.start()
 }
 

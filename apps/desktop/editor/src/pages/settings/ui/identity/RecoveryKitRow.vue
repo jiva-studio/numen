@@ -10,15 +10,16 @@ import { computed } from 'vue'
 import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
 
-/* --------------------------------- Props ---------------------------------- */
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ problem: string; isBusy: boolean }>()
-
-const tip = useTooltip()
-const label = computed(() => (props.isBusy ? words.kitDownloading : words.kitDialogTitle))
 
 const emit = defineEmits<{
   (e: 'download'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
+const label = computed(() => (props.isBusy ? words.kitDownloading : words.kitDialogTitle))
 </script>
 
 <template>

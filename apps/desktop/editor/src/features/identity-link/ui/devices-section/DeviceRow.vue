@@ -3,7 +3,7 @@
  * One device of the identity: its name, when it was linked, its fingerprint and whether it is this
  * one. A right-click (or the Menu key) on another device opens a menu with Remove; this one has none.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { Trash2 } from '@lucide/vue'
 import { NavigationRow } from '@numen/plugin-manager'
 import { Fingerprint, Menu, measureRect, type MenuItem } from '@numen/ui'
@@ -23,7 +23,7 @@ const date = computed(() => {
 })
 
 const hasMenu = computed(() => !props.device.isThis && !props.device.isRevoked)
-const row = ref<HTMLElement | null>(null)
+const row = useTemplateRef<HTMLElement>('row')
 const anchor = ref<{ x: number; y: number } | null>(null)
 
 const items: readonly MenuItem[] = [{ id: 'revoke', text: words.deviceRevoke }]

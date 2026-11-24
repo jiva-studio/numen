@@ -190,16 +190,8 @@ func watchJoin(ctx context.Context, deps Deps, mine *join) {
 			return
 		}
 		answer, err := deps.Relay.WaitMessages(ctx, mine.id, ports.LinkSideScanner, after, waitFor)
-		if errors.Is(err, syncprotocol.ErrChannelGone) {
-			finishJoin(deps.Hub, mine, PhaseExpired, nil)
-			return
-		}
-		if errors.Is(err, syncprotocol.ErrLinkBusy) && mine.channel == nil {
-			finishJoin(deps.Hub, mine, PhaseUsed, domainshare.ErrLinkUsed)
-			return
-		}
 		if err != nil {
-			if deps.Clock.Wait(ctx, retryAfter) != nil {
+			if !retryJoin(ctx, deps, mine, err) {
 				return
 			}
 			continue
@@ -213,6 +205,19 @@ func watchJoin(ctx context.Context, deps Deps, mine *join) {
 			return
 		}
 	}
+}
+
+// retryJoin finishes the join when the failure ends it and reports whether the watch goes on after a wait.
+func retryJoin(ctx context.Context, deps Deps, mine *join, failure error) bool {
+	switch {
+	case errors.Is(failure, syncprotocol.ErrChannelGone):
+		finishJoin(deps.Hub, mine, PhaseExpired, nil)
+		return false
+	case errors.Is(failure, syncprotocol.ErrLinkBusy) && mine.channel == nil:
+		finishJoin(deps.Hub, mine, PhaseUsed, domainshare.ErrLinkUsed)
+		return false
+	}
+	return deps.Clock.Wait(ctx, retryAfter) == nil
 }
 
 func isJoinFinished(hub *Hub, mine *join) bool {

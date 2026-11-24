@@ -99,7 +99,7 @@ func (e *Events) closeBus(ctx context.Context) error {
 	return e.bus.Close(ctx)
 }
 
-func (e *Events) listActivatedBy(event string) []string {
+func (e *Events) listActivatedBy(ctx context.Context, event string) []string {
 	types, isFiltered := e.takeFileTypes(event)
 	if _, isFilesChanged := protocol.ReadFilesChangedEvent(event); isFilesChanged && !isFiltered {
 		return nil
@@ -108,7 +108,7 @@ func (e *Events) listActivatedBy(event string) []string {
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {
-		if p.Manifest.IsActivatedBy(event) && (!isFiltered || p.Manifest.IsTakingFileTypes(types)) && e.requires.GetUnmet(context.Background(), p.Manifest.Backend) == "" {
+		if p.Manifest.IsActivatedBy(event) && (!isFiltered || p.Manifest.IsTakingFileTypes(types)) && e.requires.GetUnmet(ctx, p.Manifest.Backend) == "" {
 			candidates = append(candidates, p.Manifest.ID)
 		}
 	}
@@ -120,7 +120,7 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 	if e.mode.IsSafeMode() {
 		return nil, nil
 	}
-	candidates := e.listActivatedBy(event)
+	candidates := e.listActivatedBy(ctx, event)
 
 	activated := make([]string, 0, len(candidates))
 	var errs []error

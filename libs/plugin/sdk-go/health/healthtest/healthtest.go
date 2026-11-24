@@ -123,8 +123,6 @@ const maxKeyLength = 32
 
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 
-// checkKey returns the invalid-argument error the host gives to a key that is not lowercase letters, digits and
-// hyphens starting with a letter, or is longer than 32 characters.
 func checkKey(key string) error {
 	if len(key) > maxKeyLength || !keyPattern.MatchString(key) {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid health item: the key %q is not accepted by the host", key))

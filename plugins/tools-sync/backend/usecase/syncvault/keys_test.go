@@ -3,7 +3,7 @@ package syncvault
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/healthkeytest"
 )
 
 // The host refuses a key that is not lowercase letters, digits and hyphens starting with a letter, or is
@@ -15,12 +15,12 @@ func TestEveryHealthKeyOfAVaultIsValid(t *testing.T) {
 		keySharedConflicts, keyShareEnded, keySharedUnverified,
 	}
 	for _, prefix := range prefixes {
-		if key := getKey(prefix, ulid); !healthkey.IsValid(key) {
+		if key := getKey(prefix, ulid); !healthkeytest.IsValid(key) {
 			t.Errorf("the key %q of the prefix %q is not valid", key, prefix)
 		}
 	}
 	for _, key := range []string{keyUnreachable, keyFailed} {
-		if !healthkey.IsValid(key) {
+		if !healthkeytest.IsValid(key) {
 			t.Errorf("the key %q is not valid", key)
 		}
 	}

@@ -205,8 +205,8 @@ func TestEveryClientSendsTheVersionAndTheBearerOfTheTokenInEachRequest(t *testin
 	}
 
 	calls := stub.calls()
-	if len(calls) != 10 {
-		t.Fatalf("the server saw %d requests, want 10", len(calls))
+	if len(calls) != 12 {
+		t.Fatalf("the server saw %d requests, want 12", len(calls))
 	}
 	for i, header := range calls {
 		if got := header.Get("Authorization"); got != "Bearer token-of-the-session" {

@@ -61,6 +61,8 @@ type launchServices interface {
 // Processes starts the process of a plugin, or the handler of a built-in one, and holds the pipes it
 // opened for the process until the process exits.
 type Processes struct {
+	outputLog
+
 	sups     processTable
 	clock    machineport.Clock
 	report   func(error)
@@ -73,7 +75,6 @@ type Processes struct {
 	launcher Launcher
 	limits   process.Limits
 	policy   lifecycle.ActivationPolicy
-	record   func(domainlogs.Entry)
 
 	stdinsMu sync.Mutex
 	stdins   map[stdinKey]io.Closer
@@ -87,19 +88,6 @@ func NewProcesses(sups processTable, clock machineport.Clock, report func(error)
 		limits: process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
 		stdins: make(map[stdinKey]io.Closer),
 	}
-}
-
-// SetOutputLog sets where the lines a plugin process writes to its output are recorded. Without it they are dropped.
-func (p *Processes) SetOutputLog(record func(domainlogs.Entry)) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.record = record
-}
-
-func (p *Processes) getOutputLog() func(domainlogs.Entry) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.record
 }
 
 // SetProcessLimits sets execution limits for launched plugin processes.
@@ -257,7 +245,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 
 	go func() {
-		pumpOutput(stdout, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelInfo)
+		forwardOutput(stdout, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelInfo)
 		closeResource(p.report, "stdout of plugin "+plug.Manifest.ID, stdout)
 	}()
 
@@ -351,7 +339,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
-	go pumpOutput(stderr, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelWarning)
+	go forwardOutput(stderr, p.getOutputLog(), plug.Manifest.ID, domainlogs.LevelWarning)
 	p.HoldStdin(plug.Manifest.ID, cmd.Process.Pid, stdin)
 	return cmd.Process, stdout, nil
 }

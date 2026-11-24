@@ -574,7 +574,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     expect(tab.text()).toContain('Printed sheets to bring your identity back')
     expect(tab.text()).not.toContain('if you lose this computer')
     await tab.get('[aria-label="About Recovery kit"]').trigger('click')
-    expect(tab.text()).toContain(
+    expect(getBody(tab).text()).toContain(
       'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
     )
     expect(getDownload(tab)).toBeDefined()
@@ -695,11 +695,11 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     await press(tab, 'Restore')
     const items = getBody(tab)
       .findAll('[role=menuitem]')
-      .map((one) => one.text())
+      .map((one) => [one.get('.menu__text').text(), one.get('.menu__detail').text()])
     expect(items).toStrictEqual([
-      'Recovery wordsType the 12 words',
-      'Recovery kitScan the QR codes of two sheets',
-      'Recovery kitType the words of two sheets',
+      ['Recovery words', 'Type the 12 words'],
+      ['Recovery kit', 'Scan the QR codes of two sheets'],
+      ['Recovery kit', 'Type the words of two sheets'],
     ])
     await pressRestore(tab, 'Type the 12 words')
     expect(getDialog(tab).get('h2').text()).toBe('Recovery words')

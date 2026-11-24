@@ -19,7 +19,6 @@ type Lifecycle struct {
 	keeper   pluginKeeper
 }
 
-// NewLifecycle creates a lifecycle from the teardown and the keeper of the plugins.
 func NewLifecycle(teardown pluginTeardown, keeper pluginKeeper) Lifecycle {
 	return Lifecycle{teardown: teardown, keeper: keeper}
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 )
@@ -17,11 +18,11 @@ const (
 	outputQueueLines   = 256
 )
 
-// pumpOutput records each line read from out as a log entry of the plugin until out ends. The lines pass
+// forwardOutput records each line read from out until out ends. The lines pass
 // through a bounded queue, so a slow log never blocks the plugin: when the queue is full the line is dropped.
-func pumpOutput(out io.Reader, record func(domainlogs.Entry), pluginID string, level domainlogs.Level) {
+func forwardOutput(out io.Reader, record func(domainlogs.Entry), pluginID string, level domainlogs.Level) {
 	if record == nil {
-		_, _ = io.Copy(io.Discard, out)
+		discardOutput(out)
 		return
 	}
 	queue := make(chan string, outputQueueLines)
@@ -45,7 +46,6 @@ func pumpOutput(out io.Reader, record func(domainlogs.Entry), pluginID string, l
 	<-done
 }
 
-// readLines calls emit with every non-empty line of in, cut to maxOutputLineBytes; the rest of a longer line is skipped.
 func readLines(in io.Reader, emit func(string)) {
 	reader := bufio.NewReaderSize(in, maxOutputLineBytes)
 	for {
@@ -70,4 +70,30 @@ func cutLine(chunk []byte, truncated bool) string {
 		line = strings.TrimRight(line, "�") + "... [truncated]"
 	}
 	return line
+}
+
+// discardOutput drains out; a read error only ends the draining.
+func discardOutput(out io.Reader) {
+	if _, err := io.Copy(io.Discard, out); err != nil {
+		return
+	}
+}
+
+// outputLog holds where the lines a plugin process writes to its output are recorded.
+type outputLog struct {
+	outputMu sync.RWMutex
+	record   func(domainlogs.Entry)
+}
+
+// SetOutputLog sets where the lines a plugin process writes to its output are recorded. Without it they are dropped.
+func (l *outputLog) SetOutputLog(record func(domainlogs.Entry)) {
+	l.outputMu.Lock()
+	defer l.outputMu.Unlock()
+	l.record = record
+}
+
+func (l *outputLog) getOutputLog() func(domainlogs.Entry) {
+	l.outputMu.RLock()
+	defer l.outputMu.RUnlock()
+	return l.record
 }

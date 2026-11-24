@@ -134,7 +134,8 @@ func TestDeleteVault_ReportsNotDeletedForUnknownVault(t *testing.T) {
 
 func TestDeleteVault_IsAllowedInReadOnlyAndRefusedInDeleted(t *testing.T) {
 	t.Parallel()
-	b := createBillingEnv(t, false)
+	b := createBillingEnv(t, true)
+	b.pay()
 	vault, second := b.env.newVault(), b.env.newVault()
 
 	b.setPhase("phase=read_only")

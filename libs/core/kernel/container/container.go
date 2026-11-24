@@ -12,6 +12,7 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -81,7 +82,7 @@ type Resources struct {
 
 	vaultLocks    *vaultwriter.Locks
 	watches       *vaultwatch.Hub
-	settings      settingsadapter.Shared
+	settings      sharedSettings
 	subscriptions settingsusecase.Subscriptions
 	logEntries    *logsusecase.Entries
 	progress      *identity.Progress
@@ -93,7 +94,7 @@ func NewResources() *Resources {
 		Chunks:        &note.ChunkTokens{},
 		vaultLocks:    vaultwriter.NewLocks(),
 		watches:       vaultwatch.NewHub(),
-		settings:      settingsadapter.NewShared(),
+		settings:      newSharedSettings(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
 		progress:      identity.NewProgress(),
@@ -241,4 +242,14 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		PluginCatalog:   res.PluginCatalog,
 		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: getCreateGate(res)},
 	}
+}
+
+// sharedSettings holds the settings files and the change events that one composition root shares.
+type sharedSettings struct {
+	Files  *settingsadapter.Files
+	Events *settingevents.Events
+}
+
+func newSharedSettings() sharedSettings {
+	return sharedSettings{Files: settingsadapter.NewFiles(), Events: settingevents.New()}
 }

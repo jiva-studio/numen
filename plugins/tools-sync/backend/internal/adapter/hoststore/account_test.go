@@ -27,7 +27,7 @@ func TestAVaultWithNoJournalFileHasAnEmptyJournal(t *testing.T) {
 	}
 }
 
-func TestWriteJournal_SkipsGoneFolders(t *testing.T) {
+func TestWriteJournal_SkipsMissingFolders(t *testing.T) {
 	first := hosttest.CreateOnDisk(t, "first", nil)
 	gone := hosttest.CreateOnDisk(t, "gone", nil)
 	if err := os.RemoveAll(gone.Vault().Path); err != nil {
@@ -46,7 +46,7 @@ func TestWriteJournal_SkipsGoneFolders(t *testing.T) {
 	}
 }
 
-func TestWritePin_SkipsGoneFolders(t *testing.T) {
+func TestWritePin_SkipsMissingFolders(t *testing.T) {
 	first := hosttest.CreateOnDisk(t, "first", nil)
 	gone := hosttest.CreateOnDisk(t, "gone", nil)
 	if err := os.RemoveAll(gone.Vault().Path); err != nil {
@@ -64,7 +64,7 @@ func TestWritePin_SkipsGoneFolders(t *testing.T) {
 	}
 }
 
-func TestWriteJournal_FailsWhenAllFoldersGone(t *testing.T) {
+func TestWriteJournal_FailsWhenNoFolderExists(t *testing.T) {
 	only := hosttest.CreateOnDisk(t, "only", nil)
 	if err := os.RemoveAll(only.Vault().Path); err != nil {
 		t.Fatal(err)

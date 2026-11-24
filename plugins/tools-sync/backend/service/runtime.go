@@ -181,5 +181,4 @@ func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {
 	}
 }
 
-// getHealth returns the health reports of the plugin: the host may refuse one, and no work depends on it.
 func (p parts) getHealth() ports.Health { return besthealth.New(p.health, logging.Warn) }

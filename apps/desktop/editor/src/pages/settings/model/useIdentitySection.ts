@@ -4,7 +4,7 @@
  * and deleting the identity from this device. The words live in this state only while a setup is
  * open; leaving the page or cancelling drops them, and a kept identity hands them to `onKept` once.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../types'
@@ -16,6 +16,14 @@ import { useWordsConfirmation } from './useWordsConfirmation'
 import { useSetupStage } from './useSetupStage'
 
 type Step = 'idle' | 'setup' | 'restore-words' | 'restore-sheets' | 'restore-typed'
+
+function useLoadOnMount(getIdentity: () => InstallationIdentity, problem: Ref<string>): void {
+  onMounted(() => {
+    runInBackground(getIdentity().load(), (caughtError) => {
+      problem.value = formatError(caughtError)
+    })
+  })
+}
 
 export function useIdentitySection(
   getIdentity: () => InstallationIdentity,
@@ -36,12 +44,7 @@ export function useIdentitySection(
     onRestored: () => reset(),
   })
 
-  onMounted(() => {
-    runInBackground(getIdentity().load(), (caughtError) => {
-      problem.value = formatError(caughtError)
-    })
-  })
-
+  useLoadOnMount(getIdentity, problem)
   onBeforeUnmount(reset)
 
   let generation = 0

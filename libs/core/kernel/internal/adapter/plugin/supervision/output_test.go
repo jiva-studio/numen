@@ -49,8 +49,11 @@ func TestProcessOutputIsRecordedWithPluginID(t *testing.T) {
 	rec := &outputRecorder{}
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() { defer wg.Done(); pumpOutput(stdout, rec.Record, "org.example.sync", domainlogs.LevelInfo) }()
-	go func() { defer wg.Done(); pumpOutput(stderr, rec.Record, "org.example.sync", domainlogs.LevelWarning) }()
+	go func() { defer wg.Done(); forwardOutput(stdout, rec.Record, "org.example.sync", domainlogs.LevelInfo) }()
+	go func() {
+		defer wg.Done()
+		forwardOutput(stderr, rec.Record, "org.example.sync", domainlogs.LevelWarning)
+	}()
 	wg.Wait()
 	if err := cmd.Wait(); err != nil {
 		t.Fatal(err)
@@ -69,7 +72,7 @@ func TestProcessOutputIsRecordedWithPluginID(t *testing.T) {
 
 func TestLongOutputLineIsTruncated(t *testing.T) {
 	rec := &outputRecorder{}
-	pumpOutput(strings.NewReader(strings.Repeat("x", 3*maxOutputLineBytes)+"\nnext\n"), rec.Record, "p", domainlogs.LevelInfo)
+	forwardOutput(strings.NewReader(strings.Repeat("x", 3*maxOutputLineBytes)+"\nnext\n"), rec.Record, "p", domainlogs.LevelInfo)
 	entries := rec.List()
 	if len(entries) != 2 || len(entries[0].Message) > maxOutputLineBytes+32 || !strings.HasSuffix(entries[0].Message, "[truncated]") || entries[1].Message != "next" {
 		t.Fatalf("entries = %d", len(entries))
@@ -81,7 +84,7 @@ func TestSlowLogDoesNotBlockPluginOutput(t *testing.T) {
 	reader, writer := io.Pipe()
 	finished := make(chan struct{})
 	go func() {
-		pumpOutput(reader, func(domainlogs.Entry) { <-release }, "p", domainlogs.LevelInfo)
+		forwardOutput(reader, func(domainlogs.Entry) { <-release }, "p", domainlogs.LevelInfo)
 		close(finished)
 	}()
 	for range 10 * outputQueueLines {
