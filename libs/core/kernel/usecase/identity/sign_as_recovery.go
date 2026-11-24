@@ -18,7 +18,9 @@ func (u *SignAsRecovery) Execute(_ context.Context, pluginID string, message []b
 	if pluginID == "" {
 		return nil, errNoPluginID
 	}
-	restore := u.restores.read()
+	store, release := u.restores.hold()
+	defer release()
+	restore := store.current
 	if restore == nil {
 		return nil, identitydomain.ErrNoPendingRestore
 	}

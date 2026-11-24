@@ -28,6 +28,29 @@ func getLegalWords() []string {
 
 var fingerprint = regexp.MustCompile(`^([0-9A-F]{4} ){7}[0-9A-F]{4}$`)
 
+func TestCreateIdentity_AcceptsTheSameWordsAgainAfterAFailedWrite(t *testing.T) {
+	t.Parallel()
+	keys := newFakeKeyStore()
+	deps := identity.NewDeps(keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(&fakeChainStore{})
+	generate, create := identity.NewGenerateRecoveryWords(deps), identity.NewCreateIdentity(deps)
+	words, err := generate.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys.setFails = errors.New("key store is locked")
+	if _, err := create.Execute(t.Context(), words); err == nil {
+		t.Fatal("create with a failing key store: error = nil")
+	}
+	keys.setFails = nil
+
+	if _, err := create.Execute(t.Context(), words); err != nil {
+		t.Fatalf("create of the same words after the failure: %v", err)
+	}
+	if _, err := create.Execute(t.Context(), words); err == nil {
+		t.Error("create of the same words after success: error = nil, want a refusal")
+	}
+}
+
 type kit struct {
 	keys     *fakeKeyStore
 	chains   *fakeChainStore

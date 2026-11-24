@@ -20,6 +20,7 @@ func getOtherWords() []string {
 }
 
 type restoreKit struct {
+	deps     identity.Deps
 	keys     *fakeKeyStore
 	clock    *testsupport.ManualClock
 	get      *identity.GetIdentity
@@ -43,7 +44,7 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	deps := identity.NewDeps(keys, fakeNames{name: name}, clock).WithChains(&fakeChainStore{})
 	saver := &fakeKitSaver{}
 	return restoreKit{
-		keys: keys, clock: clock, saver: saver,
+		deps: deps, keys: keys, clock: clock, saver: saver,
 		get:      identity.NewGetIdentity(deps),
 		create:   identity.NewSeededCreate(deps),
 		public:   identity.NewGetPublicIdentity(deps),
@@ -564,12 +565,20 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 		t.Fatalf("pending = %+v, error = %v, want the restore to stay pending after a failed completion", pending, err)
 	}
 
+	areKeysZeroed := identity.GetPendingKeyCheck(k.deps)
+	if areKeysZeroed() {
+		t.Fatal("keys of the pending restore are zero before the expiry")
+	}
+
 	k.clock.Advance(10 * time.Minute)
 
 	testsupport.WaitFor(t, func() bool {
 		pending, err := k.pending.Execute(t.Context())
 		return err == nil && !pending.IsPending
 	})
+	if !areKeysZeroed() {
+		t.Error("keys of the expired restore are not zeroed")
+	}
 	if _, err := k.sign.Execute(t.Context(), syncPlugin, []byte("message")); !errors.Is(err, identitydomain.ErrNoPendingRestore) {
 		t.Errorf("SignAsRecovery after the expiry: error = %v, want ErrNoPendingRestore", err)
 	}

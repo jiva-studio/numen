@@ -20,18 +20,20 @@ func (g *generatedWords) put(words []string) {
 	g.words = slices.Clone(words)
 }
 
-func (g *generatedWords) take(words []string) bool {
+func (g *generatedWords) matches(words []string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if len(g.words) == 0 || len(words) != len(g.words) {
 		return false
 	}
-	isSame := subtle.ConstantTimeCompare([]byte(strings.Join(normalizeWords(words), " ")), []byte(strings.Join(g.words, " "))) == 1
-	if isSame {
-		clear(g.words)
-		g.words = nil
-	}
-	return isSame
+	return subtle.ConstantTimeCompare([]byte(strings.Join(normalizeWords(words), " ")), []byte(strings.Join(g.words, " "))) == 1
+}
+
+func (g *generatedWords) drop() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	clear(g.words)
+	g.words = nil
 }
 
 func normalizeWords(words []string) []string {

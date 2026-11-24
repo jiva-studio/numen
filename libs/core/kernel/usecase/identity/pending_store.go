@@ -57,6 +57,7 @@ func (s *pendingStore) isCurrent(restore *pendingRestore) bool {
 	return s.current == restore
 }
 
+// read returns the current restore to compare it with the store later; its keys are read only while hold holds the lock.
 func (s *pendingStore) read() *pendingRestore {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -68,5 +69,7 @@ func (s *pendingStore) expire(restore *pendingRestore) {
 	defer s.mu.Unlock()
 	if s.current == restore {
 		s.clearLocked()
+		restore.recovery = identitylib.RecoveryKey{}
+		restore.device = identitylib.DeviceKey{}
 	}
 }

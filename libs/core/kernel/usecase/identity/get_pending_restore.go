@@ -16,7 +16,9 @@ func NewGetPendingRestore(d Deps) *GetPendingRestore {
 
 // Execute returns the public keys of the pending restore, or a value with IsPending false.
 func (u *GetPendingRestore) Execute(context.Context) (identitydomain.PendingRestore, error) {
-	restore := u.restores.read()
+	store, release := u.restores.hold()
+	defer release()
+	restore := store.current
 	if restore == nil {
 		return identitydomain.PendingRestore{}, nil
 	}
