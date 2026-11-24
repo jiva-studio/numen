@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The dialog of a new device: the camera scans the QR code of a device that has the account, and a button reveals a
- * field to paste its link into for a machine without a camera. Then it shows the name of this device, asks for
+ * The dialog of a new device: the camera scans the QR code of a device that has the account, and a machine
+ * without a camera shows a field to paste its link into instead. Then it shows the name of this device, asks for
  * the confirmation code the other device shows, and asks whether to join the account. Escape closes it, and closing
  * it cancels the link.
  */
@@ -33,15 +33,9 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const session = useLinkSession(() => props.calls, 'joiner', props.stallMs)
 const scan = useLinkScan(props.findCamera)
 const draft = { text: ref(''), code: ref('') }
-const isPasteAsked = ref(false)
-const isPasting = computed(() => isPasteAsked.value || scan.phase.value === 'paste')
+const isPasting = computed(() => scan.phase.value === 'paste')
 const actions = useLinkActions(session, 'joiner', draft)
 const { view } = actions
-const extra = computed(() =>
-  view.value === 'scan' && !isPasting.value
-    ? { label: words.linkPasteInstead, isDisabled: false }
-    : undefined,
-)
 const hasInput = computed(() =>
   view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
 )
@@ -63,7 +57,6 @@ const hasInput = computed(() =>
       :problem="session.problem.value"
       :phase="scan.phase.value"
       :notice="scan.notice.value"
-      :is-pasting="isPasting"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="actions.scan"
       @unavailable="scan.setUnavailable"
@@ -82,10 +75,8 @@ const hasInput = computed(() =>
         :is-busy="session.isBusy.value"
         :has-input="hasInput"
         :is-pasting="isPasting"
-        v-bind="extra === undefined ? {} : { extra }"
         @close="emit('close')"
         @decline="actions.decline"
-        @extra="isPasteAsked = true"
       />
     </template>
   </Dialog>

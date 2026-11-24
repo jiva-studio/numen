@@ -1,6 +1,6 @@
 /**
  * The dialog of a new device that joins an account, : it opens the camera for the QR code of the
- * other device, offers a pasted link on request, and walks through the waiting, the code and the end.
+ * other device, shows a field for a pasted link only without a camera, and walks through the waiting, the code and the end.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -59,8 +59,6 @@ const joiner = (overrides: Parameters<typeof createInfo>[0] = {}) =>
   createInfo({ role: 'joiner', mode: 'scan', accountFingerprint: '', ...overrides })
 
 const submitText = async (canvas: ReturnType<typeof within>, text: string) => {
-  const reveal = canvas.queryByRole('button', { name: 'Paste link instead' })
-  if (reveal) await userEvent.click(reveal)
   await userEvent.click(await canvas.findByRole('textbox', { name: 'Link from the other device' }))
   await userEvent.paste(text)
   await userEvent.click(canvas.getByRole('button', { name: 'Use link' }))
@@ -93,6 +91,8 @@ export const CameraReady: Story = {
     await expect(
       await canvas.findByText('Point the camera at the code on your other device.'),
     ).toBeVisible()
+    await expect(canvas.queryByRole('textbox')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: /paste/i })).toBeNull()
     await waitFor(() => expect(args.calls.start).toHaveBeenCalledWith('joiner', 'scan', QR_TEXT), {
       timeout: 10_000,
     })

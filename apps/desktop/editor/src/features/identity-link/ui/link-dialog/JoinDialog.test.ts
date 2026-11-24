@@ -1,4 +1,4 @@
-/** The dialog of a new device: the camera, the pasted link on request, the code and the account. */
+/** The dialog of a new device: the camera, the pasted link without one, the code and the account. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createIdentityStore, type LinkInfo } from '@/entities/identity'
@@ -55,15 +55,12 @@ describe('the dialog that joins an account', () => {
     )
   })
 
-  it('offers no field until the person asks for it where the machine has a camera', async () => {
+  it('offers no field and no way to paste where the machine has a camera', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true)
     expect(dialog.find('input').exists()).toBe(false)
-    expect(findButtons(/^Use link$/)).toHaveLength(0)
-    await click(findButton(/^Paste link instead$/))
-    expect(dialog.find('input').exists()).toBe(true)
-    expect(findButton(/^Use link$/)).toBeTruthy()
+    expect(findButtons(/paste|^Use link$/i)).toHaveLength(0)
+    expect(findButtons(/^Cancel$|^Close$/)).toHaveLength(1)
   })
-
 
   it('shows the camera and says where to point it', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true)

@@ -15,7 +15,6 @@ export const WORDS = {
   linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,
   linkQr: 'QR code',
   linkPaste: 'Link from the other device',
-  linkPasteInstead: 'Paste link instead',
   linkUse: 'Use link',
   linkCopy: 'Copy link',
   linkCopied: 'Copied',

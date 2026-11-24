@@ -12,7 +12,6 @@ const PAGE = 'Identity and licenses'
 const LIST = 'Devices'
 const LINK_NEW = 'Link a new device'
 const JOIN_WITH_QR = 'Join account'
-const PASTE_INSTEAD = 'Paste link instead'
 const QR_IMAGE = 'QR code'
 const PASTE_FIELD = 'Link from the other device'
 const USE_LINK = 'Use link'
@@ -101,10 +100,8 @@ export class DevicesDriver {
   /** A new device reads the QR code of a device that has the account: the desktop takes the link by paste. */
   async scanToJoin(text: string): Promise<void> {
     const dialog = await this.openJoinDialog()
-    const reveal = dialog.getByRole('button', { name: PASTE_INSTEAD, exact: true })
     const field = dialog.getByRole('textbox', { name: PASTE_FIELD })
-    await expect(reveal.or(field).first()).toBeVisible({ timeout: STEP_LIMIT_MS })
-    if (await reveal.isVisible()) await reveal.click()
+    await expect(field).toBeVisible({ timeout: STEP_LIMIT_MS })
     await field.fill(text)
     await dialog.getByRole('button', { name: USE_LINK, exact: true }).click()
   }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * What a new device scans with: the camera in a box of the size it keeps while the camera is checked, and, once
- * the person asks for it or the machine has no camera, a field to paste the link of the other device into.
+ * What a new device scans with: the camera across the whole width, or, only where the machine has no camera or the
+ * camera failed, the reason and a field to paste the link of the other device into.
  */
 import { QrScanner, type ScannerCamera } from '@numen/ui'
 import { WORDS as words } from '../../words'
@@ -14,7 +14,6 @@ defineProps<{
   problem: string
   phase: 'checking' | 'camera' | 'paste'
   notice: string
-  isPasting: boolean
   camera?: ScannerCamera
 }>()
 
@@ -27,27 +26,24 @@ const emit = defineEmits<{
 
 <template>
   <div class="link-scan">
-    <div v-if="phase !== 'paste'" class="link-scan__stage">
-      <LinkStatus
-        v-if="phase === 'checking'"
-        :title="words.linkCheckingCamera"
-        :detail="words.linkCheckingCameraDetail"
-      />
-      <QrScanner
-        v-else
-        v-bind="camera === undefined ? {} : { camera }"
-        @scanned="emit('scanned', $event)"
-        @unavailable="emit('unavailable', $event)"
-      />
+    <div v-if="phase === 'checking'" class="link-scan__checking">
+      <LinkStatus :title="words.linkCheckingCamera" :detail="words.linkCheckingCameraDetail" />
     </div>
-    <p v-else role="status" class="link-scan__notice">{{ notice }}</p>
-    <LinkField
-      v-if="isPasting || phase === 'paste'"
-      :model-value="modelValue"
-      :label="words.linkPaste"
-      is-mono
-      @update:model-value="emit('update:modelValue', $event)"
+    <QrScanner
+      v-else-if="phase === 'camera'"
+      v-bind="camera === undefined ? {} : { camera }"
+      @scanned="emit('scanned', $event)"
+      @unavailable="emit('unavailable', $event)"
     />
+    <template v-else>
+      <p role="status" class="link-scan__notice">{{ notice }}</p>
+      <LinkField
+        :model-value="modelValue"
+        :label="words.linkPaste"
+        is-mono
+        @update:model-value="emit('update:modelValue', $event)"
+      />
+    </template>
     <p v-if="problem !== ''" role="alert" class="link-scan__problem">{{ problem }}</p>
   </div>
 </template>
@@ -59,13 +55,10 @@ const emit = defineEmits<{
   gap: 0.5rem;
 }
 
-.link-scan__stage {
+.link-scan__checking {
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 100%;
-  max-inline-size: 22rem;
-  margin-inline: auto;
   aspect-ratio: 4 / 3;
 }
 
