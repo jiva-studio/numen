@@ -30,7 +30,7 @@ func getGuide() vault.AbsentFile {
 func openPhone(t *testing.T, notes map[string]string, absent ...vault.AbsentFile) vaultport.VaultReader {
 	t.Helper()
 	v := domain.Vault{ID: "01VAULT0000000000000000000", Path: vaulttest.CreateVault(t, notes, nil)}
-	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}

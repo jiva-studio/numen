@@ -298,7 +298,7 @@ func (b *missingFirstBlob) GetBlobUrls(ctx context.Context, vaultID []byte, blob
 	return downloads, err
 }
 
-type powerLossHost struct{ synctest.Host }
+type powerLossHost struct{ ports.Host }
 
 func (h powerLossHost) GetFiles(id domain.VaultID) ports.Files {
 	return powerLossFiles{Files: h.Host.GetFiles(id)}

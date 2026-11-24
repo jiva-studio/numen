@@ -214,14 +214,14 @@ func TestANoteCreatedOnTheComputerArrivesWhileTheApplicationIsOpenOnThePhone(t *
 		t.Fatal(err)
 	}
 	suspendAfter(t, life)
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 	w.Computer.WriteNote(synctest.ComputerVault, listPath, "milk")
 	w.Clock.Advance(time.Minute)
 	w.ComputerSync(t)
 
 	s.Hint(synctest.PhoneVault)
 
-	synctest.Eventually(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
+	synctest.WaitUntil(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
 }
 
 func TestANoteCreatedWhileTheApplicationIsClosedArrivesWhenItOpens(t *testing.T) {
@@ -236,7 +236,7 @@ func TestANoteCreatedWhileTheApplicationIsClosedArrivesWhenItOpens(t *testing.T)
 	}
 	suspendAfter(t, life)
 
-	synctest.Eventually(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
+	synctest.WaitUntil(t, "the note on the phone", func() bool { return hasPhoneNote(w, listPath, "milk") })
 }
 
 func TestNumenAsksForNothingWhenItIsOffTheScreen(t *testing.T) {
@@ -246,7 +246,7 @@ func TestNumenAsksForNothingWhenItIsOffTheScreen(t *testing.T) {
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 
 	if err := life.Suspend(t.Context()); err != nil {
 		t.Fatal(err)
@@ -278,7 +278,7 @@ func TestNumenAsksAgainWhenItReturnsToTheScreen(t *testing.T) {
 	}
 	suspendAfter(t, life)
 
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
 func TestANoteIsSentWhenTheApplicationIsSuspended(t *testing.T) {

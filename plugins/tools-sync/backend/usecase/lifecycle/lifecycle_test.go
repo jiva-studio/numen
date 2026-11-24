@@ -33,11 +33,11 @@ func TestResume_RunsAPassAtOnceAndOpensTheStream(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "the note on the phone", func() bool {
+	synctest.WaitUntil(t, "the note on the phone", func() bool {
 		text, ok := w.Phone.ReadNote(synctest.PhoneVault, "Shopping list.md")
 		return ok && text == "milk"
 	})
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
 func TestResume_IsIdempotent(t *testing.T) {
@@ -55,7 +55,7 @@ func TestResume_IsIdempotent(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() >= 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() >= 1 })
 	if got := s.CountOpened(); got != 1 {
 		t.Errorf("%d streams were opened by two calls, want 1", got)
 	}
@@ -68,7 +68,7 @@ func TestSuspend_ClosesTheStreamAndAsksForNothingMore(t *testing.T) {
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 
 	if err := life.Suspend(t.Context()); err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestResume_OpensTheStreamAgainAfterSuspend(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
 func TestSuspend_SendsTheNoteCreatedOnThePhoneBeforeItStops(t *testing.T) {
@@ -184,7 +184,7 @@ func TestResume_SendsTheNoteCreatedWhileTheApplicationWasClosed(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "the note on the computer", func() bool {
+	synctest.WaitUntil(t, "the note on the computer", func() bool {
 		w.ComputerSync(t)
 		text, ok := w.Computer.ReadNote(synctest.ComputerVault, "Shopping list.md")
 		return ok && text == "eggs"

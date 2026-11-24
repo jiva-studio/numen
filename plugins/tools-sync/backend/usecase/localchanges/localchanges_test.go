@@ -243,7 +243,7 @@ func TestScanLocalChanges_KeepsItsPositionInFeedJSON(t *testing.T) {
 }
 
 type brokenStatHost struct {
-	synctest.Host
+	ports.Host
 	path string
 }
 

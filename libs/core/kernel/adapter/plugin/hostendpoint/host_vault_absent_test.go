@@ -76,7 +76,7 @@ type phoneVault struct {
 func newPhoneVault(t *testing.T, held map[string]string) phoneVault {
 	t.Helper()
 	v := vaulttest.NewVault(t, held)
-	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.DisableSync())
 	if err != nil {
 		t.Fatal(err)
 	}
