@@ -7,13 +7,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// RequirementSource says whether a condition of the host that a manifest names holds.
+// RequirementSource reports which conditions of the host that a manifest names hold.
 type RequirementSource interface {
 	// IsRequirementMet reports whether the condition holds now.
 	IsRequirementMet(ctx context.Context, requirement string) bool
 }
 
-// Requirements answers whether the conditions a backend requires hold. Until a source is set none holds.
+// Requirements returns the first condition a backend requires that does not hold. Until a source is set none holds.
 type Requirements struct {
 	mu     sync.RWMutex
 	source RequirementSource
@@ -22,7 +22,7 @@ type Requirements struct {
 // NewRequirements creates the requirements with no source.
 func NewRequirements() *Requirements { return &Requirements{} }
 
-// SetSource sets what says whether a condition holds. It replaces the source set before.
+// SetSource sets the source that reports the conditions. It replaces the source set before.
 func (r *Requirements) SetSource(source RequirementSource) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -46,4 +46,17 @@ func (r *Requirements) GetUnmet(ctx context.Context, backend manifest.Backend) s
 		}
 	}
 	return ""
+}
+
+// Presence tells whether this device has an identity or is on the way to one.
+type Presence interface {
+	IsPresent(ctx context.Context) bool
+}
+
+// IdentityRequirement meets the identity requirement while the device is present.
+type IdentityRequirement struct{ Presence Presence }
+
+// IsRequirementMet reports whether the requirement is the identity and the device is present.
+func (r IdentityRequirement) IsRequirementMet(ctx context.Context, requirement string) bool {
+	return requirement == manifest.RequirementIdentity && r.Presence.IsPresent(ctx)
 }
