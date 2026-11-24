@@ -31,7 +31,6 @@ import { checkPermission, type PermissionTarget, type RequirePermission } from '
 import {
   createMountView,
   createRegistrations,
-  type RegistrationGuard,
   type Track,
 } from './guards/registrations'
 import { guardService } from './guards/guardService'
