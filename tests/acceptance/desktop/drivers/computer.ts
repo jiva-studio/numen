@@ -5,9 +5,11 @@
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { IdentityDriver } from './identity.js'
+import { DEFAULT_VAULT } from './rules.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
 import type { SyncDriver } from './sync.js'
+import type { World } from './world.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 /** The vault of the second computer: a scenario names it, and the computer has no other. */
@@ -15,6 +17,12 @@ const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
+
+/** The folders of a computer and the name of one vault in them. */
+export interface Place {
+  readonly world: World
+  readonly vault: string
+}
 
 export type ComputerName = 'first' | 'second'
 
@@ -78,7 +86,7 @@ export class ComputerDriver {
     return this.second
   }
 
-  private getScenario(computer: ComputerName): Scenario {
+  getScenario(computer: ComputerName): Scenario {
     return computer === 'first' ? this.first : this.requireSecond().scenario
   }
 
@@ -104,6 +112,12 @@ export class ComputerDriver {
   private resolveVault(computer: ComputerName, vault: string | undefined): string {
     const scenario = this.getScenario(computer)
     return scenario.getVault(vault ?? SECOND_VAULT)
+  }
+
+  /** The folders of a computer and the name of the vault a step names, or the only vault of the second computer. */
+  getPlace(computer: ComputerName, vault: string | undefined): Place {
+    const named = vault ?? (computer === 'first' ? DEFAULT_VAULT : undefined)
+    return { world: this.getScenario(computer).getWorld(), vault: this.resolveVault(computer, named) }
   }
 
   writeNote(computer: ComputerName, title: string, text: string, vault: string): void {

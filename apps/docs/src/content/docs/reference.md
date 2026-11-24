@@ -232,6 +232,7 @@ The settings of the plugin Numen Sync.
 | --- | --- | --- |
 | `server` | text | address of the server this device signs in to. |
 | `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
+| `removalDelaySeconds` | a number | how long a removed file is watched before the removal is sent. |
 
 ### `md.numen.tools.templates`
 

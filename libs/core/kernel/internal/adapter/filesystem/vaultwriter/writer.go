@@ -126,7 +126,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 	defer closeAndJoin(&err, root)
 	w.lock.write.Lock()
 	defer w.lock.write.Unlock()
-	leaves, err := w.getRelativeName(source)
+	leaves, err := getRelativeName(w.root, source)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (w *VaultWriter) CheckMoveTarget(ctx context.Context, from, to string) (err
 		return err
 	}
 	defer closeAndJoin(&err, root)
-	leaves, err := w.getRelativeName(source)
+	leaves, err := getRelativeName(w.root, source)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (w *VaultWriter) getContainedPath(path string) (string, error) {
 }
 
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
-	name, err := w.getRelativeName(target)
+	name, err := getRelativeName(w.root, target)
 	if err != nil {
 		return nil, "", err
 	}

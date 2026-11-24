@@ -15,7 +15,7 @@ const DEFAULT_POLL_EVERY_MS = 3000
 const DEFAULT_POLL_LIMIT_MS = 600_000
 const NO_DATES: SubscriptionDates = { periodEnd: '', writesEnd: '', deleteAt: '' }
 
-export interface UseSubscriptionOptions {
+interface UseSubscriptionOptions {
   readonly client?: SubscriptionClient | undefined
   readonly openExternal: (url: string) => Promise<Result<null, Failure<OpenExternalErrorCode>>>
   readonly now?: (() => Date) | undefined

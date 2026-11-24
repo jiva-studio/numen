@@ -100,6 +100,8 @@ func getHostVaultErrors() map[v1.ErrorCode]error {
 		v1.ErrorCode_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
 		v1.ErrorCode_ERROR_CODE_NOT_TEXT:       ErrNotText,
 		v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED:  ErrNotAttempted,
+		v1.ErrorCode_ERROR_CODE_HASH_MISMATCH:  ErrHashMismatch,
+		v1.ErrorCode_ERROR_CODE_INVALID_RANGE:  ErrInvalidRange,
 	}
 }
 

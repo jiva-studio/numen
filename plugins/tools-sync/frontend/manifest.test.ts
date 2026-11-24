@@ -38,9 +38,9 @@ describe('the manifest of the sync plugin', () => {
     )
   })
 
-  it('serves its own service and wakes on a change of a markdown file', () => {
+  it('serves its own service and wakes on a change of any file', () => {
     expect(manifest.services).toStrictEqual(['md.numen.tools.sync'])
-    expect(manifest.activationEvents).toStrictEqual(['onFilesChanged:text/markdown'])
+    expect(manifest.activationEvents).toStrictEqual(['onFilesChanged'])
   })
 
   it('has a setting of how often this device asks the server for changes', () => {
@@ -51,6 +51,17 @@ describe('the manifest of the sync plugin', () => {
       default: 30,
       min: 1,
       description: 'How often this device asks the server for changes',
+    })
+  })
+
+  it('has a setting of how long a removed file is watched before the removal is sent', () => {
+    const delay = manifest.settings.find((one) => one.key === 'removalDelaySeconds')
+
+    expect(delay).toMatchObject({
+      type: 'number',
+      default: 60,
+      min: 1,
+      description: 'How long a removed file is watched before the removal is sent',
     })
   })
 

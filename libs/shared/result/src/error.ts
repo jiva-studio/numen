@@ -141,6 +141,8 @@ const ERROR_CODE_MESSAGES: Readonly<Partial<Record<number, string>>> = {
   12: 'another program holds the file',
   13: 'the note could not be changed',
   14: 'the note was not changed',
+  15: 'the file does not match its recorded hash',
+  16: 'the requested range is outside the file',
 }
 
 /** The message for one error code; empty when there was no error. */

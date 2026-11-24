@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
@@ -145,17 +145,34 @@ func TestSyncVault_DoesNotSendANoteBackThatItWroteItself(t *testing.T) {
 	}
 }
 
-func TestSyncVault_SyncsNoFileThatIsNotANote(t *testing.T) {
+func TestSyncVault_AFileThatIsNotANoteAppearsOnTheSecondComputerAsItIs(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "data.bin", "bytes")
+	p.a.WriteNote(source, "Papers/Report.pdf", "%PDF-1.7 bytes")
+
+	sync(t, p.a, source)
+	sync(t, p.b, target)
+
+	wantNote(t, p.b, target, "Papers/Report.pdf", "%PDF-1.7 bytes")
+	row, ok := p.b.GetFileRow(t, target, "Papers/Report.pdf")
+	if !ok || row.BaseHash != note.Hash([]byte("%PDF-1.7 bytes")) {
+		t.Errorf("row of the second computer = %+v (there: %v), want the hash of the file as base", row, ok)
+	}
+}
+
+func TestSyncVault_SendsNoFileThatIsNotThePersons(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Papers/Report.pdf.part", "half")
+	p.a.WriteNote(source, "Papers/~$Report.docx", "lock")
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, "Shopping list.md", "milk")
-	if _, ok := p.b.ReadNote(target, "data.bin"); ok {
-		t.Error("a file that is not a note reached the second computer")
+	for _, path := range []string{"Papers/Report.pdf.part", "Papers/~$Report.docx"} {
+		if _, ok := p.b.ReadNote(target, path); ok {
+			t.Errorf("%s reached the second computer", path)
+		}
 	}
 	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 1 {
 		t.Errorf("server holds %d revisions, want 1", got)

@@ -50,6 +50,25 @@ type FileReader interface {
 	ReadRange(ctx context.Context, path string, start, length int) (plugin.FileRange, error)
 }
 
+// FileRanges reads bytes of any file as they are.
+type FileRanges interface {
+	// ReadFileRange returns at most length bytes of the file from start, with the file stat taken before the bytes
+	// are read. A start or length outside the limits returns plugin.ErrInvalidRange; a folder, fs.ErrNotExist.
+	ReadFileRange(ctx context.Context, path string, start, length int64) ([]byte, domain.FileStat, error)
+}
+
+// FileOperations files, trashes and places files of any kind. A baseline names the file as the caller last saw it:
+// the file changed since returns edit.ErrStale.
+type FileOperations interface {
+	// MoveFile moves a file, or a folder with everything under it, and returns the count of files under to.
+	MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (int, error)
+	// RemoveFile moves a file, or a folder with everything under it, to the trash and returns the count of files.
+	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (int, error)
+	// PlaceFile puts the staged file of the plugin in the vault at path, whole or not at all. A content that does
+	// not have expectedHash returns plugin.ErrHashMismatch. Without a baseline the path must be free.
+	PlaceFile(ctx context.Context, pluginID, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
+}
+
 type FileWriter interface {
 	// WriteFile replaces the file if it still matches the baseline, and returns the new file stat.
 	WriteFile(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
@@ -142,6 +161,8 @@ type Access struct {
 	FileChanges FileChangeLookup
 	Links       LinkLookup
 	Files       FileReader
+	Ranges      FileRanges
+	Ops         FileOperations
 	Writer      FileWriter
 	Arranger    Arranger
 	LinkEditor  LinkEditor

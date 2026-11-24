@@ -261,7 +261,7 @@ func TestCheckRevision_AcceptsAWellFormedRevisionAndATombstone(t *testing.T) {
 	}
 	limit := newRevision()
 	limit.EncMeta = bytes.Repeat([]byte{1}, syncprotocol.MaxEncSize)
-	limit.BlobSize = syncprotocol.MaxBlobSize
+	limit.BlobSize = syncprotocol.MaxMultipartSize
 	limit.ShareRootId = bytes.Repeat([]byte{1}, 16)
 	if err := syncprotocol.CheckRevision(limit); err != nil {
 		t.Errorf("a revision at the limits: %v", err)
@@ -281,7 +281,7 @@ func TestCheckRevision_RefusesAShapeThatIsNotTheProtocol(t *testing.T) {
 		"blob hash of 31 bytes":            func(r *syncv1.Revision) { r.BlobHash = r.GetBlobHash()[:31] },
 		"no blob hash":                     func(r *syncv1.Revision) { r.BlobHash = nil },
 		"blob size zero":                   func(r *syncv1.Revision) { r.BlobSize = 0 },
-		"blob size over the limit":         func(r *syncv1.Revision) { r.BlobSize = syncprotocol.MaxBlobSize + 1 },
+		"blob size over the limit":         func(r *syncv1.Revision) { r.BlobSize = syncprotocol.MaxMultipartSize + 1 },
 		"no meta":                          func(r *syncv1.Revision) { r.EncMeta = nil },
 		"meta over the limit":              func(r *syncv1.Revision) { r.EncMeta = make([]byte, syncprotocol.MaxEncSize+1) },
 		"path hash of 31 bytes":            func(r *syncv1.Revision) { r.PathHash = r.GetPathHash()[:31] },
@@ -351,7 +351,7 @@ func TestLimits_HaveTheValuesOfTheProtocol(t *testing.T) {
 
 	for name, got := range map[string][2]int{
 		"MaxBlobSize":       {syncprotocol.MaxBlobSize, 64 << 20},
-		"MaxBatchRevisions": {syncprotocol.MaxBatchRevisions, 500},
+		"MaxBatchRevisions": {syncprotocol.MaxBatchRevisions, 5000},
 		"MaxReserveBlobs":   {syncprotocol.MaxReserveBlobs, 100},
 		"MaxBlobURLs":       {syncprotocol.MaxBlobURLs, 100},
 		"MaxEncSize":        {syncprotocol.MaxEncSize, 16 << 10},

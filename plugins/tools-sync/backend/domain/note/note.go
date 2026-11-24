@@ -15,10 +15,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-const (
-	pathHashInfo = "numen-sync/path-hash/v1"
-	extension    = ".md"
-)
+const pathHashInfo = "numen-sync/path-hash/v1"
 
 // ErrInvalidPath means a path is empty, absolute or leaves the vault.
 var ErrInvalidPath = errors.New("the path is not inside the vault")
@@ -40,9 +37,6 @@ func Hash(content []byte) string {
 	sum := sha256.Sum256(content)
 	return hex.EncodeToString(sum[:])
 }
-
-// IsMarkdown reports whether the path names a markdown note.
-func IsMarkdown(notePath string) bool { return strings.EqualFold(path.Ext(notePath), extension) }
 
 // NormalizePath returns the path in Unicode normal form C, or ErrInvalidPath for a path that is not
 // inside the vault.

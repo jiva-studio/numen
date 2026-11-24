@@ -70,6 +70,14 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	useCases := createNoteUseCases(vaultDeps, db, index, noteViews{})
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: install.ServiceDir}}
+	storeReaders := func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
+		return stores.Open(v, pluginID)
+	}
+	storeWriters := func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
+		return stores.OpenWriter(v, pluginID)
+	}
+	stat := file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers)
+	scan := file.NewScanFiles(index)
 	return hostvault.NewAccess(
 		hostvault.Session{
 			GetCurrent: current,
@@ -80,26 +88,27 @@ func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			WriteWake:  hooks.WriteWake,
 		},
 		hostvault.Files{
-			Stat:        file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers),
+			Stat:        stat,
+			Bytes:       file.NewReadBytes(vaultDeps.Readers, stat),
 			ReadFile:    file.NewReadFile(vaultDeps.Readers, vaultDeps.Writers),
 			RangeReader: file.Read{Readers: vaultDeps.Readers},
 		},
 		hostvault.Writer{
-			Write:  file.NewWriteFile(vaultDeps.Writers, index),
-			Create: file.NewCreateFile(vaultDeps.Writers, index),
-			Index:  file.NewScanFiles(index),
-			Locks:  hold.NewLocks(vaultDeps.Writers, hold.LockHold),
+			Write:        file.NewWriteFile(vaultDeps.Writers, index),
+			Create:       file.NewCreateFile(vaultDeps.Writers, index),
+			Index:        scan,
+			Locks:        hold.NewLocks(vaultDeps.Writers, hold.LockHold),
+			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), vaultDeps.Readers),
+			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), vaultDeps.Readers),
+			Place:        file.NewPlaceStaged(stat, scan, vaultDeps.Writers),
+			StoreReaders: storeReaders, StoreWriters: storeWriters,
 		},
 		getPluginLookups(db),
 		arranger,
 		hostvault.Stores{
-			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
-				return stores.Open(v, pluginID)
-			},
-			StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
-				return stores.OpenWriter(v, pluginID)
-			},
-			Cache: cache,
+			StoreReaders: storeReaders,
+			StoreWriters: storeWriters,
+			Cache:        cache,
 		},
 	), nil
 }

@@ -19,9 +19,13 @@ const (
 // ComputePaddedLength returns the length of the plain stream for a payload of the given size: the 8-byte length prefix,
 // the payload and zero bytes up to the next step of the ladder.
 func ComputePaddedLength(payloadLength int) int {
+	return int(computePaddedLength64(int64(payloadLength)))
+}
+
+func computePaddedLength64(payloadLength int64) int64 {
 	m := lengthPrefixSize + payloadLength
 	if m <= mebibyte {
-		padded := minPaddedLength
+		padded := int64(minPaddedLength)
 		for padded < m {
 			padded *= 2
 		}

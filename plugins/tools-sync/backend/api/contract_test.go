@@ -16,7 +16,10 @@ func getContracts() map[string]plugintest.MessageContract {
 			CreateRequest: func() any { return &api.ListRemoteVaultsRequest{} }, CreateResponse: func() any { return &api.ListRemoteVaultsResponse{} },
 		},
 		api.MethodConnectVault: {CreateRequest: func() any { return &api.ConnectVaultRequest{} }, CreateResponse: func() any { return &api.ConnectVaultResponse{} }},
-		api.MethodGetStatus:    {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
+		api.MethodResolveDeletions: {
+			CreateRequest: func() any { return &api.ResolveDeletionsRequest{} }, CreateResponse: func() any { return &api.ResolveDeletionsResponse{} },
+		},
+		api.MethodGetStatus: {CreateRequest: func() any { return &api.GetStatusRequest{} }, CreateResponse: func() any { return &api.GetStatusResponse{} }},
 		api.MethodGetSubscription: {
 			CreateRequest: func() any { return &api.GetSubscriptionRequest{} }, CreateResponse: func() any { return &api.GetSubscriptionResponse{} },
 		},
@@ -54,5 +57,11 @@ func TestTheNamesOfTheSubscriptionMethodsAndPhases(t *testing.T) {
 	}
 	if api.PhaseNone != "none" || api.PhaseActive != "active" || api.PhaseGrace != "grace" || api.PhaseReadOnly != "readOnly" || api.PhaseDeleted != "deleted" {
 		t.Errorf("phases %q, %q, %q, %q, %q", api.PhaseNone, api.PhaseActive, api.PhaseGrace, api.PhaseReadOnly, api.PhaseDeleted)
+	}
+}
+
+func TestTheNameOfTheMethodThatAnswersPausedRemovalsAndTheirDirections(t *testing.T) {
+	if api.MethodResolveDeletions != "ResolveDeletions" {
+		t.Errorf("method %q, want ResolveDeletions", api.MethodResolveDeletions)
 	}
 }

@@ -1,11 +1,18 @@
 import { computed, ref, shallowRef } from 'vue'
-import type { RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
+import type {
+  DeletionsChoice,
+  PausedDeletions,
+  RemoteVault,
+  Vault,
+  VaultsClient,
+  VaultState,
+} from '../api/vaults'
 import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
 
-export interface VaultRow {
+interface VaultRow {
   readonly id: string
   readonly name: string
   readonly path: string
@@ -13,6 +20,7 @@ export interface VaultRow {
   readonly syncedLabel: string
   readonly conflictLabel: string
   readonly canConnect: boolean
+  readonly pausedLabel: string
 }
 
 interface UseVaultsOptions {
@@ -37,6 +45,13 @@ const getSyncedLabel = (vault: Vault, now: Date): string => {
   return minutes < 1 ? words.syncedJustNow : words.syncedMinutesAgo(minutes)
 }
 
+const getPausedLabel = (paused: PausedDeletions | null | undefined): string => {
+  if (paused === null || paused === undefined) return ''
+  return paused.direction === 'apply'
+    ? words.deletionsPausedApply(paused.count, paused.tracked)
+    : words.deletionsPausedSend(paused.count, paused.tracked)
+}
+
 const getRow = (vault: Vault, now: Date): VaultRow => ({
   id: vault.id,
   name: vault.name,
@@ -45,6 +60,7 @@ const getRow = (vault: Vault, now: Date): VaultRow => ({
   syncedLabel: getSyncedLabel(vault, now),
   conflictLabel: vault.conflictCount > 0 ? words.conflicts(vault.conflictCount) : '',
   canConnect: vault.state === 'notConnected',
+  pausedLabel: getPausedLabel(vault.pausedDeletions),
 })
 
 export function useVaults(options: UseVaultsOptions) {
@@ -100,12 +116,22 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
+  async function resolveDeletions(vaultId: string, choice: DeletionsChoice): Promise<void> {
+    try {
+      await client.resolveDeletions({ vaultId, choice })
+      error.value = ''
+      await read()
+    } catch (failure) {
+      error.value = getErrorMessage(failure)
+    }
+  }
+
   const connectNew = (vaultId: string): Promise<void> => connect({ vaultId, mode: 'new' })
   const connectExisting = (vaultId: string, remoteId: string): Promise<void> =>
     connect({ vaultId, mode: 'existing', remoteId })
 
   return {
     state: { status, error, hasIdentity, warning, rows, openFor, remote },
-    actions: { load, openRemote, closeRemote, connectNew, connectExisting },
+    actions: { load, openRemote, closeRemote, connectNew, connectExisting, resolveDeletions },
   }
 }

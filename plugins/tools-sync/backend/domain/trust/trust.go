@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// errUntrustedChain means the chain of the server is not one this device can trust.
 var errUntrustedChain = errors.New("the account chain of the server does not extend the chain of this device")
 
 // Authors are the devices of the account.

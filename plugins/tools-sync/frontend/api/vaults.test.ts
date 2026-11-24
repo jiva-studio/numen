@@ -54,6 +54,7 @@ describe('the fixtures of the vaults service', () => {
       state: 'connected',
       lastSyncedAt: '2026-11-23T12:00:00Z',
       conflictCount: 1,
+      pausedDeletions: { count: 5, tracked: 10, direction: 'send' },
     })
   })
 
@@ -74,6 +75,14 @@ describe('the fixtures of the vaults service', () => {
 
     expect(read('ConnectVault.request')).toStrictEqual(request)
     expect(read('ConnectVault.response')).toStrictEqual({})
+  })
+
+  it('reads the ResolveDeletions fixture as ResolveDeletionsRequest', () => {
+    expect(read('ResolveDeletions.request')).toStrictEqual({
+      vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0P',
+      choice: 'keep',
+    })
+    expect(read('ResolveDeletions.response')).toStrictEqual({})
   })
 
   it('reads the GetStatus fixture as GetStatusResponse', () => {

@@ -20,7 +20,8 @@ message Revision {
   bytes file_id = 2;
   // parent_rev is the revision id, 32 bytes, that the author saw as head; empty for a new file.
   bytes parent_rev = 3;
-  // blob_id is 16 bytes from ReserveBlobs; empty when deleted.
+  // blob_id is 16 bytes from ReserveBlobs or ReserveMultipartBlob; empty when deleted. It may name the blob of the head of the
+  // same file when parent_rev is that head and blob_hash and blob_size equal the head's (a revision that changes only metadata).
   bytes blob_id = 4;
   // blob_hash is the SHA-256 of the stored object, 32 bytes; empty when deleted.
   bytes blob_hash = 5;
@@ -32,7 +33,7 @@ message Revision {
   bytes path_hash = 8;
   // share_root_id is 16 bytes or empty. It is stored and signed; the server does not act on it yet.
   bytes share_root_id = 9;
-  // deleted marks a tombstone.
+  // deleted marks a tombstone: no blob, enc_meta may be empty, path_hash and parent_rev are set.
   bool deleted = 10;
   // epoch is the key epoch of the vault or the share root; stored and signed, not checked.
   uint32 epoch = 11;
@@ -52,7 +53,7 @@ message StoredRevision {
 
 message CommitRevisionsRequest {
   bytes vault_id = 1;
-  // revisions holds 1 to 500 revisions.
+  // revisions holds 1 to 5000 revisions.
   repeated Revision revisions = 2;
 }
 
@@ -100,4 +101,7 @@ message GetChangesResponse {
   bool has_more = 3;
   // head_seq is the vault seq when the page was read.
   uint64 head_seq = 4;
+  // reset is true when since_seq is older than the deletion records the server keeps; changes is empty and the client lists
+  // the vault again from since_seq 0.
+  bool reset = 5;
 }
