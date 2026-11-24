@@ -118,7 +118,7 @@ export const WORDS = {
   identityCancel: 'Cancel',
   identityRestoreTitle: 'Restore identity',
   identityRestoreHint:
-    'Enter the 12 words, or any two sheets of your recovery kit. One sheet alone is not enough.',
+    'Scan the QR of two sheets of your recovery kit, or type the 12 words or the words of two sheets.',
   identityRestoreAction: 'Restore the account',
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
@@ -142,7 +142,7 @@ export const WORDS = {
   kitSaved: 'Recovery kit saved',
   kitDialogTitle: 'Download recovery kit',
   kitProofHint:
-    'Enter the 12 recovery words, or any two sheets of an earlier kit. The earlier kit keeps working.',
+    'Enter the 12 recovery words, or any two sheets of an earlier kit.',
   proofField: 'Recovery words or sheets',
   proofPlaceholder: 'Type or paste the 12 words, or put one sheet on each line',
   proofWordsSoFar: (count: number) => `${count} of 12 words`,
@@ -157,6 +157,14 @@ export const WORDS = {
   proofTooManySheets: 'Two sheets are enough. Remove the others.',
   proofOneSheet: (sheet: number) => `Sheet ${sheet} recognized, one more sheet needed`,
   proofTwoSheets: '2 of 3 sheets recognized',
+  /** Scanning the QR codes of kit sheets in the restore. */
+  scanAction: 'Scan the QR',
+  scanStop: 'Stop scanning',
+  scanProgress: (count: number) => `${count} of 2 sheets scanned`,
+  scanNotSheet: 'This is not a code of a Numen recovery kit.',
+  scanOtherKit: 'This sheet is from another kit. Scan a sheet of the same kit.',
+  scanRepeated: (sheet: number) => `Sheet ${sheet} is scanned already. Scan another sheet.`,
+  scanNoCamera: 'No camera is available. Type or paste the words instead.',
   deviceRevokedNotice: 'This device was revoked',
   deviceDeleteRevoked: 'Delete identity from this device',
   /** The page of licenses. */

@@ -67,7 +67,7 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('dialog', { name: 'Restore identity' })).toBeVisible()
-    await expect(canvas.getByText(/any two sheets of your recovery kit/)).toBeVisible()
+    await expect(canvas.getByText(/Scan the QR of two sheets/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveAttribute(
       'data-slot',
@@ -141,5 +141,38 @@ export const Busy: Story = {
     await expect(getField(canvas)).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Restoring…' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  },
+}
+
+/** The machine has no camera: the scan is closed and the words can still be typed. */
+export const NoCamera: Story = {
+  render: (args) => ({
+    components: { IdentityRestoreDialog },
+    setup: () => {
+      const proof = useRecoveryProof(ref(''))
+      const camera = () => Promise.reject(new DOMException('none', 'NotFoundError'))
+      return { args, proof, onRestore, onCancel, camera }
+    },
+    template: `
+      <div class="numen" style="position:relative;contain:strict;box-sizing:border-box;inline-size:760px;block-size:640px;margin:1.5rem auto;border:1px solid var(--numen-rule);background:var(--numen-surface)">
+        <IdentityRestoreDialog
+          :text="proof.text.value"
+          :reading="proof.reading.value"
+          :problem="args.problem"
+          :is-busy="args.isBusy"
+          :camera="camera"
+          @change="proof.setText"
+          @restore="onRestore"
+          @cancel="onCancel"
+        />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Scan the QR' }))
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('No camera is available')
+    await enter(canvas, createSheet('a'))
+    await expect(canvas.getByText('Sheet 1 recognized, one more sheet needed')).toBeVisible()
   },
 }
