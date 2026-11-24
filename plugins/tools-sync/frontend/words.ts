@@ -73,7 +73,6 @@ export const WORDS = {
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Synced vaults',
-  vaultsText: 'Vaults kept in step on all your devices.',
   noVaultsTitle: 'No vault is synced yet',
   noVaultsText:
     'Right-click the top folder of a vault in the file tree and choose Sync this vault.',
@@ -131,7 +130,6 @@ export const WORDS = {
   syncStarted: 'This vault is synced now.',
   syncedAlready: 'This vault is synced already.',
   sharedFoldersTitle: 'Shared folders',
-  sharedFoldersText: 'Folders you share to be read, and folders other devices share with you.',
   sharedByYou: 'Shared by you',
   sharedByYouText: 'Devices with read access to your folders. They cannot change anything.',
   sharedWithYou: 'Shared with you',

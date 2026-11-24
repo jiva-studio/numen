@@ -51,7 +51,7 @@
 
 .sync-card {
   color: var(--numen-ink);
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
   line-height: var(--numen-line-height);
 }
 
@@ -74,7 +74,7 @@
 .sync-card__group {
   margin: 0;
   padding-block: calc(0.75 * var(--numen-chrome-unit)) 0;
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
   font-weight: 600;
 }
 
@@ -91,7 +91,7 @@
 
 .sync-row__detail {
   color: var(--numen-hushed);
-  font-size: var(--numen-chrome-text-1);
+  font-size: var(--numen-text-1);
 }
 
 .sync-field {
@@ -145,7 +145,7 @@
 
 .sync-dialog__text--hushed {
   color: var(--numen-hushed);
-  font-size: var(--numen-chrome-text-1);
+  font-size: var(--numen-text-1);
 }
 
 .sync-dialog__text--alarm {
@@ -173,14 +173,14 @@
 
 .share-people__title {
   margin: 0;
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
   font-weight: 600;
 }
 
 .subscription {
   --row-pad: calc(0.75 * var(--numen-chrome-unit));
   color: var(--numen-ink);
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
 }
 
 .subscription__badge {
@@ -192,7 +192,7 @@
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
   color: var(--numen-ink);
-  font-size: var(--numen-chrome-text-1);
+  font-size: var(--numen-text-1);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -222,7 +222,7 @@
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
   color: var(--numen-ink);
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
 }
 
 .subscription__away svg {
@@ -337,7 +337,7 @@
 
 .subscription__price small {
   color: var(--numen-hushed);
-  font-size: calc(0.75 * var(--numen-chrome-unit));
+  font-size: var(--numen-text-1);
 }
 
 .subscription__current-tag {
@@ -346,7 +346,7 @@
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
   color: var(--numen-ink);
-  font-size: var(--numen-chrome-text-1);
+  font-size: var(--numen-text-1);
   font-weight: 500;
 }
 
@@ -433,7 +433,7 @@
 .share-code {
   margin: 0;
   font-family: var(--numen-font-mono);
-  font-size: calc(1.125 * var(--numen-chrome-unit));
+  font-size: var(--numen-title-size);
   font-weight: 600;
   letter-spacing: 0.1em;
   color: var(--numen-ink);

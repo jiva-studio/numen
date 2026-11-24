@@ -88,7 +88,6 @@ function report(failure: unknown): void {
 
 <template>
   <IslandCard class="sync-card" :title="words.vaultsTitle" :aria-label="words.vaultsTitle">
-    <p class="sync-card__lead">{{ words.vaultsText }}</p>
     <div v-if="status === 'loading'" class="sync-card__state">
       <LoadingIndicator :label="words.loading" />
     </div>

@@ -41,7 +41,6 @@ function onRemove(row: GivenRow, device: DeviceRow): void {
     :title="words.sharedFoldersTitle"
     :aria-label="words.sharedFoldersTitle"
   >
-    <p class="sync-card__lead">{{ words.sharedFoldersText }}</p>
     <p v-if="view.error !== ''" class="sync-card__note sync-card__note--alarm" role="alert">
       {{ view.error }}
     </p>

@@ -30,7 +30,8 @@ defineProps<{ icon: Component; title: string; text: string }>()
 
 .empty-block__title {
   margin: 0;
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
   font-weight: 600;
 }
 
@@ -38,5 +39,7 @@ defineProps<{ icon: Component; title: string; text: string }>()
   margin: 0;
   max-inline-size: calc(24 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
 }
 </style>
