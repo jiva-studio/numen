@@ -19,16 +19,16 @@ import (
 )
 
 type pass struct {
-	use        *SyncVault
-	id         domain.VaultID
-	authors    trust.Authors
-	shares     []share.Root
-	conflicts  []string
-	resolved   int
-	clashes    []string
-	unverified int
-	verdict    restore.Verdict
-	isSent     bool
+	use          *SyncVault
+	id           domain.VaultID
+	authors      trust.Authors
+	shares       []share.Root
+	conflicts    []string
+	resolved     int
+	clashes      []string
+	unverified   int
+	verdict      restore.Verdict
+	isSent       bool
 	isStaleEpoch bool
 }
 

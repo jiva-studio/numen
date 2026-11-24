@@ -155,7 +155,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 		t.Fatal(err)
 	}
 	saver := &kitSaver{}
-	save := identity.NewSaveRecoveryKit(identity.NewDeps(keys, names{}, clock), saver)
+	save := identity.NewSaveRecoveryKit(identity.NewDeps(keys, names{}, clock).WithProgress(res.progress).WithChains(res.ChainStore), saver)
 	if _, err := save.Execute(t.Context(), words, nil); err != nil {
 		t.Fatal(err)
 	}

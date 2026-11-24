@@ -68,10 +68,6 @@ func newHandler(keys *keyStore) *windowidentity.Handler {
 	return newHandlerOf(keys, &kitSaver{}, getNoon())
 }
 
-func newHandlerAt(keys *keyStore, clock *testsupport.ManualClock) *windowidentity.Handler {
-	return newHandlerOf(keys, &kitSaver{}, clock)
-}
-
 func newHandlerWith(keys *keyStore, saver identity.KitSaver) *windowidentity.Handler {
 	return newHandlerOf(keys, saver, getNoon())
 }
