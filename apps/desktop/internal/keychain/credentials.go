@@ -112,14 +112,18 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 
 func (s *Store) writeEntries(ctx context.Context, entries map[string]string, mode FileMode) error {
 	content, err := s.encodeEntries(ctx, entries, mode)
+	if err != nil {
+		return fmt.Errorf("write the credentials file: %w", err)
+	}
 	target := s.getCredentialsFile()
 	folder := filepath.Dir(target)
-	if err := errors.Join(
-		err,
-		os.MkdirAll(folder, credentialsDirPerm),
-		os.Chmod(folder, credentialsDirPerm),
-		atomicfile.WriteFile(target, bytes.NewReader(content), 0o600),
-	); err != nil {
+	if err := os.MkdirAll(folder, credentialsDirPerm); err != nil {
+		return fmt.Errorf("write the credentials file: %w", err)
+	}
+	if err := os.Chmod(folder, credentialsDirPerm); err != nil {
+		return fmt.Errorf("write the credentials file: %w", err)
+	}
+	if err := atomicfile.WriteFile(target, bytes.NewReader(content), 0o600); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
 	return nil

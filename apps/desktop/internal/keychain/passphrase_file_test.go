@@ -261,3 +261,77 @@ func TestAPlaintextFileWritesOneWarningToTheLog(t *testing.T) {
 		t.Errorf("warnings = %q, want one plaintext warning", warnings)
 	}
 }
+
+type failingSource struct{ err error }
+
+func (f failingSource) GetPassphrase(context.Context) (string, error) {
+	return "", f.err
+}
+
+func TestACancelledPassphrasePromptLeavesAPlaintextFileUnchangedOnSetKey(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
+		t.Fatal(err)
+	}
+	before := readCredentialsBytes(t, dir)
+	cancelled := errors.New("the prompt was cancelled")
+	store := newPassphraseStore(dir, failingSource{err: cancelled})
+
+	err := store.SetKey(t.Context(), otherEntry, valueOne)
+
+	if !errors.Is(err, cancelled) {
+		t.Fatalf("SetKey = %v, want the prompt error", err)
+	}
+	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
+		t.Errorf("the credentials file changed: %q, want %q", after, before)
+	}
+}
+
+func TestACancelledPassphrasePromptLeavesAPlaintextFileUnchangedOnDeleteKey(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	plain := newTestStore(dir)
+	for name, value := range map[string]string{entryName: seedValue, otherEntry: valueOne} {
+		if err := plain.SetKey(t.Context(), name, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := readCredentialsBytes(t, dir)
+	cancelled := errors.New("the prompt was cancelled")
+	store := newPassphraseStore(dir, failingSource{err: cancelled})
+
+	err := store.DeleteKey(t.Context(), otherEntry)
+
+	if !errors.Is(err, cancelled) {
+		t.Fatalf("DeleteKey = %v, want the prompt error", err)
+	}
+	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
+		t.Errorf("the credentials file changed: %q, want %q", after, before)
+	}
+}
+
+func TestACancelledPassphrasePromptCreatesNoFileOnAFirstWrite(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	cancelled := errors.New("the prompt was cancelled")
+	store := newPassphraseStore(dir, failingSource{err: cancelled})
+
+	err := store.SetKey(t.Context(), entryName, seedValue)
+
+	if !errors.Is(err, cancelled) {
+		t.Fatalf("SetKey = %v, want the prompt error", err)
+	}
+	if _, statErr := os.Stat(credentialsPath(dir)); !os.IsNotExist(statErr) {
+		t.Errorf("the credentials file exists after a failed first write: %v", statErr)
+	}
+}
+
+func readCredentialsBytes(t *testing.T, dir string) []byte {
+	t.Helper()
+	raw, err := os.ReadFile(credentialsPath(dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
