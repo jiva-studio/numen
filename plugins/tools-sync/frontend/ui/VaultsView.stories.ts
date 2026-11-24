@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import VaultsView from './VaultsView.vue'
 import '../styles.css'
 
@@ -65,7 +65,7 @@ const createClient = (setup: Setup): VaultsClient => ({
 const meta = {
   title: 'NumenSync/Vaults',
   component: VaultsView,
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { VaultsView },
     setup: () => ({ args }),

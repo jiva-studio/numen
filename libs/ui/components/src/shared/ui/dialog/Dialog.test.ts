@@ -1,5 +1,5 @@
 /** The shared modal: its roles, what closes it, and where the focus goes. */
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Dialog from './Dialog.vue'
 
@@ -13,19 +13,21 @@ const mountDialog = (props: Record<string, unknown> = {}) =>
     },
   })
 
+const getBody = () => new DOMWrapper(document.body)
+
 afterEach(() => {
   document.body.innerHTML = ''
 })
 
 describe('Dialog', () => {
   it('names the dialog by its title and draws the hint', () => {
-    const dialog = mountDialog()
-    const box = dialog.get('[role="dialog"]')
+    mountDialog()
+    const box = getBody().get('[role="dialog"]')
     expect(box.attributes('aria-modal')).toBe('true')
     expect(document.getElementById(box.attributes('aria-labelledby')!)?.textContent).toBe(
       'Restore identity',
     )
-    expect(dialog.text()).toContain('Enter the words.')
+    expect(getBody().text()).toContain('Enter the words.')
   })
 
   it('focuses the first control when it opens', () => {
@@ -35,16 +37,16 @@ describe('Dialog', () => {
 
   it('emits cancel on Escape and on the backdrop, not on a press inside', async () => {
     const dialog = mountDialog()
-    await dialog.get('[role="dialog"]').trigger('click')
+    await getBody().get('[role="dialog"]').trigger('click')
     expect(dialog.emitted('cancel')).toBeUndefined()
-    await dialog.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
-    await dialog.get('[data-slot="dialog-backdrop"]').trigger('click')
+    await getBody().get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await getBody().get('[data-slot="dialog-backdrop"]').trigger('click')
     expect(dialog.emitted('cancel')).toHaveLength(2)
   })
 
-  it('is a form that emits submit when asked', async () => {
+  it('emits submit from a form dialog', async () => {
     const dialog = mountDialog({ isForm: true })
-    await dialog.get('form').trigger('submit')
+    await getBody().get('form').trigger('submit')
     expect(dialog.emitted('submit')).toHaveLength(1)
   })
 

@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import EndSyncDialog from './EndSyncDialog.vue'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
 const meta = {
   title: 'NumenSync/EndSyncDialog',
   component: EndSyncDialog,
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { EndSyncDialog },
     setup: () => ({ args }),

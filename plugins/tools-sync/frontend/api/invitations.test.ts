@@ -75,12 +75,12 @@ describe('the client of the owner of a folder', () => {
 })
 
 describe('the client of the person who got a link', () => {
-  it('previews the link, sends the request and reads how it stands', async () => {
+  it('reads the preview, sends the request and reads its status', async () => {
     const { reader, sent } = createClients(() =>
       Response.json({ requestId: 'r1', folder: 'Food', ownerFingerprint: 'AAAA' }),
     )
 
-    await reader.previewShareInvitation('numen-share:abc')
+    await reader.readSharePreview('numen-share:abc')
     await reader.acceptShareInvitation({ link: 'numen-share:abc', deviceName: '' })
     await reader.getShareInvitationStatus('r1')
 

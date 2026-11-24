@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import type { AcceptInvitationClient, RequestStatus } from '../api/invitations'
 import { createAcceptanceView } from '../model/acceptance'
 import AcceptInvitationDialog from './AcceptInvitationDialog.vue'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
 const LINK = 'numen-share:eyJ2IjoxfQ'
@@ -20,7 +20,7 @@ interface Setup {
 }
 
 const createClient = (setup: Setup): AcceptInvitationClient => ({
-  previewShareInvitation: () =>
+  readSharePreview: () =>
     setup.previewFailure === undefined
       ? Promise.resolve(PREVIEW)
       : Promise.reject(new Error(setup.previewFailure)),
@@ -56,7 +56,7 @@ const createView = (setup: Setup, step: Step) => {
 const meta = {
   title: 'NumenSync/AcceptInvitationDialog',
   component: AcceptInvitationDialog,
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { AcceptInvitationDialog },
     setup: () => ({ args }),

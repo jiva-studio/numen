@@ -49,7 +49,7 @@ export function createAcceptanceView(options: AcceptanceViewOptions) {
     previewError.value = ''
     if (value.trim() === '') return
     try {
-      const found = await client.previewShareInvitation(value.trim())
+      const found = await client.readSharePreview(value.trim())
       if (mine === seq) preview.value = found
     } catch (failure) {
       if (mine === seq) previewError.value = getErrorMessage(failure)

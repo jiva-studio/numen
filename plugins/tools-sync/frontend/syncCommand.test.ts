@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { MockVaultsHost } from '@numen/plugin-sdk/testing'
 import {
   createMockDialogHost,
   createMockHostServices,
@@ -47,6 +48,8 @@ const run = async (server: Server) => {
   stubServer(server)
   const dialogs = createMockDialogHost()
   const host = createMockHostServices({ dialogs })
+  const current = { id: 'v1', name: 'Work' }
+  ;(host.vault.vaults as MockVaultsHost).setState({ vaults: [current], current })
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.sync' })
   activate(context, host)
   const command = context.getRegisteredCommands().find((one) => one.id === SYNC_COMMAND)

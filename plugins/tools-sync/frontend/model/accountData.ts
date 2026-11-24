@@ -1,12 +1,10 @@
 import { computed, onScopeDispose, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { AccountClient } from '../api/account'
+import type { SaveFile } from '../api/saveFile'
 import { WORDS as words } from '../words'
 
 const REFRESH_MS = 10_000
-
-/** Writes the text of a file to a place the person chooses, and answers that file, or undefined when the person chose none. */
-export type SaveFile = (name: string, content: string) => Promise<string | undefined>
 
 export interface AccountDataOptions {
   readonly client: AccountClient

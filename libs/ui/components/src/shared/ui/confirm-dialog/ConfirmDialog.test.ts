@@ -1,7 +1,7 @@
 /**
  * What the dialog announces, where focus starts, and what answers it.
  */
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import ConfirmDialog from './ConfirmDialog.vue'
 
@@ -19,8 +19,10 @@ const mountDialog = (props: Partial<DialogProps> = {}) =>
     },
   })
 
-const getButton = (dialog: ReturnType<typeof mountDialog>, text: string) => {
-  const found = dialog.findAll('button').find((one) => one.text() === text)
+const getBody = () => new DOMWrapper(document.body)
+
+const getButton = (text: string) => {
+  const found = getBody().findAll('button').find((one) => one.text() === text)
   if (!found) throw new Error(`no button ${text}`)
   return found
 }
@@ -31,8 +33,8 @@ afterEach(() => {
 
 describe('ConfirmDialog', () => {
   it('is announced as a modal alert dialog named by its title, with its question', () => {
-    const dialog = mountDialog()
-    const box = dialog.get('[role="alertdialog"]')
+    mountDialog()
+    const box = getBody().get('[role="alertdialog"]')
     expect(box.attributes('aria-modal')).toBe('true')
     const labelledBy = box.attributes('aria-labelledby')
     expect(labelledBy).toBeTruthy()
@@ -41,19 +43,19 @@ describe('ConfirmDialog', () => {
   })
 
   it('points the dialog at its question as the description', () => {
-    const dialog = mountDialog()
-    const describedBy = dialog.get('[role="alertdialog"]').attributes('aria-describedby')
+    mountDialog()
+    const describedBy = getBody().get('[role="alertdialog"]').attributes('aria-describedby')
     expect(describedBy).toBeTruthy()
     expect(document.getElementById(describedBy!)?.textContent).toBe('Delete the page?')
   })
 
   it('draws what the default slot holds in place of the text, as the description', () => {
-    const dialog = mount(ConfirmDialog, {
+    mount(ConfirmDialog, {
       attachTo: document.body,
       props: { label: 'Switch to Pro?', confirmText: 'Switch to Pro', cancelText: 'Cancel' },
       slots: { default: '<dl><dt>New plan</dt><dd>Pro, 250 GB, $30 / month</dd></dl>' },
     })
-    const describedBy = dialog.get('[role="alertdialog"]').attributes('aria-describedby')
+    const describedBy = getBody().get('[role="alertdialog"]').attributes('aria-describedby')
     expect(document.getElementById(describedBy!)?.querySelector('dd')?.textContent).toBe(
       'Pro, 250 GB, $30 / month',
     )
@@ -66,38 +68,38 @@ describe('ConfirmDialog', () => {
 
   it('emits confirm from the confirm button only', async () => {
     const dialog = mountDialog()
-    await getButton(dialog, 'Delete').trigger('click')
+    await getButton('Delete').trigger('click')
     expect(dialog.emitted('confirm')).toHaveLength(1)
     expect(dialog.emitted('cancel')).toBeUndefined()
   })
 
   it('emits cancel from the cancel button, Escape and the backdrop', async () => {
     const dialog = mountDialog()
-    await getButton(dialog, 'Cancel').trigger('click')
-    await dialog.get('[role="alertdialog"]').trigger('keydown', { key: 'Escape' })
-    await dialog.get('[data-slot="dialog-backdrop"]').trigger('click')
+    await getButton('Cancel').trigger('click')
+    await getBody().get('[role="alertdialog"]').trigger('keydown', { key: 'Escape' })
+    await getBody().get('[data-slot="dialog-backdrop"]').trigger('click')
     expect(dialog.emitted('cancel')).toHaveLength(3)
     expect(dialog.emitted('confirm')).toBeUndefined()
   })
 
   it('does not cancel on a press inside the box', async () => {
     const dialog = mountDialog()
-    await dialog.get('.confirm-dialog__text').trigger('click')
+    await getBody().get('.confirm-dialog__text').trigger('click')
     expect(dialog.emitted('cancel')).toBeUndefined()
   })
 
   it('marks the danger tone on the dialog and the default tone as default', () => {
-    const danger = mountDialog({ tone: 'danger' })
-    expect(danger.get('[role="alertdialog"]').attributes('data-tone')).toBe('danger')
+    mountDialog({ tone: 'danger' })
+    expect(getBody().get('[role="alertdialog"]').attributes('data-tone')).toBe('danger')
     document.body.innerHTML = ''
-    const neutral = mountDialog()
-    expect(neutral.get('[role="alertdialog"]').attributes('data-tone')).toBe('default')
+    mountDialog()
+    expect(getBody().get('[role="alertdialog"]').attributes('data-tone')).toBe('default')
   })
 
   it('wraps Tab from the last button to the first and back', async () => {
-    const dialog = mountDialog()
-    const cancel = getButton(dialog, 'Cancel')
-    const confirm = getButton(dialog, 'Delete')
+    mountDialog()
+    const cancel = getButton('Cancel')
+    const confirm = getButton('Delete')
     ;(confirm.element as HTMLElement).focus()
     await confirm.trigger('keydown', { key: 'Tab' })
     expect(document.activeElement).toBe(cancel.element)

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import GetVaultDialog from './GetVaultDialog.vue'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
 const vault = (id: string, state: Vault['state']): Vault => ({
@@ -32,7 +32,7 @@ const createClient = (vaults: Vault[], differCount = 0): VaultsClient => ({
 const meta = {
   title: 'NumenSync/GetVaultDialog',
   component: GetVaultDialog,
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { GetVaultDialog },
     setup: () => ({ args }),

@@ -1,6 +1,8 @@
 import type { DialogHost } from '@numen/plugin-sdk'
-import type { SaveFile } from '../model/accountData'
 import { WORDS as words } from '../words'
+
+/** Writes the text of a file to a place the person chooses; answers that file, or undefined when the person chose none. */
+export type SaveFile = (name: string, content: string) => Promise<string | undefined>
 
 /**
  * Saves the text in the file the person chooses in the save dialog of the machine, because the window cannot

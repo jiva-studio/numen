@@ -2,7 +2,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asValue, type PluginContext } from '@numen/plugin-sdk'
 import type { AccountClient } from '../api/account'
-import type { SaveFile } from '../model/accountData'
+import type { SaveFile } from '../api/saveFile'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -93,7 +93,7 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
 
 const findButton = (text: string) =>
   Array.from(document.body.querySelectorAll('button')).find(
-    (one) => one.textContent?.trim() === text,
+    (one) => (one.getAttribute('aria-label') ?? one.textContent?.trim()) === text,
   )
 
 const press = async (text: string) => {
@@ -240,7 +240,7 @@ describe('SubscriptionCard account actions', () => {
     expect(saveFile).toHaveBeenCalledWith('Numen Sync account data.json', EXPORT_DOCUMENT)
   })
 
-  it('says where the file was saved and what it holds', async () => {
+  it('says where the file was saved and that it is not encrypted', async () => {
     const { wrapper } = await render(createState())
 
     await pressMenu('Export account data')

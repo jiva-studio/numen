@@ -4,7 +4,7 @@ import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
 import type { FolderSharesClient, ShareReader } from '../api/shares'
 import { createInvitationView } from '../model/invitation'
 import ShareInvitationDialog from './ShareInvitationDialog.vue'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
 const TARGET = { vaultId: 'v1', folder: 'Recipes' }
@@ -69,7 +69,7 @@ const createState = (setup: Setup) => {
 const meta = {
   title: 'NumenSync/ShareInvitationDialog',
   component: ShareInvitationDialog,
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { ShareInvitationDialog },
     setup: () => ({ args }),

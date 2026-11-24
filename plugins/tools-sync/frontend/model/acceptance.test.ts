@@ -17,7 +17,7 @@ const status = (patch: Partial<RequestStatus>): RequestStatus => ({
 })
 
 const createClient = (statuses: RequestStatus[]): AcceptInvitationClient => ({
-  previewShareInvitation: vi.fn(() => Promise.resolve(PREVIEW)),
+  readSharePreview: vi.fn(() => Promise.resolve(PREVIEW)),
   acceptShareInvitation: vi.fn(() =>
     Promise.resolve({ requestId: 'r1', folder: 'Food', ownerFingerprint: 'AAAA BBBB' }),
   ),
@@ -38,13 +38,13 @@ describe('the dialog that accepts a shared folder', () => {
 
     await view.setLink('  numen-share:abc ')
 
-    expect(client.previewShareInvitation).toHaveBeenCalledWith('numen-share:abc')
+    expect(client.readSharePreview).toHaveBeenCalledWith('numen-share:abc')
     expect(view.preview).toStrictEqual(PREVIEW)
   })
 
   it('shows the words of a link the backend refuses', async () => {
     const client = createClient([])
-    vi.mocked(client.previewShareInvitation).mockRejectedValue(new Error('The link expired'))
+    vi.mocked(client.readSharePreview).mockRejectedValue(new Error('The link expired'))
     const view = create(client)
 
     await view.setLink('numen-share:abc')
@@ -55,7 +55,7 @@ describe('the dialog that accepts a shared folder', () => {
   it('drops the answer of a link that was replaced before the answer came', async () => {
     const answers = new Map<string, (value: typeof PREVIEW) => void>()
     const client = createClient([])
-    vi.mocked(client.previewShareInvitation).mockImplementation(
+    vi.mocked(client.readSharePreview).mockImplementation(
       (link) => new Promise((resolve) => answers.set(link, resolve)),
     )
     const view = create(client)

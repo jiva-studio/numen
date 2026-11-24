@@ -1,5 +1,5 @@
 import type { HostServices, PluginContext } from '@numen/plugin-sdk'
-import { receivedSharesClient, vaultsClient } from '../api/wire'
+import { incomingSharesClient, vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 import EndSyncDialog from './EndSyncDialog.vue'
 
@@ -8,7 +8,7 @@ const getCurrentVault = (host: HostServices): string =>
 
 /**
  * Registers the command that ends the sync of the vault the file tree shows: it asks first, a synced vault stops
- * syncing and a received folder is left, and any other vault is told it is not synced. The files stay.
+ * syncing and a received folder is left, and any other vault gets a notice that it is not synced. The files stay.
  */
 export const registerUnsync = (plugin: PluginContext, host: HostServices, id: string): void => {
   const show = (failure: unknown): void =>
@@ -19,7 +19,7 @@ export const registerUnsync = (plugin: PluginContext, host: HostServices, id: st
     const end = (): Promise<void> =>
       kind === 'stop'
         ? vaultsClient.stopSyncingVault({ vaultId })
-        : receivedSharesClient.leaveShare({ vaultId })
+        : incomingSharesClient.leaveShare({ vaultId })
     const dialog = dialogs.open({
       component: EndSyncDialog,
       props: {

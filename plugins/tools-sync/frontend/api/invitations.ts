@@ -81,7 +81,7 @@ export interface ShareInvitationClient {
 
 /** The calls of the person who got a link: what it offers, the request to read and how it stands. */
 export interface AcceptInvitationClient {
-  previewShareInvitation(link: string): Promise<InvitationPreview>
+  readSharePreview(link: string): Promise<InvitationPreview>
   acceptShareInvitation(request: AcceptRequest): Promise<SentRequest>
   getShareInvitationStatus(requestId: string): Promise<RequestStatus>
 }
@@ -115,7 +115,7 @@ export function createShareInvitationClient(api: Api): ShareInvitationClient {
 
 export function createAcceptInvitationClient(api: Api): AcceptInvitationClient {
   return {
-    previewShareInvitation: (link) =>
+    readSharePreview: (link) =>
       call<{ link: string }, InvitationPreview>(api, 'PreviewShareInvitation', { link }),
     acceptShareInvitation: (request) =>
       call<AcceptRequest, SentRequest>(api, 'AcceptShareInvitation', request),

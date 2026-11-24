@@ -67,7 +67,7 @@ describe('the page of the shared folders', () => {
         vaultId: 'r1',
         name: 'Plans',
         ownerShort: 'AAAA BBBB CCCC…',
-        stateLabel: 'The person stopped sharing this folder',
+        stateLabel: 'Sharing of this folder has ended',
         tone: 'alarm',
       },
     ])

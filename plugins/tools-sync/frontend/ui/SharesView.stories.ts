@@ -7,7 +7,7 @@ import type {
   SharedFolder,
 } from '../api/shares'
 import { createSharesPage } from './sharesPage'
-import { frameDecorator } from './storyFrame'
+import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
 const OWNER = 'EEEE FFFF GGGG HHHH IIII'
@@ -47,7 +47,7 @@ const createPage = (setup: Setup) => {
 
 const meta = {
   title: 'NumenSync/SharedFolders',
-  decorators: [frameDecorator],
+  decorators: [decorateWithFrame],
   render: (args) => ({
     components: { Page: args.page },
     template: '<Page />',
@@ -95,7 +95,7 @@ export const Ended: Story = {
   args: { page: createPage({ received: [food('ended')] }) },
   play: async ({ canvasElement }) => {
     await expect(
-      await within(canvasElement).findByText('The person stopped sharing this folder'),
+      await within(canvasElement).findByText('Sharing of this folder has ended'),
     ).toBeVisible()
   },
 }

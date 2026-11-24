@@ -3,6 +3,6 @@ const FRAME =
   'background:var(--numen-surface);color:var(--numen-ink)'
 
 /** Draws a story in a frame as large as the window, where every dialog is centred under one backdrop. */
-export const frameDecorator = () => ({
+export const decorateWithFrame = () => ({
   template: `<div class="numen" style="${FRAME}"><story /></div>`,
 })

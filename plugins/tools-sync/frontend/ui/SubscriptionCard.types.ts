@@ -1,7 +1,7 @@
 import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
 import type { AccountClient } from '../api/account'
 import type { SubscriptionClient } from '../api/subscription'
-import type { SaveFile } from '../model/accountData'
+import type { SaveFile } from '../api/saveFile'
 import type { UseSubscriptionOptions } from '../model/subscription'
 
 export interface SubscriptionCardProps {
