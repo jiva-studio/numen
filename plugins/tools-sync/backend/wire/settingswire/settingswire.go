@@ -15,8 +15,8 @@ const (
 	// SettingEpochRoot is the name of the setting of the epoch root key.
 	SettingEpochRoot = "epochRootKey"
 
-	keyEpochRoot      = "tools-sync/epoch-root"
-	keyInsecureServer = "tools-sync/insecure-server"
+	keyEpochRoot      = "epoch-root"
+	keyInsecureServer = "insecure-server"
 )
 
 // Settings reports the two settings.

@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
@@ -16,9 +17,9 @@ import (
 const (
 	textWentBack       = "The sync server went back to an earlier state"
 	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
-	keyRunning         = "restore.running"
-	keyWentBack        = "restore.wentBack"
-	keyEpochUntrusted  = "restore.epochUntrusted"
+	keyRunning         = "restore-running"
+	keyWentBack        = "restore-went-back"
+	keyEpochUntrusted  = "restore-epoch-untrusted"
 )
 
 func backup(t *testing.T, p *pair) []byte {
@@ -279,7 +280,7 @@ func TestSyncVault_ClearsTheWentBackWarningWhenTheRestoreIsAnnounced(t *testing.
 
 	sync(t, p.a, source)
 
-	if p.a.HasItemKey(keyWentBack + "/" + string(source)) {
+	if p.a.HasItemKey(healthkey.Create(keyWentBack, string(source))) {
 		t.Errorf("health items = %+v, want the warning cleared", p.a.Health.List())
 	}
 	wantServerNote(t, p, "Shopping list.md", "eggs")
@@ -419,7 +420,7 @@ func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLo
 
 	sync(t, p.a, source)
 
-	if !p.a.HasItem(textEpochUntrusted) || !p.a.HasItemKey(keyEpochUntrusted+"/"+string(source)) {
+	if !p.a.HasItem(textEpochUntrusted) || !p.a.HasItemKey(healthkey.Create(keyEpochUntrusted, string(source))) {
 		t.Errorf("health items = %+v, want %q", p.a.Health.List(), textEpochUntrusted)
 	}
 	if got := countCommits(p); got != commits {

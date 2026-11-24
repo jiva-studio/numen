@@ -13,7 +13,7 @@ import (
 )
 
 // HealthKey is the item the plugin reports while a person waits for the sharer to answer.
-const HealthKey = "share.requestWaiting"
+const HealthKey = "share-request-waiting"
 
 func watchOffer(ctx context.Context, deps Deps, o *offer) {
 	var after uint32

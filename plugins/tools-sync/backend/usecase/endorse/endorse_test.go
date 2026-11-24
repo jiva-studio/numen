@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 )
@@ -127,7 +128,7 @@ func TestPublish_ADeviceThatJoinsAfterTheRevokeStillReadsTheNotesTheRevokedPhone
 	if text, isThere := late.ReadNote(tablet, list); !isThere || text != "milk" {
 		t.Errorf("the new device reads %q (%v), want the list of the revoked phone", text, isThere)
 	}
-	if late.HasItemKey("unverified-changes/" + string(tablet)) {
+	if late.HasItemKey(healthkey.Create("unverified-changes", string(tablet))) {
 		t.Error("the new device says some changes could not be verified")
 	}
 }
@@ -165,7 +166,7 @@ func TestPublish_ARevokedDevicesUnendorsedNoteIsNotTaken(t *testing.T) {
 	if text, isThere := late.ReadNote(tablet, list); isThere {
 		t.Errorf("the new device downloaded %q written by the revoked phone that nobody endorsed", text)
 	}
-	if !late.HasItemKey("unverified-changes/" + string(tablet)) {
+	if !late.HasItemKey(healthkey.Create("unverified-changes", string(tablet))) {
 		t.Error("the new device does not say that changes could not be verified")
 	}
 }

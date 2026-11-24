@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -18,9 +19,9 @@ const (
 	keyUnverified     = "unverified-changes"
 	keyCaseClash      = "case-clash"
 	keyStorageFull    = "storage-full"
-	keyWentBack       = "restore.wentBack"
-	keyEpochUntrusted = "restore.epochUntrusted"
-	keyDiverged       = "restore.diverged"
+	keyWentBack       = "restore-went-back"
+	keyEpochUntrusted = "restore-epoch-untrusted"
+	keyDiverged       = "restore-diverged"
 
 	textWentBack       = "The sync server went back to an earlier state"
 	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
@@ -32,7 +33,7 @@ type reporter struct {
 	subscription SubscriptionReader
 }
 
-func getKey(key string, id hostdomain.VaultID) string { return key + "/" + string(id) }
+func getKey(key string, id hostdomain.VaultID) string { return healthkey.Create(key, string(id)) }
 
 func (r reporter) raise(ctx context.Context, key, text string) error {
 	return r.health.Report(ctx, health.Item{Key: key, Severity: health.Warning, Text: text, Detail: "", Action: nil})

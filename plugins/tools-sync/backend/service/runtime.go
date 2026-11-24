@@ -9,6 +9,7 @@ import (
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/besthealth"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
@@ -21,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/platform"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
@@ -107,7 +109,7 @@ func (r *runtime) configure(values map[string]string) {
 func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
-	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
+	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.getHealth(), Clock: p.clock, Chains: p.client})
 	roots, rootsErr := cloud.GetRoots(address, r.epochRoot.Get())
 	r.settings.ReportEpochRoot(ctx, rootsErr)
 	cloudSide := cloud.New(cloud.Config{
@@ -117,7 +119,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
-		Host: p.vaults, Notes: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.NewRandom(),
+		Host: p.vaults, Notes: p.vaults, State: p.state, Progress: p.state, Health: p.getHealth(), Clock: p.clock, Random: loops.NewRandom(),
 		Subscriptions: cloudSide, Shop: cloudSide, Pauses: p.state, Shares: cloudSide, ShareStates: p.state, Box: p.identity, Vaults: p.vaults,
 		Folders: folders.NewReceived(r.received.Get), Forget: p.state, Cloud: cloudSide,
 		Restore: syncvault.RestoreDeps{Address: address, Epochs: cloudSide, Mirror: p.state},
@@ -129,8 +131,8 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	}
 	pass := syncwire.NewSyncVault(wired)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: pass, Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
-		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
+		Pass: pass, Host: p.vaults, State: p.state, Health: p.getHealth(), Clock: p.clock,
+		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.getHealth()}),
 		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(), Describe: errorwire.GetText, Report: logging.ReportPassFailure,
 	})
 	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
@@ -143,7 +145,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	}
 	hub := shareinvite.NewHub()
 	invites := shareinvite.Deps{
-		Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Identity: p.identity, Device: device.Host{},
+		Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Identity: p.identity, Device: device.Host{},
 		Sharing:   sharewire.NewFolderSharer(sharewire.NewShareDeps(deps)),
 		Receiving: sharewire.NewInvitationReceiver(sharewire.NewReceiveDeps(deps)),
 		Random:    deps.Random, Server: address, Hub: hub,
@@ -158,9 +160,9 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	}))
 	loopsOf := map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute,
-		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Server: address}).Execute,
+		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Server: address}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
-			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
+			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.getHealth(), Clock: p.clock,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
 		"share-invite": shareinvite.NewCourier(hub).Execute,
@@ -178,3 +180,6 @@ func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State, Random: deps.Random,
 	}
 }
+
+// getHealth returns the health reports of the plugin: the host may refuse one, and no work depends on it.
+func (p parts) getHealth() ports.Health { return besthealth.New(p.health, logging.Warn) }

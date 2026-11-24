@@ -154,7 +154,8 @@ type Absences interface {
 	WriteAbsences(ctx context.Context, id domain.VaultID, absent map[string]int64) error
 }
 
-// Health is where the plugin says what does not work.
+// Health is where the plugin says what does not work. Reporting is best effort: Report and Clear return no
+// error for a host that refuses an item, and no work fails because a report did not arrive (see besthealth).
 type Health interface {
 	Report(ctx context.Context, item health.Item) error
 	Clear(ctx context.Context, key string) error

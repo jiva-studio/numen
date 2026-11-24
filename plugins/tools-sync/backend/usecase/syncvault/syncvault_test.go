@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
@@ -103,7 +104,7 @@ func TestSyncVault_ANoteFromTheSecondComputerAppearsOnTheFirst(t *testing.T) {
 	sync(t, p.a, source)
 
 	wantNote(t, p.a, source, "Plan.md", "tea")
-	if p.a.HasItemKey("unverified-changes/" + string(source)) {
+	if p.a.HasItemKey(healthkey.Create("unverified-changes", string(source))) {
 		t.Error("the first computer reports unverified changes for a device it learned from the server")
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
 
@@ -58,7 +59,7 @@ func TestSyncVault_WarnsOfTheNotesResolvedWithACopyAndClearsTheWarningOnTheNextP
 		t.Fatalf("health items = %+v, want the warning of 1 note changed on two computers", p.b.Health.List())
 	}
 	sync(t, p.b, target)
-	if p.b.HasItemKey("conflicts/" + string(target)) {
+	if p.b.HasItemKey(healthkey.Create("conflicts", string(target))) {
 		t.Errorf("health items = %+v, want the warning cleared by a pass with no conflict", p.b.Health.List())
 	}
 }
@@ -69,7 +70,7 @@ func TestSyncVault_TheComputerThatReachedTheServerFirstHasNoWarning(t *testing.T
 
 	sync(t, p.a, source)
 
-	if p.a.HasItemKey("conflicts/" + string(source)) {
+	if p.a.HasItemKey(healthkey.Create("conflicts", string(source))) {
 		t.Errorf("health items = %+v, want no warning on the computer whose text is the head", p.a.Health.List())
 	}
 }
@@ -104,7 +105,7 @@ func TestSyncVault_TheSameTextOnBothComputersMakesNoCopyAndNoWarning(t *testing.
 	if _, ok := p.b.ReadNote(target, listCopy); ok {
 		t.Error("a conflict copy of equal notes was made")
 	}
-	if p.b.HasItemKey("conflicts/"+string(target)) || len(p.heads(t)) != 1 {
+	if p.b.HasItemKey(healthkey.Create("conflicts", string(target))) || len(p.heads(t)) != 1 {
 		t.Errorf("health items = %+v with %d files on the server, want no warning and the one note", p.b.Health.List(), len(p.heads(t)))
 	}
 }
@@ -150,7 +151,7 @@ func TestSyncVault_AFileChangedOnTwoComputersKeepsTheHeadAndMakesNoCopyAndNoWarn
 
 	wantNote(t, p.b, target, pdf, pdfText+" there")
 	wantNote(t, p.a, source, pdf, pdfText+" there")
-	if p.b.HasItemKey("conflicts/"+string(target)) || len(p.heads(t)) != 1 {
+	if p.b.HasItemKey(healthkey.Create("conflicts", string(target))) || len(p.heads(t)) != 1 {
 		t.Errorf("health items = %+v with %d files on the server, want no warning and no copy", p.b.Health.List(), len(p.heads(t)))
 	}
 }
@@ -239,7 +240,7 @@ func TestSyncVault_AWarningOfANameThatMatchesAnotherNameClearsOnceTheFileIsRemov
 
 	sync(t, p.b, target)
 
-	if p.b.HasItemKey("case-clash/" + string(target)) {
+	if p.b.HasItemKey(healthkey.Create("case-clash", string(target))) {
 		t.Errorf("health items = %+v, want the warning cleared", p.b.Health.List())
 	}
 }

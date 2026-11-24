@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	keySharedConflicts = "shared-conflicts:"
-	keyShareEnded      = "share-ended:"
-	textShareEnded     = "The owner ended this share"
+	keySharedConflicts  = "shared-conflicts"
+	keySharedUnverified = "shared-unverified"
+	keyShareEnded       = "share-ended"
+	textShareEnded      = "The owner ended this share"
 )
 
 func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) error {
@@ -31,14 +32,14 @@ func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) erro
 }
 
 func (r reporter) raiseEnded(ctx context.Context, id domain.VaultID) error {
-	return r.raise(ctx, keyShareEnded+string(id), textShareEnded)
+	return r.raise(ctx, getKey(keyShareEnded, id), textShareEnded)
 }
 
 func (r reporter) reportShared(ctx context.Context, id domain.VaultID, conflicts, unverified int) error {
-	if err := r.toggle(ctx, keySharedConflicts+string(id), conflicts, getSharedConflictText(conflicts)); err != nil {
+	if err := r.toggle(ctx, getKey(keySharedConflicts, id), conflicts, getSharedConflictText(conflicts)); err != nil {
 		return err
 	}
-	return r.toggle(ctx, keyUnverified+":"+string(id), unverified, "Some changes of this shared vault could not be verified")
+	return r.toggle(ctx, getKey(keySharedUnverified, id), unverified, "Some changes of this shared vault could not be verified")
 }
 
 func getSharedConflictText(count int) string {
