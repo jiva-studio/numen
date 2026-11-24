@@ -40,6 +40,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     api: {
       settings: api.configuration.settings,
       license: api.configuration.license,
+      identity: api.configuration.identity,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       readReadme: api.plugins.readReadme,

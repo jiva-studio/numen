@@ -88,6 +88,48 @@ export const WORDS = {
   pathChoose: 'Choose…',
   pathAdd: 'Add…',
   pathClear: 'Clear',
+  /** The identity section of the page of identity and licenses. */
+  identitySection: 'Identity',
+  identityNoneDetail:
+    'An identity is your Numen account. Unlike a usual account, it lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
+  identityNoneWords:
+    'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
+  identityCreate: 'Create identity',
+  identityRestore: 'Restore',
+  identitySetupTitle: 'Recovery words',
+  identityWriteDown: 'Write the 12 words down in order. We show them once.',
+  identityNobodyRecovers:
+    'Neither Numen nor support can recover these words. If you lose the words and all your devices, you lose access to your cloud vaults.',
+  identityWordsWritten: 'I wrote the words down',
+  identityRecoveryWords: 'Recovery words',
+  identityCheckTitle: 'Check the words',
+  identityConfirmHint: (positions: readonly number[]) =>
+    `Enter words ${positions
+      .slice(0, -1)
+      .map((position) => `#${position}`)
+      .join(', ')} and #${positions.at(-1)} from your record.`,
+  identityConfirmWord: (position: number) => `Word ${position}`,
+  identityConfirmPlaceholder: 'word',
+  identityBack: 'Back',
+  identityContinue: 'Continue',
+  identityKeeping: 'Keeping…',
+  identityCancel: 'Cancel',
+  identityRestoreTitle: 'Restore identity',
+  identityRestoreHint: 'Type the 12 words in order.',
+  identityRestoreWord: (position: number) => `Recovery word ${position}`,
+  identityRestoring: 'Restoring…',
+  identityNotValid: 'Some words are not valid.',
+  identityAccount: 'Account fingerprint',
+  identityAccountDetail: 'Compare it when you link a device',
+  identityThisDevice: 'This device',
+  identityDevices: 'Devices',
+  identityDeviceCount: (count: number) => (count === 1 ? '1 device' : `${count} devices`),
+  identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
+  identityDelete: 'Delete identity',
+  identityDeleteTitle: 'Delete the identity from this device?',
+  identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',
+  identityDeleteConfirm: 'Delete',
+  identityDeleteCancel: 'Cancel',
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:

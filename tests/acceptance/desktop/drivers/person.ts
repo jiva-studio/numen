@@ -12,6 +12,7 @@ import { ConnectionsDriver } from './connections.js'
 import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
+import { IdentityDriver } from './identity.js'
 import { NoteDriver } from './notes.js'
 import { PaletteDriver } from './palette.js'
 import { PlexDriver } from './plex.js'
@@ -49,6 +50,7 @@ export class Person {
   readonly connections: ConnectionsDriver
   readonly reader: ReaderDriver
   readonly deck: DeckDriver
+  readonly identity: IdentityDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -78,6 +80,7 @@ export class Person {
     this.connections = new ConnectionsDriver(this.scenario, this.settings, this.services)
     this.reader = new ReaderDriver(this.scenario, this.tab)
     this.deck = new DeckDriver(this.scenario, this.tab)
+    this.identity = new IdentityDriver(this.scenario, this.settings)
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */

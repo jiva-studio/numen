@@ -21,6 +21,7 @@ updates:
       - /libs/plugin/sdk-go
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
+      - /libs/shared/identity
       - /libs/shared/licensing
       - /libs/shared/onnx
       - /libs/shared/rerank

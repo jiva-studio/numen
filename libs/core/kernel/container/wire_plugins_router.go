@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
-	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
@@ -47,7 +47,7 @@ type pluginInstall struct {
 	SafeMode        bool
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
-	KeyStore        pluginport.KeyStore
+	Keys            identity.SharedKeys
 }
 
 func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {
@@ -112,26 +112,18 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 }
 
 func openPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks) *run.PluginWork {
-	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, func(pluginID string) string {
-		return getPluginName(exec.Runtime.Resolver, pluginID)
-	})
+	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, getPluginNames(exec.Runtime.Resolver))
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work
 }
 
-func getPluginName(resolver pluginResolver, pluginID string) string {
-	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
-		return found.Manifest.Name
+func getPluginNames(resolver pluginResolver) func(pluginID string) string {
+	return func(pluginID string) string {
+		if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
+			return found.Manifest.Name
+		}
+		return pluginID
 	}
-	return pluginID
-}
-
-func setPluginVault(lender *hostendpoint.Lender, v *pluginvault.Access) {
-	lender.Update(func(l *hostendpoint.Lent) { l.Vault = v })
-}
-
-func setPluginVaultList(lender *hostendpoint.Lender, list pluginvault.List) {
-	lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
 func newDependencyRegistry(clock machineport.Clock, observe func(manifest.DependencyRequirement, plugindomain.DependencyStatus), defaultDir string) supervision.Dependencies {

@@ -11,6 +11,7 @@ import {
   type SettingsStore,
 } from '@/entities/settings'
 import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
+import { createIdentityStore, type IdentityApi, type IdentityStore } from '@/entities/identity'
 import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
@@ -40,6 +41,7 @@ interface SettingsPageApi {
     'choosePluginPath' | 'getPluginData' | 'deletePluginData' | 'retryPlugin'
   >
   readonly license: LicenseApi
+  readonly identity: IdentityApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
   readonly readReadme: ReadmeReader
@@ -99,6 +101,7 @@ interface SettingsTabConfigDeps {
   plugin: InstallationPluginDeps
   connections: ConnectionStore
   licenses: LicenseStore
+  identity: IdentityStore
   api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
@@ -245,6 +248,16 @@ function createInstallationLicenses(licenses: LicenseStore) {
   }
 }
 
+function createInstallationIdentity(identity: IdentityStore) {
+  return {
+    identity: identity.identity,
+    load: () => identity.load(),
+    generateWords: () => identity.generateWords(),
+    create: (words: readonly string[]) => identity.create(words),
+    delete: () => identity.delete(),
+  }
+}
+
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
@@ -255,6 +268,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
     },
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
+    identity: createInstallationIdentity(deps.identity),
   }
 }
 
@@ -274,6 +288,9 @@ export function createSettingsPage({
   const reportError = (error: unknown) => log.getWriter('configured')(formatError(error), 'error')
   const licenses = createLicenseStore(api.license, (text, level) =>
     log.getWriter('licenses')(text, level),
+  )
+  const identity = createIdentityStore(api.identity, (text, level) =>
+    log.getWriter('identity')(text, level),
   )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
@@ -301,6 +318,7 @@ export function createSettingsPage({
       },
       connections,
       licenses,
+      identity,
       api,
     }),
     reportError,

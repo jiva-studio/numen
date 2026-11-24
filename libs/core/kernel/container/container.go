@@ -6,6 +6,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
@@ -80,6 +81,7 @@ type Resources struct {
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
+	identityLock    identity.CreateGate
 }
 
 func NewResources() *Resources {
@@ -91,6 +93,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
+		identityLock:  identity.NewCreateGate(),
 	}
 }
 
@@ -175,8 +178,7 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 func createVaultWiring(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, chunks)
-	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
-	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
+	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
 	return base
 }
 
@@ -230,6 +232,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		KeyStore:        res.KeyStore,
+		Keys:            identity.SharedKeys{Store: res.KeyStore, CreateLock: res.identityLock},
 	}
 }

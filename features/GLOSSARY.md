@@ -554,6 +554,14 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: page "Connections"; fields "Type", "Name", "Address", "API key"; type "OpenAI-compatible server"; "Delete connection"; question "Index the notes again?": "The vault will be indexed again: 3 notes through Name. This can take a while and may cost money.", answers "Index", "Cancel" (editor/src/pages/settings/words.ts, plugins/connections-llm/manifest.json).
 - Not: not a note connection. A key is a private value kept in the system keychain and never shown again after it is saved. A plugin that is a type of connection is "Language model services".
 
+### identity
+
+- Is: The Numen account of a person, kept on their own computers and not on any server: no email and no password. Their devices use it to recognize each other, and their subscription belongs to it. 12 recovery words, shown once when the identity is created, restore it. Its account fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
+- States: not created (the card explains in two paragraphs what an identity is ("An identity is your Numen account. ...") and what the 12 recovery words are for, and offers "Create identity" and "Restore" in its header); an identity with its account fingerprint and this device.
+- Actions: "Create identity", "Restore", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore" opens the dialog "Restore identity" ("Type the 12 words in order.") with the 12 numbered boxes of the setup as fields, three to a row, named "Recovery word 1" to "Recovery word 12"; the 12 words pasted into the first box fill the rest.
+- Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "Some words are not valid." (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
+- Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
+
 ### row
 
 - Is: One line of the setting "Connection" or "Connections" of a plugin: a connection and a model. The plugin tries the rows in order and uses the next row when one fails.

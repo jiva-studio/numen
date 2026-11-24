@@ -56,6 +56,8 @@ shared_go_lib: &shared_go_lib
   - libs/shared/**
 rerank_lib: &rerank_lib
   - libs/shared/rerank/**
+identity_lib: &identity_lib
+  - libs/shared/identity/**
 result_lib: &result_lib
   - libs/shared/result/**
 sdk_ts_lib: &sdk_ts_lib
@@ -77,6 +79,7 @@ go_base: &go_base
   - *go_rules
   - *protocol_lib
   - *rerank_lib
+  - *identity_lib
   - *atomicfile_lib
   - *notes_lib
   - *core_lib

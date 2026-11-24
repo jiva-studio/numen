@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
@@ -13,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
@@ -142,9 +139,7 @@ func createVaultOpenerWith(c vaultWiring,
 		db.Maintenance(),
 		db.Sources(),
 	)
-	if c.SetNoteCut != nil {
-		c.SetNoteCut(&scan)
-	}
+	c.SetNoteCut(&scan)
 	scan.Walks = &db.Walks
 
 	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
@@ -213,8 +208,4 @@ func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, reco
 		CreateOpener: func(i *vaultIndex) *indexing.VaultOpener { return createVaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,
 	}
-}
-
-func setShellNotes(api *shell.API, db *vaultIndex) {
-	api.Ensure = ensureindexed.New(api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 }

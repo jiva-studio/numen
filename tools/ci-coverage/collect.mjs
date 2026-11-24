@@ -16,6 +16,7 @@ const tmpDir = join(root, '.coverage_tmp')
 const GO_MODULES = [
   'libs/core/kernel',
   'libs/shared/protocol',
+  'libs/shared/identity',
   'libs/shared/licensing',
   'libs/shared/onnx',
   'libs/shared/tokenizer',

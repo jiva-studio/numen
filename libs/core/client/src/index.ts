@@ -22,6 +22,7 @@ export {
   createConnectionCallRpc,
   createLogRpc,
   createLicenseRpc,
+  createIdentityRpc,
   NAME_SOURCE,
   type NameSourceCode,
   NOTE_MARKER,
@@ -114,6 +115,12 @@ export {
   type LicenseClient,
   createLicenseClient,
 } from './licenses'
+export {
+  type IdentityInfo,
+  type IdentityFailure,
+  type IdentityClient,
+  createIdentityClient,
+} from './identity'
 export {
   NoteGraphSchema,
   type Entry,

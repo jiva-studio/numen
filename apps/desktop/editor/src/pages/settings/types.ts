@@ -15,6 +15,7 @@ import type {
   OperationTitles,
   RowOption,
 } from '@/entities/connection'
+import type { IdentityInfo } from '@/entities/identity'
 import type { LicenseInfo } from '@/entities/license'
 import type {
   PluginInfo,
@@ -31,6 +32,7 @@ export interface Installation {
   readonly settings: InstallationSettings
   readonly plugin: InstallationPlugin
   readonly connections: InstallationConnections
+  readonly identity: InstallationIdentity
   readonly licenses: InstallationLicenses
 }
 
@@ -149,6 +151,18 @@ export interface ConnectionEdits {
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
   readonly delete: (id: string) => Promise<Result<undefined, string>>
+}
+
+/**
+ * The identity of this device. The recovery words pass through `generateWords` and `create` and
+ * are not held here.
+ */
+export interface InstallationIdentity {
+  readonly identity: Readonly<Ref<IdentityInfo | undefined>>
+  load(): Promise<void>
+  generateWords(): Promise<Result<readonly string[], string>>
+  create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
+  delete(): Promise<Result<void, string>>
 }
 
 /**

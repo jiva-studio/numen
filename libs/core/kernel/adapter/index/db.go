@@ -46,6 +46,10 @@ type DB struct {
 	noteCache   *note.Cache
 }
 
+// busyTimeout waits for a writer, up to five seconds, before SQLITE_BUSY. The check of the file before the pool
+// opens waits as well: the last connection of this process to close checkpoints the WAL under an exclusive lock.
+const busyTimeout = "busy_timeout(5000)"
+
 func getPragmas() []string {
 	return []string{
 		// WAL so a long scan does not block readers. This one is persisted in the
@@ -56,7 +60,7 @@ func getPragmas() []string {
 		// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer being
 		// waited for may be in another process, and a write that exhausted the wait
 		// retries.
-		"busy_timeout(5000)",
+		busyTimeout,
 		// Pages are read from the mapped file, shared by every connection, up to
 		// 256 MiB of it.
 		"mmap_size(268435456)",
