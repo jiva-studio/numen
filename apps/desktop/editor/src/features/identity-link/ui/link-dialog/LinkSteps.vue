@@ -1,37 +1,21 @@
 <script setup lang="ts">
-/** The numbered steps a person follows on the two devices. */
+/** The steps a person follows on the two devices, in one fixed list: the step being waited for is the active one. */
+import { computed } from 'vue'
+import { StageList, type Stage } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ steps: readonly string[] }>()
+const props = defineProps<{ steps: readonly string[]; isWaiting: boolean }>()
+
+/* --------------------------------- State ---------------------------------- */
+const stages = computed<Stage[]>(() =>
+  props.steps.map((label, at) => ({
+    id: `step-${at}`,
+    label,
+    state: props.isWaiting && at === 0 ? 'active' : 'pending',
+  })),
+)
 </script>
 
 <template>
-  <ol class="link-steps">
-    <li v-for="step in steps" :key="step" class="link-steps__step">{{ step }}</li>
-  </ol>
+  <StageList :stages="stages" />
 </template>
-
-<style scoped>
-.link-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-}
-
-.link-steps__step {
-  counter-increment: step;
-  display: grid;
-  grid-template-columns: 1.25rem minmax(0, 1fr);
-  gap: 0.5rem;
-}
-
-.link-steps__step::before {
-  content: counter(step) '.';
-  color: var(--numen-hushed);
-  font-variant-numeric: tabular-nums;
-}
-</style>

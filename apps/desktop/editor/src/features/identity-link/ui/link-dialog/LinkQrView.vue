@@ -20,7 +20,7 @@ const QR_SIZE = 200
       <QrCode v-if="qrText !== ''" :text="qrText" :label="words.linkQr" :size="QR_SIZE" />
       <Spinner v-else />
     </div>
-    <LinkSteps :steps="words.linkHostSteps" />
+    <LinkSteps :steps="words.linkHostSteps" :is-waiting="qrText !== ''" />
     <p class="link-qr__wait" role="status" aria-busy="true">
       <Spinner />
       {{ qrText === '' ? words.linkPreparingTitle : words.linkWaitingScanTitle }}

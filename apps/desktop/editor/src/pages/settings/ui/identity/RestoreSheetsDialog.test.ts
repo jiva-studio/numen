@@ -63,7 +63,7 @@ describe('the restore from sheets dialog', () => {
   it('keeps the camera on after the first sheet and restores by itself after the second', async () => {
     const { scan, run } = createDialog()
     await scan(makeCode('C0DE', 3, 'a'))
-    expect(getBody().findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
+    expect(getBody().findAll('.stage-list__detail').map((one) => one.text())).toStrictEqual(['Sheet 3', '', ''])
     expect(getBody().text()).toContain('Second sheet')
     expect(getBody().find('.camera').exists()).toBe(true)
     expect(run).not.toHaveBeenCalled()
@@ -96,6 +96,38 @@ describe('the restore from sheets dialog', () => {
     expect(wrapper.findComponent(camera).vm).toBe(before)
   })
 
+  it('lists the three stages in order before any scan', () => {
+    createDialog()
+    const rows = getBody().findAll('.stage-list__row')
+    expect(rows.map((row) => row.get('.stage-list__label').text())).toStrictEqual(['First sheet', 'Second sheet', 'Restore'])
+    expect(rows.map((row) => row.attributes('data-state'))).toStrictEqual(['active', 'pending', 'pending'])
+  })
+
+  it('keeps a scanned sheet in its row as done and shows the restore as active while it runs', async () => {
+    let finish = (): void => undefined
+    const { scan } = createDialog(() => new Promise<void>((resolve) => (finish = resolve)))
+    await scan(makeCode('C0DE', 3, 'a'))
+    expect(getBody().findAll('.stage-list__row').map((row) => row.attributes('data-state'))).toStrictEqual(['done', 'active', 'pending'])
+    await scan(makeCode('C0DE', 1, 'b'))
+    const rows = getBody().findAll('.stage-list__row')
+    expect(rows.map((row) => row.attributes('data-state'))).toStrictEqual(['done', 'done', 'active'])
+    expect(rows[2]?.text()).toContain('Restoring…')
+    expect(rows.map((row) => row.get('.stage-list__label').text())).toStrictEqual(['First sheet', 'Second sheet', 'Restore'])
+    finish()
+  })
+
+  it('keeps the list after a failure and sets the sheets back to pending', async () => {
+    const { scan, problem } = createDialog(() => {
+      problem.value = 'The sheets belong to another account.'
+      return Promise.resolve()
+    })
+    await scan(makeCode('C0DE', 1, 'a'))
+    await scan(makeCode('C0DE', 2, 'b'))
+    const rows = getBody().findAll('.stage-list__row')
+    expect(rows).toHaveLength(3)
+    expect(rows.map((row) => row.attributes('data-state'))).toStrictEqual(['active', 'pending', 'pending'])
+  })
+
   it('has only Cancel as a button', () => {
     createDialog()
     expect(getBody().findAll('button').map((one) => one.text())).toStrictEqual(['Cancel'])
@@ -113,6 +145,6 @@ describe('the restore from sheets dialog', () => {
     problem.value = ''
     await scan(makeCode('C0DE', 3, 'c'))
     expect(getBody().find('[role=alert]').exists()).toBe(false)
-    expect(getBody().findAll('.restore-slots__sheet').map((one) => one.text())).toStrictEqual(['Sheet 3', ''])
+    expect(getBody().findAll('.stage-list__detail').map((one) => one.text())).toStrictEqual(['Sheet 3', '', ''])
   })
 })
