@@ -42,6 +42,5 @@ export function useSubscription(options: UseSubscriptionOptions) {
     await session.load()
   }
 
-
   return { session, payment, offers, summary, accountData, start }
 }

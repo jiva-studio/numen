@@ -76,7 +76,13 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
     Promise.resolve(asValue(null)),
   )
   const wrapper = mount(SubscriptionCard, {
-    props: { client, accountClient, saveFile, openExternal, now: () => new Date('2026-11-23T12:00:00Z') },
+    props: {
+      client,
+      accountClient,
+      saveFile,
+      openExternal,
+      now: () => new Date('2026-11-23T12:00:00Z'),
+    },
     attachTo: document.body,
   })
   mounted.push(wrapper)
@@ -85,7 +91,9 @@ const render = async (state: AccountStateResponse, subscription = ACTIVE) => {
 }
 
 const findButton = (text: string) =>
-  Array.from(document.body.querySelectorAll('button')).find((one) => one.textContent?.trim() === text)
+  Array.from(document.body.querySelectorAll('button')).find(
+    (one) => one.textContent?.trim() === text,
+  )
 
 const press = async (text: string) => {
   findButton(text)?.click()
