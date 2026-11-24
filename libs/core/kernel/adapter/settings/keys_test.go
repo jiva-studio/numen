@@ -22,7 +22,7 @@ func TestCredentialsFileIsUnsetWhereNothingWasChosen(t *testing.T) {
 	}
 }
 
-func TestCredentialsFileChoiceIsKeptForTheNextRead(t *testing.T) {
+func TestCredentialsFileChoiceIsReadBackAfterWrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 
 	for _, value := range []string{settings.CredentialsFilePassphrase, settings.CredentialsFilePlaintext} {

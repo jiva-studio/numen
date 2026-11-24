@@ -14,12 +14,9 @@ const (
 	qrQuietSize = 4
 )
 
-type rectSink interface {
-	SetFillColor(r, g, b int)
-	Rect(x, y, w, h float64, styleStr string)
-}
+// fillBlack paints one rectangle of the code in the black the caller has selected.
+type fillBlack func(x, y, w, h float64)
 
-// getSheetText is the text of the code on a sheet: a versioned link of the kit, the sheet and its words, nothing else.
 func getSheetText(kitID string, sheet identitydomain.Sheet) string {
 	return fmt.Sprintf("numen://recover?v=1&kit=%s&sheet=%d&words=%s", kitID, sheet.Number, strings.Join(sheet.Words, "+"))
 }
@@ -39,9 +36,8 @@ func getQRMatrix(text string) ([][]bool, error) {
 	return matrix, nil
 }
 
-func drawQR(sink rectSink, matrix [][]bool, left, top float64) {
+func drawQR(fill fillBlack, matrix [][]bool, left, top float64) {
 	module := qrSide / float64(len(matrix)+2*qrQuietSize)
-	sink.SetFillColor(0, 0, 0)
 	for y, row := range matrix {
 		for x := 0; x < len(row); x++ {
 			if !row[x] {
@@ -51,10 +47,10 @@ func drawQR(sink rectSink, matrix [][]bool, left, top float64) {
 			for end+1 < len(row) && row[end+1] {
 				end++
 			}
-			sink.Rect(
+			fill(
 				left+float64(x+qrQuietSize)*module,
 				top+float64(y+qrQuietSize)*module,
-				float64(end-x+1)*module, module, "F",
+				float64(end-x+1)*module, module,
 			)
 			x = end
 		}

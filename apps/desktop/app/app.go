@@ -147,7 +147,6 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	}
 	pages, installation := displayed.pages, displayed.opened
 	installation.Report(notices)
-	mountKeyFile(installation, services.KeyFile)
 
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(

@@ -5,19 +5,19 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 )
 
 type recordingFile struct {
-	state       pluginport.KeyFileState
+	state       domainkeyfile.State
 	plaintext   int
 	passphrases []string
 	unlocked    []string
 	fail        error
 }
 
-func (f *recordingFile) GetState(context.Context) (pluginport.KeyFileState, error) {
+func (f *recordingFile) GetState(context.Context) (domainkeyfile.State, error) {
 	return f.state, f.fail
 }
 
@@ -38,30 +38,30 @@ func (f *recordingFile) Unlock(_ context.Context, passphrase string) error {
 
 func TestChooseAppliesPlaintextAndRemembersIt(t *testing.T) {
 	file := &recordingFile{}
-	var remembered []pluginport.KeyFileMode
-	choose := keyfile.NewChoose(file, func(mode pluginport.KeyFileMode) error {
+	var remembered []domainkeyfile.Mode
+	choose := keyfile.NewChoose(file, func(mode domainkeyfile.Mode) error {
 		remembered = append(remembered, mode)
 		return nil
 	})
 
-	if err := choose.Execute(t.Context(), pluginport.KeyFilePlaintext, ""); err != nil {
+	if err := choose.Execute(t.Context(), domainkeyfile.Plaintext, ""); err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
 
-	if file.plaintext != 1 || len(remembered) != 1 || remembered[0] != pluginport.KeyFilePlaintext {
+	if file.plaintext != 1 || len(remembered) != 1 || remembered[0] != domainkeyfile.Plaintext {
 		t.Fatalf("plaintext used %d times, remembered %v", file.plaintext, remembered)
 	}
 }
 
 func TestChooseAppliesPassphraseAndRemembersIt(t *testing.T) {
 	file := &recordingFile{}
-	var remembered []pluginport.KeyFileMode
-	choose := keyfile.NewChoose(file, func(mode pluginport.KeyFileMode) error {
+	var remembered []domainkeyfile.Mode
+	choose := keyfile.NewChoose(file, func(mode domainkeyfile.Mode) error {
 		remembered = append(remembered, mode)
 		return nil
 	})
 
-	if err := choose.Execute(t.Context(), pluginport.KeyFilePassphrase, "moon river"); err != nil {
+	if err := choose.Execute(t.Context(), domainkeyfile.Passphrase, "moon river"); err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
 
@@ -72,18 +72,18 @@ func TestChooseAppliesPassphraseAndRemembersIt(t *testing.T) {
 
 func TestChooseRefusesWithoutChangingAnything(t *testing.T) {
 	cases := map[string]struct {
-		mode       pluginport.KeyFileMode
+		mode       domainkeyfile.Mode
 		passphrase string
 		want       error
 	}{
-		"empty passphrase": {pluginport.KeyFilePassphrase, "", pluginport.ErrEmptyPassphrase},
-		"unset":            {pluginport.KeyFileUnset, "", keyfile.ErrInvalidMode},
-		"unknown":          {pluginport.KeyFileMode("other"), "", keyfile.ErrInvalidMode},
+		"empty passphrase": {domainkeyfile.Passphrase, "", domainkeyfile.ErrEmptyPassphrase},
+		"unset":            {domainkeyfile.Unset, "", keyfile.ErrInvalidMode},
+		"unknown":          {domainkeyfile.Mode("other"), "", keyfile.ErrInvalidMode},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			file := &recordingFile{}
-			choose := keyfile.NewChoose(file, func(pluginport.KeyFileMode) error { t.Fatal("remembered"); return nil })
+			choose := keyfile.NewChoose(file, func(domainkeyfile.Mode) error { t.Fatal("remembered"); return nil })
 
 			err := choose.Execute(t.Context(), c.mode, c.passphrase)
 
@@ -95,22 +95,22 @@ func TestChooseRefusesWithoutChangingAnything(t *testing.T) {
 }
 
 func TestChooseReportsAChoiceThatIsNotSaved(t *testing.T) {
-	choose := keyfile.NewChoose(&recordingFile{}, func(pluginport.KeyFileMode) error { return errors.New("disk full") })
+	choose := keyfile.NewChoose(&recordingFile{}, func(domainkeyfile.Mode) error { return errors.New("disk full") })
 
-	err := choose.Execute(t.Context(), pluginport.KeyFilePlaintext, "")
+	err := choose.Execute(t.Context(), domainkeyfile.Plaintext, "")
 
 	if !errors.Is(err, keyfile.ErrNotSaved) {
 		t.Fatalf("err %v", err)
 	}
 }
 
-func TestChooseKeepsTheWrongPassphraseRefusal(t *testing.T) {
-	file := &recordingFile{fail: pluginport.ErrWrongPassphrase}
-	choose := keyfile.NewChoose(file, func(pluginport.KeyFileMode) error { t.Fatal("remembered"); return nil })
+func TestChooseRefusesAWrongPassphrase(t *testing.T) {
+	file := &recordingFile{fail: domainkeyfile.ErrWrongPassphrase}
+	choose := keyfile.NewChoose(file, func(domainkeyfile.Mode) error { t.Fatal("remembered"); return nil })
 
-	err := choose.Execute(t.Context(), pluginport.KeyFilePassphrase, "wrong")
+	err := choose.Execute(t.Context(), domainkeyfile.Passphrase, "wrong")
 
-	if !errors.Is(err, pluginport.ErrWrongPassphrase) {
+	if !errors.Is(err, domainkeyfile.ErrWrongPassphrase) {
 		t.Fatalf("err %v", err)
 	}
 }
@@ -132,13 +132,13 @@ func TestUnlockRefusesAnEmptyPassphrase(t *testing.T) {
 
 	err := keyfile.NewUnlock(file).Execute(t.Context(), "")
 
-	if !errors.Is(err, pluginport.ErrEmptyPassphrase) || len(file.unlocked) != 0 {
+	if !errors.Is(err, domainkeyfile.ErrEmptyPassphrase) || len(file.unlocked) != 0 {
 		t.Fatalf("err %v, unlocked %v", err, file.unlocked)
 	}
 }
 
 func TestGetStateReturnsTheFileState(t *testing.T) {
-	want := pluginport.KeyFileState{IsInUse: true, Mode: pluginport.KeyFilePassphrase, Warning: "", IsLocked: true}
+	want := domainkeyfile.State{IsInUse: true, Mode: domainkeyfile.Passphrase, Warning: "", IsLocked: true}
 
 	got, err := keyfile.NewGetState(&recordingFile{state: want}).Execute(t.Context())
 

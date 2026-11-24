@@ -76,7 +76,7 @@ func TestSaveTextReportsADialogThisMachineCannotShow(t *testing.T) {
 	}
 }
 
-func TestSaveTextReportsAFolderThatIsGone(t *testing.T) {
+func TestSaveTextFailsInAMissingFolder(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "gone", "account.json")
 
 	saved, err := picker.NewSaveText(&saveDialog{path: path, isChosen: true}).Execute(t.Context(), picker.TextFile{})

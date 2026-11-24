@@ -46,7 +46,6 @@ type Installation struct {
 	Preferences *container.PluginPreferences
 	Endpoints   *container.PluginEndpoints
 	Resources   *container.Resources
-	KeyFile     *keychain.KeyFile
 }
 
 // NewPluginServices builds the plugin host and shared resources of a desktop window or command.
@@ -57,13 +56,14 @@ func NewPluginServices(target string) Installation {
 	passphrase := &keychain.Passphrase{}
 	applyCredentialsFile(store, passphrase)
 	res.KeyStore = store
+	res.KeyFile = keychain.NewKeyFile(store, passphrase)
 	res.ChainStore = getChainStore()
 	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	preferences.SetStorage(cacheRoot, dataRoot)
 	res.PluginCatalog = getCatalogConfig(target, dirs, execution.Runtime.Listing.IsPluginEnabled)
-	return Installation{Execution: execution, Preferences: preferences, Endpoints: endpoints, Resources: res, KeyFile: keychain.NewKeyFile(store, passphrase)}
+	return Installation{Execution: execution, Preferences: preferences, Endpoints: endpoints, Resources: res}
 }
 
 func reportPluginHost(err error) {
@@ -84,8 +84,6 @@ func getChainStore() *identityfile.Chain {
 	return identityfile.Open(filepath.Dir(path))
 }
 
-// applyCredentialsFile gives the store the choice of keys.credentialsFile. A passphrase file waits for the
-// window to give the passphrase.
 func applyCredentialsFile(store *keychain.Store, passphrase *keychain.Passphrase) {
 	path, err := settings.GetPath()
 	if err != nil {

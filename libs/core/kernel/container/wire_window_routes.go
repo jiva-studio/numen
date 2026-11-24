@@ -18,6 +18,7 @@ import (
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
+	windowkeyfile "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/keyfile"
 	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
@@ -29,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
@@ -39,6 +41,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -379,4 +382,24 @@ func mountTheme(w *windowRoutes, themes *theme.Service) {
 func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring, res *Resources, dialog editor.PathDialog) {
 	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, res, dialog))
 	w.Installation.Mount(editor.NewRoute(windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())))
+}
+
+func mountKeyFile(w *windowRoutes, res *Resources) {
+	if res == nil || res.KeyFile == nil {
+		return
+	}
+	handler := windowkeyfile.NewHandler(windowkeyfile.UseCases{
+		GetState: keyfileusecase.NewGetState(res.KeyFile),
+		Choose:   keyfileusecase.NewChoose(res.KeyFile, rememberKeyFileMode),
+		Unlock:   keyfileusecase.NewUnlock(res.KeyFile),
+	})
+	w.Installation.Mount(editor.NewRoute(windowkeyfile.NewRoute(handler, w.page.Gate.CountQuestions())))
+}
+
+func rememberKeyFileMode(mode domainkeyfile.Mode) error {
+	path, err := settingsadapter.GetPath()
+	if err != nil {
+		return err
+	}
+	return settingsadapter.WriteCredentialsFile(path, string(mode))
 }

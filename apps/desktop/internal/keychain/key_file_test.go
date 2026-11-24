@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 )
 
 func newKeyFile(dir string) (*KeyFile, *Store) {
@@ -34,7 +34,7 @@ func TestKeyFileAsksForAChoiceWhereThereIsNoKeychain(t *testing.T) {
 
 	state, err := file.GetState(t.Context())
 
-	if err != nil || !state.IsInUse || state.Mode != pluginport.KeyFileUnset || state.Warning == "" {
+	if err != nil || !state.IsInUse || state.Mode != domainkeyfile.Unset || state.Warning == "" {
 		t.Fatalf("state %+v, err %v", state, err)
 	}
 }
@@ -55,8 +55,11 @@ func TestKeyFileKeepsKeysEncryptedAfterAPassphraseChoice(t *testing.T) {
 	if err != nil || !isEncryptedFile(raw) {
 		t.Fatalf("file encrypted %v, err %v", isEncryptedFile(raw), err)
 	}
-	state, _ := file.GetState(t.Context())
-	if state.Mode != pluginport.KeyFilePassphrase || state.IsLocked {
+	state, stateErr := file.GetState(t.Context())
+	if stateErr != nil {
+		t.Fatal(stateErr)
+	}
+	if state.Mode != domainkeyfile.Passphrase || state.IsLocked {
 		t.Fatalf("state %+v", state)
 	}
 }
@@ -74,17 +77,20 @@ func TestKeyFileIsLockedAtTheNextStartUntilTheRightPassphraseIsGiven(t *testing.
 	second, secondStore := newKeyFile(dir)
 	secondStore.UsePassphraseFile(second.passphrase)
 
-	locked, _ := second.GetState(t.Context())
+	locked, lockedErr := second.GetState(t.Context())
 	_, readErr := secondStore.GetKey(t.Context(), entryName)
 	wrong := second.Unlock(t.Context(), passphraseTwo)
 	right := second.Unlock(t.Context(), passphraseOne)
-	unlocked, _ := second.GetState(t.Context())
+	unlocked, unlockedErr := second.GetState(t.Context())
 	got, getErr := secondStore.GetKey(t.Context(), entryName)
 
+	if lockedErr != nil || unlockedErr != nil {
+		t.Fatalf("locked state %v, unlocked state %v", lockedErr, unlockedErr)
+	}
 	if !locked.IsLocked || !errors.Is(readErr, ErrPassphraseNeeded) {
 		t.Fatalf("locked %+v, read error %v", locked, readErr)
 	}
-	if !errors.Is(wrong, pluginport.ErrWrongPassphrase) || right != nil || unlocked.IsLocked {
+	if !errors.Is(wrong, domainkeyfile.ErrWrongPassphrase) || right != nil || unlocked.IsLocked {
 		t.Fatalf("wrong %v, right %v, unlocked %+v", wrong, right, unlocked)
 	}
 	if getErr != nil || got != seedValue {
@@ -106,7 +112,7 @@ func TestKeyFileRefusesAPassphraseThatDoesNotOpenTheFile(t *testing.T) {
 
 	err := second.UsePassphrase(t.Context(), passphraseTwo)
 
-	if !errors.Is(err, pluginport.ErrWrongPassphrase) {
+	if !errors.Is(err, domainkeyfile.ErrWrongPassphrase) {
 		t.Fatalf("err %v", err)
 	}
 }
@@ -123,9 +129,15 @@ func TestKeyFileKeepsKeysAsTextAfterAPlaintextChoice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	raw, _ := os.ReadFile(credentialsPath(dir))
-	state, _ := file.GetState(t.Context())
-	if isEncryptedFile(raw) || state.Mode != pluginport.KeyFilePlaintext || state.Warning == "" {
+	raw, rawErr := os.ReadFile(credentialsPath(dir))
+	if rawErr != nil {
+		t.Fatal(rawErr)
+	}
+	state, stateErr := file.GetState(t.Context())
+	if stateErr != nil {
+		t.Fatal(stateErr)
+	}
+	if isEncryptedFile(raw) || state.Mode != domainkeyfile.Plaintext || state.Warning == "" {
 		t.Fatalf("encrypted %v, state %+v", isEncryptedFile(raw), state)
 	}
 }
@@ -145,7 +157,10 @@ func TestKeyFileWritesTheKeysAgainWhenTheModeChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	raw, _ := os.ReadFile(credentialsPath(dir))
+	raw, rawErr := os.ReadFile(credentialsPath(dir))
+	if rawErr != nil {
+		t.Fatal(rawErr)
+	}
 	got, err := store.GetKey(t.Context(), entryName)
 	if isEncryptedFile(raw) || err != nil || got != seedValue {
 		t.Fatalf("encrypted %v, key %q, err %v", isEncryptedFile(raw), got, err)
@@ -153,7 +168,10 @@ func TestKeyFileWritesTheKeysAgainWhenTheModeChanges(t *testing.T) {
 	if err := file.UsePassphrase(t.Context(), passphraseTwo); err != nil {
 		t.Fatal(err)
 	}
-	raw, _ = os.ReadFile(credentialsPath(dir))
+	raw, rawErr = os.ReadFile(credentialsPath(dir))
+	if rawErr != nil {
+		t.Fatal(rawErr)
+	}
 	if !isEncryptedFile(raw) {
 		t.Fatal("the keys stayed as plaintext after the passphrase was chosen")
 	}

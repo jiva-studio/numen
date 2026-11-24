@@ -9,7 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -48,7 +48,7 @@ func (h *Handler) GetKeyFileState(
 	return connect.NewResponse(&v1.GetKeyFileStateResponse{
 		IsInUse:        state.IsInUse,
 		Mode:           writeMode(state.Mode),
-		IsChoiceNeeded: state.IsInUse && state.Mode == pluginport.KeyFileUnset,
+		IsChoiceNeeded: state.IsInUse && state.Mode == domainkeyfile.Unset,
 		IsLocked:       state.IsLocked,
 		Warning:        state.Warning,
 	}), nil
@@ -81,9 +81,9 @@ func getErrorCode(err error) (v1.KeyFileErrorCode, error) {
 	switch {
 	case err == nil:
 		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED, nil
-	case errors.Is(err, pluginport.ErrWrongPassphrase):
+	case errors.Is(err, domainkeyfile.ErrWrongPassphrase):
 		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE, nil
-	case errors.Is(err, pluginport.ErrEmptyPassphrase):
+	case errors.Is(err, domainkeyfile.ErrEmptyPassphrase):
 		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE, nil
 	case errors.Is(err, keyfile.ErrNotSaved):
 		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_SAVE_FAILED, nil
@@ -93,26 +93,26 @@ func getErrorCode(err error) (v1.KeyFileErrorCode, error) {
 	return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED, err
 }
 
-func writeMode(mode pluginport.KeyFileMode) v1.KeyFileMode {
+func writeMode(mode domainkeyfile.Mode) v1.KeyFileMode {
 	switch mode {
-	case pluginport.KeyFilePlaintext:
+	case domainkeyfile.Plaintext:
 		return v1.KeyFileMode_KEY_FILE_MODE_PLAINTEXT
-	case pluginport.KeyFilePassphrase:
+	case domainkeyfile.Passphrase:
 		return v1.KeyFileMode_KEY_FILE_MODE_PASSPHRASE
-	case pluginport.KeyFileUnset:
+	case domainkeyfile.Unset:
 		return v1.KeyFileMode_KEY_FILE_MODE_UNSET
 	}
 	return v1.KeyFileMode_KEY_FILE_MODE_UNSET
 }
 
-func readMode(mode v1.KeyFileMode) pluginport.KeyFileMode {
+func readMode(mode v1.KeyFileMode) domainkeyfile.Mode {
 	switch mode {
 	case v1.KeyFileMode_KEY_FILE_MODE_PLAINTEXT:
-		return pluginport.KeyFilePlaintext
+		return domainkeyfile.Plaintext
 	case v1.KeyFileMode_KEY_FILE_MODE_PASSPHRASE:
-		return pluginport.KeyFilePassphrase
+		return domainkeyfile.Passphrase
 	case v1.KeyFileMode_KEY_FILE_MODE_UNSET, v1.KeyFileMode_KEY_FILE_MODE_UNSPECIFIED:
-		return pluginport.KeyFileUnset
+		return domainkeyfile.Unset
 	}
-	return pluginport.KeyFileUnset
+	return domainkeyfile.Unset
 }

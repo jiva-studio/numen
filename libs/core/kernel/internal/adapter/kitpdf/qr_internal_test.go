@@ -9,13 +9,10 @@ import (
 type recordedRect struct{ x, y, w, h float64 }
 
 type recordingSink struct {
-	fills int
 	rects []recordedRect
 }
 
-func (r *recordingSink) SetFillColor(_, _, _ int) { r.fills++ }
-
-func (r *recordingSink) Rect(x, y, w, h float64, _ string) {
+func (r *recordingSink) fill(x, y, w, h float64) {
 	r.rects = append(r.rects, recordedRect{x: x, y: y, w: w, h: h})
 }
 
@@ -68,10 +65,7 @@ func TestDrawQR_FillsEachRunOfBlackModulesInsideTheSquare(t *testing.T) {
 	}
 	sink := &recordingSink{}
 	const left, top = 150.0, 209.0
-	drawQR(sink, matrix, left, top)
-	if sink.fills != 1 {
-		t.Errorf("the fill color is set %d times, want 1", sink.fills)
-	}
+	drawQR(sink.fill, matrix, left, top)
 	if len(sink.rects) != runs {
 		t.Errorf("%d rectangles are drawn, want %d", len(sink.rects), runs)
 	}

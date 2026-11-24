@@ -41,7 +41,7 @@ func ReadCredentialsFile(path string) string {
 	return value
 }
 
-// WriteCredentialsFile keeps value as keys.credentialsFile in the settings file at path.
+// WriteCredentialsFile writes value to keys.credentialsFile; the other settings of the file are kept. The caller passes one of the CredentialsFile constants.
 func WriteCredentialsFile(path, value string) error {
 	store := NewStore(NewFiles(), func() (string, error) { return path, nil }, nil, nil)
 	return store.Write([]settingsdomain.Setting{{

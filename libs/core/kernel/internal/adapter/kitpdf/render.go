@@ -119,7 +119,8 @@ func (p sheetPage) drawWords(words []string) {
 
 func (p sheetPage) drawQR(matrix [][]bool) {
 	const top = 160.0
-	drawQR(p.pdf, matrix, margin, top)
+	p.pdf.SetFillColor(0, 0, 0)
+	drawQR(func(x, y, w, h float64) { p.pdf.Rect(x, y, w, h, "F") }, matrix, margin, top)
 	p.setFont("Helvetica", "", 10, ink)
 	p.write(margin+qrSide+6, top+qrSide/2-2, "To restore, scan this code in Numen under")
 	p.write(margin+qrSide+6, top+qrSide/2+3, "Settings, Restore. Any 2 of 3 sheets are enough.")

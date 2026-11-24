@@ -30,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
+	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
@@ -72,6 +73,7 @@ type Config struct {
 type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
+	KeyFile       keyfileusecase.File
 	ChainStore    identity.ChainStore
 	ErrorHandler  window.ErrorHandler
 	Now           installationClock

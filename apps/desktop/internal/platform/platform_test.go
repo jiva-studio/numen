@@ -131,6 +131,7 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 func TestCredentialsFileChoiceIsAppliedToTheKeyStore(t *testing.T) {
 	keyring.MockInitWithError(keyring.ErrUnsupportedPlatform)
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 	path, err := settings.GetPath()
 	if err != nil {
 		t.Fatal(err)
@@ -150,6 +151,7 @@ func TestCredentialsFileChoiceIsAppliedToTheKeyStore(t *testing.T) {
 func TestACredentialsFileWithoutAChoiceRefusesKeys(t *testing.T) {
 	keyring.MockInitWithError(keyring.ErrUnsupportedPlatform)
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 	store := getKeyStore()
 
 	applyCredentialsFile(store, &keychain.Passphrase{})

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 )
 
 // ErrPassphraseNeeded is the credentials file that is encrypted while this run has not been given its
@@ -13,7 +13,7 @@ import (
 var ErrPassphraseNeeded = errors.New("the credentials file is locked: its passphrase is needed")
 
 // Passphrase keeps the passphrase of the credentials file in memory for this run. It never writes it
-// down. It is the PassphraseSource of the store: it asks nobody, the window gives it through Set.
+// down. It is the PassphraseSource of the store: the window gives it through Set.
 type Passphrase struct {
 	mu    sync.Mutex
 	value string
@@ -43,32 +43,30 @@ type KeyFile struct {
 	passphrase *Passphrase
 }
 
-var _ pluginport.KeyFile = (*KeyFile)(nil)
-
 // NewKeyFile returns the key file of the store. The store takes its passphrase from the passphrase it is given here.
 func NewKeyFile(store *Store, passphrase *Passphrase) *KeyFile {
 	return &KeyFile{store: store, passphrase: passphrase}
 }
 
 // GetState returns how the store keeps keys where the keychain cannot be reached.
-func (k *KeyFile) GetState(ctx context.Context) (pluginport.KeyFileState, error) {
+func (k *KeyFile) GetState(ctx context.Context) (domainkeyfile.State, error) {
 	state, err := k.store.GetFileState(ctx)
 	if err != nil {
-		return pluginport.KeyFileState{}, err
+		return domainkeyfile.State{}, err
 	}
-	return pluginport.KeyFileState{IsInUse: state.IsInUse, Mode: readMode(state.Mode), Warning: state.Warning, IsLocked: state.IsLocked}, nil
+	return domainkeyfile.State{IsInUse: state.IsInUse, Mode: readMode(state.Mode), Warning: state.Warning, IsLocked: state.IsLocked}, nil
 }
 
-func readMode(mode FileMode) pluginport.KeyFileMode {
+func readMode(mode FileMode) domainkeyfile.Mode {
 	switch mode {
 	case FileModePlaintext:
-		return pluginport.KeyFilePlaintext
+		return domainkeyfile.Plaintext
 	case FileModePassphrase:
-		return pluginport.KeyFilePassphrase
+		return domainkeyfile.Passphrase
 	case FileModeUnset:
-		return pluginport.KeyFileUnset
+		return domainkeyfile.Unset
 	}
-	return pluginport.KeyFileUnset
+	return domainkeyfile.Unset
 }
 
 // UsePlaintext keeps the keys as plaintext from now on. Keys the file holds are written again as plaintext.
@@ -108,7 +106,7 @@ func (k *KeyFile) check(ctx context.Context) error {
 	err := k.store.CheckFile(ctx)
 	if errors.Is(err, ErrWrongPassphrase) {
 		k.passphrase.Set("")
-		return pluginport.ErrWrongPassphrase
+		return domainkeyfile.ErrWrongPassphrase
 	}
 	return err
 }
