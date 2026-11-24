@@ -19,6 +19,7 @@ const (
 	KindGenesis      EntryKind = 1
 	KindAddDevice    EntryKind = 2
 	KindRevokeDevice EntryKind = 3
+	KindRotateKeys   EntryKind = 4
 )
 
 type Entry struct {
@@ -211,8 +212,8 @@ func (c Chain) WrappedForRecovery() WrappedAccountKeys {
 
 func (c Chain) latestRevoke() *Revoke {
 	for i := len(c.entries) - 1; i > 0; i-- {
-		if c.entries[i].Kind == KindRevokeDevice && c.entries[i].Revoke != nil {
-			return c.entries[i].Revoke
+		if revoke := c.entries[i].keyChange(); revoke != nil {
+			return revoke
 		}
 	}
 	return nil
@@ -292,4 +293,11 @@ func (c Chain) ListDeviceRevocations() []DeviceRevocation {
 		found = append(found, DeviceRevocation{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.Revoke.Device), At: entry.Time})
 	}
 	return found
+}
+
+func (e Entry) keyChange() *Revoke {
+	if e.Kind == KindRevokeDevice || e.Kind == KindRotateKeys {
+		return e.Revoke
+	}
+	return nil
 }

@@ -120,6 +120,9 @@ export {
   type IdentityFailure,
   type KitProof,
   type LinkInfo,
+  type AccountClient,
+  type LinkClient,
+  type DevicesClient,
   type IdentityClient,
   createIdentityClient,
 } from './identity'

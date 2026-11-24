@@ -1,5 +1,11 @@
 /** An identity client of the core that refuses every call; a test overrides the calls it needs. */
-import type { IdentityClient, IdentityFailure, LinkInfo } from '@numen/core-client'
+import type {
+  AccountClient,
+  DevicesClient,
+  IdentityFailure,
+  LinkClient,
+  LinkInfo,
+} from '@numen/core-client'
 import type { Result } from '@numen/result'
 import {
   createAccountApi,
@@ -15,8 +21,7 @@ const asRefused = (): Result<never, IdentityFailure> => ({
   error: { error: 'noLink', message: 'No link.' },
 })
 
-/** The calls of the identity client of the core, flat: a test overrides the calls it needs. */
-export type IdentityCalls = IdentityClient['account'] & IdentityClient['link'] & IdentityClient['devices']
+export type IdentityCalls = AccountClient & LinkClient & DevicesClient
 
 export const createIdentityClient = (overrides: Partial<IdentityCalls> = {}): IdentityCalls => ({
   get: () => Promise.resolve(undefined),

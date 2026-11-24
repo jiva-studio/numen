@@ -42,19 +42,39 @@ func (c Chain) RevokeDevice(by Signer, current AccountKeys, device ed25519.Publi
 	if len(c.entries) == 0 {
 		return Chain{}, AccountKeys{}, fmt.Errorf("%w: the chain has no genesis", ErrMalformed)
 	}
-	fresh, err := NewAccountKeys(random)
+	var remaining []Device
+	for _, one := range c.replay().active {
+		if !bytes.Equal(one.Public.Sign, device) {
+			remaining = append(remaining, one)
+		}
+	}
+	revoke, fresh, err := c.makeKeys(current, remaining, random)
 	if err != nil {
 		return Chain{}, AccountKeys{}, err
 	}
-	revoke, err := c.makeRevoke(current, fresh, device, random)
+	revoke.Device = slices.Clone(device)
+	return c.appendKeys(by, KindRevokeDevice, revoke, current, fresh, at)
+}
+
+// RotateKeys returns a chain that starts the next epoch of keys for every active device and removes none. Only the recovery key signs it:
+// a restore from the words rotates, so the keys a chain wrapped for the recovery key are never the keys in use.
+func (c Chain) RotateKeys(by RecoveryKey, current AccountKeys, random io.Reader, at time.Time) (Chain, AccountKeys, error) {
+	if len(c.entries) == 0 {
+		return Chain{}, AccountKeys{}, fmt.Errorf("%w: the chain has no genesis", ErrMalformed)
+	}
+	revoke, fresh, err := c.makeKeys(current, c.replay().active, random)
 	if err != nil {
 		return Chain{}, AccountKeys{}, err
 	}
+	return c.appendKeys(by, KindRotateKeys, revoke, current, fresh, at)
+}
+
+func (c Chain) appendKeys(by Signer, kind EntryKind, revoke *Revoke, current, fresh AccountKeys, at time.Time) (Chain, AccountKeys, error) {
 	last := c.entries[len(c.entries)-1]
 	entry := Entry{
 		Seq:    last.Seq + 1,
 		Prev:   hashEntry(last),
-		Kind:   KindRevokeDevice,
+		Kind:   kind,
 		Time:   at.UTC().Truncate(time.Second),
 		Signer: by.SignerKey(),
 		Revoke: revoke,
@@ -73,36 +93,35 @@ func (c Chain) RevokeDevice(by Signer, current AccountKeys, device ed25519.Publi
 	return next, fresh, nil
 }
 
-func (c Chain) makeRevoke(current, fresh AccountKeys, device ed25519.PublicKey, random io.Reader) (*Revoke, error) {
-	state := c.replay()
-	epoch := state.epoch + 1
+func (c Chain) makeKeys(current AccountKeys, remaining []Device, random io.Reader) (*Revoke, AccountKeys, error) {
+	fresh, err := NewAccountKeys(random)
+	if err != nil {
+		return nil, AccountKeys{}, err
+	}
+	epoch := c.replay().epoch + 1
 	forRecovery, err := fresh.WrapForRecovery(c.Root())
 	if err != nil {
-		return nil, err
+		return nil, AccountKeys{}, err
 	}
 	previous, err := sealPreviousKeys(random, fresh, epoch, current)
 	if err != nil {
-		return nil, err
+		return nil, AccountKeys{}, err
 	}
 	var wraps []DeviceWrap
-	for _, remaining := range state.active {
-		if bytes.Equal(remaining.Public.Sign, device) {
-			continue
-		}
-		wrapped, err := fresh.WrapForDevice(remaining.Public)
+	for _, one := range remaining {
+		wrapped, err := fresh.WrapForDevice(one.Public)
 		if err != nil {
-			return nil, err
+			return nil, AccountKeys{}, err
 		}
-		wraps = append(wraps, DeviceWrap{Device: remaining.Public.Sign, Wrapped: wrapped})
+		wraps = append(wraps, DeviceWrap{Device: one.Public.Sign, Wrapped: wrapped})
 	}
 	return &Revoke{
-		Device:             slices.Clone(device),
 		Epoch:              epoch,
 		AccountBox:         fresh.BoxPublicKey(),
 		WrappedForRecovery: forRecovery,
 		PreviousKeys:       previous,
 		Wrapped:            wraps,
-	}, nil
+	}, fresh, nil
 }
 
 func newHistoryAEAD(kek [32]byte) (cipher.AEAD, error) {
@@ -151,10 +170,11 @@ func openPreviousKeys(kek [32]byte, epoch uint32, sealed []byte) ([32]byte, erro
 // GetWrappedFor returns the keys wrapped for the device by the latest entry that wraps for it; the genesis is not looked at.
 func (c Chain) GetWrappedFor(device ed25519.PublicKey) (WrappedAccountKeys, bool) {
 	for i := len(c.entries) - 1; i > 0; i-- {
-		if c.entries[i].Kind != KindRevokeDevice || c.entries[i].Revoke == nil {
+		revoke := c.entries[i].keyChange()
+		if revoke == nil {
 			continue
 		}
-		if wrapped, ok := c.entries[i].Revoke.getWrapFor(device); ok {
+		if wrapped, ok := revoke.getWrapFor(device); ok {
 			return wrapped, true
 		}
 	}
@@ -176,8 +196,8 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 	keys.earlier = make(map[uint32][32]byte)
 	kek := current.kek
 	for i := len(c.entries) - 1; i > 0; i-- {
-		revoke := c.entries[i].Revoke
-		if c.entries[i].Kind != KindRevokeDevice || revoke == nil || revoke.Epoch > epoch {
+		revoke := c.entries[i].keyChange()
+		if revoke == nil || revoke.Epoch > epoch {
 			continue
 		}
 		previous, err := openPreviousKeys(kek, revoke.Epoch, revoke.PreviousKeys)
@@ -193,15 +213,16 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 func (c Chain) getKeyEpoch(sign ed25519.PublicKey) uint32 {
 	var epoch, held uint32
 	for _, entry := range c.entries[min(1, len(c.entries)):] {
+		revoke := entry.keyChange()
 		switch {
 		case entry.Kind == KindAddDevice && entry.AddDevice != nil && bytes.Equal(entry.AddDevice.Device.Sign, sign):
 			held = epoch
-		case entry.Kind == KindRevokeDevice && entry.Revoke != nil:
-			if bytes.Equal(entry.Revoke.Device, sign) {
+		case revoke != nil:
+			if bytes.Equal(revoke.Device, sign) {
 				return held
 			}
-			epoch = entry.Revoke.Epoch
-			if _, ok := entry.Revoke.getWrapFor(sign); ok {
+			epoch = revoke.Epoch
+			if _, ok := revoke.getWrapFor(sign); ok {
 				held = epoch
 			}
 		}

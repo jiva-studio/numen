@@ -61,6 +61,11 @@ const (
 	IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE IdentityErrorCode = 15
 	// IDENTITY_ERROR_CODE_CODE_INVALID is a confirmation code that is not six digits.
 	IdentityErrorCode_IDENTITY_ERROR_CODE_CODE_INVALID IdentityErrorCode = 16
+	// IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK IdentityErrorCode = 17
+	// IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
+	// kit: older, or another history, or none. The restore is over; nothing was kept.
+	IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED IdentityErrorCode = 18
 )
 
 // Enum value maps for IdentityErrorCode.
@@ -83,6 +88,8 @@ var (
 		14: "IDENTITY_ERROR_CODE_DEVICE_REVOKED",
 		15: "IDENTITY_ERROR_CODE_UNKNOWN_DEVICE",
 		16: "IDENTITY_ERROR_CODE_CODE_INVALID",
+		17: "IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK",
+		18: "IDENTITY_ERROR_CODE_CHAIN_OUTDATED",
 	}
 	IdentityErrorCode_value = map[string]int32{
 		"IDENTITY_ERROR_CODE_UNSPECIFIED":             0,
@@ -102,6 +109,8 @@ var (
 		"IDENTITY_ERROR_CODE_DEVICE_REVOKED":          14,
 		"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE":          15,
 		"IDENTITY_ERROR_CODE_CODE_INVALID":            16,
+		"IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK":      17,
+		"IDENTITY_ERROR_CODE_CHAIN_OUTDATED":          18,
 	}
 )
 
@@ -503,7 +512,10 @@ func (*GetIdentityRequest) Descriptor() ([]byte, []int) {
 type GetIdentityResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// identity is unset when this device holds no identity.
-	Identity      *IdentityInfo `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
+	Identity *IdentityInfo `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
+	// error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
+	Error         IdentityErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Detail        string            `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -543,6 +555,20 @@ func (x *GetIdentityResponse) GetIdentity() *IdentityInfo {
 		return x.Identity
 	}
 	return nil
+}
+
+func (x *GetIdentityResponse) GetError() IdentityErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *GetIdentityResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 type GenerateRecoveryWordsRequest struct {
@@ -731,8 +757,11 @@ func (x *CreateIdentityResponse) GetDetail() string {
 }
 
 type StartRestoreRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Words         []string               `protobuf:"bytes,1,rep,name=words,proto3" json:"words,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Words []string               `protobuf:"bytes,1,rep,name=words,proto3" json:"words,omitempty"`
+	// chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
+	// not contain it.
+	ChainMark     string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -772,6 +801,13 @@ func (x *StartRestoreRequest) GetWords() []string {
 		return x.Words
 	}
 	return nil
+}
+
+func (x *StartRestoreRequest) GetChainMark() string {
+	if x != nil {
+		return x.ChainMark
+	}
+	return ""
 }
 
 type StartRestoreResponse struct {
@@ -1179,8 +1215,10 @@ func (x *SaveRecoveryKitResponse) GetDetail() string {
 }
 
 type StartRestoreFromKitRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sheets        []*RecoverySheet       `protobuf:"bytes,1,rep,name=sheets,proto3" json:"sheets,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Sheets []*RecoverySheet       `protobuf:"bytes,1,rep,name=sheets,proto3" json:"sheets,omitempty"`
+	// chain_mark is the chain mark printed on the sheets, or empty.
+	ChainMark     string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1220,6 +1258,13 @@ func (x *StartRestoreFromKitRequest) GetSheets() []*RecoverySheet {
 		return x.Sheets
 	}
 	return nil
+}
+
+func (x *StartRestoreFromKitRequest) GetChainMark() string {
+	if x != nil {
+		return x.ChainMark
+	}
+	return ""
 }
 
 type StartRestoreFromKitResponse struct {
@@ -2298,9 +2343,11 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"is_revoked\x18\x05 \x01(\bR\tisRevoked\x12\x1b\n" +
 	"\tkey_epoch\x18\x06 \x01(\rR\bkeyEpoch\"\x14\n" +
-	"\x12GetIdentityRequest\"I\n" +
+	"\x12GetIdentityRequest\"\x94\x01\n" +
 	"\x13GetIdentityResponse\x122\n" +
-	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\"\x1e\n" +
+	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x1e\n" +
 	"\x1cGenerateRecoveryWordsRequest\":\n" +
 	"\x1dGenerateRecoveryWordsResponse\x12\x19\n" +
 	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"2\n" +
@@ -2309,9 +2356,11 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x16CreateIdentityResponse\x122\n" +
 	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"0\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"O\n" +
 	"\x13StartRestoreRequest\x12\x19\n" +
-	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"a\n" +
+	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\x12\x1d\n" +
+	"\n" +
+	"chain_mark\x18\x02 \x01(\tR\tchainMark\"a\n" +
 	"\x14StartRestoreResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x17\n" +
@@ -2330,9 +2379,11 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x17SaveRecoveryKitResponse\x12\x19\n" +
 	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"M\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"l\n" +
 	"\x1aStartRestoreFromKitRequest\x12/\n" +
-	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\"h\n" +
+	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\x12\x1d\n" +
+	"\n" +
+	"chain_mark\x18\x02 \x01(\tR\tchainMark\"h\n" +
 	"\x1bStartRestoreFromKitResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\xee\x03\n" +
@@ -2403,7 +2454,7 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"a\n" +
 	"\x14RevokeDeviceResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x02 \x01(\tR\x06detail*\xb4\x05\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail*\x88\x06\n" +
 	"\x11IdentityErrorCode\x12#\n" +
 	"\x1fIDENTITY_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
 	"!IDENTITY_ERROR_CODE_INVALID_WORDS\x10\x01\x12'\n" +
@@ -2422,7 +2473,9 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"+IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE\x10\r\x12&\n" +
 	"\"IDENTITY_ERROR_CODE_DEVICE_REVOKED\x10\x0e\x12&\n" +
 	"\"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE\x10\x0f\x12$\n" +
-	" IDENTITY_ERROR_CODE_CODE_INVALID\x10\x10*O\n" +
+	" IDENTITY_ERROR_CODE_CODE_INVALID\x10\x10\x12*\n" +
+	"&IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK\x10\x11\x12&\n" +
+	"\"IDENTITY_ERROR_CODE_CHAIN_OUTDATED\x10\x12*O\n" +
 	"\bLinkRole\x12\x19\n" +
 	"\x15LINK_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eLINK_ROLE_HOST\x10\x01\x12\x14\n" +
@@ -2531,67 +2584,68 @@ var file_numen_v1_identity_proto_goTypes = []any{
 }
 var file_numen_v1_identity_proto_depIdxs = []int32{
 	5,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	5,  // 1: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	0,  // 2: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 3: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
-	16, // 4: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
-	17, // 5: numen.v1.SaveRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
-	18, // 6: numen.v1.SaveRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
-	0,  // 7: numen.v1.SaveRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	16, // 8: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
-	0,  // 9: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	3,  // 10: numen.v1.LinkInfo.phase:type_name -> numen.v1.LinkPhase
-	2,  // 11: numen.v1.LinkInfo.mode:type_name -> numen.v1.LinkMode
-	1,  // 12: numen.v1.LinkInfo.role:type_name -> numen.v1.LinkRole
-	4,  // 13: numen.v1.LinkInfo.reason:type_name -> numen.v1.LinkReason
-	1,  // 14: numen.v1.StartLinkRequest.role:type_name -> numen.v1.LinkRole
-	2,  // 15: numen.v1.StartLinkRequest.mode:type_name -> numen.v1.LinkMode
-	23, // 16: numen.v1.StartLinkResponse.link:type_name -> numen.v1.LinkInfo
-	0,  // 17: numen.v1.StartLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	23, // 18: numen.v1.GetLinkResponse.link:type_name -> numen.v1.LinkInfo
-	0,  // 19: numen.v1.GetLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 20: numen.v1.DecideLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 21: numen.v1.EnterLinkCodeResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 22: numen.v1.ConfirmJoinResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 23: numen.v1.CancelLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	36, // 24: numen.v1.ListDevicesResponse.devices:type_name -> numen.v1.DeviceInfo
-	0,  // 25: numen.v1.ListDevicesResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 26: numen.v1.RevokeDeviceResponse.error:type_name -> numen.v1.IdentityErrorCode
-	6,  // 27: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
-	8,  // 28: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
-	10, // 29: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
-	12, // 30: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
-	14, // 31: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
-	19, // 32: numen.v1.IdentityService.SaveRecoveryKit:input_type -> numen.v1.SaveRecoveryKitRequest
-	21, // 33: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
-	24, // 34: numen.v1.IdentityService.StartLink:input_type -> numen.v1.StartLinkRequest
-	26, // 35: numen.v1.IdentityService.GetLink:input_type -> numen.v1.GetLinkRequest
-	28, // 36: numen.v1.IdentityService.DecideLink:input_type -> numen.v1.DecideLinkRequest
-	30, // 37: numen.v1.IdentityService.EnterLinkCode:input_type -> numen.v1.EnterLinkCodeRequest
-	32, // 38: numen.v1.IdentityService.ConfirmJoin:input_type -> numen.v1.ConfirmJoinRequest
-	34, // 39: numen.v1.IdentityService.CancelLink:input_type -> numen.v1.CancelLinkRequest
-	37, // 40: numen.v1.IdentityService.ListDevices:input_type -> numen.v1.ListDevicesRequest
-	39, // 41: numen.v1.IdentityService.RevokeDevice:input_type -> numen.v1.RevokeDeviceRequest
-	7,  // 42: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
-	9,  // 43: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
-	11, // 44: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
-	13, // 45: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
-	15, // 46: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
-	20, // 47: numen.v1.IdentityService.SaveRecoveryKit:output_type -> numen.v1.SaveRecoveryKitResponse
-	22, // 48: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
-	25, // 49: numen.v1.IdentityService.StartLink:output_type -> numen.v1.StartLinkResponse
-	27, // 50: numen.v1.IdentityService.GetLink:output_type -> numen.v1.GetLinkResponse
-	29, // 51: numen.v1.IdentityService.DecideLink:output_type -> numen.v1.DecideLinkResponse
-	31, // 52: numen.v1.IdentityService.EnterLinkCode:output_type -> numen.v1.EnterLinkCodeResponse
-	33, // 53: numen.v1.IdentityService.ConfirmJoin:output_type -> numen.v1.ConfirmJoinResponse
-	35, // 54: numen.v1.IdentityService.CancelLink:output_type -> numen.v1.CancelLinkResponse
-	38, // 55: numen.v1.IdentityService.ListDevices:output_type -> numen.v1.ListDevicesResponse
-	40, // 56: numen.v1.IdentityService.RevokeDevice:output_type -> numen.v1.RevokeDeviceResponse
-	42, // [42:57] is the sub-list for method output_type
-	27, // [27:42] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	0,  // 1: numen.v1.GetIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
+	5,  // 2: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	0,  // 3: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 4: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
+	16, // 5: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
+	17, // 6: numen.v1.SaveRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
+	18, // 7: numen.v1.SaveRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
+	0,  // 8: numen.v1.SaveRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
+	16, // 9: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
+	0,  // 10: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
+	3,  // 11: numen.v1.LinkInfo.phase:type_name -> numen.v1.LinkPhase
+	2,  // 12: numen.v1.LinkInfo.mode:type_name -> numen.v1.LinkMode
+	1,  // 13: numen.v1.LinkInfo.role:type_name -> numen.v1.LinkRole
+	4,  // 14: numen.v1.LinkInfo.reason:type_name -> numen.v1.LinkReason
+	1,  // 15: numen.v1.StartLinkRequest.role:type_name -> numen.v1.LinkRole
+	2,  // 16: numen.v1.StartLinkRequest.mode:type_name -> numen.v1.LinkMode
+	23, // 17: numen.v1.StartLinkResponse.link:type_name -> numen.v1.LinkInfo
+	0,  // 18: numen.v1.StartLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	23, // 19: numen.v1.GetLinkResponse.link:type_name -> numen.v1.LinkInfo
+	0,  // 20: numen.v1.GetLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 21: numen.v1.DecideLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 22: numen.v1.EnterLinkCodeResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 23: numen.v1.ConfirmJoinResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 24: numen.v1.CancelLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
+	36, // 25: numen.v1.ListDevicesResponse.devices:type_name -> numen.v1.DeviceInfo
+	0,  // 26: numen.v1.ListDevicesResponse.error:type_name -> numen.v1.IdentityErrorCode
+	0,  // 27: numen.v1.RevokeDeviceResponse.error:type_name -> numen.v1.IdentityErrorCode
+	6,  // 28: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
+	8,  // 29: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
+	10, // 30: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
+	12, // 31: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
+	14, // 32: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
+	19, // 33: numen.v1.IdentityService.SaveRecoveryKit:input_type -> numen.v1.SaveRecoveryKitRequest
+	21, // 34: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
+	24, // 35: numen.v1.IdentityService.StartLink:input_type -> numen.v1.StartLinkRequest
+	26, // 36: numen.v1.IdentityService.GetLink:input_type -> numen.v1.GetLinkRequest
+	28, // 37: numen.v1.IdentityService.DecideLink:input_type -> numen.v1.DecideLinkRequest
+	30, // 38: numen.v1.IdentityService.EnterLinkCode:input_type -> numen.v1.EnterLinkCodeRequest
+	32, // 39: numen.v1.IdentityService.ConfirmJoin:input_type -> numen.v1.ConfirmJoinRequest
+	34, // 40: numen.v1.IdentityService.CancelLink:input_type -> numen.v1.CancelLinkRequest
+	37, // 41: numen.v1.IdentityService.ListDevices:input_type -> numen.v1.ListDevicesRequest
+	39, // 42: numen.v1.IdentityService.RevokeDevice:input_type -> numen.v1.RevokeDeviceRequest
+	7,  // 43: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
+	9,  // 44: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
+	11, // 45: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
+	13, // 46: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
+	15, // 47: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
+	20, // 48: numen.v1.IdentityService.SaveRecoveryKit:output_type -> numen.v1.SaveRecoveryKitResponse
+	22, // 49: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
+	25, // 50: numen.v1.IdentityService.StartLink:output_type -> numen.v1.StartLinkResponse
+	27, // 51: numen.v1.IdentityService.GetLink:output_type -> numen.v1.GetLinkResponse
+	29, // 52: numen.v1.IdentityService.DecideLink:output_type -> numen.v1.DecideLinkResponse
+	31, // 53: numen.v1.IdentityService.EnterLinkCode:output_type -> numen.v1.EnterLinkCodeResponse
+	33, // 54: numen.v1.IdentityService.ConfirmJoin:output_type -> numen.v1.ConfirmJoinResponse
+	35, // 55: numen.v1.IdentityService.CancelLink:output_type -> numen.v1.CancelLinkResponse
+	38, // 56: numen.v1.IdentityService.ListDevices:output_type -> numen.v1.ListDevicesResponse
+	40, // 57: numen.v1.IdentityService.RevokeDevice:output_type -> numen.v1.RevokeDeviceResponse
+	43, // [43:58] is the sub-list for method output_type
+	28, // [28:43] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_identity_proto_init() }

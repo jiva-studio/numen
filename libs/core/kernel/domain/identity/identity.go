@@ -28,6 +28,11 @@ var (
 	ErrNotEnoughSheets = errors.New("two sheets are needed")
 	// ErrOtherAccount means the proof belongs to another account than the one of this device.
 	ErrOtherAccount = errors.New("the proof belongs to another account")
+	// ErrInvalidChainMark means the chain mark of a recovery kit is not a number, a dash and 12 hex digits.
+	ErrInvalidChainMark = errors.New("the chain mark of the recovery kit is not valid")
+	// ErrChainOutdated means the chain the server holds is older than the chain mark of the recovery kit, or is another history, or the
+	// server holds none: the restore was refused and keeps nothing.
+	ErrChainOutdated = errors.New("the server holds an older chain than the recovery kit names")
 )
 
 // Identity is what a person can see of the identity of this device.
@@ -63,6 +68,7 @@ type PendingRestore struct {
 type Kit struct {
 	ID                 string
 	AccountFingerprint string
+	ChainMark          string
 	CreatedAt          time.Time
 	Sheets             []Sheet
 }

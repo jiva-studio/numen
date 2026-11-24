@@ -10,8 +10,10 @@ import (
 type pendingRestore struct {
 	recovery  identitylib.RecoveryKey
 	device    identitylib.DeviceKey
+	mark      identitylib.Mark
 	startedAt time.Time
 	replaced  chan struct{}
+	refusal   error
 }
 
 // restoreHold is the restore that waits for the account chain of a sync plugin: replace, isCurrent, read and expire take the
@@ -20,6 +22,7 @@ type restoreHold interface {
 	replace(next *pendingRestore)
 	isCurrent(restore *pendingRestore) bool
 	read() *pendingRestore
+	readRefusal() error
 	expire(restore *pendingRestore)
 	hold() (*pendingStore, func())
 }
@@ -54,14 +57,32 @@ func (s *pendingStore) clearLocked() {
 func (s *pendingStore) isCurrent(restore *pendingRestore) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.current == restore
+	return s.current == restore && s.current.refusal == nil
 }
 
 // read returns the current restore to compare it with the store later; its keys are read only while hold holds the lock.
 func (s *pendingStore) read() *pendingRestore {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.current == nil || s.current.refusal != nil {
+		return nil
+	}
 	return s.current
+}
+
+func (s *pendingStore) readRefusal() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.current == nil {
+		return nil
+	}
+	return s.current.refusal
+}
+
+func (s *pendingStore) refuseLocked(restore *pendingRestore, reason error) {
+	restore.recovery = identitylib.RecoveryKey{}
+	restore.device = identitylib.DeviceKey{}
+	restore.refusal = reason
 }
 
 func (s *pendingStore) expire(restore *pendingRestore) {
