@@ -44,19 +44,9 @@ type restoreCompletion struct {
 }
 
 func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore, chainBytes []byte) error {
-<<<<<<< HEAD
-	c.restores.mu.Lock()
-	defer c.restores.mu.Unlock()
-	if c.restores.current != restore || restore.refusal != nil {
-||||||| e01f2955e
-	c.restores.mu.Lock()
-	defer c.restores.mu.Unlock()
-	if c.restores.current != restore {
-=======
 	store, release := c.restores.hold()
 	defer release()
-	if store.current != restore {
->>>>>>> origin/integ/sync-all
+	if store.current != restore || restore.refusal != nil {
 		return identitydomain.ErrNoPendingRestore
 	}
 	if err := c.records.checkAbsent(ctx); err != nil {
@@ -65,7 +55,7 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 	state, err := c.buildRestoredState(restore, chainBytes)
 	if err != nil {
 		if errors.Is(err, identitydomain.ErrChainOutdated) {
-			c.restores.refuseLocked(restore, err)
+			store.refuseLocked(restore, err)
 		}
 		return err
 	}
