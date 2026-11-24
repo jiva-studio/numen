@@ -100,10 +100,6 @@ function getTip(): string {
   outline: none;
 }
 
-.card-action:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
 .card-action:disabled {
   cursor: default;
   opacity: 0.5;

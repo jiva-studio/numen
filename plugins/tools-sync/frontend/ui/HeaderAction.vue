@@ -43,10 +43,6 @@ defineProps<{ isDisabled?: boolean }>()
   outline: none;
 }
 
-.header-action:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
 .header-action:disabled {
   cursor: default;
   opacity: 0.5;
