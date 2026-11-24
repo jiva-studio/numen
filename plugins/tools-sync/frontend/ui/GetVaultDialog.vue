@@ -12,7 +12,11 @@ const props = defineProps<{ client?: VaultsClient }>()
 const emit = defineEmits<{ (event: 'close'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { state, actions } = useVaults({ client: props.client, now: getCurrentDate })
+const { state, actions } = useVaults({
+  client: props.client,
+  now: getCurrentDate,
+  onConnected: () => emit('close'),
+})
 const { cloudVaults, freeVaults, pendingConfirm, error } = state
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -24,15 +28,11 @@ onMounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(vaultId: string, remoteId: string): void {
-  actions.connectExisting(vaultId, remoteId).then(onDone).catch(onFail)
+  actions.connectExisting(vaultId, remoteId).catch(onFail)
 }
 
 function onConfirm(): void {
-  actions.confirmConnect().then(onDone).catch(onFail)
-}
-
-function onDone(): void {
-  if (error.value === '' && pendingConfirm.value === null) emit('close')
+  actions.confirmConnect().catch(onFail)
 }
 
 function onFail(failure: unknown): void {

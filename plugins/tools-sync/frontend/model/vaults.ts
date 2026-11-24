@@ -31,6 +31,7 @@ export interface VaultRow {
 interface UseVaultsOptions {
   readonly client?: VaultsClient | undefined
   readonly now: () => Date
+  readonly onConnected?: (() => void) | undefined
 }
 
 export interface PendingStop {
@@ -117,7 +118,7 @@ const getRow = (
 }
 
 export function useVaults(options: UseVaultsOptions) {
-  const { client = vaultsClient, now } = options
+  const { client = vaultsClient, now, onConnected } = options
   const vaults = shallowRef<readonly Vault[]>([])
   const remote = shallowRef<readonly RemoteVault[]>([])
   const status = ref<VaultsStatus>('loading')
@@ -184,6 +185,7 @@ export function useVaults(options: UseVaultsOptions) {
       error.value = ''
       pendingConfirm.value = null
       await read()
+      onConnected?.()
     } catch (failure) {
       if (isServerAway(failure)) isReachable.value = false
       error.value = getErrorMessage(failure)
