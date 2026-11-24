@@ -83,7 +83,6 @@ function onClose(): void {
   isKeptOpen = false
 }
 
-// The menu dismisses itself after every choice; choosing "Change plan" turns it into the plans instead.
 function onDismiss(): void {
   if (isKeptOpen) {
     isKeptOpen = false

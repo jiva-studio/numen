@@ -13,22 +13,16 @@ const props = defineProps<{
   label: string
   isPrimary?: boolean
   isDisabled?: boolean
-  /** Hidden when the card is too narrow even for icons: the overflow menu carries it. */
   isSecondary?: boolean
-  /** Shows the icon at every width. */
   isIconOnly?: boolean
-  /** Shown only where the secondary actions are hidden. */
   isMore?: boolean
-  /** The label stays beside the icon at every width. */
   isLabelKept?: boolean
-  /** Marks the action as one that opens a menu, with a chevron after the label. */
   hasMenu?: boolean
 }>()
 
 const tip = useTooltip()
 const button = useTemplateRef<HTMLButtonElement>('button')
 
-/** The tooltip names the action only while the card hides its label. */
 function getTip(): string {
   const shown = button.value?.querySelector<HTMLElement>('.card-action__label')
   return shown && getComputedStyle(shown).display !== 'none' ? '' : props.label

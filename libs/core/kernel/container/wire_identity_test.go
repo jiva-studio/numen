@@ -114,7 +114,11 @@ func TestOpenIdentityUseCases_SavesTheKitAsAPDFInTheFileOfTheDialog(t *testing.T
 
 func TestOpenIdentityUseCases_SavesNoKitWithoutADialog(t *testing.T) {
 	t.Parallel()
-	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), &Resources{Stores: identity.Stores{Chains: &memoryChain{}}, progress: identity.NewProgress()}, nil)
+	res := &Resources{
+		Stores:   identity.Stores{Chains: &memoryChain{}},
+		progress: identity.NewProgress(),
+	}
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: memoryKeys{}}}, getWiring(), res, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
