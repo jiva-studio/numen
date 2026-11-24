@@ -13,6 +13,7 @@ import type { IdentityInfo } from '@/entities/identity'
 import type { LicenseInfo } from '@/entities/license'
 import {
   createInertDevices,
+  createInertKeyFile,
   createInstallation,
   createSettingsState,
 } from '@/pages/settings/testing/installation'
@@ -138,6 +139,7 @@ const createPage = async (
       delete: calls.delete,
       saveKit: kitCalls.saveKit,
       devices: createInertDevices(),
+      keyFile: createInertKeyFile(),
     },
   })
   const tab = mount(SettingsTab, {

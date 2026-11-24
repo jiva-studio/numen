@@ -1,6 +1,7 @@
 /** The questions about where the keys are kept on a computer without a system keychain, in a tab-sized frame. */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import type { Component } from 'vue'
 import KeyFileDialog from './KeyFileDialog.vue'
 import KeyFileRow from './KeyFileRow.vue'
 import KeyFileUnlockDialog from './KeyFileUnlockDialog.vue'
@@ -20,7 +21,7 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-const frame = (body: string, components: Record<string, unknown>) => ({
+const frame = (body: string, components: Record<string, Component>) => ({
   components,
   setup: () => ({ onChoose, onUnlock, onCancel }),
   template: `<div class="numen" style="${FRAME}">${body}</div>`,

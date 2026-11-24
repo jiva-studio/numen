@@ -6,7 +6,7 @@ import type { Installation, SettingsTabState } from '../types'
 import type { CatalogEntry } from '@/entities/plugin'
 import { createKeyFileStore } from '@/entities/key-file'
 
-const createInertKeyFile = () =>
+export const createInertKeyFile = () =>
   createKeyFileStore(
     {
       getState: () =>
