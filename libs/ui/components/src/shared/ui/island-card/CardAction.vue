@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ChevronDown } from '@lucide/vue'
+
 /**
  * An action in the header of an island card: an icon in the default slot and the label beside it. The
  * label hides when the card gets narrow, and then names the button as its tooltip and accessible name.
@@ -15,6 +17,10 @@ defineProps<{
   isIconOnly?: boolean
   /** Shown only where the secondary actions are hidden. */
   isMore?: boolean
+  /** The label stays beside the icon at every width. */
+  isLabelKept?: boolean
+  /** Marks the action as one that opens a menu, with a chevron after the label. */
+  hasMenu?: boolean
 }>()
 </script>
 
@@ -26,6 +32,7 @@ defineProps<{
       'card-action--primary': isPrimary,
       'card-action--secondary': isSecondary,
       'card-action--more': isMore,
+      'card-action--kept': isLabelKept,
     }"
     :disabled="isDisabled"
     :aria-label="label"
@@ -33,6 +40,7 @@ defineProps<{
   >
     <slot />
     <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">{{ label }}</span>
+    <ChevronDown v-if="hasMenu" :size="12" aria-hidden="true" />
   </button>
 </template>
 

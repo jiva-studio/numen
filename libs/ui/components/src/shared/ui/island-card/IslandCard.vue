@@ -92,8 +92,8 @@ onBeforeUnmount(() => watcher?.disconnect())
   margin-inline-end: calc(0.375rem - var(--numen-card-pad));
 }
 
-.island-card--icons .card-action__label,
-.island-card--menu .card-action__label,
+.island-card--icons .card-action:not(.card-action--kept) .card-action__label,
+.island-card--menu .card-action:not(.card-action--kept) .card-action__label,
 .island-card--menu .card-action--secondary {
   display: none;
 }

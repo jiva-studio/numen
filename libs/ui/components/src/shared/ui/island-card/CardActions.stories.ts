@@ -3,17 +3,24 @@
  * overflow menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { KeyRound, Plus, QrCode, ScanLine } from '@lucide/vue'
+import { KeyRound, Plus, QrCode } from '@lucide/vue'
 import { expect, within } from 'storybook/test'
 import CardActions from './CardActions.vue'
 import IslandCard from './IslandCard.vue'
 import type { CardActionItem } from './cardActionItem'
 
 const ITEMS: readonly CardActionItem[] = [
-  { id: 'words', label: 'Restore from words', icon: KeyRound },
-  { id: 'sheets', label: 'Restore from sheets', icon: ScanLine },
+  {
+    id: 'restore',
+    label: 'Restore',
+    icon: KeyRound,
+    choices: [
+      { id: 'words', label: 'From 12 words' },
+      { id: 'typed', label: 'Type sheets' },
+    ],
+  },
   { id: 'join', label: 'Join', icon: QrCode },
-  { id: 'create', label: 'Create', icon: Plus, isPrimary: true },
+  { id: 'create', label: 'Create', icon: Plus, isPrimary: true, isLabelKept: true },
 ]
 
 const meta: Meta = {
@@ -41,18 +48,19 @@ type Story = StoryObj
 export const Wide: Story = {
   parameters: { cardWidth: '60rem' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Restore from words')).toBeVisible()
+    await expect(within(canvasElement).getByText('Join')).toBeVisible()
   },
 }
 
-/** Narrow: the words give way to icons, every button keeps its name. */
+/** Narrow: the words give way to icons except on Create, every button keeps its name. */
 export const Narrow: Story = {
   parameters: { cardWidth: '24rem' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.queryByText('Restore from words')).not.toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Restore from words' })).toBeVisible()
+    await expect(canvas.queryByText('Join')).not.toBeVisible()
+    await expect(canvas.getByText('Create')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Join' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Identity' })).toBeVisible()
   },
 }
@@ -63,7 +71,8 @@ export const Narrowest: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.queryByRole('button', { name: 'Restore from words' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Join' })).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'More actions' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Create' })).toBeVisible()
   },

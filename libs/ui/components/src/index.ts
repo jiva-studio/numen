@@ -55,6 +55,7 @@ export {
   CardAction,
   CardActions,
   IslandCard,
+  type CardActionChoice,
   type CardActionItem,
 } from './shared/ui/island-card'
 

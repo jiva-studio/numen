@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * The actions of a card header as data: each shows its icon and label, the labels hide as the card
- * narrows, and in a card too narrow for the icons the secondary ones move into a "..." menu.
+ * narrows (unless the item keeps its label), and in a card too narrow for the icons the secondary ones
+ * move into a "..." menu. An item with choices is a menu button: it stays in the header and opens its choices.
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Ellipsis } from '@lucide/vue'
@@ -26,9 +27,15 @@ const getTrigger = (): HTMLElement | null => {
 
 const anchor = ref<{ at: Position; wide: number } | null>(null)
 
+const choice = ref<{ item: CardActionItem; at: Position; wide: number; from: HTMLElement } | null>(null)
+
+const choices = computed<readonly MenuItem[]>(() =>
+  (choice.value?.item.choices ?? []).map((one) => ({ id: one.id, text: one.label })),
+)
+
 const overflow = computed<readonly MenuItem[]>(() =>
   props.items
-    .filter((item) => item.isPrimary !== true)
+    .filter((item) => item.isPrimary !== true && item.choices === undefined)
     .map((item) => ({ id: item.id, text: item.label, isDisabled: item.isDisabled === true })),
 )
 
@@ -40,6 +47,25 @@ function onToggle(): void {
   }
   const box = measureRect(getTrigger())
   if (box !== undefined) anchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
+}
+
+function onPress(item: CardActionItem, event: Event): void {
+  if (item.choices === undefined) {
+    emit('choose', item.id)
+    return
+  }
+  const from = event.currentTarget
+  if (choice.value !== null || !(from instanceof HTMLElement)) {
+    choice.value = null
+    return
+  }
+  const box = measureRect(from)
+  if (box !== undefined) choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
+}
+
+function onChooseChoice(id: string): void {
+  choice.value = null
+  emit('choose', id)
 }
 
 function onClose(): void {
@@ -58,12 +84,28 @@ function onChoose(id: string): void {
     :key="item.id"
     :label="item.label"
     :is-primary="item.isPrimary === true"
-    :is-secondary="item.isPrimary !== true"
+    :is-secondary="item.isPrimary !== true && item.choices === undefined"
+    :is-label-kept="item.isLabelKept === true"
+    :has-menu="item.choices !== undefined"
+    :aria-haspopup="item.choices !== undefined ? 'menu' : undefined"
+    :aria-expanded="item.choices !== undefined ? choice?.item.id === item.id : undefined"
     :is-disabled="item.isDisabled === true"
-    @click="emit('choose', item.id)"
+    @click="onPress(item, $event)"
   >
     <component :is="item.icon" :size="14" aria-hidden="true" />
   </CardAction>
+  <Menu
+    v-if="choice"
+    :items="choices"
+    :at="choice.at"
+    :asking="choice.wide"
+    :from="choice.from"
+    :name="choice.item.label"
+    is-open
+    trigger="keyboard"
+    @choose="onChooseChoice"
+    @dismiss="choice = null"
+  />
   <template v-if="overflow.length > 0">
     <CardAction
       ref="trigger"

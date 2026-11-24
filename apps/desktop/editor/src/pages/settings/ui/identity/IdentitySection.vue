@@ -5,7 +5,7 @@
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
 import { computed, ref } from 'vue'
-import { KeyRound, Plus, QrCode, ScanLine } from '@lucide/vue'
+import { KeyRound, Plus, QrCode } from '@lucide/vue'
 import { CardActions, IslandCard, Toast, type CardActionItem } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
@@ -35,15 +35,24 @@ const isJoining = ref(false)
 const noneActions = computed<readonly CardActionItem[]>(() => {
   const isDisabled = call.isBusy.value
   return [
-    { id: 'restore-words', label: words.identityRestoreWords, icon: KeyRound, isDisabled },
-    { id: 'restore-sheets', label: words.identityRestoreSheets, icon: ScanLine, isDisabled },
+    {
+      id: 'restore',
+      label: words.identityRestore,
+      icon: KeyRound,
+      isDisabled,
+      choices: [
+        { id: 'restore-words', label: words.identityRestoreFromWords },
+        { id: 'restore-sheets', label: words.identityRestoreScan },
+        { id: 'restore-typed', label: words.identityRestoreType },
+      ],
+    },
     { id: 'join', label: words.identityJoin, icon: QrCode, isDisabled },
-    { id: 'create', label: words.identityCreate, icon: Plus, isDisabled, isPrimary: true },
+    { id: 'create', label: words.identityCreate, icon: Plus, isDisabled, isPrimary: true, isLabelKept: true },
   ]
 })
 
 function onChooseNone(id: string): void {
-  if (id === 'restore-words' || id === 'restore-sheets') actions.startRestore(id)
+  if (id === 'restore-words' || id === 'restore-sheets' || id === 'restore-typed') actions.startRestore(id)
   else if (id === 'join') isJoining.value = true
   else actions.startSetup()
 }

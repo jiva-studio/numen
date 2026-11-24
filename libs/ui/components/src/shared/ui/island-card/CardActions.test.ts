@@ -53,3 +53,35 @@ describe('the card actions', () => {
     expect(actions.find('button[aria-label="More actions"]').exists()).toBe(false)
   })
 })
+
+describe('an action with choices', () => {
+  const MENU: readonly CardActionItem[] = [
+    {
+      id: 'restore',
+      label: 'Restore',
+      icon: KeyRound,
+      choices: [
+        { id: 'words', label: 'From 12 words' },
+        { id: 'typed', label: 'Type sheets' },
+      ],
+    },
+    { id: 'create', label: 'Create', icon: Plus, isPrimary: true, isLabelKept: true },
+  ]
+
+  it('opens its choices, emits the one that was picked and stays out of the overflow menu', async () => {
+    const actions = mount(CardActions, {
+      props: { items: MENU, moreLabel: 'More actions' },
+      attachTo: document.body,
+    })
+
+    expect(actions.find('button[aria-label="More actions"]').exists()).toBe(false)
+    await actions.get('button[aria-label="Restore"]').trigger('click')
+    const items = [...document.body.querySelectorAll('[role="menuitem"]')]
+    expect(items.map((one) => one.textContent?.trim())).toEqual(['From 12 words', 'Type sheets'])
+    ;(items[1] as HTMLElement).click()
+    await actions.vm.$nextTick()
+
+    expect(actions.emitted('choose')).toEqual([['typed']])
+    actions.unmount()
+  })
+})

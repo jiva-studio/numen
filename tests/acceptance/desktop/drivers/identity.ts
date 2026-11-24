@@ -206,7 +206,8 @@ export class IdentityDriver {
 
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore from words', exact: true }).click()
+    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
+    await panel.page().getByRole('menuitem', { name: 'From 12 words', exact: true }).click()
     const dialog = this.getRestoreDialog(panel, 'Restore from words')
     await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(text)
     const restore = dialog.getByRole('button', { name: 'Restore', exact: true })
@@ -215,7 +216,8 @@ export class IdentityDriver {
 
   private async restoreSheets(texts: readonly string[]): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore from sheets', exact: true }).click()
+    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
+    await panel.page().getByRole('menuitem', { name: 'Type sheets', exact: true }).click()
     const dialog = this.getRestoreDialog(panel, 'Type sheets')
     for (const [index, text] of texts.entries()) {
       await dialog.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
