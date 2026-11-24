@@ -20,7 +20,6 @@ func (g *generatedWords) put(words []string) {
 	g.words = slices.Clone(words)
 }
 
-// take reports whether words are the held words, and forgets them when they are.
 func (g *generatedWords) take(words []string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
