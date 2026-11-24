@@ -29,6 +29,7 @@ defineProps<{ title: string }>()
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  container: island-card-header / inline-size;
   padding: 0.375rem var(--numen-card-pad);
   background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
 }
@@ -36,6 +37,7 @@ defineProps<{ title: string }>()
 .island-card__title {
   margin: 0;
   min-inline-size: 0;
+  overflow-wrap: anywhere;
   font-size: var(--numen-text-2);
   font-weight: 600;
   color: var(--numen-ink);
@@ -43,6 +45,7 @@ defineProps<{ title: string }>()
 
 .island-card__aside {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 0.5rem;
   font-size: var(--numen-text-2);
@@ -52,5 +55,12 @@ defineProps<{ title: string }>()
 .island-card__body {
   box-sizing: border-box;
   padding: var(--numen-card-inset) var(--numen-card-pad);
+}
+</style>
+
+<style>
+/* The last action moves right so its box stands as far from the right edge as from the top. */
+.island-card__aside:has(.card-action) {
+  margin-inline-end: calc(0.375rem - var(--numen-card-pad));
 }
 </style>

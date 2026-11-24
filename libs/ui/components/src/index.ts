@@ -49,7 +49,12 @@ export { Toast } from './shared/ui/toast'
 export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { ErrorState } from './shared/ui/error-state'
-export { IslandCard } from './shared/ui/island-card'
+export {
+  CardAction,
+  CardActions,
+  IslandCard,
+  type CardActionItem,
+} from './shared/ui/island-card'
 
 export { ConfirmDialog } from './shared/ui/confirm-dialog'
 export { Dialog } from './shared/ui/dialog'
