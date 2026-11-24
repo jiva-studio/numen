@@ -27,7 +27,7 @@ func kitOfRestoredPhone(t *testing.T) (older, current []byte, kit identitydomain
 	return older, phone.getChain(t), phone.kitOf(t, getLegalWords())
 }
 
-func TestSaveRecoveryKit_HoldsTheLengthAndTheHeadOfTheChainOfTheDevice(t *testing.T) {
+func TestSaveRecoveryKit_LengthAndHeadOfTheDeviceChain(t *testing.T) {
 	t.Parallel()
 	_, current, made := kitOfRestoredPhone(t)
 

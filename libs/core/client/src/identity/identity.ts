@@ -182,7 +182,11 @@ export interface DevicesClient {
 }
 
 /** The identity of this device, its link and the devices of its account. */
-export type IdentityClient = AccountClient & LinkClient & DevicesClient
+export interface IdentityClient {
+  readonly account: AccountClient
+  readonly link: LinkClient
+  readonly devices: DevicesClient
+}
 
 const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
   accountFingerprint: info.accountFingerprint,
@@ -378,7 +382,7 @@ const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
 
 /** The identity managed through an IdentityService client. */
 export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
-  ...createAccountClient(rpc),
-  ...createLinkClient(rpc),
-  ...createDevicesClient(rpc),
+  account: createAccountClient(rpc),
+  link: createLinkClient(rpc),
+  devices: createDevicesClient(rpc),
 })

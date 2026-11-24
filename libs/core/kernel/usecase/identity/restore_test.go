@@ -282,7 +282,7 @@ func TestCompleteRestore_JoinsTheAccountOfAnotherDeviceAndKeepsItsKeys(t *testin
 	}
 }
 
-func TestCompleteRestore_GivesBothDevicesTheSameKeysOnceTheFirstTakesTheChainOfTheRestore(t *testing.T) {
+func TestCompleteRestore_BothDevicesHaveTheSameKeysAfterTheFirstAppliesTheChain(t *testing.T) {
 	t.Parallel()
 	first := newRestoreKit(t, "Desktop")
 	if _, err := first.create.Execute(t.Context(), getLegalWords()); err != nil {

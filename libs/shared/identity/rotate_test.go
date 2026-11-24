@@ -56,10 +56,10 @@ func TestChainMark_IsContainedByTheChainItWasTakenFromAndByItsExtensionsOnly(t *
 		t.Fatal(err)
 	}
 
-	if !m.chain.Contains(mark) || !longer.Contains(mark) {
+	if !m.chain.HasMark(mark) || !longer.HasMark(mark) {
 		t.Error("the chain or its extension does not contain its own mark")
 	}
-	if other.chain.Contains(mark) {
+	if other.chain.HasMark(mark) {
 		t.Error("another history contains the mark")
 	}
 	if mark.Length != shorter.Len() || shorter.Len() >= longer.Len() {

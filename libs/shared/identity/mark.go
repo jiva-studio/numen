@@ -29,8 +29,8 @@ func (c Chain) getMarkAt(length int) Mark {
 	return Mark{Length: length, Head: [markHeadSize]byte(head[:markHeadSize])}
 }
 
-// Contains reports whether the chain has at least m.Length entries and its entry at that length ends with the head of the mark.
-func (c Chain) Contains(m Mark) bool {
+// HasMark reports whether the chain has at least m.Length entries and its entry at that length ends with the head of the mark.
+func (c Chain) HasMark(m Mark) bool {
 	return m.Length >= 1 && len(c.entries) >= m.Length && c.getMarkAt(m.Length) == m
 }
 

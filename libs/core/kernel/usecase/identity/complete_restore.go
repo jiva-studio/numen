@@ -80,7 +80,7 @@ func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainByte
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
 	}
-	if !restore.mark.IsZero() && !chain.Contains(restore.mark) {
+	if !restore.mark.IsZero() && !chain.HasMark(restore.mark) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has %d entries and does not contain the mark %v", identitydomain.ErrChainOutdated, chain.Len(), restore.mark)
 	}
 	account, err := c.openRecoveryKeys(restore.recovery, chain)

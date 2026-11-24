@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 import { createIdentityStore } from './identity'
-import { wrapIdentityClient } from '@/testing/identityClient'
+import { type IdentityCalls, wrapIdentityClient } from '@/testing/identityClient'
 
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
@@ -37,7 +36,7 @@ const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityIn
   ...overrides,
 })
 
-const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient => ({
+const createClient = (overrides: Partial<IdentityCalls> = {}): IdentityCalls => ({
   get: () => Promise.resolve(undefined),
   generateWords: () => Promise.resolve(WORDS),
   create: () => Promise.resolve(asValue(createSampleIdentity())),
@@ -56,7 +55,7 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
   ...overrides,
 })
 
-const createStore = (client: IdentityClient) => {
+const createStore = (client: IdentityCalls) => {
   const notify = vi.fn()
   return { notify, store: createIdentityStore(wrapIdentityClient(client), notify) }
 }
