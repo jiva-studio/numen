@@ -73,6 +73,12 @@ Two things are not settings and are not in here: which files count as notes, and
 | --- | --- | --- |
 | `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
 
+### `app.keys`
+
+| | | |
+| --- | --- | --- |
+| `credentialsFile` | text | without a reachable system keychain Numen keeps the keys in a file in its settings folder. Not chosen means Numen has not asked yet and will not store a key. Passphrase encrypts the file and asks for the passphrase at each start. Plain file leaves the keys readable by anyone who can read your files. Change it under Identity and licenses; a change applies after a restart. One of `unset`, `passphrase`, `plaintext`. |
+
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.
