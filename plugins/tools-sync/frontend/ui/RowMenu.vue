@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** The "..." button of a row and the menu it opens; choosing an item emits its id and nothing else happens here. */
 import { ref, useTemplateRef } from 'vue'
-import { Ellipsis } from '@lucide/vue'
+import { Ellipsis, LogOut, Unplug } from '@lucide/vue'
 import { Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
 import HeaderAction from './HeaderAction.vue'
 
@@ -59,5 +59,10 @@ function onChoose(id: string): void {
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="onClose"
-  />
+  >
+    <template #icon="{ id }">
+      <Unplug v-if="id === 'stop'" :size="14" aria-hidden="true" />
+      <LogOut v-else-if="id === 'leave'" :size="14" aria-hidden="true" />
+    </template>
+  </Menu>
 </template>

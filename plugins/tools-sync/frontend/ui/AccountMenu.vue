@@ -4,7 +4,7 @@
  * data, which is marked as dangerous. Choosing an item emits it; nothing is done here.
  */
 import { computed, defineComponent, h, markRaw, ref, useTemplateRef } from 'vue'
-import { Ellipsis } from '@lucide/vue'
+import { Download, Ellipsis, Trash2 } from '@lucide/vue'
 import { CardAction, Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
 import { WORDS as words } from '../words'
 
@@ -80,5 +80,10 @@ function onChoose(id: string): void {
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="onClose"
-  />
+  >
+    <template #icon="{ id }">
+      <Download v-if="id === 'export'" :size="14" aria-hidden="true" />
+      <Trash2 v-else-if="id === 'delete'" :size="14" aria-hidden="true" />
+    </template>
+  </Menu>
 </template>
