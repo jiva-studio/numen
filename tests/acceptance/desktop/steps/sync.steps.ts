@@ -332,8 +332,7 @@ Given('the second computer goes offline for a moment', async ({ person }) => {
 
 Then(
   '{holder} has the note {string} with the text {string} within {string} seconds{inside}',
-  async ({ person }, holder: Holder, title: string, text: string, ...rest: [seconds: string, vault: string | undefined]) => {
-    const [seconds, vault] = rest
+  async ({ person }, holder: Holder, title: string, text: string, seconds: string, vault: string | undefined) => {
     await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) }, vault)
   },
 )
