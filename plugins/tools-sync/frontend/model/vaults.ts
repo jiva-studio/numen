@@ -87,8 +87,8 @@ export function useVaults(options: UseVaultsOptions) {
   const error = ref('')
   const hasIdentity = ref(true)
   const isReachable = ref(true)
-  const pendingConfirm = shallowRef<PendingConfirm   const pendingStop = shallowRef<PendingStop | null>(null)
-| null>(null)
+  const pendingConfirm = shallowRef<PendingConfirm | null>(null)
+  const pendingStop = shallowRef<PendingStop | null>(null)
 
   const rows = computed(() =>
     vaults.value
