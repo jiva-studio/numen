@@ -46,7 +46,7 @@ export interface LicenseInfo {
   readonly verifiedUnixMs: number
 }
 
-/** Why an activation or deactivation call was refused. */
+/** Why an activation or deactivation call was rejected. */
 export type LicenseErrorCode =
   | 'notFound'
   | 'invalidKey'

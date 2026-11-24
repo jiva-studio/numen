@@ -7,7 +7,7 @@ import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
 import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
-import { createFollower } from '@/shared/api/stream'
+import { createStreamReader } from '@/shared/api/stream'
 import {
   createEditStream,
   createFocusStream,
@@ -114,7 +114,7 @@ function createStreamFollower(
   wait: (ms: number) => Promise<void>,
   isOpen: () => boolean,
 ) {
-  return createFollower({
+  return createStreamReader({
     isOpen,
     setLost: (response) => {
       health.lost.value = response

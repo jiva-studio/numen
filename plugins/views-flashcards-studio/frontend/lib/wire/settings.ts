@@ -6,7 +6,7 @@ import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from './sched
 
 import { goalNames, goalOf } from './goal'
 import type { Goal } from './goal'
-import { getNames } from './names'
+import { getCodesByWord } from './names'
 
 /** The unit a day's budget is spent in. */
 export type BudgetUnit = 'cards' | 'shows'
@@ -72,7 +72,7 @@ const ruleOf: Readonly<Record<Rules, Rule | null>> = {
   [Rules.RETENTION]: 'retention',
 }
 
-const ruleNames: Readonly<Record<Rule, Rules>> = getNames<Rule, Rules>(ruleOf)
+const ruleNames: Readonly<Record<Rule, Rules>> = getCodesByWord<Rule, Rules>(ruleOf)
 
 /** The unit in the windows' words, and nothing for a message naming none. */
 const budgetUnitOf: Readonly<Record<BudgetUnits, BudgetUnit | null>> = {
@@ -81,7 +81,7 @@ const budgetUnitOf: Readonly<Record<BudgetUnits, BudgetUnit | null>> = {
   [BudgetUnits.SHOWS]: 'shows',
 }
 
-const budgetUnitNames: Readonly<Record<BudgetUnit, BudgetUnits>> = getNames<
+const budgetUnitNames: Readonly<Record<BudgetUnit, BudgetUnits>> = getCodesByWord<
   BudgetUnit,
   BudgetUnits
 >(budgetUnitOf)

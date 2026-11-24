@@ -225,11 +225,12 @@ jobs:
       - name: Submit the review
         env:
           GH_TOKEN: ${{ steps.quick.outputs.github_token || steps.full.outputs.github_token }}
+          WORKFLOW_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::The Claude action returned no app token"
-            exit 1
+          if [ -z "$GH_TOKEN" ] || ! gh api rate_limit > /dev/null 2>&1; then
+            echo "::notice::The Claude action revoked its app token; the review is submitted with the workflow token"
+            GH_TOKEN=$WORKFLOW_TOKEN
           fi
           head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
           if [ "$head" != "$REVIEWED_SHA" ]; then

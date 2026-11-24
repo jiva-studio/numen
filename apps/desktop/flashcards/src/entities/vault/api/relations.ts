@@ -1,6 +1,6 @@
 /**
  * The relationships between notes as this window offers them to plugins: the wikilinks of a text,
- * resolved by the core. The window writes no relationships, so every other call is refused.
+ * resolved by the core. The window writes no relationships, so every other call is rejected.
  */
 import { resolveTextLinks } from '@numen/core-client'
 import type { VaultRelations } from '@numen/plugin-loader'

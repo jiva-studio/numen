@@ -31,6 +31,14 @@ names the plugin by its token and checks the permission of each call there; a
 request that names a plugin names only the one the token names. A service only
 one of them serves keeps its name (`Host...` for the host endpoint).
 
+## Pairs that stay two
+
+A pair of window and host methods merges when one handler answers both from the same request and response. These stay two, because the sides ask different questions:
+
+- `NoteService.RenameNote` renames the note a window has open and answers a conflict with prose the caller never saw and `is_index_outdated`. `HostNoteService.RenameNote` renames a path of the vault the plugin's identity works through the arranger and has neither.
+- `VaultService.GetVaultState` and `GetCurrentVault` answer for one window: its vault, its scan and its id by `window_id`. `HostVaultService.GetHostVault` answers for the plugin's identity, with the vault unset when none is shown. Mounting `VaultService` whole on the host endpoint would need a host `WatchVaultChanges`, which no plugin asks for.
+- `NoteService.ResolveAddresses` resolves addresses and the wikilinks of a text across vaults (`vault_id`, `is_crossed`). `HostLinkService.ResolveLinks` resolves the links of one note path into `HostLink`s. `MediaService.ResolveAddress` resolves a media address and is another subject.
+
 ## An error code is a successful response; a status code is not
 
 A call that cannot be served at all — nothing mounts it, the transport is

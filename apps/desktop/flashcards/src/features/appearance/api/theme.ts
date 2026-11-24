@@ -1,5 +1,5 @@
 /** The theme service of the application, as the window's appearance reads and writes it. */
-import { createFollower, createThemeClient, type ThemeClient } from '@numen/core-client'
+import { createStreamReader, createThemeClient, type ThemeClient } from '@numen/core-client'
 import { createWindowAppearance as createWorkbenchAppearance } from '@numen/workbench'
 import type { WindowClients } from '@/shared/api/clients'
 
@@ -10,5 +10,5 @@ export type { ThemeClient }
 
 /** The window appearance over the themes of the application, following them with the core's follower. */
 export const createWindowAppearance = (
-  deps: Omit<Parameters<typeof createWorkbenchAppearance>[0], 'createFollower'>,
-) => createWorkbenchAppearance({ ...deps, createFollower })
+  deps: Omit<Parameters<typeof createWorkbenchAppearance>[0], 'createStreamReader'>,
+) => createWorkbenchAppearance({ ...deps, createStreamReader })

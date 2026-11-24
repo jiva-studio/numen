@@ -1,1 +1,1 @@
-export { createFollower } from '@numen/core-client'
+export { createStreamReader } from '@numen/core-client'
