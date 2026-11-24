@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/sharestate"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -47,23 +48,23 @@ func (s *Server) createShare(account string, entry *syncv1.ShareLogEntry) (*conn
 	if err := s.checkShareAuthor(account, entry); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	share := newShareState(account, string(entry.GetVaultId()))
-	share.log = []*syncv1.ShareLogEntry{entry}
+	share := sharestate.New(account, string(entry.GetVaultId()))
+	share.Log = []*syncv1.ShareLogEntry{entry}
 	s.shares[string(entry.GetShareRootId())] = share
 	return connect.NewResponse(&syncv1.AppendShareLogEntryResponse{Committed: true, Head: entry}), nil
 }
 
 func (s *Server) extendShare(account string, entry *syncv1.ShareLogEntry) (*connect.Response[syncv1.AppendShareLogEntryResponse], error) {
 	share, found := s.shares[string(entry.GetShareRootId())]
-	if !found || share.account != account || share.isClosed {
+	if !found || share.Account != account || share.IsClosed {
 		return nil, newNoShare()
 	}
 	if err := s.checkShareAuthor(account, entry); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	head := syncprotocol.GetShareLogEntryID(share.getHead())
-	if entry.GetVersion() != share.getHead().GetVersion()+1 || !bytes.Equal(entry.GetPrevHash(), head[:]) {
-		return connect.NewResponse(&syncv1.AppendShareLogEntryResponse{Head: share.getHead()}), nil
+	head := syncprotocol.GetShareLogEntryID(share.GetHead())
+	if entry.GetVersion() != share.GetHead().GetVersion()+1 || !bytes.Equal(entry.GetPrevHash(), head[:]) {
+		return connect.NewResponse(&syncv1.AppendShareLogEntryResponse{Head: share.GetHead()}), nil
 	}
 	if err := s.checkShareKind(share, entry); err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (s *Server) checkShareAuthor(account string, entry *syncv1.ShareLogEntry) e
 	return nil
 }
 
-func (s *Server) checkShareKind(share *shareState, entry *syncv1.ShareLogEntry) error {
+func (s *Server) checkShareKind(share *sharestate.State, entry *syncv1.ShareLogEntry) error {
 	var problem string
 	switch entry.GetKind() {
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
@@ -92,12 +93,12 @@ func (s *Server) checkShareKind(share *shareState, entry *syncv1.ShareLogEntry) 
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
 		problem = getRemoveReaderProblem(share, entry)
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE:
-		if entry.GetEpoch() != share.epoch+1 || !hasSealsFor(entry, share.listActiveMembers(), nil) {
+		if entry.GetEpoch() != share.Epoch+1 || !hasSealsFor(entry, share.ListActiveMembers(), nil) {
 			problem = "a rotation is the next epoch with a seal for each reader"
 		}
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE,
 		syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE, syncv1.ShareLogKind_SHARE_LOG_KIND_UNSPECIFIED:
-		if entry.GetEpoch() != share.epoch {
+		if entry.GetEpoch() != share.Epoch {
 			problem = "the epoch does not change"
 		}
 	}
@@ -107,35 +108,35 @@ func (s *Server) checkShareKind(share *shareState, entry *syncv1.ShareLogEntry) 
 	return nil
 }
 
-func getRemoveReaderProblem(share *shareState, entry *syncv1.ShareLogEntry) string {
-	subject := share.findMemberByRoot(entry.GetSubjectRootSignKey())
+func getRemoveReaderProblem(share *sharestate.State, entry *syncv1.ShareLogEntry) string {
+	subject := share.FindMemberByRoot(entry.GetSubjectRootSignKey())
 	switch {
-	case entry.GetEpoch() != share.epoch+1:
+	case entry.GetEpoch() != share.Epoch+1:
 		return "a removal is the next epoch"
-	case subject == nil || !subject.isActive():
+	case subject == nil || !subject.IsActive():
 		return "the subject is not a reader"
-	case !hasSealsFor(entry, share.listActiveMembers(), subject):
+	case !hasSealsFor(entry, share.ListActiveMembers(), subject):
 		return "a removal has a seal for each remaining reader"
 	}
 	return ""
 }
 
-func (s *Server) checkAddReader(share *shareState, entry *syncv1.ShareLogEntry) error {
+func (s *Server) checkAddReader(share *sharestate.State, entry *syncv1.ShareLogEntry) error {
 	root := entry.GetSubjectRootSignKey()
 	account := identity.RecoveryPublicKey{Sign: root}.Fingerprint().String()
 	_, isKnown := s.chains[account]
-	member := share.findMemberByRoot(root)
+	member := share.FindMemberByRoot(root)
 	var problem string
 	switch {
 	case !isKnown:
 		problem = "the reader is not valid"
-	case entry.GetEpoch() != share.epoch:
+	case entry.GetEpoch() != share.Epoch:
 		problem = "an addition keeps the epoch"
-	case account == share.account:
+	case account == share.Account:
 		problem = "the owner is not a reader"
-	case member != nil && member.isActive():
+	case member != nil && member.IsActive():
 		problem = "the reader is a member"
-	case len(share.listActiveMembers()) >= syncprotocol.MaxShareSeals:
+	case len(share.ListActiveMembers()) >= syncprotocol.MaxShareSeals:
 		problem = "the share has the most readers"
 	}
 	if problem != "" {
@@ -144,7 +145,7 @@ func (s *Server) checkAddReader(share *shareState, entry *syncv1.ShareLogEntry) 
 	return nil
 }
 
-func hasSealsFor(entry *syncv1.ShareLogEntry, readers []*shareMember, skipped *shareMember) bool {
+func hasSealsFor(entry *syncv1.ShareLogEntry, readers []*sharestate.Member, skipped *sharestate.Member) bool {
 	wanted := map[string]bool{}
 	for _, reader := range readers {
 		if reader != skipped {
@@ -163,26 +164,26 @@ func hasSealsFor(entry *syncv1.ShareLogEntry, readers []*shareMember, skipped *s
 	return true
 }
 
-func applyShareEntry(share *shareState, entry *syncv1.ShareLogEntry) {
+func applyShareEntry(share *sharestate.State, entry *syncv1.ShareLogEntry) {
 	version := entry.GetVersion()
-	share.log = append(share.log, entry)
-	share.epoch = entry.GetEpoch()
+	share.Log = append(share.Log, entry)
+	share.Epoch = entry.GetEpoch()
 	switch entry.GetKind() {
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ADD_READER:
 		root := entry.GetSubjectRootSignKey()
 		account := identity.RecoveryPublicKey{Sign: root}.Fingerprint().String()
-		if member := share.findMemberByRoot(root); member != nil {
+		if member := share.FindMemberByRoot(root); member != nil {
 			member.Added, member.Removed = version, 0
 			return
 		}
-		share.members = append(share.members, &shareMember{Account: account, Root: bytes.Clone(root), Added: version})
+		share.Members = append(share.Members, &sharestate.Member{Account: account, Root: bytes.Clone(root), Added: version})
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
-		share.findMemberByRoot(entry.GetSubjectRootSignKey()).Removed = version
+		share.FindMemberByRoot(entry.GetSubjectRootSignKey()).Removed = version
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE:
-		for _, member := range share.listActiveMembers() {
+		for _, member := range share.ListActiveMembers() {
 			member.Removed = version
 		}
-		share.isClosed = true
+		share.IsClosed = true
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE,
 		syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UNSPECIFIED:
 	}
@@ -198,11 +199,11 @@ func (s *Server) ListShares(_ context.Context, req *connect.Request[syncv1.ListS
 	var listed []*syncv1.ShareSummary
 	for _, id := range slices.Sorted(maps.Keys(s.shares)) {
 		share := s.shares[id]
-		if share.account != account {
+		if share.Account != account {
 			continue
 		}
 		listed = append(listed, &syncv1.ShareSummary{
-			ShareRootId: []byte(id), VaultId: []byte(share.vault), HeadVersion: share.getHead().GetVersion(), Epoch: share.epoch, IsClosed: share.isClosed,
+			ShareRootId: []byte(id), VaultId: []byte(share.Vault), HeadVersion: share.GetHead().GetVersion(), Epoch: share.Epoch, IsClosed: share.IsClosed,
 		})
 	}
 	return connect.NewResponse(&syncv1.ListSharesResponse{Shares: listed}), nil
@@ -216,37 +217,37 @@ func (s *Server) GetShareLog(_ context.Context, req *connect.Request[syncv1.GetS
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	share, found := s.shares[string(req.Msg.GetShareRootId())]
-	var member *shareMember
+	var member *sharestate.Member
 	if found {
-		member = share.findMember(account)
+		member = share.FindMember(account)
 	}
-	if !found || (share.account != account && member == nil) {
+	if !found || (share.Account != account && member == nil) {
 		return nil, newNoShare()
 	}
-	upTo := uint64(len(share.log))
-	if share.account != account && !member.isActive() {
+	upTo := uint64(len(share.Log))
+	if share.Account != account && !member.IsActive() {
 		upTo = member.Removed
 	}
 	since := min(req.Msg.GetSinceVersion(), upTo)
-	rest := share.log[since:upTo]
+	rest := share.Log[since:upTo]
 	limit := getPageLimit(req.Msg.GetLimit())
-	response := &syncv1.GetShareLogResponse{Entries: rest, OwnerChain: s.chains[share.account].Bytes()}
+	response := &syncv1.GetShareLogResponse{Entries: rest, OwnerChain: s.chains[share.Account].Bytes()}
 	if len(rest) > limit {
 		response.Entries, response.HasMore = rest[:limit], true
 	}
 	return connect.NewResponse(response), nil
 }
 
-func (s *Server) getReaderShare(account string, id []byte) (*shareState, error) {
+func (s *Server) getReaderShare(account string, id []byte) (*sharestate.State, error) {
 	share, found := s.shares[string(id)]
-	if !found || share.account == account {
+	if !found || share.Account == account {
 		return nil, newNoShare()
 	}
-	member := share.findMember(account)
+	member := share.FindMember(account)
 	if member == nil {
 		return nil, newNoShare()
 	}
-	if !member.isActive() {
+	if !member.IsActive() {
 		return nil, newShareEnded(member.Removed)
 	}
 	return share, nil
@@ -273,8 +274,8 @@ func (s *Server) GetShareChanges(_ context.Context, req *connect.Request[syncv1.
 	return connect.NewResponse(&syncv1.GetShareChangesResponse{Changes: page, NextSeq: next, HasMore: len(page) < len(rows)}), nil
 }
 
-func (s *Server) listShareChanges(share *shareState, id []byte, since uint64) []*syncv1.ShareChange {
-	vault := s.vaults[share.vault]
+func (s *Server) listShareChanges(share *sharestate.State, id []byte, since uint64) []*syncv1.ShareChange {
+	vault := s.vaults[share.Vault]
 	if vault == nil {
 		return nil
 	}
@@ -282,7 +283,7 @@ func (s *Server) listShareChanges(share *shareState, id []byte, since uint64) []
 	for file, head := range vault.files {
 		revision := head.GetRevision()
 		metaHash := sha256.Sum256(revision.GetEncMeta())
-		switch exitSeq, exited := share.exits[file]; {
+		switch exitSeq, exited := share.Exits[file]; {
 		case bytes.Equal(revision.GetShareRootId(), id) && head.GetSeq() > since:
 			rows = append(rows, &syncv1.ShareChange{Change: head, EncMetaHash: metaHash[:]})
 		case exited && exitSeq > since && !bytes.Equal(revision.GetShareRootId(), id):
@@ -349,19 +350,19 @@ func (s *Server) GetShareBlobUrls(_ context.Context, req *connect.Request[syncv1
 	return connect.NewResponse(&syncv1.GetShareBlobUrlsResponse{Downloads: downloads}), nil
 }
 
-func (s *Server) countShareURLs(share *shareState, count int) error {
+func (s *Server) countShareURLs(share *sharestate.State, count int) error {
 	now := s.now()
 	window := now.Truncate(shareWindow)
-	if share.urls[window.Unix()]+count > shareURLsPerHour {
+	if share.URLs[window.Unix()]+count > shareURLsPerHour {
 		return newRateLimited(window.Add(shareWindow).Sub(now))
 	}
-	share.urls[window.Unix()] += count
+	share.URLs[window.Unix()] += count
 	return nil
 }
 
-func (s *Server) listSharedBlobs(share *shareState, id []byte) map[string]bool {
+func (s *Server) listSharedBlobs(share *sharestate.State, id []byte) map[string]bool {
 	shared := map[string]bool{}
-	if vault := s.vaults[share.vault]; vault != nil {
+	if vault := s.vaults[share.Vault]; vault != nil {
 		for _, head := range vault.files {
 			if bytes.Equal(head.GetRevision().GetShareRootId(), id) && !head.GetRevision().GetDeleted() {
 				shared[string(head.GetRevision().GetBlobId())] = true

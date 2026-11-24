@@ -1,9 +1,11 @@
-package fakeserver
+// Package linkrelay is the relay of the link service: it holds the sealed messages of both sides of a channel and reads none of them.
+package linkrelay
 
 import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -42,32 +44,46 @@ type linkChannel struct {
 	lastNumber uint32
 }
 
+// Relay serves the channels of the link service.
+type Relay struct {
+	now      func() time.Time
+	mu       sync.Mutex
+	channels map[string]*linkChannel
+}
+
+// New returns a relay that reads the time from now.
+func New(now func() time.Time) *Relay {
+	return &Relay{now: now, channels: map[string]*linkChannel{}}
+}
+
 func (c *linkChannel) wake() {
 	close(c.changed)
 	c.changed = make(chan struct{})
 }
 
-func (s *Server) getOpenChannel(id []byte) (*linkChannel, error) {
-	found, ok := s.links[string(id)]
-	if !ok || found.isClosed || !s.now().Before(found.expiresAt) {
+func (r *Relay) getOpenChannel(id []byte) (*linkChannel, error) {
+	found, ok := r.channels[string(id)]
+	if !ok || found.isClosed || !r.now().Before(found.expiresAt) {
 		return nil, connect.NewError(connect.CodeNotFound, errChannelGone)
 	}
 	return found, nil
 }
 
-func (s *Server) CreateChannel(_ context.Context, _ *connect.Request[syncv1.CreateChannelRequest]) (*connect.Response[syncv1.CreateChannelResponse], error) {
+// CreateChannel serves the call of the same name of the link service.
+func (r *Relay) CreateChannel(_ context.Context, _ *connect.Request[syncv1.CreateChannelRequest]) (*connect.Response[syncv1.CreateChannelResponse], error) {
 	id := make([]byte, linkIDSize)
 	if _, err := rand.Read(id); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	expiresAt := s.now().Add(linkLife)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.links[string(id)] = &linkChannel{expiresAt: expiresAt, waiting: map[syncv1.LinkSide]bool{}, changed: make(chan struct{})}
+	expiresAt := r.now().Add(linkLife)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.channels[string(id)] = &linkChannel{expiresAt: expiresAt, waiting: map[syncv1.LinkSide]bool{}, changed: make(chan struct{})}
 	return connect.NewResponse(&syncv1.CreateChannelResponse{ChannelId: id, ExpiresAt: expiresAt.Unix()}), nil
 }
 
-func (s *Server) SendMessage(_ context.Context, req *connect.Request[syncv1.SendMessageRequest]) (*connect.Response[syncv1.SendMessageResponse], error) {
+// SendMessage serves the call of the same name of the link service.
+func (r *Relay) SendMessage(_ context.Context, req *connect.Request[syncv1.SendMessageRequest]) (*connect.Response[syncv1.SendMessageResponse], error) {
 	body := req.Msg.GetBody()
 	if len(body) == 0 || len(body) > syncprotocol.MaxLinkMessage {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errLinkBody)
@@ -75,9 +91,9 @@ func (s *Server) SendMessage(_ context.Context, req *connect.Request[syncv1.Send
 	if side := req.Msg.GetTo(); side != syncv1.LinkSide_LINK_SIDE_DISPLAYER && side != syncv1.LinkSide_LINK_SIDE_SCANNER {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errLinkSide)
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	channel, err := s.getOpenChannel(req.Msg.GetChannelId())
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	channel, err := r.getOpenChannel(req.Msg.GetChannelId())
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +106,11 @@ func (s *Server) SendMessage(_ context.Context, req *connect.Request[syncv1.Send
 	return connect.NewResponse(&syncv1.SendMessageResponse{Seq: channel.lastNumber}), nil
 }
 
-func (s *Server) CloseChannel(_ context.Context, req *connect.Request[syncv1.CloseChannelRequest]) (*connect.Response[syncv1.CloseChannelResponse], error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	channel, err := s.getOpenChannel(req.Msg.GetChannelId())
+// CloseChannel serves the call of the same name of the link service.
+func (r *Relay) CloseChannel(_ context.Context, req *connect.Request[syncv1.CloseChannelRequest]) (*connect.Response[syncv1.CloseChannelResponse], error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	channel, err := r.getOpenChannel(req.Msg.GetChannelId())
 	if err != nil {
 		return nil, err
 	}
@@ -102,19 +119,20 @@ func (s *Server) CloseChannel(_ context.Context, req *connect.Request[syncv1.Clo
 	return connect.NewResponse(&syncv1.CloseChannelResponse{}), nil
 }
 
-func (s *Server) WaitMessages(ctx context.Context, req *connect.Request[syncv1.WaitMessagesRequest]) (*connect.Response[syncv1.WaitMessagesResponse], error) {
+// WaitMessages serves the call of the same name of the link service.
+func (r *Relay) WaitMessages(ctx context.Context, req *connect.Request[syncv1.WaitMessagesRequest]) (*connect.Response[syncv1.WaitMessagesResponse], error) {
 	reader := req.Msg.GetReader()
 	if reader != syncv1.LinkSide_LINK_SIDE_DISPLAYER && reader != syncv1.LinkSide_LINK_SIDE_SCANNER {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errLinkSide)
 	}
 	wait := time.Duration(min(req.Msg.GetWaitSeconds(), syncprotocol.LinkWaitMax)) * time.Second
 	timeout := time.After(wait)
-	if err := s.takeSide(req.Msg.GetChannelId(), reader); err != nil {
+	if err := r.takeSide(req.Msg.GetChannelId(), reader); err != nil {
 		return nil, err
 	}
-	defer s.freeSide(req.Msg.GetChannelId(), reader)
+	defer r.freeSide(req.Msg.GetChannelId(), reader)
 	for {
-		response, changed, err := s.readMessages(req.Msg)
+		response, changed, err := r.readMessages(req.Msg)
 		if err != nil || len(response.GetMessages()) > 0 || response.GetIsClosed() || wait <= 0 {
 			return connect.NewResponse(response), err
 		}
@@ -128,11 +146,11 @@ func (s *Server) WaitMessages(ctx context.Context, req *connect.Request[syncv1.W
 	}
 }
 
-func (s *Server) takeSide(id []byte, side syncv1.LinkSide) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	channel, ok := s.links[string(id)]
-	if !ok || !s.now().Before(channel.expiresAt) || (channel.isClosed && channel.isTold) {
+func (r *Relay) takeSide(id []byte, side syncv1.LinkSide) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	channel, ok := r.channels[string(id)]
+	if !ok || !r.now().Before(channel.expiresAt) || (channel.isClosed && channel.isTold) {
 		return connect.NewError(connect.CodeNotFound, errChannelGone)
 	}
 	if channel.waiting[side] {
@@ -142,19 +160,19 @@ func (s *Server) takeSide(id []byte, side syncv1.LinkSide) error {
 	return nil
 }
 
-func (s *Server) freeSide(id []byte, side syncv1.LinkSide) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if channel, ok := s.links[string(id)]; ok {
+func (r *Relay) freeSide(id []byte, side syncv1.LinkSide) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if channel, ok := r.channels[string(id)]; ok {
 		channel.waiting[side] = false
 	}
 }
 
-func (s *Server) readMessages(req *syncv1.WaitMessagesRequest) (*syncv1.WaitMessagesResponse, <-chan struct{}, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	channel, ok := s.links[string(req.GetChannelId())]
-	if !ok || !s.now().Before(channel.expiresAt) {
+func (r *Relay) readMessages(req *syncv1.WaitMessagesRequest) (*syncv1.WaitMessagesResponse, <-chan struct{}, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	channel, ok := r.channels[string(req.GetChannelId())]
+	if !ok || !r.now().Before(channel.expiresAt) {
 		return nil, nil, connect.NewError(connect.CodeNotFound, errChannelGone)
 	}
 	response := &syncv1.WaitMessagesResponse{}
