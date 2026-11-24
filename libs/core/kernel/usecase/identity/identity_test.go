@@ -360,7 +360,7 @@ func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
 	}
 }
 
-func TestCreateIdentity_CancelledWhileWaitingForTheGateWritesNothing(t *testing.T) {
+func TestCreateIdentity_CanceledWhileWaitingForTheGateWritesNothing(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	gate := identity.NewCreateGate()
