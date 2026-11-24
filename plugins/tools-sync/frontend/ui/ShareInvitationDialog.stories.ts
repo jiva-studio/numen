@@ -91,7 +91,9 @@ export const RequestWaiting: Story = {
   args: { state: createState({ request: REQUEST }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Device «Phone» (1111 2222 3333…) wants to read Recipes.')).toBeVisible()
+    await expect(
+      await canvas.findByText('Device «Phone» (1111 2222 3333…) wants to read Recipes.'),
+    ).toBeVisible()
     await expect(canvas.getByText('Code 482 913')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Allow' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Decline' })).toBeVisible()
@@ -102,7 +104,9 @@ export const Approved: Story = {
   args: { state: createState({ state: 'approved', people: [PHONE] }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Shared with Device «Phone» (1111 2222 3333…)')).toBeVisible()
+    await expect(
+      await canvas.findByText('Shared with Device «Phone» (1111 2222 3333…)'),
+    ).toBeVisible()
     await expect(canvas.getAllByText('1111 2222 3333…')).toHaveLength(2)
   },
 }
