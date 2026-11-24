@@ -382,6 +382,9 @@ func TestCreateIdentity_AcceptsTheWordsOfTheLastGenerateOnceInAnyLetterCase(t *t
 	}
 	if _, err := create.Execute(t.Context(), upper); err != nil {
 		t.Fatalf("create of the held words: %v", err)
+	}
+}
+
 func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")

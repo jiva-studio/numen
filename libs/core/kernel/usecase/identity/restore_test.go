@@ -591,14 +591,13 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 	if _, err := k.sign.Execute(t.Context(), syncPlugin, []byte("message")); !errors.Is(err, identitydomain.ErrNoPendingRestore) {
 		t.Errorf("SignAsRecovery after the expiry: error = %v, want ErrNoPendingRestore", err)
 	}
-	}
 }
 
 func TestCompleteRestore_ConcurrentCreateLeavesOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
 	other := identity.NewSeededCreate(k.deps)
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	var arrived atomic.Int32
@@ -647,7 +646,7 @@ func TestStartRestore_TriesTheFallbackAgainWhenTheKeyStoreRefusedIt(t *testing.T
 		t.Fatal(err)
 	}
 	k := newRestoreKit(t, "Phone")
-	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
 		t.Fatal(err)
 	}
 	k.keys.failSets(errBroken)
