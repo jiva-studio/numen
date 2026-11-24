@@ -71,7 +71,7 @@ describe('the link dialog', () => {
     expect(startLink).toHaveBeenCalledWith('host', 'scan', 'numen://link?v=1')
   })
 
-  it('tells a machine with no camera to paste the code', async () => {
+  it('shows the field for the pasted code on a machine with no camera', async () => {
     const dialog = await mountDialog('joiner', createLinkInfo())
     await click(findButton(/^Scan a QR code$/))
     expect(dialog.get('[role="status"]').text()).toBe(

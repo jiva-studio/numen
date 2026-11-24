@@ -120,11 +120,11 @@ export const TriesAgainAfterAFailure: Story = {
       }
     })(),
     onScanned: fn(),
-    onFailed: fn(),
+    onUnavailable: fn(),
   },
   play: async ({ args, canvasElement }) => {
     const retry = await within(canvasElement).findByRole('button', { name: 'Try again' })
-    await expect(args.onFailed).toHaveBeenCalledWith('The camera is not allowed.')
+    await expect(args.onUnavailable).toHaveBeenCalledWith('The camera is not allowed.')
     await userEvent.click(retry)
     await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
   },
