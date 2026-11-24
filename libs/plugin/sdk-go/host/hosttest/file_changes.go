@@ -161,11 +161,32 @@ func (v *Vault) ListFileChanges(ctx context.Context, q host.FileChangeQuery) (ho
 		return host.FileChangePage{Next: head, IsReset: true}, nil
 	}
 	changes := v.feed.listChanges(q.Since.Seq, q.Events)
+	for i := range changes {
+		v.fillContent(&changes[i])
+	}
 	if len(changes) <= limit {
 		return host.FileChangePage{Changes: changes, Next: head}, nil
 	}
 	changes = changes[:limit]
 	return host.FileChangePage{Changes: changes, Next: host.FileChangeCursor{FeedID: head.FeedID, Seq: changes[limit-1].Seq}, HasMore: true}, nil
+}
+
+func (v *Vault) fillContent(change *host.FileChange) {
+	if change.Event == host.EventFileRemoved {
+		return
+	}
+	at, err := v.files.stat(change.Path)
+	if err != nil {
+		return
+	}
+	at, err = v.hashStat(at)
+	if err != nil {
+		return
+	}
+	change.Hash, change.Size = at.Hash, at.Size
+	if !at.ModTime.IsZero() {
+		change.ModifiedAt = at.ModTime.UnixNano()
+	}
 }
 
 func (f *feed) listChanges(seq int64, events []string) []host.FileChange {

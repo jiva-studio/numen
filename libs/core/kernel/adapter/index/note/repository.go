@@ -174,7 +174,7 @@ func saveSourceAndNote(
 	var updated bool
 	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
-		nil, newNullableValue(indexed.Recipe), nil,
+		newNullableValue(n.FileStat.Hash), newNullableValue(indexed.Recipe), nil,
 	).Scan(&row, &updated); err != nil {
 		return 0, stored, fmt.Errorf("record the source this note is: %w", err)
 	}

@@ -143,4 +143,12 @@ message FileChange {
   string path = 2;
   string event = 3;
   int64 seq = 4;
+  // hash is the content hash of the file as the index has it now, empty for file.removed
+  // and for a file the index has no hash of.
+  string hash = 5;
+  // size is the size of the file in bytes as the index has it now, 0 for file.removed.
+  int64 size = 6;
+  // mtime is the modification time of the file as the index has it now, in nanoseconds
+  // since the Unix epoch, 0 for file.removed.
+  int64 mtime = 7;
 }
