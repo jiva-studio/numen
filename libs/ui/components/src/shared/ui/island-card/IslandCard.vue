@@ -36,8 +36,11 @@ defineProps<{ title: string }>()
 
 .island-card__title {
   margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
+  flex: 0 1 auto;
+  min-inline-size: 5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--numen-text-2);
   font-weight: 600;
   color: var(--numen-ink);

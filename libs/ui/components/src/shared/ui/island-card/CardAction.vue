@@ -87,13 +87,13 @@ defineProps<{
   display: none;
 }
 
-@container island-card-header (max-inline-size: 32rem) {
+@container island-card-header (max-inline-size: 46rem) {
   .card-action__label {
     display: none;
   }
 }
 
-@container island-card-header (max-inline-size: 18rem) {
+@container island-card-header (max-inline-size: 24rem) {
   .card-action--secondary {
     display: none;
   }
