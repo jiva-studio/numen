@@ -11,7 +11,7 @@ import (
 )
 
 // serving is a server that answers the first change request with the revisions it was given as a page ahead of the
-// head, and every other request as the real server does.
+// head, and every other request as the head server does.
 type serving struct {
 	ports.Revisions
 	page *syncv1.GetChangesResponse
@@ -28,7 +28,7 @@ func (s *serving) GetChanges(ctx context.Context, vaultID []byte, since uint64, 
 
 func (p *pair) pullServing(t *testing.T, changes ...*syncv1.StoredRevision) {
 	t.Helper()
-	real, err := p.a.Cloud.GetChanges(t.Context(), p.vault.ID, 0, 0)
+	head, err := p.a.Cloud.GetChanges(t.Context(), p.vault.ID, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func (p *pair) pullServing(t *testing.T, changes ...*syncv1.StoredRevision) {
 	deps.Revisions = &serving{
 		Revisions: deps.Revisions,
 		page: &syncv1.GetChangesResponse{
-			Changes: changes, NextSeq: real.GetHeadSeq() + 1, HeadSeq: real.GetHeadSeq() + 1, RestoreEpochId: real.GetRestoreEpochId(),
+			Changes: changes, NextSeq: head.GetHeadSeq() + 1, HeadSeq: head.GetHeadSeq() + 1, RestoreEpochId: head.GetRestoreEpochId(),
 		},
 	}
 	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {

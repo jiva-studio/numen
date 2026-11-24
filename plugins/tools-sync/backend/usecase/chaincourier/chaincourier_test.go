@@ -94,7 +94,7 @@ func newRevokedByFirst(t *testing.T) (observer *synctest.Computer, clock *syncte
 	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if err := first.Fake.RevokeDevice(second.Fake.Public().DeviceSignKey); err != nil {
+	if err := first.Fake.RevokeDeviceAt(second.Fake.Public().DeviceSignKey, clock.Now()); err != nil {
 		t.Fatal(err)
 	}
 	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
