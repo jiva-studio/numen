@@ -244,7 +244,6 @@ func checkDeviceName(name string) error {
 	return nil
 }
 
-// getForkIndex returns the index of the first entry where the two chains differ, or -1 when one is a prefix of the other.
 func (c Chain) getForkIndex(other Chain) int {
 	for i := range min(len(c.entries), len(other.entries)) {
 		if hashEntry(c.entries[i]) != hashEntry(other.entries[i]) {
@@ -254,10 +253,10 @@ func (c Chain) getForkIndex(other Chain) int {
 	return -1
 }
 
-// Outranks reports whether c replaces other at a fork: both chains have the same root, and at the first entry where they differ the
+// IsPreferredOver reports whether c replaces other at a fork: both chains have the same root, and at the first entry where they differ the
 // entry of c is signed by the root while the entry of other is not. When both are signed by the root the entry with the lower hash
 // wins, so every device settles on the same chain. Every entry of other from that index on is void.
-func (c Chain) Outranks(other Chain) bool {
+func (c Chain) IsPreferredOver(other Chain) bool {
 	i := c.getForkIndex(other)
 	if i < 1 || !bytes.Equal(c.Root().Sign, other.Root().Sign) {
 		return false

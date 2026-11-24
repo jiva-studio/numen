@@ -16,7 +16,7 @@ func TestAdopt_RefusesARevokeWhoseAccountBoxIsNotTheOneWrappedForTheDevice(t *te
 	}
 }
 
-func TestAdopt_RefusesARevokeWhoseKeyHistoryIsNotSealedUnderTheWrappedKeys(t *testing.T) {
+func TestAdopt_RevokeWithUnsealedKeyHistoryRejected(t *testing.T) {
 	t.Parallel()
 	f := newForgery(t)
 	state := f.newOtherState(t)

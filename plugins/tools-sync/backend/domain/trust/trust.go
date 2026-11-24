@@ -33,7 +33,7 @@ func NewAuthors(own, stored []byte) (Authors, error) {
 		return Authors{devices: nil}, errUntrustedChain
 	}
 	switch {
-	case chain.IsExtensionOf(ownChain), chain.Outranks(ownChain):
+	case chain.IsExtensionOf(ownChain), chain.IsPreferredOver(ownChain):
 	case ownChain.IsExtensionOf(chain):
 		chain = ownChain
 	default:

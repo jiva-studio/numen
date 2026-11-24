@@ -36,8 +36,6 @@ func (r *run) reconcile(ctx context.Context) error {
 	return r.settleRemovals(ctx)
 }
 
-// forgetAbsent drops the record of every file the listing lacks, so the next push sends the local file again as a new file.
-// The listing proves no removal: only a signed removal revision removes a file of this device.
 func (r *run) forgetAbsent(present map[string]bool) {
 	for _, record := range slices.Clone(r.records) {
 		if !present[string(record.FileID)] {

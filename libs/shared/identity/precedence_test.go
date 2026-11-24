@@ -17,8 +17,6 @@ type takeover struct {
 	fresh    identity.AccountKeys
 }
 
-// newTakeover: the first device is stolen; it adds the attacker and revokes the second device. The owner answers with the words,
-// signing a revoke of the stolen device at the same place of the chain.
 func newTakeover(t *testing.T) takeover {
 	t.Helper()
 	m := newTeam(t)
@@ -81,7 +79,7 @@ func TestAdopt_ADeviceEntryDoesNotReplaceTheRecoveryEntryAtAFork(t *testing.T) {
 	}
 }
 
-func TestOutranks_OfTwoRecoveryEntriesTheLowerHashWinsOnBothSides(t *testing.T) {
+func TestIsPreferredOver_LowerHashWinsBetweenRecoveryEntries(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	one, err := appended(m.chain, m.recovery, newDeviceOf(t).Public(), "Tablet", epoch().Add(time.Hour))
@@ -92,12 +90,12 @@ func TestOutranks_OfTwoRecoveryEntriesTheLowerHashWinsOnBothSides(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if one.Outranks(two) == two.Outranks(one) {
+	if one.IsPreferredOver(two) == two.IsPreferredOver(one) {
 		t.Error("exactly one of two recovery forks must outrank the other")
 	}
 }
 
-func TestAdopt_RefusesAForkThatLeavesTheDeviceOutOfTheChain(t *testing.T) {
+func TestAdopt_ForkWithoutDeviceRejected(t *testing.T) {
 	t.Parallel()
 	x := newTakeover(t)
 	chain, err := appended(x.chain, x.first, x.attacker.Public(), "Attacker", epoch().Add(time.Hour))

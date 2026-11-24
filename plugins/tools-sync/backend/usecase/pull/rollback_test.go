@@ -101,7 +101,7 @@ func TestPullChanges_KeepsTheNoteWhenTheServerServesAnOlderRemovalAgain(t *testi
 	}
 }
 
-func TestPullChanges_TakesARevisionThatContinuesTheFile(t *testing.T) {
+func TestPullChanges_ContinuingRevisionApplied(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, "Shopping list.md", "milk", nil)
 	p.pull(t, trustAll)

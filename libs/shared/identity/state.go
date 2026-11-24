@@ -50,7 +50,7 @@ func (s State) Adopt(next Chain) (State, error) {
 		return State{}, err
 	}
 	isFork := !next.IsExtensionOf(s.Chain)
-	if isFork && !next.Outranks(s.Chain) {
+	if isFork && !next.IsPreferredOver(s.Chain) {
 		return State{}, ErrNotExtension
 	}
 	status, err := getStatus(next, s.Record.Device)

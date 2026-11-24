@@ -232,8 +232,6 @@ func (c Chain) GetRevokedSince(prefix Chain) []ed25519.PublicKey {
 // Epoch returns the epoch of the keys; 0 for keys that were just unwrapped, until OpenKeyHistory sets it.
 func (a AccountKeys) Epoch() uint32 { return a.epoch }
 
-// getKeyIndex returns the index of the latest entry that gave the device keys: the entry that added it or the latest revoke that wraps for it.
-// It is -1 when the device was never added.
 func (c Chain) getKeyIndex(sign ed25519.PublicKey) int {
 	found := -1
 	for i := 1; i < len(c.entries); i++ {

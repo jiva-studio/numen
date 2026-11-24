@@ -80,7 +80,7 @@ func (u *Adopt) Execute(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if parsed.Len() <= ownChain.Len() && !parsed.Outranks(ownChain) {
+	if parsed.Len() <= ownChain.Len() && !parsed.IsPreferredOver(ownChain) {
 		u.notify(ctx, ownChain, own.DeviceSignKey)
 		return false, nil
 	}

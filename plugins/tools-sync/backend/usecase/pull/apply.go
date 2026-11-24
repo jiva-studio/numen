@@ -341,8 +341,6 @@ func (r *run) getKey(epoch uint32) ([32]byte, bool) {
 	return [32]byte(r.keys[at].Key), true
 }
 
-// isRegressed reports whether the revision is not newer than what this device holds of its file: the version of the
-// head it keeps, or the version at which it saw the file removed.
 func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKnown bool) bool {
 	floor := r.link.GetFloor(rev.GetFileId())
 	if isKnown {
