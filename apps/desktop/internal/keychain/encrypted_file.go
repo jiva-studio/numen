@@ -17,9 +17,8 @@ var ErrWrongPassphrase = errors.New("the passphrase does not open the credential
 
 var errBadEncryptedFile = errors.New("the credentials file is not a valid encrypted file")
 
-var encryptedMagic = []byte("NMCRED")
-
 const (
+	encryptedMagic   = "NMCRED"
 	encryptedVersion = 1
 	saltSize         = 16
 	headerSize       = 6 + 1 + 4 + 4 + 1 + saltSize
@@ -36,11 +35,13 @@ type kdfParams struct {
 	threads   uint8
 }
 
-// defaultKDFParams follow RFC 9106 with at least 64 MiB of memory.
-var defaultKDFParams = kdfParams{memoryKiB: 64 * 1024, time: 3, threads: 1}
+func getDefaultKDFParams() kdfParams {
+	// RFC 9106 asks for at least 64 MiB of memory.
+	return kdfParams{memoryKiB: 64 * 1024, time: 3, threads: 1}
+}
 
 func isEncryptedFile(raw []byte) bool {
-	return bytes.HasPrefix(raw, encryptedMagic)
+	return bytes.HasPrefix(raw, []byte(encryptedMagic))
 }
 
 func encryptEntries(entries map[string]string, passphrase string, params kdfParams) ([]byte, error) {
@@ -61,7 +62,9 @@ func encryptEntries(entries map[string]string, passphrase string, params kdfPara
 	if err != nil {
 		return nil, fmt.Errorf("encrypt the credentials: %w", err)
 	}
-	out := append(header, nonce...)
+	out := make([]byte, 0, len(header)+len(nonce)+len(plain)+chacha20poly1305.Overhead)
+	out = append(out, header...)
+	out = append(out, nonce...)
 	return aead.Seal(out, nonce, plain, header), nil
 }
 
