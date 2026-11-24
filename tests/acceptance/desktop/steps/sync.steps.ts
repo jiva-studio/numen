@@ -369,6 +369,6 @@ When('the person exports the account data', async ({ person }) => {
   await person.accounts.exportAccountData()
 })
 
-Then('the saved file names the account of the person', async ({ person }) => {
+Then('the saved file names the account of the person', ({ person }) => {
   person.accounts.expectExportNamesAccount()
 })
