@@ -320,7 +320,6 @@ const readLinkAnswer = (
   return asValue(readLink(answer.link))
 }
 
-/** The calls that keep the identity of this device, over an IdentityService client. */
 const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
     const { identity } = await rpc.getIdentity({})
@@ -350,7 +349,6 @@ const createAccountClient = (rpc: AccountRpc): AccountClient => ({
     readStartAnswer(await rpc.startRestoreFromKit({ sheets: writeSheets(sheets) })),
 })
 
-/** The calls of the link of this device to an account, over an IdentityService client. */
 const createLinkClient = (rpc: LinkRpc): LinkClient => ({
   startLink: async (role, mode, scannedText) =>
     readLinkAnswer(
@@ -367,7 +365,6 @@ const createLinkClient = (rpc: LinkRpc): LinkClient => ({
   cancelLink: async () => readStartAnswer(await rpc.cancelLink({})),
 })
 
-/** The calls of the devices of the account, over an IdentityService client. */
 const createDevicesClient = (rpc: DevicesRpc): DevicesClient => ({
   listDevices: async () => {
     const answer = await rpc.listDevices({})

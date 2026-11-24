@@ -19,10 +19,13 @@ Feature: Numen Sync plan change
 
   Rule: The page asks before it changes the plan
 
-    Scenario: The switch is made once the person confirms it
+    Scenario: The page asks before it makes the switch
       When the person chooses the plan "Pro" in Change plan
       Then the page says "Switch to Pro?"
       And the page says "Charged now"
+
+    Scenario: The switch is made once the person confirms it
+      Given the person chooses the plan "Pro" in Change plan
       When the person confirms the switch to "Pro"
       Then the subscription shows the plan "Pro" with 250 GB
 

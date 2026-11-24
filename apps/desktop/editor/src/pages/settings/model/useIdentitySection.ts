@@ -10,7 +10,7 @@ import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
-import { useIdentityRestore } from './useIdentityRestore'
+import { createIdentityRestore } from './createIdentityRestore'
 import { useIdentityCall } from './useIdentityCall'
 import { useRecoveryProof } from './useRecoveryProof'
 import { useWordsConfirmation } from './useWordsConfirmation'
@@ -30,7 +30,7 @@ export function useIdentitySection(
   const confirmation = useWordsConfirmation(setup.recoveryWords)
   const restoring = useRecoveryProof(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
-  const identityRestore = useIdentityRestore(getIdentity, run, restoring.read, problem)
+  const identityRestore = createIdentityRestore(getIdentity, run, restoring.read, problem)
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {

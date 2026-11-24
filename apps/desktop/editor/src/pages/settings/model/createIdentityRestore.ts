@@ -9,7 +9,7 @@ import { WORDS as words } from '../words'
 
 type Run = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
 
-export function useIdentityRestore(
+export function createIdentityRestore(
   getIdentity: () => InstallationIdentity,
   run: Run,
   readProof: () => KitProof | undefined,

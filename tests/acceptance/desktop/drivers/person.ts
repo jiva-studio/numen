@@ -98,7 +98,7 @@ export class Person {
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
     this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
-    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity, this.scenario)
+    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity)
     this.computers = new ComputerDriver(this.scenario, viewport, {
       identity: this.identity,
       sync: this.sync,

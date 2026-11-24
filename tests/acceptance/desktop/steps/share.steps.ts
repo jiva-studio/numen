@@ -55,13 +55,6 @@ When('the person removes the reader from the sharing of the folder {string}', as
 })
 
 When(
-  'the person moves the file {string} to {string} in the vault {string}',
-  ({ person }, from: string, to: string, vault: string) => {
-    person.sharing.moveFile(from, to, vault)
-  },
-)
-
-When(
   '{reader} creates the note {string} in the shared vault {string}',
   async ({ person }, reader: ReaderName, title: string, vault: string) => {
     await person.readers.createNote(reader, vault, title)
