@@ -39,10 +39,6 @@ func (p *pass) run(ctx context.Context) error {
 	if isPaused, err := p.use.deps.Pauses.HasPending(ctx, p.id); isPaused || err != nil {
 		return err
 	}
-	previous, err := p.use.deps.Progress.ReadStatus(ctx, p.id)
-	if err != nil {
-		return err
-	}
 	if err := p.pinRestoreKey(ctx); err != nil {
 		return err
 	}
@@ -51,20 +47,20 @@ func (p *pass) run(ctx context.Context) error {
 	}
 	isRetry, err := p.pushAgain(ctx)
 	if err != nil {
-		return p.use.reports.settle(ctx, err)
+		return p.use.reports.settle(ctx, p.id, err)
 	}
 	if isRetry || p.isSent {
 		if err := p.pull(ctx); err != nil {
 			return err
 		}
 	}
-	return p.finish(ctx, previous)
+	return p.finish(ctx)
 }
 
-func (p *pass) finish(ctx context.Context, previous ports.Status) error {
+func (p *pass) finish(ctx context.Context) error {
 	conflicts := len(p.conflicts) + p.resolved
-	found := tally{conflicts: conflicts, previousConflicts: previous.ConflictCount, unverified: p.unverified, clashes: len(p.clashes)}
-	if err := p.use.reports.report(ctx, found); err != nil {
+	found := tally{conflicts: conflicts, unverified: p.unverified, clashes: len(p.clashes)}
+	if err := p.use.reports.report(ctx, p.id, found); err != nil {
 		return err
 	}
 	return p.use.deps.Progress.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: conflicts})

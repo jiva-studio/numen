@@ -61,8 +61,9 @@ func (u *RunSync) runLoop(ctx context.Context) error {
 	if err := u.passAll(ctx); err != nil {
 		return err
 	}
+	next := u.deps.Clock.Now().Add(u.deps.Interval())
 	for {
-		id, isChange, err := u.wait(ctx)
+		id, isChange, err := u.wait(ctx, next)
 		if err != nil {
 			return err
 		}
@@ -70,6 +71,7 @@ func (u *RunSync) runLoop(ctx context.Context) error {
 			err = u.passOne(ctx, id)
 		} else {
 			err = u.passAll(ctx)
+			next = u.deps.Clock.Now().Add(u.deps.Interval())
 		}
 		if err != nil {
 			return err
@@ -77,11 +79,11 @@ func (u *RunSync) runLoop(ctx context.Context) error {
 	}
 }
 
-func (u *RunSync) wait(ctx context.Context) (domain.VaultID, bool, error) {
+func (u *RunSync) wait(ctx context.Context, next time.Time) (domain.VaultID, bool, error) {
 	waitCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	ended := make(chan error, 1)
-	go func() { ended <- u.deps.Clock.Wait(waitCtx, u.deps.Interval()) }()
+	go func() { ended <- u.deps.Clock.Wait(waitCtx, max(0, next.Sub(u.deps.Clock.Now()))) }()
 	select {
 	case err := <-ended:
 		return "", false, err

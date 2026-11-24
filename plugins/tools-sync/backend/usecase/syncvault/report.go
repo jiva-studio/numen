@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
+	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -31,16 +32,18 @@ type reporter struct {
 	subscription SubscriptionReader
 }
 
+func getKey(key string, id hostdomain.VaultID) string { return key + "/" + string(id) }
+
 func (r reporter) raise(ctx context.Context, key, text string) error {
 	return r.health.Report(ctx, health.Item{Key: key, Severity: health.Warning, Text: text, Detail: "", Action: nil})
 }
 
-func (r reporter) settle(ctx context.Context, err error) error {
+func (r reporter) settle(ctx context.Context, id hostdomain.VaultID, err error) error {
 	var quota syncprotocol.QuotaExceededError
 	var notReady syncprotocol.BlobNotReadyError
 	switch {
 	case errors.As(err, &quota):
-		return r.raise(ctx, keyStorageFull, "Cloud storage is full: changes stay on this device")
+		return r.raise(ctx, getKey(keyStorageFull, id), "Cloud storage is full: changes stay on this device")
 	case errors.Is(err, syncprotocol.ErrWriteNotAllowed):
 		return r.raise(ctx, domain.WarningKey, r.getRefusedText(ctx))
 	case errors.As(err, &notReady):
@@ -51,33 +54,29 @@ func (r reporter) settle(ctx context.Context, err error) error {
 
 // tally is what a pass found to warn of.
 type tally struct {
-	conflicts         int
-	previousConflicts int
-	unverified        int
-	clashes           int
+	conflicts  int
+	unverified int
+	clashes    int
 }
 
-func (r reporter) report(ctx context.Context, found tally) error {
-	for _, key := range []string{keyStorageFull, domain.WarningKey} {
+func (r reporter) report(ctx context.Context, id hostdomain.VaultID, found tally) error {
+	for _, key := range []string{getKey(keyStorageFull, id), domain.WarningKey} {
 		if err := r.health.Clear(ctx, key); err != nil {
 			return err
 		}
 	}
-	if err := r.toggle(ctx, keyConflicts, found.conflicts > 0 || found.previousConflicts > 0, found.conflicts, GetConflictText(found.conflicts)); err != nil {
+	if err := r.toggle(ctx, getKey(keyConflicts, id), found.conflicts, GetConflictText(found.conflicts)); err != nil {
 		return err
 	}
-	if err := r.toggle(ctx, keyCaseClash, true, found.clashes, GetCaseClashText(found.clashes)); err != nil {
+	if err := r.toggle(ctx, getKey(keyCaseClash, id), found.clashes, GetCaseClashText(found.clashes)); err != nil {
 		return err
 	}
-	return r.toggle(ctx, keyUnverified, found.unverified > 0, found.unverified, "Some changes of your other computers could not be verified")
+	return r.toggle(ctx, getKey(keyUnverified, id), found.unverified, "Some changes of your other computers could not be verified")
 }
 
-func (r reporter) toggle(ctx context.Context, key string, isOn bool, count int, text string) error {
+func (r reporter) toggle(ctx context.Context, key string, count int, text string) error {
 	if count == 0 {
-		if isOn {
-			return r.health.Clear(ctx, key)
-		}
-		return nil
+		return r.health.Clear(ctx, key)
 	}
 	return r.raise(ctx, key, text)
 }
@@ -108,9 +107,9 @@ func (r reporter) getRefusedText(ctx context.Context) string {
 	return domain.GetWarningText(domain.State{Phase: domain.PhaseNone, PeriodEnd: time.Time{}, WritesEnd: time.Time{}, DeleteAt: time.Time{}, PlanID: "", QuotaBytes: 0, UsedBytes: 0, IsTrial: false})
 }
 
-func (r reporter) clearRestore(ctx context.Context) error {
+func (r reporter) clearRestore(ctx context.Context, id hostdomain.VaultID) error {
 	for _, key := range []string{keyWentBack, keyKeyChanged, keyDiverged} {
-		if err := r.health.Clear(ctx, key); err != nil {
+		if err := r.health.Clear(ctx, getKey(key, id)); err != nil {
 			return err
 		}
 	}

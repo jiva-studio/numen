@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -33,12 +34,17 @@ type ConnectInput struct {
 }
 
 // ConnectVault ties a local vault to a synced vault.
-type ConnectVault struct{ reader reader }
+type ConnectVault struct {
+	reader reader
+	mu     sync.Mutex
+}
 
 // NewConnectVault returns the use case over the dependencies.
-func NewConnectVault(deps Deps) *ConnectVault { return &ConnectVault{reader: reader{deps: deps}} }
+func NewConnectVault(deps Deps) *ConnectVault {
+	return &ConnectVault{reader: reader{deps: deps}, mu: sync.Mutex{}}
+}
 
-// Execute connects the vault. It refuses a copy of a connected vault with ErrCopyOfConnectedVault.
+// Execute connects the vault; one call at a time runs the check and the write. It refuses a copy of a connected vault with ErrCopyOfConnectedVault.
 func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	if in.Mode != ModeNew && in.Mode != ModeExisting {
 		return errUnknownMode
@@ -46,6 +52,8 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	if _, err := u.reader.deps.Identity.GetPublicIdentity(ctx); err != nil {
 		return err
 	}
+	u.mu.Lock()
+	defer u.mu.Unlock()
 	if err := u.checkNotReceived(ctx, in.VaultID); err != nil {
 		return err
 	}

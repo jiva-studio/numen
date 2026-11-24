@@ -16,7 +16,7 @@ func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	case err != nil:
 		return false, err
 	case p.verdict == restore.WentBack:
-		return false, p.use.reports.raise(ctx, keyWentBack, textWentBack)
+		return false, p.use.reports.raise(ctx, getKey(keyWentBack, p.id), textWentBack)
 	case p.verdict == restore.Changed:
 		return p.recover(ctx)
 	}
@@ -30,13 +30,13 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 	}
 	switch {
 	case errors.Is(err, restore.ErrKeyChanged):
-		return false, p.use.reports.raise(ctx, keyKeyChanged, textKeyChanged)
+		return false, p.use.reports.raise(ctx, getKey(keyKeyChanged, p.id), textKeyChanged)
 	case errors.Is(err, restore.ErrDiverged):
-		return false, p.use.reports.raise(ctx, keyDiverged, textDiverged)
+		return false, p.use.reports.raise(ctx, getKey(keyDiverged, p.id), textDiverged)
 	case err != nil:
-		return false, p.use.reports.settle(ctx, err)
+		return false, p.use.reports.settle(ctx, p.id, err)
 	}
-	if err := p.use.reports.clearRestore(ctx); err != nil {
+	if err := p.use.reports.clearRestore(ctx, p.id); err != nil {
 		return false, err
 	}
 	if err := p.pull(ctx); err != nil {

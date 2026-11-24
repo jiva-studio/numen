@@ -45,6 +45,7 @@ type run struct {
 	removalSeq uint64
 	isListing  bool
 	rolledBack []string
+	failures   []error
 }
 
 func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) error {
@@ -53,7 +54,11 @@ func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) erro
 	}
 	for _, stored := range page {
 		if err := r.apply(ctx, stored); err != nil {
-			return err
+			if !isBlobFailure(err) {
+				return err
+			}
+			r.hold(stored.GetSeq())
+			r.failures = append(r.failures, err)
 		}
 	}
 	return nil
@@ -243,24 +248,12 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 	if err != nil {
 		return err
 	}
+	if err := write(ctx, baseline); err != nil {
+		return r.settleFailure(ctx, stored, meta, err)
+	}
 	r.setRecord(record)
-	if err := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); err != nil {
-		return err
-	}
-	err = write(ctx, baseline)
-	if err == nil {
-		r.result.Applied = append(r.result.Applied, meta.Path)
-		return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
-	}
-	if isKnown {
-		r.setRecord(previous)
-	} else {
-		r.removeRecord(rev.GetFileId())
-	}
-	if saveErr := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); saveErr != nil {
-		return saveErr
-	}
-	return r.settleFailure(ctx, stored, meta, err)
+	r.result.Applied = append(r.result.Applied, meta.Path)
+	return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
 }
 
 func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, err error) error {

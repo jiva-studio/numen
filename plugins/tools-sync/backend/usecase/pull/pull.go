@@ -123,7 +123,10 @@ func (r *run) execute(ctx context.Context) error {
 			return err
 		}
 		if !page.GetHasMore() {
-			return r.settleRemovals(ctx)
+			if err := r.settleRemovals(ctx); err != nil {
+				return err
+			}
+			return errors.Join(r.failures...)
 		}
 		since = page.GetNextSeq()
 	}
@@ -150,4 +153,8 @@ func (r *run) hold(seq uint64) {
 	if !r.isHeld || seq-1 < r.holdSeq {
 		r.holdSeq, r.isHeld = seq-1, true
 	}
+}
+
+func isBlobFailure(err error) bool {
+	return errors.Is(err, errBlobMissing) || errors.Is(err, ErrCorruptBlob)
 }

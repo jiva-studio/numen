@@ -93,6 +93,8 @@ func load(fake *fakeserver.Server, path string) error {
 	return fake.Restore(raw)
 }
 
+func prepareStateDir(dir string) error { return os.MkdirAll(dir, 0o700) }
+
 func main() {
 	address := flag.String("addr", "127.0.0.1:0", "address to listen on")
 	protocol := flag.Uint64("protocol", 0, "protocol version the server needs; 0 is the version of this build")
@@ -127,6 +129,9 @@ func main() {
 	exit := make(chan struct{})
 	var handler http.Handler
 	if *stateDir != "" {
+		if err := prepareStateDir(*stateDir); err != nil {
+			log.Fatal(err)
+		}
 		path := filepath.Join(*stateDir, stateFile)
 		if err := load(fake, path); err != nil {
 			log.Fatal(err)

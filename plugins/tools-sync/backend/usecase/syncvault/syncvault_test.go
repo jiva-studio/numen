@@ -327,3 +327,17 @@ func TestSyncVault_KeepsOneHeadForANoteChangedInManyPasses(t *testing.T) {
 		t.Errorf("server holds %d heads, want 1 for one note", got)
 	}
 }
+
+func TestSyncVault_APassOverAnotherVaultKeepsTheWarningAboutFullStorage(t *testing.T) {
+	p := newPair(t, fakeserver.Config{QuotaBytes: 3000})
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	p.a.AddVault(t, "Plain")
+	p.a.Connect(t, "Plain")
+	sync(t, p.a, source)
+
+	sync(t, p.a, "Plain")
+
+	if !p.a.HasItem("Sync storage is full") {
+		t.Errorf("health items = %+v, want Sync storage is full to stay for the vault that is full", p.a.Health.List())
+	}
+}

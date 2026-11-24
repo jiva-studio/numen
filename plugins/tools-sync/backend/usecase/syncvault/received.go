@@ -17,10 +17,6 @@ const (
 )
 
 func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) error {
-	previous, err := u.deps.Progress.ReadStatus(ctx, id)
-	if err != nil {
-		return err
-	}
 	result, err := u.steps.Receive.Execute(ctx, id)
 	if errors.Is(err, share.ErrEnded) {
 		return errors.Join(err, u.reports.raiseEnded(ctx, id))
@@ -28,7 +24,7 @@ func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) erro
 	if err != nil {
 		return err
 	}
-	if err := u.reports.reportShared(ctx, id, len(result.Conflicts), previous.ConflictCount, result.Unverified); err != nil {
+	if err := u.reports.reportShared(ctx, id, len(result.Conflicts), result.Unverified); err != nil {
 		return err
 	}
 	return u.deps.Progress.WriteStatus(ctx, id, ports.Status{LastSyncedAt: u.deps.Clock.Now(), ConflictCount: len(result.Conflicts)})
@@ -38,11 +34,11 @@ func (r reporter) raiseEnded(ctx context.Context, id domain.VaultID) error {
 	return r.raise(ctx, keyShareEnded+string(id), textShareEnded)
 }
 
-func (r reporter) reportShared(ctx context.Context, id domain.VaultID, conflicts, previousConflicts, unverified int) error {
-	if err := r.toggle(ctx, keySharedConflicts+string(id), conflicts > 0 || previousConflicts > 0, conflicts, getSharedConflictText(conflicts)); err != nil {
+func (r reporter) reportShared(ctx context.Context, id domain.VaultID, conflicts, unverified int) error {
+	if err := r.toggle(ctx, keySharedConflicts+string(id), conflicts, getSharedConflictText(conflicts)); err != nil {
 		return err
 	}
-	return r.toggle(ctx, keyUnverified+":"+string(id), unverified > 0, unverified, "Some changes of this shared vault could not be verified")
+	return r.toggle(ctx, keyUnverified+":"+string(id), unverified, "Some changes of this shared vault could not be verified")
 }
 
 func getSharedConflictText(count int) string {

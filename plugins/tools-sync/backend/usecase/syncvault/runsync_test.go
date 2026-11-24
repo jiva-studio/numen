@@ -111,3 +111,17 @@ func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
 		t.Error("link.json exists in a vault that was never connected")
 	}
 }
+
+func TestRunSync_AChangedVaultDoesNotPutOffThePassOverEveryVault(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	changed := make(chan domain.VaultID, 1)
+	startRun(t, p.a, changed)
+	p.a.Clock.AwaitWait(t)
+	p.a.Clock.Advance(10 * time.Second)
+
+	changed <- source
+
+	if waited := p.a.Clock.AwaitWait(t); waited != interval-10*time.Second {
+		t.Errorf("wait = %v, want the %v that are left of the interval", waited, interval-10*time.Second)
+	}
+}

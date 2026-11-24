@@ -194,7 +194,7 @@ func (s *Server) ForgetRemovals() { s.Fake.PruneTombstones() }
 func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	isLost = s.lostPath != "" && strings.HasSuffix(path, s.lostPath)
+	isLost = !s.isDown && s.lostPath != "" && strings.HasSuffix(path, s.lostPath)
 	if isLost {
 		s.lostPath = ""
 	}
