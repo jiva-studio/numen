@@ -165,6 +165,9 @@ func (r *pullRun) followLog(ctx context.Context) error {
 	if entries, err = domainshare.ListEntriesAfter(entries, received.ServerVersion, headID); err != nil {
 		return err
 	}
+	if err := refuseShorterChain(received.OwnerChain, chain); err != nil {
+		return err
+	}
 	if r.authors, err = trust.NewAuthors(received.OwnerChain, chain); err != nil {
 		return err
 	}
@@ -497,4 +500,19 @@ func (r *pullRun) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Met
 		return nil, fmt.Errorf("%w: it does not open to the note", errCorruptBlob)
 	}
 	return plain, nil
+}
+
+func refuseShorterChain(stored, served []byte) error {
+	storedChain, err := identity.ParseChain(stored)
+	if err != nil {
+		return fmt.Errorf("read the owner chain held: %w", err)
+	}
+	servedChain, err := identity.ParseChain(served)
+	if err != nil {
+		return fmt.Errorf("read the owner chain served: %w", err)
+	}
+	if servedChain.Len() < storedChain.Len() && storedChain.IsExtensionOf(servedChain) {
+		return fmt.Errorf("%w: the owner chain served is shorter than the one held", domainshare.ErrRolledBack)
+	}
+	return nil
 }
