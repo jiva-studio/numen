@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -184,7 +183,6 @@ func (u *Loop) reportPublish(ctx context.Context, published error) {
 		}
 		return
 	}
-	slog.WarnContext(ctx, "could not publish the chain to the server", "error", published)
 	item := health.Item{Key: publishFailedKey, Severity: health.Warning, Text: publishFailedText, Detail: truncate(published.Error(), maxDetail)}
 	if u.health.Report(ctx, item) == nil {
 		u.isFailed = true

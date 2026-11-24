@@ -174,7 +174,7 @@ func TestPublish_AcceptsRevokeAfterEarlierRestoreOfSameName(t *testing.T) {
 	}
 }
 
-func TestLoop_ShowsAndLogsAFailedPublishAndClearsItWhenTheServerIsBack(t *testing.T) {
+func TestLoop_ShowsAFailedPublishAndClearsItWhenTheServerIsBack(t *testing.T) {
 	t.Parallel()
 	earlier, current := newThreeRestores(t)
 	if err := current.Fake.RevokeDevice(earlier.GetDeviceSignKey(t)); err != nil {
