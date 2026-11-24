@@ -32,6 +32,7 @@ type Keeper struct {
 	starter  heldStarter
 	requires *Requirements
 	stopper  pluginStopper
+	report   func(error)
 
 	mu           sync.Mutex
 	kept         map[string]struct{}
