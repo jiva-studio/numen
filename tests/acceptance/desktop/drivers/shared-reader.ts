@@ -59,6 +59,7 @@ interface ReaderParts {
 }
 
 export class SharedReaderDriver {
+  private readonly left = new Map<string, string>()
   private readonly readers = new Map<ReaderName, Reader>()
 
   constructor(private readonly parts: ReaderParts) {}
@@ -172,6 +173,23 @@ export class SharedReaderDriver {
         { timeout: ARRIVAL_LIMIT_MS },
       )
       .toBeUndefined()
+  }
+
+  /** Leaves the shared folder from the row menu of the page "Shared folders" and remembers where its folder was. */
+  async leaveShare(name: ReaderName, vault: string): Promise<void> {
+    const reader = this.require(name)
+    const folder = await this.findVaultFolder(reader, vault)
+    if (folder !== undefined) this.left.set(`${name}/${vault}`, folder)
+    const panel = await this.showShares(reader)
+    await panel.getByRole('button', { name: `Actions for ${vault}` }).click()
+    await reader.scenario.page.getByRole('menuitem', { name: 'Leave', exact: true }).click()
+    await reader.scenario.page.getByRole('alertdialog').getByRole('button', { name: 'Leave', exact: true }).click()
+  }
+
+  async expectFolderKept(name: ReaderName, vault: string, filePath: string, text: string): Promise<void> {
+    const folder = this.left.get(`${name}/${vault}`)
+    expect(folder, `the ${name} left no shared vault "${vault}"`).toBeDefined()
+    expect(readNote(folder as string, filePath)).toBe(text)
   }
 
   async expectNoVault(name: ReaderName, vault: string): Promise<void> {

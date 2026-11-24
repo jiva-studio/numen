@@ -55,7 +55,7 @@ describe('the devices section', () => {
     const section = await mountSection([THIS, OTHER])
     const rows = section.findAll('li')
     expect(rows[0]?.find('button').exists()).toBe(false)
-    expect(rows[1]?.find('button').text()).toBe('Revoke')
+    expect(rows[1]?.find('button').text()).toBe('Remove')
   })
 
   it('offers no revoke on a revoked device', async () => {
@@ -68,21 +68,21 @@ describe('the devices section', () => {
   it('revokes a device only after the person confirms the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButtons(/^Revoke$/)[0] as HTMLElement)
+    await click(findButtons(/^Remove$/)[0] as HTMLElement)
     expect(
       findText(
-        'Phone will lose access. New notes will not be readable on it. Its files stay on it.',
+        'Phone will lose access. Files on that device stay.',
       ),
     ).not.toBeNull()
     expect(revokeDevice).not.toHaveBeenCalled()
-    await click(findButtons(/^Revoke$/)[1] as HTMLElement)
+    await click(findButtons(/^Remove$/)[1] as HTMLElement)
     expect(revokeDevice).toHaveBeenCalledWith(OTHER.fingerprint)
   })
 
   it('keeps the device when the person cancels the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButton(/^Revoke$/))
+    await click(findButton(/^Remove$/))
     await click(findButton(/^Cancel$/))
     expect(revokeDevice).not.toHaveBeenCalled()
   })
@@ -94,8 +94,8 @@ describe('the devices section', () => {
         error: { error: 'revokeRaced' as const, message: 'x' },
       })
     const section = await mountSection([THIS, OTHER], { revokeDevice })
-    await click(findButtons(/^Revoke$/)[0] as HTMLElement)
-    await click(findButtons(/^Revoke$/)[1] as HTMLElement)
+    await click(findButtons(/^Remove$/)[0] as HTMLElement)
+    await click(findButtons(/^Remove$/)[1] as HTMLElement)
     expect(section.get('[role="alert"]').text()).toBe(
       'A device was added while you revoked. Check the list.',
     )

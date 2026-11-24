@@ -85,3 +85,14 @@ When(
 Then('the subscription shows {string} on the reader', async ({ person }, text: string) => {
   await person.readers.expectSubscription('reader', text)
 })
+
+When('{reader} leaves the shared vault {string}', async ({ person }, reader: ReaderName, vault: string) => {
+  await person.readers.leaveShare(reader, vault)
+})
+
+Then(
+  'the folder of the shared vault {string} of {reader} still has the file {string} with the text {string}',
+  async ({ person }, vault: string, reader: ReaderName, filePath: string, text: string) => {
+    await person.readers.expectFolderKept(reader, vault, filePath, text)
+  },
+)

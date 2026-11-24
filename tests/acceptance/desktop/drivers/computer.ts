@@ -433,6 +433,10 @@ export class ComputerDriver {
     await this.getVaults(computer).expectNotAsked()
   }
 
+  async stopSyncing(computer: ComputerName, vault: string): Promise<void> {
+    await this.getVaults(computer).stopSyncing(vault)
+  }
+
   async expectNotConnected(computer: ComputerName, vault: string): Promise<void> {
     await this.getVaults(computer).expectNotConnected(vault)
   }

@@ -6,10 +6,10 @@ export const WORDS = {
   deviceThis: 'This device',
   deviceRevoked: 'Revoked',
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
-  deviceRevoke: 'Revoke',
-  deviceRevokeTitle: 'Revoke this device?',
+  deviceRevoke: 'Remove',
+  deviceRevokeTitle: 'Remove this device?',
   deviceRevokeWarning: (name: string) =>
-    `${name} will lose access. New notes will not be readable on it. Its files stay on it.`,
+    `${name} will lose access. Files on that device stay.`,
   deviceRevokeCancel: 'Cancel',
   linkNoCamera: 'No camera found. Paste the link from the other device.',
   linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * One device of the account: its name, when it was linked and its fingerprint, whether it is this
- * one or revoked, and a Revoke button for another.
+ * one or revoked, and a Remove button for another.
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'

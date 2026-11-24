@@ -66,6 +66,10 @@ Then('the sync settings list the synced vault {string}', async ({ person }, vaul
   await person.computers.expectConnected('first', vault)
 })
 
+When('the person stops syncing the vault {string}', async ({ person }, vault: string) => {
+  await person.computers.stopSyncing('first', vault)
+})
+
 Then('the vault {string} is not synced', async ({ person }, vault: string) => {
   await person.computers.expectNotConnected('first', vault)
 })
