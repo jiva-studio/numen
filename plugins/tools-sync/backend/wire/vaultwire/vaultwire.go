@@ -62,7 +62,7 @@ type Removals struct {
 func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	catalogDeps := catalog.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget,
+		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health,
 		Random: deps.Random,
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
@@ -118,6 +118,9 @@ func (v *Listing) getVault(ctx context.Context, vault domain.Vault, holders map[
 		one.State = api.StateCopy
 		return one, nil
 	default:
+		if isForeign, keyErr := vaultlink.IsKeyForeign(ctx, v.deps.Crypto, link); keyErr == nil && isForeign {
+			return one, nil
+		}
 		holders[link.RemoteVaultID] = true
 		one.State = api.StateConnected
 		one.RemoteID = link.RemoteVaultID

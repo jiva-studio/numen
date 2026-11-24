@@ -187,6 +187,9 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if link.Kind == vaultlink.KindReceived {
 		return u.executeReceived(ctx, id)
 	}
+	if isForeign, err := vaultlink.IsKeyForeign(ctx, u.deps.Crypto, link); isForeign || err != nil {
+		return u.dropForeign(ctx, id, isForeign, err)
+	}
 	if _, err := u.steps.Rename.Execute(ctx, id); err != nil {
 		return err
 	}
@@ -221,4 +224,16 @@ func (u *SyncVault) getAuthors(ctx context.Context) (trust.Authors, error) {
 		return trust.Authors{}, err
 	}
 	return trust.NewAuthors(own.Chain, stored)
+}
+
+// dropForeign forgets the registration of a vault whose key another identity sealed, so the vault is not synced any
+// more and can be synced again, and tells the person in one plain item.
+func (u *SyncVault) dropForeign(ctx context.Context, id domain.VaultID, isForeign bool, err error) error {
+	if !isForeign {
+		return err
+	}
+	if err := u.deps.Forget.ForgetVault(ctx, id); err != nil {
+		return err
+	}
+	return u.reports.raise(ctx, getKey(keyOtherIdentity, id), textOtherIdentity)
 }

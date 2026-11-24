@@ -112,6 +112,11 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
   })
 }
 
+const getFailureText = (failure: unknown): string => {
+  const text = failure instanceof Error ? failure.message : String(failure)
+  return text.trim() === '' ? words.syncFailed : text
+}
+
 const getOutcomeText = (kind: 'synced' | 'already'): string =>
   kind === 'synced' ? words.syncStarted : words.syncedAlready
 
@@ -121,7 +126,7 @@ const registerSync = (
   refreshFlags: () => Promise<void>,
 ): void => {
   const show = (failure: unknown): void =>
-    host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
+    host.ui.notices.show(getFailureText(failure), 'error')
   const choose = (vaultId: string, name: string, remoteId: string): void => {
     const dialogs = host.ui.dialogs
     if (dialogs === undefined) return

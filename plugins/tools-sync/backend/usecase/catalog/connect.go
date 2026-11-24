@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -25,6 +26,9 @@ const (
 )
 
 const keySize = 32
+
+// keyOtherIdentity is the prefix of the item a pass raises for a vault synced with another identity.
+const keyOtherIdentity = "other-identity"
 
 // ConnectInput names the local vault, how it is connected and, for ModeExisting, the synced vault.
 type ConnectInput struct {
@@ -72,7 +76,10 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	if errors.Is(err, host.ErrNotExist) || errors.Is(err, vaultlink.ErrNoVaults) {
 		return fmt.Errorf("connect: %w", vaultlink.FolderMissingError{Name: vault.Name, Path: vault.Path})
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	return u.reader.deps.Health.Clear(ctx, healthkey.Create(keyOtherIdentity, string(in.VaultID)))
 }
 
 func (u *ConnectVault) checkNotReceived(ctx context.Context, id domain.VaultID) error {
@@ -113,10 +120,17 @@ func (u *ConnectVault) checkNotConnected(ctx context.Context, in ConnectInput) e
 			return ErrCopyOfConnectedVault
 		}
 	}
-	if isLinked {
+	if !isLinked {
+		return nil
+	}
+	isForeign, err := vaultlink.IsKeyForeign(ctx, u.reader.deps.Crypto, own)
+	if err != nil {
+		return err
+	}
+	if !isForeign {
 		return errAlreadyConnected
 	}
-	return nil
+	return u.reader.deps.Forget.ForgetVault(ctx, in.VaultID)
 }
 
 func (u *ConnectVault) connectNew(ctx context.Context, id domain.VaultID, name string) error {

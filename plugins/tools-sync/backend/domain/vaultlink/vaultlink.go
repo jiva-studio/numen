@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 )
 
 const (
@@ -190,6 +191,16 @@ func OpenKeys(ctx context.Context, sealer Sealer, link Link) ([]VaultKey, error)
 		keys = append(keys, VaultKey{Epoch: one.Epoch, Key: key})
 	}
 	return keys, nil
+}
+
+// IsKeyForeign reports whether the vault key of the link was sealed for another identity, so the identity of this
+// device cannot open it. Any other failure is returned as it is.
+func IsKeyForeign(ctx context.Context, sealer Sealer, link Link) (bool, error) {
+	_, err := OpenKeys(ctx, sealer, link)
+	if errors.Is(err, session.ErrCannotOpen) {
+		return true, nil
+	}
+	return false, err
 }
 
 // GetNewestEpoch returns the highest epoch of the keys, 0 for none.

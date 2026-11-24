@@ -23,9 +23,12 @@ const (
 	keyEpochUntrusted = "restore-epoch-untrusted"
 	keyDiverged       = "restore-diverged"
 
+	keyOtherIdentity = "other-identity"
+
 	textWentBack       = "The sync server went back to an earlier state"
 	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
 	textDiverged       = "The sync server holds another history than this computer"
+	textOtherIdentity  = "This vault was synced with another identity. Sync it again to use the current one."
 )
 
 type reporter struct {

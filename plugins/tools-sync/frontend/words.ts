@@ -131,6 +131,7 @@ export const WORDS = {
   sendThisOne: 'Send this vault',
   syncStarted: 'This vault is synced now.',
   syncedAlready: 'This vault is synced already.',
+  syncFailed: 'This vault could not be synced. Try again in a moment.',
   sharedFoldersTitle: 'Shared folders',
   sharedByYou: 'Shared by you',
   sharedByYouText: 'Devices with read access to your folders. They cannot change anything.',

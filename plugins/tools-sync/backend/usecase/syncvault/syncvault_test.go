@@ -342,3 +342,58 @@ func TestSyncVault_APassOverAnotherVaultKeepsTheWarningAboutFullStorage(t *testi
 		t.Errorf("health items = %+v, want the warning about full storage to stay for the vault that is full", p.a.Health.List())
 	}
 }
+
+func sealKeyForAnotherIdentity(t *testing.T, c *synctest.Computer, id domain.VaultID) {
+	t.Helper()
+	link := c.Link(t, id)
+	link.SealedKey = bytes.Repeat([]byte{7}, len(link.SealedKey))
+	if err := c.State.WriteLink(t.Context(), id, link); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSyncVault_AVaultWhoseKeyBelongsToAnotherIdentityBecomesNotSynced(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	sealKeyForAnotherIdentity(t, p.a, source)
+
+	if err := p.a.Sync(t.Context(), source); err != nil {
+		t.Fatalf("pass over the vault: %v", err)
+	}
+
+	if _, err := p.a.State.ReadLink(t.Context(), source); !errors.Is(err, syncvault.ErrNotConnected) {
+		t.Errorf("link after the pass: error = %v, want the vault not connected", err)
+	}
+	if !p.a.HasItem("This vault was synced with another identity. Sync it again to use the current one.") {
+		t.Error("the person is not told the vault was synced with another identity")
+	}
+}
+
+func TestConnectVault_SyncThisVaultRegistersAgainWithAFreshKey(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	sealKeyForAnotherIdentity(t, p.a, source)
+	if err := p.a.Sync(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+
+	p.a.Connect(t, source)
+
+	if err := p.a.Sync(t.Context(), source); err != nil {
+		t.Fatalf("pass after syncing again: %v", err)
+	}
+	if p.a.HasItem("This vault was synced with another identity. Sync it again to use the current one.") {
+		t.Error("the item stays after the vault was registered again")
+	}
+}
+
+func TestConnectVault_SyncThisVaultRegistersAgainWhenTheOldKeyIsStillThere(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	old := p.a.Link(t, source).RemoteVaultID
+	sealKeyForAnotherIdentity(t, p.a, source)
+
+	p.a.Connect(t, source)
+
+	if got := p.a.Link(t, source).RemoteVaultID; got == old {
+		t.Error("the vault kept its old registration")
+	}
+	p.a.GetVaultKey(t, source)
+}

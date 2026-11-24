@@ -43,6 +43,7 @@ type Deps struct {
 	Journals ports.Journals
 	Cloud    ports.CloudVaults
 	Forget   ports.Forgetter
+	Health   ports.Health
 	Random   io.Reader
 }
 
