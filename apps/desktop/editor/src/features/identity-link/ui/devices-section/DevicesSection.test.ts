@@ -1,12 +1,12 @@
 /** The list of devices, the revoke after a question, and the one way to join an account, against the real store. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import type { IdentityClient } from '@numen/core-client'
 import { createIdentityStore, type DeviceInfo } from '@/entities/identity'
 import { click, dispose, findButton, findButtons, findText } from '@/testing/dom'
 import {
   createDeviceInfo,
   createIdentityClient,
+  type IdentityCalls,
   wrapIdentityClient,
 } from '@/testing/identityClient'
 import DevicesSection from './DevicesSection.vue'
@@ -27,7 +27,7 @@ afterEach(() => {
 const mountSection = async (
   hasIdentity: boolean,
   devices: readonly DeviceInfo[],
-  overrides: Partial<IdentityClient> = {},
+  overrides: Partial<IdentityCalls> = {},
 ) => {
   const client = createIdentityClient({
     listDevices: () => Promise.resolve({ ok: true, value: devices }),

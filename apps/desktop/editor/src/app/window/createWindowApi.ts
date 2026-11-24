@@ -93,9 +93,9 @@ export function createWindowApi(transports: WindowTransports) {
       connection: createConnectionApi(settingsClients.connections),
       license: createLicenseApi(settingsClients.licenses),
       identity: {
-        account: createAccountApi(settingsClients.identity),
-        link: createDeviceLinkApi(settingsClients.identity),
-        devices: createDevicesApi(settingsClients.identity),
+        account: createAccountApi(settingsClients.identity.account),
+        link: createDeviceLinkApi(settingsClients.identity.link),
+        devices: createDevicesApi(settingsClients.identity.devices),
       },
       settings: createSettingsApi(
         settingsClients.settingsService,
