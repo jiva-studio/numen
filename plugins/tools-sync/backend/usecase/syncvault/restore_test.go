@@ -279,7 +279,7 @@ func TestSyncVault_ClearsTheWentBackWarningWhenTheRestoreIsAnnounced(t *testing.
 
 	sync(t, p.a, source)
 
-	if p.a.HasItemKey(keyWentBack) {
+	if p.a.HasItemKey(keyWentBack + "/" + string(source)) {
 		t.Errorf("health items = %+v, want the warning cleared", p.a.Health.List())
 	}
 	wantServerNote(t, p, "Shopping list.md", "eggs")

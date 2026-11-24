@@ -103,7 +103,7 @@ func TestSyncVault_ANoteFromTheSecondComputerAppearsOnTheFirst(t *testing.T) {
 	sync(t, p.a, source)
 
 	wantNote(t, p.a, source, "Plan.md", "tea")
-	if p.a.HasItemKey("unverified-changes") {
+	if p.a.HasItemKey("unverified-changes/" + string(source)) {
 		t.Error("the first computer reports unverified changes for a device it learned from the server")
 	}
 }
@@ -337,7 +337,7 @@ func TestSyncVault_APassOverAnotherVaultKeepsTheWarningAboutFullStorage(t *testi
 
 	sync(t, p.a, "Plain")
 
-	if !p.a.HasItem("Sync storage is full") {
-		t.Errorf("health items = %+v, want Sync storage is full to stay for the vault that is full", p.a.Health.List())
+	if !p.a.HasItem("Cloud storage is full: changes stay on this device") {
+		t.Errorf("health items = %+v, want the warning about full storage to stay for the vault that is full", p.a.Health.List())
 	}
 }

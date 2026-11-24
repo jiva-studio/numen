@@ -286,7 +286,8 @@ func (s *Server) GetShareBlobUrls(_ context.Context, req *connect.Request[syncv1
 	for _, id := range ids {
 		download := &syncv1.BlobDownload{BlobId: id}
 		if row, found := s.blobs[string(id)]; found && shared[string(id)] && row.state == blobCommitted {
-			download.Url, download.ExpiresAt, download.Found = s.getBlobURL(id), s.now().Add(blobLife).Unix(), true
+			row.downloadUntil = s.now().Add(blobLife)
+			download.Url, download.ExpiresAt, download.Found = s.getBlobURL(id), row.downloadUntil.Unix(), true
 		}
 		downloads = append(downloads, download)
 	}

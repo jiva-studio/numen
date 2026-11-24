@@ -127,7 +127,7 @@ func TestPublish_ADeviceThatJoinsAfterTheRevokeStillReadsTheNotesTheRevokedPhone
 	if text, isThere := late.ReadNote(tablet, list); !isThere || text != "milk" {
 		t.Errorf("the new device reads %q (%v), want the list of the revoked phone", text, isThere)
 	}
-	if late.HasItemKey("unverified-changes") {
+	if late.HasItemKey("unverified-changes/" + string(tablet)) {
 		t.Error("the new device says some changes could not be verified")
 	}
 }
@@ -165,7 +165,7 @@ func TestPublish_ARevokedDevicesUnendorsedNoteIsNotTaken(t *testing.T) {
 	if text, isThere := late.ReadNote(tablet, list); isThere {
 		t.Errorf("the new device downloaded %q written by the revoked phone that nobody endorsed", text)
 	}
-	if !late.HasItemKey("unverified-changes") {
+	if !late.HasItemKey("unverified-changes/" + string(tablet)) {
 		t.Error("the new device does not say that changes could not be verified")
 	}
 }

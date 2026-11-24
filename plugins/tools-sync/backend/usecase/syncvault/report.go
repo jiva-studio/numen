@@ -60,6 +60,9 @@ type tally struct {
 }
 
 func (r reporter) report(ctx context.Context, id hostdomain.VaultID, found tally) error {
+	if err := r.health.Clear(ctx, domain.WarningKey); err != nil {
+		return err
+	}
 	if err := r.health.Clear(ctx, getKey(keyStorageFull, id)); err != nil {
 		return err
 	}

@@ -20,7 +20,7 @@ func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	case p.verdict == restore.Changed:
 		return p.recover(ctx)
 	}
-	return true, p.use.reports.health.Clear(ctx, keyWentBack)
+	return true, p.use.reports.health.Clear(ctx, getKey(keyWentBack, p.id))
 }
 
 func (p *pass) recover(ctx context.Context) (bool, error) {
