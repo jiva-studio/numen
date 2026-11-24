@@ -93,7 +93,7 @@ func TestRecord_ContainsNoWord(t *testing.T) {
 
 func TestParseRecord_RefusesWrappedKeysThatTheDeviceCannotOpen(t *testing.T) {
 	t.Parallel()
-	record, a := newRecord(t, "Laptop")
+	record, a := newRecord(t)
 	wrapped, err := a.keys.WrapForDevice(newDevice(t).Public())
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestParseRecord_RefusesWrappedKeysThatTheDeviceCannotOpen(t *testing.T) {
 
 func TestParseRecord_RefusesWrappedKeysOfAnotherAccount(t *testing.T) {
 	t.Parallel()
-	record, _ := newRecord(t, "Laptop")
+	record, _ := newRecord(t)
 	wrapped, err := newAccount(t).WrapForDevice(record.Device.Public())
 	if err != nil {
 		t.Fatal(err)

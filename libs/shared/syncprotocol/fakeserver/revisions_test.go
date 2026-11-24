@@ -536,7 +536,7 @@ func TestGetBlobUrls_ALinkStopsReadingTheBodyWhenItExpiresAndANewLinkReadsItAgai
 	}
 
 	clock.offset.Store(int64(20 * time.Minute))
-	_, expiredErr := syncprotocol.GetBlob(t.Context(), http.DefaultClient, first[0].GetUrl())
+	_, expiredErr := syncclient.GetBlob(t.Context(), http.DefaultClient, first[0].GetUrl())
 	second, err := e.blob.GetBlobUrls(t.Context(), vault, [][]byte{revision.GetBlobId()})
 	if err != nil {
 		t.Fatal(err)

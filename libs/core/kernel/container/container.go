@@ -30,7 +30,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 

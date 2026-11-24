@@ -20,7 +20,7 @@ var _ host.AbsentFiles = (*Vault)(nil)
 func (v *Vault) PutAbsentFiles(ctx context.Context, files []host.AbsentFile) error {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkVault(ctx); err != nil {
 		return err
 	}
 	var listed []host.AbsentFile
@@ -48,7 +48,7 @@ func (v *Vault) PutAbsentFiles(ctx context.Context, files []host.AbsentFile) err
 func (v *Vault) ListAbsentFiles(ctx context.Context) ([]host.AbsentFile, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkVault(ctx); err != nil {
 		return nil, err
 	}
 	listed := make([]host.AbsentFile, 0, len(v.absent))
@@ -146,4 +146,11 @@ func (v *Vault) moveEntry(from, target string) error {
 	entry.Path = target
 	v.absent[target] = entry
 	return nil
+}
+
+func (v *Vault) checkVault(ctx context.Context) error {
+	if err := v.checkContext(ctx); err != nil {
+		return err
+	}
+	return v.reach()
 }

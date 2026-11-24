@@ -193,7 +193,6 @@ func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
 }
 
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) })
 	watch := pluginprocess.NewWatchProcesses(exec.Processes, exec.Health, exec.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch, settings.NewRetryPlugin(exec.Runtime.RetryPlugin))
 	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.page.Gate.CountQuestions())))

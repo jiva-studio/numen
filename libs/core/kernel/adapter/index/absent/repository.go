@@ -27,7 +27,7 @@ func NewRepository(read, write *sql.DB) *Repository {
 
 // PutAbsentFiles replaces the entry of each path.
 func (r *Repository) PutAbsentFiles(ctx context.Context, v domain.Vault, files []vault.AbsentFile) error {
-	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		for _, f := range files {
 			if _, err := tx.ExecContext(ctx, putSQL, string(v.ID), f.Path, f.Size, f.Mtime.UnixNano(), f.Hash, f.Provider); err != nil {
 				return fmt.Errorf("put %s: %w", f.Path, err)
@@ -74,7 +74,7 @@ func (r *Repository) GetAbsentFile(ctx context.Context, v domain.Vault, path str
 }
 
 func (r *Repository) RemoveAbsentFiles(ctx context.Context, v domain.Vault, paths []string) error {
-	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.RunInTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		for _, p := range paths {
 			if _, err := tx.ExecContext(ctx, removeSQL, string(v.ID), p); err != nil {
 				return fmt.Errorf("remove %s: %w", p, err)

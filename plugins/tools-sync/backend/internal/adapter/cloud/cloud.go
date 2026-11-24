@@ -47,6 +47,10 @@ type Cloud struct {
 
 // New returns the server of the config.
 func New(cfg Config) *Cloud {
+	now := cfg.Now
+	if now == nil {
+		now = time.Now
+	}
 	return &Cloud{
 		http:         cfg.HTTP,
 		storage:      cmp.Or(cfg.Storage, cfg.HTTP),
@@ -56,7 +60,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, cmp.Or(cfg.Now, time.Now)),
+		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, now),
 		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 		shares:       syncclient.NewShareClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}

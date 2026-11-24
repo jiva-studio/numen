@@ -4,6 +4,7 @@ package pull
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"

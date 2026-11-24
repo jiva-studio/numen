@@ -47,7 +47,7 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 		record.HeadRev, record.Version = stored.GetRevId(), version
 		r.setRecord(record)
 	default:
-		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId(), version: version}, stored.GetSeq())
+		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId(), version: version, isListed: isListed}, stored.GetSeq())
 	}
 	return nil
 }
