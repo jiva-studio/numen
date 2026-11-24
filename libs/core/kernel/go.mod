@@ -15,6 +15,7 @@ require (
 	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.62.0
 	pgregory.net/rapid v1.3.0
+	rsc.io/qr v0.2.0
 )
 
 require (

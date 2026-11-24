@@ -102,6 +102,7 @@ func TestRender_ShowsTheFingerprintTheRuleAndTheWordsOfEachSheetInOrder(t *testi
 			"Keep each sheet in a different place. Never store the sheets together.",
 			"23 November 2026",
 			"Kept at:",
+			"Scan this sheet to restore",
 			chainMark,
 		} {
 			if !slices.Contains(page, want) {

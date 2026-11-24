@@ -46,7 +46,11 @@ func Render(kit identitydomain.Kit) ([]byte, error) {
 	pdf.SetModificationDate(kit.CreatedAt)
 	page := sheetPage{pdf: pdf, toCodePage: pdf.UnicodeTranslatorFromDescriptor(""), kit: kit}
 	for _, sheet := range kit.Sheets {
-		page.draw(sheet)
+		matrix, err := getQRMatrix(getSheetText(sheet.Words))
+		if err != nil {
+			return nil, err
+		}
+		page.draw(sheet, matrix)
 	}
 	var out bytes.Buffer
 	if err := pdf.Output(&out); err != nil {
@@ -61,7 +65,7 @@ type sheetPage struct {
 	kit        identitydomain.Kit
 }
 
-func (p sheetPage) draw(sheet identitydomain.Sheet) {
+func (p sheetPage) draw(sheet identitydomain.Sheet, matrix [][]bool) {
 	p.pdf.AddPage()
 	of := fmt.Sprintf("Sheet %d of %d", sheet.Number, len(p.kit.Sheets))
 	p.drawHeader(of)
@@ -69,6 +73,7 @@ func (p sheetPage) draw(sheet identitydomain.Sheet) {
 	p.drawWords(sheet.Words, of)
 	p.drawRule()
 	p.drawRestore()
+	p.drawQR(matrix)
 	p.drawKeptAt()
 	p.drawFooter(of)
 }
@@ -149,18 +154,29 @@ func (p sheetPage) drawRule() {
 }
 
 func (p sheetPage) drawRestore() {
+	const indent = margin + 7
 	p.setFont("Helvetica", "B", 11, ink)
 	p.write(margin, 219, "To restore your account")
 	p.setFont("Helvetica", "", 10, ink)
-	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore, then choose Recovery kit.")
-	p.write(margin, 232, "2.  Type the words of any two sheets, one sheet in each field, then choose Restore.")
-	p.write(margin, 238, "3.  In the field Chain mark, type the mark below. A server that went back in time is refused.")
+	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore,")
+	p.write(indent, 231.5, "then choose Recovery kit.")
+	p.write(margin, 237, "2.  Type the words of any two sheets, one sheet in each field,")
+	p.write(indent, 242.5, "then choose Restore.")
+	p.write(margin, 248, "3.  In the field Chain mark, type the mark below. A server")
+	p.write(indent, 253.5, "that went back in time is refused.")
 	p.setFont("Courier", "B", 11, ink)
-	p.write(margin+7, 244.5, p.kit.ChainMark)
+	p.write(indent, 260.5, p.kit.ChainMark)
+}
+
+func (p sheetPage) drawQR(matrix [][]bool) {
+	const top = 209.0
+	drawQR(p.pdf, matrix, right-qrSide, top)
+	p.setFont("Helvetica", "", 8, hushed)
+	p.writeRight(right, top+qrSide+3.5, "Scan this sheet to restore")
 }
 
 func (p sheetPage) drawKeptAt() {
-	const y = 252.0
+	const y = 268.0
 	p.setFont("Helvetica", "B", 10, ink)
 	p.write(margin, y, "Kept at:")
 	p.pdf.SetDrawColor(hushed.getRed(), hushed.getGreen(), hushed.getBlue())
