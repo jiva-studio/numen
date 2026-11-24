@@ -100,9 +100,10 @@
       "default": false
     }
   ],
+  "settingsTabs": [{ "id": "sync", "title": "Sync" }],
   "settingsViews": [
-    { "id": "vaults", "title": "Synced vaults" },
-    { "id": "shares", "title": "Shared folders" },
+    { "id": "vaults", "title": "Synced vaults", "tab": "sync" },
+    { "id": "shares", "title": "Shared folders", "tab": "sync" },
     { "id": "subscription", "title": "Subscription", "page": "identity" }
   ],
   "frontend": {}

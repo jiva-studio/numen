@@ -23,7 +23,9 @@ interface Manifest {
     readonly id: string
     readonly title: string
     readonly page?: string
+    readonly tab?: string
   }[]
+  readonly settingsTabs?: readonly { readonly id: string; readonly title: string }[]
   readonly contributes?: Record<string, unknown>
 }
 
@@ -69,10 +71,14 @@ describe('the manifest of the sync plugin', () => {
     expect(manifest.settings.map((one) => one.key)).toContain('server')
   })
 
+  it('declares the tab Sync that holds the views of the vaults and the shares', () => {
+    expect(manifest.settingsTabs).toStrictEqual([{ id: 'sync', title: 'Sync' }])
+  })
+
   it('declares the views of the synced vaults and the shared folders, and the subscription view of the page of the identity', () => {
     expect(manifest.settingsViews).toStrictEqual([
-      { id: 'vaults', title: 'Synced vaults' },
-      { id: 'shares', title: 'Shared folders' },
+      { id: 'vaults', title: 'Synced vaults', tab: 'sync' },
+      { id: 'shares', title: 'Shared folders', tab: 'sync' },
       { id: 'subscription', title: 'Subscription', page: 'identity' },
     ])
   })

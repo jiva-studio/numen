@@ -9,6 +9,10 @@ export const WORDS = {
   /** Accessible name of the search field in a long model list. */
   searchValues: (title: string) => `Search ${title.toLowerCase()}`,
   searchConnections: 'Search connections',
+  /** The default tab of the settings page of a plugin that declares more tabs. */
+  settingsTab: 'Settings',
+  /** Accessible name of the tab strip of the settings page of a plugin. */
+  settingsTabs: 'Sections of the settings',
   /** The button of the fix of a health item that names no title of its own. */
   healthAction: 'Fix',
   resetSettingOf: (name: string) => `Reset ${name} to its default`,

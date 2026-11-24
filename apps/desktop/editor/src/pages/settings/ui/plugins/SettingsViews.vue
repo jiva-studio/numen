@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The views a plugin's frontend registered for its settings form, drawn at the top of the form
- * in the order the manifest declares them. A declared view without a registration draws nothing.
+ * The views of one tab that a plugin's frontend registered for its settings form, drawn one after
+ * another in the order the manifest declares them. A declared view without a registration draws nothing.
  */
 import type { InstallationSettings, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
@@ -12,6 +12,7 @@ const props = defineProps<{
   settings: InstallationSettings
   host: Pick<PluginFieldsHost, 'getSettingsViews'>
   plugin: PluginInfo
+  tab: string
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -23,6 +24,7 @@ const {
   getSettings: () => props.settings,
   getHost: () => props.host,
   getPlugin: () => props.plugin,
+  getTab: () => props.tab,
 })
 </script>
 

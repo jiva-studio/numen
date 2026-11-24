@@ -2,14 +2,13 @@
 /**
  * Declarative settings fields for a plugin: switches, number inputs, sliders,
  * selects, paths, lists, and text fields. A setting whose condition fails is not shown,
- * and keeps its value. Without a group the fields are the settings that name none, with the views
- * of the plugin; with one, the settings of that group.
+ * and keeps its value. Without a group the fields are the settings that name none; with one, the
+ * settings of that group.
  */
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import { ListField } from '../list-field'
-import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import {
@@ -68,13 +67,6 @@ function getDrawnSettings() {
 </script>
 
 <template>
-  <SettingsViews
-    v-if="props.group === undefined"
-    :settings="props.settings"
-    :host="props.host"
-    :plugin="props.plugin"
-  />
-
   <template v-for="setting in getDrawnSettings()" :key="setting.key">
     <SettingRow
       v-if="setting.type !== 'connections' && setting.type !== 'slots'"
