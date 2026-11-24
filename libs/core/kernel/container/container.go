@@ -99,8 +99,8 @@ func NewResources() *Resources {
 		vaultLocks: vaultwriter.NewLocks(),
 		watches:    vaultwatch.NewHub(),
 		settings: settingsResources{
-			files:         settingsadapter.NewFiles(),
-			events:        settingevents.New(),
+			files:  settingsadapter.NewFiles(),
+			events: settingevents.New(),
 			subscriptions: settingsusecase.Subscriptions{
 				Changes: settingsusecase.PluginChanges{},
 				Hosts:   settingsusecase.HostSubscriptions{},
