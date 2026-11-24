@@ -27,7 +27,6 @@ type StoreOpener interface {
 
 type openedStoreFiles struct{ opener StoreOpener }
 
-// NewStoreFiles returns the store files that the opener opens.
 func NewStoreFiles(opener StoreOpener) StoreFiles { return openedStoreFiles{opener: opener} }
 
 func (s openedStoreFiles) Open(ctx context.Context, name string) (io.ReadCloser, error) {

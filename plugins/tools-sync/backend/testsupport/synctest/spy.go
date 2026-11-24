@@ -34,7 +34,7 @@ type RemoveCall struct {
 // SpyHost is the host of a computer that writes down the calls that move the bytes of files, and serves a file that
 // is never held whole when one is given.
 type SpyHost struct {
-	inner ports.Host
+	inner HostPorts
 
 	mu            sync.Mutex
 	sources       map[string]*Source
@@ -46,7 +46,7 @@ type SpyHost struct {
 }
 
 // NewSpyHost returns the host over the inner host.
-func NewSpyHost(inner ports.Host) *SpyHost {
+func NewSpyHost(inner HostPorts) *SpyHost {
 	return &SpyHost{inner: inner, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, placeCallback: nil}
 }
 

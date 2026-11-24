@@ -27,7 +27,11 @@ type certFile struct {
 	RootSignature string `json:"rootSignature"`
 }
 
+type clock interface{ Now() time.Time }
+
 type systemClock struct{}
+
+var _ clock = systemClock{}
 
 func (systemClock) Now() time.Time { return time.Now() }
 

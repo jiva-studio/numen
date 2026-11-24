@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/logging"
 )
 
 const keyInsecureServer = "tools-sync/insecure-server"
@@ -32,7 +32,7 @@ func (r *runtime) reportInsecureServer(address string) {
 		Action: health.OpenSettings(settingServer),
 	})
 	if err != nil {
-		slog.Warn("the health report of the insecure server failed", "error", err)
+		logging.Warn("the health report of the insecure server failed", err)
 	}
 }
 
@@ -41,6 +41,6 @@ func (r *runtime) clearInsecureServer() {
 		return
 	}
 	if err := r.parts.health.Clear(context.Background(), keyInsecureServer); err != nil {
-		slog.Warn("clearing the health report of the insecure server failed", "error", err)
+		logging.Warn("clearing the health report of the insecure server failed", err)
 	}
 }

@@ -50,6 +50,12 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
+// HostPorts is the host of a computer as the use cases take it: the vaults and the notes of the installation.
+type HostPorts interface {
+	ports.Host
+	ports.NoteHost
+}
+
 // Host is the host of a computer for the plugin: the vaults of the installation and the files and the store
 // folder of each, served by the vaults of the SDK test host.
 type Host struct {
@@ -79,7 +85,7 @@ type Computer struct {
 	Client    *account.Client
 	Health    *healthtest.Host
 	Vaults    *hosttest.Vault
-	Host      ports.Host
+	Host      HostPorts
 	Cloud     *cloud.Cloud
 	Roots     []ed25519.PublicKey
 	Account   *accountadapter.Account

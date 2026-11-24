@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/logging"
 )
 
 const keyEpochRoot = "tools-sync/epoch-root"
@@ -21,12 +21,12 @@ func (r *runtime) readEpochRoots(ctx context.Context, address string) cloud.Root
 			Detail: "Restore announcements of the sync server are ignored until the key is fixed.", Action: health.OpenSettings(settingEpochRoot),
 		})
 		if reportErr != nil {
-			slog.Warn("the health report of the epoch root key failed", "error", reportErr)
+			logging.Warn("the health report of the epoch root key failed", reportErr)
 		}
 		return roots
 	}
 	if clearErr := r.parts.health.Clear(ctx, keyEpochRoot); clearErr != nil {
-		slog.Warn("clearing the health report of the epoch root key failed", "error", clearErr)
+		logging.Warn("clearing the health report of the epoch root key failed", clearErr)
 	}
 	return roots
 }
