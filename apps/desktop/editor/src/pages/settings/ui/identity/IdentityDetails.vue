@@ -5,7 +5,7 @@
  * with the link of a new one and the revoke of another. A revoked device shows only itself.
  */
 import { computed, ref } from 'vue'
-import { Download, Link, Trash2 } from '@lucide/vue'
+import { Link, Trash2 } from '@lucide/vue'
 import { CardAction, CardActions, ConfirmDialog, IslandCard, type CardActionItem } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
@@ -20,11 +20,9 @@ const props = defineProps<{
   problem: string
   isBusy: boolean
   isAskingDelete: boolean
-  isKitBusy: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'download'): void
   (e: 'ask'): void
   (e: 'confirm'): void
   (e: 'cancel'): void
@@ -33,12 +31,6 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isLinking = ref(false)
 const accountActions = computed<readonly CardActionItem[]>(() => [
-  {
-    id: 'download',
-    label: props.isKitBusy ? words.kitDownloading : words.kitDownload,
-    icon: Download,
-    isDisabled: props.isBusy || props.isKitBusy,
-  },
   {
     id: 'delete',
     label: props.info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete,
@@ -66,7 +58,7 @@ const thisDevice = computed<DeviceInfo>(() => ({
       <CardActions
         :items="accountActions"
         :more-label="words.moreActions"
-        @choose="(id) => (id === 'download' ? emit('download') : emit('ask'))"
+        @choose="() => emit('ask')"
       />
     </template>
     <SettingRow

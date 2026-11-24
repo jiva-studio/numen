@@ -91,7 +91,6 @@ const meta: Meta<Knobs> = {
           :devices="calls"
           problem=""
           :is-busy="false"
-          :is-kit-busy="false"
           :is-asking-delete="args.isAskingDelete"
           @ask="onDelete"
           @cancel="onDelete"
@@ -104,12 +103,11 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** Both cards: Download and Delete in the header of the identity, Link a new device in the header of the devices. */
+/** Both cards: Delete in the header of the identity, Link a new device in the header of the devices. */
 export const Loaded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Link a new device' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Download PDF' })).toBeVisible()
     await expect(canvas.getAllByRole('button', { name: 'Remove' })).toHaveLength(1)
   },
 }

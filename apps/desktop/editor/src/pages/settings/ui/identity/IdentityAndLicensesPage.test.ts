@@ -538,11 +538,11 @@ const SHEET_THREE = createSheetWords(3)
 const getDownload = (tab: Page) =>
   tab
     .findAll('button')
-    .find((one) => one.text() === 'Download PDF' && one.attributes('type') === 'button')
+    .find((one) => one.text() === 'Download' && one.attributes('type') === 'button')
 
 const pressDownload = async (tab: Page) => {
   const button = getDownload(tab)
-  if (!button) throw new Error('the page has no button "Download PDF"')
+  if (!button) throw new Error('the page has no button "Download"')
   await button.trigger('click')
   await flushPromises()
 }

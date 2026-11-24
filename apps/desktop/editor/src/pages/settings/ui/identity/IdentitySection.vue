@@ -55,15 +55,17 @@ function onChooseNone(id: string): void {
       :info="current"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value || kit.call.isBusy.value"
-      :is-kit-busy="kit.call.isBusy.value"
       :is-asking-delete="deletion.isAskingDelete.value"
       :devices="identity.devices"
-      @download="kit.actions.download"
       @ask="deletion.askDelete"
       @confirm="deletion.confirmDelete"
       @cancel="deletion.cancelDelete"
     >
-      <RecoveryKitRow :problem="kit.isAsking.value ? '' : kit.call.problem.value" />
+      <RecoveryKitRow
+        :problem="kit.isAsking.value ? '' : kit.call.problem.value"
+        :is-busy="call.isBusy.value || kit.call.isBusy.value"
+        @download="kit.actions.download"
+      />
     </IdentityDetails>
 
     <RecoveryKitDialog

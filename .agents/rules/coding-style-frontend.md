@@ -137,6 +137,7 @@ function formatValue(val: string) { ... }
 - **The root's font size is the interface multiplier.** What scales with the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
 - **One `Tooltip` from `@numen/ui` serves every hint.** Native HTML `title` attributes are forbidden in `.vue` templates, and elements whose text is already visible on screen carry no tooltip.
 - A component copied in from the registry is edited when it is copied in: its palette, its `dark:` variants and its types are maintained in this module from then on, because the copied source belongs to this module.
+- **A row that is about one object (the recovery kit) keeps its own action in the row; the header holds the actions of the card as a whole.**
 
 ---
 
