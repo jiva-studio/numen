@@ -3,6 +3,7 @@ package fakeserver
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,7 +13,18 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
+// snapshotFormat is the layout of the saved state: metadata only; the bodies of blobs live in the body folder, or in
+// Bodies when the server has no folder. Restore refuses a saved state of another layout.
+const snapshotFormat = 2
+
+// SnapshotPrefix is how every saved state begins, so a caller can tell the layout without reading the whole file.
+const SnapshotPrefix = `{"format":2,`
+
+// ErrOldFormat is returned by Restore for a saved state of another layout.
+var ErrOldFormat = errors.New("the saved state has an old layout")
+
 type snapshot struct {
+	Format        int                        `json:"format"`
 	Chains        map[string][]byte          `json:"chains"`
 	Catalogs      map[string][][]byte        `json:"catalogs"`
 	Vaults        map[string]persisted.Vault `json:"vaults"`
@@ -22,7 +34,7 @@ type snapshot struct {
 	Plans         map[string]string          `json:"plans"`
 	Trials        map[string]bool            `json:"trials"`
 	PartLog       []partLogEntry             `json:"partLog"`
-	Bodies        map[string][]byte          `json:"bodies"`
+	Bodies        map[string][]byte          `json:"bodies,omitempty"`
 	Shares        map[string]persisted.Share `json:"shares"`
 }
 
@@ -32,9 +44,10 @@ func (s *Server) Snapshot() ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := snapshot{
+		Format: snapshotFormat,
 		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]persisted.Vault{},
 		Blobs: map[string]persisted.Blob{}, Used: s.used, Subscriptions: s.subscriptions,
-		Plans: s.planOf, Trials: s.shop.trials, PartLog: s.partLog, Bodies: s.store.Held, Shares: map[string]persisted.Share{},
+		Plans: s.planOf, Trials: s.shop.trials, PartLog: s.partLog, Bodies: s.store.GetHeld(), Shares: map[string]persisted.Share{},
 	}
 	for account, chain := range s.chains {
 		out.Chains[account] = chain.Bytes()
@@ -57,7 +70,7 @@ func (s *Server) Snapshot() ([]byte, error) {
 	}
 	for id, row := range s.blobs {
 		out.Blobs[hex.EncodeToString([]byte(id))] = persisted.Blob{
-			Account: row.account, Vault: hex.EncodeToString([]byte(row.vault)), Size: row.size, ExpiresAt: row.expiresAt, State: int(row.state), Body: row.body,
+			Account: row.account, Vault: hex.EncodeToString([]byte(row.vault)), Size: row.size, ExpiresAt: row.expiresAt, State: int(row.state),
 			IsUploaded: row.isUploaded, Multipart: snapshotMultipart(row.multipart),
 		}
 	}
@@ -92,6 +105,9 @@ func (s *Server) Restore(raw []byte) error {
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return fmt.Errorf("read the snapshot: %w", err)
 	}
+	if in.Format != snapshotFormat {
+		return ErrOldFormat
+	}
 	chains, err := persisted.DecodeChains(in.Chains)
 	if err != nil {
 		return err
@@ -120,7 +136,7 @@ func (s *Server) Restore(raw []byte) error {
 	}
 	s.partLog = in.PartLog
 	if in.Bodies != nil {
-		s.store.Held = in.Bodies
+		s.store.SetHeld(in.Bodies)
 	}
 	s.shares = shares
 	s.subscriptions = in.Subscriptions
@@ -190,7 +206,7 @@ func restoreBlobs(in map[string]persisted.Blob) (map[string]*blobRow, error) {
 		}
 		out[id] = &blobRow{
 			account: kept.Account, vault: vault, size: kept.Size, expiresAt: kept.ExpiresAt, state: blobState(kept.State),
-			body: kept.Body, isUploaded: kept.IsUploaded, multipart: restoreMultipart(kept.Multipart),
+			isUploaded: kept.IsUploaded, multipart: restoreMultipart(kept.Multipart),
 		}
 	}
 	return out, nil

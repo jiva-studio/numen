@@ -85,7 +85,8 @@ func (s *Server) DropBlob(id []byte) error {
 	if !found {
 		return errNoBlob
 	}
-	row.body, row.isUploaded = nil, false
+	s.store.Remove(getObjectName(string(id)))
+	row.isUploaded = false
 	return nil
 }
 

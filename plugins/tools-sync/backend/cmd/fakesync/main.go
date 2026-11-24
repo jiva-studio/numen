@@ -8,9 +8,11 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net"
@@ -37,7 +39,8 @@ func newKeeper(fake *fakeserver.Server, path string, stopped *atomic.Bool, exit 
 }
 
 // keeper saves the data of the server after every request that may have changed it: any but a GET, and the
-// GET of a pay page.
+// GET of a pay page. It writes the file only when the data differs from what it wrote last, so a request
+// that read only leaves the file alone. The bodies of blobs are not in the file; the server writes each one to the bodies folder once.
 type keeper struct {
 	next    http.Handler
 	fake    *fakeserver.Server
@@ -46,6 +49,7 @@ type keeper struct {
 	stopped *atomic.Bool
 	exit    chan struct{}
 	once    sync.Once
+	saved   [sha256.Size]byte
 }
 
 func (k *keeper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -75,11 +79,22 @@ func (k *keeper) save() error {
 	if err != nil {
 		return err
 	}
-	temporary := k.path + ".tmp"
+	if sum := sha256.Sum256(raw); sum == k.saved {
+		return nil
+	}
+	if err := writeAtomic(k.path, raw); err != nil {
+		return err
+	}
+	k.saved = sha256.Sum256(raw)
+	return nil
+}
+
+func writeAtomic(path string, raw []byte) error {
+	temporary := path + ".tmp"
 	if err := os.WriteFile(temporary, raw, 0o600); err != nil {
 		return err
 	}
-	return os.Rename(temporary, k.path)
+	return os.Rename(temporary, path)
 }
 
 func getStatePath(fake *fakeserver.Server, stateDir string) string {
@@ -97,10 +112,20 @@ func getStatePath(fake *fakeserver.Server, stateDir string) string {
 }
 
 func load(fake *fakeserver.Server, path string) error {
-	raw, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+	head := make([]byte, len(fakeserver.SnapshotPrefix))
+	if count, _ := io.ReadFull(file, head); string(head[:count]) != fakeserver.SnapshotPrefix {
+		log.Printf("%s has the old layout and is not read; starting with an empty server", path)
+		return nil
+	}
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

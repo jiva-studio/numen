@@ -43,7 +43,6 @@ type Blob struct {
 	Size       uint64     `json:"size"`
 	ExpiresAt  time.Time  `json:"expiresAt"`
 	State      int        `json:"state"`
-	Body       []byte     `json:"body"`
 	IsUploaded bool       `json:"isUploaded"`
 	Multipart  *Multipart `json:"multipart"`
 }

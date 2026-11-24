@@ -62,7 +62,6 @@ type blobRow struct {
 	expiresAt     time.Time
 	downloadUntil time.Time
 	state         blobState
-	body          []byte
 	isUploaded    bool
 	multipart     *multipartState
 }

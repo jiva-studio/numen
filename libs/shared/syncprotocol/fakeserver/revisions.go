@@ -164,7 +164,7 @@ func (s *Server) isBlobReady(b *batch, rev *syncv1.Revision) bool {
 	if row.multipart != nil {
 		return row.multipart.isCompleted && row.size == rev.GetBlobSize()
 	}
-	return row.expiresAt.After(s.now()) && row.isUploaded && row.size == rev.GetBlobSize() && uint64(len(row.body)) == row.size
+	return row.expiresAt.After(s.now()) && row.isUploaded && row.size == rev.GetBlobSize()
 }
 
 func newBlobNotReady(index uint32) error {

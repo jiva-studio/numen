@@ -58,10 +58,10 @@ func checkReserveSizes(sizes []uint64) error {
 }
 
 func (s *Server) abandonExpired(account string) {
-	for _, row := range s.blobs {
+	for id, row := range s.blobs {
 		if row.account == account && row.state == blobReserved && !row.expiresAt.After(s.now()) {
 			row.state = blobAbandoned
-			row.body = nil
+			s.store.Remove(getObjectName(id))
 			s.used[account] -= min(row.size, s.used[account])
 		}
 	}
@@ -183,7 +183,11 @@ func (s *Server) storeBlobBody(w http.ResponseWriter, r *http.Request, id string
 	case r.ContentLength != int64(len(body)) || uint64(len(body)) != row.size:
 		http.Error(w, "the body is not of the reserved size", http.StatusBadRequest)
 	default:
-		row.body, row.isUploaded = body, true
+		if err := s.store.Write(getObjectName(id), body); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		row.isUploaded = true
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -204,9 +208,6 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 }
 
 func (s *Server) getBody(id string, row *blobRow) []byte {
-	if row.multipart == nil {
-		return slices.Clone(row.body)
-	}
 	body, _ := s.store.Read(getObjectName(id))
 	return body
 }
@@ -233,7 +234,7 @@ func (s *Server) listStoredBlobs() []byte {
 	defer s.mu.Unlock()
 	ids := make([]string, 0, len(s.blobs))
 	for id, row := range s.blobs {
-		if row.isUploaded && (row.body != nil || row.multipart != nil) {
+		if row.isUploaded || row.multipart != nil {
 			ids = append(ids, id)
 		}
 	}
