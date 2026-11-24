@@ -339,7 +339,7 @@ func (c *Computer) RestoreDeps() restore.Deps {
 // timeout, both over the network link of this computer, and refresh as the way to sign in again.
 func (c *Computer) NewCloud(address string, refresh func(context.Context) error) *cloud.Cloud {
 	return cloud.New(cloud.Config{
-		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots,
+		Address: address, HTTP: &http.Client{Transport: c.network}, Stream: &http.Client{Transport: c.network}, Token: c.getToken, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now,
 	})
 }
 

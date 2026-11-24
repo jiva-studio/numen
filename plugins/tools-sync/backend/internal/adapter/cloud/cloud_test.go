@@ -37,7 +37,7 @@ func newVaultID(t *testing.T) []byte {
 }
 
 func newCloud(c *synctest.Computer, token string, refresh func(context.Context) error) *cloud.Cloud {
-	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: http.DefaultClient, Token: func() string { return token }, Refresh: refresh, Roots: fakeserver.GetTestRoots()})
+	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: http.DefaultClient, Token: func() string { return token }, Refresh: refresh, Roots: fakeserver.GetTestRoots(), Now: c.Clock.Now})
 }
 
 func TestCloud_AppendsACatalogEntryAndReadsItBack(t *testing.T) {
@@ -276,7 +276,7 @@ func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *t
 	t.Cleanup(served.Close)
 	hints := cloud.New(cloud.Config{
 		Address: served.URL, HTTP: &http.Client{Timeout: 100 * time.Millisecond}, Stream: &http.Client{},
-		Token: func() string { return "t" }, Refresh: nil,
+		Token: func() string { return "t" }, Refresh: nil, Now: synctest.NewClock(synctest.GetStart()).Now,
 	})
 	watch, err := hints.Watch(t.Context())
 	if err != nil {

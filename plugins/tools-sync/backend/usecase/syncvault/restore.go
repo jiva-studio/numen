@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
@@ -30,7 +29,7 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 		err = p.use.steps.RecoverVault.Execute(ctx, p.id)
 	}
 	switch {
-	case errors.Is(err, epochtrust.ErrUntrusted):
+	case errors.Is(err, restore.ErrEpochUntrusted):
 		return false, p.use.reports.raise(ctx, getKey(keyEpochUntrusted, p.id), textEpochUntrusted)
 	case errors.Is(err, restore.ErrDiverged):
 		return false, p.use.reports.raise(ctx, getKey(keyDiverged, p.id), textDiverged)

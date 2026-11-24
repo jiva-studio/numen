@@ -2,26 +2,31 @@ package service
 
 import (
 	"context"
-	"crypto/ed25519"
+	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 )
 
 const keyEpochRoot = "tools-sync/epoch-root"
 
-func (r *runtime) readEpochRoots(address string) []ed25519.PublicKey {
-	roots, err := epochtrust.GetRoots(address, r.epochRoot.Get())
+func (r *runtime) readEpochRoots(ctx context.Context, address string) cloud.Roots {
+	roots, err := cloud.GetRoots(address, r.epochRoot.Get())
 	if r.parts.health == nil {
 		return roots
 	}
 	if err != nil {
-		_ = r.parts.health.Report(context.Background(), health.Item{
+		reportErr := r.parts.health.Report(ctx, health.Item{
 			Key: keyEpochRoot, Severity: health.Warning, Text: "The epoch root key of Numen Sync is not 32 bytes of hex",
 			Detail: "Restore announcements of the sync server are ignored until the key is fixed.", Action: health.OpenSettings(settingEpochRoot),
 		})
+		if reportErr != nil {
+			slog.Warn("the health report of the epoch root key failed", "error", reportErr)
+		}
 		return roots
 	}
-	_ = r.parts.health.Clear(context.Background(), keyEpochRoot)
+	if clearErr := r.parts.health.Clear(ctx, keyEpochRoot); clearErr != nil {
+		slog.Warn("clearing the health report of the epoch root key failed", "error", clearErr)
+	}
 	return roots
 }

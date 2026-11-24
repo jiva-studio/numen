@@ -13,14 +13,14 @@ import (
 
 func serveTLSStorage(t *testing.T) *httptest.Server {
 	t.Helper()
-	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("sealed")) }))
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { writeBody(t, w, "sealed") }))
 	t.Cleanup(server.Close)
 	return server
 }
 
 func TestNewBlobHTTPClient_ReachesLoopbackStorageOfALoopbackServer(t *testing.T) {
 	t.Parallel()
-	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("sealed")) }))
+	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { writeBody(t, w, "sealed") }))
 	t.Cleanup(storage.Close)
 
 	got, err := syncclient.GetBlob(t.Context(), syncclient.NewBlobHTTPClient("http://127.0.0.1:8080", time.Minute), storage.URL+"/blob")
@@ -68,7 +68,7 @@ func mustGetPort(t *testing.T, address string) string {
 
 func TestBlobTransfers_FollowNoRedirect(t *testing.T) {
 	t.Parallel()
-	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("internal")) }))
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { writeBody(t, w, "internal") }))
 	t.Cleanup(target.Close)
 	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, target.URL+"/rest", http.StatusFound)
@@ -85,7 +85,9 @@ func TestBlobTransfers_FollowNoRedirect(t *testing.T) {
 		t.Error("PutPart followed a redirect, want an error")
 	}
 	if body, err := syncclient.GetBlobRange(t.Context(), http.DefaultClient, storage.URL+"/blob", 0); err == nil {
-		_ = body.Close()
+		if err := body.Close(); err != nil {
+			t.Error(err)
+		}
 		t.Error("GetBlobRange followed a redirect, want an error")
 	}
 }
@@ -104,5 +106,12 @@ func TestBlobTransfers_LeaveTheSignatureOutOfTheirErrors(t *testing.T) {
 		if err == nil || strings.Contains(err.Error(), "secret-signature") || strings.Contains(err.Error(), "X-Amz") {
 			t.Errorf("%s: error = %v, want a failure without the address", name, err)
 		}
+	}
+}
+
+func writeBody(t *testing.T, w http.ResponseWriter, body string) {
+	t.Helper()
+	if _, err := w.Write([]byte(body)); err != nil {
+		t.Error(err)
 	}
 }

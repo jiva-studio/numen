@@ -82,6 +82,9 @@ const (
 // ErrKeyChanged means the key that signs restore epochs is not the key this device pinned.
 var ErrKeyChanged = errors.New("the restore key of the sync server changed")
 
+// ErrEpochUntrusted means the announcement of the server has no valid certificate of a known root key.
+var ErrEpochUntrusted = errors.New("the restore epoch of the server is not trusted")
+
 // ErrDiverged means the log on the server differs from the copy at an entry both hold.
 var ErrDiverged = errors.New("the log on the sync server differs from the copy of this device")
 

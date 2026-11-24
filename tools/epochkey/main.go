@@ -20,15 +20,19 @@ import (
 )
 
 type certFile struct {
-	EpochKey      string `json:"epoch_key"`
+	EpochKey      string `json:"epochKey"`
 	Serial        uint64 `json:"serial"`
-	NotBefore     int64  `json:"not_before"`
-	NotAfter      int64  `json:"not_after"`
-	RootSignature string `json:"root_signature"`
+	NotBefore     int64  `json:"notBefore"`
+	NotAfter      int64  `json:"notAfter"`
+	RootSignature string `json:"rootSignature"`
 }
 
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now() }
+
 func main() {
-	if err := run(os.Args[1:], os.Stdout, time.Now); err != nil {
+	if err := run(os.Args[1:], os.Stdout, systemClock{}.Now); err != nil {
 		fmt.Fprintln(os.Stderr, "epochkey:", err)
 		os.Exit(1)
 	}

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"mime"
-	"path"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -22,7 +20,7 @@ func (r *run) isLazy(meta note.Meta, isListed bool) bool {
 	if !r.deps.LazyHeavy {
 		return false
 	}
-	return layer.ClassifyLayer(meta.Path, meta.Size, mime.TypeByExtension(path.Ext(meta.Path))) == layer.OnTap
+	return layer.ClassifyLayer(meta.Path, meta.Size) == layer.OnTap
 }
 
 func (r *run) getListedHash(ctx context.Context, filePath string) (string, error) {

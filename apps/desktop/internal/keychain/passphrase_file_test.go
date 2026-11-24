@@ -268,19 +268,19 @@ func (f failingSource) GetPassphrase(context.Context) (string, error) {
 	return "", f.err
 }
 
-func TestSetKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
+func TestSetKey_CanceledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
 		t.Fatal(err)
 	}
 	before := readCredentialsBytes(t, dir)
-	cancelled := errors.New("the prompt was cancelled")
-	store := newPassphraseStore(dir, failingSource{err: cancelled})
+	canceled := errors.New("the prompt was canceled")
+	store := newPassphraseStore(dir, failingSource{err: canceled})
 
 	err := store.SetKey(t.Context(), otherEntry, valueOne)
 
-	if !errors.Is(err, cancelled) {
+	if !errors.Is(err, canceled) {
 		t.Fatalf("SetKey = %v, want the prompt error", err)
 	}
 	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
@@ -288,7 +288,7 @@ func TestSetKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T
 	}
 }
 
-func TestDeleteKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
+func TestDeleteKey_CanceledPassphrasePromptDoesNotChangePlaintextFile(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
 	plain := newTestStore(dir)
@@ -298,12 +298,12 @@ func TestDeleteKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testin
 		}
 	}
 	before := readCredentialsBytes(t, dir)
-	cancelled := errors.New("the prompt was cancelled")
-	store := newPassphraseStore(dir, failingSource{err: cancelled})
+	canceled := errors.New("the prompt was canceled")
+	store := newPassphraseStore(dir, failingSource{err: canceled})
 
 	err := store.DeleteKey(t.Context(), otherEntry)
 
-	if !errors.Is(err, cancelled) {
+	if !errors.Is(err, canceled) {
 		t.Fatalf("DeleteKey = %v, want the prompt error", err)
 	}
 	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
@@ -311,15 +311,15 @@ func TestDeleteKey_CancelledPassphrasePromptDoesNotChangePlaintextFile(t *testin
 	}
 }
 
-func TestACancelledPassphrasePromptCreatesNoFileOnAFirstWrite(t *testing.T) {
+func TestACanceledPassphrasePromptCreatesNoFileOnAFirstWrite(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
-	cancelled := errors.New("the prompt was cancelled")
-	store := newPassphraseStore(dir, failingSource{err: cancelled})
+	canceled := errors.New("the prompt was canceled")
+	store := newPassphraseStore(dir, failingSource{err: canceled})
 
 	err := store.SetKey(t.Context(), entryName, seedValue)
 
-	if !errors.Is(err, cancelled) {
+	if !errors.Is(err, canceled) {
 		t.Fatalf("SetKey = %v, want the prompt error", err)
 	}
 	if _, statErr := os.Stat(credentialsPath(dir)); !os.IsNotExist(statErr) {

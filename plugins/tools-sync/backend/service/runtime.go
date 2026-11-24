@@ -96,11 +96,11 @@ func (r *runtime) configure(values map[string]string) {
 	r.session.Configure(r.readServerAddress(values[settingServer]))
 }
 
-func (r *runtime) start(_ context.Context, address string) (*Backend, map[string]func(context.Context) error) {
+func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
 	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.health, Clock: p.clock, Chains: p.client})
-	roots := r.readEpochRoots(address)
+	roots := r.readEpochRoots(ctx, address)
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),

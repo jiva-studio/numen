@@ -182,7 +182,7 @@ func (f *Fake) RevokeDeviceAt(deviceSignKey []byte, at time.Time) error {
 	if f.record == nil {
 		return errors.New("the host has no identity")
 	}
-	return f.revokeLocked(deviceSignKey, f.now())
+	return f.revokeLocked(deviceSignKey, at)
 }
 
 func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {

@@ -8,14 +8,13 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-// ErrEpochUntrusted is epochtrust.ErrUntrusted: the announcement of the server has no valid certificate of a known root key.
-var ErrEpochUntrusted = epochtrust.ErrUntrusted
+// ErrEpochUntrusted is domain.ErrEpochUntrusted: the announcement of the server has no valid certificate of a known root key.
+var ErrEpochUntrusted = domain.ErrEpochUntrusted
 
 // ErrDiverged is domain.ErrDiverged: a log on the server differs from the copy of this device, so nothing is replayed.
 var ErrDiverged = domain.ErrDiverged

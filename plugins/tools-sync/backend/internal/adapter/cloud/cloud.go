@@ -5,14 +5,16 @@ package cloud
 import (
 	"cmp"
 	"context"
-	"crypto/ed25519"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
 // Config is where the server is, what reaches it, the session token of each call and how to sign in again.
@@ -23,8 +25,8 @@ type Config struct {
 	Refresh func(ctx context.Context) error
 	Stream  *http.Client
 	Storage *http.Client
-	Roots []ed25519.PublicKey
-	Now func() time.Time
+	Roots   Roots
+	Now     func() time.Time
 }
 
 // Cloud is the sync server at an address.
@@ -44,10 +46,6 @@ type Cloud struct {
 
 // New returns the server of the config.
 func New(cfg Config) *Cloud {
-	now := cfg.Now
-	if now == nil {
-		now = time.Now
-	}
 	return &Cloud{
 		http:         cfg.HTTP,
 		storage:      cmp.Or(cfg.Storage, cfg.HTTP),
@@ -57,7 +55,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, now),
+		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, cfg.Now),
 		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 		shares:       syncclient.NewShareClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}
@@ -152,6 +150,9 @@ func (c *Cloud) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []by
 		key = signKey
 		return found, err
 	})
+	if errors.Is(err, epochtrust.ErrUntrusted) {
+		err = fmt.Errorf("%w: %w", restore.ErrEpochUntrusted, err)
+	}
 	return epoch, key, err
 }
 

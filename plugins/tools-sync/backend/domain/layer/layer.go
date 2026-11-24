@@ -20,13 +20,18 @@ const (
 	OnTap
 )
 
+var imageExtensions = map[string]bool{
+	".avif": true, ".bmp": true, ".gif": true, ".heic": true, ".jpeg": true, ".jpg": true, ".png": true, ".svg": true, ".webp": true,
+}
+
 // ClassifyLayer returns when the file is downloaded: a markdown file of any size and an image up to
-// AtOnceImageLimit at once, every other file on tap. The media type is the one the file's extension names.
-func ClassifyLayer(path string, size int64, mime string) Layer {
-	if strings.EqualFold(pathpkg.Ext(path), ".md") {
+// AtOnceImageLimit at once, every other file on tap. A file is an image when its extension names one, without regard to case.
+func ClassifyLayer(path string, size int64) Layer {
+	ext := strings.ToLower(pathpkg.Ext(path))
+	if ext == ".md" {
 		return AtOnce
 	}
-	if strings.HasPrefix(mime, "image/") && size <= AtOnceImageLimit {
+	if imageExtensions[ext] && size <= AtOnceImageLimit {
 		return AtOnce
 	}
 	return OnTap

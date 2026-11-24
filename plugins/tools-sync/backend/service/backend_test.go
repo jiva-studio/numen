@@ -252,8 +252,10 @@ type meetingHost struct {
 
 func (h *meetingHost) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	h.arrived.Add(1)
-	deadline := time.Now().Add(300 * time.Millisecond)
-	for h.arrived.Load() < 2 && time.Now().Before(deadline) {
+	for range 300 {
+		if h.arrived.Load() >= 2 {
+			break
+		}
 		time.Sleep(time.Millisecond)
 	}
 	return h.Host.GetVaults(ctx)

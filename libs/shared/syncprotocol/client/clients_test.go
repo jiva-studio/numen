@@ -439,8 +439,12 @@ func TestEveryClientSendsNoBearerOverPlainHTTPToAnotherHost(t *testing.T) {
 	transport := &recordingTransport{}
 	web := &http.Client{Transport: transport}
 
-	_, _ = syncclient.NewCatalogClient("http://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4)
-	_, _ = syncclient.NewCatalogClient("https://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4)
+	if _, err := syncclient.NewCatalogClient("http://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4); err == nil {
+		t.Error("the catalog call over a transport with no network succeeded, want an error")
+	}
+	if _, err := syncclient.NewCatalogClient("https://sync.example.org", web, func() string { return "token-of-the-session" }).GetCatalog(t.Context(), 4); err == nil {
+		t.Error("the catalog call over a transport with no network succeeded, want an error")
+	}
 
 	if len(transport.headers) != 2 {
 		t.Fatalf("the transport saw %d requests, want 2", len(transport.headers))

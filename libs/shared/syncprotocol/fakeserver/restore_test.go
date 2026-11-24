@@ -21,7 +21,7 @@ func newRestoreEnv(tb testing.TB) (*fakeserver.Server, *env, *syncclient.Restore
 	account := newOwnedAccount(tb)
 	device := account.addDevice(tb, "First")
 	e := newEnvOn(tb, address, &account, device)
-	restore := syncclient.NewRestoreClient(address, http.DefaultClient, func() string { return e.token }, fakeserver.GetTestRoots(), time.Now)
+	restore := syncclient.NewRestoreClient(address, http.DefaultClient, func() string { return e.token }, fakeserver.GetTestRoots(), func() time.Time { return time.Unix(1000, 0) })
 	return server, e, restore
 }
 
