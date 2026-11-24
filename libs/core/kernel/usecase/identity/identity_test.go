@@ -90,22 +90,6 @@ func TestGetIdentity_NoRecord(t *testing.T) {
 	}
 }
 
-func TestGetIdentity_ReportsARecordThatDoesNotParseAndNeverCallsItAbsent(t *testing.T) {
-	t.Parallel()
-	k := newKit("Laptop")
-	k.keys.keys[keyName] = "not-a-record"
-	_, err := k.get.Execute(t.Context())
-	if !errors.Is(err, identitylib.ErrMalformed) || errors.Is(err, identitydomain.ErrNoIdentity) {
-		t.Fatalf("error = %v, want ErrMalformed and not ErrNoIdentity", err)
-	}
-	if _, err := k.create.Execute(t.Context(), getLegalWords()); !errors.Is(err, identitydomain.ErrIdentityExists) {
-		t.Errorf("create over a broken record: error = %v, want ErrIdentityExists", err)
-	}
-	if k.keys.keys[keyName] != "not-a-record" {
-		t.Error("the broken record was overwritten")
-	}
-}
-
 func TestGetIdentity_ReportsARecordWhoseDeviceIsNotInItsChain(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
@@ -466,5 +450,35 @@ func TestCreateIdentity_CanceledWhileWaitingForTheGateWritesNothing(t *testing.T
 	}
 	if k.keys.setCalled != 1 {
 		t.Errorf("writes = %d, want 1", k.keys.setCalled)
+	}
+}
+
+func TestCreateIdentity_ReplacesARecordThatDoesNotParseEvenWhenAChainFileIsThere(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	k.keys.keys[keyName] = "not-a-record"
+	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
+		t.Fatalf("get: error = %v, want ErrNoIdentity", err)
+	}
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatalf("create over the broken record: %v", err)
+	}
+}
+
+func TestGetIdentity_ReadsARecordThatDoesNotParseAsNoIdentityAndLetsCreateReplaceIt(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	k.keys.keys[keyName] = "not-a-record"
+	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
+		t.Fatalf("error = %v, want ErrNoIdentity", err)
+	}
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatalf("create over a record that does not parse: %v", err)
+	}
+	if _, err := k.get.Execute(t.Context()); err != nil {
+		t.Errorf("get after create: %v", err)
 	}
 }

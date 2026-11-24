@@ -429,10 +429,6 @@ func TestStartRestoreFromKit_RefusesWhenTheDeviceHasAnIdentity(t *testing.T) {
 	if k.keys.snapshot()[keyName] != before {
 		t.Error("the record changed")
 	}
-	k.keys.keys[keyName] = "not-a-record"
-	if err := k.startKit.Execute(t.Context(), pick(t, made, 1, 2), ""); !errors.Is(err, identitydomain.ErrIdentityExists) {
-		t.Errorf("over a broken record: error = %v, want ErrIdentityExists", err)
-	}
 	if pending, err := k.pending.Execute(t.Context()); err != nil || pending.IsPending {
 		t.Errorf("pending = %+v, error = %v, want nothing pending", pending, err)
 	}

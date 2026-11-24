@@ -326,7 +326,8 @@ const readLinkAnswer = (
 
 const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
-    const { identity } = await rpc.getIdentity({})
+    const { identity, error, detail } = await rpc.getIdentity({})
+    if (error === ProtoIdentityErrorCode.KEY_STORE_FAILED) throw new Error(detail)
     return identity === undefined ? undefined : readInfo(identity)
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],

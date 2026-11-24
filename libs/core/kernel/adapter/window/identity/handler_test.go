@@ -259,3 +259,13 @@ func TestCreateIdentity_AcceptsTheGeneratedWordsOnce(t *testing.T) {
 		t.Errorf("second create = %v, want INVALID_WORDS", again.GetError())
 	}
 }
+
+func TestGetIdentity_AnswersNoIdentityForARecordThatDoesNotParse(t *testing.T) {
+	t.Parallel()
+	keys := newKeys()
+	keys.keys["identity"] = "not-a-record"
+	got, err := newHandler(keys).GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
+	if err != nil || got.Msg.GetIdentity() != nil || got.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("GetIdentity() = %v, %v; want no identity and no error", got, err)
+	}
+}

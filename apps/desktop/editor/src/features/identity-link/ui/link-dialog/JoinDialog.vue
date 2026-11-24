@@ -5,7 +5,7 @@
  * the confirmation code the other device shows, and asks whether to join the identity. Escape closes it, and closing
  * it cancels the link.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Dialog, hasCamera, type ScannerCamera } from '@numen/ui'
 import type { LinkCalls } from '../../lib/types'
 import { useLinkActions } from '../../model/useLinkActions'
@@ -27,7 +27,7 @@ const props = withDefaults(
   { findCamera: hasCamera },
 )
 
-const emit = defineEmits<{ (e: 'close'): void }>()
+const emit = defineEmits<{ (e: 'close'): void; (e: 'linked'): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const session = useLinkSession(() => props.calls, 'joiner', props.stallMs)
@@ -36,6 +36,12 @@ const draft = { text: ref(''), code: ref('') }
 const isPasting = computed(() => scan.phase.value === 'paste')
 const actions = useLinkActions(session, 'joiner', draft)
 const { view } = actions
+watch(
+  () => session.link.value?.phase,
+  (phase) => {
+    if (phase === 'linked') emit('linked')
+  },
+)
 const hasInput = computed(() =>
   view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
 )

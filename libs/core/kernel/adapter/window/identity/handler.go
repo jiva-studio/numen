@@ -21,6 +21,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
+const keyStoreDetail = "The key store of this computer is not available."
+
 var (
 	errNoProof  = errors.New("give the recovery words or the sheets as the proof")
 	errNoSheets = errors.New("give the sheets")
@@ -70,6 +72,10 @@ func (h *Handler) GetIdentity(
 	}
 	if errors.Is(err, identitydomain.ErrChainOutdated) {
 		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED, Detail: getDetail(err)}), nil
+	}
+	if errors.Is(err, identitydomain.ErrKeyStore) {
+		slog.ErrorContext(ctx, "the key store of this computer failed", "error", err)
+		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED, Detail: keyStoreDetail}), nil
 	}
 	if err != nil {
 		return nil, newInternalError(ctx, err)

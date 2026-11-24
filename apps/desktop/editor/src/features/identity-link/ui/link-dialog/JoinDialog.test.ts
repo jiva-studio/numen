@@ -159,4 +159,9 @@ describe('the dialog that joins an identity', () => {
     await click(findButton(/^Use identity$/))
     expect(confirmJoin).toHaveBeenCalledWith(true)
   })
+
+  it('tells the page once the link is finished so the page can read the new identity', async () => {
+    const dialog = await mountWithLink(createLinkInfo({ phase: 'linked', role: 'joiner' }))
+    expect(dialog.emitted('linked')).toHaveLength(1)
+  })
 })

@@ -56,16 +56,30 @@ func (r records) checkAbsent(ctx context.Context) error {
 	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
 }
 
-// checkReplaceable refuses when the record has its chain. A record without a chain file cannot be used,
-// and a new identity, a restore or a link replaces it.
+// checkReplaceable refuses when the device holds a usable identity. A record without a chain file, a record that does not parse
+// and a device missing from its chain cannot be used, and a new identity, a restore or a link replaces them.
 func (r records) checkReplaceable(ctx context.Context) error {
-	if _, err := r.chains.Read(ctx); errors.Is(err, identitydomain.ErrNoChain) {
+	_, err := r.readState(ctx)
+	switch {
+	case err == nil:
+		return identitydomain.ErrIdentityExists
+	case errors.Is(err, identitydomain.ErrNoIdentity):
 		return nil
 	}
-	return identitydomain.ErrIdentityExists
+	return err
 }
 
+// readState returns the identity of this device. A record or chain that cannot be used reads as no identity (ErrNoIdentity, which
+// also wraps the cause); a key store or file that fails is returned as it is.
 func (r records) readState(ctx context.Context) (identitylib.State, error) {
+	state, err := r.readStoredState(ctx)
+	if errors.Is(err, identitylib.ErrMalformed) || errors.Is(err, identitylib.ErrUnsupportedVersion) || errors.Is(err, identitydomain.ErrNoChain) {
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrNoIdentity, err)
+	}
+	return state, err
+}
+
+func (r records) readStoredState(ctx context.Context) (identitylib.State, error) {
 	record, err := r.readExistingRecord(ctx)
 	if err != nil {
 		return identitylib.State{}, err
