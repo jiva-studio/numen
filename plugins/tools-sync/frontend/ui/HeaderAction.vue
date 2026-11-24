@@ -20,7 +20,7 @@ defineProps<{ isDisabled?: boolean }>()
   align-items: center;
   gap: calc(0.375 * var(--numen-chrome-unit));
   box-sizing: border-box;
-  block-size: calc(var(--numen-font-size) * var(--numen-line-height));
+  block-size: calc(var(--numen-chrome-text-2) * var(--numen-line-height));
   margin: 0;
   padding: 0 calc(0.375 * var(--numen-chrome-unit));
   border: none;
@@ -28,7 +28,7 @@ defineProps<{ isDisabled?: boolean }>()
   background: none;
   color: var(--numen-accent);
   font: inherit;
-  font-size: var(--numen-font-size);
+  font-size: var(--numen-chrome-text-2);
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;

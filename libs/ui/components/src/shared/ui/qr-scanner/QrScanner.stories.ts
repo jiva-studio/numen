@@ -3,7 +3,7 @@
  * a camera gives.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { encode } from 'uqr'
 import QrScanner from './QrScanner.vue'
 
@@ -92,7 +92,8 @@ const filmCode = (text: string) => (): Promise<MediaStream> => {
 /** The camera films the QR code of a link: the scanner says its text once. */
 export const ReadsALink: Story = {
   args: { camera: filmCode(LINK_TEXT), onScanned: fn(), onFailed: fn() },
-  play: async ({ args }) => {
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(canvasElement)
     await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
     await expect(args.onFailed).not.toHaveBeenCalled()
   },

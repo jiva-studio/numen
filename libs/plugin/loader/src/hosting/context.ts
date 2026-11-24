@@ -200,7 +200,6 @@ function createUiService(
   })
 }
 
-/** The window a plugin draws in: the guarded services of the window and the view mounter of the plugin. */
 function addMountView(ui: Omit<PluginUi, 'mountView'>, mountView: PluginUi['mountView']): PluginUi {
   return { ...ui, mountView }
 }

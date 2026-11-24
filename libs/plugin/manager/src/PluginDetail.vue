@@ -233,12 +233,9 @@ function onRunAction(key: string): void {
   padding: var(--settings-card-pad);
 }
 
-.plugin-detail__readme {
-  --numen-prose-size: var(--numen-font-size);
-}
-
 .plugin-detail__readme :deep(.prose) {
   max-inline-size: 36rem;
+  font-size: var(--numen-font-size);
   line-height: var(--numen-line-height);
 }
 
