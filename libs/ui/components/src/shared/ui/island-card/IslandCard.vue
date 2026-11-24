@@ -9,13 +9,21 @@ const header = useTemplateRef<HTMLElement>('header')
 const level = ref<(typeof LEVELS)[number]>('full')
 let watcher: ResizeObserver | undefined
 
+/** The header is crowded when its content spills over it or a label shows an ellipsis. */
+function isCrowded(element: HTMLElement): boolean {
+  if (element.scrollWidth > element.clientWidth) return true
+  return [...element.querySelectorAll<HTMLElement>('.card-action__label')].some(
+    (label) => label.scrollWidth > label.clientWidth,
+  )
+}
+
 async function fit(): Promise<void> {
   const element = header.value
   if (element === null) return
   for (const next of LEVELS) {
     level.value = next
     await nextTick()
-    if (element.scrollWidth <= element.clientWidth) return
+    if (!isCrowded(element)) return
   }
 }
 
@@ -73,7 +81,8 @@ onBeforeUnmount(() => watcher?.disconnect())
 
 .island-card__aside {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
+  min-inline-size: 0;
   align-items: center;
   gap: 0.5rem;
   font-size: var(--numen-text-2);

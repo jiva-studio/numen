@@ -70,6 +70,19 @@ defineProps<{
   color: var(--numen-ink);
 }
 
+/* A kept label is the last to give way: it shrinks and ends with an ellipsis. */
+.card-action--kept {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+}
+
+.card-action__label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .card-action--primary {
   color: var(--numen-accent);
 }
