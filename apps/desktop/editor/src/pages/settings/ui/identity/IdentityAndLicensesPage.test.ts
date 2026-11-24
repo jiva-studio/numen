@@ -171,9 +171,14 @@ const press = async (tab: Page, text: string) => {
   await flushPromises()
 }
 
-const pressRestore = async (tab: Page, choice: string) => {
+const pressRestore = async (tab: Page, detail: string) => {
   await press(tab, 'Restore')
-  await press(tab, choice)
+  const item = getBody(tab)
+    .findAll('[role=menuitem]')
+    .find((one) => one.text().includes(detail))
+  if (!item) throw new Error(`the Restore menu has no item "${detail}"`)
+  await item.trigger('click')
+  await flushPromises()
 }
 
 const getShownWords = (tab: Page): string[] =>
@@ -242,15 +247,15 @@ describe('the page "Identity and licenses"', () => {
 
   it('shows the join by a QR code in the header with restore and create, and create keeps its text', async () => {
     const { tab } = await createPage()
-    const header = findButton(tab, 'Join account')?.element.parentElement
+    const header = findButton(tab, 'Use existing account')?.element.parentElement
     expect(header?.contains(findButton(tab, 'Restore')?.element ?? null)).toBe(true)
     expect(header?.contains(findButton(tab, 'Create identity')?.element ?? null)).toBe(true)
   })
 
   it('opens the join dialog from the header', async () => {
     const { tab } = await createPage()
-    await press(tab, 'Join account')
-    expect(getDialog(tab).text()).toContain('Join account')
+    await press(tab, 'Use existing account')
+    expect(getDialog(tab).text()).toContain('Use existing account')
   })
 
   it('shows the account fingerprint and the linked device when the device has an identity', async () => {
@@ -388,8 +393,8 @@ describe('the page "Identity and licenses"', () => {
 
   it('restores from words in a dialog with one field, a line of help and a button that waits', async () => {
     const { tab } = await createPage()
-    await pressRestore(tab, 'From 12 words')
-    expect(getDialog(tab).get('h2').text()).toBe('Restore from words')
+    await pressRestore(tab, 'Type the 12 words')
+    expect(getDialog(tab).get('h2').text()).toBe('Recovery words')
     expect(getDialog(tab).findAll('textarea')).toHaveLength(1)
     expect(getDialog(tab).findAll('input')).toHaveLength(0)
     expect(getDialog(tab).text()).toContain(
@@ -402,7 +407,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('counts the words while they are typed and restores when the 12th is in', async () => {
     const { tab, restore } = await createPage()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, RECOVERY_WORDS.slice(0, 5).join(' '))
     expect(getNote(tab).text()).toBe('5 of 12 words')
     expect(getSubmit(tab).attributes('disabled')).toBeDefined()
@@ -414,7 +419,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('restores from the 12 words in any case and spacing and shows the identity', async () => {
     const { tab, create, restore } = await createPage()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, `  ${RECOVERY_WORDS.join('  ').toUpperCase()}\n`)
     await submitRestore(tab)
     expect(restore).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
@@ -432,7 +437,7 @@ describe('the page "Identity and licenses"', () => {
           finish = resolve
         }),
     )
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, RECOVERY_WORDS.join(' '))
 
     await submitRestore(tab)
@@ -450,7 +455,7 @@ describe('the page "Identity and licenses"', () => {
     const { tab } = await createPage()
     const opener = findButton(tab, 'Restore')
     ;(opener?.element as HTMLElement).focus()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     expect(document.activeElement).not.toBe(opener?.element)
     await press(tab, 'Cancel')
     expect(document.activeElement).toBe(opener?.element)
@@ -458,7 +463,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('refuses 12 words followed by an extra one and does not call the core', async () => {
     const { tab, restore } = await createPage()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, `${RECOVERY_WORDS.join(' ')} extra`)
     expect(getNote(tab).text()).toContain('13 words')
     expect(getNote(tab).attributes('role')).toBe('alert')
@@ -471,7 +476,7 @@ describe('the page "Identity and licenses"', () => {
     const { tab, identity } = await createPage(undefined, () =>
       Promise.resolve(asFailure('Some words are not valid.')),
     )
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, 'abandon '.repeat(12))
     await submitRestore(tab)
     const alert = getDialog(tab).get('[role="alert"]')
@@ -492,12 +497,12 @@ describe('the page "Identity and licenses"', () => {
 
   it('closes the restore dialog on Cancel and drops what was entered', async () => {
     const { tab, restore } = await createPage()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     await enterProof(tab, RECOVERY_WORDS.join(' '))
     await press(tab, 'Cancel')
     expect(hasDialog(tab)).toBe(false)
     expect(restore).not.toHaveBeenCalled()
-    await pressRestore(tab, 'From 12 words')
+    await pressRestore(tab, 'Type the 12 words')
     expect((getProofField(tab).element as HTMLTextAreaElement).value).toBe('')
   })
 
@@ -677,7 +682,7 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     await flushPromises()
   }
   const openSheets = async (tab: Page) => {
-    await pressRestore(tab, 'Scan sheets')
+    await pressRestore(tab, 'Scan the QR codes of two sheets')
     await flushPromises()
   }
 
@@ -689,23 +694,27 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     const items = getBody(tab)
       .findAll('[role=menuitem]')
       .map((one) => one.text())
-    expect(items).toStrictEqual(['From 12 words', 'Scan sheets', 'Type sheets'])
-    await press(tab, 'From 12 words')
-    expect(getDialog(tab).get('h2').text()).toBe('Restore from words')
+    expect(items).toStrictEqual([
+      'Recovery wordsType the 12 words',
+      'Recovery kitScan the QR codes of two sheets',
+      'Recovery kitType the words of two sheets',
+    ])
+    await pressRestore(tab, 'Type the 12 words')
+    expect(getDialog(tab).get('h2').text()).toBe('Recovery words')
     expect(getDialog(tab).findAll('.camera, video')).toHaveLength(0)
   })
 
   it('opens the typed sheets straight from the Restore menu', async () => {
     const { tab } = await createPage()
-    await pressRestore(tab, 'Type sheets')
-    expect(getDialog(tab).get('h2').text()).toBe('Type sheets')
+    await pressRestore(tab, 'Type the words of two sheets')
+    expect(getDialog(tab).get('h2').text()).toBe('Recovery kit: type')
     expect(getDialog(tab).findAll('textarea')).toHaveLength(2)
   })
 
   it('moves to typed sheets on a machine with no camera and sends the two sheets', async () => {
     const { tab, restoreFromKit, restore } = await createPage()
     await openSheets(tab)
-    expect(getDialog(tab).get('h2').text()).toBe('Type sheets')
+    expect(getDialog(tab).get('h2').text()).toBe('Recovery kit: type')
     expect(getDialog(tab).findAll('textarea')).toHaveLength(2)
     await typeSheets(tab, SHEET_THREE.join(' '), '')
     expect(getTypedNote(tab).text()).toBe('Sheet 1 recognized, one more sheet needed')

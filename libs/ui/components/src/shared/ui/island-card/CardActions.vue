@@ -4,7 +4,7 @@
  * narrows (unless the item keeps its label), and in a card too narrow for the icons the secondary ones
  * move into a "..." menu. An item with choices is a menu button: it stays in the header and opens its choices.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, type Component } from 'vue'
 import { Ellipsis } from '@lucide/vue'
 import { measureRect } from '@/shared/api/dom'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -30,7 +30,7 @@ const anchor = ref<{ at: Position; wide: number } | null>(null)
 const choice = ref<{ item: CardActionItem; at: Position; wide: number; from: HTMLElement } | null>(null)
 
 const choices = computed<readonly MenuItem[]>(() =>
-  (choice.value?.item.choices ?? []).map((one) => ({ id: one.id, text: one.label })),
+  (choice.value?.item.choices ?? []).map((one) => ({ id: one.id, text: one.label, detail: one.detail })),
 )
 
 const overflow = computed<readonly MenuItem[]>(() =>
@@ -61,6 +61,10 @@ function onPress(item: CardActionItem, event: Event): void {
   }
   const box = measureRect(from)
   if (box !== undefined) choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
+}
+
+function getChoiceIcon(id: string): Component | undefined {
+  return choice.value?.item.choices?.find((one) => one.id === id)?.icon
 }
 
 function onChooseChoice(id: string): void {
@@ -105,7 +109,11 @@ function onChoose(id: string): void {
     trigger="keyboard"
     @choose="onChooseChoice"
     @dismiss="choice = null"
-  />
+  >
+    <template #icon="{ id }">
+      <component :is="getChoiceIcon(id)" v-if="getChoiceIcon(id)" :size="14" aria-hidden="true" />
+    </template>
+  </Menu>
   <template v-if="overflow.length > 0">
     <CardAction
       ref="trigger"

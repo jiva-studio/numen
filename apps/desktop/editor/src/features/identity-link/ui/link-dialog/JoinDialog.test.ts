@@ -49,7 +49,7 @@ const mountWithLink = async (link: LinkInfo, overrides: Partial<IdentityCalls> =
 describe('the dialog that joins an account', () => {
   it('has a short title and asks for the camera first', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }))
-    expect(dialog.get('h2').text()).toBe('Join account')
+    expect(dialog.get('h2').text()).toBe('Use existing account')
     expect(dialog.get('[role="status"]').text()).toBe(
       'No camera found. Paste the link from the other device.',
     )

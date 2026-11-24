@@ -5,7 +5,7 @@
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
 import { computed, ref } from 'vue'
-import { KeyRound, Plus, QrCode } from '@lucide/vue'
+import { Keyboard, KeyRound, Plus, QrCode, RotateCcw, ScanQrCode } from '@lucide/vue'
 import { CardActions, IslandCard, Toast, type CardActionItem } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
@@ -38,12 +38,27 @@ const noneActions = computed<readonly CardActionItem[]>(() => {
     {
       id: 'restore',
       label: words.identityRestore,
-      icon: KeyRound,
+      icon: RotateCcw,
       isDisabled,
       choices: [
-        { id: 'restore-words', label: words.identityRestoreFromWords },
-        { id: 'restore-sheets', label: words.identityRestoreScan },
-        { id: 'restore-typed', label: words.identityRestoreType },
+        {
+          id: 'restore-words',
+          label: words.identityRestoreFromWords,
+          detail: words.identityRestoreFromWordsDetail,
+          icon: KeyRound,
+        },
+        {
+          id: 'restore-sheets',
+          label: words.identityRestoreKit,
+          detail: words.identityRestoreScanDetail,
+          icon: ScanQrCode,
+        },
+        {
+          id: 'restore-typed',
+          label: words.identityRestoreKit,
+          detail: words.identityRestoreTypeDetail,
+          icon: Keyboard,
+        },
       ],
     },
     { id: 'join', label: words.identityJoin, icon: QrCode, isDisabled },

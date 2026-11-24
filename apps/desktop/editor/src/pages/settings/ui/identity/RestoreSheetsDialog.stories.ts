@@ -37,7 +37,7 @@ type Story = StoryObj<Knobs>
 export const Waiting: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('dialog', { name: 'Restore from sheets' })).toBeVisible()
+    await expect(canvas.getByRole('dialog', { name: 'Recovery kit: scan' })).toBeVisible()
     await expect(canvas.getByText('First sheet')).toBeVisible()
     await expect(canvas.queryByRole('textbox')).toBeNull()
   },

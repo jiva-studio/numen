@@ -2,7 +2,7 @@
 export const WORDS = {
   devices: 'Devices',
   deviceLinkNew: 'Link a new device',
-  deviceJoin: 'Join account',
+  deviceJoin: 'Use existing account',
   deviceThis: 'This device',
   deviceMore: (name: string) => `More actions for ${name}`,
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
@@ -25,11 +25,11 @@ export const WORDS = {
   linkJoin: 'Join',
   linkCancel: 'Cancel',
   linkClose: 'Close',
-  linkJoinTitle: 'Join account',
+  linkJoinTitle: 'Use existing account',
   linkHostTitle: 'Link a device',
-  linkJoinHint: 'Point the camera at the code on your other device.',
+  linkJoinHint: 'Scan the code shown on your other device.',
   linkHostSteps: [
-    'On the other device, tap Join account.',
+    'On the other device, tap Use existing account.',
     'Scan this code.',
     'Check the code matches, then tap Link.',
   ],

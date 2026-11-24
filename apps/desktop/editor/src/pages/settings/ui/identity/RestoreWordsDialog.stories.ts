@@ -44,7 +44,7 @@ type Story = StoryObj<Knobs>
 export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('dialog', { name: 'Restore from words' })).toBeVisible()
+    await expect(canvas.getByRole('dialog', { name: 'Recovery words' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
   },
 }

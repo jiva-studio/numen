@@ -4,6 +4,9 @@ import type { Component } from 'vue'
 export interface CardActionChoice {
   readonly id: string
   readonly label: string
+  /** A second, hushed line under the label. */
+  readonly detail?: string
+  readonly icon?: Component
 }
 
 /** One action of a card header, as `CardActions` draws it. */
