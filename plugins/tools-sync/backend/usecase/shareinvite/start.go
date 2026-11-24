@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 )
 
 var errChannelID = errors.New("the relay made a channel with an id of another size")
@@ -31,13 +30,13 @@ func NewStart(deps Deps) *Start { return &Start{deps: deps} }
 
 // Execute makes a channel on the relay and a key for it, and returns the link that holds them. The link works once,
 // for as long as the relay keeps the channel and 24 hours at most. The share itself is made when the sharer approves
-// the request, so a link nobody uses changes nothing. The folder must be one that may be shared.
+// the request, so a link that no person uses changes nothing. The folder must be one that may be shared.
 func (u *Start) Execute(ctx context.Context, id domain.VaultID, folder string) (Started, error) {
 	normalized := domainshare.NormalizeFolder(folder)
 	if normalized == "" {
 		return Started{}, domainshare.ErrWholeVault
 	}
-	if _, err := share.NewGetShare(u.deps.Sharing).Execute(ctx, id, normalized); err != nil {
+	if err := u.deps.Sharing.CheckShareable(ctx, id, normalized); err != nil {
 		return Started{}, err
 	}
 	own, err := u.deps.Identity.GetPublicIdentity(ctx)

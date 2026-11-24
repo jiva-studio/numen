@@ -91,8 +91,8 @@ func refuseOther(ctx context.Context, deps Deps, o *offer) {
 }
 
 func read(ctx context.Context, deps Deps, o *offer, plain []byte) {
-	m, err := decodeMessage(plain)
-	if err != nil || m.Kind != kindJoin {
+	m, err := domainshare.DecodeLinkMessage(plain)
+	if err != nil || m.Kind != domainshare.MessageJoin {
 		return
 	}
 	chain, err := domainshare.ParseReaderCode(domainshare.NewReaderCode(m.Chain))

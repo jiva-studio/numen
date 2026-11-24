@@ -143,11 +143,15 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	hub := shareinvite.NewHub()
 	invites := shareinvite.Deps{
 		Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock, Identity: p.identity, Device: device.Host{},
-		Sharing: sharewire.NewShareDeps(deps), Receiving: sharewire.NewReceiveDeps(deps), Random: deps.Random, Server: address, Hub: hub,
+		Sharing:   sharewire.NewFolderSharer(sharewire.NewShareDeps(deps)),
+		Receiving: sharewire.NewInvitationReceiver(sharewire.NewReceiveDeps(deps)),
+		Random:    deps.Random, Server: address, Hub: hub,
 	}
-	backend := NewBackend(deps).WithInvites(invitewire.New(invites)).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithDownloads(downloadwire.New(fetching)).WithAccountData(accountdata.Deps{
-		Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep,
-	})
+	backend := NewBackend(deps).
+		WithInvites(invitewire.New(invites)).
+		WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).
+		WithDownloads(downloadwire.New(fetching)).
+		WithAccountData(accountdata.Deps{Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep})
 	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
 	}))

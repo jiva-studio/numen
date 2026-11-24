@@ -10,32 +10,51 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
 )
 
-// Invites answers the methods about the links of this computer and the requests made to read a folder.
+// Invites answers the methods about sharing a folder by a link, as the three parts below.
 type Invites struct {
-	start    *shareinvite.Start
-	list     *shareinvite.ListInvitations
-	revoke   *shareinvite.Revoke
-	requests *shareinvite.ListRequests
-	approve  *shareinvite.Approve
-	decline  *shareinvite.Decline
-	read     *shareinvite.ReadLink
-	join     *shareinvite.Join
-	status   *shareinvite.GetStatus
+	*Links
+	*Requests
+	*Joins
+}
+
+// Links answers the methods about the links this computer made.
+type Links struct {
+	start  *shareinvite.Start
+	list   *shareinvite.ListInvitations
+	revoke *shareinvite.Revoke
+}
+
+// Requests answers the methods about the people who wait for the sharer to answer.
+type Requests struct {
+	list    *shareinvite.ListRequests
+	approve *shareinvite.Approve
+	decline *shareinvite.Decline
+}
+
+// Joins answers the methods about the links this computer pasted.
+type Joins struct {
+	read   *shareinvite.ReadLink
+	join   *shareinvite.Join
+	status *shareinvite.GetStatus
 }
 
 // New returns the methods over the dependencies.
 func New(deps shareinvite.Deps) *Invites {
 	return &Invites{
-		start: shareinvite.NewStart(deps), list: shareinvite.NewListInvitations(deps), revoke: shareinvite.NewRevoke(deps),
-		requests: shareinvite.NewListRequests(deps), approve: shareinvite.NewApprove(deps), decline: shareinvite.NewDecline(deps),
-		read: shareinvite.NewReadLink(deps), join: shareinvite.NewJoin(deps), status: shareinvite.NewGetStatus(deps),
+		Links: &Links{
+			start: shareinvite.NewStart(deps), list: shareinvite.NewListInvitations(deps), revoke: shareinvite.NewRevoke(deps),
+		},
+		Requests: &Requests{
+			list: shareinvite.NewListRequests(deps), approve: shareinvite.NewApprove(deps), decline: shareinvite.NewDecline(deps),
+		},
+		Joins: &Joins{read: shareinvite.NewReadLink(deps), join: shareinvite.NewJoin(deps), status: shareinvite.NewGetStatus(deps)},
 	}
 }
 
 func formatTime(at time.Time) string { return at.UTC().Format(time.RFC3339) }
 
 // StartShareInvitation makes the link a folder is shared by.
-func (s *Invites) StartShareInvitation(ctx context.Context, request api.StartShareInvitationRequest) (api.StartShareInvitationResponse, error) {
+func (s *Links) StartShareInvitation(ctx context.Context, request api.StartShareInvitationRequest) (api.StartShareInvitationResponse, error) {
 	started, err := s.start.Execute(ctx, domain.VaultID(request.VaultID), request.Folder)
 	if err != nil {
 		return api.StartShareInvitationResponse{}, err
@@ -44,7 +63,7 @@ func (s *Invites) StartShareInvitation(ctx context.Context, request api.StartSha
 }
 
 // ListShareInvitations lists the links that work still.
-func (s *Invites) ListShareInvitations(ctx context.Context, _ api.ListShareInvitationsRequest) (api.ListShareInvitationsResponse, error) {
+func (s *Links) ListShareInvitations(ctx context.Context, _ api.ListShareInvitationsRequest) (api.ListShareInvitationsResponse, error) {
 	listed := s.list.Execute(ctx)
 	invitations := make([]api.ShareInvitation, len(listed))
 	for i, one := range listed {
@@ -54,13 +73,13 @@ func (s *Invites) ListShareInvitations(ctx context.Context, _ api.ListShareInvit
 }
 
 // RevokeShareInvitation makes a link stop working.
-func (s *Invites) RevokeShareInvitation(ctx context.Context, request api.RevokeShareInvitationRequest) (api.RevokeShareInvitationResponse, error) {
+func (s *Links) RevokeShareInvitation(ctx context.Context, request api.RevokeShareInvitationRequest) (api.RevokeShareInvitationResponse, error) {
 	return api.RevokeShareInvitationResponse{}, s.revoke.Execute(ctx, request.ID)
 }
 
 // ListShareRequests lists the devices that wait for an answer.
-func (s *Invites) ListShareRequests(ctx context.Context, _ api.ListShareRequestsRequest) (api.ListShareRequestsResponse, error) {
-	listed := s.requests.Execute(ctx)
+func (s *Requests) ListShareRequests(ctx context.Context, _ api.ListShareRequestsRequest) (api.ListShareRequestsResponse, error) {
+	listed := s.list.Execute(ctx)
 	requests := make([]api.ShareRequest, len(listed))
 	for i, one := range listed {
 		requests[i] = api.ShareRequest{
@@ -71,17 +90,17 @@ func (s *Invites) ListShareRequests(ctx context.Context, _ api.ListShareRequests
 }
 
 // ApproveShareRequest lets the device read the folder.
-func (s *Invites) ApproveShareRequest(ctx context.Context, request api.ApproveShareRequestRequest) (api.ApproveShareRequestResponse, error) {
+func (s *Requests) ApproveShareRequest(ctx context.Context, request api.ApproveShareRequestRequest) (api.ApproveShareRequestResponse, error) {
 	return api.ApproveShareRequestResponse{}, s.approve.Execute(ctx, request.RequestID)
 }
 
 // DeclineShareRequest refuses the device.
-func (s *Invites) DeclineShareRequest(ctx context.Context, request api.DeclineShareRequestRequest) (api.DeclineShareRequestResponse, error) {
+func (s *Requests) DeclineShareRequest(ctx context.Context, request api.DeclineShareRequestRequest) (api.DeclineShareRequestResponse, error) {
 	return api.DeclineShareRequestResponse{}, s.decline.Execute(ctx, request.RequestID)
 }
 
-// PreviewShareInvitation reads a link without contacting anybody.
-func (s *Invites) PreviewShareInvitation(_ context.Context, request api.PreviewShareInvitationRequest) (api.PreviewShareInvitationResponse, error) {
+// GetShareInvitationPreview reads a link without contacting anybody.
+func (s *Joins) GetShareInvitationPreview(_ context.Context, request api.PreviewShareInvitationRequest) (api.PreviewShareInvitationResponse, error) {
 	preview, err := s.read.Execute(request.Link)
 	if err != nil {
 		return api.PreviewShareInvitationResponse{}, err
@@ -92,7 +111,7 @@ func (s *Invites) PreviewShareInvitation(_ context.Context, request api.PreviewS
 }
 
 // AcceptShareInvitation sends the owner of a link a request to read the folder.
-func (s *Invites) AcceptShareInvitation(ctx context.Context, request api.AcceptShareInvitationRequest) (api.AcceptShareInvitationResponse, error) {
+func (s *Joins) AcceptShareInvitation(ctx context.Context, request api.AcceptShareInvitationRequest) (api.AcceptShareInvitationResponse, error) {
 	joined, err := s.join.Execute(ctx, request.Link, request.DeviceName)
 	if err != nil {
 		return api.AcceptShareInvitationResponse{}, err
@@ -101,7 +120,7 @@ func (s *Invites) AcceptShareInvitation(ctx context.Context, request api.AcceptS
 }
 
 // GetShareInvitationStatus says how a request of this computer stands.
-func (s *Invites) GetShareInvitationStatus(_ context.Context, request api.GetShareInvitationStatusRequest) (api.GetShareInvitationStatusResponse, error) {
+func (s *Joins) GetShareInvitationStatus(_ context.Context, request api.GetShareInvitationStatusRequest) (api.GetShareInvitationStatusResponse, error) {
 	status, err := s.status.Execute(request.RequestID)
 	if err != nil {
 		return api.GetShareInvitationStatusResponse{}, err

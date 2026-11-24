@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 )
 
 // Phase is how a request to read a folder stands, as the person who made it sees it.
@@ -195,6 +194,10 @@ func watchJoin(ctx context.Context, deps Deps, mine *join) {
 			finishJoin(deps.Hub, mine, PhaseExpired, nil)
 			return
 		}
+		if errors.Is(err, syncprotocol.ErrLinkBusy) && mine.channel == nil {
+			finishJoin(deps.Hub, mine, PhaseUsed, domainshare.ErrLinkUsed)
+			return
+		}
 		if err != nil {
 			if deps.Clock.Wait(ctx, retryAfter) != nil {
 				return
@@ -236,14 +239,14 @@ func receiveAtJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
 	if err != nil {
 		return
 	}
-	m, err := decodeMessage(plain)
+	m, err := domainshare.DecodeLinkMessage(plain)
 	if err != nil {
 		return
 	}
 	switch m.Kind {
-	case kindApproved:
+	case domainshare.MessageApproved:
 		accept(ctx, deps, mine, m.Invitation)
-	case kindDeclined:
+	case domainshare.MessageDeclined:
 		finishJoin(deps.Hub, mine, PhaseDeclined, domainshare.ErrLinkDeclined)
 	}
 }
@@ -257,7 +260,7 @@ func bindJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
 	if err != nil {
 		return
 	}
-	request := channel.Seal(encodeMessage(message{Kind: kindJoin, Chain: mine.chain, Name: mine.name, Invitation: ""}))
+	request := channel.Seal(domainshare.EncodeLinkMessage(domainshare.LinkMessage{Kind: domainshare.MessageJoin, Chain: mine.chain, Name: mine.name, Invitation: ""}))
 	if _, err := deps.Relay.SendMessage(ctx, mine.id, ports.LinkSideDisplayer, request); err != nil {
 		return
 	}
@@ -267,15 +270,15 @@ func bindJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
 }
 
 func accept(ctx context.Context, deps Deps, mine *join, invitation string) {
-	preview, err := receive.NewReadInvitation(deps.Receiving).Execute(ctx, invitation)
-	if err == nil && preview.OwnerFingerprint != mine.invitation.Fingerprint {
+	owner, err := deps.Receiving.GetInvitationOwner(ctx, invitation)
+	if err == nil && owner != mine.invitation.Fingerprint {
 		err = domainshare.ErrLinkMismatch
 	}
 	if err != nil {
 		finishJoin(deps.Hub, mine, PhaseFailed, err)
 		return
 	}
-	if _, err := receive.NewAcceptInvitation(deps.Receiving).Execute(ctx, invitation); err != nil {
+	if err := deps.Receiving.AcceptInvitation(ctx, invitation); err != nil {
 		finishJoin(deps.Hub, mine, PhaseFailed, err)
 		return
 	}

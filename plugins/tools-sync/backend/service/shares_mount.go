@@ -55,7 +55,7 @@ func mountInviteMethods(service *server.API, r *runtime) {
 	})
 	server.Handle(service, api.MethodPreviewShareInvitation, func(ctx context.Context, request api.PreviewShareInvitationRequest) (api.PreviewShareInvitationResponse, error) {
 		return handle(r, func(b *Backend) (api.PreviewShareInvitationResponse, error) {
-			return b.PreviewShareInvitation(ctx, request)
+			return b.GetShareInvitationPreview(ctx, request)
 		})
 	})
 	server.Handle(service, api.MethodAcceptShareInvitation, func(ctx context.Context, request api.AcceptShareInvitationRequest) (api.AcceptShareInvitationResponse, error) {

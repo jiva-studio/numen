@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 )
 
 const (
@@ -33,8 +31,8 @@ type Deps struct {
 	Clock     ports.Clock
 	Identity  ports.Identity
 	Device    ports.Device
-	Sharing   share.Deps
-	Receiving receive.Deps
+	Sharing   ports.FolderSharing
+	Receiving ports.InvitationReceiving
 	Random    io.Reader
 	Server    string
 	Hub       *Hub

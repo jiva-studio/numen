@@ -27,7 +27,7 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 	if err != nil || started.Link == "" || started.ExpiresAt == "" {
 		t.Fatalf("started = %+v, %v, want a link with its expiry", started, err)
 	}
-	preview, err := readerSide.PreviewShareInvitation(ctx, api.PreviewShareInvitationRequest{Link: started.Link})
+	preview, err := readerSide.GetShareInvitationPreview(ctx, api.PreviewShareInvitationRequest{Link: started.Link})
 	if err != nil || preview.Folder != "Food" || !preview.IsReadOnly || preview.OwnerFingerprint == "" {
 		t.Fatalf("preview = %+v, %v, want the folder, the owner and read-only", preview, err)
 	}
@@ -36,12 +36,12 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		t.Fatal(err)
 	}
 	var status api.GetShareInvitationStatusResponse
-	synctest.Eventually(t, "the code on the reader", func() bool {
+	synctest.WaitUntil(t, "the code on the reader", func() bool {
 		status, err = readerSide.GetShareInvitationStatus(ctx, api.GetShareInvitationStatusRequest{RequestID: sent.RequestID})
 		return err == nil && status.Phase == api.ShareRequestWaiting
 	})
 	var requests api.ListShareRequestsResponse
-	synctest.Eventually(t, "the request on the owner", func() bool {
+	synctest.WaitUntil(t, "the request on the owner", func() bool {
 		requests, err = ownerSide.ListShareRequests(ctx, api.ListShareRequestsRequest{})
 		return err == nil && len(requests.Requests) == 1
 	})
@@ -53,7 +53,7 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		t.Fatal(err)
 	}
 
-	synctest.Eventually(t, "the folder on the reader", func() bool {
+	synctest.WaitUntil(t, "the folder on the reader", func() bool {
 		status, err = readerSide.GetShareInvitationStatus(ctx, api.GetShareInvitationStatusRequest{RequestID: sent.RequestID})
 		return err == nil && status.Phase == api.ShareRequestReceived
 	})
@@ -85,7 +85,7 @@ func TestSharing_RefusesWhatTheOwnerMayNotDo(t *testing.T) {
 	backend := service.NewBackend(w.c.SyncDeps()).WithInvites(w.c.NewInvites(t))
 
 	_, wholeErr := backend.StartShareInvitation(t.Context(), api.StartShareInvitationRequest{VaultID: "Test", Folder: ""})
-	_, badErr := backend.PreviewShareInvitation(t.Context(), api.PreviewShareInvitationRequest{Link: "numen-share:AAAA"})
+	_, badErr := backend.GetShareInvitationPreview(t.Context(), api.PreviewShareInvitationRequest{Link: "numen-share:AAAA"})
 	_, unknownErr := backend.ApproveShareRequest(t.Context(), api.ApproveShareRequestRequest{RequestID: "00"})
 
 	for name, err := range map[string]error{"the whole vault": wholeErr, "a link that is none": badErr, "a request that is none": unknownErr} {

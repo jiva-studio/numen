@@ -415,7 +415,7 @@ func TestLinkChannel_CodeIsTheSameOnBothSidesAndSixDigits(t *testing.T) {
 	}
 }
 
-func TestLinkChannel_CodeDiffersWhenAnotherKeyStandsBetweenTheSides(t *testing.T) {
+func TestLinkChannel_CodeDiffersForDifferentKeys(t *testing.T) {
 	t.Parallel()
 	one, other := newPair(t), newPair(t)
 	displayer, _ := one.connect(t)

@@ -11,16 +11,17 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/device"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/invitewire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 )
 
 const eventuallyLimit = 10 * time.Second
 
-// InviteDeps are the dependencies of the use cases of sharing a folder by a link, over the relay of the server of this
+// NewInviteDeps are the dependencies of the use cases of sharing a folder by a link, over the relay of the server of this
 // computer. They share the hub, so a link made through one set of use cases is found by the others.
-func (c *Computer) InviteDeps(hub *shareinvite.Hub) shareinvite.Deps {
+func (c *Computer) NewInviteDeps(hub *shareinvite.Hub) shareinvite.Deps {
 	return shareinvite.Deps{
 		Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock, Identity: c.Account,
-		Device: device.Host{}, Sharing: c.ShareDeps(), Receiving: c.ReceiveDeps(), Random: rand.Reader, Server: c.Server.URL, Hub: hub,
+		Device: device.Host{}, Sharing: sharewire.NewFolderSharer(c.ShareDeps()), Receiving: sharewire.NewInvitationReceiver(c.ReceiveDeps()), Random: rand.Reader, Server: c.Server.URL, Hub: hub,
 	}
 }
 
@@ -28,7 +29,7 @@ func (c *Computer) InviteDeps(hub *shareinvite.Hub) shareinvite.Deps {
 func (c *Computer) StartInviteCourier(t *testing.T) shareinvite.Deps {
 	t.Helper()
 	hub := shareinvite.NewHub()
-	deps := c.InviteDeps(hub)
+	deps := c.NewInviteDeps(hub)
 	ctx, stop := context.WithCancel(t.Context())
 	finished := make(chan struct{})
 	go func() {
@@ -50,8 +51,8 @@ func (c *Computer) NewInvites(t *testing.T) *invitewire.Invites {
 	return invitewire.New(c.StartInviteCourier(t))
 }
 
-// Eventually waits until the condition holds, as the couriers work in the background, and fails the test when it does not.
-func Eventually(t *testing.T, what string, condition func() bool) {
+// WaitUntil waits until the condition holds, as the couriers work in the background, and fails the test when it does not.
+func WaitUntil(t *testing.T, what string, condition func() bool) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), eventuallyLimit)
 	defer cancel()

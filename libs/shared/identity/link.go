@@ -243,7 +243,7 @@ func newLinkCode(pseudo []byte, transcript [32]byte) (string, error) {
 }
 
 // Code returns the six digits both sides of a link derive from the keys of the link. Two sides that hold different
-// keys, as when a relay stands between them, show different codes.
+// keys, as when a relay sits between them, show different codes.
 func (c *LinkChannel) Code() string { return c.code }
 
 func newLinkAEAD(pseudo []byte, label string, transcript [32]byte) (cipher.AEAD, error) {

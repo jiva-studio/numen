@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 )
 
 const fingerprintTag = 6
@@ -57,7 +56,6 @@ func (u *ListInvitations) Execute(_ context.Context) []Invitation {
 	return listed
 }
 
-// claim returns the offer and its request, marked busy so that two answers do not run at once.
 func claim(deps Deps, id string) (*offer, *pending, error) {
 	deps.Hub.mu.Lock()
 	defer deps.Hub.mu.Unlock()
@@ -84,9 +82,9 @@ func end(hub *Hub, o *offer) {
 	hub.mu.Unlock()
 }
 
-func send(ctx context.Context, deps Deps, o *offer, m message) error {
+func send(ctx context.Context, deps Deps, o *offer, m domainshare.LinkMessage) error {
 	deps.Hub.mu.Lock()
-	sealed := o.channel.Seal(encodeMessage(m))
+	sealed := o.channel.Seal(domainshare.EncodeLinkMessage(m))
 	deps.Hub.mu.Unlock()
 	_, err := deps.Relay.SendMessage(ctx, o.id, ports.LinkSideScanner, sealed)
 	return err
@@ -113,18 +111,17 @@ func (u *Approve) Execute(ctx context.Context, id string) error {
 	}
 	end(u.deps.Hub, o)
 	reportWaiting(ctx, u.deps)
-	return send(ctx, u.deps, o, message{Kind: kindApproved, Chain: nil, Name: "", Invitation: invited})
+	return send(ctx, u.deps, o, domainshare.LinkMessage{Kind: domainshare.MessageApproved, Chain: nil, Name: "", Invitation: invited})
 }
 
 func addReader(ctx context.Context, deps Deps, o *offer, p *pending) (string, error) {
-	input := share.AddReaderInput{VaultID: o.vault, Folder: o.folder, Code: domainshare.NewReaderCode(p.chain), Label: p.name, IsConfirmed: false}
-	add := share.NewShareFolder(deps.Sharing)
-	invited, err := add.Execute(ctx, input)
+	code := domainshare.NewReaderCode(p.chain)
+	invited, err := deps.Sharing.ShareWithReader(ctx, o.vault, o.folder, code, p.name)
 	if errors.Is(err, domainshare.ErrChangedIdentity) {
-		input.Label = p.name + " (" + p.fingerprint[:min(fingerprintTag, len(p.fingerprint))] + ")"
-		invited, err = add.Execute(ctx, input)
+		label := p.name + " (" + p.fingerprint[:min(fingerprintTag, len(p.fingerprint))] + ")"
+		invited, err = deps.Sharing.ShareWithReader(ctx, o.vault, o.folder, code, label)
 	}
-	return invited.Text, err
+	return invited, err
 }
 
 // Decline refuses a person.
@@ -141,7 +138,7 @@ func (u *Decline) Execute(ctx context.Context, id string) error {
 	}
 	end(u.deps.Hub, o)
 	reportWaiting(ctx, u.deps)
-	err = send(ctx, u.deps, o, message{Kind: kindDeclined, Chain: nil, Name: "", Invitation: ""})
+	err = send(ctx, u.deps, o, domainshare.LinkMessage{Kind: domainshare.MessageDeclined, Chain: nil, Name: "", Invitation: ""})
 	release(u.deps.Hub, p)
 	return err
 }

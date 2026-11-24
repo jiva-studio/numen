@@ -65,7 +65,7 @@ func join(t *testing.T, deps shareinvite.Deps, link, device string) string {
 func waitPhase(t *testing.T, deps shareinvite.Deps, id string, want shareinvite.Phase) shareinvite.Status {
 	t.Helper()
 	var status shareinvite.Status
-	synctest.Eventually(t, "the request to be "+string(want), func() bool {
+	synctest.WaitUntil(t, "the request to be "+string(want), func() bool {
 		var err error
 		status, err = shareinvite.NewGetStatus(deps).Execute(id)
 		return err == nil && status.Phase == want
@@ -76,14 +76,14 @@ func waitPhase(t *testing.T, deps shareinvite.Deps, id string, want shareinvite.
 func (w *world) waitRequest(t *testing.T, count int) []shareinvite.Request {
 	t.Helper()
 	var requests []shareinvite.Request
-	synctest.Eventually(t, "the requests to arrive", func() bool {
+	synctest.WaitUntil(t, "the requests to arrive", func() bool {
 		requests = shareinvite.NewListRequests(w.sharer).Execute(t.Context())
 		return len(requests) == count
 	})
 	return requests
 }
 
-func TestApprove_GivesTheRequestingDeviceReadAccessToTheFolder(t *testing.T) {
+func TestApprove_AddsTheDeviceAsReaderOfTheFolder(t *testing.T) {
 	w := newWorld(t)
 	reader, readerDeps := w.newReader(t, "Reader")
 	started := w.start(t)
@@ -126,13 +126,13 @@ func TestApprove_ShowsTheRequestAsAHealthItemUntilAnswered(t *testing.T) {
 		}
 		return false
 	}
-	synctest.Eventually(t, "the health item", hasItem)
+	synctest.WaitUntil(t, "the health item", hasItem)
 
 	if err := shareinvite.NewDecline(w.sharer).Execute(t.Context(), requests[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	synctest.Eventually(t, "the health item to go", func() bool { return !hasItem() })
+	synctest.WaitUntil(t, "the health item to go", func() bool { return !hasItem() })
 }
 
 func TestDecline_TellsTheDeviceAndAddsNoReader(t *testing.T) {
