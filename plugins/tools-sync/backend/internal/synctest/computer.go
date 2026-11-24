@@ -55,17 +55,17 @@ func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
 type Computer struct {
-	Clock    *Clock
-	Server   *Server
-	Fake     *accounttest.Fake
-	Client   *account.Client
-	Health   *healthtest.Host
-	Vaults   *hosttest.Vault
-	Host     Host
-	Cloud    *cloud.Cloud
-	Account  *accountadapter.Account
-	Sessions *serveradapter.Server
-	State    *hoststore.State
+	Clock     *Clock
+	Server    *Server
+	Fake      *accounttest.Fake
+	Client    *account.Client
+	Health    *healthtest.Host
+	Vaults    *hosttest.Vault
+	Host      Host
+	Cloud     *cloud.Cloud
+	Account   *accountadapter.Account
+	Sessions  *serveradapter.Server
+	State     *hoststore.State
 	LazyHeavy bool
 
 	healthEndpoint hostcall.Endpoint

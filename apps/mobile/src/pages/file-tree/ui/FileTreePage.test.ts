@@ -84,7 +84,7 @@ describe('tapping a file', () => {
     const core = coreWith([guide], {
       fetchFile: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<{ ok: true; value: null }>((resolve) => {
             finish = () => resolve({ ok: true, value: null })
           }),
       ),
@@ -103,7 +103,7 @@ describe('tapping a file', () => {
 
   it('downloads once for two taps on the same file', async () => {
     const core = coreWith([guide], {
-      fetchFile: vi.fn(() => new Promise(() => undefined)),
+      fetchFile: vi.fn(() => new Promise<{ ok: true; value: null }>(() => undefined)),
     })
     const page = await showFiles()
 

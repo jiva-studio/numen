@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -45,7 +44,7 @@ type runtime struct {
 	wakes        *loops.Wakes
 	interval     *loops.Interval
 	session      *loops.Supervisor[*Backend]
-	isForeground atomic.Bool
+	isForeground loops.Flag
 }
 
 func newRuntime(p parts) *runtime {
@@ -69,7 +68,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 }
 
 func (r *runtime) configure(values map[string]string) {
-	r.isForeground.Store(values[settingForeground] == "true")
+	r.isForeground.Set(values[settingForeground] == "true")
 	r.interval.Set(values[settingInterval])
 	r.session.Configure(values[settingServer])
 }
@@ -96,7 +95,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
 	}))
 	loopsOf := map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute}
-	if !r.isForeground.Load() {
+	if !r.isForeground.IsOn() {
 		loopsOf["sync"] = loop.Execute
 	}
 	return backend, loopsOf

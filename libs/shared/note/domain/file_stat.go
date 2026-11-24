@@ -17,13 +17,13 @@ const (
 // FileStat is what a walk of a vault reports before anything is read: enough to
 // decide whether the file has to be read at all, and what would read it.
 type FileStat struct {
-	Path    string
-	Kind    SourceKind
-	Size    int64
-	ModTime time.Time
-	FileID  FileID
-	Hash    string
-	Version uint64
+	Path     string
+	Kind     SourceKind
+	Size     int64
+	ModTime  time.Time
+	FileID   FileID
+	Hash     string
+	Version  uint64
 	IsAbsent bool
 }
 

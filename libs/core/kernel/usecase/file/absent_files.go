@@ -204,3 +204,34 @@ func NewListAbsentFiles(absent vaultport.AbsentFiles) *ListAbsentFiles {
 func (u *ListAbsentFiles) Execute(ctx context.Context, v domain.Vault) ([]vault.AbsentFile, error) {
 	return u.absent.ListAbsentFiles(ctx, v)
 }
+
+// AbsentWriters opens a vault to place a file and to delete the bytes of one.
+type AbsentWriters interface {
+	vaultport.FolderWriters
+	EvictWriters
+}
+
+// Absent is the use cases over the registry of the absent files of the vaults of a host.
+type Absent struct {
+	Put     *PutAbsentFiles
+	List    *ListAbsentFiles
+	Evict   *EvictFile
+	NewFill func(store StoreFiles) *FillFile
+}
+
+// NewAbsent returns the use cases over the registry, or nil where there is no registry.
+func NewAbsent(
+	readers vaultport.VaultReaders, registry vaultport.AbsentFiles, writers AbsentWriters, index edit.IndexUpdater,
+) *Absent {
+	if registry == nil {
+		return nil
+	}
+	return &Absent{
+		Put:   NewPutAbsentFiles(readers, registry),
+		List:  NewListAbsentFiles(registry),
+		Evict: NewEvictFile(readers, registry, writers),
+		NewFill: func(store StoreFiles) *FillFile {
+			return NewFillFile(registry, writers, store, index)
+		},
+	}
+}

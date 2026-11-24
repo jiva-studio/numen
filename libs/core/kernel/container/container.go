@@ -63,8 +63,8 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
-	Absent  bool
-	machine Machine
+	Absent             bool
+	machine            Machine
 }
 
 // Resources holds the services shared by the parts of one installation.

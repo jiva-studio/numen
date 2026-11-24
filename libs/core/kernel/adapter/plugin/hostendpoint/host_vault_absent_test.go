@@ -97,15 +97,7 @@ func newPhoneVault(t *testing.T, held map[string]string) phoneVault {
 			ReadFile:    file.NewReadFile(readers, writers),
 			RangeReader: file.Read{Readers: readers},
 		},
-		hostvault.Writer{Absent: &hostvault.Absent{
-			Put:  file.NewPutAbsentFiles(readers, registry),
-			List: file.NewListAbsentFiles(registry),
-			NewFill: func(store file.StoreFiles) *file.FillFile {
-				return file.NewFillFile(registry, writers, store, noIndex)
-			},
-			Evict:        file.NewEvictFile(readers, registry, writers),
-			StoreReaders: storeReaders,
-		}},
+		hostvault.Writer{Absent: hostvault.NewAbsent(file.NewAbsent(readers, registry, writers, noIndex), storeReaders)},
 		hostvault.Lookups{}, hostvault.Arranger{}, hostvault.Stores{},
 	)
 	return phoneVault{client: openReadEndpoint(t, access), root: v.Path, store: store}
