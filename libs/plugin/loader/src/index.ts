@@ -89,6 +89,7 @@ export {
   type VaultFiles,
   type VaultNotes,
   type VaultRelations,
+  type VaultFlagsHost,
   type VaultsHost,
   type VaultsState,
   type WindowHost,

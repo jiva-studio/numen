@@ -20,4 +20,5 @@ export const WHEN_VARIABLES = [
   { name: 'window.isPaletteOpen', type: 'bool' },
   { name: 'app.platform', type: 'string' },
   { name: 'config', type: 'map' },
+  { name: 'vault.flags', type: 'map' },
 ] as const

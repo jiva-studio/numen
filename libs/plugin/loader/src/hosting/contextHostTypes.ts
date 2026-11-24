@@ -33,6 +33,7 @@ import type {
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultFlagsHost,
   VaultsHost,
   VaultTexts,
   WindowHost,
@@ -149,6 +150,7 @@ export interface ContextUiHost {
     readonly getPermission?: (command: string) => string | undefined
   }
   readonly getWindow: () => WindowHost | undefined
+  readonly getVaultFlags: (pluginId: string) => VaultFlagsHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined
   readonly getDialogs: () => DialogHost | undefined

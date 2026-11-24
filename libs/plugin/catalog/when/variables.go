@@ -23,5 +23,6 @@ func listVariables() []variable {
 		{name: "window.isPaletteOpen", kind: kindBool},
 		{name: "app.platform", kind: kindString},
 		{name: "config", kind: kindMap},
+		{name: "vault.flags", kind: kindMap},
 	}
 }

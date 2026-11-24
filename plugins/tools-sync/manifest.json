@@ -20,13 +20,13 @@
         "slot": "fileTree.context",
         "command": "vault.sync",
         "group": "6-sync",
-        "when": "target.isRoot"
+        "when": "target.isRoot && vault.flags.md.numen.tools.sync.isSynced == false"
       },
       {
         "slot": "fileTree.context",
         "command": "share.open",
         "group": "6-sync",
-        "when": "target.isFolder"
+        "when": "target.isFolder && vault.flags.md.numen.tools.sync.isSynced == true"
       }
     ]
   },

@@ -165,6 +165,7 @@ function createUi(
   return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
     workspace: ui.getWorkspace(),
     window: ui.getWindow(),
+    vaultFlags: ui.getVaultFlags(pluginId),
     commands:
       commands &&
       limitCommands(commands, {

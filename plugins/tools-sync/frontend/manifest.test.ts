@@ -90,7 +90,7 @@ describe('the manifest of the sync plugin', () => {
       expect.objectContaining({
         slot: 'fileTree.context',
         command: 'share.open',
-        when: 'target.isFolder',
+        when: 'target.isFolder && vault.flags.md.numen.tools.sync.isSynced == true',
       }),
     )
     expect(contributes.commands).toContainEqual(
@@ -100,7 +100,7 @@ describe('the manifest of the sync plugin', () => {
       expect.objectContaining({
         slot: 'fileTree.context',
         command: 'vault.sync',
-        when: 'target.isRoot',
+        when: 'target.isRoot && vault.flags.md.numen.tools.sync.isSynced == false',
       }),
     )
     expect(contributes.commands).toContainEqual(

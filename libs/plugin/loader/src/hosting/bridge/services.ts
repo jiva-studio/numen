@@ -60,6 +60,7 @@ export function createUiServiceBridge(
       getPermission: (command) => findCommandPermission(commands, manifests, command),
     },
     getWindow: window.getWindow,
+    getVaultFlags: window.getVaultFlags,
     getNotices: window.getNotices,
     getPicker: window.getPicker,
     getDialogs: window.getDialogs,

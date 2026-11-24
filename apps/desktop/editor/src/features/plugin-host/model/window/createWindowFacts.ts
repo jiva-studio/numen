@@ -1,4 +1,4 @@
-import type { WhenValues } from '@numen/plugin-loader'
+import type { JsonObject, WhenValues } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'
 import type { CommandTarget } from '@/shared/model/command'
 import { isFieldFocused } from './isFieldFocused'
@@ -13,6 +13,7 @@ export interface WindowFactsDeps {
   readonly appCommands: readonly Command[]
   readonly getTarget: () => CommandTarget
   readonly isPaletteOpen: () => boolean
+  readonly getVaultFlags: (vaultId: string) => JsonObject
 }
 
 /** What the conditions of the commands of the plugins read of the window. */
@@ -27,6 +28,7 @@ export function createWindowFacts(deps: WindowFactsDeps): WindowFactsSource {
         'window.isTabOpen': inFront.tab !== '',
         'window.isFieldFocused': isFieldFocused(),
         'window.isPaletteOpen': deps.isPaletteOpen(),
+        'vault.flags': deps.getVaultFlags(inFront.vault.id),
       }
     },
   }

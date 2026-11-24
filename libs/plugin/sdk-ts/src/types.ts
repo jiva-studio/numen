@@ -13,6 +13,7 @@ import type { BackgroundTaskHost } from './backgroundTasks'
 import type { HealthHost } from './health'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
+import type { VaultFlagsHost } from './vaultFlags'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
 import type { ConnectionHost } from './connections'
@@ -306,6 +307,7 @@ export interface PluginVault {
 export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
+  readonly vaultFlags?: VaultFlagsHost
   readonly commands?: CommandsHost
   readonly slots: SlotHost
   readonly notices: NoticeHost

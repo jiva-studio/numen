@@ -25,6 +25,7 @@ import type {
   VaultRelations,
   VaultTexts,
   ConnectionHost,
+  VaultFlagsHost,
   VaultsHost,
   WindowHost,
   WorkspaceHost,
@@ -116,6 +117,7 @@ export interface HostWindow {
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly getWindow: () => WindowHost | undefined
+  readonly getVaultFlags: (pluginId: string) => VaultFlagsHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined
   readonly getDialogs: () => DialogHost | undefined

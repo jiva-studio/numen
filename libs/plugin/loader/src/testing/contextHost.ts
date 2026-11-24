@@ -67,6 +67,7 @@ const IDLE: PluginContextHost = {
     getCommands: () => undefined,
     commandAccess: { isListed: () => false },
     getWindow: () => undefined,
+    getVaultFlags: () => undefined,
     getSlots: () => createMockSlotHost(),
     getNotices: () => createMockNoticeHost(),
     getPicker: () => undefined,

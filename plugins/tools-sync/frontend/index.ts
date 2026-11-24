@@ -13,6 +13,7 @@ import {
 import { createAcceptanceView } from './model/acceptance'
 import { createInvitationView } from './model/invitation'
 import { createSyncState } from './model/sync'
+import { createSyncedFlags } from './model/syncedFlags'
 import { finishSync, startSync } from './model/syncVault'
 import { createSubscriptionView } from './ui/subscriptionView'
 import { createSharesPage } from './ui/sharesPage'
@@ -111,7 +112,11 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
 const getOutcomeText = (kind: 'synced' | 'already'): string =>
   kind === 'synced' ? words.syncStarted : words.syncedAlready
 
-const registerSync = (plugin: PluginContext, host: HostServices): void => {
+const registerSync = (
+  plugin: PluginContext,
+  host: HostServices,
+  refreshFlags: () => Promise<void>,
+): void => {
   const show = (failure: unknown): void =>
     host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
   const choose = (vaultId: string, name: string, remoteId: string): void => {
@@ -120,7 +125,10 @@ const registerSync = (plugin: PluginContext, host: HostServices): void => {
     const finish = (id: string): void => {
       dialog.close()
       finishSync(vaultsClient, vaultId, id)
-        .then(() => host.ui.notices.show(words.syncStarted))
+        .then(() => {
+          host.ui.notices.show(words.syncStarted)
+          return refreshFlags()
+        })
         .catch(show)
     }
     const dialog = dialogs.open({
@@ -141,6 +149,7 @@ const registerSync = (plugin: PluginContext, host: HostServices): void => {
         const outcome = await startSync(vaultsClient, vaultId)
         if (outcome.kind === 'choose') choose(vaultId, outcome.name, outcome.remoteId)
         else host.ui.notices.show(getOutcomeText(outcome.kind))
+        await refreshFlags()
       } catch (failure) {
         show(failure)
       }
@@ -158,9 +167,16 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
     component: createSubscriptionView(plugin, host, createSettingsOpener(plugin, host)),
   })
   registerShare(plugin, host)
-  registerSync(plugin, host)
+  const synced = createSyncedFlags({
+    client: vaultsClient,
+    flags: host.ui.vaultFlags ?? { setFlag: () => undefined },
+    getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
+  })
+  registerSync(plugin, host, synced.refresh)
   registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
+  synced.start()
+  plugin.identity.subscriptions.push({ dispose: () => synced.stop() })
   state.start()
 }
 
