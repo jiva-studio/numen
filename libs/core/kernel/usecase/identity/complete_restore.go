@@ -37,6 +37,7 @@ type restoreCompletion struct {
 	records  records
 	restores restoreHold
 	builder  stateBuilder
+	gate     CreateGate
 }
 
 func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore, chainBytes []byte) error {
@@ -45,6 +46,11 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 	if store.current != restore {
 		return identitydomain.ErrNoPendingRestore
 	}
+	write, err := c.gate.acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("wait for the write of the identity: %w", err)
+	}
+	defer write()
 	if err := c.records.checkAbsent(ctx); err != nil {
 		return err
 	}

@@ -13,12 +13,20 @@ import { IDENTITY_WORDS } from '../words'
 import { createDeviceStore } from './devices'
 
 const RESTORE_POLL_MS = 1000
+const RESTORE_READ_FAILURES = 5
 
 const waitForIdentity = async (api: IdentityApi): Promise<IdentityInfo> => {
+  let failures = 0
   for (;;) {
     await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-    const found = await api.account.getIdentity().catch(() => undefined)
-    if (found !== undefined) return found
+    try {
+      const found = await api.account.getIdentity()
+      failures = 0
+      if (found !== undefined) return found
+    } catch (caughtError) {
+      failures += 1
+      if (failures >= RESTORE_READ_FAILURES) throw caughtError
+    }
   }
 }
 

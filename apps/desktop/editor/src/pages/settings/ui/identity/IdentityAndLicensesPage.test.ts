@@ -373,6 +373,28 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.find('[role="dialog"]').exists()).toBe(false)
   })
 
+  it('shows "Restoring…" until the core has the identity', async () => {
+    let finish: (answer: Result<IdentityInfo, string>) => void = () => undefined
+    const { tab, identity } = await createPage(
+      undefined,
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    await press(tab, 'Restore')
+    await getRestoreInputs(tab)[0]?.setValue(RECOVERY_WORDS.join(' '))
+
+    await submitRestore(tab)
+
+    expect(findButton(tab, words.identityRestoring)?.attributes('disabled')).toBeDefined()
+    expect(identity.value).toBeUndefined()
+    expect(tab.text()).not.toContain(IDENTITY.accountFingerprint)
+    finish(asValue(IDENTITY))
+    await flushPromises()
+    expect(tab.text()).toContain(IDENTITY.accountFingerprint)
+  })
+
   it('fills the fields after the first when the 12 words are pasted into it', async () => {
     const { tab, restore } = await createPage()
     await press(tab, 'Restore')

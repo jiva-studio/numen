@@ -104,3 +104,15 @@ func (s *fakeKitSaver) getLast() (identitydomain.Kit, bool) {
 	}
 	return s.kits[len(s.kits)-1], true
 }
+
+func (s *fakeKeyStore) writes() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.setCalled
+}
+
+func (s *fakeKeyStore) failSets(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.setFails = err
+}

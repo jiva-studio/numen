@@ -16,6 +16,10 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
+const maxSealPlain = 32 << 10
+
+var errDataSize = errors.New("the data to seal has at most 32 KiB")
+
 type pendingRestore struct {
 	recovery identity.RecoveryKey
 	device   identity.DeviceKey
@@ -71,6 +75,9 @@ func (f *Fake) readAccountKeys() (identity.AccountKeys, error) {
 }
 
 func (s *service) SealData(_ context.Context, req *connect.Request[v1.SealDataRequest]) (*connect.Response[v1.SealDataResponse], error) {
+	if len(req.Msg.GetPlain()) > maxSealPlain {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errDataSize)
+	}
 	keys, err := s.fake.readAccountKeys()
 	if err != nil {
 		return nil, err
@@ -127,12 +134,18 @@ func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.Com
 	if err != nil {
 		return nil, err
 	}
+	if s.fake.completeHook != nil {
+		s.fake.completeHook()
+	}
 	state, err := joinRestore(restore, req.Msg.GetChain())
 	if err != nil {
 		return nil, err
 	}
 	s.fake.mu.Lock()
 	defer s.fake.mu.Unlock()
+	if s.fake.pending != restore {
+		return nil, refuse(connect.CodeFailedPrecondition, "NO_PENDING_RESTORE")
+	}
 	s.fake.record = &state
 	s.fake.pending = nil
 	return connect.NewResponse(&v1.CompleteRestoreResponse{}), nil

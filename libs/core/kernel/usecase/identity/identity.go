@@ -50,7 +50,8 @@ type SharedKeys struct {
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
-	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: NewProgress(), createLock: NewCreateGate()}
+	progress := NewProgress()
+	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: progress, createLock: progress.gate}
 }
 
 // WithCreateLock makes the use cases over one key store create the identity one at a time. Every
@@ -67,6 +68,7 @@ func (d Deps) WithCreateLock(lock CreateGate) Deps {
 func (d Deps) WithProgress(progress *Progress) Deps {
 	if progress != nil {
 		d.progress = progress
+		d.createLock = progress.gate
 	}
 	return d
 }
@@ -114,5 +116,5 @@ func encodeRecord(record identitylib.Record) string {
 }
 
 func (d Deps) getCompletion() restoreCompletion {
-	return restoreCompletion{records: d.records, restores: d.progress.restores, builder: d.getBuilder()}
+	return restoreCompletion{records: d.records, restores: d.progress.restores, builder: d.getBuilder(), gate: d.createLock}
 }

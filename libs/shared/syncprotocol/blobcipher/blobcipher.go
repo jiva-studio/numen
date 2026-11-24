@@ -6,7 +6,7 @@ import (
 )
 
 // Seal reads the salt from random and returns the stored bytes of plain. A text body is compressed first.
-// It returns ErrTooLarge when the stored size is over 64 MiB.
+// It returns ErrTooLarge when the stored size is over 64 MiB or a text body is over 256 MiB.
 func Seal(random io.Reader, revisionKey [32]byte, fileID [16]byte, plain []byte, isText bool) ([]byte, error) {
 	payload, flags, err := createPayload(plain, isText)
 	if err != nil {
@@ -56,6 +56,9 @@ func Open(revisionKey [32]byte, fileID [16]byte, blob []byte) ([]byte, error) {
 func createPayload(plain []byte, isText bool) (payload []byte, flags byte, err error) {
 	if !isText {
 		return plain, 0, nil
+	}
+	if ComputePaddedLength(len(plain)) > maxPlainSize {
+		return nil, 0, ErrTooLarge
 	}
 	payload, err = compress(plain)
 	if err != nil {

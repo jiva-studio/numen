@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -582,4 +584,76 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 	if _, err := k.sign.Execute(t.Context(), syncPlugin, []byte("message")); !errors.Is(err, identitydomain.ErrNoPendingRestore) {
 		t.Errorf("SignAsRecovery after the expiry: error = %v, want ErrNoPendingRestore", err)
 	}
+	}
+}
+
+func TestCompleteRestore_ConcurrentCreateLeavesOneIdentity(t *testing.T) {
+	t.Parallel()
+	k := newRestoreKit(t, "Phone")
+	other := identity.NewSeededCreate(k.deps)
+	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	var arrived atomic.Int32
+	both := make(chan struct{})
+	var once sync.Once
+	k.keys.onGet = func() {
+		if arrived.Add(1) >= 2 {
+			once.Do(func() { close(both) })
+		}
+		select {
+		case <-both:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	errs := make([]error, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		errs[0] = k.complete.Execute(t.Context(), syncPlugin, nil)
+	}()
+	go func() {
+		defer wg.Done()
+		_, errs[1] = other.Execute(t.Context(), getOtherWords())
+	}()
+	wg.Wait()
+
+	succeeded, refused := 0, 0
+	for _, err := range errs {
+		switch {
+		case err == nil:
+			succeeded++
+		case errors.Is(err, identitydomain.ErrIdentityExists):
+			refused++
+		}
+	}
+	if succeeded != 1 || refused != 1 || k.keys.setCalled != 1 {
+		t.Errorf("succeeded = %d, refused = %d, writes = %d, want 1, 1, 1", succeeded, refused, k.keys.setCalled)
+	}
+}
+
+func TestStartRestore_TriesTheFallbackAgainWhenTheKeyStoreRefusedIt(t *testing.T) {
+	t.Parallel()
+	expected, err := newKit("Desktop").create.Execute(t.Context(), getLegalWords())
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := newRestoreKit(t, "Phone")
+	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	k.keys.failSets(errBroken)
+	k.clock.Advance(restoreFallback)
+	testsupport.WaitFor(t, func() bool {
+		pending, err := k.pending.Execute(t.Context())
+		return err == nil && pending.IsPending && k.keys.writes() == 1
+	})
+	k.keys.failSets(nil)
+
+	testsupport.WaitFor(t, func() bool {
+		k.clock.Advance(restoreFallback)
+		got, err := k.get.Execute(t.Context())
+		return err == nil && got.AccountFingerprint == expected.AccountFingerprint
+	})
 }

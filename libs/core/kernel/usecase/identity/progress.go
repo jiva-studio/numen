@@ -7,9 +7,13 @@ type Progress struct {
 	restores restoreHold
 	links    linkHold
 	created  generatedWords
+	gate     CreateGate
 }
 
 // NewProgress returns a progress with no restore, no link and no revoke.
 func NewProgress() *Progress {
-	return &Progress{restores: newPendingStore(), links: newLinkStore()}
+	return &Progress{restores: newPendingStore(), links: newLinkStore(), gate: NewCreateGate()}
 }
+
+// GetCreateGate returns the gate that serializes the check for an absent identity and the write of one over every use case of this progress.
+func (p *Progress) GetCreateGate() CreateGate { return p.gate }

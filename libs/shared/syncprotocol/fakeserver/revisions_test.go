@@ -6,13 +6,17 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -312,8 +316,7 @@ func TestRevisionCallsOfAnotherAccountAreRefusedAsNoVault(t *testing.T) {
 	t.Parallel()
 	owner := newEnv(t)
 	vault := owner.newVault()
-	_, address := newServer(t)
-	stranger := newSecondAccountOn(t, address)
+	stranger := newSecondAccountOn(t, owner.address)
 	revision := stranger.newFile(stranger.newVault(), newID(16), nil, "milk.md", []byte("milk"))
 	revision.VaultId = vault
 	stranger.signRevision(revision)
@@ -507,5 +510,43 @@ func TestTheAdminBlobsPathReturnsEveryStoredBodyAsRawBytes(t *testing.T) {
 
 	if response.StatusCode != http.StatusOK || !bytes.Contains(all, first) || !bytes.Contains(all, second) {
 		t.Errorf("status = %d, %d bytes; want 200 with both stored bodies in it", response.StatusCode, len(all))
+	}
+}
+
+type shiftedClock struct{ offset atomic.Int64 }
+
+func (c *shiftedClock) Now() time.Time { return time.Now().Add(time.Duration(c.offset.Load())) }
+
+func TestGetBlobUrls_ALinkStopsReadingTheBodyWhenItExpiresAndANewLinkReadsItAgain(t *testing.T) {
+	t.Parallel()
+	clock := &shiftedClock{}
+	served := fakeserver.New(fakeserver.Config{Now: clock.Now})
+	httpServer := httptest.NewServer(served)
+	t.Cleanup(httpServer.Close)
+	served.SetAudience(httpServer.URL)
+	account := newOwnedAccount(t)
+	e := newEnvOn(t, httpServer.URL, &account, account.addDevice(t, "First"))
+	vault := e.newVault()
+	body := []byte("stored bytes")
+	revision := e.newFile(vault, newID(16), nil, "milk.md", body)
+	e.commit(vault, revision)
+	first, err := e.blob.GetBlobUrls(t.Context(), vault, [][]byte{revision.GetBlobId()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	clock.offset.Store(int64(20 * time.Minute))
+	_, expiredErr := syncprotocol.GetBlob(t.Context(), http.DefaultClient, first[0].GetUrl())
+	second, err := e.blob.GetBlobUrls(t.Context(), vault, [][]byte{revision.GetBlobId()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, renewedErr := syncprotocol.GetBlob(t.Context(), http.DefaultClient, second[0].GetUrl())
+
+	if expiredErr == nil {
+		t.Error("the link read the body after its expiry")
+	}
+	if renewedErr != nil || !bytes.Equal(got, body) {
+		t.Errorf("body = %q, error = %v, want the stored body from the new link", got, renewedErr)
 	}
 }

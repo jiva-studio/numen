@@ -88,6 +88,7 @@ type Resources struct {
 }
 
 func NewResources() *Resources {
+	progress := identity.NewProgress()
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
 		vaultLocks:    vaultwriter.NewLocks(),
@@ -96,8 +97,8 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
-		progress:      identity.NewProgress(),
-		identityLock:  identity.NewCreateGate(),
+		progress:      progress,
+		identityLock:  progress.GetCreateGate(),
 	}
 }
 

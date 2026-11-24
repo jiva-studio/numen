@@ -53,3 +53,30 @@ func TestNewBearerInterceptor_SendsTheTokenAsABearerInEveryRequestAndReadsItAgai
 		t.Errorf("authorization headers = %q, want [Bearer first Bearer second]", recorder.seen)
 	}
 }
+
+func TestNewBearerInterceptor_RemovesTheBearerOfAReusedRequestWhenTheTokenBecomesEmpty(t *testing.T) {
+	t.Parallel()
+	tokens := []string{"first", ""}
+	next := 0
+	interceptor := syncprotocol.NewBearerInterceptor(func() string {
+		token := tokens[next]
+		next++
+		return token
+	})
+	req := connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: make([]byte, 32)})
+	var seen []string
+	call := interceptor.WrapUnary(func(_ context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		seen = append(seen, req.Header().Get("Authorization"))
+		return nil, nil
+	})
+
+	for range tokens {
+		if _, err := call(t.Context(), req); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if len(seen) != 2 || seen[0] != "Bearer first" || seen[1] != "" {
+		t.Errorf("Authorization seen = %q, want [\"Bearer first\" \"\"]", seen)
+	}
+}
