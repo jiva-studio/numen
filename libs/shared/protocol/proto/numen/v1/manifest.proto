@@ -420,6 +420,10 @@ message ManifestBackend {
   // after the idle limit, or "persistent", where the host keeps it running while the plugin is enabled and
   // starts it again when it exits. Absent is "onDemand". A persistent backend sets no idle_stop_seconds.
   string lifecycle = 4;
+  // requires names host conditions the process runs under. The host starts the process only while every
+  // one holds, stops it when one stops holding, and answers a call that would start it with a failure of code
+  // requirement_unmet. "identity" holds while this device has an identity or is restoring or joining one.
+  repeated string requires = 5;
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the

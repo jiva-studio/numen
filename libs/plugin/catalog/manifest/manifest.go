@@ -209,11 +209,12 @@ func listSettingTypes() []string {
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
-// of the host. An empty Lifecycle is LifecycleOnDemand.
+// of the host. An empty Lifecycle is LifecycleOnDemand. Requires lists the host conditions the process runs under.
 type Backend struct {
 	Entrypoint      string
 	IdleStopSeconds int
 	Lifecycle       string
+	Requires        []string
 }
 
 const (
@@ -332,6 +333,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.Backend.listIdleStopIssues()...)
 	issues = append(issues, m.Backend.listLifecycleIssues()...)
+	issues = append(issues, m.Backend.listRequirementIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
@@ -551,4 +553,30 @@ func isMatchingActivationEvent(declared, event string) bool {
 	}
 	vaultID, isScoped := strings.CutPrefix(event, declared+":")
 	return event == declared || (isScoped && vaultID != "")
+}
+
+// RequirementIdentity holds while this device has an identity or is restoring or joining one.
+const RequirementIdentity = "identity"
+
+// IsKnownRequirement reports whether the host can evaluate the requirement.
+func IsKnownRequirement(requirement string) bool {
+	return requirement == RequirementIdentity
+}
+
+// HasRequirement reports whether the backend requires the condition.
+func (b Backend) HasRequirement(requirement string) bool {
+	return slices.Contains(b.Requires, requirement)
+}
+
+func (b Backend) listRequirementIssues() []error {
+	var issues []error
+	for i, requirement := range b.Requires {
+		switch {
+		case !IsKnownRequirement(requirement):
+			issues = append(issues, fmt.Errorf("%w: unknown requirement %q", ErrInvalidBackend, requirement))
+		case slices.Contains(b.Requires[:i], requirement):
+			issues = append(issues, fmt.Errorf("%w: requirement %q is listed twice", ErrInvalidBackend, requirement))
+		}
+	}
+	return issues
 }

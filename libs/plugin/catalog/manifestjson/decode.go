@@ -138,7 +138,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {
-	return manifest.Backend{Entrypoint: wire.GetEntrypoint(), IdleStopSeconds: int(wire.GetIdleStopSeconds()), Lifecycle: wire.GetLifecycle()}
+	return manifest.Backend{Entrypoint: wire.GetEntrypoint(), IdleStopSeconds: int(wire.GetIdleStopSeconds()), Lifecycle: wire.GetLifecycle(), Requires: wire.GetRequires()}
 }
 
 func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
