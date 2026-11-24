@@ -142,7 +142,7 @@ const isJoining = ref(false)
 }
 
 .identity-section__problem {
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   color: var(--numen-alarm);
 }
 </style>

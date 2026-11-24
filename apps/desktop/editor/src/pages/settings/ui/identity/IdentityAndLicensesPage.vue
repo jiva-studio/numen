@@ -90,6 +90,6 @@ function onBack(): void {
 .identity-page__empty-detail {
   margin: 0;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
 }
 </style>

@@ -75,7 +75,7 @@ describe('ConfirmDialog', () => {
     const dialog = mountDialog()
     await getButton(dialog, 'Cancel').trigger('click')
     await dialog.get('[role="alertdialog"]').trigger('keydown', { key: 'Escape' })
-    await dialog.get('[data-slot="confirm-dialog-backdrop"]').trigger('click')
+    await dialog.get('[data-slot="modal-dialog-backdrop"]').trigger('click')
     expect(dialog.emitted('cancel')).toHaveLength(3)
     expect(dialog.emitted('confirm')).toBeUndefined()
   })
@@ -94,14 +94,14 @@ describe('ConfirmDialog', () => {
     expect(neutral.get('[role="alertdialog"]').attributes('data-tone')).toBe('default')
   })
 
-  it('keeps Tab between the two buttons', async () => {
+  it('wraps Tab from the last button to the first and back', async () => {
     const dialog = mountDialog()
     const cancel = getButton(dialog, 'Cancel')
     const confirm = getButton(dialog, 'Delete')
-    ;(cancel.element as HTMLElement).focus()
-    await cancel.trigger('keydown', { key: 'Tab' })
-    expect(document.activeElement).toBe(confirm.element)
-    await confirm.trigger('keydown', { key: 'Tab', shiftKey: true })
+    ;(confirm.element as HTMLElement).focus()
+    await confirm.trigger('keydown', { key: 'Tab' })
     expect(document.activeElement).toBe(cancel.element)
+    await cancel.trigger('keydown', { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(confirm.element)
   })
 })

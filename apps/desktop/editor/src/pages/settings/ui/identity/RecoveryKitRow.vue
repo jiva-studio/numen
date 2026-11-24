@@ -30,7 +30,7 @@ const emit = defineEmits<{
 .recovery-kit__problem {
   margin: 0;
   padding-block: 0.5rem;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   color: var(--numen-alarm);
 }
 </style>

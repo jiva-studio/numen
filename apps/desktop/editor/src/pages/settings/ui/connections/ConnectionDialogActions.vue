@@ -32,7 +32,7 @@ const emit = defineEmits<{
       <Trash2 :size="14" aria-hidden="true" />
       {{ words.connectionMenuDelete }}
     </Button>
-    <Button type="button" variant="outline" @click="emit('cancel')">
+    <Button type="button" variant="ghost" @click="emit('cancel')">
       {{ words.connectionCancel }}
     </Button>
     <Button type="submit" variant="solid" :disabled="!props.canSave">
@@ -44,8 +44,9 @@ const emit = defineEmits<{
 <style scoped>
 .connection-actions {
   display: flex;
+  flex: 1;
   justify-content: flex-end;
-  gap: 0.375rem;
+  gap: 0.5rem;
 }
 
 .connection-actions__delete {

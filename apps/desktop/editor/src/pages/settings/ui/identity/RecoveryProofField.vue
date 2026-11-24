@@ -62,7 +62,7 @@ function onInput(event: Event): void {
 .proof-field {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.5rem;
 }
 
 .proof-field__input {
@@ -97,7 +97,7 @@ function onInput(event: Event): void {
   min-block-size: calc(1em * var(--numen-line-height));
   margin: 0;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
 }
 
 .proof-field__note--problem {

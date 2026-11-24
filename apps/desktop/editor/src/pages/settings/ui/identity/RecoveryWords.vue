@@ -44,7 +44,7 @@ defineProps<{ recoveryWords: readonly string[] }>()
   content: counter(word);
   min-inline-size: 1.1em;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   font-variant-numeric: tabular-nums;
   text-align: end;
 }

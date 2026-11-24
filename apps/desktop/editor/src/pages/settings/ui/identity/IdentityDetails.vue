@@ -134,14 +134,14 @@ const count = computed(() =>
   border-radius: var(--numen-radius-tight);
   background-color: var(--settings-hover-bg);
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   white-space: nowrap;
 }
 
 .identity-details__problem {
   margin: 0;
   padding-block: 0.5rem;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   color: var(--numen-alarm);
 }
 </style>

@@ -68,7 +68,7 @@ const date = computed(() => {
   border-radius: var(--numen-radius-tight);
   background-color: var(--settings-hover-bg);
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   white-space: nowrap;
 }
 </style>
