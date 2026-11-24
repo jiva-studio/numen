@@ -67,8 +67,8 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('dialog', { name: 'Restore identity' })).toBeVisible()
-    await expect(canvas.getByText(/Scan a recovery sheet or type its words/)).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
+    await expect(canvas.getByText(/Scan the QR of two sheets/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveAttribute(
       'data-slot',
       'button',
@@ -82,7 +82,7 @@ export const Words: Story = {
     const canvas = within(canvasElement)
     await enter(canvas, PHRASE)
     await expect(canvas.getByText('12 words recognized')).toBeVisible()
-    const button = canvas.getByRole('button', { name: 'Restore' })
+    const button = canvas.getByRole('button', { name: 'Restore the account' })
     await expect(button).toBeEnabled()
     await userEvent.click(button)
     await expect(onRestore).toHaveBeenCalled()
@@ -95,7 +95,7 @@ export const ExtraWord: Story = {
     const canvas = within(canvasElement)
     await enter(canvas, `${PHRASE} extra`)
     await expect(canvas.getByRole('alert')).toHaveTextContent('13 words')
-    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeDisabled()
   },
 }
 
@@ -105,10 +105,10 @@ export const Sheets: Story = {
     const canvas = within(canvasElement)
     await enter(canvas, createSheet('a'))
     await expect(canvas.getByText('Sheet 1 recognized, one more sheet needed')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeDisabled()
     await userEvent.paste(`\n${createSheet('b')}`)
     await expect(canvas.getByText('2 of 3 sheets recognized')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeEnabled()
   },
 }
 
@@ -118,7 +118,7 @@ export const RepeatedSheet: Story = {
     const canvas = within(canvasElement)
     await enter(canvas, `${createSheet('a')}\n${createSheet('a')}`)
     await expect(canvas.getByRole('alert')).toHaveTextContent('Sheet 2 is the same as sheet 1')
-    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Restore the account' })).toBeDisabled()
   },
 }
 

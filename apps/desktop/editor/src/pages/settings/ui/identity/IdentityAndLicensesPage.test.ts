@@ -381,9 +381,9 @@ describe('the page "Identity and licenses"', () => {
     expect(getDialog(tab).findAll('textarea')).toHaveLength(1)
     expect(getDialog(tab).findAll('input')).toHaveLength(0)
     expect(getDialog(tab).text()).toContain(
-      'Scan a recovery sheet or type its words.',
+      'Scan the QR of two sheets of your recovery kit, or type the 12 words or the words of two sheets.',
     )
-    expect(getSubmit(tab).text()).toBe('Restore')
+    expect(getSubmit(tab).text()).toBe('Restore the account')
     expect(getSubmit(tab).attributes('disabled')).toBeDefined()
     expect(getNote(tab).text()).toBe('')
   })

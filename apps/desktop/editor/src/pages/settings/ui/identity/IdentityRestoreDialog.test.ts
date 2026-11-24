@@ -31,7 +31,7 @@ function createDialog() {
     const button = wrapper.findAll('button').find((one) => one.text() === 'Scan QR')
     await button?.trigger('click')
   }
-  const restore = () => wrapper.findAll('button').find((one) => one.text() === 'Restore')
+  const restore = () => wrapper.findAll('button').find((one) => one.text() === 'Restore the account')
   const lines = () => (wrapper.find('textarea').element as HTMLTextAreaElement).value.split('\n')
   return { wrapper, scan, open, restore, lines }
 }
@@ -41,7 +41,7 @@ describe('the restore dialog scans the sheets of a kit', () => {
     const { wrapper, scan, open, restore, lines } = createDialog()
     await open()
     await scan(makeCode('C0DE', 1, 'a'))
-    expect(wrapper.text()).toContain('Sheet 1 of 2 scanned. Scan 1 more.')
+    expect(wrapper.text()).toContain('1 of 2 sheets scanned')
     expect(wrapper.find('textarea').exists()).toBe(false)
     expect(restore()?.attributes('disabled')).toBeDefined()
     await scan(makeCode('C0DE', 3, 'b'))
