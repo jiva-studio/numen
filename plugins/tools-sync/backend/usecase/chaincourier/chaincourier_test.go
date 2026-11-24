@@ -3,6 +3,7 @@ package chaincourier_test
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -79,5 +80,57 @@ func TestAdopt_DoesNothingWhenTheChainsAreTheSameLength(t *testing.T) {
 
 	if err != nil || adopted {
 		t.Errorf("adopted = %v, error = %v, want nothing adopted", adopted, err)
+	}
+}
+
+func newRevokedByFirst(t *testing.T) (observer *synctest.Computer, clock *synctest.Clock) {
+	t.Helper()
+	clock = synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
+	third := synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Fake.RevokeDeviceAt(second.Fake.Public().DeviceSignKey, clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the revoke published", published, err)
+	}
+	return third, clock
+}
+
+func TestAdopt_RaisesANoticeWhenAnotherDeviceRemovedADevice(t *testing.T) {
+	t.Parallel()
+	observer, _ := newRevokedByFirst(t)
+
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	items := observer.Health.List()
+	if len(items) != 1 || items[0].Key != "device-revoked-others" {
+		t.Errorf("health items = %+v, want one notice that a device removed another device", items)
+	}
+}
+
+func TestAdopt_ClearsTheNoticeWhenTheCoolingOffEnds(t *testing.T) {
+	t.Parallel()
+	observer, clock := newRevokedByFirst(t)
+	adopt := chaincourier.NewAdopt(observer.ChainDeps())
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	clock.Advance(identity.CoolingOff + time.Hour)
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if items := observer.Health.List(); len(items) != 0 {
+		t.Errorf("health items = %+v, want none after the cooling-off", items)
 	}
 }

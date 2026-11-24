@@ -231,3 +231,19 @@ func (c Chain) GetRevokedSince(prefix Chain) []ed25519.PublicKey {
 
 // Epoch returns the epoch of the keys; 0 for keys that were just unwrapped, until OpenKeyHistory sets it.
 func (a AccountKeys) Epoch() uint32 { return a.epoch }
+
+func (c Chain) getKeyIndex(sign ed25519.PublicKey) int {
+	found := -1
+	for i := 1; i < len(c.entries); i++ {
+		entry := c.entries[i]
+		if entry.Kind == KindAddDevice && entry.AddDevice != nil && bytes.Equal(entry.AddDevice.Device.Sign, sign) {
+			found = i
+		}
+		if entry.Kind == KindRevokeDevice && entry.Revoke != nil {
+			if _, ok := entry.Revoke.getWrapFor(sign); ok {
+				found = i
+			}
+		}
+	}
+	return found
+}

@@ -42,28 +42,57 @@ func getStatus(chain Chain, device DeviceKey) (Status, error) {
 	}
 }
 
-// Adopt takes a chain that extends the one of the state, finds this device in it and returns the next state.
-// An active device takes the wrapped keys of the chain when the epoch grew; a revoked device keeps its record.
+// Adopt takes a chain that extends the one of the state, or that outranks it at a fork, finds this device in it and returns the next
+// state. An active device takes the wrapped keys of the chain when the chain gave it new ones or voided the ones it held, and the keys
+// must be the keys of the chain; a revoked device keeps its record.
 func (s State) Adopt(next Chain) (State, error) {
 	if err := next.Verify(); err != nil {
 		return State{}, err
 	}
-	if !next.IsExtensionOf(s.Chain) {
+	isFork := !next.IsExtensionOf(s.Chain)
+	if isFork && !next.IsPreferredOver(s.Chain) {
 		return State{}, ErrNotExtension
 	}
 	status, err := getStatus(next, s.Record.Device)
-	if err != nil {
+	switch {
+	case isFork && err != nil:
+		return State{}, fmt.Errorf("%w: %w", ErrDeviceVoided, err)
+	case err != nil:
 		return State{}, err
 	}
 	record := s.Record
-	if status == StatusActive && next.Epoch() > s.Chain.Epoch() {
-		wrapped, ok := next.GetWrappedFor(record.Device.SignerKey())
-		if !ok {
-			return State{}, fmt.Errorf("%w: the chain holds no keys for this device", ErrUnwrap)
+	if status == StatusActive {
+		if record, err = s.takeKeys(next, isFork); err != nil {
+			return State{}, err
 		}
-		record.Wrapped = wrapped
 	}
 	return State{Record: record, Chain: next, Status: status}, nil
+}
+
+func (s State) takeKeys(next Chain, isFork bool) (Record, error) {
+	sign := s.Record.Device.SignerKey()
+	shared := len(s.Chain.entries)
+	if isFork {
+		shared = next.getForkIndex(s.Chain)
+	}
+	isNew := next.getKeyIndex(sign) >= shared
+	if !isNew && s.Chain.getKeyIndex(sign) < shared {
+		return s.Record, nil
+	}
+	wrapped, ok := next.GetWrappedFor(sign)
+	if !ok {
+		return Record{}, fmt.Errorf("%w: the chain holds no keys for this device", ErrUnwrap)
+	}
+	record := s.Record
+	record.Wrapped = wrapped
+	keys, err := record.Device.UnwrapAccountKeys(wrapped)
+	if err != nil {
+		return Record{}, fmt.Errorf("%w: %w", ErrWrapMismatch, err)
+	}
+	if _, err := next.OpenKeyHistory(keys); err != nil {
+		return Record{}, fmt.Errorf("%w: %w", ErrWrapMismatch, err)
+	}
+	return record, nil
 }
 
 // KeyEpoch returns the epoch of the account keys this device holds: the epoch of the chain for an active device, the last

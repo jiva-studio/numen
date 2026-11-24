@@ -244,3 +244,52 @@ func checkDeviceName(name string) error {
 	}
 	return nil
 }
+
+func (c Chain) getForkIndex(other Chain) int {
+	for i := range min(len(c.entries), len(other.entries)) {
+		if hashEntry(c.entries[i]) != hashEntry(other.entries[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// IsPreferredOver reports whether c replaces other at a fork: both chains have the same root, and at the first entry where they differ the
+// entry of c is signed by the root while the entry of other is not. When both are signed by the root the entry with the lower hash
+// wins, so every device settles on the same chain. Every entry of other from that index on is void.
+func (c Chain) IsPreferredOver(other Chain) bool {
+	i := c.getForkIndex(other)
+	if i < 1 || !bytes.Equal(c.Root().Sign, other.Root().Sign) {
+		return false
+	}
+	root := c.Root().Sign
+	mine, theirs := c.entries[i], other.entries[i]
+	isMineRoot, isTheirsRoot := bytes.Equal(mine.Signer, root), bytes.Equal(theirs.Signer, root)
+	if isMineRoot && isTheirsRoot {
+		mineHash, theirsHash := hashEntry(mine), hashEntry(theirs)
+		return bytes.Compare(mineHash[:], theirsHash[:]) < 0
+	}
+	return isMineRoot
+}
+
+// CoolingOff is how long a revoke signed by a device, not by the recovery key, is shown as a notice to the other devices.
+const CoolingOff = 72 * time.Hour
+
+// DeviceRevocation is a revoke of a device that another device signed.
+type DeviceRevocation struct {
+	By     ed25519.PublicKey
+	Device ed25519.PublicKey
+	At     time.Time
+}
+
+// ListDeviceRevocations returns the revokes signed by a device, not by the recovery key, in the order of the chain.
+func (c Chain) ListDeviceRevocations() []DeviceRevocation {
+	var found []DeviceRevocation
+	for _, entry := range c.entries[min(1, len(c.entries)):] {
+		if entry.Kind != KindRevokeDevice || entry.Revoke == nil || bytes.Equal(entry.Signer, c.Root().Sign) {
+			continue
+		}
+		found = append(found, DeviceRevocation{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.Revoke.Device), At: entry.Time})
+	}
+	return found
+}

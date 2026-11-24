@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-var errUntrustedChain = errors.New("the account chain of the server does not extend the chain of this device")
+var errUntrustedChain = errors.New("the account chain of the server does not extend or outrank the chain of this device")
 
 // Authors are the devices of the account.
 type Authors struct {
@@ -33,7 +33,7 @@ func NewAuthors(own, stored []byte) (Authors, error) {
 		return Authors{devices: nil}, errUntrustedChain
 	}
 	switch {
-	case chain.IsExtensionOf(ownChain):
+	case chain.IsExtensionOf(ownChain), chain.IsPreferredOver(ownChain):
 	case ownChain.IsExtensionOf(chain):
 		chain = ownChain
 	default:

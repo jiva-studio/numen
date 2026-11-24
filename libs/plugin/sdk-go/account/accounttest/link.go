@@ -147,12 +147,17 @@ func (f *Fake) AdvanceEpoch() error {
 // RevokeDevice makes the host revoke the device with the signing key, which its chain lists since the plugin adopted the chain of
 // the server. The account keys of the host are the new ones, and the server is not notified of it until the plugin publishes the chain.
 func (f *Fake) RevokeDevice(deviceSignKey []byte) error {
+	return f.RevokeDeviceAt(deviceSignKey, clock.System{}.Now())
+}
+
+// RevokeDeviceAt revokes the device as RevokeDevice does, with the entry signed at the given time.
+func (f *Fake) RevokeDeviceAt(deviceSignKey []byte, at time.Time) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.record == nil {
 		return errors.New("the host has no identity")
 	}
-	return f.revokeLocked(deviceSignKey, clock.System{}.Now())
+	return f.revokeLocked(deviceSignKey, at)
 }
 
 func (f *Fake) revokeLocked(deviceSignKey []byte, now time.Time) error {

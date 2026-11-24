@@ -11,7 +11,7 @@ import (
 )
 
 // serving is a server that answers the first change request with the revisions it was given as a page ahead of the
-// head, and every other request as the real server does.
+// head, and every other request as the head server does.
 type serving struct {
 	ports.Revisions
 	page *syncv1.GetChangesResponse

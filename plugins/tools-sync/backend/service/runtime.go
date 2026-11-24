@@ -137,7 +137,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		"sign-in": keep.Execute, "restore": watch.Execute,
 		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
-			Identity: p.identity, Core: p.client, Chain: cloudSide,
+			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.health, Clock: p.clock,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
 		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
