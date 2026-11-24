@@ -48,3 +48,4 @@ Feature: Connect a vault to Numen Sync
       Given the person deletes the identity from this device
       When the person opens the sync settings
       Then the sync settings warn about "No identity on this device"
+      And the vault "Test" is not connected
