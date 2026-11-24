@@ -43,11 +43,12 @@ function onInput(event: Event): void {
       :disabled="isDisabled"
       :placeholder="words.proofPlaceholder"
       :aria-label="words.proofField"
-      :aria-describedby="noteId"
+      :aria-describedby="note !== '' ? noteId : undefined"
       :aria-invalid="isProblem || undefined"
       @input="onInput"
     />
     <p
+      v-if="note !== ''"
       :id="noteId"
       class="proof-field__note"
       :class="{ 'proof-field__note--problem': isProblem }"
@@ -94,7 +95,6 @@ function onInput(event: Event): void {
 }
 
 .proof-field__note {
-  min-block-size: calc(1em * var(--numen-line-height));
   margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);

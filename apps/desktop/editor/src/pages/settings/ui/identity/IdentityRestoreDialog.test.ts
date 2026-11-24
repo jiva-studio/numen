@@ -28,7 +28,7 @@ function createDialog() {
     await wrapper.vm.$nextTick()
   }
   const open = async () => {
-    const button = wrapper.findAll('button').find((one) => one.text() === 'Scan the QR')
+    const button = wrapper.findAll('button').find((one) => one.text() === 'Scan QR')
     await button?.trigger('click')
   }
   const restore = () => wrapper.findAll('button').find((one) => one.text() === 'Restore the account')
@@ -42,9 +42,11 @@ describe('the restore dialog scans the sheets of a kit', () => {
     await open()
     await scan(makeCode('C0DE', 1, 'a'))
     expect(wrapper.text()).toContain('1 of 2 sheets scanned')
+    expect(wrapper.find('textarea').exists()).toBe(false)
     expect(restore()?.attributes('disabled')).toBeDefined()
     await scan(makeCode('C0DE', 3, 'b'))
-    expect(wrapper.text()).toContain('2 of 2 sheets scanned')
+    expect(wrapper.find('textarea').exists()).toBe(true)
+    expect(wrapper.find('.camera').exists()).toBe(false)
     expect(restore()?.attributes('disabled')).toBeUndefined()
     expect(lines()).toHaveLength(2)
   })
@@ -69,5 +71,19 @@ describe('the restore dialog scans the sheets of a kit', () => {
     await open()
     await scan('https://example.com')
     expect(wrapper.find('[role=alert]').text()).toBe('This is not a code of a Numen recovery kit.')
+  })
+})
+
+describe('the restore dialog has one mode at a time', () => {
+  it('replaces the field with the camera, and Type words brings the field back', async () => {
+    const { wrapper, open } = createDialog()
+    expect(wrapper.find('textarea').exists()).toBe(true)
+    await open()
+    expect(wrapper.find('.camera').exists()).toBe(true)
+    expect(wrapper.find('textarea').exists()).toBe(false)
+    const back = wrapper.findAll('button').find((one) => one.text() === 'Type words')
+    await back?.trigger('click')
+    expect(wrapper.find('textarea').exists()).toBe(true)
+    expect(wrapper.find('.camera').exists()).toBe(false)
   })
 })

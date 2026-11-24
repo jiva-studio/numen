@@ -170,7 +170,7 @@ export const NoCamera: Story = {
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Scan the QR' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Scan QR' }))
     await expect(await canvas.findByRole('alert')).toHaveTextContent('No camera is available')
     await enter(canvas, createSheet('a'))
     await expect(canvas.getByText('Sheet 1 recognized, one more sheet needed')).toBeVisible()

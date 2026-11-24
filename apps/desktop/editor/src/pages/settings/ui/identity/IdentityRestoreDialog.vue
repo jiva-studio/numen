@@ -68,16 +68,19 @@ function onChange(value: string): void {
     @submit="emit('restore')"
     @cancel="emit('cancel')"
   >
-    <QrScanner
-      v-if="isScanning"
-      v-bind="camera === undefined ? {} : { camera }"
-      @scanned="onScanned"
-      @unavailable="onUnavailable"
-    />
-    <p v-if="scanNote !== '' && shownProblem === ''" role="status" class="restore-scan__note">
-      {{ scanNote }}
-    </p>
+    <template v-if="isScanning">
+      <QrScanner
+        v-bind="camera === undefined ? {} : { camera }"
+        @scanned="onScanned"
+        @unavailable="onUnavailable"
+      />
+      <p v-if="scanProblem !== ''" role="alert" class="restore-scan__note restore-scan__note--problem">
+        {{ scanProblem }}
+      </p>
+      <p v-else-if="scanNote !== ''" role="status" class="restore-scan__note">{{ scanNote }}</p>
+    </template>
     <RecoveryProofField
+      v-else
       :text="text"
       :reading="reading"
       :problem="shownProblem"
@@ -100,8 +103,13 @@ function onChange(value: string): void {
 
 <style scoped>
 .restore-scan__note {
+  text-align: center;
   margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);
+}
+
+.restore-scan__note--problem {
+  color: var(--numen-alarm);
 }
 </style>

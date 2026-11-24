@@ -158,8 +158,8 @@ export const WORDS = {
   proofOneSheet: (sheet: number) => `Sheet ${sheet} recognized, one more sheet needed`,
   proofTwoSheets: '2 of 3 sheets recognized',
   /** Scanning the QR codes of kit sheets in the restore. */
-  scanAction: 'Scan the QR',
-  scanStop: 'Stop scanning',
+  scanAction: 'Scan QR',
+  scanStop: 'Type words',
   scanProgress: (count: number) => `${count} of 2 sheets scanned`,
   scanNotSheet: 'This is not a code of a Numen recovery kit.',
   scanOtherKit: 'This sheet is from another kit. Scan a sheet of the same kit.',
