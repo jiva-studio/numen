@@ -29,11 +29,6 @@ interface UseVaultsOptions {
   readonly now: () => Date
 }
 
-export interface PendingStop {
-  readonly vaultId: string
-  readonly name: string
-}
-
 export interface PendingConfirm {
   readonly vaultId: string
   readonly remoteId: string
@@ -88,7 +83,6 @@ export function useVaults(options: UseVaultsOptions) {
   const hasIdentity = ref(true)
   const isReachable = ref(true)
   const pendingConfirm = shallowRef<PendingConfirm | null>(null)
-  const pendingStop = shallowRef<PendingStop | null>(null)
 
   const rows = computed(() =>
     vaults.value
@@ -161,27 +155,6 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
-  function askStop(row: VaultRow): void {
-    pendingStop.value = { vaultId: row.id, name: row.name }
-  }
-
-  function cancelStop(): void {
-    pendingStop.value = null
-  }
-
-  async function confirmStop(): Promise<void> {
-    const pending = pendingStop.value
-    if (pending === null) return
-    pendingStop.value = null
-    try {
-      await client.stopSyncingVault({ vaultId: pending.vaultId })
-      error.value = ''
-      await read()
-    } catch (failure) {
-      error.value = getErrorMessage(failure)
-    }
-  }
-
   async function confirmConnect(): Promise<void> {
     const pending = pendingConfirm.value
     if (pending === null) return
@@ -219,7 +192,6 @@ export function useVaults(options: UseVaultsOptions) {
       cloudVaults,
       canGetFromCloud,
       pendingConfirm,
-      pendingStop,
     },
     actions: {
       load,
@@ -228,9 +200,6 @@ export function useVaults(options: UseVaultsOptions) {
       resolveDeletions,
       confirmConnect,
       cancelConnect,
-      askStop,
-      cancelStop,
-      confirmStop,
     },
   }
 }

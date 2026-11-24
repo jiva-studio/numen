@@ -10,7 +10,6 @@ import type { SettingsDriver } from './settings.js'
 const PLUGIN_NAME = 'Numen Sync'
 const SECTION = 'Synced vaults'
 const SYNC = 'Sync this vault'
-const STOP_SYNCING = 'Stop syncing'
 const FROM_CLOUD = 'Get a vault from the cloud'
 const CLOUD_VAULT = 'Vault in the cloud'
 const DEVICE_VAULT = 'Vault on this device'
@@ -37,13 +36,6 @@ export class SyncVaultsDriver {
   }
 
   /** Runs the command "Sync this vault" on the top folder of the vault that is open. */
-  /** Chooses "Stop syncing" in the menu of the row of the vault and answers the question with the same button. */
-  async stopSyncingVault(vault: string): Promise<void> {
-    const row = this.getRow(await this.show(), vault)
-    await row.getByRole('button', { name: `Actions for ${vault}` }).click()
-    await this.scenario.page.getByRole('menuitem', { name: STOP_SYNCING, exact: true }).click()
-    await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: STOP_SYNCING, exact: true }).click()
-  }
 
   async connectNew(_vault: string): Promise<void> {
     await this.application.runCommand(SYNC)

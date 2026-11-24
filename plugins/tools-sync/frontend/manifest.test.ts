@@ -104,12 +104,6 @@ describe('the manifest of the sync plugin', () => {
       }),
     )
     expect(contributes.commands).toContainEqual(
-      expect.objectContaining({ id: 'vault.stopSync', title: 'Stop syncing this vault' }),
-    )
-    expect(contributes.slots).not.toContainEqual(
-      expect.objectContaining({ slot: 'fileTree.context', command: 'vault.stopSync' }),
-    )
-    expect(contributes.commands).toContainEqual(
       expect.objectContaining({ id: 'share.accept', title: 'Accept a shared folder...' }),
     )
     expect(contributes).not.toHaveProperty('tabKinds')

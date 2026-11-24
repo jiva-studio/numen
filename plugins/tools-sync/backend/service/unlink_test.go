@@ -7,86 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
-
-func TestStopSyncingVault_KeepsTheFilesAndMakesTheVaultUnsyncedAgain(t *testing.T) {
-	w := newWorld(t)
-	w.c.Connect(t, "Test")
-	w.c.WriteNote("Test", "Food/Soup.md", "carrots")
-	if err := w.c.Sync(t.Context(), "Test"); err != nil {
-		t.Fatal(err)
-	}
-	backend := service.NewBackend(w.c.SyncDeps())
-
-	if _, err := backend.StopSyncingVault(t.Context(), api.StopSyncingVaultRequest{VaultID: "Test"}); err != nil {
-		t.Fatal(err)
-	}
-
-	if got, ok := w.c.ReadNote("Test", "Food/Soup.md"); !ok || got != "carrots" {
-		t.Errorf("note = %q (there: %v), want it kept", got, ok)
-	}
-	if vaults := listVaults(t, backend); len(vaults) != 1 || vaults[0].State != api.StateNotConnected {
-		t.Errorf("vaults = %+v, want Test not connected", vaults)
-	}
-	if err := w.c.Sync(t.Context(), "Test"); !errors.Is(err, vaultlink.ErrNotConnected) {
-		t.Errorf("sync error = %v, want the vault not connected", err)
-	}
-	remote, err := backend.ListRemoteVaults(t.Context(), api.ListRemoteVaultsRequest{})
-	if err != nil || len(remote.Vaults) != 1 || remote.Vaults[0].IsConnected {
-		t.Errorf("remote = %+v, %v, want the synced vault kept on the server and not connected", remote, err)
-	}
-}
-
-func TestStopSyncingVault_CanConnectTheVaultAgain(t *testing.T) {
-	w := newWorld(t)
-	w.c.Connect(t, "Test")
-	w.c.WriteNote("Test", "Food/Soup.md", "carrots")
-	if err := w.c.Sync(t.Context(), "Test"); err != nil {
-		t.Fatal(err)
-	}
-	backend := service.NewBackend(w.c.SyncDeps())
-	if _, err := backend.StopSyncingVault(t.Context(), api.StopSyncingVaultRequest{VaultID: "Test"}); err != nil {
-		t.Fatal(err)
-	}
-	remote, err := backend.ListRemoteVaults(t.Context(), api.ListRemoteVaultsRequest{})
-	if err != nil || len(remote.Vaults) != 1 {
-		t.Fatalf("remote = %+v, %v, want the synced vault", remote, err)
-	}
-
-	err = connect(t, backend, api.ConnectVaultRequest{VaultID: "Test", Mode: api.ModeExisting, RemoteID: remote.Vaults[0].RemoteID})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	if vaults := listVaults(t, backend); vaults[0].State != api.StateConnected {
-		t.Errorf("state = %q, want connected", vaults[0].State)
-	}
-}
-
-func TestStopSyncingVault_RefusesAVaultThatIsNotSyncedAndASharedFolder(t *testing.T) {
-	w := newWorld(t)
-	owner, reader := w.c, synctest.NewReaderComputer(t, w.server, w.clock, "Reader")
-	owner.Connect(t, "Test")
-	received := receiveFood(t, owner, reader)
-	backend := service.NewBackend(reader.SyncDeps())
-
-	_, unsyncedErr := backend.StopSyncingVault(t.Context(), api.StopSyncingVaultRequest{VaultID: "Reader"})
-	_, receivedErr := backend.StopSyncingVault(t.Context(), api.StopSyncingVaultRequest{VaultID: string(received)})
-
-	if !errors.Is(unsyncedErr, share.ErrNotConnected) {
-		t.Errorf("a vault that is not synced: error = %v, want the vault not connected", unsyncedErr)
-	}
-	if receivedErr == nil {
-		t.Error("a shared folder: the method did not refuse, it is left instead")
-	}
-	listed, err := backend.ListReceived(t.Context(), api.ListReceivedRequest{})
-	if err != nil || len(listed.Shares) != 1 {
-		t.Errorf("received = %+v, %v, want the share kept", listed, err)
-	}
-}
 
 func TestLeaveShare_ForgetsTheShareOnThisDeviceAndTheOwnerStillListsTheReader(t *testing.T) {
 	w := newWorld(t)

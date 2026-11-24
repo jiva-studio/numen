@@ -102,7 +102,6 @@ function onRemove(row: GivenRow, device: DeviceRow): void {
     </template>
     <EndSyncDialog
       v-if="view.pendingLeave !== null"
-      kind="leave"
       @confirm="onConfirmLeave"
       @cancel="view.cancelLeave"
     />

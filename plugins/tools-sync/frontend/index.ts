@@ -16,7 +16,6 @@ import { createSyncState } from './model/sync'
 import { finishSync, startSync } from './model/syncVault'
 import { createSubscriptionView } from './ui/subscriptionView'
 import { createSharesPage } from './ui/sharesPage'
-import { registerUnsync } from './ui/unsyncCommand'
 import AcceptInvitationDialog from './ui/AcceptInvitationDialog.vue'
 import GetVaultDialog from './ui/GetVaultDialog.vue'
 import ShareInvitationDialog from './ui/ShareInvitationDialog.vue'
@@ -32,7 +31,6 @@ export const SUBSCRIPTION_VIEW = 'subscription'
 export const SHARES_VIEW = 'shares'
 export const SHARE_COMMAND = 'share.open'
 export const SYNC_COMMAND = 'vault.sync'
-export const STOP_SYNC_COMMAND = 'vault.stopSync'
 export const ACCEPT_COMMAND = 'share.accept'
 export const CLOUD_COMMAND = 'vault.fromCloud'
 
@@ -154,7 +152,6 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   })
   registerShare(plugin, host)
   registerSync(plugin, host)
-  registerUnsync(plugin, host, STOP_SYNC_COMMAND)
   registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
   state.start()

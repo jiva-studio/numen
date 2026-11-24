@@ -30,7 +30,6 @@ const createClient = (vaults: Vault[] = [createVault()]) => {
     ),
     resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
     connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
-    stopSyncingVault: vi.fn<VaultsClient['stopSyncingVault']>(() => Promise.resolve()),
     getStatus: vi.fn<VaultsClient['getStatus']>(() =>
       Promise.resolve({ hasIdentity: true, isReachable: true, items: [] }),
     ),
@@ -297,31 +296,6 @@ describe('useVaults', () => {
 
     expect(client.resolveDeletions).toHaveBeenCalledWith({ vaultId: 'Test', choice: 'keep' })
     expect(client.listVaults).toHaveBeenCalled()
-  })
-
-  it('asks first, then stops the sync of the vault and lists the vaults again', async () => {
-    const client = createClient([createVault({ id: 'a', state: 'connected' })])
-    const model = createModel(client)
-    await model.actions.load()
-
-    model.actions.askStop(model.state.rows.value[0]!)
-    expect(client.stopSyncingVault).not.toHaveBeenCalled()
-    await model.actions.confirmStop()
-
-    expect(client.stopSyncingVault).toHaveBeenCalledWith({ vaultId: 'a' })
-    expect(model.state.pendingStop.value).toBeNull()
-  })
-
-  it('stops nothing when the person cancels', async () => {
-    const client = createClient([createVault({ id: 'a', state: 'connected' })])
-    const model = createModel(client)
-    await model.actions.load()
-
-    model.actions.askStop(model.state.rows.value[0]!)
-    model.actions.cancelStop()
-    await model.actions.confirmStop()
-
-    expect(client.stopSyncingVault).not.toHaveBeenCalled()
   })
 
   it('keeps the message of an answer the backend refuses', async () => {

@@ -108,10 +108,6 @@ export const WORDS = {
     `Paused: ${count} of ${total} files are removed here`,
   deletionsPausedApply: (count: number, total: number): string =>
     `Paused: ${count} of ${total} files were removed on another device`,
-  stopSyncing: 'Stop syncing',
-  stopSyncingVault: 'Stop syncing this vault',
-  stopSyncingText: 'This device stops syncing. Files stay here and in the cloud.',
-  notSyncedHere: 'This vault is not synced.',
   leaveShare: 'Leave',
   leaveTitle: 'Leave folder',
   leaveText: 'You stop receiving changes. Files stay on this device.',

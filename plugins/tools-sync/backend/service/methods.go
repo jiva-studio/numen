@@ -18,9 +18,6 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodConnectVault, func(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
 		return handle(r, func(b *Backend) (api.ConnectVaultResponse, error) { return b.ConnectVault(ctx, request) })
 	})
-	server.Handle(service, api.MethodStopSyncingVault, func(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
-		return handle(r, func(b *Backend) (api.StopSyncingVaultResponse, error) { return b.StopSyncingVault(ctx, request) })
-	})
 	server.Handle(service, api.MethodPreviewConnect, func(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
 		return handle(r, func(b *Backend) (api.PreviewConnectResponse, error) { return b.GetConnectPreview(ctx, request) })
 	})

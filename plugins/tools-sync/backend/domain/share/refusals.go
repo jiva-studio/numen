@@ -64,8 +64,6 @@ var (
 )
 
 var (
-	// ErrReceivedStop means a shared vault is left, not stopped.
-	ErrReceivedStop = errors.New("this folder is shared with you; leave it instead")
 	// ErrNotReceived means the vault is not a folder another person shares with this account.
 	ErrNotReceived = errors.New("this folder is not shared with you")
 )

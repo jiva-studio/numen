@@ -5,20 +5,11 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Cloud, RefreshCw } from '@lucide/vue'
-import {
-  Button,
-  ErrorState,
-  getCurrentDate,
-  IslandCard,
-  LoadingIndicator,
-  type MenuItem,
-} from '@numen/ui'
+import { Button, ErrorState, getCurrentDate, IslandCard, LoadingIndicator } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
-import EndSyncDialog from './EndSyncDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
-import RowMenu from './RowMenu.vue'
 import SyncRow from './SyncRow.vue'
 import SyncStatus from './SyncStatus.vue'
 
@@ -33,9 +24,8 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, warning, rows, pendingStop } = model.state
-const { load, watch, resolveDeletions, askStop, cancelStop, confirmStop } = model.actions
-const ITEMS: readonly MenuItem[] = [{ id: 'stop', text: words.stopSyncing, group: 'danger' }]
+const { status, error, warning, rows } = model.state
+const { load, watch, resolveDeletions } = model.actions
 const hasProblem = computed(() => error.value !== '' && status.value !== 'error')
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -52,10 +42,6 @@ onUnmounted(() => {
 /* -------------------------------- Handlers -------------------------------- */
 function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
   resolveDeletions(vaultId, choice).catch(report)
-}
-
-function onConfirmStop(): void {
-  confirmStop().catch(report)
 }
 
 function onRetry(): void {
@@ -106,16 +92,9 @@ function report(failure: unknown): void {
                 {{ words.keepFiles }}
               </Button>
             </template>
-            <RowMenu :label="words.rowActions(row.name)" :items="ITEMS" @choose="askStop(row)" />
           </template>
         </SyncRow>
       </ul>
     </template>
-    <EndSyncDialog
-      v-if="pendingStop !== null"
-      kind="stop"
-      @confirm="onConfirmStop"
-      @cancel="cancelStop"
-    />
   </IslandCard>
 </template>

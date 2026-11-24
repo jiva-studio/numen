@@ -18,28 +18,6 @@ type Deps struct {
 	Vaults ports.VaultList
 }
 
-// StopSyncing ends the sync of a vault of this account on this device.
-type StopSyncing struct{ deps Deps }
-
-// NewStopSyncing returns the use case over the dependencies.
-func NewStopSyncing(deps Deps) *StopSyncing { return &StopSyncing{deps: deps} }
-
-// Execute forgets the link and what the sync kept of the vault, so the vault is not synced any more. The files stay, and
-// so does the synced vault on the server.
-func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID) error {
-	link, err := u.deps.Links.ReadLink(ctx, id)
-	if errors.Is(err, vaultlink.ErrNotConnected) {
-		return domainshare.ErrNotConnected
-	}
-	if err != nil {
-		return err
-	}
-	if link.Kind == vaultlink.KindReceived {
-		return domainshare.ErrReceivedStop
-	}
-	return u.deps.Forget.ForgetVault(ctx, id)
-}
-
 // Leave drops a share another person made with this account.
 type Leave struct{ deps Deps }
 

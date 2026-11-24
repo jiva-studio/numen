@@ -26,7 +26,6 @@ const (
 	MethodStopShare                = "StopShare"
 	MethodListReceived             = "ListReceived"
 	MethodLeaveShare               = "LeaveShare"
-	MethodStopSyncingVault         = "StopSyncingVault"
 	MethodStartShareInvitation     = "StartShareInvitation"
 	MethodListShareInvitations     = "ListShareInvitations"
 	MethodRevokeShareInvitation    = "RevokeShareInvitation"
@@ -299,13 +298,6 @@ type ResolveDeletionsRequest struct {
 
 // ResolveDeletionsResponse is the answer to a choice that was taken.
 type ResolveDeletionsResponse struct{}
-
-// StopSyncingVaultRequest asks to stop syncing a vault on this device. The files and the synced vault on the server stay.
-type StopSyncingVaultRequest struct {
-	VaultID string `json:"vaultId"`
-}
-
-type StopSyncingVaultResponse struct{}
 
 // GetAccountStateRequest asks whether the account is being deleted on the server.
 type GetAccountStateRequest struct{}

@@ -36,7 +36,6 @@ const createClient = (setup: Setup = {}) => ({
   ),
   resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
   connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
-  stopSyncingVault: vi.fn<VaultsClient['stopSyncingVault']>(() => Promise.resolve()),
   getStatus: vi.fn<VaultsClient['getStatus']>(() =>
     Promise.resolve({ hasIdentity: setup.hasIdentity ?? true, isReachable: true, items: [] }),
   ),

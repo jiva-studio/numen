@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/unlink"
 )
 
 const (
@@ -36,7 +35,6 @@ type Vaults struct {
 	heads   ports.Heads
 	pending ports.PausedStore
 	resolve *deletions.ResolveDeletions
-	stop    *unlink.StopSyncing
 }
 
 // New returns the methods over the dependencies of a pass and the heads of a synced vault.
@@ -46,9 +44,7 @@ func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 		Journals: deps.Restore.Mirror,
 		Random:   deps.Random,
 	}
-	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil,
-		stop: unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults}),
-	}
+	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil}
 }
 
 // SetDeletions gives the methods the answer to the pause before many removals.
@@ -126,11 +122,6 @@ func (v *Vaults) ResolveDeletions(ctx context.Context, request api.ResolveDeleti
 	}
 	_, err := v.resolve.Execute(ctx, domain.VaultID(request.VaultID), domaintransfer.Choice(request.Choice))
 	return api.ResolveDeletionsResponse{}, err
-}
-
-// StopSyncingVault ends the sync of the vault on this device. Its files and its synced vault on the server stay.
-func (v *Vaults) StopSyncingVault(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
-	return api.StopSyncingVaultResponse{}, v.stop.Execute(ctx, domain.VaultID(request.VaultID))
 }
 
 // ListRemoteVaults lists the synced vaults of the account.

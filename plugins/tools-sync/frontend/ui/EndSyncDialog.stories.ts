@@ -18,21 +18,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const StopSyncing: Story = {
-  args: { kind: 'stop' },
-  play: async ({ canvasElement }) => {
-    const dialog = within(canvasElement.ownerDocument.body)
-    await expect(await dialog.findByRole('alertdialog', { name: 'Stop syncing' })).toBeVisible()
-    await expect(
-      dialog.getByText('This device stops syncing. Files stay here and in the cloud.'),
-    ).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Stop syncing' })).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible()
-  },
-}
-
 export const LeaveFolder: Story = {
-  args: { kind: 'leave' },
   play: async ({ canvasElement }) => {
     const dialog = within(canvasElement.ownerDocument.body)
     await expect(await dialog.findByRole('alertdialog', { name: 'Leave folder' })).toBeVisible()
