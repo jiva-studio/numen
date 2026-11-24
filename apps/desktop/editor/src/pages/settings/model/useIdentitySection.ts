@@ -10,6 +10,7 @@ import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
+import { useIdentityRestore } from './useIdentityRestore'
 import { useIdentityCall } from './useIdentityCall'
 import { useRecoveryProof } from './useRecoveryProof'
 import { useWordsConfirmation } from './useWordsConfirmation'
@@ -26,10 +27,10 @@ export function useIdentitySection(
   const call = useIdentityCall()
   const { problem, isBusy, run } = call
   const setup = useSetupStage(problem)
-  const { stage, recoveryWords } = setup
-  const confirmation = useWordsConfirmation(recoveryWords)
+  const confirmation = useWordsConfirmation(setup.recoveryWords)
   const restoring = useRecoveryProof(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
+  const identityRestore = useIdentityRestore(getIdentity, run, restoring.read, problem)
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {
@@ -37,9 +38,7 @@ export function useIdentitySection(
     })
   })
 
-  onBeforeUnmount(() => {
-    reset()
-  })
+  onBeforeUnmount(reset)
 
   function reset(): void {
     step.value = 'idle'
@@ -54,9 +53,9 @@ export function useIdentitySection(
     if (isBusy.value) return
     const answer = await run(() => getIdentity().generateWords())
     if (!answer.ok) return
-    recoveryWords.value = answer.value
+    setup.recoveryWords.value = answer.value
     confirmation.pick()
-    stage.value = 'words'
+    setup.stage.value = 'words'
     step.value = 'setup'
   }
 
@@ -72,12 +71,11 @@ export function useIdentitySection(
 
   const keep = async (): Promise<void> => {
     if (isBusy.value) return
-    if (!confirmation.isConfirmed()) {
-      confirmation.markWrong()
+    if (!confirmation.check()) {
       problem.value = words.identityNotValid
       return
     }
-    const kept = recoveryWords.value
+    const kept = setup.recoveryWords.value
     const answer = await run(() => getIdentity().create(kept))
     if (!answer.ok) return
     reset()
@@ -86,17 +84,7 @@ export function useIdentitySection(
 
   const restore = async (): Promise<void> => {
     if (isBusy.value) return
-    const given = restoring.read()
-    if (given === undefined) {
-      problem.value = words.kitOneMoreSheet
-      return
-    }
-    const answer = await run(() =>
-      'words' in given
-        ? getIdentity().restore(given.words)
-        : getIdentity().restoreFromKit(given.sheets),
-    )
-    if (answer.ok) reset()
+    if (await identityRestore.restore()) reset()
   }
 
   return {

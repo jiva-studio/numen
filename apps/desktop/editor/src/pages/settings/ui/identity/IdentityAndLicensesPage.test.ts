@@ -128,7 +128,17 @@ const createPage = async (
       activate: vi.fn(() => Promise.resolve(asFailure('Not activated.'))),
       deactivate: vi.fn(() => Promise.resolve(asFailure('Not deactivated.'))),
     },
-    identity: { identity, ...calls, ...kitCalls, devices: createInertDevices() },
+    identity: {
+      identity,
+      load: calls.load,
+      generateWords: calls.generateWords,
+      create: calls.create,
+      restore: (proof: KitProof) =>
+        'words' in proof ? calls.restore(proof.words) : kitCalls.restoreFromKit(proof.sheets),
+      delete: calls.delete,
+      saveKit: kitCalls.saveKit,
+      devices: createInertDevices(),
+    },
   })
   const tab = mount(SettingsTab, {
     props: { state: createSettingsState(installation, { initialSearchQuery: ref('') }) },

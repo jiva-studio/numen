@@ -113,7 +113,6 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
     delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
     saveKit: fn(() => Promise.resolve(asFailure('Not saved.'))),
-    restoreFromKit: fn(() => Promise.resolve(asFailure('Not restored.'))),
     devices: createInertDevices(),
   },
   licenses: overrides.licenses ?? {
