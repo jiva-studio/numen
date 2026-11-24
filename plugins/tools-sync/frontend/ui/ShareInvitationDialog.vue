@@ -20,6 +20,15 @@ const folderName = computed(() => props.state.target.folder.split('/').at(-1) ??
 const hasRequest = computed(() => props.state.request !== undefined)
 const isAsking = computed(() => props.state.phase === 'waiting' && hasRequest.value)
 const isWaiting = computed(() => props.state.phase === 'waiting' && !hasRequest.value)
+const accepted = computed(() => props.state.people.at(-1))
+const getDevice = (name: string, fingerprint: string): string =>
+  words.deviceLabel(name, getShortFingerprint(fingerprint))
+const requester = computed(() =>
+  getDevice(props.state.request?.deviceName ?? '', props.state.request?.fingerprint ?? ''),
+)
+const acceptedDevice = computed(() =>
+  getDevice(accepted.value?.deviceName ?? '', accepted.value?.fingerprint ?? ''),
+)
 const isEnded = computed(() => props.state.phase === 'approved')
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -71,13 +80,13 @@ function onDecline(): void {
     </p>
     <div v-if="isAsking && state.request" class="share-result" role="alert">
       <p class="sync-dialog__text">
-        {{ words.wantsToRead(state.request.name, state.request.folderName) }}
+        {{ words.wantsToRead(requester, state.request.folderName) }}
       </p>
       <p class="sync-dialog__text">{{ words.confirmationCode(state.request.code) }}</p>
     </div>
     <p v-if="isEnded" class="sync-dialog__text" role="status">
       <Check :size="14" aria-hidden="true" />
-      {{ words.sharedWithName(state.people.at(-1)?.name ?? '') }}
+      {{ words.sharedWithName(acceptedDevice) }}
     </p>
     <p v-if="state.phase === 'declined'" class="sync-dialog__text" role="status">
       {{ words.declinedText }}
@@ -91,7 +100,11 @@ function onDecline(): void {
     <section v-if="state.people.length > 0" class="share-people" :aria-label="words.peopleTitle">
       <h3 class="share-people__title">{{ words.peopleTitle }}</h3>
       <ul class="sync-card__list">
-        <SyncRow v-for="person in state.people" :key="person.fingerprint" :name="person.name">
+        <SyncRow
+          v-for="person in state.people"
+          :key="person.fingerprint"
+          :name="person.deviceName === '' ? words.deviceName : person.deviceName"
+        >
           <span class="sync-row__detail">{{ getShortFingerprint(person.fingerprint) }}</span>
         </SyncRow>
       </ul>

@@ -12,7 +12,7 @@ const FINGERPRINT = 'CCCC DDDD EEEE'
 const LINK = `numen://share/${CODE}`
 const INVITATION = 'numen-invitation-1.xyz'
 
-const anna: ShareReader = { label: 'Anna', fingerprint: FINGERPRINT, state: 'active' }
+const phone: ShareReader = { label: 'Phone', fingerprint: FINGERPRINT, state: 'active' }
 
 interface Setup {
   readonly share?: Share
@@ -31,7 +31,7 @@ const createClient = (setup: Setup): SharesClient => ({
       ? Promise.reject(new Error('this is not a reader code or an invitation'))
       : Promise.resolve({
       fingerprint: FINGERPRINT,
-      label: setup.label ?? 'Anna',
+      label: setup.label ?? 'Phone',
     }),
   getShare: () => Promise.resolve(setup.share ?? { state: 'notShared', readers: [] }),
   addReader: () =>
@@ -115,17 +115,17 @@ export const Shared: Story = {
       INVITATION,
     )
     await expect(
-      canvas.getByText('Folder shared with Anna. Send them this invitation:'),
+      canvas.getByText('Folder shared with Device «Phone» (CCCC DDDD EEEE…). Send them this invitation:'),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Copy invitation' })).toBeVisible()
   },
 }
 
 export const WithPeople: Story = {
-  args: { state: createState({ share: { state: 'active', readers: [anna] } }) },
+  args: { state: createState({ share: { state: 'active', readers: [phone] } }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Anna')).toBeVisible()
+    await expect(await canvas.findByText('Phone')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Remove access' })).toBeVisible()
   },
 }

@@ -11,10 +11,11 @@ import ShareInvitationDialog from './ShareInvitationDialog.vue'
 import { frameDecorator } from './storyFrame'
 import '../styles.css'
 
-const ANNA: SharePerson = { name: 'Anna', fingerprint: 'CCCC DDDD EEEE FFFF' }
+const PHONE: SharePerson = { deviceName: 'Phone', fingerprint: '1111 2222 3333 4444' }
 const REQUEST: ShareRequest = {
   requestId: 'r1',
-  name: 'Anna',
+  deviceName: 'Phone',
+  fingerprint: '1111 2222 3333 4444',
   folderName: 'Recipes',
   code: '482 913',
 }
@@ -90,7 +91,7 @@ export const RequestWaiting: Story = {
   args: { state: createState({ request: REQUEST }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Anna wants to read Recipes.')).toBeVisible()
+    await expect(await canvas.findByText('Device «Phone» (1111 2222 3333…) wants to read Recipes.')).toBeVisible()
     await expect(canvas.getByText('Code 482 913')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Allow' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Decline' })).toBeVisible()
@@ -98,11 +99,11 @@ export const RequestWaiting: Story = {
 }
 
 export const Approved: Story = {
-  args: { state: createState({ state: 'approved', people: [ANNA] }) },
+  args: { state: createState({ state: 'approved', people: [PHONE] }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Shared with Anna')).toBeVisible()
-    await expect(canvas.getByText('CCCC DDDD EEEE…')).toBeVisible()
+    await expect(await canvas.findByText('Shared with Device «Phone» (1111 2222 3333…)')).toBeVisible()
+    await expect(canvas.getAllByText('1111 2222 3333…')).toHaveLength(2)
   },
 }
 

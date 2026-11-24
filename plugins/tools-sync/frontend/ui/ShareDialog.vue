@@ -24,7 +24,10 @@ const isIdentityChange = computed(() => isIdentityWarning(props.state.error))
 const hasInvitation = computed(() => props.state.invitation !== '')
 const isSharing = computed(() => props.state.isBusy || props.state.share.state === 'creating')
 const canShare = computed(() => !isSharing.value && props.state.code.trim() !== '')
-const sharedWith = computed(() => words.sharedWith(props.state.sharedName || words.unnamed))
+const getDevice = (name: string): string =>
+  words.deviceLabel(name, getShortFingerprint(props.state.fingerprint))
+const device = computed(() => getDevice(props.state.label))
+const sharedWith = computed(() => words.sharedWith(getDevice(props.state.sharedName)))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCodeInput(event: Event): void {
@@ -107,7 +110,7 @@ function onCopyIdentity(fingerprint: string): void {
         </p>
         <p v-else-if="state.fingerprint !== ''" class="sync-dialog__text" role="status">
           <Check :size="14" aria-hidden="true" />
-          {{ words.shareWith(state.label || state.fingerprint) }}
+          {{ words.shareWith(device) }}
         </p>
         <p v-else class="sync-dialog__text sync-dialog__text--hushed">
           {{ words.sharingLinkHint }}

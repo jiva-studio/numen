@@ -4,13 +4,14 @@ export type InvitationState = 'waiting' | 'approved' | 'declined' | 'expired'
 
 export interface ShareRequest {
   readonly requestId: string
-  readonly name: string
+  readonly deviceName: string
+  readonly fingerprint: string
   readonly folderName: string
   readonly code: string
 }
 
 export interface SharePerson {
-  readonly name: string
+  readonly deviceName: string
   readonly fingerprint: string
 }
 
