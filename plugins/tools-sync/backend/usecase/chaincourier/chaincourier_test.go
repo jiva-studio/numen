@@ -148,7 +148,7 @@ func newThreeRestores(t *testing.T) (earlier, current *synctest.Computer) {
 	return earlier, current
 }
 
-func TestPublish_ServerTakesTheRevokeOfAnEarlierRestoreOfTheSameName(t *testing.T) {
+func TestPublish_AcceptsRevokeAfterEarlierRestoreOfSameName(t *testing.T) {
 	t.Parallel()
 	earlier, current := newThreeRestores(t)
 	target := earlier.GetDeviceSignKey(t)

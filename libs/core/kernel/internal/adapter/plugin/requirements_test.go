@@ -89,7 +89,7 @@ func TestABackendThatRequiresTheIdentityStartsOnceTheDeviceHasOne(t *testing.T) 
 	}
 }
 
-func TestABackendThatRequiresTheIdentityStopsWhenTheIdentityIsGoneAndIsNotStartedAgain(t *testing.T) {
+func TestRequirements_StopsTheBackendOnceTheIdentityIsRemoved(t *testing.T) {
 	host := newRequiringHost(t)
 	host.setPresent(true)
 	host.waitForRunning(t, requiringPlugin)

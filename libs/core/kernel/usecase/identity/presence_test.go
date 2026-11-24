@@ -59,7 +59,7 @@ func TestIsPresent_FollowsTheCreationAndTheDeletionAndTellsEachChange(t *testing
 	}
 }
 
-func TestIsPresent_HoldsWhileARestoreWaitsForTheChainOfTheServer(t *testing.T) {
+func TestIsPresent_TrueWhileRestoreAwaitsServerChain(t *testing.T) {
 	t.Parallel()
 	k := newPresenceKit()
 

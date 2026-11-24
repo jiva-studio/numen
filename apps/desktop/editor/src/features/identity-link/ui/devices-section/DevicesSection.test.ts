@@ -42,7 +42,6 @@ const mountSection = async (
   return wrapper
 }
 
-/** Right-clicks the row, as the pointer does. */
 const openMenu = async (index: number): Promise<void> => {
   const row = document.querySelectorAll('li')[index]
   row?.dispatchEvent(

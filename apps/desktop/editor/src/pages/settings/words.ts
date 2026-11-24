@@ -91,7 +91,7 @@ export const WORDS = {
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
   identityNoneDetail:
-    'An identity is who you are in Numen. It lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
+    'Your identity in Numen lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
   identityNoneWords:
     'When you create it, you get 12 recovery words — write them down. With them you can bring the same identity to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
@@ -151,9 +151,9 @@ export const WORDS = {
   identityDeleteCancel: 'Cancel',
   /** The recovery kit of three sheets on the identity section, saved as a PDF. */
   kitTitle: 'Recovery kit',
-  kitDetail: 'Printed sheets that bring your identity back',
+  kitDetail: 'Printed sheets to bring your identity back',
   kitDetails:
-    'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
+    'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
   kitDownload: 'Download PDF',
   kitDownloading: 'Saving…',
   kitSaved: 'Recovery kit saved',

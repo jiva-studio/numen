@@ -20,7 +20,7 @@ import {
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
-const NO_IDENTITY = 'An identity is who you are in Numen.'
+const NO_IDENTITY = 'Your identity in Numen lives on your own computer'
 
 const RECOVERY_WORDS = [
   'legal',
@@ -571,11 +571,11 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
   it('is one row of the identity card with a button that downloads a PDF', async () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Recovery kit')
-    expect(tab.text()).toContain('Printed sheets that bring your identity back')
+    expect(tab.text()).toContain('Printed sheets to bring your identity back')
     expect(tab.text()).not.toContain('if you lose this computer')
     await tab.get('[aria-label="About Recovery kit"]').trigger('click')
     expect(tab.text()).toContain(
-      'Printed sheets that bring your identity back if you lose this computer. Any two of the three restore it.',
+      'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
     )
     expect(getDownload(tab)).toBeDefined()
     expect(hasDialog(tab)).toBe(false)

@@ -20,8 +20,8 @@ func (s *changeSignal) subscribe(listener func()) {
 	s.listeners = append(s.listeners, listener)
 }
 
-// notify calls each listener. It is called under the lock of a store, so a listener returns at once and takes none.
 func (s *changeSignal) notify() {
+	// Called under the lock of a store: a listener returns at once and takes none.
 	s.mu.Lock()
 	listeners := append([]func(){}, s.listeners...)
 	s.mu.Unlock()

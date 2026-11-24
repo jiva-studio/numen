@@ -147,7 +147,6 @@ func (p sheetPage) drawLine(x1, x2, y, width float64, c color) {
 	p.pdf.Line(x1, y, x2, y)
 }
 
-// writeFlow wraps the segments between f.left and f.right and returns the y below the last line.
 func (p sheetPage) writeFlow(f flow, segments []segment) float64 {
 	p.pdf.SetLeftMargin(f.left)
 	p.pdf.SetRightMargin(pageWidth - f.right)
@@ -165,7 +164,6 @@ func (p sheetPage) writeFlow(f flow, segments []segment) float64 {
 	return p.pdf.GetY() + f.lineH
 }
 
-// getBaseline is the y where fpdf puts the baseline of text written on a line of the given top and height.
 func getBaseline(top, lineH, size float64) float64 { return top + lineH/2 + 0.3*size*pointToMM }
 
 func (p sheetPage) drawHeader(of string) {
