@@ -69,15 +69,15 @@ describe('the manifest of the sync plugin', () => {
     expect(manifest.settings.map((one) => one.key)).toContain('server')
   })
 
-  it('declares the vaults view and the subscription view that the page of the identity draws', () => {
+  it('declares the views of the synced vaults and the shared folders, and the subscription view of the page of the identity', () => {
     expect(manifest.settingsViews).toStrictEqual([
-      { id: 'vaults', title: 'Vaults' },
-      { id: 'shares', title: 'Shares' },
+      { id: 'vaults', title: 'Synced vaults' },
+      { id: 'shares', title: 'Shared folders' },
       { id: 'subscription', title: 'Subscription', page: 'identity' },
     ])
   })
 
-  it('offers "Share..." on a folder of the file tree and keeps the folder for shared vaults a setting', () => {
+  it('offers "Sync this vault" on the root and "Share..." on a folder of the file tree, and has a setting for the folder of shared vaults', () => {
     const contributes = manifest.contributes as {
       slots: readonly Record<string, string>[]
       commands: readonly Record<string, string>[]
@@ -90,9 +90,20 @@ describe('the manifest of the sync plugin', () => {
       expect.objectContaining({
         slot: 'fileTree.context',
         command: 'share.open',
-        when: 'target.isFolder',
+        when: 'target.isFolder && !target.isRoot',
       }),
     )
+    expect(contributes.commands).toContainEqual(
+      expect.objectContaining({ id: 'vault.sync', title: 'Sync this vault' }),
+    )
+    expect(contributes.slots).toContainEqual(
+      expect.objectContaining({
+        slot: 'fileTree.context',
+        command: 'vault.sync',
+        when: 'target.isRoot',
+      }),
+    )
+    expect(contributes).not.toHaveProperty('tabKinds')
     expect(manifest.settings.find((one) => one.key === 'receivedFolder')).toMatchObject({
       type: 'string',
       default: '',

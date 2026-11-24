@@ -58,7 +58,7 @@ describe('the dialog of a shared folder', () => {
     expect(view.fingerprint).toBe('SECOND')
   })
 
-  it('gives the invitation and clears the form once the reader is added', async () => {
+  it('has the invitation and the name and clears the form once the person is added', async () => {
     const client = createClient()
     const view = createShare(client)
     await view.setCode('numen-reader-1.def')
@@ -158,7 +158,14 @@ describe('the page of the shares received', () => {
 
     expect(view.code).toBe('numen-reader-1.abc')
     expect(view.rows).toStrictEqual([
-      { vaultId: 'r1', name: 'Food', ownerFingerprint: 'EEEE FFFF', stateLabel: 'Up to date' },
+      {
+        vaultId: 'r1',
+        name: 'Food',
+        ownerFingerprint: 'EEEE FFFF',
+        ownerShort: 'EEEE FFFF',
+        stateLabel: 'Up to date',
+        tone: 'ok',
+      },
     ])
   })
 
@@ -222,9 +229,57 @@ describe('the page of the shares received', () => {
     view.stop()
 
     expect(view.rows.map((row) => row.stateLabel)).toStrictEqual([
-      'Receiving…',
+      'Getting the folder…',
       'Up to date',
-      'The owner ended this share',
+      'The person stopped sharing this folder',
     ])
+  })
+})
+
+describe('the dialog of a share, in the words of the product', () => {
+  it('names the person the invitation is for', async () => {
+    const view = createShare(createClient())
+    await view.setCode('numen-reader-1.def')
+    view.setLabel(' Anna ')
+
+    await view.add(false)
+
+    expect(view.sharedName).toBe('Anna')
+  })
+
+  it('says a code that cannot be read is not an identity code', async () => {
+    const client = createClient({
+      readReaderCode: () => Promise.reject(new Error('this is not a reader code or an invitation')),
+    })
+    const view = createShare(client)
+
+    await view.setCode('nonsense')
+
+    expect(view.codeError).toBe('This does not look like an identity code.')
+  })
+
+  it('lists only the people who have access', () => {
+    const view = createShare(createClient())
+    view.share = {
+      state: 'active',
+      readers: [
+        { label: 'Anna', fingerprint: 'CCCC DDDD', state: 'active' },
+        { label: 'Bo', fingerprint: 'EEEE FFFF', state: 'removed' },
+      ],
+    }
+
+    expect(view.people.map((one) => one.label)).toStrictEqual(['Anna'])
+  })
+
+  it('takes the code from the clipboard', async () => {
+    vi.stubGlobal('navigator', {
+      clipboard: { readText: () => Promise.resolve('numen-reader-1.xyz') },
+    })
+    const view = createShare(createClient())
+
+    await view.pasteCode()
+
+    expect(view.code).toBe('numen-reader-1.xyz')
+    vi.unstubAllGlobals()
   })
 })
