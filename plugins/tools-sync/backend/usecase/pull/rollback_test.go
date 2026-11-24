@@ -39,7 +39,7 @@ func (p *pair) pullServing(t *testing.T, changes ...*syncv1.StoredRevision) {
 			Changes: changes, NextSeq: real.GetHeadSeq() + 1, HeadSeq: real.GetHeadSeq() + 1, RestoreEpochId: real.GetRestoreEpochId(),
 		},
 	}
-	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), transfer.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {
+	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {
 		t.Fatal(err)
 	}
 }
