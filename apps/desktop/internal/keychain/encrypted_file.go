@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
@@ -62,10 +63,7 @@ func encryptEntries(entries map[string]string, passphrase string, params kdfPara
 	if err != nil {
 		return nil, fmt.Errorf("encrypt the credentials: %w", err)
 	}
-	out := make([]byte, 0, len(header)+len(nonce)+len(plain)+chacha20poly1305.Overhead)
-	out = append(out, header...)
-	out = append(out, nonce...)
-	return aead.Seal(out, nonce, plain, header), nil
+	return aead.Seal(slices.Concat(header, nonce), nonce, plain, header), nil
 }
 
 func decryptEntries(raw []byte, passphrase string) (map[string]string, error) {
