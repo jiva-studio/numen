@@ -82,7 +82,7 @@ type Sweeper interface {
 
 // Puller brings the changes of the server into the vault.
 type Puller interface {
-	Execute(ctx context.Context, in transfer.PullInput) (restore.PullResult, error)
+	Execute(ctx context.Context, in ports.PullInput) (restore.PullResult, error)
 }
 
 // Scanner lists the notes that changed on this device.
@@ -110,7 +110,7 @@ type Guard interface {
 
 // Committer commits files to the server.
 type Committer interface {
-	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
+	Execute(ctx context.Context, in ports.CommitInput) ([]transfer.Outcome, error)
 }
 
 // SubscriptionReader reads the subscription of the account from the server.

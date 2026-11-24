@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 )
@@ -234,7 +235,7 @@ func TestCommitRemovals_CommitsManyRemovalsInOneCall(t *testing.T) {
 
 func (s *setup) runBig(t *testing.T, file transfer.File) []transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), transfer.CommitInput{VaultID: vaultID, Vault: s.vault, Files: []transfer.File{file}})
+	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), ports.CommitInput{VaultID: vaultID, Vault: s.vault, Files: []transfer.File{file}})
 	if err != nil {
 		t.Fatal(err)
 	}

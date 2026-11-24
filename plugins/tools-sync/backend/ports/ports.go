@@ -342,3 +342,20 @@ type ShareStates interface {
 	ReadShareStates(ctx context.Context, id domain.VaultID) ([]share.Progress, error)
 	WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error
 }
+
+// CommitInput is the files to commit to a vault. VaultID names the vault on this device; a note under the folder of
+// one of Shares is sealed under the key of that share.
+type CommitInput struct {
+	VaultID domain.VaultID
+	Vault   transfer.Vault
+	Files   []transfer.File
+	Shares  []share.Root
+}
+
+// PullInput is the vault, the check of the author of a revision and the shares of the vault, whose revisions open with
+// the keys of the share.
+type PullInput struct {
+	VaultID  domain.VaultID
+	IsAuthor func(deviceSignKey []byte) bool
+	Shares   []share.Root
+}

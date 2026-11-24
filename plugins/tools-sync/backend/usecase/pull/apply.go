@@ -26,7 +26,7 @@ var errBlobMissing = errors.New("the server has no blob for a revision")
 
 type run struct {
 	deps    Deps
-	in      transfer.PullInput
+	in      ports.PullInput
 	files   ports.Files
 	moves   ports.Transfers
 	remote  []byte
