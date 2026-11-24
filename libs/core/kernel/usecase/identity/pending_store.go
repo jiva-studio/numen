@@ -14,6 +14,15 @@ type pendingRestore struct {
 	replaced  chan struct{}
 }
 
+// restoreHold is the restore that waits for the account chain of a sync plugin: replace, isCurrent and read take the
+// lock of the store themselves, and hold waits for the lock and returns the store with the function that gives it back.
+type restoreHold interface {
+	replace(next *pendingRestore)
+	isCurrent(restore *pendingRestore) bool
+	read() *pendingRestore
+	hold() (*pendingStore, func())
+}
+
 // pendingStore keeps the one restore that waits for the account chain of a sync plugin. Its keys stay in memory.
 type pendingStore struct {
 	mu      sync.Mutex
@@ -21,6 +30,11 @@ type pendingStore struct {
 }
 
 func newPendingStore() *pendingStore { return &pendingStore{} }
+
+func (s *pendingStore) hold() (*pendingStore, func()) {
+	s.mu.Lock()
+	return s, s.mu.Unlock
+}
 
 func (s *pendingStore) replace(next *pendingRestore) {
 	s.mu.Lock()

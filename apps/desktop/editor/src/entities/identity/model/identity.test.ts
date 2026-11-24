@@ -230,7 +230,7 @@ describe('the identity store restoring from words', () => {
       }),
     )
 
-    const answer = await settle(store.restore(WORDS))
+    const answer = await settle(store.restore({ words: WORDS }))
 
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
     expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS)
@@ -244,7 +244,7 @@ describe('the identity store restoring from words', () => {
     let isDone = false
     const { store } = createStore(createClient({ get: () => Promise.resolve(undefined) }))
 
-    store.restore(WORDS).then(
+    store.restore({ words: WORDS }).then(
       () => {
         isDone = true
       },
@@ -268,7 +268,7 @@ describe('the identity store restoring from words', () => {
       }),
     )
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore({ words: WORDS })
 
     expect(answer).toStrictEqual({ ok: false, error: 'Some words are not valid.' })
     expect(get).not.toHaveBeenCalled()
@@ -284,7 +284,7 @@ describe('the identity store restoring from words', () => {
     )
     await store.load()
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore({ words: WORDS })
 
     expect(answer).toStrictEqual({ ok: false, error: 'This device already has an identity.' })
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
@@ -295,7 +295,7 @@ describe('the identity store restoring from words', () => {
       createClient({ startRestore: () => Promise.reject(new Error('offline')) }),
     )
 
-    const answer = await store.restore(WORDS)
+    const answer = await store.restore({ words: WORDS })
 
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
@@ -374,7 +374,7 @@ describe('the identity store and the recovery kit', () => {
             Promise.resolve(asFailure({ error, message: 'sheet 2 is not valid' })),
         }),
       )
-      expect(await store.restoreFromKit(SHEETS)).toStrictEqual({ ok: false, error: text })
+      expect(await store.restore({ sheets: SHEETS })).toStrictEqual({ ok: false, error: text })
     }
   })
 
@@ -394,7 +394,7 @@ describe('the identity store and the recovery kit', () => {
       }),
     )
     expect((await store.saveKit({ words: WORDS })).ok).toBe(false)
-    expect((await store.restoreFromKit(SHEETS)).ok).toBe(false)
+    expect((await store.restore({ sheets: SHEETS })).ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
   })
 
@@ -411,7 +411,7 @@ describe('the identity store and the recovery kit', () => {
         },
       }),
     )
-    const pending = store.restoreFromKit(SHEETS)
+    const pending = store.restore({ sheets: SHEETS })
     await vi.advanceTimersByTimeAsync(2000)
     expect(await pending).toStrictEqual({ ok: true, value: createSampleIdentity() })
     expect(startRestoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS)
@@ -428,7 +428,7 @@ describe('the identity store and the recovery kit', () => {
           Promise.resolve(asFailure({ error: 'notEnoughSheets', message: '' })),
       }),
     )
-    expect(await store.restoreFromKit(SHEETS.slice(0, 1))).toStrictEqual({
+    expect(await store.restore({ sheets: SHEETS.slice(0, 1) })).toStrictEqual({
       ok: false,
       error: 'One more sheet is needed.',
     })

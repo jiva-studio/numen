@@ -95,7 +95,7 @@ func (u *Courier) carry(ctx context.Context, work ports.LinkWork, created *[]byt
 		stopWaits(current)
 		*current = channelState{id: bytes.Clone(work.ChannelID), side: getSide(work.ChannelID, *created), isClosed: false, stopWaits: nil}
 	}
-	if !u.post(ctx, current, work.Outbound) {
+	if !u.sendBlobs(ctx, current, work.Outbound) {
 		return false
 	}
 	if work.IsClosed {
@@ -133,9 +133,9 @@ func (u *Courier) makeChannel(ctx context.Context, created *[]byte) bool {
 	return true
 }
 
-func (u *Courier) post(ctx context.Context, current *channelState, blobs [][]byte) bool {
+func (u *Courier) sendBlobs(ctx context.Context, current *channelState, blobs [][]byte) bool {
 	for _, blob := range blobs {
-		_, err := u.deps.Relay.PostMessage(ctx, current.id, getOtherSide(current.side), blob)
+		_, err := u.deps.Relay.SendMessage(ctx, current.id, getOtherSide(current.side), blob)
 		if errors.Is(err, syncprotocol.ErrChannelGone) {
 			return true
 		}

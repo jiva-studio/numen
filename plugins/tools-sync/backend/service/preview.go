@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
 )
 
-// PreviewConnect counts the notes of a vault that have another text than the note at the same path of a synced vault.
-func (b *Backend) PreviewConnect(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
+// GetConnectPreview counts the notes of a vault that have another text than the note at the same path of a synced vault.
+func (b *Backend) GetConnectPreview(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
 	if !vaultlink.IsRemoteID(request.RemoteID) {
 		return api.PreviewConnectResponse{}, catalog.ErrUnknownRemoteVault
 	}

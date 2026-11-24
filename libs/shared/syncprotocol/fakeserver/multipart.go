@@ -203,17 +203,17 @@ func listIncomplete(row *blobRow) *syncv1.MultipartIncomplete {
 func (s *Server) joinParts(id string, row *blobRow) error {
 	object := make([]byte, 0, row.size)
 	for number := uint32(1); number <= row.multipart.partCount; number++ {
-		part, found := s.store.read(getPartName(id, number))
+		part, found := s.store.Read(getPartName(id, number))
 		if !found {
 			return fmt.Errorf("%w: part %d is not stored", errIncomplete, number)
 		}
 		object = append(object, part...)
 	}
-	if err := s.store.write(getObjectName(id), object); err != nil {
+	if err := s.store.Write(getObjectName(id), object); err != nil {
 		return err
 	}
 	for number := uint32(1); number <= row.multipart.partCount; number++ {
-		s.store.remove(getPartName(id, number))
+		s.store.Remove(getPartName(id, number))
 	}
 	row.multipart.isCompleted, row.isUploaded = true, true
 	return nil
@@ -238,7 +238,7 @@ func (s *Server) AbortMultipartBlob(_ context.Context, req *connect.Request[sync
 		return connect.NewResponse(&syncv1.AbortMultipartBlobResponse{}), nil
 	}
 	for number := range row.multipart.parts {
-		s.store.remove(getPartName(id, number))
+		s.store.Remove(getPartName(id, number))
 	}
 	row.multipart.isAborted, row.multipart.parts, row.state = true, map[uint32]uint64{}, blobAbandoned
 	s.used[account] -= min(row.size, s.used[account])
@@ -272,7 +272,7 @@ func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, nu
 	case r.ContentLength != int64(len(body)) || uint64(len(body)) != expected:
 		http.Error(w, "the body is not of the size of the part", http.StatusBadRequest)
 	default:
-		if err := s.store.write(getPartName(id, number), body); err != nil {
+		if err := s.store.Write(getPartName(id, number), body); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 )
@@ -231,7 +232,7 @@ func TestPullChanges_KeepsANoteWhoseHeadDoesNotVerifyOnAReset(t *testing.T) {
 
 func commitAsAway(t *testing.T, w *away, path, text string) transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitRevisions(w.b.CommitDeps()).Execute(t.Context(), transfer.CommitInput{
+	outcomes, err := commit.NewCommitRevisions(w.b.CommitDeps()).Execute(t.Context(), ports.CommitInput{
 		Vault: w.vault, Files: []transfer.File{{Path: path, Content: []byte(text)}},
 	})
 	if err != nil {

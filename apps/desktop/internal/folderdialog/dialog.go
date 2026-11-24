@@ -140,8 +140,6 @@ func (d *Dialog) ChooseSaveFile(_ context.Context, title, name string, accept []
 	return selected, selected != "", nil
 }
 
-// getFilter returns the name and the pattern of a filter that shows the files with one of the
-// extensions.
 func getFilter(accept []string) (string, string) {
 	patterns := make([]string, 0, len(accept))
 	for _, extension := range accept {

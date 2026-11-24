@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 )
@@ -43,7 +44,7 @@ func (w *world) removeAfterReading(t *testing.T) []domainshare.Root {
 func TestCommitRevisions_ReturnsStaleEpochForNoteSealedAtOldEpoch(t *testing.T) {
 	w := newWorld(t)
 	stale := w.removeAfterReading(t)
-	in := transfer.CommitInput{
+	in := ports.CommitInput{
 		Vault:  transfer.Vault{ID: w.owner.GetRemoteID(t, owned), Key: w.owner.GetVaultKey(t, owned)},
 		Files:  []transfer.File{{Path: "Food/Bread.md", Content: []byte("flour")}},
 		Shares: stale,

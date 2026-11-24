@@ -14,6 +14,7 @@ import (
 	domainrestore "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 const batchSize = 100
@@ -203,7 +204,7 @@ func (r *recovery) send(ctx context.Context, files []transfer.File) error {
 	if len(files) == 0 {
 		return nil
 	}
-	outcomes, err := r.deps.Commit.Execute(ctx, transfer.CommitInput{VaultID: r.id, Vault: r.vault, Files: files})
+	outcomes, err := r.deps.Commit.Execute(ctx, ports.CommitInput{VaultID: r.id, Vault: r.vault, Files: files, Shares: nil})
 	if err != nil {
 		return err
 	}

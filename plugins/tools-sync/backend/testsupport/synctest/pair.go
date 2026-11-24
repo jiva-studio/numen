@@ -40,5 +40,5 @@ func NewPair(t *testing.T, cfg fakeserver.Config) *Pair {
 // GetVault returns the synced vault the two computers share, with its key.
 func (p *Pair) GetVault(t *testing.T) transfer.Vault {
 	t.Helper()
-	return transfer.Vault{ID: p.A.GetRemoteID(t, FirstVault), Key: p.A.GetVaultKey(t, FirstVault)}
+	return transfer.Vault{ID: p.A.GetRemoteID(t, FirstVault), Key: p.A.GetVaultKey(t, FirstVault), Later: nil}
 }

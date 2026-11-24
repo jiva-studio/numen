@@ -19,17 +19,16 @@ import (
 )
 
 type pass struct {
-	use        *SyncVault
-	id         domain.VaultID
-	authors    trust.Authors
-	shares     []share.Root
-	conflicts  []string
-	resolved   int
-	clashes    []string
-	unverified int
-	verdict    restore.Verdict
-	isSent     bool
-	// isStaleEpoch is a push the server refused because the epoch of a share moved: the shares are read again.
+	use          *SyncVault
+	id           domain.VaultID
+	authors      trust.Authors
+	shares       []share.Root
+	conflicts    []string
+	resolved     int
+	clashes      []string
+	unverified   int
+	verdict      restore.Verdict
+	isSent       bool
 	isStaleEpoch bool
 }
 
@@ -65,7 +64,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted, Shares: p.shares})
+	result, err := p.use.steps.Pull.Execute(ctx, ports.PullInput{VaultID: p.id, IsAuthor: p.authors.IsTrusted, Shares: p.shares})
 	if err != nil {
 		return err
 	}
@@ -212,7 +211,7 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 	if err != nil || len(files) == 0 {
 		return records, false, err
 	}
-	input := transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files, Shares: p.shares}
+	input := ports.CommitInput{VaultID: p.id, Vault: vault, Files: files, Shares: p.shares}
 	outcomes, err := p.use.steps.Commit.Execute(ctx, input)
 	if err != nil {
 		return records, false, err
@@ -230,12 +229,12 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 			outcomes[one.index] = second[i]
 		}
 	}
-	p.noteClashes(outcomes)
+	p.recordClashes(outcomes)
 	p.isStaleEpoch = p.isStaleEpoch || slices.ContainsFunc(outcomes, func(o transfer.Outcome) bool { return o.Status == transfer.StaleEpoch })
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
 }
 
-func (p *pass) noteClashes(outcomes []transfer.Outcome) {
+func (p *pass) recordClashes(outcomes []transfer.Outcome) {
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.CaseClash && !slices.Contains(p.clashes, outcome.Path) {
 			p.clashes = append(p.clashes, outcome.Path)

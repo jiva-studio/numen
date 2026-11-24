@@ -5,7 +5,7 @@ import { doc } from '@/shared/api/dom'
 
 export interface QrScannerSource {
   camera: ScannerCamera
-  accepts: (text: string) => boolean
+  isAccepted: (text: string) => boolean
 }
 
 export interface QrScannerEvents {
@@ -40,7 +40,7 @@ export function useQrScanner(
     const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
     const found = jsQR(pixels.data, pixels.width, pixels.height)
     if (found === null) return
-    if (!source.accepts(found.data)) {
+    if (!source.isAccepted(found.data)) {
       if (found.data === rejected) return
       rejected = found.data
       problem.value = 'This code is not a link of Numen.'
