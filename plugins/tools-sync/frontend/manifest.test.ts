@@ -90,7 +90,7 @@ describe('the manifest of the sync plugin', () => {
       expect.objectContaining({
         slot: 'fileTree.context',
         command: 'share.open',
-        when: 'target.isFolder && !target.isRoot',
+        when: 'target.isFolder',
       }),
     )
     expect(contributes.commands).toContainEqual(

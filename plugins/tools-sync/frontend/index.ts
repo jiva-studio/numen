@@ -50,6 +50,12 @@ const createSettingsOpener = (
 const getCurrentVault = (host: HostServices): string =>
   host.vault.vaults?.getState().current?.id ?? ''
 
+/** The folder of the vault the command ran on: the vault root is the empty folder. */
+const getFolder = (path: string): string => {
+  const trimmed = path.replace(/^\/+|\/+$/g, '')
+  return trimmed === '.' ? '' : trimmed
+}
+
 const registerShare = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.command({
     id: SHARE_COMMAND,
@@ -59,7 +65,8 @@ const registerShare = (plugin: PluginContext, host: HostServices): void => {
       const view = createInvitationView({
         invitations: shareInvitationClient,
         shares: folderSharesClient,
-        target: { vaultId: getCurrentVault(host), folder: note.path },
+        target: { vaultId: getCurrentVault(host), folder: getFolder(note.path) },
+        vaultName: host.vault.vaults?.getState().current?.name ?? '',
         close: () => {
           view.stop()
           dialog.close()

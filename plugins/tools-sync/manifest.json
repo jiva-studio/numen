@@ -26,7 +26,7 @@
         "slot": "fileTree.context",
         "command": "share.open",
         "group": "6-sync",
-        "when": "target.isFolder && !target.isRoot"
+        "when": "target.isFolder"
       }
     ]
   },

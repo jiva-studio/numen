@@ -10,6 +10,8 @@ export interface InvitationViewOptions {
   readonly invitations: ShareInvitationClient
   readonly shares: FolderSharesClient
   readonly target: FolderTarget
+  /** The name of the vault, which names the share of the whole vault. */
+  readonly vaultName?: string
   readonly close: () => void
   readonly refreshMs?: number
 }
@@ -21,7 +23,8 @@ export interface SharePerson {
 
 /** What the dialog "Share..." holds: the link to send, the device that asks to read, and the devices that read. */
 export function createInvitationView(options: InvitationViewOptions) {
-  const { invitations, shares, target, close, refreshMs = REFRESH_MS } = options
+  const { invitations, shares, target, close, vaultName = '', refreshMs = REFRESH_MS } = options
+  const name = target.folder.split('/').at(-1) || vaultName
   const id = ref('')
   const link = ref('')
   const expiresAt = ref('')
@@ -95,6 +98,7 @@ export function createInvitationView(options: InvitationViewOptions) {
 
   return reactive({
     target,
+    name,
     link,
     expiresAt,
     isStarting,

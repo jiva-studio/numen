@@ -17,7 +17,7 @@ import SyncRow from './SyncRow.vue'
 const props = defineProps<{ state: InvitationView }>()
 
 /* --------------------------------- State ---------------------------------- */
-const folderName = computed(() => props.state.target.folder.split('/').at(-1) ?? '')
+const folderName = computed(() => props.state.name)
 const isAsking = computed(() => props.state.request !== undefined)
 const isWaiting = computed(() => props.state.isLinkAlive && !isAsking.value)
 const step = computed(() => (isAsking.value ? 'asking' : props.state.isLinkAlive ? 'link' : 'done'))
