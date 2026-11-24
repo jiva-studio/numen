@@ -41,7 +41,7 @@ type phone struct {
 func newPhone(t *testing.T, held map[string]string) phone {
 	t.Helper()
 	v := domain.Vault{ID: "01VAULT0000000000000000000", Path: vaulttest.CreateVault(t, held, nil)}
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.Unsynchronized())
 	if err != nil {
 		t.Fatal(err)
 	}

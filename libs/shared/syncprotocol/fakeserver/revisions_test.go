@@ -541,7 +541,7 @@ func TestGetBlobUrls_ALinkStopsReadingTheBodyWhenItExpiresAndANewLinkReadsItAgai
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, renewedErr := syncprotocol.GetBlob(t.Context(), http.DefaultClient, second[0].GetUrl())
+	got, renewedErr := syncclient.GetBlob(t.Context(), http.DefaultClient, second[0].GetUrl())
 
 	if expiredErr == nil {
 		t.Error("the link read the body after its expiry")

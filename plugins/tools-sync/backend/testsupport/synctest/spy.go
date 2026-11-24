@@ -91,6 +91,9 @@ func (h *SpyHost) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 
 func (h *SpyHost) GetFiles(id domain.VaultID) ports.Files { return h.inner.GetFiles(id) }
 
+// GetAbsent returns the absent files of the vault.
+func (h *SpyHost) GetAbsent(id domain.VaultID) ports.Absent { return h.inner.GetAbsent(id) }
+
 func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.inner.GetNotes(id) }
 
 // Store returns the store folder of the plugin in the vault.

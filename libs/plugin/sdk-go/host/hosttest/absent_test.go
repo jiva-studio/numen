@@ -77,7 +77,7 @@ func TestFillFilePlacesTheStoreFileAndReportsNoChange(t *testing.T) {
 	if err := v.FillFile(t.Context(), guidePath, "guide.part"); err != nil {
 		t.Fatal(err)
 	}
-	if got, isThere := v.Content(guidePath); !isThere || got != guideContent {
+	if got, isThere := v.ReadContent(guidePath); !isThere || got != guideContent {
 		t.Fatalf("got %q, %v, want the bytes of the store file", got, isThere)
 	}
 	if listed, err := v.ListAbsentFiles(t.Context()); err != nil || len(listed) != 0 {
@@ -95,7 +95,7 @@ func TestFillFileWithOtherBytesReturnsErrHashMismatchAndPlacesNothing(t *testing
 	if err := v.FillFile(t.Context(), guidePath, "guide.part"); !errors.Is(err, host.ErrHashMismatch) {
 		t.Fatalf("got %v, want ErrHashMismatch", err)
 	}
-	if _, isThere := v.Content(guidePath); isThere {
+	if _, isThere := v.ReadContent(guidePath); isThere {
 		t.Fatal("a file is at the path after a mismatch")
 	}
 }
@@ -107,7 +107,7 @@ func TestEvictFileDeletesTheBytesListsTheFileAndReportsNoRemoval(t *testing.T) {
 	if err := v.EvictFile(t.Context(), guidePath, getHash(guideContent)); err != nil {
 		t.Fatal(err)
 	}
-	if _, isThere := v.Content(guidePath); isThere {
+	if _, isThere := v.ReadContent(guidePath); isThere {
 		t.Fatal("the bytes are still held")
 	}
 	if listed, err := v.ListAbsentFiles(t.Context()); err != nil || len(listed) != 1 || listed[0].Path != guidePath {
@@ -124,7 +124,7 @@ func TestEvictFileOfAFileWithChangesReturnsErrChangedAndKeepsIt(t *testing.T) {
 	if err := v.EvictFile(t.Context(), guidePath, getHash(guideContent)); !errors.Is(err, host.ErrChanged) {
 		t.Fatalf("got %v, want ErrChanged", err)
 	}
-	if _, isThere := v.Content(guidePath); !isThere {
+	if _, isThere := v.ReadContent(guidePath); !isThere {
 		t.Fatal("a file with changes lost its bytes")
 	}
 }

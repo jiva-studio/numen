@@ -26,7 +26,7 @@ func getGuide() vault.AbsentFile {
 
 func openRepository(t *testing.T) *absent.Repository {
 	t.Helper()
-	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	db, err := index.Open(t.Context(), indexfile.GetPath(t), index.Unsynchronized())
 	if err != nil {
 		t.Fatal(err)
 	}
