@@ -17,4 +17,4 @@ Feature: Stop syncing a vault
       And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"
       When the person stops syncing the vault "Test"
       Then the vault "Test" is not synced
-      And the person has the note "Shopping list" with the text "milk" in the vault "Test"
+      And the vault "Test" has the note "Shopping list" with the text "milk"
