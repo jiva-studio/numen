@@ -55,7 +55,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, interrupted)
 	embed.source = sourcefake.Wrap(&embedder{dims: dimensions})
 	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(stopCtx, indexfake.GetFirst()); err == nil {
+	if _, err := embed.EmbedWithProgress(stopCtx, indexfake.GetFirst(), nil, nil); err == nil {
 		t.Fatal("a canceled context did not stop the run")
 	}
 
@@ -72,7 +72,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	embed.vectors = index
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	// No chunk needs a vector, so a third run does no work.
-	third, err := embed.Execute(ctx, indexfake.GetFirst())
+	third, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 400)), 1)
 	small := cutBooks(t, index, shelf, indexfake.GetFirst())
 
-	res, err := (newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)).Execute(ctx, indexfake.GetFirst())
+	res, err := (newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)).EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 
 			emb := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 			emb.source = sourcefake.Wrap(&embedder{dims: dimensions})
-			res, err := emb.Execute(ctx, indexfake.GetFirst())
+			res, err := emb.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 			if err != nil {
 				t.Fatalf("a source that moved on is not an error: %v", err)
 			}
@@ -271,7 +271,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 
 	embed := newEmbed(shelves, index, index)
 	embed.source = sourcefake.Wrap(&embedder{dims: dimensions})
-	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
+	if _, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	for _, chunk := range mine {
@@ -285,7 +285,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		}
 	}
 
-	if _, err := embed.Execute(ctx, indexfake.GetSecond()); err != nil {
+	if _, err := embed.EmbedWithProgress(ctx, indexfake.GetSecond(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	for _, chunk := range append(append([]indexfake.Chunk{}, mine...), theirs...) {
@@ -310,7 +310,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	embed.source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 4000
 
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatalf("a claimed vault is not an error: %v", err)
 	}
@@ -328,7 +328,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	if err := claim.release(); err != nil {
 		t.Fatal(err)
 	}
-	secondRes, err := embed.Execute(ctx, indexfake.GetFirst())
+	secondRes, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,7 +383,7 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	embed.source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 50000
 
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -433,7 +433,7 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
+	if _, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -469,7 +469,7 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	embed.BatchCharacters = 200
 	embed.Concurrency = 3
 
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatalf("concurrent execution failed: %v", err)
 	}
@@ -611,7 +611,7 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 	source := sourcefake.Wrap(aware)
 	source.Queries = aware.EmbedQueries
 	embed.source = source
-	if _, err := embed.Execute(t.Context(), indexfake.GetFirst()); err != nil {
+	if _, err := embed.EmbedWithProgress(t.Context(), indexfake.GetFirst(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if aware.calls == 0 {

@@ -26,7 +26,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	embed.BatchCharacters = 4000
 
 	cutBooks(t, index, shelf, indexfake.GetFirst())
-	if _, err := embed.Execute(t.Context(), indexfake.GetFirst()); err != nil {
+	if _, err := embed.EmbedWithProgress(t.Context(), indexfake.GetFirst(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,7 +46,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 
 	index.Groups = nil
 	cutBooks(t, index, shelf, indexfake.GetSecond())
-	res, err := embed.Execute(t.Context(), indexfake.GetSecond())
+	res, err := embed.EmbedWithProgress(t.Context(), indexfake.GetSecond(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

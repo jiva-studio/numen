@@ -45,7 +45,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.BatchCharacters = 4000
 	embed.source = sourcefake.Wrap(narrow)
-	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
+	if _, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,7 +62,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	}
 
 	embed.source = sourcefake.Wrap(large)
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

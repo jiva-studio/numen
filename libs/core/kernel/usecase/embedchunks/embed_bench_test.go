@@ -55,7 +55,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
-				if _, err := embed.Execute(b.Context(), indexfake.GetFirst()); err != nil {
+				if _, err := embed.EmbedWithProgress(b.Context(), indexfake.GetFirst(), nil, nil); err != nil {
 					b.Fatal(err)
 				}
 			}

@@ -63,9 +63,9 @@ func NewEmbed(
 	return Embed{readers: readers, chunks: chunks, vectors: vectors, claim: claim, texts: texts, source: source}
 }
 
-// EmbedWithProgress runs Execute with onProgress reporting each step when
-// non-nil, and leaves without vectors the chunks of every source isSkipped
-// names when non-nil.
+// EmbedWithProgress embeds the chunks of a vault that lack vectors, in batches, until none
+// remain. It reports each step to onProgress when non-nil and leaves without vectors the chunks
+// of every source isSkipped names when non-nil.
 func (u Embed) EmbedWithProgress(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (vaultreading.EmbedResult, error) {
@@ -74,11 +74,6 @@ func (u Embed) EmbedWithProgress(
 
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
 const pipelineBufferSize = 4
-
-// Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (vaultreading.EmbedResult, error) {
-	return u.run(ctx, v, nil, nil)
-}
 
 func (u Embed) run(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
