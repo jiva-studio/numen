@@ -4,7 +4,7 @@
   "version": "2026.11.1",
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "mobile.app"],
   "activationEvents": ["onFilesChanged"],
   "contributes": {
     "category": "tools",
@@ -57,6 +57,14 @@
       "description": "Where the folders shared with you are kept",
       "details": "Where the folders shared with you are kept. Empty means Numen Shared in your home folder.",
       "default": ""
+    },
+    {
+      "key": "syncOnlyWhileOpen",
+      "type": "boolean",
+      "title": "Sync only while the app is open",
+      "description": "Stops the sync while the app is off the screen",
+      "details": "Stops the sync when the app leaves the screen and starts it when it returns.",
+      "default": false
     }
   ],
   "settingsViews": [

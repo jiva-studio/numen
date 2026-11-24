@@ -26,6 +26,10 @@ type Server struct {
 	isCorrupted  bool
 	hookPath     string
 	hookCallback func()
+	requests     int
+	blobGets     int
+	blobBudget   int
+	hasBudget    bool
 }
 
 // NewServer starts the server on the clock and stops it when the test ends. An admin stop budget that ends makes the
@@ -33,7 +37,7 @@ type Server struct {
 func NewServer(t *testing.T, clock *Clock, cfg fakeserver.Config) *Server {
 	t.Helper()
 	cfg.Now = clock.Now
-	s := &Server{Fake: nil, URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, hookPath: "", hookCallback: nil}
+	s := &Server{Fake: nil, URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, hookPath: "", hookCallback: nil, requests: 0, blobGets: 0, blobBudget: 0, hasBudget: false}
 	cfg.Stop = func() { s.SetDown(true) }
 	s.Fake = fakeserver.New(cfg)
 	served := httptest.NewServer(http.HandlerFunc(s.serve))
@@ -171,7 +175,7 @@ func (s *Server) RunAfterNext(suffix string, hook func()) {
 }
 
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
-	isDown, isCorrupted, isLost, hook := s.takeFaults(r.URL.Path)
+	isDown, isCorrupted, isLost, hook := s.takeFaults(r.Method, r.URL.Path)
 	switch {
 	case isDown:
 		http.Error(w, "the server is down", http.StatusServiceUnavailable)
@@ -191,9 +195,10 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 // retention.
 func (s *Server) ForgetRemovals() { s.Fake.PruneTombstones() }
 
-func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook func()) {
+func (s *Server) takeFaults(method, path string) (isDown, isCorrupted, isLost bool, hook func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	isCut := s.countRequest(method, path)
 	isLost = !s.isDown && s.lostPath != "" && strings.HasSuffix(path, s.lostPath)
 	if isLost {
 		s.lostPath = ""
@@ -201,7 +206,45 @@ func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook
 	if s.hookPath != "" && strings.HasSuffix(path, s.hookPath) {
 		hook, s.hookPath, s.hookCallback = s.hookCallback, "", nil
 	}
-	return s.isDown, s.isCorrupted, isLost, hook
+	return s.isDown || isCut, s.isCorrupted, isLost, hook
+}
+
+func (s *Server) countRequest(method, path string) bool {
+	s.requests++
+	if method != http.MethodGet || !strings.HasPrefix(path, "/blobs/") {
+		return false
+	}
+	s.blobGets++
+	if !s.hasBudget {
+		return false
+	}
+	if s.blobBudget <= 0 {
+		return true
+	}
+	s.blobBudget--
+	return false
+}
+
+// CountRequests returns how many requests the server has taken, answered or not.
+func (s *Server) CountRequests() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.requests
+}
+
+// CountBlobGets returns how many downloads of a blob, whole or in a range, the server has taken.
+func (s *Server) CountBlobGets() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.blobGets
+}
+
+// FailBlobGetsAfter makes every download of a blob answer 503 once n more have been taken, as a connection that
+// drops in the middle of a file does. A negative n lifts the limit.
+func (s *Server) FailBlobGetsAfter(n int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.hasBudget, s.blobBudget = n >= 0, n
 }
 
 func (s *Server) serveCorrupted(w http.ResponseWriter, r *http.Request) {

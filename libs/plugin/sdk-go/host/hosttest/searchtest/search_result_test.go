@@ -1,4 +1,4 @@
-package hosttest_test
+package searchtest_test
 
 import (
 	"strings"

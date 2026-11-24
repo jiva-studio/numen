@@ -65,7 +65,7 @@ func NewTriggers(deps TriggersDeps) *Triggers {
 func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
 	_, err := u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
 		return reader.WalkFiles(ctx, func(stat domain.FileStat) error {
-			if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
+			if stat.IsAbsent || stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
 				return nil
 			}
 			return each(stat.Path, false)

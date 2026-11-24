@@ -31,6 +31,7 @@ type Vault struct {
 	rejected   map[string]error
 	unwritable map[string]error
 	cache      map[string][]byte
+	absent     map[string]host.AbsentFile
 	locked     chan struct{}
 	scanned    [][]string
 	unknown    bool
@@ -187,6 +188,7 @@ func (v *Vault) WriteFile(filePath string, content string) {
 func (v *Vault) Remove(filePath string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
+	delete(v.absent, filePath)
 	if err := v.files.remove(filePath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		v.report(fmt.Errorf("remove %s: %w", filePath, err))
 	}
@@ -224,6 +226,9 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 		return domain.FileStat{}, err
 	}
 	at, err := v.files.stat(filePath)
+	if err != nil {
+		err = v.checkAbsent(filePath, err)
+	}
 	if err == nil && isIgnored(filePath) {
 		return domain.FileStat{}, host.ErrNotANote
 	}
@@ -242,7 +247,7 @@ func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileS
 	version := v.writes
 	fp, err := v.files.stat(filePath)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return nil, domain.FileStat{}, v.checkAbsent(filePath, err)
 	}
 	content, err := v.files.read(filePath)
 	if err != nil {

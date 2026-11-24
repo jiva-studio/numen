@@ -103,6 +103,9 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 			continue
 		}
 		stat, err := files.StatFile(ctx, path)
+		if errors.Is(err, host.ErrFileAbsent) {
+			continue
+		}
 		if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
 			delete(seen, path)
 			continue

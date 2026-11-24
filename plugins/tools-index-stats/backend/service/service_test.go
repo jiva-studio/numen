@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
@@ -24,9 +24,9 @@ const recipe = "local|bge-m3|1024|512|mean|int8@0.4"
 
 func getStart() time.Time { return time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC) }
 
-func newIndex() *hosttest.Search {
-	search := hosttest.NewSearch("physics")
-	search.SetModel(hosttest.SearchModel{Name: "bge-m3", Recipe: recipe, FloorHint: 0})
+func newIndex() *searchtest.Search {
+	search := searchtest.NewSearch("physics")
+	search.SetModel(searchtest.SearchModel{Name: "bge-m3", Recipe: recipe, FloorHint: 0})
 	search.SetProgress(13100, 12480)
 	search.SetIndexStats(host.IndexStats{
 		Recipe: "", Model: "", Dimensions: 1024, ChunkCount: 0, VectorCount: 0,
@@ -42,7 +42,7 @@ func newIndex() *hosttest.Search {
 }
 
 func TestAHostWithoutAModelOrAVaultIsAFailedPrecondition(t *testing.T) {
-	noModel := hosttest.NewSearch("physics")
+	noModel := searchtest.NewSearch("physics")
 	noVault := newIndex()
 	noVault.HideVault()
 	for name, index := range map[string]indexstats.Index{"no model": noModel, "no vault": noVault} {

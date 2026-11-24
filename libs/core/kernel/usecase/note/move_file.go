@@ -18,7 +18,7 @@ import (
 // inside its own folder is called by that name, where a title and a filename are one name.
 type MoveFile struct {
 	notes     Move
-	queries   SourcesUnder
+	queries   MovedFiles
 	admission vaultport.WriteAdmission
 	follow    IndexFollow
 }
@@ -29,7 +29,7 @@ type MoveFile struct {
 // files them, what the index holds about the files under the path, and the
 // admission and the index follow of a write.
 func NewMoveFile(notes Move, queries SourcesUnder, admission vaultport.WriteAdmission, follow IndexFollow) MoveFile {
-	return MoveFile{notes: notes, queries: queries, admission: admission, follow: follow}
+	return MoveFile{notes: notes, queries: movedFiles{sources: queries, absent: nil}, admission: admission, follow: follow}
 }
 
 // Execute moves the file or folder from from to to, repairs what pointed at the
@@ -77,10 +77,16 @@ func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (do
 	}
 	// Only the core reports a path as holding nothing: the writer returns the same
 	// error for a vault it cannot reach at all.
-	if err := mover.Move(ctx, from, to); errors.Is(err, edit.ErrNotExist) {
-		return res, edit.ErrNoNote
-	} else if err != nil {
+	moveErr := mover.Move(ctx, from, to)
+	if moveErr != nil && !errors.Is(moveErr, edit.ErrNotExist) {
+		return res, moveErr
+	}
+	listed, err := u.queries.MoveAbsent(ctx, v, from, to)
+	if err != nil {
 		return res, err
+	}
+	if moveErr != nil && listed == 0 {
+		return res, edit.ErrNoNote
 	}
 	res.IsMoved = true
 

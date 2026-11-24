@@ -923,3 +923,30 @@ func TestPluginRouteServesAFolderFileAndForwardsTheRest(t *testing.T) {
 		t.Errorf("forwarded %q", plugins.routed)
 	}
 }
+
+type servingPlugins struct{ routedPlugins }
+
+func (p *servingPlugins) CanServe(string) bool { return true }
+
+func (p *servingPlugins) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	if _, err := io.WriteString(w, "served by the plugin"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func TestNarrowBuildServesTheServiceOfAPluginItNames(t *testing.T) {
+	services := newBareServices()
+	services.PluginServices = &servingPlugins{}
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName, "md.numen.tools.sync"))
+	t.Cleanup(server.Close)
+
+	named := fetch(t, server.Client(), server.URL+"/md.numen.tools.sync/FetchFile")
+	other := fetch(t, server.Client(), server.URL+"/md.numen.other/Call")
+
+	if named.StatusCode != http.StatusOK || string(named.Body) != "served by the plugin" {
+		t.Errorf("the named service answered %d %q", named.StatusCode, named.Body)
+	}
+	if other.StatusCode == http.StatusOK {
+		t.Errorf("a service the build does not name answered %d", other.StatusCode)
+	}
+}

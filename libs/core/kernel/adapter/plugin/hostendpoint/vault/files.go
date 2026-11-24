@@ -69,6 +69,9 @@ func getErrorEntries() []errorEntry {
 		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},
 		{plugin.ErrHashMismatch, v1.ErrorCode_ERROR_CODE_HASH_MISMATCH},
 		{plugin.ErrInvalidRange, v1.ErrorCode_ERROR_CODE_INVALID_RANGE},
+		{vaultdomain.ErrFileAbsent, v1.ErrorCode_ERROR_CODE_FILE_ABSENT},
+		{vaultdomain.ErrFilePresent, v1.ErrorCode_ERROR_CODE_FILE_PRESENT},
+		{vaultdomain.ErrChanged, v1.ErrorCode_ERROR_CODE_CHANGED},
 	}
 }
 

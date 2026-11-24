@@ -38,7 +38,7 @@ func (v *Vault) MoveFile(ctx context.Context, from, to string, baseline *domain.
 		return host.MoveFileResult{}, err
 	}
 	for _, move := range moves {
-		if err := v.moveFile(move.from, move.target); err != nil {
+		if err := v.moveEntry(move.from, move.target); err != nil {
 			return host.MoveFileResult{}, err
 		}
 	}
@@ -52,7 +52,7 @@ func (v *Vault) checkMoves(moves []fileMove, baseline *domain.FileStat, isFolder
 		}
 	}
 	for _, move := range moves {
-		if v.isPresent(move.target) {
+		if v.isPresent(move.target) || v.isListed(move.target) {
 			return fmt.Errorf("%s: %w", move.target, host.ErrAlreadyExists)
 		}
 	}
@@ -60,7 +60,7 @@ func (v *Vault) checkMoves(moves []fileMove, baseline *domain.FileStat, isFolder
 }
 
 func (v *Vault) checkBaseline(filePath string, baseline *domain.FileStat) error {
-	if baseline == nil {
+	if baseline == nil || v.isListed(filePath) {
 		return nil
 	}
 	now, err := v.files.stat(filePath)
@@ -78,10 +78,10 @@ func (v *Vault) checkBaseline(filePath string, baseline *domain.FileStat) error 
 }
 
 func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err error) {
-	if v.isPresent(entry) {
+	if v.isPresent(entry) || v.isListed(entry) {
 		return []string{entry}, false, nil
 	}
-	paths, err := v.files.listPaths()
+	paths, err := v.listEntryPaths()
 	if err != nil {
 		return nil, false, err
 	}
@@ -114,6 +114,10 @@ func (v *Vault) RemoveFile(ctx context.Context, filePath string, baseline *domai
 		}
 	}
 	for _, file := range files {
+		if v.isListed(file) {
+			delete(v.absent, file)
+			continue
+		}
 		if err := v.moveFile(file, v.getTrashPath(file)); err != nil {
 			return host.RemoveFileResult{}, err
 		}

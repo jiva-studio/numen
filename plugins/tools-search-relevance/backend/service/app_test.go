@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -38,17 +39,17 @@ func getMeasuredAt() time.Time {
 // fixture is a plugin over a host that shows an embedded vault of 25 notes.
 type fixture struct {
 	app       *service.App
-	search    *hosttest.Search
+	search    *searchtest.Search
 	vault     *hosttest.Vault
 	queue     *hosttest.Queue
 	processes *processtest.Host
 	web       *httptest.Server
 }
 
-func sampledChunks(n, sources int) []hosttest.SampledChunk {
-	out := make([]hosttest.SampledChunk, n)
+func sampledChunks(n, sources int) []searchtest.SampledChunk {
+	out := make([]searchtest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = searchtest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
@@ -65,8 +66,8 @@ func setNotes(vault *hosttest.Vault, n int) {
 
 func newFixture(t *testing.T, hint float64) *fixture {
 	t.Helper()
-	search := hosttest.NewSearch("physics", "chemistry")
-	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
+	search := searchtest.NewSearch("physics", "chemistry")
+	search.SetModel(searchtest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
@@ -166,7 +167,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 
-	f.search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
+	f.search.SetSampledChunks(modelRecipe, []searchtest.SampledChunk{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
 	var probe api.ProbeFloorResponse
 	if status, failure := f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &probe); status != http.StatusOK {
 		t.Fatalf("probe: %d %v", status, failure)
@@ -319,7 +320,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		t.Errorf("Mount without host env gave %v, want ErrNoHost", err)
 	}
 
-	search := hosttest.NewSearch("physics")
+	search := searchtest.NewSearch("physics")
 	vault := hosttest.New("physics")
 	queue := hosttest.NewQueue()
 	clk := newFakeClock(getMeasuredAt())
@@ -343,7 +344,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	errReport := errors.New("report task failed")
 	errFinish := errors.New("finish task failed")
-	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
+	search.SetModel(searchtest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
@@ -382,7 +383,7 @@ func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	}
 }
 
-func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+func searchOf(search *searchtest.Search) func(domain.VaultID) relevance.Search {
 	return func(id domain.VaultID) relevance.Search {
 		on := search.With(id)
 		return relevance.Search{Index: on, Policy: on}

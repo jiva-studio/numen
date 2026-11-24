@@ -1,4 +1,4 @@
-package hosttest
+package searchtest
 
 import (
 	"context"

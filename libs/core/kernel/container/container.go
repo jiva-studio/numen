@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
@@ -62,6 +64,7 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
+	Absent             bool
 	Scales             Scales
 	machine            Machine
 }
@@ -85,6 +88,7 @@ type Resources struct {
 	logEntries      *logsusecase.Entries
 	progress        *identity.Progress
 	identityLock    identity.CreateGate
+	absentFiles     vaultport.AbsentFiles
 }
 
 func NewResources() *Resources {
@@ -192,6 +196,7 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	exec = getPluginExecution(exec)
 	settings := createSettingsWiring(c, exec, prefs, res)
 	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	base.Readers, base.AbsentFiles = vaultabsent.Wrap(base.Readers, res.absentFiles), res.absentFiles
 	plan := vaultIndexPlan{
 		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Resolver},
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,

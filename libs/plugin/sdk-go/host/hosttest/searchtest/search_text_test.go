@@ -1,4 +1,4 @@
-package hosttest_test
+package searchtest_test
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 )
 
 func getIndexedResults() []host.SearchResult {
@@ -68,7 +68,7 @@ func TestTheSearchMatchesThePathPrefixInEitherNormalForm(t *testing.T) {
 	}
 }
 func TestSearchTextNeedsPermissionAndVaultButNoModel(t *testing.T) {
-	search := hosttest.NewSearch("physics")
+	search := searchtest.NewSearch("physics")
 	search.SetIndexedResults(getIndexedResults())
 	if got, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); err != nil || len(got) != 3 {
 		t.Errorf("a host with no model found %d, %v, want the words alone to match", len(got), err)
@@ -81,12 +81,12 @@ func TestSearchTextNeedsPermissionAndVaultButNoModel(t *testing.T) {
 	if _, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("without the permission it gave %v", err)
 	}
-	noVault := hosttest.NewSearch("physics")
+	noVault := searchtest.NewSearch("physics")
 	noVault.HideVault()
 	if _, err := noVault.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("with no vault shown it gave %v", err)
 	}
-	if _, err := hosttest.NewSearch("physics").With("nowhere").SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); !errors.Is(err, host.ErrUnknownVault) {
+	if _, err := searchtest.NewSearch("physics").With("nowhere").SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); !errors.Is(err, host.ErrUnknownVault) {
 		t.Errorf("an unknown vault gave %v", err)
 	}
 }

@@ -96,10 +96,14 @@ type Store interface {
 	Delete(ctx context.Context, name string) error
 }
 
+// Absent is the files of one vault that the device lists and does not hold.
+type Absent interface{ host.AbsentFiles }
+
 // Host is the vaults of the installation.
 type Host interface {
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
 	GetFiles(id domain.VaultID) Files
+	GetAbsent(id domain.VaultID) Absent
 	GetTransfers(id domain.VaultID) Transfers
 	Store(id domain.VaultID) Store
 	GetNotes(id domain.VaultID) Notes

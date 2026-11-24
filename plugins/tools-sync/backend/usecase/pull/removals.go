@@ -13,10 +13,18 @@ import (
 
 // removal is a file another computer removed, waiting for the guard. revID and version are of the signed removal.
 type removal struct {
-	record  transfer.FileRecord
-	stat    domain.FileStat
-	revID   []byte
-	version uint64
+	record   transfer.FileRecord
+	stat     domain.FileStat
+	revID    []byte
+	version  uint64
+	isListed bool
+}
+
+func getBaseline(stat domain.FileStat, isListed bool) *domain.FileStat {
+	if isListed {
+		return nil
+	}
+	return &stat
 }
 
 func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, record transfer.FileRecord, isKnown bool) error {
@@ -27,7 +35,7 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 		}
 		return nil
 	}
-	hash, stat, err := r.readLocal(ctx, record.Path)
+	hash, stat, isListed, err := r.readLocal(ctx, record.Path)
 	if err != nil {
 		return err
 	}
@@ -69,7 +77,7 @@ func (r *run) settleRemovals(ctx context.Context) error {
 
 func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error {
 	if !isKept {
-		_, err := r.moves.RemoveFile(ctx, one.record.Path, &one.stat)
+		_, err := r.moves.RemoveFile(ctx, one.record.Path, getBaseline(one.stat, one.isListed))
 		if err == nil || errors.Is(err, host.ErrNotExist) {
 			r.removeRecord(one.record.FileID)
 			r.link.AddRetired(vaultlink.RetiredFile{FileID: one.record.FileID, Version: one.version})

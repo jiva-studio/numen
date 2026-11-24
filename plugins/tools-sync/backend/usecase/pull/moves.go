@@ -18,14 +18,14 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 	if localAtNew == meta.Hash {
 		return true, r.adopt(ctx, stored, meta, record, true)
 	}
-	oldHash, oldStat, err := r.readLocal(ctx, record.Path)
+	oldHash, oldStat, isListed, err := r.readLocal(ctx, record.Path)
 	if err != nil || oldHash == "" {
 		return false, err
 	}
 	if localAtNew != "" {
 		return true, r.resolveTaken(ctx, stored, meta, localAtNew, newStat, moveSource{record: record, stat: oldStat})
 	}
-	if _, err := r.moves.MoveFile(ctx, record.Path, meta.Path, &oldStat); err != nil {
+	if _, err := r.moves.MoveFile(ctx, record.Path, meta.Path, getBaseline(oldStat, isListed)); err != nil {
 		if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
 			r.addConflict(meta.Path, stored.GetSeq())
 			return true, nil
@@ -122,7 +122,7 @@ func (r *run) countInFolder(folder string) int {
 
 func (r *run) hasAllLocal(ctx context.Context, moved []transfer.FileRecord) (bool, error) {
 	for _, record := range moved {
-		hash, _, err := r.readLocal(ctx, record.Path)
+		hash, _, _, err := r.readLocal(ctx, record.Path)
 		if err != nil || hash == "" {
 			return false, err
 		}

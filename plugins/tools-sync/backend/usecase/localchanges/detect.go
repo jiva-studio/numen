@@ -53,7 +53,11 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	}
 	gone, fresh := u.split(seen, in.Records)
 	scan := transfer.Scan{}
-	scan.Moves = matchMoves(gone, fresh)
+	moves, err := u.keepGone(ctx, in, matchMoves(gone, fresh))
+	if err != nil {
+		return transfer.Scan{}, err
+	}
+	scan.Moves = moves
 	moved := map[string]bool{}
 	for _, move := range scan.Moves {
 		moved[move.Record.Path] = true
@@ -83,6 +87,9 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 
 func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record transfer.FileRecord) (bool, error) {
 	_, err := u.deps.Host.GetFiles(in.VaultID).StatFile(ctx, record.Path)
+	if errors.Is(err, host.ErrFileAbsent) {
+		return false, nil
+	}
 	if errors.Is(err, host.ErrNotExist) {
 		return true, nil
 	}
@@ -129,4 +136,18 @@ func matchMoves(gone []transfer.FileRecord, fresh map[string]note.Seen) []transf
 	}
 	slices.SortFunc(moves, func(a, b transfer.Move) int { return strings.Compare(a.To, b.To) })
 	return moves
+}
+
+func (u *DetectMoves) keepGone(ctx context.Context, in transfer.ScanInput, moves []transfer.Move) ([]transfer.Move, error) {
+	var kept []transfer.Move
+	for _, move := range moves {
+		isGone, err := u.isGone(ctx, in, move.Record)
+		if err != nil {
+			return nil, err
+		}
+		if isGone {
+			kept = append(kept, move)
+		}
+	}
+	return kept, nil
 }

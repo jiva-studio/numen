@@ -4,10 +4,10 @@ package pull
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -15,7 +15,7 @@ import (
 )
 
 // ErrCorruptBlob means a blob the server sent is not the one its revision names, or does not open.
-var ErrCorruptBlob = errors.New("the blob of a revision is damaged")
+var ErrCorruptBlob = note.ErrCorruptBlob
 
 const (
 	// KeyIntegrity is the health item of a file from the server that does not match its revision.
@@ -53,6 +53,7 @@ type Deps struct {
 	Conflicts ports.ConflictResolver
 	Clock     ports.Clock
 	Health    ports.Health
+	LazyHeavy bool
 }
 
 // PullChanges reads the changes after the position of the vault and applies them.
@@ -86,7 +87,7 @@ func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.
 		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
-		removals: nil, removalSeq: 0, isListing: false, rolledBack: nil,
+		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil,
 	}
 	if err = r.execute(ctx); err == nil && r.result.Verdict == restore.Same {
 		err = r.reportRollbacks(ctx)

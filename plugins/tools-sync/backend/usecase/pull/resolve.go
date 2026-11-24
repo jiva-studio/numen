@@ -56,7 +56,7 @@ func (r *run) settleRace(ctx context.Context, stored *syncv1.StoredRevision, met
 	if err := r.deps.Downloads.Discard(ctx, r.in.VaultID, stored.GetRevision().GetFileId()); err != nil {
 		return err
 	}
-	local, stat, err := r.readLocal(ctx, meta.Path)
+	local, stat, _, err := r.readLocal(ctx, meta.Path)
 	if err != nil {
 		return err
 	}

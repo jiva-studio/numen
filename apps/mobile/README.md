@@ -30,4 +30,26 @@ The whole of `libs/core/kernel` compiles for `android/arm64` with the NDK, OCR i
 
 The policy is the `<meta http-equiv>` in `index.html`, pinned by the check `ts/window-sources` (`tools/checks`), and `src/app/App.policy.test.ts` runs what the page asks for. The window on the desktop is served its policy as a header; here the package serves the page and sets none, so the page contains its own. This means `frame-ancestors` is not available, because a page cannot set it for itself. It also means the bridge that Capacitor injects (an inline script inserted directly after `<head>`) runs before the policy is parsed, so the policy does not apply to it.
 
-Three things are still to be checked on a device: that the Ionic styles, injected at runtime, are drawn under `style-src 'unsafe-inline'`; that on a WebView too old for a message listener the bridge's reply, evaluated into the page from the native side, is not read as a script the policy refuses; and that every part of the application is shown. A fourth is the camera: that the system asks for it when the scanner of a QR code opens, that a refusal shows the text of the scanner, and that a code of a link is read on the arm64 emulator and on a phone.
+Three things are still to be checked on a device: that the Ionic styles, injected at runtime, are drawn under `style-src 'unsafe-inline'`; that on a WebView too old for a message listener the bridge's reply, evaluated into the page from the native side, is not read as a script the policy refuses; and that every part of the application is shown.
+
+## Sync on the phone
+
+The phone syncs through the cloud only, with the same protocol and the same `tools-sync` code as the computers, while the application is on the screen. When it leaves the screen it sends what the person wrote within 20 seconds and then stops; when it returns it runs one pass at once and opens the stream again. There is no foreground service, no periodic job and no push channel.
+
+A file of a synced vault that is not a note and not an image of 5 MiB or less is listed with the text "Not downloaded" and is downloaded when the person opens it. Removing a download frees the space and keeps the file in the vault.
+
+### Checks
+
+`scripts/device-check.sh` runs on mridanga against the arm64 emulator `numen-arm64` and is not part of CI. Its steps are written as functions and are still to be filled in.
+
+The list below is run by hand on a real device before the release. Each line says what to do and what must happen.
+
+1. The key vault survives a restart and a device lock: connect, force-stop the application, lock the device, open the application. The identity is still there and no recovery words are asked.
+2. Doze and App Standby: leave the application for 30 minutes, open it. One pass runs and the tree is current.
+3. Battery: leave the application in the pocket for an hour. The Battery usage screen shows no background use by the application.
+4. Mobile data and Wi-Fi: open a file of 100 MB on mobile data, switch on airplane mode in the middle, switch it off, open the file again. The download resumes where it stopped and the file opens.
+5. Rotation does not leave the screen: rotate while a download runs. The download goes on and the stream stays open.
+6. Low storage: fill the device, open a file larger than the room left. The phone warns and no part of the file is in the vault.
+7. Camera link (#2575): scan the code of a computer. The phone shows the synced vault.
+
+The iOS list is this list, to be run once an iOS project exists.

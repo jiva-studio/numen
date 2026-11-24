@@ -142,8 +142,12 @@ type Entry struct {
 	// When the file or folder was last modified, in milliseconds since the Unix
 	// epoch. 0 where the vault does not know it.
 	ModifiedUnixMs int64 `protobuf:"varint,8,opt,name=modified_unix_ms,json=modifiedUnixMs,proto3" json:"modified_unix_ms,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
+	IsAbsent bool `protobuf:"varint,9,opt,name=is_absent,json=isAbsent,proto3" json:"is_absent,omitempty"`
+	// The id of the plugin that can fill an absent file. Empty for a file that is not absent.
+	Provider      string `protobuf:"bytes,10,opt,name=provider,proto3" json:"provider,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Entry) Reset() {
@@ -223,6 +227,20 @@ func (x *Entry) GetModifiedUnixMs() int64 {
 		return x.ModifiedUnixMs
 	}
 	return 0
+}
+
+func (x *Entry) GetIsAbsent() bool {
+	if x != nil {
+		return x.IsAbsent
+	}
+	return false
+}
+
+func (x *Entry) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
 }
 
 type ListFileKindsRequest struct {
@@ -893,7 +911,7 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xbe\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xf7\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -901,7 +919,10 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\ais_note\x18\x06 \x01(\bR\x06isNote\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12\x19\n" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\x12(\n" +
-	"\x10modified_unix_ms\x18\b \x01(\x03R\x0emodifiedUnixMs\",\n" +
+	"\x10modified_unix_ms\x18\b \x01(\x03R\x0emodifiedUnixMs\x12\x1b\n" +
+	"\tis_absent\x18\t \x01(\bR\bisAbsent\x12\x1a\n" +
+	"\bprovider\x18\n" +
+	" \x01(\tR\bprovider\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +

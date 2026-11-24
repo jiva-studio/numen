@@ -3,7 +3,6 @@ package pull
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"path"
@@ -12,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
@@ -40,6 +38,7 @@ type run struct {
 	holdSeq uint64
 	isHeld  bool
 	next    uint64
+	listed  map[string]string
 
 	removals   []removal
 	removalSeq uint64
@@ -85,7 +84,7 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 }
 
 func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, isKnown bool) error {
-	local, stat, err := r.readLocal(ctx, meta.Path)
+	local, stat, isListed, err := r.readLocal(ctx, meta.Path)
 	if err != nil {
 		return err
 	}
@@ -99,6 +98,9 @@ func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, m
 	case note.Adopt:
 		return r.adopt(ctx, stored, meta, record, isKnown)
 	case note.Download:
+		if r.isLazy(meta, isListed) {
+			return r.list(ctx, stored, meta, record, local, isListed, isKnown)
+		}
 		return r.download(ctx, stored, meta, stat, local == "")
 	case note.Conflict:
 	}
@@ -178,15 +180,19 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	return note.OpenRevision(key, stored, r.in.IsAuthor)
 }
 
-func (r *run) readLocal(ctx context.Context, path string) (string, domain.FileStat, error) {
-	stat, err := r.files.StatFile(ctx, path)
+func (r *run) readLocal(ctx context.Context, path string) (hash string, stat domain.FileStat, isListed bool, err error) {
+	stat, err = r.files.StatFile(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
-		return "", domain.FileStat{}, nil
+		return "", domain.FileStat{}, false, nil
+	}
+	if errors.Is(err, host.ErrFileAbsent) {
+		hash, err = r.getListedHash(ctx, path)
+		return hash, domain.FileStat{}, err == nil, err
 	}
 	if err != nil {
-		return "", domain.FileStat{}, err
+		return "", domain.FileStat{}, false, err
 	}
-	return stat.Hash, stat, nil
+	return stat.Hash, stat, false, nil
 }
 
 func (r *run) getRecord(fileID []byte) (transfer.FileRecord, bool) {
@@ -315,15 +321,7 @@ func (r *run) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Meta) (
 	if err != nil {
 		return nil, err
 	}
-	sum := sha256.Sum256(blob)
-	if !bytes.Equal(sum[:], rev.GetBlobHash()) {
-		return nil, fmt.Errorf("%w: its hash differs", ErrCorruptBlob)
-	}
-	plain, err := blobcipher.Open([32]byte(meta.Key), [16]byte(rev.GetFileId()), blob)
-	if err != nil || note.Hash(plain) != meta.Hash {
-		return nil, fmt.Errorf("%w: it does not open to the note", ErrCorruptBlob)
-	}
-	return plain, nil
+	return note.OpenBlob(meta, rev.GetFileId(), rev.GetBlobHash(), blob)
 }
 
 func (r *run) getKey(epoch uint32) ([32]byte, bool) {

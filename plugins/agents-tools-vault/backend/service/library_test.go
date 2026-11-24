@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
@@ -103,7 +104,7 @@ func getPlaceSeconds(place *placeAnswer) float64 {
 type library struct {
 	vault    *hosttest.Vault
 	texts    *hosttest.Texts
-	search   *hosttest.Search
+	search   *searchtest.Search
 	registry *tools.Registry
 }
 
@@ -131,7 +132,7 @@ func newLibrary(t *testing.T) library {
 		{Text: talkThird, Selector: `{"t":[4.5,9]}`},
 	})
 
-	search := hosttest.NewSearch(testVault)
+	search := searchtest.NewSearch(testVault)
 	search.SetIndexedResults([]host.SearchResult{
 		{Path: guidePath, Text: "The gray heron stands in the reeds", PlaceLabel: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
 		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, MatchLine: 1},
@@ -146,7 +147,7 @@ func newLibrary(t *testing.T) library {
 	return library{vault: vault, texts: texts, search: search, registry: registry}
 }
 
-func libraryOf(texts *hosttest.Texts, search *hosttest.Search) func(domain.VaultID) service.Library {
+func libraryOf(texts *hosttest.Texts, search *searchtest.Search) func(domain.VaultID) service.Library {
 	return func(id domain.VaultID) service.Library {
 		on := texts.With(id)
 		return service.Library{Versions: on, Texts: on, Search: search.With(id)}
@@ -322,7 +323,7 @@ func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	vault := hosttest.New(testVault)
 	garden := hosttest.New("garden-vault")
 	vault.LinkBeside(garden)
-	search := hosttest.NewSearch(testVault, "garden-vault")
+	search := searchtest.NewSearch(testVault, "garden-vault")
 	search.SetIndexedResults([]host.SearchResult{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
 	search.With("garden-vault").SetIndexedResults([]host.SearchResult{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
 	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search), host.SearchFunctions{}).BuildRegistry()

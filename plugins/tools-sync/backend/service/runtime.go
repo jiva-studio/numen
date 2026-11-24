@@ -17,16 +17,20 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/platform"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
@@ -51,12 +55,13 @@ type parts struct {
 // runtime keeps the sign-in, the restore of an identity and the sync loop running against the server of the
 // setting server, and runs them again when that address changes.
 type runtime struct {
-	parts    parts
-	wakes    *loops.Wakes
-	interval *loops.Interval
-	removal  *loops.Interval
-	received *loops.Text
-	session  *loops.Supervisor[*Backend]
+	parts        parts
+	wakes        *loops.Wakes
+	interval     *loops.Interval
+	removal      *loops.Interval
+	received     *loops.Text
+	session      *loops.Supervisor[*Backend]
+	isForeground loops.Flag
 }
 
 func newRuntime(p parts) *runtime {
@@ -81,6 +86,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 }
 
 func (r *runtime) configure(values map[string]string) {
+	r.isForeground.Set(values[settingForeground] == "true")
 	r.interval.Set(values[settingInterval])
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
@@ -104,23 +110,39 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	wired := syncwire.Deps{
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
-		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}),
+		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: platform.IsPhone(),
 	}
+	pass := syncwire.NewSyncVault(wired)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: syncwire.NewSyncVault(wired), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
+		Pass: pass, Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
 		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(),
 	})
 	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	return NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithAccountData(accountdata.Deps{
-			Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep,
-		}), map[string]func(context.Context) error{
-			"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute, "watch": push.Execute,
-			"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
-			"chain":  chaincourier.NewLoop(chaincourier.Deps{Identity: p.identity, Core: p.client, Chain: cloudSide}, p.clock).Execute,
-			"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
-		}
+	fetching := downloadwire.Deps{
+		Fetch: fetchfile.Deps{
+			Stage: syncwire.NewDownloads(wired), Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
+		},
+		Entries: p.state,
+	}
+	backend := NewBackend(deps).WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).WithDownloads(downloadwire.New(fetching)).WithAccountData(accountdata.Deps{
+		Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep,
+	})
+	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
+		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
+	}))
+	loopsOf := map[string]func(context.Context) error{
+		"sign-in": keep.Execute, "restore": watch.Execute,
+		"link":   linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.health, Clock: p.clock}).Execute,
+		"chain":  chaincourier.NewLoop(chaincourier.Deps{Identity: p.identity, Core: p.client, Chain: cloudSide}, p.clock).Execute,
+		"rotate": rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
+	}
+	if !r.isForeground.IsOn() {
+		loopsOf["sync"] = loop.Execute
+		loopsOf["watch"] = push.Execute
+	}
+	return backend, loopsOf
 }
 
 func rotateDeps(deps syncvault.Deps) rotatevaultkeys.Deps {

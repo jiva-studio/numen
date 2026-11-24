@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
@@ -55,7 +56,7 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 func TestCalibrateComparesATitleOnlyWithChunksOfOtherSources(t *testing.T) {
 	search, vault := newHost(0)
 	// This passage is the first note's: identical in direction to every title.
-	chunks := append(sampledChunksOf(60, 2), hosttest.SampledChunk{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
+	chunks := append(sampledChunksOf(60, 2), searchtest.SampledChunk{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
 	fill(search, vault, 20, chunks)
 
 	_, got, err := calibrate(t, search, vault)
@@ -75,7 +76,7 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		titles int
-		chunks []hosttest.SampledChunk
+		chunks []searchtest.SampledChunk
 	}{
 		{"19 titles", 19, sampledChunksOf(60, 3)},
 		{"49 passages", 25, sampledChunksOf(49, 3)},
@@ -364,12 +365,12 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		set  func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup)
+		set  func(search *searchtest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup)
 		want error
 	}{
 		{
 			name: "a model that fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
+			set: func(search *searchtest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				search.FailEmbedding(errors.New("the plugin is not running"))
 				return search, vault
 			},
@@ -377,7 +378,7 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 		},
 		{
 			name: "a permission that is denied",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
+			set: func(search *searchtest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				search.Deny(host.PermissionIndexRead)
 				return search, vault
 			},
@@ -385,14 +386,14 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 		},
 		{
 			name: "listing notes fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
+			set: func(search *searchtest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				return search, noteLookup{NoteLookup: vault, pathsErr: host.ErrUnknownVault}
 			},
 			want: host.ErrUnknownVault,
 		},
 		{
 			name: "reading note titles fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
+			set: func(search *searchtest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				return search, noteLookup{
 					NoteLookup: vault,
 					getNotes: func(context.Context, []string) (map[string]domain.NoteRef, error) {
@@ -421,7 +422,7 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 
 func TestCalibrateRefusesAChunkOfAnotherWidth(t *testing.T) {
 	search, vault := newHost(0)
-	fill(search, vault, 25, append(sampledChunksOf(60, 3), hosttest.SampledChunk{Path: "narrow.md", Vector: []float32{1, 2}}))
+	fill(search, vault, 25, append(sampledChunksOf(60, 3), searchtest.SampledChunk{Path: "narrow.md", Vector: []float32{1, 2}}))
 	if outcome, _, err := calibrate(t, search, vault); outcome != 0 || !errors.Is(err, host.ErrInvalidQuery) {
 		t.Errorf("got outcome %v, err %v, want 0 and ErrInvalidQuery", outcome, err)
 	}

@@ -55,6 +55,21 @@ func mountMethods(service *server.API, r *runtime) {
 		return handle(r, func(b *Backend) (api.ExportAccountDataResponse, error) { return b.ExportAccountData(ctx, request) })
 	})
 	mountShareMethods(service, r)
+	server.Handle(service, api.MethodSuspend, func(ctx context.Context, request api.SuspendRequest) (api.SuspendResponse, error) {
+		return handle(r, func(b *Backend) (api.SuspendResponse, error) { return b.Suspend(ctx, request) })
+	})
+	server.Handle(service, api.MethodFetchFile, func(ctx context.Context, request api.FetchFileRequest) (api.FetchFileResponse, error) {
+		return handle(r, func(b *Backend) (api.FetchFileResponse, error) { return b.FetchFile(ctx, request) })
+	})
+	server.Handle(service, api.MethodDropDownload, func(ctx context.Context, request api.DropDownloadRequest) (api.DropDownloadResponse, error) {
+		return handle(r, func(b *Backend) (api.DropDownloadResponse, error) { return b.DropDownload(ctx, request) })
+	})
+	server.Handle(service, api.MethodGetDownloads, func(ctx context.Context, request api.GetDownloadsRequest) (api.GetDownloadsResponse, error) {
+		return handle(r, func(b *Backend) (api.GetDownloadsResponse, error) { return b.GetDownloads(ctx, request) })
+	})
+	server.Handle(service, api.MethodResume, func(ctx context.Context, request api.ResumeRequest) (api.ResumeResponse, error) {
+		return handle(r, func(b *Backend) (api.ResumeResponse, error) { return b.Resume(ctx, request) })
+	})
 }
 
 func handle[T any](r *runtime, call func(b *Backend) (T, error)) (T, error) {

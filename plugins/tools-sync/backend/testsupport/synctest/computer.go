@@ -59,6 +59,9 @@ func (h Host) GetFiles(id domain.VaultID) ports.Files { return h.Root.With(id) }
 
 func (h Host) GetNotes(id domain.VaultID) ports.Notes { return h.Root.With(id) }
 
+// GetAbsent returns the absent files of the vault.
+func (h Host) GetAbsent(id domain.VaultID) ports.Absent { return h.Root.With(id) }
+
 // Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
@@ -68,18 +71,19 @@ func (h Host) GetTransfers(id domain.VaultID) ports.Transfers { return h.Root.Wi
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
 // adapters of the plugin over them, signed in to the server.
 type Computer struct {
-	Clock    *Clock
-	Server   *Server
-	Fake     *accounttest.Fake
-	Client   *account.Client
-	Health   *healthtest.Host
-	Vaults   *hosttest.Vault
-	Host     ports.Host
-	Cloud    *cloud.Cloud
-	Account  *accountadapter.Account
-	Sessions *serveradapter.Server
-	State    *hoststore.State
-	Folders  *folders.Received
+	Clock     *Clock
+	Server    *Server
+	Fake      *accounttest.Fake
+	Client    *account.Client
+	Health    *healthtest.Host
+	Vaults    *hosttest.Vault
+	Host      ports.Host
+	Cloud     *cloud.Cloud
+	Account   *accountadapter.Account
+	Sessions  *serveradapter.Server
+	State     *hoststore.State
+	Folders   *folders.Received
+	LazyHeavy bool
 
 	network        *link
 	healthEndpoint hostcall.Endpoint
@@ -215,7 +219,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 	return syncwire.Deps{
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
 		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
-		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}),
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), LazyHeavy: c.LazyHeavy,
 	}
 }
 
@@ -235,7 +239,7 @@ func (c *Computer) PullDeps() pull.Deps {
 	return pull.Deps{
 		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
-		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock,
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock, LazyHeavy: c.LazyHeavy,
 	}
 }
 

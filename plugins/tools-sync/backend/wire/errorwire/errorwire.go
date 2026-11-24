@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 )
 
 // GetCode returns the code of the error an API method reports.
@@ -21,8 +23,12 @@ func GetCode(err error) server.ErrorCode {
 		return server.CodeAlreadyExists
 	case errors.Is(err, syncprotocol.ErrUnknownPlan), errors.Is(err, share.ErrBadCode):
 		return server.CodeInvalidArgument
-	case errors.Is(err, share.ErrUnknownShare):
+	case errors.Is(err, share.ErrUnknownShare), errors.Is(err, fetchfile.ErrBlobMissing), errors.Is(err, host.ErrNotExist):
 		return server.CodeNotFound
+	case errors.Is(err, host.ErrInvalidRange):
+		return server.CodeInvalidArgument
+	case errors.Is(err, host.ErrChanged), errors.Is(err, fetchfile.ErrNotAbsent), errors.Is(err, fetchfile.ErrHeadChanged):
+		return server.CodeFailedPrecondition
 	case isRefusal(err):
 		return server.CodeFailedPrecondition
 	case isAccountDeleting(err):
@@ -31,6 +37,19 @@ func GetCode(err error) server.ErrorCode {
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal
+}
+
+// GetWarning returns the text a failed download or removal of a download shows as a warning, and nothing for another error.
+func GetWarning(err error) string {
+	switch {
+	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):
+		return "Could not reach the sync server"
+	case errors.Is(err, fetchfile.ErrBlobMissing):
+		return "Could not download the file"
+	case errors.Is(err, host.ErrChanged):
+		return "The file has changes that are not sent"
+	}
+	return ""
 }
 
 // GetText returns the text of the error an API method reports; a refusal of a share starts with a capital.

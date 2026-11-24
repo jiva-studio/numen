@@ -1,4 +1,4 @@
-package hosttest_test
+package searchtest_test
 
 import (
 	"errors"
@@ -7,22 +7,22 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 )
 
 const searchRecipe = "local|bge|1024|512|mean|int8@0.4"
 
-func newSearch() *hosttest.Search {
-	search := hosttest.NewSearch("physics", "chemistry")
-	search.SetModel(hosttest.SearchModel{Name: "bge", Recipe: searchRecipe, FloorHint: 0.4})
+func newSearch() *searchtest.Search {
+	search := searchtest.NewSearch("physics", "chemistry")
+	search.SetModel(searchtest.SearchModel{Name: "bge", Recipe: searchRecipe, FloorHint: 0.4})
 	search.SetEmbedder(func(text string) []float32 { return []float32{float32(len(text)), 1} })
 	return search
 }
 
-func sampledChunksOf(n int) []hosttest.SampledChunk {
-	out := make([]hosttest.SampledChunk, n)
+func sampledChunksOf(n int) []searchtest.SampledChunk {
+	out := make([]searchtest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("note-%d.md", i+1), Vector: []float32{float32(n - i), float32(i + 1)}}
+		out[i] = searchtest.SampledChunk{Path: fmt.Sprintf("note-%d.md", i+1), Vector: []float32{float32(n - i), float32(i + 1)}}
 	}
 	return out
 }
@@ -226,7 +226,7 @@ func TestSettingTheStoredFloorAgainChangesNothingAndZeroRemovesIt(t *testing.T) 
 	if err != nil || got.Floor != 0.4 || got.Source != host.FloorFromModelHint || got.Stored != 0 {
 		t.Errorf("after removing the floor: %+v (%v), want the hint", got, err)
 	}
-	search.SetModel(hosttest.SearchModel{Name: "bge", Recipe: searchRecipe})
+	search.SetModel(searchtest.SearchModel{Name: "bge", Recipe: searchRecipe})
 	got, err = search.GetSearchFloor(ctx, searchRecipe)
 	if err != nil || got.Floor != 0.30 || got.Source != host.FloorFromDefault {
 		t.Errorf("with no hint: %+v (%v), want the default", got, err)
@@ -283,7 +283,7 @@ func TestTheSearchEmbedsWithinTheLimitsAndFailsWhenTheModelFails(t *testing.T) {
 func TestTheBestSimilarityIsTheNearestChunk(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetSampledChunks(searchRecipe, []hosttest.SampledChunk{
+	search.SetSampledChunks(searchRecipe, []searchtest.SampledChunk{
 		{Path: "a.md", Vector: []float32{0, 127}},
 		{Path: "b.md", Vector: []float32{127, 0}},
 	})
@@ -324,7 +324,7 @@ func TestTheSearchReportsTheIndexStatisticsOfTheVaultForTheModelInUse(t *testing
 		t.Errorf("a denied read gave %v", err)
 	}
 	search.RemoveModel()
-	search = hosttest.NewSearch("physics")
+	search = searchtest.NewSearch("physics")
 	if _, err := search.GetIndexStats(ctx); !errors.Is(err, host.ErrNoModel) {
 		t.Errorf("a host with no model gave %v", err)
 	}

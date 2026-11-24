@@ -77,6 +77,15 @@ enum ErrorCode {
 
   // The vault is read only for this caller: another plugin manages it. Nothing is written.
   ERROR_CODE_READ_ONLY = 17;
+
+  // The file is listed and its bytes are not on this device.
+  ERROR_CODE_FILE_ABSENT = 18;
+
+  // A file with other content is already at the path of an absent file.
+  ERROR_CODE_FILE_PRESENT = 19;
+
+  // The file has changes that are not the content the call named. It is left as it is.
+  ERROR_CODE_CHANGED = 20;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

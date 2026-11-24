@@ -18,8 +18,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/accountwire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/downloadwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/subscriptionwire"
 )
@@ -31,11 +33,13 @@ const (
 
 // Backend answers the methods of the settings view.
 type Backend struct {
-	deps    syncvault.Deps
-	catalog catalog.Deps
-	connect *catalog.ConnectVault
-	pending ports.PausedStore
-	resolve *deletions.ResolveDeletions
+	deps      syncvault.Deps
+	catalog   catalog.Deps
+	connect   *catalog.ConnectVault
+	life      *lifecycle.Lifecycle
+	pending   ports.PausedStore
+	resolve   *deletions.ResolveDeletions
+	downloads *downloadwire.Downloads
 	*sharewire.Shares
 	*sharewire.Received
 	*subscriptionwire.Subscription
@@ -51,7 +55,7 @@ func NewBackend(deps syncvault.Deps) *Backend {
 	}
 	return &Backend{
 		deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps),
-		pending: nil, resolve: nil,
+		pending: nil, resolve: nil, life: nil, downloads: nil,
 		Shares:       sharewire.New(deps),
 		Received:     sharewire.NewReceived(deps),
 		Subscription: subscriptionwire.New(deps),

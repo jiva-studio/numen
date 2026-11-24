@@ -43,6 +43,7 @@ type Writer struct {
 	Create file.CreateFile
 	Index  file.ScanFiles
 	Locks  vault.Locks
+	Absent *Absent
 
 	Move         fileMover
 	Remove       fileRemover

@@ -32,7 +32,10 @@ func (v *Vaults) GetNotes(id domain.VaultID) ports.Notes { return v.client.With(
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
 
-// Transfers returns what the host does with the bytes of the files of the vault.
+// GetAbsent returns the files of the vault that the device lists and does not hold.
+func (v *Vaults) GetAbsent(id domain.VaultID) ports.Absent { return v.client.With(id) }
+
+// GetTransfers returns what the host does with the bytes of the files of the vault.
 func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.client.With(id) }
 
 // AddManagedVault adds the folder as a vault that only the plugin with the id managedBy writes.

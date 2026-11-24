@@ -70,3 +70,21 @@ describe('what an error is called', () => {
     expect(findErrorCode({ error: NOTE_ERROR_CODE.UNSPECIFIED })).toBeNull()
   })
 })
+
+describe('what the codes of a file on a phone are called', () => {
+  it('words a file with no bytes here as one that is not found', () => {
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.FILE_ABSENT })).toBe('notFound')
+  })
+
+  it('words a different file at the path as one that exists', () => {
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.FILE_PRESENT })).toBe('alreadyExists')
+  })
+
+  it('words bytes of another hash as unreadable', () => {
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.HASH_MISMATCH })).toBe('unreadable')
+  })
+
+  it('leaves a file with changes of its own with no word', () => {
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.CHANGED })).toBeNull()
+  })
+})

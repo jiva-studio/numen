@@ -9,4 +9,6 @@ type Entry struct {
 	IsFolder bool
 	Kind     SourceKind
 	ModTime  time.Time
+	IsAbsent bool
+	Provider string
 }
