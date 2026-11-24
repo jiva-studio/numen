@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -30,6 +31,13 @@ func countMatchingFiles(
 	if errors.Is(err, edit.ErrNotExist) {
 		return 0, fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
 	}
+	count := 0
+	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
+		if strings.HasPrefix(stat.Path, path+"/") {
+			count++
+		}
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
