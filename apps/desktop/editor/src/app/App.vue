@@ -5,9 +5,10 @@
  * The window's structure is made by `createWindow` and handed in. This file holds what the user
  * sees of it, and the binding between the two.
  */
+import { useTemplateRef } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
-import { LoadingIndicator } from '@numen/ui'
+import { LoadingIndicator, provideDialogHost } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -54,6 +55,10 @@ const { fileFlush, getTitle } = vault.editing
 const { failure } = vault.window.health
 const { vaultList } = vault.vaults
 const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstrap
+
+/** Dialogs are drawn into the content between the title bar and the status bar, and cover only it. */
+const content = useTemplateRef<HTMLElement>('content')
+provideDialogHost(content)
 </script>
 
 <template>
@@ -66,69 +71,71 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
 
     <CoreFailureNotice :failure="failure" />
 
-    <WorkspaceLayout
-      v-model="layout"
-      class="below"
-      :tabs="windowTabs.tabs.tabs.value"
-      :window-edge="windowEdge"
-      :tab-menu="tabMenu.menu.value"
-      @close="windowTabs.panes.closeTab"
-      @show="windowTabs.panes.onTabShown"
-      @tab-context-menu="tabMenu.open"
-      @tab-menu-choose="tabMenu.choose"
-      @tab-menu-dismiss="tabMenu.dismiss"
-      @tab-menu-highlight="tabMenu.highlight"
-      @tear-off="detachTab"
-    >
-      <template #tab-menu-icon="{ id }">
-        <component
-          :is="tabMenu.getIcon(id)"
-          v-if="tabMenu.getIcon(id)"
-          class="tab-menu-icon"
-          aria-hidden="true"
-        />
-      </template>
+    <div ref="content" class="content">
+      <WorkspaceLayout
+        v-model="layout"
+        class="fill"
+        :tabs="windowTabs.tabs.tabs.value"
+        :window-edge="windowEdge"
+        :tab-menu="tabMenu.menu.value"
+        @close="windowTabs.panes.closeTab"
+        @show="windowTabs.panes.onTabShown"
+        @tab-context-menu="tabMenu.open"
+        @tab-menu-choose="tabMenu.choose"
+        @tab-menu-dismiss="tabMenu.dismiss"
+        @tab-menu-highlight="tabMenu.highlight"
+        @tear-off="detachTab"
+      >
+        <template #tab-menu-icon="{ id }">
+          <component
+            :is="tabMenu.getIcon(id)"
+            v-if="tabMenu.getIcon(id)"
+            class="tab-menu-icon"
+            aria-hidden="true"
+          />
+        </template>
 
-      <template #icon="{ id }">
-        <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
-        <TabLinkIndicator
-          :is-linked="tabLinks.getGroupOf(id) !== null"
-          :color-index="tabLinks.getGroupOf(id)?.colorIndex"
-        />
-      </template>
+        <template #icon="{ id }">
+          <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
+          <TabLinkIndicator
+            :is-linked="tabLinks.getGroupOf(id) !== null"
+            :color-index="tabLinks.getGroupOf(id)?.colorIndex"
+          />
+        </template>
 
-      <template #tab="{ id }">
-        <component
-          :is="windowTabs.tabs.getTab(id)!.kind.pane"
-          v-if="windowTabs.tabs.getTab(id)"
-          :state="windowTabs.tabs.getTab(id)!.state"
-        />
+        <template #tab="{ id }">
+          <component
+            :is="windowTabs.tabs.getTab(id)!.kind.pane"
+            v-if="windowTabs.tabs.getTab(id)"
+            :state="windowTabs.tabs.getTab(id)!.state"
+          />
 
-        <div v-else />
-      </template>
+          <div v-else />
+        </template>
 
-      <template #silence>
-        <BootstrapFailure
-          v-if="bootstrapFailure"
-          :message="bootstrapFailure"
-          @retry="retryBootstrap"
-        />
-        <WelcomeScreen
-          v-else-if="isLayoutReady || !vaultList.showing"
-          :vault-list="vaultList"
-          :tabs="windowTabs.tabs.tabs.value"
-          :commands="commands"
-          :search="search"
-          :doing="commandDeps"
-          :get-target="getTarget"
-          :plugin-ways="pluginWays"
-          :run-command="runCommand"
-          :open-current-vault="openCurrentVault"
-          :agent="getUserAgent()"
-        />
-        <div v-else />
-      </template>
-    </WorkspaceLayout>
+        <template #silence>
+          <BootstrapFailure
+            v-if="bootstrapFailure"
+            :message="bootstrapFailure"
+            @retry="retryBootstrap"
+          />
+          <WelcomeScreen
+            v-else-if="isLayoutReady || !vaultList.showing"
+            :vault-list="vaultList"
+            :tabs="windowTabs.tabs.tabs.value"
+            :commands="commands"
+            :search="search"
+            :doing="commandDeps"
+            :get-target="getTarget"
+            :plugin-ways="pluginWays"
+            :run-command="runCommand"
+            :open-current-vault="openCurrentVault"
+            :agent="getUserAgent()"
+          />
+          <div v-else />
+        </template>
+      </WorkspaceLayout>
+    </div>
 
     <SlotViewHost :view="statusBarView" :styles="pluginHost.slotViews.styles" />
 
@@ -175,7 +182,15 @@ main.is-highlighted::after {
   height: 100vh;
 }
 
-.below {
+.content {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fill {
   flex: 1;
   min-height: 0;
 }

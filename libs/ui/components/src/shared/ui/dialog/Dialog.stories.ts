@@ -7,6 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from '../button'
 import Dialog from './Dialog.vue'
+import DialogFrame from './DialogFrame.vue'
 
 interface Knobs {
   size: 'sm' | 'md' | 'lg'
@@ -64,5 +65,30 @@ export const Large: Story = {
   args: { size: 'lg' },
   play: async () => {
     await expect(getDialog()).toBeVisible()
+  },
+}
+
+/** Hosted: the backdrop covers the content alone, and the title bar and the status bar stay usable. */
+export const InsideContent: Story = {
+  render: (args) => ({
+    components: { Dialog, DialogFrame, Button },
+    setup: () => ({ args }),
+    template: `
+      <div class="numen">
+        <DialogFrame>
+          <Dialog label='Rename the vault' @cancel="args.onCancel">
+            <input aria-label='Name' value="Notes" />
+            <template #actions><Button variant="solid">Rename</Button></template>
+          </Dialog>
+        </DialogFrame>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const content = canvasElement.querySelector('[data-slot="content"]')
+    await expect(content).toContainElement(getDialog())
+    const bar = canvasElement.querySelector('[data-slot="title-bar"]')!.getBoundingClientRect()
+    const backdrop = canvasElement.querySelector('[data-slot="dialog-backdrop"]')!.getBoundingClientRect()
+    await expect(backdrop.top).toBeGreaterThanOrEqual(bar.bottom)
   },
 }

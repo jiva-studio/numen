@@ -59,7 +59,7 @@ export {
 } from './shared/ui/island-card'
 
 export { ConfirmDialog } from './shared/ui/confirm-dialog'
-export { Dialog } from './shared/ui/dialog'
+export { Dialog, provideDialogHost } from './shared/ui/dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
 export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'

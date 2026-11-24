@@ -1,7 +1,9 @@
 /** The shared modal: its roles, what closes it, and where the focus goes. */
 import { DOMWrapper, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { defineComponent, h, ref } from 'vue'
 import Dialog from './Dialog.vue'
+import { provideDialogHost } from './host'
 
 const mountDialog = (props: Record<string, unknown> = {}) =>
   mount(Dialog, {
@@ -57,5 +59,31 @@ describe('Dialog', () => {
     const dialog = mountDialog()
     dialog.unmount()
     expect(document.activeElement).toBe(opener)
+  })
+})
+
+describe('Dialog host', () => {
+  const mountHosted = () => {
+    const host = document.createElement('main')
+    document.body.append(host)
+    const Root = defineComponent({
+      setup() {
+        provideDialogHost(ref(host))
+        return () => h(Dialog, { label: 'Restore identity' })
+      },
+    })
+    mount(Root, { attachTo: document.body })
+    return { host }
+  }
+
+  it('draws into the host element when one is provided', () => {
+    const { host } = mountHosted()
+    expect(host.querySelector('[role="dialog"]')).not.toBeNull()
+    expect(document.body.querySelector(':scope > [data-slot="dialog-backdrop"]')).toBeNull()
+  })
+
+  it('draws into the body when no host is provided', () => {
+    mountDialog()
+    expect(document.body.querySelector(':scope > [data-slot="dialog-backdrop"]')).not.toBeNull()
   })
 })

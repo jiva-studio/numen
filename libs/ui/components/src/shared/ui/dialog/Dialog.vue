@@ -2,12 +2,14 @@
 /**
  * The one modal of the interface, for every window and plugin: a dimmed backdrop and a panel in its middle with
  * a title, a hint, the body and a row of buttons at the right. The panel is `sm` (22rem), `md` (28rem) or `lg`
- * (36rem) wide and as high as its content. It is drawn into the window root over everything, one backdrop over the whole window. Escape and a press on the backdrop emit `cancel`, Tab stays inside
+ * (36rem) wide and as high as its content. It covers the area the window gave with `provideDialogHost` (the content
+ * between the title bar and the status bar) and the whole window where none was given. Escape and a press on the backdrop emit `cancel`, Tab stays inside
  * the panel, the first control takes the focus when the panel opens and each time `step` changes, and the focus
  * returns to the control that had it before.
  */
 import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 import { doc } from '@/shared/api/dom'
+import { useDialogHost } from './host'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -39,6 +41,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const CONTROLS = 'input, textarea, select, button, [href], [role="combobox"], [role="switch"]'
+const host = useDialogHost()
 const titleId = useId()
 const panel = useTemplateRef<HTMLElement>('panel')
 const active = doc.activeElement
@@ -79,10 +82,11 @@ function focusFirst(): void {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport :to="host ?? 'body'" :disabled="host === null">
     <div
       data-slot="dialog-backdrop"
       class="dialog-backdrop"
+      :data-scope="host === null ? 'window' : 'host'"
       @click.self="emit('cancel')"
       @keydown.esc="emit('cancel')"
       @keydown.tab="onKeepFocus"
@@ -120,6 +124,10 @@ function focusFirst(): void {
   align-items: center;
   justify-content: center;
   background: color-mix(in oklab, var(--numen-surface), transparent 30%);
+}
+
+.dialog-backdrop[data-scope='host'] {
+  position: absolute;
 }
 
 .dialog[data-size='sm'] {
