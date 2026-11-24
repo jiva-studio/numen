@@ -39,14 +39,24 @@ func (u *CompleteRestore) Execute(ctx context.Context, pluginID string, chainByt
 // restoreCompletion completes a pending restore: it keeps the identity the restore makes and forgets the restore.
 type restoreCompletion struct {
 	records  records
-	restores *pendingStore
+	restores restoreHold
 	builder  stateBuilder
 }
 
 func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore, chainBytes []byte) error {
+<<<<<<< HEAD
 	c.restores.mu.Lock()
 	defer c.restores.mu.Unlock()
 	if c.restores.current != restore || restore.refusal != nil {
+||||||| e01f2955e
+	c.restores.mu.Lock()
+	defer c.restores.mu.Unlock()
+	if c.restores.current != restore {
+=======
+	store, release := c.restores.hold()
+	defer release()
+	if store.current != restore {
+>>>>>>> origin/integ/sync-all
 		return identitydomain.ErrNoPendingRestore
 	}
 	if err := c.records.checkAbsent(ctx); err != nil {
@@ -62,7 +72,7 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 	if err := c.records.writeNewState(ctx, state.Record, state.Chain); err != nil {
 		return err
 	}
-	c.restores.clearLocked()
+	store.clearLocked()
 	return nil
 }
 

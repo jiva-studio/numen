@@ -162,7 +162,7 @@ func (x *CreateChannelResponse) GetExpiresAt() int64 {
 	return 0
 }
 
-type PostMessageRequest struct {
+type SendMessageRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId []byte                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	// to is the side that reads the message.
@@ -172,20 +172,20 @@ type PostMessageRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PostMessageRequest) Reset() {
-	*x = PostMessageRequest{}
+func (x *SendMessageRequest) Reset() {
+	*x = SendMessageRequest{}
 	mi := &file_numen_sync_v1_link_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PostMessageRequest) String() string {
+func (x *SendMessageRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PostMessageRequest) ProtoMessage() {}
+func (*SendMessageRequest) ProtoMessage() {}
 
-func (x *PostMessageRequest) ProtoReflect() protoreflect.Message {
+func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_sync_v1_link_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -197,53 +197,53 @@ func (x *PostMessageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PostMessageRequest.ProtoReflect.Descriptor instead.
-func (*PostMessageRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendMessageRequest.ProtoReflect.Descriptor instead.
+func (*SendMessageRequest) Descriptor() ([]byte, []int) {
 	return file_numen_sync_v1_link_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PostMessageRequest) GetChannelId() []byte {
+func (x *SendMessageRequest) GetChannelId() []byte {
 	if x != nil {
 		return x.ChannelId
 	}
 	return nil
 }
 
-func (x *PostMessageRequest) GetTo() LinkSide {
+func (x *SendMessageRequest) GetTo() LinkSide {
 	if x != nil {
 		return x.To
 	}
 	return LinkSide_LINK_SIDE_UNSPECIFIED
 }
 
-func (x *PostMessageRequest) GetBody() []byte {
+func (x *SendMessageRequest) GetBody() []byte {
 	if x != nil {
 		return x.Body
 	}
 	return nil
 }
 
-type PostMessageResponse struct {
+type SendMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Seq           uint32                 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PostMessageResponse) Reset() {
-	*x = PostMessageResponse{}
+func (x *SendMessageResponse) Reset() {
+	*x = SendMessageResponse{}
 	mi := &file_numen_sync_v1_link_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PostMessageResponse) String() string {
+func (x *SendMessageResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PostMessageResponse) ProtoMessage() {}
+func (*SendMessageResponse) ProtoMessage() {}
 
-func (x *PostMessageResponse) ProtoReflect() protoreflect.Message {
+func (x *SendMessageResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_sync_v1_link_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -255,12 +255,12 @@ func (x *PostMessageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PostMessageResponse.ProtoReflect.Descriptor instead.
-func (*PostMessageResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendMessageResponse.ProtoReflect.Descriptor instead.
+func (*SendMessageResponse) Descriptor() ([]byte, []int) {
 	return file_numen_sync_v1_link_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *PostMessageResponse) GetSeq() uint32 {
+func (x *SendMessageResponse) GetSeq() uint32 {
 	if x != nil {
 		return x.Seq
 	}
@@ -530,12 +530,12 @@ const file_numen_sync_v1_link_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\fR\tchannelId\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\x02 \x01(\x03R\texpiresAt\"p\n" +
-	"\x12PostMessageRequest\x12\x1d\n" +
+	"\x12SendMessageRequest\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\fR\tchannelId\x12'\n" +
 	"\x02to\x18\x02 \x01(\x0e2\x17.numen.sync.v1.LinkSideR\x02to\x12\x12\n" +
 	"\x04body\x18\x03 \x01(\fR\x04body\"'\n" +
-	"\x13PostMessageResponse\x12\x10\n" +
+	"\x13SendMessageResponse\x12\x10\n" +
 	"\x03seq\x18\x01 \x01(\rR\x03seq\"\xa5\x01\n" +
 	"\x13WaitMessagesRequest\x12\x1d\n" +
 	"\n" +
@@ -559,7 +559,7 @@ const file_numen_sync_v1_link_proto_rawDesc = "" +
 	"\x11LINK_SIDE_SCANNER\x10\x022\xf1\x02\n" +
 	"\vLinkService\x12Z\n" +
 	"\rCreateChannel\x12#.numen.sync.v1.CreateChannelRequest\x1a$.numen.sync.v1.CreateChannelResponse\x12T\n" +
-	"\vPostMessage\x12!.numen.sync.v1.PostMessageRequest\x1a\".numen.sync.v1.PostMessageResponse\x12W\n" +
+	"\vSendMessage\x12!.numen.sync.v1.SendMessageRequest\x1a\".numen.sync.v1.SendMessageResponse\x12W\n" +
 	"\fWaitMessages\x12\".numen.sync.v1.WaitMessagesRequest\x1a#.numen.sync.v1.WaitMessagesResponse\x12W\n" +
 	"\fCloseChannel\x12\".numen.sync.v1.CloseChannelRequest\x1a#.numen.sync.v1.CloseChannelResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
@@ -581,8 +581,8 @@ var file_numen_sync_v1_link_proto_goTypes = []any{
 	(LinkSide)(0),                 // 0: numen.sync.v1.LinkSide
 	(*CreateChannelRequest)(nil),  // 1: numen.sync.v1.CreateChannelRequest
 	(*CreateChannelResponse)(nil), // 2: numen.sync.v1.CreateChannelResponse
-	(*PostMessageRequest)(nil),    // 3: numen.sync.v1.PostMessageRequest
-	(*PostMessageResponse)(nil),   // 4: numen.sync.v1.PostMessageResponse
+	(*SendMessageRequest)(nil),    // 3: numen.sync.v1.SendMessageRequest
+	(*SendMessageResponse)(nil),   // 4: numen.sync.v1.SendMessageResponse
 	(*WaitMessagesRequest)(nil),   // 5: numen.sync.v1.WaitMessagesRequest
 	(*WaitMessagesResponse)(nil),  // 6: numen.sync.v1.WaitMessagesResponse
 	(*LinkMessage)(nil),           // 7: numen.sync.v1.LinkMessage
@@ -590,15 +590,15 @@ var file_numen_sync_v1_link_proto_goTypes = []any{
 	(*CloseChannelResponse)(nil),  // 9: numen.sync.v1.CloseChannelResponse
 }
 var file_numen_sync_v1_link_proto_depIdxs = []int32{
-	0, // 0: numen.sync.v1.PostMessageRequest.to:type_name -> numen.sync.v1.LinkSide
+	0, // 0: numen.sync.v1.SendMessageRequest.to:type_name -> numen.sync.v1.LinkSide
 	0, // 1: numen.sync.v1.WaitMessagesRequest.reader:type_name -> numen.sync.v1.LinkSide
 	7, // 2: numen.sync.v1.WaitMessagesResponse.messages:type_name -> numen.sync.v1.LinkMessage
 	1, // 3: numen.sync.v1.LinkService.CreateChannel:input_type -> numen.sync.v1.CreateChannelRequest
-	3, // 4: numen.sync.v1.LinkService.PostMessage:input_type -> numen.sync.v1.PostMessageRequest
+	3, // 4: numen.sync.v1.LinkService.SendMessage:input_type -> numen.sync.v1.SendMessageRequest
 	5, // 5: numen.sync.v1.LinkService.WaitMessages:input_type -> numen.sync.v1.WaitMessagesRequest
 	8, // 6: numen.sync.v1.LinkService.CloseChannel:input_type -> numen.sync.v1.CloseChannelRequest
 	2, // 7: numen.sync.v1.LinkService.CreateChannel:output_type -> numen.sync.v1.CreateChannelResponse
-	4, // 8: numen.sync.v1.LinkService.PostMessage:output_type -> numen.sync.v1.PostMessageResponse
+	4, // 8: numen.sync.v1.LinkService.SendMessage:output_type -> numen.sync.v1.SendMessageResponse
 	6, // 9: numen.sync.v1.LinkService.WaitMessages:output_type -> numen.sync.v1.WaitMessagesResponse
 	9, // 10: numen.sync.v1.LinkService.CloseChannel:output_type -> numen.sync.v1.CloseChannelResponse
 	7, // [7:11] is the sub-list for method output_type

@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
@@ -159,7 +160,7 @@ func TestPreviewConnect_RefusesAnIdThatNoSyncedVaultHas(t *testing.T) {
 func TestPreviewConnect_IgnoresANoteThatTheServerHasAsRemoved(t *testing.T) {
 	w := newWorld(t)
 	vault := transfer.Vault{ID: w.a.GetRemoteID(t, source), Key: w.a.GetVaultKey(t, source)}
-	outcomes, err := commit.NewCommitRevisions(w.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{
+	outcomes, err := commit.NewCommitRevisions(w.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{
 		Vault: vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}},
 	})
 	if err != nil {

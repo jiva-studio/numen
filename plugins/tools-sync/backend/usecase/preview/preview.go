@@ -47,14 +47,14 @@ func (u *PreviewConnect) Execute(ctx context.Context, in Input) (Preview, error)
 	if err != nil {
 		return Preview{}, err
 	}
-	return pair(local, heads), nil
+	return matchHeads(local, heads), nil
 }
 
-func pair(local, remote []ports.Head) Preview {
+func matchHeads(local, remote []ports.Head) Preview {
 	locals, remotes := index(local), index(remote)
 	var found Preview
 	for key, one := range locals {
-		switch note.Meet(one.Hash, remotes[key].Hash) {
+		switch note.GetMeeting(one.Hash, remotes[key].Hash) {
 		case note.Same:
 			found.Same = append(found.Same, one.Path)
 		case note.LocalOnly:

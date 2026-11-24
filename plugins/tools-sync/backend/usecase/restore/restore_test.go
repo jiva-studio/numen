@@ -38,7 +38,7 @@ func (p *pair) restoreAndAnnounce(t *testing.T, kept []byte) {
 	if err := p.server.Fake.Restore(kept); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := p.server.Fake.IssueRestoreEpoch(); err != nil {
+	if _, err := p.server.Fake.AnnounceRestoreEpoch(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -109,7 +109,7 @@ func TestRecoverAccount_PinsTheKeyOfTheServerTheFirstTime(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	p.a.Connect(t, source)
-	if _, err := p.server.Fake.IssueRestoreEpoch(); err != nil {
+	if _, err := p.server.Fake.AnnounceRestoreEpoch(); err != nil {
 		t.Fatal(err)
 	}
 

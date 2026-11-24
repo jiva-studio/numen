@@ -21,8 +21,8 @@ func TestMeet_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := note.Meet(tc.local, tc.head); got != tc.want {
-				t.Errorf("Meet(%q, %q) = %v, want %v", tc.local, tc.head, got, tc.want)
+			if got := note.GetMeeting(tc.local, tc.head); got != tc.want {
+				t.Errorf("GetMeeting(%q, %q) = %v, want %v", tc.local, tc.head, got, tc.want)
 			}
 		})
 	}

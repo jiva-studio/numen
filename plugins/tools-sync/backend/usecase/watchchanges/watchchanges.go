@@ -72,7 +72,7 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) {
 		group.Wait()
 	}()
 	events := make(chan received)
-	group.Go(func() { pump(readCtx, watch, events) })
+	group.Go(func() { forwardEvents(readCtx, watch, events) })
 	// Only the clock of the plugin can tell a silence of silenceBeats heartbeats from a quiet but healthy stream.
 	beat := silenceBeats * max(watch.GetHeartbeat(), minHeartbeat)
 	silence := u.startSilence(readCtx, &group, beat)
@@ -93,7 +93,7 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) {
 	}
 }
 
-func pump(ctx context.Context, watch ports.Watch, events chan<- received) {
+func forwardEvents(ctx context.Context, watch ports.Watch, events chan<- received) {
 	for {
 		event, err := watch.Receive(ctx)
 		select {

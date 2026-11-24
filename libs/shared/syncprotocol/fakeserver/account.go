@@ -80,7 +80,7 @@ func checkAppend(stored, presented identity.Chain, session Session) error {
 	if !presented.IsExtensionOf(stored) {
 		return newChainStale(stored)
 	}
-	for _, signer := range presented.SignersSince(stored) {
+	for _, signer := range presented.GetSignersSince(stored) {
 		if !bytes.Equal(signer, session.DeviceSignKey) && !bytes.Equal(signer, presented.Root().Sign) {
 			return connect.NewError(connect.CodePermissionDenied, errInvalidRequest)
 		}
@@ -99,7 +99,7 @@ func newChainStale(head identity.Chain) error {
 func (s *Server) applyChain(account string, chain identity.Chain) {
 	stored := s.chains[account]
 	s.chains[account] = chain
-	for _, revoked := range chain.RevokedSince(stored) {
+	for _, revoked := range chain.GetRevokedSince(stored) {
 		s.sessions = slices.DeleteFunc(s.sessions, func(one Session) bool {
 			return one.AccountFingerprint == account && bytes.Equal(one.DeviceSignKey, revoked)
 		})
