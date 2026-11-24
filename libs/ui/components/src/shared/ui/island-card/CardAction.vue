@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue'
+import { Tooltip, useTooltip } from '../tooltip'
 
 /**
  * An action in the header of an island card: an icon in the default slot and the label beside it. The
@@ -7,7 +8,7 @@ import { ChevronDown } from '@lucide/vue'
  */
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
   label: string
   isPrimary?: boolean
   isDisabled?: boolean
@@ -22,6 +23,8 @@ defineProps<{
   /** Marks the action as one that opens a menu, with a chevron after the label. */
   hasMenu?: boolean
 }>()
+
+const tip = useTooltip()
 </script>
 
 <template>
@@ -36,11 +39,18 @@ defineProps<{
     }"
     :disabled="isDisabled"
     :aria-label="label"
-    :title="label"
+    :aria-describedby="tip.describedBy.value"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+    @focus="tip.open"
+    @blur="tip.close"
   >
     <slot />
     <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">{{ label }}</span>
     <ChevronDown v-if="hasMenu" :size="12" aria-hidden="true" />
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ props.label }}</Tooltip>
+    </Teleport>
   </button>
 </template>
 

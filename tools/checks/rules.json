@@ -1674,6 +1674,23 @@
       ]
     },
     {
+      "name": "style/tooltips",
+      "paths": [
+        "**/*.vue"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "style/tooltips/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/checks/style/tooltips/check.mjs"
+      ]
+    },
+    {
       "name": "style/names",
       "paths": [
         "**/*.{ts,vue,go,md,json}"
