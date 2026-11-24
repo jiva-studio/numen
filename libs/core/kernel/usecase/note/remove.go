@@ -68,19 +68,8 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 		return res, err
 	}
 
-	writer, err := u.writers.OpenFileMover(v)
+	target, err := u.trashFiles(ctx, v, path)
 	if err != nil {
-		return res, err
-	}
-	target, err := moveToTrash(ctx, writer, path)
-	if err != nil && !errors.Is(err, edit.ErrNoNote) {
-		return res, err
-	}
-	listed, absentErr := u.removeAbsent(ctx, v, path)
-	if absentErr != nil {
-		return res, absentErr
-	}
-	if err != nil && listed == 0 {
 		return res, err
 	}
 	res.Trashed = target
@@ -92,6 +81,34 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 		filingErr = u.filer.MoveVersions(ctx, v.ID, path, target)
 	}
 
+	indexPaths, inside := getIndexPaths(went, path)
+	// The file is in the trash from here on, so the index update result is reported
+	// alongside the links that now resolve to nothing.
+	indexErr := u.updateIndex(ctx, v, indexPaths...)
+	res.Dangling = getDangling(pointing, inside)
+	return res, errors.Join(filingErr, indexErr)
+}
+
+func (u Remove) trashFiles(ctx context.Context, v domain.Vault, path string) (string, error) {
+	writer, err := u.writers.OpenFileMover(v)
+	if err != nil {
+		return "", err
+	}
+	target, err := moveToTrash(ctx, writer, path)
+	if err != nil && !errors.Is(err, edit.ErrNoNote) {
+		return "", err
+	}
+	listed, absentErr := u.removeAbsent(ctx, v, path)
+	if absentErr != nil {
+		return "", absentErr
+	}
+	if err != nil && listed == 0 {
+		return "", err
+	}
+	return target, nil
+}
+
+func getIndexPaths(went []domain.FileStat, path string) ([]string, map[string]bool) {
 	// The index is updated for what the vault held at each path, and with
 	// the path itself where it held nothing.
 	indexPaths := make([]string, 0, len(went))
@@ -103,18 +120,19 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 	if len(indexPaths) == 0 {
 		indexPaths = append(indexPaths, path)
 	}
-	// The file is in the trash from here on, so the index update result is reported
-	// alongside the links that now resolve to nothing.
-	indexErr := u.updateIndex(ctx, v, indexPaths...)
+	return indexPaths, inside
+}
+
+func getDangling(pointing []domain.ResolvedLink, inside map[string]bool) []string {
+	var dangling []string
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
 		// nothing left to reach from.
-		if inside[was.From] {
-			continue
+		if !inside[was.From] {
+			dangling = append(dangling, was.From)
 		}
-		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, errors.Join(filingErr, indexErr)
+	return dangling
 }
 
 func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.FileStat) ([]domain.ResolvedLink, error) {

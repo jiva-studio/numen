@@ -71,22 +71,8 @@ func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (do
 		return res, err
 	}
 
-	mover, err := u.notes.writers.OpenFileMover(v)
-	if err != nil {
+	if err := u.moveFiles(ctx, v, from, to); err != nil {
 		return res, err
-	}
-	// Only the core reports a path as holding nothing: the writer returns the same
-	// error for a vault it cannot reach at all.
-	moveErr := mover.Move(ctx, from, to)
-	if moveErr != nil && !errors.Is(moveErr, edit.ErrNotExist) {
-		return res, moveErr
-	}
-	listed, err := u.queries.MoveAbsent(ctx, v, from, to)
-	if err != nil {
-		return res, err
-	}
-	if moveErr != nil && listed == 0 {
-		return res, edit.ErrNoNote
 	}
 	res.IsMoved = true
 
@@ -110,6 +96,27 @@ func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (do
 		return res, err
 	}
 	return res, called
+}
+
+func (u MoveFile) moveFiles(ctx context.Context, v domain.Vault, from, to string) error {
+	mover, err := u.notes.writers.OpenFileMover(v)
+	if err != nil {
+		return err
+	}
+	// Only the core reports a path as holding nothing: the writer returns the same
+	// error for a vault it cannot reach at all.
+	moveErr := mover.Move(ctx, from, to)
+	if moveErr != nil && !errors.Is(moveErr, edit.ErrNotExist) {
+		return moveErr
+	}
+	listed, err := u.queries.MoveAbsent(ctx, v, from, to)
+	if err != nil {
+		return err
+	}
+	if moveErr != nil && listed == 0 {
+		return edit.ErrNoNote
+	}
+	return nil
 }
 
 func (u MoveFile) getBacklinksByPath(
