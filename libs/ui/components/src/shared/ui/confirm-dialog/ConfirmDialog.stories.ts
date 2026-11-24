@@ -39,8 +39,8 @@ type Story = StoryObj<Knobs>
 
 /** A dangerous question: the confirm button is drawn as a danger button. */
 export const Danger: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+  play: async () => {
+    const canvas = within(document.body)
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveFocus()
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'Delete' })).toHaveFocus()
@@ -62,8 +62,8 @@ export const OtherScripts: Story = { args: { text: 'Удалить заметк�
 
 /** Pressing the confirm button emits `confirm` and not `cancel`. */
 export const Confirming: Story = {
-  play: async ({ canvasElement, args }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Delete' }))
+  play: async ({ args }) => {
+    await userEvent.click(within(document.body).getByRole('button', { name: 'Delete' }))
     await expect(args.onConfirm).toHaveBeenCalledTimes(1)
     await expect(args.onCancel).not.toHaveBeenCalled()
   },
@@ -71,8 +71,8 @@ export const Confirming: Story = {
 
 /** Pressing the cancel button emits `cancel` and not `confirm`. */
 export const Cancelling: Story = {
-  play: async ({ canvasElement, args }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Cancel' }))
+  play: async ({ args }) => {
+    await userEvent.click(within(document.body).getByRole('button', { name: 'Cancel' }))
     await expect(args.onCancel).toHaveBeenCalledTimes(1)
     await expect(args.onConfirm).not.toHaveBeenCalled()
   },

@@ -30,7 +30,9 @@ export function useHeaderFit(header: Readonly<Ref<HTMLElement | null>>): Readonl
   onMounted(() => {
     fit().catch(() => undefined)
     if (typeof ResizeObserver === 'undefined' || header.value === null) return
-    watcher = new ResizeObserver(() => fit().catch(() => undefined))
+    watcher = new ResizeObserver(() => {
+      fit().catch(() => undefined)
+    })
     watcher.observe(header.value)
   })
 

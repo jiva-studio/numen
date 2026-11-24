@@ -35,7 +35,7 @@ const stages = computed(() => getRestoreStages(props.slots, props.isBusy, props.
     @cancel="emit('cancel')"
   >
     <QrScanner
-      continuous
+      is-continuous
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="emit('scanned', $event)"
       @unavailable="emit('unavailable')"

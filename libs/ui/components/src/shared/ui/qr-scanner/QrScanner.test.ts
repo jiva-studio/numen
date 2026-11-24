@@ -1,10 +1,25 @@
 /** The scanner reports why a camera did not open, and stops a camera it opened when it unmounts. */
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { decodeFrame } from './decodeFrame'
+import { encode } from 'uqr'
+import type { Frame } from './decodeFrame'
 import QrScanner from './QrScanner.vue'
 
-vi.mock('./decodeFrame', () => ({ decodeFrame: vi.fn() }))
+const CELL = 6
+const QUIET = 4
+
+const makeFrame = (text: string): Frame => {
+  const { data: modules } = encode(text, { ecc: 'M', border: 0 })
+  const side = (modules.length + QUIET * 2) * CELL
+  const data = new Uint8ClampedArray(side * side * 4).fill(255)
+  for (let y = 0; y < side; y += 1) {
+    for (let x = 0; x < side; x += 1) {
+      if (modules[Math.floor(y / CELL) - QUIET]?.[Math.floor(x / CELL) - QUIET] !== true) continue
+      data.fill(0, (y * side + x) * 4, (y * side + x) * 4 + 3)
+    }
+  }
+  return { data, width: side, height: side }
+}
 
 const makeStream = () => {
   const stop = vi.fn()
@@ -98,16 +113,18 @@ describe('a QR scanner', () => {
 })
 
 describe('a continuous QR scanner', () => {
-  const decode = vi.mocked(decodeFrame)
+  let shown: Frame = { data: new Uint8ClampedArray(64 * 64 * 4).fill(136), width: 64, height: 64 }
+  const show = (text: string): void => {
+    shown = makeFrame(text)
+  }
 
   beforeEach(() => {
     vi.useFakeTimers()
-    decode.mockReset()
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
     vi.spyOn(HTMLVideoElement.prototype, 'videoWidth', 'get').mockReturnValue(4)
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: () => undefined,
-      getImageData: () => ({}),
+      getImageData: () => shown,
     } as unknown as CanvasRenderingContext2D)
   })
 
@@ -116,10 +133,10 @@ describe('a continuous QR scanner', () => {
     vi.restoreAllMocks()
   })
 
-  const open = async (continuous: boolean) => {
+  const open = async (isContinuous: boolean) => {
     const { stream, stop } = makeStream()
     const scanner = mount(QrScanner, {
-      props: { camera: () => Promise.resolve(stream), continuous },
+      props: { camera: () => Promise.resolve(stream), isContinuous },
     })
     await flushPromises()
     return { scanner, stop }
@@ -128,9 +145,9 @@ describe('a continuous QR scanner', () => {
 
   it('reads the second code with the same mounted scanner and keeps the camera on', async () => {
     const { scanner, stop } = await open(true)
-    decode.mockReturnValue('first')
+    show('first')
     await frames(1)
-    decode.mockReturnValue('second')
+    show('second')
     await frames(1)
     expect(scanner.emitted('scanned')).toStrictEqual([['first'], ['second']])
     expect(stop).not.toHaveBeenCalled()
@@ -138,16 +155,16 @@ describe('a continuous QR scanner', () => {
 
   it('reports a code that stays in view once', async () => {
     const { scanner } = await open(true)
-    decode.mockReturnValue('first')
+    show('first')
     await frames(10)
     expect(scanner.emitted('scanned')).toStrictEqual([['first']])
   })
 
   it('stops the camera after the first code when it is not continuous', async () => {
     const { scanner, stop } = await open(false)
-    decode.mockReturnValue('first')
+    show('first')
     await frames(1)
-    decode.mockReturnValue('second')
+    show('second')
     await frames(1)
     expect(scanner.emitted('scanned')).toStrictEqual([['first']])
     expect(stop).toHaveBeenCalledOnce()

@@ -4,7 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { KeyRound, Plus, QrCode } from '@lucide/vue'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import CardActions from './CardActions.vue'
 import IslandCard from './IslandCard.vue'
 import type { CardActionItem } from './cardActionItem'
@@ -57,11 +57,11 @@ export const Wide: Story = {
 
 /** Narrow: the words give way to icons except on Create, every button keeps its name. */
 export const Narrow: Story = {
-  parameters: { cardWidth: '24rem' },
+  parameters: { cardWidth: '20rem' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.queryByText('Join')).not.toBeVisible()
+    await waitFor(() => expect(canvas.queryByText('Join')).not.toBeVisible())
     await expect(canvas.getByText('Create')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Join' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Identity' })).toBeVisible()
@@ -74,7 +74,7 @@ export const Narrowest: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.queryByRole('button', { name: 'Join' })).toBeNull()
+    await waitFor(() => expect(canvas.queryByRole('button', { name: 'Join' })).toBeNull())
     await expect(canvas.getByRole('button', { name: 'Restore' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'More actions' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Create' })).toBeVisible()

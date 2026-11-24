@@ -3,7 +3,7 @@
  * Reads QR codes from the camera at eight frames a second and reports the text of the first valid one it finds.
  * It asks the machine for the camera when it mounts, so a dialog that holds it asks once it is open. One box of 4:3 fills the width it
  * is given from the first frame: a spinner shows in it while the camera starts, the picture replaces it, and a failure
- * is written in it. The stream stops after the first scan; with `continuous` it
+ * is written in it. The stream stops after the first scan; with `isContinuous` it
  * keeps reading and reports each new code (the same code held in front of the camera once) until the scanner unmounts.
  * The decoder is plain JavaScript, so no worker and no wasm is needed.
  */
@@ -17,12 +17,12 @@ const props = withDefaults(
   defineProps<{
     camera?: ScannerCamera
     isAccepted?: (text: string) => boolean
-    continuous?: boolean
+    isContinuous?: boolean
   }>(),
   {
     camera: openMachineCamera,
     isAccepted: () => true,
-    continuous: false,
+    isContinuous: false,
   },
 )
 

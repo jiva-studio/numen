@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, ref, type ShallowRef } from 'vue'
 import { describeCameraFailure, FRAMES_PER_SECOND, type ScannerCamera } from '@/shared/api/camera'
-import { doc } from '@/shared/api/dom'
+import { doc, getNow } from '@/shared/api/dom'
 import { decodeFrame } from './decodeFrame'
 
 /** How long a code that stays in front of the camera is not reported again. */
@@ -9,7 +9,7 @@ const SAME_CODE_PAUSE_MS = 2000
 export interface QrScannerSource {
   camera: ScannerCamera
   isAccepted: (text: string) => boolean
-  continuous: boolean
+  isContinuous: boolean
 }
 
 export interface QrScannerEvents {
@@ -19,8 +19,8 @@ export interface QrScannerEvents {
 }
 
 /**
- * The camera of one scanner and the frames read from it: what it is waiting for, the problem it shows, and a way to
- * ask the camera again after a failure. The stream stops after the first scan; in the continuous mode it stops only
+ * The camera of one scanner and the frames read from it: what it is waiting for and the problem it shows.
+ * The stream stops after the first scan; in the continuous mode it stops only
  * when the scanner unmounts.
  */
 export function useQrScanner(
@@ -55,8 +55,8 @@ export function useQrScanner(
       emit('failed', problem.value)
       return
     }
-    if (source.continuous) {
-      const now = Date.now()
+    if (source.isContinuous) {
+      const now = getNow()
       const isRepeat = found === lastText && now - lastAt < SAME_CODE_PAUSE_MS
       lastText = found
       lastAt = now
@@ -97,5 +97,5 @@ export function useQrScanner(
   onMounted(start)
   onBeforeUnmount(stop)
 
-  return { status, problem, retry: start }
+  return { status, problem }
 }

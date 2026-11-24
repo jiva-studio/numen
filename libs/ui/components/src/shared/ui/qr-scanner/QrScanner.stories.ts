@@ -3,7 +3,7 @@
  * a camera gives.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, waitFor, within } from 'storybook/test'
 import { encode } from 'uqr'
 import QrScanner from './QrScanner.vue'
 
@@ -21,9 +21,15 @@ export const WaitingForPermission: Story = {
   args: { camera: () => new Promise<MediaStream>(() => undefined) },
 }
 
-/** The person said no. */
+/** The person said no: the box says so and gives no button to ask again. */
 export const Denied: Story = {
-  args: { camera: () => Promise.reject(new DOMException('no', 'NotAllowedError')) },
+  args: { camera: () => Promise.reject(new DOMException('no', 'NotAllowedError')), onUnavailable: fn() },
+  play: async ({ args, canvasElement }) => {
+    const alert = await within(canvasElement).findByRole('alert')
+    await expect(alert).toHaveTextContent('The camera is not allowed.')
+    await expect(within(canvasElement).queryByRole('button')).toBeNull()
+    await expect(args.onUnavailable).toHaveBeenCalledWith('The camera is not allowed.')
+  },
 }
 
 /** The machine has no camera. */
@@ -105,27 +111,5 @@ export const ShowsAnInvalidCode: Story = {
     await expect(alert).toHaveTextContent('This code is not a link of Numen.')
     await expect(args.onFailed).toHaveBeenCalledWith('This code is not a link of Numen.')
     await expect(args.onScanned).not.toHaveBeenCalled()
-  },
-}
-
-/** The first answer of the camera is no, the person asks again and the camera films the QR code of a link. */
-export const TriesAgainAfterAFailure: Story = {
-  args: {
-    camera: (() => {
-      let isFirst = true
-      return () => {
-        if (!isFirst) return filmCode(LINK_TEXT)()
-        isFirst = false
-        return Promise.reject(new DOMException('no', 'NotAllowedError'))
-      }
-    })(),
-    onScanned: fn(),
-    onUnavailable: fn(),
-  },
-  play: async ({ args, canvasElement }) => {
-    const retry = await within(canvasElement).findByRole('button', { name: 'Try again' })
-    await expect(args.onUnavailable).toHaveBeenCalledWith('The camera is not allowed.')
-    await userEvent.click(retry)
-    await waitFor(() => expect(args.onScanned).toHaveBeenCalledWith(LINK_TEXT), { timeout: 10_000 })
   },
 }

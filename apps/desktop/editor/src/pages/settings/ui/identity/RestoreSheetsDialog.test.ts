@@ -13,7 +13,7 @@ const makeCode = (kit: string, sheet: number, prefix: string): string =>
 // The camera is the outer edge: the stand-in only reports what a camera would scan.
 const camera = defineComponent({
   name: 'QrScanner',
-  props: { continuous: Boolean },
+  props: { isContinuous: Boolean },
   emits: ['scanned', 'unavailable'],
   template: '<div class="camera" />',
 })
@@ -89,7 +89,7 @@ describe('the restore from sheets dialog', () => {
   it('keeps one scanner in continuous mode through both sheets', async () => {
     const { wrapper, scan } = createDialog()
     const before = wrapper.findComponent(camera).vm
-    expect(wrapper.findComponent(camera).props('continuous')).toBe(true)
+    expect(wrapper.findComponent(camera).props('isContinuous')).toBe(true)
     await scan(makeCode('C0DE', 3, 'a'))
     await scan(makeCode('C0DE', 1, 'b'))
     expect(wrapper.findComponent(camera).vm).toBe(before)

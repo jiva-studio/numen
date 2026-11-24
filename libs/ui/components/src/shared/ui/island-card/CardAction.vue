@@ -2,6 +2,7 @@
 import { ChevronDown } from '@lucide/vue'
 import { useTemplateRef } from 'vue'
 import { Tooltip, useTooltip } from '../tooltip'
+import type { CardActionProps } from './CardAction.types'
 
 /**
  * An action in the header of an island card: an icon in the default slot and the label beside it. The
@@ -9,16 +10,7 @@ import { Tooltip, useTooltip } from '../tooltip'
  */
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  label: string
-  isPrimary?: boolean
-  isDisabled?: boolean
-  isSecondary?: boolean
-  isIconOnly?: boolean
-  isMore?: boolean
-  isLabelKept?: boolean
-  hasMenu?: boolean
-}>()
+const props = defineProps<CardActionProps>()
 
 const tip = useTooltip()
 const button = useTemplateRef<HTMLButtonElement>('button')

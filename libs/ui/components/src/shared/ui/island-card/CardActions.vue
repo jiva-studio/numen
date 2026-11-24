@@ -64,16 +64,12 @@ function onPress(item: CardActionItem, event: Event): void {
     return
   }
   const box = measureRect(from)
-  if (box !== undefined) choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
-}
-
-function getChoiceIcon(id: string): Component | undefined {
-  return choice.value?.item.choices?.find((one) => one.id === id)?.icon
+  choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
 }
 
 function onChooseChoice(id: string): void {
   choice.value = null
-  void nextTick(() => emit('choose', id))
+  nextTick(() => emit('choose', id)).catch(() => undefined)
 }
 
 function onClose(): void {
@@ -83,6 +79,11 @@ function onClose(): void {
 function onChoose(id: string): void {
   onClose()
   emit('choose', id)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function getChoiceIcon(id: string): Component | undefined {
+  return choice.value?.item.choices?.find((one) => one.id === id)?.icon
 }
 </script>
 
