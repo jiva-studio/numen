@@ -421,11 +421,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Restore')
     await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
     await submitRestore(tab)
-    expect(
-    await press(tab, 'Restore')
-    await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
-    await submitRestore(tab)
-    restore).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
+    expect(restore).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
   })
 
   it('says under the fields that the words are not valid and holds no identity when the core refuses them', async () => {
