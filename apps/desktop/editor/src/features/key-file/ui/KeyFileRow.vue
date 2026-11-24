@@ -4,7 +4,8 @@
  * is protected. The action to change it or to enter the passphrase sits in the header of the card.
  */
 import { computed } from 'vue'
-import { IslandCard } from '@numen/ui'
+import { LockOpen, Pencil } from '@lucide/vue'
+import { CardAction, IslandCard } from '@numen/ui'
 import type { KeyFileState } from '@/entities/key-file'
 import { WORDS as words } from '../words'
 
@@ -27,17 +28,12 @@ const detail = computed(() => {
 <template>
   <IslandCard :title="words.rowTitle">
     <template v-if="state.isInUse" #aside>
-      <button
-        v-if="state.isLocked"
-        type="button"
-        class="key-file-row__action"
-        @click="emit('unlock')"
-      >
-        {{ words.rowUnlock }}
-      </button>
-      <button v-else type="button" class="key-file-row__action" @click="emit('change')">
-        {{ words.rowChange }}
-      </button>
+      <CardAction v-if="state.isLocked" is-primary :label="words.rowUnlock" @click="emit('unlock')">
+        <LockOpen :size="14" aria-hidden="true" />
+      </CardAction>
+      <CardAction v-else is-primary :label="words.rowChange" @click="emit('change')">
+        <Pencil :size="14" aria-hidden="true" />
+      </CardAction>
     </template>
     <p class="key-file-row__detail">{{ detail }}</p>
   </IslandCard>
@@ -48,17 +44,5 @@ const detail = computed(() => {
   margin: 0;
   padding-block: calc(var(--numen-card-pad) - var(--numen-card-inset));
   color: var(--numen-hushed);
-}
-
-.key-file-row__action {
-  margin: 0;
-  padding: 0 0.375rem;
-  border: none;
-  background: none;
-  color: var(--numen-accent);
-  font: inherit;
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  cursor: pointer;
 }
 </style>

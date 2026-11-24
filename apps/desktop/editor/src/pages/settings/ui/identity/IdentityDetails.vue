@@ -6,13 +6,12 @@
  */
 import { computed, ref } from 'vue'
 import { Download, Link, Trash2 } from '@lucide/vue'
-import { ConfirmDialog, IslandCard } from '@numen/ui'
+import { CardAction, CardActions, ConfirmDialog, IslandCard, type CardActionItem } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
 import { DevicesSection, type DeviceCalls } from '@/features/identity-link'
 import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
-import CardAction from './CardAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -33,6 +32,20 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isLinking = ref(false)
+const accountActions = computed<readonly CardActionItem[]>(() => [
+  {
+    id: 'download',
+    label: props.isKitBusy ? words.kitDownloading : words.kitDownload,
+    icon: Download,
+    isDisabled: props.isBusy || props.isKitBusy,
+  },
+  {
+    id: 'delete',
+    label: props.info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete,
+    icon: Trash2,
+    isDisabled: props.isBusy,
+  },
+])
 const date = computed(() => {
   const added = new Date(props.info.deviceAddedAt)
   if (Number.isNaN(added.getTime())) return ''
@@ -50,14 +63,11 @@ const thisDevice = computed<DeviceInfo>(() => ({
 <template>
   <IslandCard :title="words.identitySection">
     <template #aside>
-      <CardAction :is-disabled="isBusy || isKitBusy" @click="emit('download')">
-        <Download :size="14" aria-hidden="true" />
-        {{ isKitBusy ? words.kitDownloading : words.kitDownload }}
-      </CardAction>
-      <CardAction :is-disabled="isBusy" @click="emit('ask')">
-        <Trash2 :size="14" aria-hidden="true" />
-        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
-      </CardAction>
+      <CardActions
+        :items="accountActions"
+        :more-label="words.moreActions"
+        @choose="(id) => (id === 'download' ? emit('download') : emit('ask'))"
+      />
     </template>
     <SettingRow
       class="identity-details__fact"
@@ -76,9 +86,13 @@ const thisDevice = computed<DeviceInfo>(() => ({
 
   <IslandCard class="identity-details__devices" :title="words.identityDevices">
     <template #aside>
-      <CardAction v-if="!info.isRevoked" is-primary @click="isLinking = true">
+      <CardAction
+        v-if="!info.isRevoked"
+        is-primary
+        :label="words.identityLinkDevice"
+        @click="isLinking = true"
+      >
         <Link :size="14" aria-hidden="true" />
-        {{ words.identityLinkDevice }}
       </CardAction>
     </template>
     <DevicesSection

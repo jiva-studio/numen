@@ -95,6 +95,7 @@ export const WORDS = {
   identityNoneWords:
     'When you create it, you get 12 recovery words — write them down. With them you can bring the same account to a new computer or get it back if this one is lost.',
   identityCreate: 'Create identity',
+  moreActions: 'More actions',
   identityRestoreWords: 'Restore from words',
   identityRestoreSheets: 'Restore from sheets',
   identityJoin: 'Join account',

@@ -4,16 +4,15 @@
  * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of them)
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { KeyRound, Plus, QrCode, ScanLine } from '@lucide/vue'
-import { IslandCard, Toast } from '@numen/ui'
+import { CardActions, IslandCard, Toast, type CardActionItem } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { WORDS as words } from '../../words'
 import { JoinDialog } from '@/features/identity-link'
 import { KeyFileHost } from '@/features/key-file'
-import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import RestoreSheetsDialog from './RestoreSheetsDialog.vue'
 import RestoreTypedDialog from './RestoreTypedDialog.vue'
@@ -31,6 +30,22 @@ const section = useIdentitySection(() => props.identity, kit.actions.hold)
 const { identity: current, step, setup, call, confirmation, restoring, typing, scanning, deletion, actions } = section
 const { stage, recoveryWords } = setup
 const isJoining = ref(false)
+
+const noneActions = computed<readonly CardActionItem[]>(() => {
+  const isDisabled = call.isBusy.value
+  return [
+    { id: 'restore-words', label: words.identityRestoreWords, icon: KeyRound, isDisabled },
+    { id: 'restore-sheets', label: words.identityRestoreSheets, icon: ScanLine, isDisabled },
+    { id: 'join', label: words.identityJoin, icon: QrCode, isDisabled },
+    { id: 'create', label: words.identityCreate, icon: Plus, isDisabled, isPrimary: true },
+  ]
+})
+
+function onChooseNone(id: string): void {
+  if (id === 'restore-words' || id === 'restore-sheets') actions.startRestore(id)
+  else if (id === 'join') isJoining.value = true
+  else actions.startSetup()
+}
 </script>
 
 <template>
@@ -66,22 +81,11 @@ const isJoining = ref(false)
 
   <IslandCard v-else :title="words.identitySection">
     <template #aside>
-      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restore-words')">
-        <KeyRound :size="14" aria-hidden="true" />
-        {{ words.identityRestoreWords }}
-      </CardAction>
-      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restore-sheets')">
-        <ScanLine :size="14" aria-hidden="true" />
-        {{ words.identityRestoreSheets }}
-      </CardAction>
-      <CardAction :is-disabled="call.isBusy.value" @click="isJoining = true">
-        <QrCode :size="14" aria-hidden="true" />
-        {{ words.identityJoin }}
-      </CardAction>
-      <CardAction is-primary :is-disabled="call.isBusy.value" @click="actions.startSetup">
-        <Plus :size="14" aria-hidden="true" />
-        {{ words.identityCreate }}
-      </CardAction>
+      <CardActions
+        :items="noneActions"
+        :more-label="words.moreActions"
+        @choose="onChooseNone"
+      />
     </template>
     <div class="identity-section__body">
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
