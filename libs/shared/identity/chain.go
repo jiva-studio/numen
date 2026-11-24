@@ -199,6 +199,21 @@ func (c Chain) AccountBoxKey() [32]byte {
 	return c.entries[0].Genesis.AccountBox
 }
 
+func (c Chain) hasAccountBoxKey(box [32]byte) bool {
+	if len(c.entries) == 0 || c.entries[0].Genesis == nil {
+		return false
+	}
+	if c.entries[0].Genesis.AccountBox == box {
+		return true
+	}
+	for _, entry := range c.entries[1:] {
+		if revoke := entry.keyChange(); revoke != nil && revoke.AccountBox == box {
+			return true
+		}
+	}
+	return false
+}
+
 // WrappedForRecovery returns the account keys of the latest epoch wrapped for the recovery key.
 func (c Chain) WrappedForRecovery() WrappedAccountKeys {
 	if revoke := c.latestRevoke(); revoke != nil {

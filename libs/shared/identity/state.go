@@ -18,7 +18,7 @@ type State struct {
 	Status Status
 }
 
-// NewState checks the chain and finds the device of the record in it: active, or revoked.
+// NewState checks the chain, finds the device of the record in it, active or revoked, and checks that the wrapped keys of the record are keys of the account of the chain, of any of its epochs.
 func NewState(record Record, chain Chain) (State, error) {
 	if err := chain.Verify(); err != nil {
 		return State{}, err
@@ -27,7 +27,21 @@ func NewState(record Record, chain Chain) (State, error) {
 	if err != nil {
 		return State{}, err
 	}
+	if err := checkAccount(record, chain); err != nil {
+		return State{}, err
+	}
 	return State{Record: record, Chain: chain, Status: status}, nil
+}
+
+func checkAccount(record Record, chain Chain) error {
+	opened, err := record.Device.UnwrapAccountKeys(record.Wrapped)
+	if err != nil {
+		return fmt.Errorf("%w: the wrapped account keys do not open for the device: %w", ErrMalformed, err)
+	}
+	if !chain.hasAccountBoxKey(opened.BoxPublicKey()) {
+		return fmt.Errorf("%w: the wrapped account keys are not the account of the chain", ErrMalformed)
+	}
+	return nil
 }
 
 func getStatus(chain Chain, device DeviceKey) (Status, error) {

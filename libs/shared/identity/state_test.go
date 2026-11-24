@@ -52,6 +52,28 @@ func TestNewState_RefusesADeviceThatIsNotInTheChain(t *testing.T) {
 	}
 }
 
+func TestNewState_RefusesWrappedKeysOfAnotherAccount(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	wrapped, err := newAccount(t).WrapForDevice(m.first.Public())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := identity.NewState(identity.Record{Device: m.first, Wrapped: wrapped}, m.chain); !errors.Is(err, identity.ErrMalformed) {
+		t.Errorf("error = %v, want ErrMalformed", err)
+	}
+}
+
+func TestNewState_AcceptsWrappedKeysOfAnEarlierEpoch(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	chain, _ := m.revokeSecond(t)
+	state, err := identity.NewState(m.firstRecord(t), chain)
+	if err != nil || state.Status != identity.StatusActive {
+		t.Errorf("status = %v, error = %v, want active", state.Status, err)
+	}
+}
+
 func TestNewState_ReportsARevokedDeviceAsRevoked(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)

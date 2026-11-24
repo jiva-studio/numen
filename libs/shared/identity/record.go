@@ -43,5 +43,8 @@ func ParseRecord(b []byte) (Record, error) {
 	if err != nil {
 		return Record{}, err
 	}
+	if _, err := device.UnwrapAccountKeys(wrapped); err != nil {
+		return Record{}, fmt.Errorf("%w: the wrapped account keys do not open for the device: %w", ErrMalformed, err)
+	}
 	return Record{Device: device, Wrapped: wrapped}, nil
 }
