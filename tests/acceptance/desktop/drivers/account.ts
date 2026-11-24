@@ -33,7 +33,8 @@ export class AccountDriver {
 
   /** Opens the question of the card, types the account fingerprint and confirms the deletion of the cloud data. */
   async deleteCloudData(): Promise<void> {
-    await this.tryDeleteCloudDataWithWrongName(this.identity.getAccountFingerprint())
+    await this.openDeleteQuestion()
+    await this.confirmDeleteCloudData(this.identity.getAccountFingerprint())
   }
 
   /** Opens the question of the card. */
@@ -42,9 +43,8 @@ export class AccountDriver {
     await card.getByRole('button', { name: DELETE_CLOUD_DATA }).click()
   }
 
-  /** Opens the question of the card and tries to confirm with a text that is not the account fingerprint. */
-  async tryDeleteCloudDataWithWrongName(name: string): Promise<void> {
-    await this.openDeleteQuestion()
+  /** Types the text into the open question of the card and confirms the deletion. */
+  async confirmDeleteCloudData(name: string): Promise<void> {
     const dialog = (await this.getCard()).getByRole('alertdialog')
     await dialog.getByRole('textbox', { name: ACCOUNT_FINGERPRINT }).fill(name)
     await dialog.getByRole('button', { name: DELETE_CLOUD_DATA }).click()

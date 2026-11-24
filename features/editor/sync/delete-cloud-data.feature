@@ -23,9 +23,10 @@ Feature: Delete cloud data
       And the question says "Type the account fingerprint"
 
     Scenario: A text that is not the account fingerprint deletes nothing
-      When the person asks to delete the cloud data and types "somebody else"
+      Given the person asks to delete the cloud data
+      When the person confirms the deletion with the text "somebody else"
       Then the page says "This is not the account fingerprint."
-      And the cloud data is not being deleted
+      And the cloud data is kept
 
   Rule: The cloud data is kept for 7 days
 
@@ -37,7 +38,7 @@ Feature: Delete cloud data
     Scenario: Restoring the account stops the deletion
       Given the person deletes the cloud data
       When the person restores the account
-      Then the cloud data is not being deleted
+      Then the cloud data is kept
 
     Scenario: Deleting the cloud data cancels the subscription
       Given the person buys the subscription

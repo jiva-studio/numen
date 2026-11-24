@@ -341,8 +341,8 @@ When('the person asks to delete the cloud data', async ({ person }) => {
   await person.accounts.openDeleteQuestion()
 })
 
-When('the person asks to delete the cloud data and types {string}', async ({ person }, name: string) => {
-  await person.accounts.tryDeleteCloudDataWithWrongName(name)
+When('the person confirms the deletion with the text {string}', async ({ person }, name: string) => {
+  await person.accounts.confirmDeleteCloudData(name)
 })
 
 Then('the question says {string}', async ({ person }, text: string) => {
@@ -357,7 +357,7 @@ Then('the cloud data is being deleted', async ({ person }) => {
   await person.accounts.expectDeleting(true)
 })
 
-Then('the cloud data is not being deleted', async ({ person }) => {
+Then('the cloud data is kept', async ({ person }) => {
   await person.accounts.expectDeleting(false)
 })
 
