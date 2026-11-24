@@ -1,14 +1,17 @@
 /**
- * What proves the account in a dialog of the identity: one text, the 12 recovery words or two sheets
- * of a recovery kit one to a line, read as the person types. Typing clears the problem shown.
+ * What proves the account in a dialog of the identity: one text read as the person types, by default
+ * as the 12 recovery words or two sheets of a recovery kit one to a line. Typing clears the problem shown.
  */
 import { computed, ref, type Ref } from 'vue'
 import type { KitProof } from '@/entities/identity'
-import { readProof } from './readProof'
+import { readProof, type ProofReading } from './readProof'
 
-export function useRecoveryProof(problem: Ref<string>) {
+export function useRecoveryProof(
+  problem: Ref<string>,
+  readText: (text: string) => ProofReading = readProof,
+) {
   const text = ref('')
-  const reading = computed(() => readProof(text.value))
+  const reading = computed(() => readText(text.value))
 
   const setText = (value: string): void => {
     text.value = value

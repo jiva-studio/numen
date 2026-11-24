@@ -180,7 +180,7 @@ export class IdentityDriver {
 
   async restoreFromSheets(numbers: string, mistakeSheet?: number): Promise<void> {
     const texts = planSheetTexts(this.sheets, readSheetNumbers(numbers), mistakeSheet)
-    await this.restore(texts.join('\n'))
+    await this.restoreSheets(texts)
   }
 
   async expectIdentity(has: boolean): Promise<void> {
@@ -200,21 +200,33 @@ export class IdentityDriver {
     await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
-  private getRestoreDialog(panel: Locator): Locator {
-    return panel.getByRole('dialog', { name: 'Restore identity' })
+  private getRestoreDialog(panel: Locator, title: string): Locator {
+    return panel.getByRole('dialog', { name: title })
   }
 
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
-    const dialog = this.getRestoreDialog(panel)
+    await panel.getByRole('button', { name: 'Restore from words', exact: true }).click()
+    const dialog = this.getRestoreDialog(panel, 'Restore from words')
     await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(text)
-    const restore = dialog.getByRole('button', { name: 'Restore the account', exact: true })
+    const restore = dialog.getByRole('button', { name: 'Restore', exact: true })
+    if (await restore.isEnabled()) await restore.click()
+  }
+
+  // The test browser has no camera, so the sheets dialog hands over to the typed one.
+  private async restoreSheets(texts: readonly string[]): Promise<void> {
+    const panel = await this.showPage()
+    await panel.getByRole('button', { name: 'Restore from sheets', exact: true }).click()
+    const dialog = this.getRestoreDialog(panel, 'Type sheets')
+    for (const [index, text] of texts.entries()) {
+      await dialog.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
+    }
+    const restore = dialog.getByRole('button', { name: 'Restore', exact: true })
     if (await restore.isEnabled()) await restore.click()
   }
 
   async expectRestoreNote(text: string): Promise<void> {
-    const dialog = this.getRestoreDialog(await this.showPage())
+    const dialog = (await this.showPage()).getByRole('dialog', { name: /^(Restore from words|Type sheets)$/ })
     await expect(dialog.getByRole('status').or(dialog.getByRole('alert'))).toContainText(text, {
       ignoreCase: true,
     })

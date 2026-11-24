@@ -5,7 +5,7 @@
  * or to restore one in a dialog from its words or from two sheets of a kit.
  */
 import { ref } from 'vue'
-import { KeyRound, Plus, QrCode } from '@lucide/vue'
+import { KeyRound, Plus, QrCode, ScanLine } from '@lucide/vue'
 import { IslandCard, Toast } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
@@ -15,7 +15,9 @@ import { JoinDialog } from '@/features/identity-link'
 import { KeyFileHost } from '@/features/key-file'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
-import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
+import RestoreSheetsDialog from './RestoreSheetsDialog.vue'
+import RestoreTypedDialog from './RestoreTypedDialog.vue'
+import RestoreWordsDialog from './RestoreWordsDialog.vue'
 import IdentitySetup from './IdentitySetup.vue'
 import RecoveryKitDialog from './RecoveryKitDialog.vue'
 import RecoveryKitRow from './RecoveryKitRow.vue'
@@ -26,7 +28,7 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 /* --------------------------------- State ---------------------------------- */
 const kit = useRecoveryKit(() => props.identity)
 const section = useIdentitySection(() => props.identity, kit.actions.hold)
-const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
+const { identity: current, step, setup, call, confirmation, restoring, typing, scanning, deletion, actions } = section
 const { stage, recoveryWords } = setup
 const isJoining = ref(false)
 </script>
@@ -64,9 +66,13 @@ const isJoining = ref(false)
 
   <IslandCard v-else :title="words.identitySection">
     <template #aside>
-      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore">
+      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restore-words')">
         <KeyRound :size="14" aria-hidden="true" />
-        {{ words.identityRestore }}
+        {{ words.identityRestoreWords }}
+      </CardAction>
+      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restore-sheets')">
+        <ScanLine :size="14" aria-hidden="true" />
+        {{ words.identityRestoreSheets }}
       </CardAction>
       <CardAction :is-disabled="call.isBusy.value" @click="isJoining = true">
         <QrCode :size="14" aria-hidden="true" />
@@ -113,14 +119,37 @@ const isJoining = ref(false)
       @cancel="actions.cancel"
     />
 
-    <IdentityRestoreDialog
-      v-if="step === 'restore'"
+    <RestoreWordsDialog
+      v-if="step === 'restore-words'"
       :text="restoring.text.value"
       :reading="restoring.reading.value"
       :problem="call.problem.value"
       :is-busy="call.isBusy.value"
       @change="restoring.setText"
       @restore="actions.restore"
+      @cancel="actions.cancel"
+    />
+
+    <RestoreSheetsDialog
+      v-if="step === 'restore-sheets'"
+      :slots="scanning.slots.value"
+      :note="scanning.note.value"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      @scanned="scanning.scan"
+      @unavailable="actions.startRestore('restore-typed')"
+      @retry="scanning.retry"
+      @cancel="actions.cancel"
+    />
+
+    <RestoreTypedDialog
+      v-if="step === 'restore-typed'"
+      :sheets="typing.sheets.value"
+      :reading="typing.reading.value"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      @change="typing.setSheet"
+      @restore="actions.restoreTyped"
       @cancel="actions.cancel"
     />
   </IslandCard>

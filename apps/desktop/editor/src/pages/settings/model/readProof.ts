@@ -72,3 +72,15 @@ export function readProof(text: string): ProofReading {
   }
   return readSheets(lines)
 }
+
+/** What a text proves as the recovery words alone: the 12 words and no sheet. */
+export function readWordsOnly(text: string): ProofReading {
+  const entered = splitWords(text)
+  return entered.length === 0 ? getReading('') : readPhrase(entered)
+}
+
+/** What two typed sheets prove: the words of one sheet in each field. */
+export function readTypedSheets(first: string, second: string): ProofReading {
+  const lines = [first, second].map(splitWords).filter((line) => line.length > 0)
+  return lines.length === 0 ? getReading('') : readSheets(lines)
+}

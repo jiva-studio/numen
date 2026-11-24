@@ -1,6 +1,6 @@
 /**
  * The state of the identity section: showing the recovery words of a new identity and checking
- * three of them in two steps, restoring from the twelve words or two sheets of a kit in a dialog,
+ * three of them in two steps, restoring from the twelve words, from two scanned sheets or from two typed sheets in a dialog of its own,
  * and deleting the identity from this device. The words live in this state only while a setup is
  * open; leaving the page or cancelling drops them, and a kept identity hands them to `onKept` once.
  */
@@ -12,11 +12,14 @@ import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
 import { createIdentityRestore } from './createIdentityRestore'
 import { useIdentityCall } from './useIdentityCall'
+import { readWordsOnly } from './readProof'
 import { useRecoveryProof } from './useRecoveryProof'
+import { useSheetScan } from './useSheetScan'
+import { useTypedSheets } from './useTypedSheets'
 import { useWordsConfirmation } from './useWordsConfirmation'
 import { useSetupStage } from './useSetupStage'
 
-type Step = 'idle' | 'setup' | 'restore'
+type Step = 'idle' | 'setup' | 'restore-words' | 'restore-sheets' | 'restore-typed'
 
 export function useIdentitySection(
   getIdentity: () => InstallationIdentity,
@@ -28,9 +31,13 @@ export function useIdentitySection(
   const { problem, isBusy, run } = call
   const setup = useSetupStage(problem)
   const confirmation = useWordsConfirmation(setup.recoveryWords)
-  const restoring = useRecoveryProof(problem)
+  const restoring = useRecoveryProof(problem, readWordsOnly)
+  const typing = useTypedSheets(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
   const identityRestore = createIdentityRestore(getIdentity, run, restoring.read)
+  const scanning = useSheetScan(problem, async (proof) => {
+    if (await identityRestore.restore(proof)) reset()
+  })
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {
@@ -48,6 +55,8 @@ export function useIdentitySection(
     setup.clear()
     confirmation.clear()
     restoring.clear()
+    typing.clear()
+    scanning.clear()
     problem.value = ''
     deletion.cancelDelete()
   }
@@ -63,9 +72,13 @@ export function useIdentitySection(
     step.value = 'setup'
   }
 
-  const startRestore = (): void => {
+  const startRestore = (kind: 'restore-words' | 'restore-sheets' | 'restore-typed'): void => {
     reset()
-    step.value = 'restore'
+    step.value = kind
+  }
+
+  const restoreTyped = async (): Promise<void> => {
+    if (!isBusy.value && (await identityRestore.restore(typing.read()))) reset()
   }
 
   const setEntered = (position: number, value: string): void => {
@@ -97,6 +110,8 @@ export function useIdentitySection(
     call,
     confirmation,
     restoring,
+    typing,
+    scanning,
     deletion,
     actions: {
       startSetup,
@@ -105,6 +120,7 @@ export function useIdentitySection(
       setEntered,
       keep,
       restore,
+      restoreTyped,
     },
   }
 }
