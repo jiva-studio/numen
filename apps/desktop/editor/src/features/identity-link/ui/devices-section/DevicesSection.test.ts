@@ -68,7 +68,7 @@ describe('the devices section', () => {
     await click(findMenuItem(/^Remove$/))
     expect(
       findText(
-        'Phone will lose access. The files on the device stay.',
+        `Phone (${OTHER.fingerprint}) will lose access. The files on the device stay.`,
       ),
     ).not.toBeNull()
     expect(revokeDevice).not.toHaveBeenCalled()
@@ -127,5 +127,29 @@ describe('the devices section', () => {
     const section = await mountSection([THIS])
     expect(section.find('[role="dialog"]').exists()).toBe(false)
     expect(section.text()).not.toContain('Link a new device')
+  })
+})
+
+describe('devices with the same name', () => {
+  it('removes the one that was chosen and keeps the other with its own fingerprint', async () => {
+    const twin = { ...OTHER, fingerprint: 'aaaa bbbb cccc dddd eeee ffff 0000 1111' }
+    let listed: readonly DeviceInfo[] = [THIS, OTHER, twin]
+    const revokeDevice = vi.fn((fingerprint: string) => {
+      listed = listed.filter((device) => device.fingerprint !== fingerprint)
+      return Promise.resolve({ ok: true as const, value: undefined })
+    })
+    const section = await mountSection([THIS, OTHER, twin], {
+      revokeDevice,
+      listDevices: () => Promise.resolve({ ok: true, value: listed }),
+    })
+    await click(section.findAll('li')[2]?.get('button').element as Element)
+    await click(findMenuItem(/^Remove$/))
+    expect(findText(twin.fingerprint)).not.toBeNull()
+    await click(findButton(/^Remove$/))
+    await flushPromises()
+    expect(revokeDevice).toHaveBeenCalledWith(twin.fingerprint)
+    const rows = section.findAll('li')
+    expect(rows).toHaveLength(2)
+    expect(rows[1]?.text()).toContain(OTHER.fingerprint)
   })
 })

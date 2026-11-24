@@ -8,8 +8,8 @@ export const WORDS = {
   deviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
   deviceRevoke: 'Remove',
   deviceRevokeTitle: 'Remove this device?',
-  deviceRevokeWarning: (name: string) =>
-    `${name} will lose access. The files on the device stay.`,
+  deviceRevokeWarning: (name: string, fingerprint: string) =>
+    `${name} (${fingerprint}) will lose access. The files on the device stay.`,
   deviceRevokeCancel: 'Cancel',
   linkNoCamera: 'No camera found. Paste the link from the other device.',
   linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,

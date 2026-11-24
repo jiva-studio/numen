@@ -53,7 +53,7 @@ function onClose(): void {
     <ConfirmDialog
       v-if="asked !== undefined"
       tone="danger"
-      :text="words.deviceRevokeWarning(asked.name)"
+      :text="words.deviceRevokeWarning(asked.name, asked.fingerprint)"
       :label="words.deviceRevokeTitle"
       :confirm-text="words.deviceRevoke"
       :cancel-text="words.deviceRevokeCancel"
