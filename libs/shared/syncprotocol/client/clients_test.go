@@ -68,6 +68,20 @@ func (s *stubServer) GetCatalog(_ context.Context, req *connect.Request[syncv1.G
 	return connect.NewResponse(response), nil
 }
 
+func (s *stubServer) GetVaultUsage(_ context.Context, req *connect.Request[syncv1.GetVaultUsageRequest]) (*connect.Response[syncv1.GetVaultUsageResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&syncv1.GetVaultUsageResponse{Vaults: []*syncv1.VaultUsage{{VaultId: bytes.Repeat([]byte{1}, 16), UsedBytes: 4096}}}), nil
+}
+
+func (s *stubServer) DeleteVault(_ context.Context, req *connect.Request[syncv1.DeleteVaultRequest]) (*connect.Response[syncv1.DeleteVaultResponse], error) {
+	if err := s.record(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&syncv1.DeleteVaultResponse{Deleted: true, FreedBytes: uint64(len(req.Msg.GetVaultId()))}), nil
+}
+
 func (s *stubServer) CommitRevisions(_ context.Context, req *connect.Request[syncv1.CommitRevisionsRequest]) (*connect.Response[syncv1.CommitRevisionsResponse], error) {
 	if err := s.record(req.Header()); err != nil {
 		return nil, err
@@ -167,6 +181,8 @@ func (c stubCalls) callAll(ctx context.Context) map[string]error {
 	errs := map[string]error{}
 	_, errs["AppendCatalogEntry"] = c.catalog.AppendCatalogEntry(ctx, newCatalogEntry())
 	_, errs["GetCatalog"] = c.catalog.GetCatalog(ctx, 4)
+	_, errs["GetVaultUsage"] = c.catalog.GetVaultUsage(ctx)
+	_, errs["DeleteVault"] = c.catalog.DeleteVault(ctx, vault)
 	_, errs["CommitRevisions"] = c.revision.CommitRevisions(ctx, vault, []*syncv1.Revision{newRevision()})
 	_, errs["GetChanges"] = c.revision.GetChanges(ctx, vault, 0, 0)
 	_, errs["ReserveBlobs"] = c.blob.ReserveBlobs(ctx, vault, []uint64{4096})
@@ -360,6 +376,14 @@ func TestTheWrappersReturnWhatTheServerAnswered(t *testing.T) {
 	appended, err := calls.catalog.AppendCatalogEntry(t.Context(), newCatalogEntry())
 	if err != nil || !appended.GetCommitted() || appended.GetHead().GetVersion() != 3 {
 		t.Errorf("AppendCatalogEntry() = %v, %v, want a committed answer with the head", appended, err)
+	}
+	usage, err := calls.catalog.GetVaultUsage(t.Context())
+	if err != nil || len(usage) != 1 || usage[0].GetUsedBytes() != 4096 {
+		t.Errorf("GetVaultUsage() = %v, %v, want one vault of 4096 bytes", usage, err)
+	}
+	removed, err := calls.catalog.DeleteVault(t.Context(), vault)
+	if err != nil || !removed.GetDeleted() || removed.GetFreedBytes() != 16 {
+		t.Errorf("DeleteVault() = %v, %v, want a deleted vault that freed 16 bytes", removed, err)
 	}
 	committed, err := calls.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{newRevision()})
 	if err != nil || !committed.GetCommitted() || committed.GetSeq() != 4 {

@@ -58,6 +58,25 @@ func (c *CatalogClient) GetCatalog(ctx context.Context, sinceVersion uint64) ([]
 	}
 }
 
+// GetVaultUsage returns the stored bytes of every vault of the account, also of a vault no device syncs any more.
+func (c *CatalogClient) GetVaultUsage(ctx context.Context) ([]*syncv1.VaultUsage, error) {
+	response, err := c.rpc.GetVaultUsage(ctx, connect.NewRequest(&syncv1.GetVaultUsageRequest{}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg.GetVaults(), nil
+}
+
+// DeleteVault removes the vault from the server. Deleted is false for a vault the server does not store for the
+// account, so a repeat succeeds. A reserve or a commit that races with it is ErrNoVault.
+func (c *CatalogClient) DeleteVault(ctx context.Context, vaultID []byte) (*syncv1.DeleteVaultResponse, error) {
+	response, err := c.rpc.DeleteVault(ctx, connect.NewRequest(&syncv1.DeleteVaultRequest{VaultId: vaultID}))
+	if err != nil {
+		return nil, syncprotocol.ReadCallError(err)
+	}
+	return response.Msg, nil
+}
+
 // RevisionClient calls the revision service of one server with the bearer of the session.
 type RevisionClient struct {
 	rpc syncv1connect.RevisionServiceClient
