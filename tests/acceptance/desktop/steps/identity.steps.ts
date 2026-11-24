@@ -75,7 +75,7 @@ When('the person downloads the recovery kit again with the recovery words', asyn
 })
 
 When(
-  'the person downloads the recovery kit again with the words of another account',
+  'the person downloads the recovery kit of another account',
   async ({ person }) => {
     await person.identity.downloadWithOtherWords()
   },

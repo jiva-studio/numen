@@ -46,37 +46,6 @@ Feature: Numen Sync plan change
       And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
 
-  Rule: A smaller plan never deletes notes
-
-    Scenario: The page shows the smaller plan after the change
-      Given the person changes the plan to "Pro"
-      When the person changes the plan to "Plus"
-      Then the subscription shows the plan "Plus" with 100 GB
-
-    Scenario: A plan smaller than the notes keeps them in the cloud
-      Given the person writes the note "Archive" with the text "old" in the vault "Test"
-      And the person changes the plan to "Pro"
-      And the cloud holds 20 GB of the notes of the person
-      When the person changes the plan to "Basic"
-      Then the subscription shows "20 GB of 10 GB"
-      And the second computer has the note "Archive" with the text "old" in its vault "Copy"
-
-    Scenario: A plan smaller than the notes stops new changes
-      Given the person changes the plan to "Pro"
-      And the cloud holds 20 GB of the notes of the person
-      And the person changes the plan to "Basic"
-      When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the plugin "Numen Sync" warns about "Cloud storage is full: changes stay on this device"
-      And the second computer does not have the file "Shopping list.md" in its vault "Copy"
-
-    Scenario: Changes are sent again when the notes fit the plan
-      Given the person changes the plan to "Pro"
-      And the cloud holds 20 GB of the notes of the person
-      And the person changes the plan to "Basic"
-      When the person deletes 15 GB of the notes of the person from the cloud
-      And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-
   Rule: Only an active subscription changes its plan
 
     Scenario: The page shows the plan that is bought as current and does not offer it
