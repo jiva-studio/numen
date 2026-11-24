@@ -4,9 +4,8 @@
  * one checked, tagged "Current plan" and not to be chosen. Choosing another plan emits it; nothing changes here.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Check, ChevronDown } from '@lucide/vue'
-import { Menu, measureRect, type Position } from '@numen/ui'
-import HeaderAction from './HeaderAction.vue'
+import { ArrowLeftRight, Check } from '@lucide/vue'
+import { CardAction, Menu, measureRect, type Position } from '@numen/ui'
 import { getPlanItems } from './planItems'
 import type { PlanOffer } from '../lib/subscriptionView'
 import { WORDS as words } from '../words'
@@ -23,7 +22,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const trigger = useTemplateRef<InstanceType<typeof HeaderAction>>('trigger')
+const trigger = useTemplateRef<InstanceType<typeof CardAction>>('trigger')
 const getTrigger = (): HTMLElement | null => {
   const element: unknown = trigger.value?.$el
   return element instanceof HTMLElement ? element : null
@@ -56,15 +55,16 @@ function onChoose(id: string): void {
 </script>
 
 <template>
-  <HeaderAction
+  <CardAction
     ref="trigger"
+    is-primary
+    :label="words.changePlan"
     aria-haspopup="menu"
     :aria-expanded="anchor !== null"
     @click="onToggle"
   >
-    {{ words.changePlan }}
-    <ChevronDown :size="14" aria-hidden="true" />
-  </HeaderAction>
+    <ArrowLeftRight :size="14" aria-hidden="true" />
+  </CardAction>
   <Menu
     v-if="anchor"
     :items="items"

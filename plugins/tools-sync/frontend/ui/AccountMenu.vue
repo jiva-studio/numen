@@ -5,9 +5,8 @@
  */
 import { computed, defineComponent, h, markRaw, ref, useTemplateRef } from 'vue'
 import { Ellipsis } from '@lucide/vue'
-import { Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
+import { CardAction, Menu, measureRect, type MenuItem, type Position } from '@numen/ui'
 import { WORDS as words } from '../words'
-import HeaderAction from './HeaderAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const emit = defineEmits<{
@@ -16,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const trigger = useTemplateRef<InstanceType<typeof HeaderAction>>('trigger')
+const trigger = useTemplateRef<InstanceType<typeof CardAction>>('trigger')
 const getTrigger = (): HTMLElement | null => {
   const element: unknown = trigger.value?.$el
   return element instanceof HTMLElement ? element : null
@@ -59,15 +58,17 @@ function onChoose(id: string): void {
 </script>
 
 <template>
-  <HeaderAction
+  <CardAction
     ref="trigger"
-    :aria-label="words.moreActions"
+    is-primary
+    is-icon-only
+    :label="words.moreActions"
     aria-haspopup="menu"
     :aria-expanded="anchor !== null"
     @click="onToggle"
   >
     <Ellipsis :size="14" aria-hidden="true" />
-  </HeaderAction>
+  </CardAction>
   <Menu
     v-if="anchor"
     :items="items"

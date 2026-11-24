@@ -11,6 +11,8 @@ defineProps<{
   isDisabled?: boolean
   /** Hidden when the card is too narrow even for icons: the overflow menu carries it. */
   isSecondary?: boolean
+  /** Shows the icon at every width. */
+  isIconOnly?: boolean
   /** Shown only where the secondary actions are hidden. */
   isMore?: boolean
 }>()
@@ -30,7 +32,7 @@ defineProps<{
     :title="label"
   >
     <slot />
-    <span v-if="!isMore" class="card-action__label" aria-hidden="true">{{ label }}</span>
+    <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">{{ label }}</span>
   </button>
 </template>
 

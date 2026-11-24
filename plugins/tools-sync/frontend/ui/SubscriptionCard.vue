@@ -8,15 +8,14 @@
  * stop waiting.
  */
 import { computed, onMounted, ref } from 'vue'
-import { ChevronRight } from '@lucide/vue'
-import { Button, IslandCard, Spinner } from '@numen/ui'
+import { ChevronRight, RotateCcw, Settings, WalletCards } from '@lucide/vue'
+import { Button, CardAction, IslandCard, Spinner } from '@numen/ui'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 import AccountMenu from './AccountMenu.vue'
 import ChangePlanMenu from './ChangePlanMenu.vue'
 import DeleteCloudDataDialog from './DeleteCloudDataDialog.vue'
-import HeaderAction from './HeaderAction.vue'
 import SwitchPlanDialog from './SwitchPlanDialog.vue'
 import type { SubscriptionCardProps } from './SubscriptionCard.types'
 
@@ -131,26 +130,33 @@ function onFailure(failure: unknown): void {
       >
         {{ view.badge }}
       </span>
-      <HeaderAction
+      <CardAction
         v-if="isDeleting"
+        is-primary
+        :label="words.restoreAccount"
         :is-disabled="accountData?.state.isBusy.value"
         @click="onRestore"
       >
-        {{ words.restoreAccount }}
-      </HeaderAction>
+        <RotateCcw :size="14" aria-hidden="true" />
+      </CardAction>
       <template v-else>
-        <HeaderAction v-if="hasSettingsAction" @click="props.openSettings?.()">
-          {{ words.openSettings }}
-        </HeaderAction>
+        <CardAction
+          v-if="hasSettingsAction"
+          is-primary
+          :label="words.openSettings"
+          @click="props.openSettings?.()"
+        >
+          <Settings :size="14" aria-hidden="true" />
+        </CardAction>
         <ChangePlanMenu
           v-if="changeOffers.length > 0"
           :offers="changeOffers"
           :current-id="currentOffer?.id ?? ''"
           @choose="onChoosePlan"
         />
-        <HeaderAction v-if="canManage" @click="onManage">
-          {{ words.manageSubscription }}
-        </HeaderAction>
+        <CardAction v-if="canManage" is-primary :label="words.manageSubscription" @click="onManage">
+          <WalletCards :size="14" aria-hidden="true" />
+        </CardAction>
         <AccountMenu v-if="canChangeAccount" @export="onExport" @delete="onAskDelete" />
       </template>
     </template>
