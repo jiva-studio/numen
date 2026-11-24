@@ -41,6 +41,7 @@ const createClient = (setup: Setup): ShareInvitationClient => ({
     }),
   approveShareRequest: () => Promise.resolve(),
   declineShareRequest: () => Promise.resolve(),
+  revokeShareInvitation: () => Promise.resolve(),
 })
 
 const createState = (setup: Setup) => {
@@ -81,6 +82,7 @@ export const LinkShown: Story = {
     )
     await expect(canvas.getByText('Valid for 24 hours, works once.')).toBeVisible()
     await expect(canvas.getByText('Waiting for the person to open the link')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Revoke the link' })).toBeVisible()
   },
 }
 

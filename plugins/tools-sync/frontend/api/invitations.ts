@@ -36,4 +36,5 @@ export interface ShareInvitationClient {
   getInvitationStatus(target: FolderTarget): Promise<InvitationStatus>
   approveShareRequest(requestId: string): Promise<void>
   declineShareRequest(requestId: string): Promise<void>
+  revokeShareInvitation(target: FolderTarget): Promise<void>
 }

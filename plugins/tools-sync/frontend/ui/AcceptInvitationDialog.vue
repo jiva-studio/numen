@@ -50,7 +50,7 @@ function onAccept(): void {
       />
     </label>
     <p v-if="view.shareName !== ''" class="sync-dialog__text" role="status">
-      {{ view.shareName }}: {{ words.fromPerson(view.ownerFingerprint) }}
+      {{ words.willRead(view.shareName) }}. {{ words.fromPerson(view.ownerFingerprint) }}
     </p>
     <p v-if="problem !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
       {{ problem }}

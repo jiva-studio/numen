@@ -27,6 +27,10 @@ function onCopy(): void {
   props.state.copyLink().catch(props.state.fail)
 }
 
+function onRevoke(): void {
+  props.state.revoke().catch(props.state.fail)
+}
+
 function onAllow(): void {
   props.state.approve().catch(props.state.fail)
 }
@@ -98,6 +102,12 @@ function onDecline(): void {
           {{ words.decline }}
         </Button>
         <Button :disabled="state.isBusy" @click="onAllow">{{ words.allow }}</Button>
+      </template>
+      <template v-else-if="isWaiting">
+        <Button variant="ghost" :disabled="state.isBusy" @click="onRevoke">
+          {{ words.revoke }}
+        </Button>
+        <Button @click="state.close">{{ words.done }}</Button>
       </template>
       <Button v-else @click="state.close">{{ words.done }}</Button>
     </template>

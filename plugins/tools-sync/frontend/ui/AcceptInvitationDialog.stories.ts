@@ -67,7 +67,7 @@ export const Pasted: Story = {
   args: { view: createView({}) },
   play: async ({ canvasElement }) => {
     const canvas = await paste(canvasElement)
-    await expect(await canvas.findByText(/Recipes: From/)).toBeVisible()
+    await expect(await canvas.findByText(/Recipes: read only. From/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Accept' })).toBeEnabled()
   },
 }

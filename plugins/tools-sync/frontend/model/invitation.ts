@@ -98,6 +98,11 @@ export function createInvitationView(options: InvitationViewOptions) {
       answer(async () => {
         if (request.value !== undefined) await client.declineShareRequest(request.value.requestId)
       }),
+    revoke: (): Promise<void> =>
+      answer(async () => {
+        await client.revokeShareInvitation(target)
+        close()
+      }),
     copyLink: (): Promise<void> => globalThis.navigator.clipboard.writeText(link.value),
     stop,
     close,
