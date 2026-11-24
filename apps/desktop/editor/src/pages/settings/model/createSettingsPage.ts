@@ -262,10 +262,9 @@ function createInstallationIdentity(identity: IdentityStore) {
     load: () => identity.load(),
     generateWords: () => identity.generateWords(),
     create: (words: readonly string[]) => identity.create(words),
-    restore: (words: readonly string[]) => identity.restore(words),
+    restore: (proof: KitProof) => identity.restore(proof),
     delete: () => identity.delete(),
     saveKit: (proof: KitProof) => identity.saveKit(proof),
-    restoreFromKit: (sheets: readonly (readonly string[])[]) => identity.restoreFromKit(sheets),
   }
 }
 

@@ -1,4 +1,5 @@
-package service
+// Package subscriptionwire answers the methods of the settings view about the subscription of the account.
+package subscriptionwire
 
 import (
 	"context"
@@ -8,21 +9,35 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/subscription"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
+
+// Subscription answers the methods of the settings view about the subscription of the account.
+type Subscription struct {
+	identity      ports.Identity
+	subscriptions ports.Subscriptions
+	shop          ports.Shop
+}
+
+// New returns the methods over the dependencies of a pass.
+func New(deps syncvault.Deps) *Subscription {
+	return &Subscription{identity: deps.Identity, subscriptions: deps.Subscriptions, shop: deps.Shop}
+}
 
 // GetSubscription returns the subscription of the account. A device with no identity gets an empty answer and
 // the server is not asked.
-func (b *Backend) GetSubscription(ctx context.Context, _ api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
+func (s *Subscription) GetSubscription(ctx context.Context, _ api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
 	none := getNoSubscriptionResponse()
-	_, err := b.deps.Identity.GetPublicIdentity(ctx)
+	_, err := s.identity.GetPublicIdentity(ctx)
 	if errors.Is(err, sessiondomain.ErrNoIdentity) {
 		return none, nil
 	}
 	if err != nil {
 		return none, err
 	}
-	state, err := usecase.NewReadSubscription(usecase.Deps{Subscriptions: b.deps.Subscriptions}).Execute(ctx)
+	state, err := usecase.NewReadSubscription(usecase.Deps{Subscriptions: s.subscriptions}).Execute(ctx)
 	if err != nil {
 		return none, err
 	}
@@ -43,11 +58,11 @@ func getSubscriptionResponse(state subscription.State) api.GetSubscriptionRespon
 
 // ListPlans returns the plans the server sells, ascending by quota. A device with no identity gets ErrNoIdentity
 // and the server is not asked.
-func (b *Backend) ListPlans(ctx context.Context, _ api.ListPlansRequest) (api.ListPlansResponse, error) {
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+func (s *Subscription) ListPlans(ctx context.Context, _ api.ListPlansRequest) (api.ListPlansResponse, error) {
+	if _, err := s.identity.GetPublicIdentity(ctx); err != nil {
 		return api.ListPlansResponse{Plans: nil}, err
 	}
-	plans, err := usecase.NewListPlans(usecase.Deps{Subscriptions: b.deps.Subscriptions}).Execute(ctx)
+	plans, err := usecase.NewListPlans(usecase.Deps{Subscriptions: s.subscriptions}).Execute(ctx)
 	if err != nil {
 		return api.ListPlansResponse{Plans: nil}, err
 	}
@@ -60,22 +75,22 @@ func (b *Backend) ListPlans(ctx context.Context, _ api.ListPlansRequest) (api.Li
 
 // CreateCheckout returns the address of a payment page for the plan. A device with no identity gets ErrNoIdentity
 // and the server is not asked.
-func (b *Backend) CreateCheckout(ctx context.Context, request api.CreateCheckoutRequest) (api.CreateCheckoutResponse, error) {
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+func (s *Subscription) CreateCheckout(ctx context.Context, request api.CreateCheckoutRequest) (api.CreateCheckoutResponse, error) {
+	if _, err := s.identity.GetPublicIdentity(ctx); err != nil {
 		return api.CreateCheckoutResponse{CheckoutURL: ""}, err
 	}
-	address, err := usecase.NewCreateCheckout(usecase.Deps{Subscriptions: b.deps.Subscriptions}).Execute(ctx, request.Plan)
+	address, err := usecase.NewCreateCheckout(usecase.Deps{Subscriptions: s.subscriptions}).Execute(ctx, request.Plan)
 	return api.CreateCheckoutResponse{CheckoutURL: address}, err
 }
 
 // ChangePlan moves the active subscription to the plan and returns the subscription after the change. A device
 // with no identity gets ErrNoIdentity and the server is not asked.
-func (b *Backend) ChangePlan(ctx context.Context, request api.ChangePlanRequest) (api.ChangePlanResponse, error) {
+func (s *Subscription) ChangePlan(ctx context.Context, request api.ChangePlanRequest) (api.ChangePlanResponse, error) {
 	none := api.ChangePlanResponse{Subscription: getNoSubscriptionResponse()}
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+	if _, err := s.identity.GetPublicIdentity(ctx); err != nil {
 		return none, err
 	}
-	state, err := usecase.NewChangePlan(usecase.Deps{Subscriptions: b.deps.Subscriptions}).Execute(ctx, request.Plan)
+	state, err := usecase.NewChangePlan(usecase.Deps{Subscriptions: s.subscriptions}).Execute(ctx, request.Plan)
 	if err != nil {
 		return none, err
 	}
@@ -106,10 +121,10 @@ func formatTime(at time.Time) string {
 
 // CreatePortalSession returns the address of the page where the person manages the subscription. A device with no
 // identity gets ErrNoIdentity and the server is not asked.
-func (b *Backend) CreatePortalSession(ctx context.Context, _ api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
-	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+func (s *Subscription) CreatePortalSession(ctx context.Context, _ api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
+	if _, err := s.identity.GetPublicIdentity(ctx); err != nil {
 		return api.CreatePortalSessionResponse{PortalURL: ""}, err
 	}
-	address, err := usecase.NewCreatePortalSession(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
+	address, err := usecase.NewCreatePortalSession(usecase.ShopDeps{Shop: s.shop}).Execute(ctx)
 	return api.CreatePortalSessionResponse{PortalURL: address}, err
 }

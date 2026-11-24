@@ -2,43 +2,28 @@
 // Stryker disable StringLiteral: interface copy
 import type { IdentityErrorCode } from './lib/types'
 
+const FAILURE_TEXTS: Readonly<Partial<Record<IdentityErrorCode, string>>> = {
+  invalidWords: 'Some words are not valid.',
+  identityExists: 'This device already has an identity.',
+  keyStoreFailed: 'The identity could not be saved. Check the system keychain.',
+  notEnoughSheets: 'One more sheet is needed.',
+  invalidSheets: 'Some sheets are not valid.',
+  noIdentity: 'This device has no identity to make a kit for.',
+  lastDevice: 'The last device of the account cannot be revoked.',
+  revokeRaced: 'A device was added while you revoked. Check the list.',
+  notAllowedThisDevice: 'This device cannot revoke itself.',
+  linkTextInvalid: 'This text is not the link of a QR code.',
+  linkActive: 'Another link is in progress.',
+  codeInvalid: 'The code has six digits.',
+}
+
 export const IDENTITY_WORDS = {
   loadFailed: 'The identity could not be read.',
   describeFailure: (
     failure: { readonly error: IdentityErrorCode; readonly message: string },
     proves: 'words' | 'sheets' = 'sheets',
   ): string => {
-    switch (failure.error) {
-      case 'invalidWords':
-        return 'Some words are not valid.'
-      case 'identityExists':
-        return 'This device already has an identity.'
-      case 'keyStoreFailed':
-        return 'The identity could not be saved. Check the system keychain.'
-      case 'notEnoughSheets':
-        return 'One more sheet is needed.'
-      case 'invalidSheets':
-        return 'Some sheets are not valid.'
-      case 'otherAccount':
-        return proves === 'words'
-          ? 'The words belong to another account.'
-          : 'The sheets belong to another account.'
-      case 'noIdentity':
-        return 'This device has no identity to make a kit for.'
-      case 'lastDevice':
-        return 'The last device of the account cannot be revoked.'
-      case 'revokeRaced':
-        return 'A device was added while you revoked. Check the list.'
-      case 'notAllowedThisDevice':
-        return 'This device cannot revoke itself.'
-      case 'linkTextInvalid':
-        return 'This text is not the link of a QR code.'
-      case 'linkActive':
-        return 'Another link is in progress.'
-      case 'codeInvalid':
-        return 'The code has six digits.'
-      default:
-        return failure.message
-    }
+    if (failure.error === 'otherAccount') return `The ${proves} belong to another account.`
+    return FAILURE_TEXTS[failure.error] ?? failure.message
   },
 }

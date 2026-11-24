@@ -31,7 +31,7 @@ const createClient = (setup: Setup = {}) => ({
       vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
     }),
   ),
-  previewConnect: vi.fn<VaultsClient['previewConnect']>(() =>
+  getConnectPreview: vi.fn<VaultsClient['getConnectPreview']>(() =>
     Promise.resolve({ differCount: setup.differCount ?? 0 }),
   ),
   resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),

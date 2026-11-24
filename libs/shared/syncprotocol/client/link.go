@@ -61,9 +61,9 @@ func (c *LinkClient) CreateChannel(ctx context.Context) (LinkChannel, error) {
 	return LinkChannel{ID: response.Msg.GetChannelId(), ExpiresAt: time.Unix(response.Msg.GetExpiresAt(), 0)}, nil
 }
 
-// PostMessage stores a message for the side and returns its number. A channel that is not there is ErrChannelGone.
-func (c *LinkClient) PostMessage(ctx context.Context, channelID []byte, to LinkSide, body []byte) (uint32, error) {
-	response, err := c.rpc.PostMessage(ctx, connect.NewRequest(&syncv1.PostMessageRequest{
+// SendMessage stores a message for the side and returns its number. A channel that is not there is ErrChannelGone.
+func (c *LinkClient) SendMessage(ctx context.Context, channelID []byte, to LinkSide, body []byte) (uint32, error) {
+	response, err := c.rpc.SendMessage(ctx, connect.NewRequest(&syncv1.SendMessageRequest{
 		ChannelId: channelID, To: writeLinkSide(to), Body: body,
 	}))
 	if err != nil {

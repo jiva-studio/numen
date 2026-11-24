@@ -45,7 +45,6 @@ func getSampleKit() identitydomain.Kit {
 	}
 }
 
-// readPages returns the strings each page shows, in the order they are drawn.
 func readPages(t *testing.T, content []byte) [][]string {
 	t.Helper()
 	var pages [][]string

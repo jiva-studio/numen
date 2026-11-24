@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/subscriptionwire"
 )
 
 const (
@@ -28,12 +29,13 @@ const (
 
 // Backend answers the methods of the settings view.
 type Backend struct {
-	deps     syncvault.Deps
-	catalog  catalog.Deps
-	pending  ports.PausedStore
-	resolve  *deletions.ResolveDeletions
-	shares   *sharewire.Shares
-	received *sharewire.Received
+	deps    syncvault.Deps
+	catalog catalog.Deps
+	pending ports.PausedStore
+	resolve *deletions.ResolveDeletions
+	*sharewire.Shares
+	*sharewire.Received
+	*subscriptionwire.Subscription
 }
 
 // NewBackend returns the backend over the dependencies of a pass.
@@ -46,8 +48,9 @@ func NewBackend(deps syncvault.Deps) *Backend {
 			Random:   deps.Random,
 		},
 		pending: nil, resolve: nil,
-		shares:   sharewire.New(deps),
-		received: sharewire.NewReceived(deps),
+		Shares:       sharewire.New(deps),
+		Received:     sharewire.NewReceived(deps),
+		Subscription: subscriptionwire.New(deps),
 	}
 }
 

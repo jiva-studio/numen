@@ -93,15 +93,12 @@ func isPublicAddress(ip netip.Addr, isLocal bool) bool {
 
 func refuseRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 
-// withoutRedirects returns a copy of httpClient that follows no redirect: a 3xx answer is a failed transfer.
 func withoutRedirects(httpClient *http.Client) *http.Client {
 	copied := *httpClient
 	copied.CheckRedirect = refuseRedirect
 	return &copied
 }
 
-// redactURL returns err without the address a *url.Error carries: the signature of a presigned address
-// is in its query.
 func redactURL(err error) error {
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) {

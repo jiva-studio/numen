@@ -204,7 +204,7 @@ func (s *Server) getBody(id string, row *blobRow) []byte {
 	if row.multipart == nil {
 		return slices.Clone(row.body)
 	}
-	body, _ := s.store.read(getObjectName(id))
+	body, _ := s.store.Read(getObjectName(id))
 	return body
 }
 

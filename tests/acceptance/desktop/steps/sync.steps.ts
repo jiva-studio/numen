@@ -117,7 +117,7 @@ Then('{computer} does not have the file {string} in {owned}', async ({ person },
 })
 
 When('{computer} is the first to reach the sync server', ({ person }, computer: ComputerName) => {
-  person.computers.leadToServer(computer)
+  person.computers.connectToServer(computer)
 })
 
 Then(
@@ -148,23 +148,23 @@ Then('the subscription is active{on}', async ({ person }, computer: ComputerName
 })
 
 When('the person buys the subscription', async ({ person }) => {
-  await person.identity.startPurchase()
+  await person.subscription.startPurchase()
 })
 
 When('the person opens the payment page without paying', async ({ person }) => {
-  await person.identity.openPaymentWithoutPaying()
+  await person.subscription.openPaymentWithoutPaying()
 })
 
 Then('the page offers to buy the subscription', async ({ person }) => {
-  await person.identity.expectOffer(true)
+  await person.subscription.expectOffer(true)
 })
 
 Then('the page does not offer to buy the subscription', async ({ person }) => {
-  await person.identity.expectOffer(false)
+  await person.subscription.expectOffer(false)
 })
 
 Then('the page says {string}', async ({ person }, text: string) => {
-  await person.identity.expectPageSays(text)
+  await person.subscription.expectPageSays(text)
 })
 
 Given('a sync server that sells the plans {plans} runs', async ({ person }, plans: PlanSpec[]) => {
@@ -172,15 +172,15 @@ Given('a sync server that sells the plans {plans} runs', async ({ person }, plan
 })
 
 When('the person buys the plan {string}', async ({ person }, name: string) => {
-  await person.identity.choosePlan(name)
+  await person.subscription.choosePlan(name)
 })
 
 Then('the page offers to buy the plan {string} with {int} GB', async ({ person }, name: string, gigabytes: number) => {
-  await person.identity.expectBuyOffer(name, gigabytes)
+  await person.subscription.expectBuyOffer(name, gigabytes)
 })
 
 Then('the page does not offer to buy a plan', async ({ person }) => {
-  await person.identity.expectNoBuyOffer()
+  await person.subscription.expectNoBuyOffer()
 })
 
 Then('the subscription shows the plan {string} with {int} GB{on}', async ({ person }, name: string, gigabytes: number, computer: ComputerName) => {
@@ -188,31 +188,31 @@ Then('the subscription shows the plan {string} with {int} GB{on}', async ({ pers
 })
 
 When('the person changes the plan to {string}', async ({ person }, name: string) => {
-  await person.identity.changePlan(name)
+  await person.subscription.changePlan(name)
 })
 
 When('the person chooses the plan {string} in Change plan', async ({ person }, name: string) => {
-  await person.identity.chooseChange(name)
+  await person.subscription.chooseChange(name)
 })
 
 When('the person confirms the switch to {string}', async ({ person }, name: string) => {
-  await person.identity.confirmChange(name)
+  await person.subscription.confirmChange(name)
 })
 
 When('the person cancels the switch', async ({ person }) => {
-  await person.identity.cancelChange()
+  await person.subscription.cancelChange()
 })
 
 Then('the page shows the plan {string} as the current plan', async ({ person }, name: string) => {
-  await person.identity.expectCurrentPlan(name)
+  await person.subscription.expectCurrentPlan(name)
 })
 
 Then('the page offers to change the plan to {string}', async ({ person }, name: string) => {
-  await person.identity.expectChangeOffer(name, true)
+  await person.subscription.expectChangeOffer(name, true)
 })
 
 Then('the page does not offer to change the plan to {string}', async ({ person }, name: string) => {
-  await person.identity.expectChangeOffer(name, false)
+  await person.subscription.expectChangeOffer(name, false)
 })
 
 Given('the cloud holds {int} GB of the notes of the person', async ({ person }, gigabytes: number) => {
@@ -232,7 +232,7 @@ When('the person cancels the trial', async ({ person }) => {
 })
 
 Then('the subscription shows the day the trial ends', async ({ person }) => {
-  await person.identity.expectTrialUntil(person.sync.getTrialEnd())
+  await person.subscription.expectTrialUntil(person.sync.getTrialEnd())
 })
 
 When('the operator makes a backup of the sync server', async ({ person }) => {
@@ -331,9 +331,8 @@ Given('the second computer goes offline for a moment', async ({ person }) => {
 })
 
 Then(
-  '{holder} has the note {string} with the text {string} within {string} seconds{inside}',
-  async ({ person }, holder: Holder, title: string, text: string, ...rest: [seconds: string, vault: string | undefined]) => {
-    const [seconds, vault] = rest
-    await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) }, vault)
+  '{holder} has the note {string} with the text {string} within {string} seconds',
+  async ({ person }, holder: Holder, title: string, text: string, seconds: string) => {
+    await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) })
   },
 )

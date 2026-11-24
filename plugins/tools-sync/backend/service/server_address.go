@@ -9,7 +9,6 @@ import (
 
 const keyInsecureServer = "tools-sync/insecure-server"
 
-// readServerAddress returns the address the session runs over, and empty for an address it must not run over.
 func (r *runtime) readServerAddress(address string) string {
 	if address == "" {
 		return ""

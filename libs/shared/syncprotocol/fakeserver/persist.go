@@ -9,58 +9,23 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/persisted"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver/internal/sharestate"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
 type snapshot struct {
-	Chains        map[string][]byte        `json:"chains"`
-	Catalogs      map[string][][]byte      `json:"catalogs"`
-	Vaults        map[string]vaultSnapshot `json:"vaults"`
-	Blobs         map[string]blobSnapshot  `json:"blobs"`
-	Used          map[string]uint64        `json:"used"`
-	Subscriptions map[string]time.Time     `json:"subscriptions"`
-	Plans         map[string]string        `json:"plans"`
-	Trials        map[string]bool          `json:"trials"`
-	PartLog       []partLogEntry           `json:"partLog"`
-	Bodies        map[string][]byte        `json:"bodies"`
-	Shares        map[string]shareSnapshot `json:"shares"`
-}
-
-type multipartSnapshot struct {
-	PartSize    uint64            `json:"partSize"`
-	PartCount   uint32            `json:"partCount"`
-	Parts       map[uint32]uint64 `json:"parts"`
-	IsCompleted bool              `json:"isCompleted"`
-	IsAborted   bool              `json:"isAborted"`
-}
-
-type shareSnapshot struct {
-	Account  string            `json:"account"`
-	Vault    string            `json:"vault"`
-	Epoch    uint32            `json:"epoch"`
-	IsClosed bool              `json:"isClosed"`
-	Log      [][]byte          `json:"log"`
-	Members  []*shareMember    `json:"members"`
-	Exits    map[string]uint64 `json:"exits"`
-}
-
-type vaultSnapshot struct {
-	Account   string            `json:"account"`
-	Seq       uint64            `json:"seq"`
-	PrunedSeq uint64            `json:"prunedSeq"`
-	Files     map[string][]byte `json:"files"`
-	Paths     map[string]string `json:"paths"`
-}
-
-type blobSnapshot struct {
-	Account    string             `json:"account"`
-	Vault      string             `json:"vault"`
-	Size       uint64             `json:"size"`
-	ExpiresAt  time.Time          `json:"expiresAt"`
-	State      int                `json:"state"`
-	Body       []byte             `json:"body"`
-	IsUploaded bool               `json:"isUploaded"`
-	Multipart  *multipartSnapshot `json:"multipart"`
+	Chains        map[string][]byte          `json:"chains"`
+	Catalogs      map[string][][]byte        `json:"catalogs"`
+	Vaults        map[string]persisted.Vault `json:"vaults"`
+	Blobs         map[string]persisted.Blob  `json:"blobs"`
+	Used          map[string]uint64          `json:"used"`
+	Subscriptions map[string]time.Time       `json:"subscriptions"`
+	Plans         map[string]string          `json:"plans"`
+	Trials        map[string]bool            `json:"trials"`
+	PartLog       []partLogEntry             `json:"partLog"`
+	Bodies        map[string][]byte          `json:"bodies"`
+	Shares        map[string]persisted.Share `json:"shares"`
 }
 
 // Snapshot returns the accounts, catalogs, vaults, blobs and subscriptions of the server as bytes that Restore
@@ -69,9 +34,9 @@ func (s *Server) Snapshot() ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := snapshot{
-		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]vaultSnapshot{},
-		Blobs: map[string]blobSnapshot{}, Used: s.used, Subscriptions: s.subscriptions,
-		Plans: s.planOf, Trials: s.shop.trials, PartLog: s.partLog, Bodies: s.store.held, Shares: map[string]shareSnapshot{},
+		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]persisted.Vault{},
+		Blobs: map[string]persisted.Blob{}, Used: s.used, Subscriptions: s.subscriptions,
+		Plans: s.planOf, Trials: s.shop.trials, PartLog: s.partLog, Bodies: s.store.Held, Shares: map[string]persisted.Share{},
 	}
 	for account, chain := range s.chains {
 		out.Chains[account] = chain.Bytes()
@@ -93,7 +58,7 @@ func (s *Server) Snapshot() ([]byte, error) {
 		out.Vaults[hex.EncodeToString([]byte(id))] = kept
 	}
 	for id, row := range s.blobs {
-		out.Blobs[hex.EncodeToString([]byte(id))] = blobSnapshot{
+		out.Blobs[hex.EncodeToString([]byte(id))] = persisted.Blob{
 			Account: row.account, Vault: hex.EncodeToString([]byte(row.vault)), Size: row.size, ExpiresAt: row.expiresAt, State: int(row.state), Body: row.body,
 			IsUploaded: row.isUploaded, Multipart: snapshotMultipart(row.multipart),
 		}
@@ -108,33 +73,33 @@ func (s *Server) Snapshot() ([]byte, error) {
 	return json.Marshal(out)
 }
 
-func snapshotShare(share *shareState) (shareSnapshot, error) {
-	kept := shareSnapshot{
-		Account: share.account, Vault: hex.EncodeToString([]byte(share.vault)), Epoch: share.epoch, IsClosed: share.isClosed, Members: share.members,
+func snapshotShare(share *sharestate.State) (persisted.Share, error) {
+	kept := persisted.Share{
+		Account: share.Account, Vault: hex.EncodeToString([]byte(share.Vault)), Epoch: share.Epoch, IsClosed: share.IsClosed, Members: share.Members,
 		Exits: map[string]uint64{},
 	}
-	for file, seq := range share.exits {
+	for file, seq := range share.Exits {
 		kept.Exits[hex.EncodeToString([]byte(file))] = seq
 	}
-	for _, entry := range share.log {
+	for _, entry := range share.Log {
 		raw, err := proto.Marshal(entry)
 		if err != nil {
-			return shareSnapshot{}, fmt.Errorf("keep a share log entry: %w", err)
+			return persisted.Share{}, fmt.Errorf("keep a share log entry: %w", err)
 		}
 		kept.Log = append(kept.Log, raw)
 	}
 	return kept, nil
 }
 
-func snapshotVault(vault *vaultState) (vaultSnapshot, error) {
-	kept := vaultSnapshot{Account: vault.account, Seq: vault.seq, PrunedSeq: vault.prunedSeq, Files: map[string][]byte{}, Paths: map[string]string{}}
+func snapshotVault(vault *vaultState) (persisted.Vault, error) {
+	kept := persisted.Vault{Account: vault.account, Seq: vault.seq, PrunedSeq: vault.prunedSeq, Files: map[string][]byte{}, Paths: map[string]string{}}
 	for path, id := range vault.paths {
 		kept.Paths[hex.EncodeToString([]byte(path))] = hex.EncodeToString([]byte(id))
 	}
 	for id, stored := range vault.files {
 		raw, err := proto.Marshal(stored)
 		if err != nil {
-			return vaultSnapshot{}, fmt.Errorf("keep a revision: %w", err)
+			return persisted.Vault{}, fmt.Errorf("keep a revision: %w", err)
 		}
 		kept.Files[hex.EncodeToString([]byte(id))] = raw
 	}
@@ -175,7 +140,7 @@ func (s *Server) Restore(raw []byte) error {
 	}
 	s.partLog = in.PartLog
 	if in.Bodies != nil {
-		s.store.held = in.Bodies
+		s.store.Held = in.Bodies
 	}
 	s.shares = shares
 	s.subscriptions = in.Subscriptions
@@ -222,7 +187,7 @@ func restoreCatalogs(in map[string][][]byte) (map[string][]*syncv1.CatalogEntry,
 	return out, nil
 }
 
-func restoreVaults(in map[string]vaultSnapshot) (map[string]*vaultState, error) {
+func restoreVaults(in map[string]persisted.Vault) (map[string]*vaultState, error) {
 	out := map[string]*vaultState{}
 	for encodedID, kept := range in {
 		id, err := decodeID(encodedID)
@@ -258,7 +223,7 @@ func restoreVaults(in map[string]vaultSnapshot) (map[string]*vaultState, error) 
 	return out, nil
 }
 
-func restoreBlobs(in map[string]blobSnapshot) (map[string]*blobRow, error) {
+func restoreBlobs(in map[string]persisted.Blob) (map[string]*blobRow, error) {
 	out := map[string]*blobRow{}
 	for encodedID, kept := range in {
 		id, err := decodeID(encodedID)
@@ -285,14 +250,14 @@ func decodeID(encoded string) (string, error) {
 	return string(raw), nil
 }
 
-func snapshotMultipart(state *multipartState) *multipartSnapshot {
+func snapshotMultipart(state *multipartState) *persisted.Multipart {
 	if state == nil {
 		return nil
 	}
-	return &multipartSnapshot{PartSize: state.partSize, PartCount: state.partCount, Parts: state.parts, IsCompleted: state.isCompleted, IsAborted: state.isAborted}
+	return &persisted.Multipart{PartSize: state.partSize, PartCount: state.partCount, Parts: state.parts, IsCompleted: state.isCompleted, IsAborted: state.isAborted}
 }
 
-func restoreMultipart(kept *multipartSnapshot) *multipartState {
+func restoreMultipart(kept *persisted.Multipart) *multipartState {
 	if kept == nil {
 		return nil
 	}
@@ -303,8 +268,8 @@ func restoreMultipart(kept *multipartSnapshot) *multipartState {
 	return state
 }
 
-func restoreShares(in map[string]shareSnapshot) (map[string]*shareState, error) {
-	out := map[string]*shareState{}
+func restoreShares(in map[string]persisted.Share) (map[string]*sharestate.State, error) {
+	out := map[string]*sharestate.State{}
 	for encodedID, kept := range in {
 		id, err := decodeID(encodedID)
 		if err != nil {
@@ -314,21 +279,21 @@ func restoreShares(in map[string]shareSnapshot) (map[string]*shareState, error) 
 		if err != nil {
 			return nil, err
 		}
-		share := newShareState(kept.Account, vault)
-		share.epoch, share.isClosed, share.members = kept.Epoch, kept.IsClosed, kept.Members
+		share := sharestate.New(kept.Account, vault)
+		share.Epoch, share.IsClosed, share.Members = kept.Epoch, kept.IsClosed, kept.Members
 		for encodedFile, seq := range kept.Exits {
 			file, err := decodeID(encodedFile)
 			if err != nil {
 				return nil, err
 			}
-			share.exits[file] = seq
+			share.Exits[file] = seq
 		}
 		for _, raw := range kept.Log {
 			entry := &syncv1.ShareLogEntry{}
 			if err := proto.Unmarshal(raw, entry); err != nil {
 				return nil, fmt.Errorf("read a share log entry: %w", err)
 			}
-			share.log = append(share.log, entry)
+			share.Log = append(share.Log, entry)
 		}
 		out[id] = share
 	}

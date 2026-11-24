@@ -81,7 +81,6 @@ func accountOfWords(t *testing.T, words []string) string {
 	return key.Public().Fingerprint().String()
 }
 
-// restoredOn is the account two sheets give on a fresh device that restores them offline.
 func restoredOn(t *testing.T, sheets [][]string) (string, error) {
 	t.Helper()
 	fresh := newRestoreKit(t, "Phone")

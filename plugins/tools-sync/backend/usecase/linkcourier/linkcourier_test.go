@@ -57,7 +57,7 @@ func TestExecute_CreatesChannelWhenCoreRequestsOneAndReturnsIt(t *testing.T) {
 	if err != nil || len(id) != 16 {
 		t.Fatalf("channel = %x, %v, want a 16 byte id from the relay", id, err)
 	}
-	if _, err := r.relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("hello")); err != nil {
+	if _, err := r.relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("hello")); err != nil {
 		t.Errorf("the channel the core got is not one of the relay: %v", err)
 	}
 }
@@ -93,7 +93,7 @@ func TestExecute_PassesWhatTheOtherSidePostsToTheCore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.relay.PostMessage(t.Context(), id, syncclient.LinkSideDisplayer, []byte("from the scanner")); err != nil {
+	if _, err := r.relay.SendMessage(t.Context(), id, syncclient.LinkSideDisplayer, []byte("from the scanner")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,7 +119,7 @@ func TestExecute_ClosesTheChannelWhenTheCoreEndsTheLink(t *testing.T) {
 	}
 
 	for range 100 {
-		if _, err := r.relay.PostMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("x")); err != nil {
+		if _, err := r.relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("x")); err != nil {
 			return
 		}
 		<-time.After(50 * time.Millisecond)
@@ -163,7 +163,7 @@ func waitHealthKey(t *testing.T, r *run, key string) bool {
 	return false
 }
 
-func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
+func TestExecute_SendsNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	channel, err := r.relay.CreateChannel(t.Context())
@@ -186,7 +186,7 @@ func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T
 	}
 }
 
-func TestExecute_CarriesALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
+func TestExecute_SendsALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	channel, err := r.relay.CreateChannel(t.Context())

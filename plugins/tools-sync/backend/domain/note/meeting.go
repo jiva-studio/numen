@@ -14,8 +14,8 @@ const (
 	Differ
 )
 
-// Meet sorts a pair of notes by the hash of the local note and the hash of the head, each empty when absent.
-func Meet(local, head string) Meeting {
+// GetMeeting sorts a pair of notes by the hash of the local note and the hash of the head, each empty when absent.
+func GetMeeting(local, head string) Meeting {
 	switch {
 	case local == head:
 		return Same

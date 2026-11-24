@@ -54,12 +54,12 @@ func TestGetRestoreEpoch_ReturnsNoEpochAndTheKeyBeforeTheFirstRestore(t *testing
 	}
 }
 
-func TestIssueRestoreEpoch_SignsAnEpochThatTheClientChecksAndGetChangesNamesIt(t *testing.T) {
+func TestAnnounceRestoreEpoch_SignsAnEpochThatTheClientChecksAndGetChangesNamesIt(t *testing.T) {
 	t.Parallel()
 	server, e, restore := newRestoreEnv(t)
 	vault := e.newVault()
 
-	id, err := server.IssueRestoreEpoch()
+	id, err := server.AnnounceRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,16 +79,16 @@ func TestIssueRestoreEpoch_SignsAnEpochThatTheClientChecksAndGetChangesNamesIt(t
 	}
 }
 
-func TestIssueRestoreEpoch_IssuesAnotherIDEachTimeAndTheLastOneIsCurrent(t *testing.T) {
+func TestAnnounceRestoreEpoch_IssuesAnotherIDEachTimeAndTheLastOneIsCurrent(t *testing.T) {
 	t.Parallel()
 	server, e, _ := newRestoreEnv(t)
 	vault := e.newVault()
-	first, err := server.IssueRestoreEpoch()
+	first, err := server.AnnounceRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	second, err := server.IssueRestoreEpoch()
+	second, err := server.AnnounceRestoreEpoch()
 	if err != nil {
 		t.Fatal(err)
 	}

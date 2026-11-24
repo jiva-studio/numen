@@ -9,6 +9,7 @@ import { callRPC, listVaults } from '../../../e2e/desktop/tests/support/vault.js
 import { ApplicationDriver } from './application.js'
 import { FileTreeDriver } from './file-tree.js'
 import { IdentityDriver } from './identity.js'
+import { SubscriptionDriver } from './subscription.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
 import { ShareDriver, type GivenInvitation } from './share.js'
@@ -42,6 +43,7 @@ export const getSharedNotePath = (title: string): string => `${title}.md`
 interface Reader {
   readonly scenario: Scenario
   readonly identity: IdentityDriver
+  readonly subscription: SubscriptionDriver
   readonly settings: SettingsDriver
   readonly vaults: SyncVaultsDriver
   readonly share: ShareDriver
@@ -75,11 +77,13 @@ export class SharedReaderDriver {
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
+    const subscription = new SubscriptionDriver(scenario, settings)
     await application.startApplication('editor')
     await identity.create()
     this.readers.set(name, {
       scenario,
       identity,
+      subscription,
       settings,
       vaults: new SyncVaultsDriver(scenario, settings),
       share: new ShareDriver(scenario, new FileTreeDriver(scenario), application),
@@ -196,7 +200,7 @@ export class SharedReaderDriver {
   }
 
   async expectSubscription(name: ReaderName, text: string): Promise<void> {
-    await this.require(name).identity.expectSubscription(text)
+    await this.require(name).subscription.expectSubscription(text)
   }
 
   async remove(): Promise<void> {
