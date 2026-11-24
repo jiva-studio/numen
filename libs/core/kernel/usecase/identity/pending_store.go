@@ -59,7 +59,6 @@ func (s *pendingStore) isCurrent(restore *pendingRestore) bool {
 	return s.current == restore && s.current.refusal == nil
 }
 
-// read returns the restore that waits for a chain; a restore that was refused waits for nothing.
 func (s *pendingStore) read() *pendingRestore {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -69,7 +68,6 @@ func (s *pendingStore) read() *pendingRestore {
 	return s.current
 }
 
-// readRefusal returns why the current restore was refused, or nil.
 func (s *pendingStore) readRefusal() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -79,7 +77,6 @@ func (s *pendingStore) readRefusal() error {
 	return s.current.refusal
 }
 
-// refuseLocked forgets the keys of the restore and keeps the reason, which the window reads until the restore expires or another starts.
 func (s *pendingStore) refuseLocked(restore *pendingRestore, reason error) {
 	restore.recovery = identitylib.RecoveryKey{}
 	restore.device = identitylib.DeviceKey{}

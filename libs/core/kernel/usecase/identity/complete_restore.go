@@ -104,8 +104,6 @@ func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainByte
 	return identitylib.NewState(identitylib.Record{Device: restore.device, Wrapped: wrapped}, chain)
 }
 
-// openRecoveryKeys returns the keys of the latest epoch that the chain wraps for the recovery key, with the history of the earlier ones. The
-// keys must be those of the account box of the chain, or the chain has been made by someone who could not wrap the keys of the account.
 func (c restoreCompletion) openRecoveryKeys(recovery identitylib.RecoveryKey, chain identitylib.Chain) (identitylib.AccountKeys, error) {
 	account, err := recovery.UnwrapAccountKeys(chain.WrappedForRecovery())
 	if err != nil {

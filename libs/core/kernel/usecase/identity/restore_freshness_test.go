@@ -8,8 +8,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// kitOfRestoredPhone returns the chain of the account when it had one device, the chain after a phone restored it, and a kit saved
-// from the phone.
 func kitOfRestoredPhone(t *testing.T) (older, current []byte, kit identitydomain.Kit) {
 	t.Helper()
 	desktop := newRestoreKit(t, "Desktop")

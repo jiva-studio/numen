@@ -16,7 +16,6 @@ type Mark struct {
 	Head   [markHeadSize]byte
 }
 
-// GetMark returns the mark of the chain as it is now.
 func (c Chain) GetMark() Mark {
 	if len(c.entries) == 0 {
 		return Mark{}

@@ -68,7 +68,6 @@ type PendingRestore struct {
 type Kit struct {
 	ID                 string
 	AccountFingerprint string
-	// ChainMark is the mark of the chain of the account when the kit was made, which a restore compares with the chain of the server.
 	ChainMark string
 	CreatedAt time.Time
 	Sheets    []Sheet
