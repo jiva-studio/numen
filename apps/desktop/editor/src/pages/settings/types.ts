@@ -16,6 +16,7 @@ import type {
   RowOption,
 } from '@/entities/connection'
 import type { IdentityInfo, KitProof } from '@/entities/identity'
+import type { KeyFileStore } from '@/entities/key-file'
 import type { DeviceCalls } from '@/features/identity-link'
 import type { LicenseInfo } from '@/entities/license'
 import type {
@@ -167,6 +168,7 @@ export interface ConnectionEdits {
  * take them and are not held here; the sheets of a new kit stay in the core.
  */
 export interface InstallationIdentity {
+  readonly keyFile: KeyFileStore
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
   readonly devices: DeviceCalls
   load(): Promise<void>

@@ -7,6 +7,7 @@ import { createFrameRuntimeLoader } from '@numen/plugin-loader'
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
 import { createAccountApi, createDevicesApi, createDeviceLinkApi } from '@/entities/identity'
+import { createKeyFileApi } from '@/entities/key-file'
 import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
@@ -92,6 +93,7 @@ export function createWindowApi(transports: WindowTransports) {
     configuration: {
       connection: createConnectionApi(settingsClients.connections),
       license: createLicenseApi(settingsClients.licenses),
+      keyFile: createKeyFileApi(settingsClients.keyFile),
       identity: {
         account: createAccountApi(settingsClients.identity.account),
         link: createDeviceLinkApi(settingsClients.identity.link),

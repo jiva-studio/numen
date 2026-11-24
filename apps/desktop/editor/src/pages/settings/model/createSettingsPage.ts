@@ -17,6 +17,7 @@ import {
   type IdentityStore,
   type KitProof,
 } from '@/entities/identity'
+import { createKeyFileStore, type KeyFileApi, type KeyFileStore } from '@/entities/key-file'
 import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
@@ -48,6 +49,7 @@ interface SettingsPageApi {
   >
   readonly license: LicenseApi
   readonly identity: IdentityApi
+  readonly keyFile: KeyFileApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
   readonly readReadme: ReadmeReader
@@ -108,6 +110,7 @@ interface SettingsTabConfigDeps {
   connections: ConnectionStore
   licenses: LicenseStore
   identity: IdentityStore
+  keyFile: KeyFileStore
   api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
@@ -255,8 +258,9 @@ function createInstallationLicenses(licenses: LicenseStore) {
   }
 }
 
-function createInstallationIdentity(identity: IdentityStore) {
+function createInstallationIdentity(identity: IdentityStore, keyFile: KeyFileStore) {
   return {
+    keyFile,
     identity: identity.identity,
     devices: identity.devices,
     load: () => identity.load(),
@@ -278,7 +282,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
     },
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
-    identity: createInstallationIdentity(deps.identity),
+    identity: createInstallationIdentity(deps.identity, deps.keyFile),
   }
 }
 
@@ -299,8 +303,13 @@ export function createSettingsPage({
   const licenses = createLicenseStore(api.license, (text, level) =>
     log.getWriter('licenses')(text, level),
   )
-  const identity = createIdentityStore(api.identity, (text, level) =>
-    log.getWriter('identity')(text, level),
+  const keyFile = createKeyFileStore(api.keyFile, (text, level) =>
+    log.getWriter('keyFile')(text, level),
+  )
+  const identity = createIdentityStore(
+    api.identity,
+    (text, level) => log.getWriter('identity')(text, level),
+    keyFile.retryAfterAsking,
   )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
@@ -329,6 +338,7 @@ export function createSettingsPage({
       connections,
       licenses,
       identity,
+      keyFile,
       api,
     }),
     reportError,

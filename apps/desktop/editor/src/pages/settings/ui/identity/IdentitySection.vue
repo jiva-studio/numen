@@ -12,6 +12,7 @@ import { useIdentitySection } from '../../model/useIdentitySection'
 import { useRecoveryKit } from '../../model/useRecoveryKit'
 import { WORDS as words } from '../../words'
 import { LinkDialog } from '@/features/identity-link'
+import { KeyFileHost } from '@/features/key-file'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
@@ -124,6 +125,8 @@ const isJoining = ref(false)
       @cancel="actions.cancel"
     />
   </IslandCard>
+
+  <KeyFileHost :key-file="identity.keyFile" />
 </template>
 
 <style scoped>

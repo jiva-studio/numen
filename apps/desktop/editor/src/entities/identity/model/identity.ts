@@ -52,7 +52,16 @@ const settle = async <T>(
   }
 }
 
-export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
+/** Makes a call once more after the person answered the question that its refusal raised. */
+export type RetryAfterAsking = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
+
+const retryNever: RetryAfterAsking = (call) => call()
+
+export function createIdentityStore(
+  api: IdentityApi,
+  notify: MessageWriter,
+  retryAfterAsking: RetryAfterAsking = retryNever,
+) {
   const identity = shallowRef<IdentityInfo | undefined>(undefined)
   const guard = createRequestGuard()
 
@@ -76,7 +85,10 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const generateWords = (): Promise<Result<readonly string[], string>> =>
     attempt(() => api.account.generateWords())
 
-  const create = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
+  const create = (words: readonly string[]): Promise<Result<IdentityInfo, string>> =>
+    retryAfterAsking(() => createOnce(words))
+
+  const createOnce = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
       const answer = await api.account.createIdentity(words)
       if (!answer.ok) {
@@ -91,12 +103,14 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   }
 
   const restore = async (proof: KitProof): Promise<Result<IdentityInfo, string>> => {
-    const started = await settle(
-      () =>
-        'words' in proof
-          ? api.account.startRestore(proof.words)
-          : api.account.startRestoreFromKit(proof.sheets),
-      'words' in proof ? 'words' : 'sheets',
+    const started = await retryAfterAsking(() =>
+      settle(
+        () =>
+          'words' in proof
+            ? api.account.startRestore(proof.words)
+            : api.account.startRestoreFromKit(proof.sheets),
+        'words' in proof ? 'words' : 'sheets',
+      ),
     )
     if (!started.ok) return started
     return attempt(async () => {

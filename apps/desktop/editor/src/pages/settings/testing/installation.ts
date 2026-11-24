@@ -4,6 +4,24 @@ import { asFailure, asValue } from '@numen/result'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Installation, SettingsTabState } from '../types'
 import type { CatalogEntry } from '@/entities/plugin'
+import { createKeyFileStore } from '@/entities/key-file'
+
+const createInertKeyFile = () =>
+  createKeyFileStore(
+    {
+      getState: () =>
+        Promise.resolve({
+          isInUse: false,
+          mode: 'unset',
+          isChoiceNeeded: false,
+          isLocked: false,
+          warning: '',
+        }),
+      choose: () => Promise.resolve(asValue(undefined)),
+      unlock: () => Promise.resolve(asValue(undefined)),
+    },
+    () => undefined,
+  )
 
 type Flat<T> = { [K in keyof T]: T[K] }
 
@@ -106,6 +124,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     ...pickOf(overrides, CONNECTIONS_KEYS),
   },
   identity: overrides.identity ?? {
+    keyFile: createInertKeyFile(),
     identity: ref(undefined),
     load: fn(() => Promise.resolve()),
     generateWords: fn(() => Promise.resolve(asFailure('No words.'))),

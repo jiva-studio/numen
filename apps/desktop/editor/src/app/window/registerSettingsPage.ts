@@ -41,6 +41,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
       settings: api.configuration.settings,
       license: api.configuration.license,
       identity: api.configuration.identity,
+      keyFile: api.configuration.keyFile,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       readReadme: api.plugins.readReadme,

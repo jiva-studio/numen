@@ -4,7 +4,10 @@
  * this page, then every license declared by the installed plugins with the controls to activate or
  * deactivate this machine.
  */
+import { computed, onMounted } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { SettingsPage } from '@numen/plugin-manager'
+import { KeyFileRow } from '@/features/key-file'
 import type { InstallationIdentity, InstallationLicenses, InstallationPlugin } from '../../types'
 import { useIdentityPage } from '../../model/useIdentityPage'
 import { WORDS as words } from '../../words'
@@ -28,6 +31,12 @@ const page = useIdentityPage(
   () => props.plugin,
 )
 
+const keyFileState = computed(() => props.identity.keyFile.state.value)
+
+onMounted(() => {
+  runInBackground(props.identity.keyFile.load(), () => undefined)
+})
+
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
@@ -38,6 +47,13 @@ function onBack(): void {
   <SettingsPage :path="[words.settings, words.identityAndLicenses]" @back="onBack" @open="onBack">
     <div class="identity-page">
       <IdentitySection :identity="props.identity" />
+
+      <KeyFileRow
+        v-if="keyFileState && keyFileState.isInUse"
+        :state="keyFileState"
+        @change="props.identity.keyFile.change"
+        @unlock="props.identity.keyFile.askWhenNeeded"
+      />
 
       <component
         :is="view.component"

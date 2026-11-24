@@ -15,6 +15,8 @@ import {
   createFolderDialogRpc,
   createIdentityClient,
   createIdentityRpc,
+  createKeyFileClient,
+  createKeyFileRpc,
   createLogClient,
   createLogRpc,
   createLicenseClient,
@@ -76,6 +78,7 @@ export const createSettingsClients = (transport: Transport) => {
     connections: createConnectionClient(createProviderConnectionRpc(settings)),
     licenses: createLicenseClient(createLicenseRpc(settings)),
     identity: createIdentityClient(createIdentityRpc(settings)),
+    keyFile: createKeyFileClient(createKeyFileRpc(settings)),
     pluginData: createPluginDataRpc(settings),
     theme: createThemeRpc(transport),
   }
