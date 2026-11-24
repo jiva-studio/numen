@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
@@ -20,10 +21,14 @@ func NewRenameRemoteVault(deps Deps) *RenameRemoteVault {
 }
 
 // Execute appends an entry with the name of the local vault when it differs from the one the link holds, and
-// reports whether it did.
+// reports whether it did. It forgets the link of a vault whose cloud copy another device deleted, and returns
+// ErrNotConnected for it.
 func (u *RenameRemoteVault) Execute(ctx context.Context, id domain.VaultID) (bool, error) {
 	link, err := u.reader.deps.State.ReadLink(ctx, id)
 	if err != nil {
+		return false, err
+	}
+	if err := u.dropRemoved(ctx, id, link); err != nil {
 		return false, err
 	}
 	vaults, err := u.reader.deps.Host.GetVaults(ctx)
@@ -51,7 +56,7 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	if err != nil {
 		return err
 	}
-	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: opened[0].Key, Keys: keys}
+	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: opened[0].Key, Keys: keys, Removed: false}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: false, body: body}); err != nil {
 		return err
 	}
@@ -64,11 +69,41 @@ func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]va
 	if err != nil {
 		return nil, err
 	}
-	for _, entry := range slices.Backward(entries) {
-		if bytes.Equal(entry.GetVaultId(), remoteID) {
-			body, err := u.reader.openBody(ctx, entry)
-			return body.Keys, err
-		}
+	if last := getLastEntry(entries, remoteID); last != nil {
+		body, err := u.reader.openBody(ctx, last)
+		return body.Keys, err
 	}
 	return nil, nil
+}
+
+func (u *RenameRemoteVault) dropRemoved(ctx context.Context, id domain.VaultID, link vaultlink.Link) error {
+	remoteID, err := hex.DecodeString(link.RemoteVaultID)
+	if err != nil {
+		return fmt.Errorf("read the remote id of the link: %w", err)
+	}
+	entries, err := u.reader.read(ctx)
+	if err != nil {
+		return err
+	}
+	last := getLastEntry(entries, remoteID)
+	if last == nil {
+		return nil
+	}
+	body, err := u.reader.openBody(ctx, last)
+	if err != nil || !body.Removed {
+		return err
+	}
+	if err := u.reader.deps.Forget.ForgetVault(ctx, id); err != nil {
+		return err
+	}
+	return vaultlink.ErrNotConnected
+}
+
+func getLastEntry(entries []*syncv1.CatalogEntry, remoteID []byte) *syncv1.CatalogEntry {
+	for _, entry := range slices.Backward(entries) {
+		if bytes.Equal(entry.GetVaultId(), remoteID) {
+			return entry
+		}
+	}
+	return nil
 }

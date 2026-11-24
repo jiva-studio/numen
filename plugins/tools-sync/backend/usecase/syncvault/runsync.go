@@ -158,7 +158,11 @@ func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 		}
 		return false, nil
 	}
-	return true, u.deps.Pass.Execute(ctx, id)
+	err = u.deps.Pass.Execute(ctx, id)
+	if errors.Is(err, vaultlink.ErrNotConnected) {
+		return false, nil
+	}
+	return true, err
 }
 
 func (u *RunSync) finish(ctx context.Context, failed *failure, isConnected bool) error {

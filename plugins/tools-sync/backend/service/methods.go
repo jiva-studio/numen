@@ -28,6 +28,9 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodStopSyncingVault, func(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
 		return handle(ctx, r, api.MethodStopSyncingVault, func(b *Backend) (api.StopSyncingVaultResponse, error) { return b.StopSyncingVault(ctx, request) })
 	})
+	server.Handle(service, api.MethodDeleteCloudVault, func(ctx context.Context, request api.DeleteCloudVaultRequest) (api.DeleteCloudVaultResponse, error) {
+		return handle(ctx, r, api.MethodDeleteCloudVault, func(b *Backend) (api.DeleteCloudVaultResponse, error) { return b.DeleteCloudVault(ctx, request) })
+	})
 	server.Handle(service, api.MethodPreviewConnect, func(ctx context.Context, request api.PreviewConnectRequest) (api.PreviewConnectResponse, error) {
 		return handle(ctx, r, api.MethodPreviewConnect, func(b *Backend) (api.PreviewConnectResponse, error) { return b.GetConnectPreview(ctx, request) })
 	})

@@ -62,6 +62,7 @@ type Deps struct {
 	Vaults        ports.VaultList
 	Folders       ports.Folders
 	Forget        ports.Forgetter
+	Cloud         ports.CloudVaults
 }
 
 // RestoreDeps are where the recovery after a restored server reads the epoch and keeps the pinned key and the copies of

@@ -82,6 +82,16 @@ func (c *Cloud) GetCatalog(ctx context.Context, sinceVersion uint64) ([]*syncv1.
 	return call(ctx, c, func() ([]*syncv1.CatalogEntry, error) { return c.catalog.GetCatalog(ctx, sinceVersion) })
 }
 
+// GetVaultUsage returns the stored bytes of every vault of the account.
+func (c *Cloud) GetVaultUsage(ctx context.Context) ([]*syncv1.VaultUsage, error) {
+	return call(ctx, c, func() ([]*syncv1.VaultUsage, error) { return c.catalog.GetVaultUsage(ctx) })
+}
+
+// DeleteVault removes a synced vault from the server.
+func (c *Cloud) DeleteVault(ctx context.Context, vaultID []byte) (*syncv1.DeleteVaultResponse, error) {
+	return call(ctx, c, func() (*syncv1.DeleteVaultResponse, error) { return c.catalog.DeleteVault(ctx, vaultID) })
+}
+
 func (c *Cloud) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
 	return call(ctx, c, func() (*syncv1.CommitRevisionsResponse, error) {
 		return c.revisions.CommitRevisions(ctx, vaultID, revisions)

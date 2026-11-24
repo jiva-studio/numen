@@ -7,6 +7,7 @@
       "state": "connected",
       "lastSyncedAt": "2026-11-23T12:00:00Z",
       "conflictCount": 1,
+      "remoteId": "00112233445566778899aabbccddeeff",
       "pausedDeletions": { "count": 5, "tracked": 10, "direction": "send" }
     },
     {
@@ -16,6 +17,7 @@
       "state": "notConnected",
       "lastSyncedAt": "",
       "conflictCount": 0,
+      "remoteId": "",
       "pausedDeletions": null
     },
     {
@@ -25,6 +27,7 @@
       "state": "received",
       "lastSyncedAt": "2026-11-23T12:00:00Z",
       "conflictCount": 0,
+      "remoteId": "",
       "pausedDeletions": null
     }
   ]

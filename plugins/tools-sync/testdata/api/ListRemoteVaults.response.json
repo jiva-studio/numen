@@ -1,6 +1,6 @@
 {
   "vaults": [
-    { "remoteId": "00112233445566778899aabbccddeeff", "name": "Test", "isConnected": true },
-    { "remoteId": "ffeeddccbbaa99887766554433221100", "name": "Work", "isConnected": false }
+    { "remoteId": "00112233445566778899aabbccddeeff", "name": "Test", "isConnected": true, "sizeBytes": 3145728 },
+    { "remoteId": "ffeeddccbbaa99887766554433221100", "name": "Work", "isConnected": false, "sizeBytes": 0 }
   ]
 }

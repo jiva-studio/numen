@@ -19,8 +19,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/preview"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/unlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 )
 
 const (
@@ -37,17 +39,19 @@ type Vaults struct {
 	pending ports.PausedStore
 	resolve *deletions.ResolveDeletions
 	stop    *unlink.StopSyncing
+	delete  *catalog.DeleteCloudVault
 }
 
 // New returns the methods over the dependencies of a pass and the heads of a synced vault.
 func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	catalogDeps := catalog.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-		Journals: deps.Restore.Mirror,
-		Random:   deps.Random,
+		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget,
+		Random: deps.Random,
 	}
-	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil,
-		stop: unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults}),
+	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
+	return &Vaults{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads, pending: nil, resolve: nil, delete: deleting,
+		stop: unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting}),
 	}
 }
 
@@ -78,7 +82,7 @@ func (v *Vaults) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.L
 }
 
 func (v *Vaults) getVault(ctx context.Context, vault domain.Vault, holders map[string]bool) (api.Vault, error) {
-	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil}
+	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil, RemoteID: ""}
 	link, err := v.deps.State.ReadLink(ctx, vault.ID)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return one, nil
@@ -95,6 +99,7 @@ func (v *Vaults) getVault(ctx context.Context, vault domain.Vault, holders map[s
 	default:
 		holders[link.RemoteVaultID] = true
 		one.State = api.StateConnected
+		one.RemoteID = link.RemoteVaultID
 	}
 	status, err := v.deps.Progress.ReadStatus(ctx, vault.ID)
 	if err != nil {
@@ -130,7 +135,12 @@ func (v *Vaults) ResolveDeletions(ctx context.Context, request api.ResolveDeleti
 
 // StopSyncingVault ends the sync of the vault on this device. Its files and its synced vault on the server stay.
 func (v *Vaults) StopSyncingVault(ctx context.Context, request api.StopSyncingVaultRequest) (api.StopSyncingVaultResponse, error) {
-	return api.StopSyncingVaultResponse{}, v.stop.Execute(ctx, domain.VaultID(request.VaultID))
+	return api.StopSyncingVaultResponse{}, v.stop.Execute(ctx, domain.VaultID(request.VaultID), request.DeleteCloudCopy)
+}
+
+// DeleteCloudVault deletes a synced vault of the account from the cloud. The files of the vaults that were synced stay.
+func (v *Vaults) DeleteCloudVault(ctx context.Context, request api.DeleteCloudVaultRequest) (api.DeleteCloudVaultResponse, error) {
+	return api.DeleteCloudVaultResponse{}, v.delete.Execute(ctx, request.RemoteID)
 }
 
 // ListRemoteVaults lists the synced vaults of the account.
@@ -141,7 +151,7 @@ func (v *Vaults) ListRemoteVaults(ctx context.Context, _ api.ListRemoteVaultsReq
 	}
 	listed := make([]api.RemoteVault, len(remote))
 	for i, one := range remote {
-		listed[i] = api.RemoteVault{RemoteID: one.RemoteID, Name: one.Name, IsConnected: one.IsConnected}
+		listed[i] = api.RemoteVault{RemoteID: one.RemoteID, Name: one.Name, IsConnected: one.IsConnected, SizeBytes: one.SizeBytes}
 	}
 	return api.ListRemoteVaultsResponse{Vaults: listed}, nil
 }

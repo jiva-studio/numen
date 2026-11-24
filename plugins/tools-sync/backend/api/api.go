@@ -27,6 +27,7 @@ const (
 	MethodListReceived             = "ListReceived"
 	MethodLeaveShare               = "LeaveShare"
 	MethodStopSyncingVault         = "StopSyncingVault"
+	MethodDeleteCloudVault         = "DeleteCloudVault"
 	MethodStartShareInvitation     = "StartShareInvitation"
 	MethodListShareInvitations     = "ListShareInvitations"
 	MethodRevokeShareInvitation    = "RevokeShareInvitation"
@@ -76,6 +77,7 @@ type Vault struct {
 	LastSyncedAt    string           `json:"lastSyncedAt"`
 	ConflictCount   int              `json:"conflictCount"`
 	PausedDeletions *PausedDeletions `json:"pausedDeletions"`
+	RemoteID        string           `json:"remoteId"`
 }
 
 // ListVaultsRequest asks for every vault of the installation.
@@ -90,6 +92,7 @@ type RemoteVault struct {
 	RemoteID    string `json:"remoteId"`
 	Name        string `json:"name"`
 	IsConnected bool   `json:"isConnected"`
+	SizeBytes   uint64 `json:"sizeBytes"`
 }
 
 // ListRemoteVaultsRequest asks for the synced vaults of the account.
@@ -300,12 +303,22 @@ type ResolveDeletionsRequest struct {
 // ResolveDeletionsResponse is the answer to a choice that was taken.
 type ResolveDeletionsResponse struct{}
 
-// StopSyncingVaultRequest asks to stop syncing a vault on this device. The files and the synced vault on the server stay.
+// StopSyncingVaultRequest asks to stop syncing a vault on this device. The files stay; the synced vault on the server
+// stays too, unless DeleteCloudCopy is set.
 type StopSyncingVaultRequest struct {
-	VaultID string `json:"vaultId"`
+	VaultID         string `json:"vaultId"`
+	DeleteCloudCopy bool   `json:"deleteCloudCopy"`
 }
 
 type StopSyncingVaultResponse struct{}
+
+// DeleteCloudVaultRequest asks to delete a synced vault of the account from the cloud. Every device that syncs it
+// stops, and the vault cannot be restored.
+type DeleteCloudVaultRequest struct {
+	RemoteID string `json:"remoteId"`
+}
+
+type DeleteCloudVaultResponse struct{}
 
 // GetAccountStateRequest asks whether the account is being deleted on the server.
 type GetAccountStateRequest struct{}

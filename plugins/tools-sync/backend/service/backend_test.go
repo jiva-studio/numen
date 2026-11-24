@@ -63,6 +63,10 @@ func TestListVaults_ListsEveryVaultOfTheInstallationWithItsState(t *testing.T) {
 	if len(vaults) != len(want) {
 		t.Fatalf("vaults = %+v, want %d", vaults, len(want))
 	}
+	if len(vaults[1].RemoteID) != 32 {
+		t.Fatalf("remote id = %q, want 32 hexadecimal digits", vaults[1].RemoteID)
+	}
+	want[1].RemoteID = vaults[1].RemoteID
 	for i := range want {
 		if vaults[i] != want[i] {
 			t.Errorf("vault %d = %+v, want %+v", i, vaults[i], want[i])

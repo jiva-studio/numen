@@ -128,7 +128,7 @@ func (u *ConnectVault) connectNew(ctx context.Context, id domain.VaultID, name s
 	if err != nil {
 		return err
 	}
-	body := vaultlink.CatalogBody{LocalID: string(id), Name: name, Key: key, Keys: nil}
+	body := vaultlink.CatalogBody{LocalID: string(id), Name: name, Key: key, Keys: nil, Removed: false}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: true, body: body}); err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (u *ConnectVault) connectExisting(ctx context.Context, in ConnectInput, nam
 		return err
 	}
 	for _, one := range vaults {
-		if string(one.vaultID) == string(remoteID) {
+		if string(one.vaultID) == string(remoteID) && !one.body.Removed {
 			return u.writeLink(ctx, in.VaultID, remoteID, name, one.body.GetKeys())
 		}
 	}

@@ -41,6 +41,8 @@ type Deps struct {
 	Host     ports.Host
 	State    ports.Links
 	Journals ports.Journals
+	Cloud    ports.CloudVaults
+	Forget   ports.Forgetter
 	Random   io.Reader
 }
 
@@ -84,7 +86,7 @@ func (r reader) mergeEntries(ctx context.Context, entries []*syncv1.CatalogEntry
 		if !known {
 			at = len(vaults)
 			positions[key] = at
-			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{LocalID: "", Name: "", Key: nil, Keys: nil}})
+			vaults = append(vaults, remote{vaultID: entry.GetVaultId(), last: nil, body: vaultlink.CatalogBody{LocalID: "", Name: "", Key: nil, Keys: nil, Removed: false}})
 		}
 		vaults[at].last = entry
 	}
@@ -155,10 +157,29 @@ func (u *ListRemoteVaults) Execute(ctx context.Context) ([]vaultlink.RemoteVault
 	for _, link := range links {
 		connected[link.RemoteVaultID] = true
 	}
-	listed := make([]vaultlink.RemoteVault, len(vaults))
-	for i, one := range vaults {
+	usage, err := u.reader.readUsage(ctx)
+	if err != nil {
+		return nil, err
+	}
+	listed := make([]vaultlink.RemoteVault, 0, len(vaults))
+	for _, one := range vaults {
+		if one.body.Removed {
+			continue
+		}
 		id := hex.EncodeToString(one.vaultID)
-		listed[i] = vaultlink.RemoteVault{RemoteID: id, Name: one.body.Name, IsConnected: connected[id]}
+		listed = append(listed, vaultlink.RemoteVault{RemoteID: id, Name: one.body.Name, IsConnected: connected[id], SizeBytes: usage[id]})
 	}
 	return listed, nil
+}
+
+func (r reader) readUsage(ctx context.Context) (map[string]uint64, error) {
+	rows, err := r.deps.Cloud.GetVaultUsage(ctx)
+	if err != nil {
+		return nil, err
+	}
+	usage := make(map[string]uint64, len(rows))
+	for _, row := range rows {
+		usage[hex.EncodeToString(row.GetVaultId())] = row.GetUsedBytes()
+	}
+	return usage, nil
 }

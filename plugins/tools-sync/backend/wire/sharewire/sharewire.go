@@ -61,7 +61,7 @@ type Received struct {
 func NewReceived(deps syncvault.Deps) *Received {
 	receiving := NewReceiveDeps(deps)
 	return &Received{
-		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults}),
+		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: nil}),
 	}
 }
 

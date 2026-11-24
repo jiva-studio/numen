@@ -110,6 +110,9 @@ func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own 
 	if err != nil {
 		return false, true, err
 	}
+	if body.Removed {
+		return false, true, nil
+	}
 	if err := u.store(ctx, target, body.GetKeys()); err != nil {
 		return false, true, err
 	}
@@ -173,7 +176,7 @@ func (u *RotateVaultKeys) append(ctx context.Context, entries []*syncv1.CatalogE
 	}
 	next := vaultlink.CatalogBody{
 		LocalID: body.LocalID, Name: body.Name, Key: body.Key,
-		Keys: append(append([]vaultlink.VaultKey(nil), body.GetKeys()...), vaultlink.VaultKey{Epoch: own.KeyEpoch, Key: fresh}),
+		Keys: append(append([]vaultlink.VaultKey(nil), body.GetKeys()...), vaultlink.VaultKey{Epoch: own.KeyEpoch, Key: fresh}), Removed: false,
 	}
 	entry, err := u.newEntry(ctx, entries, last.GetVaultId(), next, own)
 	if err != nil {

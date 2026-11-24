@@ -46,15 +46,18 @@ type RemoteVault struct {
 	RemoteID    string
 	Name        string
 	IsConnected bool
+	SizeBytes   uint64
 }
 
 // CatalogBody is what an entry of the catalog seals: the vault on the computer that wrote it, the name and the
-// keys of the synced vault by epoch.
+// keys of the synced vault by epoch. A body with Removed set is the newest entry of a vault whose cloud copy was
+// deleted: the vault is unlinked and not listed any more.
 type CatalogBody struct {
 	LocalID string     `json:"localId"`
 	Name    string     `json:"name"`
 	Key     []byte     `json:"key"`
 	Keys    []VaultKey `json:"keys"`
+	Removed bool       `json:"removed,omitempty"`
 }
 
 // VaultKey is a key of a synced vault with the epoch of the account keys it was made under.

@@ -16,6 +16,12 @@ type Deps struct {
 	Links  ports.Links
 	Forget ports.Forgetter
 	Vaults ports.VaultList
+	Cloud  CloudDeleter
+}
+
+// CloudDeleter deletes a synced vault from the cloud and forgets the links of this device to it.
+type CloudDeleter interface {
+	Execute(ctx context.Context, remoteID string) error
 }
 
 // StopSyncing ends the sync of a vault of this account on this device.
@@ -25,8 +31,9 @@ type StopSyncing struct{ deps Deps }
 func NewStopSyncing(deps Deps) *StopSyncing { return &StopSyncing{deps: deps} }
 
 // Execute forgets the link and what the sync kept of the vault, so the vault is not synced any more. The files stay, and
-// so does the synced vault on the server.
-func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID) error {
+// so does the synced vault on the server, unless isDeleting is set: then the cloud copy is deleted first, and the vault
+// stays linked when that fails.
+func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID, isDeleting bool) error {
 	link, err := u.deps.Links.ReadLink(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return domainshare.ErrNotConnected
@@ -36,6 +43,9 @@ func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID) error {
 	}
 	if link.Kind == vaultlink.KindReceived {
 		return domainshare.ErrReceivedStop
+	}
+	if isDeleting {
+		return u.deps.Cloud.Execute(ctx, link.RemoteVaultID)
 	}
 	return u.deps.Forget.ForgetVault(ctx, id)
 }

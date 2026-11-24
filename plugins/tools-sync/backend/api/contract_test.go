@@ -83,6 +83,9 @@ func getContracts() map[string]plugintest.MessageContract {
 			CreateRequest: func() any { return &api.ListReceivedRequest{} }, CreateResponse: func() any { return &api.ListReceivedResponse{} },
 		},
 		api.MethodLeaveShare: {CreateRequest: func() any { return &api.LeaveShareRequest{} }, CreateResponse: func() any { return &api.LeaveShareResponse{} }},
+		api.MethodDeleteCloudVault: {
+			CreateRequest: func() any { return &api.DeleteCloudVaultRequest{} }, CreateResponse: func() any { return &api.DeleteCloudVaultResponse{} },
+		},
 		api.MethodStopSyncingVault: {
 			CreateRequest: func() any { return &api.StopSyncingVaultRequest{} }, CreateResponse: func() any { return &api.StopSyncingVaultResponse{} },
 		},
