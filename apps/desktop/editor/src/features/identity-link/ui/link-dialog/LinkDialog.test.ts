@@ -68,18 +68,16 @@ describe('the dialog that links a new device', () => {
     expect(findButton(/^Copy link$/).hasAttribute('disabled')).toBe(true)
   })
 
-  it('shows the new device and the code large and passes the approval on', async () => {
+  it('shows the new device and passes the approval on', async () => {
     const link = createLinkInfo({
       phase: 'confirmPeer',
       peerName: 'Phone',
       peerFingerprint: '1111 2222',
-      code: '482913',
     })
     const decideLink = vi.fn(() => ok(undefined))
     const dialog = await mountDialog(link, { decideLink })
     expect(dialog.text()).toContain('Phone')
     expect(dialog.text()).toContain('1111 2222')
-    expect(dialog.text()).toContain('482 913')
     await click(findButton(/^Link device$/))
     expect(decideLink).toHaveBeenCalledWith(true)
   })
@@ -96,21 +94,6 @@ describe('the dialog that links a new device', () => {
     expect(decideLink).toHaveBeenCalledWith(false)
   })
 
-  it('waits for the code once the new device was approved', async () => {
-    const link = createLinkInfo({
-      phase: 'confirmPeer',
-      isApproved: true,
-      peerName: 'Phone',
-      peerFingerprint: '1111 2222',
-      code: '482913',
-    })
-    const dialog = await mountDialog(link)
-    expect(dialog.get('ol li[data-state="active"]').text()).toContain('Type the code shown here')
-    expect(dialog.findAll('ol li[data-state="done"]')).toHaveLength(2)
-    expect(dialog.text()).toContain('482 913')
-    expect(dialog.text()).not.toContain('Link device')
-  })
-
   it('checks the steps once linked and keeps the same three', async () => {
     const dialog = await mountDialog(createLinkInfo({ phase: 'linked' }))
     expect(dialog.findAll('ol li[data-state="done"]')).toHaveLength(3)
@@ -122,8 +105,8 @@ describe('the dialog that links a new device', () => {
   })
 
   it('says why a link failed and offers to try again', async () => {
-    const dialog = await mountDialog(createLinkInfo({ phase: 'failed', reason: 'tooManyWrongCodes' }))
-    expect(dialog.get('[role="alert"]').text()).toContain('Too many wrong codes. The link is closed.')
+    const dialog = await mountDialog(createLinkInfo({ phase: 'failed', reason: 'staleChain' }))
+    expect(dialog.get('[role="alert"]').text()).toContain('The identity changed while linking. Try again.')
     expect(findButton(/^Try again$/)).toBeTruthy()
   })
 

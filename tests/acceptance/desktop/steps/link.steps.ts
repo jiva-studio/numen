@@ -16,18 +16,6 @@ When('the person declines the new device', async ({ person }) => {
   await person.computers.decline()
 })
 
-When('the second computer enters the confirmation code of the person', async ({ person }) => {
-  await person.computers.enterCode()
-})
-
-When('the second computer types {string} as the confirmation code', async ({ person }, code: string) => {
-  await person.computers.enterCode(code)
-})
-
-When('the second computer enters a wrong confirmation code {int} times', async ({ person }, times: number) => {
-  await person.computers.enterWrongCodes(times)
-})
-
 Then('the second computer has the identity of the person', async ({ person }) => {
   await person.computers.expectSecondHasAccount()
 })

@@ -41,7 +41,6 @@ export function createDeviceStore(api: DevicesCalls, notify: MessageWriter) {
       ask(() => api.link.startLink(role, mode, text)),
     get: (): Promise<Result<LinkInfo, string>> => ask(() => api.link.getLink()),
     decide: (approve: boolean) => ask(() => api.link.decideLink(approve)),
-    enterCode: (code: string) => ask(() => api.link.enterLinkCode(code)),
     confirmJoin: (approve: boolean) => ask(() => api.link.confirmJoin(approve)),
     cancel: () => ask(() => api.link.cancelLink()),
   }

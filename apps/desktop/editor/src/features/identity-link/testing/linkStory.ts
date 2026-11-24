@@ -20,15 +20,12 @@ const INFO: LinkInfo = {
   mode: 'show',
   role: 'host',
   qrText: QR_TEXT,
-  code: '',
   peerName: '',
   peerFingerprint: '',
   accountFingerprint: '3F2A 91C0 7B15 22D4 90AA 11C3 5E6F 0B87',
-  triesLeft: 3,
   reason: undefined,
   deviceName: 'Studio laptop',
   deviceFingerprint: 'D5AF 4DDB 6D92 FA46 0390 D870 1186 EB41',
-  isApproved: false,
 }
 
 export const createInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo =>
@@ -40,7 +37,6 @@ export const createCalls = (link: LinkInfo): LinkCalls => ({
   start: fn(() => ok(link)),
   get: fn(() => ok(link)),
   decide: fn(() => ok(undefined)),
-  enterCode: fn(() => ok(undefined)),
   confirmJoin: fn(() => ok(undefined)),
   cancel: fn(() => ok(undefined)),
 })

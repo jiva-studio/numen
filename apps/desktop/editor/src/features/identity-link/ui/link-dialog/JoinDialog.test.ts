@@ -1,4 +1,4 @@
-/** The dialog of a new device: the camera, the pasted link without one, the code and the account. */
+/** The dialog of a new device: the camera, the pasted link without one, and the account. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createIdentityStore, type LinkInfo } from '@/entities/identity'
@@ -135,16 +135,6 @@ describe('the dialog that joins an identity', () => {
     await enterText(textInputs()[0] as HTMLInputElement, 'nonsense')
     await click(findButton(/^Use link$/))
     expect(dialog.get('[role="alert"]').text()).toBe('This text is not the link of a QR code.')
-  })
-
-  it('sends the code the person typed from the other device', async () => {
-    const link = createLinkInfo({ phase: 'enterCode', role: 'joiner', mode: 'scan', triesLeft: 2 })
-    const enterLinkCode = vi.fn(() => ok(undefined))
-    const dialog = await mountWithLink(link, { enterLinkCode })
-    expect(dialog.text()).toContain('2 tries left.')
-    await enterText(textInputs()[0] as HTMLInputElement, '482913')
-    await click(findButton(/^Confirm$/))
-    expect(enterLinkCode).toHaveBeenCalledWith('482913')
   })
 
   it('asks the new device to join the identity and passes the answer on', async () => {

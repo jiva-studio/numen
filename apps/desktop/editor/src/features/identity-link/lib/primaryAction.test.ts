@@ -18,10 +18,9 @@ describe('the primary action of a link dialog', () => {
     )
   })
 
-  it('needs the code field to hold text and no running call', () => {
-    expect(getPrimaryAction('code', IDLE)?.isDisabled).toBe(true)
-    expect(getPrimaryAction('code', { ...IDLE, hasInput: true })?.isDisabled).toBe(false)
-    expect(getPrimaryAction('code', { ...IDLE, hasInput: true, isBusy: true })?.isDisabled).toBe(true)
+  it('lets the host approve the new device unless a call is running', () => {
+    expect(getPrimaryAction('peer', IDLE)).toStrictEqual({ label: 'Link device', isDisabled: false })
+    expect(getPrimaryAction('peer', { ...IDLE, isBusy: true })?.isDisabled).toBe(true)
   })
 
   it('tries again from a stalled, refused or failed link', () => {

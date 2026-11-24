@@ -6,7 +6,6 @@ import {
   CreateIdentityResponseSchema,
   DecideLinkResponseSchema,
   DeleteIdentityResponseSchema,
-  EnterLinkCodeResponseSchema,
   GenerateRecoveryWordsResponseSchema,
   GetIdentityResponseSchema,
   GetLinkResponseSchema,
@@ -243,15 +242,12 @@ const LINK = {
   mode: LinkMode.SCAN,
   role: LinkRole.HOST,
   qrText: '',
-  code: '123456',
   peerName: 'Phone',
   peerFingerprint: 'AAAA BBBB CCCC DDDD 0000 1111 2222 3333',
   accountFingerprint: INFO.accountFingerprint,
-  triesLeft: 3,
   reason: LinkReason.UNSPECIFIED,
   deviceName: 'Laptop',
   deviceFingerprint: INFO.deviceFingerprint,
-  isApproved: false,
 }
 
 describe('createIdentityClient link', () => {
@@ -275,7 +271,6 @@ describe('createIdentityClient link', () => {
         phase: 'confirmPeer',
         mode: 'scan',
         role: 'host',
-        code: '123456',
         reason: undefined,
       },
     })
@@ -285,12 +280,12 @@ describe('createIdentityClient link', () => {
     const client = createClient({
       getLink: () =>
         create(GetLinkResponseSchema, {
-          link: { ...LINK, phase: LinkPhase.FAILED, reason: LinkReason.TOO_MANY_WRONG_CODES },
+          link: { ...LINK, phase: LinkPhase.FAILED, reason: LinkReason.STALE_CHAIN },
         }),
     })
     expect(await client.link.getLink()).toMatchObject({
       ok: true,
-      value: { phase: 'failed', reason: 'tooManyWrongCodes' },
+      value: { phase: 'failed', reason: 'staleChain' },
     })
   })
 
@@ -300,11 +295,6 @@ describe('createIdentityClient link', () => {
         create(GetLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
       decideLink: () =>
         create(DecideLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
-      enterLinkCode: () =>
-        create(EnterLinkCodeResponseSchema, {
-          error: IdentityErrorCode.CODE_INVALID,
-          detail: 'six',
-        }),
       confirmJoin: () =>
         create(ConfirmJoinResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
       cancelLink: () =>
@@ -315,10 +305,6 @@ describe('createIdentityClient link', () => {
     expect(await client.link.decideLink(true)).toStrictEqual(noLink)
     expect(await client.link.confirmJoin(true)).toStrictEqual(noLink)
     expect(await client.link.cancelLink()).toStrictEqual(noLink)
-    expect(await client.link.enterLinkCode('12')).toStrictEqual({
-      ok: false,
-      error: { error: 'codeInvalid', message: 'six' },
-    })
   })
 
   it('sends the answers of the person', async () => {
@@ -328,19 +314,14 @@ describe('createIdentityClient link', () => {
         sent.push(`decide ${request.approve}`)
         return create(DecideLinkResponseSchema, {})
       },
-      enterLinkCode: (request) => {
-        sent.push(`code ${request.code}`)
-        return create(EnterLinkCodeResponseSchema, {})
-      },
       confirmJoin: (request) => {
         sent.push(`join ${request.approve}`)
         return create(ConfirmJoinResponseSchema, {})
       },
     })
     await client.link.decideLink(false)
-    await client.link.enterLinkCode('654321')
     await client.link.confirmJoin(true)
-    expect(sent).toStrictEqual(['decide false', 'code 654321', 'join true'])
+    expect(sent).toStrictEqual(['decide false', 'join true'])
   })
 
   it('lists the devices in the order the core gives them', async () => {

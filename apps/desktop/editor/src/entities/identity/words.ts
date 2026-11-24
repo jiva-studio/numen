@@ -14,7 +14,6 @@ const FAILURE_TEXTS: Readonly<Partial<Record<IdentityErrorCode, string>>> = {
   notAllowedThisDevice: 'This device cannot revoke itself.',
   linkTextInvalid: 'This text is not the link of a QR code.',
   linkActive: 'Another link is in progress.',
-  codeInvalid: 'The code has six digits.',
 }
 
 export const IDENTITY_WORDS = {

@@ -187,7 +187,6 @@ export function createInertDevices() {
       start: fn(createRefusal),
       get: fn(createRefusal),
       decide: fn(createRefusal),
-      enterCode: fn(createRefusal),
       confirmJoin: fn(createRefusal),
       cancel: fn(createRefusal),
     },

@@ -9,7 +9,7 @@ import { WORDS as words } from '../../words'
 const props = defineProps<{ view: LinkView }>()
 
 /* --------------------------------- State ---------------------------------- */
-const ACTIVE_STEP: Partial<Record<LinkView, number>> = { qr: 0, peer: 2, code: 2, linking: 2 }
+const ACTIVE_STEP: Partial<Record<LinkView, number>> = { qr: 1, peer: 2, linking: 2 }
 
 const stages = computed<Stage[]>(() => {
   const active = ACTIVE_STEP[props.view] ?? (props.view === 'linked' ? words.linkHostSteps.length : -1)

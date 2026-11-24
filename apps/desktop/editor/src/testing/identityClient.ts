@@ -34,7 +34,6 @@ export const createIdentityClient = (overrides: Partial<IdentityCalls> = {}): Id
   startLink: () => Promise.resolve(asRefused()),
   getLink: () => Promise.resolve(asRefused()),
   decideLink: () => Promise.resolve(asDone()),
-  enterLinkCode: () => Promise.resolve(asDone()),
   confirmJoin: () => Promise.resolve(asDone()),
   cancelLink: () => Promise.resolve(asDone()),
   listDevices: () => Promise.resolve({ ok: true, value: [] }),
@@ -48,15 +47,12 @@ export const createLinkInfo = (overrides: Partial<LinkInfo> = {}): LinkInfo => (
   mode: 'show',
   role: 'host',
   qrText: 'numen://link?v=1&c=AAAA&k=BBBB&s=CCCC',
-  code: '',
   peerName: '',
   peerFingerprint: '',
   accountFingerprint: '3F2A 91C0 0000 1111 2222 3333 4444 5555',
-  triesLeft: 3,
   reason: undefined,
   deviceName: 'Laptop',
   deviceFingerprint: 'AAAA BBBB CCCC DDDD 0000 1111 2222 3333',
-  isApproved: false,
   ...overrides,
 })
 

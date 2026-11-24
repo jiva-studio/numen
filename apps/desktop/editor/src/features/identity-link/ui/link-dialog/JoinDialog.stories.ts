@@ -1,6 +1,6 @@
 /**
  * The dialog of a new device that joins an account, : it opens the camera for the QR code of the
- * other device, shows a field for a pasted link only without a camera, and walks through the waiting, the code and the end.
+ * other device, shows a field for a pasted link only without a camera, and walks through the waiting and the end.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -150,19 +150,6 @@ export const WaitingForTheOtherDevice: Story = {
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByText('Waiting for the other device')).toBeVisible()
     await expect(canvas.getByText('Studio laptop')).toBeVisible()
-  },
-}
-
-/** The other device shows six digits: they are typed here. */
-export const EnterCode: Story = {
-  args: { calls: createCalls(joiner({ phase: 'enterCode', triesLeft: 2 })) },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    await submitText(canvas, QR_TEXT)
-    await expect(await canvas.findByText('2 tries left.')).toBeVisible()
-    await userEvent.type(canvas.getByRole('textbox', { name: /Enter the code/ }), '482913')
-    await userEvent.click(canvas.getByRole('button', { name: 'Confirm' }))
-    await expect(args.calls.enterCode).toHaveBeenCalledWith('482913')
   },
 }
 

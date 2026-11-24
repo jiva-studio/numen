@@ -14,7 +14,6 @@ export type LinkView =
   | 'qr'
   | 'waiting'
   | 'peer'
-  | 'code'
   | 'account'
   | 'linking'
   | 'linked'
@@ -33,7 +32,6 @@ const PHASE_VIEWS: Partial<Record<LinkPhase, LinkView>> = {
   waitingForChannel: 'preparing',
   waitingForAccept: 'waiting',
   confirmPeer: 'peer',
-  enterCode: 'code',
   linked: 'linked',
   failed: 'failed',
 }

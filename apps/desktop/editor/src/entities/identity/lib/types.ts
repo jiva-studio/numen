@@ -31,7 +31,6 @@ export type IdentityErrorCode =
   | 'noIdentity'
   | 'deviceRevoked'
   | 'unknownDevice'
-  | 'codeInvalid'
 
 /** What proves the account when a kit is saved or the identity is restored: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
@@ -55,7 +54,6 @@ export type LinkPhase =
   | 'waitingForPeer'
   | 'confirmPeer'
   | 'waitingForAccept'
-  | 'enterCode'
   | 'publishing'
   | 'confirmAccount'
   | 'linked'
@@ -65,8 +63,6 @@ export type LinkPhase =
 type LinkReason =
   | 'declined'
   | 'deviceHasIdentity'
-  | 'wrongCode'
-  | 'tooManyWrongCodes'
   | 'staleChain'
   | 'cancelled'
   | 'expired'
@@ -78,15 +74,12 @@ export interface LinkInfo {
   readonly mode: LinkMode
   readonly role: LinkRole
   readonly qrText: string
-  readonly code: string
   readonly peerName: string
   readonly peerFingerprint: string
   readonly accountFingerprint: string
-  readonly triesLeft: number
   readonly reason: LinkReason | undefined
   readonly deviceName: string
   readonly deviceFingerprint: string
-  readonly isApproved: boolean
 }
 
 /** One device of the identity. */

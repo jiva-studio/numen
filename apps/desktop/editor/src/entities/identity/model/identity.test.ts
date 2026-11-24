@@ -47,7 +47,6 @@ const createClient = (overrides: Partial<IdentityCalls> = {}): IdentityCalls => 
   startLink: () => Promise.resolve(asRefusal('noLink')),
   getLink: () => Promise.resolve(asRefusal('noLink')),
   decideLink: () => Promise.resolve(asStarted()),
-  enterLinkCode: () => Promise.resolve(asStarted()),
   confirmJoin: () => Promise.resolve(asStarted()),
   cancelLink: () => Promise.resolve(asStarted()),
   listDevices: () => Promise.resolve(asValue([])),
@@ -567,15 +566,10 @@ describe('the devices and the link of the identity store', () => {
           sent.push(`decide ${approve}`)
           return Promise.resolve(asStarted())
         },
-        enterLinkCode: (code) => {
-          sent.push(`code ${code}`)
-          return Promise.resolve(asStarted())
-        },
       }),
     )
     await store.devices.link.decide(true)
-    await store.devices.link.enterCode('123456')
-    expect(sent).toStrictEqual(['decide true', 'code 123456'])
+    expect(sent).toStrictEqual(['decide true'])
   })
 
   it('words a refused link text', async () => {

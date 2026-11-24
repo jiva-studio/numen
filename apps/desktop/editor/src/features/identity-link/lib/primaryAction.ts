@@ -16,14 +16,11 @@ export interface PrimaryState {
 
 const LABELS: Partial<Record<LinkView, string>> = {
   peer: words.linkApprove,
-  code: words.linkCodeConfirm,
   account: words.linkJoin,
   stalled: words.linkTryAgain,
   refused: words.linkTryAgain,
   failed: words.linkTryAgain,
 }
-
-const VIEWS_WITH_FIELD: ReadonlySet<LinkView> = new Set(['code'])
 
 export function getPrimaryAction(view: LinkView, state: PrimaryState): PrimaryAction | undefined {
   if (view === 'scan') {
@@ -33,5 +30,5 @@ export function getPrimaryAction(view: LinkView, state: PrimaryState): PrimaryAc
   }
   const label = LABELS[view]
   if (label === undefined) return undefined
-  return { label, isDisabled: state.isBusy || (VIEWS_WITH_FIELD.has(view) && !state.hasInput) }
+  return { label, isDisabled: state.isBusy }
 }

@@ -7,7 +7,6 @@ import { ApplicationDriver } from './application.js'
 import { DevicesDriver } from './devices.js'
 import { IdentityDriver } from './identity.js'
 import { SubscriptionDriver } from './subscription.js'
-import { makeWrongCode } from './link.js'
 import { DEFAULT_VAULT } from './rules.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
@@ -258,17 +257,6 @@ export class ComputerDriver {
     await (await this.ensureSecond()).identity.create()
   }
 
-  /** The second computer types the code that the device of the person shows, or a code it is given. */
-  async enterCode(code?: string): Promise<void> {
-    const second = this.requireSecond()
-    await second.devices.enterCode(code ?? (await this.owner.devices.readConfirmationCode()))
-  }
-
-  async enterWrongCodes(times: number): Promise<void> {
-    const wrong = makeWrongCode(await this.owner.devices.readConfirmationCode())
-    for (let attempt = 0; attempt < times; attempt += 1) await this.requireSecond().devices.enterCode(wrong)
-  }
-
   async expectActiveDevices(count: number): Promise<void> {
     await this.owner.devices.expectActiveDevices(count)
   }
@@ -280,7 +268,6 @@ export class ComputerDriver {
     await this.showQrToLink()
     await this.scan()
     await this.approve()
-    await this.enterCode()
     await this.expectSecondHasAccount()
   }
 

@@ -45,7 +45,6 @@ type IdentityErrorCode =
   | 'noIdentity'
   | 'deviceRevoked'
   | 'unknownDevice'
-  | 'codeInvalid'
 
 /** A served refusal with the reason the core gives. */
 export type IdentityFailure = Failure<IdentityErrorCode>
@@ -62,7 +61,6 @@ type LinkPhase =
   | 'waitingForPeer'
   | 'confirmPeer'
   | 'waitingForAccept'
-  | 'enterCode'
   | 'publishing'
   | 'confirmAccount'
   | 'linked'
@@ -72,8 +70,6 @@ type LinkPhase =
 type LinkReason =
   | 'declined'
   | 'deviceHasIdentity'
-  | 'wrongCode'
-  | 'tooManyWrongCodes'
   | 'staleChain'
   | 'cancelled'
   | 'expired'
@@ -85,15 +81,12 @@ export interface LinkInfo {
   readonly mode: LinkMode
   readonly role: LinkRole
   readonly qrText: string
-  readonly code: string
   readonly peerName: string
   readonly peerFingerprint: string
   readonly accountFingerprint: string
-  readonly triesLeft: number
   readonly reason: LinkReason | undefined
   readonly deviceName: string
   readonly deviceFingerprint: string
-  readonly isApproved: boolean
 }
 
 /** One device of the account. */
@@ -127,7 +120,7 @@ export type KitProof =
 
 /** The calls of IdentityService that link a device to an account. */
 type LinkRpc = Rpc<
-  'startLink' | 'getLink' | 'decideLink' | 'enterLinkCode' | 'confirmJoin' | 'cancelLink'
+  'startLink' | 'getLink' | 'decideLink' | 'confirmJoin' | 'cancelLink'
 >
 
 /** The calls of IdentityService that list the devices of the account and revoke one. */
@@ -168,7 +161,6 @@ export interface LinkClient {
   getLink(): Promise<Result<LinkInfo, IdentityFailure>>
   /** The answer of the person on the host to the new device. */
   decideLink(approve: boolean): Promise<Result<undefined, IdentityFailure>>
-  enterLinkCode(code: string): Promise<Result<undefined, IdentityFailure>>
   /** The answer of the person on the new device to the account it is offered. */
   confirmJoin(approve: boolean): Promise<Result<undefined, IdentityFailure>>
   cancelLink(): Promise<Result<undefined, IdentityFailure>>
@@ -213,7 +205,6 @@ const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = 
   [ProtoIdentityErrorCode.NO_IDENTITY]: 'noIdentity',
   [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'deviceRevoked',
   [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknownDevice',
-  [ProtoIdentityErrorCode.CODE_INVALID]: 'codeInvalid',
 }
 
 const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined =>
@@ -224,7 +215,6 @@ const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
   [ProtoLinkPhase.WAITING_FOR_PEER]: 'waitingForPeer',
   [ProtoLinkPhase.CONFIRM_PEER]: 'confirmPeer',
   [ProtoLinkPhase.WAITING_FOR_ACCEPT]: 'waitingForAccept',
-  [ProtoLinkPhase.ENTER_CODE]: 'enterCode',
   [ProtoLinkPhase.PUBLISHING]: 'publishing',
   [ProtoLinkPhase.CONFIRM_ACCOUNT]: 'confirmAccount',
   [ProtoLinkPhase.LINKED]: 'linked',
@@ -240,10 +230,6 @@ const readReason = (reason: ProtoLinkReason): LinkReason | undefined => {
       return 'declined'
     case ProtoLinkReason.DEVICE_HAS_IDENTITY:
       return 'deviceHasIdentity'
-    case ProtoLinkReason.WRONG_CODE:
-      return 'wrongCode'
-    case ProtoLinkReason.TOO_MANY_WRONG_CODES:
-      return 'tooManyWrongCodes'
     case ProtoLinkReason.STALE_CHAIN:
       return 'staleChain'
     case ProtoLinkReason.CANCELED:
@@ -260,15 +246,12 @@ const readLink = (link: ProtoLinkInfo): LinkInfo => ({
   mode: link.mode === ProtoLinkMode.SCAN ? 'scan' : 'show',
   role: link.role === ProtoLinkRole.HOST ? 'host' : 'joiner',
   qrText: link.qrText,
-  code: link.code,
   peerName: link.peerName,
   peerFingerprint: link.peerFingerprint,
   accountFingerprint: link.accountFingerprint,
-  triesLeft: link.triesLeft,
   reason: readReason(link.reason),
   deviceName: link.deviceName,
   deviceFingerprint: link.deviceFingerprint,
-  isApproved: link.isApproved,
 })
 
 const readDevice = (device: ProtoDeviceInfo): DeviceInfo => ({
@@ -365,7 +348,6 @@ const createLinkClient = (rpc: LinkRpc): LinkClient => ({
     ),
   getLink: async () => readLinkAnswer(await rpc.getLink({})),
   decideLink: async (approve) => readStartAnswer(await rpc.decideLink({ approve })),
-  enterLinkCode: async (code) => readStartAnswer(await rpc.enterLinkCode({ code })),
   confirmJoin: async (approve) => readStartAnswer(await rpc.confirmJoin({ approve })),
   cancelLink: async () => readStartAnswer(await rpc.cancelLink({})),
 })

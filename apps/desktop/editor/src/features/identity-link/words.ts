@@ -18,8 +18,6 @@ export const WORDS = {
   linkCopied: 'Copied',
   linkApprove: 'Link device',
   linkDecline: "Don't link",
-  linkCodeField: 'Enter the code shown on your other device',
-  linkCodeConfirm: 'Confirm',
   linkJoin: 'Use identity',
   linkCancel: 'Cancel',
   linkClose: 'Close',
@@ -28,9 +26,9 @@ export const WORDS = {
   linkJoinHint: 'Scan the code shown on your other device.',
   linkJoinPasteHint: 'Paste the link shown on your other device.',
   linkHostSteps: [
-    'On the other device, choose Use existing.',
-    'Scan this code.',
-    'Type the code shown here on the other device.',
+    'On this device, choose Link a device.',
+    'On the other device, choose Use existing and scan this code.',
+    'Approve the other device here.',
   ],
   linkCheckingCamera: 'Checking the camera',
   linkCheckingCameraDetail: 'Numen asks the system for the camera. Allow it if you are asked.',
@@ -44,7 +42,6 @@ export const WORDS = {
   linkWaitingDetail: 'Keep this window open until the other device answers.',
   linkLinkingTitle: 'Linking the device',
   linkLinkingDetail: 'The keys of the identity are being passed on.',
-  linkCodeHint: 'Type this confirmation code on the new device.',
   linkDoneTitle: 'The device is linked',
   linkDoneDetail: 'It has the identity now.',
   linkFailedTitle: 'The link failed',
@@ -53,10 +50,7 @@ export const WORDS = {
   linkDone: 'Done',
   linkDeviceName: 'Device name',
   linkDeviceFingerprint: 'Device fingerprint',
-  linkCode: 'Confirmation code',
   linkCompare: 'Compare this fingerprint with the one the new device shows.',
-  linkWaitingCode: 'Waiting for the code on the new device.',
-  linkTriesLeft: (count: number) => `${count} tries left.`,
   linkJoinQuestion: (account: string) => `Use identity ${account} on this device?`,
   linkReason: (reason: string | undefined): string => {
     switch (reason) {
@@ -64,10 +58,6 @@ export const WORDS = {
         return 'The new device was declined.'
       case 'deviceHasIdentity':
         return 'This device has an identity.'
-      case 'tooManyWrongCodes':
-        return 'Too many wrong codes. The link is closed.'
-      case 'wrongCode':
-        return 'The code was wrong.'
       case 'cancelled':
         return 'The link was cancelled.'
       case 'expired':

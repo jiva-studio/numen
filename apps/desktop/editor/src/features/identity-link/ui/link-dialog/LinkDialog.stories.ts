@@ -1,6 +1,6 @@
 /**
  * The dialog of a device that has the account and links a new one: it shows its QR code at once,
- * says what it waits for, shows the new device with the confirmation code in large digits, and ends in a clear state.
+ * says what it waits for, shows the new device to approve, and ends in a clear state.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -43,7 +43,6 @@ const peer = (overrides: Parameters<typeof createInfo>[0] = {}) =>
     mode: 'show',
     peerName: 'Phone',
     peerFingerprint: '1111 2222 3333 4444 5555 6666 7777 8888',
-    code: '482913',
     ...overrides,
   })
 
@@ -55,7 +54,7 @@ export const ShowingQr: Story = {
       await canvas.findByRole('dialog', { name: 'Link a device' }),
     ).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
-    await expect(canvas.getByText('Scan this code.')).toBeVisible()
+    await expect(canvas.getByText('On the other device, choose Use existing and scan this code.')).toBeVisible()
     await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('choose Use existing')
     await expect(canvas.getByRole('button', { name: 'Copy link' })).toBeVisible()
   },
@@ -96,25 +95,14 @@ export const Refused: Story = {
 }
 
 
-/** The new device is asked about with its name, its fingerprint and the code to type on it. */
+/** The new device is asked about with its name, its fingerprint to approve. */
 export const NewDeviceAsked: Story = {
   args: { calls: createCalls(peer()) },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Phone')).toBeVisible()
-    await expect(canvas.getByLabelText('Confirmation code')).toHaveTextContent('482 913')
     await userEvent.click(canvas.getByRole('button', { name: 'Link device' }))
     await expect(args.calls.decide).toHaveBeenCalledWith(true)
-  },
-}
-
-/** The new device was linked on this side and waits for its code. */
-export const WaitingForTheCode: Story = {
-  args: { calls: createCalls(peer({ isApproved: true })) },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('Type the code shown here')
-    await expect(canvas.getByLabelText('Confirmation code')).toHaveTextContent('482 913')
   },
 }
 
@@ -139,11 +127,11 @@ export const Linked: Story = {
   },
 }
 
-/** Three wrong codes close the link. */
+/** The identity changed while linking, so the link is closed. */
 export const Failed: Story = {
-  args: { calls: createCalls(createInfo({ phase: 'failed', reason: 'tooManyWrongCodes' })) },
+  args: { calls: createCalls(createInfo({ phase: 'failed', reason: 'staleChain' })) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('Too many wrong codes.')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('The identity changed while linking.')
   },
 }

@@ -4,7 +4,7 @@
  */
 import { expect, type Locator } from 'playwright/test'
 import { decodeQr } from './qr.js'
-import { readCode, readFingerprint } from './link.js'
+import { readFingerprint } from './link.js'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
@@ -17,8 +17,6 @@ const PASTE_FIELD = 'Link from the other device'
 const USE_LINK = 'Use link'
 const LINK_THIS = 'Link device'
 const DECLINE = "Don't link"
-const CODE_FIELD = 'Enter the code shown on your other device'
-const CONFIRM_CODE = 'Confirm'
 const JOIN = 'Use identity'
 const REVOKE = 'Remove'
 const THIS_DEVICE = 'This device'
@@ -26,7 +24,6 @@ const REVOKED = 'Revoked'
 const DELETE_REVOKED = 'Delete identity from this device'
 const DEVICE_NAME = 'Device name'
 const DEVICE_FINGERPRINT = 'Device fingerprint'
-const CONFIRMATION_CODE = 'Confirmation code'
 const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 /** The people at the two computers act within seconds; the plugin carries a message in about a second. */
 const STEP_LIMIT_MS = 30_000
@@ -126,23 +123,6 @@ export class DevicesDriver {
   /** The name and the fingerprint of the new device that the dialog of the device that has the identity shows. */
   async readPeer(): Promise<{ readonly name: string; readonly fingerprint: string }> {
     return this.readOwnDevice()
-  }
-
-  /** The six digits the device that has the identity shows when it scanned the QR code of a new device. */
-  async readConfirmationCode(): Promise<string> {
-    const code = this.getDialog().getByLabel(CONFIRMATION_CODE)
-    await expect(code).toBeVisible({ timeout: STEP_LIMIT_MS })
-    return readCode((await code.innerText()).replace(/\s/g, ''))
-  }
-
-  /** Types the code where the page takes one; a link that was closed shows an alert and takes none, so nothing is typed. */
-  async enterCode(code: string): Promise<void> {
-    const dialog = this.getDialog()
-    const field = dialog.getByRole('textbox', { name: CODE_FIELD })
-    await expect(field.or(dialog.getByRole('alert')).first()).toBeVisible({ timeout: STEP_LIMIT_MS })
-    if ((await field.count()) === 0 || !(await field.isEditable())) return
-    await field.fill(code)
-    await dialog.getByRole('button', { name: CONFIRM_CODE, exact: true }).click()
   }
 
   /** Expects the page of a new device to ask whether to join the identity with this fingerprint, and answers Join where answer is set. */

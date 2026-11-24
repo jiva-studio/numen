@@ -3,7 +3,7 @@
  * open (a timer of the window), and the refusal the person last saw. A host starts to show its QR code when the dialog
  * opens. A link that waits for its channel for 15 seconds is cancelled and reported as stalled, because the channel
  * comes from the Numen Sync server and the core waits for it as long as the link lives. The dialog holds no key and
- * no secret: the code and the text of the QR code come from the core and are dropped with the dialog.
+ * no secret: the text of the QR code come from the core and are dropped with the dialog.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
@@ -90,7 +90,6 @@ export function useLinkSession(
 
   const answers = {
     decide: (isApproved: boolean) => ask(() => getCalls().decide(isApproved)),
-    sendCode: (code: string) => ask(() => getCalls().enterCode(code)),
     confirmJoin: (isApproved: boolean) => ask(() => getCalls().confirmJoin(isApproved)),
   }
 

@@ -49,7 +49,6 @@ const createCalls = (devices: readonly DeviceInfo[]): DeviceCalls => ({
     start: fn(() => ok({ ...createLinkInfo(), phase: 'waitingForChannel' as const })),
     get: fn(() => ok({ ...createLinkInfo(), phase: 'waitingForChannel' as const })),
     decide: fn(() => ok(undefined)),
-    enterCode: fn(() => ok(undefined)),
     confirmJoin: fn(() => ok(undefined)),
     cancel: fn(() => ok(undefined)),
   },
@@ -60,15 +59,12 @@ const createLinkInfo = () => ({
   mode: 'show' as const,
   role: 'host' as const,
   qrText: 'numen://link?v=1',
-  code: '',
   peerName: '',
   peerFingerprint: '',
   accountFingerprint: INFO.accountFingerprint,
-  triesLeft: 3,
   reason: undefined,
   deviceName: INFO.deviceName,
   deviceFingerprint: INFO.deviceFingerprint,
-  isApproved: false,
 })
 
 const onDelete = fn()

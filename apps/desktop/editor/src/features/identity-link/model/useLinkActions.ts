@@ -7,7 +7,6 @@ import type { useLinkSession } from './useLinkSession'
 /** What the person typed into the dialog and which way it links. */
 export interface LinkDraft {
   text: Ref<string>
-  code: Ref<string>
 }
 
 const ignore = (): void => undefined
@@ -39,9 +38,6 @@ export function useLinkActions(
         break
       case 'peer':
         run(session.answers.decide(true))
-        break
-      case 'code':
-        run(session.answers.sendCode(draft.code.value))
         break
       case 'account':
         run(session.answers.confirmJoin(true))

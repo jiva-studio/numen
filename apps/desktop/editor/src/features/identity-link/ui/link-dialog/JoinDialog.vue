@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * The dialog of a new device: the camera scans the QR code of a device that has the account, and a machine
- * without a camera shows a field to paste its link into instead. Then it shows the name of this device, asks for
- * the confirmation code the other device shows, and asks whether to join the identity. Escape closes it, and closing
+ * without a camera shows a field to paste its link into instead. Then it shows the name of this device and asks
+ * whether to join the identity. Escape closes it, and closing
  * it cancels the link.
  */
 import { computed, ref, watch } from 'vue'
@@ -32,7 +32,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'linked'): void }>()
 /* --------------------------------- State ---------------------------------- */
 const session = useLinkSession(() => props.calls, 'joiner', props.stallMs)
 const scan = useLinkScan(props.findCamera)
-const draft = { text: ref(''), code: ref('') }
+const draft = { text: ref('') }
 const isPasting = computed(() => scan.phase.value === 'paste')
 const actions = useLinkActions(session, 'joiner', draft)
 const { view } = actions
@@ -42,9 +42,7 @@ watch(
     if (phase === 'linked') emit('linked')
   },
 )
-const hasInput = computed(() =>
-  view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
-)
+const hasInput = computed(() => view.value === 'scan' && draft.text.value !== '')
 
 /* -------------------------------- Handlers -------------------------------- */
 function getHint(): string {
@@ -74,7 +72,6 @@ function getHint(): string {
     />
     <LinkProgress
       v-else
-      v-model:code="draft.code.value"
       :view="view"
       :link="session.link.value"
       role="joiner"

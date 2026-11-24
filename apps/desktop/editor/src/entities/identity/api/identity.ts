@@ -53,9 +53,6 @@ export const createDeviceLinkApi = (identity: LinkClient) => ({
   /** The answer of the person on the host to the new device. */
   decideLink: (approve: boolean) => identity.decideLink(approve),
 
-  /** The confirmation code the person read on the host. */
-  enterLinkCode: (code: string) => identity.enterLinkCode(code),
-
   /** The answer of the person on the new device to the identity it is offered. */
   confirmJoin: (approve: boolean) => identity.confirmJoin(approve),
 

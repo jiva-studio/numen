@@ -1,28 +1,24 @@
 <script setup lang="ts">
-/** What a link in progress draws in each view: a status, the QR code, the new device, the code, the account, the end. */
+/** What a link in progress draws in each view: a status, the QR code, the new device, the account, the end. */
 import { computed } from 'vue'
 import { ErrorState } from '@numen/ui'
 import type { LinkInfo, LinkRole } from '@/entities/identity'
 import type { Fact } from '../../lib/types'
 import type { LinkView } from '../../lib/phases'
 import { WORDS as words } from '../../words'
-import LinkCodeForm from './LinkCodeForm.vue'
 import LinkFacts from './LinkFacts.vue'
 import LinkPeerView from './LinkPeerView.vue'
 import LinkQrView from './LinkQrView.vue'
 import LinkSteps from './LinkSteps.vue'
 import LinkStatus from './LinkStatus.vue'
 
-/* ----------------------------- Props & Emits ------------------------------ */
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   view: LinkView
   link: LinkInfo | undefined
   role: LinkRole
   problem: string
-  code: string
 }>()
-
-const emit = defineEmits<{ (e: 'update:code', value: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const ownFacts = computed<Fact[]>(() =>
@@ -37,7 +33,7 @@ const isQrShown = computed(() => props.role === 'host' && (props.view === 'qr' |
 const isStepsShown = computed(
   () => props.role === 'host' && ['qr', 'preparing', 'peer', 'linking', 'linked'].includes(props.view),
 )
-const isOwnShown = computed(() => ['waiting', 'code', 'account'].includes(props.view))
+const isOwnShown = computed(() => ['waiting', 'account'].includes(props.view))
 </script>
 
 <template>
@@ -70,14 +66,6 @@ const isOwnShown = computed(() => ['waiting', 'code', 'account'].includes(props.
       v-else-if="view === 'peer' && link"
       :name="link.peerName"
       :fingerprint="link.peerFingerprint"
-      :code="link.code"
-      :is-approved="link.isApproved"
-    />
-    <LinkCodeForm
-      v-else-if="view === 'code' && link"
-      :model-value="code"
-      :tries-left="link.triesLeft"
-      @update:model-value="emit('update:code', $event)"
     />
     <p v-else-if="view === 'account' && link">
       {{ words.linkJoinQuestion(link.accountFingerprint) }}
