@@ -50,9 +50,10 @@ describe('the dialog that joins an identity', () => {
   it('has a short title and asks for the camera first', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }))
     expect(dialog.get('h2').text()).toBe('Use existing')
-    expect(dialog.get('[role="status"]').text()).toBe(
-      'No camera found. Paste the link from the other device.',
-    )
+    expect(dialog.text()).toContain('Paste the link shown on your other device.')
+    expect(dialog.text()).not.toContain('Scan the code')
+    expect(dialog.find('label').exists()).toBe(false)
+    expect(dialog.get('input').attributes('aria-label')).toBe('Link from the other device')
   })
 
   it('offers no field and no way to paste where the machine has a camera', async () => {
@@ -80,14 +81,13 @@ describe('the dialog that joins an identity', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('Checking the camera')
   })
 
-  it('shows the field and the reason when the camera is not allowed', async () => {
+  it('shows the field and the paste hint when the camera is not allowed', async () => {
     const dialog = await mountDialog(createLinkInfo({ role: 'joiner' }), {}, true, () =>
       Promise.reject(new DOMException('no', 'NotAllowedError')),
     )
     expect(dialog.find('video').exists()).toBe(false)
-    expect(dialog.get('[role="status"]').text()).toBe(
-      'The camera is not allowed. Paste the link from the other device.',
-    )
+    expect(dialog.text()).toContain('Paste the link shown on your other device.')
+    expect(dialog.text()).not.toContain('not allowed')
     expect(textInputs()).toHaveLength(1)
   })
   it('starts as the scanner with the link pasted', async () => {

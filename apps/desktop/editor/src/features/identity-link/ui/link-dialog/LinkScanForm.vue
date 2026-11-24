@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * What a new device scans with: the camera across the whole width, or, only where the machine has no camera or the
- * camera failed, the reason and a field to paste the link of the other device into.
+ * camera failed, a field to paste the link of the other device into.
  */
 import { QrScanner, type ScannerCamera } from '@numen/ui'
 import { WORDS as words } from '../../words'
@@ -13,7 +13,6 @@ defineProps<{
   modelValue: string
   problem: string
   phase: 'checking' | 'camera' | 'paste'
-  notice: string
   camera?: ScannerCamera
 }>()
 
@@ -36,10 +35,10 @@ const emit = defineEmits<{
       @unavailable="emit('unavailable', $event)"
     />
     <template v-else>
-      <p role="status" class="link-scan__notice">{{ notice }}</p>
       <LinkField
         :model-value="modelValue"
         :label="words.linkPaste"
+        is-label-hidden
         is-mono
         @update:model-value="emit('update:modelValue', $event)"
       />
@@ -60,11 +59,6 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: center;
   aspect-ratio: 4 / 3;
-}
-
-.link-scan__notice {
-  margin: 0;
-  color: var(--numen-hushed);
 }
 
 .link-scan__problem {

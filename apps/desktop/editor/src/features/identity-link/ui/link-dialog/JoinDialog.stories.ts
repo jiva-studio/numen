@@ -104,13 +104,13 @@ export const NoCamera: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('No camera found. Paste the link from the other device.'),
+      await canvas.findByText('Paste the link shown on your other device.'),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Use link' })).toBeDisabled()
   },
 }
 
-/** The person did not allow the camera: the reason and the field. */
+/** The person did not allow the camera: the same hint and the field. */
 export const CameraDenied: Story = {
   args: {
     findCamera: () => Promise.resolve(true),
@@ -119,7 +119,7 @@ export const CameraDenied: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByText('The camera is not allowed. Paste the link from the other device.'),
+      await canvas.findByText('Paste the link shown on your other device.'),
     ).toBeVisible()
   },
 }

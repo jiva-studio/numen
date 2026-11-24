@@ -8,6 +8,7 @@ defineProps<{
   modelValue: string
   isReadonly?: boolean
   isMono?: boolean
+  isLabelHidden?: boolean
   inputmode?: 'numeric' | 'text'
   maxlength?: number
 }>()
@@ -25,10 +26,11 @@ function onInput(event: Event): void {
 
 <template>
   <div class="link-field">
-    <label class="link-field__label" :for="inputId">{{ label }}</label>
+    <label v-if="!isLabelHidden" class="link-field__label" :for="inputId">{{ label }}</label>
     <div class="link-field__row">
       <input
         :id="inputId"
+        :aria-label="isLabelHidden ? label : undefined"
         class="link-field__input"
         :class="{ 'link-field__input--mono': isMono }"
         type="text"

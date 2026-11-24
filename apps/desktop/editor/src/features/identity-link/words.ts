@@ -11,8 +11,6 @@ export const WORDS = {
   deviceRevokeWarning: (name: string, fingerprint: string) =>
     `${name} (${fingerprint}) will lose access. The files on the device stay.`,
   deviceRevokeCancel: 'Cancel',
-  linkNoCamera: 'No camera found. Paste the link from the other device.',
-  linkCameraFailed: (reason: string) => `${reason} Paste the link from the other device.`,
   linkQr: 'QR code',
   linkPaste: 'Link from the other device',
   linkUse: 'Use link',
@@ -28,6 +26,7 @@ export const WORDS = {
   linkJoinTitle: 'Use existing',
   linkHostTitle: 'Link a device',
   linkJoinHint: 'Scan the code shown on your other device.',
+  linkJoinPasteHint: 'Paste the link shown on your other device.',
   linkHostSteps: [
     'On the other device, choose Use existing.',
     'Scan this code.',

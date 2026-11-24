@@ -39,13 +39,19 @@ const { view } = actions
 const hasInput = computed(() =>
   view.value === 'scan' ? draft.text.value !== '' : draft.code.value.length === 6,
 )
+
+/* -------------------------------- Handlers -------------------------------- */
+function getHint(): string {
+  if (view.value !== 'scan') return ''
+  return isPasting.value ? words.linkJoinPasteHint : words.linkJoinHint
+}
 </script>
 
 <template>
   <Dialog
     is-form
     :label="words.linkJoinTitle"
-    :hint="view === 'scan' ? words.linkJoinHint : ''"
+    :hint="getHint()"
     size="md"
     :step="view"
     @submit="actions.submit"
@@ -56,7 +62,6 @@ const hasInput = computed(() =>
       v-model="draft.text.value"
       :problem="session.problem.value"
       :phase="scan.phase.value"
-      :notice="scan.notice.value"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="actions.scan"
       @unavailable="scan.setUnavailable"
