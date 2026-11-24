@@ -52,8 +52,6 @@ func (s *pendingStore) expire(restore *pendingRestore) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.current == restore {
-		s.current.recovery = identitylib.RecoveryKey{}
-		s.current.device = identitylib.DeviceKey{}
 		s.clearLocked()
 	}
 }

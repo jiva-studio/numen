@@ -567,17 +567,10 @@ func TestStartRestore_DropsAPendingRestoreThatStaysUncompletedFor10Minutes(t *te
 
 	k.clock.Advance(10 * time.Minute)
 
-	deadline := time.Now().Add(5 * time.Second)
-	for {
+	testsupport.WaitFor(t, func() bool {
 		pending, err := k.pending.Execute(t.Context())
-		if err == nil && !pending.IsPending {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("pending = %+v, error = %v, want the restore dropped after 10 minutes", pending, err)
-		}
-		time.Sleep(time.Millisecond)
-	}
+		return err == nil && !pending.IsPending
+	})
 	if _, err := k.sign.Execute(t.Context(), syncPlugin, []byte("message")); !errors.Is(err, identitydomain.ErrNoPendingRestore) {
 		t.Errorf("SignAsRecovery after the expiry: error = %v, want ErrNoPendingRestore", err)
 	}
