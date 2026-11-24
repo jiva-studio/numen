@@ -342,8 +342,8 @@ export class ComputerDriver {
   }
 
   /** Expects the note within the seconds the scenario names, with the settings the plugin has now. */
-  async expectNoteWithin(holder: Holder, note: { title: string; text: string; seconds: number }, vault: string | undefined): Promise<void> {
-    await this.expectNoteBy({ ...holder, vault: holder.vault ?? vault }, note.title, note.text, note.seconds * 1000)
+  async expectNoteWithin(holder: Holder, note: { title: string; text: string; seconds: number }): Promise<void> {
+    await this.expectNoteBy(holder, note.title, note.text, note.seconds * 1000)
   }
 
   async expectConflictCopy(holder: Holder, title: string, text: string, vault: string | undefined): Promise<void> {
