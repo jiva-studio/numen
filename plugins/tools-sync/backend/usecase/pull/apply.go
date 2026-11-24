@@ -70,7 +70,7 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 		return nil
 	}
 	if (isKnown || !rev.GetDeleted()) && r.isRegressed(rev, record, isKnown) {
-		r.noteRollback(meta, rev)
+		r.recordRollback(meta, rev)
 		return nil
 	}
 	if rev.GetDeleted() {
@@ -351,7 +351,7 @@ func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKn
 	return rev.GetFileVersion() <= floor
 }
 
-func (r *run) noteRollback(meta note.Meta, rev *syncv1.Revision) {
+func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) {
 	text := meta.Path
 	if rev.GetDeleted() {
 		text = fmt.Sprintf("%x", rev.GetFileId())

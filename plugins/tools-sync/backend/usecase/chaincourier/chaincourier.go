@@ -71,7 +71,7 @@ func (u *Publish) endorse(ctx context.Context, pending []byte) error {
 		return err
 	}
 	var revoked [][]byte
-	for _, device := range chain.RevokedSince(prefix) {
+	for _, device := range chain.GetRevokedSince(prefix) {
 		revoked = append(revoked, device)
 	}
 	return u.deps.Endorse.Execute(ctx, revoked)
