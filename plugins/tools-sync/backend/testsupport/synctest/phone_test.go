@@ -69,6 +69,8 @@ func TestAPhoneDropsAFileDeletedOnTheComputerFromItsList(t *testing.T) {
 	w.Computer.Vaults.With(synctest.ComputerVault).Remove(guidePath)
 	w.Clock.Advance(time.Minute)
 	w.SyncComputer(t)
+	w.Clock.Advance(synctest.RemovalDelay)
+	w.SyncComputer(t)
 
 	w.SyncPhone(t)
 

@@ -373,25 +373,6 @@ func readCatalogCache(t *testing.T, c *synctest.Computer) [][]byte {
 	return journal.Entries
 }
 
-func TestSyncVault_PinsTheKeyOfTheServerBeforeAnyRestoreIsAnnounced(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
-
-	sync(t, p.a, source)
-
-	_, key, err := p.a.Cloud.GetRestoreEpoch(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	pinned, err := p.a.State.ReadPin(t.Context(), p.server.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(key) == 0 || !bytes.Equal(pinned, key) {
-		t.Errorf("pinned key = %x, want the key of the server %x from the first pass", pinned, key)
-	}
-}
-
 func TestSyncVault_AppliesNewerTextInsteadOfSendingItsOwnWhenServerAnnouncesRestoreItNeverMade(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "milk")
@@ -421,7 +402,7 @@ func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLo
 
 	sync(t, p.a, source)
 
-	if !p.a.HasItem(textEpochUntrusted) || !p.a.HasItemKey(keyEpochUntrusted) {
+	if !p.a.HasItem(textEpochUntrusted) || !p.a.HasItemKey(keyEpochUntrusted+"/"+string(source)) {
 		t.Errorf("health items = %+v, want %q", p.a.Health.List(), textEpochUntrusted)
 	}
 	if got := countCommits(p); got != commits {

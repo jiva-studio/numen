@@ -55,6 +55,11 @@ func (r *run) list(ctx context.Context, stored *syncv1.StoredRevision, meta note
 	if r.listed != nil {
 		r.listed[meta.Path] = meta.Hash
 	}
+	if isKnown && previous.Path != meta.Path {
+		if err := r.dropListed(ctx, previous.Path); err != nil {
+			return err
+		}
+	}
 	record, err := r.makeRecord(ctx, stored, meta, previous, isKnown)
 	if err != nil {
 		return err
@@ -70,4 +75,17 @@ func (r *run) holdOnRefusal(err, refusal error, filePath string, seq uint64) err
 		return nil
 	}
 	return err
+}
+
+func (r *run) dropListed(ctx context.Context, filePath string) error {
+	if _, err := r.getListedHash(ctx, filePath); errors.Is(err, host.ErrFileAbsent) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if _, err := r.moves.RemoveFile(ctx, filePath, nil); err != nil && !errors.Is(err, host.ErrNotExist) {
+		return err
+	}
+	delete(r.listed, filePath)
+	return nil
 }

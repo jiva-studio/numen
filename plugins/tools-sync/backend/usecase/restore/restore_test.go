@@ -105,29 +105,7 @@ func TestRecoverAccount_SendsTheCachedCatalogEntriesTheServerLost(t *testing.T) 
 	}
 }
 
-func TestRecoverAccount_PinsTheKeyOfTheServerTheFirstTime(t *testing.T) {
-	t.Parallel()
-	p := newFirst(t)
-	p.a.Connect(t, source)
-	if _, err := p.server.Fake.AnnounceRestoreEpoch(); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-
-	_, key, err := p.a.Cloud.GetRestoreEpoch(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	pinned, err := p.a.State.ReadPin(t.Context(), p.server.URL)
-	if err != nil || !bytes.Equal(pinned, key) {
-		t.Errorf("pinned key = %x, %v, want %x", pinned, err, key)
-	}
-}
-
-func TestRecoverAccount_RefusesAKeyThatIsNotThePinnedOneAndSendsNothing(t *testing.T) {
+func TestRecoverAccount_RefusesAnAnnouncementNoKnownRootVouchesForAndSendsNothing(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	kept, err := p.server.Fake.Snapshot()

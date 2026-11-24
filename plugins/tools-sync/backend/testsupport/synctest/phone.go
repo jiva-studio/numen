@@ -99,6 +99,7 @@ type PhoneWorld struct {
 	Clock    *Clock
 	Computer *Computer
 	Phone    *Computer
+	fetch    *fetchfile.FetchFile
 }
 
 // NewPhoneWorld makes the world. No pass has run on the phone.
@@ -111,7 +112,9 @@ func NewPhoneWorld(t *testing.T) *PhoneWorld {
 	computer.Connect(t, ComputerVault)
 	phone := NewPhone(t, server, clock, PhoneVault, words)
 	phone.ConnectExisting(t, PhoneVault, computer.Link(t, ComputerVault).RemoteVaultID)
-	return &PhoneWorld{Server: server, Clock: clock, Computer: computer, Phone: phone}
+	return &PhoneWorld{
+		Server: server, Clock: clock, Computer: computer, Phone: phone, fetch: fetchfile.NewFetchFile(phone.FetchDeps()),
+	}
 }
 
 // SyncComputer runs a pass of the computer.
@@ -132,7 +135,7 @@ func (w *PhoneWorld) SyncPhone(t *testing.T) {
 
 // Fetch downloads the absent file of the phone.
 func (w *PhoneWorld) Fetch(ctx context.Context, path string) error {
-	return fetchfile.NewFetchFile(w.Phone.FetchDeps()).Execute(ctx, PhoneVault, path)
+	return w.fetch.Execute(ctx, PhoneVault, path)
 }
 
 func (w *PhoneWorld) DropDownload(ctx context.Context, path string) error {
