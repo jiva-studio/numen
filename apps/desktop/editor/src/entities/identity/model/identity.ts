@@ -110,6 +110,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const remove = (): Promise<Result<void, string>> =>
     attempt(async () => {
       await api.account.deleteIdentity()
+      guard.cancel()
       identity.value = undefined
     })
 

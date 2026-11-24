@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { asValue, type Result } from '@numen/result'
 import type { IdentityInfo } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
+import { createInertDevices } from '../testing/installation'
 import { useIdentitySection } from './useIdentitySection'
 
 const RECOVERY_WORDS = [
@@ -29,13 +30,16 @@ describe('the identity section', () => {
       load: vi.fn(() => Promise.resolve()),
       generateWords: () => new Promise((resolve) => (finish = resolve)),
       create: vi.fn(),
+      restore: vi.fn(),
       delete: vi.fn(),
+      saveKit: vi.fn(),
+      devices: createInertDevices(),
     }
     let section: ReturnType<typeof useIdentitySection> | undefined
     const host = mount(
       defineComponent({
         setup() {
-          section = useIdentitySection(() => installation)
+          section = useIdentitySection(() => installation, () => undefined)
           return () => null
         },
       }),

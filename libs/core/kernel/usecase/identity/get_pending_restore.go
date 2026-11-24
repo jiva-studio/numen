@@ -19,7 +19,7 @@ func (u *GetPendingRestore) Execute(context.Context) (identitydomain.PendingRest
 	store, release := u.restores.hold()
 	defer release()
 	restore := store.current
-	if restore == nil {
+	if restore == nil || restore.refusal != nil {
 		return identitydomain.PendingRestore{}, nil
 	}
 	return identitydomain.PendingRestore{

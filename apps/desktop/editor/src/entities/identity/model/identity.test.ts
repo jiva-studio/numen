@@ -329,7 +329,7 @@ describe('the identity store restoring from words', () => {
     const get = vi.fn(() => Promise.reject(new Error('core is gone')))
     const { store } = createStore(createClient({ get }))
 
-    const answer = await settle(store.restore(WORDS))
+    const answer = await settle(store.restore({ words: WORDS }))
 
     expect(answer.ok).toBe(false)
     expect(get).toHaveBeenCalledTimes(5)
@@ -349,7 +349,7 @@ describe('the identity store restoring from words', () => {
       }),
     )
 
-    const answer = await settle(store.restore(WORDS))
+    const answer = await settle(store.restore({ words: WORDS }))
 
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
   })
@@ -373,7 +373,7 @@ describe('the identity store restoring from words', () => {
     )
     const loading = store.load()
 
-    await settle(store.restore(WORDS))
+    await settle(store.restore({ words: WORDS }))
     answerLoad(undefined)
     await loading
 

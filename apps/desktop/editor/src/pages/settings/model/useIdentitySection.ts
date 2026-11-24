@@ -87,8 +87,7 @@ export function useIdentitySection(
   }
 
   const restore = async (): Promise<void> => {
-    if (isBusy.value) return
-    if (await identityRestore.restore()) reset()
+    if (!isBusy.value && (await identityRestore.restore())) reset()
   }
 
   return {

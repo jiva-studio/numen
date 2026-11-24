@@ -417,11 +417,15 @@ describe('the page "Identity and licenses"', () => {
   })
 
   it('does not restore from 12 words followed by an extra one pasted into the first field', async () => {
-    const { tab, create } = await createPage()
+    const { tab, restore } = await createPage()
     await press(tab, 'Restore')
     await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
     await submitRestore(tab)
-    expect(create).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
+    expect(
+    await press(tab, 'Restore')
+    await getRestoreInputs(tab)[0]?.setValue(`${RECOVERY_WORDS.join(' ')} extra`)
+    await submitRestore(tab)
+    restore).toHaveBeenCalledExactlyOnceWith([...RECOVERY_WORDS, 'extra'])
   })
 
   it('says under the fields that the words are not valid and holds no identity when the core refuses them', async () => {
