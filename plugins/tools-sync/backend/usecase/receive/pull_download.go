@@ -9,12 +9,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
-	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 )
 
 func (r *pullRun) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
@@ -81,19 +79,4 @@ func (r *pullRun) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Met
 		return nil, fmt.Errorf("%w: it does not open to the note", errCorruptBlob)
 	}
 	return plain, nil
-}
-
-func refuseShorterChain(stored, served []byte) error {
-	storedChain, err := identity.ParseChain(stored)
-	if err != nil {
-		return fmt.Errorf("read the owner chain held: %w", err)
-	}
-	servedChain, err := identity.ParseChain(served)
-	if err != nil {
-		return fmt.Errorf("read the owner chain served: %w", err)
-	}
-	if servedChain.Len() < storedChain.Len() && storedChain.IsExtensionOf(servedChain) {
-		return fmt.Errorf("%w: the owner chain served is shorter than the one held", domainshare.ErrRolledBack)
-	}
-	return nil
 }
