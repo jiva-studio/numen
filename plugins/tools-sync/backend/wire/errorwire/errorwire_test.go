@@ -1,14 +1,20 @@
 package errorwire
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
 func TestGetCode_MapsTheErrorsOfTheSubscriptionMethodsToTheCodesTheFrontendReads(t *testing.T) {
@@ -43,9 +49,9 @@ func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 		"inside a share":        {err: share.ErrInsideShare, wantCode: server.CodeFailedPrecondition, wantText: "A folder inside a shared folder cannot be shared"},
 		"a share in the way":    {err: fmt.Errorf("share: %w", share.NestingError{Kind: share.ErrHoldsShare, Folder: "", Shared: "Recipes"}), wantCode: server.CodeFailedPrecondition, wantText: "The vault cannot be shared while its folder «Recipes» is shared"},
 		"share ended":           {err: share.ErrEnded, wantCode: server.CodeFailedPrecondition, wantText: "The owner ended this share"},
-		"not a code":            {err: fmt.Errorf("%w: base64", share.ErrBadCode), wantCode: server.CodeInvalidArgument, wantText: "this is not a reader code or an invitation: base64"},
-		"no such share":         {err: share.ErrUnknownShare, wantCode: server.CodeNotFound, wantText: share.ErrUnknownShare.Error()},
-		"another error":         {err: errors.New("broken"), wantCode: server.CodeInternal, wantText: "broken"},
+		"not a code":            {err: fmt.Errorf("%w: base64", share.ErrBadCode), wantCode: server.CodeInvalidArgument, wantText: "This is not a reader code or an invitation."},
+		"no such share":         {err: share.ErrUnknownShare, wantCode: server.CodeNotFound, wantText: "This share does not exist or is not meant for you."},
+		"another error":         {err: errors.New("broken"), wantCode: server.CodeInternal, wantText: GenericText},
 		"changed identity":      {err: share.ErrChangedIdentity, wantCode: server.CodeFailedPrecondition, wantText: "This person has another identity than before"},
 		"refused by the server": {err: share.ErrReaderNotAdded, wantCode: server.CodeFailedPrecondition, wantText: "The reader could not be added; the reader may not have signed in to Numen Sync yet"},
 	} {
@@ -54,6 +60,62 @@ func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 		}
 		if got := GetText(one.err); got != one.wantText {
 			t.Errorf("%s: text = %q, want %q", name, got, one.wantText)
+		}
+	}
+}
+
+func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *testing.T) {
+	var logged bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+	for name, err := range map[string]error{
+		"a file name":      fmt.Errorf("write journal-catalog.json: %w", errors.New("open /home/anna/.numen/x: permission denied")),
+		"a timeout":        fmt.Errorf("get catalog: %w", context.DeadlineExceeded),
+		"a refused socket": errors.New("dial tcp 127.0.0.1:8080: connect: connection refused"),
+		"a Go chain":       fmt.Errorf("sync vault 3f9a: %w", fmt.Errorf("pass: %w", errors.New("internal error"))),
+	} {
+		logged.Reset()
+		code, text := Describe(context.Background(), "connect-vault", err)
+		if text != GenericText || code != server.CodeInternal {
+			t.Errorf("%s: got %q %q, want the generic text", name, code, text)
+		}
+		if line := logged.String(); !strings.Contains(line, "connect-vault") || !strings.Contains(line, "level=WARN") || !strings.Contains(line, "error=") {
+			t.Errorf("%s: log = %q, want a warning with the operation and the chain", name, line)
+		}
+	}
+}
+
+func TestDescribe_KeepsAWrappedFileNameAwayFromThePersonAndSaysWhatToDo(t *testing.T) {
+	wrapped := fmt.Errorf("write journal-catalog.json: %w", host.ErrNotExist)
+	_, text := Describe(context.Background(), "connect-vault", wrapped)
+	if strings.Contains(text, "journal-catalog.json") || strings.Contains(text, "file does not exist") {
+		t.Errorf("text = %q, want no file name and no Go text", text)
+	}
+}
+
+func TestDescribe_GivesTheFailuresOfAFirstSyncPlainTexts(t *testing.T) {
+	for name, one := range map[string]struct {
+		err  error
+		want string
+	}{
+		"folder gone": {
+			err:  fmt.Errorf("connect: %w", vaultlink.FolderMissingError{Name: "Recipes", Path: "/home/anna/Recipes"}),
+			want: "The folder of the vault «Recipes» is missing: /home/anna/Recipes. Remove the vault from the list or restore the folder.",
+		},
+		"server away": {err: fmt.Errorf("get catalog: %w", syncprotocol.ErrUnreachable), want: "Numen Sync cannot reach the server. Check the server address in the settings."},
+		"no plan":     {err: fmt.Errorf("append: %w", syncprotocol.ErrWriteNotAllowed), want: "Your plan does not allow syncing: choose a plan."},
+		"quota":       {err: fmt.Errorf("append: %w", syncprotocol.QuotaExceededError{Used: 5, Limit: 4}), want: textStorageFull},
+		"no vaults":   {err: fmt.Errorf("write: %w", vaultlink.ErrNoVaults), want: "There is no vault with a folder to sync. Add a vault, or restore the folder of one."},
+		"no identity": {err: sessiondomain.ErrNoIdentity, want: "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
+		"no server":   {err: sessiondomain.ErrNoServer, want: "No sync server is set. Enter the server address in the settings of Numen Sync."},
+	} {
+		code, text := Describe(context.Background(), "connect-vault", one.err)
+		if text != one.want {
+			t.Errorf("%s: text = %q, want %q", name, text, one.want)
+		}
+		if code == server.CodeInternal {
+			t.Errorf("%s: code = %q, want a code of a known failure", name, code)
 		}
 	}
 }

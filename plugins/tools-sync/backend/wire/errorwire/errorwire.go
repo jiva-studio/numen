@@ -1,8 +1,11 @@
-// Package errorwire turns the errors of the methods into the codes and texts the frontend reads.
+// Package errorwire turns the errors of the methods into the codes and texts the frontend reads. The person reads a
+// plain sentence only: an error that is not in the tables gets one generic sentence, and its chain goes to the log.
 package errorwire
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -11,45 +14,135 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 )
 
+// GenericText is what the person reads for a failure that has no entry in the tables.
+const GenericText = "Something went wrong in Numen Sync. Try again; if it fails again, look at the log of the plugin."
+
+const (
+	textUnreachable = "Numen Sync cannot reach the server. Check the server address in the settings."
+	textNoPlan      = "Your plan does not allow syncing: choose a plan."
+	textStorageFull = "The cloud storage is full: changes stay on this computer. Free some space or choose a bigger plan."
+	textSignIn      = "The server did not accept the sign-in of this computer. Try again later."
+	textUpdate      = "The sync server needs a newer version of Numen. Update Numen."
+)
+
+// Describe returns the code and the plain text of the failure of an operation. It writes the full error to the log
+// when the failure has no plain text of its own.
+func Describe(ctx context.Context, operation string, err error) (server.ErrorCode, string) {
+	text, isKnown := findText(err)
+	if !isKnown {
+		slog.WarnContext(ctx, "a method of Numen Sync failed", "operation", operation, "error", err)
+		text = GenericText
+	}
+	return GetCode(err), text
+}
+
+// GetText returns the plain text of the error: its entry of the tables, or GenericText.
+func GetText(err error) string {
+	if text, isKnown := findText(err); isKnown {
+		return text
+	}
+	return GenericText
+}
+
+func findText(err error) (string, bool) {
+	var nesting share.NestingError
+	var missing vaultlink.FolderMissingError
+	var quota syncprotocol.QuotaExceededError
+	switch {
+	case errors.As(err, &nesting):
+		return capitalize(nesting.Error()), true
+	case errors.As(err, &missing):
+		return "The folder of the vault «" + missing.Name + "» is missing: " + missing.Path + ". Remove the vault from the list or restore the folder.", true
+	case errors.As(err, &quota):
+		return textStorageFull, true
+	case isAccountDeleting(err):
+		return "The account is being deleted. Restore it in the settings of Numen Sync to keep syncing.", true
+	case errors.As(err, new(sessiondomain.DeviceRevokedError)):
+		return "This computer was removed from the account. Sign in again in the settings of Numen Sync.", true
+	}
+	for _, one := range getEntries() {
+		if errors.Is(err, one.target) {
+			return one.text, true
+		}
+	}
+	if refusal := findRefusal(err); refusal != nil {
+		return capitalize(refusal.Error()), true
+	}
+	return "", false
+}
+
 // GetCode returns the code of the error an API method reports.
 func GetCode(err error) server.ErrorCode {
-	switch {
-	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):
-		return server.CodeUnavailable
-	case errors.Is(err, syncprotocol.ErrAlreadySubscribed), errors.Is(err, syncprotocol.ErrSamePlan):
-		return server.CodeAlreadyExists
-	case errors.Is(err, syncprotocol.ErrUnknownPlan), errors.Is(err, share.ErrBadCode):
-		return server.CodeInvalidArgument
-	case errors.Is(err, share.ErrUnknownShare), errors.Is(err, fetchfile.ErrBlobMissing), errors.Is(err, host.ErrNotExist):
-		return server.CodeNotFound
-	case errors.Is(err, host.ErrInvalidRange):
-		return server.CodeInvalidArgument
-	case errors.Is(err, host.ErrChanged), errors.Is(err, fetchfile.ErrNotAbsent), errors.Is(err, fetchfile.ErrHeadChanged):
+	var quota syncprotocol.QuotaExceededError
+	var missing vaultlink.FolderMissingError
+	if errors.As(err, &quota) || errors.As(err, &missing) || isAccountDeleting(err) {
 		return server.CodeFailedPrecondition
-	case isRefusal(err):
-		return server.CodeFailedPrecondition
-	case isAccountDeleting(err):
-		return server.CodeFailedPrecondition
-	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable), errors.Is(err, syncprotocol.ErrNoActiveSubscription):
+	}
+	for _, one := range getEntries() {
+		if errors.Is(err, one.target) {
+			return one.code
+		}
+	}
+	if findRefusal(err) != nil {
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal
 }
 
-// GetText returns the text of the error an API method reports; a refusal of a share starts with a capital.
-func GetText(err error) string {
-	var nesting share.NestingError
-	if errors.As(err, &nesting) {
-		return capitalize(nesting.Error())
+func isAccountDeleting(err error) bool {
+	return errors.Is(err, sessiondomain.AccountDeletingError{DeleteAt: time.Time{}})
+}
+
+func findRefusal(err error) error {
+	for _, refusal := range getRefusals() {
+		if errors.Is(err, refusal) {
+			return refusal
+		}
 	}
-	refusal := findRefusal(err)
-	if refusal == nil {
-		return err.Error()
+	return nil
+}
+
+func capitalize(text string) string { return strings.ToUpper(text[:1]) + text[1:] }
+
+type entry struct {
+	target error
+	code   server.ErrorCode
+	text   string
+}
+
+func getEntries() []entry {
+	return []entry{
+		{syncprotocol.ErrUnreachable, server.CodeUnavailable, textUnreachable},
+		{sessiondomain.ErrUnreachable, server.CodeUnavailable, textUnreachable},
+		{sessiondomain.ErrNoServer, server.CodeUnavailable, "No sync server is set. Enter the server address in the settings of Numen Sync."},
+		{syncprotocol.ErrInsecureAddress, server.CodeInvalidArgument, "The server address must start with https://, or be an http address on this computer. Check the server address in the settings."},
+		{syncprotocol.ErrAlreadySubscribed, server.CodeAlreadyExists, "The account has a subscription already."},
+		{syncprotocol.ErrSamePlan, server.CodeAlreadyExists, "The account has this plan already."},
+		{syncprotocol.ErrUnknownPlan, server.CodeInvalidArgument, "The server does not sell this plan. Choose another plan."},
+		{share.ErrBadCode, server.CodeInvalidArgument, "This is not a reader code or an invitation."},
+		{share.ErrUnknownShare, server.CodeNotFound, "This share does not exist or is not meant for you."},
+		{fetchfile.ErrBlobMissing, server.CodeNotFound, "The sync server does not hold this file any more."},
+		{host.ErrNotExist, server.CodeNotFound, "A file or a folder of the vault is gone. Check that the folder of the vault is there."},
+		{host.ErrInvalidRange, server.CodeInvalidArgument, GenericText},
+		{host.ErrChanged, server.CodeFailedPrecondition, "The file changed while it was read. Try again."},
+		{fetchfile.ErrHeadChanged, server.CodeFailedPrecondition, "The file changed while it was fetched. Try again."},
+		{fetchfile.ErrNotAbsent, server.CodeFailedPrecondition, "This file is on this computer already."},
+		{sessiondomain.ErrNoIdentity, server.CodeFailedPrecondition, "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
+		{syncprotocol.ErrBillingUnavailable, server.CodeFailedPrecondition, "This sync server does not sell subscriptions."},
+		{syncprotocol.ErrNoActiveSubscription, server.CodeFailedPrecondition, textNoPlan},
+		{syncprotocol.ErrWriteNotAllowed, server.CodeFailedPrecondition, textNoPlan},
+		{sessiondomain.ErrUnauthenticated, server.CodeFailedPrecondition, textSignIn},
+		{syncprotocol.ErrUnauthenticated, server.CodeFailedPrecondition, textSignIn},
+		{sessiondomain.ErrUpdateRequired, server.CodeFailedPrecondition, textUpdate},
+		{syncprotocol.ErrUpdateRequired, server.CodeFailedPrecondition, textUpdate},
+		{syncprotocol.ErrRateLimited, server.CodeUnavailable, "The sync server is busy. Try again in a minute."},
+		{syncprotocol.ErrNoVault, server.CodeNotFound, "The sync server has no such vault. Choose the vault again."},
+		{vaultlink.ErrNoVaults, server.CodeFailedPrecondition, "There is no vault with a folder to sync. Add a vault, or restore the folder of one."},
 	}
-	return capitalize(refusal.Error())
 }
 
 func getRefusals() []error {
@@ -62,20 +155,3 @@ func getRefusals() []error {
 		share.ErrLinkUsed, share.ErrUnknownRequest, share.ErrLinkDeclined, share.ErrLinkMismatch,
 	}
 }
-
-func isAccountDeleting(err error) bool {
-	return errors.Is(err, sessiondomain.AccountDeletingError{DeleteAt: time.Time{}})
-}
-
-func isRefusal(err error) bool { return findRefusal(err) != nil }
-
-func findRefusal(err error) error {
-	for _, refusal := range getRefusals() {
-		if errors.Is(err, refusal) {
-			return refusal
-		}
-	}
-	return nil
-}
-
-func capitalize(text string) string { return strings.ToUpper(text[:1]) + text[1:] }

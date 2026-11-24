@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
 const pinsFile = "pins.json"
@@ -138,4 +139,4 @@ func (s *State) WriteJournal(ctx context.Context, journal restore.Journal) error
 	return checkKept(kept)
 }
 
-var errNoVault = errors.New("the installation has no vault to keep the copy in")
+var errNoVault = vaultlink.ErrNoVaults

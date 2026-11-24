@@ -60,14 +60,19 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	if err := u.checkNotConnected(ctx, in); err != nil {
 		return err
 	}
-	name, err := u.getVaultName(ctx, in.VaultID)
+	vault, err := u.getVault(ctx, in.VaultID)
 	if err != nil {
 		return err
 	}
 	if in.Mode == ModeNew {
-		return u.connectNew(ctx, in.VaultID, name)
+		err = u.connectNew(ctx, in.VaultID, vault.Name)
+	} else {
+		err = u.connectExisting(ctx, in, vault.Name)
 	}
-	return u.connectExisting(ctx, in, name)
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, vaultlink.ErrNoVaults) {
+		return fmt.Errorf("connect: %w", vaultlink.FolderMissingError{Name: vault.Name, Path: vault.Path})
+	}
+	return err
 }
 
 func (u *ConnectVault) checkNotReceived(ctx context.Context, id domain.VaultID) error {
@@ -84,17 +89,17 @@ func (u *ConnectVault) checkNotReceived(ctx context.Context, id domain.VaultID) 
 	return nil
 }
 
-func (u *ConnectVault) getVaultName(ctx context.Context, id domain.VaultID) (string, error) {
+func (u *ConnectVault) getVault(ctx context.Context, id domain.VaultID) (domain.Vault, error) {
 	vaults, err := u.reader.deps.Host.GetVaults(ctx)
 	if err != nil {
-		return "", err
+		return domain.Vault{}, err
 	}
 	for _, vault := range vaults {
 		if vault.ID == id {
-			return vault.Name, nil
+			return vault, nil
 		}
 	}
-	return "", fmt.Errorf("vault %s: not on the list of the host", id)
+	return domain.Vault{}, fmt.Errorf("vault %s: not on the list of the host", id)
 }
 
 func (u *ConnectVault) checkNotConnected(ctx context.Context, in ConnectInput) error {

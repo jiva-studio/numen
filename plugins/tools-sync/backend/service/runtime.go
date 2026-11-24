@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
@@ -47,7 +47,7 @@ const (
 	wakeBuffer          = 16
 )
 
-var errNotConfigured = errors.New("no sync server is set")
+var errNotConfigured = sessiondomain.ErrNoServer
 
 // parts are the adapters the runtime builds a sync from.
 type parts struct {

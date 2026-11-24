@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
@@ -18,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 )
@@ -395,5 +397,24 @@ func TestListRemoteVaults_RefusesACatalogThatIsNotValid(t *testing.T) {
 				t.Errorf("error = %v, want ErrInvalidCatalog", err)
 			}
 		})
+	}
+}
+
+type goneFolderLinks struct{ ports.Links }
+
+func (goneFolderLinks) WriteLink(context.Context, domain.VaultID, vaultlink.Link) error {
+	return fmt.Errorf("write link.json: %w", host.ErrNotExist)
+}
+
+func TestConnectVault_NamesTheVaultWhoseFolderIsGone(t *testing.T) {
+	w := newWorld(t)
+	deps := w.first.CatalogDeps()
+	deps.State = goneFolderLinks{Links: deps.State}
+
+	err := catalog.NewConnectVault(deps).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test", Mode: catalog.ModeNew})
+
+	var missing vaultlink.FolderMissingError
+	if !errors.As(err, &missing) || missing.Name != "Test" {
+		t.Errorf("error = %v, want FolderMissingError for the vault Test", err)
 	}
 }

@@ -16,6 +16,8 @@ var (
 	ErrUnauthenticated = errors.New("the sync server refused the sign-in")
 	// ErrUnreachable means the server did not answer.
 	ErrUnreachable = errors.New("the sync server could not be reached")
+	// ErrNoServer means no sync server address is set.
+	ErrNoServer = errors.New("no sync server is set")
 )
 
 // DeviceRevokedError means the server refused the sign-in because the account revoked this device. Chain is the chain the

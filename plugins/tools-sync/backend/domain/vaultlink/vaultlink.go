@@ -288,3 +288,16 @@ func (l *Link) GetFloor(fileID []byte) uint64 {
 	}
 	return floor
 }
+
+// ErrNoVaults means the list of vaults of this installation is empty, or no vault of it has a folder to keep a copy in.
+var ErrNoVaults = errors.New("the installation has no vault to keep the copy in")
+
+// FolderMissingError means the folder of a vault is gone from the disk.
+type FolderMissingError struct {
+	Name string
+	Path string
+}
+
+func (e FolderMissingError) Error() string {
+	return fmt.Sprintf("the folder %s of the vault %s is missing", e.Path, e.Name)
+}
