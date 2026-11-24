@@ -3,6 +3,7 @@ package ports
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
@@ -396,4 +397,14 @@ type PullInput struct {
 	VaultID  domain.VaultID
 	IsAuthor func(deviceSignKey []byte) bool
 	Shares   []share.Root
+}
+
+// IsKeyForeign reports whether the vault key of the link was sealed for another identity, so the identity of this
+// device cannot open it. Any other failure is returned as it is.
+func IsKeyForeign(ctx context.Context, sealer vaultlink.Sealer, link vaultlink.Link) (bool, error) {
+	_, err := vaultlink.OpenKeys(ctx, sealer, link)
+	if errors.Is(err, session.ErrCannotOpen) {
+		return true, nil
+	}
+	return false, err
 }

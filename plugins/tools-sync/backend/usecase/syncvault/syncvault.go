@@ -193,7 +193,7 @@ func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if link.Kind == vaultlink.KindReceived {
 		return u.executeReceived(ctx, id)
 	}
-	if isForeign, err := vaultlink.IsKeyForeign(ctx, u.deps.Crypto, link); isForeign || err != nil {
+	if isForeign, err := ports.IsKeyForeign(ctx, u.deps.Crypto, link); isForeign || err != nil {
 		return u.dropForeign(ctx, id, isForeign, err)
 	}
 	if _, err := u.steps.Rename.Execute(ctx, id); err != nil {

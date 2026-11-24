@@ -118,7 +118,7 @@ func (v *Listing) getVault(ctx context.Context, vault domain.Vault, holders map[
 		one.State = api.StateCopy
 		return one, nil
 	default:
-		if isForeign, keyErr := vaultlink.IsKeyForeign(ctx, v.deps.Crypto, link); keyErr == nil && isForeign {
+		if isForeign, keyErr := ports.IsKeyForeign(ctx, v.deps.Crypto, link); keyErr == nil && isForeign {
 			return one, nil
 		}
 		holders[link.RemoteVaultID] = true

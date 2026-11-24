@@ -7,12 +7,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"net"
@@ -114,22 +114,16 @@ func getStatePath(fake *fakeserver.Server, stateDir string) string {
 }
 
 func load(fake *fakeserver.Server, path string) error {
-	file, err := os.Open(path)
+	raw, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
-	head := make([]byte, len(fakeserver.SnapshotPrefix))
-	if count, _ := io.ReadFull(file, head); string(head[:count]) != fakeserver.SnapshotPrefix {
+	if !bytes.HasPrefix(raw, []byte(fakeserver.SnapshotPrefix)) {
 		log.Printf("%s has the old layout and is not read; starting with an empty server", path)
 		return nil
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return err
 	}
 	return fake.Restore(raw)
 }
@@ -137,6 +131,12 @@ func load(fake *fakeserver.Server, path string) error {
 func prepareStateDir(dir string) error { return os.MkdirAll(dir, 0o700) }
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	address := flag.String("addr", "127.0.0.1:0", "address to listen on")
 	protocol := flag.Uint64("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
@@ -145,29 +145,28 @@ func main() {
 	heartbeat := flag.Duration("heartbeat", syncprotocol.WatchHeartbeat, "silence after which a stream of change hints sends a heartbeat")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty uses a fresh folder for this run and removes it at exit")
 	flag.Parse()
+	plans, err := readPlans(*plansFlag)
+	if err != nil {
+		return err
+	}
+	if *protocol > math.MaxUint32 {
+		return fmt.Errorf("-protocol %d does not fit in 32 bits", *protocol)
+	}
 	cleanup := func() {}
 	if *stateDir == "" {
 		folder, remove, err := newSessionFolder()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		*stateDir, cleanup = folder, remove
 	}
 	defer cleanup()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if *protocol > math.MaxUint32 {
-		log.Fatalf("-protocol %d does not fit in 32 bits", *protocol)
-	}
-	plans, err := readPlans(*plansFlag)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", *address)
 	if err != nil {
-		cleanup()
-		log.Fatal(err)
+		return err
 	}
 	url := "http://" + listener.Addr().String()
 	var stopped atomic.Bool
@@ -182,8 +181,7 @@ func main() {
 	exit := make(chan struct{})
 	handler := newKeeper(fake, getStatePath(fake, *stateDir), &stopped, exit)
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
-		cleanup()
-		log.Fatal(err)
+		return err
 	}
 	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
@@ -199,6 +197,7 @@ func main() {
 	if err := server.Close(); err != nil {
 		log.Print(err)
 	}
+	return nil
 }
 
 // newSessionFolder makes the folder a run without -state-dir works in, and returns the function that removes it.

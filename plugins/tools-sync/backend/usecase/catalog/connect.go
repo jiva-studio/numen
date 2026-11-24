@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 // Mode is how a local vault is connected.
@@ -123,7 +124,7 @@ func (u *ConnectVault) checkNotConnected(ctx context.Context, in ConnectInput) e
 	if !isLinked {
 		return nil
 	}
-	isForeign, err := vaultlink.IsKeyForeign(ctx, u.reader.deps.Crypto, own)
+	isForeign, err := ports.IsKeyForeign(ctx, u.reader.deps.Crypto, own)
 	if err != nil {
 		return err
 	}
