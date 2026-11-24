@@ -31,6 +31,7 @@ export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, getKeyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
+export { Fingerprint } from './shared/ui/fingerprint'
 
 export {
   createRequestGuard,
