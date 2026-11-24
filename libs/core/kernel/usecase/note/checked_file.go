@@ -10,26 +10,22 @@ import (
 )
 
 // FileCounter counts the files at a path: one for a file, and the files under it for a folder.
-type FileCounter interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (int, error)
-}
+type FileCounter func(ctx context.Context, v domain.Vault, path string) (int, error)
 
 // FileHasher returns the stat of a file with the hash of its content.
-type FileHasher interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
-}
+type FileHasher func(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
 
 func countMatchingFiles(
 	ctx context.Context, files FileCounter, hashes FileHasher, v domain.Vault, path string, baseline *domain.FileStat,
 ) (int, error) {
-	count, err := files.Execute(ctx, v, path)
+	count, err := files(ctx, v, path)
 	if err != nil {
 		return 0, err
 	}
 	if count != 1 || baseline == nil {
 		return count, nil
 	}
-	now, err := hashes.Execute(ctx, v, path)
+	now, err := hashes(ctx, v, path)
 	if errors.Is(err, edit.ErrNotExist) {
 		return 0, fmt.Errorf("%s is gone since it was read: %w", path, edit.ErrStale)
 	}

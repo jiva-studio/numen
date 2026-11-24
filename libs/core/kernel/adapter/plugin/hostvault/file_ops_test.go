@@ -54,8 +54,8 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		Writer{
 			Index:  scan,
 			Place:  file.NewPlaceStaged(stat, scan, writers),
-			Move:   note.NewMoveChecked(note.MoveFile{}, count, stat),
-			Remove: note.NewRemoveChecked(note.RemoveFile{}, count, stat),
+			Move:   note.NewMoveChecked(note.MoveFile{}, count.Execute, stat.Execute),
+			Remove: note.NewRemoveChecked(note.RemoveFile{}, count.Execute, stat.Execute),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},
