@@ -1,5 +1,5 @@
 // Package manifest is the model of a plugin's manifest.json: the fields a plugin declares, the
-// rules between them, what a plugin requires of the application, and the order of versions.
+// rules between them and what a plugin requires of the application.
 //
 // The package reads no file and no JSON; manifestjson decodes the file into this model.
 package manifest
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -130,7 +131,7 @@ var (
 	ErrInvalidID    = errors.New(
 		"plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)",
 	)
-	ErrInvalidVersion         = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
+	ErrInvalidVersion         = semver.ErrInvalid
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
 	ErrInvalidBackend         = errors.New("invalid backend")
@@ -171,9 +172,6 @@ var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 	manifestNoteTypePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern  = regexp.MustCompile(
-		`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`,
-	)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.
@@ -377,7 +375,7 @@ func (m Manifest) listIdentityIssues() []error {
 	switch {
 	case strings.TrimSpace(m.Version) == "":
 		issues = append(issues, ErrEmptyVersion)
-	case !manifestVersionPattern.MatchString(m.Version):
+	case !semver.IsValid(m.Version):
 		issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidVersion, m.Version))
 	}
 	return issues

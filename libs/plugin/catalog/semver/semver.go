@@ -1,14 +1,27 @@
-package manifest
+// Package semver reads and orders the versions of plugins, which follow semantic versioning.
+package semver
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-// CompareVersions orders two semantic versions by precedence: -1 when a precedes b, 1 when b precedes a
+// ErrInvalid is a text that is not a semantic version.
+var ErrInvalid = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
+
+var pattern = regexp.MustCompile(
+	`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`,
+)
+
+// IsValid reports whether text is a semantic version, with or without a leading v.
+func IsValid(text string) bool { return pattern.MatchString(text) }
+
+// Compare orders two semantic versions by precedence: -1 when a precedes b, 1 when b precedes a
 // and 0 when they are equal. A leading v and build metadata are ignored.
-func CompareVersions(a, b string) (int, error) {
+func Compare(a, b string) (int, error) {
 	left, err := parseVersion(a)
 	if err != nil {
 		return 0, err
@@ -31,8 +44,8 @@ type version struct {
 }
 
 func parseVersion(text string) (version, error) {
-	if !manifestVersionPattern.MatchString(text) {
-		return version{}, fmt.Errorf("%w: %q", ErrInvalidVersion, text)
+	if !IsValid(text) {
+		return version{}, fmt.Errorf("%w: %q", ErrInvalid, text)
 	}
 	core := strings.TrimPrefix(text, "v")
 	core, _, _ = strings.Cut(core, "+")
@@ -41,7 +54,7 @@ func parseVersion(text string) (version, error) {
 	for i, part := range strings.Split(core, ".") {
 		number, err := strconv.ParseUint(part, 10, 64)
 		if err != nil {
-			return version{}, fmt.Errorf("%w: %q: %w", ErrInvalidVersion, text, err)
+			return version{}, fmt.Errorf("%w: %q: %w", ErrInvalid, text, err)
 		}
 		parsed.numbers[i] = number
 	}

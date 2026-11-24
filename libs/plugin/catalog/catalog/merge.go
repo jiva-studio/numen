@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
 )
 
 func mergeEntries(lists [][]Entry) []Entry {
@@ -29,6 +29,6 @@ func isPreferred(candidate, current Entry) bool {
 	if candidate.State.IsOnDisk() != current.State.IsOnDisk() {
 		return candidate.State.IsOnDisk()
 	}
-	order, err := manifest.CompareVersions(candidate.Version, current.Version)
+	order, err := semver.Compare(candidate.Version, current.Version)
 	return err == nil && order > 0
 }
