@@ -1,7 +1,7 @@
-import jsQR from 'jsqr'
 import { onBeforeUnmount, onMounted, ref, type ShallowRef } from 'vue'
 import { describeCameraFailure, FRAMES_PER_SECOND, type ScannerCamera } from '@/shared/api/camera'
 import { doc } from '@/shared/api/dom'
+import { decodeFrame } from './decodeFrame'
 
 export interface QrScannerSource {
   camera: ScannerCamera
@@ -39,17 +39,17 @@ export function useQrScanner(
     if (drawing === null) return
     drawing.drawImage(view, 0, 0)
     const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
-    const found = jsQR(pixels.data, pixels.width, pixels.height)
+    const found = decodeFrame(pixels)
     if (found === null) return
-    if (!source.isAccepted(found.data)) {
-      if (found.data === rejected) return
-      rejected = found.data
+    if (!source.isAccepted(found)) {
+      if (found === rejected) return
+      rejected = found
       problem.value = 'This code is not a link of Numen.'
       emit('failed', problem.value)
       return
     }
     stop()
-    emit('scanned', found.data)
+    emit('scanned', found)
   }
 
   function stop(): void {

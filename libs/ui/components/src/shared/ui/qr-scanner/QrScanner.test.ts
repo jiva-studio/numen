@@ -64,4 +64,22 @@ describe('a QR scanner', () => {
     scanner.unmount()
     expect(stop).toHaveBeenCalledOnce()
   })
+
+  it('draws a video that plays on its own, muted and inline', () => {
+    const scanner = mount(QrScanner, {
+      props: { camera: () => new Promise<MediaStream>(() => undefined) },
+    })
+    const video = scanner.get('video')
+    expect(video.attributes()).toHaveProperty('autoplay')
+    expect(video.attributes()).toHaveProperty('playsinline')
+    expect(video.element.muted).toBe(true)
+  })
+
+  it('asks for the camera only when it mounts', async () => {
+    const camera = vi.fn(() => new Promise<MediaStream>(() => undefined))
+    expect(camera).not.toHaveBeenCalled()
+    mount(QrScanner, { props: { camera } })
+    await flushPromises()
+    expect(camera).toHaveBeenCalledOnce()
+  })
 })
