@@ -221,7 +221,7 @@ func TestAdoptChain_RefusesBytesThatAreNotAChain(t *testing.T) {
 	}
 }
 
-func TestRevokeDevice_TheDeviceLeavesTheListBeforeTheServerAnswers(t *testing.T) {
+func TestRevokeDevice_RemovesDeviceFromListBeforeServerAnswers(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {

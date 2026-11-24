@@ -17,14 +17,11 @@ type textSearch struct {
 }
 
 func newSearch(c textSearch, db *vaultIndex, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
-	return newSearchOver(c, db.ChunkSearch(), getParticipants(db, asking), errorHandler, reportAnswered)
-}
-
-func getParticipants(db *vaultIndex, source searchsourceport.Source) []searchusecase.Participant {
-	if source == nil {
-		return nil
+	var participants []searchusecase.Participant
+	if asking != nil {
+		participants = []searchusecase.Participant{searchusecase.NewSource(asking, db.ChunkSearch())}
 	}
-	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
+	return newSearchOver(c, db.ChunkSearch(), participants, errorHandler, reportAnswered)
 }
 
 func newSearchOver(c textSearch, queries searchusecase.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {

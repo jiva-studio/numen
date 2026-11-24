@@ -80,36 +80,24 @@ type Resources struct {
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vaultLocks  *vaultwriter.Locks
-	watches     *vaultwatch.Hub
-	settings    settingsResources
-	logEntries  *logsusecase.Entries
-	progress    *identity.Progress
-	absentFiles vaultport.AbsentFiles
-}
-
-type settingsResources struct {
-	files         *settingsadapter.Files
-	events        *settingevents.Events
+	vaultLocks    *vaultwriter.Locks
+	watches       *vaultwatch.Hub
+	settings      settingsadapter.Shared
 	subscriptions settingsusecase.Subscriptions
+	logEntries    *logsusecase.Entries
+	progress      *identity.Progress
+	absentFiles   vaultport.AbsentFiles
 }
 
 func NewResources() *Resources {
-	progress := identity.NewProgress()
 	return &Resources{
-		Chunks:     &note.ChunkTokens{},
-		vaultLocks: vaultwriter.NewLocks(),
-		watches:    vaultwatch.NewHub(),
-		settings: settingsResources{
-			files:  settingsadapter.NewFiles(),
-			events: settingevents.New(),
-			subscriptions: settingsusecase.Subscriptions{
-				Changes: settingsusecase.PluginChanges{},
-				Hosts:   settingsusecase.HostSubscriptions{},
-			},
-		},
-		logEntries: logsusecase.NewEntries(),
-		progress:   progress,
+		Chunks:        &note.ChunkTokens{},
+		vaultLocks:    vaultwriter.NewLocks(),
+		watches:       vaultwatch.NewHub(),
+		settings:      settingsadapter.Shared{Files: settingsadapter.NewFiles(), Events: settingevents.New()},
+		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
+		logEntries:    logsusecase.NewEntries(),
+		progress:      identity.NewProgress(),
 	}
 }
 
@@ -185,9 +173,9 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
 		Watches:         res.watches,
-		SettingsFiles:   res.settings.files,
-		SettingEvents:   res.settings.events,
-		PluginChanges:   &res.settings.subscriptions.Changes,
+		SettingsFiles:   res.settings.Files,
+		SettingEvents:   res.settings.Events,
+		PluginChanges:   &res.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,

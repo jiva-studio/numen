@@ -51,8 +51,8 @@ func (c *Computer) NewInvites(t *testing.T) *invitewire.Invites {
 	return invitewire.New(c.StartInviteCourier(t))
 }
 
-// WaitUntil waits until the condition holds, as the couriers work in the background, and fails the test when it does not.
-func WaitUntil(t *testing.T, what string, condition func() bool) {
+// AwaitCondition waits until the condition holds, as the couriers work in the background, and fails the test when it does not.
+func AwaitCondition(t *testing.T, what string, condition func() bool) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), eventuallyLimit)
 	defer cancel()

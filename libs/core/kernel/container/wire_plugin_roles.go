@@ -1,6 +1,7 @@
 package container
 
 import (
+	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -8,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // PluginManagement provides discovery, activation and settings for installed plugins.
@@ -51,7 +53,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	health := pluginhealth.NewItems()
 	failures := supervision.NewFailures(sups, clock, errs, health)
-	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: getCoreClaims()})
+	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}})
 	files := storage.New(errs.Report, set.GetVersion)
 	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, GetTools: toolbridge.ListKeptItems(files)})
 	config := plugin.NewConfigPush(plugin.ConfigPushDeps{Set: set, Supervisors: sups, Report: errs.Report, Health: health})

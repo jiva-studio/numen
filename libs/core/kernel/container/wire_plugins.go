@@ -2,6 +2,7 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
@@ -199,7 +200,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(management.Activation, management.Registry)
 	manifests := pluginmanifest.Open(management.Registry, management.Registry, processes.Failures)
-	revision := getListingRevision(getSearchCatalog(manifests))
+	revision := func() string { return searchquerydomain.GetCatalogRevision(getSearchCatalog(manifests)()) }
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	callers := hostendpoint.Callers{
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),

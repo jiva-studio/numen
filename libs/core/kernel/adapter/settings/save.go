@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
@@ -389,4 +390,11 @@ func (f *Files) GetVersion() uint64 {
 		return 0
 	}
 	return f.version.Load()
+}
+
+// Shared is what every window of one installation shares about the settings: the writers of the file and the
+// delivery of its changes.
+type Shared struct {
+	Files  *Files
+	Events *settingevents.Events
 }

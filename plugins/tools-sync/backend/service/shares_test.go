@@ -36,12 +36,12 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		t.Fatal(err)
 	}
 	var status api.GetShareInvitationStatusResponse
-	synctest.WaitUntil(t, "the code on the reader", func() bool {
+	synctest.AwaitCondition(t, "the code on the reader", func() bool {
 		status, err = readerSide.GetShareInvitationStatus(ctx, api.GetShareInvitationStatusRequest{RequestID: sent.RequestID})
 		return err == nil && status.Phase == api.ShareRequestWaiting
 	})
 	var requests api.ListShareRequestsResponse
-	synctest.WaitUntil(t, "the request on the owner", func() bool {
+	synctest.AwaitCondition(t, "the request on the owner", func() bool {
 		requests, err = ownerSide.ListShareRequests(ctx, api.ListShareRequestsRequest{})
 		return err == nil && len(requests.Requests) == 1
 	})
@@ -53,7 +53,7 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		t.Fatal(err)
 	}
 
-	synctest.WaitUntil(t, "the folder on the reader", func() bool {
+	synctest.AwaitCondition(t, "the folder on the reader", func() bool {
 		status, err = readerSide.GetShareInvitationStatus(ctx, api.GetShareInvitationStatusRequest{RequestID: sent.RequestID})
 		return err == nil && status.Phase == api.ShareRequestReceived
 	})

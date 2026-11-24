@@ -14,7 +14,6 @@ import (
 	queryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -56,12 +55,4 @@ func getSearchCatalog(manifests pluginmanifest.Manifests) func() searchquerydoma
 	return func() searchquerydomain.Catalog {
 		return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), manifests.ListSearchFunctions())
 	}
-}
-
-func getListingRevision(catalog func() searchquerydomain.Catalog) func() string {
-	return func() string { return searchquerydomain.GetCatalogRevision(catalog()) }
-}
-
-func getCoreClaims() manifest.CoreClaims {
-	return manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}
 }

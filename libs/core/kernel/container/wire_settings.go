@@ -40,7 +40,7 @@ func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, r
 func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
 	prefs = getPluginPreferences(prefs)
-	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.settings.subscriptions.Hosts, s, c.machine.ResolvedCompute)
+	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.subscriptions.Hosts, s, c.machine.ResolvedCompute)
 	return c
 }
 
@@ -95,19 +95,15 @@ func getRegistries(c settingsWiring) settingsdomain.Registries {
 	themes := getThemeRegistry(c).GetNames()
 	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
 		if name == settingsdomain.RegistryConnections {
-			return listConnectionIDs(c)
+			ids, err := createSettingsStore(c).ListConnectionIDs()
+			if err != nil {
+				c.HandleError(err)
+				return nil, false
+			}
+			return ids, true
 		}
 		return themes(name)
 	}, c.ConnectionTypes, c.Detection)
-}
-
-func listConnectionIDs(c settingsWiring) ([]string, bool) {
-	ids, err := createSettingsStore(c).ListConnectionIDs()
-	if err != nil {
-		c.HandleError(err)
-		return nil, false
-	}
-	return ids, true
 }
 
 func getThemeRegistry(c settingsWiring) settingsadapter.RegistryOptions {

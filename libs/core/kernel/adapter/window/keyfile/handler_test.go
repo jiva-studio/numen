@@ -123,7 +123,7 @@ func TestKeyFileErrorCodesAreProducedFromFailures(t *testing.T) {
 		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_INVALID_MODE:     keyfileusecase.ErrInvalidMode,
 	}, func(failure error) v1.KeyFileErrorCode {
 		file.err = failure
-		got, err := handler.UnlockKeyFile(context.Background(), connect.NewRequest(&v1.UnlockKeyFileRequest{Passphrase: "x"}))
+		got, err := handler.UnlockKeyFile(t.Context(), connect.NewRequest(&v1.UnlockKeyFileRequest{Passphrase: "x"}))
 		if err != nil {
 			t.Fatal(err)
 		}
