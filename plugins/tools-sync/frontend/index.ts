@@ -154,6 +154,9 @@ const registerSync = (
     handler: async () => {
       const vaultId = getCurrentVault(host)
       try {
+        host.work.logs
+          ?.write({ level: 'debug', message: 'Sync this vault was chosen', properties: { vault: vaultId } })
+          .catch(() => undefined)
         const outcome = await startSync(vaultsClient, vaultId)
         if (outcome.kind === 'choose') choose(vaultId, outcome.name, outcome.remoteId)
         else host.ui.notices.show(getOutcomeText(outcome.kind))
