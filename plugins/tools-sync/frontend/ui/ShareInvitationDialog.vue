@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import { Copy } from '@lucide/vue'
-import { Button, ModalDialog, Spinner } from '@numen/ui'
+import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
 import { getExpiryText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
@@ -43,7 +43,7 @@ function onDecline(): void {
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     :label="words.shareDialogTitle(folderName)"
     :hint="words.shareDialogText"
     :step="step"
@@ -120,5 +120,5 @@ function onDecline(): void {
       </template>
       <Button v-else @click="state.close">{{ words.done }}</Button>
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>

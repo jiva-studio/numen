@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** The question of "Sync this vault" when the account holds a vault of the same name: use that copy or send this one. */
-import { Button, ModalDialog } from '@numen/ui'
+import { Button, Dialog } from '@numen/ui'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     :label="words.syncVaultTitle(name)"
     :hint="words.syncVaultText(name)"
     @cancel="emit('cancel')"
@@ -24,5 +24,5 @@ const emit = defineEmits<{
       <Button variant="outline" @click="emit('send')">{{ words.sendThisOne }}</Button>
       <Button @click="emit('use')">{{ words.useCloudCopy }}</Button>
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>

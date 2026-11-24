@@ -4,7 +4,7 @@
  * while the owner decides, then how the request ended.
  */
 import { computed } from 'vue'
-import { Button, ModalDialog, Spinner } from '@numen/ui'
+import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
 import { getExpiryText } from '../lib/expiry'
 import { getShortFingerprint } from '../lib/fingerprint'
@@ -47,7 +47,7 @@ function onAccept(): void {
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     is-form
     :label="words.acceptTitle"
     :hint="words.acceptText"
@@ -99,5 +99,5 @@ function onAccept(): void {
       <Button v-else-if="isWaiting" variant="ghost" @click="view.close">{{ words.cancel }}</Button>
       <Button v-else @click="view.close">{{ words.done }}</Button>
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>

@@ -4,7 +4,7 @@
  * receives it. When notes of the two differ, it asks once more before it connects them.
  */
 import { computed, ref } from 'vue'
-import { Button, ModalDialog } from '@numen/ui'
+import { Button, Dialog } from '@numen/ui'
 import type { RemoteVault, Vault } from '../api/vaults'
 import { WORDS as words } from '../words'
 
@@ -41,7 +41,7 @@ function onSecondary(): void {
 </script>
 
 <template>
-  <ModalDialog
+  <Dialog
     is-form
     :label="words.getFromCloud"
     :hint="isAsking ? '' : words.getFromCloudText"
@@ -76,5 +76,5 @@ function onSecondary(): void {
       <Button variant="ghost" @click="onSecondary">{{ words.cancel }}</Button>
       <Button type="submit" :disabled="!isAsking && !canChoose">{{ words.getVault }}</Button>
     </template>
-  </ModalDialog>
+  </Dialog>
 </template>
