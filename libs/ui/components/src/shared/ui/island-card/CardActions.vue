@@ -30,7 +30,11 @@ const anchor = ref<{ at: Position; wide: number } | null>(null)
 const choice = ref<{ item: CardActionItem; at: Position; wide: number; from: HTMLElement } | null>(null)
 
 const choices = computed<readonly MenuItem[]>(() =>
-  (choice.value?.item.choices ?? []).map((one) => ({ id: one.id, text: one.label, detail: one.detail })),
+  (choice.value?.item.choices ?? []).map((one) => ({
+    id: one.id,
+    text: one.label,
+    ...(one.detail === undefined ? {} : { detail: one.detail }),
+  })),
 )
 
 const overflow = computed<readonly MenuItem[]>(() =>

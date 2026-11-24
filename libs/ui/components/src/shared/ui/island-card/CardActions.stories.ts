@@ -23,10 +23,12 @@ const ITEMS: readonly CardActionItem[] = [
   { id: 'create', label: 'Create', icon: Plus, isPrimary: true, isLabelKept: true },
 ]
 
+const onChoose = fn()
+
 const meta: Meta = {
   title: 'Controls/IslandCard/Actions',
   component: CardActions,
-  args: { onChoose: fn() },
+  args: { onChoose },
   render: (args, { parameters }) => ({
     components: { CardActions, IslandCard },
     setup: () => ({ items: ITEMS, width: parameters.cardWidth as string, onChoose: args['onChoose'] }),
@@ -82,9 +84,9 @@ export const Narrowest: Story = {
 /** A press on an action gives the id of the action. */
 export const Choosing: Story = {
   parameters: { cardWidth: '60rem' },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Create' }))
 
-    await expect(args['onChoose']).toHaveBeenCalledWith('create')
+    await expect(onChoose).toHaveBeenCalledWith('create')
   },
 }
