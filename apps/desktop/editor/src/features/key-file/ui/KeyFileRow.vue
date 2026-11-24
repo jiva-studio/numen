@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Where the keys are kept: the system keychain, or on a computer without one the file and the way it
- * is protected. The action to change it or to enter the passphrase sits in the header of the card.
+ * is protected. The action to change it or to enter the passphrase is in the header of the card.
  */
 import { computed } from 'vue'
 import { LockOpen, Pencil } from '@lucide/vue'

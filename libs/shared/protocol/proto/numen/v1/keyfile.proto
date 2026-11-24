@@ -8,7 +8,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // in a file, protected by a passphrase or left as plain text. The passphrase crosses the wire only in
 // the calls that take it; the core keeps it in memory and never writes it down.
 service KeyFileService {
-  // GetKeyFileState tells whether the keys are kept in a file and how.
+  // GetKeyFileState reports whether the keys are kept in a file and how.
   rpc GetKeyFileState(GetKeyFileStateRequest) returns (GetKeyFileStateResponse);
 
   // ChooseKeyFile sets how the file keeps the keys and remembers the choice for the next start.

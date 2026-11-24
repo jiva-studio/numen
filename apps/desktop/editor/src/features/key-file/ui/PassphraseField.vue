@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A field for a passphrase: the text is hidden and the browser is told not to keep it. */
+/** A field for a passphrase: the text is hidden and the browser is set not to keep it. */
 import { useId } from 'vue'
 
 /* --------------------------------- Props ---------------------------------- */

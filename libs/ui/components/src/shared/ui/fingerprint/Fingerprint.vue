@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A fingerprint in monospace. In a narrow place the middle is cut with an ellipsis and the last two
- * groups stay, so two fingerprints can still be told apart; where there is room it reads in full.
+ * groups stay, so two fingerprints stay distinguishable; where there is room it reads in full.
  * The whole value is the label for a screen reader and what a selection copies.
  */
 import { computed } from 'vue'
