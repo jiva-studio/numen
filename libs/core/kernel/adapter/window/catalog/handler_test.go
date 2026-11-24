@@ -33,7 +33,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 
 func newHandler(t *testing.T, sources ...catalog.Source) *windowcatalog.Handler {
 	t.Helper()
-	return newHandlerOver(t, nil, sources...)
+	return newHandlerOver(t, func() []manifest.Discovered { return nil }, sources...)
 }
 
 func newHandlerOver(t *testing.T, installed windowcatalog.InstalledPlugins, sources ...catalog.Source) *windowcatalog.Handler {

@@ -101,13 +101,12 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 		open,
 		change.Remove,
 	)
-	if dialog != nil {
-		handler = handler.WithFolderChooser(picker.NewChooseFolder(dialog))
-	}
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served))
-	path, served = vaults.NewDialogRoute(handler.Dialog, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served))
+	if dialog != nil {
+		path, served = vaults.NewDialogRoute(picker.NewChooseFolder(dialog), w.page.Gate.CountQuestions())
+		w.Installation.Mount(editor.NewRoute(path, served))
+	}
 }
 
 func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchquery.SearchRuns) {

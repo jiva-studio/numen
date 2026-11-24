@@ -32,7 +32,8 @@ type Handler struct {
 	installed InstalledPlugins
 }
 
-// NewHandler returns the handler over the catalog. installed is nil where the installation has no plugin folders.
+// NewHandler returns the handler over the catalog and the installed plugins. An installation with no plugin
+// folders passes a list that is empty.
 func NewHandler(plugins Catalog, installed InstalledPlugins) *Handler {
 	return &Handler{plugins: plugins, installed: installed}
 }
@@ -45,9 +46,6 @@ const readmeName = "README.md"
 func (h *Handler) GetCatalogReadme(
 	ctx context.Context, r *connect.Request[v1.GetCatalogReadmeRequest],
 ) (*connect.Response[v1.GetCatalogReadmeResponse], error) {
-	if h.installed == nil {
-		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
-	}
 	dir, isInstalled := h.getPluginDir(r.Msg.GetId())
 	if !isInstalled {
 		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
