@@ -3,6 +3,7 @@ package hosttest
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -11,7 +12,8 @@ import (
 )
 
 // Store is the plugin's folder in the store of a vault, held in memory. It behaves as the host does:
-// a vault the host does not have open, does not know, or whose folder is gone rejects the call.
+// a vault the host does not have open or does not know rejects the call, and one whose folder is gone
+// answers host.ErrNotExist.
 type Store struct {
 	vault *Vault
 }
@@ -72,7 +74,7 @@ func (s *Store) reach(ctx context.Context) (*folder, error) {
 		return nil, err
 	}
 	if err := s.vault.reach(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", host.ErrNotExist, err)
 	}
 	return s.vault.getFolder(), nil
 }

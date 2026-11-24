@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
@@ -58,6 +59,7 @@ func (s *State) WritePin(ctx context.Context, address string, key []byte) error 
 	if len(ids) == 0 {
 		return errNoVault
 	}
+	kept := 0
 	for _, id := range ids {
 		var document pinsDocument
 		if _, err := s.read(ctx, id, pinsFile, &document); err != nil {
@@ -67,9 +69,30 @@ func (s *State) WritePin(ctx context.Context, address string, key []byte) error 
 			document.Keys = map[string][]byte{}
 		}
 		document.Keys[address] = key
-		if err := s.write(ctx, id, pinsFile, document); err != nil {
+		isKept, err := s.writeCopy(ctx, id, pinsFile, document)
+		if err != nil {
 			return err
 		}
+		if isKept {
+			kept++
+		}
+	}
+	return checkKept(kept)
+}
+
+// writeCopy writes the copy of the account state in the vault. A vault whose folder is gone keeps no copy, and
+// that is no failure of the others.
+func (s *State) writeCopy(ctx context.Context, id domain.VaultID, name string, value any) (bool, error) {
+	err := s.write(ctx, id, name, value)
+	if errors.Is(err, host.ErrNotExist) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func checkKept(kept int) error {
+	if kept == 0 {
+		return errNoVault
 	}
 	return nil
 }
@@ -102,12 +125,17 @@ func (s *State) WriteJournal(ctx context.Context, journal restore.Journal) error
 	if len(ids) == 0 {
 		return errNoVault
 	}
+	kept := 0
 	for _, id := range ids {
-		if err := s.write(ctx, id, getJournalFile(journal.Kind), journalDocument{Entries: journal.Entries}); err != nil {
+		isKept, err := s.writeCopy(ctx, id, getJournalFile(journal.Kind), journalDocument{Entries: journal.Entries})
+		if err != nil {
 			return err
 		}
+		if isKept {
+			kept++
+		}
 	}
-	return nil
+	return checkKept(kept)
 }
 
 var errNoVault = errors.New("the installation has no vault to keep the copy in")
