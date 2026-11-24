@@ -25,12 +25,10 @@ type TextIndexer interface {
 	IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error)
 }
 
-// VectorEmbedder embeds the chunks of a vault.
-type VectorEmbedder interface {
-	EmbedWithProgress(
-		ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
-	) (vaultreading.EmbedResult, error)
-}
+// EmbedVectors embeds the chunks of a vault.
+type EmbedVectors func(
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+) (vaultreading.EmbedResult, error)
 
 // VaultPreparing prepares a ReadWholeVault for a vault once it has been found.
 type VaultPreparing = func(ctx context.Context, v domain.Vault) (ReadWholeVault, error)
@@ -42,7 +40,7 @@ type ReadWholeVault struct {
 	prepare VaultPreparing
 	notes   NoteScanner
 	texts   TextIndexer
-	vectors VectorEmbedder
+	vectors EmbedVectors
 
 	Unembedded error
 }
@@ -60,7 +58,7 @@ type Reporting struct {
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
 // walked, the file texts cut, and the vectors made.
-func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbedder) ReadWholeVault {
+func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors EmbedVectors) ReadWholeVault {
 	return ReadWholeVault{notes: notes, texts: texts, vectors: vectors}
 }
 
@@ -137,7 +135,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault, reportin
 
 // MakeVectors embeds every chunk that lacks a vector.
 func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporting Reporting) (vaultreading.EmbedResult, error) {
-	res, err := u.vectors.EmbedWithProgress(ctx, v, reporting.NotifyVectorsProgress, reporting.IsVectorSkipped)
+	res, err := u.vectors(ctx, v, reporting.NotifyVectorsProgress, reporting.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
 	}

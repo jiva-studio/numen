@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -116,7 +117,7 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 
 func Scan(c TestInstallation, db *Index) indexing.Scan { return searchScan(indexPlanOf(c), db) }
 
-func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
+func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (embedchunks.Embed, error) {
 	return searchEmbed(indexPlanOf(c), db, source, v)
 }
 

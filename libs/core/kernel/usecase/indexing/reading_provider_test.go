@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
@@ -79,6 +80,6 @@ func createReadWholeVault(
 	if source == nil {
 		source = none.SearchSource{}
 	}
-	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
-	return indexing.NewReadWholeVault(scan.SetRebuild(rebuild), texts, embed), nil
+	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
+	return indexing.NewReadWholeVault(scan.SetRebuild(rebuild), texts, embed.EmbedWithProgress), nil
 }

@@ -1,4 +1,4 @@
-package indexing
+package embedchunks
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // embedder returns the same vector for the same text, so a returned vector
@@ -79,14 +80,16 @@ func vectorOf(text string, dims int) []float32 {
 	return out
 }
 
+const bookPath = "library/book.epub"
+
 func newEmbed(readers vaultport.VaultReaders, chunks VectorQueries, vectors VectorRepository) Embed {
 	return NewEmbed(readers, chunks, vectors, openClaim{}, bookTexts{readers: readers}, noModel{})
 }
 
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
-) Index {
-	extract := NewIndex(IndexDeps{
+) indexing.Index {
+	extract := indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: index, Records: index, Backlog: index, Lookup: index,
 		Texts: bookTexts{readers: readers},
 	})

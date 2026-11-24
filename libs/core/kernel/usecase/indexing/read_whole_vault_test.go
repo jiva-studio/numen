@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -61,8 +62,8 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers},
 	})
-	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
-	making := indexing.NewReadWholeVault(notes, books, embed)
+	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
 		NotifyNotesProgress:   func(vaultreading.ScanResult) { order = append(order, "notes") },
@@ -99,8 +100,8 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 		Readers: counted, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: counted},
 	})
-	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
-	making := indexing.NewReadWholeVault(notes, books, embed)
+	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
+	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
 	if err == nil || !strings.Contains(err.Error(), "not here") {
@@ -126,8 +127,8 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 		Readers: refusing{}, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: refusing{}},
 	})
-	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
-	making := indexing.NewReadWholeVault(notes, books, embed)
+	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
 	if err == nil {
@@ -160,8 +161,8 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 		Texts: testsupport.Texts{Readers: timedOut{limit: limitCtx}},
 	})
 	counted := &counting{VaultReaders: readers}
-	embed := indexing.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
-	making := indexing.NewReadWholeVault(notes, books, embed)
+	embed := embedchunks.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
 	if !errors.Is(err, context.DeadlineExceeded) {
@@ -282,6 +283,6 @@ func newWholeVaultRead(readers vaultport.VaultReaders, db *scanIndex) indexing.R
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
-		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
+		embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}).EmbedWithProgress,
 	)
 }

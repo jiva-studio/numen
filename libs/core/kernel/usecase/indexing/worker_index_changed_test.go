@@ -159,7 +159,7 @@ func newSession(withSource bool) *session {
 	}
 	s.worker = NewWorker(Config{
 		Reading: func(context.Context, searchsourceport.Source, domain.Vault, bool) (ReadWholeVault, error) {
-			return NewReadWholeVault(s.steps, s.steps, s.steps), nil
+			return NewReadWholeVault(s.steps, s.steps, s.steps.EmbedWithProgress), nil
 		},
 		Source:       source,
 		VectorCounts: s.steps.getVectorCounts,
