@@ -334,7 +334,7 @@ func TestCreateIdentity_RefusesValidWordsThatGenerateRecoveryWordsDidNotMake(t *
 	}
 }
 
-func TestCreateIdentity_TakesTheWordsOfTheLastGenerateOnceInAnyLetterCase(t *testing.T) {
+func TestCreateIdentity_AcceptsTheWordsOfTheLastGenerateOnceInAnyLetterCase(t *testing.T) {
 	t.Parallel()
 	deps := identity.NewDeps(newFakeKeyStore(), fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(&fakeChainStore{})
 	generate, create := identity.NewGenerateRecoveryWords(deps), identity.NewCreateIdentity(deps)
