@@ -91,7 +91,7 @@ func newPhoneVault(t *testing.T, held map[string]string) phoneVault {
 	}
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
 	access := hostvault.NewAccess(
-		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
+		hostvault.Session{GetCurrent: func() (domain.Vault, bool) { return v, true }},
 		hostvault.Files{
 			Stat:        file.NewHashFile(readers, writers),
 			ReadFile:    file.NewReadFile(readers, writers),
