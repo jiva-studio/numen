@@ -78,6 +78,7 @@ export function createSharesView(options: SharesViewOptions = {}) {
   const gives = ref<readonly GivenRow[]>([])
   const receives = ref<readonly ReceivedRow[]>([])
   const error = ref('')
+  const pendingLeave = ref<ReceivedRow | null>(null)
   const poller = createPoller(options.refreshMs ?? REFRESH_MS, fail)
 
   if (getCurrentScope() !== undefined) onScopeDispose(poller.stop)
@@ -126,6 +127,19 @@ export function createSharesView(options: SharesViewOptions = {}) {
       ),
     stopSharing: (row: GivenRow): Promise<void> =>
       change(() => given.stopShare({ vaultId: row.vaultId, folder: row.folder })),
+    pendingLeave,
+    askLeave: (row: ReceivedRow): void => {
+      pendingLeave.value = row
+    },
+    cancelLeave: (): void => {
+      pendingLeave.value = null
+    },
+    confirmLeave: (): Promise<void> => {
+      const row = pendingLeave.value
+      pendingLeave.value = null
+      if (row === null) return Promise.resolve()
+      return change(() => received.leaveShare({ vaultId: row.vaultId }))
+    },
     stop: poller.stop,
   })
 }

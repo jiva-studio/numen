@@ -50,6 +50,7 @@ const createClient = (setup: Setup): VaultsClient => ({
   getConnectPreview: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
   resolveDeletions: () => Promise.resolve(),
   connectVault: () => Promise.resolve(),
+  stopSyncingVault: () => Promise.resolve(),
   getStatus: () => {
     if (setup.isPending === true) return never()
     if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))

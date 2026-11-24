@@ -43,6 +43,18 @@ const createClient = (respond: () => Response) => {
   return { client, sent }
 }
 
+describe('the client of the vaults service', () => {
+  it('stops the sync of a vault by its id', async () => {
+    const { client, sent } = createClient(() => Response.json({}))
+
+    await client.stopSyncingVault({ vaultId: 'v1' })
+
+    expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
+      ['StopSyncingVault', { vaultId: 'v1' }],
+    ])
+  })
+})
+
 describe('the fixtures of the vaults service', () => {
   it('reads the ListVaults fixture as ListVaultsResponse', () => {
     const response = read('ListVaults.response') as ListVaultsResponse

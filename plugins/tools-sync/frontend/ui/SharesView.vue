@@ -8,6 +8,7 @@ import { FolderOpen } from '@lucide/vue'
 import { Button, IslandCard, type MenuItem } from '@numen/ui'
 import type { DeviceRow, GivenRow, SharesView } from '../model/shares'
 import { WORDS as words } from '../words'
+import EndSyncDialog from './EndSyncDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
 import RowMenu from './RowMenu.vue'
 import SyncRow from './SyncRow.vue'
@@ -18,10 +19,15 @@ const props = defineProps<{ view: SharesView }>()
 
 /* --------------------------------- State ---------------------------------- */
 const ITEMS: readonly MenuItem[] = [{ id: 'stop', text: words.stopSharing, group: 'danger' }]
+const LEAVE_ITEMS: readonly MenuItem[] = [{ id: 'leave', text: words.leaveShare, group: 'danger' }]
 
 /* -------------------------------- Handlers -------------------------------- */
 function onStop(row: GivenRow): void {
   props.view.stopSharing(row).catch(props.view.fail)
+}
+
+function onConfirmLeave(): void {
+  props.view.confirmLeave().catch(props.view.fail)
 }
 
 function onRemove(row: GivenRow, device: DeviceRow): void {
@@ -84,8 +90,21 @@ function onRemove(row: GivenRow, device: DeviceRow): void {
           <span class="sync-row__detail">
             {{ words.readOnly }} · {{ words.fromOwner(row.ownerShort) }}
           </span>
+          <template #actions>
+            <RowMenu
+              :label="words.rowActions(row.name)"
+              :items="LEAVE_ITEMS"
+              @choose="view.askLeave(row)"
+            />
+          </template>
         </SyncRow>
       </ul>
     </template>
+    <EndSyncDialog
+      v-if="view.pendingLeave !== null"
+      kind="leave"
+      @confirm="onConfirmLeave"
+      @cancel="view.cancelLeave"
+    />
   </IslandCard>
 </template>

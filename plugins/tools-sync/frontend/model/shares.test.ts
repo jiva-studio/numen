@@ -36,6 +36,7 @@ const createClients = (shared: SharedFolder[] = [FOOD]) => {
         },
       ]),
     ),
+    leaveShare: vi.fn(() => Promise.resolve()),
   }
   return { given, received, view: createSharesView({ given, received, refreshMs: 10_000 }) }
 }
@@ -94,6 +95,29 @@ describe('the page of the shared folders', () => {
 
     expect(given.stopShare).toHaveBeenCalledWith({ vaultId: 'v1', folder: 'Food' })
     expect(view.gives).toStrictEqual([])
+  })
+
+  it('leaves a received folder only after the question is answered', async () => {
+    const { received, view } = createClients()
+    await view.load()
+
+    view.askLeave(view.receives[0]!)
+    expect(received.leaveShare).not.toHaveBeenCalled()
+    await view.confirmLeave()
+
+    expect(received.leaveShare).toHaveBeenCalledWith({ vaultId: 'r1' })
+    expect(view.pendingLeave).toBeNull()
+  })
+
+  it('leaves nothing when the person cancels', async () => {
+    const { received, view } = createClients()
+    await view.load()
+
+    view.askLeave(view.receives[0]!)
+    view.cancelLeave()
+    await view.confirmLeave()
+
+    expect(received.leaveShare).not.toHaveBeenCalled()
   })
 
   it('shows the words of a failed list', async () => {

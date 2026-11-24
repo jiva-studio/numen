@@ -35,6 +35,10 @@ interface FolderRequest {
   readonly folder: string
 }
 
+interface LeaveShareRequest {
+  readonly vaultId: string
+}
+
 interface RemoveReaderRequest extends FolderRequest {
   readonly fingerprint: string
 }
@@ -49,6 +53,7 @@ export interface FolderSharesClient {
 /** The calls of a reader: the folders received. */
 export interface ReceivedSharesClient {
   listReceived(): Promise<readonly ReceivedShare[]>
+  leaveShare(request: LeaveShareRequest): Promise<void>
 }
 
 export function createFolderSharesClient(api: Api): FolderSharesClient {
@@ -68,5 +73,8 @@ export function createReceivedSharesClient(api: Api): ReceivedSharesClient {
   return {
     listReceived: async () =>
       (await call<Empty, { shares: readonly ReceivedShare[] }>(api, 'ListReceived', {})).shares,
+    leaveShare: async (request) => {
+      await call<LeaveShareRequest, Empty>(api, 'LeaveShare', request)
+    },
   }
 }

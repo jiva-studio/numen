@@ -40,6 +40,7 @@ const createPage = (setup: Setup) => {
   }
   const received: ReceivedSharesClient = {
     listReceived: () => Promise.resolve(setup.received ?? []),
+    leaveShare: () => Promise.resolve(),
   }
   return createSharesPage({ given, received, refreshMs: 1_000_000 })
 }

@@ -59,6 +59,16 @@ describe('the client of the sharing methods', () => {
     expect(await received.listReceived()).toStrictEqual([share])
   })
 
+  it('leaves a received share by its vault', async () => {
+    const { received, sent } = createClients(() => Response.json({}))
+
+    await received.leaveShare({ vaultId: 'r1' })
+
+    expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
+      ['LeaveShare', { vaultId: 'r1' }],
+    ])
+  })
+
   it('throws the message of a failed call', async () => {
     const { folder } = createClients(() =>
       Response.json({ code: 'failed_precondition', message: 'No identity' }, { status: 400 }),

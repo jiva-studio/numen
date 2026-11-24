@@ -70,6 +70,10 @@ interface ResolveDeletionsRequest {
   readonly choice: DeletionsChoice
 }
 
+interface StopSyncingVaultRequest {
+  readonly vaultId: string
+}
+
 interface GetStatusResponse {
   readonly hasIdentity: boolean
   readonly isReachable: boolean
@@ -83,6 +87,7 @@ export interface VaultsClient {
   connectVault(request: ConnectVaultRequest): Promise<void>
   resolveDeletions(request: ResolveDeletionsRequest): Promise<void>
   getStatus(): Promise<GetStatusResponse>
+  stopSyncingVault(request: StopSyncingVaultRequest): Promise<void>
 }
 
 const createFailure = (error: ApiError): Error => new Error(error.message)
@@ -106,5 +111,8 @@ export function createVaultsClient(api: Api): VaultsClient {
       await call<ResolveDeletionsRequest, Empty>('ResolveDeletions', request)
     },
     getStatus: () => call<Empty, GetStatusResponse>('GetStatus', {}),
+    stopSyncingVault: async (request) => {
+      await call<StopSyncingVaultRequest, Empty>('StopSyncingVault', request)
+    },
   }
 }
