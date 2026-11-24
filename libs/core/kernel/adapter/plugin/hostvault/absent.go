@@ -5,27 +5,19 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
-
-// AbsentWriters opens a vault to fill a file and to drop the bytes of one.
-type AbsentWriters interface {
-	vaultport.FolderWriters
-	file.EvictWriters
-}
 
 // Absent lists, fills and evicts the files a vault shows and does not hold. A host that holds every
 // file has none.
 type Absent struct {
-	Registry     vaultport.AbsentFiles
-	Readers      vaultport.VaultReaders
-	Writers      AbsentWriters
-	Index        edit.IndexUpdater
+	Put          *file.PutAbsentFiles
+	List         *file.ListAbsentFiles
+	NewFill      func(store file.StoreFiles) *file.FillFile
+	Evict        *file.EvictFile
 	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
 }
 
@@ -50,7 +42,7 @@ func (a absentFiles) PutAbsentFiles(ctx context.Context, pluginID string, files 
 	for i := range files {
 		files[i].Provider = pluginID
 	}
-	return file.NewPutAbsentFiles(a.Readers, a.Registry).Execute(ctx, v, files)
+	return a.Put.Execute(ctx, v, files)
 }
 
 func (a absentFiles) ListAbsentFiles(ctx context.Context) ([]vaultdomain.AbsentFile, error) {
@@ -58,7 +50,7 @@ func (a absentFiles) ListAbsentFiles(ctx context.Context) ([]vaultdomain.AbsentF
 	if err != nil {
 		return nil, err
 	}
-	return a.Registry.ListAbsentFiles(ctx, v)
+	return a.List.Execute(ctx, v)
 }
 
 func (a absentFiles) FillFile(ctx context.Context, pluginID, path, storeName string) error {
@@ -70,7 +62,7 @@ func (a absentFiles) FillFile(ctx context.Context, pluginID, path, storeName str
 	if err != nil {
 		return err
 	}
-	err = file.NewFillFile(a.Registry, a.Writers, storeFiles{store}, a.Index).Execute(ctx, v, path, storeName)
+	err = a.NewFill(storeFiles{store}).Execute(ctx, v, path, storeName)
 	a.session.ReportWrites(v.ID, err)
 	return err
 }
@@ -80,7 +72,7 @@ func (a absentFiles) EvictFile(ctx context.Context, pluginID, path, expectedHash
 	if err != nil {
 		return err
 	}
-	err = file.NewEvictFile(a.Readers, a.Registry, a.Writers).Execute(ctx, v, path, expectedHash, pluginID)
+	err = a.Evict.Execute(ctx, v, path, expectedHash, pluginID)
 	a.session.ReportWrites(v.ID, err)
 	return err
 }
@@ -93,13 +85,3 @@ func (s storeFiles) Open(ctx context.Context, name string) (io.ReadCloser, error
 	return opened, err
 }
 
-// NewAbsent returns the absent files over the registry, or nil where there is no registry.
-func NewAbsent(
-	registry vaultport.AbsentFiles, readers vaultport.VaultReaders, writers AbsentWriters, index edit.IndexUpdater,
-	storeReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error),
-) *Absent {
-	if registry == nil {
-		return nil
-	}
-	return &Absent{Registry: registry, Readers: readers, Writers: writers, Index: index, StoreReaders: storeReaders}
-}

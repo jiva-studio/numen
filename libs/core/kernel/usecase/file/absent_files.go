@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -58,7 +57,7 @@ func (u *PutAbsentFiles) Execute(ctx context.Context, v domain.Vault, files []va
 
 func checkHeld(ctx context.Context, reader vaultport.VaultReader, entry vault.AbsentFile) (bool, error) {
 	stat, err := reader.StatFile(ctx, entry.Path)
-	if errors.Is(err, fs.ErrNotExist) || err == nil && stat.IsAbsent {
+	if edit.IsNoNote(err) || err == nil && stat.IsAbsent {
 		return false, nil
 	}
 	if err != nil {
@@ -100,14 +99,14 @@ func NewFillFile(
 
 // Execute checks the bytes of the store file, writes them to the vault path in one atomic step, and
 // removes the entry. A file of other bytes returns vault.ErrHashMismatch and places nothing; a path
-// that is not listed returns fs.ErrNotExist.
+// that is not listed returns edit.ErrNotExist.
 func (u *FillFile) Execute(ctx context.Context, v domain.Vault, path, storeName string) error {
 	entry, isListed, err := u.absent.GetAbsentFile(ctx, v, path)
 	if err != nil {
 		return err
 	}
 	if !isListed {
-		return fmt.Errorf("fill %s: not listed as absent: %w", path, fs.ErrNotExist)
+		return fmt.Errorf("fill %s: not listed as absent: %w", path, edit.ErrNotExist)
 	}
 	if err := u.check(ctx, storeName, entry); err != nil {
 		return err
@@ -193,4 +192,15 @@ func (u *EvictFile) Execute(ctx context.Context, v domain.Vault, path, expectedH
 		return err
 	}
 	return mover.Remove(ctx, path)
+}
+
+// ListAbsentFiles lists the files the vault shows and does not hold.
+type ListAbsentFiles struct{ absent vaultport.AbsentFiles }
+
+func NewListAbsentFiles(absent vaultport.AbsentFiles) *ListAbsentFiles {
+	return &ListAbsentFiles{absent: absent}
+}
+
+func (u *ListAbsentFiles) Execute(ctx context.Context, v domain.Vault) ([]vault.AbsentFile, error) {
+	return u.absent.ListAbsentFiles(ctx, v)
 }

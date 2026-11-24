@@ -27,6 +27,7 @@ import (
 
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // pluginVaultHooks is what a window adds to the vault it lets the plugins work.
@@ -92,7 +93,7 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Create: file.NewCreateFile(vaultDeps.Writers, index),
 			Index:  file.NewScanFiles(index),
 			Locks:  hold.NewLocks(vaultDeps.Writers, hold.LockHold),
-			Absent: hostvault.NewAbsent(vaultDeps.AbsentFiles, vaultDeps.Readers, vaultDeps.Writers, index, storeReaders),
+			Absent: newAbsent(vaultDeps, index, storeReaders),
 		},
 		getPluginLookups(db),
 		arranger,
@@ -169,4 +170,22 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 func getPluginDir(resolver pluginResolver, id string) (string, bool) {
 	p, ok := resolver.GetPlugin(id)
 	return p.Dir, ok
+}
+
+func newAbsent(
+	deps vaultWiring, index edit.IndexUpdater,
+	storeReaders func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error),
+) *hostvault.Absent {
+	if deps.AbsentFiles == nil {
+		return nil
+	}
+	return &hostvault.Absent{
+		Put:  file.NewPutAbsentFiles(deps.Readers, deps.AbsentFiles),
+		List: file.NewListAbsentFiles(deps.AbsentFiles),
+		NewFill: func(store file.StoreFiles) *file.FillFile {
+			return file.NewFillFile(deps.AbsentFiles, deps.Writers, store, index)
+		},
+		Evict:        file.NewEvictFile(deps.Readers, deps.AbsentFiles, deps.Writers),
+		StoreReaders: storeReaders,
+	}
 }
