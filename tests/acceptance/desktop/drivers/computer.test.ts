@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findConflictCopies, getNotePath, parseComputer, parseHolder, parseInside, parseOwnedVault } from './computer.js'
+import { findConflictCopies, getNotePath, parseComputer, parseHolder, parseInside, parseOwnedVault, parseWait } from './computer.js'
 
 describe('parseComputer', () => {
   it('names the first computer by the person and the second by its words', () => {
@@ -41,6 +41,22 @@ describe('parseInside', () => {
 
   it('names no vault where the step has none', () => {
     expect(parseInside('')).toBeUndefined()
+  })
+})
+
+describe('parseWait', () => {
+  it('reads the seconds and the vault after them', () => {
+    expect(parseWait(' within "5" seconds')).toStrictEqual({ seconds: 5, vault: undefined })
+    expect(parseWait(' within "15" seconds in its vault "Copy"')).toStrictEqual({ seconds: 15, vault: 'Copy' })
+  })
+
+  it('reads no seconds where the text names none', () => {
+    expect(parseWait('')).toStrictEqual({ seconds: undefined, vault: undefined })
+    expect(parseWait(' in the vault "Test"')).toStrictEqual({ seconds: undefined, vault: 'Test' })
+  })
+
+  it('fails on a text that names no vault', () => {
+    expect(() => parseWait(' soon')).toThrow('does not name a vault')
   })
 })
 

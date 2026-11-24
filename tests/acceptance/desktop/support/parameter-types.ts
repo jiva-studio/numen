@@ -6,6 +6,7 @@ import {
   parseComputer,
   parseHolder,
   parseInside,
+  parseWait,
   parseOwnedVault,
 } from '../drivers/computer.js'
 import {
@@ -186,4 +187,10 @@ defineParameterType({
   name: 'teller',
   regexp: /the person|the reader|the second reader/,
   transformer: (teller: string) => teller,
+})
+
+defineParameterType({
+  name: 'wait',
+  regexp: /(?: within "\d+" seconds)?(?: in (?:the|its) vault "[^"]+")?/,
+  transformer: (wait: string) => parseWait(wait),
 })

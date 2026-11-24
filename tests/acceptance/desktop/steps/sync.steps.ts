@@ -1,4 +1,4 @@
-import type { ComputerName, Holder } from '../drivers/computer.js'
+import type { ComputerName, Holder, Wait } from '../drivers/computer.js'
 import type { PlanSpec } from '../drivers/sync.js'
 import { Given, Then, When } from '../support/bdd.js'
 
@@ -104,13 +104,6 @@ When(
 When('{computer} writes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   person.files.writeFile(computer, filePath, undefined, vault)
 })
-
-Then(
-  '{holder} has the note {string} with the text {string}{inside}',
-  async ({ person }, holder: Holder, title: string, text: string, vault: string | undefined) => {
-    await person.computers.expectNote(holder, title, text, vault)
-  },
-)
 
 Then('{computer} does not have the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   await person.computers.expectNoFile(computer, filePath, vault)
@@ -331,9 +324,9 @@ Given('the second computer goes offline for a moment', async ({ person }) => {
 })
 
 Then(
-  '{holder} has the note {string} with the text {string} within {string} seconds',
-  async ({ person }, holder: Holder, title: string, text: string, seconds: string) => {
-    await person.computers.expectNoteWithin(holder, { title, text, seconds: Number(seconds) })
+  '{holder} has the note {string} with the text {string}{wait}',
+  async ({ person }, holder: Holder, title: string, text: string, wait: Wait) => {
+    await person.computers.expectNoteWithin(holder, { title, text }, wait)
   },
 )
 

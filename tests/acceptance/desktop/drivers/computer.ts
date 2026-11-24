@@ -71,6 +71,17 @@ export const parseInside = (text: string): string | undefined => {
   return trimmed === '' ? undefined : parseOwnedVault(trimmed.replace(/^in /, ''))
 }
 
+/** How long a step waits for a note, and the vault it names after the wait, if any. */
+export interface Wait {
+  readonly seconds: number | undefined
+  readonly vault: string | undefined
+}
+
+export const parseWait = (text: string): Wait => {
+  const match = /^(?: within "(\d+)" seconds)?(.*)$/.exec(text)
+  return { seconds: match?.[1] === undefined ? undefined : Number(match[1]), vault: parseInside(match?.[2] ?? text) }
+}
+
 /** The path of a note a scenario names by its title. */
 export const getNotePath = (title: string): string => `${title}.md`
 
@@ -318,10 +329,6 @@ export class ComputerDriver {
     this.getScenario(computer).getWorld().writeText(this.resolveVault(computer, vault), filePath, 'bytes')
   }
 
-  async expectNote(holder: Holder, title: string, text: string, vault: string | undefined): Promise<void> {
-    await this.expectNoteBy({ ...holder, vault: holder.vault ?? vault }, title, text, ARRIVAL_LIMIT_MS)
-  }
-
   private async expectNoteBy(holder: Holder, title: string, text: string, timeout: number): Promise<void> {
     const world = this.getScenario(holder.computer).getWorld()
     const name = this.resolveVault(holder.computer, holder.vault)
@@ -342,8 +349,9 @@ export class ComputerDriver {
   }
 
   /** Expects the note within the seconds the scenario names, with the settings the plugin has now. */
-  async expectNoteWithin(holder: Holder, note: { title: string; text: string; seconds: number }): Promise<void> {
-    await this.expectNoteBy(holder, note.title, note.text, note.seconds * 1000)
+  async expectNoteWithin(holder: Holder, note: { title: string; text: string }, wait: Wait): Promise<void> {
+    const timeout = wait.seconds === undefined ? ARRIVAL_LIMIT_MS : wait.seconds * 1000
+    await this.expectNoteBy({ ...holder, vault: holder.vault ?? wait.vault }, note.title, note.text, timeout)
   }
 
   async expectConflictCopy(holder: Holder, title: string, text: string, vault: string | undefined): Promise<void> {
