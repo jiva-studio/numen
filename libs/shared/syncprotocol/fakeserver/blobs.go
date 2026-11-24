@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -181,9 +182,7 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 		return
 	}
 	w.Header().Set("Content-Type", "application/octet-stream")
-	if _, err := w.Write(body); err != nil {
-		return
-	}
+	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(body))
 }
 
 func (s *Server) serveStoredBlobs(w http.ResponseWriter, r *http.Request) {

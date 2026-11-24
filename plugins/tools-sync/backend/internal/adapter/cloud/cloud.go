@@ -111,6 +111,6 @@ func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 }
 
 // GetBlobRange returns at most length bytes of the blob from offset.
-func (c *Cloud) GetBlobRange(context.Context, string, int64, int64) ([]byte, error) {
-	return nil, errors.New("not implemented")
+func (c *Cloud) GetBlobRange(ctx context.Context, url string, offset, length int64) ([]byte, error) {
+	return syncclient.GetBlobSpan(ctx, c.http, url, offset, length)
 }

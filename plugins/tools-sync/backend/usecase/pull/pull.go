@@ -4,16 +4,16 @@ package pull
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 // ErrCorruptBlob means a blob the server sent is not the one its revision names, or does not open.
-var ErrCorruptBlob = errors.New("the blob of a revision is damaged")
+var ErrCorruptBlob = note.ErrCorruptBlob
 
 // State is what a pull keeps of the vault.
 type State interface {
@@ -58,7 +58,7 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (trans
 	}
 	r := &run{
 		deps: u.deps, in: in, files: u.deps.Host.Files(in.VaultID), remote: remote, key: [32]byte(key), link: link, records: records,
-		result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
+		result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false, listed: nil,
 	}
 	err = r.execute(ctx)
 	return r.result, err
