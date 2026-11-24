@@ -203,7 +203,7 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	}
 	what := newSignInFailedConcern()
 	revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](cause)
-	isDeleting := errors.Is(cause, domain.AccountDeletingError{})
+	isDeleting := errors.Is(cause, domain.AccountDeletingError{DeleteAt: time.Time{}})
 	switch {
 	case isRevoked:
 		what = newRevokedConcern()

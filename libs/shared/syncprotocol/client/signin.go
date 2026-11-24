@@ -23,10 +23,10 @@ type Challenge struct {
 // Proof is what answers a challenge: the signature over its message, with the key and the chain that
 // vouch for the device.
 type Proof struct {
-	ChallengeID   []byte
-	DeviceSignKey []byte
-	Signature     []byte
-	Chain         []byte
+	ChallengeID    []byte
+	DeviceSignKey  []byte
+	Signature      []byte
+	Chain          []byte
 	RestoreAccount bool
 }
 
