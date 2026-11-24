@@ -82,7 +82,6 @@ export const WORDS = {
   linkCode: 'Confirmation code',
   linkCompare: 'Compare this fingerprint with the one the new device shows.',
   linkWaitingCode: 'Waiting for the code on the new device.',
-  linkDone: 'The device is linked.',
   linkTriesLeft: (count: number) => `${count} tries left.`,
   linkJoinQuestion: (account: string) => `Join account ${account}?`,
   linkReason: (reason: string | undefined): string => {
