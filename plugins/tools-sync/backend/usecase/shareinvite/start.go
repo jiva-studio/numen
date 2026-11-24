@@ -33,13 +33,14 @@ func NewStart(deps Deps) *Start { return &Start{deps: deps} }
 // the request, so a link that no person uses changes nothing. The folder must be one that may be shared.
 func (u *Start) Execute(ctx context.Context, id domain.VaultID, folder string) (Started, error) {
 	normalized := domainshare.NormalizeFolder(folder)
-	if normalized == "" {
-		return Started{}, domainshare.ErrWholeVault
-	}
 	if err := u.deps.Sharing.CheckShareable(ctx, id, normalized); err != nil {
 		return Started{}, err
 	}
 	own, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return Started{}, err
+	}
+	name, err := u.getFolderName(ctx, id, normalized)
 	if err != nil {
 		return Started{}, err
 	}
@@ -63,13 +64,13 @@ func (u *Start) Execute(ctx context.Context, id domain.VaultID, folder string) (
 		return Started{}, fmt.Errorf("make the key of the link: %w", err)
 	}
 	link, err := domainshare.NewLink(domainshare.LinkInvitation{
-		Payload: payload, Folder: path.Base(normalized), Fingerprint: chain.Root().Fingerprint().String(), ExpiresAt: expiresAt,
+		Payload: payload, Folder: name, Fingerprint: chain.Root().Fingerprint().String(), ExpiresAt: expiresAt,
 	})
 	if err != nil {
 		return Started{}, err
 	}
 	made := &offer{
-		id: channel.ID, vault: id, folder: normalized, expiresAt: expiresAt, displayer: displayer, channel: nil, request: nil, isDone: false,
+		id: channel.ID, vault: id, folder: normalized, name: name, expiresAt: expiresAt, displayer: displayer, channel: nil, request: nil, isDone: false,
 	}
 	u.deps.Hub.mu.Lock()
 	u.deps.Hub.offers[hex.EncodeToString(channel.ID)] = made
@@ -78,4 +79,11 @@ func (u *Start) Execute(ctx context.Context, id domain.VaultID, folder string) (
 		return Started{}, err
 	}
 	return Started{ID: hex.EncodeToString(channel.ID), Link: link, ExpiresAt: expiresAt}, nil
+}
+
+func (u *Start) getFolderName(ctx context.Context, id domain.VaultID, folder string) (string, error) {
+	if folder == "" {
+		return u.deps.Sharing.GetVaultName(ctx, id)
+	}
+	return path.Base(folder), nil
 }

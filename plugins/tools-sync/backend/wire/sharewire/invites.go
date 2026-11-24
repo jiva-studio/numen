@@ -48,3 +48,9 @@ func (r *InvitationReceiver) AcceptInvitation(ctx context.Context, text string) 
 	_, err := receive.NewAcceptInvitation(r.deps).Execute(ctx, text)
 	return err
 }
+
+// GetVaultName returns the name of the vault as the synced vault keeps it.
+func (s *FolderSharer) GetVaultName(ctx context.Context, id domain.VaultID) (string, error) {
+	link, err := s.deps.Links.ReadLink(ctx, id)
+	return link.CatalogName, err
+}

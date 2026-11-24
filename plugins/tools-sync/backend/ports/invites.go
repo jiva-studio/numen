@@ -10,6 +10,8 @@ import (
 type FolderSharing interface {
 	// CheckShareable refuses a folder that may not be shared.
 	CheckShareable(ctx context.Context, id domain.VaultID, folder string) error
+	// GetVaultName returns the name of the vault, which the link of the whole vault names as its folder.
+	GetVaultName(ctx context.Context, id domain.VaultID) (string, error)
 	// ShareWithReader shares the folder when it is not shared yet, adds the reader of the code, and returns the text of the
 	// invitation.
 	ShareWithReader(ctx context.Context, id domain.VaultID, folder, code, label string) (string, error)

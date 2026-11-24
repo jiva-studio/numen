@@ -84,13 +84,27 @@ func TestSharing_RefusesWhatTheOwnerMayNotDo(t *testing.T) {
 	w.c.Connect(t, "Test")
 	backend := service.NewBackend(w.c.SyncDeps()).WithInvites(w.c.NewInvites(t))
 
-	_, wholeErr := backend.StartShareInvitation(t.Context(), api.StartShareInvitationRequest{VaultID: "Test", Folder: ""})
 	_, badErr := backend.GetShareInvitationPreview(t.Context(), api.PreviewShareInvitationRequest{Link: "numen-share:AAAA"})
 	_, unknownErr := backend.ApproveShareRequest(t.Context(), api.ApproveShareRequestRequest{RequestID: "00"})
 
-	for name, err := range map[string]error{"the whole vault": wholeErr, "a link that is none": badErr, "a request that is none": unknownErr} {
+	for name, err := range map[string]error{"a link that is none": badErr, "a request that is none": unknownErr} {
 		if err == nil {
 			t.Errorf("%s: the method did not refuse", name)
 		}
+	}
+}
+
+func TestSharing_TheWholeVaultIsSharedByALinkNamedAfterTheVault(t *testing.T) {
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	backend := service.NewBackend(w.c.SyncDeps()).WithInvites(w.c.NewInvites(t))
+
+	started, err := backend.StartShareInvitation(t.Context(), api.StartShareInvitationRequest{VaultID: "Test", Folder: ""})
+	if err != nil || started.Link == "" {
+		t.Fatalf("started = %+v, %v, want a link for the whole vault", started, err)
+	}
+	preview, err := backend.GetShareInvitationPreview(t.Context(), api.PreviewShareInvitationRequest{Link: started.Link})
+	if err != nil || preview.Folder != "Test" {
+		t.Errorf("preview = %+v, %v, want the vault name Test", preview, err)
 	}
 }

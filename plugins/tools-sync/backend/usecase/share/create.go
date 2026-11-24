@@ -22,14 +22,11 @@ type CreateShare struct{ base }
 // NewCreateShare returns the use case over the dependencies.
 func NewCreateShare(deps Deps) *CreateShare { return &CreateShare{base: base{deps: deps}} }
 
-// Execute shares the folder of the vault with no reader yet. It refuses the whole vault, a folder inside a share
-// or holding one, a vault that is received and a vault that is not connected. It returns after the files are
+// Execute shares the folder of the vault with no reader yet; an empty folder is the whole vault. It refuses a folder
+// inside a share or holding one, a vault that is received and a vault that is not synced. It returns after the files are
 // rewrapped; a rewrap that ends early is resumed by the next pass over the vault.
 func (u *CreateShare) Execute(ctx context.Context, id domain.VaultID, folder string) error {
 	normalized := domainshare.NormalizeFolder(folder)
-	if normalized == "" {
-		return domainshare.ErrWholeVault
-	}
 	remote, err := u.getRemote(ctx, id)
 	if err != nil {
 		return err
@@ -59,7 +56,7 @@ func (u *CreateShare) create(ctx context.Context, id domain.VaultID, remote []by
 	}
 	keys := domainshare.Keys{}.Add(0, [32]byte(key))
 	body := domainshare.OwnerBody{Folder: folder, Keys: keys, Readers: nil}
-	entry, err := u.sign(ctx, shareID, 1, [32]byte{}, draft{
+	entry, err := u.sign(ctx, id, shareID, 1, [32]byte{}, draft{
 		kind: syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, subject: nil, vaultID: remote, epoch: 0, body: body, seals: nil, previous: nil,
 	})
 	if err != nil {

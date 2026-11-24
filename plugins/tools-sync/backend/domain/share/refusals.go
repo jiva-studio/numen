@@ -3,8 +3,8 @@ package share
 import "errors"
 
 var (
-	// ErrNotConnected means the vault is not connected to a synced vault.
-	ErrNotConnected = errors.New("the vault is not connected to Numen Sync")
+	// ErrNotConnected means the vault is not synced.
+	ErrNotConnected = errors.New("this vault is not synced: sync it first to share it")
 	// ErrReceivedVault means the vault is a shared vault, which is not shared again or synced as an own vault.
 	ErrReceivedVault = errors.New("a shared vault cannot be shared again")
 	// ErrReceivedNotSynced means a shared vault is connected as a synced vault.

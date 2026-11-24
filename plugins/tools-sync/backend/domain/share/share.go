@@ -31,8 +31,6 @@ const (
 )
 
 var (
-	// ErrWholeVault means the folder is the root of the vault.
-	ErrWholeVault = errors.New("choose a folder, not the whole vault")
 	// ErrInsideShare means the folder is a shared folder or lies inside one.
 	ErrInsideShare = errors.New("a folder inside a shared folder cannot be shared")
 	// ErrHoldsShare means the folder holds a shared folder.
@@ -87,19 +85,13 @@ func hasPrefix(segments, prefix []string) bool {
 	return true
 }
 
-// CheckNesting returns nil when folder may be shared next to the shared folders given: not the vault root, not a
-// shared folder or inside one, not holding one. Folders are paths of the vault, compared by segment and without
-// case.
+// CheckNesting returns nil when folder may be shared next to the shared folders given: not a shared folder or inside
+// one, not holding one. The vault root, the empty folder, holds every folder, so it is shared only while no folder
+// is. Folders are paths of the vault, compared by segment and without case.
 func CheckNesting(folder string, shared []string) error {
 	segments := getSegments(folder)
-	if len(segments) == 0 {
-		return ErrWholeVault
-	}
 	for _, one := range shared {
 		other := getSegments(one)
-		if len(other) == 0 {
-			continue
-		}
 		if hasPrefix(segments, other) {
 			return ErrInsideShare
 		}
@@ -113,7 +105,7 @@ func CheckNesting(folder string, shared []string) error {
 func GetRelativePath(folder, filePath string) (string, bool) {
 	prefix := getSegments(folder)
 	segments := strings.Split(filePath, "/")
-	if len(prefix) == 0 || len(segments) <= len(prefix) || !hasPrefix(segments, prefix) {
+	if len(segments) <= len(prefix) || !hasPrefix(segments, prefix) {
 		return "", false
 	}
 	return strings.Join(segments[len(prefix):], "/"), true

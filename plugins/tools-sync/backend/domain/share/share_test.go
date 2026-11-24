@@ -52,11 +52,12 @@ func TestCheckNesting_AcceptsAFolderApartFromTheSharedOnes(t *testing.T) {
 		folder string
 		shared []string
 	}{
-		"no share":                     {folder: "Food", shared: nil},
-		"sibling":                      {folder: "Plans", shared: []string{"Food"}},
-		"sibling with a common prefix": {folder: "Foodie", shared: []string{"Food"}},
-		"sibling the prefix is shared": {folder: "Food", shared: []string{"Foodie"}},
-		"nested sibling":               {folder: "Life/Plans", shared: []string{"Life/Food"}},
+		"no share":                       {folder: "Food", shared: nil},
+		"the vault root, nothing shared": {folder: "", shared: nil},
+		"sibling":                        {folder: "Plans", shared: []string{"Food"}},
+		"sibling with a common prefix":   {folder: "Foodie", shared: []string{"Food"}},
+		"sibling the prefix is shared":   {folder: "Food", shared: []string{"Foodie"}},
+		"nested sibling":                 {folder: "Life/Plans", shared: []string{"Life/Food"}},
 	}
 	for name, c := range cases {
 		if err := share.CheckNesting(c.folder, c.shared); err != nil {
@@ -72,15 +73,17 @@ func TestCheckNesting_RejectsWholeVaultAndFolderNestedWithShare(t *testing.T) {
 		shared []string
 		want   error
 	}{
-		"the vault root":         {folder: "", shared: nil, want: share.ErrWholeVault},
-		"the vault root as dot":  {folder: ".", shared: nil, want: share.ErrWholeVault},
-		"the same folder":        {folder: "Food", shared: []string{"Food"}, want: share.ErrInsideShare},
-		"inside":                 {folder: "Food/Dinner", shared: []string{"Food"}, want: share.ErrInsideShare},
-		"deep inside":            {folder: "Food/Dinner/Soup", shared: []string{"Food"}, want: share.ErrInsideShare},
-		"inside with other case": {folder: "food/Dinner", shared: []string{"Food"}, want: share.ErrInsideShare},
-		"holds":                  {folder: "Life", shared: []string{"Life/Food"}, want: share.ErrHoldsShare},
-		"holds with other case":  {folder: "LIFE", shared: []string{"Life/Food"}, want: share.ErrHoldsShare},
-		"inside the second":      {folder: "Plans/Trip", shared: []string{"Food", "Plans"}, want: share.ErrInsideShare},
+		"the vault root while a folder is shared": {folder: "", shared: []string{"Food"}, want: share.ErrHoldsShare},
+		"the vault root as dot while one is":      {folder: ".", shared: []string{"Life/Food"}, want: share.ErrHoldsShare},
+		"the vault root while the root is":        {folder: "", shared: []string{""}, want: share.ErrInsideShare},
+		"a folder while the root is shared":       {folder: "Food", shared: []string{""}, want: share.ErrInsideShare},
+		"the same folder":                         {folder: "Food", shared: []string{"Food"}, want: share.ErrInsideShare},
+		"inside":                                  {folder: "Food/Dinner", shared: []string{"Food"}, want: share.ErrInsideShare},
+		"deep inside":                             {folder: "Food/Dinner/Soup", shared: []string{"Food"}, want: share.ErrInsideShare},
+		"inside with other case":                  {folder: "food/Dinner", shared: []string{"Food"}, want: share.ErrInsideShare},
+		"holds":                                   {folder: "Life", shared: []string{"Life/Food"}, want: share.ErrHoldsShare},
+		"holds with other case":                   {folder: "LIFE", shared: []string{"Life/Food"}, want: share.ErrHoldsShare},
+		"inside the second":                       {folder: "Plans/Trip", shared: []string{"Food", "Plans"}, want: share.ErrInsideShare},
 	}
 	for name, c := range cases {
 		if err := share.CheckNesting(c.folder, c.shared); !errors.Is(err, c.want) {
@@ -311,6 +314,16 @@ func TestParseInvitation_RefusesATextThatIsNotAnInvitationOrIsTooShort(t *testin
 	} {
 		if _, err := share.ParseInvitation(text); !errors.Is(err, share.ErrBadCode) {
 			t.Errorf("%s: error = %v, want ErrBadCode", name, err)
+		}
+	}
+}
+
+func TestGetRelativePath_TheVaultRootHoldsEveryFile(t *testing.T) {
+	t.Parallel()
+	for _, root := range []string{"", ".", "/"} {
+		got, ok := share.GetRelativePath(root, "Food/Soup.md")
+		if !ok || got != "Food/Soup.md" {
+			t.Errorf("root %q: got %q (%v), want the whole path", root, got, ok)
 		}
 	}
 }

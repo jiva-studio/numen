@@ -179,7 +179,7 @@ func FindRoot(roots []Root, folder string) (Root, bool) {
 
 func isSameFolder(first, second string) bool {
 	one, other := getSegments(first), getSegments(second)
-	return len(one) > 0 && len(one) == len(other) && hasPrefix(one, other)
+	return len(one) == len(other) && hasPrefix(one, other)
 }
 
 // FindRootOf returns the open share that holds the file.

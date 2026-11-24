@@ -143,7 +143,7 @@ func TestCreateShare_HidesThePathAboveTheFolderFromTheServer(t *testing.T) {
 	}
 }
 
-func TestCreateShare_RefusesTheWholeVaultNestingAReceivedVaultAndAVaultThatIsNotConnected(t *testing.T) {
+func TestCreateShare_RefusesNestingAndAVaultThatIsNotSynced(t *testing.T) {
 	w := newWorld(t)
 	w.shareFolder(t)
 	w.owner.AddVault(t, "Offline")
@@ -153,7 +153,7 @@ func TestCreateShare_RefusesTheWholeVaultNestingAReceivedVaultAndAVaultThatIsNot
 		folder string
 		want   error
 	}{
-		"the vault root":     {vault: owned, folder: "", want: share.ErrWholeVault},
+		"the vault root":     {vault: owned, folder: "", want: share.ErrHoldsShare},
 		"the same folder":    {vault: owned, folder: folder, want: share.ErrInsideShare},
 		"inside the folder":  {vault: owned, folder: "Food/Dinner", want: share.ErrInsideShare},
 		"a vault not synced": {vault: "Offline", folder: "Food", want: share.ErrNotConnected},
@@ -165,8 +165,8 @@ func TestCreateShare_RefusesTheWholeVaultNestingAReceivedVaultAndAVaultThatIsNot
 	if err := w.owner.CreateShare(t.Context(), owned, "Life"); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.owner.CreateShare(t.Context(), owned, ""); !errors.Is(err, share.ErrWholeVault) {
-		t.Errorf("the root with two shares: error = %v, want ErrWholeVault", err)
+	if err := w.owner.CreateShare(t.Context(), owned, ""); !errors.Is(err, share.ErrHoldsShare) {
+		t.Errorf("the root with two shares: error = %v, want ErrHoldsShare", err)
 	}
 }
 
@@ -396,5 +396,53 @@ func TestCreateShare_ResumesAnInterruptedRewrapAtItsCursorAndAddsNoReaderBeforeI
 	}
 	if shared != 3 {
 		t.Errorf("%d share revisions after the pass resumed the rewrap, want 3", shared)
+	}
+}
+
+func TestCreateShare_SharesTheWholeVaultAndAReaderReadsEveryFile(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.owner.WriteNote(owned, "Plans/Trip.md", "Lisbon")
+	w.owner.WriteNote(owned, "Top.md", "root note")
+	w.syncOwner(t)
+	if err := w.owner.CreateShare(t.Context(), owned, ""); err != nil {
+		t.Fatal(err)
+	}
+	w.syncOwner(t)
+	code, err := w.reader.GetReaderCode(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	invitation, err := w.owner.AddReader(t.Context(), owned, "", code.Code, "Anna", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	received, err := w.reader.AcceptInvitation(t.Context(), invitation.Text)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for path, want := range map[string]string{"Food/Soup.md": "carrots", "Plans/Trip.md": "Lisbon", "Top.md": "root note"} {
+		if got, ok := w.reader.ReadNote(received.VaultID, path); !ok || got != want {
+			t.Errorf("%s on the reader = %q (%v), want %q", path, got, ok, want)
+		}
+	}
+	listed, err := w.reader.ListReceived(t.Context())
+	if err != nil || len(listed) != 1 || listed[0].Name != string(owned) {
+		t.Errorf("received = %+v, %v, want one vault named after the shared vault", listed, err)
+	}
+}
+
+func TestCreateShare_RefusesAFolderWhileTheWholeVaultIsShared(t *testing.T) {
+	w := newWorld(t)
+	if err := w.owner.CreateShare(t.Context(), owned, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, at := range map[string]string{"a folder": "Food", "the root again": "."} {
+		if err := w.owner.CreateShare(t.Context(), owned, at); !errors.Is(err, share.ErrInsideShare) {
+			t.Errorf("%s: error = %v, want ErrInsideShare", name, err)
+		}
 	}
 }

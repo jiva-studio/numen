@@ -66,6 +66,7 @@ type offer struct {
 	id        []byte
 	vault     domain.VaultID
 	folder    string
+	name      string
 	expiresAt time.Time
 	displayer *identity.LinkDisplayer
 	channel   *identity.LinkChannel

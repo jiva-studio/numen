@@ -138,8 +138,16 @@ func listRequests(hub *Hub) []Request {
 			continue
 		}
 		requests = append(requests, Request{
-			ID: key, VaultID: o.vault, Folder: o.folder, DeviceName: o.request.name, Fingerprint: o.request.fingerprint, Code: o.request.code,
+			ID: key, VaultID: o.vault, Folder: o.getLabel(), DeviceName: o.request.name, Fingerprint: o.request.fingerprint, Code: o.request.code,
 		})
 	}
 	return requests
+}
+
+// getLabel returns what the sharer reads as the folder of the offer: its path, and for the whole vault the vault name.
+func (o *offer) getLabel() string {
+	if o.folder == "" {
+		return o.name
+	}
+	return o.folder
 }

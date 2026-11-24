@@ -207,7 +207,7 @@ type draft struct {
 	previous []byte
 }
 
-func (b base) sign(ctx context.Context, id []byte, version uint64, prev [32]byte, d draft) (*syncv1.ShareLogEntry, error) {
+func (b base) sign(ctx context.Context, vault domain.VaultID, id []byte, version uint64, prev [32]byte, d draft) (*syncv1.ShareLogEntry, error) {
 	key, isKnown := d.body.Keys.Get(d.epoch)
 	if !isKnown {
 		return nil, errNoKey
@@ -220,7 +220,10 @@ func (b base) sign(ctx context.Context, id []byte, version uint64, prev [32]byte
 	if err != nil {
 		return nil, fmt.Errorf("seal the owner body: %w", err)
 	}
-	name := domainshare.Body{Name: domainshare.GetShareName(d.body.Folder)}
+	name, err := b.getShareName(ctx, vault, d.body.Folder)
+	if err != nil {
+		return nil, err
+	}
 	sealedShare, err := domainshare.SealBody(b.deps.Random, key, id, d.epoch, name)
 	if err != nil {
 		return nil, err
@@ -266,7 +269,7 @@ func (b base) change(ctx context.Context, at ref, build func(root domainshare.Ro
 		if err != nil {
 			return domainshare.Root{}, err
 		}
-		entry, err := b.sign(ctx, root.ID, root.Version+1, root.HeadID, d)
+		entry, err := b.sign(ctx, at.vault, root.ID, root.Version+1, root.HeadID, d)
 		if err != nil {
 			return domainshare.Root{}, err
 		}
@@ -333,4 +336,17 @@ func (u *GetShare) Execute(ctx context.Context, id domain.VaultID, folder string
 		return Overview{}, err
 	}
 	return Overview{State: root.GetState(), Readers: root.Readers}, nil
+}
+
+// getShareName returns the body a reader sees of the share: the last segment of the folder, and for the whole vault
+// the name of the vault.
+func (b base) getShareName(ctx context.Context, id domain.VaultID, folder string) (domainshare.Body, error) {
+	if domainshare.NormalizeFolder(folder) != "" {
+		return domainshare.Body{Name: domainshare.GetShareName(folder)}, nil
+	}
+	link, err := b.deps.Links.ReadLink(ctx, id)
+	if err != nil {
+		return domainshare.Body{}, err
+	}
+	return domainshare.Body{Name: link.CatalogName}, nil
 }

@@ -285,3 +285,31 @@ func TestApprove_RefusesARequestThatDoesNotExist(t *testing.T) {
 		t.Errorf("error = %v, want ErrUnknownRequest", err)
 	}
 }
+
+func TestApprove_ShareTheWholeVaultWhenTheFolderIsEmpty(t *testing.T) {
+	w := newWorld(t)
+	reader, readerDeps := w.newReader(t, "Reader")
+	started, err := shareinvite.NewStart(w.sharer).Execute(t.Context(), owned, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := join(t, readerDeps, started.Link, "Anna laptop")
+	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
+	requests := w.waitRequest(t, 1)
+	if requests[0].Folder != string(owned) {
+		t.Errorf("request folder = %q, want the vault name", requests[0].Folder)
+	}
+
+	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	waitPhase(t, readerDeps, id, shareinvite.PhaseReceived)
+	received, err := reader.ListReceived(t.Context())
+	if err != nil || len(received) != 1 {
+		t.Fatalf("received = %+v, %v, want one vault", received, err)
+	}
+	if text, ok := reader.ReadNote(received[0].VaultID, "Food/Soup.md"); !ok || text != "carrots" {
+		t.Errorf("note = %q (%v), want carrots", text, ok)
+	}
+}
