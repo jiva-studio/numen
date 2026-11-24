@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
-import type { FolderSharesClient, ShareReader } from '../api/shares'
+import type { FolderSharesClient, SharedFolder } from '../api/shares'
 import { createInvitationView } from '../model/invitation'
 import ShareInvitationDialog from './ShareInvitationDialog.vue'
 import { decorateWithFrame } from './storyFrame'
 import '../styles.css'
 
+type Reader = SharedFolder['readers'][number]
+
 const TARGET = { vaultId: 'v1', folder: 'Recipes' }
-const PHONE: ShareReader = { label: 'Phone', fingerprint: '1111 2222 3333 4444', state: 'active' }
+const PHONE: Reader = { label: 'Phone', fingerprint: '1111 2222 3333 4444', state: 'active' }
 const REQUEST: ShareRequest = {
   requestId: 'r1',
   ...TARGET,
@@ -19,7 +21,7 @@ const REQUEST: ShareRequest = {
 
 interface Setup {
   readonly request?: ShareRequest
-  readonly readers?: ShareReader[]
+  readonly readers?: Reader[]
   readonly isUsed?: boolean
   readonly isPending?: boolean
   readonly failure?: string

@@ -1,7 +1,7 @@
 import type { Failure } from '@numen/result'
 
 /** How the keys of this computer are kept where it has no system keychain. */
-export type KeyFileMode = 'unset' | 'plaintext' | 'passphrase'
+type KeyFileMode = 'unset' | 'plaintext' | 'passphrase'
 
 /** How the keys are kept now. */
 export interface KeyFileState {

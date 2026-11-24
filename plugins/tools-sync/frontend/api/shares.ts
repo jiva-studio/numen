@@ -7,7 +7,7 @@ import { call, type Empty } from './call'
 
 type ShareState = 'notShared' | 'creating' | 'active'
 
-export interface ShareReader {
+interface ShareReader {
   readonly label: string
   readonly fingerprint: string
   readonly state: 'active' | 'removed'

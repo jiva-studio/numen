@@ -11,13 +11,13 @@ export interface FolderTarget {
   readonly folder: string
 }
 
-export interface StartedInvitation {
+interface StartedInvitation {
   readonly id: string
   readonly link: string
   readonly expiresAt: string
 }
 
-export interface ShareInvitation {
+interface ShareInvitation {
   readonly id: string
   readonly folder: string
   readonly expiresAt: string
@@ -45,7 +45,7 @@ interface AcceptRequest {
   readonly deviceName: string
 }
 
-export interface SentRequest {
+interface SentRequest {
   readonly requestId: string
   readonly folder: string
   readonly ownerFingerprint: string

@@ -29,5 +29,3 @@ export function createDialogStack(
   }
   return { entries, host }
 }
-
-export type DialogStack = ReturnType<typeof createDialogStack>

@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { addScannedSheet, readSheetCode } from './readSheetCode'
+import { addScannedSheet } from './readSheetCode'
 
 const WORDS = Array.from({ length: 33 }, (_, index) => `word${String.fromCharCode(97 + (index % 26))}`)
 const makeCode = (kit: string, sheet: number, list: readonly string[] = WORDS): string =>
   `numen://recover?v=1&kit=${kit}&sheet=${sheet}&words=${list.join('+')}`
 
-describe('readSheetCode', () => {
-  it('reads the kit, the sheet and the words of a sheet code', () => {
-    expect(readSheetCode(makeCode('C0DE', 2))).toEqual({
-      code: { kit: 'C0DE', sheet: 2, words: WORDS },
+describe('a sheet code', () => {
+  it('gives the kit, the sheet and the words of a sheet code', () => {
+    expect(addScannedSheet(undefined, makeCode('C0DE', 2))).toEqual({
+      next: { kit: 'C0DE', sheets: [2] },
+      line: WORDS.join(' '),
     })
   })
 
@@ -19,7 +20,7 @@ describe('readSheetCode', () => {
     ['a sheet of 12 words', makeCode('C0DE', 1, WORDS.slice(0, 12))],
     ['a sheet number of 4', makeCode('C0DE', 4)],
   ])('refuses %s in plain words', (_name, text) => {
-    expect(readSheetCode(text).problem).toBe('This is not a code of a Numen recovery kit.')
+    expect(addScannedSheet(undefined, text).problem).toBe('This is not a code of a Numen recovery kit.')
   })
 })
 

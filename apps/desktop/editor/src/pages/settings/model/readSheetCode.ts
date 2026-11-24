@@ -3,18 +3,18 @@ import { WORDS as words } from '../words'
 const PREFIX = 'numen://recover?'
 const WORDS_ON_SHEET = 33
 
-export interface SheetCode {
+interface SheetCode {
   readonly kit: string
   readonly sheet: number
   readonly words: readonly string[]
 }
 
-export type SheetCodeReading =
+type SheetCodeReading =
   | { readonly code: SheetCode; readonly problem?: undefined }
   | { readonly code?: undefined; readonly problem: string }
 
 /** What the QR code of a kit sheet says: its kit, its number and its 33 words. Anything else is no sheet code. */
-export function readSheetCode(text: string): SheetCodeReading {
+function readSheetCode(text: string): SheetCodeReading {
   const bad = { problem: words.scanNotSheet }
   const trimmed = text.trim()
   if (!trimmed.startsWith(PREFIX)) return bad

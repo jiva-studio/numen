@@ -11,7 +11,6 @@ export {
 } from './model/createHostParts'
 export type { HostParts } from './model/createHostParts'
 export { createDialogStack } from './model/createDialogStack'
-export type { DialogStack } from './model/createDialogStack'
 export { default as PluginDialogs } from './ui/PluginDialogs.vue'
 export { createWindowPluginStatus } from './model/pluginSettings'
 export {

@@ -9,7 +9,7 @@ import { REQUIREMENT_UNMET } from './call'
 
 export const SERVICE = 'md.numen.tools.sync'
 
-export type VaultState = 'notConnected' | 'connected' | 'copy' | 'received'
+type VaultState = 'notConnected' | 'connected' | 'copy' | 'received'
 
 type DeletionsDirection = 'send' | 'apply'
 
