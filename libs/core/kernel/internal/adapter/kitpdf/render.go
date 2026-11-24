@@ -4,6 +4,7 @@ package kitpdf
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"strconv"
 
@@ -26,7 +27,16 @@ const (
 	boxHeight  = 35.0
 	stepIndent = 5.0
 	pointToMM  = 25.4 / 72
+	logoName   = "logo"
+	logoSize   = 12.0
+	logoGap    = 3.0
+	logoTop    = 20.7
 )
+
+// logoPNG is the application icon, the same 256 px picture the desktop build ships.
+//
+//go:embed logo.png
+var logoPNG []byte
 
 type color int
 
@@ -49,6 +59,7 @@ func Render(kit identitydomain.Kit) ([]byte, error) {
 	pdf.SetCreator("Numen", true)
 	pdf.SetCreationDate(kit.CreatedAt)
 	pdf.SetModificationDate(kit.CreatedAt)
+	pdf.RegisterImageOptionsReader(logoName, getLogoOptions(), bytes.NewReader(logoPNG))
 	page := sheetPage{pdf: pdf, toCodePage: pdf.UnicodeTranslatorFromDescriptor(""), kit: kit}
 	for _, sheet := range kit.Sheets {
 		matrix, err := getQRMatrix(getSheetText(kit.ID, sheet))
@@ -159,7 +170,8 @@ func getBaseline(top, lineH, size float64) float64 { return top + lineH/2 + 0.3*
 
 func (p sheetPage) drawHeader(of string) {
 	p.setFont("Helvetica", "B", 26, ink)
-	p.write(margin, 30, "Numen")
+	p.pdf.ImageOptions(logoName, margin, logoTop, logoSize, logoSize, false, getLogoOptions(), 0, "")
+	p.write(margin+logoSize+logoGap, 30, "Numen")
 	p.setFont("Helvetica", "B", 13, ink)
 	p.writeRight(right, 25.5, "Recovery kit")
 	p.setFont("Helvetica", "", 10, hushed)
@@ -234,4 +246,8 @@ func (p sheetPage) drawFooter() {
 	p.setFont("Helvetica", "", 8, hushed)
 	p.write(margin, textY, "numen.md")
 	p.writeRight(right, textY, "Do not photograph or share. Anyone with two sheets can restore your identity.")
+}
+
+func getLogoOptions() fpdf.ImageOptions {
+	return fpdf.ImageOptions{ImageType: "png", ReadDpi: false, AllowNegativePosition: false}
 }

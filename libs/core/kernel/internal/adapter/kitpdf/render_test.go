@@ -101,6 +101,9 @@ func TestRender_WritesAPDFOfOnePageForEachSheet(t *testing.T) {
 	if got := len(pageObject.FindAll(content, -1)); got != 3 {
 		t.Errorf("the document has %d pages, want 3", got)
 	}
+	if got := bytes.Count(content, []byte("/Subtype /Image")); got == 0 {
+		t.Error("the document carries no logo image")
+	}
 	if pages := readPages(t, content); len(pages) != 3 {
 		t.Errorf("%d pages show text, want 3", len(pages))
 	}
