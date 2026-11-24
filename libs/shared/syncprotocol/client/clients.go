@@ -197,7 +197,6 @@ func (c *BlobClient) AbortMultipartBlob(ctx context.Context, vaultID, blobID []b
 	return nil
 }
 
-// getTokenFor returns token for an address that is safe to send it to, and an empty token for any other.
 func getTokenFor(address string, token func() string) func() string {
 	if syncprotocol.CheckServerAddress(address) != nil {
 		return func() string { return "" }

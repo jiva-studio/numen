@@ -155,7 +155,7 @@ func (p sheetPage) drawRestore() {
 	p.write(margin, 226, "1.  In Numen, open Settings › Identity and licenses › Restore, then choose Recovery kit.")
 	p.write(margin, 232, "2.  Type the words of any two sheets, one sheet in each field, then choose Restore.")
 	p.write(margin, 238, "3.  In the field Chain mark, type the mark below. A server that went back in time is refused.")
-	p.setFont("Courier", "B", 11, getInkColor())
+	p.setFont("Courier", "B", 11, ink)
 	p.write(margin+7, 244.5, p.kit.ChainMark)
 }
 

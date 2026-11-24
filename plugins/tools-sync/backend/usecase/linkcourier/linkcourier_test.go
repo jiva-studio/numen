@@ -163,7 +163,7 @@ func waitHealthKey(t *testing.T, r *run, key string) bool {
 	return false
 }
 
-func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
+func TestExecute_SendsNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	channel, err := r.relay.CreateChannel(t.Context())
@@ -186,7 +186,7 @@ func TestExecute_CarriesNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T
 	}
 }
 
-func TestExecute_CarriesALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
+func TestExecute_SendsALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	channel, err := r.relay.CreateChannel(t.Context())

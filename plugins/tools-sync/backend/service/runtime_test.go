@@ -34,7 +34,7 @@ func TestRuntimeConfigure_RunsNoSessionOverPlainHTTPToAnotherHost(t *testing.T) 
 	}
 }
 
-func TestReadServerAddress_KeepsHTTPSAndLoopbackHTTPAndDropsOtherHTTP(t *testing.T) {
+func TestReadServerAddress_AcceptsHTTPSAndLoopbackHTTPAndRefusesOtherHTTP(t *testing.T) {
 	t.Parallel()
 	r := newRuntime(parts{clock: clock.System{}})
 	for address, want := range map[string]string{
