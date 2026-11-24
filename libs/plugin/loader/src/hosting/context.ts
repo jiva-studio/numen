@@ -193,6 +193,7 @@ function createUiService(
   return pickDefinedParts<PluginUi>({
     workspace: ui.workspace,
     window: ui.window,
+    vaultFlags: ui.vaultFlags,
     commands: ui.commands,
     drops: ui.drops,
     slots: ui.slots,

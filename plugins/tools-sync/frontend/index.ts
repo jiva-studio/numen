@@ -169,9 +169,11 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
     component: createSubscriptionView(plugin, host, createSettingsOpener(plugin, host)),
   })
   registerShare(plugin, host)
+  const flags = host.ui.vaultFlags
+  if (flags === undefined) throw new Error('the window gives no vault flags')
   const synced = createSyncedFlags({
     client: vaultsClient,
-    flags: host.ui.vaultFlags ?? { setFlag: () => undefined },
+    flags,
     getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
   })
   registerSync(plugin, host, synced.refresh)

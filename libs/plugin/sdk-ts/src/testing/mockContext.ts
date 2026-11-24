@@ -456,6 +456,7 @@ export function createMockHostServices(initialValues?: MockHostServicesInit): Mo
       commands: createMockCommandsHost(),
       slots: createMockSlotHost(),
       window: createMockWindowHost(),
+      vaultFlags: { setFlag: () => undefined },
       mountView: createMockMountView(mounted),
     },
     work: {
