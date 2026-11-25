@@ -31,7 +31,11 @@ const meta: Meta = {
   args: { onChoose },
   render: (args, { parameters }) => ({
     components: { CardActions, IslandCard },
-    setup: () => ({ items: ITEMS, width: parameters.cardWidth as string, onChoose: args['onChoose'] }),
+    setup: () => ({
+      items: ITEMS,
+      width: parameters.cardWidth as string,
+      onChoose: args['onChoose'],
+    }),
     template: `
       <div class="numen" style="padding:1rem;background:var(--numen-surface)">
         <div :style="{ inlineSize: width }">

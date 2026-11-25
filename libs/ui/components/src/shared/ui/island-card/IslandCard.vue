@@ -70,7 +70,7 @@ const level = useHeaderFit(header)
 
 <style>
 /* The last action moves right so its box stands as far from the right edge as from the top. */
-.island-card__aside:has(button, [role="button"]) {
+.island-card__aside:has(button, [role='button']) {
   margin-inline-end: calc(0.375rem - var(--numen-card-pad));
 }
 

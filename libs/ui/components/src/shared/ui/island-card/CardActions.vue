@@ -27,7 +27,9 @@ const getTrigger = (): HTMLElement | null => {
 
 const anchor = ref<{ at: Position; wide: number } | null>(null)
 
-const choice = ref<{ item: CardActionItem; at: Position; wide: number; from: HTMLElement } | null>(null)
+const choice = ref<{ item: CardActionItem; at: Position; wide: number; from: HTMLElement } | null>(
+  null,
+)
 
 const choices = computed<readonly MenuItem[]>(() =>
   (choice.value?.item.choices ?? []).map((one) => ({
@@ -67,9 +69,10 @@ function onPress(item: CardActionItem, event: Event): void {
   choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
 }
 
-function onChooseChoice(id: string): void {
+async function onChooseChoice(id: string): Promise<void> {
   choice.value = null
-  nextTick(() => emit('choose', id)).catch(() => undefined)
+  await nextTick()
+  emit('choose', id)
 }
 
 function onClose(): void {

@@ -14,7 +14,10 @@ const ITEMS: readonly CardActionItem[] = [
 ]
 
 const mountActions = () =>
-  mount(CardActions, { props: { items: ITEMS, moreLabel: 'More actions' }, attachTo: document.body })
+  mount(CardActions, {
+    props: { items: ITEMS, moreLabel: 'More actions' },
+    attachTo: document.body,
+  })
 
 describe('the card actions', () => {
   it('names every action for a button that shows only its icon', () => {
@@ -37,7 +40,9 @@ describe('the card actions', () => {
 
   it('shows the label as a tooltip on an action whose label is hidden', async () => {
     const actions = mountActions()
-    actions.get<HTMLElement>('button[aria-label="Create"] .card-action__label').element.style.display = 'none'
+    actions.get<HTMLElement>(
+      'button[aria-label="Create"] .card-action__label',
+    ).element.style.display = 'none'
 
     await actions.get('button[aria-label="Create"]').trigger('mouseenter')
 
@@ -103,6 +108,26 @@ describe('an action with choices', () => {
     expect(document.activeElement).toBe(actions.get('button[aria-label="Restore"]').element)
 
     expect(actions.emitted('choose')).toEqual([['typed']])
+    actions.unmount()
+  })
+
+  it('hands a failure of the listener of a picked choice to the error handler of the app', async () => {
+    const errors: unknown[] = []
+    const actions = mount(CardActions, {
+      props: { items: MENU, moreLabel: 'More actions' },
+      attrs: {
+        onChoose: () => {
+          throw new Error('the listener failed')
+        },
+      },
+      attachTo: document.body,
+      global: { config: { errorHandler: (error: unknown) => errors.push(error) } },
+    })
+    await actions.get('button[aria-label="Restore"]').trigger('click')
+    ;(document.body.querySelectorAll('[role="menuitem"]')[1] as HTMLElement).click()
+    await actions.vm.$nextTick()
+    await actions.vm.$nextTick()
+    expect(errors).toHaveLength(1)
     actions.unmount()
   })
 })

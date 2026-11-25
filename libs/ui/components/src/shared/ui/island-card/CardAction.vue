@@ -41,7 +41,9 @@ function getTip(): string {
     @blur="tip.close"
   >
     <slot />
-    <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">{{ label }}</span>
+    <span v-if="!isMore && !isIconOnly" class="card-action__label" aria-hidden="true">
+      {{ label }}
+    </span>
     <ChevronDown v-if="hasMenu" :size="12" aria-hidden="true" />
     <Teleport to="body">
       <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ tip.text.value }}</Tooltip>
