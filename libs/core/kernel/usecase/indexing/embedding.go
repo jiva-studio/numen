@@ -47,10 +47,7 @@ func (e *EmbeddingSetup) Describe() (name, recipe string) {
 }
 
 // EmbeddingProgress holds the number of chunks that can carry a vector and how many already carry one.
-type EmbeddingProgress struct {
-	TotalCount    int64
-	EmbeddedCount int64
-}
+type EmbeddingProgress struct{ TotalCount, EmbeddedCount int64 }
 
 // CountProgress returns how many chunks of the vault can carry a vector under the recipe and how many
 // carry one.
@@ -59,10 +56,7 @@ func (e *EmbeddingSetup) CountProgress(ctx context.Context, vaultID domain.Vault
 		return EmbeddingProgress{}, ErrNoProgress
 	}
 	total, embedded, err := e.progress.GetProgress(ctx, vaultID, recipe)
-	if err != nil {
-		return EmbeddingProgress{}, err
-	}
-	return EmbeddingProgress{TotalCount: total, EmbeddedCount: embedded}, nil
+	return EmbeddingProgress{TotalCount: total, EmbeddedCount: embedded}, err
 }
 
 // HasProgress reports whether the indexed chunks can be counted.

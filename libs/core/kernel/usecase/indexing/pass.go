@@ -40,7 +40,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 	// a cache, so neither has to finish.
 	isStopped := false
 	if p.readNotes(ctx, read) {
-		isStopped = p.indexSources(ctx)
+		isStopped = p.indexTexts(ctx)
 	}
 	p.reportIndexChanged(ctx, isStopped)
 
@@ -51,7 +51,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		case <-ctx.Done():
 			return
 		case <-p.waits.getSourcesWake():
-			p.reportIndexChanged(ctx, p.indexSources(ctx))
+			p.reportIndexChanged(ctx, p.indexTexts(ctx))
 		case <-p.waits.readWakeChannel():
 			p.reportIndexChanged(ctx, p.embedRecognized(ctx))
 		case <-p.waits.getNotesWake():
@@ -100,22 +100,6 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-type indexMode int
-
-const (
-	indexIncremental indexMode = iota
-	indexRebuild
-)
-
-func (p *pass) indexSources(ctx context.Context) (isStoppedByWake bool) {
-	mode := indexIncremental
-	if p.isRebuild {
-		mode = indexRebuild
-	}
-	p.isRebuild = false
-	return p.indexTexts(ctx, mode)
-}
-
 func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	target := p.drainSources()
 	if len(target) == 0 {
@@ -127,9 +111,11 @@ func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	return p.embed(ctx)
 }
 
-func (p *pass) indexTexts(ctx context.Context, mode indexMode) (isStoppedByWake bool) {
+func (p *pass) indexTexts(ctx context.Context) (isStoppedByWake bool) {
+	rebuild := p.isRebuild
+	p.isRebuild = false
 	events := p.events
-	making, err := p.env.openReading(ctx, p.v, mode == indexRebuild)
+	making, err := p.env.openReading(ctx, p.v, rebuild)
 	if err != nil {
 		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return false

@@ -241,7 +241,7 @@ func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc
 		t.Fatal(err)
 	}
 
-	newPass(made, db, events, nil, "", v).indexTexts(t.Context(), indexIncremental)
+	newPass(made, db, events, nil, "", v).indexTexts(t.Context())
 
 	pos := findTask(t, events, work.IndexingTexts)
 	if pos == nil {
