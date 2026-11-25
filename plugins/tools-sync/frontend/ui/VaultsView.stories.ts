@@ -1,3 +1,4 @@
+import { ReportedError } from '@numen/plugin-sdk'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
@@ -65,7 +66,7 @@ const createClient = (setup: Setup): VaultsClient => ({
   deleteCloudVault: () => Promise.resolve(),
   getStatus: () => {
     if (setup.isPending === true) return never()
-    if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))
+    if (setup.failure !== undefined) return Promise.reject(new ReportedError(setup.failure))
     return Promise.resolve({
       hasIdentity: setup.hasIdentity ?? true,
       isReachable: setup.isReachable ?? true,
@@ -92,7 +93,7 @@ export const Loading: Story = {
   args: { client: createClient({ isPending: true }), now: () => NOW },
   play: async ({ canvasElement }) => {
     const rows = within(canvasElement).getAllByRole('listitem')
-    await expect(rows).toHaveLength(2)
+    await expect(rows).toHaveLength(1)
     await expect(rows[0]).toHaveTextContent('')
   },
 }
@@ -121,7 +122,7 @@ export const Synced: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Work')).toBeVisible()
-    await expect(canvas.getAllByText('Up to date')).toHaveLength(2)
+    await expect(canvas.getAllByText('Up to date ·')).toHaveLength(2)
     await expect(canvas.getByText('Last sync 5 minutes ago')).toBeVisible()
     await expect(canvas.queryByText('Plain')).toBeNull()
   },
@@ -154,7 +155,7 @@ export const DeletionsPaused: Story = {
 export const ServerAway: Story = {
   args: { client: createClient({ vaults: [work], isReachable: false }), now: () => NOW },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText('Connecting…')).toBeVisible()
+    await expect(await within(canvasElement).findByText('Connecting… ·')).toBeVisible()
   },
 }
 

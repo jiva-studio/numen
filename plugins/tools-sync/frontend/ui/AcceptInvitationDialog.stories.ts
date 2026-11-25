@@ -1,3 +1,4 @@
+import { ReportedError } from '@numen/plugin-sdk'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import type { AcceptInvitationClient, RequestStatus } from '../api/invitations'
@@ -23,7 +24,7 @@ const createClient = (setup: Setup): AcceptInvitationClient => ({
   readSharePreview: () =>
     setup.previewFailure === undefined
       ? Promise.resolve(PREVIEW)
-      : Promise.reject(new Error(setup.previewFailure)),
+      : Promise.reject(new ReportedError(setup.previewFailure)),
   acceptShareInvitation: () =>
     Promise.resolve({
       requestId: 'r1',

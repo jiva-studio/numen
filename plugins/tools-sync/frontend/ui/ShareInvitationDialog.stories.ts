@@ -1,3 +1,4 @@
+import { ReportedError } from '@numen/plugin-sdk'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import { getCurrentDate } from '@numen/ui'
@@ -31,7 +32,7 @@ interface Setup {
 const createInvitations = (setup: Setup): ShareInvitationClient => ({
   startShareInvitation: () => {
     if (setup.isPending === true) return new Promise(() => undefined)
-    if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))
+    if (setup.failure !== undefined) return Promise.reject(new ReportedError(setup.failure))
     return Promise.resolve({
       id: 'i1',
       link: 'numen-share:eyJ2IjoxfQ',
