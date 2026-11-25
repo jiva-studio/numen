@@ -177,6 +177,12 @@ type Clock interface {
 	Wait(ctx context.Context, d time.Duration) error
 }
 
+// Jitter picks random durations.
+type Jitter interface {
+	// Pick returns a duration from 0 to limit, both included.
+	Pick(limit time.Duration) time.Duration
+}
+
 // Subscriptions is the subscription of the account on the server.
 type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)

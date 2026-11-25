@@ -52,6 +52,11 @@ func start(t *testing.T, c *synctest.Computer, hints ports.Hints, waker ports.Wa
 	t.Helper()
 	deps := c.WatchDeps(waker)
 	deps.Hints = hints
+	return startWith(t, deps)
+}
+
+func startWith(t *testing.T, deps watchchanges.Deps) *running {
+	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	run := &running{cancel: cancel, done: make(chan struct{}), err: nil}
 	go func() {
@@ -283,4 +288,46 @@ func TestWatchChanges_ReturnsAndClosesTheStreamWhenItsContextEnds(t *testing.T) 
 		t.Errorf("error = %v, want none or the error of the context", run.err)
 	}
 	synctest.WaitUntil(t, "no open stream", func() bool { return w.streams() == 0 })
+}
+
+func TestWatchChanges_WaitsBetweenHalfAndTheFullRetryWaitSoThatDevicesDoNotReconnectTogether(t *testing.T) {
+	w := newWorld(t)
+	w.server.SetDown(true)
+	deps := w.b.WatchDeps(w.wakes)
+	deps.Jitter = synctest.NewJitter(0, 0.5, 1)
+	startWith(t, deps)
+
+	base := retryWait
+	for i, fraction := range []float64{0, 0.5, 1} {
+		wantWait := base/2 + time.Duration(float64(base/2)*fraction)
+		got := w.b.Clock.AwaitWait(t)
+		if got != wantWait {
+			t.Fatalf("wait %d = %v, want %v: half of %v plus %v of its other half", i, got, wantWait, base, fraction)
+		}
+		w.b.Clock.Advance(got)
+		base = min(2*base, longestRetryWait)
+	}
+}
+
+func TestWatchChanges_SpreadsTheWaitOfManyDevicesOverTheRetryWait(t *testing.T) {
+	w := newWorld(t)
+	w.server.SetDown(true)
+	seen := map[time.Duration]bool{}
+	for device := range 5 {
+		deps := w.b.WatchDeps(w.wakes)
+		deps.Jitter = synctest.NewJitter(float64(device) / 4)
+		run := startWith(t, deps)
+		seen[w.b.Clock.AwaitWait(t)] = true
+		run.cancel()
+		<-run.done
+	}
+
+	if len(seen) != 5 {
+		t.Errorf("%d different first waits for 5 devices, want 5: %v", len(seen), seen)
+	}
+	for got := range seen {
+		if got < retryWait/2 || got > retryWait {
+			t.Errorf("wait = %v, want within %v and %v", got, retryWait/2, retryWait)
+		}
+	}
 }

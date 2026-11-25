@@ -14,7 +14,7 @@ import (
 
 // WatchDeps are the dependencies of the stream of change hints, over the cloud of this computer.
 func (c *Computer) WatchDeps(waker ports.Waker) watchchanges.Deps {
-	return watchchanges.Deps{Hints: c.Cloud, Host: c.Host, Links: c.State, Waker: waker, Clock: c.Clock}
+	return watchchanges.Deps{Hints: c.Cloud, Host: c.Host, Links: c.State, Waker: waker, Clock: c.Clock, Jitter: NewJitter(1)}
 }
 
 // StartPush runs the sync loop of this computer with the given interval, fed by the stream of change hints as the

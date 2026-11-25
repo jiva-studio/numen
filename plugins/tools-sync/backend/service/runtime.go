@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/folders"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/jitter"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/logging"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
@@ -151,7 +152,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.getHealth()}),
 		Interval: r.interval.Get, Changed: r.wakes.WatchVaults(), Describe: errorwire.GetText, Report: logging.ReportPassFailure,
 	})
-	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock})
+	push := watchchanges.NewWatchChanges(watchchanges.Deps{Hints: cloudSide, Host: p.vaults, Links: p.state, Waker: r.wakes, Clock: p.clock, Jitter: jitter.NewSystem()})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
 	fetching := downloadwire.Deps{
 		Fetch: fetchfile.Deps{

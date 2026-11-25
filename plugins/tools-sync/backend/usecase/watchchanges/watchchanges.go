@@ -24,6 +24,8 @@ type Deps struct {
 	Links ports.Links
 	Waker ports.Waker
 	Clock ports.Clock
+	// Jitter spreads the wait before the stream is opened again, so devices that lost it together do not return together.
+	Jitter ports.Jitter
 }
 
 // WatchChanges reads the stream of hints until its context ends.
@@ -49,13 +51,18 @@ func (u *WatchChanges) Execute(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return errors.Join(err, closeErr)
 		}
-		if err := u.deps.Clock.Wait(ctx, wait); err != nil {
+		if err := u.deps.Clock.Wait(ctx, u.spread(wait)); err != nil {
 			return err
 		}
 		if !isOpened {
 			wait = min(2*wait, longestRetryWait)
 		}
 	}
+}
+
+// spread returns a wait from half of d to d.
+func (u *WatchChanges) spread(d time.Duration) time.Duration {
+	return d/2 + u.deps.Jitter.Pick(d-d/2)
 }
 
 func (u *WatchChanges) runOnce(ctx context.Context) (isOpened bool, closeErr error) {
